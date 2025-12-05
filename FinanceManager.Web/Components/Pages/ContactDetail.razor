@@ -1,11 +1,13 @@
 @page "/contacts/{Id:guid}"
 @page "/contacts/new"
+@using System.ComponentModel.DataAnnotations
 @using FinanceManager.Application.Contacts
 @using FinanceManager.Domain
-@using System.ComponentModel.DataAnnotations
+@using FinanceManager.Domain.Attachments
 @using FinanceManager.Shared.Dtos
 @using FinanceManager.Web.Components.Shared
-@using FinanceManager.Domain.Attachments
+@using FinanceManager.Web.ViewModels.Common
+@using FinanceManager.Web.ViewModels.Contacts
 @rendermode InteractiveServer
 @inject NavigationManager Navigation
 @inject FinanceManager.Application.ICurrentUserService CurrentUser

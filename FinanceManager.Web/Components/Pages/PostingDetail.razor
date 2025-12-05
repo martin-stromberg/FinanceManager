@@ -3,9 +3,11 @@
 @inject NavigationManager Nav
 @inject IServiceProvider Services
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Pages.PostingDetail> Localizer
-@using FinanceManager.Web.Components.Shared
 @using FinanceManager.Domain.Attachments
+@using FinanceManager.Web.Components.Shared
 @using FinanceManager.Web.ViewModels
+@using FinanceManager.Web.ViewModels.Common
+@using FinanceManager.Web.ViewModels.Postings
 <PageTitle>@Localizer["PageTitle"]</PageTitle>
 
 <Ribbon TTabEnum="PostingDetail.TabId" Tabs="_tabs" ActiveTab="_activeTab" ActiveTabChanged="OnActiveTabChanged" />

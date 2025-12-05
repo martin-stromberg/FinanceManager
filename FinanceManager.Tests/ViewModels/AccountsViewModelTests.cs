@@ -1,7 +1,7 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
 using FinanceManager.Shared.Dtos.Accounts;
-using FinanceManager.Web.ViewModels;
+using FinanceManager.Web.ViewModels.Accounts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;

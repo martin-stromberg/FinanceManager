@@ -3,13 +3,16 @@
 @rendermode InteractiveServer
 @inject NavigationManager Nav
 @inject IServiceProvider Services
-@using FinanceManager.Shared.Dtos
 @using System.ComponentModel.DataAnnotations
-@using Microsoft.Extensions.Localization
-@using FinanceManager.Web.Components.Shared
 @using FinanceManager.Domain.Attachments
+@using FinanceManager.Shared.Dtos
+@using FinanceManager.Web.Components.Shared
 @using FinanceManager.Web.ViewModels
+@using FinanceManager.Web.ViewModels.Securities
 @using Microsoft.Extensions.DependencyInjection
+@using Microsoft.Extensions.Localization
+n
+@using Microsoft.Extensions.Localization
 @inject IStringLocalizer<Components.Pages.SecurityEdit> Localizer
 @inject FinanceManager.Shared.IApiClient Api
 <PageTitle>@Localizer["PageTitle"]</PageTitle>

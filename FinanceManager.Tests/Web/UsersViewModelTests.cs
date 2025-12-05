@@ -1,6 +1,6 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
-using FinanceManager.Web.ViewModels;
+using FinanceManager.Web.ViewModels.Setup;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;

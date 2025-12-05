@@ -4,10 +4,12 @@
 @inject IJSRuntime JS
 @inject IServiceProvider Services
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Pages.PostingsSecurity> Localizer
-@using FinanceManager.Web.Components.Shared
-@using FinanceManager.Web.ViewModels
 @using FinanceManager.Domain;
 @using FinanceManager.Shared.Dtos;
+@using FinanceManager.Web.Components.Shared
+@using FinanceManager.Web.ViewModels
+@using FinanceManager.Web.ViewModels.Common
+@using FinanceManager.Web.ViewModels.Postings
 <PageTitle>@Localizer["PageTitle"]</PageTitle>
 
 <Ribbon TTabEnum="PostingsSecurity.TabId" Tabs="_tabs" ActiveTab="_activeTab" ActiveTabChanged="OnActiveTabChanged" />
