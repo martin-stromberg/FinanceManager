@@ -1,0 +1,37 @@
+@page "/card/{Kind}/{Id:guid}"
+@rendermode InteractiveServer
+@inject IServiceProvider Services
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
+@using FinanceManager.Web.ViewModels
+@using FinanceManager.Web.ViewModels.Common
+@using FinanceManager.Web.Components.Shared
+@using System
+
+<PageTitle>@L["General_PageTitle"]</PageTitle>
+
+<h3>@L["General_PageTitle"]</h3>
+
+@if (_vm == null)
+{
+    <p>@L["General_Loading"]</p>
+}
+else
+{
+    <GenericCardPage TKeyValue="(string, string)" Provider="_vm" Localizer="L" LoadingText="@L["General_Loading"]" />
+}
+
+@code {
+    [Parameter] public string Kind { get; set; } = string.Empty;
+    [Parameter] public Guid Id { get; set; }
+
+    private BaseCardViewModel<(string Key, string Value)>? _vm;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Kind?.ToLowerInvariant() == "accounts")
+        {
+            _vm = ActivatorUtilities.CreateInstance<BankAccountCardViewModel>(Services);
+            await _vm.InitializeAsync(Id);
+        }
+    }
+}

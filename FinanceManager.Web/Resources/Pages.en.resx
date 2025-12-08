@@ -117,6 +117,24 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Card_Caption_Account_Balance" xml:space="preserve">
+    <value>Balance</value>
+  </data>
+  <data name="Card_Caption_Account_Iban" xml:space="preserve">
+    <value>IBAN</value>
+  </data>
+  <data name="Card_Caption_Account_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Card_Caption_Account_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Card_Value_AccountType_Giro" xml:space="preserve">
+    <value>Giro account</value>
+  </data>
+  <data name="Card_Value_AccountType_Savings" xml:space="preserve">
+    <value>Savings account</value>
+  </data>
   <data name="General_Loading" xml:space="preserve">
     <value>Loading…</value>
   </data>
@@ -155,5 +173,14 @@
   </data>
   <data name="List_Th_Account_Type" xml:space="preserve">
     <value>Type</value>
+  </data>
+  <data name="Ribbon_Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="Ribbon_Group_Navigation" xml:space="preserve">
+    <value>Navigate</value>
+  </data>
+  <data name="Ribbon_OpenPostings" xml:space="preserve">
+    <value>Postings</value>
   </data>
 </root>

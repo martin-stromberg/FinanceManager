@@ -1,0 +1,98 @@
+@typeparam TKeyValue
+@using FinanceManager.Web.ViewModels.Common
+@using FinanceManager.Web.Components.Shared
+@inject IJSRuntime JS
+
+@if (Provider == null)
+{
+    <p style="opacity:.7;">No provider</p>
+}
+else
+{
+    <Ribbon TTabEnum="TabId" Provider="Provider" Localizer="Localizer" />
+
+    @if (Provider.Loading)
+    {
+        <p>@LoadingText</p>
+    }
+    else if (Provider.CardRecord is not null)
+    {
+        <div class="card-view" style="max-width:720px;">
+            <table class="fm-table card">
+                <tbody>
+                    @foreach (var f in Provider.CardRecord.Fields)
+                    {
+                        <tr>
+                            <th style="width:30%;text-align:left;vertical-align:top;padding:.5rem .6rem;font-weight:600;">@(Localizer?[f.LabelKey] ?? f.LabelKey)</th>
+                            <td style="padding:.5rem .6rem;">@RenderField(f)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@code {
+    public enum TabId { Card }
+
+    [Parameter] public BaseCardViewModel<TKeyValue>? Provider { get; set; }
+    [Parameter] public Microsoft.Extensions.Localization.IStringLocalizer? Localizer { get; set; }
+
+    [Parameter] public string LoadingText { get; set; } = "Loading";
+
+    private string GetKey(TKeyValue kv)
+    {
+        // Default: if kv is (string Key, string Value)
+        if (kv is System.ValueTuple<string, string> t)
+        {
+            return t.Item1;
+        }
+        // fallback to ToString
+        return kv?.ToString() ?? string.Empty;
+    }
+
+    private string GetValue(TKeyValue kv)
+    {
+        if (kv is System.ValueTuple<string, string> t)
+        {
+            return System.Net.WebUtility.HtmlEncode(t.Item2 ?? string.Empty);
+        }
+        return System.Net.WebUtility.HtmlEncode(kv?.ToString() ?? string.Empty);
+    }
+
+    private RenderFragment RenderField(CardField f) => builder =>
+    {
+        switch (f.Kind)
+        {
+            case CardFieldKind.Text:
+                var txt = LocalizeInline(f.Text ?? string.Empty);
+                builder.AddContent(0, txt);
+                break;
+            case CardFieldKind.Symbol:
+                if (f.SymbolId.HasValue)
+                {
+                    builder.OpenElement(1, "img");
+                    builder.AddAttribute(2, "src", $"/api/attachments/{f.SymbolId}/download");
+                    builder.AddAttribute(3, "style", "width:36px;height:36px;object-fit:contain;border-radius:6px;border:1px solid var(--border);");
+                    builder.CloseElement();
+                }
+                break;
+            case CardFieldKind.Currency:
+                builder.AddContent(4, (f.Amount ?? 0m).ToString("C", System.Globalization.CultureInfo.CurrentCulture));
+                break;
+        }
+    };
+
+    private string LocalizeInline(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return string.Empty;
+        if (Localizer == null) return input;
+        return System.Text.RegularExpressions.Regex.Replace(input, "\\$(\\w+)", m =>
+        {
+            var key = m.Groups[1].Value;
+            var ls = Localizer[key];
+            return ls.ResourceNotFound ? m.Value : ls.Value;
+        });
+    }
+}

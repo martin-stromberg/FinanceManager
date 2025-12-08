@@ -1,0 +1,68 @@
+@page "/list/{Kind}"
+@rendermode InteractiveServer
+@inject IServiceProvider Services
+@inject NavigationManager Nav
+@inject Microsoft.Extensions.Localization.IStringLocalizer<Pages>? Localizer
+@using FinanceManager.Web.ViewModels
+@using FinanceManager.Web.ViewModels.Common
+@using FinanceManager.Web.Components.Shared
+@using System.Resources
+@using System.Globalization
+@using System.Collections
+
+<PageTitle>@($"{Localizer["General_PageTitle"]}: {GetKindTitle()}")</PageTitle>
+
+<h3>@Localizer["General_PageTitle"]: @GetKindTitle()</h3>
+
+
+@if (_provider == null)
+{
+    <p>@Localizer["General_Loading"]</p>
+}
+else
+{
+    <GenericListPage TItem="object"
+                     Provider="_provider"
+                     Localizer="Localizer"
+                     SearchPlaceholder="@Localizer["List_SearchPlaceholder"]"
+                     RangeFromLabel="@Localizer["List_SearchFrom"]"
+                     RangeToLabel="@Localizer["List_SearchTo"]"
+                     LoadingText="@Localizer["General_Loading"]"
+                     EmptyText="@Localizer["List_Result_NoItems"]"
+                     EndOfListText="@Localizer["List_Result_EndOfList"]"
+                     ItemClick="OnItemClick" />
+}
+
+@code {
+    [Parameter] public string Kind { get; set; } = string.Empty;
+
+    private IListProvider? _provider;
+
+    private string GetKindTitle() => (Kind ?? string.Empty).Trim().ToLowerInvariant() switch
+    {
+        "accounts" => Localizer["General_Title_Account"],
+        "contacts" => Localizer["General_Title_Contact"],
+        _ => Kind
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var factory = ActivatorUtilities.CreateInstance<ListViewModelFactory>(Services);
+        var result = factory.Create(Kind);
+        _provider = result?.Provider;
+        if (_provider != null)
+        {
+            _provider.StateChanged += (_, __) => _ = InvokeAsync(StateHasChanged);
+            await _provider.InitializeAsync();
+        }
+    }
+
+    private Task OnItemClick(object item)
+    {
+        if (item is IListItemNavigation nav)
+        {
+            Nav.NavigateTo(nav.GetNavigateUrl());
+        }
+        return Task.CompletedTask;
+    }
+}

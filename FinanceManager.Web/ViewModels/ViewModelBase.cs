@@ -44,6 +44,7 @@ public abstract class ViewModelBase : IAsyncDisposable, IRibbonProvider
         var vm = ActivatorUtilities.CreateInstance<T>(_services);
         vm.StateChanged += (_, __) => RaiseStateChanged();
         vm.AuthenticationRequired += (_, ret) => AuthenticationRequired?.Invoke(this, ret);
+        vm.UiActionRequested += (_, act) => UiActionRequested?.Invoke(this, act);
         _children.Add(vm);
         _childViewModels.Add(vm);
         configure?.Invoke(vm);

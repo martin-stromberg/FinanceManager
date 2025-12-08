@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using Microsoft.IdentityModel.Tokens;
 using System.Globalization;
 using System.Text;
@@ -43,6 +44,7 @@ namespace FinanceManager.Web
         {
             // Localization
             builder.Services.AddLocalization(o => o.ResourcesPath = "Resources");
+            builder.Services.AddSingleton<IStringLocalizer<Pages>, PagesStringLocalizer>();
 
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
