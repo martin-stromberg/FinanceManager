@@ -10,6 +10,7 @@ public interface IApiClient
     /// Holds the last error message returned by the server when a method returns false/null due to a non-success HTTP status.
     /// </summary>
     string? LastError { get; }
+    string? LastErrorCode { get; }
 
     // Accounts
     /// <summary>Lists accounts for the current user. Optional filter by bank contact id.</summary>

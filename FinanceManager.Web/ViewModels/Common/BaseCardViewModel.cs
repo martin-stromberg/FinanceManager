@@ -13,6 +13,107 @@ namespace FinanceManager.Web.ViewModels.Common
 
         public virtual Task<bool> DeleteAsync() => Task.FromResult(false);
 
+        // New: single card record for the card view
         public virtual CardRecord? CardRecord { get; protected set; }
+
+        // Pending field values stored by label key (not persisted until SaveAsync)
+        protected readonly Dictionary<string, object?> _pendingFieldValues = new();
+        public IReadOnlyDictionary<string, object?> PendingFieldValues => _pendingFieldValues;
+        public bool HasPendingChanges => _pendingFieldValues.Count > 0;
+
+        // Validate (accept) a field value change and remember it for later saving.
+        // This does not persist; it only stores the change in memory and raises StateChanged so UI can enable Save.
+        public virtual void ValidateFieldValue(CardField field, object? newValue)
+        {
+            if (field == null) return;
+            _pendingFieldValues[field.LabelKey] = newValue;
+            RaiseStateChanged();
+        }
+
+        // Validate lookup field: store LookupItem object directly as pending value
+        public virtual void ValidateLookupField(CardField field, LookupItem? item)
+        {
+            if (field == null) return;
+            if (item == null)
+            {
+                _pendingFieldValues.Remove(field.LabelKey);
+            }
+            else
+            {
+                _pendingFieldValues[field.LabelKey] = item;
+            }
+            RaiseStateChanged();
+        }
+
+        // Clear pending changes
+        protected void ClearPendingChanges() => _pendingFieldValues.Clear();
+
+        // Apply pending field overrides to a CardRecord instance. This mutates the given CardRecord's fields
+        // so the UI can render the in-memory pending values without persisting them.
+        public virtual CardRecord ApplyPendingValues(CardRecord record)
+        {
+            if (record == null) return record!;
+            foreach (var f in record.Fields)
+            {
+                if (f == null) continue;
+                if (!_pendingFieldValues.TryGetValue(f.LabelKey, out var v)) continue;
+                // if pending value is a LookupItem, use its name and key
+                if (v is LookupItem li)
+                {
+                    f.ValueId = li.Key;
+                    f.Text = li.Name;
+                    continue;
+                }
+                switch (v)
+                {
+                    case Guid g:
+                        f.ValueId = g;
+                        if (f.Kind == CardFieldKind.Symbol) f.SymbolId = g;
+                        break;
+                    case decimal d:
+                        f.Amount = d;
+                        break;
+                    case string s:
+                        // try parse decimal for currency fields
+                        if (f.Kind == CardFieldKind.Currency && decimal.TryParse(s, out var dv))
+                        {
+                            f.Amount = dv;
+                        }
+                        else if (Guid.TryParse(s, out var gv))
+                        {
+                            f.ValueId = gv;
+                            if (f.Kind == CardFieldKind.Symbol) f.SymbolId = gv;
+                        }
+                        else
+                        {
+                            f.Text = s;
+                        }
+                        break;
+                    default:
+                        f.Text = v?.ToString();
+                        break;
+                }
+            }
+            return record;
+        }
+
+        // Validate and upload a symbol file for this card's entity. Default implementation does nothing and returns null.
+        public virtual Task<Guid?> ValidateSymbolAsync(System.IO.Stream stream, string fileName, string contentType)
+        {
+            return Task.FromResult<Guid?>(null);
+        }
+
+        // Reload the card data after changes (default no-op)
+        public virtual Task ReloadAsync()
+        {
+            return Task.CompletedTask;
+        }
+
+        // Query lookup items for a given CardField. Default: empty.
+        // The CardField contains LookupType and LookupField which implementations may use to filter/search.
+        public virtual Task<IReadOnlyList<LookupItem>> QueryLookupAsync(CardField field, string? q, int skip, int take)
+        {
+            return Task.FromResult<IReadOnlyList<LookupItem>>(Array.Empty<LookupItem>());
+        }
     }
 }

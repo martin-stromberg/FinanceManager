@@ -8,10 +8,47 @@ public class ApiClient : IApiClient
 {
     private readonly HttpClient _http;
     public string? LastError { get; private set; }
+    public string? LastErrorCode { get; private set; }
 
     public ApiClient(HttpClient http)
     {
         _http = http;
+    }
+
+    private async Task EnsureSuccessOrSetErrorAsync(HttpResponseMessage resp)
+    {
+        if (resp.IsSuccessStatusCode) return;
+        LastError = null; LastErrorCode = null;
+        try
+        {
+            var content = await resp.Content.ReadAsStringAsync();
+            if (!string.IsNullOrWhiteSpace(content))
+            {
+                // try parse JSON { error:..., message:... }
+                try
+                {
+                    using var doc = JsonDocument.Parse(content);
+                    if (doc.RootElement.ValueKind == JsonValueKind.Object)
+                    {
+                        if (doc.RootElement.TryGetProperty("message", out var m) && m.ValueKind == JsonValueKind.String)
+                            LastError = m.GetString();
+                        if (doc.RootElement.TryGetProperty("error", out var e) && e.ValueKind == JsonValueKind.String)
+                            LastErrorCode = e.GetString();
+                    }
+                }
+                catch
+                {
+                    // not JSON, use raw content
+                    LastError = content;
+                }
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+        if (string.IsNullOrWhiteSpace(LastError)) LastError = resp.ReasonPhrase ?? $"HTTP {(int)resp.StatusCode}";
+        resp.EnsureSuccessStatusCode();
     }
 
     #region Accounts
@@ -22,7 +59,7 @@ public class ApiClient : IApiClient
         var url = $"/api/accounts?skip={skip}&take={take}";
         if (bankContactId.HasValue) url += $"&bankContactId={Uri.EscapeDataString(bankContactId.Value.ToString())}";
         var resp = await _http.GetAsync(url, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<AccountDto>>(cancellationToken: ct) ?? Array.Empty<AccountDto>();
     }
 
@@ -31,7 +68,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.GetAsync($"/api/accounts/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<AccountDto>(cancellationToken: ct);
     }
 
@@ -39,7 +76,7 @@ public class ApiClient : IApiClient
     public async Task<AccountDto> CreateAccountAsync(AccountCreateRequest request, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync("/api/accounts", request, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<AccountDto>(cancellationToken: ct))!;
     }
 
@@ -48,7 +85,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PutAsJsonAsync($"/api/accounts/{id}", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<AccountDto>(cancellationToken: ct);
     }
 
@@ -57,7 +94,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.DeleteAsync($"/api/accounts/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -65,14 +102,14 @@ public class ApiClient : IApiClient
     public async Task SetAccountSymbolAsync(Guid id, Guid attachmentId, CancellationToken ct = default)
     {
         var resp = await _http.PostAsync($"/api/accounts/{id}/symbol/{attachmentId}", content: null, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
     }
 
     /// <inheritdoc />
     public async Task ClearAccountSymbolAsync(Guid id, CancellationToken ct = default)
     {
         var resp = await _http.DeleteAsync($"/api/accounts/{id}/symbol", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
     }
 
     #endregion Accounts
@@ -83,7 +120,7 @@ public class ApiClient : IApiClient
     public async Task<AuthOkResponse> Auth_LoginAsync(LoginRequest request, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync("/api/auth/login", request, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<AuthOkResponse>(cancellationToken: ct))!;
     }
 
@@ -91,7 +128,7 @@ public class ApiClient : IApiClient
     public async Task<AuthOkResponse> Auth_RegisterAsync(RegisterRequest request, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync("/api/auth/register", request, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<AuthOkResponse>(cancellationToken: ct))!;
     }
 
@@ -99,7 +136,7 @@ public class ApiClient : IApiClient
     public async Task<bool> Auth_LogoutAsync(CancellationToken ct = default)
     {
         var resp = await _http.PostAsync("/api/auth/logout", content: null, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -112,7 +149,7 @@ public class ApiClient : IApiClient
     {
         var url = $"/api/background-tasks/{type}?allowDuplicate={(allowDuplicate ? "true" : "false")}";
         var resp = await _http.PostAsync(url, content: null, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BackgroundTaskInfo>(cancellationToken: ct))!;
     }
 
@@ -120,7 +157,7 @@ public class ApiClient : IApiClient
     public async Task<IReadOnlyList<BackgroundTaskInfo>> BackgroundTasks_GetActiveAsync(CancellationToken ct = default)
     {
         var resp = await _http.GetAsync("/api/background-tasks/active", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<BackgroundTaskInfo>>(cancellationToken: ct) ?? Array.Empty<BackgroundTaskInfo>();
     }
 
@@ -129,7 +166,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.GetAsync($"/api/background-tasks/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<BackgroundTaskInfo>(cancellationToken: ct);
     }
 
@@ -139,7 +176,7 @@ public class ApiClient : IApiClient
         var resp = await _http.DeleteAsync($"/api/background-tasks/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -148,7 +185,7 @@ public class ApiClient : IApiClient
     {
         var url = $"/api/background-tasks/aggregates/rebuild?allowDuplicate={(allowDuplicate ? "true" : "false")}";
         var resp = await _http.PostAsync(url, content: null, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<AggregatesRebuildStatusDto>(cancellationToken: ct))!;
     }
 
@@ -156,7 +193,7 @@ public class ApiClient : IApiClient
     public async Task<AggregatesRebuildStatusDto> Aggregates_GetRebuildStatusAsync(CancellationToken ct = default)
     {
         var resp = await _http.GetAsync("/api/background-tasks/aggregates/rebuild/status", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<AggregatesRebuildStatusDto>(cancellationToken: ct))!;
     }
 
@@ -168,7 +205,7 @@ public class ApiClient : IApiClient
     public async Task<IReadOnlyList<UserAdminDto>> Admin_ListUsersAsync(CancellationToken ct = default)
     {
         var resp = await _http.GetAsync("/api/admin/users", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<UserAdminDto>>(cancellationToken: ct) ?? Array.Empty<UserAdminDto>();
     }
 
@@ -177,7 +214,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.GetAsync($"/api/admin/users/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<UserAdminDto>(cancellationToken: ct);
     }
 
@@ -185,7 +222,7 @@ public class ApiClient : IApiClient
     public async Task<UserAdminDto> Admin_CreateUserAsync(CreateUserRequest request, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync("/api/admin/users", request, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<UserAdminDto>(cancellationToken: ct))!;
     }
 
@@ -194,7 +231,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PutAsJsonAsync($"/api/admin/users/{id}", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<UserAdminDto>(cancellationToken: ct);
     }
 
@@ -203,7 +240,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PostAsJsonAsync($"/api/admin/users/{id}/reset-password", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -212,7 +249,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PostAsync($"/api/admin/users/{id}/unlock", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -221,7 +258,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.DeleteAsync($"/api/admin/users/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -238,7 +275,7 @@ public class ApiClient : IApiClient
             url += onlyBlocked.Value ? "?onlyBlocked=true" : "?onlyBlocked=false";
         }
         var resp = await _http.GetAsync(url, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<IpBlockDto>>(cancellationToken: ct) ?? Array.Empty<IpBlockDto>();
     }
 
@@ -246,7 +283,7 @@ public class ApiClient : IApiClient
     public async Task<IpBlockDto> Admin_CreateIpBlockAsync(IpBlockCreateRequest request, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync("/api/admin/ip-blocks", request, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<IpBlockDto>(cancellationToken: ct))!;
     }
 
@@ -255,7 +292,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.GetAsync($"/api/admin/ip-blocks/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IpBlockDto>(cancellationToken: ct);
     }
 
@@ -264,7 +301,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PutAsJsonAsync($"/api/admin/ip-blocks/{id}", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IpBlockDto>(cancellationToken: ct);
     }
 
@@ -273,7 +310,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PostAsJsonAsync($"/api/admin/ip-blocks/{id}/block", new IpBlockUpdateRequest(reason, null), ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -282,7 +319,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PostAsync($"/api/admin/ip-blocks/{id}/unblock", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -291,7 +328,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PostAsync($"/api/admin/ip-blocks/{id}/reset-counters", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -300,7 +337,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.DeleteAsync($"/api/admin/ip-blocks/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -316,7 +353,7 @@ public class ApiClient : IApiClient
         if (isUrl.HasValue) url += isUrl.Value ? "&isUrl=true" : "&isUrl=false";
         if (!string.IsNullOrWhiteSpace(q)) url += $"&q={Uri.EscapeDataString(q)}";
         var resp = await _http.GetAsync(url, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<PageResult<AttachmentDto>>(cancellationToken: ct)) ?? new PageResult<AttachmentDto>();
     }
 
@@ -331,7 +368,7 @@ public class ApiClient : IApiClient
         var url = $"/api/attachments/{entityKind}/{entityId}";
         if (role.HasValue) url += $"?role={role.Value}";
         var resp = await _http.PostAsync(url, content, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<AttachmentDto>(cancellationToken: ct))!;
     }
 
@@ -340,7 +377,7 @@ public class ApiClient : IApiClient
     {
         var payload = new { file = (string?)null, categoryId, url };
         var resp = await _http.PostAsJsonAsync($"/api/attachments/{entityKind}/{entityId}", payload, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<AttachmentDto>(cancellationToken: ct))!;
     }
 
@@ -349,7 +386,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.DeleteAsync($"/api/attachments/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -359,7 +396,7 @@ public class ApiClient : IApiClient
         var req = new AttachmentUpdateCoreRequest(fileName, categoryId);
         var resp = await _http.PutAsJsonAsync($"/api/attachments/{id}", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -369,7 +406,7 @@ public class ApiClient : IApiClient
         var req = new AttachmentUpdateCategoryRequest(categoryId);
         var resp = await _http.PutAsJsonAsync($"/api/attachments/{id}/category", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -377,7 +414,7 @@ public class ApiClient : IApiClient
     public async Task<IReadOnlyList<AttachmentCategoryDto>> Attachments_ListCategoriesAsync(CancellationToken ct = default)
     {
         var resp = await _http.GetAsync("/api/attachments/categories", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<AttachmentCategoryDto>>(cancellationToken: ct) ?? Array.Empty<AttachmentCategoryDto>();
     }
 
@@ -386,7 +423,7 @@ public class ApiClient : IApiClient
     {
         var req = new AttachmentCreateCategoryRequest(name);
         var resp = await _http.PostAsJsonAsync("/api/attachments/categories", req, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<AttachmentCategoryDto>(cancellationToken: ct))!;
     }
 
@@ -396,7 +433,7 @@ public class ApiClient : IApiClient
         var req = new AttachmentUpdateCategoryNameRequest(name);
         var resp = await _http.PutAsJsonAsync($"/api/attachments/categories/{id}", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<AttachmentCategoryDto>(cancellationToken: ct);
     }
 
@@ -406,7 +443,7 @@ public class ApiClient : IApiClient
         var resp = await _http.DeleteAsync($"/api/attachments/categories/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         if (resp.StatusCode == System.Net.HttpStatusCode.Conflict) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -415,7 +452,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PostAsync($"/api/attachments/{id}/download-token?validSeconds={validSeconds}", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<AttachmentDownloadTokenDto>(cancellationToken: ct);
     }
 
@@ -427,7 +464,7 @@ public class ApiClient : IApiClient
     public async Task<IReadOnlyList<BackupDto>> Backups_ListAsync(CancellationToken ct = default)
     {
         var resp = await _http.GetAsync("/api/setup/backups", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<BackupDto>>(cancellationToken: ct) ?? Array.Empty<BackupDto>();
     }
 
@@ -435,7 +472,7 @@ public class ApiClient : IApiClient
     public async Task<BackupDto> Backups_CreateAsync(CancellationToken ct = default)
     {
         var resp = await _http.PostAsync("/api/setup/backups", content: null, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BackupDto>(cancellationToken: ct))!;
     }
 
@@ -445,7 +482,7 @@ public class ApiClient : IApiClient
         using var content = new MultipartFormDataContent();
         content.Add(new StreamContent(fileStream), "file", fileName);
         var resp = await _http.PostAsync("/api/setup/backups/upload", content, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BackupDto>(cancellationToken: ct))!;
     }
 
@@ -465,7 +502,7 @@ public class ApiClient : IApiClient
     public async Task<BackupRestoreStatusDto> Backups_StartApplyAsync(Guid id, CancellationToken ct = default)
     {
         var resp = await _http.PostAsync($"/api/setup/backups/{id}/apply/start", content: null, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BackupRestoreStatusDto>(cancellationToken: ct))!;
     }
 
@@ -473,7 +510,7 @@ public class ApiClient : IApiClient
     public async Task<BackupRestoreStatusDto> Backups_GetStatusAsync(CancellationToken ct = default)
     {
         var resp = await _http.GetAsync("/api/setup/backups/restore/status", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BackupRestoreStatusDto>(cancellationToken: ct))!;
     }
 
@@ -490,7 +527,7 @@ public class ApiClient : IApiClient
     public async Task<bool> Backups_CancelAsync(CancellationToken ct = default)
     {
         var resp = await _http.PostAsync("/api/setup/backups/restore/cancel", content: null, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -499,7 +536,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.DeleteAsync($"/api/setup/backups/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -511,7 +548,7 @@ public class ApiClient : IApiClient
     public async Task<IReadOnlyList<ContactCategoryDto>> ContactCategories_ListAsync(CancellationToken ct = default)
     {
         var resp = await _http.GetAsync("/api/contact-categories", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<ContactCategoryDto>>(cancellationToken: ct) ?? Array.Empty<ContactCategoryDto>();
     }
 
@@ -520,7 +557,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.GetAsync($"/api/contact-categories/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<ContactCategoryDto>(cancellationToken: ct);
     }
 
@@ -528,7 +565,7 @@ public class ApiClient : IApiClient
     public async Task<ContactCategoryDto> ContactCategories_CreateAsync(ContactCategoryCreateRequest request, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync("/api/contact-categories", request, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<ContactCategoryDto>(cancellationToken: ct))!;
     }
 
@@ -537,7 +574,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PutAsJsonAsync($"/api/contact-categories/{id}", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -546,7 +583,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.DeleteAsync($"/api/contact-categories/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -580,7 +617,7 @@ public class ApiClient : IApiClient
         if (all) url += "&all=true";
         if (!string.IsNullOrWhiteSpace(nameFilter)) url += $"&q={Uri.EscapeDataString(nameFilter)}";
         var resp = await _http.GetAsync(url, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<ContactDto>>(cancellationToken: ct) ?? Array.Empty<ContactDto>();
     }
 
@@ -589,7 +626,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.GetAsync($"/api/contacts/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<ContactDto>(cancellationToken: ct);
     }
 
@@ -597,7 +634,7 @@ public class ApiClient : IApiClient
     public async Task<ContactDto> Contacts_CreateAsync(ContactCreateRequest request, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync("/api/contacts", request, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<ContactDto>(cancellationToken: ct))!;
     }
 
@@ -606,7 +643,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PutAsJsonAsync($"/api/contacts/{id}", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<ContactDto>(cancellationToken: ct);
     }
 
@@ -615,7 +652,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.DeleteAsync($"/api/contacts/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -689,7 +726,7 @@ public class ApiClient : IApiClient
     public async Task<IReadOnlyList<HomeKpiDto>> HomeKpis_ListAsync(CancellationToken ct = default)
     {
         var resp = await _http.GetAsync("/api/home-kpis", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<HomeKpiDto>>(cancellationToken: ct) ?? Array.Empty<HomeKpiDto>();
     }
     /// <inheritdoc />
@@ -697,14 +734,14 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.GetAsync($"/api/home-kpis/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<HomeKpiDto>(cancellationToken: ct);
     }
     /// <inheritdoc />
     public async Task<HomeKpiDto> HomeKpis_CreateAsync(HomeKpiCreateRequest request, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync("/api/home-kpis", request, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<HomeKpiDto>(cancellationToken: ct))!;
     }
     /// <inheritdoc />
@@ -713,7 +750,7 @@ public class ApiClient : IApiClient
         var resp = await _http.PutAsJsonAsync($"/api/home-kpis/{id}", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         if (resp.StatusCode == System.Net.HttpStatusCode.Conflict) throw new InvalidOperationException(await resp.Content.ReadAsStringAsync(ct));
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<HomeKpiDto>(cancellationToken: ct);
     }
     /// <inheritdoc />
@@ -721,7 +758,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.DeleteAsync($"/api/home-kpis/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -791,7 +828,7 @@ public class ApiClient : IApiClient
     public async Task<IReadOnlyList<NotificationDto>> Notifications_ListAsync(CancellationToken ct = default)
     {
         var resp = await _http.GetAsync("/api/notifications", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<NotificationDto>>(cancellationToken: ct) ?? Array.Empty<NotificationDto>();
     }
 
@@ -812,7 +849,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.GetAsync($"/api/postings/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<PostingServiceDto>(cancellationToken: ct);
     }
 
@@ -824,7 +861,7 @@ public class ApiClient : IApiClient
         if (to.HasValue) url += $"&to={to.Value:O}";
         var resp = await _http.GetAsync(url, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return Array.Empty<PostingServiceDto>();
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<PostingServiceDto>>(cancellationToken: ct) ?? Array.Empty<PostingServiceDto>();
     }
 
@@ -836,7 +873,7 @@ public class ApiClient : IApiClient
         if (to.HasValue) url += $"&to={to.Value:O}";
         var resp = await _http.GetAsync(url, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return Array.Empty<PostingServiceDto>();
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<PostingServiceDto>>(cancellationToken: ct) ?? Array.Empty<PostingServiceDto>();
     }
 
@@ -848,7 +885,7 @@ public class ApiClient : IApiClient
         if (to.HasValue) url += $"&to={to.Value:O}";
         var resp = await _http.GetAsync(url, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return Array.Empty<PostingServiceDto>();
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<PostingServiceDto>>(cancellationToken: ct) ?? Array.Empty<PostingServiceDto>();
     }
 
@@ -859,7 +896,7 @@ public class ApiClient : IApiClient
         if (to.HasValue) url += $"&to={to.Value:O}";
         var resp = await _http.GetAsync(url, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return Array.Empty<PostingServiceDto>();
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<PostingServiceDto>>(cancellationToken: ct) ?? Array.Empty<PostingServiceDto>();
     }
 
@@ -879,14 +916,14 @@ public class ApiClient : IApiClient
     public async Task<ReportAggregationResult> Reports_QueryAggregatesAsync(ReportAggregatesQueryRequest req, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync("/api/report-aggregates", req, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<ReportAggregationResult>(cancellationToken: ct))!;
     }
 
     public async Task<IReadOnlyList<ReportFavoriteDto>> Reports_ListFavoritesAsync(CancellationToken ct = default)
     {
         var resp = await _http.GetAsync("/api/report-favorites", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<ReportFavoriteDto>>(cancellationToken: ct) ?? Array.Empty<ReportFavoriteDto>();
     }
 
@@ -894,7 +931,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.GetAsync($"/api/report-favorites/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<ReportFavoriteDto>(cancellationToken: ct);
     }
 
@@ -906,7 +943,7 @@ public class ApiClient : IApiClient
             var err = await resp.Content.ReadAsStringAsync(ct);
             throw new InvalidOperationException(err);
         }
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<ReportFavoriteDto>(cancellationToken: ct))!;
     }
 
@@ -920,7 +957,7 @@ public class ApiClient : IApiClient
             throw new InvalidOperationException(err);
         }
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest) { throw new ArgumentException(await resp.Content.ReadAsStringAsync(ct)); }
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<ReportFavoriteDto>(cancellationToken: ct);
     }
 
@@ -939,7 +976,7 @@ public class ApiClient : IApiClient
     public async Task<IReadOnlyList<SavingsPlanCategoryDto>> SavingsPlanCategories_ListAsync(CancellationToken ct = default)
     {
         var resp = await _http.GetAsync("/api/savings-plan-categories", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<SavingsPlanCategoryDto>>(cancellationToken: ct) ?? Array.Empty<SavingsPlanCategoryDto>();
     }
 
@@ -947,7 +984,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.GetAsync($"/api/savings-plan-categories/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<SavingsPlanCategoryDto>(cancellationToken: ct);
     }
 
@@ -992,7 +1029,7 @@ public class ApiClient : IApiClient
             LastError = await resp.Content.ReadAsStringAsync(ct);
             return false;
         }
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -1031,14 +1068,14 @@ public class ApiClient : IApiClient
     public async Task<IReadOnlyList<SavingsPlanDto>> SavingsPlans_ListAsync(bool onlyActive = true, CancellationToken ct = default)
     {
         var resp = await _http.GetAsync($"/api/savings-plans?onlyActive={(onlyActive ? "true" : "false")}", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<SavingsPlanDto>>(cancellationToken: ct) ?? Array.Empty<SavingsPlanDto>();
     }
 
     public async Task<int> SavingsPlans_CountAsync(bool onlyActive = true, CancellationToken ct = default)
     {
         var resp = await _http.GetAsync($"/api/savings-plans/count?onlyActive={(onlyActive ? "true" : "false")}", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         var json = await resp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
         if (json.TryGetProperty("count", out var countProp) && countProp.TryGetInt32(out var cnt))
         {
@@ -1051,14 +1088,14 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.GetAsync($"/api/savings-plans/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<SavingsPlanDto>(cancellationToken: ct);
     }
 
     public async Task<SavingsPlanDto> SavingsPlans_CreateAsync(SavingsPlanCreateRequest req, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync("/api/savings-plans", req, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<SavingsPlanDto>(cancellationToken: ct))!;
     }
 
@@ -1066,14 +1103,14 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PutAsJsonAsync($"/api/savings-plans/{id}", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<SavingsPlanDto>(cancellationToken: ct);
     }
 
     public async Task<SavingsPlanAnalysisDto> SavingsPlans_AnalyzeAsync(Guid id, CancellationToken ct = default)
     {
         var resp = await _http.GetAsync($"/api/savings-plans/{id}/analysis", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<SavingsPlanAnalysisDto>(cancellationToken: ct))!;
     }
 
@@ -1136,14 +1173,14 @@ public class ApiClient : IApiClient
     public async Task<IReadOnlyList<SecurityDto>> Securities_ListAsync(bool onlyActive = true, CancellationToken ct = default)
     {
         var resp = await _http.GetAsync($"/api/securities?onlyActive={(onlyActive ? "true" : "false")}", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<SecurityDto>>(cancellationToken: ct) ?? Array.Empty<SecurityDto>();
     }
 
     public async Task<int> Securities_CountAsync(bool onlyActive = true, CancellationToken ct = default)
     {
         var resp = await _http.GetAsync($"/api/securities/count?onlyActive={(onlyActive ? "true" : "false")}", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         var json = await resp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
         if (json.TryGetProperty("count", out var countProp) && countProp.TryGetInt32(out var cnt))
         {
@@ -1156,14 +1193,14 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.GetAsync($"/api/securities/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<SecurityDto>(cancellationToken: ct);
     }
 
     public async Task<SecurityDto> Securities_CreateAsync(SecurityRequest req, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync("/api/securities", req, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<SecurityDto>(cancellationToken: ct))!;
     }
 
@@ -1171,7 +1208,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PutAsJsonAsync($"/api/securities/{id}", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<SecurityDto>(cancellationToken: ct);
     }
 
@@ -1351,14 +1388,14 @@ public class ApiClient : IApiClient
     public async Task<IReadOnlyList<StatementDraftDto>> StatementDrafts_ListOpenAsync(int skip = 0, int take = 3, CancellationToken ct = default)
     {
         var resp = await _http.GetAsync($"/api/statement-drafts?skip={skip}&take={take}", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<StatementDraftDto>>(cancellationToken: ct) ?? Array.Empty<StatementDraftDto>();
     }
 
     public async Task<int> StatementDrafts_GetOpenCountAsync(CancellationToken ct = default)
     {
         var resp = await _http.GetAsync("/api/statement-drafts/count", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         var json = await resp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
         if (json.TryGetProperty("count", out var prop) && prop.TryGetInt32(out var cnt)) return cnt;
         return 0;
@@ -1509,14 +1546,14 @@ public class ApiClient : IApiClient
     public async Task<DraftValidationResultDto?> StatementDrafts_ValidateAsync(Guid draftId, CancellationToken ct = default)
     {
         var resp = await _http.GetAsync($"/api/statement-drafts/{draftId}/validate", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<DraftValidationResultDto>(cancellationToken: ct);
     }
 
     public async Task<DraftValidationResultDto?> StatementDrafts_ValidateEntryAsync(Guid draftId, Guid entryId, CancellationToken ct = default)
     {
         var resp = await _http.GetAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/validate", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<DraftValidationResultDto>(cancellationToken: ct);
     }
 

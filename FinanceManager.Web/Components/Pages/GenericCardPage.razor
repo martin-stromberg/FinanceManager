@@ -2,6 +2,9 @@
 @using FinanceManager.Web.ViewModels.Common
 @using FinanceManager.Web.Components.Shared
 @inject IJSRuntime JS
+@using Microsoft.AspNetCore.Components.Forms
+@inject FinanceManager.Shared.IApiClient Api
+@using FinanceManager.Domain.Attachments
 
 @if (Provider == null)
 {
@@ -10,6 +13,15 @@
 else
 {
     <Ribbon TTabEnum="TabId" Provider="Provider" Localizer="Localizer" />
+
+    @if (!string.IsNullOrEmpty(Provider.LastError))
+    {
+        var err = Provider.GetLocalizedError(Localizer);
+        if (!string.IsNullOrEmpty(err))
+        {
+            <div class="error-msg" style="color:#e66;margin:.5rem 0;padding:.5rem;border:1px solid rgba(230,102,102,.2);background:rgba(230,102,102,.04);border-radius:4px;">@err</div>
+        }
+    }
 
     @if (Provider.Loading)
     {
@@ -24,7 +36,7 @@ else
                     {
                         <tr>
                             <th style="width:30%;text-align:left;vertical-align:top;padding:.5rem .6rem;font-weight:600;">@(Localizer?[f.LabelKey] ?? f.LabelKey)</th>
-                            <td style="padding:.5rem .6rem;">@RenderField(f)</td>
+                            <td style="padding:.5rem .6rem;">@RenderEditableField(f)</td>
                         </tr>
                     }
                 </tbody>
@@ -66,7 +78,9 @@ else
         switch (f.Kind)
         {
             case CardFieldKind.Text:
-                var txt = LocalizeInline(f.Text ?? string.Empty);
+                // If Text is empty (e.g. lookup without resolved name), fall back to ValueId or a placeholder
+                var raw = !string.IsNullOrWhiteSpace(f.Text) ? f.Text : (f.ValueId?.ToString() ?? string.Empty);
+                var txt = LocalizeInline(raw);
                 builder.AddContent(0, txt);
                 break;
             case CardFieldKind.Symbol:
@@ -84,6 +98,93 @@ else
         }
     };
 
+    // If field is editable or a lookup, render appropriate input controls instead of plain text
+    private RenderFragment RenderEditableField(CardField f) => builder =>
+    {
+        if (!f.Editable)
+        {
+            // invoke the RenderFragment returned by RenderField
+            builder.AddContent(0, RenderField(f));
+            return;
+        }
+
+        // Lookup fields: render special input with suggestions
+        if (!string.IsNullOrEmpty(f.LookupType))
+        {
+            // wrapper for relative positioning
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "style", "position:relative;display:inline-block;width:100%;");
+
+            // input
+            builder.OpenElement(2, "input");
+            builder.AddAttribute(3, "value", f.Text ?? string.Empty);
+            builder.AddAttribute(4, "class", "card-input");
+            builder.AddAttribute(5, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, (ChangeEventArgs e) => OnLookupInputAsync(f, e)));
+            builder.AddAttribute(6, "onfocus", EventCallback.Factory.Create(this, () => _openLookupField = f));
+            builder.AddAttribute(7, "onfocusout", EventCallback.Factory.Create(this, () => CloseLookup(f)));
+            builder.AddAttribute(8, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, (ChangeEventArgs e) => OnLookupChangeCommit(f, e)));
+            builder.CloseElement();
+
+            // overlay panel
+            if (_openLookupField == f && _lookupResults.TryGetValue(f, out var list) && list?.Count > 0)
+            {
+                builder.OpenElement(20, "div");
+                builder.AddAttribute(21, "class", "lookup-overlay");
+                builder.AddAttribute(22, "style", "position:absolute;left:0;right:0;z-index:20;background:var(--panel-bg);border:1px solid var(--border);max-height:200px;overflow:auto;margin-top:.25rem;border-radius:4px;padding:.25rem;");
+                int seq = 23;
+                foreach (var item in list)
+                {
+                    builder.OpenElement(seq++, "div");
+                    builder.AddAttribute(seq++, "class", "lookup-item");
+                    builder.AddAttribute(seq++, "style", "padding:.3rem .5rem;cursor:pointer;");
+                    var id = item.Key; var name = item.Name;
+                    // use pointerdown so selection happens before input loses focus (blur), preventing overlay from being closed prematurely
+                    builder.AddAttribute(seq++, "onpointerdown", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.PointerEventArgs>(this, (Microsoft.AspNetCore.Components.Web.PointerEventArgs _) => OnSelectLookupAsync(f, id, name)));
+                    builder.AddContent(seq++, name);
+                    builder.CloseElement();
+                }
+                builder.CloseElement();
+            }
+
+            builder.CloseElement(); // wrapper
+            return;
+        }
+
+        switch (f.Kind)
+        {
+            case CardFieldKind.Text:
+                builder.OpenElement(0, "input");
+                builder.AddAttribute(1, "value", f.Text ?? string.Empty);
+                builder.AddAttribute(2, "class", "card-input");
+                builder.AddAttribute(3, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, (ChangeEventArgs e) => OnEditableTextChanged(f, e)));
+                builder.CloseElement();
+                break;
+            case CardFieldKind.Symbol:
+                // Render preview + upload control
+                if (f.SymbolId.HasValue)
+                {
+                    builder.OpenElement(3, "img");
+                    builder.AddAttribute(4, "src", $"/api/attachments/{f.SymbolId}/download");
+                    builder.AddAttribute(5, "style", "width:36px;height:36px;object-fit:contain;border-radius:6px;border:1px solid var(--border);");
+                    builder.CloseElement();
+                }
+                // render InputFile for direct upload
+                builder.OpenComponent<InputFile>(6);
+                builder.AddAttribute(7, "OnChange", EventCallback.Factory.Create<InputFileChangeEventArgs>(this, (e) => OnInputFileChangeAsync(e, f)));
+                builder.AddAttribute(8, "accept", "image/*");
+                builder.AddAttribute(9, "class", "card-input-file");
+                builder.CloseComponent();
+                break;
+            case CardFieldKind.Currency:
+                builder.OpenElement(9, "input");
+                builder.AddAttribute(10, "value", (f.Amount ?? 0m).ToString(System.Globalization.CultureInfo.CurrentCulture));
+                builder.AddAttribute(11, "class", "card-input numeric");
+                builder.AddAttribute(12, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, (ChangeEventArgs e) => OnEditableCurrencyChanged(f, e)));
+                builder.CloseElement();
+                break;
+        }
+    };
+
     private string LocalizeInline(string input)
     {
         if (string.IsNullOrEmpty(input)) return string.Empty;
@@ -95,4 +196,141 @@ else
             return ls.ResourceNotFound ? m.Value : ls.Value;
         });
     }
+
+    private async Task OnInputFileChangeAsync(InputFileChangeEventArgs e, CardField f)
+    {
+        try
+        {
+            var file = e.File;
+            if (file == null) return;
+            // determine entity kind and id from Provider.CardRecord.Item if possible
+            if (Provider?.CardRecord?.Item is FinanceManager.Shared.Dtos.Accounts.AccountDto acc)
+            {
+                // upload as Attachment for Account
+                using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB
+                var vm = Provider as BaseCardViewModel<TKeyValue>;
+                var newId = await vm?.ValidateSymbolAsync(stream, file.Name, file.ContentType ?? "application/octet-stream");
+                if (newId.HasValue)
+                {
+                    f.SymbolId = newId.Value;
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+            else if (Provider?.CardRecord?.Item is FinanceManager.Shared.Dtos.Contacts.ContactDto c)
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                var vm = Provider as BaseCardViewModel<TKeyValue>;
+                var newId = await vm?.ValidateSymbolAsync(stream, file.Name, file.ContentType ?? "application/octet-stream");
+                if (newId.HasValue)
+                {
+                    f.SymbolId = newId.Value;
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+            else
+            {
+                // unknown owner: attempt upload to Attachments root not supported; ignore
+            }
+        }
+        catch (Exception ex)
+        {
+            // TODO: surface error to user (toast) — for now just debug
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+    }
+
+    private readonly Dictionary<CardField, List<FinanceManager.Web.ViewModels.Common.LookupItem>> _lookupResults = new();
+    private CardField? _openLookupField;
+    private BaseCardViewModel<TKeyValue>? _subscribedProvider;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        if (_subscribedProvider != Provider)
+        {
+            if (_subscribedProvider != null) _subscribedProvider.StateChanged -= OnProviderStateChanged;
+            _subscribedProvider = Provider;
+            if (_subscribedProvider != null) _subscribedProvider.StateChanged += OnProviderStateChanged;
+        }
+    }
+
+    private void OnProviderStateChanged(object? _, EventArgs __) => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        if (_subscribedProvider != null) _subscribedProvider.StateChanged -= OnProviderStateChanged;
+    }
+
+    private async Task OnLookupInputAsync(CardField f, ChangeEventArgs e)
+    {
+        try
+        {
+            var q = (e.Value ?? string.Empty).ToString();
+            f.Text = q;
+            if (Provider is not null)
+            {
+                var list = await Provider.QueryLookupAsync(f, q, 0, 10);
+                _lookupResults[f] = list.ToList();
+                _openLookupField = f;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+    }
+
+    private async Task OnSelectLookupAsync(CardField f, Guid id, string name)
+    {
+        // set selected id and display name
+        f.ValueId = id;
+        f.Text = name;
+        // remember pending lookup (store LookupItem with key+name) in ViewModel
+        if (Provider is not null) Provider.ValidateLookupField(f, new LookupItem(id, name));
+        _lookupResults.Remove(f);
+        if (_openLookupField == f) _openLookupField = null;
+        // ask ViewModel to reload in case other fields depend on selection
+        await (Provider?.ReloadAsync() ?? Task.CompletedTask);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseLookup(CardField f)
+    {
+        // hide overlay for this field
+        if (_openLookupField == f) _openLookupField = null;
+        _lookupResults.Remove(f);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void OnLookupChangeCommit(CardField f, ChangeEventArgs e)
+    {
+        // when user leaves input without selecting, treat current text as pending new name (no id)
+        var txt = (e.Value ?? string.Empty).ToString();
+        if (Provider is null) return;
+        // If a LookupItem is already stored as pending (selection happened), don't overwrite with the raw text
+        if (Provider.PendingFieldValues.TryGetValue(f.LabelKey, out var existing) && existing is LookupItem)
+        {
+            return;
+        }
+        Provider.ValidateFieldValue(f, txt);
+    }
+
+    private void OnEditableTextChanged(CardField f, ChangeEventArgs e)
+    {
+        var txt = (e.Value ?? string.Empty).ToString();
+        f.Text = txt;
+        if (Provider is not null) Provider.ValidateFieldValue(f, txt);
+    }
+
+    private void OnEditableCurrencyChanged(CardField f, ChangeEventArgs e)
+    {
+        var txt = (e.Value ?? string.Empty).ToString();
+        if (decimal.TryParse(txt, out var val))
+        {
+            f.Amount = val;
+            if (Provider is not null) Provider.ValidateFieldValue(f, val);
+        }
+    }
 }
+

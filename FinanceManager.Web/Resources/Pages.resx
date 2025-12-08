@@ -120,11 +120,17 @@
   <data name="Card_Caption_Account_Balance" xml:space="preserve">
     <value>Balance</value>
   </data>
+  <data name="Card_Caption_Account_Contact" xml:space="preserve">
+    <value>Contact</value>
+  </data>
   <data name="Card_Caption_Account_Iban" xml:space="preserve">
     <value>IBAN</value>
   </data>
   <data name="Card_Caption_Account_Name" xml:space="preserve">
     <value>Name</value>
+  </data>
+  <data name="Card_Caption_Account_Symbol" xml:space="preserve">
+    <value>Symbol</value>
   </data>
   <data name="Card_Caption_Account_Type" xml:space="preserve">
     <value>Type</value>
@@ -134,6 +140,9 @@
   </data>
   <data name="Card_Value_AccountType_Savings" xml:space="preserve">
     <value>Savings Account</value>
+  </data>
+  <data name="Err_Invalid_bankContactId" xml:space="preserve">
+    <value>The bank contact is invalid.</value>
   </data>
   <data name="General_Loading" xml:space="preserve">
     <value>Loading…</value>
@@ -177,10 +186,24 @@
   <data name="Ribbon_Back" xml:space="preserve">
     <value>Back</value>
   </data>
+  <data name="Ribbon_Group_Linked" xml:space="preserve">
+    <value>Linked Data</value>
+  </data>
+  <data name="Ribbon_Group_Manage" xml:space="preserve">
+    <value>Manage</value>
+  </data>
   <data name="Ribbon_Group_Navigation" xml:space="preserve">
     <value>Navigation</value>
   </data>
   <data name="Ribbon_OpenPostings" xml:space="preserve">
     <value>Postings</value>
+  </data>
+  <data name="Ribbon_Reset" xml:space="preserve">
+    <value>Reset</value>
+    <comment>Action button for resetting the changes</comment>
+  </data>
+  <data name="Ribbon_Save" xml:space="preserve">
+    <value>Save</value>
+    <comment>Action button for saving the changes.</comment>
   </data>
 </root>

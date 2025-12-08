@@ -121,7 +121,8 @@ public sealed class AccountsController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new { error = ex.Message });
+            var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_{ex.ParamName}" : "Err_InvalidArgument";
+            return BadRequest(new { error = code, message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -169,7 +170,8 @@ public sealed class AccountsController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new { error = ex.Message });
+            var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_{ex.ParamName}" : "Err_InvalidArgument";
+            return BadRequest(new { error = code, message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -219,7 +221,8 @@ public sealed class AccountsController : ControllerBase
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "SetSymbol failed for account {AccountId}", id);
-            return NotFound();
+            var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_{ex.ParamName}" : "Err_NotFound";
+            return NotFound(new { error = code, message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -246,7 +249,8 @@ public sealed class AccountsController : ControllerBase
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "ClearSymbol failed for account {AccountId}", id);
-            return NotFound();
+            var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_{ex.ParamName}" : "Err_NotFound";
+            return NotFound(new { error = code, message = ex.Message });
         }
         catch (Exception ex)
         {
