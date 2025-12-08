@@ -2,10 +2,12 @@
 @rendermode InteractiveServer
 @inject NavigationManager Nav
 @inject IJSRuntime JS
-@inject FinanceManager.Shared.IApiClient Api
+@inject IServiceProvider Services
 @using FinanceManager.Domain.Statements
 @using Microsoft.Extensions.Localization
 @using FinanceManager.Web.Components.Shared
+@using Microsoft.Extensions.DependencyInjection
+@using FinanceManager.Web.ViewModels.StatementDrafts
 @inject IStringLocalizer<Components.Pages.StatementDraftEntryDetail> Localizer
 @using FinanceManager.Domain.Attachments
 @using FinanceManager.Shared.Dtos.Statements
@@ -15,30 +17,27 @@
 
 <h3>@Localizer["Title"]</h3>
 
-<Ribbon TTabEnum="TabId"
-        Tabs="_tabs"
-        ActiveTab="_activeTab"
-        ActiveTabChanged="OnActiveTabChanged" />
+<Ribbon TTabEnum="TabId" Provider="_vm" Localizer="Localizer" />
 
-@if (_vm == null)
+@if (_vm.Loading)
 {
     <p>@Localizer["Loading"]</p>
 }
 else
 {    
     <p><strong>@Localizer["DraftFile"]</strong> @_vm.OriginalFileName</p>
-    @if(_entryValidation != null)
+    @if(_vm.EntryValidation != null)
     {
         <div style="margin-bottom:1rem;padding:.5rem .75rem;border:1px solid #444;border-radius:4px;background:#181818;max-width:960px;">
             <h4 style="margin:.2rem 0 .4rem 0;font-size:.8rem;">@Localizer["Validation_Header"]</h4>
-            @if(!_entryValidation.Messages.Any())
+            @if(!_vm.EntryValidation!.Messages.Any())
             {
                 <p style="margin:0;font-size:.7rem;color:#6c6;">@Localizer["Validation_NoIssues"]</p>
             }
             else
             {
                 <ul style="margin:.25rem 0 0 1rem;padding:0;font-size:.65rem;">
-                    @foreach(var m in _entryValidation.Messages)
+                    @foreach(var m in _vm.EntryValidation!.Messages)
                     {
                         var c = m.Severity=="Error"?"#e66":"#cc6";
                         <li style="margin:.2rem 0;color:@c;">@m.Message</li>
@@ -47,36 +46,33 @@ else
             }
         </div>
     }
-    @if(_showBookWarnings && _lastBookingResult != null)
+    @if(_vm.ShowBookWarnings && _vm.LastBookingResult != null)
     {
         <div class="panel" style="margin-bottom:1rem;padding:.5rem .75rem;border:1px solid #665;border-radius:4px;background:#2a1f1f;max-width:960px;">
             <h4 style="margin:.2rem 0 .4rem 0;font-size:.8rem;">@Localizer["Warnings"]</h4>
             <ul style="margin:.25rem 0 0 1rem;padding:0;font-size:.65rem;">
-                @foreach(var m in _lastBookingResult.Validation.Messages.Where(m=>m.Severity=="Warning"))
+                @foreach(var m in _vm.LastBookingResult.Validation.Messages.Where(m=>m.Severity=="Warning"))
                 {
                     <li style="margin:.2rem 0;color:#cc6;">@m.Message</li>
                 }
             </ul>
             <div style="margin-top:.5rem;display:flex;gap:.5rem;">
                 <button class="icon-btn" @onclick="ConfirmBookEntry"><svg><use href="/icons/sprite.svg#check" /></svg>&nbsp;@Localizer["BtnBookAnyway"]</button>
-                <button class="icon-btn" @onclick="(()=>{_showBookWarnings=false;BuildRibbon();})"><svg><use href="/icons/sprite.svg#clear" /></svg>&nbsp;@Localizer["Cancel"]</button>
+                <button class="icon-btn" @onclick="(()=>{ _vm.ClearBookWarnings(); })"><svg><use href="/icons/sprite.svg#clear" /></svg>&nbsp;@Localizer["Cancel"]</button>
             </div>
         </div>
     }
     <div style="margin-bottom:1rem;">
-        <label><input type="checkbox" @bind="_editMode" @bind:after="(()=>{BuildRibbon();})" disabled="@IsReadOnly" /> @Localizer["EditMode"]</label>
-    @if (IsDuplicate)
+        <label><input type="checkbox" @bind="_vm.EditMode" @bind:after="(()=>{})" disabled="@_vm.IsReadOnly" /> @Localizer["EditMode"]</label>
+        @if (_vm.IsDuplicate)
         {
             <div style="margin-top:.3rem;color:#cc6;font-size:.75rem;">@Localizer["Msg_ReadOnlyAlreadyBooked"]</div>
-            <div style="margin-top:.5rem;display:flex;gap:.5rem;">
-                <button class="icon-btn" @onclick="ResetDuplicateWithConfirm"><svg><use href="/icons/sprite.svg#refresh" /></svg>&nbsp;@Localizer["Btn_ResetDuplicate"]</button>
-            </div>
         }
-    @if (IsAnnounced)
-    {
-        <div style="margin-top:.3rem;color:#cc6;font-size:.75rem;">@Localizer["Msg_ReadOnlyAnnounced"]</div>
-    }
-        @if (_editMode && _vm != null && !IsReadOnly)
+        @if (_vm.IsAnnounced)
+        {
+            <div style="margin-top:.3rem;color:#cc6;font-size:.75rem;">@Localizer["Msg_ReadOnlyAnnounced"]</div>
+        }
+        @if (_vm.EditMode && !_vm.IsReadOnly)
         {
             <div class="edit-core" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem;margin-top:.5rem;max-width:960px;">
                 <div>
@@ -142,24 +138,24 @@ else
             <tr><th>@Localizer["Th_Description"]</th><td class="wrap">@(_vm.Entry.BookingDescription ?? "-")</td></tr>
             <tr><th>@Localizer["Th_Announced"]</th><td>@(_vm.Entry.IsAnnounced ? Localizer["Yes"] : Localizer["No"])</td></tr>
             <tr><th>@Localizer["Th_Status"]</th><td>@_vm.Entry.Status</td></tr>
-            @if (!IsReadOnly)
+            @if (!_vm.IsReadOnly)
             {
             <tr>
                 <th>@Localizer["Th_Contact"]</th>
                 <td>
                     <div class="contact-combobox" style="display:grid;grid-template-columns:1fr auto;align-items:start;gap:.5rem;max-width:420px;margin-bottom:1rem;">
                         <div style="position:relative;min-width:0;">
-                            <input type="text" style="width:95%;" @bind="_contactFilter" @bind:event="oninput" @bind:after="(()=>{OnContactFilterAfterChanged();BuildRibbon();})" placeholder='@Localizer["Placeholder_FilterContacts"]' @onfocus="ShowDropdown" />
+                            <input type="text" style="width:95%;" @bind="_vm.ContactFilter" @bind:event="oninput" @bind:after="(()=>{OnContactFilterAfterChanged();})" placeholder='@Localizer["Placeholder_FilterContacts"]' @onfocus="ShowDropdown" />
                             <input type="hidden" value="@_selectedContactId" />
                             @if (_dropdownVisible)
                             {
                                 <ul class="combo-list" style="list-style:none;margin:0;padding:.25rem .25rem;position:absolute;z-index:10;left:0;right:0;max-height:9.5rem;overflow:auto;background:#222;border:1px solid #444;border-radius:4px;box-shadow:0 3px 12px #0005;">
-                                    <li style="padding:.3rem .4rem;cursor:pointer;" @onclick="(()=>SelectContact(null))" class="@( _selectedContactId==null?"active":string.Empty)">-- @Localizer["None"] --</li>
-                                    @foreach(var c in FilteredContacts)
+                                        <li style="padding:.3rem .4rem;cursor:pointer;" @onclick="(()=>SelectContact(null))" class="@( _selectedContactId==null?"active":string.Empty)">-- @Localizer["None"] --</li>
+                                    @foreach(var c in _vm.FilteredContacts)
                                     {
-                                        <li style="padding:.3rem .4rem;cursor:pointer;" @onclick="(()=>SelectContact(c.Id))" class="@( _selectedContactId==c.Id?"active":string.Empty)" title="@c.Name">@c.Name</li>
+                                            <li style="padding:.3rem .4rem;cursor:pointer;" @onclick="(()=>SelectContact(c.Id))" class="@( _selectedContactId==c.Id?"active":string.Empty)" title="@c.Name">@c.Name</li>
                                     }
-                                    @if(!FilteredContacts.Any())
+                                        @if (!_vm.FilteredContacts.Any())
                                     {
                                         <li style="padding:.3rem .4rem;opacity:.6;">@Localizer["NoMatches"]</li>
                                     }
@@ -185,17 +181,17 @@ else
                 <td>
                     <div class="savingsplan-combobox" style="display:grid;grid-template-columns:1fr auto;align-items:start;gap:.5rem;max-width:420px;margin-bottom:.75rem;">
                         <div style="position:relative;min-width:0;">
-                            <input type="text" style="width:95%;" @bind="_savingsPlanFilter" @bind:event="oninput" @bind:after="(()=>{OnSavingsPlanFilterAfterChanged();BuildRibbon();})" placeholder='@Localizer["Placeholder_FilterSavingsPlans"]' @onfocus="ShowSavingsPlanDropdown" />
+                            <input type="text" style="width:95%;" @bind="_vm.SavingsPlanFilter" @bind:event="oninput" @bind:after="(()=>{OnSavingsPlanFilterAfterChanged();})" placeholder='@Localizer["Placeholder_FilterSavingsPlans"]' @onfocus="ShowSavingsPlanDropdown" />
                             <input type="hidden" value="@_selectedSavingsPlanId" />
                             @if (_savingsPlanDropdownVisible)
                             {
                                 <ul class="combo-list" style="list-style:none;margin:0;padding:.25rem .25rem;position:absolute;z-index:10;left:0;right:0;max-height:9.5rem;overflow:auto;background:#222;border:1px solid #444;border-radius:4px;box-shadow:0 3px 12px #0005;">
                                     <li style="padding:.3rem .4rem;cursor:pointer;" @onclick="(()=>SelectSavingsPlan(null))" class="@( _selectedSavingsPlanId==null?"active":string.Empty)">-- @Localizer["None"] --</li>
-                                    @foreach(var plan in FilteredSavingsPlans)
+                                    @foreach(var plan in _vm.FilteredSavingsPlans)
                                     {
                                         <li style="padding:.3rem .4rem;cursor:pointer;" @onclick="(()=>SelectSavingsPlan(plan.Id))" class="@( _selectedSavingsPlanId==plan.Id?"active":string.Empty)" title="@plan.Name">@plan.Name</li>
                                     }
-                                    @if(!FilteredSavingsPlans.Any())
+                                    @if(!_vm.FilteredSavingsPlans.Any())
                                     {
                                         <li style="padding:.3rem .4rem;opacity:.6;">@Localizer["NoMatches"]</li>
                                     }
@@ -206,16 +202,16 @@ else
                             <button class="icon-btn" title='@Localizer["BtnNewSavingsPlan"]' aria-label='@Localizer["BtnNewSavingsPlan"]' @onclick="OpenCreateSavingsPlan" disabled="@(!CanCreateSavingsPlan)"><svg><use href="/icons/sprite.svg#plus" /></svg></button>
                         </div>
                     </div>
-                    @if(_selectedSavingsPlanId != null)
+                    @if(_selectedSavingsPlanId != null || _vm.Entry.SavingsPlanId != null)
                     {
                         <div style="display:flex;align-items:center;gap:.5rem;margin:.25rem 0 .5rem 0;max-width:420px;">
-                            <InputCheckbox @bind-Value="_archiveSavingsPlanOnBooking" @bind-Value:after="(()=> { MarkDirty(); })" />
+                            <InputCheckbox @bind-Value="_archiveSavingsPlanOnBooking" @bind-Value:after="(()=> { _vm?.MarkDirty(); })" />
                             <span>@Localizer["ArchiveSavingsPlanOnBooking"]</span>
                         </div>
                     }
                 </td>
             </tr>
-            @if(ShowSecuritySection)
+            @if(_vm.ShowSecuritySection)
             {
                 <tr>
                     <th>@Localizer["Th_Security"]</th>
@@ -224,9 +220,9 @@ else
                             <div style="position:relative;min-width:0;">
                                 <input type="text"
                                        style="width:95%;"
-                                       @bind="_securityFilter"
+                                       @bind="_vm.SecurityFilter"
                                        @bind:event="oninput"
-                                       @bind:after="(()=>{OnSecurityFilterChanged();BuildRibbon();})"
+                                       @bind:after="(()=>{OnSecurityFilterChanged();})"
                                        placeholder='@Localizer["Placeholder_FilterSecurities"]'
                                        @onfocus="ShowSecurityDropdown" />
                                 <input type="hidden" value="@_selectedSecurityId" />
@@ -236,14 +232,14 @@ else
                                         <li style="padding:.3rem .4rem;cursor:pointer;"
                                             @onclick="(()=>SelectSecurity(null))"
                                             class="@(_selectedSecurityId==null?"active":string.Empty)">-- @Localizer["None"] --</li>
-                                        @foreach(var s in FilteredSecurities)
+                                        @foreach(var s in _vm.FilteredSecurities)
                                         {
                                             <li style="padding:.3rem .4rem;cursor:pointer;"
                                                 @onclick="(()=>SelectSecurity(s.Id))"
                                                 class="@(_selectedSecurityId==s.Id?"active":string.Empty)"
                                                 title="@s.Name">@s.Name (@s.Identifier)</li>
                                         }
-                                        @if(!FilteredSecurities.Any())
+                                        @if(!_vm.FilteredSecurities.Any())
                                         {
                                             <li style="padding:.3rem .4rem;opacity:.6;">@Localizer["NoMatches"]</li>
                                         }
@@ -260,10 +256,9 @@ else
                         </div>
                         @if (_selectedSecurityId != null)
                         {
-                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;max-width:720px;margin-top:.25rem;">
-                                <div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;max-width:720px;margin-top:.25rem;">\n                                <div>
                                     <label>@Localizer["Label_TxType"]</label>
-                                    <select @bind="_securityTxType" @bind:after="(()=>{MarkDirty();BuildRibbon();})">
+                                    <select @bind="_securityTxType" @bind:after="(()=>{MarkDirty();})">
                                         <option value="">--</option>
                                         <option value="Buy">@Localizer["Tx_Buy"]</option>
                                         <option value="Sell">@Localizer["Tx_Sell"]</option>
@@ -295,44 +290,44 @@ else
         </tbody>
     </table>
 
-    @if (_showSplitDialog)
+    @if (_vm?.ShowSplitDialog == true)
     {
         <div class="modal-backdrop split-center">
-            <div class="modal split-dialog" role="dialog" aria-modal="true" aria-label='@Localizer["Split_SelectTitle"]'>
+            <div class="modal split-dialog" role="dialog" aria-modal="true" aria-label='@Localizer["Split_SelectTitle"]' style="overflow-x:hidden;">
                 <h3 style="margin-top:0;">@Localizer["Split_SelectTitle"]</h3>
                 @if(_vm?.Entry.SplitDraftId != null)
                 {
                     <p style="margin:.15rem 0 .4rem 0;font-size:.7rem;opacity:.7;">@Localizer["Split_CurrentlyLinked"] @_vm.Entry.SplitDraftId</p>
                 }
                 <p style="margin-top:.2rem;opacity:.8;font-size:.85rem;">@Localizer["Split_SelectHint"]</p>
-                <input type="text" @bind="_splitFilter" placeholder='@Localizer["Filter"]' style="width:100%;margin:.5rem 0 .75rem 0;" />
-                <div class="split-scroll">
-                    @if(_loadingSplits)
+                <input type="text" @bind="_vm.SplitFilter" placeholder='@Localizer["Filter"]' style="margin:.5rem 0 .75rem 0;" />
+                <div class="split-scroll" style="overflow-x:hidden;">
+                    @if(_vm.LoadingSplits)
                     {
                         <div class="split-hint">@Localizer["Loading"]</div>
                     }
                     else
                     {
-                        @foreach(var d in FilteredSplitDrafts)
+                        @foreach(var d in _vm.FilteredSplitDrafts)
                         {
-                            <div class="split-row @(d.DraftId==_selectedSplitDraftId? "active" : string.Empty)" @onclick="(()=>SelectSplit(d.DraftId))">
-                                <div class="name">@d.OriginalFileName</div>
-                                <div class="meta">@d.EntriesCount @Localizer["Entries"] · @Localizer["Total"] @d.TotalAmount</div>
+                            <div class="split-row @(d.DraftId==_vm.SelectedSplitDraftId? "active" : string.Empty)" @onclick="(()=>_vm.SelectSplit(d.DraftId))">
+                                <div class="name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@d.OriginalFileName</div>
+                                <div class="meta">@d.Entries.Count @Localizer["Entries"] · @Localizer["Total"] @d.TotalAmount</div>
                             </div>
                         }
-                        @if(!FilteredSplitDrafts.Any())
+                        @if(!_vm.FilteredSplitDrafts.Any())
                         {
                             <div class="split-hint">@Localizer["NoMatches"]</div>
                         }
                     }
                 </div>
-                @if(!string.IsNullOrEmpty(_splitError))
+                @if(!string.IsNullOrEmpty(_vm.SplitError))
                 {
-                    <div class="split-error">@_splitError</div>
+                    <div class="split-error">@_vm.SplitError</div>
                 }
                 <div class="split-actions">
-                    <button class="icon-btn" disabled="@(_selectedSplitDraftId==null)" @onclick="ConfirmSplit" title='@Localizer["Apply"]' aria-label='@Localizer["Apply"]'><svg><use href="/icons/sprite.svg#check" /></svg></button>
-                    <button class="icon-btn" @onclick="CloseSplitDialog" title='@Localizer["Cancel"]' aria-label='@Localizer["Cancel"]'><svg><use href="/icons/sprite.svg#clear" /></svg></button>
+                    <button class="icon-btn" disabled="@(_vm.SelectedSplitDraftId==null)" @onclick="ConfirmSplit" title='@Localizer["Apply"]' aria-label='@Localizer["Apply"]'><svg><use href="/icons/sprite.svg#check" /></svg></button>
+                    <button class="icon-btn" @onclick="(()=>_vm.CloseSplitDialog())" title='@Localizer["Cancel"]' aria-label='@Localizer["Cancel"]'><svg><use href="/icons/sprite.svg#clear" /></svg></button>
                 </div>
             </div>
         </div>
@@ -355,170 +350,58 @@ else
 @code {
     // Ribbon State
     private enum TabId { Entry }
-    private List<Ribbon<TabId>.RibbonTab<TabId>> _tabs = new();
-    private TabId _activeTab = TabId.Entry;
-    private Task OnActiveTabChanged(TabId id) { _activeTab = id; return Task.CompletedTask; }
+    // assume VM always initialized in OnInitialized; use null-forgiving to avoid repetitive null checks
+    private StatementDraftEntryDetailViewModel _vm = null!;
 
-    private void BuildRibbon()
+    protected override void OnInitialized()
     {
-        var navGroup = new Ribbon<TabId>.RibbonGroup
+        if (_vm == null)
         {
-            Title = Localizer["Ribbon_Group_Navigation"],
-            Items = new()
-            {
-                new Ribbon<TabId>.RibbonItem
-                {
-                    Label = Localizer["BtnBack"],
-                    IconSvg = "<svg><use href='/icons/sprite.svg#arrow-left'/></svg>",
-                    Size = Ribbon<TabId>.RibbonItemSize.Large,
-                    Callback = () => { _ = BackAsync(); return Task.CompletedTask; }
-                },
-                new Ribbon<TabId>.RibbonItem
-                {
-                    Label = Localizer["BtnPrevEntry"],
-                    IconSvg = "<svg><use href='/icons/sprite.svg#chevron-left'/></svg>",
-                    Disabled = _vm?.PrevEntryId == null,
-                    Callback = () => { _ = GoPrevAsync(); return Task.CompletedTask; }
-                },
-                new Ribbon<TabId>.RibbonItem
-                {
-                    Label = Localizer["BtnNextOpenEntry"],
-                    IconSvg = "<svg><use href='/icons/sprite.svg#chevron-right'/></svg>",
-                    Disabled = _vm?.NextOpenEntryId == null,
-                    Callback = () => { _ = GoNextOpenAsync(); return Task.CompletedTask; }
-                }
-            }
-        };
-
-        var editGroup = new Ribbon<TabId>.RibbonGroup
-        {
-            Title = Localizer["Ribbon_Group_Edit"],
-            Items = new()
-            {
-                new Ribbon<TabId>.RibbonItem
-                {
-                    Label = Localizer["BtnSave"],
-                    IconSvg = "<svg><use href='/icons/sprite.svg#save'/></svg>",
-                    Disabled = _pendingSave,
-                    Callback = () => { _ = SaveAll(); return Task.CompletedTask; }
-                },
-                new Ribbon<TabId>.RibbonItem
-                {
-                    Label = Localizer["BtnDelete"],
-                    IconSvg = "<svg><use href='/icons/sprite.svg#clear'/></svg>",
-                    Disabled = _hasUnsavedChanges,
-                    Callback = () => { _ = DeleteEntry(); return Task.CompletedTask; }
-                },
-                new Ribbon<TabId>.RibbonItem
-                {
-                    Label = Localizer["BtnReclassify"],
-                    IconSvg = "<svg><use href='/icons/sprite.svg#refresh'/></svg>",
-                    Disabled = _hasUnsavedChanges,
-                    Callback = () => { _ = Reclassify(); return Task.CompletedTask; }
-                },
-                new Ribbon<TabId>.RibbonItem
-                {
-                    Label = Localizer["BtnAssignSplit"],
-                    IconSvg = "<svg><use href='/icons/sprite.svg#link'/></svg>",
-                    Disabled = _hasUnsavedChanges,
-                    Callback = () => { OpenSplitDialog(); return Task.CompletedTask; }
-                },
-                new Ribbon<TabId>.RibbonItem
-                {
-                    Label = Localizer["Ribbon_Attachments"],
-                    IconSvg = "<svg><use href='/icons/sprite.svg#attachment'/></svg>",
-                    Disabled = _hasUnsavedChanges,
-                    Callback = () => { _showAttachments = true; StateHasChanged(); return Task.CompletedTask; }
-                }
-            }
-        };
-
-        var postingGroup = new Ribbon<TabId>.RibbonGroup
-        {
-            Title = Localizer["Ribbon_Group_Book"],
-            Items = new()
-            {
-                new Ribbon<TabId>.RibbonItem
-                {
-                    Label = Localizer["BtnValidate"],
-                    IconSvg = "<svg><use href='/icons/sprite.svg#check'/></svg>",
-                    Disabled = _hasUnsavedChanges,
-                    Callback = () => { _ = ValidateEntry(); return Task.CompletedTask; }
-                },
-                new Ribbon<TabId>.RibbonItem
-                {
-                    Label = Localizer["BtnBook"],
-                    IconSvg = "<svg><use href='/icons/sprite.svg#postings'/></svg>",
-                    Disabled = _hasUnsavedChanges,
-                    Callback = () => { _ = BookEntry(); return Task.CompletedTask; }
-                }
-            }
-        };
-
-        var relatedItems = new List<Ribbon<TabId>.RibbonItem>();
-        relatedItems.Add(new Ribbon<TabId>.RibbonItem
-        {
-            Label = Localizer["BtnOpenContact"],
-            IconSvg = "<svg><use href='/icons/sprite.svg#groups'/></svg>",
-            Disabled = _selectedContactId == null || _hasUnsavedChanges,
-            Callback = () => { OpenContactDetail(); return Task.CompletedTask; }
-        });
-        relatedItems.Add(new Ribbon<TabId>.RibbonItem
-        {
-            Label = Localizer["BtnOpenSavingsPlan"],
-            IconSvg = "<svg><use href='/icons/sprite.svg#external'/></svg>",
-            Disabled = _selectedSavingsPlanId == null || _hasUnsavedChanges,
-            Callback = () => { OpenSavingsPlanDetail(); return Task.CompletedTask; }
-        });
-        relatedItems.Add(new Ribbon<TabId>.RibbonItem
-        {
-            Label = Localizer["BtnOpenSecurity"],
-            IconSvg = "<svg><use href='/icons/sprite.svg#security'/></svg>",
-            Disabled = _selectedSecurityId == null || _hasUnsavedChanges,
-            Callback = () => { OpenSecurityDetail(); return Task.CompletedTask; }
-        });
-
-        if (_vm?.Entry.SplitDraftId != null)
-        {
-            relatedItems.Add(new Ribbon<TabId>.RibbonItem
-            {
-                Label = Localizer["BtnOpenLinkedSplit"],
-                IconSvg = "<svg><use href='/icons/sprite.svg#external'/></svg>",
-                Disabled = _hasUnsavedChanges,
-                Callback = () => { OpenAssignedSplitDraft(); return Task.CompletedTask; }
-            });
-            relatedItems.Add(new Ribbon<TabId>.RibbonItem
-            {
-                Label = Localizer["BtnRemoveAssignment"],
-                IconSvg = "<svg><use href='/icons/sprite.svg#unlink'/></svg>",
-                Disabled = _hasUnsavedChanges,
-                Callback = () => { _ = RemoveSplit(); return Task.CompletedTask; }
-            });
+            _vm = ActivatorUtilities.CreateInstance<StatementDraftEntryDetailViewModel>(Services);
+            _vm.StateChanged += OnRibbonStateChanged;
+            _vm.UiActionRequested += RibbonVmOnUiActionRequested;
         }
+    }
 
-        var relatedGroup = new Ribbon<TabId>.RibbonGroup
-        {
-            Title = Localizer["Ribbon_Group_Related"],
-            Items = relatedItems
-        };
+    private void OnRibbonStateChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
 
-        _tabs = new List<Ribbon<TabId>.RibbonTab<TabId>>
-        {
-            new()
-            {
-                Id = TabId.Entry,
-                Title = Localizer["Ribbon_Tab_Entry"],
-                Groups = new List<Ribbon<TabId>.RibbonGroup>{ navGroup, editGroup, postingGroup, relatedGroup }
-            }
-        };
-        StateHasChanged();
+    private void RibbonVmOnUiActionRequested(object? sender, string? action)
+    {
+        if (string.IsNullOrEmpty(action)) return;
+        _ = InvokeAsync(() => HandleRibbonActionAsync(action!));
     }
 
     private void RebuildAfter(Action action)
     {
         action();
-        BuildRibbon();
     }
+    // Minimal implementations to satisfy shared ribbon actions used across pages.
+    // These intentionally delegate to the statement-drafts listing where the real upload / dialogs live.
+    private async Task TriggerFileInputAsync()
+    {
+        try
+        {
+            // Try to click the hidden input
+            await JS.InvokeVoidAsync("eval", "document.getElementById('draft-upload-input')?.click();");
+        }
+        catch { }
+    }
+
+    private async Task OnHiddenFileChanged(InputFileChangeEventArgs e)
+    {
+        // Hide input again
+        try
+        {
+            await JS.InvokeVoidAsync("eval", "(function(){var inp=document.getElementById('draft-upload-input'); if(inp){inp.style.left='-9999px';inp.style.opacity='0';inp.style.pointerEvents='none';}})()");
+        }
+        catch { }
+
+        // Navigate to drafts page where uploaded files are handled centrally
+        Nav.NavigateTo("/statement-drafts");
+    }
+
+    private void OpenDeleteAllDialog() => Nav.NavigateTo("/statement-drafts");
+    private void OpenBookAllDialog() => Nav.NavigateTo("/statement-drafts");
 
     [Parameter] public Guid DraftId { get; set; }
     [Parameter] public Guid EntryId { get; set; }
@@ -536,11 +419,9 @@ else
     }
     private bool HasOriginEntryContext => !string.IsNullOrEmpty(ContextQuery);
 
-    private StatementDraftEntryDetailDto? _vm;
-    private List<ContactVm> _allContacts = new();
     private string _contactFilter = string.Empty;
+    private CancellationTokenSource? _contactFilterCts;
     private Guid? _selectedContactId;
-    private Guid? _selfContactId;
     private string? _contactError;
     private bool _dropdownVisible;
     private bool _pendingSave;
@@ -550,18 +431,177 @@ else
     private bool _hasUnsavedChanges;
     private void MarkDirty()
     {
-        _hasUnsavedChanges = true;
-        BuildRibbon();
+        if (_vm != null) { _vm.MarkDirty(); }
     }
     private void ClearDirty()
     {
-        _hasUnsavedChanges = false;
-        BuildRibbon();
+        if (_vm != null) { _vm.ClearDirty(); }
     }
 
-    private IEnumerable<ContactVm> FilteredContacts => string.IsNullOrWhiteSpace(_contactFilter)
-        ? _allContacts
-        : _allContacts.Where(c => c.Name.Contains(_contactFilter, StringComparison.OrdinalIgnoreCase));
+    // Delegate contact selection to the ViewModel — do NOT persist immediately anymore
+    private async Task SelectContact(Guid? id)
+    {
+        _selectedContactId = id;
+        _dropdownVisible = false;
+        _contactError = null;
+
+        try
+        {
+            // update VM state only
+            _vm.SelectedContactId = id;
+            // reflect chosen name in input
+            var contacts = await _vm.LoadContactsAsync();
+            var name = id.HasValue ? contacts.FirstOrDefault(c => c.Id == id)?.Name ?? string.Empty : string.Empty;
+            _vm.ContactFilter = name;
+            MarkDirty();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            _contactError = ex.Message;
+        }
+    }
+
+    // Select a security — do NOT persist immediately; update VM state and mark dirty
+    private async Task SelectSecurity(Guid? id)
+    {
+        _selectedSecurityId = id;
+        _securityDropdownVisible = false;
+        _securityError = null;
+
+        try
+        {
+            _vm.SelectedSecurityId = id;
+            // update filter text to selected security name
+            var secs = await _vm.LoadSecuritiesIfNeededAsync();
+            _securityFilter = id.HasValue ? secs.FirstOrDefault(s => s.Id == id)?.Name ?? string.Empty : string.Empty;
+            MarkDirty();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            _securityError = ex.Message;
+        }
+    }
+
+    // Select a savings plan — do NOT persist immediately; update VM state and mark dirty
+    private async Task SelectSavingsPlan(Guid? id)
+    {
+        _selectedSavingsPlanId = id;
+        _savingsPlanDropdownVisible = false;
+        _contactError = null;
+
+        try
+        {
+            // update VM state only
+            _selectedSavingsPlanId = id;
+            var plans = await _vm.LoadUserSavingsPlansAsync();
+            var name = id.HasValue ? plans.FirstOrDefault(p => p.Id == id)?.Name ?? string.Empty : string.Empty;
+            _vm.SavingsPlanFilter = name;
+            MarkDirty();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            _contactError = ex.Message;
+        }
+    }
+
+    // Debounced handler invoked after the contact filter input changes
+    private async void OnContactFilterAfterChanged()
+    {
+        _contactFilterCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _contactFilterCts = cts;
+        try
+        {
+            await Task.Delay(300, cts.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        try
+        {
+            var list = await _vm.LoadContactsAsync();
+            _dropdownVisible = true;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { /* ignore errors */ }
+    }
+
+    // Debounced handler invoked after security filter input changes
+    private CancellationTokenSource? _securityFilterCts;
+    private async void OnSecurityFilterChanged()
+    {
+        _securityFilterCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _securityFilterCts = cts;
+        try
+        {
+            await Task.Delay(300, cts.Token);
+        }
+        catch (TaskCanceledException) { return; }
+
+        try
+        {
+            await _vm.LoadSecuritiesIfNeededAsync();
+            _securityDropdownVisible = true;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { }
+    }
+
+    // Debounced handler invoked after the savings plan filter input changes
+    private CancellationTokenSource? _savingsPlanFilterCts;
+    private async void OnSavingsPlanFilterAfterChanged()
+    {
+        _savingsPlanFilterCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _savingsPlanFilterCts = cts;
+        try
+        {
+            await Task.Delay(300, cts.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        try
+        {
+            var list = await _vm.LoadUserSavingsPlansAsync();
+            _userSavingsPlans = list.ToList();
+            _savingsPlanDropdownVisible = true;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { /* ignore errors */ }
+    }
+
+    // Show contact dropdown and ensure contacts are loaded
+    private async Task ShowDropdown()
+    {
+        try { await _vm.LoadContactsAsync(); } catch { }
+        _dropdownVisible = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // Show savings plan dropdown and ensure plans are loaded
+    private async Task ShowSavingsPlanDropdown()
+    {
+        try { var plans = await _vm.LoadUserSavingsPlansAsync(); _userSavingsPlans = plans.ToList(); } catch { }
+        _savingsPlanDropdownVisible = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // Show security dropdown and ensure securities are loaded
+    private async Task ShowSecurityDropdown()
+    {
+        try { await _vm.LoadSecuritiesIfNeededAsync(); } catch { }
+        _securityDropdownVisible = true;
+        await InvokeAsync(StateHasChanged);
+    }
 
     private Guid? _selectedSavingsPlanId;
     private string _savingsPlanFilter = string.Empty;
@@ -569,33 +609,12 @@ else
     private List<SavingsPlanDto> _userSavingsPlans = new();
     private bool _archiveSavingsPlanOnBooking;
 
-    private IEnumerable<SavingsPlanDto> FilteredSavingsPlans => string.IsNullOrWhiteSpace(_savingsPlanFilter)
-         ? _userSavingsPlans
-         : _userSavingsPlans.Where(p => p.Name.Contains(_savingsPlanFilter, StringComparison.OrdinalIgnoreCase));
-
-    // Split UI
-    private bool _showSplitDialog;
-    private bool _loadingSplits;
-    private string _splitFilter = string.Empty;
-    private Guid? _selectedSplitDraftId;
-    private string? _splitError;
-    private List<SplitDraftOption> _candidateSplits = new();
-
-    // Attachments UI
-    private bool _showAttachments;
-
-    private IEnumerable<SplitDraftOption> FilteredSplitDrafts => string.IsNullOrWhiteSpace(_splitFilter)
-        ? _candidateSplits
-        : _candidateSplits.Where(d => d.OriginalFileName.Contains(_splitFilter, StringComparison.OrdinalIgnoreCase));
-
-    private sealed record SplitDraftOption(Guid DraftId, string OriginalFileName, int EntriesCount, decimal TotalAmount);
-
     // Core edit
     private bool _editMode; private bool _savingCore; private string? _coreError;
     private DateTime _editBookingDate; private DateTime? _editValutaDate; private decimal _editAmount; private string _editSubject=""; private string? _editRecipient; private string? _editDescription; private string _editCurrency="EUR";
 
     // Securities UI State
-    private List<SecurityVm> _securities = new();
+    private List<SecurityDto> _securities = new();
     private string _securityFilter = string.Empty;
     private bool _securityDropdownVisible;
     private Guid? _selectedSecurityId;
@@ -611,18 +630,11 @@ else
     private string _securityTaxExpr = string.Empty;
     private string? _securityExprError;
 
-    private IEnumerable<SecurityVm> FilteredSecurities => string.IsNullOrWhiteSpace(_securityFilter)
+    private IEnumerable<SecurityDto> FilteredSecurities => string.IsNullOrWhiteSpace(_securityFilter)
         ? _securities
         : _securities.Where(s => s.Name.Contains(_securityFilter, StringComparison.OrdinalIgnoreCase) || s.Identifier.Contains(_securityFilter, StringComparison.OrdinalIgnoreCase));
 
-    private bool ShowSecuritySection =>
-        _vm != null &&
-        (
-            _vm.Entry.SecurityId != null ||
-            (_vm.BankContactId != null &&
-             _vm.Entry.ContactId != null &&
-             _vm.Entry.ContactId == _vm.BankContactId)
-        );
+    private bool ShowSecuritySection => _vm?.ShowSecuritySection ?? false;
 
     private void InitCoreEdit()
     {
@@ -636,20 +648,57 @@ else
         _editCurrency = _vm.Entry.CurrencyCode;
     }
 
+    private async Task SaveCoreAsync()
+    {
+        if (_vm == null) return;
+        _savingCore = true;
+        _coreError = null;
+        try
+        {
+            var ok = await _vm.UpdateEntryCoreAsync(DraftId, EntryId, _editBookingDate, _editValutaDate, _editAmount, _editSubject, _editRecipient, _editCurrency, _editDescription);
+            if (!ok)
+            {
+                _coreError = _vm.LastError ?? Localizer["Err_SaveCore"];
+            }
+            else
+            {
+                // reflect loaded values
+                InitCoreEdit();
+                if (_vm != null) { _vm.ClearDirty(); }
+            }
+        }
+        finally
+        {
+            _savingCore = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ResetCoreEdits()
+    {
+        InitCoreEdit();
+        if (_vm != null) { _vm.ClearDirty(); }
+    }
+
     protected override async Task OnParametersSetAsync()
     {
-        await LoadEntryAsync();
-        await LoadContactsAsync();
-        await LoadUserSavingsPlansAsync();
+        if (_vm != null)
+        {
+            await _vm.LoadAsync(DraftId, EntryId);
+        }
+        // Load contacts via VM and initialize filter/ids
+        var contacts = await _vm.LoadContactsAsync();
+        var contactName = _vm.Entry.ContactId != null ? contacts.FirstOrDefault(c => c.Id == _vm.Entry.ContactId)?.Name ?? string.Empty : string.Empty;
+        _vm.ContactFilter = contactName;
+        _selectedContactId = _vm.Entry.ContactId;
 
-        _selectedContactId = _vm?.Entry.ContactId;
-        _contactFilter = _vm?.Entry.ContactId != null ? _allContacts.FirstOrDefault(c=>c.Id==_vm.Entry.ContactId)?.Name ?? string.Empty : string.Empty;
-
-        _selectedSavingsPlanId = _vm?.Entry.SavingsPlanId;
-        _savingsPlanFilter = _selectedSavingsPlanId != null
-            ? _userSavingsPlans.FirstOrDefault(p=>p.Id==_selectedSavingsPlanId)?.Name ?? string.Empty
-            : string.Empty;
+        // Load savings plans via VM
+        var plans = _vm != null ? await _vm.LoadUserSavingsPlansAsync() : Array.Empty<FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto>();
+        _userSavingsPlans = plans.ToList();
+        var planName = _vm?.Entry.SavingsPlanId != null ? _userSavingsPlans.FirstOrDefault(p => p.Id == _vm.Entry.SavingsPlanId)?.Name ?? string.Empty : string.Empty;
+        if (_vm != null) { _vm.SavingsPlanFilter = planName; }
         _archiveSavingsPlanOnBooking = _vm?.Entry.ArchiveSavingsPlanOnBooking ?? false;
+        _selectedSavingsPlanId = _vm.Entry.SavingsPlanId;
 
         if (_vm?.Entry != null)
         {
@@ -663,7 +712,9 @@ else
             _securityTaxExpr = _securityTax?.ToString(System.Globalization.CultureInfo.CurrentCulture) ?? string.Empty;
         }
 
-        await LoadSecuritiesIfNeededAsync();
+        // Load securities via VM
+        var secs = _vm != null ? await _vm.LoadSecuritiesIfNeededAsync() : Array.Empty<FinanceManager.Shared.Dtos.Securities.SecurityDto>();
+        _securities = secs.Select(s => new SecurityDto { Id = s.Id, Name = s.Name, Identifier = s.Identifier }).OrderBy(s => s.Name).ToList();
 
         if (_selectedSecurityId != null && string.IsNullOrEmpty(_securityFilter))
         {
@@ -672,12 +723,11 @@ else
 
         InitCoreEdit();
         ClearDirty();
-        BuildRibbon();
     }
 
     private async Task<bool> ConfirmIfDirtyAsync()
     {
-        if (!_hasUnsavedChanges) { return true; }
+        if (!(_vm?.HasUnsavedChanges ?? false)) { return true; }
         try
         {
             return await JS.InvokeAsync<bool>("confirm", Localizer["ConfirmUnsavedChanges"].Value);
@@ -685,535 +735,64 @@ else
         catch { return true; }
     }
 
-    private async Task LoadEntryAsync()
-    {
-        var detail = await Api.StatementDrafts_GetEntryAsync(DraftId, EntryId);
-        if (detail != null)
-        {
-            _vm = detail;
-            _IsCostNeutral = _vm!.Entry.IsCostNeutral;
-            _selectedSavingsPlanId = _vm.Entry.SavingsPlanId;
-            _selectedContactId = _vm.Entry.ContactId;
-            _selectedSecurityId = _vm.Entry.SecurityId;
-            _savingsPlanFilter = _selectedSavingsPlanId != null
-                ? _userSavingsPlans.FirstOrDefault(p => p.Id == _selectedSavingsPlanId)?.Name ?? string.Empty
-                : string.Empty;
-            _archiveSavingsPlanOnBooking = _vm.Entry.ArchiveSavingsPlanOnBooking;
-        }
-        else
-        {
-            _vm = null;
-        }
-        BuildRibbon();
-    }
+    private Task LoadEntryAsync() => _vm != null ? _vm.LoadAsync(DraftId, EntryId) : Task.CompletedTask;
 
     private async Task DeleteEntry()
     {
-        var ok = await Api.StatementDrafts_DeleteEntryAsync(DraftId, EntryId);
+        if (_vm == null) return;
+        var ok = await _vm.DeleteEntryAsync(DraftId, EntryId);
         if (ok)
         {
             Nav.NavigateTo(AppendContext($"/statement-drafts/{DraftId}"));
         }
-        else
-        {
-            BuildRibbon();
-        }
     }
 
-    private async Task LoadContactsAsync()
-    {
-        try
-        {
-            var list = await Api.Contacts_ListAsync(skip: 0, take: 1000, type: null, all: true, nameFilter: null);
-            _allContacts = list.Select(c => new ContactVm { Id = c.Id, Name = c.Name }).OrderBy(c => c.Name).ToList();
-            _selfContactId = list.FirstOrDefault(c => c.Type == ContactType.Self)?.Id;
-        }
-        catch { }
-    }
-
-    private async Task LoadUserSavingsPlansAsync()
-    {
-        try
-        {
-            var list = await Api.SavingsPlans_ListAsync(true);
-            _userSavingsPlans = list.ToList();
-        }
-        catch
-        {
-            _userSavingsPlans = new();
-        }
-    }
-
-    private async Task LoadSecuritiesIfNeededAsync()
-    {
-        if (!ShowSecuritySection && _vm?.Entry.SecurityId == null) { return; }
-        if (_securities.Count > 0) { return; }
-
-        try
-        {
-            var list = await Api.Securities_ListAsync(onlyActive: true);
-            _securities = list
-                .Select(s => new SecurityVm { Id = s.Id, Name = s.Name, Identifier = s.Identifier })
-                .OrderBy(s => s.Name)
-                .ToList();
-        }
-        catch (Exception ex)
-        {
-            _securityError = ex.Message;
-            return;
-        }
-    }
-
-    private void ShowSavingsPlanDropdown(FocusEventArgs _) { _savingsPlanDropdownVisible = true; BuildRibbon(); }
-    private void SelectSavingsPlan(Guid? id)
-    {
-        if (_selectedSavingsPlanId != id) { _selectedSavingsPlanId = id; MarkDirty(); }
-        _savingsPlanFilter = id == null ? string.Empty : _userSavingsPlans.FirstOrDefault(p => p.Id == id)?.Name ?? string.Empty;
-        _savingsPlanDropdownVisible = false;
-        if (id == null) { _archiveSavingsPlanOnBooking = false; }
-        BuildRibbon();
-    }
-    private void OnSavingsPlanFilterAfterChanged()
-    {
-        _savingsPlanDropdownVisible = true;
-        if (_selectedSavingsPlanId != null && !_userSavingsPlans.Any(p => string.Equals(p.Name, _savingsPlanFilter, StringComparison.OrdinalIgnoreCase)))
-        {
-            _selectedSavingsPlanId = null; MarkDirty();
-        }
-    }
-
-    private bool CanCreateSavingsPlan =>
-        _vm != null &&
-        _selfContactId != null &&
-        _vm.Entry.ContactId != null &&
-        _vm.Entry.ContactId == _selfContactId &&
-        _vm.Entry.Amount < 0 &&
-        _selectedSavingsPlanId == null;
-
-    private void OpenCreateSavingsPlan()
-    {
-        if (_vm == null) { return; }
-        var name = string.IsNullOrWhiteSpace(_savingsPlanFilter) ? _vm.Entry.Subject : _savingsPlanFilter;
-        name ??= string.Empty;
-        var url = $"/savings-plans/new?prefillName={Uri.EscapeDataString(name)}&draftId={DraftId}&entryId={EntryId}";
-        Nav.NavigateTo(url);
-    }
-
-    private async Task BackAsync()
-    {
-        if (!await ConfirmIfDirtyAsync()) return;
-        Nav.NavigateTo(AppendContext($"/statement-drafts/{DraftId}"));
-    }
-    private void OpenCreateContact()
-    {
-        var name = _vm?.Entry.RecipientName;
-        if (string.IsNullOrWhiteSpace(name)) { name = string.IsNullOrWhiteSpace(_contactFilter) ? _vm?.Entry.Subject : _contactFilter; }
-        name ??= string.Empty;
-        var url = $"/contacts/new?prefillName={Uri.EscapeDataString(name)}&draftId={DraftId}&entryId={EntryId}";
-        Nav.NavigateTo(url);
-    }
-    private void OpenContactDetail()
-    {
-        if (_selectedContactId != null) { Nav.NavigateTo($"/contacts/{_selectedContactId}?&draftId={DraftId}&entryId={EntryId}"); }
-    }
-    private void OpenSavingsPlanDetail()
-    {
-        if (_selectedSavingsPlanId != null) { Nav.NavigateTo($"/savings-plans/{_selectedSavingsPlanId}?&draftId={DraftId}&entryId={EntryId}"); }
-    }
-    private async Task GoPrevAsync()
-    {
-        if (!await ConfirmIfDirtyAsync()) return;
-        if (_vm?.PrevEntryId != null)
-        {
-            Nav.NavigateTo(AppendContext($"/statement-drafts/{DraftId}/entries/{_vm.PrevEntryId}"));
-        }
-    }
-    private async Task GoNextOpenAsync()
-    {
-        if (!await ConfirmIfDirtyAsync()) return;
-        if (_vm?.NextOpenEntryId != null)
-        {
-            Nav.NavigateTo(AppendContext($"/statement-drafts/{DraftId}/entries/{_vm.NextOpenEntryId}"));
-        }
-    }
-
-    private void OpenSplitDialog()
-    {
-        _splitError = null;
-        _selectedSplitDraftId = null;
-        _showSplitDialog = true;
-        _ = LoadSplitCandidates();
-        BuildRibbon();
-    }
-    private void CloseSplitDialog() { _showSplitDialog = false; BuildRibbon(); }
-    private async Task LoadSplitCandidates()
-    {
-        _loadingSplits = true;
-        try
-        {
-            var list = await Api.StatementDrafts_ListOpenAsync(skip: 0, take: 500);
-            if (list != null)
-            {
-                _candidateSplits = list
-                    .Where(d => d.DraftId != DraftId && d.DetectedAccountId == null && !d.IsSplitDraft && d.Status == StatementDraftStatus.Draft)
-                    .Select(d => new SplitDraftOption(d.DraftId, d.OriginalFileName, d.Entries.Count, d.TotalAmount))
-                    .OrderBy(d => d.OriginalFileName)
-                    .ToList();
-            }
-        }
-        finally
-        {
-            _loadingSplits = false;
-            StateHasChanged();
-        }
-    }
-    private void SelectSplit(Guid id) { _selectedSplitDraftId = id; }
-    private async Task ConfirmSplit()
-    {
-        if (_selectedSplitDraftId == null) { return; }
-        try
-        {
-            var resp = await Api.StatementDrafts_SaveEntryAllAsync(DraftId, EntryId,
-                new StatementDraftSaveEntryAllRequest(_selectedContactId, _IsCostNeutral, _selectedSavingsPlanId, _archiveSavingsPlanOnBooking,
-                    _selectedSecurityId, _securityTxType, _securityQuantity, _securityFee, _securityTax, _selectedSplitDraftId, null));
-            if (resp == null)
-            {
-                _splitError = Api.LastError;
-                return;
-            }
-            _showSplitDialog = false;
-            await LoadEntryAsync();
-        }
-        catch (Exception ex)
-        {
-            _splitError = ex.Message;
-        }
-        BuildRibbon();
-    }
-    private async Task RemoveSplit()
-    {
-        try
-        {
-            var resp = await Api.StatementDrafts_SaveEntryAllAsync(DraftId, EntryId,
-                new StatementDraftSaveEntryAllRequest(_selectedContactId, _IsCostNeutral, _selectedSavingsPlanId, _archiveSavingsPlanOnBooking,
-                    _selectedSecurityId, _securityTxType, _securityQuantity, _securityFee, _securityTax, null, true));
-            if (resp != null)
-            {
-                await LoadEntryAsync();
-            }
-            else
-            {
-                _splitError = Api.LastError;
-            }
-        }
-        catch (Exception ex)
-        {
-            _splitError = ex.Message;
-        }
-        BuildRibbon();
-    }
-    private void OpenAssignedSplitDraft()
-    {
-        if (_vm?.Entry.SplitDraftId != null)
-        {
-            var baseUrl = $"/statement-drafts/{_vm.Entry.SplitDraftId}";
-            string url;
-            if (HasOriginEntryContext)
-            {
-                url = AppendContext(baseUrl);
-            }
-            else
-            {
-                url = $"{baseUrl}?src=entry&fromEntryDraftId={DraftId}&fromEntryId={EntryId}";
-            }
-            Nav.NavigateTo(url);
-        }
-    }
-
-    private async Task SaveCoreAsync()
-    {
-        if (_vm == null) { return; }
-        _savingCore = true; _coreError = null;
-        try
-        {
-            var payload = new StatementDraftSaveEntryAllRequest(_selectedContactId, _IsCostNeutral, _selectedSavingsPlanId, _archiveSavingsPlanOnBooking, _selectedSecurityId, _securityTxType, _securityQuantity, _securityFee, _securityTax);
-            var resp = await Api.StatementDrafts_SaveEntryAllAsync(DraftId, EntryId, payload);
-            if (resp == null)
-            {
-                _coreError = Api.LastError ?? Localizer["Err_SaveCore"];
-            }
-            else
-            {
-                await LoadEntryAsync();
-                InitCoreEdit();
-                ClearDirty();
-                _editMode = false;
-            }
-        }
-        catch(Exception ex)
-        {
-            _coreError = ex.Message;
-        }
-        _savingCore = false;
-        BuildRibbon();
-    }
-    private void ResetCoreEdits() { InitCoreEdit(); ClearDirty(); }
-
-    private sealed class ContactVm { public Guid Id { get; set; } public string Name { get; set; } = string.Empty; }
-    private sealed class SecurityVm { public Guid Id { get; set; } public string Name { get; set; } = string.Empty; public string Identifier { get; set; } = string.Empty; }
-
-    private DraftValidationResultDto? _entryValidation;
-
-    private async Task ValidateEntry()
-    {
-        if (_hasUnsavedChanges) { return; }
-        _entryValidation = await Api.StatementDrafts_ValidateEntryAsync(DraftId, EntryId);
-        BuildRibbon();
-        StateHasChanged();
-    }
-
-    private async Task SaveAll()
-    {
-        if (_vm == null) { return; }
-        _pendingSave = true; _contactError = null;
-        BuildRibbon();
-        try
-        {
-            var payload = new StatementDraftSaveEntryAllRequest(_selectedContactId, _IsCostNeutral, _selectedSavingsPlanId, _archiveSavingsPlanOnBooking, _selectedSecurityId, _securityTxType, _securityQuantity, _securityFee, _securityTax);
-            var resp = await Api.StatementDrafts_SaveEntryAllAsync(DraftId, EntryId, payload);
-            if (resp == null)
-            {
-                _contactError = Api.LastError ?? Localizer["Err_SaveAll"];
-            }
-            else
-            {
-                await LoadEntryAsync();
-                ClearDirty();
-            }
-        }
-        catch (Exception ex)
-        {
-            _contactError = ex.Message;
-        }
-        _pendingSave = false;
-        BuildRibbon();
-    }
-
-    private async Task Reclassify()
-    {
-        if (_hasUnsavedChanges) { return; }
-        var after = await Api.StatementDrafts_ClassifyEntryAsync(DraftId, _vm?.Entry.Id ?? Guid.Empty);
-        if (after != null)
-        {
-            await LoadEntryAsync();
-            _selectedContactId = _vm?.Entry.ContactId;
-            _contactFilter = _selectedContactId == null ? string.Empty : _allContacts.FirstOrDefault(c=>c.Id==_vm.Entry.ContactId)?.Name ?? string.Empty;
-            StateHasChanged();
-        }
-        BuildRibbon();
-    }
-
-    private void OpenSecurityDetail()
-    {
-        if (_hasUnsavedChanges) { return; }
-        if (_selectedSecurityId != null)
-        {
-            Nav.NavigateTo($"/securities/{_selectedSecurityId}?draftId={DraftId}&entryId={EntryId}");
-        }
-    }
-
-    private void ShowDropdown(FocusEventArgs _) { _dropdownVisible = true; BuildRibbon(); }
-    private void SelectContact(Guid? id)
-    {
-        if (_selectedContactId != id) { _selectedContactId = id; MarkDirty(); }
-        _contactFilter = id == null ? string.Empty : _allContacts.FirstOrDefault(c=>c.Id==id)?.Name ?? string.Empty;
-        _dropdownVisible = false;
-        BuildRibbon();
-    }
-    private void OnContactFilterAfterChanged()
-    {
-        _dropdownVisible = true;
-        if (_selectedContactId != null && !_allContacts.Any(c => string.Equals(c.Name, _contactFilter, StringComparison.OrdinalIgnoreCase)))
-        {
-            _selectedContactId = null; MarkDirty();
-        }
-    }
-
-    private void ShowSecurityDropdown(FocusEventArgs _) { _securityDropdownVisible = true; BuildRibbon(); }
-    private void OnSecurityFilterChanged()
-    {
-        _securityDropdownVisible = true;
-        if (_selectedSecurityId != null &&
-            !_securities.Any(s => string.Equals(s.Name, _securityFilter, StringComparison.OrdinalIgnoreCase)))
-        {
-            _selectedSecurityId = null; MarkDirty();
-        }
-    }
-    private void SelectSecurity(Guid? id)
-    {
-        if (_selectedSecurityId != id) { _selectedSecurityId = id; MarkDirty(); }
-        _securityFilter = id == null ? string.Empty : _securities.FirstOrDefault(s => s.Id == id)?.Name ?? string.Empty;
-        _securityDropdownVisible = false;
-        BuildRibbon();
-    }
-
-    private void OpenCreateSecurity()
-    {
-        var name = _securityFilter;
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            name = _vm?.Entry.Subject;
-        }
-        name ??= string.Empty;
-        var url = $"/securities/new?prefillName={Uri.EscapeDataString(name)}&draftId={DraftId}&entryId={EntryId}";
-        Nav.NavigateTo(url);
-    }
-
-    private void ParseSecurityQuantity(FocusEventArgs _) { if (TryEvalDecimal(_securityQuantityExpr, out var v)) { _securityQuantity = v; _securityQuantityExpr = v?.ToString(System.Globalization.CultureInfo.CurrentCulture) ?? string.Empty; _securityExprError = null; MarkDirty(); } else { _securityExprError = Localizer["Err_InvalidQuantity"]; } }
-    private void ParseSecurityFee(FocusEventArgs _) { if (TryEvalDecimal(_securityFeeExpr, out var v)) { _securityFee = v; _securityFeeExpr = v?.ToString(System.Globalization.CultureInfo.CurrentCulture) ?? string.Empty; _securityExprError = null; MarkDirty(); } else { _securityExprError = Localizer["Err_InvalidFee"]; } }
-    private void ParseSecurityTax(FocusEventArgs _) { if (TryEvalDecimal(_securityTaxExpr, out var v)) { _securityTax = v; _securityTaxExpr = v?.ToString(System.Globalization.CultureInfo.CurrentCulture) ?? string.Empty; _securityExprError = null; MarkDirty(); } else { _securityExprError = Localizer["Err_InvalidTax"]; } }
-
-    private static bool TryEvalDecimal(string? expr, out decimal? value)
-    {
-        value = null;
-        if (string.IsNullOrWhiteSpace(expr)) { return true; }
-        try
-        {
-            var d = Eval(expr);
-            value = (decimal)d;
-            return true;
-        }
-        catch
-        {
-            value = null; return false;
-        }
-    }
-
-    private static double Eval(string input)
-    {
-        var expr = new string(input.Where(c => !char.IsWhiteSpace(c)).ToArray());
-        expr = expr.Replace(',', '.');
-        int i = 0;
-        double ParseExpression()
-        {
-            double x = ParseTerm();
-            while (i < expr.Length)
-            {
-                if (expr[i] == '+') { i++; x += ParseTerm(); }
-                else if (expr[i] == '-') { i++; x -= ParseTerm(); }
-                else break;
-            }
-            return x;
-        }
-        double ParseTerm()
-        {
-            double x = ParseFactor();
-            while (i < expr.Length)
-            {
-                if (expr[i] == '*') { i++; x *= ParseFactor(); }
-                else if (expr[i] == '/') { i++; x /= ParseFactor(); }
-                else break;
-            }
-            return x;
-        }
-        double ParseFactor()
-        {
-            if (i >= expr.Length) throw new FormatException();
-            if (expr[i] == '+') { i++; return ParseFactor(); }
-            if (expr[i] == '-') { i++; return -ParseFactor(); }
-            if (expr[i] == '(')
-            {
-                i++; var v = ParseExpression();
-                if (i >= expr.Length || expr[i] != ')') throw new FormatException();
-                i++; return v;
-            }
-            int start = i;
-            while (i < expr.Length && (char.IsDigit(expr[i]) || expr[i] == '.')) i++;
-            if (start == i) throw new FormatException();
-            var token = expr.Substring(start, i - start);
-            if (!double.TryParse(token, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v2))
-                throw new FormatException();
-            return v2;
-        }
-        var result = ParseExpression();
-        if (i != expr.Length) throw new FormatException();
-        return result;
-    }
-
-    private bool GetArchiveFlagFromEntryVm()
-    {
-        try
-        {
-            return _vm?.Entry.ArchiveSavingsPlanOnBooking ?? false;
-        }
-        catch { return false; }
-    }
 
     private bool _showBookWarnings;
     private StatementDraftBookingResultDto? _lastBookingResult;
 
     private async Task BookEntry()
     {
-        if (_hasUnsavedChanges) { return; }
+        if (_vm?.HasUnsavedChanges ?? false) { return; }
         _contactError = null;
-        _showBookWarnings = false;
-        BuildRibbon();
-        try
+
+        var ok = await _vm.BookEntryAsync(DraftId, EntryId, false);
+        if (!ok)
         {
-            var res = await Api.StatementDrafts_BookEntryAsync(DraftId, EntryId, forceWarnings: false);
-            if (res == null)
+            if (_vm != null && _vm.ShowBookWarnings)
             {
-                _contactError = Api.LastError ?? Localizer["Err_Book"]; return;
-            }
-            if (res.HasWarnings)
-            {
-                _lastBookingResult = new StatementDraftBookingResultDto(res.Success, res.HasWarnings, res.Validation, res.StatementImportId, res.TotalEntries, res.nextDraftId);
-                _showBookWarnings = true;
-                BuildRibbon();
                 StateHasChanged();
                 return;
             }
-            if (!res.Success)
-            {
-                var text = Api.LastError;
-                _contactError = string.IsNullOrWhiteSpace(text) ? Localizer["Err_Book"] : text;
-                return;
-            }
-            _lastBookingResult = new StatementDraftBookingResultDto(res.Success, res.HasWarnings, res.Validation, res.StatementImportId, res.TotalEntries, res.nextDraftId);
-            await LoadEntryAsync();
-            if (_vm != null && _vm.Entry != null && _vm.Entry.Id == EntryId)
-            {
-                StateHasChanged();
-            }
-            else
-            {
-                Nav.NavigateTo(AppendContext($"/statement-drafts/{DraftId}"), true);
-            }
+            _contactError = _vm?.LastError ?? Localizer["Err_Book"];
+            return;
         }
-        catch (Exception ex)
+
+        // success - reload entry to check if we stayed on same draft/entry
+        await LoadEntryAsync();
+        if (_vm != null && _vm.Entry != null && _vm.Entry.Id == EntryId)
         {
-            _contactError = ex.Message;
+            StateHasChanged();
         }
-        BuildRibbon();
+        else
+        {
+            Nav.NavigateTo(AppendContext($"/statement-drafts/{DraftId}"), true);
+        }
     }
 
     private async Task ConfirmBookEntry()
     {
-        var res = await Api.StatementDrafts_BookEntryAsync(DraftId, EntryId, forceWarnings: true);
-        if (res == null || !res.Success)
+        var ok = await _vm.BookEntryAsync(DraftId, EntryId, true);
+        if (!ok)
         {
-            _contactError = Api.LastError ?? Localizer["Err_Book"]; return;
+            _contactError = _vm?.LastError ?? Localizer["Err_Book"]; return;
         }
-        _lastBookingResult = new StatementDraftBookingResultDto(res.Success, res.HasWarnings, res.Validation, res.StatementImportId, res.TotalEntries, res.nextDraftId);
-        _showBookWarnings = false;
+        // proceed to list
+        _vm.ClearBookWarnings();
         await LoadEntryAsync();
         Nav.NavigateTo(AppendContext($"/statement-drafts/{DraftId}"), true);
-        BuildRibbon();
     }
 
-    private bool IsReadOnly => IsDuplicate || IsAnnounced;
-    private bool IsDuplicate => _vm?.Entry.Status == StatementDraftEntryStatus.AlreadyBooked;
-    private bool IsAnnounced => _vm?.Entry.Status == StatementDraftEntryStatus.Announced;
 
     private async Task ResetDuplicateWithConfirm()
     {
@@ -1224,19 +803,256 @@ else
         }
         catch { }
 
-        var resp = await Api.StatementDrafts_ResetDuplicateEntryAsync(DraftId, EntryId);
-        if (resp != null)
+        var resp = await _vm.ResetDuplicateEntryAsync(DraftId, EntryId);
+        if (resp)
         {
             await LoadEntryAsync();
             _editMode = false;
-            _hasUnsavedChanges = false;
-            BuildRibbon();
+            if (_vm != null) { _vm.ClearDirty(); }
             StateHasChanged();
         }
         else
         {
-            var msg = Api.LastError;
+            var msg = _vm?.LastError;
             _contactError = string.IsNullOrWhiteSpace(msg) ? Localizer["Err_ResetDuplicate"] : msg;
         }
+    }
+
+    private void SelectSplit(Guid draftId)
+    {
+        _vm.SelectSplit(draftId);
+    }
+
+    private async Task ConfirmSplit()
+    {
+        if (_vm.SelectedSplitDraftId == null) return;
+        // Call API to assign split via VM
+        var ok = await _vm.SetEntrySplitDraftAsync(DraftId, EntryId, _vm.SelectedSplitDraftId);
+        if (ok)
+        {
+            _vm.CloseSplitDialog();
+            await InvokeAsync(StateHasChanged);
+        }
+        else
+        {
+            _vm.OpenSplitDialog();
+        }
+    }
+
+    private void CloseSplitDialog()
+    {
+        _vm.CloseSplitDialog();
+        StateHasChanged();
+    }
+
+    private void OpenCreateSavingsPlan()
+    {
+        var q = $"?draftId={DraftId}&entryId={EntryId}";
+        Nav.NavigateTo($"/savings-plans/new{q}");
+    }
+
+    private void OpenCreateSecurity()
+    {
+        var q = $"?returnUrl={Uri.EscapeDataString($"/statement-drafts/{DraftId}/entries/{EntryId}")}";
+        Nav.NavigateTo($"/securities/new{q}");
+    }
+
+    private void OpenCreateContact()
+    {
+        var name = _vm?.ContactFilter ?? string.Empty;
+        var q = $"?prefillName={Uri.EscapeDataString(name)}&draftId={DraftId}&entryId={EntryId}";
+        Nav.NavigateTo($"/contacts/new{q}");
+    }
+
+    private Task ParseSecurityQuantity(FocusEventArgs args)
+    {
+        _securityExprError = null;
+        if (StatementDraftEntryDetailViewModel.TryEvalDecimal(_securityQuantityExpr, out var val))
+        {
+            _securityQuantity = val;
+        }
+        else
+        {
+            _securityExprError = Localizer["Err_InvalidExpression"];
+        }
+        return Task.CompletedTask;
+    }
+
+    private Task ParseSecurityFee(FocusEventArgs args)
+    {
+        _securityExprError = null;
+        if (StatementDraftEntryDetailViewModel.TryEvalDecimal(_securityFeeExpr, out var val))
+        {
+            _securityFee = val;
+        }
+        else
+        {
+            _securityExprError = Localizer["Err_InvalidExpression"];
+        }
+        return Task.CompletedTask;
+    }
+
+    private Task ParseSecurityTax(FocusEventArgs args)
+    {
+        _securityExprError = null;
+        if (StatementDraftEntryDetailViewModel.TryEvalDecimal(_securityTaxExpr, out var val))
+        {
+            _securityTax = val;
+        }
+        else
+        {
+            _securityExprError = Localizer["Err_InvalidExpression"];
+        }
+        return Task.CompletedTask;
+    }
+
+    private bool CanCreateSavingsPlan => _vm?.Entry.ContactId != null;
+
+    private IEnumerable<SavingsPlanDto> FilteredSavingsPlans => _vm?.FilteredSavingsPlans ?? Array.Empty<SavingsPlanDto>();
+
+    private bool _showAttachments;
+
+    private async Task OpenSplitDialogAsync()
+    {
+        await _vm.OpenSplitDialogAsync();
+    }
+
+    private async Task HandleRibbonActionAsync(string action)
+    {
+        switch (action)
+        {
+            // Navigation
+            case "Back":
+                Nav.NavigateTo(AppendContext($"/statement-drafts/{DraftId}"));
+                break;
+            case "Prev":
+                if (_vm?.PrevEntryId != null)
+                {
+                    Nav.NavigateTo(AppendContext($"/statement-drafts/{DraftId}/entries/{_vm.PrevEntryId}"));
+                }
+                break;
+            case "NextOpen":
+                if (_vm?.NextOpenEntryId != null)
+                {
+                    Nav.NavigateTo(AppendContext($"/statement-drafts/{DraftId}/entries/{_vm.NextOpenEntryId}"));
+                }
+                break;
+
+            // Edit
+            case "Save":
+                // Persist all current VM/page state in one call
+                var payload = new StatementDraftSaveEntryAllRequest(
+                    ContactId: _selectedContactId ?? _vm.Entry.ContactId,
+                    IsCostNeutral: IsCostNeutral,
+                    SavingsPlanId: _selectedSavingsPlanId ?? _vm.Entry.SavingsPlanId,
+                    ArchiveOnBooking: _archiveSavingsPlanOnBooking,
+                    SecurityId: _selectedSecurityId ?? _vm.Entry.SecurityId,
+                    TransactionType: _securityTxType,
+                    Quantity: _securityQuantity,
+                    FeeAmount: _securityFee,
+                    TaxAmount: _securityTax
+                );
+                var okSaveAll = await _vm.SaveEntryAllAsync(DraftId, EntryId, payload);
+                if (!okSaveAll)
+                {
+                    _contactError = _vm.LastError ?? Localizer["Err_SaveAll"];
+                }
+                else
+                {
+                    // clear dirty and refresh name filters to reflect committed state
+                    ClearDirty();
+                    await OnParametersSetAsync();
+                }
+                break;
+            case "DeleteEntry":
+                try
+                {
+                    var ok = await JS.InvokeAsync<bool>("confirm", Localizer["BtnDelete"].Value);
+                    if (!ok) break;
+                }
+                catch { }
+                await DeleteEntry();
+                break;
+            case "Reclassify":
+                if (_vm != null)
+                {
+                    var ok = await _vm.ReclassifyAsync(DraftId, EntryId);
+                    if (ok) { await LoadEntryAsync(); }
+                }
+                break;
+            case "AssignSplit":
+                await _vm.OpenSplitDialogAsync();
+                 break;
+            case "OpenAttachments":
+                _showAttachments = true;
+                StateHasChanged();
+                break;
+
+            // Book
+            case "Validate":
+                await _vm.ValidateEntryAsync(DraftId, EntryId);
+                break;
+            case "Book":
+                await BookEntry();
+                break;
+
+            // Related
+            case "OpenContact":
+                if (_vm?.Entry.ContactId != null) { Nav.NavigateTo($"/contacts/{_vm.Entry.ContactId}"); }
+                break;
+            case "OpenSavingsPlan":
+                if (_vm?.Entry.SavingsPlanId != null) { Nav.NavigateTo($"/savings-plans/{_vm.Entry.SavingsPlanId}"); }
+                break;
+            case "OpenSecurity":
+                if (_vm?.Entry.SecurityId != null) { Nav.NavigateTo($"/securities/{_vm.Entry.SecurityId}"); }
+                break;
+            case "ResetDuplicate":
+                await ResetDuplicateWithConfirm();
+                break;
+            case "OpenSplitDraft":
+                if (_vm?.Entry?.SplitDraftId != null)
+                {
+                    // Eintragskontext (aktueller Draft + Entry) beim Navigieren mitgeben,
+                    // damit der Ziel-Auszug zurück zum Eintrag springen kann
+                    var q = $"?src=entry&fromEntryDraftId={DraftId}&fromEntryId={EntryId}";
+                    Nav.NavigateTo($"/statement-drafts/{_vm.Entry.SplitDraftId}{q}");
+                }
+                break;
+            case "RemoveSplitLink":
+                if (_vm != null)
+                {
+                    // remove link by setting null split draft
+                    var ok = await _vm.SetEntrySplitDraftAsync(DraftId, EntryId, null);
+                    if (!ok)
+                    {
+                        // optional: show error via _contactError reuse
+                        _contactError = _vm.LastError ?? Localizer["Err_AssignSplit"];
+                    }
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+}
+<!-- Single always-present file input for iOS Safari: off-screen but not display:none/visibility:hidden -->
+<InputFile id="draft-upload-input" OnChange="OnHiddenFileChanged" style="position:fixed; left:-9999px; width:1px; height:1px; opacity:0;" />
+
+@implements IAsyncDisposable
+
+@code {
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_vm != null)
+            {
+                _vm.StateChanged -= OnRibbonStateChanged;
+                _vm.UiActionRequested -= RibbonVmOnUiActionRequested;
+                await _vm.DisposeAsync();
+            }
+        }
+        catch { }
     }
 }

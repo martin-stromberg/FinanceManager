@@ -1,9 +1,9 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
-using FinanceManager.Web.ViewModels.SavingsPlans;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
+using FinanceManager.Web.ViewModels.Common;
 
 namespace FinanceManager.Tests.ViewModels;
 
@@ -66,7 +66,8 @@ public sealed class SavingsPlanCategoriesViewModelTests
     {
         var (vm, _) = CreateVm();
         var loc = new TestLocalizer<SavingsPlanCategoriesViewModelTests>();
-        var groups = vm.GetRibbon(loc);
+        var regs = vm.GetRibbonRegisters(loc);
+        var groups = regs.ToUiRibbonGroups(loc);
         var actions = groups.First();
         Assert.Contains(actions.Items, i => i.Action == "New");
         Assert.Contains(actions.Items, i => i.Action == "Back");

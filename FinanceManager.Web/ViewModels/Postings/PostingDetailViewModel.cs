@@ -80,20 +80,77 @@ public sealed class PostingDetailViewModel : ViewModelBase
         finally { LinksLoading = false; RaiseStateChanged(); }
     }
 
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
     {
-        var nav = new UiRibbonGroup(localizer["Ribbon_Group_Navigation"], new()
+        // Navigation group
+        var nav = new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, new List<UiRibbonAction>
         {
-            new UiRibbonItem(localizer["Ribbon_Back"], "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, "Back")
+            new UiRibbonAction(
+                "Back",
+                localizer["Ribbon_Back"].Value,
+                "<svg><use href='/icons/sprite.svg#back'/></svg>",
+                UiRibbonItemSize.Large,
+                false,
+                null,
+                "Back",
+                new Func<Task>(async () => { RaiseUiActionRequested("Back"); await Task.CompletedTask; }))
         });
-        var linked = new UiRibbonGroup(localizer["Ribbon_Group_Linked"], new()
+
+        // Linked group - navigation requires page to perform (navigation), so raise UI action
+        var linked = new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, new List<UiRibbonAction>
         {
-            new UiRibbonItem(localizer["Ribbon_OpenAccount"], "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, LinksLoading || !HasId(LinkedAccountId), "OpenAccount"),
-            new UiRibbonItem(localizer["Ribbon_OpenContact"], "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, LinksLoading || !HasId(LinkedContactId), "OpenContact"),
-            new UiRibbonItem(localizer["Ribbon_OpenSavingsPlan"], "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, LinksLoading || !HasId(LinkedPlanId), "OpenSavingsPlan"),
-            new UiRibbonItem(localizer["Ribbon_OpenSecurity"], "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, LinksLoading || !HasId(LinkedSecurityId), "OpenSecurity")
+            new UiRibbonAction(
+                "OpenAccount",
+                localizer["Ribbon_OpenAccount"].Value,
+                "<svg><use href='/icons/sprite.svg#external'/></svg>",
+                UiRibbonItemSize.Small,
+                LinksLoading || !HasId(LinkedAccountId),
+                null,
+                "OpenAccount",
+                new Func<Task>(async () => { RaiseUiActionRequested("OpenAccount"); await Task.CompletedTask; })),
+            new UiRibbonAction(
+                "OpenContact",
+                localizer["Ribbon_OpenContact"].Value,
+                "<svg><use href='/icons/sprite.svg#external'/></svg>",
+                UiRibbonItemSize.Small,
+                LinksLoading || !HasId(LinkedContactId),
+                null,
+                "OpenContact",
+                new Func<Task>(async () => { RaiseUiActionRequested("OpenContact"); await Task.CompletedTask; })),
+            new UiRibbonAction(
+                "OpenSavingsPlan",
+                localizer["Ribbon_OpenSavingsPlan"].Value,
+                "<svg><use href='/icons/sprite.svg#external'/></svg>",
+                UiRibbonItemSize.Small,
+                LinksLoading || !HasId(LinkedPlanId),
+                null,
+                "OpenSavingsPlan",
+                new Func<Task>(async () => { RaiseUiActionRequested("OpenSavingsPlan"); await Task.CompletedTask; })),
+            new UiRibbonAction(
+                "OpenSecurity",
+                localizer["Ribbon_OpenSecurity"].Value,
+                "<svg><use href='/icons/sprite.svg#external'/></svg>",
+                UiRibbonItemSize.Small,
+                LinksLoading || !HasId(LinkedSecurityId),
+                null,
+                "OpenSecurity",
+                new Func<Task>(async () => { RaiseUiActionRequested("OpenSecurity"); await Task.CompletedTask; })),
+            new UiRibbonAction(
+                "OpenAttachments",
+                localizer["Ribbon_Attachments"].Value,
+                "<svg><use href='/icons/sprite.svg#attachment'/></svg>",
+                UiRibbonItemSize.Small,
+                false,
+                null,
+                "OpenAttachments",
+                new Func<Task>(async () => { RaiseUiActionRequested("OpenAttachments"); await Task.CompletedTask; }))
         });
-        return new List<UiRibbonGroup> { nav, linked };
+
+        var registers = new List<UiRibbonRegister>
+        {
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, linked })
+        };
+        return registers;
     }
 
     private static bool HasId(Guid? id) => id.HasValue && id.Value != Guid.Empty;

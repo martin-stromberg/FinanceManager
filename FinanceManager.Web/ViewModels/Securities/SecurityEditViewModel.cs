@@ -135,26 +135,100 @@ public sealed class SecurityEditViewModel : ViewModelBase
         return true;
     }
 
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    // Ribbon: provide registers/tabs/actions via the new provider API
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
     {
-        var nav = new UiRibbonGroup(localizer["Ribbon_Group_Navigation"], new List<UiRibbonItem>
-        {
-            new UiRibbonItem(localizer["Ribbon_Back"], "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, "Back")
-        });
         var canSave = !string.IsNullOrWhiteSpace(Model.Name) && Model.Name.Trim().Length >= 2 && !string.IsNullOrWhiteSpace(Model.Identifier) && Model.Identifier.Trim().Length >= 3;
-        var edit = new UiRibbonGroup(localizer["Ribbon_Group_Edit"], new List<UiRibbonItem>
+
+        var tabs = new List<UiRibbonTab>
         {
-            new UiRibbonItem(localizer["Ribbon_Save"], "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !canSave, "Save"),
-            new UiRibbonItem(localizer["Ribbon_Archive"], "<svg><use href='/icons/sprite.svg#archive'/></svg>", UiRibbonItemSize.Small, !(IsEdit && Loaded && Display.IsActive), "Archive"),
-            new UiRibbonItem(localizer["Ribbon_Delete"], "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, !(IsEdit && Loaded && !Display.IsActive), "Delete")
-        });
-        var related = new UiRibbonGroup(localizer["Ribbon_Group_Related"], new List<UiRibbonItem>
-        {
-            new UiRibbonItem(localizer["Ribbon_Postings"], "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, !IsEdit || !Loaded, "Postings"),
-            new UiRibbonItem(localizer["Ribbon_Prices"], "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, !IsEdit || !Loaded, "Prices"),
-            new UiRibbonItem(localizer["Ribbon_Attachments"], "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, !IsEdit || !Loaded, "Attachments")
-        });
-        return new List<UiRibbonGroup> { nav, edit, related };
+            new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
+            {
+                new UiRibbonAction(
+                    Id: "Back",
+                    Label: localizer["Ribbon_Back"],
+                    IconSvg: "<svg><use href='/icons/sprite.svg#back'/></svg>",
+                    Size: UiRibbonItemSize.Large,
+                    Disabled: false,
+                    Tooltip: null,
+                    Action: "Back",
+                    Callback: new Func<Task>(() => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })
+                )
+            }),
+
+            new UiRibbonTab(localizer["Ribbon_Group_Edit"], new List<UiRibbonAction>
+            {
+                new UiRibbonAction(
+                    Id: "Save",
+                    Label: localizer["Ribbon_Save"],
+                    IconSvg: "<svg><use href='/icons/sprite.svg#save'/></svg>",
+                    Size: UiRibbonItemSize.Large,
+                    Disabled: !canSave,
+                    Tooltip: null,
+                    Action: "Save",
+                    Callback: new Func<Task>(() => { RaiseUiActionRequested("Save"); return Task.CompletedTask; })
+                ),
+                new UiRibbonAction(
+                    Id: "Archive",
+                    Label: localizer["Ribbon_Archive"],
+                    IconSvg: "<svg><use href='/icons/sprite.svg#archive'/></svg>",
+                    Size: UiRibbonItemSize.Small,
+                    Disabled: !(IsEdit && Loaded && Display.IsActive),
+                    Tooltip: null,
+                    Action: "Archive",
+                    Callback: new Func<Task>(() => { RaiseUiActionRequested("Archive"); return Task.CompletedTask; })
+                ),
+                new UiRibbonAction(
+                    Id: "Delete",
+                    Label: localizer["Ribbon_Delete"],
+                    IconSvg: "<svg><use href='/icons/sprite.svg#delete'/></svg>",
+                    Size: UiRibbonItemSize.Small,
+                    Disabled: !(IsEdit && Loaded && !Display.IsActive),
+                    Tooltip: null,
+                    Action: "Delete",
+                    Callback: new Func<Task>(() => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
+                )
+            }),
+
+            new UiRibbonTab(localizer["Ribbon_Group_Related"], new List<UiRibbonAction>
+            {
+                new UiRibbonAction(
+                    Id: "Postings",
+                    Label: localizer["Ribbon_Postings"],
+                    IconSvg: "<svg><use href='/icons/sprite.svg#postings'/></svg>",
+                    Size: UiRibbonItemSize.Small,
+                    Disabled: !IsEdit || !Loaded,
+                    Tooltip: null,
+                    Action: "Postings",
+                    Callback: new Func<Task>(() => { RaiseUiActionRequested("Postings"); return Task.CompletedTask; })
+                ),
+                new UiRibbonAction(
+                    Id: "Prices",
+                    Label: localizer["Ribbon_Prices"],
+                    IconSvg: "<svg><use href='/icons/sprite.svg#postings'/></svg>",
+                    Size: UiRibbonItemSize.Small,
+                    Disabled: !IsEdit || !Loaded,
+                    Tooltip: null,
+                    Action: "Prices",
+                    Callback: new Func<Task>(() => { RaiseUiActionRequested("Prices"); return Task.CompletedTask; })
+                ),
+                new UiRibbonAction(
+                    Id: "Attachments",
+                    Label: localizer["Ribbon_Attachments"],
+                    IconSvg: "<svg><use href='/icons/sprite.svg#attachment'/></svg>",
+                    Size: UiRibbonItemSize.Small,
+                    Disabled: !IsEdit || !Loaded,
+                    Tooltip: null,
+                    Action: "Attachments",
+                    Callback: new Func<Task>(() => { RaiseUiActionRequested("Attachments"); return Task.CompletedTask; })
+                )
+            })
+        };
+
+        var registers = new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
+        var baseRegs = base.GetRibbonRegisters(localizer);
+        if (baseRegs != null) registers.AddRange(baseRegs);
+        return registers;
     }
 
     public sealed class EditModel

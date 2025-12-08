@@ -214,29 +214,75 @@ public sealed class UsersViewModel : ViewModelBase
         LastResetUserId = Guid.Empty; LastResetPassword = null; RaiseStateChanged();
     }
 
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
     {
-        var groups = new List<UiRibbonGroup>();
-        var nav = new UiRibbonGroup(localizer["Ribbon_Group_Navigation"], new List<UiRibbonItem>
-        {
-            new UiRibbonItem(localizer["Ribbon_Back"], "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, "Back")
-        });
-        groups.Add(nav);
+        var tabs = new List<UiRibbonTab>();
 
-        var actionsItems = new List<UiRibbonItem>
+        // Navigation group as a tab
+        var navItems = new List<UiRibbonAction>
         {
-            new UiRibbonItem(localizer["Ribbon_Reload"], "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, false, "Reload")
+            new UiRibbonAction(
+                "back",
+                localizer["Ribbon_Back"],
+                "<svg><use href='/icons/sprite.svg#back'/></svg>",
+                UiRibbonItemSize.Large,
+                false,
+                null,
+                "Back",
+                new Func<Task>(() => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })
+            )
         };
+        tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Navigation"], navItems));
+
+        // Actions group as a tab
+        var actionItems = new List<UiRibbonAction>
+        {
+            new UiRibbonAction(
+                "reload",
+                localizer["Ribbon_Reload"],
+                "<svg><use href='/icons/sprite.svg#refresh'/></svg>",
+                UiRibbonItemSize.Small,
+                false,
+                null,
+                "Reload",
+                new Func<Task>(() => { RaiseUiActionRequested("Reload"); return Task.CompletedTask; })
+            )
+        };
+
         if (Edit != null)
         {
-            actionsItems.Add(new UiRibbonItem(localizer["Ribbon_CancelEdit"], "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, false, "CancelEdit"));
+            actionItems.Add(new UiRibbonAction(
+                "cancelEdit",
+                localizer["Ribbon_CancelEdit"],
+                "<svg><use href='/icons/sprite.svg#clear'/></svg>",
+                UiRibbonItemSize.Small,
+                false,
+                null,
+                "CancelEdit",
+                new Func<Task>(() => { RaiseUiActionRequested("CancelEdit"); return Task.CompletedTask; })
+            ));
         }
+
         if (LastResetUserId != Guid.Empty && !string.IsNullOrEmpty(LastResetPassword))
         {
-            actionsItems.Add(new UiRibbonItem(localizer["Ribbon_HidePassword"], "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, false, "HidePassword"));
+            actionItems.Add(new UiRibbonAction(
+                "hidePassword",
+                localizer["Ribbon_HidePassword"],
+                "<svg><use href='/icons/sprite.svg#clear'/></svg>",
+                UiRibbonItemSize.Small,
+                false,
+                null,
+                "HidePassword",
+                new Func<Task>(() => { RaiseUiActionRequested("HidePassword"); return Task.CompletedTask; })
+            ));
         }
-        groups.Add(new UiRibbonGroup(localizer["Ribbon_Group_Actions"], actionsItems));
-        return groups;
+
+        tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Actions"], actionItems));
+
+        return new List<UiRibbonRegister>
+        {
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs)
+        };
     }
 
     // DTOs

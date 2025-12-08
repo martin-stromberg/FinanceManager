@@ -129,7 +129,7 @@
   <data name="Btn_BackToParent" xml:space="preserve">
     <value>Back to source entry</value>
   </data>
-  <data name="Btn_Back" xml:space="preserve">
+  <data name="Ribbon_Back" xml:space="preserve">
     <value>Back</value>
   </data>
   <data name="Btn_ShowOriginal" xml:space="preserve">
@@ -299,5 +299,17 @@
   </data>
   <data name="Ribbon_Group_Related" xml:space="preserve">
     <value>Related</value>
+  </data>
+  <data name="Ribbon_Attachments" xml:space="preserve">
+    <value>Attachments</value>
+  </data>
+  <data name="Ribbon_Confirmation_Delete" xml:space="preserve">
+    <value>Do you want the statement draft to be deleted?</value>
+  </data>
+  <data name="Th_Security" xml:space="preserve">
+    <value>Security</value>
+  </data>
+  <data name="Ribbon_Group_Operations" xml:space="preserve">
+    <value>Operations</value>
   </data>
 </root>

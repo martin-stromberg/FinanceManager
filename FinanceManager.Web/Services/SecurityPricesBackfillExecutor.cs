@@ -1,5 +1,6 @@
 using FinanceManager.Application;
 using FinanceManager.Infrastructure;
+using FinanceManager.Web;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using System.Text.Json;
@@ -12,11 +13,11 @@ public sealed class SecurityPricesBackfillExecutor : IBackgroundTaskExecutor
 
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<SecurityPricesBackfillExecutor> _logger;
-    private readonly IStringLocalizer<SecurityPricesBackfillExecutor> _localizer;
+    private readonly IStringLocalizer _localizer;
 
     private sealed record Payload(Guid? SecurityId, DateTime? FromDateUtc, DateTime? ToDateUtc);
 
-    public SecurityPricesBackfillExecutor(IServiceScopeFactory scopeFactory, ILogger<SecurityPricesBackfillExecutor> logger, IStringLocalizer<SecurityPricesBackfillExecutor> localizer)
+    public SecurityPricesBackfillExecutor(IServiceScopeFactory scopeFactory, ILogger<SecurityPricesBackfillExecutor> logger, IStringLocalizer<Pages> localizer)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;

@@ -84,19 +84,56 @@ public sealed class SavingsPlanCategoryDetailViewModel : ViewModelBase
         return true;
     }
 
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    // Ribbon: provide registers/tabs/actions via the new provider API
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
     {
-        var nav = new UiRibbonGroup(localizer["Ribbon_Group_Navigation"], new List<UiRibbonItem>
-        {
-            new UiRibbonItem(localizer["Ribbon_Back"], "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, "Back")
-        });
         var canSave = !string.IsNullOrWhiteSpace(Model.Name) && Model.Name.Trim().Length >= 2;
-        var edit = new UiRibbonGroup(localizer["Ribbon_Group_Edit"], new List<UiRibbonItem>
+
+        var tabs = new List<UiRibbonTab>
         {
-            new UiRibbonItem(localizer["Ribbon_Save"], "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !canSave, "Save"),
-            new UiRibbonItem(localizer["Ribbon_Delete"], "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, !IsEdit, "Delete"),
-        });
-        return new List<UiRibbonGroup> { nav, edit };
+            new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
+            {
+                new UiRibbonAction(
+                    Id: "Back",
+                    Label: localizer["Ribbon_Back"],
+                    IconSvg: "<svg><use href='/icons/sprite.svg#back'/></svg>",
+                    Size: UiRibbonItemSize.Large,
+                    Disabled: false,
+                    Tooltip: null,
+                    Action: "Back",
+                    Callback: new Func<Task>(() => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })
+                )
+            }),
+
+            new UiRibbonTab(localizer["Ribbon_Group_Edit"], new List<UiRibbonAction>
+            {
+                new UiRibbonAction(
+                    Id: "Save",
+                    Label: localizer["Ribbon_Save"],
+                    IconSvg: "<svg><use href='/icons/sprite.svg#save'/></svg>",
+                    Size: UiRibbonItemSize.Large,
+                    Disabled: !canSave,
+                    Tooltip: null,
+                    Action: "Save",
+                    Callback: new Func<Task>(() => { RaiseUiActionRequested("Save"); return Task.CompletedTask; })
+                ),
+                new UiRibbonAction(
+                    Id: "Delete",
+                    Label: localizer["Ribbon_Delete"],
+                    IconSvg: "<svg><use href='/icons/sprite.svg#delete'/></svg>",
+                    Size: UiRibbonItemSize.Small,
+                    Disabled: !IsEdit,
+                    Tooltip: null,
+                    Action: "Delete",
+                    Callback: new Func<Task>(() => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
+                )
+            })
+        };
+
+        var registers = new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
+        var baseRegs = base.GetRibbonRegisters(localizer);
+        if (baseRegs != null) registers.AddRange(baseRegs);
+        return registers;
     }
 
     public sealed class EditModel

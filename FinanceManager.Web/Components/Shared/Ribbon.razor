@@ -1,19 +1,38 @@
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Web
+@using FinanceManager.Web.ViewModels.Common
+@using FinanceManager.Web.ViewModels
 @typeparam TTabEnum
 
-@if (Tabs?.Any() == true)
+@if ((TabsToRender)?.Any() == true)
 {
-    var singleTab = Tabs!.Count == 1;
-    var activeIndex = Tabs!.FindIndex(t => EqualityComparer<TTabEnum>.Default.Equals(t.Id, ActiveTab));
+    var tabs = TabsToRender!;
+    var singleTab = tabs.Count == 1;
+
+    // Determine current ActiveTab: prefer provider's active tab when available
+    var providerActive = default(TTabEnum);
+    bool providerHas = false;
+    if (Provider is IRibbonProvider rp)
+    {
+        var vObj = (object?)rp.GetActiveTab<TTabEnum>();
+        if (vObj != null)
+        {
+            providerActive = (TTabEnum)vObj;
+            providerHas = true;
+        }
+    }
+
+    var active = providerHas ? providerActive : ActiveTab;
+    var activeIndex = tabs.FindIndex(t => EqualityComparer<TTabEnum>.Default.Equals(t.Id, active));
     if (activeIndex < 0) { activeIndex = 0; }
+
     <div class="fm-ribbon @(singleTab?"single-tab":"")" role="region" aria-label="@AriaLabel">
         @if(!singleTab)
         {
             <ul class="fm-ribbon-tabs" role="tablist" aria-label="@AriaTabsLabel">
-                @for (var i = 0; i < Tabs!.Count; i++)
+                @for (var i = 0; i < tabs.Count; i++)
                 {
-                    var t = Tabs[i];
+                    var t = tabs[i];
                     var isActive = i == activeIndex;
                     var tabId = $"ribbon-tab-{i}";
                     var panelId = $"ribbon-panel-{i}";
@@ -72,27 +91,142 @@
 }
 
 @code {
-    [Parameter] public List<RibbonTab<TTabEnum>>? Tabs { get; set; }
-    [Parameter] public EventCallback<RibbonItem> OnItemSelected { get; set; }
-    [Parameter] public TTabEnum ActiveTab { get; set; } = default!;
+    // Unified API: prefer Provider; obsolete public parameters left for compatibility
+    [Parameter] public IRibbonProvider? Provider { get; set; }
+    [Parameter] public Microsoft.Extensions.Localization.IStringLocalizer? Localizer { get; set; }
+    // Legacy parameters maintained for pages that construct tabs locally
+    [Parameter] public TTabEnum ActiveTab { get; set; }
     [Parameter] public EventCallback<TTabEnum> ActiveTabChanged { get; set; }
+
     [Parameter] public string AriaLabel { get; set; } = "Application ribbon";
     [Parameter] public string AriaTabsLabel { get; set; } = "Ribbon tabs";
     [Parameter] public string AriaGroupsLabel { get; set; } = "Ribbon action groups";
 
-    private IEnumerable<RibbonGroup>? CurrentGroups =>
-        Tabs?.FirstOrDefault(t => EqualityComparer<TTabEnum>.Default.Equals(t.Id, ActiveTab))?.Groups;
+    private List<RibbonTab<TTabEnum>>? TabsToRender => _tabsToRender ??= BuildTabsToRender();
+    private List<RibbonTab<TTabEnum>>? _tabsToRender;
+
+    private List<RibbonTab<TTabEnum>>? BuildTabsToRender()
+    {
+        var regs = Provider?.GetRibbonRegisters(Localizer);
+        if (regs == null) { return new List<RibbonTab<TTabEnum>>(); }
+
+        // Merge groups across registers: groups with same title get merged; preserve first-seen order
+        var groupOrder = new List<string>();
+        var groupMap = new Dictionary<string, RibbonGroup>(StringComparer.Ordinal);
+
+        foreach (var reg in regs)
+        {
+            if (reg.Tabs == null || reg.Tabs.Count == 0) continue;
+
+            foreach (var tab in reg.Tabs)
+            {
+                if (tab.Items == null || tab.Items.Count == 0) continue;
+
+                var groupTitle = !string.IsNullOrWhiteSpace(tab.Title) ? tab.Title : reg.Kind.ToString();
+                if (!groupMap.TryGetValue(groupTitle, out var existingGroup))
+                {
+                    existingGroup = new RibbonGroup { Title = groupTitle, Items = new List<RibbonItem>() };
+                    groupMap[groupTitle] = existingGroup;
+                    groupOrder.Add(groupTitle);
+                }
+
+                foreach (var act in tab.Items)
+                {
+                    var size = act.Size == UiRibbonItemSize.Large ? RibbonItemSize.Large : RibbonItemSize.Small;
+                    existingGroup.Items.Add(new RibbonItem
+                    {
+                        Id = act.Id,
+                        Label = act.Label,
+                        IconSvg = act.IconSvg,
+                        Size = size,
+                        Disabled = act.Disabled,
+                        Tooltip = act.Tooltip,
+                        Callback = act.Callback
+                    });
+                }
+            }
+        }
+
+        var groups = groupOrder.Select(title => groupMap[title]).ToList();
+
+        if (groups.Count == 0) return new List<RibbonTab<TTabEnum>>();
+
+        // Determine title: use first tab title from registers if available
+        var firstTitle = regs.SelectMany(r => r.Tabs ?? Enumerable.Empty<UiRibbonTab>()).Select(t => t.Title).FirstOrDefault();
+
+        // Compute id by boxing provider result to object to avoid unconstrained-generic nullability checks
+        TTabEnum id;
+        if (Provider is IRibbonProvider p)
+        {
+            var boxed = (object?)p.GetActiveTab<TTabEnum>();
+            id = boxed != null ? (TTabEnum)boxed : ActiveTab;
+        }
+        else
+        {
+            id = ActiveTab;
+        }
+
+        return new List<RibbonTab<TTabEnum>>
+        {
+            new RibbonTab<TTabEnum>
+            {
+                Id = id,
+                Title = firstTitle ?? string.Empty,
+                Groups = groups
+            }
+        };
+    }
+
+    private IEnumerable<RibbonGroup>? CurrentGroups
+    {
+        get
+        {
+            TTabEnum effectiveActive;
+            if (Provider is IRibbonProvider p)
+            {
+                var boxed = (object?)p.GetActiveTab<TTabEnum>();
+                effectiveActive = boxed != null ? (TTabEnum)boxed : ActiveTab;
+            }
+            else
+            {
+                effectiveActive = ActiveTab;
+            }
+            return TabsToRender?.FirstOrDefault(t => EqualityComparer<TTabEnum>.Default.Equals(t.Id, effectiveActive))?.Groups;
+        }
+    }
 
     protected override void OnParametersSet()
     {
-        if (Tabs != null && Tabs.Any() && !Tabs.Any(t => EqualityComparer<TTabEnum>.Default.Equals(t.Id, ActiveTab)))
+        _tabsToRender = null;
+        var regs = Provider?.GetRibbonRegisters(Localizer);
+        if (regs != null && regs.Any())
         {
-            ActiveTab = Tabs.First().Id;
+            if (Provider is IRibbonProvider rp)
+            {
+                var boxed = (object?)rp.GetActiveTab<TTabEnum>();
+                var providerActive = boxed != null ? (TTabEnum)boxed : default!;
+                if (boxed != null && !TabsToRender.Any(t => EqualityComparer<TTabEnum>.Default.Equals(t.Id, providerActive)))
+                {
+                    rp.SetActiveTab<TTabEnum>(TabsToRender.First().Id);
+                }
+                else if (boxed == null && !TabsToRender.Any(t => EqualityComparer<TTabEnum>.Default.Equals(t.Id, ActiveTab)))
+                {
+                    rp.SetActiveTab<TTabEnum>(TabsToRender.First().Id);
+                }
+            }
+            else if (!TabsToRender.Any(t => EqualityComparer<TTabEnum>.Default.Equals(t.Id, ActiveTab)))
+            {
+                ActiveTab = TabsToRender.First().Id;
+            }
         }
     }
 
     private async Task SelectTab(TTabEnum id)
     {
+        if (Provider is IRibbonProvider rp)
+        {
+            rp.SetActiveTab(id);
+        }
         ActiveTab = id;
         if (ActiveTabChanged.HasDelegate)
         {
@@ -105,36 +239,36 @@
     {
         if (item.Disabled) { return; }
         if (item.Callback != null) { await item.Callback.Invoke(); }
-        if (OnItemSelected.HasDelegate) { await OnItemSelected.InvokeAsync(item); }
     }
 
     private void OnTabKeyDown(KeyboardEventArgs e, int index)
     {
-        if (Tabs == null || Tabs.Count == 0) { return; }
+        var tabs = TabsToRender;
+        if (tabs == null || tabs.Count == 0) { return; }
         if (e.Key == "ArrowRight")
         {
-            var next = (index + 1) % Tabs.Count;
-            _ = SelectTab(Tabs[next].Id);
+            var next = (index + 1) % tabs.Count;
+            _ = SelectTab(tabs[next].Id);
         }
         else if (e.Key == "ArrowLeft")
         {
-            var prev = (index - 1 + Tabs.Count) % Tabs.Count;
-            _ = SelectTab(Tabs[prev].Id);
+            var prev = (index - 1 + tabs.Count) % tabs.Count;
+            _ = SelectTab(tabs[prev].Id);
         }
     }
 
-    public class RibbonTab<T>
+    private class RibbonTab<T>
     {
         public required T Id { get; set; }
         public required string Title { get; set; }
         public List<RibbonGroup> Groups { get; set; } = new();
     }
-    public class RibbonGroup
+    private class RibbonGroup
     {
         public required string Title { get; set; }
         public List<RibbonItem> Items { get; set; } = new();
     }
-    public class RibbonItem
+    private class RibbonItem
     {
         public string? Id { get; set; }
         public required string Label { get; set; }
@@ -144,5 +278,5 @@
         public string? Tooltip { get; set; }
         public Func<Task>? Callback { get; set; }
     }
-    public enum RibbonItemSize { Small, Large }
+    private enum RibbonItemSize { Small, Large }
 }

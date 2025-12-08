@@ -96,7 +96,7 @@ button:disabled {
 input { 
     border-radius: var(--radius); 
     padding: .5rem .55rem; 
-    width: 100%; 
+    wwidth: 100%; 
     font-size: .9rem; 
 }
 

@@ -137,20 +137,22 @@ public sealed class AccountsViewModel : ViewModelBase
         catch { }
     }
 
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
-        var items = new List<UiRibbonItem>
+        var items = new List<UiRibbonAction>
         {
-            new UiRibbonItem(localizer["Ribbon_New"], "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, "New")
+            new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, "New", new Func<Task>(()=>{ RaiseUiActionRequested("New"); return Task.CompletedTask; }))
         };
         if (FilterBankContactId.HasValue)
         {
-            items.Add(new UiRibbonItem(localizer["Ribbon_ClearFilter"], "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, false, "ClearFilter"));
+            items.Add(new UiRibbonAction("ClearFilter", localizer["Ribbon_ClearFilter"].Value, "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, false, null, "ClearFilter", new Func<Task>(()=>{ RaiseUiActionRequested("ClearFilter"); return Task.CompletedTask; })));
         }
-        return new List<UiRibbonGroup>
+
+        var tabs = new List<UiRibbonTab>
         {
-            new UiRibbonGroup(localizer["Ribbon_Group_Actions"], items)
+            new UiRibbonTab(localizer["Ribbon_Group_Actions"].Value, items)
         };
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
     }
 
     public sealed class AccountItem

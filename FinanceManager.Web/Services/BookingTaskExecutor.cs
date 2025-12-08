@@ -1,5 +1,6 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Statements;
+using FinanceManager.Web;
 using Microsoft.Extensions.Localization;
 using System.Text.Json;
 
@@ -10,11 +11,11 @@ namespace FinanceManager.Web.Services
         public BackgroundTaskType Type => BackgroundTaskType.BookAllDrafts;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<BookingTaskExecutor> _logger;
-        private readonly IStringLocalizer<BookingTaskExecutor> _localizer;
+        private readonly IStringLocalizer _localizer;
 
         private sealed record Options(bool IgnoreWarnings, bool AbortOnFirstIssue, bool BookEntriesIndividually);
 
-        public BookingTaskExecutor(IServiceScopeFactory scopeFactory, ILogger<BookingTaskExecutor> logger, IStringLocalizer<BookingTaskExecutor> localizer)
+        public BookingTaskExecutor(IServiceScopeFactory scopeFactory, ILogger<BookingTaskExecutor> logger, IStringLocalizer<Pages> localizer)
         {
             _scopeFactory = scopeFactory;
             _logger = logger;

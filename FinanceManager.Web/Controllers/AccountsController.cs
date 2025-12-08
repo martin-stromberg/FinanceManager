@@ -105,7 +105,10 @@ public sealed class AccountsController : ControllerBase
             }
             else
             {
-                return BadRequest(new { error = "Bank contact required (existing or new)" });
+                // Auto-create a bank contact based on the account name or IBAN if none provided
+                var contactName = !string.IsNullOrWhiteSpace(req.Name) ? req.Name.Trim() : (string.IsNullOrWhiteSpace(req.Iban) ? "Bankkonto" : req.Iban!.Trim());
+                var createdContact = await _contacts.CreateAsync(_current.UserId, contactName, ContactType.Bank, null, null, null, ct);
+                bankContactId = createdContact.Id;
             }
 
             var account = await _accounts.CreateAsync(_current.UserId, req.Name.Trim(), req.Type, req.Iban?.Trim(), bankContactId, req.SavingsPlanExpectation, ct);

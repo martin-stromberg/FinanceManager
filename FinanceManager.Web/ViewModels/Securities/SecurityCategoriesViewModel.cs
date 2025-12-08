@@ -36,16 +36,16 @@ public sealed class SecurityCategoriesViewModel : ViewModelBase
         RaiseStateChanged();
     }
 
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
     {
-        return new List<UiRibbonGroup>
+        var actions = new List<UiRibbonAction>
         {
-            new UiRibbonGroup(localizer["Ribbon_Group_Actions"], new List<UiRibbonItem>
-            {
-                new UiRibbonItem(localizer["Ribbon_New"], "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, "New"),
-                new UiRibbonItem(localizer["Ribbon_Back"], "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Small, false, "Back")
-            })
+            new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, "New", new Func<Task>(async () => { RaiseUiActionRequested("New"); await Task.CompletedTask; })),
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Small, false, null, "Back", new Func<Task>(async () => { RaiseUiActionRequested("Back"); await Task.CompletedTask; }))
         };
+
+        var tab = new UiRibbonTab(localizer["Ribbon_Group_Actions"].Value, actions);
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { tab }) };
     }
 
     public sealed class CategoryItem { public Guid Id { get; set; } public string Name { get; set; } = string.Empty; public Guid? SymbolAttachmentId { get; set; } }

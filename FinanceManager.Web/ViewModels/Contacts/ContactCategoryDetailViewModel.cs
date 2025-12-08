@@ -84,19 +84,50 @@ public sealed class ContactCategoryDetailViewModel : ViewModelBase
         return true;
     }
 
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
-        var nav = new UiRibbonGroup(localizer["Ribbon_Group_Navigation"], new List<UiRibbonItem>
+        var navActions = new List<UiRibbonAction>
         {
-            new UiRibbonItem(localizer["Ribbon_Back"], "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, "Back")
-        });
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, "Back", new Func<Task>(async () => { RaiseUiActionRequested("Back"); await Task.CompletedTask; }))
+        };
         var canSave = !string.IsNullOrWhiteSpace(Model.Name) && Model.Name.Trim().Length >= 2;
-        var edit = new UiRibbonGroup(localizer["Ribbon_Group_Edit"], new List<UiRibbonItem>
+        var editActions = new List<UiRibbonAction>
         {
-            new UiRibbonItem(localizer["Ribbon_Save"], "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !canSave, "Save"),
-            new UiRibbonItem(localizer["Ribbon_Delete"], "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, !IsEdit, "Delete")
-        });
-        return new List<UiRibbonGroup> { nav, edit };
+            new UiRibbonAction(
+                "Save",
+                localizer["Ribbon_Save"].Value,
+                "<svg><use href='/icons/sprite.svg#save'/></svg>",
+                UiRibbonItemSize.Large,
+                !canSave,
+                null,
+                "Save",
+                new Func<Task>(async () =>
+                {
+                    var ok = await SaveAsync();
+                    if (ok) { RaiseUiActionRequested("Saved"); }
+                })),
+            new UiRibbonAction(
+                "Delete",
+                localizer["Ribbon_Delete"].Value,
+                "<svg><use href='/icons/sprite.svg#delete'/></svg>",
+                UiRibbonItemSize.Small,
+                !IsEdit,
+                null,
+                "Delete",
+                new Func<Task>(async () =>
+                {
+                    var ok = await DeleteAsync();
+                    if (ok) { RaiseUiActionRequested("Deleted"); }
+                }))
+        };
+
+        var tabs = new List<UiRibbonTab>
+        {
+            new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, navActions),
+            new UiRibbonTab(localizer["Ribbon_Group_Edit"].Value, editActions)
+        };
+
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
     }
 
     public sealed class EditModel

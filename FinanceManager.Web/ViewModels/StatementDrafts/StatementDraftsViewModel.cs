@@ -105,34 +105,62 @@ public sealed class StatementDraftsViewModel : ViewModelBase
         RaiseStateChanged();
     }
 
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    // New ribbon API: provide registers with tabs (groups are represented as tabs here)
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
     {
-        var groups = new List<UiRibbonGroup>();
-        groups.Add(new UiRibbonGroup(
-            localizer["Ribbon_Group_Management"],
-            new List<UiRibbonItem>
+        var tabs = new List<UiRibbonTab>
+        {
+            new UiRibbonTab(localizer["Ribbon_Group_Management"].Value, new List<UiRibbonAction>
             {
-                new UiRibbonItem(localizer["Ribbon_DeleteAll"], "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Large, false, "DeleteAll")
-            }));
-        groups.Add(new UiRibbonGroup(
-            localizer["Ribbon_Group_Classification"],
-            new List<UiRibbonItem>
+                new UiRibbonAction(
+                    "DeleteAll",
+                    localizer["Ribbon_DeleteAll"].Value,
+                    "<svg><use href='/icons/sprite.svg#delete'/></svg>",
+                    UiRibbonItemSize.Large,
+                    false,
+                    null,
+                    "DeleteAll",
+                    new Func<Task>(async () => { RaiseUiActionRequested("DeleteAll"); await Task.CompletedTask; }))
+            }),
+            new UiRibbonTab(localizer["Ribbon_Group_Classification"].Value, new List<UiRibbonAction>
             {
-                new UiRibbonItem(localizer["Ribbon_Reclassify"], "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Large, IsClassifying, "Reclassify")
-            }));
-        groups.Add(new UiRibbonGroup(
-            localizer["Ribbon_Group_Booking"],
-            new List<UiRibbonItem>
+                new UiRibbonAction(
+                    "Reclassify",
+                    localizer["Ribbon_Reclassify"].Value,
+                    "<svg><use href='/icons/sprite.svg#refresh'/></svg>",
+                    UiRibbonItemSize.Large,
+                    IsClassifying,
+                    null,
+                    "Reclassify",
+                    new Func<Task>(async () => { await StartClassifyAsync(); }))
+            }),
+            new UiRibbonTab(localizer["Ribbon_Group_Booking"].Value, new List<UiRibbonAction>
             {
-                new UiRibbonItem(localizer["Ribbon_MassBooking"], "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, IsBooking, "MassBooking")
-            }));
-        groups.Add(new UiRibbonGroup(
-            localizer["Ribbon_Group_Import"],
-            new List<UiRibbonItem>
+                new UiRibbonAction(
+                    "MassBooking",
+                    localizer["Ribbon_MassBooking"].Value,
+                    "<svg><use href='/icons/sprite.svg#save'/></svg>",
+                    UiRibbonItemSize.Large,
+                    IsBooking,
+                    null,
+                    "MassBooking",
+                    new Func<Task>(async () => { RaiseUiActionRequested("MassBooking"); await Task.CompletedTask; }))
+            }),
+            new UiRibbonTab(localizer["Ribbon_Group_Import"].Value, new List<UiRibbonAction>
             {
-                new UiRibbonItem(localizer["Ribbon_Import"], "<svg><use href='/icons/sprite.svg#upload'/></svg>", UiRibbonItemSize.Large, false, "Import")
-            }));
-        return groups;
+                new UiRibbonAction(
+                    "Import",
+                    localizer["Ribbon_Import"].Value,
+                    "<svg><use href='/icons/sprite.svg#upload'/></svg>",
+                    UiRibbonItemSize.Large,
+                    false,
+                    null,
+                    "Import",
+                    new Func<Task>(async () => { RaiseUiActionRequested("Import"); await Task.CompletedTask; }))
+            })
+        };
+
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
     }
 
     // Upload handling

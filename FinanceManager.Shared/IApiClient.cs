@@ -354,6 +354,10 @@ public interface IApiClient
     Task<StatementDraftDetailDto?> StatementDrafts_GetAsync(Guid draftId, bool headerOnly = false, string? src = null, Guid? fromEntryDraftId = null, Guid? fromEntryId = null, CancellationToken ct = default);
     /// <summary>Gets the detail of a specific entry in a statement draft.</summary>
     Task<StatementDraftEntryDetailDto?> StatementDrafts_GetEntryAsync(Guid draftId, Guid entryId, CancellationToken ct = default);
+    /// <summary>
+    /// Updates core fields of a draft entry (dates, amount, textual fields).
+    /// </summary>
+    Task<StatementDraftEntryDto?> StatementDrafts_UpdateEntryCoreAsync(Guid draftId, Guid entryId, StatementDraftUpdateEntryCoreRequest req, CancellationToken ct = default);
     /// <summary>Adds a new entry to a statement draft.</summary>
     Task<StatementDraftDetailDto?> StatementDrafts_AddEntryAsync(Guid draftId, StatementDraftAddEntryRequest req, CancellationToken ct = default);
     /// <summary>Classifies a statement draft (automatic processing).</summary>
@@ -402,7 +406,8 @@ public interface IApiClient
     Task<bool> StatementDrafts_CancelBookAllAsync(CancellationToken ct = default);
     /// <summary>Deletes a statement draft. Returns false when not found.</summary>
     Task<bool> StatementDrafts_DeleteAsync(Guid draftId, CancellationToken ct = default);
-
+    // Add to IApiClient interface in the Statement Drafts region:
+    Task<StatementDraftEntryDto?> StatementDrafts_SetEntrySplitDraftAsync(Guid draftId, Guid entryId, StatementDraftSetSplitDraftRequest req, CancellationToken ct = default);
     // Users
     /// <summary>Checks if any users exist in the system.</summary>
     Task<bool> Users_HasAnyAsync(CancellationToken ct = default);

@@ -41,13 +41,14 @@ public sealed class ReportsHomeViewModel : ViewModelBase
         finally { Loading = false; RaiseStateChanged(); }
     }
 
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
-        var actions = new UiRibbonGroup(localizer["Ribbon_Group_Actions"], new()
+        var actions = new List<UiRibbonAction>
         {
-            new UiRibbonItem(localizer["Ribbon_Reload"], "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, Loading, "Reload"),
-            new UiRibbonItem(localizer["Ribbon_NewReport"], "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, "NewReport")
-        });
-        return new List<UiRibbonGroup> { actions };
+            new UiRibbonAction("Reload", localizer["Ribbon_Reload"].Value, "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, Loading, null, "Reload", null),
+            new UiRibbonAction("NewReport", localizer["Ribbon_NewReport"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, "NewReport", null)
+        };
+        var tabs = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Actions"].Value, actions) };
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
     }
 }

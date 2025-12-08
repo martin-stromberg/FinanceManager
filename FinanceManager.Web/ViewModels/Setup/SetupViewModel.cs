@@ -64,14 +64,26 @@ public sealed class SetupViewModel : ViewModelBase
         || section == TabIpBlocks
         || section == TabAttachmentCategories;
 
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    // Ribbon: provide registers/tabs/actions via the new provider API
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
     {
-        return new List<UiRibbonGroup>
+        var tabs = new List<UiRibbonTab>
         {
-            new UiRibbonGroup(localizer["Ribbon_Group_Navigation"], new List<UiRibbonItem>
+            new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
             {
-                new UiRibbonItem(localizer["Ribbon_Back"], "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, "Back")
+                new UiRibbonAction(
+                    Id: "Back",
+                    Label: localizer["Ribbon_Back"],
+                    IconSvg: "<svg><use href='/icons/sprite.svg#back'/></svg>",
+                    Size: UiRibbonItemSize.Large,
+                    Disabled: false,
+                    Tooltip: null,
+                    Action: "Back",
+                    Callback: new Func<Task>(() => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })
+                )
             })
         };
+
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
     }
 }

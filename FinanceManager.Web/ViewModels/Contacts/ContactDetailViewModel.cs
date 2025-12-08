@@ -290,49 +290,61 @@ public sealed class ContactDetailViewModel : ViewModelBase
     }
 
     // Ribbon
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
         if (!Loaded)
         {
-            return Array.Empty<UiRibbonGroup>();
+            return null;
         }
 
-        var groups = new List<UiRibbonGroup>();
-        groups.Add(new UiRibbonGroup(localizer["Ribbon_Group_Navigation"], new List<UiRibbonItem>
-        {
-            new UiRibbonItem(localizer["Ribbon_Back"], "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, "Back")
-        }));
+        var groups = new List<UiRibbonAction>();
+        var uiGroups = new List<UiRibbonTab>();
 
-        var canSave = !Busy && !string.IsNullOrWhiteSpace(Name) && Name.Trim().Length >= 2;
-        var editItems = new List<UiRibbonItem>
+        // Navigation
+        var navActions = new List<UiRibbonAction>
         {
-            new UiRibbonItem(localizer["Ribbon_Save"], "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !canSave, "Save")
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, "Back", new Func<Task>(()=>{ RaiseUiActionRequested("Back"); return Task.CompletedTask; }))
+        };
+        uiGroups.Add(new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, navActions));
+
+        // Edit
+        var canSave = !Busy && !string.IsNullOrWhiteSpace(Name) && Name.Trim().Length >= 2;
+        var editActions = new List<UiRibbonAction>
+        {
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !canSave, null, "Save", new Func<Task>(()=>{ RaiseUiActionRequested("Save"); return Task.CompletedTask; }))
         };
         if (!IsNew)
         {
-            editItems.Add(new UiRibbonItem(localizer["Ribbon_Delete"], "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Busy || IsSelfContact, "Delete"));
+            editActions.Add(new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Busy || IsSelfContact, null, "Delete", new Func<Task>(()=>{ RaiseUiActionRequested("Delete"); return Task.CompletedTask; })));
         }
-        groups.Add(new UiRibbonGroup(localizer["Ribbon_Group_Edit"], editItems));
+        uiGroups.Add(new UiRibbonTab(localizer["Ribbon_Group_Edit"].Value, editActions));
 
         if (!IsNew)
         {
-            var related = new List<UiRibbonItem>();
+            var related = new List<UiRibbonAction>();
             if (Type == ContactType.Bank)
             {
-                related.Add(new UiRibbonItem(localizer["Ribbon_Accounts"], "<svg><use href='/icons/sprite.svg#accounts'/></svg>", UiRibbonItemSize.Small, Busy, "OpenBankAccounts"));
+                related.Add(new UiRibbonAction("OpenBankAccounts", localizer["Ribbon_Accounts"].Value, "<svg><use href='/icons/sprite.svg#accounts'/></svg>", UiRibbonItemSize.Small, Busy, null, "OpenBankAccounts", new Func<Task>(()=>{ RaiseUiActionRequested("OpenBankAccounts"); return Task.CompletedTask; })));
             }
             if (!IsSelfContact)
             {
-                related.Add(new UiRibbonItem(localizer["Ribbon_Merge"], "<svg><use href='/icons/sprite.svg#merge'/></svg>", UiRibbonItemSize.Small, Busy, "OpenMerge"));
+                related.Add(new UiRibbonAction("OpenMerge", localizer["Ribbon_Merge"].Value, "<svg><use href='/icons/sprite.svg#merge'/></svg>", UiRibbonItemSize.Small, Busy, null, "OpenMerge", new Func<Task>(()=>{ RaiseUiActionRequested("OpenMerge"); return Task.CompletedTask; })));
             }
-            related.Add(new UiRibbonItem(localizer["Ribbon_Postings"], "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Busy, "OpenPostings"));
-            related.Add(new UiRibbonItem(localizer["Ribbon_Attachments"], "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Busy, "OpenAttachments"));
-            groups.Add(new UiRibbonGroup(localizer["Ribbon_Group_Related"], related));
+            related.Add(new UiRibbonAction("OpenPostings", localizer["Ribbon_Postings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Busy, null, "OpenPostings", new Func<Task>(()=>{ RaiseUiActionRequested("OpenPostings"); return Task.CompletedTask; })));
+            related.Add(new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Busy, null, "OpenAttachments", new Func<Task>(()=>{ RaiseUiActionRequested("OpenAttachments"); return Task.CompletedTask; })));
+            uiGroups.Add(new UiRibbonTab(localizer["Ribbon_Group_Related"].Value, related));
         }
 
-        var merged = base.GetRibbon(localizer);
-        if (merged.Count > 0) { groups.AddRange(merged); }
-        return groups;
+        var registers = new List<UiRibbonRegister>();
+        if (uiGroups.Count > 0)
+        {
+            registers.Add(new UiRibbonRegister(UiRibbonRegisterKind.Actions, uiGroups));
+        }
+
+        var baseRegs = base.GetRibbonRegisters(localizer);
+        if (baseRegs != null) registers.AddRange(baseRegs);
+
+        return registers.Count == 0 ? null : registers;
     }
 
     public sealed class CategoryItem { public Guid Id { get; set; } public string Name { get; set; } = string.Empty; }

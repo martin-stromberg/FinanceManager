@@ -2,63 +2,64 @@
 @using Microsoft.AspNetCore.Authorization
 @rendermode InteractiveServer
 @inject IHttpContextAccessor httpContextAccessor
-@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Pages.Home> Localizer
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
 @inject FinanceManager.Shared.IApiClient Api
-@inject FinanceManager.Application.ICurrentUserService CurrentUser
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @using FinanceManager.Web.Components.Shared
 @using Microsoft.AspNetCore.Components.Web
 @using FinanceManager.Shared.Dtos.Statements
+@using Microsoft.Extensions.DependencyInjection
+@inject IServiceProvider ServiceProvider
 <PageTitle>@Localizer["PageTitle"]</PageTitle>
 
-<Ribbon TTabEnum="Home.TabId" Tabs="_tabs" ActiveTab="_activeTab" ActiveTabChanged="OnActiveTabChanged" />
+<Ribbon TTabEnum="TabId" Provider="_vm" Localizer="Localizer" />
 
 <h1>@Localizer["PageTitle"]</h1>
 
-@if (CurrentUser.IsAuthenticated)
+@if (_vm?.IsAuthenticated == true)
 {
     <HomeNotifications />
 
-    @if (_uploadInProgress)
+    @if (_vm?.UploadInProgress == true)
     {
         <div class="upload-progress" role="status" aria-live="polite">
             <div class="hdr">
                 <span class="title">@Localizer["Upload_Progress_Title"]</span>
-                <span class="cnt">@_uploadDone/@_uploadTotal</span>
+                <span class="cnt">@_vm.UploadDone/@_vm.UploadTotal</span>
             </div>
-            <div class="bar"><div class="bar-inner" style="width:@UploadPercent%"></div></div>
-            @if(!string.IsNullOrWhiteSpace(_currentFileName))
+            <div class="bar"><div class="bar-inner" style="width:@_vm.UploadPercent%"></div></div>
+            @if(!string.IsNullOrWhiteSpace(_vm.CurrentFileName))
             {
-                <div class="file" title="@_currentFileName">@_currentFileName</div>
+                <div class="file" title="@_vm.CurrentFileName">@_vm.CurrentFileName</div>
             }
         </div>
     }
 
-    @if (_importSuccess && _draftId != null)
+    @if (_vm?.ImportSuccess == true && _vm?.FirstDraftId != null)
     {
         <div class="alert alert-success import-success">
             @Localizer["Import_Success"]
-            <a href="@($"/statement-drafts/{_draftId}")" class="alert-link">@Localizer["Import_ShowDetails"]</a>
+            <a href="@($"/statement-drafts/{_vm.FirstDraftId}")" class="alert-link">@Localizer["Import_ShowDetails"]</a>
         </div>
     }
-    @if (_splitInfo != null)
+    @if (_vm?.SplitInfo != null)
     {
         <div class="alert split-info">
-            @if(_splitInfo.EffectiveMonthly)
+            @if(_vm.SplitInfo.EffectiveMonthly)
             {
-                <span>@string.Format(Localizer["Import_SplitInfo_Monthly"], _splitInfo.TotalMovements, _splitInfo.DraftCount)</span>
+                <span>@string.Format(Localizer["Import_SplitInfo_Monthly"], _vm.SplitInfo.TotalMovements, _vm.SplitInfo.DraftCount)</span>
             }
             else
             {
-                <span>@string.Format(Localizer["Import_SplitInfo_Fixed"], _splitInfo.TotalMovements, _splitInfo.DraftCount)</span>
+                <span>@string.Format(Localizer["Import_SplitInfo_Fixed"], _vm.SplitInfo.TotalMovements, _vm.SplitInfo.DraftCount)</span>
             }
-            <span class="split-details">@string.Format(Localizer["Import_SplitInfo_Details"], _splitInfo.Mode, _splitInfo.MaxEntriesPerDraft, _splitInfo.LargestDraftSize)</span>
+            <span class="split-details">@string.Format(Localizer["Import_SplitInfo_Details"], _vm.SplitInfo.Mode, _vm.SplitInfo.MaxEntriesPerDraft, _vm.SplitInfo.LargestDraftSize)</span>
         </div>
     }
 
     <div class="kpi-grid">
-        <HomeKpiGrid EditMode="@_kpiEditMode" />
+        <HomeKpiGrid EditMode="@(_vm?.KpiEditMode == true)" />
     </div>
 
     <!-- File input used for import. Normally off-screen; moved over the Import button for iOS taps. -->
@@ -74,82 +75,30 @@ else
 
 @code {
     private enum TabId { Home }
-    private List<Ribbon<TabId>.RibbonTab<TabId>> _tabs = new();
     private TabId _activeTab = TabId.Home;
     private Task OnActiveTabChanged(TabId id){ _activeTab = id; return Task.CompletedTask; }
 
-    private void BuildRibbon()
-    {
-        if (!CurrentUser.IsAuthenticated)
-        {
-            _tabs = new(); return;
-        }
-        var importGroup = new Ribbon<TabId>.RibbonGroup
-        {
-            Title = Localizer["Ribbon_Group_Import"],
-            Items = new()
-            {
-                new Ribbon<TabId>.RibbonItem
-                {
-                    Id = "home-import-btn",
-                    Label = Localizer["Ribbon_Import"],
-                    IconSvg = "<svg><use href='/icons/sprite.svg#upload'/></svg>",
-                    Size = Ribbon<TabId>.RibbonItemSize.Large,
-                    Callback = async () => { await TriggerImportOverlayAsync(); }
-                }
-            }
-        };
-        var kpiGroup = new Ribbon<TabId>.RibbonGroup
-        {
-            Title = Localizer["Ribbon_Group_Kpi"],
-            Items = new()
-            {
-                new Ribbon<TabId>.RibbonItem
-                {
-                    Label = _kpiEditMode ? Localizer["Ribbon_Kpi_Done"] : Localizer["Ribbon_Kpi_Edit"],
-                    IconSvg = _kpiEditMode ? "<svg><use href='/icons/sprite.svg#check'/></svg>" : "<svg><use href='/icons/sprite.svg#edit'/></svg>",
-                    Size = Ribbon<TabId>.RibbonItemSize.Large,
-                    Callback = () => { ToggleKpiEditMode(); return Task.CompletedTask; }
-                }
-            }
-        };
-        _tabs = new()
-        {
-            new Ribbon<TabId>.RibbonTab<TabId>
-            {
-                Id = TabId.Home,
-                Title = Localizer["Ribbon_Tab_Home"],
-                Groups = new(){ importGroup, kpiGroup }
-            }
-        };
-        StateHasChanged();
-    }
-
-    private bool _importSuccess;
-    private Guid? _draftId;
-
-    private ImportSplitInfoDto? _splitInfo;
-
-    // Upload progress state
-    private bool _uploadInProgress;
-    private int _uploadTotal;
-    private int _uploadDone;
-    private string? _currentFileName;
-    private int UploadPercent => _uploadTotal == 0 ? 0 : (int)Math.Round((double)(_uploadDone * 100m / _uploadTotal));
-
-    // --- Home KPI edit toggle (state bleibt hier) ---
-    private bool _kpiEditMode;
+    private FinanceManager.Web.ViewModels.Home.HomeViewModel? _vm;
 
     protected override async Task OnInitializedAsync()
     {
-        BuildRibbon();
+        _vm = ActivatorUtilities.CreateInstance<FinanceManager.Web.ViewModels.Home.HomeViewModel>(ServiceProvider);
+        _vm.StateChanged += VmOnStateChanged;
+        _vm.UiActionRequested += VmOnUiActionRequested;
         await Task.CompletedTask;
     }
 
-    private void ToggleKpiEditMode()
+    private void VmOnUiActionRequested(object? _, string? action)
     {
-        _kpiEditMode = !_kpiEditMode;
-        BuildRibbon();
+        if (string.Equals(action, "Import", StringComparison.OrdinalIgnoreCase))
+        {
+            _ = InvokeAsync(TriggerImportOverlayAsync);
+        }
+    }
+
+    private void VmOnStateChanged(object? _, EventArgs? __)
+    {
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private async Task TriggerImportOverlayAsync()
@@ -182,63 +131,39 @@ else
         }
         catch
         {
-            // Fallback: navigate to drafts page where import also exists
             Nav.NavigateTo("/statement-drafts");
         }
     }
 
     private async Task OnFileChanged(InputFileChangeEventArgs e)
     {
+        if (_vm == null) return;
+
         var files = e.GetMultipleFiles();
         if (files == null || files.Count == 0)
         {
-            // Hide input again
             await JS.InvokeVoidAsync("eval", "(function(){var inp=document.getElementById('home-import-input'); if(inp){inp.style.left='-9999px';inp.style.opacity='0';inp.style.pointerEvents='none';}})()");
             return;
         }
 
-        _uploadInProgress = true;
-        _uploadTotal = files.Count;
-        _uploadDone = 0;
-        _currentFileName = null;
-        StateHasChanged();
-
-        Guid? firstDraftId = null;
-        ImportSplitInfoDto? lastSplitInfo = null;
+        _vm.StartUpload(files.Count);
 
         foreach (var file in files)
         {
-            _currentFileName = file.Name;
-            StateHasChanged();
-
             await using var stream = file.OpenReadStream(10_000_000);
-            var result = await Api.StatementDrafts_UploadAsync(stream, file.Name);
-            if (result?.FirstDraft != null && !firstDraftId.HasValue)
-            {
-                firstDraftId = result.FirstDraft.DraftId;
-            }
-            if (result?.SplitInfo != null)
-            {
-                lastSplitInfo = result.SplitInfo;
-            }
-
-            _uploadDone++;
-            StateHasChanged();
+            await _vm.UploadFileAsync(stream, file.Name);
         }
-
-        _uploadInProgress = false;
-        _currentFileName = null;
 
         // Hide input again
         await JS.InvokeVoidAsync("eval", "(function(){var inp=document.getElementById('home-import-input'); if(inp){inp.style.left='-9999px';inp.style.opacity='0';inp.style.pointerEvents='none';}})()");
-
-        if (firstDraftId.HasValue)
-        {
-            _draftId = firstDraftId.Value;
-            _importSuccess = true;
-        }
-        _splitInfo = lastSplitInfo;
-        StateHasChanged();
     }
 
+    public void Dispose()
+    {
+        if (_vm != null)
+        {
+            _vm.StateChanged -= VmOnStateChanged;
+            _vm.UiActionRequested -= VmOnUiActionRequested;
+        }
+    }
 }

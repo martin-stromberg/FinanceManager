@@ -87,18 +87,56 @@ public sealed class SecuritiesListViewModel : ViewModelBase
         RaiseStateChanged();
     }
 
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
     {
-        var actions = new UiRibbonGroup(localizer["Ribbon_Group_Actions"], new List<UiRibbonItem>
+        // Actions tab
+        var actions = new List<UiRibbonAction>
         {
-            new UiRibbonItem(localizer["Ribbon_New"], "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, "New"),
-            new UiRibbonItem(localizer["Ribbon_Categories"], "<svg><use href='/icons/sprite.svg#groups'/></svg>", UiRibbonItemSize.Small, false, "Categories")
-        });
-        var filter = new UiRibbonGroup(localizer["Ribbon_Group_Filter"], new List<UiRibbonItem>
+            new UiRibbonAction(
+                "New",
+                localizer["Ribbon_New"].Value,
+                "<svg><use href='/icons/sprite.svg#plus'/></svg>",
+                UiRibbonItemSize.Large,
+                false,
+                null,
+                "New",
+                null
+            ),
+            new UiRibbonAction(
+                "Categories",
+                localizer["Ribbon_Categories"].Value,
+                "<svg><use href='/icons/sprite.svg#groups'/></svg>",
+                UiRibbonItemSize.Small,
+                false,
+                null,
+                "Categories",
+                null
+            )
+        };
+
+        // Filter tab - ToggleActive can be handled directly by VM via Callback
+        var filter = new List<UiRibbonAction>
         {
-            new UiRibbonItem(localizer["Ribbon_ToggleActive"], "<svg><use href='/icons/sprite.svg#check'/></svg>", UiRibbonItemSize.Small, false, "ToggleActive")
-        });
-        return new List<UiRibbonGroup> { actions, filter };
+            new UiRibbonAction(
+                "ToggleActive",
+                localizer["Ribbon_ToggleActive"].Value,
+                "<svg><use href='/icons/sprite.svg#check'/></svg>",
+                UiRibbonItemSize.Small,
+                false,
+                null,
+                null,
+                new Func<Task>(() => { ToggleActive(); return Task.CompletedTask; })
+            )
+        };
+
+        var tabsActions = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Actions"].Value, actions) };
+        var tabsFilter = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Filter"].Value, filter) };
+
+        return new List<UiRibbonRegister>
+        {
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabsActions),
+            new UiRibbonRegister(UiRibbonRegisterKind.Custom, tabsFilter)
+        };
     }
 
     // Public helper for UI to get display symbol attachment id (security symbol or category fallback)

@@ -4,7 +4,14 @@ using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.ViewModels;
 
-public abstract class ViewModelBase : IAsyncDisposable
+public interface IRibbonProvider
+{
+    IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer);
+    TTabEnum? GetActiveTab<TTabEnum>();
+    void SetActiveTab<TTabEnum>(TTabEnum id);
+}
+
+public abstract class ViewModelBase : IAsyncDisposable, IRibbonProvider
 {
     private readonly IServiceProvider _services;
     private readonly List<IAsyncDisposable> _children = new();
@@ -21,10 +28,14 @@ public abstract class ViewModelBase : IAsyncDisposable
     public event EventHandler? StateChanged;
     // Raised when the VM requires authentication; argument may contain a suggested returnUrl
     public event EventHandler<string?>? AuthenticationRequired;
+    // Raised when the VM wants the UI to perform an action (e.g., open file picker)
+    public event EventHandler<string?>? UiActionRequested;
 
     protected void RaiseStateChanged() => StateChanged?.Invoke(this, EventArgs.Empty);
 
     protected void RequireAuthentication(string? returnUrl = null) => AuthenticationRequired?.Invoke(this, returnUrl);
+
+    protected void RaiseUiActionRequested(string? action) => UiActionRequested?.Invoke(this, action);
 
     public bool IsAuthenticated => _currentUser.IsAuthenticated;
 
@@ -50,9 +61,28 @@ public abstract class ViewModelBase : IAsyncDisposable
 
     public virtual ValueTask InitializeAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
 
-    // Ribbon der Sub-ViewModels wird standardm‰ﬂig gemerged
-    public virtual IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
-        => _childViewModels.SelectMany(vm => vm.GetRibbon(localizer)).ToList();
+    // New ribbon API: aggregate registers from children
+    public virtual IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+    {
+        var registers = new List<UiRibbonRegister>();
+
+
+        // Aggregate registers from child viewmodels
+        foreach (var vm in _childViewModels)
+        {
+            if (vm is IRibbonProvider rp)
+            {
+                var child = rp.GetRibbonRegisters(localizer);
+                if (child != null) registers.AddRange(child);
+            }
+        }
+
+        return registers.Count == 0 ? null : registers;
+    }
+
+    // Default ActiveTab handling: VMs can override to persist/return a tab id
+    public virtual TTabEnum? GetActiveTab<TTabEnum>() => default;
+    public virtual void SetActiveTab<TTabEnum>(TTabEnum id) { }
 
     public virtual async ValueTask DisposeAsync()
     {

@@ -2,16 +2,19 @@ using FinanceManager.Shared; // IApiClient
 using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Web.ViewModels.Contacts;
 
 public sealed class ContactCategoriesViewModel : ViewModelBase
 {
     private readonly IApiClient _api;
+    private readonly NavigationManager _nav;
 
     public ContactCategoriesViewModel(IServiceProvider sp) : base(sp)
     {
         _api = sp.GetRequiredService<IApiClient>();
+        _nav = sp.GetRequiredService<NavigationManager>();
     }
 
     public bool Loaded { get; private set; }
@@ -74,19 +77,35 @@ public sealed class ContactCategoriesViewModel : ViewModelBase
         }
     }
 
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    // New unified ribbon API
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
     {
-        return new List<UiRibbonGroup>
-        {
-            new UiRibbonGroup(localizer["Ribbon_Group_Navigation"], new List<UiRibbonItem>
-            {
-                new UiRibbonItem(localizer["Ribbon_Back"], "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, "Back")
-            }),
-            new UiRibbonGroup(localizer["Ribbon_Group_Actions"], new List<UiRibbonItem>
-            {
-                new UiRibbonItem(localizer["Ribbon_New"], "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, "New")
-            })
-        };
+        var tab = new UiRibbonTab(localizer["Ribbon_Tab_ContactCategories"], new List<UiRibbonAction>());
+
+        tab.Items.Add(new UiRibbonAction(
+            Id: "back",
+            Label: localizer["Ribbon_Back"],
+            IconSvg: "<svg><use href='/icons/sprite.svg#back'/></svg>",
+            Size: UiRibbonItemSize.Large,
+            Disabled: false,
+            Tooltip: null,
+            Action: "Back",
+            Callback: () => { _nav.NavigateTo("/contacts"); return Task.CompletedTask; }
+        ));
+
+        tab.Items.Add(new UiRibbonAction(
+            Id: "new",
+            Label: localizer["Ribbon_New"],
+            IconSvg: "<svg><use href='/icons/sprite.svg#plus'/></svg>",
+            Size: UiRibbonItemSize.Large,
+            Disabled: Busy,
+            Tooltip: null,
+            Action: "New",
+            Callback: () => { _nav.NavigateTo("/contact-categories/new"); return Task.CompletedTask; }
+        ));
+
+        var register = new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { tab });
+        return new List<UiRibbonRegister> { register };
     }
 
     public sealed class CategoryItem { public Guid Id { get; set; } public string Name { get; set; } = string.Empty; public Guid? SymbolAttachmentId { get; set; } }

@@ -1,6 +1,5 @@
 using FinanceManager.Application;
 using FinanceManager.Shared; // added
-using FinanceManager.Web.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Text;

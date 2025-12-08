@@ -105,22 +105,24 @@ public sealed class ContactsViewModel : ViewModelBase
         await ResetAndReloadAsync(ct);
     }
 
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    // New ribbon API: provide registers (do not reintroduce legacy wrappers)
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
     {
-        var items = new List<UiRibbonItem>
+        var actions = new List<UiRibbonAction>
         {
-            new UiRibbonItem(localizer["Ribbon_New"], "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, "New"),
-            new UiRibbonItem(localizer["Ribbon_Reload"], "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, false, "Reload")
+            new UiRibbonAction("New", localizer["Ribbon_New"], "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, "New", null),
+            new UiRibbonAction("Reload", localizer["Ribbon_Reload"], "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, false, null, "Reload", null)
         };
+
         if (!string.IsNullOrWhiteSpace(Filter))
         {
-            items.Add(new UiRibbonItem(localizer["Ribbon_ClearFilter"], "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, false, "ClearFilter"));
+            actions.Add(new UiRibbonAction("ClearFilter", localizer["Ribbon_ClearFilter"], "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, false, null, "ClearFilter", null));
         }
-        items.Add(new UiRibbonItem(localizer["Ribbon_Categories"], "<svg><use href='/icons/sprite.svg#groups'/></svg>", UiRibbonItemSize.Small, false, "Categories"));
-        return new List<UiRibbonGroup>
-        {
-            new UiRibbonGroup(localizer["Ribbon_Group_Actions"], items)
-        };
+
+        actions.Add(new UiRibbonAction("Categories", localizer["Ribbon_Categories"], "<svg><use href='/icons/sprite.svg#groups'/></svg>", UiRibbonItemSize.Small, false, null, "Categories", null));
+
+        var tab = new UiRibbonTab(localizer["Ribbon_Group_Actions"], actions);
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { tab }) };
     }
 
     public sealed class ContactItem

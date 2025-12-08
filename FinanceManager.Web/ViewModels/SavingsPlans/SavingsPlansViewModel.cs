@@ -22,18 +22,54 @@ public sealed class SavingsPlansViewModel : ViewModelBase
     private readonly Dictionary<Guid, SavingsPlanAnalysisDto> _analysisByPlan = new();
     private readonly Dictionary<Guid, Guid?> _displaySymbolByPlan = new();
 
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    // Ribbon: provide registers/tabs/actions via the new provider API
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
     {
-        var actions = new UiRibbonGroup(localizer["Ribbon_Group_Actions"], new List<UiRibbonItem>
+        var tabs = new List<UiRibbonTab>
         {
-            new UiRibbonItem(localizer["BtnNew"], "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, "New"),
-            new UiRibbonItem(localizer["Ribbon_Categories"], "<svg><use href='/icons/sprite.svg#groups'/></svg>", UiRibbonItemSize.Small, false, "Categories")
-        });
-        var filter = new UiRibbonGroup(localizer["Ribbon_Group_Filter"], new List<UiRibbonItem>
-        {
-            new UiRibbonItem(ShowActiveOnly ? localizer["OnlyActive"] : localizer["StatusArchived"], "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, false, "ToggleActive")
-        });
-        return new List<UiRibbonGroup> { actions, filter };
+            new UiRibbonTab(localizer["Ribbon_Group_Actions"], new List<UiRibbonAction>
+            {
+                new UiRibbonAction(
+                    Id: "New",
+                    Label: localizer["BtnNew"],
+                    IconSvg: "<svg><use href='/icons/sprite.svg#plus'/></svg>",
+                    Size: UiRibbonItemSize.Large,
+                    Disabled: false,
+                    Tooltip: null,
+                    Action: "New",
+                    Callback: new Func<Task>(() => { RaiseUiActionRequested("New"); return Task.CompletedTask; })
+                ),
+                new UiRibbonAction(
+                    Id: "Categories",
+                    Label: localizer["Ribbon_Categories"],
+                    IconSvg: "<svg><use href='/icons/sprite.svg#groups'/></svg>",
+                    Size: UiRibbonItemSize.Small,
+                    Disabled: false,
+                    Tooltip: null,
+                    Action: "Categories",
+                    Callback: new Func<Task>(() => { RaiseUiActionRequested("Categories"); return Task.CompletedTask; })
+                )
+            }),
+
+            new UiRibbonTab(localizer["Ribbon_Group_Filter"], new List<UiRibbonAction>
+            {
+                new UiRibbonAction(
+                    Id: "ToggleActive",
+                    Label: ShowActiveOnly ? localizer["OnlyActive"] : localizer["StatusArchived"],
+                    IconSvg: "<svg><use href='/icons/sprite.svg#refresh'/></svg>",
+                    Size: UiRibbonItemSize.Small,
+                    Disabled: false,
+                    Tooltip: null,
+                    Action: "ToggleActive",
+                    Callback: new Func<Task>(() => { RaiseUiActionRequested("ToggleActive"); return Task.CompletedTask; })
+                )
+            })
+        };
+
+        var registers = new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
+        var baseRegs = base.GetRibbonRegisters(localizer);
+        if (baseRegs != null) registers.AddRange(baseRegs);
+        return registers;
     }
 
     public void ToggleActiveOnly()

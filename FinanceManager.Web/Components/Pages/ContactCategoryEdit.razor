@@ -16,7 +16,7 @@ ion
 @using FinanceManager.Shared.Dtos
 <PageTitle>@Localizer["PageTitle"]</PageTitle>
 
-<Ribbon TTabEnum="ContactCategoryEdit.TabId" Tabs="_tabs" ActiveTab="_activeTab" ActiveTabChanged="OnActiveTabChanged" />
+<Ribbon TTabEnum="ContactCategoryEdit.TabId" Provider="_vm" Localizer="Localizer" />
 
 <h3>@((_vm?.IsEdit ?? false) ? Localizer["TitleEdit"] : Localizer["TitleNew"])</h3>
 
@@ -31,7 +31,7 @@ else
         <ValidationSummary />
         <div style="max-width:520px;">
             <label>@Localizer["Label_Name"]</label>
-            <InputText @bind-Value="_vm!.Model.Name" @bind-Value:after="(()=>RebuildRibbon())" />
+            <InputText @bind-Value="_vm!.Model.Name" />
             <ValidationMessage For="()=>_vm!.Model.Name" />
         </div>
         @if(!string.IsNullOrEmpty(_vm?.Error))
@@ -50,79 +50,27 @@ else
 
     private ContactCategoryDetailViewModel? _vm;
 
-    // Ribbon state
+    // Ribbon state - provided by ViewModel
     private enum TabId { Category }
-    private List<Ribbon<TabId>.RibbonTab<TabId>> _tabs = new();
-    private TabId _activeTab = TabId.Category;
-    private Task OnActiveTabChanged(TabId id) { _activeTab = id; return Task.CompletedTask; }
 
     protected override async Task OnParametersSetAsync()
     {
         if (_vm is null)
         {
             _vm = ActivatorUtilities.CreateInstance<ContactCategoryDetailViewModel>(Services);
-            _vm.StateChanged += (_, __) => { RebuildRibbon(); _ = InvokeAsync(StateHasChanged); };
+            _vm.StateChanged += (_, __) => { _ = InvokeAsync(StateHasChanged); };
+            _vm.UiActionRequested += VmOnUiActionRequested;
         }
         await _vm.InitializeAsync(Id);
-        RebuildRibbon();
     }
 
-    private void RebuildRibbon()
+    private void VmOnUiActionRequested(object? sender, string? action)
     {
-        var groupsDto = _vm?.GetRibbon(Localizer) ?? new List<UiRibbonGroup>();
-        var groups = new List<Ribbon<TabId>.RibbonGroup>();
-        foreach (var g in groupsDto)
-        {
-            var items = new List<Ribbon<TabId>.RibbonItem>();
-            foreach (var it in g.Items)
-            {
-                var size = it.Size == UiRibbonItemSize.Large ? Ribbon<TabId>.RibbonItemSize.Large : Ribbon<TabId>.RibbonItemSize.Small;
-                items.Add(new Ribbon<TabId>.RibbonItem
-                {
-                    Label = it.Label,
-                    IconSvg = it.IconSvg,
-                    Size = size,
-                    Disabled = it.Disabled,
-                    Callback = () => { HandleRibbonAction(it.Action); return Task.CompletedTask; }
-                });
-            }
-            groups.Add(new Ribbon<TabId>.RibbonGroup { Title = g.Title, Items = items });
-        }
-        _tabs = new()
-        {
-            new Ribbon<TabId>.RibbonTab<TabId>
-            {
-                Id = TabId.Category,
-                Title = Localizer["Ribbon_Tab_Category"],
-                Groups = groups
-            }
-        };
-        StateHasChanged();
+        if (string.IsNullOrEmpty(action)) return;
+        _ = InvokeAsync(() => HandleVmUiAction(action!));
     }
 
-    private async Task SaveAsync()
-    {
-        var ok = await _vm!.SaveAsync();
-        if (ok)
-        {
-            Nav.NavigateTo("/contact-categories", true);
-        }
-        RebuildRibbon();
-    }
-
-    private async Task DeleteAsync()
-    {
-        var ok = await _vm!.DeleteAsync();
-        if (ok)
-        {
-            Nav.NavigateTo("/contact-categories", true);
-        }
-        RebuildRibbon();
-    }
-
-    private void Back() => Nav.NavigateTo("/contact-categories");
-
-    private void HandleRibbonAction(string action)
+    private void HandleVmUiAction(string action)
     {
         switch (action)
         {
@@ -130,14 +78,57 @@ else
                 Back();
                 break;
             case "Save":
+                // Some VMs may request Save via UI event; call Save if needed
                 _ = SaveAsync();
                 break;
             case "Delete":
                 _ = DeleteAsync();
                 break;
+            case "Saved":
+                Nav.NavigateTo("/contact-categories", true);
+                break;
+            case "Deleted":
+                Nav.NavigateTo("/contact-categories", true);
+                break;
         }
     }
 
+    private async Task SaveAsync()
+    {
+        if (_vm == null) return;
+        var ok = await _vm.SaveAsync();
+        if (ok)
+        {
+            Nav.NavigateTo("/contact-categories", true);
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (_vm == null) return;
+        var ok = await _vm.DeleteAsync();
+        if (ok)
+        {
+            Nav.NavigateTo("/contact-categories", true);
+        }
+    }
+
+    private void Back() => Nav.NavigateTo("/contact-categories");
+
     private async Task OnSymbolUploaded(Guid aid) { if (_vm?.Id != null) { _vm.Model.SymbolAttachmentId = aid; StateHasChanged(); } }
     private async Task OnSymbolCleared() { if (_vm?.Id != null) { _vm.Model.SymbolAttachmentId = null; StateHasChanged(); } }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_vm != null)
+            {
+                _vm.StateChanged -= (_, __) => { _ = InvokeAsync(StateHasChanged); };
+                _vm.UiActionRequested -= VmOnUiActionRequested;
+                await _vm.DisposeAsync();
+            }
+        }
+        catch { }
+    }
 }

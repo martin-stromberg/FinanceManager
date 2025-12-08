@@ -18,10 +18,7 @@
 @inject FinanceManager.Shared.IApiClient Api
 <PageTitle>@Localizer["PageTitle"]</PageTitle>
 
-<Ribbon TTabEnum="ContactDetail.TabId"
-        Tabs="_tabs"
-        ActiveTab="_activeTab"
-        ActiveTabChanged="OnActiveTabChanged" />
+<Ribbon TTabEnum="ContactDetail.TabId" Provider="_vm" Localizer="Localizer" />
 
 <h1>@Localizer["Title"]</h1>
 
@@ -42,23 +39,30 @@ else
         <div>
             <div>
                 <label>@Localizer["LabelName"]</label>
-                <InputText @bind-Value="_vm!.Name" @bind-Value:after="(()=>RebuildRibbon())" />
+                <InputText @bind-Value="_vm!.Name" @bind-Value:after="(()=>_ = InvokeAsync(StateHasChanged))" />
                 <ValidationMessage For="()=>_vm!.Name" />
             </div>
 
             <div>
                 <label>@Localizer["LabelType"]</label>
-                <InputSelect @bind-Value="_vm!.Type" @bind-Value:after="(()=>RebuildRibbon())">
-                    @foreach (var t in Enum.GetValues<ContactType>())
-                    {
-                        <option value="@t">@t</option>
-                    }
-                </InputSelect>
+                @if (_typeLocked)
+                {
+                    <div style="padding:.35rem .5rem;border:1px solid var(--border);border-radius:4px;opacity:.8;">@_vm!.Type</div>
+                }
+                else
+                {
+                    <InputSelect @bind-Value="_vm!.Type" @bind-Value:after="(()=>_ = InvokeAsync(StateHasChanged))">
+                        @foreach (var t in Enum.GetValues<ContactType>())
+                        {
+                            <option value="@t">@t</option>
+                        }
+                    </InputSelect>
+                }
             </div>
 
             <div>
                 <label>@Localizer["LabelGroup"]</label>
-                <InputSelect @bind-Value="_vm!.CategoryId" @bind-Value:after="(()=>RebuildRibbon())">
+                <InputSelect @bind-Value="_vm!.CategoryId" @bind-Value:after="(()=>_ = InvokeAsync(StateHasChanged))">
                     <option value="">-- @Localizer["None"] --</option>
                     @foreach (var g in _vm!.Categories)
                     {
@@ -73,7 +77,7 @@ else
             </div>
 
             <div>
-                <label><input type="checkbox" @bind="_vm!.IsPaymentIntermediary" @bind:after="(()=>RebuildRibbon())" /> @Localizer["LabelIntermediary"]</label>
+                <label><input type="checkbox" @bind="_vm!.IsPaymentIntermediary" @bind:after="(()=>_ = InvokeAsync(StateHasChanged))" /> @Localizer["LabelIntermediary"]</label>
             </div>
 
             <div style="margin-top:.75rem;width:220px;">
@@ -147,17 +151,20 @@ else
     [Parameter] public Guid? Id { get; set; }
     [SupplyParameterFromQuery(Name="back")] public string? BackNav { get; set; }
 
-    // Ribbon state
-    private enum TabId { Contact }
-    private List<Ribbon<TabId>.RibbonTab<TabId>> _tabs = new();
-    private TabId _activeTab = TabId.Contact;
-    private Task OnActiveTabChanged(TabId t) { _activeTab = t; return Task.CompletedTask; }
-
     private ContactDetailViewModel? _vm;
 
     private Guid? _prefillDraftId;
     private Guid? _prefillEntryId;
     private string? _pendingPrefillName;
+    private ContactType? _pendingPrefillType;
+    private bool _typeLocked;
+    private Guid? _originAccountId;
+    private string? _originAccName;
+    private string? _originAccType;
+    private string? _originAccIban;
+    private string? _originAccExp;
+
+    private enum TabId { Contact }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -174,6 +181,7 @@ else
             _vm = ActivatorUtilities.CreateInstance<ContactDetailViewModel>(Services);
             _vm.StateChanged += VmOnStateChanged;
             _vm.AuthenticationRequired += VmOnAuthenticationRequired;
+            _vm.UiActionRequested += VmOnUiActionRequested;
             _vm.ForContact(Id);
 
             if (_vm.IsAuthenticated)
@@ -183,12 +191,16 @@ else
                 {
                     _vm.Name = _pendingPrefillName!;
                 }
+                if (_vm.IsNew && _pendingPrefillType.HasValue)
+                {
+                    _vm.Type = _pendingPrefillType.Value;
+                    _typeLocked = true;
+                }
             }
             else
             {
                 VmOnAuthenticationRequired(_vm, Navigation.ToBaseRelativePath(Navigation.Uri));
             }
-            RebuildRibbon();
         }
     }
 
@@ -201,41 +213,46 @@ else
 
     private void VmOnStateChanged(object? sender, EventArgs e)
     {
-        RebuildRibbon();
         _ = InvokeAsync(StateHasChanged);
     }
 
-    private void RebuildRibbon()
+    private void VmOnUiActionRequested(object? sender, string? action)
     {
-        var groupsDto = _vm?.GetRibbon(Localizer) ?? new List<UiRibbonGroup>();
-        var groups = new List<Ribbon<TabId>.RibbonGroup>();
-        foreach (var g in groupsDto)
+        if (string.IsNullOrEmpty(action)) return;
+        _ = InvokeAsync(() => HandleVmUiAction(action!));
+    }
+
+    private void HandleVmUiAction(string action)
+    {
+        switch (action)
         {
-            var items = new List<Ribbon<TabId>.RibbonItem>();
-            foreach (var it in g.Items)
-            {
-                var size = it.Size == UiRibbonItemSize.Large ? Ribbon<TabId>.RibbonItemSize.Large : Ribbon<TabId>.RibbonItemSize.Small;
-                items.Add(new Ribbon<TabId>.RibbonItem
-                {
-                    Label = it.Label,
-                    IconSvg = it.IconSvg,
-                    Size = size,
-                    Disabled = it.Disabled,
-                    Callback = () => { HandleRibbonAction(it.Action); return Task.CompletedTask; }
-                });
-            }
-            groups.Add(new Ribbon<TabId>.RibbonGroup { Title = g.Title, Items = items });
+            case "Saved":
+                // If prefill assignment happened page navigation is performed by AfterSaveAssignToDraftIfNeeded
+                if (_vm?.IsNew != true) Navigation.NavigateTo($"/contacts/{_vm?.ContactId}", forceLoad: true);
+                break;
+            case "Deleted":
+                Navigation.NavigateTo("/contacts", forceLoad: true);
+                break;
+            case "Back":
+                if (!string.IsNullOrWhiteSpace(BackNav)) { Navigation.NavigateTo(BackNav!, forceLoad: true); } else { Navigation.NavigateTo("/contacts", forceLoad: true); }
+                break;
+            case "Save":
+                _ = OnSaveAsync();
+                break;
+            case "Delete":
+                _ = OnDeleteAsync();
+                break;
         }
-        _tabs = new()
+    }
+
+    private async Task OnDeleteAsync()
+    {
+        if (_vm is null || _vm.IsNew) { return; }
+        await _vm.DeleteAsync();
+        if (string.IsNullOrWhiteSpace(_vm.Error))
         {
-            new Ribbon<TabId>.RibbonTab<TabId>
-            {
-                Id = TabId.Contact,
-                Title = Localizer["Ribbon_Tab_Contact"],
-                Groups = groups
-            }
-        };
-        StateHasChanged();
+            Navigation.NavigateTo("/contacts", forceLoad: true);
+        }
     }
 
     private async Task OnSaveAsync()
@@ -270,67 +287,29 @@ else
             catch { }
             Navigation.NavigateTo($"/statement-drafts/{_prefillDraftId}/entries/{_prefillEntryId}", forceLoad: true);
         }
+        else if (_originAccountId.HasValue)
+        {
+            // Link contact to existing account by navigating back to account detail with the bankContactId
+            var url = $"/accounts/{_originAccountId.Value}?bankContactId={contactId}";
+            Navigation.NavigateTo(url, forceLoad: true);
+        }
+        else if (!string.IsNullOrWhiteSpace(_originAccName) || !string.IsNullOrWhiteSpace(_originAccIban))
+        {
+            // Navigate to account creation with prefilled values and the new contact id
+            var q = $"?accName={Uri.EscapeDataString(_originAccName ?? string.Empty)}&accType={Uri.EscapeDataString(_originAccType ?? string.Empty)}&accIban={Uri.EscapeDataString(_originAccIban ?? string.Empty)}&accExp={Uri.EscapeDataString(_originAccExp ?? string.Empty)}&bankContactId={contactId}";
+            Navigation.NavigateTo($"/accounts/new{q}", forceLoad: true);
+        }
+        else if (!string.IsNullOrWhiteSpace(BackNav) && Uri.UnescapeDataString(BackNav!).Contains("/accounts/new", StringComparison.OrdinalIgnoreCase))
+        {
+            // Fallback: invoked from accounts/new, no prefill provided -> navigate back with selected bank contact
+            Navigation.NavigateTo($"/accounts/new?bankContactId={contactId}", forceLoad: true);
+        }
         else
         {
             if (_vm?.IsNew == true)
             {
                 Navigation.NavigateTo("/contacts", forceLoad: true);
             }
-        }
-    }
-
-    private void HandleRibbonAction(string action)
-    {
-        switch (action)
-        {
-            case "Back":
-                Back();
-                break;
-            case "Save":
-                _ = OnSaveAsync();
-                break;
-            case "Delete":
-                _ = DeleteAsync();
-                break;
-            case "OpenBankAccounts":
-                if (_vm?.ContactId is Guid cid) { Navigation.NavigateTo($"/accounts?bankContactId={cid}"); }
-                break;
-            case "OpenMerge":
-                _vm?.OpenMergeDialog();
-                break;
-            case "OpenPostings":
-                if (_vm?.ContactId is Guid cid2) { Navigation.NavigateTo($"/postings/contact/{cid2}"); }
-                break;
-            case "OpenAttachments":
-                if (_vm is not null) { _vm.ShowAttachments = true; }
-                break;
-        }
-    }
-
-    private async Task DeleteAsync()
-    {
-        if (_vm is null || _vm.IsNew) { return; }
-        await _vm.DeleteAsync();
-        if (string.IsNullOrWhiteSpace(_vm.Error))
-        {
-            Back();
-        }
-    }
-
-    private void Back()
-    {
-        if (!string.IsNullOrWhiteSpace(BackNav))
-        {
-            Navigation.NavigateTo(Uri.UnescapeDataString(BackNav!), forceLoad: true);
-            return;
-        }
-        if (_prefillDraftId.HasValue && _prefillEntryId.HasValue)
-        {
-            Navigation.NavigateTo($"/statement-drafts/{_prefillDraftId}/entries/{_prefillEntryId}", forceLoad: true);
-        }
-        else
-        {
-            Navigation.NavigateTo("/contacts", forceLoad: true);
         }
     }
 
@@ -343,6 +322,19 @@ else
         {
             _pendingPrefillName = prefillName;
         }
+        var typeStr = query.Get("type");
+        if (!string.IsNullOrWhiteSpace(typeStr))
+        {
+            if (Enum.TryParse<ContactType>(typeStr, ignoreCase: true, out var t))
+            {
+                _pendingPrefillType = t;
+            }
+        }
+        if (Guid.TryParse(query.Get("accountId"), out var aid)) { _originAccountId = aid; }
+        _originAccName = query.Get("accName");
+        _originAccType = query.Get("accType");
+        _originAccIban = query.Get("accIban");
+        _originAccExp = query.Get("accExp");
         if (Guid.TryParse(query.Get("draftId"), out var did)) { _prefillDraftId = did; }
         if (Guid.TryParse(query.Get("entryId"), out var eid)) { _prefillEntryId = eid; }
         BackNav = query.Get("back");

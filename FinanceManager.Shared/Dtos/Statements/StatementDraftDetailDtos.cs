@@ -17,5 +17,10 @@ public sealed record StatementDraftDetailDto(
     Guid? UploadGroupId,
     IReadOnlyList<StatementDraftEntryDto> Entries,
     Guid? PrevInUpload,
-    Guid? NextInUpload
+    Guid? NextInUpload,
+    IReadOnlyDictionary<Guid, Guid?>? ContactSymbols = null,
+    IReadOnlyDictionary<Guid, Guid?>? SavingsPlanSymbols = null,
+    IReadOnlyDictionary<Guid, string>? SavingsPlanNames = null,
+    IReadOnlyDictionary<Guid, Guid?>? SecuritySymbols = null,
+    IReadOnlyDictionary<Guid, string>? SecurityNames = null
 );

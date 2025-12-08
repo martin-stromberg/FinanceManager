@@ -14,7 +14,7 @@
 @using FinanceManager.Domain.Attachments
 <PageTitle>@Localizer["PageTitle"]</PageTitle>
 
-<Ribbon TTabEnum="Contacts.TabId" Tabs="_tabs" ActiveTab="_activeTab" ActiveTabChanged="OnActiveTabChanged" />
+<Ribbon TTabEnum="Contacts.TabId" Provider="_vm" Localizer="Localizer" />
 
 <h1>@Localizer["Title"]</h1>
 
@@ -85,10 +85,8 @@ else
 }
 
 @code {
+    // Ribbon state - required for TTabEnum resolution
     private enum TabId { Contacts }
-    private List<Ribbon<TabId>.RibbonTab<TabId>> _tabs = new();
-    private TabId _activeTab = TabId.Contacts;
-    private Task OnActiveTabChanged(TabId id){ _activeTab = id; return Task.CompletedTask; }
 
     private ContactsViewModel? _vm;
 
@@ -112,7 +110,6 @@ else
         _vm.AuthenticationRequired += VmOnAuthenticationRequired;
 
         await _vm.InitializeAsync();
-        BuildRibbon();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -162,70 +159,8 @@ else
 
     private void VmOnStateChanged(object? sender, EventArgs e)
     {
-        BuildRibbon();
         _ = InvokeAsync(StateHasChanged);
     }
-
-    private void BuildRibbon()
-    {
-        var groupsDto = _vm?.GetRibbon(Localizer) ?? new List<UiRibbonGroup>();
-        var groups = new List<Ribbon<TabId>.RibbonGroup>();
-        foreach (var g in groupsDto)
-        {
-            var items = new List<Ribbon<TabId>.RibbonItem>();
-            foreach (var it in g.Items)
-            {
-                var size = it.Size == UiRibbonItemSize.Large ? Ribbon<TabId>.RibbonItemSize.Large : Ribbon<TabId>.RibbonItemSize.Small;
-                items.Add(new Ribbon<TabId>.RibbonItem
-                {
-                    Label = it.Label,
-                    IconSvg = it.IconSvg,
-                    Size = size,
-                    Disabled = it.Disabled,
-                    Callback = () => { HandleRibbonAction(it.Action); return Task.CompletedTask; }
-                });
-            }
-            groups.Add(new Ribbon<TabId>.RibbonGroup { Title = g.Title, Items = items });
-        }
-        _tabs = new()
-        {
-            new Ribbon<TabId>.RibbonTab<TabId>
-            {
-                Id = TabId.Contacts,
-                Title = Localizer["Ribbon_Tab_Contacts"],
-                Groups = groups
-            }
-        };
-        StateHasChanged();
-    }
-
-    private void HandleRibbonAction(string action)
-    {
-        switch (action)
-        {
-            case "New":
-                CreateNew();
-                break;
-            case "Reload":
-                _ = _vm?.ResetAndReloadAsync();
-                break;
-            case "ClearFilter":
-                _filter = string.Empty;
-                _ = _vm?.SetFilterAsync(_filter);
-                break;
-            case "Categories":
-                Navigation.NavigateTo("/contact-categories");
-                break;
-        }
-    }
-
-    private void CreateNew() => OpenDetail(null);
-    private void OpenDetail(Guid? id)
-    {
-        var url = id == null ? "/contacts/new" : $"/contacts/{id}";
-        Navigation.NavigateTo(url);
-    }
-    private void OpenDetail(Guid id) => Navigation.NavigateTo($"/contacts/{id}");
 
     private async void OnFilterAfterChanged()
     {
@@ -241,6 +176,13 @@ else
             return;
         }
         await (_vm?.SetFilterAsync(_filter) ?? Task.CompletedTask);
-        BuildRibbon();
     }
+
+    private void CreateNew() => OpenDetail(null);
+    private void OpenDetail(Guid? id)
+    {
+        var url = id == null ? "/contacts/new" : $"/contacts/{id}";
+        Navigation.NavigateTo(url);
+    }
+    private void OpenDetail(Guid id) => Navigation.NavigateTo($"/contacts/{id}");
 }

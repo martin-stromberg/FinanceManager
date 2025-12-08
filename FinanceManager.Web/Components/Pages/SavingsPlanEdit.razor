@@ -18,7 +18,7 @@ s
 @inject FinanceManager.Shared.IApiClient Api
 <PageTitle>@Localizer["PageTitle"]</PageTitle>
 
-<Ribbon TTabEnum="SavingsPlanEdit.TabId" Tabs="_tabs" ActiveTab="_activeTab" ActiveTabChanged="OnActiveTabChanged" />
+<Ribbon TTabEnum="SavingsPlanEdit.TabId" Provider="_vm" Localizer="Localizer" />
 
 <h3>@(_vm?.IsEdit == true ? Localizer["TitleEdit"] : Localizer["TitleNew"])</h3>
 
@@ -27,12 +27,12 @@ s
     <ValidationSummary />
     <div>
         <label>@Localizer["LabelName"]</label>
-        <InputText @bind-Value="_vm!.Model.Name" @bind-Value:after="(()=>RebuildRibbon())" />
+        <InputText @bind-Value="_vm!.Model.Name" @bind-Value:after="(()=>_ = InvokeAsync(StateHasChanged))" />
         <ValidationMessage For="() => _vm!.Model.Name" />
     </div>
     <div>
         <label>@Localizer["LabelType"]</label>
-        <InputSelect @bind-Value="_vm!.Model.Type" @bind-Value:after="(()=>RebuildRibbon())">
+        <InputSelect @bind-Value="_vm!.Model.Type" @bind-Value:after="(()=>_ = InvokeAsync(StateHasChanged))">
             @foreach (var t in Enum.GetValues<SavingsPlanType>())
             {
                 <option value="@t">@Localizer[$"Type_{t}"]</option>
@@ -141,83 +141,40 @@ s
     private SavingsPlanEditViewModel? _vm;
     private bool _showAttachments;
 
-    // Ribbon state
     private enum TabId { SavingsPlan }
-    private List<Ribbon<TabId>.RibbonTab<TabId>> _tabs = new();
-    private TabId _activeTab = TabId.SavingsPlan;
-    private Task OnActiveTabChanged(TabId id){ _activeTab = id; return Task.CompletedTask; }
 
     protected override async Task OnParametersSetAsync()
     {
         if (_vm is null)
         {
             _vm = ActivatorUtilities.CreateInstance<SavingsPlanEditViewModel>(Services);
-            _vm.StateChanged += (_, __) => { RebuildRibbon(); _ = InvokeAsync(StateHasChanged); };
+            _vm.StateChanged += (_, __) => { _ = InvokeAsync(StateHasChanged); };
+            _vm.UiActionRequested += VmOnUiActionRequested;
         }
         await _vm.InitializeAsync(Id, BackNav, DraftId, EntryId, PrefillName);
-        RebuildRibbon();
     }
 
-    private void RebuildRibbon()
+    private void VmOnUiActionRequested(object? sender, string? action)
     {
-        var groupsDto = _vm?.GetRibbon(Localizer) ?? new List<UiRibbonGroup>();
-        var groups = new List<Ribbon<TabId>.RibbonGroup>();
-        foreach (var g in groupsDto)
-        {
-            var items = new List<Ribbon<TabId>.RibbonItem>();
-            foreach (var it in g.Items)
-            {
-                var size = it.Size == UiRibbonItemSize.Large ? Ribbon<TabId>.RibbonItemSize.Large : Ribbon<TabId>.RibbonItemSize.Small;
-                items.Add(new Ribbon<TabId>.RibbonItem
-                {
-                    Label = it.Label,
-                    IconSvg = it.IconSvg,
-                    Size = size,
-                    Disabled = it.Disabled,
-                    Callback = () => { HandleRibbonAction(it.Action); return Task.CompletedTask; }
-                });
-            }
-            groups.Add(new Ribbon<TabId>.RibbonGroup { Title = g.Title, Items = items });
-        }
-        _tabs = new()
-        {
-            new Ribbon<TabId>.RibbonTab<TabId>
-            {
-                Id = TabId.SavingsPlan,
-                Title = Localizer["Ribbon_Tab_SavingsPlan"],
-                Groups = groups
-            }
-        };
-        StateHasChanged();
+        if (string.IsNullOrEmpty(action)) return;
+        _ = InvokeAsync(() => HandleVmUiAction(action!));
     }
 
-    private void HandleRibbonAction(string action)
+    private void HandleVmUiAction(string action)
     {
         switch (action)
         {
+            case "Saved":
+                // navigation similar to SaveAsync
+                if (_vm == null) return;
+                if (_vm.IsEdit) { Nav.NavigateTo($"/savings-plans/{_vm.Id}", true); }
+                else if (_vm.ReturnDraftId != null && _vm.ReturnEntryId != null) { Nav.NavigateTo($"/statement-drafts/{_vm.ReturnDraftId}/entries/{_vm.ReturnEntryId}", true); }
+                break;
+            case "Deleted":
+                Nav.NavigateTo("/savings-plans", true);
+                break;
             case "Back":
                 Back();
-                break;
-            case "Save":
-                _ = SaveAsync();
-                break;
-            case "Archive":
-                _ = ArchiveAsync();
-                break;
-            case "Delete":
-                _ = DeleteAsync();
-                break;
-            case "Recalculate":
-                _ = _vm!.LoadAnalysisAsync();
-                break;
-            case "Categories":
-                OpenCategoryList();
-                break;
-            case "Postings":
-                OpenPostings();
-                break;
-            case "Attachments":
-                OpenAttachments();
                 break;
         }
     }
@@ -227,7 +184,6 @@ s
         var dto = await _vm!.SaveAsync();
         if (dto is null)
         {
-            RebuildRibbon();
             return;
         }
         if (_vm!.IsEdit)
@@ -251,7 +207,6 @@ s
                 Nav.NavigateTo($"/savings-plans/{dto.Id}", true);
             }
         }
-        RebuildRibbon();
     }
 
     private async Task ArchiveAsync()
@@ -261,7 +216,6 @@ s
         {
             Nav.NavigateTo("/savings-plans", true);
         }
-        RebuildRibbon();
     }
 
     private async Task DeleteAsync()
@@ -271,7 +225,6 @@ s
         {
             Nav.NavigateTo("/savings-plans", true);
         }
-        RebuildRibbon();
     }
 
     private void Back()
@@ -302,4 +255,4 @@ s
 
     private async Task OnSymbolUploaded(Guid aid) { if (_vm?.Id != null) { await Api.SavingsPlans_SetSymbolAsync(_vm.Id!.Value, aid); _vm!.Model.SymbolAttachmentId = aid; StateHasChanged(); } }
     private async Task OnSymbolCleared() { if (_vm?.Id != null) { await Api.SavingsPlans_ClearSymbolAsync(_vm.Id!.Value); _vm!.Model.SymbolAttachmentId = null; StateHasChanged(); } }
-}}
+}

@@ -150,38 +150,42 @@ public sealed class SecurityPricesViewModel : ViewModelBase
         }
     }
 
-    // Ribbon-Struktur der Seite (wird mit Sub-VMs gemerged)
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(Microsoft.Extensions.Localization.IStringLocalizer localizer)
+    // Ribbon: provide registers/tabs/actions via the new provider API
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
-        var groups = new List<UiRibbonGroup>
+        var tabs = new List<UiRibbonTab>
         {
-            new UiRibbonGroup(
-                localizer["Ribbon_Group_Navigation"],
-                new List<UiRibbonItem>
-                {
-                    new UiRibbonItem(
-                        localizer["Ribbon_Back"],
-                        "<svg><use href='/icons/sprite.svg#back'/></svg>",
-                        UiRibbonItemSize.Large,
-                        false,
-                        "Back")
-                }),
-            new UiRibbonGroup(
-                localizer["Ribbon_Group_Actions"],
-                new List<UiRibbonItem>
-                {
-                    new UiRibbonItem(
-                        localizer["Ribbon_Backfill"],
-                        "<svg><use href='/icons/sprite.svg#postings'/></svg>",
-                        UiRibbonItemSize.Large,
-                        Loading,
-                        "Backfill")
-                })
+            new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
+            {
+                new UiRibbonAction(
+                    Id: "Back",
+                    Label: localizer["Ribbon_Back"],
+                    IconSvg: "<svg><use href='/icons/sprite.svg#back'/></svg>",
+                    Size: UiRibbonItemSize.Large,
+                    Disabled: false,
+                    Tooltip: null,
+                    Action: "Back",
+                    Callback: new Func<Task>(() => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })
+                )
+            }),
+            new UiRibbonTab(localizer["Ribbon_Group_Actions"], new List<UiRibbonAction>
+            {
+                new UiRibbonAction(
+                    Id: "Backfill",
+                    Label: localizer["Ribbon_Backfill"],
+                    IconSvg: "<svg><use href='/icons/sprite.svg#postings'/></svg>",
+                    Size: UiRibbonItemSize.Large,
+                    Disabled: Loading,
+                    Tooltip: null,
+                    Action: "Backfill",
+                    Callback: new Func<Task>(() => { RaiseUiActionRequested("Backfill"); return Task.CompletedTask; })
+                )
+            })
         };
 
-        var merged = base.GetRibbon(localizer);
-        if (merged.Count > 0) { groups.AddRange(merged); }
-
-        return groups;
+        var registers = new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
+        var baseRegs = base.GetRibbonRegisters(localizer);
+        if (baseRegs != null) registers.AddRange(baseRegs);
+        return registers;
     }
 }

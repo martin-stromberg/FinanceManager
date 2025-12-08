@@ -16,7 +16,7 @@
 @inject IServiceProvider Services
 <PageTitle>@Localizer["PageTitle"]</PageTitle>
 
-<Ribbon TTabEnum="AccountDetail.TabId" Tabs="_tabs" ActiveTab="_activeTab" ActiveTabChanged="OnActiveTabChanged" />
+<Ribbon TTabEnum="AccountDetail.TabId" Provider="_vm" Localizer="Localizer" />
 
 <h1>@((_vm?.IsNew ?? (Id is null)) ? Localizer["TitleNew"] : Localizer["TitleEdit"])</h1>
 
@@ -36,11 +36,11 @@ else
         <div style="display:grid;gap:.6rem;max-width:520px;">
             <div>
                 <label>@Localizer["LabelName"]</label><br />
-                <InputText @bind-Value="_vm!.Name" @bind-Value:after="(()=>RebuildRibbon())" />
+                <InputText @bind-Value="_vm!.Name" />
             </div>
             <div>
                 <label>@Localizer["LabelType"]</label><br />
-                <select @bind="_vm!.Type" @bind:after="(()=>RebuildRibbon())">
+                <select @bind="_vm!.Type">
                     <option value="Giro">@Localizer["Type_Giro"]</option>
                     <option value="Savings">@Localizer["Type_Savings"]</option>
                 </select>
@@ -51,14 +51,30 @@ else
             </div>
             <div>
                 <label>@Localizer["LabelBankContact"]</label><br />
-                <select @bind="_vm!.BankContactId" @bind:after="(()=>RebuildRibbon())">
-                    <option value="">-- @Localizer["Select"] --</option>
-                    @foreach (var c in _vm!.BankContacts)
-                    {
-                        <option value="@c.Id">@c.Name</option>
-                    }
-                </select>
-            </div>
+                <div class="contact-combobox" style="display:grid;grid-template-columns:1fr auto;align-items:start;gap:.5rem;max-width:420px;">
+                    <div style="position:relative;min-width:0;">
+                        <input type="text" style="width:95%;" @bind="_contactFilter" @bind:event="oninput" @bind:after="(()=>{OnContactFilterChanged();})" placeholder='@Localizer["Placeholder_FilterContacts"]' @onfocus="ShowContactDropdown" />
+                        <input type="hidden" value="@_vm!.BankContactId" />
+                        @if (_contactDropdownVisible)
+                        {
+                            <ul class="combo-list" style="list-style:none;margin:0;padding:.25rem .25rem;position:absolute;z-index:10;left:0;right:0;max-height:9.5rem;overflow:auto;background:#222;border:1px solid #444;border-radius:4px;box-shadow:0 3px 12px #0005;">
+                                <li style="padding:.3rem .4rem;cursor:pointer;" @onclick="(()=>SelectBankContact(null))" class="@( _vm!.BankContactId==null?"active":string.Empty)">-- @Localizer["None"] --</li>
+                                @foreach(var c in FilteredBankContacts)
+                                {
+                                    <li style="padding:.3rem .4rem;cursor:pointer;" @onclick="(()=>SelectBankContact(c.Id))" class="@( _vm!.BankContactId==c.Id?"active":string.Empty)" title="@c.Name">@c.Name</li>
+                                }
+                                @if (!FilteredBankContacts.Any())
+                                {
+                                    <li style="padding:.3rem .4rem;opacity:.6;">@Localizer["NoMatches"]</li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                    <div>
+                        <button class="icon-btn" title='@Localizer["BtnNewContact"]' aria-label='@Localizer["BtnNewContact"]' @onclick="OpenCreateBankContact"><svg><use href="/icons/sprite.svg#plus" /></svg></button>
+                    </div>
+                </div>
+             </div>
             @if (!_vm!.BankContactId.HasValue)
             {
                 <div>
@@ -107,7 +123,7 @@ else
                 <h3 style="margin:0;font-size:1rem;">@Localizer["Attachments_Title"]</h3>
                 <button class="icon-btn" title='@Localizer["Btn_Close"]' @onclick="(()=> _vm!.ShowAttachments=false)"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
             </div>
-            <AttachmentsPanel ParentKind="@AttachmentEntityKind.Account" ParentId="@Id!.Value" />
+            <AttachmentsPanel ParentKind="AttachmentEntityKind.Account" ParentId="@Id!.Value" />
         </div>
     </div>
 }
@@ -120,25 +136,76 @@ else
                 <h3 style="margin:0;font-size:1rem;">@Localizer["UploadSymbol"]</h3>
                 <button class="icon-btn" title='@Localizer["Btn_Close"]' @onclick="(()=> _attachmentsPanelVisible=false)"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
             </div>
-            <AttachmentsPanel ParentKind="@AttachmentEntityKind.Account" ParentId="@Id!.Value" OnUploaded="OnSymbolUploaded" AllowedMimeTypes="@(new[] { "image/png", "image/jpeg", "image/svg+xml" })" />
+            <AttachmentsPanel ParentKind="AttachmentEntityKind.Account" ParentId="@Id!.Value" OnUploaded="OnSymbolUploaded" AllowedMimeTypes="@(new[] { "image/png", "image/jpeg", "image/svg+xml" })" />
         </div>
     </div>
 }
 
 @code {
+    public enum TabId { Account }
+
     [Parameter] public Guid? Id { get; set; }
     [SupplyParameterFromQuery(Name="back")] public string? BackNav { get; set; }
-
-    // Ribbon state
-    private enum TabId { Account }
-    private List<Ribbon<TabId>.RibbonTab<TabId>> _tabs = new();
-    private TabId _activeTab = TabId.Account;
-    private Task OnActiveTabChanged(TabId id){ _activeTab = id; return Task.CompletedTask; }
 
     private AccountDetailViewModel? _vm;
     private bool _attachmentsPanelVisible;
     private string? _symbolError;
     private string? _symbolPreviewUrl;
+
+    // Bank contact combobox state
+    private string _contactFilter = string.Empty;
+    private bool _contactDropdownVisible;
+    private CancellationTokenSource? _contactFilterCts;
+    private IEnumerable<AccountDetailViewModel.BankContactVm> FilteredBankContacts => string.IsNullOrWhiteSpace(_contactFilter)
+        ? _vm!.BankContacts
+        : _vm!.BankContacts.Where(c => c.Name.Contains(_contactFilter, StringComparison.OrdinalIgnoreCase));
+
+    private void ShowContactDropdown()
+    {
+        _contactDropdownVisible = true;
+        StateHasChanged();
+    }
+
+    private async void OnContactFilterChanged()
+    {
+        _contactFilterCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _contactFilterCts = cts;
+        try { await Task.Delay(250, cts.Token); } catch (TaskCanceledException) { return; }
+        _contactDropdownVisible = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void SelectBankContact(Guid? id)
+    {
+        _vm!.BankContactId = id;
+        _contactDropdownVisible = false;
+        var name = id.HasValue ? _vm!.BankContacts.FirstOrDefault(c => c.Id == id)?.Name ?? string.Empty : string.Empty;
+        _contactFilter = name;
+        StateHasChanged();
+    }
+
+    private void OpenCreateBankContact()
+    {
+        var name = _contactFilter ?? string.Empty;
+        // If account already exists, pass its id for post-save linking; otherwise pass current form values to prefill account creation
+        var back = "/accounts/new";
+        var common = $"prefillName={Uri.EscapeDataString(name)}&type=Bank";
+        if (Id.HasValue)
+        {
+            var q = $"?{common}&accountId={Id.Value}&back={Uri.EscapeDataString(back)}";
+            Nav.NavigateTo($"/contacts/new{q}");
+        }
+        else
+        {
+            var type = (_vm != null ? _vm.Type.ToString() : "Giro");
+            var iban = _vm?.Iban ?? string.Empty;
+            var exp = (_vm != null ? _vm.SavingsPlanExpectation.ToString() : string.Empty);
+            var accPrefill = $"&accName={Uri.EscapeDataString(_vm?.Name ?? string.Empty)}&accType={Uri.EscapeDataString(type)}&accIban={Uri.EscapeDataString(iban)}&accExp={Uri.EscapeDataString(exp)}";
+            var q = $"?{common}{accPrefill}&back={Uri.EscapeDataString(back)}";
+            Nav.NavigateTo($"/contacts/new{q}");
+        }
+    }
 
     private bool _pendingRedirect;
     private string? _pendingRedirectUrl;
@@ -151,16 +218,44 @@ else
             {
                 _vm.StateChanged -= VmOnStateChanged;
                 _vm.AuthenticationRequired -= VmOnAuthenticationRequired;
+                _vm.UiActionRequested -= VmOnUiActionRequested;
                 await _vm.DisposeAsync();
             }
             _vm = ActivatorUtilities.CreateInstance<AccountDetailViewModel>(Services);
             _vm.StateChanged += VmOnStateChanged;
             _vm.AuthenticationRequired += VmOnAuthenticationRequired;
+            _vm.UiActionRequested += VmOnUiActionRequested;
             _vm.ForAccount(Id);
+            _vm.BackNav = BackNav;
 
             if (_vm.IsAuthenticated)
             {
                 await _vm.InitializeAsync();
+                // Prefill from query if provided (after returning from creating a bank contact)
+                var uri = new Uri(Nav.Uri);
+                var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                var accName = query.Get("accName");
+                var accType = query.Get("accType");
+                var accIban = query.Get("accIban");
+                var accExp = query.Get("accExp");
+                var bankContactIdStr = query.Get("bankContactId");
+                if (!string.IsNullOrWhiteSpace(accName)) { _vm.Name = accName; }
+                if (!string.IsNullOrWhiteSpace(accType))
+                {
+                    if (Enum.TryParse<AccountType>(accType, true, out var t)) { _vm.Type = t; }
+                }
+                if (!string.IsNullOrWhiteSpace(accIban)) { _vm.Iban = accIban; }
+                if (!string.IsNullOrWhiteSpace(accExp))
+                {
+                    if (Enum.TryParse<SavingsPlanExpectation>(accExp, true, out var e)) { _vm.SavingsPlanExpectation = e; }
+                }
+                if (Guid.TryParse(bankContactIdStr, out var bcid)) { _vm.BankContactId = bcid; _contactFilter = _vm.BankContacts.FirstOrDefault(c => c.Id == bcid)?.Name ?? _contactFilter; }
+                // Initialize contact filter text from selected
+                if (_vm.BankContactId.HasValue)
+                {
+                    var sel = _vm.BankContacts.FirstOrDefault(c => c.Id == _vm.BankContactId.Value)?.Name;
+                    _contactFilter = sel ?? string.Empty;
+                }
                 await EnsureSymbolPreviewAsync();
             }
             else
@@ -168,7 +263,6 @@ else
                 var returnUrl = Nav.ToBaseRelativePath(Nav.Uri);
                 VmOnAuthenticationRequired(_vm, returnUrl);
             }
-            RebuildRibbon();
         }
     }
 
@@ -200,46 +294,36 @@ else
 
     private void VmOnStateChanged(object? sender, EventArgs e)
     {
-        RebuildRibbon();
         _ = InvokeAsync(StateHasChanged);
     }
 
-    private void RebuildRibbon()
+    private void VmOnUiActionRequested(object? sender, string? action)
     {
-        var groupsDto = _vm?.GetRibbon(Localizer) ?? new List<UiRibbonGroup>();
-        var groups = new List<Ribbon<TabId>.RibbonItem>();
-        var tabsGroups = new List<Ribbon<TabId>.RibbonGroup>();
-        foreach (var g in groupsDto)
+        if (string.IsNullOrEmpty(action)) return;
+        _ = InvokeAsync(() =>
         {
-            var items = new List<Ribbon<TabId>.RibbonItem>();
-            foreach (var it in g.Items)
+            // Handle VM lifecycle events first
+            switch (action)
             {
-                var size = it.Size == UiRibbonItemSize.Large
-                    ? Ribbon<TabId>.RibbonItemSize.Large
-                    : Ribbon<TabId>.RibbonItemSize.Small;
-
-                items.Add(new Ribbon<TabId>.RibbonItem
-                {
-                    Label = it.Label,
-                    IconSvg = it.IconSvg,
-                    Size = size,
-                    Disabled = it.Disabled,
-                    Callback = () => { HandleRibbonAction(it.Action); return Task.CompletedTask; }
-                });
+                case "Saved":
+                    if (_vm != null && _vm.AccountId.HasValue)
+                    {
+                        Nav.NavigateTo($"/accounts/{_vm.AccountId.Value}", forceLoad: true);
+                        return Task.CompletedTask;
+                    }
+                    break;
+                case "Deleted":
+                    Nav.NavigateTo("/accounts", forceLoad: true);
+                    return Task.CompletedTask;
             }
-            tabsGroups.Add(new Ribbon<TabId>.RibbonGroup { Title = g.Title, Items = items });
-        }
+            return HandleRibbonActionAsync(action!);
+        });
+    }
 
-        _tabs = new()
-        {
-            new Ribbon<TabId>.RibbonTab<TabId>
-            {
-                Id = TabId.Account,
-                Title = Localizer["Ribbon_Tab_Account"],
-                Groups = tabsGroups
-            }
-        };
-        StateHasChanged();
+    private Task HandleRibbonActionAsync(string action)
+    {
+        HandleRibbonAction(action);
+        return Task.CompletedTask;
     }
 
     private async Task EnsureSymbolPreviewAsync()

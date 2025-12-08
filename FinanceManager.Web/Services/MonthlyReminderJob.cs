@@ -8,10 +8,10 @@ namespace FinanceManager.Web.Services;
 
 public sealed class MonthlyReminderJob
 {
-    private readonly IStringLocalizer<MonthlyReminderJob> _localizer;
+    private readonly IStringLocalizer _localizer;
     private readonly IHolidayProviderResolver _holidayResolver;
 
-    public MonthlyReminderJob(IStringLocalizer<MonthlyReminderJob> localizer, IHolidayProviderResolver holidayResolver)
+    public MonthlyReminderJob(IStringLocalizer<Pages> localizer, IHolidayProviderResolver holidayResolver)
     {
         _localizer = localizer;
         _holidayResolver = holidayResolver;

@@ -140,28 +140,34 @@ public sealed class PostingsAccountViewModel : ViewModelBase
         return $"/api/postings/account/{AccountId}/export{qs}";
     }
 
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
-        var nav = new UiRibbonGroup(localizer["Ribbon_Group_Navigation"], new()
+        var tabs = new List<UiRibbonTab>();
+        tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, new List<UiRibbonAction>
         {
-            new UiRibbonItem(localizer["Ribbon_Back"], "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, "Back")
-        });
-        var filterItems = new List<UiRibbonItem>
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, "Back", new Func<Task>(()=>{ RaiseUiActionRequested("Back"); return Task.CompletedTask; }))
+        }));
+
+        var filterItems = new List<UiRibbonAction>
         {
-            new UiRibbonItem(localizer["Ribbon_ClearSearch"], "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, string.IsNullOrWhiteSpace(Search), "ClearSearch")
+            new UiRibbonAction("ClearSearch", localizer["Ribbon_ClearSearch"].Value, "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, string.IsNullOrWhiteSpace(Search), null, "ClearSearch", new Func<Task>(()=>{ RaiseUiActionRequested("ClearSearch"); return Task.CompletedTask; }))
         };
         if (From.HasValue || To.HasValue)
         {
-            filterItems.Add(new UiRibbonItem(localizer["Ribbon_ClearRange"], "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, false, "ClearRange"));
+            filterItems.Add(new UiRibbonAction("ClearRange", localizer["Ribbon_ClearRange"].Value, "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, false, null, "ClearRange", new Func<Task>(()=>{ RaiseUiActionRequested("ClearRange"); return Task.CompletedTask; })));
         }
-        var filter = new UiRibbonGroup(localizer["Ribbon_Group_Filter"], filterItems);
-        var export = new UiRibbonGroup(localizer["Ribbon_Group_Export"], new()
-        {
-            new UiRibbonItem(localizer["Ribbon_ExportCsv"], "<svg><use href='/icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Loading, "ExportCsv"),
-            new UiRibbonItem(localizer["Ribbon_ExportExcel"], "<svg><use href='/icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Loading, "ExportXlsx")
-        });
+        tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Filter"].Value, filterItems));
 
-        return new List<UiRibbonGroup> { nav, filter, export };
+        tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Export"].Value, new List<UiRibbonAction>
+        {
+            new UiRibbonAction("ExportCsv", localizer["Ribbon_ExportCsv"].Value, "<svg><use href='/icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Loading, null, "ExportCsv", new Func<Task>(()=>{ RaiseUiActionRequested("ExportCsv"); return Task.CompletedTask; })),
+            new UiRibbonAction("ExportXlsx", localizer["Ribbon_ExportExcel"].Value, "<svg><use href='/icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Loading, null, "ExportXlsx", new Func<Task>(()=>{ RaiseUiActionRequested("ExportXlsx"); return Task.CompletedTask; }))
+        }));
+
+        var registers = new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
+        var baseRegs = base.GetRibbonRegisters(localizer);
+        if (baseRegs != null) registers.AddRange(baseRegs);
+        return registers.Count == 0 ? null : registers;
     }
 
     private static PostingItem Map(PostingServiceDto p) => new()

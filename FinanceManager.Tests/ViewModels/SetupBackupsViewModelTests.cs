@@ -1,5 +1,4 @@
 using FinanceManager.Application;
-using FinanceManager.Web.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Text;

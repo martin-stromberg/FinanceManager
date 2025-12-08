@@ -1,5 +1,6 @@
 using Bunit;
 using FinanceManager.Web.Components.Shared;
+using FinanceManager.Web.ViewModels.Common;
 
 namespace FinanceManager.Tests.Components;
 
@@ -11,35 +12,26 @@ public class RibbonTests : TestContext
     public void SingleTab_RendersGroupsAndButtons()
     {
         // Arrange
-        var tabs = new List<Ribbon<TabId>.RibbonTab<TabId>>
+        var registers = new List<UiRibbonRegister>
         {
-            new()
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>
             {
-                Id = TabId.One,
-                Title = "Tab One",
-                Groups = new()
+                new UiRibbonTab("Tab One", new List<UiRibbonAction>
                 {
-                    new Ribbon<TabId>.RibbonGroup
-                    {
-                        Title = "Group A",
-                        Items = new()
-                        {
-                            new Ribbon<TabId>.RibbonItem{ Label="Save", IconSvg="<svg></svg>" },
-                            new Ribbon<TabId>.RibbonItem{ Label="Delete", IconSvg="<svg></svg>", Disabled=true }
-                        }
-                    }
-                }
-            }
+                    new UiRibbonAction("save","Save","<svg></svg>", UiRibbonItemSize.Small, false, null, null, null),
+                    new UiRibbonAction("delete","Delete","<svg></svg>", UiRibbonItemSize.Small, true, null, null, null)
+                })
+            })
         };
 
         // Act
         var cut = Render<Ribbon<TabId>>(p => p
-            .Add(x => x.Tabs, tabs)
+            .Add(x => x.Registers, registers)
             .Add(x => x.ActiveTab, TabId.One));
 
         // Assert
         Assert.Equal(1, cut.FindAll(".fm-ribbon-group").Count);
-        Assert.Contains("Group A", cut.Markup);
+        Assert.Contains("Tab One", cut.Markup);
         var buttons = cut.FindAll("button.fm-ribbon-btn");
         Assert.Equal(2, buttons.Count);
         Assert.Null(buttons[0].GetAttribute("aria-disabled"));
@@ -51,24 +43,17 @@ public class RibbonTests : TestContext
     {
         // Arrange
         var clicked = false;
-        var item = new Ribbon<TabId>.RibbonItem
+        var action = new UiRibbonAction("run","Run","<svg></svg>", UiRibbonItemSize.Small, false, null, "run", new Func<Task>(() => { clicked = true; return Task.CompletedTask; }));
+        var registers = new List<UiRibbonRegister>
         {
-            Label = "Run",
-            IconSvg = "<svg></svg>",
-            Callback = () => { clicked = true; return Task.CompletedTask; }
-        };
-        var tabs = new List<Ribbon<TabId>.RibbonTab<TabId>>
-        {
-            new()
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>
             {
-                Id = TabId.One,
-                Title = "Tab One",
-                Groups = new() { new Ribbon<TabId>.RibbonGroup{ Title="Main", Items = new(){ item } } }
-            }
+                new UiRibbonTab("Tab One", new List<UiRibbonAction> { action })
+            })
         };
 
         var cut = Render<Ribbon<TabId>>(p => p
-            .Add(x => x.Tabs, tabs)
+            .Add(x => x.Registers, registers)
             .Add(x => x.ActiveTab, TabId.One));
 
         // Act

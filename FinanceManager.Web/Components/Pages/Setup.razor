@@ -12,7 +12,7 @@
 
 <PageTitle>@Localizer["PageTitle"]</PageTitle>
 
-<Ribbon TTabEnum="Setup.TabId" Tabs="_tabs" ActiveTab="_activeTab" ActiveTabChanged="OnActiveTabChanged" />
+<Ribbon TTabEnum="TabId" Provider="_vm" Localizer="Localizer" />
 
 <h3>@Localizer["Heading"]</h3>
 
@@ -56,12 +56,8 @@
 </div>
 
 @code {
-    // Ribbon state (single tab for now)
+    // Ribbon Tab enum required by Ribbon generic parameter
     private enum TabId { Setup }
-    private List<Ribbon<TabId>.RibbonTab<TabId>> _tabs = new();
-    private TabId _activeTab = TabId.Setup;
-    private Task OnActiveTabChanged(TabId id){ _activeTab = id; return Task.CompletedTask; }
-
     private SetupViewModel? _vm;
 
     protected override void OnInitialized()
@@ -69,42 +65,12 @@
         _vm = ActivatorUtilities.CreateInstance<SetupViewModel>(Services);
         _vm.StateChanged += (_, __) => { _ = InvokeAsync(StateHasChanged); };
         _vm.ApplyQueryFromUri(Navigation.Uri);
-        BuildRibbon();
     }
 
     protected override void OnParametersSet()
     {
         // React to navigation with different query parameters
         _vm!.ApplyQueryFromUri(Navigation.Uri);
-    }
-
-    private void BuildRibbon()
-    {
-        _tabs = new()
-        {
-            new Ribbon<TabId>.RibbonTab<TabId>
-            {
-                Id = TabId.Setup,
-                Title = Localizer["Ribbon_Tab_Setup"],
-                Groups = new()
-                {
-                    new Ribbon<TabId>.RibbonGroup
-                    {
-                        Title = Localizer["Ribbon_Group_Navigation"],
-                        Items = new()
-                        {
-                            new Ribbon<TabId>.RibbonItem
-                            {
-                                Label = Localizer["Ribbon_Back"],
-                                IconSvg = "<svg><use href='/icons/sprite.svg#back'/></svg>",
-                                Size = Ribbon<TabId>.RibbonItemSize.Large,
-                                Callback = () => { Back(); return Task.CompletedTask; }
-                            }
-                        }
-                    }
-                }
-            }
-        };
     }
 
     private void Activate(string section)

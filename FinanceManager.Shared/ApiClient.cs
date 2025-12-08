@@ -1423,6 +1423,14 @@ public class ApiClient : IApiClient
         return await resp.Content.ReadFromJsonAsync<StatementDraftEntryDetailDto>(cancellationToken: ct);
     }
 
+    public async Task<StatementDraftEntryDto?> StatementDrafts_UpdateEntryCoreAsync(Guid draftId, Guid entryId, StatementDraftUpdateEntryCoreRequest req, CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/edit-core", req, ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<StatementDraftEntryDto>(cancellationToken: ct);
+    }
+
     public async Task<StatementDraftDetailDto?> StatementDrafts_AddEntryAsync(Guid draftId, StatementDraftAddEntryRequest req, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/entries", req, ct);
@@ -1592,6 +1600,26 @@ public class ApiClient : IApiClient
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         resp.EnsureSuccessStatusCode();
         return true;
+    }
+    /// <summary>
+     /// Assigns or clears a split draft group for a draft entry and returns updated split difference.
+     /// </summary>
+    public async Task<StatementDraftEntryDto?> StatementDrafts_SetEntrySplitDraftAsync(Guid draftId, Guid entryId, StatementDraftSetSplitDraftRequest req, CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/split", req, ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            LastError = await resp.Content.ReadAsStringAsync(ct);
+            return null;
+        }
+        resp.EnsureSuccessStatusCode();
+        var json = await resp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
+        if (json.TryGetProperty("Entry", out var entryProp))
+        {
+            return entryProp.Deserialize<StatementDraftEntryDto>();
+        }
+        return null;
     }
     #endregion Statement Drafts
 

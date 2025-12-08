@@ -2,12 +2,15 @@ using FinanceManager.Application;
 using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Attachments; // new
 using FinanceManager.Application.Statements;
+using FinanceManager.Application.Contacts; // added
+using FinanceManager.Application.Savings; // added
 using FinanceManager.Domain.Attachments; // new
 using FinanceManager.Infrastructure.Statements; // for ImportSplitInfo
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Mime;
+using FinanceManager.Application.Securities;
 
 namespace FinanceManager.Web.Controllers;
 
@@ -184,7 +187,59 @@ public sealed class StatementDraftsController : ControllerBase
         StatementDraftDto? draft = headerOnly ? await _drafts.GetDraftHeaderAsync(draftId, _current.UserId, ct) : await _drafts.GetDraftAsync(draftId, _current.UserId, ct);
         if (draft is null) { return NotFound(); }
         var neighbors = await _drafts.GetUploadGroupNeighborsAsync(draftId, _current.UserId, ct);
-        var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId);
+
+        // Build symbol maps
+        IReadOnlyDictionary<Guid, Guid?>? contactSymbols = null;
+        IReadOnlyDictionary<Guid, Guid?>? planSymbols = null;
+        IReadOnlyDictionary<Guid, string>? planNames = null;
+        IReadOnlyDictionary<Guid, Guid?>? securitySymbols = null;
+        IReadOnlyDictionary<Guid, string>? securityNames = null;
+        try
+        {
+            var contactSvc = HttpContext.RequestServices.GetRequiredService<IContactService>();
+            var categorySvc = HttpContext.RequestServices.GetRequiredService<IContactCategoryService>();
+            var planSvc = HttpContext.RequestServices.GetRequiredService<ISavingsPlanService>();
+            var securitySvc = HttpContext.RequestServices.GetRequiredService<ISecurityService>();
+            var cMap = new Dictionary<Guid, Guid?>();
+            var pMap = new Dictionary<Guid, Guid?>();
+            var pNames = new Dictionary<Guid, string>();
+            var sMap = new Dictionary<Guid, Guid?>();
+            var sNames = new Dictionary<Guid, string>();
+            foreach (var e in draft.Entries)
+            {
+                if (e.ContactId.HasValue)
+                {
+                    var c = await contactSvc.GetAsync(e.ContactId.Value, _current.UserId, ct);
+                    Guid? symbol = c?.SymbolAttachmentId; 
+                    if (symbol == null && c?.CategoryId != null)
+                    {
+                        var cat = await categorySvc.GetAsync(c.CategoryId.Value, _current.UserId, ct);
+                        symbol = cat?.SymbolAttachmentId;
+                    }
+                    cMap[e.Id] = symbol;
+                }
+                if (e.SavingsPlanId.HasValue)
+                {
+                    var p = await planSvc.GetAsync(e.SavingsPlanId.Value, _current.UserId, ct);
+                    pMap[e.Id] = p?.SymbolAttachmentId;
+                    if (p != null) { pNames[e.Id] = p.Name; }
+                }
+                if (e.SecurityId.HasValue)
+                {
+                    var s = await securitySvc.GetAsync(e.SecurityId.Value, _current.UserId, ct);
+                    sMap[e.Id] = s?.SymbolAttachmentId;
+                    if (s != null) { sNames[e.Id] = s.Name; }
+                }
+            }
+            contactSymbols = cMap;
+            planSymbols = pMap;
+            planNames = pNames;
+            securitySymbols = sMap;
+            securityNames = sNames;
+        }
+        catch { }
+
+        var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId, contactSymbols, planSymbols, planNames, securitySymbols, securityNames);
         return Ok(dto);
     }
 

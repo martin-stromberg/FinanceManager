@@ -1,7 +1,6 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
 using FinanceManager.Shared.Dtos.Security;
-using FinanceManager.Web.ViewModels.Setup;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 

@@ -10,7 +10,7 @@
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Pages.SavingsPlanCategories> Localizer
 <PageTitle>@Localizer["PageTitle"]</PageTitle>
 
-<Ribbon TTabEnum="SavingsPlanCategories.TabId" Tabs="_tabs" ActiveTab="_activeTab" ActiveTabChanged="OnActiveTabChanged" />
+<Ribbon TTabEnum="SavingsPlanCategories.TabId" Provider="_vm" Localizer="Localizer" />
 
 <h3>@Localizer["Title"]</h3>
 @if (!(_vm?.Loaded ?? false))
@@ -60,53 +60,17 @@ else
 }
 
 @code {
-    // Ribbon state
+    // Ribbon state - required for TTabEnum resolution in generated razor class
     private enum TabId { SavingsPlanCategories }
-    private List<Ribbon<TabId>.RibbonTab<TabId>> _tabs = new();
-    private TabId _activeTab = TabId.SavingsPlanCategories;
-    private Task OnActiveTabChanged(TabId id){ _activeTab = id; return Task.CompletedTask; }
 
     private SavingsPlanCategoriesViewModel? _vm;
 
     protected override async Task OnInitializedAsync()
     {
         _vm = ActivatorUtilities.CreateInstance<SavingsPlanCategoriesViewModel>(Services);
-        _vm.StateChanged += (_, __) => { RebuildRibbon(); _ = InvokeAsync(StateHasChanged); };
+        _vm.StateChanged += VmOnStateChanged;
+        _vm.UiActionRequested += VmOnUiActionRequested;
         await _vm.InitializeAsync();
-        RebuildRibbon();
-    }
-
-    private void RebuildRibbon()
-    {
-        var groupsDto = _vm?.GetRibbon(Localizer) ?? new List<UiRibbonGroup>();
-        var groups = new List<Ribbon<TabId>.RibbonGroup>();
-        foreach (var g in groupsDto)
-        {
-            var items = new List<Ribbon<TabId>.RibbonItem>();
-            foreach (var it in g.Items)
-            {
-                var size = it.Size == UiRibbonItemSize.Large ? Ribbon<TabId>.RibbonItemSize.Large : Ribbon<TabId>.RibbonItemSize.Small;
-                items.Add(new Ribbon<TabId>.RibbonItem
-                {
-                    Label = it.Label,
-                    IconSvg = it.IconSvg,
-                    Size = size,
-                    Disabled = it.Disabled,
-                    Callback = () => { HandleRibbonAction(it.Action); return Task.CompletedTask; }
-                });
-            }
-            groups.Add(new Ribbon<TabId>.RibbonGroup { Title = g.Title, Items = items });
-        }
-        _tabs = new()
-        {
-            new Ribbon<TabId>.RibbonTab<TabId>
-            {
-                Id = TabId.SavingsPlanCategories,
-                Title = Localizer["PageTitle"],
-                Groups = groups
-            }
-        };
-        StateHasChanged();
     }
 
     private void HandleRibbonAction(string action)
@@ -123,4 +87,42 @@ else
     }
     
     private void EditCategory(Guid id) => Navigation.NavigateTo($"/savings-plan-categories/{id}");
+    
+    private void VmOnStateChanged(object? sender, EventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void VmOnUiActionRequested(object? sender, string? action)
+    {
+        if (string.IsNullOrEmpty(action)) return;
+        _ = InvokeAsync(async () =>
+        {
+            switch (action)
+            {
+                case "Saved":
+                case "Deleted":
+                    await _vm!.InitializeAsync();
+                    StateHasChanged();
+                    return;
+                case "New":
+                    Navigation.NavigateTo("/savings-plan-categories/new");
+                    return;
+            }
+        });
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_vm != null)
+            {
+                _vm.StateChanged -= VmOnStateChanged;
+                _vm.UiActionRequested -= VmOnUiActionRequested;
+                await _vm.DisposeAsync();
+            }
+        }
+        catch { }
+    }
 }

@@ -1,5 +1,6 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Backups;
+using FinanceManager.Web;
 using Microsoft.Extensions.Localization;
 using System.Text.Json;
 
@@ -10,11 +11,11 @@ namespace FinanceManager.Web.Services
         public BackgroundTaskType Type => BackgroundTaskType.BackupRestore;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<BackupRestoreTaskExecutor> _logger;
-        private readonly IStringLocalizer<BackupRestoreTaskExecutor> _localizer;
+        private readonly IStringLocalizer _localizer;
 
         private sealed record RestorePayload(Guid BackupId, bool ReplaceExisting);
 
-        public BackupRestoreTaskExecutor(IServiceScopeFactory scopeFactory, ILogger<BackupRestoreTaskExecutor> logger, IStringLocalizer<BackupRestoreTaskExecutor> localizer)
+        public BackupRestoreTaskExecutor(IServiceScopeFactory scopeFactory, ILogger<BackupRestoreTaskExecutor> logger, IStringLocalizer<Pages> localizer)
         {
             _scopeFactory = scopeFactory;
             _logger = logger;

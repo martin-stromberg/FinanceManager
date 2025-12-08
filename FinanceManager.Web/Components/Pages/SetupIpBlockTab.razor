@@ -76,7 +76,25 @@ else
     protected override async Task OnInitializedAsync()
     {
         _vm = ActivatorUtilities.CreateInstance<SetupIpBlocksViewModel>(Services);
-        _vm.StateChanged += (_, __) => { _ = InvokeAsync(StateHasChanged); };
+        _vm.StateChanged += VmOnStateChanged;
         await _vm.InitializeAsync();
+    }
+
+    private void VmOnStateChanged(object? sender, EventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_vm != null)
+            {
+                _vm.StateChanged -= VmOnStateChanged;
+                await _vm.DisposeAsync();
+            }
+        }
+        catch { }
     }
 }

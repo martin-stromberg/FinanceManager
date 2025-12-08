@@ -1,5 +1,6 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Statements;
+using FinanceManager.Web;
 using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.Services
@@ -9,9 +10,9 @@ namespace FinanceManager.Web.Services
         public BackgroundTaskType Type => BackgroundTaskType.ClassifyAllDrafts;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<ClassificationTaskExecutor> _logger;
-        private readonly IStringLocalizer<ClassificationTaskExecutor> _localizer;
+        private readonly IStringLocalizer _localizer;
 
-        public ClassificationTaskExecutor(IServiceScopeFactory scopeFactory, ILogger<ClassificationTaskExecutor> logger, IStringLocalizer<ClassificationTaskExecutor> localizer)
+        public ClassificationTaskExecutor(IServiceScopeFactory scopeFactory, ILogger<ClassificationTaskExecutor> logger, IStringLocalizer<Pages> localizer)
         {
             _scopeFactory = scopeFactory;
             _logger = logger;

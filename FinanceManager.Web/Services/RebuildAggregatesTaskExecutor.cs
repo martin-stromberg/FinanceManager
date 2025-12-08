@@ -9,9 +9,9 @@ namespace FinanceManager.Web.Services
         public BackgroundTaskType Type => BackgroundTaskType.RebuildAggregates;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<RebuildAggregatesTaskExecutor> _logger;
-        private readonly IStringLocalizer<RebuildAggregatesTaskExecutor> _localizer;
+        private readonly IStringLocalizer _localizer;
 
-        public RebuildAggregatesTaskExecutor(IServiceScopeFactory scopeFactory, ILogger<RebuildAggregatesTaskExecutor> logger, IStringLocalizer<RebuildAggregatesTaskExecutor> localizer)
+        public RebuildAggregatesTaskExecutor(IServiceScopeFactory scopeFactory, ILogger<RebuildAggregatesTaskExecutor> logger, IStringLocalizer<Pages> localizer)
         {
             _scopeFactory = scopeFactory;
             _logger = logger;

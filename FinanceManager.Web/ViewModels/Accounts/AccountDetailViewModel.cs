@@ -2,22 +2,28 @@ using FinanceManager.Shared; // IApiClient
 using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Web.ViewModels.Accounts;
 
 public sealed class AccountDetailViewModel : ViewModelBase
 {
     private readonly IApiClient _api;
+    private readonly NavigationManager _nav;
 
     public AccountDetailViewModel(IServiceProvider sp) : base(sp)
     {
         _api = sp.GetRequiredService<IApiClient>();
+        _nav = sp.GetRequiredService<NavigationManager>();
     }
 
     // Identity / status
     public Guid? AccountId { get; private set; }
     public bool IsNew => !AccountId.HasValue;
     public bool ShowCharts => !IsNew; // derived visibility
+
+    // optional back navigation target provided by the page
+    public string? BackNav { get; set; }
 
     private bool _loaded;
     public bool Loaded { get => _loaded; private set { if (_loaded != value) { _loaded = value; RaiseStateChanged(); } } }
@@ -168,40 +174,115 @@ public sealed class AccountDetailViewModel : ViewModelBase
         }
     }
 
-    // Ribbon structure
-    public override IReadOnlyList<UiRibbonGroup> GetRibbon(IStringLocalizer localizer)
+    // Ribbon API: return new unified registers with callbacks that call VM methods
+    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
     {
-        var editItems = new List<UiRibbonItem>
-        {
-            new UiRibbonItem(localizer["Ribbon_Save"], "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !CanSave, "Save")
-        };
+        var actions = new List<UiRibbonAction>();
+
+        // Navigation group
+        var navTab = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>());
+        navTab.Items.Add(new UiRibbonAction(
+            Id: "back",
+            Label: localizer["Ribbon_Back"],
+            IconSvg: "<svg><use href='/icons/sprite.svg#back'/></svg>",
+            Size: UiRibbonItemSize.Large,
+            Disabled: false,
+            Tooltip: null,
+            Action: "Back",
+            Callback: async () =>
+            {
+                if (!string.IsNullOrWhiteSpace(BackNav)) { _nav.NavigateTo(BackNav, forceLoad: true); }
+                else { _nav.NavigateTo("/accounts", forceLoad: true); }
+                await Task.CompletedTask;
+            }
+        ));
+
+        // Manage group (edit)
+        var manageTab = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>());
+        manageTab.Items.Add(new UiRibbonAction(
+            Id: "save",
+            Label: localizer["Ribbon_Save"],
+            IconSvg: "<svg><use href='/icons/sprite.svg#save'/></svg>",
+            Size: UiRibbonItemSize.Large,
+            Disabled: !CanSave,
+            Tooltip: null,
+            Action: "Save",
+            Callback: async () =>
+            {
+                var id = await SaveAsync();
+                if (id.HasValue)
+                {
+                    _nav.NavigateTo($"/accounts/{id.Value}", forceLoad: true);
+                }
+            }
+        ));
         if (!IsNew)
         {
-            editItems.Add(new UiRibbonItem(localizer["Ribbon_Delete"], "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Busy, "Delete"));
+            manageTab.Items.Add(new UiRibbonAction(
+                Id: "delete",
+                Label: localizer["Ribbon_Delete"],
+                IconSvg: "<svg><use href='/icons/sprite.svg#delete'/></svg>",
+                Size: UiRibbonItemSize.Small,
+                Disabled: Busy,
+                Tooltip: null,
+                Action: "Delete",
+                Callback: async () =>
+                {
+                    await DeleteAsync();
+                    _nav.NavigateTo("/accounts", forceLoad: true);
+                }
+            ));
         }
 
-        var groups = new List<UiRibbonGroup>
-        {
-            new UiRibbonGroup(localizer["Ribbon_Group_Navigation"], new List<UiRibbonItem>
-            {
-                new UiRibbonItem(localizer["Ribbon_Back"], "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, "Back")
-            }),
-            new UiRibbonGroup(localizer["Ribbon_Group_Edit"], editItems)
-        };
-
+        // Related information group
+        var relatedTab = new UiRibbonTab(localizer["Ribbon_Group_Related"], new List<UiRibbonAction>());
         if (!IsNew)
         {
-            groups.Add(new UiRibbonGroup(localizer["Ribbon_Group_Related"], new List<UiRibbonItem>
-            {
-                new UiRibbonItem(localizer["Ribbon_BankContact"], "<svg><use href='/icons/sprite.svg#bank'/></svg>", UiRibbonItemSize.Small, Busy || !BankContactId.HasValue, "OpenBankContact"),
-                new UiRibbonItem(localizer["Ribbon_Postings"], "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Busy, "OpenPostings"),
-                new UiRibbonItem(localizer["Ribbon_Attachments"], "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Busy, "OpenAttachments")
-            }));
+            relatedTab.Items.Add(new UiRibbonAction(
+                Id: "bankcontact",
+                Label: localizer["Ribbon_BankContact"],
+                IconSvg: "<svg><use href='/icons/sprite.svg#bank'/></svg>",
+                Size: UiRibbonItemSize.Small,
+                Disabled: Busy || !BankContactId.HasValue,
+                Tooltip: null,
+                Action: "OpenBankContact",
+                Callback: () =>
+                {
+                    if (BankContactId.HasValue)
+                    {
+                        var back = AccountId.HasValue ? $"/accounts/{AccountId}" : "/accounts/new";
+                        _nav.NavigateTo($"/contacts/{BankContactId}?back={Uri.EscapeDataString(back)}");
+                    }
+                    return Task.CompletedTask;
+                }
+            ));
+
+            relatedTab.Items.Add(new UiRibbonAction(
+                Id: "postings",
+                Label: localizer["Ribbon_Postings"],
+                IconSvg: "<svg><use href='/icons/sprite.svg#postings'/></svg>",
+                Size: UiRibbonItemSize.Small,
+                Disabled: Busy,
+                Tooltip: null,
+                Action: "OpenPostings",
+                Callback: () => { if (AccountId.HasValue) _nav.NavigateTo($"/postings/account/{AccountId}"); return Task.CompletedTask; }
+            ));
+
+            relatedTab.Items.Add(new UiRibbonAction(
+                Id: "attachments",
+                Label: localizer["Ribbon_Attachments"],
+                IconSvg: "<svg><use href='/icons/sprite.svg#attachment'/></svg>",
+                Size: UiRibbonItemSize.Small,
+                Disabled: Busy,
+                Tooltip: null,
+                Action: "OpenAttachments",
+                Callback: () => { ShowAttachments = true; return Task.CompletedTask; }
+            ));
         }
 
-        var merged = base.GetRibbon(localizer);
-        if (merged.Count > 0) { groups.AddRange(merged); }
-        return groups;
+        // Build register: separate tabs for Navigation, Manage, Related
+        var register = new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { navTab, manageTab, relatedTab });
+        return new List<UiRibbonRegister> { register };
     }
 
     // VMs used by VM

@@ -1,6 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @inject FinanceManager.Application.ICurrentUserService CurrentUser
-@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Layout.MainLayout> L
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
 @inject Microsoft.AspNetCore.Components.NavigationManager Nav
 @implements IDisposable
 
@@ -18,11 +18,11 @@
             @if (CurrentUser.IsAuthenticated)
             {
                 <li><NavLink href="/" Match="NavLinkMatch.All">@L["Nav_Home"]</NavLink></li>
-                <li><NavLink href="/accounts">@L["Nav_Accounts"]</NavLink></li>
-                <li><NavLink href="/statement-drafts" Match="NavLinkMatch.All">@L["Nav_StatementDrafts"]</NavLink></li>
-                <li><NavLink href="/contacts">@L["Nav_Contacts"]</NavLink></li>
-                <li><NavLink href="/savings-plans">@L["Nav_Plans"]</NavLink></li>
-                <li><NavLink href="/securities">@L["Nav_Securities"]</NavLink></li>
+                <li><NavLink href="/list/accounts">@L["Nav_Accounts"]</NavLink></li>
+                <li><NavLink href="/list/statement-drafts" Match="NavLinkMatch.All">@L["Nav_StatementDrafts"]</NavLink></li>
+                <li><NavLink href="/list/contacts">@L["Nav_Contacts"]</NavLink></li>
+                <li><NavLink href="/list/savings-plans">@L["Nav_Plans"]</NavLink></li>
+                <li><NavLink href="/list/securities">@L["Nav_Securities"]</NavLink></li>
                 <li><NavLink href="/reports">@L["Nav_Reports"]</NavLink></li>
                 <li><NavLink href="/setup">@L["Nav_Setup"]</NavLink></li>
                 @if (CurrentUser.IsAdmin)
@@ -50,7 +50,7 @@
                 <span>@L["Brand"]</span>
             </div>
         </div>
-        <div class="inner">
+        <div class="inner" style="@(_useFullWidth ? "max-width:none" : null)">
             @Body
         </div>
     </main>
@@ -65,6 +65,7 @@
 
 @code {
     private string _logoPath = "/icons/finance_manager.png";
+    private bool _useFullWidth;
 
     protected override void OnInitialized()
     {
@@ -91,11 +92,23 @@
             path = uri.ToLowerInvariant();
         }
 
-        if (path.StartsWith("/accounts"))
+        // Support generic list routes, e.g., /list/accounts
+        string kind = null;
+        if (path.StartsWith("/list/"))
+        {
+            var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length >= 2)
+            {
+                kind = parts[1];
+            }
+        }
+
+        // decide logo
+        if (path.StartsWith("/accounts") || string.Equals(kind, "accounts", StringComparison.OrdinalIgnoreCase))
         {
             _logoPath = "/icons/finance_manager-accounts.png";
         }
-        else if (path.StartsWith("/contacts"))
+        else if (path.StartsWith("/contacts") || string.Equals(kind, "contacts", StringComparison.OrdinalIgnoreCase))
         {
             _logoPath = "/icons/finance_manager-contacts.png";
         }
@@ -107,11 +120,11 @@
         {
             _logoPath = "/icons/finance_manager-reports.png";
         }
-        else if (path.StartsWith("/savings-plans"))
+        else if (path.StartsWith("/savings-plans") || string.Equals(kind, "savings-plans", StringComparison.OrdinalIgnoreCase))
         {
             _logoPath = "/icons/finance_manager-savingplans.png";
         }
-        else if (path.StartsWith("/securities"))
+        else if (path.StartsWith("/securities") || string.Equals(kind, "securities", StringComparison.OrdinalIgnoreCase))
         {
             _logoPath = "/icons/finance_manager-securities.png";
         }
@@ -123,6 +136,15 @@
         {
             _logoPath = "/icons/finance_manager.png"; // Home and default
         }
+
+        // Full-width for table-heavy pages
+        _useFullWidth = path.StartsWith("/statement-drafts")
+            || path.StartsWith("/accounts")
+            || path.StartsWith("/reports")
+            || path.StartsWith("/securities")
+            || path.StartsWith("/savings-plans")
+            || path.StartsWith("/contacts")
+            || path.StartsWith("/list/");
     }
 
     public void Dispose()
