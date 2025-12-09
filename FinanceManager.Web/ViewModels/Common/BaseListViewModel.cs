@@ -7,6 +7,11 @@ namespace FinanceManager.Web.ViewModels.Common
 {
     public abstract class BaseListViewModel<TItem> : BaseViewModel, IListProvider
     {
+        protected BaseListViewModel(IServiceProvider serviceProvider) 
+            : base(serviceProvider)
+        {
+        }
+
         public List<TItem> Items { get; } = new();
         IReadOnlyList<object> IListProvider.Items => Items.Cast<object>().ToList();
         public bool CanLoadMore { get; protected set; }

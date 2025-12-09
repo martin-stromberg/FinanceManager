@@ -17,7 +17,7 @@ public class ApiClient : IApiClient
 
     private async Task EnsureSuccessOrSetErrorAsync(HttpResponseMessage resp)
     {
-        if (resp.IsSuccessStatusCode) return;
+        if (resp.IsSuccessStatusCode) return;        
         LastError = null; LastErrorCode = null;
         try
         {

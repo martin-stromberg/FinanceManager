@@ -1,23 +1,24 @@
 @page "/card/{Kind}/{Id:guid}"
 @rendermode InteractiveServer
 @inject IServiceProvider Services
-@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
+@inject NavigationManager NavigationManager
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
 @using FinanceManager.Web.ViewModels
 @using FinanceManager.Web.ViewModels.Common
 @using FinanceManager.Web.Components.Shared
 @using System
 
-<PageTitle>@L["General_PageTitle"]</PageTitle>
 
-<h3>@L["General_PageTitle"]</h3>
 
 @if (_vm == null)
 {
-    <p>@L["General_Loading"]</p>
+    <PageTitle>@($"{Localizer["CardPage_PageTitle"]}: {GetKindTitle()}")</PageTitle>
+    <p>@Localizer["General_Loading"]</p>
 }
 else
 {
-    <GenericCardPage TKeyValue="(string, string)" Provider="_vm" Localizer="L" LoadingText="@L["General_Loading"]" />
+    <PageTitle>@($"{GetKindTitle()}: {_vm.Title}")</PageTitle>
+    <GenericCardPage TKeyValue="(string, string)" Provider="_vm" Localizer="Localizer" LoadingText="@Localizer["General_Loading"]" />
 }
 
 @code {
@@ -25,13 +26,39 @@ else
     [Parameter] public Guid Id { get; set; }
 
     private BaseCardViewModel<(string Key, string Value)>? _vm;
+    private async Task SetViewModel(BaseCardViewModel<(string Key, string Value)> vm)
+    {
+        if (_vm is not null)
+        {
+            _vm.StateChanged -= ViewModelSatteChanged;
+            _vm.UiActionRequested -= OnUiActionRequested;
+        }
+        _vm = vm;
+        _vm.StateChanged += ViewModelSatteChanged;
+        _vm.UiActionRequested += OnUiActionRequested;
+        await _vm.InitializeAsync(Id);
+    }
+    private void ViewModelSatteChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
+    private void OnUiActionRequested(object? sender, string? action) => _ = InvokeAsync(() =>
+    {
+        switch (action)
+        {
+            case "Back":
+                NavigationManager.NavigateTo($"/list/{Kind}");
+                break;
+        }
+    });
+
+    private string GetKindTitle() => (Kind ?? string.Empty).Trim().ToLowerInvariant() switch
+    {
+        "accounts" => Localizer["General_Title_Account"],
+        "contacts" => Localizer["General_Title_Contact"],
+        _ => Kind
+    };
 
     protected override async Task OnParametersSetAsync()
     {
         if (Kind?.ToLowerInvariant() == "accounts")
-        {
-            _vm = ActivatorUtilities.CreateInstance<BankAccountCardViewModel>(Services);
-            await _vm.InitializeAsync(Id);
-        }
+            await SetViewModel(ActivatorUtilities.CreateInstance<BankAccountCardViewModel>(Services));
     }
 }

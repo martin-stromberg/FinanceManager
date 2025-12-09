@@ -49,7 +49,4 @@ namespace FinanceManager.Web.ViewModels.Common
     }
 
     public sealed record CardRecord(IReadOnlyList<CardField> Fields, object? Item = null);
-
-    // Lookup item used for selection lists (key = primary key, name = display name)
-    public sealed record LookupItem(System.Guid Key, string Name);
 }

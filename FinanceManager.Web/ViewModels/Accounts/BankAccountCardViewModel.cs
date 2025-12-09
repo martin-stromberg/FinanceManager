@@ -1,35 +1,39 @@
+using DocumentFormat.OpenXml.VariantTypes;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Shared;
-using FinanceManager.Web.ViewModels.Common;
+using FinanceManager.Shared.Dtos.Accounts;
 using FinanceManager.Web.Components.Pages;
+using FinanceManager.Web.ViewModels.Common;
+using iText.Kernel.Pdf.Canvas.Parser.ClipperLib;
 using Microsoft.Extensions.Localization;
+using SQLitePCL;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace FinanceManager.Web.ViewModels.Accounts
 {
     // Card VM: builds key/value pairs for a single bank account
     public sealed class BankAccountCardViewModel : BaseCardViewModel<(string Key, string Value)>
     {
-        private readonly IServiceProvider _sp;
         public BankAccountCardViewModel(IServiceProvider sp)
+            :base(sp)
         {
-            _sp = sp;
         }
 
         public Guid Id { get; private set; }
         public AccountDto? Account { get; private set; }
-
+        public override string Title => Account?.Name ?? base.Title;
         public override async Task LoadAsync(Guid id)
         {
             Id = id;
-            Loading = true; LastError = null; RaiseStateChanged();
+            Loading = true; SetError(null, null); RaiseStateChanged();
+            var api = ServiceProvider.GetRequiredService<IApiClient>();
             try
-            {
-                var api = _sp.GetRequiredService<IApiClient>();
+            {                
                 Account = await api.GetAccountAsync(id);
                 if (Account == null)
                 {
-                    LastError = api.LastError;
+                    SetError(api.LastErrorCode ?? null, api.LastError ?? "Account not found");
                     CardRecord = new CardRecord(new List<CardField>());
                     return;
                 }
@@ -38,7 +42,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
             catch (Exception ex)
             {
                 CardRecord = new CardRecord(new List<CardField>());
-                LastError = ex.Message;
+                SetError(api.LastErrorCode ?? null, api.LastError ?? ex.Message);
             }
             finally { Loading = false; RaiseStateChanged(); }
         }
@@ -51,7 +55,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
             {
                 try
                 {
-                    var api = _sp.GetRequiredService<IApiClient>();
+                    var api = ServiceProvider.GetRequiredService<IApiClient>();
                     var c = await api.Contacts_GetAsync(a.BankContactId);
                     if (c != null) bankContactName = c.Name;
                 }
@@ -63,28 +67,59 @@ namespace FinanceManager.Web.ViewModels.Accounts
 
             var fields = new List<CardField>
             {
-                new CardField("Card_Caption_Account_Name", CardFieldKind.Text, text: a.Name ?? string.Empty),
-                new CardField("Card_Caption_Account_Iban", CardFieldKind.Text, text: a.Iban ?? string.Empty, symbolId: null),
-                new CardField("Card_Caption_Account_Type", CardFieldKind.Text, text: $"$Card_Value_AccountType_{a.Type}"),
+                // make name editable
+                new CardField("Card_Caption_Account_Name", CardFieldKind.Text, text: a.Name ?? string.Empty, editable: true),
+                // make IBAN editable
+                new CardField("Card_Caption_Account_Iban", CardFieldKind.Text, text: a.Iban ?? string.Empty, symbolId: null, editable: true),
+                // make Type editable as enum lookup so GenericCardPage will render a localized select
+                // Only allow changing the account type during initial creation (Id == Guid.Empty)
+                new CardField("Card_Caption_Account_Type", CardFieldKind.Text, text: a.Type.ToString(), editable: (a.Id == Guid.Empty), lookupType: "Enum:AccountType"),
                 new CardField("Card_Caption_Account_Balance", CardFieldKind.Currency, amount: a.CurrentBalance),
                 new CardField("Card_Caption_Account_Symbol", CardFieldKind.Symbol, symbolId: a.SymbolAttachmentId, editable: true),
                 new CardField("Card_Caption_Account_Contact", CardFieldKind.Text, text: bankContactName ?? "-", editable: true, lookupType: "Contact", lookupField: "Name", valueId: a.BankContactId, lookupFilter: "Type=Bank"),
+                // new: savings plan expectation setting (editable enum lookup)
+                new CardField("Card_Caption_Account_SavingsPlanExpectation", CardFieldKind.Text, text: a.SavingsPlanExpectation.ToString(), editable: true, lookupType: "Enum:SavingsPlanExpectation"),
             };
 
             var record = new CardRecord(fields, a);
+            record = ApplyEnumTranslations(record);
             return ApplyPendingValues(record);
         }
 
         private AccountDto BuildDto(CardRecord record)
         {
-            return new AccountDto(Account.Id, Account.Name, Account.Type, Account.Iban, Account.CurrentBalance, Account.BankContactId, Account.SymbolAttachmentId, Account.SavingsPlanExpectation)
+            // start from current authoritative Account and override with UI values
+            var name = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_Name")?.Text ?? Account?.Name ?? string.Empty;
+            var iban = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_Iban")?.Text ?? Account?.Iban ?? string.Empty;
+
+            // parse type from editable field (fallback to existing Account.Type)
+            var typeText = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_Type")?.Text;
+            AccountType type = Account?.Type ?? AccountType.Giro;
+            if (!string.IsNullOrWhiteSpace(typeText) && Enum.TryParse<AccountType>(typeText, ignoreCase: true, out var parsedType))
             {
-                Name = CardRecord?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_Name")?.Text ?? string.Empty,
-                Type = Account?.Type ?? AccountType.Giro,
-                Iban = CardRecord?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_Iban")?.Text ?? string.Empty,
-                SymbolAttachmentId = Account.SymbolAttachmentId,
-                BankContactId = CardRecord?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_Contact")?.ValueId ?? Guid.Empty,
-                SavingsPlanExpectation = Account.SavingsPlanExpectation,
+                type = parsedType;
+            }
+
+            // parse savings plan expectation
+            var spText = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_SavingsPlanExpectation")?.Text;
+            var enumType = typeof(SavingsPlanExpectation);
+            SavingsPlanExpectation spExpectation = Enum.GetValues<SavingsPlanExpectation>().FirstOrDefault(value => {
+                var key = $"EnumType_{enumType.Name}_{value}";
+                var val = Localizer[key];
+                return val == spText;
+            });
+
+            var symbolId = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_Symbol")?.SymbolId ?? Account?.SymbolAttachmentId;
+            var bankContactId = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_Contact")?.ValueId ?? Account?.BankContactId ?? Guid.Empty;
+
+            return new AccountDto(Account.Id, name, type, string.IsNullOrWhiteSpace(iban) ? null : iban, Account.CurrentBalance, bankContactId, symbolId, spExpectation)
+            {
+                Name = name,
+                Type = type,
+                Iban = string.IsNullOrWhiteSpace(iban) ? null : iban,
+                SymbolAttachmentId = symbolId,
+                BankContactId = bankContactId,
+                SavingsPlanExpectation = spExpectation,
                 CurrentBalance = Account.CurrentBalance,
                 Id = Account.Id
             };
@@ -146,9 +181,9 @@ namespace FinanceManager.Web.ViewModels.Accounts
             var prevRecord = CardRecord;
 
             Loading = true;
-            LastError = null;
+            SetError(null, null);
             RaiseStateChanged();
-            var api = _sp.GetRequiredService<IApiClient>();
+            var api = ServiceProvider.GetRequiredService<IApiClient>();
             try
             {
                 if (_pendingFieldValues.Count == 0) return;
@@ -169,10 +204,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
 
                 if (updated == null)
                 {
-                    // API reported not found or error; surface LastError from client if available
-                    LastError = api.LastError ?? "Update failed";
-                    LastErrorCode = api.LastErrorCode ?? null;
-                    // restore previous UI state
+                    SetError(api.LastErrorCode ?? null, api.LastError ?? "Update failed");
                     Account = prevAccount;
                     CardRecord = prevRecord ?? new CardRecord(new List<CardField>());
                     ClearPendingChanges();
@@ -186,9 +218,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
             }
             catch (Exception ex)
             {
-                // restore previous UI state and surface error
-                LastError = api.LastError ?? ex.Message;
-                LastErrorCode = api.LastErrorCode ?? null;
+                SetError(api.LastErrorCode ?? null, api.LastError ?? ex.Message);
                 Account = prevAccount;
                 CardRecord = prevRecord ?? new CardRecord(new List<CardField>());
             }
@@ -203,7 +233,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
         {
             try
             {
-                var api = _sp.GetRequiredService<IApiClient>();
+                var api = ServiceProvider.GetRequiredService<IApiClient>();
                 // upload attachment
                 var att = await api.Attachments_UploadFileAsync((short)FinanceManager.Domain.Attachments.AttachmentEntityKind.Account, Id, stream, fileName, contentType ?? "application/octet-stream");
                 // set as account symbol
@@ -228,7 +258,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
             {
                 if (string.Equals(field.LookupType, "Contact", StringComparison.OrdinalIgnoreCase))
                 {
-                    var api = _sp.GetRequiredService<IApiClient>();
+                    var api = ServiceProvider.GetRequiredService<IApiClient>();
                     // interpret LookupFilter (format: key=value) and map to API filters
                     ContactType? typeFilter = null;
                     if (!string.IsNullOrWhiteSpace(field.LookupFilter))
@@ -247,7 +277,23 @@ namespace FinanceManager.Web.ViewModels.Accounts
             {
                 // ignore and return empty
             }
-            return Array.Empty<LookupItem>();
+            return await base.QueryLookupAsync(field, q, skip, take);
         }
+
+        public override void ValidateLookupField(CardField field, LookupItem? item)
+        {
+            // For enum lookups, accept the selected name as pending value (no DB id required)
+            if (!string.IsNullOrWhiteSpace(field.LookupType) && field.LookupType.StartsWith("Enum:", StringComparison.OrdinalIgnoreCase))
+            {
+                var selected = item?.Name ?? string.Empty;
+                field.Text = selected;
+                ValidateFieldValue(field, selected);
+                return;
+            }
+
+            base.ValidateLookupField(field, item);
+        }
+
+        
     }
 }

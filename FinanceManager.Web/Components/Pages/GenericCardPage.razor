@@ -5,6 +5,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @inject FinanceManager.Shared.IApiClient Api
 @using FinanceManager.Domain.Attachments
+@using static FinanceManager.Web.ViewModels.Common.BaseViewModel
 
 @if (Provider == null)
 {
@@ -16,11 +17,7 @@ else
 
     @if (!string.IsNullOrEmpty(Provider.LastError))
     {
-        var err = Provider.GetLocalizedError(Localizer);
-        if (!string.IsNullOrEmpty(err))
-        {
-            <div class="error-msg" style="color:#e66;margin:.5rem 0;padding:.5rem;border:1px solid rgba(230,102,102,.2);background:rgba(230,102,102,.04);border-radius:4px;">@err</div>
-        }
+        <div class="error-msg" style="color:#e66;margin:.5rem 0;padding:.5rem;border:1px solid rgba(230,102,102,.2);background:rgba(230,102,102,.04);border-radius:4px;">@Provider.LastError</div>
     }
 
     @if (Provider.Loading)
@@ -52,6 +49,8 @@ else
     [Parameter] public Microsoft.Extensions.Localization.IStringLocalizer? Localizer { get; set; }
 
     [Parameter] public string LoadingText { get; set; } = "Loading";
+
+    private readonly Dictionary<string, List<LookupItem>> _enumOptions = new();
 
     private string GetKey(TKeyValue kv)
     {
@@ -105,6 +104,40 @@ else
         {
             // invoke the RenderFragment returned by RenderField
             builder.AddContent(0, RenderField(f));
+            return;
+        }
+
+        // Enum-backed fields: render select populated from Provider.QueryLookupAsync results
+        if (!string.IsNullOrEmpty(f.LookupType) && f.LookupType.StartsWith("Enum:", StringComparison.OrdinalIgnoreCase))
+        {
+            // Try to get cached options for this lookupType
+            if (!_enumOptions.TryGetValue(f.LookupType, out var opts) || opts == null)
+            {
+                // show disabled select while loading
+                builder.OpenElement(0, "select");
+                builder.AddAttribute(1, "class", "card-input");
+                builder.AddAttribute(2, "disabled", true);
+                var loadingLabel = Localizer != null ? Localizer["Loading"].Value : "Loading";
+                builder.OpenElement(3, "option"); builder.AddContent(4, loadingLabel); builder.CloseElement();
+                builder.CloseElement();
+                return;
+            }
+
+            builder.OpenElement(10, "select");
+            builder.AddAttribute(11, "class", "card-input");
+            builder.AddAttribute(12, "value", f.Text ?? string.Empty);
+            builder.AddAttribute(13, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, (ChangeEventArgs e) => OnEnumChanged(f, e)));
+
+            foreach (var li in opts)
+            {
+                builder.OpenElement(20, "option");
+                builder.AddAttribute(21, "value", li.Name);
+                if (string.Equals(f.Text, li.Name, StringComparison.OrdinalIgnoreCase)) builder.AddAttribute(22, "selected", true);
+                builder.AddContent(23, li.Name);
+                builder.CloseElement();
+            }
+
+            builder.CloseElement();
             return;
         }
 
@@ -239,19 +272,46 @@ else
         }
     }
 
-    private readonly Dictionary<CardField, List<FinanceManager.Web.ViewModels.Common.LookupItem>> _lookupResults = new();
+    private readonly Dictionary<CardField, List<LookupItem>> _lookupResults = new();
     private CardField? _openLookupField;
     private BaseCardViewModel<TKeyValue>? _subscribedProvider;
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-        base.OnParametersSet();
+        await base.OnParametersSetAsync();
         if (_subscribedProvider != Provider)
         {
             if (_subscribedProvider != null) _subscribedProvider.StateChanged -= OnProviderStateChanged;
             _subscribedProvider = Provider;
             if (_subscribedProvider != null) _subscribedProvider.StateChanged += OnProviderStateChanged;
         }
+
+        // preload enum options provided by the ViewModel
+        _enumOptions.Clear();
+        if (Provider?.CardRecord?.Fields != null)
+        {
+            var enumLookupTypes = Provider.CardRecord.Fields
+                .Where(f => !string.IsNullOrWhiteSpace(f.LookupType) && f.LookupType.StartsWith("Enum:", StringComparison.OrdinalIgnoreCase))
+                .Select(f => f.LookupType)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            foreach (var lt in enumLookupTypes)
+            {
+                try
+                {
+                    var items = await Provider.QueryLookupAsync(new CardField("", CardFieldKind.Text, lookupType: lt), null, 0, 200);
+                    _enumOptions[lt] = items?.ToList() ?? new List<LookupItem>();
+                }
+                catch { _enumOptions[lt] = new List<LookupItem>(); }
+            }
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        // keep legacy subscription logic for synchronous parameter changes
     }
 
     private void OnProviderStateChanged(object? _, EventArgs __) => InvokeAsync(StateHasChanged);
@@ -331,6 +391,13 @@ else
             f.Amount = val;
             if (Provider is not null) Provider.ValidateFieldValue(f, val);
         }
+    }
+
+    private void OnEnumChanged(CardField f, ChangeEventArgs e)
+    {
+        var txt = (e.Value ?? string.Empty).ToString();
+        f.Text = txt;
+        if (Provider is not null) Provider.ValidateFieldValue(f, txt);
     }
 }
 

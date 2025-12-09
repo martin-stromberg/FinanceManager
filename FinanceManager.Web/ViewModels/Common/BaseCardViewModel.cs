@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Localization;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -18,19 +19,21 @@ namespace FinanceManager.Web.ViewModels.Common
 
         // Pending field values stored by label key (not persisted until SaveAsync)
         protected readonly Dictionary<string, object?> _pendingFieldValues = new();
+
+        protected BaseCardViewModel(IServiceProvider serviceProvider) : base(serviceProvider)
+        {
+        }
+
         public IReadOnlyDictionary<string, object?> PendingFieldValues => _pendingFieldValues;
         public bool HasPendingChanges => _pendingFieldValues.Count > 0;
 
-        // Validate (accept) a field value change and remember it for later saving.
-        // This does not persist; it only stores the change in memory and raises StateChanged so UI can enable Save.
+        
         public virtual void ValidateFieldValue(CardField field, object? newValue)
         {
             if (field == null) return;
             _pendingFieldValues[field.LabelKey] = newValue;
             RaiseStateChanged();
         }
-
-        // Validate lookup field: store LookupItem object directly as pending value
         public virtual void ValidateLookupField(CardField field, LookupItem? item)
         {
             if (field == null) return;
@@ -109,11 +112,6 @@ namespace FinanceManager.Web.ViewModels.Common
             return Task.CompletedTask;
         }
 
-        // Query lookup items for a given CardField. Default: empty.
-        // The CardField contains LookupType and LookupField which implementations may use to filter/search.
-        public virtual Task<IReadOnlyList<LookupItem>> QueryLookupAsync(CardField field, string? q, int skip, int take)
-        {
-            return Task.FromResult<IReadOnlyList<LookupItem>>(Array.Empty<LookupItem>());
-        }
+        
     }
 }

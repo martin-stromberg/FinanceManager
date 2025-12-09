@@ -15,10 +15,8 @@ namespace FinanceManager.Web.ViewModels.Accounts
 {
     public sealed class BankAccountListViewModel : BaseListViewModel<AccountListItem>
     {
-        private readonly IServiceProvider _sp;
-        public BankAccountListViewModel(IServiceProvider sp)
+        public BankAccountListViewModel(IServiceProvider sp):base(sp)
         {
-            _sp = sp;
         }
 
         public override bool AllowRangeFiltering => false;
@@ -28,9 +26,9 @@ namespace FinanceManager.Web.ViewModels.Accounts
 
         protected override async Task LoadPageAsync(bool resetPaging)
         {
+            var api = ServiceProvider.GetRequiredService<IApiClient>();
             try
-            {
-                var api = _sp.GetRequiredService<IApiClient>();
+            {                
                 if (resetPaging) { _skip = 0; }
                 var list = await api.GetAccountsAsync(_skip, PageSize, null);
                 var items = (list ?? Array.Empty<AccountDto>())
@@ -45,14 +43,14 @@ namespace FinanceManager.Web.ViewModels.Accounts
             }
             catch (Exception ex)
             {
-                LastError = ex.Message;
+                SetError(api.LastErrorCode ?? null, api.LastError ?? ex.Message);
                 CanLoadMore = false;
             }
         }
 
         protected override void BuildRecords()
         {
-            var L = _sp.GetRequiredService<IStringLocalizer<Pages>>();
+            var L = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
             Columns = new List<ListColumn>
             {
                 new ListColumn("symbol", string.Empty, "48px", ListColumnAlign.Left),

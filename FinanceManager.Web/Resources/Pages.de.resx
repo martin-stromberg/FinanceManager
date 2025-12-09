@@ -129,16 +129,19 @@
   <data name="Card_Caption_Account_Name" xml:space="preserve">
     <value>Name</value>
   </data>
+  <data name="Card_Caption_Account_SavingsPlanExpectation" xml:space="preserve">
+    <value>Sparplanangabe</value>
+  </data>
   <data name="Card_Caption_Account_Symbol" xml:space="preserve">
     <value>Symbol</value>
   </data>
   <data name="Card_Caption_Account_Type" xml:space="preserve">
     <value>Typ</value>
   </data>
-  <data name="Card_Value_AccountType_Giro" xml:space="preserve">
+  <data name="EnumType_AccountType_Giro" xml:space="preserve">
     <value>Girokonto</value>
   </data>
-  <data name="Card_Value_AccountType_Savings" xml:space="preserve">
+  <data name="EnumType_AccountType_Savings" xml:space="preserve">
     <value>Sparkonto</value>
   </data>
   <data name="Err_Invalid_bankContactId" xml:space="preserve">
@@ -203,5 +206,17 @@
   </data>
   <data name="Ribbon_Save" xml:space="preserve">
     <value>Speichern</value>
+  </data>
+  <data name="EnumType_SavingsPlanExpectation_None" xml:space="preserve">
+    <value>Keine</value>
+  </data>
+  <data name="EnumType_SavingsPlanExpectation_Optional" xml:space="preserve">
+    <value>Optional</value>
+  </data>
+  <data name="EnumType_SavingsPlanExpectation_Required" xml:space="preserve">
+    <value>Pflichtangabe</value>
+  </data>
+  <data name="CardPage_PageTitle" xml:space="preserve">
+    <value>Details</value>
   </data>
 </root>
