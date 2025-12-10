@@ -11,6 +11,7 @@
 @inject FinanceManager.Shared.IApiClient Api
 @inject IStringLocalizer<FinanceManager.Web.Pages> Localizer
 @inject NavigationManager Nav
+@inject IServiceProvider Services
 
 <div class="kpi-grid">
     @foreach (var k in _kpis.OrderBy(x => x.SortOrder).ThenBy(x => x.CreatedUtc))
@@ -295,40 +296,44 @@
             switch (predefined)
             {
                 case HomeKpiPredefined.AccountsAggregates:
-                    builder.OpenComponent<AggregateBarChart>(i++);
-                    builder.AddAttribute(i++, "Endpoint", "/api/accounts/aggregates");
-                    builder.AddAttribute(i++, "Title", (object?)null);
-                    builder.AddAttribute(i++, "Take", 7);
-                    builder.AddAttribute(i++, "HideIntervalSelector", true);
-                    builder.AddAttribute(i++, "InitialPeriod", "Month");
-                    builder.AddAttribute(i++, "Compact", true);
-                    builder.AddAttribute(i++, "BarsHeightPx", 110);
-                    builder.CloseComponent();
+                    {
+                        var vm = new AggregateBarChartViewModel(Services, "/api/accounts/aggregates", null, 7, null);
+                        vm.HideIntervalSelector = true;
+                        vm.InitialPeriod = "Month";
+                        vm.Compact = true;
+                        vm.BarsHeightPx = 110;
+                        builder.OpenComponent<AggregateBarChart>(i++);
+                        builder.AddAttribute(i++, "ViewModel", vm);
+                        builder.CloseComponent();
+                    }
                     break;
                 case HomeKpiPredefined.SavingsPlanAggregates:
-                    builder.OpenComponent<AggregateBarChart>(i++);
-                    builder.AddAttribute(i++, "Endpoint", "/api/savings-plans/aggregates");
-                    builder.AddAttribute(i++, "Title", (object?)null);
-                    builder.AddAttribute(i++, "Take", 7);
-                    builder.AddAttribute(i++, "HideIntervalSelector", true);
-                    builder.AddAttribute(i++, "InitialPeriod", "Month");
-                    builder.AddAttribute(i++, "PositiveColor", "#2d9d4f");
-                    builder.AddAttribute(i++, "NegativeColor", "#b55");
-                    builder.AddAttribute(i++, "Compact", true);
-                    builder.AddAttribute(i++, "BarsHeightPx", 110);
-                    builder.CloseComponent();
+                    {
+                        var vm = new AggregateBarChartViewModel(Services, "/api/savings-plans/aggregates", null, 7, null);
+                        vm.HideIntervalSelector = true;
+                        vm.InitialPeriod = "Month";
+                        vm.PositiveColor = "#2d9d4f";
+                        vm.NegativeColor = "#b55";
+                        vm.Compact = true;
+                        vm.BarsHeightPx = 110;
+                        builder.OpenComponent<AggregateBarChart>(i++);
+                        builder.AddAttribute(i++, "ViewModel", vm);
+                        builder.CloseComponent();
+                    }
                     break;
                 case HomeKpiPredefined.SecuritiesDividends:
-                    builder.OpenComponent<AggregateBarChart>(i++);
-                    builder.AddAttribute(i++, "Endpoint", "/api/securities/dividends");
-                    builder.AddAttribute(i++, "Title", (object?)null);
-                    builder.AddAttribute(i++, "HideIntervalSelector", true);
-                    builder.AddAttribute(i++, "InitialPeriod", "Quarter");
-                    builder.AddAttribute(i++, "PositiveColor", "#d4a72c");
-                    builder.AddAttribute(i++, "NegativeColor", "#b55");
-                    builder.AddAttribute(i++, "Compact", true);
-                    builder.AddAttribute(i++, "BarsHeightPx", 110);
-                    builder.CloseComponent();
+                    {
+                        var vm = new AggregateBarChartViewModel(Services, "/api/securities/dividends", null, null, null);
+                        vm.HideIntervalSelector = true;
+                        vm.InitialPeriod = "Quarter";
+                        vm.PositiveColor = "#d4a72c";
+                        vm.NegativeColor = "#b55";
+                        vm.Compact = true;
+                        vm.BarsHeightPx = 110;
+                        builder.OpenComponent<AggregateBarChart>(i++);
+                        builder.AddAttribute(i++, "ViewModel", vm);
+                        builder.CloseComponent();
+                    }
                     break;
                 case HomeKpiPredefined.ActiveSavingsPlansCount:
                     builder.OpenElement(i++, "svg"); builder.AddAttribute(i++, "class", "kpi-bg-ico kpi-savings"); builder.AddMarkupContent(i++, "<use href='/icons/sprite.svg#save' />"); builder.CloseElement();

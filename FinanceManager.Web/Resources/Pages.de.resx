@@ -237,4 +237,7 @@
   <data name="Err_OperationNotSupported" xml:space="preserve">
     <value>Der aktuelle Vorgang wurde nicht unterstützt.</value>
   </data>
+  <data name="Chart_Title_Account_Aggregates" xml:space="preserve">
+    <value>Ergebnisse</value>
+  </data>
 </root>

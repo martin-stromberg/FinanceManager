@@ -18,6 +18,12 @@ else
 {
     <PageTitle>@($"{GetKindTitle()}: {_vm.Title}")</PageTitle>
     <GenericCardPage TKeyValue="(string, string)" Provider="_vm" Localizer="Localizer" LoadingText="@Localizer["General_Loading"]" />
+    @if (_vm.ChartViewModel != null)
+    {
+        <div style="margin-top:1.25rem;">
+            <AggregateBarChart ViewModel="_vm.ChartViewModel" />
+        </div>
+    }
 }
 
 @code {

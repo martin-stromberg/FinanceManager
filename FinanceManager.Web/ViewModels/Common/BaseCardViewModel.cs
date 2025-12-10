@@ -28,6 +28,8 @@ namespace FinanceManager.Web.ViewModels.Common
         public bool HasPendingChanges => _pendingFieldValues.Count > 0;
 
         
+        public virtual AggregateBarChartViewModel? ChartViewModel => null;
+
         public virtual void ValidateFieldValue(CardField field, object? newValue)
         {
             if (field == null) return;

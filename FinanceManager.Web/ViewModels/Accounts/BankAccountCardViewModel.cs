@@ -54,6 +54,16 @@ namespace FinanceManager.Web.ViewModels.Accounts
             finally { Loading = false; RaiseStateChanged(); }
         }
 
+        public override AggregateBarChartViewModel? ChartViewModel
+        {
+            get
+            {
+                var title = Localizer?["Chart_Title_Account_Aggregates"] ?? "Account";
+                var endpoint = $"/api/accounts/{Id}/aggregates";
+                return new AggregateBarChartViewModel(ServiceProvider, endpoint, title);
+            }
+        }
+
         private async Task<CardRecord> BuildCardRecordsAsync(AccountDto a)
         {
             // Build record from authoritative source (Account + contact lookup). Pending values are applied afterwards via ApplyPendingValues.
