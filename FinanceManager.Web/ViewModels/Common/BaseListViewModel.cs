@@ -23,7 +23,7 @@ namespace FinanceManager.Web.ViewModels.Common
         // New: columns metadata and rendered records for GenericListPage
         public IReadOnlyList<ListColumn> Columns { get; protected set; } = Array.Empty<ListColumn>();
         public IReadOnlyList<ListRecord> Records { get; protected set; } = Array.Empty<ListRecord>();
-        public virtual bool AllowRangeFiltering { get; } = true;
+        public virtual bool AllowRangeFiltering { get; protected set; } = true;
 
         public virtual Task InitializeAsync() => LoadAsync();
 

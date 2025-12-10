@@ -8,6 +8,7 @@
 @using FinanceManager.Web.ViewModels.Common
 @using FinanceManager.Web.Components.Shared
 @using System
+@using FinanceManager.Web.ViewModels.Accounts
 
 @if (_vm == null)
 {
@@ -44,12 +45,24 @@ else
         await _vm.InitializeAsync(Id);
     }
     private void ViewModelSatteChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
-    private void OnUiActionRequested(object? sender, string? action) => _ = InvokeAsync(() =>
+    private void OnUiActionRequested(object? sender, FinanceManager.Web.ViewModels.Common.BaseViewModel.UiActionEventArgs? e) => _ = InvokeAsync(() =>
     {
+        var action = e?.Action;
+        var payload = e?.Payload;
         switch (action)
         {
             case "Back":
                 NavigationManager.NavigateTo($"/list/{Kind}");
+                break;
+            case "OpenPostings":
+                if (!string.IsNullOrWhiteSpace(payload))
+                {
+                    NavigationManager.NavigateTo(payload);
+                }                
+                else
+                {
+                    _ = JS.InvokeVoidAsync("alert", Localizer["Err_OperationNotSupported"].Value ?? "Operation not supported");
+                }
                 break;
             case "Delete":
                 _ = HandleDeleteAsync();

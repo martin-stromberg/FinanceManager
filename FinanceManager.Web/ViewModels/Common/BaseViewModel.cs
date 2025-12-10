@@ -35,10 +35,20 @@ namespace FinanceManager.Web.ViewModels.Common
         protected IStringLocalizer? Localizer { get; }
 
         public event EventHandler? StateChanged;
-        public event EventHandler<string?>? UiActionRequested;
+        public sealed class UiActionEventArgs : EventArgs
+        {
+            public string? Action { get; }
+            public string? Payload { get; }
+            public UiActionEventArgs(string? action, string? payload)
+            {
+                Action = action; Payload = payload;
+            }
+        }
+        public event EventHandler<UiActionEventArgs?>? UiActionRequested;
         public sealed record LookupItem(System.Guid Key, string Name);
         protected void RaiseStateChanged() => StateChanged?.Invoke(this, EventArgs.Empty);
-        protected void RaiseUiActionRequested(string? action) => UiActionRequested?.Invoke(this, action);
+        protected void RaiseUiActionRequested(string? action) => UiActionRequested?.Invoke(this, new UiActionEventArgs(action, null));
+        protected void RaiseUiActionRequested(string? action, string? payload) => UiActionRequested?.Invoke(this, new UiActionEventArgs(action, payload));
 
         #region Lookup Values
         public virtual async Task<IReadOnlyList<LookupItem>> QueryLookupAsync(CardField field, string? q, int skip, int take)

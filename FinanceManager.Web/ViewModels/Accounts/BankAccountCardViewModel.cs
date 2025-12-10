@@ -169,7 +169,12 @@ namespace FinanceManager.Web.ViewModels.Accounts
             // Group: Verknüpfte Informationen (OpenPostings)
             var linkedActions = new List<UiRibbonAction>
             {
-                new UiRibbonAction("OpenPostings", localizer["Ribbon_OpenPostings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Account == null, null, "OpenPostings", () => { RaiseUiActionRequested("OpenPostings"); return Task.CompletedTask; })
+                new UiRibbonAction("OpenPostings", localizer["Ribbon_OpenPostings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Account == null, null, "OpenPostings", () => {
+                    // Provide target URL as payload so the page doesn't need to know ViewModel type
+                    var url = $"/list/postings/account/{Id}";
+                    RaiseUiActionRequested("OpenPostings", url);
+                    return Task.CompletedTask;
+                })
             };
 
             var tabs = new List<UiRibbonTab>

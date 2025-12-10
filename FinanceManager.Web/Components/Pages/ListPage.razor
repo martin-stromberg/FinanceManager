@@ -1,4 +1,4 @@
-@page "/list/{Kind}"
+@page "/list/{Kind}/{SubKind?}/{Id?}"
 @rendermode InteractiveServer
 @inject IServiceProvider Services
 @inject NavigationManager Nav
@@ -35,6 +35,8 @@ else
 
 @code {
     [Parameter] public string Kind { get; set; } = string.Empty;
+    [Parameter] public string SubKind { get; set; } = string.Empty;
+    [Parameter] public string? Id { get; set; }
 
     private IListProvider? _provider;
 
@@ -48,7 +50,7 @@ else
     protected override async Task OnParametersSetAsync()
     {
         var factory = ActivatorUtilities.CreateInstance<ListViewModelFactory>(Services);
-        var result = factory.Create(Kind);
+        ListFactoryResult? result = factory.Create(Kind, SubKind, Id);
 
         // unsubscribe previous provider's UiActionRequested if applicable
         if (_provider is BaseViewModel prevVm)
@@ -79,8 +81,9 @@ else
         return Task.CompletedTask;
     }
 
-    private void ProviderOnUiActionRequested(object? sender, string? action)
+    private void ProviderOnUiActionRequested(object? sender, FinanceManager.Web.ViewModels.Common.BaseViewModel.UiActionEventArgs? e)
     {
+        var action = e?.Action;
         if (string.IsNullOrWhiteSpace(action)) return;
         _ = InvokeAsync(() => HandleProviderAction(action!));
     }
