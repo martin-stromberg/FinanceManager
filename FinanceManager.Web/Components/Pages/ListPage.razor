@@ -49,10 +49,23 @@ else
     {
         var factory = ActivatorUtilities.CreateInstance<ListViewModelFactory>(Services);
         var result = factory.Create(Kind);
+
+        // unsubscribe previous provider's UiActionRequested if applicable
+        if (_provider is BaseViewModel prevVm)
+        {
+            prevVm.UiActionRequested -= ProviderOnUiActionRequested;
+        }
+
         _provider = result?.Provider;
         if (_provider != null)
         {
             _provider.StateChanged += (_, __) => _ = InvokeAsync(StateHasChanged);
+
+            if (_provider is BaseViewModel newVm)
+            {
+                newVm.UiActionRequested += ProviderOnUiActionRequested;
+            }
+
             await _provider.InitializeAsync();
         }
     }
@@ -64,5 +77,23 @@ else
             Nav.NavigateTo(nav.GetNavigateUrl());
         }
         return Task.CompletedTask;
+    }
+
+    private void ProviderOnUiActionRequested(object? sender, string? action)
+    {
+        if (string.IsNullOrWhiteSpace(action)) return;
+        _ = InvokeAsync(() => HandleProviderAction(action!));
+    }
+
+    private void HandleProviderAction(string action)
+    {
+        switch (action)
+        {
+            case "New":
+                var kind = (Kind ?? string.Empty).Trim().ToLowerInvariant();
+                var emptyId = Guid.Empty.ToString();
+                Nav.NavigateTo($"/card/{kind}/{emptyId}");
+                break;
+        }
     }
 }

@@ -26,8 +26,8 @@ else
     }
     else if (Provider.CardRecord is not null)
     {
-        <div class="card-view" style="max-width:720px;">
-            <table class="fm-table card">
+        <div class="card-view" style="margin-top:1.25rem;width:100%;">
+            <table class="fm-table card" style="width:100%;">
                 <tbody>
                     @foreach (var f in Provider.CardRecord.Fields)
                     {
@@ -193,20 +193,35 @@ else
                 builder.CloseElement();
                 break;
             case CardFieldKind.Symbol:
-                // Render preview + upload control
+                // Render preview inside a fixed-size box and place upload control next to it so both are vertically aligned
+                builder.OpenElement(0, "div");
+                builder.AddAttribute(1, "style", "display:flex;align-items:center;gap:.5rem;");
+
+                // image box
+                builder.OpenElement(2, "div");
+                builder.AddAttribute(3, "style", "width:36px;height:36px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:6px;");
                 if (f.SymbolId.HasValue)
                 {
-                    builder.OpenElement(3, "img");
-                    builder.AddAttribute(4, "src", $"/api/attachments/{f.SymbolId}/download");
-                    builder.AddAttribute(5, "style", "width:36px;height:36px;object-fit:contain;border-radius:6px;border:1px solid var(--border);");
+                    builder.OpenElement(4, "img");
+                    builder.AddAttribute(5, "src", $"/api/attachments/{f.SymbolId}/download");
+                    builder.AddAttribute(6, "alt", "symbol");
+                    builder.AddAttribute(7, "style", "max-width:100%;max-height:100%;display:block;");
                     builder.CloseElement();
                 }
-                // render InputFile for direct upload
-                builder.OpenComponent<InputFile>(6);
-                builder.AddAttribute(7, "OnChange", EventCallback.Factory.Create<InputFileChangeEventArgs>(this, (e) => OnInputFileChangeAsync(e, f)));
-                builder.AddAttribute(8, "accept", "image/*");
-                builder.AddAttribute(9, "class", "card-input-file");
+                else
+                {
+                    builder.AddMarkupContent(8, "<div style=\"width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);\"><svg style=\"width:18px;height:18px;opacity:.6;\"><use href=\"/icons/sprite.svg#image\" /></svg></div>");
+                }
+                builder.CloseElement();
+
+                // file input (styled button provided by CSS class)
+                builder.OpenComponent<InputFile>(9);
+                builder.AddAttribute(10, "OnChange", EventCallback.Factory.Create<InputFileChangeEventArgs>(this, (e) => OnInputFileChangeAsync(e, f)));
+                builder.AddAttribute(11, "accept", "image/*");
+                builder.AddAttribute(12, "class", "card-input-file");
                 builder.CloseComponent();
+
+                builder.CloseElement();
                 break;
             case CardFieldKind.Currency:
                 builder.OpenElement(9, "input");

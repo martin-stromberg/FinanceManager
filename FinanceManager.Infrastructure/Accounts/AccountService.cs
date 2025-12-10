@@ -21,6 +21,16 @@ public sealed class AccountService : IAccountService
         {
             throw new ArgumentException("Bank contact invalid", nameof(bankContactId));
         }
+
+        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name required", nameof(name));
+        name = name.Trim();
+
+        var nameExists = await _db.Accounts.AsNoTracking().AnyAsync(a => a.OwnerUserId == ownerUserId && a.Name.ToLower() == name.ToLower(), ct);
+        if (nameExists)
+        {
+            throw new ArgumentException("Account name already exists", nameof(name));
+        }
+
         if (!string.IsNullOrWhiteSpace(iban))
         {
             var norm = iban.Trim();
@@ -46,6 +56,16 @@ public sealed class AccountService : IAccountService
         {
             throw new ArgumentException("Bank contact invalid", nameof(bankContactId));
         }
+
+        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name required", nameof(name));
+        name = name.Trim();
+
+        var duplicateName = await _db.Accounts.AsNoTracking().AnyAsync(a => a.OwnerUserId == ownerUserId && a.Id != id && a.Name.ToLower() == name.ToLower(), ct);
+        if (duplicateName)
+        {
+            throw new ArgumentException("Account name already exists", nameof(name));
+        }
+
         if (!string.IsNullOrWhiteSpace(iban))
         {
             iban = iban.Trim();

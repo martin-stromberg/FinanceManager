@@ -221,4 +221,22 @@
   <data name="CardPage_PageTitle" xml:space="preserve">
     <value>Details</value>
   </data>
+  <data name="Err_Invalid_name" xml:space="preserve">
+    <value>The name is invalid.</value>
+  </data>
+  <data name="Ribbon_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Ribbon_New" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="Ribbon_ClearSearch" xml:space="preserve">
+    <value>Clear search</value>
+  </data>
+  <data name="Confirm_Delete_Account" xml:space="preserve">
+    <value>Do you really want the bank account to be deleted?</value>
+  </data>
+  <data name="Err_OperationNotSupported" xml:space="preserve">
+    <value>The operation is not supported.</value>
+  </data>
 </root>

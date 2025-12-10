@@ -3,12 +3,11 @@
 @inject IServiceProvider Services
 @inject NavigationManager NavigationManager
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
+@inject IJSRuntime JS
 @using FinanceManager.Web.ViewModels
 @using FinanceManager.Web.ViewModels.Common
 @using FinanceManager.Web.Components.Shared
 @using System
-
-
 
 @if (_vm == null)
 {
@@ -46,6 +45,20 @@ else
             case "Back":
                 NavigationManager.NavigateTo($"/list/{Kind}");
                 break;
+            case "Delete":
+                _ = HandleDeleteAsync();
+                break;
+            case "Deleted":
+                NavigationManager.NavigateTo($"/list/{Kind}");
+                break;
+            case "Saved":
+                // ViewModel saved a new entity (Id updated) — navigate to URL with new Id so reload won't recreate
+                if (_vm is FinanceManager.Web.ViewModels.Accounts.BankAccountCardViewModel savedVm && savedVm.Id != Guid.Empty)
+                {
+                    var kindLower = (Kind ?? string.Empty).Trim().ToLowerInvariant();
+                    NavigationManager.NavigateTo($"/card/{kindLower}/{savedVm.Id}");
+                }
+                break;
         }
     });
 
@@ -60,5 +73,38 @@ else
     {
         if (Kind?.ToLowerInvariant() == "accounts")
             await SetViewModel(ActivatorUtilities.CreateInstance<BankAccountCardViewModel>(Services));
+    }
+
+    private async Task HandleDeleteAsync()
+    {
+        try
+        {
+            var confirmed = await JS.InvokeAsync<bool>("confirm", Localizer["Confirm_Delete_Account"].Value ?? "Delete item?");
+            if (!confirmed) return;
+
+            if (_vm is FinanceManager.Web.ViewModels.Accounts.BankAccountCardViewModel bam)
+            {
+                var ok = await bam.DeleteAsync();
+                if (ok)
+                {
+                    // navigation will also be triggered by the Deleted event, but navigate here as fallback
+                    NavigationManager.NavigateTo($"/list/{Kind}");
+                }
+                else
+                {
+                    var msg = bam.LastError ?? "Delete failed";
+                    await JS.InvokeVoidAsync("alert", msg);
+                }
+            }
+            else
+            {
+                // Fallback: not supported for other kinds
+                await JS.InvokeVoidAsync("alert", Localizer["Err_OperationNotSupported"].Value ?? "Operation not supported");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", ex.Message);
+        }
     }
 }

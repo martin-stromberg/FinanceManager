@@ -219,4 +219,22 @@
   <data name="CardPage_PageTitle" xml:space="preserve">
     <value>Details</value>
   </data>
+  <data name="Err_Invalid_name" xml:space="preserve">
+    <value>Der angegebene Name ist ungültig.</value>
+  </data>
+  <data name="Ribbon_Delete" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="Ribbon_New" xml:space="preserve">
+    <value>Neu</value>
+  </data>
+  <data name="Ribbon_ClearSearch" xml:space="preserve">
+    <value>Suche zurücksetzen</value>
+  </data>
+  <data name="Confirm_Delete_Account" xml:space="preserve">
+    <value>Soll das Bankkonto gelöscht werden?</value>
+  </data>
+  <data name="Err_OperationNotSupported" xml:space="preserve">
+    <value>Der aktuelle Vorgang wurde nicht unterstützt.</value>
+  </data>
 </root>
