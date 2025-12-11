@@ -186,6 +186,27 @@
   <data name="List_Th_Account_Type" xml:space="preserve">
     <value>Typ</value>
   </data>
+  <data name="List_Th_Postings_Date" xml:space="preserve">
+    <value>Datum</value>
+  </data>
+  <data name="List_Th_Postings_Valuta" xml:space="preserve">
+    <value>Valuta</value>
+  </data>
+  <data name="List_Th_Postings_Amount" xml:space="preserve">
+    <value>Betrag</value>
+  </data>
+  <data name="List_Th_Postings_Kind" xml:space="preserve">
+    <value>Art</value>
+  </data>
+  <data name="List_Th_Postings_Recipient" xml:space="preserve">
+    <value>Empfänger</value>
+  </data>
+  <data name="List_Th_Postings_Subject" xml:space="preserve">
+    <value>Verwendungszweck</value>
+  </data>
+  <data name="List_Th_Postings_Description" xml:space="preserve">
+    <value>Beschreibung</value>
+  </data>
   <data name="Ribbon_Back" xml:space="preserve">
     <value>Zurück</value>
   </data>
@@ -239,5 +260,26 @@
   </data>
   <data name="Chart_Title_Account_Aggregates" xml:space="preserve">
     <value>Ergebnisse</value>
+  </data>
+  <data name="Card_Caption_Posting_Date" xml:space="preserve">
+    <value>Datum</value>
+  </data>
+  <data name="Card_Caption_Posting_Valuta" xml:space="preserve">
+    <value>Valuta</value>
+  </data>
+  <data name="Card_Caption_Posting_Amount" xml:space="preserve">
+    <value>Betrag</value>
+  </data>
+  <data name="Card_Caption_Posting_Kind" xml:space="preserve">
+    <value>Art</value>
+  </data>
+  <data name="Card_Caption_Posting_Recipient" xml:space="preserve">
+    <value>Empfänger</value>
+  </data>
+  <data name="Card_Caption_Posting_Subject" xml:space="preserve">
+    <value>Verwendungszweck</value>
+  </data>
+  <data name="Card_Caption_Posting_Description" xml:space="preserve">
+    <value>Beschreibung</value>
   </data>
 </root>

@@ -9,6 +9,7 @@
 @using FinanceManager.Web.Components.Shared
 @using System
 @using FinanceManager.Web.ViewModels.Accounts
+@using FinanceManager.Web.ViewModels.Postings
 
 @if (_vm == null)
 {
@@ -52,17 +53,13 @@ else
         switch (action)
         {
             case "Back":
-                NavigationManager.NavigateTo($"/list/{Kind}");
+                if (string.IsNullOrEmpty(payload))
+                    NavigationManager.NavigateTo($"/list/{Kind}");
+                else
+                    NavigationManager.NavigateTo($"/list/{Kind}/{payload}");
                 break;
             case "OpenPostings":
-                if (!string.IsNullOrWhiteSpace(payload))
-                {
-                    NavigationManager.NavigateTo(payload);
-                }                
-                else
-                {
-                    _ = JS.InvokeVoidAsync("alert", Localizer["Err_OperationNotSupported"].Value ?? "Operation not supported");
-                }
+                NavigationManager.NavigateTo(payload);
                 break;
             case "Delete":
                 _ = HandleDeleteAsync();
@@ -71,12 +68,8 @@ else
                 NavigationManager.NavigateTo($"/list/{Kind}");
                 break;
             case "Saved":
-                // ViewModel saved a new entity (Id updated) — navigate to URL with new Id so reload won't recreate
-                if (_vm is FinanceManager.Web.ViewModels.Accounts.BankAccountCardViewModel savedVm && savedVm.Id != Guid.Empty)
-                {
-                    var kindLower = (Kind ?? string.Empty).Trim().ToLowerInvariant();
-                    NavigationManager.NavigateTo($"/card/{kindLower}/{savedVm.Id}");
-                }
+                var kindLower = (Kind ?? string.Empty).Trim().ToLowerInvariant();
+                NavigationManager.NavigateTo($"/card/{kindLower}/{payload}");
                 break;
         }
     });
@@ -92,6 +85,8 @@ else
     {
         if (Kind?.ToLowerInvariant() == "accounts")
             await SetViewModel(ActivatorUtilities.CreateInstance<BankAccountCardViewModel>(Services));
+        else if (Kind?.ToLowerInvariant() == "postings")
+            await SetViewModel(ActivatorUtilities.CreateInstance<PostingsCardViewModel>(Services));
     }
 
     private async Task HandleDeleteAsync()

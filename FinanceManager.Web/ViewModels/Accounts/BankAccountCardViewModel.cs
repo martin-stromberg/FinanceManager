@@ -248,7 +248,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
                     CardRecord = await BuildCardRecordsAsync(Account);
                     ClearPendingChanges();
 
-                    RaiseUiActionRequested("Saved");
+                    RaiseUiActionRequested("Saved", Id.ToString());
                     return;
                 }
 

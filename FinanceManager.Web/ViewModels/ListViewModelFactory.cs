@@ -61,6 +61,27 @@ namespace FinanceManager.Web.ViewModels
                         return new ListFactoryResult(vm);
                     }
                     break;
+                case "contact":
+                    if (id.HasValue)
+                    {
+                        var vm = ActivatorUtilities.CreateInstance<FinanceManager.Web.ViewModels.Postings.ContactPostingsListViewModel>(_sp, id.Value);
+                        return new ListFactoryResult(vm);
+                    }
+                    break;
+                case "savings-plan":
+                    if (id.HasValue)
+                    {
+                        var vm = ActivatorUtilities.CreateInstance<FinanceManager.Web.ViewModels.Postings.SavingsPlanPostingsListViewModel>(_sp, id.Value);
+                        return new ListFactoryResult(vm);
+                    }
+                    break;
+                case "security":
+                    if (id.HasValue)
+                    {
+                        var vm = ActivatorUtilities.CreateInstance<FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel>(_sp, id.Value);
+                        return new ListFactoryResult(vm);
+                    }
+                    break;
             }
             return null;
         }

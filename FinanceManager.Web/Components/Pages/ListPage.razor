@@ -76,7 +76,9 @@ else
     {
         if (item is IListItemNavigation nav)
         {
-            Nav.NavigateTo(nav.GetNavigateUrl());
+            var uri = nav.GetNavigateUrl();
+            if (!string.IsNullOrWhiteSpace(uri))
+                Nav.NavigateTo(uri);
         }
         return Task.CompletedTask;
     }

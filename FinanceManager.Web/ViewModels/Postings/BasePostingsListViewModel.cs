@@ -1,6 +1,7 @@
 using FinanceManager.Shared;
 using FinanceManager.Shared.Dtos.Postings;
 using FinanceManager.Web.ViewModels.Common;
+using System.Linq;
 
 namespace FinanceManager.Web.ViewModels.Postings
 {
@@ -8,11 +9,22 @@ namespace FinanceManager.Web.ViewModels.Postings
     {
         protected BasePostingsListViewModel(IServiceProvider services) : base(services)
         {
-            // default columns: Date | Text | Amount
+            var dateLabel = Localizer?["List_Th_Postings_Date"].Value ?? "Date";
+            var valutaLabel = Localizer?["List_Th_Postings_Valuta"].Value ?? "Valuta";
+            var amountLabel = Localizer?["List_Th_Postings_Amount"].Value ?? "Amount";
+            var kindLabel = Localizer?["List_Th_Postings_Kind"].Value ?? "Kind";
+            var recipientLabel = Localizer?["List_Th_Postings_Recipient"].Value ?? "Recipient";
+            var subjectLabel = Localizer?["List_Th_Postings_Subject"].Value ?? "Subject";
+            var descriptionLabel = Localizer?["List_Th_Postings_Description"].Value ?? "Description";
+
             Columns = new[] {
-                new ListColumn("date", "Date", Align: ListColumnAlign.Center, Width: "8rem"),
-                new ListColumn("text", "Text"),
-                new ListColumn("amount", "Amount", Align: ListColumnAlign.Right, Width: "10rem")
+                new ListColumn("date", dateLabel, Align: ListColumnAlign.Left, Width: "8rem"),
+                new ListColumn("valuta", valutaLabel, Align: ListColumnAlign.Left, Width: "8rem"),
+                new ListColumn("amount", amountLabel, Align: ListColumnAlign.Right, Width: "10rem"),
+                new ListColumn("kind", kindLabel, Align: ListColumnAlign.Left, Width: "9rem"),
+                new ListColumn("recipient", recipientLabel),
+                new ListColumn("subject", subjectLabel, Width: "22%"),
+                new ListColumn("description", descriptionLabel)
             };
             _take = 50;
         }
@@ -50,11 +62,35 @@ namespace FinanceManager.Web.ViewModels.Postings
         protected override void BuildRecords()
         {
             Columns = Columns ?? Array.Empty<ListColumn>();
-            Records = Items.Select(i => new ListRecord(new[] {
-                new ListCell(ListCellKind.Text, Text: i.ValutaDate.ToString("d")),
-                new ListCell(ListCellKind.Text, Text: i.Subject ?? string.Empty),
-                new ListCell(ListCellKind.Currency, Amount: i.Amount)
-            }, i)).ToList();
+            Records = Items.Select(i => {
+                // create a navigation wrapper item that implements IListItemNavigation
+                var navItem = new PostingListItem(i);
+                return new ListRecord(new[] {
+                    new ListCell(ListCellKind.Text, Text: i.BookingDate.ToString("d")),
+                    new ListCell(ListCellKind.Text, Text: i.ValutaDate.ToString("d")),
+                    new ListCell(ListCellKind.Currency, Amount: i.Amount),
+                    new ListCell(ListCellKind.Text, Text: (i.Kind == PostingKind.Security && i.SecuritySubType.HasValue) ? $"Security-{i.SecuritySubType}" : i.Kind.ToString()),
+                    new ListCell(ListCellKind.Text, Text: i.RecipientName ?? string.Empty),
+                    new ListCell(ListCellKind.Text, Text: i.Subject ?? string.Empty),
+                    new ListCell(ListCellKind.Text, Text: i.Description ?? string.Empty)
+                }, navItem);
+            }).ToList();
+        }
+
+        // navigation wrapper record for postings
+        private sealed record PostingListItem(PostingServiceDto Posting) : FinanceManager.Web.ViewModels.IListItemNavigation
+        {
+            public string GetNavigateUrl()
+            {
+                // navigate to card page for posting
+                var kind = "postings";
+                return $"/card/{kind}/{Posting.Id}";
+            }
+        }
+
+        public virtual string GetNavigateUrl()
+        {
+            return string.Empty;
         }
     }
 }
