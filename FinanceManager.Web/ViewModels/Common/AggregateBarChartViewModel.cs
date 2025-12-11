@@ -1,6 +1,3 @@
-using Microsoft.Extensions.Localization;
-using System.Net.Http.Json;
-
 namespace FinanceManager.Web.ViewModels.Common
 {
     public sealed class AggregateBarChartViewModel : BaseViewModel

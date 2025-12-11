@@ -1,6 +1,4 @@
 using FinanceManager.Shared; // IApiClient
-using FinanceManager.Web.ViewModels.Common;
-using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 
@@ -315,7 +313,7 @@ public sealed class ContactDetailViewModel : ViewModelBase
         };
         if (!IsNew)
         {
-            editActions.Add(new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Busy || IsSelfContact, null, "Delete", new Func<Task>(()=>{ RaiseUiActionRequested("Delete"); return Task.CompletedTask; })));
+            editActions.Add(new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Busy || IsSelfContact, null, "Delete", new Func<Task>(() => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })));
         }
         uiGroups.Add(new UiRibbonTab(localizer["Ribbon_Group_Edit"].Value, editActions));
 
@@ -324,14 +322,14 @@ public sealed class ContactDetailViewModel : ViewModelBase
             var related = new List<UiRibbonAction>();
             if (Type == ContactType.Bank)
             {
-                related.Add(new UiRibbonAction("OpenBankAccounts", localizer["Ribbon_Accounts"].Value, "<svg><use href='/icons/sprite.svg#accounts'/></svg>", UiRibbonItemSize.Small, Busy, null, "OpenBankAccounts", new Func<Task>(()=>{ RaiseUiActionRequested("OpenBankAccounts"); return Task.CompletedTask; })));
+                related.Add(new UiRibbonAction("OpenBankAccounts", localizer["Ribbon_Accounts"].Value, "<svg><use href='/icons/sprite.svg#accounts'/></svg>", UiRibbonItemSize.Small, Busy, null, "OpenBankAccounts", new Func<Task>(() => { RaiseUiActionRequested("OpenBankAccounts"); return Task.CompletedTask; })));
             }
             if (!IsSelfContact)
             {
-                related.Add(new UiRibbonAction("OpenMerge", localizer["Ribbon_Merge"].Value, "<svg><use href='/icons/sprite.svg#merge'/></svg>", UiRibbonItemSize.Small, Busy, null, "OpenMerge", new Func<Task>(()=>{ RaiseUiActionRequested("OpenMerge"); return Task.CompletedTask; })));
+                related.Add(new UiRibbonAction("OpenMerge", localizer["Ribbon_Merge"].Value, "<svg><use href='/icons/sprite.svg#merge'/></svg>", UiRibbonItemSize.Small, Busy, null, "OpenMerge", new Func<Task>(() => { RaiseUiActionRequested("OpenMerge"); return Task.CompletedTask; })));
             }
-            related.Add(new UiRibbonAction("OpenPostings", localizer["Ribbon_Postings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Busy, null, "OpenPostings", new Func<Task>(()=>{ RaiseUiActionRequested("OpenPostings"); return Task.CompletedTask; })));
-            related.Add(new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Busy, null, "OpenAttachments", new Func<Task>(()=>{ RaiseUiActionRequested("OpenAttachments"); return Task.CompletedTask; })));
+            related.Add(new UiRibbonAction("OpenPostings", localizer["Ribbon_Postings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Busy, null, "OpenPostings", new Func<Task>(() => { RaiseUiActionRequested("OpenPostings"); return Task.CompletedTask; })));
+            related.Add(new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Busy, null, "OpenAttachments", new Func<Task>(() => { RaiseUiActionRequested("OpenAttachments"); return Task.CompletedTask; })));
             uiGroups.Add(new UiRibbonTab(localizer["Ribbon_Group_Related"].Value, related));
         }
 

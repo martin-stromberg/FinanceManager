@@ -1,16 +1,16 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Attachments; // new
-using FinanceManager.Application.Statements;
 using FinanceManager.Application.Contacts; // added
 using FinanceManager.Application.Savings; // added
+using FinanceManager.Application.Securities;
+using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Attachments; // new
 using FinanceManager.Infrastructure.Statements; // for ImportSplitInfo
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Mime;
-using FinanceManager.Application.Securities;
 
 namespace FinanceManager.Web.Controllers;
 
@@ -210,7 +210,7 @@ public sealed class StatementDraftsController : ControllerBase
                 if (e.ContactId.HasValue)
                 {
                     var c = await contactSvc.GetAsync(e.ContactId.Value, _current.UserId, ct);
-                    Guid? symbol = c?.SymbolAttachmentId; 
+                    Guid? symbol = c?.SymbolAttachmentId;
                     if (symbol == null && c?.CategoryId != null)
                     {
                         var cat = await categorySvc.GetAsync(c.CategoryId.Value, _current.UserId, ct);

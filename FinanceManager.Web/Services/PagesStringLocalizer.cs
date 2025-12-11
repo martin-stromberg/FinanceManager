@@ -1,5 +1,4 @@
-﻿using DocumentFormat.OpenXml;
-using Microsoft.Extensions.Localization;
+﻿using Microsoft.Extensions.Localization;
 using System.Collections;
 using System.Globalization;
 using System.Resources;

@@ -1,6 +1,3 @@
-using FinanceManager.Web.ViewModels.Common;
-using Microsoft.Extensions.Localization;
-
 namespace FinanceManager.Web.ViewModels.Postings;
 
 public sealed class PostingsAccountViewModel : ViewModelBase
@@ -154,7 +151,7 @@ public sealed class PostingsAccountViewModel : ViewModelBase
         };
         if (From.HasValue || To.HasValue)
         {
-            filterItems.Add(new UiRibbonAction("ClearRange", localizer["Ribbon_ClearRange"].Value, "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, false, null, "ClearRange", new Func<Task>(()=>{ RaiseUiActionRequested("ClearRange"); return Task.CompletedTask; })));
+            filterItems.Add(new UiRibbonAction("ClearRange", localizer["Ribbon_ClearRange"].Value, "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, false, null, "ClearRange", new Func<Task>(() => { RaiseUiActionRequested("ClearRange"); return Task.CompletedTask; })));
         }
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Filter"].Value, filterItems));
 

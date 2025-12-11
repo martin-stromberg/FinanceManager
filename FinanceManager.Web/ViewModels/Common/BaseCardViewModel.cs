@@ -1,7 +1,3 @@
-using Microsoft.Extensions.Localization;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 namespace FinanceManager.Web.ViewModels.Common
 {
     public abstract class BaseCardViewModel<TKeyValue> : BaseViewModel
@@ -27,7 +23,7 @@ namespace FinanceManager.Web.ViewModels.Common
         public IReadOnlyDictionary<string, object?> PendingFieldValues => _pendingFieldValues;
         public bool HasPendingChanges => _pendingFieldValues.Count > 0;
 
-        
+
         public virtual AggregateBarChartViewModel? ChartViewModel => null;
 
         public virtual void ValidateFieldValue(CardField field, object? newValue)
@@ -114,6 +110,6 @@ namespace FinanceManager.Web.ViewModels.Common
             return Task.CompletedTask;
         }
 
-        
+
     }
 }

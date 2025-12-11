@@ -1,5 +1,4 @@
 using FinanceManager.Shared;
-using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
 

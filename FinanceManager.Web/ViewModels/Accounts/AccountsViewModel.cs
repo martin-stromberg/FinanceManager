@@ -1,6 +1,4 @@
 using FinanceManager.Shared; // IApiClient
-using FinanceManager.Web.ViewModels.Common;
-using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.ViewModels.Accounts;
 
@@ -145,7 +143,7 @@ public sealed class AccountsViewModel : ViewModelBase
         };
         if (FilterBankContactId.HasValue)
         {
-            items.Add(new UiRibbonAction("ClearFilter", localizer["Ribbon_ClearFilter"].Value, "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, false, null, "ClearFilter", new Func<Task>(()=>{ RaiseUiActionRequested("ClearFilter"); return Task.CompletedTask; })));
+            items.Add(new UiRibbonAction("ClearFilter", localizer["Ribbon_ClearFilter"].Value, "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, false, null, "ClearFilter", new Func<Task>(() => { RaiseUiActionRequested("ClearFilter"); return Task.CompletedTask; })));
         }
 
         var tabs = new List<UiRibbonTab>

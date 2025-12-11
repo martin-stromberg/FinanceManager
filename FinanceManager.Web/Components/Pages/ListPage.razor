@@ -3,6 +3,7 @@
 @inject IServiceProvider Services
 @inject NavigationManager Nav
 @inject Microsoft.Extensions.Localization.IStringLocalizer<Pages>? Localizer
+@inject IJSRuntime JS
 @using FinanceManager.Web.ViewModels
 @using FinanceManager.Web.ViewModels.Common
 @using FinanceManager.Web.Components.Shared
@@ -86,11 +87,12 @@ else
     private void ProviderOnUiActionRequested(object? sender, FinanceManager.Web.ViewModels.Common.BaseViewModel.UiActionEventArgs? e)
     {
         var action = e?.Action;
+        var payload = e?.Payload;
         if (string.IsNullOrWhiteSpace(action)) return;
-        _ = InvokeAsync(() => HandleProviderAction(action!));
+        _ = InvokeAsync(() => HandleProviderAction(action!, payload));
     }
 
-    private void HandleProviderAction(string action)
+    private void HandleProviderAction(string action, string? payload = null)
     {
         switch (action)
         {
@@ -98,6 +100,49 @@ else
                 var kind = (Kind ?? string.Empty).Trim().ToLowerInvariant();
                 var emptyId = Guid.Empty.ToString();
                 Nav.NavigateTo($"/card/{kind}/{emptyId}");
+                break;
+            case "Back":
+                // For postings lists, navigate back to card of calling dataset
+                if ((Kind ?? string.Empty).Trim().ToLowerInvariant() == "postings")
+                {
+                    var sub = (SubKind ?? string.Empty).Trim().ToLowerInvariant();
+                    var mapped = sub switch
+                    {
+                        "account" => "accounts",
+                        "contact" => "contacts",
+                        "savings-plan" => "savings-plans",
+                        "security" => "securities",
+                        _ => null
+                    };
+                    if (mapped != null && Guid.TryParse(Id, out var gid))
+                    {
+                        Nav.NavigateTo($"/card/{mapped}/{gid}");
+                        break;
+                    }
+                }
+                // fallback: navigate to list root
+                Nav.NavigateTo($"/list/{Kind}");
+                break;
+            case "ExportCsv":
+            case "ExportXlsx":
+                // build export url for postings lists based on subkind and provider state
+                if ((Kind ?? string.Empty).Trim().ToLowerInvariant() == "postings" && _provider != null)
+                {
+                    var sub = (SubKind ?? string.Empty).Trim().ToLowerInvariant();
+                    var apiSub = sub; // account, contact, savings-plan, security
+                    if (!string.IsNullOrWhiteSpace(apiSub) && Guid.TryParse(Id, out var cid))
+                    {
+                        var fmt = action == "ExportCsv" ? "csv" : "xlsx";
+                        var parts = new List<string> { $"format={Uri.EscapeDataString(fmt)}" };
+                        if (!string.IsNullOrWhiteSpace(_provider.Search)) parts.Add($"q={Uri.EscapeDataString(_provider.Search)}");
+                        if (_provider.RangeFrom.HasValue) parts.Add($"from={_provider.RangeFrom.Value:O}");
+                        if (_provider.RangeTo.HasValue) parts.Add($"to={_provider.RangeTo.Value:O}");
+                        var qs = parts.Count > 0 ? ("?" + string.Join('&', parts)) : string.Empty;
+                        var url = $"/api/postings/{apiSub}/{cid}/export{qs}";
+                        var js = $"(function(){{var a=document.createElement('a'); a.href={System.Text.Json.JsonSerializer.Serialize(url)}; a.download=''; a.style.display='none'; document.body.appendChild(a); a.click(); setTimeout(()=>document.body.removeChild(a),200);}})()";
+                        try { JS.InvokeVoidAsync("eval", js); } catch { Nav.NavigateTo(url, forceLoad: true); }
+                    }
+                }
                 break;
         }
     }

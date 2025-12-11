@@ -1,5 +1,3 @@
-using FinanceManager.Web.ViewModels.Common;
-
 namespace FinanceManager.Web.ViewModels.Securities;
 
 public sealed class SecurityPricesViewModel : ViewModelBase

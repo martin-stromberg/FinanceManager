@@ -1,6 +1,4 @@
-using FinanceManager.Shared.Dtos.Statements;
 using Microsoft.Extensions.Localization;
-using FinanceManager.Web.ViewModels.Common;
 
 namespace FinanceManager.Web.ViewModels.Home;
 

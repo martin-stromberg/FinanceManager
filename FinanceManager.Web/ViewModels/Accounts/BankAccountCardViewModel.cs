@@ -1,14 +1,5 @@
-using DocumentFormat.OpenXml.VariantTypes;
-using FinanceManager.Domain.Contacts;
 using FinanceManager.Shared;
-using FinanceManager.Shared.Dtos.Accounts;
-using FinanceManager.Web.Components.Pages;
-using FinanceManager.Web.ViewModels.Common;
-using iText.Kernel.Pdf.Canvas.Parser.ClipperLib;
 using Microsoft.Extensions.Localization;
-using SQLitePCL;
-using System.Diagnostics;
-using System.Threading.Tasks;
 
 namespace FinanceManager.Web.ViewModels.Accounts
 {
@@ -16,7 +7,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
     public sealed class BankAccountCardViewModel : BaseCardViewModel<(string Key, string Value)>
     {
         public BankAccountCardViewModel(IServiceProvider sp)
-            :base(sp)
+            : base(sp)
         {
         }
 

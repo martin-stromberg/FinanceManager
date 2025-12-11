@@ -1,9 +1,5 @@
 using FinanceManager.Shared;
-using FinanceManager.Shared.Dtos.Statements;
-using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.Localization;
-using Microsoft.Extensions.DependencyInjection;
-using System.Linq;
 
 namespace FinanceManager.Web.ViewModels.StatementDrafts;
 
@@ -28,7 +24,7 @@ public sealed class StatementDraftDetailViewModel : ViewModelBase
         Draft?.Entries == null
             ? Array.Empty<StatementDraftEntryDto>()
             : Draft.Entries
-                .OrderBy(e => e.Status == StatementDraftEntryStatus.AlreadyBooked ? 2 : e.Status == StatementDraftEntryStatus.Announced ? 1: 0)
+                .OrderBy(e => e.Status == StatementDraftEntryStatus.AlreadyBooked ? 2 : e.Status == StatementDraftEntryStatus.Announced ? 1 : 0)
                 .ThenBy(e => e.BookingDate)
                 .ThenBy(e => e.BookingDescription)
                 .ThenBy(e => e.RecipientName)
@@ -112,7 +108,7 @@ public sealed class StatementDraftDetailViewModel : ViewModelBase
             new UiRibbonAction("DeleteDraft", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#trash'/></svg>", UiRibbonItemSize.Small, DraftId == null, localizer["Ribbon_Tooltip_Delete"].Value, "DeleteDraft", new Func<Task>(()=>{ RaiseUiActionRequested("DeleteDraft"); return Task.CompletedTask; }))
         };
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Operations"].Value, opsItems));
-        
+
         // Related (attachments & original file)
         var relatedItems = new List<UiRibbonAction>
         {

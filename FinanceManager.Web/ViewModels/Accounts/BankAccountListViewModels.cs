@@ -1,21 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Globalization;
 using FinanceManager.Shared;
-using FinanceManager.Shared.Dtos.Accounts;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
-using FinanceManager.Web.ViewModels.Common;
-using FinanceManager.Web;
-using FinanceManager.Web.ViewModels; // for IListItemNavigation
 
 namespace FinanceManager.Web.ViewModels.Accounts
 {
     public sealed class BankAccountListViewModel : BaseListViewModel<AccountListItem>
     {
-        public BankAccountListViewModel(IServiceProvider sp):base(sp)
+        public BankAccountListViewModel(IServiceProvider sp) : base(sp)
         {
         }
 
@@ -28,7 +18,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
         {
             var api = ServiceProvider.GetRequiredService<IApiClient>();
             try
-            {                
+            {
                 if (resetPaging) { _skip = 0; }
                 var list = await api.GetAccountsAsync(_skip, PageSize, null);
                 var items = (list ?? Array.Empty<AccountDto>())

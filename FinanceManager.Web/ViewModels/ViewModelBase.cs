@@ -1,5 +1,4 @@
 using FinanceManager.Application;
-using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.ViewModels;

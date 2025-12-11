@@ -1,4 +1,3 @@
-using FinanceManager.Web.ViewModels.Common;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Localization;
 

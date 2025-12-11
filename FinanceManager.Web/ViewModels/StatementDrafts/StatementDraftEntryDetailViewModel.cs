@@ -1,11 +1,5 @@
-using FinanceManager.Web.ViewModels.Common;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using FinanceManager.Shared;
-using FinanceManager.Shared.Dtos.Statements;
-using FinanceManager.Shared.Dtos.Contacts;
-using FinanceManager.Shared.Dtos.SavingsPlans;
-using FinanceManager.Shared.Dtos.Securities;
+using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.ViewModels.StatementDrafts;
 

@@ -1,7 +1,5 @@
 using FinanceManager.Shared;
-using FinanceManager.Shared.Dtos.Postings;
-using FinanceManager.Web.ViewModels.Common;
-using System.Linq;
+using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.ViewModels.Postings
 {
@@ -62,7 +60,8 @@ namespace FinanceManager.Web.ViewModels.Postings
         protected override void BuildRecords()
         {
             Columns = Columns ?? Array.Empty<ListColumn>();
-            Records = Items.Select(i => {
+            Records = Items.Select(i =>
+            {
                 // create a navigation wrapper item that implements IListItemNavigation
                 var navItem = new PostingListItem(i);
                 return new ListRecord(new[] {
@@ -91,6 +90,26 @@ namespace FinanceManager.Web.ViewModels.Postings
         public virtual string GetNavigateUrl()
         {
             return string.Empty;
+        }
+
+        // Default Ribbon for postings lists: Navigation (Back) and Export (CSV/XLSX)
+        public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+        {
+            var tabs = new List<UiRibbonTab>
+            {
+                new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, new List<UiRibbonAction>
+                {
+                    new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, "Back", new Func<Task>(()=>{ RaiseUiActionRequested("Back"); return Task.CompletedTask; })),
+                }),
+                new UiRibbonTab(localizer["Ribbon_Group_Export"].Value, new List<UiRibbonAction>
+                {
+                    new UiRibbonAction("ExportCsv", localizer["Ribbon_ExportCsv"].Value, "<svg><use href='/icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Loading, null, "ExportCsv", new Func<Task>(()=>{ RaiseUiActionRequested("ExportCsv"); return Task.CompletedTask; })),
+                    new UiRibbonAction("ExportXlsx", localizer["Ribbon_ExportExcel"].Value, "<svg><use href='/icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Loading, null, "ExportXlsx", new Func<Task>(()=>{ RaiseUiActionRequested("ExportXlsx"); return Task.CompletedTask; }))
+                })
+            };
+
+            var registers = new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
+            return registers.Count == 0 ? null : registers;
         }
     }
 }

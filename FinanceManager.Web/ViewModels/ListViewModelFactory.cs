@@ -1,11 +1,4 @@
-using DocumentFormat.OpenXml.Office2010.Excel;
-using FinanceManager.Web;
-using FinanceManager.Web.ViewModels.Accounts;
-using FinanceManager.Web.ViewModels.Common;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
-using System;
 
 namespace FinanceManager.Web.ViewModels
 {

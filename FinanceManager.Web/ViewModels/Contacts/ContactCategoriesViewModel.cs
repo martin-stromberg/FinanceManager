@@ -1,8 +1,7 @@
 using FinanceManager.Shared; // IApiClient
-using FinanceManager.Web.ViewModels.Common;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Web.ViewModels.Contacts;
 

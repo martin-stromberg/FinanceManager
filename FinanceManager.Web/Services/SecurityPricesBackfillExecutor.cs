@@ -1,6 +1,5 @@
 using FinanceManager.Application;
 using FinanceManager.Infrastructure;
-using FinanceManager.Web;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using System.Text.Json;

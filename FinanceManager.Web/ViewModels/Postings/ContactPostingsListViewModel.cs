@@ -1,6 +1,4 @@
 using FinanceManager.Shared;
-using FinanceManager.Shared.Dtos.Postings;
-using FinanceManager.Web.ViewModels.Common;
 
 namespace FinanceManager.Web.ViewModels.Postings
 {

@@ -1,6 +1,4 @@
 using FinanceManager.Shared;
-using FinanceManager.Shared.Dtos.Postings;
-using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.ViewModels.Postings;

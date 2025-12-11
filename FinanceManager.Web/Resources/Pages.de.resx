@@ -282,4 +282,13 @@
   <data name="Card_Caption_Posting_Description" xml:space="preserve">
     <value>Beschreibung</value>
   </data>
+  <data name="Ribbon_Group_Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Ribbon_ExportCsv" xml:space="preserve">
+    <value>Csv exportieren</value>
+  </data>
+  <data name="Ribbon_ExportExcel" xml:space="preserve">
+    <value>Excel exportieren</value>
+  </data>
 </root>

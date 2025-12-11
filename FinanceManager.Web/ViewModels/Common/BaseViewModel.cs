@@ -1,10 +1,5 @@
 using FinanceManager.Shared;
-using FinanceManager.Web.ViewModels; // for IRibbonProvider
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace FinanceManager.Web.ViewModels.Common
 {
@@ -171,6 +166,6 @@ namespace FinanceManager.Web.ViewModels.Common
 
         public virtual ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-        
+
     }
 }
