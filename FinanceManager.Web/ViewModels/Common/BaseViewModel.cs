@@ -3,6 +3,7 @@ using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.ViewModels.Common
 {
+    public enum BooleanSelection { True, False }
     public abstract class BaseViewModel : IAsyncDisposable, IRibbonProvider
     {
         protected BaseViewModel(IServiceProvider serviceProvider)

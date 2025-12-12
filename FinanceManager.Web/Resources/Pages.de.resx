@@ -220,7 +220,7 @@
     <value>Navigieren</value>
   </data>
   <data name="Ribbon_OpenPostings" xml:space="preserve">
-    <value>Posten</value>
+    <value>Buchungen</value>
   </data>
   <data name="Ribbon_Reset" xml:space="preserve">
     <value>Zurücksetzen</value>
@@ -290,5 +290,65 @@
   </data>
   <data name="Ribbon_ExportExcel" xml:space="preserve">
     <value>Excel exportieren</value>
+  </data>
+  <data name="Ribbon_Reload" xml:space="preserve">
+    <value>Neu laden</value>
+  </data>
+  <data name="List_Th_Contact_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="List_Th_Contact_Group" xml:space="preserve">
+    <value>Gruppe</value>
+  </data>
+  <data name="List_Th_Contact_Type" xml:space="preserve">
+    <value>Art</value>
+  </data>
+  <data name="Card_Caption_Contact_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Card_Caption_Contact_Type" xml:space="preserve">
+    <value>Art</value>
+  </data>
+  <data name="Card_Caption_Contact_Category" xml:space="preserve">
+    <value>Gruppe</value>
+  </data>
+  <data name="Card_Caption_Contact_Description" xml:space="preserve">
+    <value>Beschreibung</value>
+  </data>
+  <data name="Card_Caption_Contact_Symbol" xml:space="preserve">
+    <value>Symbol</value>
+  </data>
+  <data name="Card_Caption_Contact_IsPaymentIntermediary" xml:space="preserve">
+    <value>Zahlungsvermittler</value>
+  </data>
+  <data name="EnumType_ContactType_Self" xml:space="preserve">
+    <value>Benutzer</value>
+  </data>
+  <data name="EnumType_ContactType_Bank" xml:space="preserve">
+    <value>Bank</value>
+  </data>
+  <data name="EnumType_ContactType_Person" xml:space="preserve">
+    <value>Person</value>
+  </data>
+  <data name="EnumType_ContactType_Organization" xml:space="preserve">
+    <value>Unternehmen</value>
+  </data>
+  <data name="EnumType_ContactType_Other" xml:space="preserve">
+    <value>Sonstiges</value>
+  </data>
+  <data name="EnumType_BooleanSelection_False" xml:space="preserve">
+    <value>Nein</value>
+  </data>
+  <data name="EnumType_BooleanSelection_True" xml:space="preserve">
+    <value>Ja</value>
+  </data>
+  <data name="Ribbon_Attachments" xml:space="preserve">
+    <value>Anhänge</value>
+  </data>
+  <data name="Ribbon_Postings" xml:space="preserve">
+    <value>Buchungen</value>
+  </data>
+  <data name="Ribbon_Merge" xml:space="preserve">
+    <value>Zusammenführen</value>
   </data>
 </root>

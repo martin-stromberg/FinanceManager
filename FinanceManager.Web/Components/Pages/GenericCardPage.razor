@@ -153,7 +153,7 @@ else
             builder.AddAttribute(3, "value", f.Text ?? string.Empty);
             builder.AddAttribute(4, "class", "card-input");
             builder.AddAttribute(5, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, (ChangeEventArgs e) => OnLookupInputAsync(f, e)));
-            builder.AddAttribute(6, "onfocus", EventCallback.Factory.Create(this, () => _openLookupField = f));
+            builder.AddAttribute(6, "onfocus", EventCallback.Factory.Create(this, async () => await OnLookupFocusAsync(f)));
             builder.AddAttribute(7, "onfocusout", EventCallback.Factory.Create(this, () => CloseLookup(f)));
             builder.AddAttribute(8, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, (ChangeEventArgs e) => OnLookupChangeCommit(f, e)));
             builder.CloseElement();
@@ -349,6 +349,23 @@ else
                 _openLookupField = f;
                 await InvokeAsync(StateHasChanged);
             }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+    }
+
+    private async Task OnLookupFocusAsync(CardField f)
+    {
+        try
+        {
+            if (Provider is null) return;
+            // request initial unfiltered list (use empty string to indicate no filter)
+            var list = await Provider.QueryLookupAsync(f, string.Empty, 0, 10);
+            _lookupResults[f] = list.ToList();
+            _openLookupField = f;
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {

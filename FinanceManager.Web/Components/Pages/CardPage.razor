@@ -10,6 +10,7 @@
 @using System
 @using FinanceManager.Web.ViewModels.Accounts
 @using FinanceManager.Web.ViewModels.Postings
+@using FinanceManager.Web.ViewModels.Contacts
 
 @if (_vm == null)
 {
@@ -26,6 +27,34 @@ else
             <AggregateBarChart ViewModel="_vm.ChartViewModel" />
         </div>
     }
+
+    @if (_showAttachmentsOverlay)
+    {
+        if (_vm is FinanceManager.Web.ViewModels.Accounts.BankAccountCardViewModel bam)
+        {
+            <div class="split-center" @onclick="(()=> _showAttachmentsOverlay = false)">
+                <div class="split-dialog" style="max-width:90vH;" @onclick:stopPropagation="true">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+                        <h3 style="margin:0;font-size:1rem;">@Localizer["Attachments_Title"]</h3>
+                        <button class="icon-btn" title='@Localizer["Btn_Close"]' @onclick="(()=> _showAttachmentsOverlay=false)"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
+                    </div>
+                    <AttachmentsPanel ParentKind="FinanceManager.Domain.Attachments.AttachmentEntityKind.Account" ParentId="bam.Id" />
+                </div>
+            </div>
+        }
+        else if (_vm is FinanceManager.Web.ViewModels.Contacts.ContactCardViewModel cvm)
+        {
+            <div class="split-center" @onclick="(()=> _showAttachmentsOverlay = false)">
+                <div class="split-dialog" style="max-width:90vH;" @onclick:stopPropagation="true">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+                        <h3 style="margin:0;font-size:1rem;">@Localizer["Attachments_Title"]</h3>
+                        <button class="icon-btn" title='@Localizer["Btn_Close"]' @onclick="(()=> _showAttachmentsOverlay=false)"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
+                    </div>
+                    <AttachmentsPanel ParentKind="FinanceManager.Domain.Attachments.AttachmentEntityKind.Contact" ParentId="cvm.Id" />
+                </div>
+            </div>
+        }
+    }
 }
 
 @code {
@@ -33,6 +62,8 @@ else
     [Parameter] public Guid Id { get; set; }
 
     private BaseCardViewModel<(string Key, string Value)>? _vm;
+    private bool _showAttachmentsOverlay;
+
     private async Task SetViewModel(BaseCardViewModel<(string Key, string Value)> vm)
     {
         if (_vm is not null)
@@ -61,6 +92,19 @@ else
             case "OpenPostings":
                 NavigationManager.NavigateTo(payload);
                 break;
+            case "OpenBankContact":
+                var parts = (payload?? string.Empty).Split(',', 2);
+                if (parts.Length == 2 && Guid.TryParse(parts[1], out var cid))
+                {
+                    var kind = parts[0];
+                    var back = $"/card/{Kind}/{Id}";
+                    NavigationManager.NavigateTo($"/card/{kind}/{cid}?back={Uri.EscapeDataString(back)}");
+                }
+                break;
+            case "OpenAttachments":
+                _showAttachmentsOverlay = true;
+                StateHasChanged();
+                break;
             case "Delete":
                 _ = HandleDeleteAsync();
                 break;
@@ -87,6 +131,8 @@ else
             await SetViewModel(ActivatorUtilities.CreateInstance<BankAccountCardViewModel>(Services));
         else if (Kind?.ToLowerInvariant() == "postings")
             await SetViewModel(ActivatorUtilities.CreateInstance<PostingsCardViewModel>(Services));
+        else if (Kind?.ToLowerInvariant() == "contacts")
+            await SetViewModel(ActivatorUtilities.CreateInstance<ContactCardViewModel>(Services));
     }
 
     private async Task HandleDeleteAsync()
@@ -107,6 +153,19 @@ else
                 else
                 {
                     var msg = bam.LastError ?? "Delete failed";
+                    await JS.InvokeVoidAsync("alert", msg);
+                }
+            }
+            else if (_vm is FinanceManager.Web.ViewModels.Contacts.ContactCardViewModel cvm)
+            {
+                var ok = await cvm.DeleteAsync();
+                if (ok)
+                {
+                    NavigationManager.NavigateTo($"/list/{Kind}");
+                }
+                else
+                {
+                    var msg = cvm.LastError ?? "Delete failed";
                     await JS.InvokeVoidAsync("alert", msg);
                 }
             }

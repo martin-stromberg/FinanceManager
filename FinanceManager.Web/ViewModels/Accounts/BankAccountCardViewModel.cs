@@ -157,13 +157,26 @@ namespace FinanceManager.Web.ViewModels.Accounts
                 new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#trash'/></svg>", UiRibbonItemSize.Small, Account == null || Account.Id == Guid.Empty, null, "Delete", () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
             };
 
-            // Group: Verknüpfte Informationen (OpenPostings)
+            // Group: Verknüpfte Informationen (OpenPostings, OpenBankContact, OpenAttachments)
             var linkedActions = new List<UiRibbonAction>
             {
                 new UiRibbonAction("OpenPostings", localizer["Ribbon_OpenPostings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Account == null, null, "OpenPostings", () => {
                     // Provide target URL as payload so the page doesn't need to know ViewModel type
                     var url = $"/list/postings/account/{Id}";
                     RaiseUiActionRequested("OpenPostings", url);
+                    return Task.CompletedTask;
+                }),
+                new UiRibbonAction("OpenBankContact", localizer["Ribbon_OpenBankContact"].Value, "<svg><use href='/icons/sprite.svg#bank'/></svg>", UiRibbonItemSize.Small, Account == null || Account.BankContactId == Guid.Empty, null, "OpenBankContact", () => {
+                    if (Account != null && Account.BankContactId != Guid.Empty)
+                    {
+                        var payload = $"contacts,{Account.BankContactId}";
+                        RaiseUiActionRequested("OpenBankContact", payload);
+                    }
+                    return Task.CompletedTask;
+                }),
+                new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Account == null, null, "OpenAttachments", () => {
+                    // show attachments overlay
+                    RaiseUiActionRequested("OpenAttachments");
                     return Task.CompletedTask;
                 })
             };

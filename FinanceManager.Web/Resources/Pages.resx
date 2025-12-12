@@ -293,4 +293,65 @@
   <data name="Ribbon_ExportExcel" xml:space="preserve">
     <value>Export Excel</value>
   </data>
+  <data name="Ribbon_Reload" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="List_Th_Contact_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="List_Th_Contact_Group" xml:space="preserve">
+    <value>Group</value>
+  </data>
+  <data name="List_Th_Contact_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Card_Caption_Contact_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Card_Caption_Contact_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Card_Caption_Contact_Category" xml:space="preserve">
+    <value>Group</value>
+    <comment>&#x8;</comment>
+  </data>
+  <data name="Card_Caption_Contact_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Card_Caption_Contact_Symbol" xml:space="preserve">
+    <value>Symbol</value>
+  </data>
+  <data name="Card_Caption_Contact_IsPaymentIntermediary" xml:space="preserve">
+    <value>Payment Intermediary</value>
+  </data>
+  <data name="EnumType_ContactType_Self" xml:space="preserve">
+    <value>User</value>
+  </data>
+  <data name="EnumType_ContactType_Bank" xml:space="preserve">
+    <value>Bank</value>
+  </data>
+  <data name="EnumType_ContactType_Person" xml:space="preserve">
+    <value>Person</value>
+  </data>
+  <data name="EnumType_ContactType_Organization" xml:space="preserve">
+    <value>Company</value>
+  </data>
+  <data name="EnumType_ContactType_Other" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="EnumType_BooleanSelection_False" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="EnumType_BooleanSelection_True" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Ribbon_Attachments" xml:space="preserve">
+    <value>Attachments</value>
+  </data>
+  <data name="Ribbon_Postings" xml:space="preserve">
+    <value>Postings</value>
+  </data>
+  <data name="Ribbon_Merge" xml:space="preserve">
+    <value>Merge</value>
+  </data>
 </root>

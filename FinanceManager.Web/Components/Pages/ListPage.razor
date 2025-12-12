@@ -89,10 +89,10 @@ else
         var action = e?.Action;
         var payload = e?.Payload;
         if (string.IsNullOrWhiteSpace(action)) return;
-        _ = InvokeAsync(() => HandleProviderAction(action!, payload));
+        _ = InvokeAsync(async () => await HandleProviderActionAsync(action!, payload));
     }
 
-    private void HandleProviderAction(string action, string? payload = null)
+    private async Task HandleProviderActionAsync(string action, string? payload = null)
     {
         switch (action)
         {
@@ -123,6 +123,23 @@ else
                 // fallback: navigate to list root
                 Nav.NavigateTo($"/list/{Kind}");
                 break;
+            case "Reload":
+                if (_provider != null)
+                {
+                    _provider.ResetAndSearch();
+                    await _provider.LoadAsync();
+                }
+                break;
+            case "ClearFilter":
+            case "ClearSearch":
+                if (_provider != null)
+                {
+                    _provider.ClearSearch();
+                    _provider.ClearRange();
+                    _provider.ResetAndSearch();
+                    await _provider.LoadAsync();
+                }
+                break;
             case "ExportCsv":
             case "ExportXlsx":
                 // build export url for postings lists based on subkind and provider state
@@ -140,7 +157,7 @@ else
                         var qs = parts.Count > 0 ? ("?" + string.Join('&', parts)) : string.Empty;
                         var url = $"/api/postings/{apiSub}/{cid}/export{qs}";
                         var js = $"(function(){{var a=document.createElement('a'); a.href={System.Text.Json.JsonSerializer.Serialize(url)}; a.download=''; a.style.display='none'; document.body.appendChild(a); a.click(); setTimeout(()=>document.body.removeChild(a),200);}})()";
-                        try { JS.InvokeVoidAsync("eval", js); } catch { Nav.NavigateTo(url, forceLoad: true); }
+                        try { await JS.InvokeVoidAsync("eval", js); } catch { Nav.NavigateTo(url, forceLoad: true); }
                     }
                 }
                 break;

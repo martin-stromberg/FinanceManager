@@ -33,6 +33,9 @@ namespace FinanceManager.Web.ViewModels
                 case "accounts":
                     var vm = ActivatorUtilities.CreateInstance<BankAccountListViewModel>(_sp);
                     return new ListFactoryResult(vm);
+                case "contacts":
+                    var cvm = ActivatorUtilities.CreateInstance<Contacts.ContactListViewModel>(_sp);
+                    return new ListFactoryResult(cvm);
                 case "postings":
                     if (!Guid.TryParse(id, out var gid))
                         return null;

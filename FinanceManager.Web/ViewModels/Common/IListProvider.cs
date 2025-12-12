@@ -21,6 +21,8 @@ namespace FinanceManager.Web.ViewModels.Common
         Task LoadAsync();
         Task LoadMoreAsync();
 
+        void ClearSearch();
+        void ClearRange();
         void SetSearch(string value);
         void SetRange(DateTime? from, DateTime? to);
         void ResetAndSearch();
