@@ -351,4 +351,31 @@
   <data name="Ribbon_Merge" xml:space="preserve">
     <value>Zusammenführen</value>
   </data>
+  <data name="Ribbon_OpenBankContact" xml:space="preserve">
+    <value>Bankkontakt</value>
+  </data>
+  <data name="Merge_Title" xml:space="preserve">
+    <value>Kontakt zusammenführen</value>
+  </data>
+  <data name="Merge_FilterPlaceholder" xml:space="preserve">
+    <value>Kontakte nach Name filtern…</value>
+  </data>
+  <data name="Merge_Confirm" xml:space="preserve">
+    <value>Zusammenführen</value>
+  </data>
+  <data name="Merge_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="Merge_Hint" xml:space="preserve">
+    <value>Wählen Sie einen Zielkontakt, in den der aktuelle Kontakt zusammengeführt werden soll. Buchungen, Anhänge und zugehörige Daten werden dem Zielkontakt zugewiesen.</value>
+  </data>
+  <data name="Merge_Preference_Label" xml:space="preserve">
+    <value>Bei Konflikten bevorzugen:</value>
+  </data>
+  <data name="Merge_Preference_DestinationFirst" xml:space="preserve">
+    <value>Ziel zuerst (Zielwerte behalten)</value>
+  </data>
+  <data name="Merge_Preference_SourceFirst" xml:space="preserve">
+    <value>Quelle zuerst (Quellwerte übernehmen)</value>
+  </data>
 </root>

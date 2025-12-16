@@ -313,7 +313,6 @@
   </data>
   <data name="Card_Caption_Contact_Category" xml:space="preserve">
     <value>Group</value>
-    <comment>&#x8;</comment>
   </data>
   <data name="Card_Caption_Contact_Description" xml:space="preserve">
     <value>Description</value>
@@ -353,5 +352,32 @@
   </data>
   <data name="Ribbon_Merge" xml:space="preserve">
     <value>Merge</value>
+  </data>
+  <data name="Ribbon_OpenBankContact" xml:space="preserve">
+    <value>Bank contact</value>
+  </data>
+  <data name="Merge_Title" xml:space="preserve">
+    <value>Merge contact</value>
+  </data>
+  <data name="Merge_FilterPlaceholder" xml:space="preserve">
+    <value>Filter contacts by name…</value>
+  </data>
+  <data name="Merge_Confirm" xml:space="preserve">
+    <value>Merge</value>
+  </data>
+  <data name="Merge_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Merge_Hint" xml:space="preserve">
+    <value>Select a target contact to merge the current contact into. Postings, attachments and related data will be reassigned to the target contact.</value>
+  </data>
+  <data name="Merge_Preference_Label" xml:space="preserve">
+    <value>On conflict, prefer:</value>
+  </data>
+  <data name="Merge_Preference_DestinationFirst" xml:space="preserve">
+    <value>Destination first (keep target values)</value>
+  </data>
+  <data name="Merge_Preference_SourceFirst" xml:space="preserve">
+    <value>Source first (use source values)</value>
   </data>
 </root>

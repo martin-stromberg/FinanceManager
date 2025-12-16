@@ -4,7 +4,7 @@ using Microsoft.Extensions.Localization;
 namespace FinanceManager.Web.ViewModels.Accounts
 {
     // Card VM: builds key/value pairs for a single bank account
-    public sealed class BankAccountCardViewModel : BaseCardViewModel<(string Key, string Value)>
+    public sealed class BankAccountCardViewModel : BaseCardViewModel<(string Key, string Value)>, FinanceManager.Web.ViewModels.Common.IDeletableViewModel
     {
         public BankAccountCardViewModel(IServiceProvider sp)
             : base(sp)
@@ -175,8 +175,8 @@ namespace FinanceManager.Web.ViewModels.Accounts
                     return Task.CompletedTask;
                 }),
                 new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Account == null, null, "OpenAttachments", () => {
-                    // show attachments overlay
-                    RaiseUiActionRequested("OpenAttachments");
+                    // Request attachments overlay with ParentKind/ParentId payload
+                    RequestOpenAttachments(FinanceManager.Domain.Attachments.AttachmentEntityKind.Account, Id);
                     return Task.CompletedTask;
                 })
             };

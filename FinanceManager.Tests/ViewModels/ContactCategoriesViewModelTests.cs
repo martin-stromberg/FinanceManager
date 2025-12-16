@@ -3,6 +3,7 @@ using FinanceManager.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
+using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Tests.ViewModels;
 
@@ -23,12 +24,28 @@ public sealed class ContactCategoriesViewModelTests
         public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => Array.Empty<LocalizedString>();
     }
 
+    // Simple test NavigationManager to satisfy DI for viewmodels that require it
+    private sealed class TestNavigationManager : NavigationManager
+    {
+        public TestNavigationManager()
+        {
+            Initialize("http://localhost/", "http://localhost/");
+        }
+
+        protected override void NavigateToCore(string uri, bool forceLoad)
+        {
+            // no-op for tests
+        }
+    }
+
     private static (ContactCategoriesViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool isAuthenticated = true)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService { IsAuthenticated = isAuthenticated });
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
+        // register a test NavigationManager so ViewModels can request it in tests
+        services.AddSingleton<NavigationManager>(new TestNavigationManager());
         var sp = services.BuildServiceProvider();
         var vm = new ContactCategoriesViewModel(sp);
         return (vm, apiMock);
@@ -116,9 +133,9 @@ public sealed class ContactCategoriesViewModelTests
         var loc = new DummyLocalizer();
 
         var groups = vm.GetRibbon(loc);
-        Assert.Contains(groups, g => g.Title == "Ribbon_Group_Navigation");
-        Assert.Contains(groups, g => g.Title == "Ribbon_Group_Actions");
-        Assert.Contains(groups, g => g.Items.Any(i => i.Action == "Back"));
-        Assert.Contains(groups, g => g.Items.Any(i => i.Action == "New"));
+        Assert.Contains(groups, g => g.Tabs != null && g.Tabs.Any(t => t.Title == "Ribbon_Group_Navigation"));
+        Assert.Contains(groups, g => g.Tabs != null && g.Tabs.Any(t => t.Title == "Ribbon_Group_Actions"));
+        Assert.Contains(groups.SelectMany(r => r.Tabs.SelectMany(t => t.Items)), i => i.Action == "Back");
+        Assert.Contains(groups.SelectMany(r => r.Tabs.SelectMany(t => t.Items)), i => i.Action == "New");
     }
 }

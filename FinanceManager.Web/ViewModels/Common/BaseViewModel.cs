@@ -1,5 +1,7 @@
 using FinanceManager.Shared;
 using Microsoft.Extensions.Localization;
+using FinanceManager.Domain.Attachments;
+using FinanceManager.Web.Components.Shared;
 
 namespace FinanceManager.Web.ViewModels.Common
 {
@@ -31,20 +33,50 @@ namespace FinanceManager.Web.ViewModels.Common
         protected IStringLocalizer? Localizer { get; }
 
         public event EventHandler? StateChanged;
+
+        // New: allow carrying rich payloads (e.g. overlay component spec) in addition to the existing string payload
         public sealed class UiActionEventArgs : EventArgs
         {
             public string? Action { get; }
             public string? Payload { get; }
+            public object? PayloadObject { get; }
+
             public UiActionEventArgs(string? action, string? payload)
             {
-                Action = action; Payload = payload;
+                Action = action; Payload = payload; PayloadObject = null;
+            }
+
+            public UiActionEventArgs(string? action, object? payloadObject)
+            {
+                Action = action; Payload = null; PayloadObject = payloadObject;
             }
         }
+
+        // Generic overlay spec that pages can render using DynamicComponent
+        public sealed record UiOverlaySpec(Type ComponentType, IReadOnlyDictionary<string, object?>? Parameters = null, bool Modal = true);
+
         public event EventHandler<UiActionEventArgs?>? UiActionRequested;
         public sealed record LookupItem(System.Guid Key, string Name);
         protected void RaiseStateChanged() => StateChanged?.Invoke(this, EventArgs.Empty);
         protected void RaiseUiActionRequested(string? action) => UiActionRequested?.Invoke(this, new UiActionEventArgs(action, null));
         protected void RaiseUiActionRequested(string? action, string? payload) => UiActionRequested?.Invoke(this, new UiActionEventArgs(action, payload));
+        // New overload to pass arbitrary object payloads (e.g. UiOverlaySpec)
+        protected void RaiseUiActionRequested(string? action, object? payloadObject) => UiActionRequested?.Invoke(this, new UiActionEventArgs(action, payloadObject));
+
+        /// <summary>
+        /// Convenience helper for requesting the Attachments overlay from any ViewModel.
+        /// View pages can render the supplied UiOverlaySpec generically (DynamicComponent).
+        /// </summary>
+        protected void RequestOpenAttachments(AttachmentEntityKind parentKind, Guid parentId)
+        {
+            var parameters = new Dictionary<string, object?>
+            {
+                ["ParentKind"] = parentKind,
+                ["ParentId"] = parentId
+            };
+            var spec = new UiOverlaySpec(typeof(AttachmentsPanel), parameters);
+            RaiseUiActionRequested("OpenAttachments", spec);
+        }
 
         #region Lookup Values
         public virtual async Task<IReadOnlyList<LookupItem>> QueryLookupAsync(CardField field, string? q, int skip, int take)
@@ -156,6 +188,8 @@ namespace FinanceManager.Web.ViewModels.Common
         }
         // IRibbonProvider implementation
         public virtual IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer) => null;
+        // Compatibility: legacy tests and callers expect a method named GetRibbon
+        public IReadOnlyList<UiRibbonRegister>? GetRibbon(IStringLocalizer localizer) => GetRibbonRegisters(localizer);
         public void SetActiveTab<TTabEnum>(TTabEnum id)
         {
         }

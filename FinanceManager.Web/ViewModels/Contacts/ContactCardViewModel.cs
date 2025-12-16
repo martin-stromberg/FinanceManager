@@ -1,11 +1,12 @@
 using FinanceManager.Shared;
 using FinanceManager.Shared.Dtos.Contacts;
+using FinanceManager.Web.Components.Shared;
 using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.ViewModels.Contacts;
 
-public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string Value)>
+public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string Value)>, FinanceManager.Web.ViewModels.Common.IDeletableViewModel
 {
     private readonly IApiClient _api;
     public ContactCardViewModel(IServiceProvider sp) : base(sp)
@@ -46,14 +47,43 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
         }
         finally { Loading = false; RaiseStateChanged(); }
     }
+    /// <summary>
+    /// Convenience helper for requesting the Contact Merge overlay from any ViewModel.
+    /// Pages can render the supplied UiOverlaySpec generically (DynamicComponent).
+    /// </summary>
+    private void RequestOpenMerge(Guid sourceId, string sourceType)
+    {
+        var parameters = new Dictionary<string, object?>
+        {
+            ["Visible"] = true,
+            ["SourceId"] = sourceId,
+            ["SourceType"] = sourceType,
+            // Provide explicit overlay title so pages render correct header for dynamic overlay
+            ["OverlayTitle"] = Localizer?["Merge_Title"].Value ?? "Merge"
+        };
+        var spec = new UiOverlaySpec(typeof(ContactMergePanel), parameters);
+        RaiseUiActionRequested("OpenMerge", spec);
+    }
 
     private async Task<CardRecord> BuildCardRecordAsync(ContactDto c)
     {
+        var categoryName = string.Empty;
+        if (c.CategoryId.HasValue && c.CategoryId.Value != Guid.Empty)
+        {
+            try
+            {
+                var cats = await _api.ContactCategories_ListAsync();
+                var cat = cats?.FirstOrDefault(x => x.Id == c.CategoryId.Value);
+                if (cat != null) categoryName = cat.Name ?? string.Empty;
+            }
+            catch { }
+        }
+
         var fields = new List<CardField>
         {
             new CardField("Card_Caption_Contact_Name", CardFieldKind.Text, text: c.Name ?? string.Empty, editable: true),
             new CardField("Card_Caption_Contact_Type", CardFieldKind.Text, text: c.Type.ToString(), editable: true, lookupType: "Enum:ContactType"),
-            new CardField("Card_Caption_Contact_Category", CardFieldKind.Text, text: string.Empty, editable: true, lookupType: "ContactCategory", valueId: c.CategoryId),
+            new CardField("Card_Caption_Contact_Category", CardFieldKind.Text, text: categoryName, editable: true, lookupType: "ContactCategory", valueId: c.CategoryId),
             new CardField("Card_Caption_Contact_Description", CardFieldKind.Text, text: c.Description ?? string.Empty, editable: true),
             new CardField("Card_Caption_Contact_Symbol", CardFieldKind.Symbol, symbolId: c.SymbolAttachmentId, editable: c.Id != Guid.Empty),
             new CardField("Card_Caption_Contact_IsPaymentIntermediary", CardFieldKind.Text, text: (c.IsPaymentIntermediary ? BooleanSelection.True:BooleanSelection.False).ToString(), editable: true, lookupType: "Enum:BooleanSelection")
@@ -136,7 +166,6 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
         var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
         {
             new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, "Save", async () => {
-                // build request from CardRecord and pending values
                 var dto = BuildDto(CardRecord);
                 if (Id == Guid.Empty)
                 {
@@ -149,16 +178,20 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
                     if (updated != null) { Contact = updated; CardRecord = await BuildCardRecordAsync(Contact); ClearPendingChanges(); RaiseStateChanged(); RaiseUiActionRequested("Saved", Id.ToString()); }
                 }
             }),
-            // Delete action for contacts
             new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Contact==null, null, "Delete", () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
         });
 
         var linked = new UiRibbonTab(localizer["Ribbon_Group_Linked"], new List<UiRibbonAction>
         {
             new UiRibbonAction("OpenPostings", localizer["Ribbon_Postings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Contact==null, null, "OpenPostings", () => { var url = $"/list/postings/contact/{Id}"; RaiseUiActionRequested("OpenPostings", url); return Task.CompletedTask; }),
-            // Merge: open merge dialog (handled by page)
-            new UiRibbonAction("OpenMerge", localizer["Ribbon_Merge"].Value, "<svg><use href='/icons/sprite.svg#merge'/></svg>", UiRibbonItemSize.Small, Contact==null, null, "OpenMerge", () => { RaiseUiActionRequested("OpenMerge"); return Task.CompletedTask; }),
-            new UiRibbonAction("Attachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Contact==null, null, "OpenAttachments", () => { RaiseUiActionRequested("OpenAttachments"); return Task.CompletedTask; })
+            new UiRibbonAction("OpenMerge", localizer["Ribbon_Merge"].Value, "<svg><use href='/icons/sprite.svg#merge'/></svg>", UiRibbonItemSize.Small, Contact==null, null, "OpenMerge", () => {
+                RequestOpenMerge(Id, Contact?.Type.ToString() ?? string.Empty);
+                return Task.CompletedTask;
+            }),
+            new UiRibbonAction("Attachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Contact==null, null, "OpenAttachments", () => {
+                RequestOpenAttachments(FinanceManager.Domain.Attachments.AttachmentEntityKind.Contact, Id);
+                return Task.CompletedTask;
+            })
         });
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>{nav, manage, linked}) };
@@ -176,4 +209,6 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
         var isPayment = string.Equals(isPaymentText, Localizer?["EnumType_BooleanSelection_True"].Value, StringComparison.OrdinalIgnoreCase);
         return new ContactDto(Id, name, type, categoryId, desc, isPayment, Contact?.SymbolAttachmentId);
     }
+
+    string? IDeletableViewModel.LastError => this.LastError;
 }

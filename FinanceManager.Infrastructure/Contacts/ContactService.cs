@@ -169,7 +169,7 @@ public sealed class ContactService : IContactService
         await _db.SaveChangesAsync(ct);
     }
 
-    public async Task<ContactDto> MergeAsync(Guid ownerUserId, Guid sourceContactId, Guid targetContactId, CancellationToken ct)
+    public async Task<ContactDto> MergeAsync(Guid ownerUserId, Guid sourceContactId, Guid targetContactId, CancellationToken ct, FinanceManager.Shared.Dtos.Contacts.MergePreference preference = FinanceManager.Shared.Dtos.Contacts.MergePreference.DestinationFirst)
     {
         if (sourceContactId == targetContactId)
         {
@@ -206,7 +206,6 @@ public sealed class ContactService : IContactService
             .Select(a => a.Pattern.ToLower())
             .ToListAsync(ct);
 
-        // ensure target name is included in checks
         var targetNameLower = target.Name.ToLower();
 
         if (!string.Equals(source.Name, target.Name, StringComparison.OrdinalIgnoreCase)
@@ -266,6 +265,7 @@ public sealed class ContactService : IContactService
             var postings = await _db.Postings.Where(p => p.ContactId == source.Id).ToListAsync(ct);
             foreach (var p in postings)
             {
+                // private setter -> set via EF entry
                 _db.Entry(p).Property<Guid?>("ContactId").CurrentValue = target.Id;
             }
         }
@@ -301,6 +301,78 @@ public sealed class ContactService : IContactService
                 var accounts = await _db.Accounts.Where(a => a.BankContactId == source.Id).ToListAsync(ct);
                 foreach (var a in accounts) { a.SetBankContact(target.Id); }
             }
+        }
+
+        // Field-level merge according to preference
+        // Fields of interest: Name, CategoryId, Description, IsPaymentIntermediary, SymbolAttachmentId
+        // DestinationFirst: keep target value when present; otherwise take from source
+        // SourceFirst: overwrite target with source when source has value
+        
+        // Name: prefer target or source per preference
+        if (preference == FinanceManager.Shared.Dtos.Contacts.MergePreference.SourceFirst)
+        {
+            if (!string.IsNullOrWhiteSpace(source.Name) && !string.Equals(source.Name, target.Name, StringComparison.Ordinal))
+            {
+                target.Rename(source.Name);
+            }
+        }
+        else
+        {
+            // DestinationFirst: keep target if present; if empty and source has, adopt
+            if (string.IsNullOrWhiteSpace(target.Name) && !string.IsNullOrWhiteSpace(source.Name))
+            {
+                target.Rename(source.Name);
+            }
+        }
+
+        // Category
+        if (preference == FinanceManager.Shared.Dtos.Contacts.MergePreference.SourceFirst)
+        {
+            if (source.CategoryId.HasValue && source.CategoryId.Value != Guid.Empty)
+            {
+                target.SetCategory(source.CategoryId);
+            }
+        }
+        else
+        {
+            if (!target.CategoryId.HasValue || target.CategoryId.Value == Guid.Empty)
+            {
+                target.SetCategory(source.CategoryId);
+            }
+        }
+
+        // Description
+        if (preference == FinanceManager.Shared.Dtos.Contacts.MergePreference.SourceFirst)
+        {
+            if (!string.IsNullOrWhiteSpace(source.Description)) target.SetDescription(source.Description);
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(target.Description) && !string.IsNullOrWhiteSpace(source.Description)) target.SetDescription(source.Description);
+        }
+
+        // IsPaymentIntermediary
+        if (preference == FinanceManager.Shared.Dtos.Contacts.MergePreference.SourceFirst)
+        {
+            target.SetPaymentIntermediary(source.IsPaymentIntermediary);
+        }
+        else
+        {
+            // DestinationFirst: only set if target is false and source true? Keep target if it is true.
+            if (!target.IsPaymentIntermediary && source.IsPaymentIntermediary)
+            {
+                target.SetPaymentIntermediary(true);
+            }
+        }
+
+        // Symbol attachment
+        if (preference == FinanceManager.Shared.Dtos.Contacts.MergePreference.SourceFirst)
+        {
+            if (source.SymbolAttachmentId.HasValue) target.SetSymbolAttachment(source.SymbolAttachmentId);
+        }
+        else
+        {
+            if (!target.SymbolAttachmentId.HasValue && source.SymbolAttachmentId.HasValue) target.SetSymbolAttachment(source.SymbolAttachmentId);
         }
 
         // Reassign attachments from source contact to target contact

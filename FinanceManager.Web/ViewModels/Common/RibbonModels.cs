@@ -28,7 +28,13 @@ public sealed record UiRibbonAction(
 
 public sealed record UiRibbonTab(string Title, List<UiRibbonAction> Items);
 
-public sealed record UiRibbonRegister(UiRibbonRegisterKind Kind, List<UiRibbonTab>? Tabs);
+public sealed record UiRibbonRegister(UiRibbonRegisterKind Kind, List<UiRibbonTab>? Tabs)
+{
+    // Compatibility properties used by older tests / code expecting a flat register shape
+    public string Title => (Tabs != null && Tabs.Count > 0) ? Tabs[0].Title : string.Empty;
+
+    public List<UiRibbonAction> Items => (Tabs != null && Tabs.Count > 0) ? Tabs[0].Items : new List<UiRibbonAction>();
+}
 
 // Legacy compatibility types used by older viewmodels/components
 public sealed record UiRibbonItem(

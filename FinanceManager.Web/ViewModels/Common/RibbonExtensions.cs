@@ -4,6 +4,13 @@ namespace FinanceManager.Web.ViewModels.Common;
 
 public static class RibbonExtensions
 {
+    // Compatibility helper used in tests and legacy callers: vm.GetRibbon(localizer)
+    public static IReadOnlyList<UiRibbonRegister>? GetRibbon(this object? vm, IStringLocalizer localizer)
+    {
+        if (vm is IRibbonProvider rp) return rp.GetRibbonRegisters(localizer);
+        return null;
+    }
+
     public static IReadOnlyList<UiRibbonGroup> ToUiRibbonGroups(this IReadOnlyList<UiRibbonRegister>? regs, IStringLocalizer? localizer = null)
     {
         if (regs == null) return new List<UiRibbonGroup>();

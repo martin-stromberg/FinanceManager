@@ -201,12 +201,12 @@ public sealed class ContactsController : ControllerBase
     [HttpPost("{id:guid}/merge")]
     [ProducesResponseType(typeof(ContactDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> MergeAsync(Guid id, [FromBody] ContactMergeRequest req, CancellationToken ct)
+    public async Task<IActionResult> MergeAsync(Guid id, [FromBody] FinanceManager.Shared.Dtos.Contacts.ContactMergeRequest req, CancellationToken ct)
     {
         if (!ModelState.IsValid) { return ValidationProblem(ModelState); }
         try
         {
-            var dto = await _contacts.MergeAsync(_current.UserId, id, req.TargetContactId, ct);
+            var dto = await _contacts.MergeAsync(_current.UserId, id, req.TargetContactId, ct, req.Preference);
             return Ok(dto);
         }
         catch (ArgumentException ex) { return BadRequest(new ApiErrorDto(ex.Message)); }

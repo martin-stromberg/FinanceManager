@@ -7,6 +7,8 @@ namespace FinanceManager.Web.ViewModels.Contacts;
 public sealed class ContactListViewModel : BaseListViewModel<ContactListItem>
 {
     private readonly IApiClient _api;
+    private readonly Dictionary<Guid, string> _categoryNames = new();
+
     public ContactListViewModel(IServiceProvider services) : base(services)
     {
         _api = services.GetRequiredService<IApiClient>();
@@ -22,8 +24,29 @@ public sealed class ContactListViewModel : BaseListViewModel<ContactListItem>
         if (resetPaging) { _skip = 0; }
         try
         {
+            // ensure categories loaded once so we can map ids -> names
+            if (_categoryNames.Count == 0)
+            {
+                try
+                {
+                    var cats = await _api.ContactCategories_ListAsync();
+                    foreach (var c in cats ?? Enumerable.Empty<ContactCategoryDto>())
+                    {
+                        if (c != null) _categoryNames[c.Id] = c.Name ?? string.Empty;
+                    }
+                }
+                catch
+                {
+                    // ignore category load failure; leave dictionary empty
+                }
+            }
+
             var list = await _api.Contacts_ListAsync(skip: _skip, take: PageSize, type: null, all: false, nameFilter: string.IsNullOrWhiteSpace(Search) ? null : Search);
-            var items = (list ?? Array.Empty<ContactDto>()).Select(c => new ContactListItem(c.Id, c.Name ?? string.Empty, c.Type.ToString(), c.CategoryId.HasValue ? string.Empty : string.Empty, c.SymbolAttachmentId));
+            var items = (list ?? Array.Empty<ContactDto>()).Select(c =>
+            {
+                var catName = c.CategoryId.HasValue && _categoryNames.TryGetValue(c.CategoryId.Value, out var nm) ? nm : string.Empty;
+                return new ContactListItem(c.Id, c.Name ?? string.Empty, c.Type.ToString(), catName, c.SymbolAttachmentId);
+            });
             if (resetPaging) Items.Clear();
             Items.AddRange(items);
             _skip += PageSize;

@@ -11,6 +11,9 @@
 @using FinanceManager.Web.ViewModels.Accounts
 @using FinanceManager.Web.ViewModels.Postings
 @using FinanceManager.Web.ViewModels.Contacts
+@using FinanceManager.Shared.Dtos
+@using Microsoft.AspNetCore.Components
+@using FinanceManager.Web.Extensions
 
 @if (_vm == null)
 {
@@ -28,32 +31,39 @@ else
         </div>
     }
 
-    @if (_showAttachmentsOverlay)
+    @* Generic overlay rendering: VMs can request a UiOverlaySpec via UiActionRequested with an object payload. This keeps the page independent of concrete VM types. *@
+    @if (_overlayVisible && _overlaySpec is not null)
     {
-        if (_vm is FinanceManager.Web.ViewModels.Accounts.BankAccountCardViewModel bam)
-        {
-            <div class="split-center" @onclick="(()=> _showAttachmentsOverlay = false)">
-                <div class="split-dialog" style="max-width:90vH;" @onclick:stopPropagation="true">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
-                        <h3 style="margin:0;font-size:1rem;">@Localizer["Attachments_Title"]</h3>
-                        <button class="icon-btn" title='@Localizer["Btn_Close"]' @onclick="(()=> _showAttachmentsOverlay=false)"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
-                    </div>
-                    <AttachmentsPanel ParentKind="FinanceManager.Domain.Attachments.AttachmentEntityKind.Account" ParentId="bam.Id" />
+        <div class="split-center" @onclick="(()=> CloseOverlay())">
+            <div class="split-dialog" style="max-width:90vH;" @onclick:stopPropagation="true">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+                    <h3 style="margin:0;font-size:1rem;">@GetOverlayTitle()</h3>
+                    <button class="icon-btn" title='@Localizer["Btn_Close"]' @onclick="(()=> CloseOverlay())"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
                 </div>
+                @* Filter out overlay-only keys (e.g., OverlayTitle) so they are not passed as component parameters *@
+                @{
+                    IDictionary<string, object?>? parms = null;
+                    if (_overlaySpec.Parameters != null)
+                    {
+                        parms = _overlaySpec.Parameters.Where(kvp => !string.Equals(kvp.Key, "OverlayTitle", StringComparison.OrdinalIgnoreCase)
+                                                                    && !string.Equals(kvp.Key, "Visible", StringComparison.OrdinalIgnoreCase))
+                                    .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                    }
+
+                    Action overlayClose = CloseOverlay;
+                    Action<object> overlayOnFinished = obj =>
+                    {
+                        CloseOverlay();
+                        _ = NavigationManager.NavigateToModelCard(obj);
+                    };
+                }
+                <CascadingValue Name="OverlayClose" Value="@(overlayClose)">
+                    <CascadingValue Name="OverlayOnFinished" Value="@(overlayOnFinished)">
+                        <DynamicComponent Type="_overlaySpec.ComponentType" Parameters="parms" />
+                    </CascadingValue>
+                </CascadingValue>
             </div>
-        }
-        else if (_vm is FinanceManager.Web.ViewModels.Contacts.ContactCardViewModel cvm)
-        {
-            <div class="split-center" @onclick="(()=> _showAttachmentsOverlay = false)">
-                <div class="split-dialog" style="max-width:90vH;" @onclick:stopPropagation="true">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
-                        <h3 style="margin:0;font-size:1rem;">@Localizer["Attachments_Title"]</h3>
-                        <button class="icon-btn" title='@Localizer["Btn_Close"]' @onclick="(()=> _showAttachmentsOverlay=false)"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
-                    </div>
-                    <AttachmentsPanel ParentKind="FinanceManager.Domain.Attachments.AttachmentEntityKind.Contact" ParentId="cvm.Id" />
-                </div>
-            </div>
-        }
+        </div>
     }
 }
 
@@ -62,6 +72,10 @@ else
     [Parameter] public Guid Id { get; set; }
 
     private BaseCardViewModel<(string Key, string Value)>? _vm;
+    // Generic overlay state
+    private BaseViewModel.UiOverlaySpec? _overlaySpec;
+    private bool _overlayVisible;
+
     private bool _showAttachmentsOverlay;
 
     private async Task SetViewModel(BaseCardViewModel<(string Key, string Value)> vm)
@@ -79,6 +93,15 @@ else
     private void ViewModelSatteChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
     private void OnUiActionRequested(object? sender, FinanceManager.Web.ViewModels.Common.BaseViewModel.UiActionEventArgs? e) => _ = InvokeAsync(() =>
     {
+        // If a rich object payload (e.g. UiOverlaySpec) was provided, render it generically
+        if (e?.PayloadObject is BaseViewModel.UiOverlaySpec spec)
+        {
+            _overlaySpec = spec;
+            _overlayVisible = true;
+            StateHasChanged();
+            return;
+        }
+
         var action = e?.Action;
         var payload = e?.Payload;
         switch (action)
@@ -102,8 +125,10 @@ else
                 }
                 break;
             case "OpenAttachments":
-                _showAttachmentsOverlay = true;
-                StateHasChanged();
+                // Attachments are handled via UiOverlaySpec payloads emitted by viewmodels. No fallback.
+                break;
+            case "OpenMerge":
+                // OpenMerge is handled by viewmodels emitting a UiOverlaySpec payload (handled above). No fallback here.
                 break;
             case "Delete":
                 _ = HandleDeleteAsync();
@@ -117,6 +142,8 @@ else
                 break;
         }
     });
+
+    // NOTE: no fallback for OpenAttachments — viewmodels must send UiOverlaySpec via RaiseUiActionRequested
 
     private string GetKindTitle() => (Kind ?? string.Empty).Trim().ToLowerInvariant() switch
     {
@@ -142,9 +169,9 @@ else
             var confirmed = await JS.InvokeAsync<bool>("confirm", Localizer["Confirm_Delete_Account"].Value ?? "Delete item?");
             if (!confirmed) return;
 
-            if (_vm is FinanceManager.Web.ViewModels.Accounts.BankAccountCardViewModel bam)
+            if (_vm is FinanceManager.Web.ViewModels.Common.IDeletableViewModel deletable)
             {
-                var ok = await bam.DeleteAsync();
+                var ok = await deletable.DeleteAsync();
                 if (ok)
                 {
                     // navigation will also be triggered by the Deleted event, but navigate here as fallback
@@ -152,20 +179,7 @@ else
                 }
                 else
                 {
-                    var msg = bam.LastError ?? "Delete failed";
-                    await JS.InvokeVoidAsync("alert", msg);
-                }
-            }
-            else if (_vm is FinanceManager.Web.ViewModels.Contacts.ContactCardViewModel cvm)
-            {
-                var ok = await cvm.DeleteAsync();
-                if (ok)
-                {
-                    NavigationManager.NavigateTo($"/list/{Kind}");
-                }
-                else
-                {
-                    var msg = cvm.LastError ?? "Delete failed";
+                    var msg = deletable.LastError ?? "Delete failed";
                     await JS.InvokeVoidAsync("alert", msg);
                 }
             }
@@ -179,5 +193,23 @@ else
         {
             await JS.InvokeVoidAsync("alert", ex.Message);
         }
+    }
+
+    private void CloseOverlay()
+    {
+        _overlayVisible = false;
+        _overlaySpec = null;
+        StateHasChanged();
+    }
+
+    private string GetOverlayTitle()
+    {
+        if (_overlaySpec == null) return string.Empty;
+        // Prefer explicit title passed in parameters (use 'OverlayTitle' to avoid colliding with component parameters)
+        if (_overlaySpec.Parameters != null && _overlaySpec.Parameters.TryGetValue("OverlayTitle", out var v) && v is string s && !string.IsNullOrWhiteSpace(s)) return s;
+        var t = _overlaySpec.ComponentType;
+        if (t == typeof(FinanceManager.Web.Components.Shared.AttachmentsPanel)) return Localizer["Attachments_Title"];
+        if (t == typeof(FinanceManager.Web.Components.Shared.ContactMergePanel)) return Localizer["Merge_Title"];
+        return Localizer["Attachments_Title"];
     }
 }

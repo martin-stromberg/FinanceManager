@@ -10,7 +10,7 @@ public interface IContactService
     Task AddAliasAsync(Guid contactId, Guid ownerUserId, string pattern, CancellationToken ct);
     Task DeleteAliasAsync(Guid contactId, Guid ownerUserId, Guid aliasId, CancellationToken ct);
     Task<IReadOnlyList<AliasNameDto>> ListAliases(Guid id, Guid userId, CancellationToken ct);
-    Task<ContactDto> MergeAsync(Guid ownerUserId, Guid sourceContactId, Guid targetContactId, CancellationToken ct);
+    Task<ContactDto> MergeAsync(Guid ownerUserId, Guid sourceContactId, Guid targetContactId, CancellationToken ct, FinanceManager.Shared.Dtos.Contacts.MergePreference preference = FinanceManager.Shared.Dtos.Contacts.MergePreference.DestinationFirst);
     Task<int> CountAsync(Guid ownerUserId, CancellationToken ct);
     Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct);
 }

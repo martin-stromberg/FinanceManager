@@ -1,6 +1,10 @@
 using Bunit;
 using FinanceManager.Web.Components.Shared;
 using FinanceManager.Web.ViewModels.Common;
+using Moq;
+using Microsoft.Extensions.Localization;
+using FinanceManager.Web.ViewModels;
+using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Tests.Components;
 
@@ -24,10 +28,20 @@ public class RibbonTests : TestContext
             })
         };
 
-        // Act
-        var cut = Render<Ribbon<TabId>>(p => p
-            .Add(x => x.Registers, registers)
-            .Add(x => x.ActiveTab, TabId.One));
+        var provMock = new Mock<IRibbonProvider>();
+        provMock.Setup(p => p.GetRibbonRegisters(It.IsAny<IStringLocalizer>())).Returns(registers);
+
+        var localMock = new Mock<IStringLocalizer>();
+
+        RenderFragment frag = builder =>
+        {
+            builder.OpenComponent(0, typeof(Ribbon<TabId>));
+            builder.AddAttribute(1, "Provider", provMock.Object);
+            builder.AddAttribute(2, "Localizer", localMock.Object);
+            builder.CloseComponent();
+        };
+
+        var cut = Render(frag);
 
         // Assert
         Assert.Equal(1, cut.FindAll(".fm-ribbon-group").Count);
@@ -52,9 +66,20 @@ public class RibbonTests : TestContext
             })
         };
 
-        var cut = Render<Ribbon<TabId>>(p => p
-            .Add(x => x.Registers, registers)
-            .Add(x => x.ActiveTab, TabId.One));
+        var provMock = new Mock<IRibbonProvider>();
+        provMock.Setup(p => p.GetRibbonRegisters(It.IsAny<IStringLocalizer>())).Returns(registers);
+
+        var localMock = new Mock<IStringLocalizer>();
+
+        RenderFragment frag = builder =>
+        {
+            builder.OpenComponent(0, typeof(Ribbon<TabId>));
+            builder.AddAttribute(1, "Provider", provMock.Object);
+            builder.AddAttribute(2, "Localizer", localMock.Object);
+            builder.CloseComponent();
+        };
+
+        var cut = Render(frag);
 
         // Act
         cut.Find("button.fm-ribbon-btn").Click();

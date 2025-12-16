@@ -20,11 +20,14 @@ namespace FinanceManager.Web.ViewModels.Common
         public IReadOnlyList<ListRecord> Records { get; protected set; } = Array.Empty<ListRecord>();
         public virtual bool AllowRangeFiltering { get; protected set; } = true;
 
+        // Loaded flag used by many tests/pages to detect initial load completion
+        public bool Loaded { get; protected set; }
+
         public virtual Task InitializeAsync() => LoadAsync();
 
         public async Task LoadAsync()
         {
-            Loading = true; RaiseStateChanged();
+            Loading = true; Loaded = false; RaiseStateChanged();
             try
             {
                 Items.Clear();
@@ -32,7 +35,7 @@ namespace FinanceManager.Web.ViewModels.Common
                 await LoadPageAsync(resetPaging: true);
                 BuildRecords();
             }
-            finally { Loading = false; RaiseStateChanged(); }
+            finally { Loading = false; Loaded = true; RaiseStateChanged(); }
         }
 
         public async Task LoadMoreAsync()

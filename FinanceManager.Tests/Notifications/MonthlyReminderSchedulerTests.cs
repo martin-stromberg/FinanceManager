@@ -3,6 +3,7 @@ using FinanceManager.Domain.Notifications;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
 using FinanceManager.Tests.TestHelpers;
+using FinanceManager.Web;
 using FinanceManager.Web.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,7 +34,7 @@ public sealed class MonthlyReminderSchedulerTests
         var end = new DateTime(2024, 12, 31, 12, 0, 0, DateTimeKind.Utc);
 
         // Localizer mock for job
-        var loc = new Mock<IStringLocalizer<MonthlyReminderJob>>();
+        var loc = new Mock<IStringLocalizer<Pages>>();
         loc.Setup(l => l["MonthlyReminder_Title"]).Returns(new LocalizedString("MonthlyReminder_Title", "Monatsabschluss"));
         loc.Setup(l => l["MonthlyReminder_Message"]).Returns(new LocalizedString("MonthlyReminder_Message", "Es ist der letzte Werktag des Monats."));
 

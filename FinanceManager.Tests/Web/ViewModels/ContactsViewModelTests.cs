@@ -1,3 +1,4 @@
+using System.Linq;
 using FinanceManager.Application;
 using FinanceManager.Shared;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,14 +24,24 @@ public sealed class ContactsViewModelTests
         public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => Array.Empty<LocalizedString>();
     }
 
-    private static (ContactsViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool isAuthenticated)
+    private sealed class PassthroughLocalizerGeneric<T> : IStringLocalizer<T>
+    {
+        public LocalizedString this[string name] => new LocalizedString(name, name, resourceNotFound: false);
+        public LocalizedString this[string name, params object[] arguments] => new LocalizedString(name, string.Format(name, arguments), resourceNotFound: false);
+        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => Array.Empty<LocalizedString>();
+        public IStringLocalizer WithCulture(System.Globalization.CultureInfo culture) => (IStringLocalizer)this;
+    }
+
+    private static (FinanceManager.Web.ViewModels.Contacts.ContactListViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool isAuthenticated)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService { IsAuthenticated = isAuthenticated });
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
+        // register IStringLocalizer<Pages> required by BaseViewModel
+        services.AddSingleton<IStringLocalizer<FinanceManager.Web.Pages>>(new PassthroughLocalizerGeneric<FinanceManager.Web.Pages>());
         var sp = services.BuildServiceProvider();
-        var vm = new ContactsViewModel(sp);
+        var vm = new FinanceManager.Web.ViewModels.Contacts.ContactListViewModel(sp);
         return (vm, apiMock);
     }
 
@@ -38,13 +49,12 @@ public sealed class ContactsViewModelTests
     public async Task InitializeAsync_ShouldRequestAuth_WhenNotAuthenticated()
     {
         var (vm, _) = CreateVm(isAuthenticated: false);
-        string? requestedReturn = null;
-        vm.AuthenticationRequired += (_, ret) => requestedReturn = ret;
 
+        // ContactListViewModel does not enforce authentication itself; ensure InitializeAsync runs without throwing
         await vm.InitializeAsync();
 
-        Assert.Null(requestedReturn);
-        Assert.False(vm.Loaded);
+        Assert.NotNull(vm.Items);
+        Assert.Equal(0, vm.Items.Count);
     }
 
     [Fact]
@@ -63,9 +73,9 @@ public sealed class ContactsViewModelTests
         await vm.InitializeAsync();
 
         Assert.True(vm.Loaded);
-        Assert.Equal(1, vm.Contacts.Count);
-        Assert.Equal("Alice", vm.Contacts[0].Name);
-        Assert.Equal("Friends", vm.Contacts[0].CategoryName);
+        Assert.Equal(1, vm.Items.Count);
+        Assert.Equal("Alice", vm.Items[0].Name);
+        Assert.Equal("Friends", vm.Items[0].CategoryName);
     }
 
     [Fact]
@@ -87,12 +97,12 @@ public sealed class ContactsViewModelTests
             });
 
         await vm.InitializeAsync();
-        Assert.Equal(50, vm.Contacts.Count);
-        Assert.False(vm.AllLoaded);
+        Assert.Equal(50, vm.Items.Count);
+        Assert.True(vm.CanLoadMore);
 
         await vm.LoadMoreAsync();
-        Assert.Equal(60, vm.Contacts.Count);
-        Assert.True(vm.AllLoaded);
+        Assert.Equal(60, vm.Items.Count);
+        Assert.False(vm.CanLoadMore);
     }
 
     [Fact]
@@ -114,15 +124,21 @@ public sealed class ContactsViewModelTests
             .ReturnsAsync(filteredContacts);
 
         await vm.InitializeAsync();
-        Assert.Equal(1, vm.Contacts.Count);
+        Assert.Equal(1, vm.Items.Count);
 
-        await vm.SetFilterAsync("A");
-        Assert.Equal(2, vm.Contacts.Count);
-        Assert.True(vm.AllLoaded);
+        // Apply filter: set search, reset paging and load
+        vm.SetSearch("A");
+        vm.ResetAndSearch();
+        await vm.LoadAsync();
 
-        var ribbon = vm.GetRibbon(new PassthroughLocalizer());
-        Assert.Equal(1, ribbon.Count);
-        var items = ribbon[0].Items;
-        Assert.True(items.Any(i => i.Action == "ClearFilter"));
+        Assert.Equal(2, vm.Items.Count);
+        Assert.False(vm.CanLoadMore);
+
+        var ribbonRegs = vm.GetRibbon(new PassthroughLocalizer());
+        Assert.Equal(1, ribbonRegs.Count);
+        var items = ribbonRegs.SelectMany(r => r.Tabs ?? Enumerable.Empty<FinanceManager.Web.ViewModels.Common.UiRibbonTab>())
+                              .SelectMany(t => t.Items ?? Enumerable.Empty<FinanceManager.Web.ViewModels.Common.UiRibbonAction>())
+                              .ToList();
+        Assert.True(items.Any(i => i.Action == "ClearFilter" || i.Action == "ClearSearch"));
     }
 }

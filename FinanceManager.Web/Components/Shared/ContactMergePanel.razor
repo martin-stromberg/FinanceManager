@@ -1,0 +1,170 @@
+@using FinanceManager.Shared.Dtos.Contacts
+@using FinanceManager.Shared.Dtos
+@using Microsoft.Extensions.Localization
+@inject FinanceManager.Shared.IApiClient Api
+@inject NavigationManager Nav
+@inject IStringLocalizer<Pages> Localizer
+
+<div class="contact-merge-panel" style="width:100%;box-sizing:border-box;">
+    <div class="hint" style="font-size:.92rem;opacity:.85;margin-bottom:.5rem;">@Localizer["Merge_Hint"]</div>
+
+    <div class="field" style="width:100%;margin-bottom:.5rem;">
+        <label style="display:block;font-size:.85rem;margin-bottom:.25rem;">@Localizer["Merge_Preference_LABEL"]</label>
+        <div style="display:flex;gap:.75rem;align-items:center;margin-bottom:.5rem;">
+            <label style="display:flex;align-items:center;gap:.35rem;">
+                <input type="radio" name="mergePref" value="DestinationFirst" checked="@( _preference==MergePreference.DestinationFirst )" @onclick="(()=> SetPref(MergePreference.DestinationFirst))" />
+                <span>@Localizer["Merge_Preference_DestinationFirst"]</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:.35rem;">
+                <input type="radio" name="mergePref" value="SourceFirst" checked="@( _preference==MergePreference.SourceFirst )" @onclick="(()=> SetPref(MergePreference.SourceFirst))" />
+                <span>@Localizer["Merge_Preference_SourceFirst"]</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="field" style="width:100%;margin-bottom:.5rem;">
+        <input type="text" @bind="_filter" @bind:event="oninput" @bind:after="ApplyFilter" placeholder="@Localizer["Merge_FilterPlaceholder"]" style="width:100%;box-sizing:border-box;padding:.45rem;border:1px solid var(--border);background:transparent;color:inherit;" />
+    </div>
+    <div class="result-list">
+        @if (_loading)
+        {
+            <div class="loading">@Localizer["Loading"]</div>
+        }
+        else
+        {
+            <div style="max-height:360px;overflow:auto;">
+            @foreach (var c in _filtered)
+             {
+                 <div class="row @(c.Id==_selected ? "selected":"")" @onclick="() => Select(c.Id)">
+                     <span>@c.Name</span>
+                     <small>@c.Type</small>
+                 </div>
+             }
+            </div>
+         }
+     </div>
+    <div class="actions">
+        <button class="btn" @onclick="ConfirmMergeAsync" disabled="@(_selected==Guid.Empty || _busy)">@Localizer["Merge_Confirm"]</button>
+        <button class="btn secondary" @onclick="CloseClicked" disabled="@_busy">@Localizer["Merge_Cancel"]</button>
+    </div>
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <div class="error" style="margin-top:.5rem;">@_error</div>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid SourceId { get; set; }
+    [Parameter] public string SourceType { get; set; } = string.Empty;
+
+    // Cascading callbacks supplied by CardPage when shown as overlay
+    [CascadingParameter(Name = "OverlayClose")] public Action? OverlayClose { get; set; }
+    [CascadingParameter(Name = "OverlayOnFinished")] public Action<object>? OverlayOnFinished { get; set; }
+
+    private List<ContactOption> _all = new();
+    private List<ContactOption> _filtered = new();
+    private string _filter = string.Empty;
+    private bool _loading;
+    private Guid _selected;
+    private Guid _lastLoadedSource = Guid.Empty;
+
+    private MergePreference _preference = MergePreference.DestinationFirst;
+
+    private record ContactOption(Guid Id, string Name, string Type);
+
+    private void SetPref(MergePreference p) => _preference = p;
+
+    private async Task LoadListAsync()
+    {
+        _loading = true;
+        try
+        {
+            bool bankOnly = string.Equals(SourceType, "Bank", StringComparison.OrdinalIgnoreCase);
+            var list = await Api.Contacts_ListAsync(skip: 0, take: 2000, type: bankOnly ? ContactType.Bank : null, all: true);
+            _all = list.Where(c => c.Id != SourceId).Select(c => new ContactOption(c.Id, c.Name, c.Type.ToString())).OrderBy(c => c.Name).ToList();
+            ApplyFilter();
+        }
+        catch { }
+        finally { _loading = false; }
+    }
+
+    private void ApplyFilter()
+    {
+        if (string.IsNullOrWhiteSpace(_filter)) _filtered = _all;
+        else _filtered = _all.Where(c => c.Name.Contains(_filter, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (!_filtered.Any(f => f.Id == _selected)) _selected = Guid.Empty;
+    }
+    private void Select(Guid id) => _selected = id;
+
+    private bool _busy;
+    private string? _error;
+
+    private async Task ConfirmMergeAsync()
+    {
+        if (_selected == Guid.Empty || _busy) return;
+        _error = null;
+        _busy = true;
+        try
+        {
+            var res = await Api.Contacts_MergeAsync(SourceId, new ContactMergeRequest(_selected, _preference));
+            if (res != null)
+            {
+                // Use cascading finish handler when present, otherwise navigate to contact card
+                if (OverlayOnFinished != null)
+                {
+                    OverlayOnFinished(res);
+                    return;
+                }
+
+                try { Nav.NavigateTo($"/card/contacts/{res.Id}"); }
+                catch { }
+            }
+            else
+            {
+                _error = Localizer["Err_MergeFailed"] ?? "Merge failed";
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = string.IsNullOrWhiteSpace(ex.Message) ? Localizer["Err_MergeFailed"] : ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CloseClicked()
+    {
+        // Use cascading overlay close when present; otherwise navigate back
+        if (OverlayClose != null)
+        {
+            try { OverlayClose(); } catch { }
+            return;
+        }
+
+        try
+        {
+            if (SourceId != Guid.Empty)
+            {
+                Nav.NavigateTo($"/card/contacts/{SourceId}");
+            }
+            else
+            {
+                Nav.NavigateTo("/contacts");
+            }
+        }
+        catch { }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Load list when SourceId changes
+        if (SourceId != Guid.Empty && SourceId != _lastLoadedSource)
+        {
+            _lastLoadedSource = SourceId;
+            await LoadListAsync();
+        }
+    }
+}
