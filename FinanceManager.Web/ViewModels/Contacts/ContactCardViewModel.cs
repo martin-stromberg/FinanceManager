@@ -6,7 +6,7 @@ using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.ViewModels.Contacts;
 
-public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string Value)>, FinanceManager.Web.ViewModels.Common.IDeletableViewModel
+public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
 {
     private readonly IApiClient _api;
     public ContactCardViewModel(IServiceProvider sp) : base(sp)
@@ -209,6 +209,4 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
         var isPayment = string.Equals(isPaymentText, Localizer?["EnumType_BooleanSelection_True"].Value, StringComparison.OrdinalIgnoreCase);
         return new ContactDto(Id, name, type, categoryId, desc, isPayment, Contact?.SymbolAttachmentId);
     }
-
-    string? IDeletableViewModel.LastError => this.LastError;
 }
