@@ -1,4 +1,5 @@
 @page "/card/{Kind}/{Id:guid}"
+@page "/card/{Kind}/{SubKind?}/{Id:guid}"
 @rendermode InteractiveServer
 @inject IServiceProvider Services
 @inject NavigationManager NavigationManager
@@ -69,7 +70,10 @@ else
 
 @code {
     [Parameter] public string Kind { get; set; } = string.Empty;
+    [Parameter] public string? SubKind { get; set; }
     [Parameter] public Guid Id { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = "back")] public string? Back { get; set; }
 
     private BaseCardViewModel<(string Key, string Value)>? _vm;
     // Generic overlay state
@@ -77,6 +81,21 @@ else
     private bool _overlayVisible;
 
     private bool _showAttachmentsOverlay;
+
+    private string BuildListPath()
+    {
+        var kind = (Kind ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(SubKind)) return $"/list/{kind}";
+        return $"/list/{kind}/{SubKind}";
+    }
+
+    private string BuildCardPath(string kind, string? subKind, string id, string? back)
+    {
+        var k = kind.Trim();
+        var basePath = string.IsNullOrWhiteSpace(subKind) ? $"/card/{k}/{id}" : $"/card/{k}/{subKind}/{id}";
+        if (string.IsNullOrWhiteSpace(back)) return basePath;
+        return basePath + "?back=" + Uri.EscapeDataString(back);
+    }
 
     private async Task SetViewModel(BaseCardViewModel<(string Key, string Value)> vm)
     {
@@ -90,7 +109,9 @@ else
         _vm.UiActionRequested += OnUiActionRequested;
         await _vm.InitializeAsync(Id);
     }
+
     private void ViewModelSatteChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
+
     private void OnUiActionRequested(object? sender, FinanceManager.Web.ViewModels.Common.BaseViewModel.UiActionEventArgs? e) => _ = InvokeAsync(() =>
     {
         // If a rich object payload (e.g. UiOverlaySpec) was provided, render it generically
@@ -107,20 +128,27 @@ else
         switch (action)
         {
             case "Back":
-                if (string.IsNullOrEmpty(payload))
-                    NavigationManager.NavigateTo($"/list/{Kind}");
+                // prefer explicit Back query param if present
+                if (!string.IsNullOrWhiteSpace(Back))
+                {
+                    NavigationManager.NavigateTo(Back);
+                    break;
+                }
+                // payload may contain subtype (e.g., categories)
+                if (string.IsNullOrWhiteSpace(payload))
+                    NavigationManager.NavigateTo(BuildListPath());
                 else
                     NavigationManager.NavigateTo($"/list/{Kind}/{payload}");
                 break;
             case "OpenPostings":
-                NavigationManager.NavigateTo(payload);
+                if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
                 break;
             case "OpenBankContact":
-                var parts = (payload?? string.Empty).Split(',', 2);
+                var parts = (payload ?? string.Empty).Split(',', 2);
                 if (parts.Length == 2 && Guid.TryParse(parts[1], out var cid))
                 {
                     var kind = parts[0];
-                    var back = $"/card/{Kind}/{Id}";
+                    var back = BuildCardPath(Kind, SubKind, Id.ToString(), Back);
                     NavigationManager.NavigateTo($"/card/{kind}/{cid}?back={Uri.EscapeDataString(back)}");
                 }
                 break;
@@ -134,11 +162,15 @@ else
                 _ = HandleDeleteAsync();
                 break;
             case "Deleted":
-                NavigationManager.NavigateTo($"/list/{Kind}");
+                // when deleted navigate back to list (prefer Back)
+                if (!string.IsNullOrWhiteSpace(Back)) NavigationManager.NavigateTo(Back);
+                else NavigationManager.NavigateTo(BuildListPath());
                 break;
             case "Saved":
                 var kindLower = (Kind ?? string.Empty).Trim().ToLowerInvariant();
-                NavigationManager.NavigateTo($"/card/{kindLower}/{payload}");
+                var savedId = payload;
+                var url = BuildCardPath(kindLower, SubKind, savedId ?? Id.ToString(), Back);
+                NavigationManager.NavigateTo(url);
                 break;
         }
     });
@@ -154,12 +186,19 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Kind?.ToLowerInvariant() == "accounts")
+        var kind = (Kind ?? string.Empty).Trim().ToLowerInvariant();
+        var sub = (SubKind ?? string.Empty).Trim().ToLowerInvariant();
+        if (kind == "accounts")
             await SetViewModel(ActivatorUtilities.CreateInstance<BankAccountCardViewModel>(Services));
-        else if (Kind?.ToLowerInvariant() == "postings")
+        else if (kind == "postings")
             await SetViewModel(ActivatorUtilities.CreateInstance<PostingsCardViewModel>(Services));
-        else if (Kind?.ToLowerInvariant() == "contacts")
+        else if (kind == "contacts" && string.IsNullOrWhiteSpace(sub))
             await SetViewModel(ActivatorUtilities.CreateInstance<ContactCardViewModel>(Services));
+        else if (kind == "contacts" && sub == "categories")
+            await SetViewModel(ActivatorUtilities.CreateInstance<ContactCategoryCardViewModel>(Services));
+        else if (kind == "contact-categories")
+            // backward compatibility: if someone uses old flat route, still resolve to category card
+            await SetViewModel(ActivatorUtilities.CreateInstance<ContactCategoryCardViewModel>(Services));
     }
 
     private async Task HandleDeleteAsync()
@@ -174,8 +213,7 @@ else
                 var ok = await deletable.DeleteAsync();
                 if (ok)
                 {
-                    // navigation will also be triggered by the Deleted event, but navigate here as fallback
-                    NavigationManager.NavigateTo($"/list/{Kind}");
+                    if (!string.IsNullOrWhiteSpace(Back)) NavigationManager.NavigateTo(Back); else NavigationManager.NavigateTo(BuildListPath());
                 }
                 else
                 {

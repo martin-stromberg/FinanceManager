@@ -88,8 +88,10 @@ public sealed class ContactCategoryDetailViewModel : ViewModelBase
         {
             new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, "Back", new Func<Task>(async () => { RaiseUiActionRequested("Back"); await Task.CompletedTask; }))
         };
+
         var canSave = !string.IsNullOrWhiteSpace(Model.Name) && Model.Name.Trim().Length >= 2;
-        var editActions = new List<UiRibbonAction>
+
+        var manageActions = new List<UiRibbonAction>
         {
             new UiRibbonAction(
                 "Save",
@@ -101,6 +103,7 @@ public sealed class ContactCategoryDetailViewModel : ViewModelBase
                 "Save",
                 new Func<Task>(async () =>
                 {
+                    // Attempt to save and notify caller via UiActionRequested
                     var ok = await SaveAsync();
                     if (ok) { RaiseUiActionRequested("Saved"); }
                 })),
@@ -122,7 +125,7 @@ public sealed class ContactCategoryDetailViewModel : ViewModelBase
         var tabs = new List<UiRibbonTab>
         {
             new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, navActions),
-            new UiRibbonTab(localizer["Ribbon_Group_Edit"].Value, editActions)
+            new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, manageActions)
         };
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

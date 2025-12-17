@@ -34,6 +34,13 @@ namespace FinanceManager.Web.ViewModels
                     var vm = ActivatorUtilities.CreateInstance<BankAccountListViewModel>(_sp);
                     return new ListFactoryResult(vm);
                 case "contacts":
+                    // support listing contact categories via "/list/contacts/categories"
+                    if ((subKind ?? string.Empty).Trim().ToLowerInvariant() == "categories")
+                    {
+                        var gvm = ActivatorUtilities.CreateInstance<Contacts.ContactGroupListViewModel>(_sp);
+                        return new ListFactoryResult(gvm);
+                    }
+
                     var cvm = ActivatorUtilities.CreateInstance<Contacts.ContactListViewModel>(_sp);
                     return new ListFactoryResult(cvm);
                 case "postings":

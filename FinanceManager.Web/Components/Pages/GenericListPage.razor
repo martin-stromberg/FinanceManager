@@ -56,7 +56,7 @@ else
                             var cell = rec.Cells[ci];
                             var col = (Provider.Columns?.Count > ci) ? Provider.Columns[ci] : null;
                             var alignStyle = col != null && col.Align == ListColumnAlign.Right ? "text-align:right;vertical-align:middle;" : null;
-                            <td style="@(alignStyle)">
+                            <td style="@(alignStyle + $"width:{col.Width}")">
                                 @switch(cell.Kind)
                                 {
                                     case ListCellKind.Text:

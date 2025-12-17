@@ -41,12 +41,22 @@ else
 
     private IListProvider? _provider;
 
-    private string GetKindTitle() => (Kind ?? string.Empty).Trim().ToLowerInvariant() switch
+    private string GetKindTitle()
     {
-        "accounts" => Localizer["General_Title_Account"],
-        "contacts" => Localizer["General_Title_Contact"],
-        _ => Kind
-    };
+        var kind = (Kind ?? string.Empty).Trim().ToLowerInvariant();
+        var sub = (SubKind ?? string.Empty).Trim().ToLowerInvariant();
+        if (kind == "contacts" && sub == "categories")
+        {
+            return Localizer["General_Title_Contact_Categories"];
+        }
+
+        return kind switch
+        {
+            "accounts" => Localizer["General_Title_Account"],
+            "contacts" => Localizer["General_Title_Contact"],
+            _ => Kind
+        };
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -98,8 +108,9 @@ else
         {
             case "New":
                 var kind = (Kind ?? string.Empty).Trim().ToLowerInvariant();
+                var subkind = $"/{(SubKind ?? string.Empty).Trim().ToLowerInvariant()}/".Replace("//", "/");
                 var emptyId = Guid.Empty.ToString();
-                Nav.NavigateTo($"/card/{kind}/{emptyId}");
+                Nav.NavigateTo($"/card/{kind}{subkind}{emptyId}");
                 break;
             case "Back":
                 // For postings lists, navigate back to card of calling dataset

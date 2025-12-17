@@ -378,4 +378,13 @@
   <data name="Merge_Preference_SourceFirst" xml:space="preserve">
     <value>Source first (use source values)</value>
   </data>
+  <data name="Card_Caption_ContactCategory_Name" xml:space="preserve">
+    <value>Group name</value>
+  </data>
+  <data name="Card_Caption_ContactCategory_Symbol" xml:space="preserve">
+    <value>Symbol</value>
+  </data>
+  <data name="Ribbon_Groups" xml:space="preserve">
+    <value>Groups</value>
+  </data>
 </root>
