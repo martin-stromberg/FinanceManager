@@ -1,22 +1,26 @@
 using FinanceManager.Shared;
 using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.DependencyInjection;
+using FinanceManager.Domain.Attachments;
+using FinanceManager.Web.ViewModels.Common;
 
 namespace FinanceManager.Web.ViewModels.Contacts;
 
-public sealed class ContactCategoryCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
+public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel, ISymbolAssignableCard
 {
-    private readonly ContactCategoryDetailViewModel _detail;
     private readonly IApiClient _api;
 
-    public ContactCategoryCardViewModel(IServiceProvider sp) : base(sp)
+    public ContactGroupCardViewModel(IServiceProvider sp) : base(sp)
     {
-        _detail = ActivatorUtilities.CreateInstance<ContactCategoryDetailViewModel>(sp);
         _api = sp.GetRequiredService<IApiClient>();
     }
 
     public Guid Id { get; private set; }
-    public override string Title => CardRecord?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_ContactCategory_Name")?.Text ?? (_detail.Model?.Name ?? base.Title);
+
+    // Local edit model representing the contact category
+    public EditModel Model { get; } = new();
+
+    public override string Title => CardRecord?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_ContactCategory_Name")?.Text ?? (Model?.Name ?? base.Title);
 
     public override async Task LoadAsync(Guid id)
     {
@@ -24,10 +28,27 @@ public sealed class ContactCategoryCardViewModel : BaseCardViewModel<(string Key
         Loading = true; SetError(null, null); RaiseStateChanged();
         try
         {
-            await _detail.InitializeAsync(id == Guid.Empty ? null : id);
-            // build card record from detail model
-            CardRecord = BuildCardRecord(_detail.Model.Name, _detail.Model.SymbolAttachmentId);
-            // clear pending changes
+            if (id == Guid.Empty)
+            {
+                // new
+                Model.Name = string.Empty;
+                Model.SymbolAttachmentId = null;
+            }
+            else
+            {
+                var dto = await _api.ContactCategories_GetAsync(id);
+                if (dto is null)
+                {
+                    SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Not found");
+                    CardRecord = new CardRecord(new List<CardField>());
+                    Loading = false; RaiseStateChanged();
+                    return;
+                }
+                Model.Name = dto.Name ?? string.Empty;
+                Model.SymbolAttachmentId = dto.SymbolAttachmentId;
+            }
+
+            CardRecord = BuildCardRecord(Model.Name, Model.SymbolAttachmentId);
             ClearPendingChanges();
         }
         catch (Exception ex)
@@ -45,44 +66,74 @@ public sealed class ContactCategoryCardViewModel : BaseCardViewModel<(string Key
             new CardField("Card_Caption_ContactCategory_Name", CardFieldKind.Text, text: name ?? string.Empty, editable: true),
             new CardField("Card_Caption_ContactCategory_Symbol", CardFieldKind.Symbol, symbolId: symbolId, editable: true)
         };
-        return new CardRecord(fields, _detail.Model);
+        return new CardRecord(fields, Model);
     }
 
     public override async Task<bool> SaveAsync()
     {
-        // apply pending values from CardRecord into detail.Model
+        // apply pending values from CardRecord into Model
         if (CardRecord != null)
         {
             var nameField = CardRecord.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_ContactCategory_Name");
-            if (nameField != null) _detail.Model.Name = nameField.Text ?? string.Empty;
+            if (nameField != null) Model.Name = nameField.Text ?? string.Empty;
             var symField = CardRecord.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_ContactCategory_Symbol");
-            if (symField != null) _detail.Model.SymbolAttachmentId = symField.SymbolId;
+            if (symField != null) Model.SymbolAttachmentId = symField.SymbolId;
         }
 
-        var ok = await _detail.SaveAsync();
-        if (ok)
+        try
         {
-            Id = _detail.Id ?? Id;
-            // reload record to reflect persisted values (e.g., server normalized name)
+            if (Id == Guid.Empty)
+            {
+                var created = await _api.ContactCategories_CreateAsync(new ContactCategoryCreateRequest(Model.Name));
+                if (created is null)
+                {
+                    SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Create failed");
+                    return false;
+                }
+                Id = created.Id;
+                Model.SymbolAttachmentId = created.SymbolAttachmentId;
+            }
+            else
+            {
+                var ok = await _api.ContactCategories_UpdateAsync(Id, new ContactCategoryUpdateRequest(Model.Name));
+                if (!ok)
+                {
+                    SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Update failed");
+                    return false;
+                }
+            }
+
             await LoadAsync(Id);
             RaiseUiActionRequested("Saved", Id.ToString());
             ClearPendingChanges();
             return true;
         }
-        if (!string.IsNullOrWhiteSpace(_detail.Error)) SetError(null, _detail.Error);
-        return false;
+        catch (Exception ex)
+        {
+            SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
+            return false;
+        }
     }
 
     public override async Task<bool> DeleteAsync()
     {
-        var ok = await _detail.DeleteAsync();
-        if (ok)
+        if (Id == Guid.Empty) return false;
+        try
         {
+            var ok = await _api.ContactCategories_DeleteAsync(Id);
+            if (!ok)
+            {
+                SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Delete failed");
+                return false;
+            }
             RaiseUiActionRequested("Deleted");
             return true;
         }
-        if (!string.IsNullOrWhiteSpace(_detail.Error)) SetError(null, _detail.Error);
-        return false;
+        catch (Exception ex)
+        {
+            SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
+            return false;
+        }
     }
 
     public override async Task<Guid?> ValidateSymbolAsync(System.IO.Stream stream, string fileName, string contentType)
@@ -90,7 +141,6 @@ public sealed class ContactCategoryCardViewModel : BaseCardViewModel<(string Key
         try
         {
             var att = await _api.Attachments_UploadFileAsync((short)FinanceManager.Domain.Attachments.AttachmentEntityKind.ContactCategory, Id, stream, fileName, contentType ?? "application/octet-stream");
-            // persist symbol onto category via service
             await _api.ContactCategories_SetSymbolAsync(Id, att.Id);
             await LoadAsync(Id);
             return att.Id;
@@ -122,5 +172,11 @@ public sealed class ContactCategoryCardViewModel : BaseCardViewModel<(string Key
         });
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>{nav, manage}) };
+    }
+
+    public sealed class EditModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public Guid? SymbolAttachmentId { get; set; }
     }
 }

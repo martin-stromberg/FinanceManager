@@ -3,10 +3,11 @@ using FinanceManager.Shared.Dtos.Contacts;
 using FinanceManager.Web.Components.Shared;
 using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.Localization;
+using FinanceManager.Domain.Attachments;
 
 namespace FinanceManager.Web.ViewModels.Contacts;
 
-public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
+public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel, ISymbolAssignableCard
 {
     private readonly IApiClient _api;
     public ContactCardViewModel(IServiceProvider sp) : base(sp)

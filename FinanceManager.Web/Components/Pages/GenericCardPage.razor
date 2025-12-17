@@ -251,24 +251,11 @@ else
         {
             var file = e.File;
             if (file == null) return;
-            // determine entity kind and id from Provider.CardRecord.Item if possible
-            if (Provider?.CardRecord?.Item is FinanceManager.Shared.Dtos.Accounts.AccountDto acc)
+
+            if (Provider is ISymbolAssignableCard assignable)
             {
-                // upload as Attachment for Account
                 using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB
-                var vm = Provider as BaseCardViewModel<TKeyValue>;
-                var newId = await vm?.ValidateSymbolAsync(stream, file.Name, file.ContentType ?? "application/octet-stream");
-                if (newId.HasValue)
-                {
-                    f.SymbolId = newId.Value;
-                    await InvokeAsync(StateHasChanged);
-                }
-            }
-            else if (Provider?.CardRecord?.Item is FinanceManager.Shared.Dtos.Contacts.ContactDto c)
-            {
-                using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
-                var vm = Provider as BaseCardViewModel<TKeyValue>;
-                var newId = await vm?.ValidateSymbolAsync(stream, file.Name, file.ContentType ?? "application/octet-stream");
+                var newId = await assignable?.ValidateSymbolAsync(stream, file.Name, file.ContentType ?? "application/octet-stream");
                 if (newId.HasValue)
                 {
                     f.SymbolId = newId.Value;

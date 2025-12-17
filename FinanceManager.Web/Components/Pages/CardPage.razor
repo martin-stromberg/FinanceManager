@@ -195,10 +195,10 @@ else
         else if (kind == "contacts" && string.IsNullOrWhiteSpace(sub))
             await SetViewModel(ActivatorUtilities.CreateInstance<ContactCardViewModel>(Services));
         else if (kind == "contacts" && sub == "categories")
-            await SetViewModel(ActivatorUtilities.CreateInstance<ContactCategoryCardViewModel>(Services));
+            await SetViewModel(ActivatorUtilities.CreateInstance<ContactGroupCardViewModel>(Services));
         else if (kind == "contact-categories")
             // backward compatibility: if someone uses old flat route, still resolve to category card
-            await SetViewModel(ActivatorUtilities.CreateInstance<ContactCategoryCardViewModel>(Services));
+            await SetViewModel(ActivatorUtilities.CreateInstance<ContactGroupCardViewModel>(Services));
     }
 
     private async Task HandleDeleteAsync()

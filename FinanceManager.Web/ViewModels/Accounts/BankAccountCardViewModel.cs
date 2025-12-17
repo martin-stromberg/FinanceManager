@@ -1,10 +1,12 @@
 using FinanceManager.Shared;
 using Microsoft.Extensions.Localization;
+using FinanceManager.Domain.Attachments;
+using FinanceManager.Web.ViewModels.Common;
 
 namespace FinanceManager.Web.ViewModels.Accounts
 {
     // Card VM: builds key/value pairs for a single bank account
-    public sealed class BankAccountCardViewModel : BaseCardViewModel<(string Key, string Value)>, FinanceManager.Web.ViewModels.Common.IDeletableViewModel
+    public sealed class BankAccountCardViewModel : BaseCardViewModel<(string Key, string Value)>, FinanceManager.Web.ViewModels.Common.IDeletableViewModel, ISymbolAssignableCard
     {
         public BankAccountCardViewModel(IServiceProvider sp)
             : base(sp)
