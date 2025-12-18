@@ -95,11 +95,26 @@ public sealed class ContactService : IContactService
             query = query.Where(c => EF.Functions.Like(c.Name, pattern));
         }
 
-        return await query
+        // Left-join contact categories to fall back to category symbol when contact has none
+        var q = query
             .OrderBy(c => c.Name)
             .Skip(skip)
             .Take(take)
-            .Select(c => new ContactDto(c.Id, c.Name, c.Type, c.CategoryId, c.Description, c.IsPaymentIntermediary, c.SymbolAttachmentId))
+            .GroupJoin(_db.ContactCategories.Where(cat => cat.OwnerUserId == ownerUserId),
+                c => c.CategoryId,
+                cat => cat.Id,
+                (c, cats) => new { Contact = c, Categories = cats })
+            .SelectMany(x => x.Categories.DefaultIfEmpty(), (x, cat) => new { x.Contact, Category = cat });
+
+        return await q.Select(x => new ContactDto(
+                x.Contact.Id,
+                x.Contact.Name,
+                x.Contact.Type,
+                x.Contact.CategoryId,
+                x.Contact.Description,
+                x.Contact.IsPaymentIntermediary,
+                x.Contact.SymbolAttachmentId ?? (x.Category != null ? x.Category.SymbolAttachmentId : null)
+            ))
             .ToListAsync(ct);
     }
 
