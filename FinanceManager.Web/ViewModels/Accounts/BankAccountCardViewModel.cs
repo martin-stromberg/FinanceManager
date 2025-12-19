@@ -6,7 +6,7 @@ using FinanceManager.Web.ViewModels.Common;
 namespace FinanceManager.Web.ViewModels.Accounts
 {
     // Card VM: builds key/value pairs for a single bank account
-    public sealed class BankAccountCardViewModel : BaseCardViewModel<(string Key, string Value)>, FinanceManager.Web.ViewModels.Common.IDeletableViewModel, ISymbolAssignableCard
+    public sealed class BankAccountCardViewModel : BaseCardViewModel<(string Key, string Value)>, FinanceManager.Web.ViewModels.Common.IDeletableViewModel
     {
         public BankAccountCardViewModel(IServiceProvider sp)
             : base(sp)
@@ -298,98 +298,9 @@ namespace FinanceManager.Web.ViewModels.Accounts
             }
         }
 
-        public override async Task<Guid?> ValidateSymbolAsync(System.IO.Stream stream, string fileName, string contentType)
-        {
-            try
-            {
-                var api = ServiceProvider.GetRequiredService<IApiClient>();
-                var att = await api.Attachments_UploadFileAsync((short)FinanceManager.Domain.Attachments.AttachmentEntityKind.Account, Id, stream, fileName, contentType ?? "application/octet-stream");
-                await api.SetAccountSymbolAsync(Id, att.Id);
-                await InitializeAsync(Id);
-                return att.Id;
-            }
-            catch
-            {
-                return null;
-            }
-        }
         public override async Task ReloadAsync()
         {
             await InitializeAsync(Id);
-        }
-
-        public override async Task<IReadOnlyList<LookupItem>> QueryLookupAsync(CardField field, string? q, int skip, int take)
-        {
-            try
-            {
-                if (string.Equals(field.LookupType, "Contact", StringComparison.OrdinalIgnoreCase))
-                {
-                    var api = ServiceProvider.GetRequiredService<IApiClient>();
-                    ContactType? typeFilter = null;
-                    if (!string.IsNullOrWhiteSpace(field.LookupFilter))
-                    {
-                        var parts = field.LookupFilter.Split('=', 2);
-                        if (parts.Length == 2 && string.Equals(parts[0].Trim(), "Type", StringComparison.OrdinalIgnoreCase))
-                        {
-                            if (Enum.TryParse<ContactType>(parts[1].Trim(), ignoreCase: true, out var ct)) typeFilter = ct;
-                        }
-                    }
-                    var results = await api.Contacts_ListAsync(skip, take, typeFilter, false, q);
-                    return results.Select(c => new LookupItem(c.Id, c.Name)).ToList();
-                }
-            }
-            catch
-            {
-                // ignore and return empty
-            }
-            return await base.QueryLookupAsync(field, q, skip, take);
-        }
-
-        public override void ValidateLookupField(CardField field, LookupItem? item)
-        {
-            // For enum lookups, accept the selected name as pending value (no DB id required)
-            if (!string.IsNullOrWhiteSpace(field.LookupType) && field.LookupType.StartsWith("Enum:", StringComparison.OrdinalIgnoreCase))
-            {
-                var selected = item?.Name ?? string.Empty;
-                field.Text = selected;
-                ValidateFieldValue(field, selected);
-                return;
-            }
-
-            base.ValidateLookupField(field, item);
-        }
-
-        /// <summary>
-        /// Deletes the current account via API. Returns true on success.
-        /// </summary>
-        public override async Task<bool> DeleteAsync()
-        {
-            // No-op when no account loaded
-            if (Account == null) return false;
-
-            Loading = true; SetError(null, null); RaiseStateChanged();
-            var api = ServiceProvider.GetRequiredService<IApiClient>();
-            try
-            {
-                var ok = await api.DeleteAccountAsync(Id);
-                if (!ok)
-                {
-                    SetError(api.LastErrorCode ?? null, api.LastError ?? "Delete failed");
-                    return false;
-                }
-
-                RaiseUiActionRequested("Deleted");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                SetError(api.LastErrorCode ?? null, api.LastError ?? ex.Message);
-                return false;
-            }
-            finally
-            {
-                Loading = false; RaiseStateChanged();
-            }
         }
 
         private Type? ResolveEnumType(string enumName)
@@ -421,6 +332,32 @@ namespace FinanceManager.Web.ViewModels.Accounts
                 catch { }
             }
             return null;
+        }
+
+        // --- Symbol support hooks required by BaseCardViewModel ---
+        protected override (AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent() => (AttachmentEntityKind.Account, Id == Guid.Empty ? Guid.Empty : Id);
+
+        protected override bool IsSymbolUploadAllowed() => Id != Guid.Empty;
+
+        protected override async Task AssignNewSymbolAsync(Guid? attachmentId)
+        {
+            try
+            {
+                var api = ServiceProvider.GetRequiredService<IApiClient>();
+                if (attachmentId.HasValue)
+                {
+                    await api.SetAccountSymbolAsync(Id, attachmentId.Value);
+                }
+                else
+                {
+                    await api.ClearAccountSymbolAsync(Id);
+                }
+                await InitializeAsync(Id);
+            }
+            catch
+            {
+                // ignore
+            }
         }
     }
 }

@@ -26,6 +26,11 @@ public abstract class ViewModelBase : IAsyncDisposable, IRibbonProvider
         _currentUser = services.GetRequiredService<ICurrentUserService>();
     }
 
+    // Expose IServiceProvider to derived classes (needed for shared functionality in BaseCardViewModel)
+    protected IServiceProvider Services => _services;
+    // Backwards-compatible alias used in many existing viewmodels
+    protected IServiceProvider ServiceProvider => _services;
+
     public event EventHandler? StateChanged;
     // Raised when the VM requires authentication; argument may contain a suggested returnUrl
     public event EventHandler<string?>? AuthenticationRequired;

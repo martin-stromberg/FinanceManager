@@ -1,3 +1,4 @@
+using FinanceManager.Web.ViewModels.SavingsPlans.Categories;
 using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.ViewModels
@@ -47,6 +48,15 @@ namespace FinanceManager.Web.ViewModels
                     if (!Guid.TryParse(id, out var gid))
                         return null;
                     return CreatePostings((subKind ?? string.Empty).Trim().ToLowerInvariant(), gid);
+                case "savings-plans":
+                    // support listing savings plan categories via "/list/savings-plans/categories"
+                    if ((subKind ?? string.Empty).Trim().ToLowerInvariant() == "categories")
+                    {
+                        var spCvm = ActivatorUtilities.CreateInstance<SavingsPlanCategoryListViewModel>(_sp);
+                        return new ListFactoryResult(spCvm);
+                    }
+                    var spvm = ActivatorUtilities.CreateInstance<FinanceManager.Web.ViewModels.SavingsPlans.SavingsPlansListViewModel>(_sp);
+                    return new ListFactoryResult(spvm);
                 default:
                     return null;
             }

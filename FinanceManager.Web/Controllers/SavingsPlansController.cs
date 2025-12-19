@@ -4,6 +4,8 @@ using FinanceManager.Domain.Attachments;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using System.Reflection;
 
 namespace FinanceManager.Web.Controllers;
 
@@ -18,9 +20,12 @@ public sealed class SavingsPlansController : ControllerBase
     private readonly ISavingsPlanService _service;
     private readonly FinanceManager.Application.ICurrentUserService _current;
     private readonly IAttachmentService _attachments;
+    private readonly IStringLocalizer _localizer;
 
-    public SavingsPlansController(ISavingsPlanService service, FinanceManager.Application.ICurrentUserService current, IAttachmentService attachments)
-    { _service = service; _current = current; _attachments = attachments; }
+    public SavingsPlansController(ISavingsPlanService service, FinanceManager.Application.ICurrentUserService current, IAttachmentService attachments, IStringLocalizerFactory locFactory)
+    {
+        _service = service; _current = current; _attachments = attachments;
+    }
 
     /// <summary>
     /// Lists savings plans (optionally only active ones).
@@ -112,10 +117,20 @@ public sealed class SavingsPlansController : ControllerBase
     [HttpPost("{id:guid}/archive")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ArchiveAsync(Guid id, CancellationToken ct)
     {
-        var ok = await _service.ArchiveAsync(id, _current.UserId, ct);
-        return ok ? NoContent() : NotFound();
+        try
+        {
+            var ok = await _service.ArchiveAsync(id, _current.UserId, ct);
+            return ok ? NoContent() : NotFound();
+        }
+        catch (ArgumentException ex)
+        {
+            var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_SavingsPlan_{ex.ParamName}" : "Err_InvalidArgument";
+            var message = ex.Message;
+            return BadRequest(new { error = code, message });
+        }
     }
 
     /// <summary>
@@ -126,10 +141,24 @@ public sealed class SavingsPlansController : ControllerBase
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> DeleteAsync(Guid id, CancellationToken ct)
     {
-        var ok = await _service.DeleteAsync(id, _current.UserId, ct);
-        return ok ? NoContent() : NotFound();
+        try
+        {
+            var ok = await _service.DeleteAsync(id, _current.UserId, ct);
+            return ok ? NoContent() : NotFound();
+        }
+        catch (ArgumentException ex)
+        {
+            var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_SavingsPlan_{ex.ParamName}" : "Err_InvalidArgument";
+            var message = ex.Message;
+            return BadRequest(new { error = code, message });
+        }
+        catch (Exception)
+        {
+            return Problem("Unexpected error", statusCode: 500);
+        }
     }
 
     /// <summary>

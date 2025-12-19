@@ -6,7 +6,7 @@ using FinanceManager.Web.ViewModels.Common;
 
 namespace FinanceManager.Web.ViewModels.Contacts;
 
-public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel, ISymbolAssignableCard
+public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
 {
     private readonly IApiClient _api;
 
@@ -136,21 +136,6 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
         }
     }
 
-    public override async Task<Guid?> ValidateSymbolAsync(System.IO.Stream stream, string fileName, string contentType)
-    {
-        try
-        {
-            var att = await _api.Attachments_UploadFileAsync((short)FinanceManager.Domain.Attachments.AttachmentEntityKind.ContactCategory, Id, stream, fileName, contentType ?? "application/octet-stream");
-            await _api.ContactCategories_SetSymbolAsync(Id, att.Id);
-            await LoadAsync(Id);
-            return att.Id;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
     public override async Task ReloadAsync()
     {
         await LoadAsync(Id);
@@ -172,6 +157,31 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
         });
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>{nav, manage}) };
+    }
+
+    // --- Symbol support hooks required by BaseCardViewModel ---
+    protected override (AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent() => (AttachmentEntityKind.ContactCategory, Id == Guid.Empty ? Guid.Empty : Id);
+
+    protected override bool IsSymbolUploadAllowed() => true;
+
+    protected override async Task AssignNewSymbolAsync(Guid? attachmentId)
+    {
+        try
+        {
+            if (attachmentId.HasValue)
+            {
+                await _api.ContactCategories_SetSymbolAsync(Id, attachmentId.Value);
+            }
+            else
+            {
+                await _api.ContactCategories_ClearSymbolAsync(Id);
+            }
+            await LoadAsync(Id);
+        }
+        catch
+        {
+            // ignore
+        }
     }
 
     public sealed class EditModel

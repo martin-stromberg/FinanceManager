@@ -2,6 +2,7 @@ using FinanceManager.Shared;
 using Microsoft.Extensions.Localization;
 using FinanceManager.Domain.Attachments;
 using FinanceManager.Web.Components.Shared;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FinanceManager.Web.ViewModels.Common
 {
@@ -11,7 +12,8 @@ namespace FinanceManager.Web.ViewModels.Common
         protected BaseViewModel(IServiceProvider serviceProvider)
         {
             ServiceProvider = serviceProvider;
-            Localizer = serviceProvider.GetRequiredService<IStringLocalizer<Pages>>();
+            // Do not eagerly resolve Localizer here - the IServiceProvider might be disposed in some rendering scenarios.
+            // Localizer will be resolved lazily on demand.
         }
         public virtual string Title { get; } = string.Empty;
         public bool Loading { get; protected set; }
@@ -24,13 +26,31 @@ namespace FinanceManager.Web.ViewModels.Common
             LastError = errorMessage;
             if (!string.IsNullOrEmpty(LastErrorCode))
             {
-                var entry = Localizer[LastErrorCode];
-                if (!entry.ResourceNotFound)
+                var entry = Localizer?[LastErrorCode];
+                if (entry != null && !entry.ResourceNotFound)
                     LastError = entry.Value;
             }
         }
         protected IServiceProvider ServiceProvider { get; }
-        protected IStringLocalizer? Localizer { get; }
+
+        // Lazy-resolved localizer. Resolve on first access and swallow resolution errors (e.g. provider disposed).
+        private IStringLocalizer<Pages>? _localizerCache;
+        protected IStringLocalizer? Localizer
+        {
+            get
+            {
+                if (_localizerCache != null) return _localizerCache;
+                try
+                {
+                    _localizerCache = ServiceProvider.GetService<IStringLocalizer<Pages>>();
+                }
+                catch
+                {
+                    _localizerCache = null;
+                }
+                return _localizerCache;
+            }
+        }
 
         public event EventHandler? StateChanged;
 
@@ -122,8 +142,8 @@ namespace FinanceManager.Web.ViewModels.Common
                     try
                     {
                         var key = $"EnumType_{enumType.Name}_{raw}";
-                        var val = Localizer[key];
-                        if (!string.IsNullOrEmpty(val)) display = val.Value;
+                        var val = Localizer?[key];
+                        if (val != null && !string.IsNullOrWhiteSpace(val)) display = val.Value;
                     }
                     catch { }
                     return new LookupItem(Guid.Empty, display);
@@ -149,9 +169,9 @@ namespace FinanceManager.Web.ViewModels.Common
                 if (enumType != null && enumType.IsEnum)
                 {
                     var key = $"EnumType_{enumType.Name}_{field.Text}";
-                    var val = Localizer[key];
-                    if (!string.IsNullOrWhiteSpace(val))
-                        field.Text = val;
+                    var val = Localizer?[key];
+                    if (val != null && !string.IsNullOrWhiteSpace(val))
+                        field.Text = val.Value;
                 }
             }
         }

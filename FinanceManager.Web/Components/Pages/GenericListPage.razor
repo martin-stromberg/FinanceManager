@@ -34,7 +34,9 @@ else
     }
     else
     {
-        <table class="fm-table wide">
+        @* If any column uses pixel widths, enable fixed table layout so px widths are honored *@
+        var hasPixelWidths = Provider.Columns?.Any(c => !string.IsNullOrWhiteSpace(c.Width) && c.Width.Trim().EndsWith("px", StringComparison.OrdinalIgnoreCase)) ?? false;
+        <table class="fm-table wide @(hasPixelWidths ? "fixed-layout" : null)">
             @if (Provider.Columns?.Count > 0)
             {
                 <thead>
@@ -60,7 +62,17 @@ else
                                 @switch(cell.Kind)
                                 {
                                     case ListCellKind.Text:
-                                        @cell.Text
+                                        {
+                                            var txt = cell.Text ?? string.Empty;
+                                            if (txt.Contains("<svg", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                @((MarkupString)txt)
+                                            }
+                                            else
+                                            {
+                                                @txt
+                                            }
+                                        }
                                         break;
                                     case ListCellKind.Symbol:
                                         if (cell.SymbolId.HasValue)

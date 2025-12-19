@@ -1,5 +1,6 @@
 using FinanceManager.Shared;
 using Microsoft.Extensions.Localization;
+using FinanceManager.Domain.Attachments;
 
 namespace FinanceManager.Web.ViewModels.Postings;
 
@@ -89,6 +90,11 @@ public sealed class PostingsCardViewModel : BaseCardViewModel<(string Key, strin
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, linked }) };
     }
+
+    // Postings do not support symbol assignment via the card UI; provide no-op implementations for abstract hooks
+    protected override bool IsSymbolUploadAllowed() => false;
+    protected override (AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent() => (AttachmentEntityKind.Posting, Guid.Empty);
+    protected override Task AssignNewSymbolAsync(Guid? attachmentId) => Task.CompletedTask;
 
     public override Task<Guid?> ValidateSymbolAsync(System.IO.Stream stream, string fileName, string contentType) => Task.FromResult<Guid?>(null);
     public override Task ReloadAsync() => LoadAsync(Id);

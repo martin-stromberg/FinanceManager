@@ -5,16 +5,17 @@
 @inject NavigationManager NavigationManager
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
 @inject IJSRuntime JS
-@using FinanceManager.Web.ViewModels
-@using FinanceManager.Web.ViewModels.Common
-@using FinanceManager.Web.Components.Shared
 @using System
-@using FinanceManager.Web.ViewModels.Accounts
-@using FinanceManager.Web.ViewModels.Postings
-@using FinanceManager.Web.ViewModels.Contacts
 @using FinanceManager.Shared.Dtos
-@using Microsoft.AspNetCore.Components
+@using FinanceManager.Web.Components.Shared
 @using FinanceManager.Web.Extensions
+@using FinanceManager.Web.ViewModels
+@using FinanceManager.Web.ViewModels.Accounts
+@using FinanceManager.Web.ViewModels.Common
+@using FinanceManager.Web.ViewModels.Contacts
+@using FinanceManager.Web.ViewModels.Postings
+@using FinanceManager.Web.ViewModels.SavingsPlans.Categories
+@using Microsoft.AspNetCore.Components
 
 @if (_vm == null)
 {
@@ -42,7 +43,7 @@ else
                     <button class="icon-btn" title='@Localizer["Btn_Close"]' @onclick="(()=> CloseOverlay())"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
                 </div>
                 @* Filter out overlay-only keys (e.g., OverlayTitle) so they are not passed as component parameters *@
-                @{
+                @{ 
                     IDictionary<string, object?>? parms = null;
                     if (_overlaySpec.Parameters != null)
                     {
@@ -74,6 +75,7 @@ else
     [Parameter] public Guid Id { get; set; }
 
     [Parameter, SupplyParameterFromQuery(Name = "back")] public string? Back { get; set; }
+    // Note: draft/entry/prefill navigation parameters removed — special initialization for specific VMs is no longer done here.
 
     private BaseCardViewModel<(string Key, string Value)>? _vm;
     // Generic overlay state
@@ -107,6 +109,8 @@ else
         _vm = vm;
         _vm.StateChanged += ViewModelSatteChanged;
         _vm.UiActionRequested += OnUiActionRequested;
+
+        // Generic initialization for all card view models. Special navigation/init logic was removed from the page.
         await _vm.InitializeAsync(Id);
     }
 
@@ -152,6 +156,9 @@ else
                     NavigationManager.NavigateTo($"/card/{kind}/{cid}?back={Uri.EscapeDataString(back)}");
                 }
                 break;
+            case "OpenCategory":
+                if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
+                break;
             case "OpenAttachments":
                 // Attachments are handled via UiOverlaySpec payloads emitted by viewmodels. No fallback.
                 break;
@@ -181,6 +188,7 @@ else
     {
         "accounts" => Localizer["General_Title_Account"],
         "contacts" => Localizer["General_Title_Contact"],
+        "savings-plans" => (SubKind ?? string.Empty).Trim().ToLowerInvariant() == "categories" ? Localizer["General_Title_SavingsPlan_Categories"] : Localizer["General_Title_SavingsPlans"],
         _ => Kind
     };
 
@@ -199,6 +207,10 @@ else
         else if (kind == "contact-categories")
             // backward compatibility: if someone uses old flat route, still resolve to category card
             await SetViewModel(ActivatorUtilities.CreateInstance<ContactGroupCardViewModel>(Services));
+        else if (kind == "savings-plans" && sub == "categories")
+            await SetViewModel(ActivatorUtilities.CreateInstance<SavingsPlanCategoryCardViewModel>(Services));
+        else if (kind == "savings-plans")
+            await SetViewModel(ActivatorUtilities.CreateInstance<FinanceManager.Web.ViewModels.SavingsPlans.SavingsPlanCardViewModel>(Services));
     }
 
     private async Task HandleDeleteAsync()

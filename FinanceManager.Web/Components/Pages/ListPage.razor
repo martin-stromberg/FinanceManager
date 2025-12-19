@@ -49,11 +49,17 @@ else
         {
             return Localizer["General_Title_Contact_Categories"];
         }
+        if (kind == "savings-plans" && sub == "categories")
+        {
+            return Localizer["General_Title_SavingsPlan_Categories"];
+        }
 
         return kind switch
         {
             "accounts" => Localizer["General_Title_Account"],
             "contacts" => Localizer["General_Title_Contact"],
+            "savings-plans" => Localizer["General_Title_SavingsPlans"],
+            "postings" => Localizer["General_Title_Postings"],
             _ => Kind
         };
     }

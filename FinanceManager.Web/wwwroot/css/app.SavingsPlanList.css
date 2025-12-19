@@ -2,6 +2,17 @@
    app.SavingsPlanList.css - Allgemeingültige SavingsPlanList Styles
    ===================================================== */
 
+/* Fixed layout: honor pixel widths when present on table columns */
+.fixed-layout {
+    table-layout: fixed;
+}
+
+.fixed-layout th, .fixed-layout td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .savings-table {
     margin-top: 1rem;
 }
@@ -51,8 +62,14 @@
 /* Target date cell */
 .target-date-cell {
     display: flex;
-    align-items: center;
+    align-items: center; /* vertical align center */
     gap: .6rem;
+}
+
+/* Ensure inline svg inside text flows baseline-centered */
+.target-date-cell svg, .target-date-cell img {
+    vertical-align: middle;
+    display: inline-block;
 }
 
 /* Interval badge */
@@ -68,6 +85,8 @@
 
 .interval-badge svg {
     display: block;
+    width: 24px;
+    height: 24px;
 }
 
 /* Status item */

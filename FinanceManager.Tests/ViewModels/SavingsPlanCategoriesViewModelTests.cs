@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
 using FinanceManager.Web.ViewModels.Common;
+using FinanceManager.Web.ViewModels.SavingsPlans.Categories;
 
 namespace FinanceManager.Tests.ViewModels;
 

@@ -12,12 +12,27 @@ public sealed class SavingsPlanService : ISavingsPlanService
 
     public async Task<IReadOnlyList<SavingsPlanDto>> ListAsync(Guid ownerUserId, bool onlyActive, CancellationToken ct)
     {
-        var query = _db.SavingsPlans.AsNoTracking().Where(p => p.OwnerUserId == ownerUserId);
-        if (onlyActive) { query = query.Where(p => p.IsActive); }
-        return await query
-            .OrderBy(p => p.Name)
-            .Select(p => new SavingsPlanDto(p.Id, p.Name, p.Type, p.Type == SavingsPlanType.Open ? null : p.TargetAmount, p.TargetDate, p.Interval, p.IsActive, p.CreatedUtc, p.ArchivedUtc, p.CategoryId, p.ContractNumber, p.SymbolAttachmentId))
-            .ToListAsync(ct);
+        var plans = from p in _db.SavingsPlans.AsNoTracking()
+                    where p.OwnerUserId == ownerUserId && (!onlyActive || p.IsActive)
+                    join c in _db.SavingsPlanCategories.AsNoTracking() on p.CategoryId equals c.Id into pcs
+                    from cat in pcs.DefaultIfEmpty()
+                    orderby p.Name
+                    select new SavingsPlanDto(
+                        p.Id,
+                        p.Name,
+                        p.Type,
+                        p.Type == SavingsPlanType.Open ? null : p.TargetAmount,
+                        p.TargetDate,
+                        p.Interval,
+                        p.IsActive,
+                        p.CreatedUtc,
+                        p.ArchivedUtc,
+                        p.CategoryId,
+                        p.ContractNumber,
+                        p.SymbolAttachmentId ?? (cat != null ? cat.SymbolAttachmentId : null)
+                    );
+
+        return await plans.ToListAsync(ct);
     }
 
     public async Task<SavingsPlanDto?> GetAsync(Guid id, Guid ownerUserId, CancellationToken ct)
@@ -62,7 +77,8 @@ public sealed class SavingsPlanService : ISavingsPlanService
     public async Task<bool> ArchiveAsync(Guid id, Guid ownerUserId, CancellationToken ct)
     {
         var plan = await _db.SavingsPlans.FirstOrDefaultAsync(p => p.Id == id && p.OwnerUserId == ownerUserId, ct);
-        if (plan == null || !plan.IsActive) { return false; }
+        if (plan == null) { return false; }
+        if (!plan.IsActive) { throw new ArgumentException("Savings plan is already archived", "ArchiveState"); }
         plan.Archive();
         await _db.SaveChangesAsync(ct);
         return true;
@@ -75,19 +91,19 @@ public sealed class SavingsPlanService : ISavingsPlanService
 
         // Business rules:
         // 1. Only archived plans can be deleted (avoid accidental data loss of active plans).
-        if (plan.IsActive) { return false; }
+        if (plan.IsActive) { throw new ArgumentException("Savings plan must be archived before it can be deleted", "IsActive"); }
 
         // 2. Prevent deletion if referenced by committed statement entries.
         bool hasStatementEntries = await _db.StatementEntries.AsNoTracking().AnyAsync(e => e.SavingsPlanId == id, ct);
-        if (hasStatementEntries) { return false; }
+        if (hasStatementEntries) { throw new ArgumentException("Savings plan is referenced by committed statement entries and cannot be deleted", "StatementEntries"); }
 
         // 3. Prevent deletion if referenced by draft entries (user must remove assignments first).
         bool hasDraftEntries = await _db.StatementDraftEntries.AsNoTracking().AnyAsync(e => e.SavingsPlanId == id, ct);
-        if (hasDraftEntries) { return false; }
+        if (hasDraftEntries) { throw new ArgumentException("Savings plan is referenced by draft entries and cannot be deleted", "DraftEntries"); }
 
         // 4. Prevent deletion if postings reference the plan (future feature; safety for already created postings).
         bool hasPostings = await _db.Postings.AsNoTracking().AnyAsync(p => p.SavingsPlanId == id, ct);
-        if (hasPostings) { return false; }
+        if (hasPostings) { throw new ArgumentException("Savings plan is referenced by postings and cannot be deleted", "Postings"); }
 
         // Delete attachments of this savings plan
         await _db.Attachments

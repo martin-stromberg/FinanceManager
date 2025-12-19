@@ -348,6 +348,12 @@
   <data name="Ribbon_Postings" xml:space="preserve">
     <value>Postings</value>
   </data>
+  <data name="Ribbon_Archive" xml:space="preserve">
+    <value>Archive</value>
+  </data>
+  <data name="Ribbon_Recalculate" xml:space="preserve">
+    <value>Recalculate</value>
+  </data>
   <data name="Ribbon_Merge" xml:space="preserve">
     <value>Merge</value>
   </data>
@@ -386,5 +392,140 @@
   </data>
   <data name="Ribbon_Groups" xml:space="preserve">
     <value>Groups</value>
+  </data>
+  <data name="General_Title_Contact_Categories" xml:space="preserve">
+    <value>Contact groups</value>
+  </data>
+  <data name="List_Th_SavingsPlan_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="List_Th_TargetAmount" xml:space="preserve">
+    <value>Target</value>
+  </data>
+  <data name="List_Th_Balance" xml:space="preserve">
+    <value>Balance</value>
+  </data>
+  <data name="List_Th_Remaining" xml:space="preserve">
+    <value>Remaining</value>
+  </data>
+  <data name="List_Th_TargetDate" xml:space="preserve">
+    <value>Target date</value>
+  </data>
+  <data name="List_Th_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="StatusActive" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="StatusDone" xml:space="preserve">
+    <value>Reached</value>
+  </data>
+  <data name="StatusUnreachable" xml:space="preserve">
+    <value>Unreachable</value>
+  </data>
+  <data name="StatusOverdue" xml:space="preserve">
+    <value>Overdue</value>
+  </data>
+  <data name="StatusReachable" xml:space="preserve">
+    <value>Reachable</value>
+  </data>
+  <data name="OnlyActive" xml:space="preserve">
+    <value>Only active</value>
+  </data>
+  <data name="StatusArchived" xml:space="preserve">
+    <value>Archived</value>
+  </data>
+  <data name="Ribbon_Categories" xml:space="preserve">
+    <value>Categories</value>
+  </data>
+  <data name="Ribbon_Group_Filter" xml:space="preserve">
+    <value>Filter</value>
+  </data>
+  <data name="Ribbon_Group_Analysis" xml:space="preserve">
+    <value>Analysis</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_TargetAmount" xml:space="preserve">
+    <value>Target amount</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_TargetDate" xml:space="preserve">
+    <value>Target date</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_Interval" xml:space="preserve">
+    <value>Interval</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_Category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_ContractNumber" xml:space="preserve">
+    <value>Contract number</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_Symbol" xml:space="preserve">
+    <value>Symbol</value>
+  </data>
+  <data name="EnumType_SavingsPlanType_OneTime" xml:space="preserve">
+    <value>One-time</value>
+  </data>
+  <data name="EnumType_SavingsPlanType_Recurring" xml:space="preserve">
+    <value>Recurring</value>
+  </data>
+  <data name="EnumType_SavingsPlanType_Open" xml:space="preserve">
+    <value>Open-ended</value>
+  </data>
+  <data name="EnumType_SavingsPlanInterval_Monthly" xml:space="preserve">
+    <value>Monthly</value>
+  </data>
+  <data name="EnumType_SavingsPlanInterval_BiMonthly" xml:space="preserve">
+    <value>Every two months</value>
+  </data>
+  <data name="EnumType_SavingsPlanInterval_Quarterly" xml:space="preserve">
+    <value>Quarterly</value>
+  </data>
+  <data name="EnumType_SavingsPlanInterval_SemiAnnually" xml:space="preserve">
+    <value>Semi-annually</value>
+  </data>
+  <data name="EnumType_SavingsPlanInterval_Annually" xml:space="preserve">
+    <value>Annually</value>
+  </data>
+  <data name="Err_Invalid_SavingsPlan_IsActive" xml:space="preserve">
+    <value>The savings plan must be archived before it can be deleted.</value>
+  </data>
+  <data name="Err_Invalid_SavingsPlan_StatementEntries" xml:space="preserve">
+    <value>The savings plan is referenced by committed statement entries and cannot be deleted.</value>
+  </data>
+  <data name="Err_Invalid_SavingsPlan_DraftEntries" xml:space="preserve">
+    <value>The savings plan is referenced by draft entries and cannot be deleted.</value>
+  </data>
+  <data name="Err_Invalid_SavingsPlan_Postings" xml:space="preserve">
+    <value>The savings plan is referenced by postings and cannot be deleted.</value>
+  </data>
+  <data name="Err_Invalid_SavingsPlan_ArchiveState" xml:space="preserve">
+    <value>The savings plan has already been archived.</value>
+  </data>
+  <data name="Ribbon_Category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="Card_Caption_SavingsPlanCategory_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Card_Caption_SavingsPlanCategory_Symbol" xml:space="preserve">
+    <value>Symbol</value>
+  </data>
+  <data name="Chart_Title_SavingsPlan_Aggregates" xml:space="preserve">
+    <value>Aggregates</value>
+  </data>
+  <data name="General_Title_SavingsPlans" xml:space="preserve">
+    <value>Savings plans</value>
+  </data>
+  <data name="General_Title_Postings" xml:space="preserve">
+    <value>Postings</value>
+  </data>
+  <data name="General_Title_SavingsPlan_Categories" xml:space="preserve">
+    <value>Savings plan categories</value>
   </data>
 </root>

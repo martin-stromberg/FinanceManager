@@ -7,7 +7,7 @@ using FinanceManager.Domain.Attachments;
 
 namespace FinanceManager.Web.ViewModels.Contacts;
 
-public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel, ISymbolAssignableCard
+public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
 {
     private readonly IApiClient _api;
     public ContactCardViewModel(IServiceProvider sp) : base(sp)
@@ -18,6 +18,18 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
     public Guid Id { get; private set; }
     public ContactDto? Contact { get; private set; }
     public override string Title => Contact?.Name ?? base.Title;
+
+    public string ChartEndpoint => Id != Guid.Empty ? $"/api/contacts/{Id}/aggregates" : string.Empty;
+
+    public override AggregateBarChartViewModel? ChartViewModel
+    {
+        get
+        {
+            if (Id == Guid.Empty) return null;
+            var title = Localizer?["Chart_Title_Contact_Aggregates"] ?? Localizer?["General_Title_Contacts"] ?? "Contact";
+            return new AggregateBarChartViewModel(ServiceProvider, ChartEndpoint, title);
+        }
+    }
 
     public override async Task LoadAsync(Guid id)
     {
@@ -125,18 +137,6 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
         base.ValidateLookupField(field, item);
     }
 
-    public override async Task<Guid?> ValidateSymbolAsync(System.IO.Stream stream, string fileName, string contentType)
-    {
-        try
-        {
-            var att = await _api.Attachments_UploadFileAsync((short)FinanceManager.Domain.Attachments.AttachmentEntityKind.Contact, Id, stream, fileName, contentType ?? "application/octet-stream");
-            await _api.Contacts_SetSymbolAsync(Id, att.Id);
-            await InitializeAsync(Id);
-            return att.Id;
-        }
-        catch { return null; }
-    }
-
     public override async Task ReloadAsync()
     {
         await InitializeAsync(Id);
@@ -209,5 +209,30 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
         var isPaymentText = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Contact_IsPaymentIntermediary")?.Text;
         var isPayment = string.Equals(isPaymentText, Localizer?["EnumType_BooleanSelection_True"].Value, StringComparison.OrdinalIgnoreCase);
         return new ContactDto(Id, name, type, categoryId, desc, isPayment, Contact?.SymbolAttachmentId);
+    }
+
+    // --- Symbol support hooks required by BaseCardViewModel ---
+    protected override (AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent() => (AttachmentEntityKind.Contact, Id == Guid.Empty ? Guid.Empty : Id);
+
+    protected override bool IsSymbolUploadAllowed() => true;
+
+    protected override async Task AssignNewSymbolAsync(Guid? attachmentId)
+    {
+        try
+        {
+            if (attachmentId.HasValue)
+            {
+                await _api.Contacts_SetSymbolAsync(Id, attachmentId.Value);
+            }
+            else
+            {
+                await _api.Contacts_ClearSymbolAsync(Id);
+            }
+            await InitializeAsync(Id);
+        }
+        catch
+        {
+            // keep silent to preserve prior behavior
+        }
     }
 }

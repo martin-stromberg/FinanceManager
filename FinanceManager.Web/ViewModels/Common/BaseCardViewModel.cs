@@ -1,6 +1,8 @@
+using FinanceManager.Domain.Attachments;
+
 namespace FinanceManager.Web.ViewModels.Common
 {
-    public abstract class BaseCardViewModel<TKeyValue> : BaseViewModel
+    public abstract class BaseCardViewModel<TKeyValue> : BaseViewModel, ISymbolAssignableCard
     {
         public virtual Task InitializeAsync(System.Guid id) => LoadAsync(id);
 
@@ -98,10 +100,53 @@ namespace FinanceManager.Web.ViewModels.Common
             return record;
         }
 
-        // Validate and upload a symbol file for this card's entity. Default implementation does nothing and returns null.
-        public virtual Task<Guid?> ValidateSymbolAsync(System.IO.Stream stream, string fileName, string contentType)
+        // --- Symbol upload handling (default implementation provided in base) ---
+        /// <summary>
+        /// Determine whether a symbol upload is permitted. Derived classes may override and throw exceptions
+        /// or return false to disallow the upload.
+        /// </summary>
+        protected abstract bool IsSymbolUploadAllowed();
+
+        /// <summary>
+        /// Provides the Attachment parent kind and id to be used for uploading the symbol file.
+        /// Implementations should return the appropriate AttachmentEntityKind and the (possibly Guid.Empty) parent id.
+        /// </summary>
+        protected abstract (AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent();
+
+        /// <summary>
+        /// Called after a successful upload so the derived ViewModel can persist the new symbol attachment id
+        /// (for example by calling the API to set the symbol on the entity) and update its Model/state.
+        /// </summary>
+        protected abstract Task AssignNewSymbolAsync(Guid? attachmentId);
+
+        /// <summary>
+        /// Validate and upload a symbol file for this card's entity. Base implementation performs permission
+        /// check, uploads the file as a Symbol role attachment and then calls AssignNewSymbolAsync.
+        /// </summary>
+        public virtual async Task<Guid?> ValidateSymbolAsync(System.IO.Stream stream, string fileName, string contentType)
         {
-            return Task.FromResult<Guid?>(null);
+            try
+            {
+                // Allow derived classes to veto or raise an error
+                var allowed = IsSymbolUploadAllowed();
+                if (!allowed) return null;
+
+                // Upload attachment using shared API client
+                var api = ServiceProvider.GetRequiredService<Shared.IApiClient>();
+                var parent = GetSymbolParent();
+                var dto = await api.Attachments_UploadFileAsync((short)parent.Kind, parent.ParentId, stream, fileName, contentType, null, (short)FinanceManager.Domain.Attachments.AttachmentRole.Symbol);
+                if (dto != null)
+                {
+                    await AssignNewSymbolAsync(dto.Id);
+                    return dto.Id;
+                }
+                return null;
+            }
+            catch
+            {
+                // Fail silently to preserve previous behavior; derived implementations may log if desired.
+                return null;
+            }
         }
 
         // Reload the card data after changes (default no-op)

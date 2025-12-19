@@ -1118,12 +1118,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PostAsync($"/api/savings-plans/{id}/archive", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
-        {
-            LastError = await resp.Content.ReadAsStringAsync(ct);
-            return false;
-        }
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -1131,12 +1126,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.DeleteAsync($"/api/savings-plans/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
-        {
-            LastError = await resp.Content.ReadAsStringAsync(ct);
-            return false;
-        }
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -1144,12 +1134,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PostAsync($"/api/savings-plans/{id}/symbol/{attachmentId}", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
-        {
-            LastError = await resp.Content.ReadAsStringAsync(ct);
-            return false;
-        }
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -1157,12 +1142,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.DeleteAsync($"/api/savings-plans/{id}/symbol", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
-        {
-            LastError = await resp.Content.ReadAsStringAsync(ct);
-            return false;
-        }
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
