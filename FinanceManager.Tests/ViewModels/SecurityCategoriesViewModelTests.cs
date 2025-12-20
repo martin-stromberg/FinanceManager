@@ -3,6 +3,7 @@ using FinanceManager.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
+using FinanceManager.Web.ViewModels.Common;
 
 namespace FinanceManager.Tests.ViewModels;
 
@@ -16,14 +17,14 @@ public sealed class SecurityCategoriesViewModelTests
         public bool IsAdmin { get; set; }
     }
 
-    private static (SecurityCategoriesViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool authenticated = true)
+    private static (FinanceManager.Web.ViewModels.Securities.Categories.SecurityCategoriesListViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool authenticated = true)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService { IsAuthenticated = authenticated });
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
         var sp = services.BuildServiceProvider();
-        var vm = new SecurityCategoriesViewModel(sp);
+        var vm = new FinanceManager.Web.ViewModels.Securities.Categories.SecurityCategoriesListViewModel(sp);
         return (vm, apiMock);
     }
 
@@ -42,8 +43,8 @@ public sealed class SecurityCategoriesViewModelTests
         await vm.InitializeAsync();
 
         Assert.True(vm.Loaded);
-        Assert.Equal(2, vm.Categories.Count);
-        Assert.Equal(new[] { "A", "B" }, vm.Categories.Select(x => x.Name).OrderBy(x => x).ToArray());
+        Assert.Equal(2, vm.Items.Count);
+        Assert.Equal(new[] { "A", "B" }, vm.Items.Select(x => x.Name).OrderBy(x => x).ToArray());
     }
 
     [Fact]
@@ -65,10 +66,10 @@ public sealed class SecurityCategoriesViewModelTests
     {
         var (vm, _) = CreateVm();
         var loc = new TestLocalizer<SecurityCategoriesViewModelTests>();
-        var groups = vm.GetRibbon(loc);
-        var actions = groups.First();
-        Assert.Contains(actions.Items, i => i.Action == "New");
-        Assert.Contains(actions.Items, i => i.Action == "Back");
+        var regs = vm.GetRibbon(loc);
+        var items = regs.SelectMany(r => (IEnumerable<object>?)r.Items ?? Enumerable.Empty<object>()).ToList();
+        Assert.Contains(items, i => (string?)i.GetType().GetProperty("Action")?.GetValue(i) == "New");
+        Assert.Contains(items, i => (string?)i.GetType().GetProperty("Action")?.GetValue(i) == "Back");
     }
 
     private sealed class TestLocalizer<T> : IStringLocalizer<T>

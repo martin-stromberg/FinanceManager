@@ -61,9 +61,8 @@ public sealed class PostingsAccountViewModelTests
         apiMock.Setup(a => a.Postings_GetAccountAsync(It.IsAny<Guid>(), 0, 50, It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreatePostings(10));
 
-        var vm = new PostingsAccountViewModel(CreateSp(apiMock));
-        vm.Configure(Guid.NewGuid());
-
+        var accountId = Guid.NewGuid();
+        var vm = new FinanceManager.Web.ViewModels.Postings.AccountPostingsListViewModel(CreateSp(apiMock), accountId);
         await vm.InitializeAsync();
 
         Assert.False(vm.Loading);
@@ -83,9 +82,8 @@ public sealed class PostingsAccountViewModelTests
                 return CreatePostings(call == 1 ? 50 : 3);
             });
 
-        var vm = new PostingsAccountViewModel(CreateSp(apiMock));
-        vm.Configure(Guid.NewGuid());
-
+        var accountId = Guid.NewGuid();
+        var vm = new FinanceManager.Web.ViewModels.Postings.AccountPostingsListViewModel(CreateSp(apiMock), accountId);
         await vm.InitializeAsync();
         Assert.Equal(50, vm.Items.Count);
         Assert.True(vm.CanLoadMore);
@@ -96,13 +94,14 @@ public sealed class PostingsAccountViewModelTests
     }
 
     [Fact]
-    public void GetExportUrl_ComposesQuery()
+    public async Task GetExportUrl_ComposesQuery()
     {
         var apiMock = new Mock<IApiClient>();
-        var vm = new PostingsAccountViewModel(CreateSp(apiMock));
-        vm.Configure(Guid.Parse("11111111-1111-1111-1111-111111111111"));
+        var accountId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var vm = new FinanceManager.Web.ViewModels.Postings.AccountPostingsListViewModel(CreateSp(apiMock), accountId);
         vm.SetSearch("test q");
         vm.SetRange(new DateTime(2024, 1, 2), new DateTime(2024, 2, 3));
+        await vm.InitializeAsync();
 
         var url = vm.GetExportUrl("csv");
 

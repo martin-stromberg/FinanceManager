@@ -2,7 +2,7 @@ using FinanceManager.Shared;
 using Microsoft.Extensions.Localization;
 using FinanceManager.Domain.Attachments;
 
-namespace FinanceManager.Web.ViewModels.Postings;
+namespace FinanceManager.Web.ViewModels.Postings.Common;
 
 public sealed class PostingsCardViewModel : BaseCardViewModel<(string Key, string Value)>
 {

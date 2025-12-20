@@ -4,6 +4,7 @@
 @inject NavigationManager Nav
 @inject Microsoft.Extensions.Localization.IStringLocalizer<Pages>? Localizer
 @inject IJSRuntime JS
+@using FinanceManager.Web.Extensions
 @using FinanceManager.Web.ViewModels
 @using FinanceManager.Web.ViewModels.Common
 @using FinanceManager.Web.Components.Shared
@@ -32,6 +33,40 @@ else
                      EmptyText="@Localizer["List_Result_NoItems"]"
                      EndOfListText="@Localizer["List_Result_EndOfList"]"
                      ItemClick="OnItemClick" />
+
+    @* Generic overlay rendering for list providers *@
+    @if (_overlayVisible && _overlaySpec is not null)
+    {
+        <div class="split-center" @onclick="(()=> CloseOverlay())">
+            <div class="split-dialog" style="max-width:90vH;" @onclick:stopPropagation="true">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+                    <h3 style="margin:0;font-size:1rem;">@GetOverlayTitle()</h3>
+                    <button class="icon-btn" title='@Localizer["Btn_Close"]' @onclick="(()=> CloseOverlay())"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
+                </div>
+                @{ 
+                    IDictionary<string, object?>? parms = null;
+                    if (_overlaySpec.Parameters != null)
+                    {
+                        parms = _overlaySpec.Parameters.Where(kvp => !string.Equals(kvp.Key, "OverlayTitle", StringComparison.OrdinalIgnoreCase)
+                                                                    && !string.Equals(kvp.Key, "Visible", StringComparison.OrdinalIgnoreCase))
+                                    .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                    }
+
+                    Action overlayClose = CloseOverlay;
+                    Action<object> overlayOnFinished = obj =>
+                    {
+                        CloseOverlay();
+                        _ = Nav.NavigateToModelCard(obj);
+                    };
+                }
+                <CascadingValue Name="OverlayClose" Value="@(overlayClose)">
+                    <CascadingValue Name="OverlayOnFinished" Value="@(overlayOnFinished)">
+                        <DynamicComponent Type="_overlaySpec.ComponentType" Parameters="parms" />
+                    </CascadingValue>
+                </CascadingValue>
+            </div>
+        </div>
+    }
 }
 
 @code {
@@ -40,6 +75,10 @@ else
     [Parameter] public string? Id { get; set; }
 
     private IListProvider? _provider;
+
+    // Overlay state
+    private BaseViewModel.UiOverlaySpec? _overlaySpec;
+    private bool _overlayVisible;
 
     private string GetKindTitle()
     {
@@ -53,13 +92,17 @@ else
         {
             return Localizer["General_Title_SavingsPlan_Categories"];
         }
-
+        if (kind == "securities" && sub == "categories")
+        {
+            return Localizer["General_Title_Securities_Categories"];
+        }
         return kind switch
         {
             "accounts" => Localizer["General_Title_Account"],
             "contacts" => Localizer["General_Title_Contact"],
             "savings-plans" => Localizer["General_Title_SavingsPlans"],
             "postings" => Localizer["General_Title_Postings"],
+            "securities" => Localizer["General_Title_Securities"],
             _ => Kind
         };
     }
@@ -102,6 +145,15 @@ else
 
     private void ProviderOnUiActionRequested(object? sender, FinanceManager.Web.ViewModels.Common.BaseViewModel.UiActionEventArgs? e)
     {
+        // If a rich object payload (e.g. UiOverlaySpec) was provided, render it generically
+        if (e?.PayloadObject is BaseViewModel.UiOverlaySpec spec)
+        {
+            _overlaySpec = spec;
+            _overlayVisible = true;
+            _ = InvokeAsync(StateHasChanged);
+            return;
+        }
+
         var action = e?.Action;
         var payload = e?.Payload;
         if (string.IsNullOrWhiteSpace(action)) return;
@@ -113,10 +165,12 @@ else
         switch (action)
         {
             case "New":
-                var kind = (Kind ?? string.Empty).Trim().ToLowerInvariant();
-                var subkind = $"/{(SubKind ?? string.Empty).Trim().ToLowerInvariant()}/".Replace("//", "/");
-                var emptyId = Guid.Empty.ToString();
-                Nav.NavigateTo($"/card/{kind}{subkind}{emptyId}");
+                var kindNorm = (Kind ?? string.Empty).Trim().ToLowerInvariant();
+                var subKindNorm = string.IsNullOrWhiteSpace(SubKind) ? null : (SubKind ?? string.Empty).Trim().ToLowerInvariant();
+                Nav.NavigateToModelCreate(kindNorm, subKindNorm);
+                break;
+            case "OpenCategories":
+                Nav.NavigateToModelCategories(Kind);
                 break;
             case "Back":
                 // For postings lists, navigate back to card of calling dataset
@@ -179,5 +233,23 @@ else
                 }
                 break;
         }
+    }
+
+    private void CloseOverlay()
+    {
+        _overlayVisible = false;
+        _overlaySpec = null;
+        StateHasChanged();
+    }
+
+    private string GetOverlayTitle()
+    {
+        if (_overlaySpec == null) return string.Empty;
+        if (_overlaySpec.Parameters != null && _overlaySpec.Parameters.TryGetValue("OverlayTitle", out var v) && v is string s && !string.IsNullOrWhiteSpace(s)) return s;
+        var t = _overlaySpec.ComponentType;
+        if (t == typeof(FinanceManager.Web.Components.Shared.AttachmentsPanel)) return Localizer["Attachments_Title"];
+        if (t == typeof(FinanceManager.Web.Components.Shared.ContactMergePanel)) return Localizer["Merge_Title"];
+        if (t == typeof(FinanceManager.Web.Components.Shared.SecurityPricesBackfillPanel)) return Localizer["SecurityPricesBackfill_Title"];
+        return Localizer["Attachments_Title"];
     }
 }

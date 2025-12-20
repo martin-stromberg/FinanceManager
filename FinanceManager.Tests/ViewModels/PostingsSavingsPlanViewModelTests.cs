@@ -15,14 +15,14 @@ public sealed class PostingsSavingsPlanViewModelTests
         public bool IsAdmin { get; set; }
     }
 
-    private static (PostingsSavingsPlanViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool authenticated = true)
+    private static (FinanceManager.Web.ViewModels.Postings.SavingsPlanPostingsListViewModel vm, Mock<IApiClient> apiMock) CreateVm(Guid planId, bool authenticated = true)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService { IsAuthenticated = authenticated });
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
         var sp = services.BuildServiceProvider();
-        var vm = new PostingsSavingsPlanViewModel(sp);
+        var vm = new FinanceManager.Web.ViewModels.Postings.SavingsPlanPostingsListViewModel(sp, planId);
         return (vm, apiMock);
     }
 
@@ -60,11 +60,12 @@ public sealed class PostingsSavingsPlanViewModelTests
     [Fact]
     public async Task Initialize_LoadsFirstPage_SetsItemsAndFlags()
     {
-        var (vm, apiMock) = CreateVm();
+        var (vm, apiMock) = CreateVm(Guid.NewGuid());
         apiMock.Setup(a => a.Postings_GetSavingsPlanAsync(It.IsAny<Guid>(), 0, 50, It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreatePostings(15));
 
-        vm.Configure(Guid.NewGuid());
+        var planId = Guid.NewGuid();
+        (vm, apiMock) = CreateVm(planId);
         await vm.InitializeAsync();
 
         Assert.False(vm.Loading);
@@ -75,7 +76,7 @@ public sealed class PostingsSavingsPlanViewModelTests
     [Fact]
     public async Task LoadMore_AppendsItems_StopsWhenBelowPageSize()
     {
-        var (vm, apiMock) = CreateVm();
+        var (vm, apiMock) = CreateVm(Guid.NewGuid());
         int call = 0;
         apiMock.Setup(a => a.Postings_GetSavingsPlanAsync(It.IsAny<Guid>(), It.IsAny<int>(), 50, It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() =>
@@ -84,7 +85,8 @@ public sealed class PostingsSavingsPlanViewModelTests
                 return CreatePostings(call == 1 ? 50 : 1);
             });
 
-        vm.Configure(Guid.NewGuid());
+        var planId = Guid.NewGuid();
+        (vm, apiMock) = CreateVm(planId);
         await vm.InitializeAsync();
         Assert.Equal(50, vm.Items.Count);
         Assert.True(vm.CanLoadMore);
@@ -95,12 +97,12 @@ public sealed class PostingsSavingsPlanViewModelTests
     }
 
     [Fact]
-    public void GetExportUrl_ComposesQuery()
+    public async Task GetExportUrl_ComposesQuery()
     {
-        var (vm, _) = CreateVm();
-        vm.Configure(Guid.Parse("11111111-1111-1111-1111-111111111111"));
+        var planId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        (var vm, _) = CreateVm(planId);
         vm.SetSearch("abc def");
-
+        await vm.InitializeAsync();
         var url = vm.GetExportUrl("csv");
 
         Assert.StartsWith("/api/postings/savings-plan/11111111-1111-1111-1111-111111111111/export", url);

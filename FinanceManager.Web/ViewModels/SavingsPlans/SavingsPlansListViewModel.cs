@@ -257,11 +257,7 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
         var actions = new List<UiRibbonAction>
         {
             new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, "New", null),
-            new UiRibbonAction("Categories", localizer["Ribbon_Categories"].Value, "<svg><use href='/icons/sprite.svg#groups'/></svg>", UiRibbonItemSize.Small, false, null, "Categories", new Func<Task>(() => {
-                var nav = ServiceProvider.GetRequiredService<NavigationManager>();
-                nav.NavigateTo("/list/savings-plans/categories");
-                return Task.CompletedTask;
-            })),
+            new UiRibbonAction("Categories", localizer["Ribbon_Categories"].Value, "<svg><use href='/icons/sprite.svg#groups'/></svg>", UiRibbonItemSize.Small, false, null, "Categories", () => { RaiseUiActionRequested("OpenCategories"); return Task.CompletedTask; }),
         };
 
         var filter = new List<UiRibbonAction>

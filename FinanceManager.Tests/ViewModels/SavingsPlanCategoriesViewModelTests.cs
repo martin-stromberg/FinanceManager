@@ -18,14 +18,14 @@ public sealed class SavingsPlanCategoriesViewModelTests
         public bool IsAdmin { get; set; }
     }
 
-    private static (SavingsPlanCategoriesViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool authenticated = true)
+    private static (SavingsPlanCategoryListViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool authenticated = true)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService { IsAuthenticated = authenticated });
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
         var sp = services.BuildServiceProvider();
-        var vm = new SavingsPlanCategoriesViewModel(sp);
+        var vm = new SavingsPlanCategoryListViewModel(sp);
         return (vm, apiMock);
     }
 
@@ -44,8 +44,8 @@ public sealed class SavingsPlanCategoriesViewModelTests
         await vm.InitializeAsync();
 
         Assert.True(vm.Loaded);
-        Assert.Equal(2, vm.Categories.Count);
-        Assert.Equal(new[] { "A", "B" }, vm.Categories.Select(x => x.Name).OrderBy(x => x).ToArray());
+        Assert.Equal(2, vm.Items.Count);
+        Assert.Equal(new[] { "A", "B" }, vm.Items.Select(x => x.Name).OrderBy(x => x).ToArray());
     }
 
     [Fact]

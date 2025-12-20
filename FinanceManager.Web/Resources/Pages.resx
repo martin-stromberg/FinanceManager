@@ -257,6 +257,15 @@
   <data name="Confirm_Delete_Account" xml:space="preserve">
     <value>Do you really want the bank account to be deleted?</value>
   </data>
+  <data name="Confirm_Delete_Item" xml:space="preserve">
+    <value>Do you really want to delete this item?</value>
+  </data>
+  <data name="Confirm_Delete_SecurityCategory" xml:space="preserve">
+    <value>Do you really want the security category to be deleted?</value>
+  </data>
+  <data name="Confirm_Delete_ContactCategory" xml:space="preserve">
+    <value>Do you really want the contact category to be deleted?</value>
+  </data>
   <data name="Err_OperationNotSupported" xml:space="preserve">
     <value>The operation is not supported.</value>
   </data>
@@ -529,5 +538,105 @@
   </data>
   <data name="General_Title_SavingsPlan_Categories" xml:space="preserve">
     <value>Savings plan categories</value>
+  </data>
+  <data name="Card_Caption_Security_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Card_Caption_Security_Identifier" xml:space="preserve">
+    <value>Identifier</value>
+  </data>
+  <data name="Card_Caption_Security_AlphaVantage" xml:space="preserve">
+    <value>AlphaVantage</value>
+  </data>
+  <data name="Card_Caption_Security_Currency" xml:space="preserve">
+    <value>Currency</value>
+  </data>
+  <data name="Card_Caption_Security_Category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="Card_Caption_Security_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Card_Caption_Security_Symbol" xml:space="preserve">
+    <value>Symbol</value>
+  </data>
+  <data name="Chart_Title_Security" xml:space="preserve">
+    <value>Aggregates</value>
+  </data>
+  <data name="General_Title_Securities" xml:space="preserve">
+    <value>Securities</value>
+  </data>
+  <data name="List_Th_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="List_Th_Identifier" xml:space="preserve">
+    <value>Identifier</value>
+  </data>
+  <data name="List_Th_AlphaVantage" xml:space="preserve">
+    <value>AlphaVantage</value>
+  </data>
+  <data name="List_Th_Category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="Ribbon_Prices" xml:space="preserve">
+    <value>Prices</value>
+  </data>
+  <data name="Ribbon_ToggleActive" xml:space="preserve">
+    <value>Only active</value>
+  </data>
+  <data name="Ribbon_Group_Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Dlg_Backfill_Title" xml:space="preserve">
+    <value>Backfill prices</value>
+  </data>
+  <data name="Dlg_From" xml:space="preserve">
+    <value>From</value>
+  </data>
+  <data name="Dlg_To" xml:space="preserve">
+    <value>To</value>
+  </data>
+  <data name="Dlg_Starting" xml:space="preserve">
+    <value>Starting…</value>
+  </data>
+  <data name="Dlg_Start" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="Dlg_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Dlg_InvalidDates" xml:space="preserve">
+    <value>Invalid dates</value>
+  </data>
+  <data name="Dlg_FromAfterTo" xml:space="preserve">
+    <value>From date must be before or equal to To date</value>
+  </data>
+  <data name="Dlg_ToInFuture" xml:space="preserve">
+    <value>To date cannot be in the future</value>
+  </data>
+  <data name="Dlg_EnqueueFailed" xml:space="preserve">
+    <value>Failed to enqueue backfill task</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="List_Th_Date" type="System.Resources.ResXNullRef, System.Windows.Forms">
+    <value />
+  </data>
+  <data name="List_Th_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="SecurityPricesBackfill_Title" xml:space="preserve">
+    <value>Reload historical prices</value>
+  </data>
+  <data name="Ribbon_Backfill" xml:space="preserve">
+    <value>Reload historical prices</value>
+  </data>
+  <data name="Card_Caption_SecurityCategory_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Card_Caption_SecurityCategory_Symbol" xml:space="preserve">
+    <value>Symbol</value>
+  </data>
+  <data name="General_Title_Securities_Categories" xml:space="preserve">
+    <value>Security categories</value>
   </data>
 </root>

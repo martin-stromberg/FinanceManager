@@ -41,15 +41,7 @@ public class ApiClientSavingsPlansTests : IClassFixture<TestWebApplicationFactor
         cnt.Should().BeGreaterThanOrEqualTo(0);
 
         // create
-        var createReq = new SavingsPlanCreateRequest(
-            Name: "Plan A",
-            Type: SavingsPlanType.OneTime,
-            TargetAmount: 100m,
-            TargetDate: DateTime.UtcNow.Date.AddMonths(6),
-            Interval: null,
-            CategoryId: null,
-            ContractNumber: null
-        );
+        var createReq = new FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest("Plan A", FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType.OneTime, 100m, DateTime.UtcNow.Date.AddMonths(6), null, null, null);
         var created = await api.SavingsPlans_CreateAsync(createReq);
         created.Should().NotBeNull();
         created!.Name.Should().Be("Plan A");
@@ -60,15 +52,7 @@ public class ApiClientSavingsPlansTests : IClassFixture<TestWebApplicationFactor
         got!.Id.Should().Be(created.Id);
 
         // update
-        var updateReq = new SavingsPlanCreateRequest(
-            Name: "Plan B",
-            Type: SavingsPlanType.Recurring,
-            TargetAmount: 200m,
-            TargetDate: DateTime.UtcNow.Date.AddMonths(12),
-            Interval: SavingsPlanInterval.Monthly,
-            CategoryId: null,
-            ContractNumber: "CN-123"
-        );
+        var updateReq = new FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest("Plan B", FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType.Recurring, 200m, DateTime.UtcNow.Date.AddMonths(12), FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanInterval.Monthly, null, "CN-123");
         var updated = await api.SavingsPlans_UpdateAsync(created.Id, updateReq);
         updated.Should().NotBeNull();
         updated!.Name.Should().Be("Plan B");

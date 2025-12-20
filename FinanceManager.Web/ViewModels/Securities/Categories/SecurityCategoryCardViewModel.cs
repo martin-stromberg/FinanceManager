@@ -1,26 +1,25 @@
 using FinanceManager.Shared;
+using FinanceManager.Shared.Dtos.Securities;
 using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.DependencyInjection;
 using FinanceManager.Domain.Attachments;
-using FinanceManager.Web.ViewModels.Common;
 
-namespace FinanceManager.Web.ViewModels.Contacts;
+namespace FinanceManager.Web.ViewModels.Securities.Categories;
 
-public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
+public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
 {
     private readonly IApiClient _api;
 
-    public ContactGroupCardViewModel(IServiceProvider sp) : base(sp)
+    public SecurityCategoryCardViewModel(IServiceProvider sp) : base(sp)
     {
         _api = sp.GetRequiredService<IApiClient>();
     }
 
     public Guid Id { get; private set; }
 
-    // Local edit model representing the contact category
     public EditModel Model { get; } = new();
 
-    public override string Title => CardRecord?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_ContactCategory_Name")?.Text ?? (Model?.Name ?? base.Title);
+    public override string Title => CardRecord?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_SecurityCategory_Name")?.Text ?? (Model?.Name ?? base.Title);
 
     public override async Task LoadAsync(Guid id)
     {
@@ -30,13 +29,12 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
         {
             if (id == Guid.Empty)
             {
-                // new
                 Model.Name = string.Empty;
                 Model.SymbolAttachmentId = null;
             }
             else
             {
-                var dto = await _api.ContactCategories_GetAsync(id);
+                var dto = await _api.SecurityCategories_GetAsync(id);
                 if (dto is null)
                 {
                     SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Not found");
@@ -63,20 +61,19 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
     {
         var fields = new List<CardField>
         {
-            new CardField("Card_Caption_ContactCategory_Name", CardFieldKind.Text, text: name ?? string.Empty, editable: true),
-            new CardField("Card_Caption_ContactCategory_Symbol", CardFieldKind.Symbol, symbolId: symbolId, editable: true)
+            new CardField("Card_Caption_SecurityCategory_Name", CardFieldKind.Text, text: name ?? string.Empty, editable: true),
+            new CardField("Card_Caption_SecurityCategory_Symbol", CardFieldKind.Symbol, symbolId: symbolId, editable: true)
         };
         return new CardRecord(fields, Model);
     }
 
     public override async Task<bool> SaveAsync()
     {
-        // apply pending values from CardRecord into Model
         if (CardRecord != null)
         {
-            var nameField = CardRecord.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_ContactCategory_Name");
+            var nameField = CardRecord.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_SecurityCategory_Name");
             if (nameField != null) Model.Name = nameField.Text ?? string.Empty;
-            var symField = CardRecord.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_ContactCategory_Symbol");
+            var symField = CardRecord.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_SecurityCategory_Symbol");
             if (symField != null) Model.SymbolAttachmentId = symField.SymbolId;
         }
 
@@ -84,8 +81,8 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
         {
             if (Id == Guid.Empty)
             {
-                var created = await _api.ContactCategories_CreateAsync(new ContactCategoryCreateRequest(Model.Name));
-                if (created is null)
+                var created = await _api.SecurityCategories_CreateAsync(new SecurityCategoryRequest { Name = Model.Name });
+                if (created == null)
                 {
                     SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Create failed");
                     return false;
@@ -95,8 +92,8 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
             }
             else
             {
-                var ok = await _api.ContactCategories_UpdateAsync(Id, new ContactCategoryUpdateRequest(Model.Name));
-                if (!ok)
+                var dto = await _api.SecurityCategories_UpdateAsync(Id, new SecurityCategoryRequest { Name = Model.Name });
+                if (dto == null)
                 {
                     SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Update failed");
                     return false;
@@ -120,7 +117,7 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
         if (Id == Guid.Empty) return false;
         try
         {
-            var ok = await _api.ContactCategories_DeleteAsync(Id);
+            var ok = await _api.SecurityCategories_DeleteAsync(Id);
             if (!ok)
             {
                 SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Delete failed");
@@ -136,10 +133,7 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
         }
     }
 
-    public override async Task ReloadAsync()
-    {
-        await LoadAsync(Id);
-    }
+    public override async Task ReloadAsync() => await LoadAsync(Id);
 
     public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
@@ -159,8 +153,8 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>{nav, manage}) };
     }
 
-    // --- Symbol support hooks required by BaseCardViewModel ---
-    protected override (AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent() => (AttachmentEntityKind.ContactCategory, Id == Guid.Empty ? Guid.Empty : Id);
+    // Symbol hooks
+    protected override (AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent() => (AttachmentEntityKind.SecurityCategory, Id == Guid.Empty ? Guid.Empty : Id);
 
     protected override bool IsSymbolUploadAllowed() => true;
 
@@ -170,11 +164,11 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
         {
             if (attachmentId.HasValue)
             {
-                await _api.ContactCategories_SetSymbolAsync(Id, attachmentId.Value);
+                await _api.SecurityCategories_SetSymbolAsync(Id, attachmentId.Value);
             }
             else
             {
-                await _api.ContactCategories_ClearSymbolAsync(Id);
+                await _api.SecurityCategories_ClearSymbolAsync(Id);
             }
             await LoadAsync(Id);
         }

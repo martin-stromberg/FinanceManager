@@ -3,6 +3,7 @@ using FinanceManager.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
+using FinanceManager.Web.ViewModels.SavingsPlans;
 
 namespace FinanceManager.Tests.ViewModels;
 
@@ -44,15 +45,16 @@ public sealed class SavingsPlansViewModelTests
         apiMock.Setup(a => a.SavingsPlans_AnalyzeAsync(plans[1].Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SavingsPlanAnalysisDto(plans[1].Id, false, null, null, 0m, 0m, 0));
 
-        var vm = new SavingsPlansViewModel(CreateSp(apiMock));
+        var sp = CreateSp(apiMock);
+        var vm = new SavingsPlansListViewModel(sp);
         await vm.InitializeAsync();
 
         Assert.True(vm.Loaded);
-        Assert.Equal(2, vm.Plans.Count);
+        Assert.Equal(2, vm.Items.Count);
     }
 
     [Fact]
-    public async Task ToggleActiveOnly_Reloads()
+    public async Task ToggleActive_Reloads()
     {
         int calls = 0;
         var apiMock = new Mock<IApiClient>();
@@ -61,31 +63,27 @@ public sealed class SavingsPlansViewModelTests
         apiMock.Setup(a => a.SavingsPlanCategories_ListAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<SavingsPlanCategoryDto>());
 
-        var vm = new SavingsPlansViewModel(CreateSp(apiMock));
+        var sp = CreateSp(apiMock);
+        var vm = new SavingsPlansListViewModel(sp);
 
         await vm.InitializeAsync();
         Assert.Equal(1, calls);
 
-        vm.ToggleActiveOnly();
+        vm.ToggleActive();
         await Task.Delay(50);
         Assert.True(calls >= 2);
     }
 
     [Fact]
-    public void GetStatusFlags_And_Label_Work()
+    public void GetRibbon_Returns_Registers()
     {
         var apiMock = new Mock<IApiClient>();
         var sp = CreateSp(apiMock);
-        var vm = new SavingsPlansViewModel(sp);
+        var vm = new SavingsPlansListViewModel(sp);
 
-        var planId = Guid.NewGuid();
-        var plan = new SavingsPlanDto(planId, "P", SavingsPlanType.Recurring, 1000m, new DateTime(2025, 1, 1), SavingsPlanInterval.Monthly, true, DateTime.UtcNow, null, null, null, null);
         var loc = sp.GetRequiredService<IStringLocalizer<SavingsPlansViewModelTests>>();
-        var label = vm.GetStatusLabel(loc, plan);
-        Assert.False(string.IsNullOrWhiteSpace(label));
-        var flags = vm.GetStatusFlags(plan);
-        Assert.False(flags.Reachable);
-        Assert.False(flags.Unreachable);
+        var regs = vm.GetRibbonRegisters(loc);
+        Assert.NotNull(regs);
     }
 
     private sealed class TestLocalizer<T> : IStringLocalizer<T>

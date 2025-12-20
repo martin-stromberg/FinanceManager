@@ -1,8 +1,12 @@
+using FinanceManager.Shared.Dtos.Postings;
+using FinanceManager.Shared.Attributes;
+
 namespace FinanceManager.Shared.Dtos.Securities;
 
 /// <summary>
 /// DTO describing a security (stock or fund) including categorization and status metadata.
 /// </summary>
+[EntityKind(PostingKind.Security)]
 public sealed class SecurityDto
 {
     /// <summary>Unique security identifier.</summary>

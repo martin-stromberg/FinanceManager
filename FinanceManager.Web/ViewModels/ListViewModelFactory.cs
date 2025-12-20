@@ -1,4 +1,7 @@
+using FinanceManager.Web.ViewModels.Contacts.Groups;
 using FinanceManager.Web.ViewModels.SavingsPlans.Categories;
+using FinanceManager.Web.ViewModels.Securities.Categories;
+using FinanceManager.Web.ViewModels.Securities.Prices;
 using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.ViewModels
@@ -38,7 +41,7 @@ namespace FinanceManager.Web.ViewModels
                     // support listing contact categories via "/list/contacts/categories"
                     if ((subKind ?? string.Empty).Trim().ToLowerInvariant() == "categories")
                     {
-                        var gvm = ActivatorUtilities.CreateInstance<Contacts.ContactGroupListViewModel>(_sp);
+                        var gvm = ActivatorUtilities.CreateInstance<ContactGroupListViewModel>(_sp);
                         return new ListFactoryResult(gvm);
                     }
 
@@ -57,10 +60,31 @@ namespace FinanceManager.Web.ViewModels
                     }
                     var spvm = ActivatorUtilities.CreateInstance<FinanceManager.Web.ViewModels.SavingsPlans.SavingsPlansListViewModel>(_sp);
                     return new ListFactoryResult(spvm);
-                default:
-                    return null;
-            }
-        }
+                case "securities":
+                    // support sub-kind 'prices' -> /list/securities/prices/{id}
+                    if ((subKind ?? string.Empty).Trim().ToLowerInvariant() == "prices")
+                    {
+                        if (Guid.TryParse(id, out var sid))
+                        {
+                            var pricesVm = ActivatorUtilities.CreateInstance<SecurityPricesListViewModel>(_sp, sid);
+                            return new ListFactoryResult(pricesVm);
+                        }
+                        return null;
+                    }
+
+                    // support listing security categories via "/list/security-categories"
+                    if ((subKind ?? string.Empty).Trim().ToLowerInvariant() == "categories")
+                    {
+                        var scVm = ActivatorUtilities.CreateInstance<SecurityCategoriesListViewModel>(_sp);
+                        return new ListFactoryResult(scVm);
+                    }
+
+                    var secVm = ActivatorUtilities.CreateInstance<FinanceManager.Web.ViewModels.Securities.SecuritiesListViewModel>(_sp);
+                    return new ListFactoryResult(secVm);
+                 default:
+                     return null;
+             }
+         }
 
         // Create postings list providers with optional subkind (e.g. 'account', 'contact') and optional id filter
         private ListFactoryResult? CreatePostings(string subKind, Guid? id)

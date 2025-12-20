@@ -3,6 +3,7 @@ using Microsoft.Extensions.Localization;
 using FinanceManager.Domain.Attachments;
 using FinanceManager.Web.Components.Shared;
 using Microsoft.Extensions.DependencyInjection;
+using FinanceManager.Application;
 
 namespace FinanceManager.Web.ViewModels.Common
 {
@@ -53,6 +54,9 @@ namespace FinanceManager.Web.ViewModels.Common
         }
 
         public event EventHandler? StateChanged;
+        // Event raised when a viewmodel requires the UI to request authentication from the user.
+        // Payload may contain an optional reason or return URL.
+        public event EventHandler<string?>? AuthenticationRequired;
 
         // New: allow carrying rich payloads (e.g. overlay component spec) in addition to the existing string payload
         public sealed class UiActionEventArgs : EventArgs
@@ -221,6 +225,44 @@ namespace FinanceManager.Web.ViewModels.Common
 
         public virtual ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
+        /// <summary>
+        /// Returns true when a current user service is available and the user is authenticated.
+        /// This provides a simple way for viewmodels and components to check authentication state.
+        /// </summary>
+        public bool IsAuthenticated
+        {
+            get
+            {
+                try
+                {
+                    var cur = ServiceProvider.GetService<ICurrentUserService>();
+                    return cur?.IsAuthenticated ?? false;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+        }
 
+        /// <summary>
+        /// Checks the current authentication state using ICurrentUserService and raises
+        /// the <see cref="AuthenticationRequired"/> event when the user is not authenticated.
+        /// Returns true when the user is authenticated (or no current-user service is available).
+        /// </summary>
+        public bool CheckAuthentication()
+        {
+            try
+            {
+                var cur = ServiceProvider.GetService<FinanceManager.Application.ICurrentUserService>();
+                if (cur != null && !cur.IsAuthenticated)
+                {
+                    AuthenticationRequired?.Invoke(this, null);
+                    return false;
+                }
+            }
+            catch { }
+            return true;
+        }
     }
 }

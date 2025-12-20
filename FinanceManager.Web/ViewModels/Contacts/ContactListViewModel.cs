@@ -87,12 +87,7 @@ public sealed class ContactListViewModel : BaseListViewModel<ContactListItem>
         var tab = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
         {
             new UiRibbonAction("New", localizer["Ribbon_New"], "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, "New", () => { RaiseUiActionRequested("New"); return Task.CompletedTask; }),
-            new UiRibbonAction("Groups", localizer["Ribbon_Groups"], "<svg><use href='/icons/sprite.svg#layers'/></svg>", UiRibbonItemSize.Small, false, null, "Groups", () =>
-            {
-                var nav = ServiceProvider.GetRequiredService<NavigationManager>();
-                nav.NavigateTo("/list/contacts/categories");
-                return Task.CompletedTask;
-            }),
+            new UiRibbonAction("Groups", localizer["Ribbon_Groups"], "<svg><use href='/icons/sprite.svg#layers'/></svg>", UiRibbonItemSize.Small, false, null, "Groups",() => { RaiseUiActionRequested("OpenCategories"); return Task.CompletedTask; }),
             new UiRibbonAction("Reload", localizer["Ribbon_Reload"], "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, false, null, "Reload", () => { RaiseUiActionRequested("Reload"); return Task.CompletedTask; }),
             new UiRibbonAction("ClearFilter", localizer["Ribbon_ClearSearch"], "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, string.IsNullOrWhiteSpace(Search), null, "ClearSearch", () => { RaiseUiActionRequested("ClearSearch"); return Task.CompletedTask; })
         });

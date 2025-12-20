@@ -1,4 +1,5 @@
 using FinanceManager.Shared;
+using FinanceManager.Web.ViewModels.Postings.Common;
 
 namespace FinanceManager.Web.ViewModels.Postings
 {
@@ -23,6 +24,12 @@ namespace FinanceManager.Web.ViewModels.Postings
             {
                 return null;
             }
+        }
+
+        public override string GetExportUrl(string format)
+        {
+            var basePath = $"/api/postings/account/{_accountId}/export";
+            return BuildExportUrl(basePath, format);
         }
     }
 }

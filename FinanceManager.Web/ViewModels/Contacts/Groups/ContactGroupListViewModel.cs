@@ -4,7 +4,7 @@ using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Components;
 
-namespace FinanceManager.Web.ViewModels.Contacts;
+namespace FinanceManager.Web.ViewModels.Contacts.Groups;
 
 public sealed class ContactGroupListViewModel : BaseListViewModel<ContactGroupListViewModel.ContactGroupListItem>
 {

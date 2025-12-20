@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
 using Microsoft.AspNetCore.Components;
+using FinanceManager.Web.ViewModels.Contacts.Groups;
 
 namespace FinanceManager.Tests.ViewModels;
 
@@ -38,7 +39,7 @@ public sealed class ContactCategoriesViewModelTests
         }
     }
 
-    private static (FinanceManager.Web.ViewModels.Contacts.ContactGroupListViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool isAuthenticated = true)
+    private static (ContactGroupListViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool isAuthenticated = true)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService { IsAuthenticated = isAuthenticated });
@@ -47,7 +48,7 @@ public sealed class ContactCategoriesViewModelTests
         // register a test NavigationManager so ViewModels can request it in tests
         services.AddSingleton<NavigationManager>(new TestNavigationManager());
         var sp = services.BuildServiceProvider();
-        var vm = ActivatorUtilities.CreateInstance<FinanceManager.Web.ViewModels.Contacts.ContactGroupListViewModel>(sp);
+        var vm = ActivatorUtilities.CreateInstance<ContactGroupListViewModel>(sp);
         return (vm, apiMock);
     }
 

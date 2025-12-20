@@ -13,7 +13,7 @@ else
     <Ribbon TTabEnum="TabId" Provider="RibbonProvider" Localizer="Localizer" />
 
     <div style="margin-bottom:.75rem;display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;">
-        @if (ShowSearch)
+        @if (ShowSearch && Provider.AllowSearchFiltering)
         {
             <input placeholder="@SearchPlaceholder" value="@Provider.Search" @oninput="OnSearchInput" style="min-width:220px;" />
         }

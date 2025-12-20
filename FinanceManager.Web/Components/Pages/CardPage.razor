@@ -13,8 +13,11 @@
 @using FinanceManager.Web.ViewModels.Accounts
 @using FinanceManager.Web.ViewModels.Common
 @using FinanceManager.Web.ViewModels.Contacts
+@using FinanceManager.Web.ViewModels.Contacts.Groups
 @using FinanceManager.Web.ViewModels.Postings
+@using FinanceManager.Web.ViewModels.Postings.Common
 @using FinanceManager.Web.ViewModels.SavingsPlans.Categories
+@using FinanceManager.Web.ViewModels.Securities.Categories
 @using Microsoft.AspNetCore.Components
 
 @if (_vm == null)
@@ -147,6 +150,9 @@ else
             case "OpenPostings":
                 if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
                 break;
+            case "OpenPrices":
+                if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
+                break;
             case "OpenBankContact":
                 var parts = (payload ?? string.Empty).Split(',', 2);
                 if (parts.Length == 2 && Guid.TryParse(parts[1], out var cid))
@@ -211,13 +217,26 @@ else
             await SetViewModel(ActivatorUtilities.CreateInstance<SavingsPlanCategoryCardViewModel>(Services));
         else if (kind == "savings-plans")
             await SetViewModel(ActivatorUtilities.CreateInstance<FinanceManager.Web.ViewModels.SavingsPlans.SavingsPlanCardViewModel>(Services));
+        else if (kind == "securities" && sub == "categories")
+            await SetViewModel(ActivatorUtilities.CreateInstance<SecurityCategoryCardViewModel>(Services));
+        else if (kind == "securities")
+            await SetViewModel(ActivatorUtilities.CreateInstance<FinanceManager.Web.ViewModels.Securities.SecurityCardViewModel>(Services));
     }
 
     private async Task HandleDeleteAsync()
     {
         try
         {
-            var confirmed = await JS.InvokeAsync<bool>("confirm", Localizer["Confirm_Delete_Account"].Value ?? "Delete item?");
+            // choose confirmation message depending on current kind/subkind
+            var kindLower = (Kind ?? string.Empty).Trim().ToLowerInvariant();
+            var subLower = (SubKind ?? string.Empty).Trim().ToLowerInvariant();
+            var confirmKey = "Confirm_Delete_Item"; // fallback
+            if (kindLower == "accounts") confirmKey = "Confirm_Delete_Account";
+            else if (kindLower == "securities" && subLower == "categories") confirmKey = "Confirm_Delete_SecurityCategory";
+            else if (kindLower == "contacts" && subLower == "categories") confirmKey = "Confirm_Delete_ContactCategory";
+
+            var confirmed = true;
+            try { confirmed = await JS.InvokeAsync<bool>("confirm", Localizer[confirmKey].Value ?? Localizer["Confirm_Delete_Item"].Value ?? "Delete item?"); } catch { }
             if (!confirmed) return;
 
             if (_vm is FinanceManager.Web.ViewModels.Common.IDeletableViewModel deletable)
@@ -260,6 +279,7 @@ else
         var t = _overlaySpec.ComponentType;
         if (t == typeof(FinanceManager.Web.Components.Shared.AttachmentsPanel)) return Localizer["Attachments_Title"];
         if (t == typeof(FinanceManager.Web.Components.Shared.ContactMergePanel)) return Localizer["Merge_Title"];
+        if (t == typeof(FinanceManager.Web.Components.Shared.SecurityPricesBackfillPanel)) return Localizer["SecurityPricesBackfill_Title"];
         return Localizer["Attachments_Title"];
     }
 }

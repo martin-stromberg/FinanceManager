@@ -16,14 +16,14 @@ public sealed class SecurityCategoryDetailViewModelTests
         public bool IsAdmin { get; set; }
     }
 
-    private static (SecurityCategoryDetailViewModel vm, Mock<IApiClient> apiMock) CreateVm()
+    private static (FinanceManager.Web.ViewModels.Securities.Categories.SecurityCategoryCardViewModel vm, Mock<IApiClient> apiMock) CreateVm()
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService());
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
         var sp = services.BuildServiceProvider();
-        var vm = new SecurityCategoryDetailViewModel(sp);
+        var vm = new FinanceManager.Web.ViewModels.Securities.Categories.SecurityCategoryCardViewModel(sp);
         return (vm, apiMock);
     }
 
@@ -38,10 +38,9 @@ public sealed class SecurityCategoryDetailViewModelTests
 
         await vm.InitializeAsync(id);
 
-        Assert.True(vm.IsEdit);
-        Assert.True(vm.Loaded);
+        Assert.Equal(id, vm.Id);
         Assert.Equal("Cat1", vm.Model.Name);
-        Assert.Null(vm.Error);
+        Assert.Null(vm.LastError);
     }
 
     [Fact]
@@ -54,9 +53,8 @@ public sealed class SecurityCategoryDetailViewModelTests
 
         await vm.InitializeAsync(id);
 
-        Assert.True(vm.IsEdit);
-        Assert.True(vm.Loaded);
-        Assert.Equal("Err_NotFound", vm.Error);
+        Assert.Equal(id, vm.Id);
+        Assert.Equal("Not found", vm.LastError);
     }
 
     [Fact]
@@ -67,12 +65,12 @@ public sealed class SecurityCategoryDetailViewModelTests
         apiMock.Setup(a => a.SecurityCategories_CreateAsync(It.IsAny<SecurityCategoryRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(createdDto);
 
-        await vm.InitializeAsync(null);
+        await vm.InitializeAsync(Guid.Empty);
         vm.Model.Name = "NewCat";
         var ok = await vm.SaveAsync();
 
         Assert.True(ok);
-        Assert.Null(vm.Error);
+        Assert.Null(vm.LastError);
         apiMock.Verify(a => a.SecurityCategories_CreateAsync(It.Is<SecurityCategoryRequest>(r => r.Name == "NewCat"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -84,12 +82,12 @@ public sealed class SecurityCategoryDetailViewModelTests
             .ReturnsAsync((SecurityCategoryDto?)null);
         apiMock.SetupGet(a => a.LastError).Returns("bad");
 
-        await vm.InitializeAsync(null);
+        await vm.InitializeAsync(Guid.Empty);
         vm.Model.Name = "X";
         var ok = await vm.SaveAsync();
 
         Assert.False(ok);
-        Assert.Equal("bad", vm.Error);
+        Assert.Equal("bad", vm.LastError);
     }
 
     [Fact]
@@ -110,7 +108,7 @@ public sealed class SecurityCategoryDetailViewModelTests
         var ok = await vm.SaveAsync();
 
         Assert.True(ok);
-        Assert.Null(vm.Error);
+        Assert.Null(vm.LastError);
     }
 
     [Fact]
@@ -148,22 +146,30 @@ public sealed class SecurityCategoryDetailViewModelTests
         var ok = await vm.DeleteAsync();
 
         Assert.False(ok);
-        Assert.Equal("oops", vm.Error);
+        Assert.Equal("oops", vm.LastError);
     }
 
     [Fact]
-    public void Ribbon_Disables_Save_When_Name_Short()
+    public async Task Ribbon_Disables_Save_When_Name_Short()
     {
         var (vm, _) = CreateVm();
         var loc = new TestLocalizer<SecurityCategoryDetailViewModelTests>();
+
+        // initialize to ensure CardRecord is available
+        await vm.InitializeAsync(Guid.Empty);
+
         var groups = vm.GetRibbon(loc);
-        var edit = groups.First(g => g.Title == "Ribbon_Group_Edit");
-        var save = edit.Items.First(i => i.Action == "Save");
+        var manage = groups.First(g => g.Title == "Ribbon_Group_Manage");
+        var save = manage.Items.First(i => i.Action == "Save");
         Assert.True(save.Disabled);
 
-        vm.Model.Name = "OK";
+        // simulate editing the name via pending field to enable Save
+        var nameField = vm.CardRecord?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_SecurityCategory_Name");
+        Assert.NotNull(nameField);
+        vm.ValidateFieldValue(nameField!, "OK");
+
         groups = vm.GetRibbon(loc);
-        save = groups.First(g => g.Title == "Ribbon_Group_Edit").Items.First(i => i.Action == "Save");
+        save = groups.First(g => g.Title == "Ribbon_Group_Manage").Items.First(i => i.Action == "Save");
         Assert.False(save.Disabled);
     }
 

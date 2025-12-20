@@ -1,7 +1,7 @@
 using FinanceManager.Shared;
 using Microsoft.Extensions.Localization;
 
-namespace FinanceManager.Web.ViewModels.Postings
+namespace FinanceManager.Web.ViewModels.Postings.Common
 {
     public abstract class BasePostingsListViewModel : BaseListViewModel<PostingServiceDto>
     {
@@ -77,7 +77,7 @@ namespace FinanceManager.Web.ViewModels.Postings
         }
 
         // navigation wrapper record for postings
-        private sealed record PostingListItem(PostingServiceDto Posting) : FinanceManager.Web.ViewModels.IListItemNavigation
+        private sealed record PostingListItem(PostingServiceDto Posting) : IListItemNavigation
         {
             public string GetNavigateUrl()
             {
@@ -91,6 +91,19 @@ namespace FinanceManager.Web.ViewModels.Postings
         {
             return string.Empty;
         }
+
+        // Build an export URL for postings lists. Derived classes can override to provide specific base path.
+        protected string BuildExportUrl(string basePath, string format)
+        {
+            var q = new List<string>();
+            if (!string.IsNullOrWhiteSpace(format)) q.Add($"format={Uri.EscapeDataString(format)}");
+            if (!string.IsNullOrWhiteSpace(Search)) q.Add($"q={Uri.EscapeDataString(Search)}");
+            if (RangeFrom.HasValue) q.Add($"from={RangeFrom.Value:yyyy-MM-dd}");
+            if (RangeTo.HasValue) q.Add($"to={RangeTo.Value:yyyy-MM-dd}");
+            return q.Count == 0 ? basePath : basePath + "?" + string.Join('&', q);
+        }
+
+        public virtual string GetExportUrl(string format) => string.Empty;
 
         // Default Ribbon for postings lists: Navigation (Back) and Export (CSV/XLSX)
         public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Net.Mime;
 
 namespace FinanceManager.Web.Controllers;
@@ -29,9 +30,10 @@ public sealed class SecuritiesController : ControllerBase
     private readonly AppDbContext _db;
     private readonly IBackgroundTaskManager _tasks;
     private readonly IPostingTimeSeriesService _series;
+    private readonly ILogger<SecuritiesController> _logger;
 
-    public SecuritiesController(ISecurityService service, ICurrentUserService current, IAttachmentService attachments, IPostingTimeSeriesService series, AppDbContext db, IBackgroundTaskManager tasks)
-    { _service = service; _current = current; _attachments = attachments; _db = db; _tasks = tasks; _series = series; }
+    public SecuritiesController(ISecurityService service, ICurrentUserService current, IAttachmentService attachments, IPostingTimeSeriesService series, AppDbContext db, IBackgroundTaskManager tasks, ILogger<SecuritiesController> logger)
+    { _service = service; _current = current; _attachments = attachments; _db = db; _tasks = tasks; _series = series; _logger = logger; }
 
     /// <summary>
     /// Lists securities for the current user (optionally only active).
@@ -70,8 +72,21 @@ public sealed class SecuritiesController : ControllerBase
     public async Task<IActionResult> CreateAsync([FromBody] SecurityRequest req, CancellationToken ct)
     {
         if (!ModelState.IsValid) { return ValidationProblem(ModelState); }
-        var dto = await _service.CreateAsync(_current.UserId, req.Name, req.Identifier, req.Description, req.AlphaVantageCode, req.CurrencyCode, req.CategoryId, ct);
-        return CreatedAtRoute("GetSecurityAsync", new { id = dto.Id }, dto);
+        try
+        {
+            var dto = await _service.CreateAsync(_current.UserId, req.Name, req.Identifier, req.Description, req.AlphaVantageCode, req.CurrencyCode, req.CategoryId, ct);
+            return CreatedAtRoute("GetSecurityAsync", new { id = dto.Id }, dto);
+        }
+        catch (ArgumentException ex)
+        {
+            var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_{ex.ParamName}" : "Err_InvalidArgument";
+            return BadRequest(new { error = code, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Create security failed");
+            return Problem("Unexpected error", statusCode: 500);
+        }
     }
 
     /// <summary>
@@ -84,8 +99,21 @@ public sealed class SecuritiesController : ControllerBase
     public async Task<IActionResult> UpdateAsync(Guid id, [FromBody] SecurityRequest req, CancellationToken ct)
     {
         if (!ModelState.IsValid) { return ValidationProblem(ModelState); }
-        var dto = await _service.UpdateAsync(id, _current.UserId, req.Name, req.Identifier, req.Description, req.AlphaVantageCode, req.CurrencyCode, req.CategoryId, ct);
-        return dto == null ? NotFound() : Ok(dto);
+        try
+        {
+            var dto = await _service.UpdateAsync(id, _current.UserId, req.Name, req.Identifier, req.Description, req.AlphaVantageCode, req.CurrencyCode, req.CategoryId, ct);
+            return dto == null ? NotFound() : Ok(dto);
+        }
+        catch (ArgumentException ex)
+        {
+            var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_{ex.ParamName}" : "Err_InvalidArgument";
+            return BadRequest(new { error = code, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Update security {SecurityId} failed", id);
+            return Problem("Unexpected error", statusCode: 500);
+        }
     }
 
     /// <summary>
@@ -121,7 +149,7 @@ public sealed class SecuritiesController : ControllerBase
     public async Task<IActionResult> SetSymbolAsync(Guid id, Guid attachmentId, CancellationToken ct)
     {
         try { await _service.SetSymbolAttachmentAsync(id, _current.UserId, attachmentId, ct); return NoContent(); }
-        catch (ArgumentException) { return NotFound(); }
+        catch (ArgumentException ex) { var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_{ex.ParamName}" : "Err_NotFound"; return NotFound(new { error = code, message = ex.Message }); }
     }
 
     /// <summary>
@@ -133,7 +161,7 @@ public sealed class SecuritiesController : ControllerBase
     public async Task<IActionResult> ClearSymbolAsync(Guid id, CancellationToken ct)
     {
         try { await _service.SetSymbolAttachmentAsync(id, _current.UserId, null, ct); return NoContent(); }
-        catch (ArgumentException) { return NotFound(); }
+        catch (ArgumentException ex) { var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_{ex.ParamName}" : "Err_NotFound"; return NotFound(new { error = code, message = ex.Message }); }
     }
 
     /// <summary>
@@ -154,7 +182,7 @@ public sealed class SecuritiesController : ControllerBase
             await _service.SetSymbolAttachmentAsync(id, _current.UserId, dto.Id, ct);
             return Ok(dto);
         }
-        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (ArgumentException ex) { var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_{ex.ParamName}" : "Err_InvalidArgument"; return BadRequest(new { error = code, message = ex.Message }); }
         catch (Exception) { return Problem("Unexpected error", statusCode: 500); }
     }
 

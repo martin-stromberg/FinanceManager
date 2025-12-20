@@ -14,6 +14,7 @@ namespace FinanceManager.Web.ViewModels.Common
 
         // Whether the list supports range/date filtering (UI can hide range controls if false)
         bool AllowRangeFiltering { get; }
+        bool AllowSearchFiltering { get; }
 
         event EventHandler? StateChanged;
 

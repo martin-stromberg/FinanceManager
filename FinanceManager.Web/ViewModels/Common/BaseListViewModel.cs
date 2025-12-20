@@ -1,3 +1,5 @@
+using FinanceManager.Application;
+
 namespace FinanceManager.Web.ViewModels.Common
 {
     public abstract class BaseListViewModel<TItem> : BaseViewModel, IListProvider
@@ -19,11 +21,26 @@ namespace FinanceManager.Web.ViewModels.Common
         public IReadOnlyList<ListColumn> Columns { get; protected set; } = Array.Empty<ListColumn>();
         public IReadOnlyList<ListRecord> Records { get; protected set; } = Array.Empty<ListRecord>();
         public virtual bool AllowRangeFiltering { get; protected set; } = true;
+        public virtual bool AllowSearchFiltering { get; protected set; } = true;
 
         // Loaded flag used by many tests/pages to detect initial load completion
         public bool Loaded { get; protected set; }
 
-        public virtual Task InitializeAsync() => LoadAsync();
+        public virtual async Task InitializeAsync()
+        {
+            if (!CheckAuthentication())
+            {
+                return;
+            }
+
+            await LoadAsync();
+        }
+
+        public virtual async Task InitializeAsyncWithAuth()
+        {
+            // kept for compatibility but forwards to InitializeAsync
+            await InitializeAsync();
+        }
 
         public async Task LoadAsync()
         {

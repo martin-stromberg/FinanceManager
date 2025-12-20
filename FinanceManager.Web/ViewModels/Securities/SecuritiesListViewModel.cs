@@ -1,34 +1,29 @@
+using FinanceManager.Shared.Dtos;
+using FinanceManager.Web.ViewModels.Common;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using Microsoft.AspNetCore.Components;
+using FinanceManager.Web.Extensions;
+using FinanceManager.Shared.Dtos.Securities;
+using FinanceManager.Shared.Dtos.Postings;
 
 namespace FinanceManager.Web.ViewModels.Securities;
 
-public sealed class SecuritiesListViewModel : ViewModelBase
+public sealed partial class SecuritiesListViewModel : BaseListViewModel<SecurityListItem>
 {
     private readonly Shared.IApiClient _api;
+    private readonly NavigationManager _nav;
 
     public SecuritiesListViewModel(IServiceProvider sp) : base(sp)
     {
         _api = sp.GetRequiredService<Shared.IApiClient>();
+        _nav = sp.GetRequiredService<NavigationManager>();
     }
 
-    public bool Loaded { get; private set; }
-    public List<SecurityDto> Items { get; private set; } = new();
     public bool OnlyActive { get; private set; } = true;
 
     // mapping securityId -> display symbol attachment id (security symbol or category fallback)
     private readonly Dictionary<Guid, Guid?> _displaySymbolBySecurity = new();
-
-    public override async ValueTask InitializeAsync(CancellationToken ct = default)
-    {
-        if (!IsAuthenticated)
-        {
-            RequireAuthentication(null);
-            return;
-        }
-        await LoadAsync(ct);
-        Loaded = true;
-        RaiseStateChanged();
-    }
 
     public async Task LoadAsync(CancellationToken ct = default)
     {
@@ -36,11 +31,12 @@ public sealed class SecuritiesListViewModel : ViewModelBase
         try
         {
             var list = await _api.Securities_ListAsync(OnlyActive, ct);
-            Items = list.ToList();
+            Items.Clear();
+            Items.AddRange(list.Select(s => new SecurityListItem(s.Id, s.Name ?? string.Empty, s.Identifier ?? string.Empty, s.AlphaVantageCode, s.CategoryId, s.CategoryName, s.IsActive, s.SymbolAttachmentId)));
         }
         catch
         {
-            Items = new();
+            Items.Clear();
             _displaySymbolBySecurity.Clear();
             RaiseStateChanged();
             return;
@@ -65,13 +61,16 @@ public sealed class SecuritiesListViewModel : ViewModelBase
         foreach (var s in Items)
         {
             Guid? display = null;
-            if (s.SymbolAttachmentId.HasValue)
+            if (s.SymbolId.HasValue)
             {
-                display = s.SymbolAttachmentId;
+                display = s.SymbolId;
             }
-            else if (s.CategoryId.HasValue && categorySymbolMap.TryGetValue(s.CategoryId.Value, out var catSym) && catSym.HasValue)
+            else if (s.CategoryId.HasValue)
             {
-                display = catSym;
+                if (categorySymbolMap.TryGetValue(s.CategoryId.Value, out var catSym) && catSym.HasValue)
+                {
+                    display = catSym;
+                }
             }
             _displaySymbolBySecurity[s.Id] = display;
         }
@@ -84,6 +83,38 @@ public sealed class SecuritiesListViewModel : ViewModelBase
         OnlyActive = !OnlyActive;
         _ = InitializeAsync();
         RaiseStateChanged();
+    }
+
+    protected override async Task LoadPageAsync(bool resetPaging)
+    {
+        // For generic list provider load we delegate to LoadAsync which fills Items fully
+        await LoadAsync();
+        CanLoadMore = false;
+    }
+
+    protected override void BuildRecords()
+    {
+        var L = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
+        Columns = new List<ListColumn>
+        {
+            new ListColumn("symbol", string.Empty, "56px", ListColumnAlign.Left),
+            new ListColumn("name", L["List_Th_Name"], "", ListColumnAlign.Left),
+            new ListColumn("identifier", L["List_Th_Identifier"], "", ListColumnAlign.Left),
+            new ListColumn("alphavantage", L["List_Th_AlphaVantage"], "", ListColumnAlign.Left),
+            new ListColumn("category", L["List_Th_Category"], "", ListColumnAlign.Left),
+            new ListColumn("status", L["List_Th_Status"], "120px", ListColumnAlign.Left)
+        };
+
+        Records = Items.Select(i => new ListRecord(new List<ListCell>
+        {
+            new ListCell(ListCellKind.Symbol, SymbolId: _displaySymbolBySecurity.TryGetValue(i.Id, out var sym) ? sym : null),
+            new ListCell(ListCellKind.Text, Text: i.Name),
+            new ListCell(ListCellKind.Text, Text: i.Identifier),
+            new ListCell(ListCellKind.Text, Text: string.IsNullOrWhiteSpace(i.AlphaVantageCode) ? "-" : i.AlphaVantageCode),
+            new ListCell(ListCellKind.Text, Text: string.IsNullOrWhiteSpace(i.CategoryName) ? "-" : i.CategoryName),
+            new ListCell(ListCellKind.Text, Text: i.IsActive ? (ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>()?[
+                "StatusActive"].Value ?? "Active") : (ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>()?["StatusArchived"].Value ?? "Archived"))
+        }, i)).ToList();
     }
 
     public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
@@ -99,7 +130,7 @@ public sealed class SecuritiesListViewModel : ViewModelBase
                 false,
                 null,
                 "New",
-                null
+                new Func<Task>(() => { RaiseUiActionRequested("New"); return Task.CompletedTask; })
             ),
             new UiRibbonAction(
                 "Categories",
@@ -109,7 +140,7 @@ public sealed class SecuritiesListViewModel : ViewModelBase
                 false,
                 null,
                 "Categories",
-                null
+                () => { RaiseUiActionRequested("OpenCategories"); return Task.CompletedTask; }
             )
         };
 
@@ -139,7 +170,7 @@ public sealed class SecuritiesListViewModel : ViewModelBase
     }
 
     // Public helper for UI to get display symbol attachment id (security symbol or category fallback)
-    public Guid? GetDisplaySymbolAttachmentId(SecurityDto security)
+    public Guid? GetDisplaySymbolAttachmentId(SecurityListItem security)
     {
         if (security == null) return null;
         return _displaySymbolBySecurity.TryGetValue(security.Id, out var v) ? v : null;
