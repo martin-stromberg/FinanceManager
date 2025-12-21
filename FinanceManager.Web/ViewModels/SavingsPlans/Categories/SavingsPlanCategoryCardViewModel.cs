@@ -8,11 +8,8 @@ namespace FinanceManager.Web.ViewModels.SavingsPlans.Categories;
 
 public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
 {
-    private readonly IApiClient _api;
-
     public SavingsPlanCategoryCardViewModel(IServiceProvider sp) : base(sp)
     {
-        _api = sp.GetRequiredService<IApiClient>();
     }
 
     public Guid Id { get; private set; }
@@ -33,10 +30,10 @@ public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string
             }
             else
             {
-                var dto = await _api.SavingsPlanCategories_GetAsync(id);
+                var dto = await ApiClient.SavingsPlanCategories_GetAsync(id);
                 if (dto == null)
                 {
-                    SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Not found");
+                    SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Not found");
                     CardRecord = new CardRecord(new List<CardField>());
                     Loading = false; RaiseStateChanged();
                     return;
@@ -50,7 +47,7 @@ public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string
         }
         catch (Exception ex)
         {
-            SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
             CardRecord = new CardRecord(new List<CardField>());
         }
         finally { Loading = false; RaiseStateChanged(); }
@@ -81,14 +78,14 @@ public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string
         {
             if (Id == Guid.Empty)
             {
-                var created = await _api.SavingsPlanCategories_CreateAsync(new SavingsPlanCategoryDto { Name = Name });
-                if (created == null) { SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Create failed"); return false; }
+                var created = await ApiClient.SavingsPlanCategories_CreateAsync(new SavingsPlanCategoryDto { Name = Name });
+                if (created == null) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Create failed"); return false; }
                 Id = created.Id; SymbolId = created.SymbolAttachmentId;
             }
             else
             {
-                var updated = await _api.SavingsPlanCategories_UpdateAsync(Id, new SavingsPlanCategoryDto { Id = Id, Name = Name });
-                if (updated == null) { SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Update failed"); return false; }
+                var updated = await ApiClient.SavingsPlanCategories_UpdateAsync(Id, new SavingsPlanCategoryDto { Id = Id, Name = Name });
+                if (updated == null) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Update failed"); return false; }
                 SymbolId = updated.SymbolAttachmentId;
             }
             await LoadAsync(Id);
@@ -98,7 +95,7 @@ public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string
         }
         catch (Exception ex)
         {
-            SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
             return false;
         }
     }
@@ -108,14 +105,14 @@ public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string
         if (Id == Guid.Empty) return false;
         try
         {
-            var ok = await _api.SavingsPlanCategories_DeleteAsync(Id);
-            if (!ok) { SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Delete failed"); return false; }
+            var ok = await ApiClient.SavingsPlanCategories_DeleteAsync(Id);
+            if (!ok) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Delete failed"); return false; }
             RaiseUiActionRequested("Deleted");
             return true;
         }
         catch (Exception ex)
         {
-            SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
             return false;
         }
     }
@@ -146,8 +143,8 @@ public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string
     {
         try
         {
-            if (attachmentId.HasValue) await _api.SavingsPlanCategories_SetSymbolAsync(Id, attachmentId.Value);
-            else await _api.SavingsPlanCategories_ClearSymbolAsync(Id);
+            if (attachmentId.HasValue) await ApiClient.SavingsPlanCategories_SetSymbolAsync(Id, attachmentId.Value);
+            else await ApiClient.SavingsPlanCategories_ClearSymbolAsync(Id);
             await LoadAsync(Id);
         }
         catch { }

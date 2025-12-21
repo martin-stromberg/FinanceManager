@@ -2,6 +2,8 @@ using FinanceManager.Application;
 using FinanceManager.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using Microsoft.Extensions.Localization;
+using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Tests.ViewModels;
 
@@ -15,12 +17,34 @@ public sealed class SecuritiesListViewModelTests
         public bool IsAdmin { get; set; }
     }
 
+    private sealed class TestNavigationManager : NavigationManager
+    {
+        public TestNavigationManager(string baseUri = "http://localhost/")
+        {
+            Initialize(baseUri, baseUri);
+        }
+        protected override void NavigateToCore(string uri, bool forceLoad)
+        {
+            // no-op for tests
+        }
+    }
+
+    private sealed class PassthroughLocalizer<T> : IStringLocalizer<T>
+    {
+        public LocalizedString this[string name] => new(name, name);
+        public LocalizedString this[string name, params object[] arguments] => new(name, string.Format(name, arguments));
+        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) { yield break; }
+    }
+
     private static (SecuritiesListViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool authenticated = true)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService { IsAuthenticated = authenticated });
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
+        // register NavigationManager and localizer required by viewmodels
+        services.AddSingleton<NavigationManager>(new TestNavigationManager());
+        services.AddSingleton(typeof(IStringLocalizer<>), typeof(PassthroughLocalizer<>));
         var sp = services.BuildServiceProvider();
         var vm = new SecuritiesListViewModel(sp);
         return (vm, apiMock);

@@ -67,7 +67,8 @@ public sealed class PostingsAccountViewModelTests
 
         Assert.False(vm.Loading);
         Assert.Equal(10, vm.Items.Count);
-        Assert.True(vm.CanLoadMore);
+        // When fewer items than the page size are returned, there is no further page to load
+        Assert.False(vm.CanLoadMore);
     }
 
     [Fact]

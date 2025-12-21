@@ -8,11 +8,9 @@ namespace FinanceManager.Web.ViewModels.Securities;
 
 public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, string Value)>
 {
-    private readonly Shared.IApiClient _api;
 
     public SecurityCardViewModel(IServiceProvider sp) : base(sp)
     {
-        _api = sp.GetRequiredService<Shared.IApiClient>();
     }
 
     public Guid Id { get; private set; }
@@ -75,10 +73,10 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
                 return;
             }
 
-            var dto = await _api.Securities_GetAsync(id);
+            var dto = await ApiClient.Securities_GetAsync(id);
             if (dto == null)
             {
-                SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Security not found");
+                SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Security not found");
                 CardRecord = new CardRecord(new List<CardField>());
                 return;
             }
@@ -89,7 +87,7 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         catch (Exception ex)
         {
             CardRecord = new CardRecord(new List<CardField>());
-            SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
         }
         finally { Loading = false; RaiseStateChanged(); }
     }
@@ -103,7 +101,7 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
 
     public async Task LoadCategoriesAsync(CancellationToken ct = default)
     {
-        try { Categories = (await _api.SecurityCategories_ListAsync(ct)).ToList(); } catch { Categories = new(); }
+        try { Categories = (await ApiClient.SecurityCategories_ListAsync(ct)).ToList(); } catch { Categories = new(); }
     }
 
     public async Task<SecurityDto?> SaveAsync(CancellationToken ct = default)
@@ -114,18 +112,18 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
             var req = BuildRequestFromModel();
             if (Id == Guid.Empty)
             {
-                var dto = await _api.Securities_CreateAsync(req, ct);
-                if (dto == null) { Error = _api.LastError; SetError(_api.LastErrorCode, _api.LastError); RaiseStateChanged(); return null; }
+                var dto = await ApiClient.Securities_CreateAsync(req, ct);
+                if (dto == null) { Error = ApiClient.LastError; SetError(ApiClient.LastErrorCode, ApiClient.LastError); RaiseStateChanged(); return null; }
                 Id = dto.Id; Security = dto; Display = new DisplayModel { Id = dto.Id, IsActive = dto.IsActive, CategoryName = dto.CategoryName }; Model.SymbolAttachmentId = dto.SymbolAttachmentId; CardRecord = await BuildCardRecordAsync(dto); RaiseUiActionRequested("Saved", Id.ToString()); return dto;
             }
             else
             {
-                var dto = await _api.Securities_UpdateAsync(Id, req, ct);
-                if (dto == null) { Error = _api.LastError; SetError(_api.LastErrorCode, _api.LastError); RaiseStateChanged(); return null; }
+                var dto = await ApiClient.Securities_UpdateAsync(Id, req, ct);
+                if (dto == null) { Error = ApiClient.LastError; SetError(ApiClient.LastErrorCode, ApiClient.LastError); RaiseStateChanged(); return null; }
                 Security = dto; Display = new DisplayModel { Id = dto.Id, IsActive = dto.IsActive, CategoryName = dto.CategoryName }; Model.SymbolAttachmentId = dto.SymbolAttachmentId; CardRecord = await BuildCardRecordAsync(dto); RaiseUiActionRequested("Saved", Id.ToString()); return dto;
             }
         }
-        catch (Exception ex) { Error = _api.LastError ?? ex.Message; SetError(_api.LastErrorCode, _api.LastError ?? ex.Message); return null; }
+        catch (Exception ex) { Error = ApiClient.LastError ?? ex.Message; SetError(ApiClient.LastErrorCode, ApiClient.LastError ?? ex.Message); return null; }
         finally { RaiseStateChanged(); }
     }
 
@@ -250,14 +248,14 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         Loading = true; SetError(null, null); RaiseStateChanged();
         try
         {
-            var ok = await _api.Securities_ArchiveAsync(Id);
-            if (!ok) { SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Archive failed"); return false; }
+            var ok = await ApiClient.Securities_ArchiveAsync(Id);
+            if (!ok) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Archive failed"); return false; }
             // reload to reflect archived state
             await LoadAsync(Id);
             RaiseUiActionRequested("Archived");
             return true;
         }
-        catch (Exception ex) { SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message); return false; }
+        catch (Exception ex) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message); return false; }
         finally { Loading = false; RaiseStateChanged(); }
     }
 
@@ -267,12 +265,12 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         Loading = true; SetError(null, null); RaiseStateChanged();
         try
         {
-            var ok = await _api.Securities_DeleteAsync(Id);
-            if (!ok) { SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Delete failed"); return false; }
+            var ok = await ApiClient.Securities_DeleteAsync(Id);
+            if (!ok) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Delete failed"); return false; }
             RaiseUiActionRequested("Deleted");
             return true;
         }
-        catch (Exception ex) { SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message); return false; }
+        catch (Exception ex) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message); return false; }
         finally { Loading = false; RaiseStateChanged(); }
     }
 
@@ -309,11 +307,11 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         {
             if (attachmentId.HasValue)
             {
-                await _api.Securities_SetSymbolAsync(Id, attachmentId.Value);
+                await ApiClient.Securities_SetSymbolAsync(Id, attachmentId.Value);
             }
             else
             {
-                await _api.Securities_ClearSymbolAsync(Id);
+                await ApiClient.Securities_ClearSymbolAsync(Id);
             }
             await LoadAsync(Id);
         }

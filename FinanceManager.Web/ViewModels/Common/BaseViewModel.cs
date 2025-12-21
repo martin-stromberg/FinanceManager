@@ -13,9 +13,8 @@ namespace FinanceManager.Web.ViewModels.Common
         protected BaseViewModel(IServiceProvider serviceProvider)
         {
             ServiceProvider = serviceProvider;
-            // Do not eagerly resolve Localizer here - the IServiceProvider might be disposed in some rendering scenarios.
-            // Localizer will be resolved lazily on demand.
         }
+        private IApiClient _ApiClient = null;
         public virtual string Title { get; } = string.Empty;
         public bool Loading { get; protected set; }
         public string? LastError { get; protected set; }
@@ -33,6 +32,7 @@ namespace FinanceManager.Web.ViewModels.Common
             }
         }
         protected IServiceProvider ServiceProvider { get; }
+        protected IApiClient ApiClient  => _ApiClient ??= ServiceProvider.GetRequiredService<IApiClient>();
 
         // Lazy-resolved localizer. Resolve on first access and swallow resolution errors (e.g. provider disposed).
         private IStringLocalizer<Pages>? _localizerCache;

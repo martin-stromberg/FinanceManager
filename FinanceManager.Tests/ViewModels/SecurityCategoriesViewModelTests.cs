@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
 using FinanceManager.Web.ViewModels.Common;
+using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Tests.ViewModels;
 
@@ -17,12 +18,21 @@ public sealed class SecurityCategoriesViewModelTests
         public bool IsAdmin { get; set; }
     }
 
+    private sealed class TestNavigationManager : NavigationManager
+    {
+        public TestNavigationManager(string baseUri = "http://localhost/") => Initialize(baseUri, baseUri);
+        protected override void NavigateToCore(string uri, bool forceLoad) { /* no-op for tests */ }
+    }
+
     private static (FinanceManager.Web.ViewModels.Securities.Categories.SecurityCategoriesListViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool authenticated = true)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService { IsAuthenticated = authenticated });
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
+        // Register required framework services used by viewmodels
+        services.AddSingleton<NavigationManager>(new TestNavigationManager());
+        services.AddSingleton(typeof(IStringLocalizer<>), typeof(TestLocalizer<>));
         var sp = services.BuildServiceProvider();
         var vm = new FinanceManager.Web.ViewModels.Securities.Categories.SecurityCategoriesListViewModel(sp);
         return (vm, apiMock);
@@ -67,9 +77,17 @@ public sealed class SecurityCategoriesViewModelTests
         var (vm, _) = CreateVm();
         var loc = new TestLocalizer<SecurityCategoriesViewModelTests>();
         var regs = vm.GetRibbon(loc);
-        var items = regs.SelectMany(r => (IEnumerable<object>?)r.Items ?? Enumerable.Empty<object>()).ToList();
-        Assert.Contains(items, i => (string?)i.GetType().GetProperty("Action")?.GetValue(i) == "New");
-        Assert.Contains(items, i => (string?)i.GetType().GetProperty("Action")?.GetValue(i) == "Back");
+
+        // collect actions from explicit tabs (modern shape)
+        var actionsFromTabs = regs.SelectMany(r => r.Tabs ?? new List<UiRibbonTab>()).SelectMany(t => t.Items ?? new List<UiRibbonAction>()).ToList();
+        // collect actions from legacy flat Items property on registers (older viewmodels/tests rely on this)
+        var actionsFromRegisters = regs.SelectMany(r => r.Items ?? new List<UiRibbonAction>()).ToList();
+
+        // combine both sources to be resilient to grouping changes in viewmodels
+        var allActions = actionsFromTabs.Concat(actionsFromRegisters).Distinct().ToList();
+
+        Assert.Contains(allActions, i => i.Action == "New");
+        Assert.Contains(allActions, i => i.Action == "Back");
     }
 
     private sealed class TestLocalizer<T> : IStringLocalizer<T>

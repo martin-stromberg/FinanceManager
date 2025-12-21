@@ -1,27 +1,30 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Bunit;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using FinanceManager.Shared;
 using FinanceManager.Shared.Dtos.Contacts;
+using FinanceManager.Web;
 using FinanceManager.Web.Components.Pages;
+using FinanceManager.Web.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
+using System;
+using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace FinanceManager.Tests.Components
 {
     public sealed class CardPageTests : BunitContext
     {
-        private sealed class PassthroughLocalizer<T> : IStringLocalizer<T>
+        public CardPageTests()
         {
-            public LocalizedString this[string name] => new LocalizedString(name, name, resourceNotFound: false);
-            public LocalizedString this[string name, params object[] arguments] => new LocalizedString(name, string.Format(name, arguments), resourceNotFound: false);
-            public System.Collections.Generic.IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => Array.Empty<LocalizedString>();
-            public Microsoft.Extensions.Localization.IStringLocalizer WithCulture(System.Globalization.CultureInfo culture) => (IStringLocalizer)this;
+            CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
+            CultureInfo.CurrentCulture = new CultureInfo("en-US");
+            CultureInfo.CurrentUICulture = new CultureInfo("en-US");
         }
-
+        
         [Fact]
         public async Task ContactCard_EditFields_And_Save_CallsApiUpdate()
         {
@@ -40,9 +43,8 @@ namespace FinanceManager.Tests.Components
                 });
 
             Services.AddSingleton(apiMock.Object);
-            Services.AddSingleton<IStringLocalizer<FinanceManager.Web.Pages>>(new PassthroughLocalizer<FinanceManager.Web.Pages>());
-            // AttachmentsPanel will need its own localizer when opened in second test
-            Services.AddSingleton<IStringLocalizer<FinanceManager.Web.Components.Shared.AttachmentsPanel>>(new PassthroughLocalizer<FinanceManager.Web.Components.Shared.AttachmentsPanel>());
+            Services.AddLocalization(options => options.ResourcesPath = "Resources");
+            Services.AddSingleton(typeof(IStringLocalizer<Pages>), new PagesStringLocalizer());
 
             // Render CardPage for contacts
             var cut = Render<FinanceManager.Web.Components.Pages.CardPage>(parameters => parameters
@@ -88,8 +90,8 @@ namespace FinanceManager.Tests.Components
                 .ReturnsAsync(new PageResult<AttachmentDto> { Items = new System.Collections.Generic.List<AttachmentDto>(), HasMore = false, Total = 0 });
 
             Services.AddSingleton(apiMock.Object);
-            Services.AddSingleton<IStringLocalizer<FinanceManager.Web.Pages>>(new PassthroughLocalizer<FinanceManager.Web.Pages>());
-            Services.AddSingleton<IStringLocalizer<FinanceManager.Web.Components.Shared.AttachmentsPanel>>(new PassthroughLocalizer<FinanceManager.Web.Components.Shared.AttachmentsPanel>());
+            Services.AddLocalization(options => options.ResourcesPath = "Resources");
+            Services.AddSingleton(typeof(IStringLocalizer<Pages>), new PagesStringLocalizer());
 
             var cut = Render<FinanceManager.Web.Components.Pages.CardPage>(parameters => parameters
                 .Add(p => p.Kind, "contacts")
@@ -122,8 +124,8 @@ namespace FinanceManager.Tests.Components
                 .ReturnsAsync(new System.Collections.Generic.List<ContactCategoryDto> { new ContactCategoryDto(catId, "MyCategory", null) });
 
             Services.AddSingleton(apiMock.Object);
-            Services.AddSingleton<IStringLocalizer<FinanceManager.Web.Pages>>(new PassthroughLocalizer<FinanceManager.Web.Pages>());
-            Services.AddSingleton<IStringLocalizer<FinanceManager.Web.Components.Shared.AttachmentsPanel>>(new PassthroughLocalizer<FinanceManager.Web.Components.Shared.AttachmentsPanel>());
+            Services.AddLocalization(options => options.ResourcesPath = "Resources");
+            Services.AddSingleton(typeof(IStringLocalizer<Pages>), new PagesStringLocalizer());
 
             // Act: render CardPage for contact
             var cut = Render<FinanceManager.Web.Components.Pages.CardPage>(parameters => parameters
@@ -151,7 +153,7 @@ namespace FinanceManager.Tests.Components
             Assert.Equal("Some description", inputs[3].GetAttribute("value"));
 
             // IsPaymentIntermediary (last select) - should contain 'True' (localizer may return resource key)
-            Assert.Contains("True", inputs.Last().GetAttribute("value"));
+            Assert.Contains("Yes", inputs.Last().GetAttribute("value"));
 
             // Symbol image rendered
             var imgs = cut.FindAll("img");

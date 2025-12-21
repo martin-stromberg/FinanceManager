@@ -9,10 +9,8 @@ namespace FinanceManager.Web.ViewModels.Contacts;
 
 public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
 {
-    private readonly IApiClient _api;
     public ContactCardViewModel(IServiceProvider sp) : base(sp)
     {
-        _api = sp.GetRequiredService<IApiClient>();
     }
 
     public Guid Id { get; private set; }
@@ -44,10 +42,10 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
                 return;
             }
 
-            Contact = await _api.Contacts_GetAsync(id);
+            Contact = await ApiClient.Contacts_GetAsync(id);
             if (Contact == null)
             {
-                SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Contact not found");
+                SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Contact not found");
                 CardRecord = new CardRecord(new List<CardField>());
                 return;
             }
@@ -56,7 +54,7 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
         catch (Exception ex)
         {
             CardRecord = new CardRecord(new List<CardField>());
-            SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
         }
         finally { Loading = false; RaiseStateChanged(); }
     }
@@ -85,7 +83,7 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
         {
             try
             {
-                var cats = await _api.ContactCategories_ListAsync();
+                var cats = await ApiClient.ContactCategories_ListAsync();
                 var cat = cats?.FirstOrDefault(x => x.Id == c.CategoryId.Value);
                 if (cat != null) categoryName = cat.Name ?? string.Empty;
             }
@@ -112,7 +110,7 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
         {
             if (string.Equals(field.LookupType, "ContactCategory", StringComparison.OrdinalIgnoreCase))
             {
-                var list = await _api.ContactCategories_ListAsync();
+                var list = await ApiClient.ContactCategories_ListAsync();
                 if (!string.IsNullOrWhiteSpace(q))
                 {
                     var term = q.Trim();
@@ -148,12 +146,12 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
         Loading = true; SetError(null, null); RaiseStateChanged();
         try
         {
-            var ok = await _api.Contacts_DeleteAsync(Id);
-            if (!ok) { SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Delete failed"); return false; }
+            var ok = await ApiClient.Contacts_DeleteAsync(Id);
+            if (!ok) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Delete failed"); return false; }
             RaiseUiActionRequested("Deleted");
             return true;
         }
-        catch (Exception ex) { SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message); return false; }
+        catch (Exception ex) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message); return false; }
         finally { Loading = false; RaiseStateChanged(); }
     }
 
@@ -170,12 +168,12 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
                 var dto = BuildDto(CardRecord);
                 if (Id == Guid.Empty)
                 {
-                    var created = await _api.Contacts_CreateAsync(new ContactCreateRequest(dto.Name, dto.Type, dto.CategoryId, dto.Description, dto.IsPaymentIntermediary));
+                    var created = await ApiClient.Contacts_CreateAsync(new ContactCreateRequest(dto.Name, dto.Type, dto.CategoryId, dto.Description, dto.IsPaymentIntermediary));
                     if (created != null) { Id = created.Id; Contact = created; CardRecord = await BuildCardRecordAsync(Contact); ClearPendingChanges(); RaiseStateChanged(); RaiseUiActionRequested("Saved", Id.ToString()); }
                 }
                 else
                 {
-                    var updated = await _api.Contacts_UpdateAsync(Id, new ContactUpdateRequest(dto.Name, dto.Type, dto.CategoryId, dto.Description, dto.IsPaymentIntermediary));
+                    var updated = await ApiClient.Contacts_UpdateAsync(Id, new ContactUpdateRequest(dto.Name, dto.Type, dto.CategoryId, dto.Description, dto.IsPaymentIntermediary));
                     if (updated != null) { Contact = updated; CardRecord = await BuildCardRecordAsync(Contact); ClearPendingChanges(); RaiseStateChanged(); RaiseUiActionRequested("Saved", Id.ToString()); }
                 }
             }),
@@ -222,11 +220,11 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
         {
             if (attachmentId.HasValue)
             {
-                await _api.Contacts_SetSymbolAsync(Id, attachmentId.Value);
+                await ApiClient.Contacts_SetSymbolAsync(Id, attachmentId.Value);
             }
             else
             {
-                await _api.Contacts_ClearSymbolAsync(Id);
+                await ApiClient.Contacts_ClearSymbolAsync(Id);
             }
             await InitializeAsync(Id);
         }

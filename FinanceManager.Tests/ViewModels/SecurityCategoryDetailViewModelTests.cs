@@ -64,9 +64,18 @@ public sealed class SecurityCategoryDetailViewModelTests
         var createdDto = new SecurityCategoryDto { Id = Guid.NewGuid(), Name = "NewCat" };
         apiMock.Setup(a => a.SecurityCategories_CreateAsync(It.IsAny<SecurityCategoryRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(createdDto);
+        // ensure subsequent GET for the created id returns the created dto so LoadAsync does not set an error
+        apiMock.Setup(a => a.SecurityCategories_GetAsync(createdDto.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(createdDto);
 
         await vm.InitializeAsync(Guid.Empty);
-        vm.Model.Name = "NewCat";
+        // set the card field text (and pending) so SaveAsync picks up the new name
+        var nameField = vm.CardRecord?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_SecurityCategory_Name");
+        Assert.NotNull(nameField);
+        vm.ValidateFieldValue(nameField!, "NewCat");
+        // Apply pending values to the CardRecord so SaveAsync reads the updated field.Text
+        vm.ApplyPendingValues(vm.CardRecord!);
+
         var ok = await vm.SaveAsync();
 
         Assert.True(ok);
@@ -158,9 +167,15 @@ public sealed class SecurityCategoryDetailViewModelTests
         // initialize to ensure CardRecord is available
         await vm.InitializeAsync(Guid.Empty);
 
-        var groups = vm.GetRibbon(loc);
+        var registers = vm.GetRibbon(loc);
+        Assert.True(registers.Count == 1);
+
+        var groups = registers.SelectMany(r => r.Tabs).ToList();
+        Assert.True(groups.Count == 2);
+
         var manage = groups.First(g => g.Title == "Ribbon_Group_Manage");
-        var save = manage.Items.First(i => i.Action == "Save");
+        var manageActions = manage.Items;
+        var save = manageActions.First(i => i.Action == "Save");
         Assert.True(save.Disabled);
 
         // simulate editing the name via pending field to enable Save
@@ -168,8 +183,11 @@ public sealed class SecurityCategoryDetailViewModelTests
         Assert.NotNull(nameField);
         vm.ValidateFieldValue(nameField!, "OK");
 
-        groups = vm.GetRibbon(loc);
-        save = groups.First(g => g.Title == "Ribbon_Group_Manage").Items.First(i => i.Action == "Save");
+        registers = vm.GetRibbon(loc);
+        groups = registers.SelectMany(r => r.Tabs).ToList();
+        manage = groups.First(g => g.Title == "Ribbon_Group_Manage");
+        manageActions = manage.Items;
+        save = manageActions.First(i => i.Action == "Save");
         Assert.False(save.Disabled);
     }
 

@@ -8,11 +8,8 @@ namespace FinanceManager.Web.ViewModels.Securities.Categories;
 
 public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
 {
-    private readonly IApiClient _api;
-
     public SecurityCategoryCardViewModel(IServiceProvider sp) : base(sp)
     {
-        _api = sp.GetRequiredService<IApiClient>();
     }
 
     public Guid Id { get; private set; }
@@ -34,10 +31,10 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
             }
             else
             {
-                var dto = await _api.SecurityCategories_GetAsync(id);
+                var dto = await ApiClient.SecurityCategories_GetAsync(id);
                 if (dto is null)
                 {
-                    SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Not found");
+                    SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Not found");
                     CardRecord = new CardRecord(new List<CardField>());
                     Loading = false; RaiseStateChanged();
                     return;
@@ -51,7 +48,7 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
         }
         catch (Exception ex)
         {
-            SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
             CardRecord = new CardRecord(new List<CardField>());
         }
         finally { Loading = false; RaiseStateChanged(); }
@@ -81,10 +78,10 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
         {
             if (Id == Guid.Empty)
             {
-                var created = await _api.SecurityCategories_CreateAsync(new SecurityCategoryRequest { Name = Model.Name });
+                var created = await ApiClient.SecurityCategories_CreateAsync(new SecurityCategoryRequest { Name = Model.Name });
                 if (created == null)
                 {
-                    SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Create failed");
+                    SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Create failed");
                     return false;
                 }
                 Id = created.Id;
@@ -92,10 +89,10 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
             }
             else
             {
-                var dto = await _api.SecurityCategories_UpdateAsync(Id, new SecurityCategoryRequest { Name = Model.Name });
+                var dto = await ApiClient.SecurityCategories_UpdateAsync(Id, new SecurityCategoryRequest { Name = Model.Name });
                 if (dto == null)
                 {
-                    SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Update failed");
+                    SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Update failed");
                     return false;
                 }
             }
@@ -107,7 +104,7 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
         }
         catch (Exception ex)
         {
-            SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
             return false;
         }
     }
@@ -117,10 +114,10 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
         if (Id == Guid.Empty) return false;
         try
         {
-            var ok = await _api.SecurityCategories_DeleteAsync(Id);
+            var ok = await ApiClient.SecurityCategories_DeleteAsync(Id);
             if (!ok)
             {
-                SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Delete failed");
+                SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Delete failed");
                 return false;
             }
             RaiseUiActionRequested("Deleted");
@@ -128,7 +125,7 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
         }
         catch (Exception ex)
         {
-            SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
             return false;
         }
     }
@@ -164,11 +161,11 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
         {
             if (attachmentId.HasValue)
             {
-                await _api.SecurityCategories_SetSymbolAsync(Id, attachmentId.Value);
+                await ApiClient.SecurityCategories_SetSymbolAsync(Id, attachmentId.Value);
             }
             else
             {
-                await _api.SecurityCategories_ClearSymbolAsync(Id);
+                await ApiClient.SecurityCategories_ClearSymbolAsync(Id);
             }
             await LoadAsync(Id);
         }

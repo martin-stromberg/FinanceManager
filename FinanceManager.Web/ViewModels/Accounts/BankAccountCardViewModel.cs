@@ -1,7 +1,8 @@
-using FinanceManager.Shared;
-using Microsoft.Extensions.Localization;
 using FinanceManager.Domain.Attachments;
+using FinanceManager.Domain.Contacts;
+using FinanceManager.Shared;
 using FinanceManager.Web.ViewModels.Common;
+using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.ViewModels.Accounts
 {
@@ -46,7 +47,20 @@ namespace FinanceManager.Web.ViewModels.Accounts
             }
             finally { Loading = false; RaiseStateChanged(); }
         }
-
+        public override async Task<bool> DeleteAsync()
+        {
+            if (Account == null) return false;
+            Loading = true; SetError(null, null); RaiseStateChanged();
+            try
+            {
+                var ok = await ApiClient.DeleteAccountAsync(Id);
+                if (!ok) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Delete failed"); return false; }
+                RaiseUiActionRequested("Deleted");
+                return true;
+            }
+            catch (Exception ex) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message); return false; }
+            finally { Loading = false; RaiseStateChanged(); }
+        }
         public override AggregateBarChartViewModel? ChartViewModel
         {
             get

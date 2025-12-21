@@ -1,5 +1,6 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
+using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
@@ -169,7 +170,8 @@ public sealed class UsersViewModelTests
         var loc = new FakeLocalizer();
 
         // base state
-        var groups = vm.GetRibbon(loc);
+        var regs = vm.GetRibbon(loc);
+        var groups = regs.ToUiRibbonGroups(loc);
         Assert.Equal(2, groups.Count);
         Assert.Equal("Ribbon_Group_Navigation", groups[0].Title);
         Assert.Equal("Ribbon_Group_Actions", groups[1].Title);
@@ -177,14 +179,16 @@ public sealed class UsersViewModelTests
 
         // with edit
         vm.BeginEdit(new UsersViewModel.UserVm { Id = Guid.NewGuid(), Username = "x" });
-        groups = vm.GetRibbon(loc);
+        regs = vm.GetRibbon(loc);
+        groups = regs.ToUiRibbonGroups(loc);
         Assert.Contains(groups[1].Items, i => i.Label == "Ribbon_CancelEdit");
 
         // with last reset password
         vm.CancelEdit();
         vm.GetType().GetProperty("LastResetUserId")!.SetValue(vm, Guid.NewGuid());
         vm.GetType().GetProperty("LastResetPassword")!.SetValue(vm, "abcdef123456");
-        groups = vm.GetRibbon(loc);
+        regs = vm.GetRibbon(loc);
+        groups = regs.ToUiRibbonGroups(loc);
         Assert.Contains(groups[1].Items, i => i.Label == "Ribbon_HidePassword");
     }
 

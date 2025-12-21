@@ -60,23 +60,24 @@ public sealed class PostingsSavingsPlanViewModelTests
     [Fact]
     public async Task Initialize_LoadsFirstPage_SetsItemsAndFlags()
     {
-        var (vm, apiMock) = CreateVm(Guid.NewGuid());
+        var planId = Guid.NewGuid();
+        (var vm, var apiMock) = CreateVm(planId);
         apiMock.Setup(a => a.Postings_GetSavingsPlanAsync(It.IsAny<Guid>(), 0, 50, It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreatePostings(15));
 
-        var planId = Guid.NewGuid();
-        (vm, apiMock) = CreateVm(planId);
         await vm.InitializeAsync();
 
         Assert.False(vm.Loading);
         Assert.Equal(15, vm.Items.Count);
-        Assert.True(vm.CanLoadMore);
+        // When fewer items than the page size are returned, there is no further page to load
+        Assert.False(vm.CanLoadMore);
     }
 
     [Fact]
     public async Task LoadMore_AppendsItems_StopsWhenBelowPageSize()
     {
-        var (vm, apiMock) = CreateVm(Guid.NewGuid());
+        var planId = Guid.NewGuid();
+        (var vm, var apiMock) = CreateVm(planId);
         int call = 0;
         apiMock.Setup(a => a.Postings_GetSavingsPlanAsync(It.IsAny<Guid>(), It.IsAny<int>(), 50, It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() =>
@@ -85,8 +86,6 @@ public sealed class PostingsSavingsPlanViewModelTests
                 return CreatePostings(call == 1 ? 50 : 1);
             });
 
-        var planId = Guid.NewGuid();
-        (vm, apiMock) = CreateVm(planId);
         await vm.InitializeAsync();
         Assert.Equal(50, vm.Items.Count);
         Assert.True(vm.CanLoadMore);

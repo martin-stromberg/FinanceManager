@@ -1,7 +1,11 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
+using FinanceManager.Web;
+using FinanceManager.Web.Services;
 using FinanceManager.Web.ViewModels.Securities.Prices;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
@@ -22,6 +26,9 @@ public sealed class SecurityPricesViewModelTests
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService());
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
+        services.AddLocalization(options => options.ResourcesPath = "Resources");
+        services.AddSingleton(typeof(IStringLocalizer<Pages>), new PagesStringLocalizer());
+        services.AddSingleton<NavigationManager>(new TestNavigationManager());
         var sp = services.BuildServiceProvider();
         var vm = new SecurityPricesListViewModel(sp, Guid.NewGuid());
         return (vm, apiMock);
@@ -85,8 +92,29 @@ public sealed class SecurityPricesViewModelTests
         vm.RequestOpenBackfill();
 
         Assert.NotNull(received);
-        Assert.Equal("Backfill", received!.Action);
+        Assert.Equal("OpenOverlay", received!.Action);
         Assert.Null(received.Payload);
-        Assert.Null(received.PayloadObject);
+        Assert.NotNull(received.PayloadObject);
+    }
+
+    private sealed class TestLocalizer<T> : Microsoft.Extensions.Localization.IStringLocalizer<T>
+    {
+        public Microsoft.Extensions.Localization.LocalizedString this[string name] => new(name, name);
+        public Microsoft.Extensions.Localization.LocalizedString this[string name, params object[] arguments] => new(name, string.Format(name, arguments));
+        public IEnumerable<Microsoft.Extensions.Localization.LocalizedString> GetAllStrings(bool includeParentCultures) { yield break; }
+    }
+
+    private sealed class TestNavigationManager : NavigationManager
+    {
+        public TestNavigationManager()
+        {
+            // initialize with a base and current URI
+            Initialize("http://localhost/", "http://localhost/");
+        }
+
+        protected override void NavigateToCore(string uri, bool forceLoad)
+        {
+            // no-op for tests
+        }
     }
 }
