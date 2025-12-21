@@ -1,6 +1,7 @@
 # Finance Manager
 
-> Persönliche Finanzverwaltung mit Kontoauszug-Import, Sparplänen, Wertpapiertracking, Auswertungen & Mehrbenutzer?/Sharing-Funktionen.
+> Persönliche Finanzverwaltung mit Kontoauszug-Import, Sparplänen, Wertpapiertracking und Auswertungenzu diesen Themen.
+> Es handelt sich hierbei um eine Webanwendung, die auf Linux und Windowssystemem eingerichtet werden kann.
 >
 > Dieses Projekt wurde zum größten Teil anhand von Anweisungen an GitHub Copilot erstellt.
 
@@ -10,21 +11,18 @@
 3. Architektur & Schichten
 4. Technologie-Stack
    4.1 NuGet-Pakete (Abhängigkeiten)
-5. Roadmap (Wellen)
-6. Authentifizierung & Sicherheit (Kurz)
-7. Internationalisierung (i18n)
-8. Installation
-9. Entwicklung & Build
-10. Geplante Erweiterungen / Offene Punkte
-11. Accessibility (Barrierefreiheit)
-12. Lizenz / Status
+5. Authentifizierung & Sicherheit (Kurz)
+6. Internationalisierung
+7. Installation
+8. Entwicklung & Build
+9. Lizenz / Status
 
 ## 1. Überblick
 FinanceManager ist eine Blazor Server Anwendung (.NET 9) zur Verwaltung persönlicher Finanzen. Importierte Kontoauszüge (CSV/PDF) werden verarbeitet, Buchungen kategorisiert und in Bank-/Kontakt-/Sparplan- und Wertpapierposten überführt. Ergänzend existieren Auswertungen (Monat, Quartal, Jahr, YTD) und ein KPI-Dashboard. Mehrere Benutzer werden unterstützt. 
 
 ## 2. Kernfunktionen
 - Benutzeranmeldung
-  - Registrierungsmlglichkeit nur bei leerer Datenbank, Der erste Benutzer ist Administrator
+  - Registrierungsmölglichkeit nur bei leerer Datenbank, der erste Benutzer ist Administrator
   - Benutzerverwaltung im Administrationsbereich
   - IP-Sperrliste bei wiederholten fehlerhaften Anmeldeversuchen
 - Konten: Verwaltung von Giro- & Sparkonten
@@ -33,7 +31,7 @@ FinanceManager ist eine Blazor Server Anwendung (.NET 9) zur Verwaltung persönl
   - Import von CSV & PDF
   - unterstützte Banken: ING, Wüstenrot
   - Duplikatserkennung für bereits gebuchte Posten
-  - automatische Kontierung für Kontakte, Sparpläne und Wertpapiere
+  - automatische und manuelle Kontierung für Kontakte, Sparpläne und Wertpapiere
   - Plausibilitätsprüfungen vor dem Buchen
   - Dateianhänge pro Buchung
   - Erfassung der Kontobewegungen als Posten pro Kontierung
@@ -76,8 +74,11 @@ FinanceManager ist eine Blazor Server Anwendung (.NET 9) zur Verwaltung persönl
 
 
 ## 3. Architektur & Schichten (geplant)
+
+> Dieser Absatz bedarf einer genaueren Ausarbeitung
+
 ```
-Presentation (Blazor Server / künftig MAUI)
+Presentation (Blazor Server)
   → Application Layer (Use Cases, DTOs, Orchestrierung)
        → Domain Layer (Entities, Value Objects, Invarianten, Domain Services)
             → Infrastructure (EF Core, AlphaVantage, Import Parser, Logging, Security)
@@ -88,7 +89,6 @@ Querschnittsthemen: Logging, Auth (JWT), Internationalisierung, Validation, Rate
 ## 4. Technologie-Stack
 - .NET 9, C# 13
 - Blazor Server (Razor Components)
-- (Geplant) .NET MAUI iOS
 - EF Core (Sqlite/SQL Server)
 - AlphaVantage API (Wertpapierkurse; API-Key nutzer-/adminbasiert in DB)
 - Auth: JWT (kurzlebig), Passwort-Hash Ziel Argon2id/bcrypt
@@ -137,30 +137,21 @@ Gruppiert; bei gemeinsamen Namespaces mit `*`.
   - Moq — https://www.nuget.org/packages/Moq/
   - bunit — https://www.nuget.org/packages/bunit/
 
-## 5. Roadmap (Wellen)
-| Welle | Fokus |
-|-------|-------|
-| 1 | Benutzer & Auth-Basis, Konten, Kontakte, Import (CSV/PDF), Buchung, Alias, Basis-Dashboard |
-| 2 | Sparpläne + Statuslogik, Erweiterte Auswertungen |
-| 3 | Wertpapiere + Kursdienst + Renditen |
-| 4 | i18n Verfeinerung, zusätzliche Importformate, Admin-Erweiterungen, Optimierungen |
-
-## 6. Authentifizierung & Sicherheit (Kurz)
+## 5. Authentifizierung & Sicherheit (Kurz)
 - JWT Bearer für API Calls.
-- Konto-Sharing vorbereitet; Rollen/Entzug offen.
 - Duplikatserkennung verhindert Doppelbuchung.
 - IP-Sperren bei Fehlversuchen; Admin-Verwaltung.
 
-## 7. Internationalisierung
+## 6. Internationalisierung
 - Sprachen: de, en. Fallback-Kette: Benutzer > Browser/System > de.
-- Benutzerpräferenz speicherbar; dynamischer Wechsel ohne Re-Login geplant.
+- Benutzerpräferenz speicherbar; 
 - Alle UI-Texte via Ressourcen – keine Hardcoded Strings.
 
-## 8. Installation
-- AlphaVantage API-Key wird nicht in `appsettings` gespeichert. Schlüssel pro Benutzer im Profil; optional Freigabe eines Admin-Keys, der für Hintergrundjobs verwendet werden kann.
+## 7. Installation
+- AlphaVantage API-Key pro Benutzer im Profil; optional Freigabe eines Admin-Keys, der für Hintergrundjobs verwendet werden kann.
 - Weitere Installationshinweise folgen in `docs/install.md`.
 
-## 9. Entwicklung & Build
+## 8. Entwicklung & Build
 ### Voraussetzungen
 - .NET 9 SDK
 
@@ -181,20 +172,7 @@ dotnet test
 ### Code-Qualität
 - `dotnet format` vor Pull Request.
 
-## 10. Geplante Erweiterungen / Offene Punkte (Auszug)
-- OP-002: Konsolidierung Projekt-/Produktname.
-- OP-003: Finale Wahl Auth (Identity Integration vs. eigenes Minimal-Setup).
-- OP-009: Rollenmodell für Konto-Freigaben (erweitert?).
-- OP-010: Ownership Transfer bei Löschung Primärbesitzer.
-- OP-011: Audit Log Aufbewahrung & DSGVO.
-- OP-012: Weitere Importformate (MT940, CAMT). 
-- OP-013: Persistenter Sprachwechsel (Client State / Server Profil).
-- OP-014: Erweiterte Accessibility-Audits.
-
-## 11. Accessibility (Barrierefreiheit)
-- Ribbon: ARIA Roles (`tablist`, `tab`, `tabpanel`, `toolbar`, `group`), `aria-selected`, `aria-disabled`, Tastaturnavigation.
-
-## 12. Lizenz / Status
+## 9. Lizenz / Status
 - Lizenz: MIT. Siehe Datei `LICENSE` im Repository.
 - Aktueller Status: Betriebsbereit, aber Nutzung auf eigene Verantwortung (Beta). Feedback willkommen!
 
