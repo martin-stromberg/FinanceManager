@@ -1,0 +1,47 @@
+@using FinanceManager.Web.ViewModels.Common
+@inject Microsoft.Extensions.Localization.IStringLocalizer<Pages>? Localizer
+
+@code {
+    [Parameter] public IUploadFilesViewModel? ViewModel { get; set; }
+    [Parameter] public int CreatedCount { get; set; }
+    [Parameter] public Guid? FirstDraftId { get; set; }
+    [Parameter] public string? Error { get; set; }
+}
+
+@if (ViewModel != null && ViewModel.UploadInProgress)
+{
+    <div class="upload-progress" role="status" aria-live="polite" style="margin:0.5rem 0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.25rem;">
+            <span class="title">@Localizer?["Upload_Progress_Title"]</span>
+            <span class="cnt">@ViewModel.UploadDone/@ViewModel.UploadTotal</span>
+        </div>
+        <div style="background:#222;border:1px solid var(--border);height:8px;border-radius:6px;overflow:hidden;">
+            <div style="background:linear-gradient(90deg,#2d6cdf,#2da3df);height:100%;width:@ViewModel.UploadPercent%"></div>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(ViewModel.CurrentFileName))
+        {
+            <div class="file" title="@ViewModel.CurrentFileName" style="margin-top:.25rem;font-size:.85rem;opacity:.9;">@ViewModel.CurrentFileName</div>
+        }
+    </div>
+}
+
+@if (CreatedCount > 0)
+{
+    <div class="alert alert-success import-success" style="margin:0.5rem 0;">
+        @Localizer?["Import_Success"]
+        <div style="margin-top:.25rem;">@string.Format(Localizer?["Import_Result_Count"]?.Value ?? "{0} drafts created.", CreatedCount)</div>
+        @if (FirstDraftId.HasValue)
+        {
+            <a href="@($"/statement-drafts/{FirstDraftId}")" class="alert-link">@Localizer?["Import_ShowDetails"]</a>
+        }
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(Error))
+{
+    <div class="error" style="margin:0.5rem 0;">@Error</div>
+}
+else if (ViewModel != null && !string.IsNullOrWhiteSpace(ViewModel.LastError))
+{
+    <div class="error" style="margin:0.5rem 0;">@ViewModel.LastError</div>
+}

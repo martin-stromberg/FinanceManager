@@ -17,8 +17,8 @@ public class ApiClient : IApiClient
 
     private async Task EnsureSuccessOrSetErrorAsync(HttpResponseMessage resp)
     {
-        if (resp.IsSuccessStatusCode) return;        
         LastError = null; LastErrorCode = null;
+        if (resp.IsSuccessStatusCode) return;        
         try
         {
             var content = await resp.Content.ReadAsStringAsync();
@@ -1549,7 +1549,7 @@ public class ApiClient : IApiClient
         {
             return await resp.Content.ReadFromJsonAsync<BookingResult>(cancellationToken: ct);
         }
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<BookingResult>(cancellationToken: ct);
     }
 
@@ -1564,15 +1564,16 @@ public class ApiClient : IApiClient
         {
             return await resp.Content.ReadFromJsonAsync<BookingResult>(cancellationToken: ct);
         }
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<BookingResult>(cancellationToken: ct);
     }
 
     public async Task<object?> StatementDrafts_SaveEntryAllAsync(Guid draftId, Guid entryId, StatementDraftSaveEntryAllRequest req, CancellationToken ct = default)
     {
+
         var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/save-all", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
     }
 
@@ -1580,7 +1581,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.DeleteAsync($"/api/statement-drafts/{draftId}/entries/{entryId}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -1588,7 +1589,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PostAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/reset-duplicate", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
     }
 
@@ -1597,7 +1598,7 @@ public class ApiClient : IApiClient
         var resp = await _http.PostAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/classify-entry", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest) return null;
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<StatementDraftDetailDto>(cancellationToken: ct);
     }
 
@@ -1605,7 +1606,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.GetAsync($"/api/statement-drafts/{draftId}/file", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         var ms = new MemoryStream();
         await resp.Content.CopyToAsync(ms, ct);
         ms.Position = 0;
@@ -1615,7 +1616,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.DeleteAsync($"/api/statement-drafts/{draftId}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
     /// <summary>
@@ -1630,7 +1631,7 @@ public class ApiClient : IApiClient
             LastError = await resp.Content.ReadAsStringAsync(ct);
             return null;
         }
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         var json = await resp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
         if (json.TryGetProperty("Entry", out var entryProp))
         {

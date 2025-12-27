@@ -7,13 +7,14 @@ using Microsoft.Extensions.Localization;
 namespace FinanceManager.Web.ViewModels.Accounts
 {
     // Card VM: builds key/value pairs for a single bank account
+    [FinanceManager.Web.ViewModels.Common.CardRoute("accounts")]
     public sealed class BankAccountCardViewModel : BaseCardViewModel<(string Key, string Value)>, FinanceManager.Web.ViewModels.Common.IDeletableViewModel
     {
         public BankAccountCardViewModel(IServiceProvider sp)
             : base(sp)
         {
         }
-
+        
         public Guid Id { get; private set; }
         public AccountDto? Account { get; private set; }
         public override string Title => Account?.Name ?? base.Title;

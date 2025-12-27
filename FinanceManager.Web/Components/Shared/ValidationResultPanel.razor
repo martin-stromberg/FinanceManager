@@ -1,0 +1,40 @@
+@using FinanceManager.Shared.Dtos.Statements
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
+@using Microsoft.AspNetCore.Components
+
+@inherits ComponentBase
+
+@if (ValidationResult == null)
+{
+    <div></div>
+}
+else
+{
+    <div style="padding:.5rem;border:1px solid var(--border);border-radius:6px;background:var(--panel-bg);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;">
+            <div style="font-weight:600;">@Localizer?["Validation_Header"]</div>
+            <div>
+                <button class="icon-btn" title="@Localizer?["Btn_Close"]" @onclick="Close"> <svg><use href="/icons/sprite.svg#clear"/></svg></button>
+            </div>
+        </div>
+        <div style="margin-bottom:.5rem;">@((ValidationResult.IsValid) ? (Localizer?["Validation_Valid"] ?? "No errors found") : (Localizer?["Validation_Invalid"] ?? "Issues found"))</div>
+        <ul style="margin:0;padding-left:1.25rem;">
+            @foreach (var m in ValidationResult.Messages.Where(e => e.EntryId is null))
+            {
+                <li style="margin:.25rem 0;">@($"[{m.Severity}] {m.Message}") @if (m.EntryId != null) { <span style="opacity:.7;">(@m.EntryId)</span> }</li>
+            }
+        </ul>
+    </div>
+}
+
+@code {
+    [Parameter] public DraftValidationResultDto? ValidationResult { get; set; }
+
+    [CascadingParameter(Name = "EmbeddedClose")] public Action? EmbeddedClose { get; set; }
+    [CascadingParameter(Name = "EmbeddedOnFinished")] public Action<object>? EmbeddedOnFinished { get; set; }
+
+    private void Close()
+    {
+        EmbeddedClose?.Invoke();
+    }
+}

@@ -4,6 +4,7 @@ using FinanceManager.Domain.Attachments;
 
 namespace FinanceManager.Web.ViewModels.Postings.Common;
 
+[FinanceManager.Web.ViewModels.Common.CardRoute("postings")]
 public sealed class PostingsCardViewModel : BaseCardViewModel<(string Key, string Value)>
 {
     public PostingsCardViewModel(IServiceProvider sp) : base(sp) { }

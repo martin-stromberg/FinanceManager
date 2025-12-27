@@ -2,9 +2,23 @@ using FinanceManager.Domain.Attachments;
 
 namespace FinanceManager.Web.ViewModels.Common
 {
-    public abstract class BaseCardViewModel<TKeyValue> : BaseViewModel, ISymbolAssignableCard
+    public abstract class BaseCardViewModel<TKeyValue> : BaseViewModel, ISymbolAssignableCard, ICardInitializable
     {
+        private string? _initPrefill;
+        private string? _initBack;
+        public void SetInitValue(string? prefill) => _initPrefill = prefill;
+        public void SetBackNavigation(string? backUrl) => _initBack = backUrl;
         public virtual Task InitializeAsync(System.Guid id) => LoadAsync(id);
+
+        /// <summary>
+        /// Optional embedded list view model that can be rendered together with the card (e.g. entries for a statement draft).
+        /// When set, the UI may initialize and display the list below the card details.
+        /// </summary>
+        public BaseListViewModel? EmbeddedList { get; set; }
+
+        // Note: derived classes can access the prefill/back values via these protected properties if needed
+        protected string? InitPrefill => _initPrefill;
+        protected string? InitBack => _initBack;
 
         public abstract Task LoadAsync(System.Guid id);
 

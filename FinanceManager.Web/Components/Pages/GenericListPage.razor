@@ -10,7 +10,6 @@
 }
 else
 {
-    <Ribbon TTabEnum="TabId" Provider="RibbonProvider" Localizer="Localizer" />
 
     <div style="margin-bottom:.75rem;display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;">
         @if (ShowSearch && Provider.AllowSearchFiltering)
@@ -52,13 +51,22 @@ else
             <tbody>
                 @foreach (var rec in Provider.Records)
                 {
-                    <tr style="cursor:pointer;" @onclick="(()=> OnItemClicked(rec.Item))">
+                    // row is muted if any cell has Muted == true
+                    var isMuted = rec.Cells.Any(c => c.Muted);
+                    var rowStyle = isMuted ? "cursor:pointer;opacity:.6;" : "cursor:pointer;";
+                    <tr class="@(isMuted ? "muted-row" : null)" style="@rowStyle" @onclick="(()=> OnItemClicked(rec.Item))">
                         @for (int ci = 0; ci < rec.Cells.Count; ci++)
                         {
                             var cell = rec.Cells[ci];
                             var col = (Provider.Columns?.Count > ci) ? Provider.Columns[ci] : null;
                             var alignStyle = col != null && col.Align == ListColumnAlign.Right ? "text-align:right;vertical-align:middle;" : null;
-                            <td style="@(alignStyle + $"width:{col.Width}")">
+                            var cellStyle = alignStyle + $"width:{col.Width}";
+                            if (cell.Muted)
+                            {
+                                // emphasize muted cells slightly by using less contrast
+                                cellStyle += ";opacity:.7;color:var(--muted);";
+                            }
+                            <td style="@cellStyle">
                                 @switch(cell.Kind)
                                 {
                                     case ListCellKind.Text:
@@ -93,6 +101,12 @@ else
                             </td>
                         }
                     </tr>
+                    @if (!string.IsNullOrWhiteSpace(rec.Hint))
+                    {
+                        <tr>
+                            <td colspan="@rec.Cells.Count" style="padding:.25rem .6rem .75rem .6rem;color:var(--muted);font-size:.9rem;">@((Localizer != null) ? LocalizeInline(Localizer?[rec.Hint] ?? rec.Hint) : LocalizeInline(rec.Hint))</td>
+                        </tr>
+                    }
                 }
                 @if (Provider.Loading)
                 {
@@ -119,7 +133,6 @@ else
 
 @code {
     public enum TabId { List }
-    private IRibbonProvider RibbonProvider => Provider as IRibbonProvider;
     [Parameter] public IListProvider? Provider { get; set; }
     [Parameter] public EventCallback<object> ItemClick { get; set; }
 
@@ -201,5 +214,17 @@ else
     {
         if (ItemClick.HasDelegate)
             await ItemClick.InvokeAsync(item);
+    }
+
+    private string LocalizeInline(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return string.Empty;
+        if (Localizer == null) return input;
+        return System.Text.RegularExpressions.Regex.Replace(input, "\\$(\\w+)", m =>
+        {
+            var key = m.Groups[1].Value;
+            var ls = Localizer[key];
+            return ls.ResourceNotFound ? m.Value : ls.Value;
+        });
     }
 }

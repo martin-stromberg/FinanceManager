@@ -6,6 +6,7 @@ using FinanceManager.Web.ViewModels.Common;
 
 namespace FinanceManager.Web.ViewModels.Contacts.Groups;
 
+[FinanceManager.Web.ViewModels.Common.CardRoute("contacts", "categories")]
 public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
 {
 

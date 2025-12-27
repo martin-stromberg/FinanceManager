@@ -47,7 +47,7 @@ public sealed class SavingsPlanEditViewModelTests
         apiMock.Setup(a => a.SavingsPlans_AnalyzeAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(new SavingsPlanAnalysisDto(id, true, 100m, DateTime.UtcNow.Date.AddMonths(6), 50m, 10m, 6));
         apiMock.Setup(a => a.SavingsPlanCategories_ListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<SavingsPlanCategoryDto>());
 
-        await vm.InitializeAsync(id, null, null, null, null);
+        await vm.InitializeAsync(id);
 
         Assert.True(vm.IsEdit);
         Assert.True(vm.Loaded);
@@ -60,7 +60,9 @@ public sealed class SavingsPlanEditViewModelTests
         var (vm, apiMock) = CreateVm();
         apiMock.Setup(a => a.SavingsPlanCategories_ListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<SavingsPlanCategoryDto>());
 
-        await vm.InitializeAsync(null, null, null, null, "PrefillName");
+        (vm as FinanceManager.Web.ViewModels.Common.ICardInitializable)?.SetInitValue("PrefillName");
+        (vm as FinanceManager.Web.ViewModels.Common.ICardInitializable)?.SetBackNavigation(null);
+        await vm.InitializeAsync(Guid.Empty);
 
         Assert.False(vm.IsEdit);
         Assert.Equal("PrefillName", vm.Model.Name);
@@ -74,7 +76,7 @@ public sealed class SavingsPlanEditViewModelTests
         var dto = new SavingsPlanDto(id, "Plan A", SavingsPlanType.OneTime, 100m, DateTime.UtcNow.Date.AddMonths(6), null, true, DateTime.UtcNow, null, null, null);
         apiMock.Setup(a => a.SavingsPlans_GetAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
         apiMock.Setup(a => a.SavingsPlanCategories_ListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<SavingsPlanCategoryDto>());
-        await vm.InitializeAsync(id, null, null, null, null);
+        await vm.InitializeAsync(id);
 
         vm.Model.Name = "Updated";
         apiMock.Setup(a => a.SavingsPlans_UpdateAsync(id, It.Is<SavingsPlanCreateRequest>(r => r.Name == "Updated"), It.IsAny<CancellationToken>()))
@@ -90,7 +92,7 @@ public sealed class SavingsPlanEditViewModelTests
     {
         var (vm, apiMock) = CreateVm();
         apiMock.Setup(a => a.SavingsPlanCategories_ListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<SavingsPlanCategoryDto>());
-        await vm.InitializeAsync(null, null, null, null, null);
+        await vm.InitializeAsync(Guid.Empty);
 
         vm.Model.Name = "Created";
         var createdId = Guid.NewGuid();
@@ -109,7 +111,7 @@ public sealed class SavingsPlanEditViewModelTests
         var dto = new SavingsPlanDto(id, "Plan A", SavingsPlanType.OneTime, 100m, DateTime.UtcNow.Date.AddMonths(6), null, true, DateTime.UtcNow, null, null, null);
         apiMock.Setup(a => a.SavingsPlans_GetAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
         apiMock.Setup(a => a.SavingsPlanCategories_ListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<SavingsPlanCategoryDto>());
-        await vm.InitializeAsync(id, null, null, null, null);
+        await vm.InitializeAsync(id);
 
         apiMock.Setup(a => a.SavingsPlans_DeleteAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 

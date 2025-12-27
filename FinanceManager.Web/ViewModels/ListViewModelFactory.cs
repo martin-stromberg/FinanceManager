@@ -3,6 +3,7 @@ using FinanceManager.Web.ViewModels.SavingsPlans.Categories;
 using FinanceManager.Web.ViewModels.Securities.Categories;
 using FinanceManager.Web.ViewModels.Securities.Prices;
 using Microsoft.Extensions.Localization;
+using FinanceManager.Web.ViewModels.StatementDrafts;
 
 namespace FinanceManager.Web.ViewModels
 {
@@ -81,6 +82,10 @@ namespace FinanceManager.Web.ViewModels
 
                     var secVm = ActivatorUtilities.CreateInstance<FinanceManager.Web.ViewModels.Securities.SecuritiesListViewModel>(_sp);
                     return new ListFactoryResult(secVm);
+                case "statement-drafts":
+                    // list of statement drafts
+                    var sdVm = ActivatorUtilities.CreateInstance<StatementDraftsListViewModel>(_sp);
+                    return new ListFactoryResult(sdVm);
                  default:
                      return null;
              }

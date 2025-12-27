@@ -6,6 +6,7 @@ using FinanceManager.Domain.Attachments;
 
 namespace FinanceManager.Web.ViewModels.Securities.Categories;
 
+[FinanceManager.Web.ViewModels.Common.CardRoute("securities", "categories")]
 public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
 {
     public SecurityCategoryCardViewModel(IServiceProvider sp) : base(sp)
@@ -26,7 +27,7 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
         {
             if (id == Guid.Empty)
             {
-                Model.Name = string.Empty;
+                Model.Name = InitPrefill ?? string.Empty;
                 Model.SymbolAttachmentId = null;
             }
             else

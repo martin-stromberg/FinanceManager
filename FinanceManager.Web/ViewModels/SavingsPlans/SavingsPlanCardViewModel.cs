@@ -5,6 +5,7 @@ using FinanceManager.Web.ViewModels.Common;
 
 namespace FinanceManager.Web.ViewModels.SavingsPlans;
 
+[FinanceManager.Web.ViewModels.Common.CardRoute("savings-plans")]
 public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, string Value)>
 {
 
@@ -25,12 +26,13 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
     public SavingsPlanCreateRequest Model { get; private set; } = new(string.Empty, SavingsPlanType.OneTime, null, null, null, null, null);
 
     // Navigation context
-    public string? BackNav { get; private set; }
     public Guid? ReturnDraftId { get; private set; }
     public Guid? ReturnEntryId { get; private set; }
-    public string? PrefillName { get; private set; }
 
     public string ChartEndpoint => IsEdit ? $"/api/savings-plans/{Id}/aggregates" : string.Empty;
+
+    // remember last loaded dto to rebuild card with context
+    private SavingsPlanDto? _loadedDto;
 
     public override AggregateBarChartViewModel? ChartViewModel
     {
@@ -52,9 +54,10 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
             if (id == Guid.Empty)
             {
                 // If a prefill name was provided via InitializeAsync, apply it to the new model
-                var initialName = !string.IsNullOrWhiteSpace(PrefillName) ? PrefillName : string.Empty;
+                var initialName = !string.IsNullOrWhiteSpace(InitPrefill) ? InitPrefill : string.Empty;
                 Model = new SavingsPlanCreateRequest(initialName, SavingsPlanType.OneTime, null, null, null, null, null);
                 await LoadCategoriesAsync(); // ensure categories available for empty/new card
+                _loadedDto = null;
                 CardRecord = await BuildCardRecordAsync(null);
                 return;
             }
@@ -72,6 +75,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
             // Load categories first so the category name can be resolved when building the card
             await LoadCategoriesAsync();
 
+            _loadedDto = dto;
             CardRecord = await BuildCardRecordAsync(dto);
         }
         catch (Exception ex)
@@ -80,14 +84,6 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
             SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
         }
         finally { Loading = false; Loaded = true; RaiseStateChanged(); }
-    }
-
-    
-
-    public async Task InitializeAsync(Guid? id, string? backNav, Guid? draftId, Guid? entryId, string? prefillName, CancellationToken ct = default)
-    {
-        BackNav = backNav; ReturnDraftId = draftId; ReturnEntryId = entryId; PrefillName = prefillName;
-        if (id.HasValue) await LoadAsync(id.Value); else await LoadAsync(Guid.Empty);
     }
 
     public async Task LoadAnalysisAsync(CancellationToken ct = default)
@@ -117,6 +113,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
                 if (dto == null) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Error_Create"); return false; }
                 Id = dto.Id;
                 Model = req; // reflect saved data into Model
+                _loadedDto = dto;
                 CardRecord = await BuildCardRecordAsync(dto);
                 ClearPendingChanges();
                 RaiseUiActionRequested("Saved", Id.ToString());
@@ -127,6 +124,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
                 var existing = await ApiClient.SavingsPlans_UpdateAsync(Id, req, ct);
                 if (existing == null) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Error_Update"); return false; }
                 Model = req; // reflect saved data into Model
+                _loadedDto = existing;
                 CardRecord = await BuildCardRecordAsync(existing);
                 ClearPendingChanges();
                 RaiseUiActionRequested("Saved", Id.ToString());
@@ -296,19 +294,19 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
 
         var fields = new List<CardField>
         {
-            // Order: Name, Category, Type, TargetAmount, TargetDate, Interval, ContractNumber, Symbol
-            new CardField("Card_Caption_SavingsPlan_Name", CardFieldKind.Text, text: dto?.Name ?? string.Empty, editable: true),
+            new CardField("Card_Caption_SavingsPlan_Name", CardFieldKind.Text, text: dto?.Name ?? Model.Name ?? string.Empty, editable: true),
             new CardField("Card_Caption_SavingsPlan_Category", CardFieldKind.Text, text: dto == null ? string.Empty : Categories.FirstOrDefault(c => c.Id == dto.CategoryId)?.Name ?? string.Empty, editable: true, lookupType: "Category", valueId: dto?.CategoryId),
             new CardField("Card_Caption_SavingsPlan_Type", CardFieldKind.Text, text: dto?.Type.ToString() ?? Model.Type.ToString(), editable: true, lookupType: "Enum:SavingsPlanType"),
-            new CardField("Card_Caption_SavingsPlan_TargetAmount", CardFieldKind.Currency, amount: dto?.TargetAmount, editable: true),
         };
-
+        if (intervalEditable)
+        {
+            fields.Add(new CardField("Card_Caption_SavingsPlan_Interval", CardFieldKind.Text, text: dto?.Interval?.ToString() ?? string.Empty, editable: true, lookupType: "Enum:SavingsPlanInterval"));
+        }
+        fields.Add(new CardField("Card_Caption_SavingsPlan_TargetAmount", CardFieldKind.Currency, amount: dto?.TargetAmount, editable: true));
         if (showTargetDate)
         {
             fields.Add(new CardField("Card_Caption_SavingsPlan_TargetDate", CardFieldKind.Text, text: dto?.TargetDate?.ToShortDateString(), editable: true));
         }
-
-        fields.Add(new CardField("Card_Caption_SavingsPlan_Interval", CardFieldKind.Text, text: dto?.Interval?.ToString() ?? string.Empty, editable: intervalEditable, lookupType: "Enum:SavingsPlanInterval"));
         fields.Add(new CardField("Card_Caption_SavingsPlan_ContractNumber", CardFieldKind.Text, text: dto?.ContractNumber ?? string.Empty, editable: true));
         fields.Add(new CardField("Card_Caption_SavingsPlan_Symbol", CardFieldKind.Symbol, symbolId: dto?.SymbolAttachmentId, editable: dto?.Id != Guid.Empty));
 
@@ -316,45 +314,35 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
         return ApplyPendingValues(ApplyEnumTranslations(record));
     }
 
-    public override async Task<IReadOnlyList<LookupItem>> QueryLookupAsync(CardField field, string? q, int skip, int take)
+    // react to field changes so UI can update visibility/editability immediately
+    public override void ValidateFieldValue(CardField field, object? newValue)
     {
-        try
+        base.ValidateFieldValue(field, newValue);
+        if (field == null) return;
+        if (string.Equals(field.LabelKey, "Card_Caption_SavingsPlan_Type", StringComparison.OrdinalIgnoreCase) || string.Equals(field.LabelKey, "Card_Caption_SavingsPlan_Interval", StringComparison.OrdinalIgnoreCase))
         {
-            if (string.Equals(field.LookupType, "Category", StringComparison.OrdinalIgnoreCase))
-            {
-                var list = await ApiClient.SavingsPlanCategories_ListAsync();
-                if (!string.IsNullOrWhiteSpace(q))
-                {
-                    var term = q.Trim();
-                    return list.Where(c => !string.IsNullOrWhiteSpace(c.Name) && c.Name.Contains(term, StringComparison.OrdinalIgnoreCase)).Select(c => new LookupItem(c.Id, c.Name)).ToList();
-                }
-                return list.Select(c => new LookupItem(c.Id, c.Name)).ToList();
-            }
+            _ = RebuildCardRecordAsync();
         }
-        catch { }
-        return await base.QueryLookupAsync(field, q, skip, take);
     }
 
     public override void ValidateLookupField(CardField field, LookupItem? item)
     {
-        if (string.Equals(field.LookupType, "Enum:SavingsPlanType", StringComparison.OrdinalIgnoreCase) || string.Equals(field.LookupType, "Enum:SavingsPlanInterval", StringComparison.OrdinalIgnoreCase))
-        {
-            field.Text = item?.Name ?? field.Text;
-            ValidateFieldValue(field, field.Text);
-            return;
-        }
-
-        if (string.Equals(field.LookupType, "Category", StringComparison.OrdinalIgnoreCase))
-        {
-            if (item == null) _pendingFieldValues.Remove(field.LabelKey);
-            else _pendingFieldValues[field.LabelKey] = item;
-            // reflect into Model
-            Model = new SavingsPlanCreateRequest(Model.Name, Model.Type, Model.TargetAmount, Model.TargetDate, Model.Interval, item?.Key, Model.ContractNumber);
-            RaiseStateChanged();
-            return;
-        }
-
         base.ValidateLookupField(field, item);
+        if (field == null) return;
+        if (string.Equals(field.LabelKey, "Card_Caption_SavingsPlan_Type", StringComparison.OrdinalIgnoreCase) || string.Equals(field.LabelKey, "Card_Caption_SavingsPlan_Interval", StringComparison.OrdinalIgnoreCase))
+        {
+            _ = RebuildCardRecordAsync();
+        }
+    }
+
+    private async Task RebuildCardRecordAsync()
+    {
+        try
+        {
+            CardRecord = await BuildCardRecordAsync(_loadedDto);
+        }
+        catch { }
+        RaiseStateChanged();
     }
 
     // --- Ribbon provider ---

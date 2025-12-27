@@ -261,7 +261,9 @@ public sealed class StatementDraftsController : ControllerBase
         var index = ordered.FindIndex(e => e.Id == entryId);
         var prev = index > 0 ? ordered[index - 1].Id : (Guid?)null;
         var next = index < ordered.Count - 1 ? ordered[index + 1].Id : (Guid?)null;
-        var nextOpen = ordered.Skip(index + 1).FirstOrDefault(e => e.Status == StatementDraftEntryStatus.Open || e.Status == StatementDraftEntryStatus.Announced)?.Id;
+        // Prefer the next entry that is Open or Announced. If none found, fall back to the immediate next entry regardless of status.
+        var nextOpen = ordered.Skip(index + 1).FirstOrDefault(e => e.Status == StatementDraftEntryStatus.Open || e.Status == StatementDraftEntryStatus.Announced)?.Id
+            ?? (index < ordered.Count - 1 ? ordered[index + 1].Id : (Guid?)null);
         decimal? splitSum = null; decimal? diff = null;
         if (entry.SplitDraftId != null)
         {
@@ -547,8 +549,30 @@ public sealed class StatementDraftsController : ControllerBase
             }
             return Ok(new { Entry = entry, SplitSum = splitSum, Difference = diff });
         }
-        var dto = await _drafts.SaveEntryAllAsync(draftId, entryId, _current.UserId, body.ContactId, body.IsCostNeutral, body.SavingsPlanId, body.ArchiveOnBooking, body.SecurityId, body.TransactionType, body.Quantity, body.FeeAmount, body.TaxAmount, ct);
-        return dto == null ? NotFound() : Ok(dto);
+        try
+        {
+            var dto = await _drafts.SaveEntryAllAsync(draftId, entryId, _current.UserId, body.ContactId, body.IsCostNeutral, body.SavingsPlanId, body.ArchiveOnBooking, body.SecurityId, body.TransactionType, body.Quantity, body.FeeAmount, body.TaxAmount, ct);
+            return dto == null ? NotFound() : Ok(dto);
+        }
+        catch (FinanceManager.Application.Exceptions.DomainValidationException dex)
+        {
+            // Map domain validation to a consistent shape (error + message) that the ApiClient expects
+            var code = string.IsNullOrWhiteSpace(dex.Code) ? "DOMAIN_VALIDATION" : dex.Code;
+            _logger.LogInformation("Domain validation when saving entry {EntryId} in draft {DraftId}: {Code} - {Message}", entryId, draftId, code, dex.Message);
+            return BadRequest(new { error = code, message = dex.Message });
+        }
+        catch (InvalidOperationException ioex)
+        {
+            // existing usage of InvalidOperationException mapped to BadRequest in other endpoints — keep compatible
+            _logger.LogInformation(ioex, "Invalid operation when saving entry {EntryId} in draft {DraftId}", entryId, draftId);
+            return BadRequest(new { error = "InvalidOperation", message = ioex.Message });
+        }
+        catch (Exception ex)
+        {
+            // Unexpected errors -> 500 but provide message in same shape so client can surface details
+            _logger.LogError(ex, "Unexpected error in SaveEntryAllAsync for draft {DraftId} entry {EntryId}", draftId, entryId);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "ERR_INTERNAL", message = ex.Message });
+        }
     }
 
     /// <summary>

@@ -4,12 +4,15 @@ using FinanceManager.Domain.Attachments;
 using FinanceManager.Web.Components.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using FinanceManager.Application;
+using FinanceManager.Shared.Dtos.Admin;
 
 namespace FinanceManager.Web.ViewModels.Common
 {
     public enum BooleanSelection { True, False }
-    public abstract class BaseViewModel : IAsyncDisposable, IRibbonProvider
-    {
+    // Position where an embedded panel should be rendered on the Card page
+    public enum EmbeddedPanelPosition { AfterRibbon, AfterCard }
+     public abstract class BaseViewModel : IAsyncDisposable, IRibbonProvider
+     {
         protected BaseViewModel(IServiceProvider serviceProvider)
         {
             ServiceProvider = serviceProvider;
@@ -79,6 +82,9 @@ namespace FinanceManager.Web.ViewModels.Common
         // Generic overlay spec that pages can render using DynamicComponent
         public sealed record UiOverlaySpec(Type ComponentType, IReadOnlyDictionary<string, object?>? Parameters = null, bool Modal = true);
 
+        // Embedded panel spec: a viewmodel can request an inline panel to be shown on the card page
+        public sealed record EmbeddedPanelSpec(Type ComponentType, IReadOnlyDictionary<string, object?>? Parameters = null, EmbeddedPanelPosition Position = EmbeddedPanelPosition.AfterCard, bool Visible = true);
+
         public event EventHandler<UiActionEventArgs?>? UiActionRequested;
         public sealed record LookupItem(System.Guid Key, string Name);
         protected void RaiseStateChanged() => StateChanged?.Invoke(this, EventArgs.Empty);
@@ -86,6 +92,14 @@ namespace FinanceManager.Web.ViewModels.Common
         protected void RaiseUiActionRequested(string? action, string? payload) => UiActionRequested?.Invoke(this, new UiActionEventArgs(action, payload));
         // New overload to pass arbitrary object payloads (e.g. UiOverlaySpec)
         protected void RaiseUiActionRequested(string? action, object? payloadObject) => UiActionRequested?.Invoke(this, new UiActionEventArgs(action, payloadObject));
+        /// <summary>
+        /// Convenience helper to request an embedded inline panel on the Card page.
+        /// View pages will render the supplied EmbeddedPanelSpec at the requested position.
+        /// </summary>
+        protected void RaiseUiEmbeddedPanelRequested(EmbeddedPanelSpec spec) => UiActionRequested?.Invoke(this, new UiActionEventArgs("EmbeddedPanel", spec));
+
+        // Background task types that a page should show for this ViewModel. Default: none.
+        public virtual BackgroundTaskType[]? VisibleBackgroundTaskTypes => Array.Empty<BackgroundTaskType>();
 
         /// <summary>
         /// Convenience helper for requesting the Attachments overlay from any ViewModel.
@@ -117,6 +131,12 @@ namespace FinanceManager.Web.ViewModels.Common
             if (string.Equals(field.LookupType, "Contact", StringComparison.OrdinalIgnoreCase))
                 return await QueryContactLookupAsync(field, q, skip, take);
 
+            if (string.Equals(field.LookupType, "SavingsPlan", StringComparison.OrdinalIgnoreCase))
+                return await QuerySavingsPlanLookupAsync(field, q, skip, take);
+
+            if (string.Equals(field.LookupType, "Security", StringComparison.OrdinalIgnoreCase))
+                return await QuerySecurityLookupAsync(field, q, skip, take);
+
             return Array.Empty<LookupItem>();
         }
 
@@ -136,21 +156,59 @@ namespace FinanceManager.Web.ViewModels.Common
             return results.Select(c => new LookupItem(c.Id, c.Name)).ToList();
         }
 
+        private bool ParseOnlyActiveFilter(string? filter, bool defaultValue = true)
+        {
+            if (string.IsNullOrWhiteSpace(filter)) return defaultValue;
+            var parts = filter.Split('=', 2);
+            if (parts.Length != 2) return defaultValue;
+            if (!string.Equals(parts[0].Trim(), "OnlyActive", StringComparison.OrdinalIgnoreCase)) return defaultValue;
+            if (bool.TryParse(parts[1].Trim(), out var parsed)) return parsed;
+            return defaultValue;
+        }
+
+        private async Task<IReadOnlyList<LookupItem>> QuerySavingsPlanLookupAsync(CardField field, string? q, int skip, int take)
+        {
+            var api = ServiceProvider.GetRequiredService<IApiClient>();
+            // allow optional lookup filter like "OnlyActive=true"
+            var onlyActive = ParseOnlyActiveFilter(field.LookupFilter, defaultValue: true);
+            var all = await api.SavingsPlans_ListAsync(onlyActive, CancellationToken.None);
+            var filtered = all
+                .Where(sp => string.IsNullOrWhiteSpace(q) || (sp.Name?.Contains(q, StringComparison.OrdinalIgnoreCase) == true))
+                .Skip(skip).Take(take)
+                .Select(sp => new LookupItem(sp.Id, sp.Name))
+                .ToList();
+            return filtered;
+        }
+
+        private async Task<IReadOnlyList<LookupItem>> QuerySecurityLookupAsync(CardField field, string? q, int skip, int take)
+        {
+            var api = ServiceProvider.GetRequiredService<IApiClient>();
+            var onlyActive = ParseOnlyActiveFilter(field.LookupFilter, defaultValue: true);
+            var all = await api.Securities_ListAsync(onlyActive, CancellationToken.None);
+            var filtered = all
+                .Where(sx => string.IsNullOrWhiteSpace(q) || (sx.Name?.Contains(q, StringComparison.OrdinalIgnoreCase) == true) || (sx.Identifier?.Contains(q, StringComparison.OrdinalIgnoreCase) == true))
+                .Skip(skip).Take(take)
+                .Select(sx => new LookupItem(sx.Id, sx.Name))
+                .ToList();
+            return filtered;
+        }
+
         private IReadOnlyList<LookupItem> QueryEnumLookup(string? q, Type enumType)
         {
             var items = Enum.GetValues(enumType).Cast<object>()
                 .Select(v =>
                 {
                     var raw = v?.ToString() ?? string.Empty;
-                    string display = raw;
+                    // Try localized enum label first (key: EnumType_{EnumName}_{Member}) and fall back to raw member name
+                    string name = raw;
                     try
                     {
                         var key = $"EnumType_{enumType.Name}_{raw}";
                         var val = Localizer?[key];
-                        if (val != null && !string.IsNullOrWhiteSpace(val)) display = val.Value;
+                        if (val != null && !val.ResourceNotFound && !string.IsNullOrWhiteSpace(val.Value)) name = val.Value;
                     }
                     catch { }
-                    return new LookupItem(Guid.Empty, display);
+                    return new LookupItem(Guid.Empty, name);
                 })
                 .Where(li => string.IsNullOrWhiteSpace(q) || li.Name.Contains(q, StringComparison.OrdinalIgnoreCase))
                 .ToList();

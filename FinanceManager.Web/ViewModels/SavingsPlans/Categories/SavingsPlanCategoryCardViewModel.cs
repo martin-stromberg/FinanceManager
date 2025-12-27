@@ -6,6 +6,7 @@ using FinanceManager.Domain.Attachments;
 
 namespace FinanceManager.Web.ViewModels.SavingsPlans.Categories;
 
+[FinanceManager.Web.ViewModels.Common.CardRoute("savings-plans", "categories")]
 public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
 {
     public SavingsPlanCategoryCardViewModel(IServiceProvider sp) : base(sp)

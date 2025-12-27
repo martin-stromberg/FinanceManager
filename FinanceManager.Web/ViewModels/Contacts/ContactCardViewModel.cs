@@ -7,6 +7,7 @@ using FinanceManager.Domain.Attachments;
 
 namespace FinanceManager.Web.ViewModels.Contacts;
 
+[FinanceManager.Web.ViewModels.Common.CardRoute("contacts")]
 public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
 {
     public ContactCardViewModel(IServiceProvider sp) : base(sp)
@@ -16,6 +17,11 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
     public Guid Id { get; private set; }
     public ContactDto? Contact { get; private set; }
     public override string Title => Contact?.Name ?? base.Title;
+
+    // Navigation context for create flow
+    public string? BackNav { get; private set; }
+    public Guid? ReturnDraftId { get; private set; }
+    public Guid? ReturnEntryId { get; private set; }
 
     public string ChartEndpoint => Id != Guid.Empty ? $"/api/contacts/{Id}/aggregates" : string.Empty;
 
@@ -37,7 +43,8 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
         {
             if (id == Guid.Empty)
             {
-                Contact = new ContactDto(Guid.Empty, string.Empty, ContactType.Organization, null, null, false, null);
+                var name = !string.IsNullOrWhiteSpace(InitPrefill) ? InitPrefill : string.Empty;
+                Contact = new ContactDto(Guid.Empty, name, ContactType.Organization, null, null, false, null);
                 CardRecord = await BuildCardRecordAsync(Contact);
                 return;
             }

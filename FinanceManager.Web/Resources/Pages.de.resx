@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -150,6 +150,12 @@
   <data name="General_Loading" xml:space="preserve">
     <value>Laden…</value>
   </data>
+  <data name="General_Yes" xml:space="preserve">
+    <value>Ja</value>
+  </data>
+  <data name="General_No" xml:space="preserve">
+    <value>Nein</value>
+  </data>
   <data name="General_PageTitle" xml:space="preserve">
     <value>Übersicht</value>
   </data>
@@ -209,6 +215,12 @@
   </data>
   <data name="Ribbon_Back" xml:space="preserve">
     <value>Zurück</value>
+  </data>
+  <data name="Ribbon_Prev" xml:space="preserve">
+    <value>Vorherige</value>
+  </data>
+  <data name="Ribbon_Next" xml:space="preserve">
+    <value>Nächste</value>
   </data>
   <data name="Ribbon_Group_Linked" xml:space="preserve">
     <value>Verknüpfte Informationen</value>
@@ -368,6 +380,18 @@
   </data>
   <data name="Ribbon_OpenBankContact" xml:space="preserve">
     <value>Bankkontakt</value>
+  </data>
+  <data name="Ribbon_AccountDetails" xml:space="preserve">
+    <value>Bankkonto</value>
+  </data>
+  <data name="Ribbon_ViewOriginal" xml:space="preserve">
+    <value>Original anzeigen</value>
+  </data>
+  <data name="Ribbon_Download" xml:space="preserve">
+    <value>Herunterladen</value>
+  </data>
+  <data name="Ribbon_Group_Statement" xml:space="preserve">
+    <value>Auszug</value>
   </data>
   <data name="Merge_Title" xml:space="preserve">
     <value>Kontakt zusammenführen</value>
@@ -627,15 +651,6 @@
   <data name="Ribbon_Backfill" xml:space="preserve">
     <value>Historische Kurse nachladen</value>
   </data>
-  <data name="NoEntries" xml:space="preserve">
-    <value>Keine Einträge</value>
-  </data>
-  <data name="PageTitle" xml:space="preserve">
-    <value>Wertpapierkurse</value>
-  </data>
-  <data name="Title" xml:space="preserve">
-    <value>Kurse</value>
-  </data>
   <data name="Card_Caption_SecurityCategory_Name" xml:space="preserve">
     <value>Name</value>
   </data>
@@ -644,5 +659,248 @@
   </data>
   <data name="General_Title_Securities_Categories" xml:space="preserve">
     <value>Wertpapierkategorien</value>
+  </data>
+  <data name="NoEntries" xml:space="preserve">
+    <value>Keine Einträge</value>
+  </data>
+  <data name="PageTitle" xml:space="preserve">
+    <value>Wertpapierkurse</value>
+  </data>
+  <data name="List_Th_StatementDrafts_File" xml:space="preserve">
+    <value>Datei</value>
+  </data>
+  <data name="List_Th_StatementDrafts_Description" xml:space="preserve">
+    <value>Beschreibung</value>
+  </data>
+  <data name="List_Th_StatementDrafts_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="List_Th_StatementDrafts_Entries" xml:space="preserve">
+    <value>Einträge</value>
+  </data>
+  <data name="Ribbon_DeleteAll" xml:space="preserve">
+    <value>Alle löschen</value>
+  </data>
+  <data name="Ribbon_Reclassify" xml:space="preserve">
+    <value>Neu klassifizieren</value>
+  </data>
+  <data name="Ribbon_MassBooking" xml:space="preserve">
+    <value>Stapelbuchung</value>
+  </data>
+  <data name="Ribbon_Import" xml:space="preserve">
+    <value>Importieren</value>
+  </data>
+  <data name="Err_TooManyFiles" xml:space="preserve">
+    <value>Bitte wähle nicht mehr als {0} Dateien aus.</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_File" xml:space="preserve">
+    <value>Datei</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Description" xml:space="preserve">
+    <value>Beschreibung</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Entries" xml:space="preserve">
+    <value>Einträge</value>
+  </data>
+  <data name="List_Th_Amount" xml:space="preserve">
+    <value>Betrag</value>
+  </data>
+  <data name="List_Th_Recipient" xml:space="preserve">
+    <value>Empfänger</value>
+  </data>
+  <data name="List_Th_Subject" xml:space="preserve">
+    <value>Verwendungszweck</value>
+  </data>
+  <data name="List_Th_SavingsPlan" xml:space="preserve">
+    <value>Sparplan</value>
+  </data>
+  <data name="List_Th_Security" xml:space="preserve">
+    <value>Wertpapier</value>
+  </data>
+  <data name="Ribbon_Book" xml:space="preserve">
+    <value>Buchen</value>
+  </data>
+  <data name="Ribbon_Validate" xml:space="preserve">
+    <value>Prüfen</value>
+  </data>
+  <data name="Confirm_Delete_StatementDraft" xml:space="preserve">
+    <value>Soll der Kontoauszug wirklich gelöscht werden?</value>
+  </data>
+  <data name="Validation_Header" xml:space="preserve">
+    <value>Prüfergebnis</value>
+  </data>
+  <data name="Validation_Invalid" xml:space="preserve">
+    <value>Allgemeine Meldungen</value>
+  </data>
+  <data name="MassBooking_Title" xml:space="preserve">
+    <value>Stapelbuchung — Optionen</value>
+  </data>
+  <data name="MassBooking_IgnoreWarnings" xml:space="preserve">
+    <value>Warnungen ignorieren</value>
+  </data>
+  <data name="MassBooking_AbortOnFirstIssue" xml:space="preserve">
+    <value>Bei erster Warnung/Fehler abbrechen</value>
+  </data>
+  <data name="MassBooking_BookEntriesIndividually" xml:space="preserve">
+    <value>Einträge einzeln buchen</value>
+  </data>
+  <data name="Btn_Start" xml:space="preserve">
+    <value>Starten</value>
+  </data>
+  <data name="Btn_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Date" xml:space="preserve">
+    <value>Buchungsdatum</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Valuta" xml:space="preserve">
+    <value>Valuta</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Amount" xml:space="preserve">
+    <value>Betrag</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_BookingDescription" xml:space="preserve">
+    <value>Verwendungszweck / Buchungsbeschreibung</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Recipient" xml:space="preserve">
+    <value>Empfänger</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Subject" xml:space="preserve">
+    <value>Verwendungszweck</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Announced" xml:space="preserve">
+    <value>Angekündigt</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Contact" xml:space="preserve">
+    <value>Kontakt</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_CostNeutral" xml:space="preserve">
+    <value>Kostenneutral</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_SavingsPlan" xml:space="preserve">
+    <value>Sparplan</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Security" xml:space="preserve">
+    <value>Wertpapier</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_TransactionType" xml:space="preserve">
+    <value>Transaktionstyp</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Quantity" xml:space="preserve">
+    <value>Menge</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Fee" xml:space="preserve">
+    <value>Gebühr</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Tax" xml:space="preserve">
+    <value>Steuer</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Currency" xml:space="preserve">
+    <value>Währung</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_ArchiveOnBooking" xml:space="preserve">
+    <value>Bei Buchung archivieren</value>
+  </data>
+  <data name="EnumType_SecurityTransactionType_Buy" xml:space="preserve">
+    <value>Kauf</value>
+  </data>
+  <data name="EnumType_SecurityTransactionType_Sell" xml:space="preserve">
+    <value>Verkauf</value>
+  </data>
+  <data name="EnumType_SecurityTransactionType_Dividend" xml:space="preserve">
+    <value>Dividende/Zinsen</value>
+  </data>
+  <data name="Ribbon_Edit" xml:space="preserve">
+    <value>Bearbeiten</value>
+  </data>
+  <data name="Ribbon_ReadOnly" xml:space="preserve">
+    <value>Ansicht</value>
+  </data>
+  <data name="Ribbon_ResetDuplicate" xml:space="preserve">
+    <value>Duplikatstatus zurücksetzen</value>
+  </data>
+  <data name="Ribbon_Add" xml:space="preserve">
+    <value>Hinzufügen</value>
+  </data>
+  <data name="Ribbon_OpenContact" xml:space="preserve">
+    <value>Kontakt</value>
+  </data>
+  <data name="Ribbon_OpenSavingsPlan" xml:space="preserve">
+    <value>Sparplan</value>
+  </data>
+  <data name="Ribbon_OpenSecurity" xml:space="preserve">
+    <value>Wertpapier</value>
+  </data>
+  <data name="Title" xml:space="preserve">
+    <value>Kurse</value>
+  </data>
+  <data name="General_Title_StatementDrafts" xml:space="preserve">
+    <value>Kontoauszüge</value>
+  </data>
+  <data name="Import_Success" xml:space="preserve">
+    <value>Import abgeschlossen</value>
+  </data>
+  <data name="Import_ShowDetails" xml:space="preserve">
+    <value>Details anzeigen</value>
+  </data>
+  <data name="Import_Result_Count" xml:space="preserve">
+    <value>{0} Kontoauszüge erstellt.</value>
+  </data>
+  <data name="EnumType_StatementDraftEntryStatus_Open" xml:space="preserve">
+    <value>Offen</value>
+  </data>
+  <data name="EnumType_StatementDraftEntryStatus_Announced" xml:space="preserve">
+    <value>Angekündigt</value>
+  </data>
+  <data name="EnumType_StatementDraftEntryStatus_Accounted" xml:space="preserve">
+    <value>Kontiert</value>
+  </data>
+  <data name="EnumType_StatementDraftEntryStatus_AlreadyBooked" xml:space="preserve">
+    <value>Bereits gebucht</value>
+  </data>
+  <data name="Brand" xml:space="preserve">
+    <value>Finance Manager</value>
+  </data>
+  <data name="Nav_Home" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="Nav_Accounts" xml:space="preserve">
+    <value>Konten</value>
+  </data>
+  <data name="Nav_StatementDrafts" xml:space="preserve">
+    <value>Kontoauszüge</value>
+  </data>
+  <data name="Nav_Contacts" xml:space="preserve">
+    <value>Kontakte</value>
+  </data>
+  <data name="Nav_Plans" xml:space="preserve">
+    <value>Sparpläne</value>
+  </data>
+  <data name="Nav_Securities" xml:space="preserve">
+    <value>Wertpapiere</value>
+  </data>
+  <data name="Nav_Reports" xml:space="preserve">
+    <value>Berichte</value>
+  </data>
+  <data name="Nav_Setup" xml:space="preserve">
+    <value>Einrichtung</value>
+  </data>
+  <data name="Nav_Users" xml:space="preserve">
+    <value>Benutzer</value>
+  </data>
+  <data name="Nav_Legal" xml:space="preserve">
+    <value>Impressum</value>
+  </data>
+  <data name="Error_Unhandled" xml:space="preserve">
+    <value>Ein unerwarteter Fehler ist aufgetreten.</value>
+  </data>
+  <data name="Error_Reload" xml:space="preserve">
+    <value>Neu laden</value>
+  </data>
+  <data name="Validation_Valid" xml:space="preserve">
+    <value> </value>
   </data>
 </root>

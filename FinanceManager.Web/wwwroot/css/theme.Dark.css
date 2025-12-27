@@ -8,6 +8,9 @@
     --bg-alt: #191b1f;
     --panel-bg: #181818;
     --border: #2a2d33;
+    /* theme-specific variables used by shared styles */
+    --muted: #7f8a96;
+    --panel-bg: #181818;
     --text: #e2e6ea;
     --accent: #4dabf7;
     --accent-hover: #339af0;
@@ -114,6 +117,14 @@ input {
 
 .table-responsive {
     box-shadow: 0 2px 8px #0002;
+}
+
+/* Muted row style for dark theme */
+.fm-table tr.muted-row,
+.fm-table tr.muted-row td {
+    opacity: 0.65;
+    color: var(--muted);
+    background: transparent;
 }
 
 /* Split Dialog Theme */

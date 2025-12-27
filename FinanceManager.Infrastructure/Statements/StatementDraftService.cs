@@ -112,6 +112,31 @@ public sealed partial class StatementDraftService : IStatementDraftService
         }
 
         // Savings plan
+        // Savings plan - only validate when client explicitly provides a savingsPlanId (assignment)
+        // If savingsPlanId is null it is considered a clear request and validation for assignment should not block it.
+        if (savingsPlanId.HasValue)
+        {
+            var effContactIdForSavings = contactId ?? entry.ContactId;
+            if (!effContactIdForSavings.HasValue)
+            {
+                throw new FinanceManager.Application.Exceptions.DomainValidationException("SAVINGSPLAN_NO_CONTACT", "Cannot assign a savings plan when no contact is selected.");
+            }
+            var contact = await _db.Contacts.AsNoTracking().FirstOrDefaultAsync(c => c.Id == effContactIdForSavings.Value && c.OwnerUserId == ownerUserId, ct);
+            if (contact == null || contact.Type != ContactType.Self)
+            {
+                throw new FinanceManager.Application.Exceptions.DomainValidationException("SAVINGSPLAN_INVALID_CONTACT", "Savings plan can only be assigned when the contact is your own (Self).");
+            }
+            if (!draft.DetectedAccountId.HasValue)
+            {
+                throw new FinanceManager.Application.Exceptions.DomainValidationException("SAVINGSPLAN_NO_ACCOUNT", "Cannot assign a savings plan because no account is detected for this draft.");
+            }
+            var accountForSavings = await _db.Accounts.AsNoTracking().FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId.Value, ct);
+            if (accountForSavings == null || accountForSavings.SavingsPlanExpectation == SavingsPlanExpectation.None)
+            {
+                throw new FinanceManager.Application.Exceptions.DomainValidationException("SAVINGSPLAN_ACCOUNT_NOT_ALLOWED", "The detected account does not allow assigning a savings plan.");
+            }
+        }
+        // Apply incoming assignment/clear after validation
         if (entry.SavingsPlanId != savingsPlanId)
         {
             entry.AssignSavingsPlan(savingsPlanId);
@@ -121,7 +146,34 @@ public sealed partial class StatementDraftService : IStatementDraftService
             entry.SetArchiveSavingsPlanOnBooking(archiveOnBooking.Value);
         }
 
-        // Security
+        // Security - only validate when the client provided at least one security-related field (assignment/change)
+        var anyIncomingSecurityField = securityId.HasValue || transactionType.HasValue || quantity.HasValue || feeAmount.HasValue || taxAmount.HasValue;
+        if (anyIncomingSecurityField)
+        {
+            // Determine effective resulting values for validation (use existing values for fields not provided)
+            var effectiveSecurityId = securityId ?? entry.SecurityId;
+            var effectiveTxType = transactionType ?? entry.SecurityTransactionType;
+            var effectiveQuantity = quantity ?? entry.SecurityQuantity;
+            var effectiveFee = feeAmount ?? entry.SecurityFeeAmount;
+            var effectiveTax = taxAmount ?? entry.SecurityTaxAmount;
+
+            var willHaveSecurity = effectiveSecurityId.HasValue || effectiveTxType.HasValue || effectiveQuantity.HasValue || effectiveFee.HasValue || effectiveTax.HasValue;
+            if (willHaveSecurity)
+            {
+                var effContactId = contactId ?? entry.ContactId;
+                Guid? bankContactId = null;
+                if (draft.DetectedAccountId.HasValue)
+                {
+                    var accountForSecurity = await _db.Accounts.AsNoTracking().FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId.Value, ct);
+                    bankContactId = accountForSecurity?.BankContactId;
+                }
+                if (!effContactId.HasValue || bankContactId == null || effContactId.Value != bankContactId.Value)
+                {
+                    throw new FinanceManager.Application.Exceptions.DomainValidationException("SECURITY_INVALID_CONTACT", "Security-related fields can only be set when the contact equals the bank contact of the detected account.");
+                }
+            }
+        }
+        // Apply security changes after validation
         if (securityId != entry.SecurityId
             || transactionType != entry.SecurityTransactionType
             || quantity != entry.SecurityQuantity
@@ -555,7 +607,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 {
                     result.Add(current); // linker Anchor unverändert
                     // Den einen kleinen Monat NICHT hier hinzufügen, sondern später beim rechten Anchor
-                    // -> Wir markieren ihn zum Überspringen und mergen beim rechten Anchor
+                    // -> Wir markiert ihn zum Überspringen und mergen beim rechten Anchor
                     // Speicherung in Hilfsstruktur: wir lassen ihn einfach stehen und mergen später beim Eintreffen des rechten Anchors
                     index++; // current
                     // Der kleine Monat wird beim normalen Durchlauf als "small vor Anchor" erkannt
@@ -1615,6 +1667,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
             if (e.ContactId == null) { continue; }
             var c = await _db.Contacts.FirstOrDefaultAsync(x => x.Id == e.ContactId && x.OwnerUserId == ownerUserId, ct);
             if (c == null) { continue; }
+
             if (c.IsPaymentIntermediary && e.SplitDraftId != null)
             {
                 // create postings with amount 0 for parent
@@ -1857,18 +1910,15 @@ public sealed partial class StatementDraftService : IStatementDraftService
                     decimal? qty = e.SecurityTransactionType switch { SecurityTransactionType.Buy => e.SecurityQuantity, SecurityTransactionType.Sell => e.SecurityQuantity.HasValue ? -Math.Abs(e.SecurityQuantity.Value) : null, SecurityTransactionType.Dividend => null, _ => e.SecurityQuantity };
                     var main = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, e.BookingDate, e.ValutaDate ?? e.BookingDate, tradeAmt, e.Subject, e.RecipientName, e.BookingDescription, sub, qty).SetGroup(gid);
                     _db.Postings.Add(main); await UpsertAggregatesAsync(main, ct);
-                    if (parentBankPostingId.HasValue) main.SetParent(parentBankPostingId.Value);
                     if (fee != 0m)
                     {
                         var feeP = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, e.BookingDate, e.ValutaDate ?? e.BookingDate, factor * fee, e.Subject, e.RecipientName, e.BookingDescription, SecurityPostingSubType.Fee, null).SetGroup(gid);
                         _db.Postings.Add(feeP); await UpsertAggregatesAsync(feeP, ct);
-                        if (parentBankPostingId.HasValue) feeP.SetParent(parentBankPostingId.Value);
                     }
                     if (tax != 0m)
                     {
                         var taxP = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, e.BookingDate, e.ValutaDate ?? e.BookingDate, factor * tax, e.Subject, e.RecipientName, e.BookingDescription, SecurityPostingSubType.Tax, null).SetGroup(gid);
                         _db.Postings.Add(taxP); await UpsertAggregatesAsync(taxP, ct);
-                        if (parentBankPostingId.HasValue) taxP.SetParent(parentBankPostingId.Value);
                     }
                 }
 
@@ -1929,7 +1979,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
                             var candidates = await _db.Postings
                                 .Where(p => p.Kind == PostingKind.Contact
                                             && p.ContactId == newContactPost.ContactId
-                                            && p.Amount == -newContactPost.Amount
+                                            //&& p.Amount == -newContactPost.Amount
                                             && p.LinkedPostingId == null
                                             && p.SourceId != newContactPost.SourceId
                                             && p.Subject == newContactPost.Subject)

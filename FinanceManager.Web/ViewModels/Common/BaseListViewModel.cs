@@ -2,7 +2,14 @@ using FinanceManager.Application;
 
 namespace FinanceManager.Web.ViewModels.Common
 {
-    public abstract class BaseListViewModel<TItem> : BaseViewModel, IListProvider
+    // Non-generic base type so other viewmodels (e.g. card viewmodels) can hold a reference
+    // to an embedded list without knowing the item type parameter.
+    public abstract class BaseListViewModel : BaseViewModel
+    {
+        protected BaseListViewModel(IServiceProvider serviceProvider) : base(serviceProvider) { }
+    }
+
+    public abstract class BaseListViewModel<TItem> : BaseListViewModel, IListProvider
     {
         protected BaseListViewModel(IServiceProvider serviceProvider)
             : base(serviceProvider)

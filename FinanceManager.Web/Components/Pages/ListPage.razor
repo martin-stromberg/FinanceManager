@@ -4,13 +4,15 @@
 @inject NavigationManager Nav
 @inject Microsoft.Extensions.Localization.IStringLocalizer<Pages>? Localizer
 @inject IJSRuntime JS
+@using FinanceManager.Web.Components.Shared
 @using FinanceManager.Web.Extensions
 @using FinanceManager.Web.ViewModels
 @using FinanceManager.Web.ViewModels.Common
-@using FinanceManager.Web.Components.Shared
 @using System.Resources
 @using System.Globalization
 @using System.Collections
+@using FinanceManager.Shared.Dtos.Statements
+@using FinanceManager.Shared.Dtos.Admin
 
 <PageTitle>@($"{Localizer["General_PageTitle"]}: {GetKindTitle()}")</PageTitle>
 
@@ -23,6 +25,17 @@
 }
 else
 {
+    @* Render ribbon here so upload UI can be positioned directly under it *@
+    <Ribbon TTabEnum="TabId" Provider="(IRibbonProvider)_provider" Localizer="Localizer" />
+
+    <UploadStatus ViewModel="@(_provider as FinanceManager.Web.ViewModels.Common.IUploadFilesViewModel)"
+                  CreatedCount="@_uploadCreatedCount"
+                  FirstDraftId="@_firstCreatedDraftId"
+                  Error="@_uploadError" />
+
+    @* Background task status panel for viewmodel-specific task types *@
+    <BackgroundTaskStatusPanel AllowedTypes="@((_provider as BaseViewModel)?.VisibleBackgroundTaskTypes)" />
+
     <GenericListPage TItem="object"
                      Provider="_provider"
                      Localizer="Localizer"
@@ -34,13 +47,17 @@ else
                      EndOfListText="@Localizer["List_Result_EndOfList"]"
                      ItemClick="OnItemClick" />
 
+    @* Hidden input for list import (statement-drafts) - restored *@
+    <InputFile id="list-import-input" OnChange="OnListFileChanged" multiple style="position:fixed; left:-9999px; width:1px; height:1px; opacity:0; pointer-events:none;" />
+
+    
     @* Generic overlay rendering for list providers *@
     @if (_overlayVisible && _overlaySpec is not null)
     {
         <div class="split-center" @onclick="(()=> CloseOverlay())">
             <div class="split-dialog" style="max-width:90vH;" @onclick:stopPropagation="true">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
-                    <h3 style="margin:0;font-size:1rem;">@GetOverlayTitle()</h3>
+                    <h3 style="margin:0;font-size:1rem;">@GetOverlayTitle()}</h3>
                     <button class="icon-btn" title='@Localizer["Btn_Close"]' @onclick="(()=> CloseOverlay())"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
                 </div>
                 @{ 
@@ -70,6 +87,7 @@ else
 }
 
 @code {
+    private enum TabId { List }
     [Parameter] public string Kind { get; set; } = string.Empty;
     [Parameter] public string SubKind { get; set; } = string.Empty;
     [Parameter] public string? Id { get; set; }
@@ -79,6 +97,13 @@ else
     // Overlay state
     private BaseViewModel.UiOverlaySpec? _overlaySpec;
     private bool _overlayVisible;
+
+    // Upload result fields
+    private int _uploadCreatedCount;
+    private Guid? _firstCreatedDraftId;
+    // Page-level upload configuration and error
+    private int _maxUploadFiles = 10; // configurable limit for GetMultipleFiles
+    private string? _uploadError;
 
     private string GetKindTitle()
     {
@@ -99,6 +124,7 @@ else
         return kind switch
         {
             "accounts" => Localizer["General_Title_Account"],
+            "statement-drafts" => Localizer["General_Title_StatementDrafts"],
             "contacts" => Localizer["General_Title_Contact"],
             "savings-plans" => Localizer["General_Title_SavingsPlans"],
             "postings" => Localizer["General_Title_Postings"],
@@ -232,6 +258,91 @@ else
                     }
                 }
                 break;
+            case "Import":
+                // only supported for statement-drafts list
+                if ((Kind ?? string.Empty).Trim().ToLowerInvariant() == "statement-drafts")
+                {
+                    await TriggerListImportAsync();
+                }
+                break;
+        }
+    }
+
+    // Import support: hidden file input for statement-drafts list
+    private async Task TriggerListImportAsync()
+    {
+        try
+        {
+            // Directly trigger the hidden file input. This must be called from a user gesture (button click).
+            await JS.InvokeVoidAsync("eval", "document.getElementById('list-import-input')?.click();");
+        }
+        catch
+        {
+            // swallow — UI will remain unchanged; OnListFileChanged handles nothing selected
+        }
+    }
+
+    private IEnumerable<(Stream Stream, string FileName)> CreateStreamList(IReadOnlyList<IBrowserFile> files)
+    {
+        foreach (var file in files)
+        {
+            var stream = file.OpenReadStream(10_000_000);
+            yield return (stream, file.Name);
+        }
+    }
+
+    private async Task OnListFileChanged(InputFileChangeEventArgs e)
+    {
+        if ((Kind ?? string.Empty).Trim().ToLowerInvariant() != "statement-drafts") return;
+        IReadOnlyList<IBrowserFile> files;
+        try
+        {
+            files = e.GetMultipleFiles(_maxUploadFiles);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // InputFile throws when more files than allowed are supplied. Show friendly message.
+            _uploadError = string.Format(CultureInfo.CurrentCulture, Localizer["Err_TooManyFiles"].Value ?? "The maximum number of files accepted is {0}.", _maxUploadFiles);
+            StateHasChanged();
+            return;
+        }
+
+        if (files == null || files.Count == 0) return;
+
+        // clear previous upload page error
+        _uploadError = null;
+
+        if (_provider is FinanceManager.Web.ViewModels.Common.IUploadFilesViewModel upl)
+        {
+            // reset page-level result
+            _uploadCreatedCount = 0;
+            _firstCreatedDraftId = null;
+
+            var streamList = CreateStreamList(files).ToList();
+            try
+            {
+                var uploadResult = await upl.UploadFilesAsync("statementdraft", streamList, CancellationToken.None);
+                if (uploadResult != null)
+                {
+                    _uploadCreatedCount = uploadResult.CreatedCount;
+                    _firstCreatedDraftId = uploadResult.StatementDraftResult?.FirstDraft?.DraftId;
+                }
+            }
+            finally
+            {
+                foreach (var (s, _) in streamList)
+                {
+                    try { s.Dispose(); } catch { }
+                }
+            }
+
+            // refresh provider list
+            if (_provider != null)
+            {
+                _provider.ResetAndSearch();
+                await _provider.LoadAsync();
+            }
+            return;
         }
     }
 

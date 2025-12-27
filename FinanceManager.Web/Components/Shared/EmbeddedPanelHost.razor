@@ -1,0 +1,85 @@
+@using FinanceManager.Web.ViewModels.Common
+@using FinanceManager.Web.ViewModels
+@using FinanceManager.Web.Extensions
+@inject NavigationManager NavigationManager
+@typeparam TKeyValue
+
+@if (_spec != null && _visible)
+{
+    <div style="margin-top:.5rem;">
+        @{ IDictionary<string, object?>? parms = null;
+           if (_spec.Parameters != null)
+           {
+               parms = _spec.Parameters.Where(kvp => !string.Equals(kvp.Key, "Visible", StringComparison.OrdinalIgnoreCase)
+                                                   && !string.Equals(kvp.Key, "Position", StringComparison.OrdinalIgnoreCase)
+                                                   && !string.Equals(kvp.Key, "OverlayTitle", StringComparison.OrdinalIgnoreCase))
+                           .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+           }
+
+           Action embeddedClose = CloseEmbeddedPanel;
+           Action<object> embeddedOnFinished = obj =>
+           {
+               CloseEmbeddedPanel();
+               _ = NavigationManager.NavigateToModelCard(obj);
+           };
+        }
+        <CascadingValue Name="EmbeddedClose" Value="@(embeddedClose)">
+            <CascadingValue Name="EmbeddedOnFinished" Value="@(embeddedOnFinished)">
+                <DynamicComponent Type="_spec.ComponentType" Parameters="parms" />
+            </CascadingValue>
+        </CascadingValue>
+    </div>
+}
+
+@code {
+    [Parameter] public BaseCardViewModel<TKeyValue>? Provider { get; set; }
+    [Parameter] public EmbeddedPanelPosition Position { get; set; } = EmbeddedPanelPosition.AfterCard;
+
+    private BaseViewModel.EmbeddedPanelSpec? _spec;
+    private bool _visible;
+
+    private BaseCardViewModel<TKeyValue>? _subscribed;
+
+    protected override void OnParametersSet()
+    {
+        if (_subscribed != Provider)
+        {
+            if (_subscribed != null)
+            {
+                _subscribed.UiActionRequested -= OnUiActionRequested;
+            }
+            _subscribed = Provider;
+            if (_subscribed != null)
+            {
+                _subscribed.UiActionRequested += OnUiActionRequested;
+            }
+        }
+    }
+
+    private void OnUiActionRequested(object? sender, BaseViewModel.UiActionEventArgs? e)
+    {
+        // Only react to EmbeddedPanel requests
+        if (e?.PayloadObject is BaseViewModel.EmbeddedPanelSpec eps)
+        {
+            if (eps.Position == Position)
+            {
+                _spec = eps;
+                _visible = eps.Visible;
+                InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    private void CloseEmbeddedPanel()
+    {
+        _visible = false;
+        _spec = null;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        if (_subscribed != null)
+            _subscribed.UiActionRequested -= OnUiActionRequested;
+    }
+}

@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace FinanceManager.Web.ViewModels.Securities;
 
+[FinanceManager.Web.ViewModels.Common.CardRoute("securities")]
 public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, string Value)>
 {
 
@@ -41,10 +42,8 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
     public string? Error { get; private set; }
 
     // Navigation context
-    public string? BackNav { get; private set; }
     public Guid? ReturnDraftId { get; private set; }
     public Guid? ReturnEntryId { get; private set; }
-    public string? PrefillName { get; private set; }
 
     public bool IsEdit => Id != Guid.Empty;
 
@@ -68,7 +67,11 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         {
             if (id == Guid.Empty)
             {
-                Security = new SecurityDto { Id = Guid.Empty };
+                // New security: apply any prefill provided via BaseCardViewModel.InitPrefill
+                Model.Name = !string.IsNullOrWhiteSpace(InitPrefill) ? InitPrefill! : string.Empty;
+                Security = new SecurityDto { Id = Guid.Empty, Name = Model.Name };
+                // Ensure categories are loaded for lookup field
+                await LoadCategoriesAsync();
                 CardRecord = await BuildCardRecordAsync(null);
                 return;
             }
@@ -91,12 +94,10 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         }
         finally { Loading = false; RaiseStateChanged(); }
     }
-
-    public async Task InitializeAsync(Guid? id, string? backNav = null, Guid? draftId = null, Guid? entryId = null, string? prefillName = null)
+    public override async Task InitializeAsync(Guid id)
     {
-        BackNav = backNav; ReturnDraftId = draftId; ReturnEntryId = entryId; PrefillName = prefillName;
         await LoadCategoriesAsync();
-        await LoadAsync(id ?? Guid.Empty);
+        await base.InitializeAsync(id);
     }
 
     public async Task LoadCategoriesAsync(CancellationToken ct = default)
@@ -109,6 +110,8 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         Error = null; SetError(null, null);
         try
         {
+            // Ensure any pending UI field values are applied to the in-memory Model so request uses latest inputs
+            ApplyPendingValuesToModel();
             var req = BuildRequestFromModel();
             if (Id == Guid.Empty)
             {
@@ -194,13 +197,13 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
     {
         var fields = new List<CardField>
         {
-            new CardField("Card_Caption_Security_Name", CardFieldKind.Text, text: dto?.Name ?? string.Empty, editable: true),
-            new CardField("Card_Caption_Security_Identifier", CardFieldKind.Text, text: dto?.Identifier ?? string.Empty, editable: true),
-            new CardField("Card_Caption_Security_AlphaVantage", CardFieldKind.Text, text: dto?.AlphaVantageCode ?? string.Empty, editable: true),
-            new CardField("Card_Caption_Security_Currency", CardFieldKind.Text, text: dto?.CurrencyCode ?? "EUR", editable: true),
-            new CardField("Card_Caption_Security_Category", CardFieldKind.Text, text: dto?.CategoryName ?? string.Empty, editable: true, lookupType: "SecurityCategory", valueId: dto?.CategoryId),
-            new CardField("Card_Caption_Security_Description", CardFieldKind.Text, text: dto?.Description ?? string.Empty, editable: true),
-            new CardField("Card_Caption_Security_Symbol", CardFieldKind.Symbol, symbolId: dto?.SymbolAttachmentId, editable: dto?.Id != Guid.Empty)
+            new CardField("Card_Caption_Security_Name", CardFieldKind.Text, text: dto?.Name ?? Model.Name ?? string.Empty, editable: true),
+            new CardField("Card_Caption_Security_Identifier", CardFieldKind.Text, text: dto?.Identifier ?? Model.Identifier ?? string.Empty, editable: true),
+            new CardField("Card_Caption_Security_AlphaVantage", CardFieldKind.Text, text: dto?.AlphaVantageCode ?? Model.AlphaVantageCode ?? string.Empty, editable: true),
+            new CardField("Card_Caption_Security_Currency", CardFieldKind.Text, text: dto?.CurrencyCode ?? Model.CurrencyCode ?? "EUR", editable: true),
+            new CardField("Card_Caption_Security_Category", CardFieldKind.Text, text: dto?.CategoryName ?? (Model.CategoryId.HasValue ? Categories.FirstOrDefault(c => c.Id == Model.CategoryId)?.Name ?? string.Empty : string.Empty), editable: true, lookupType: "SecurityCategory", valueId: dto?.CategoryId ?? Model.CategoryId),
+            new CardField("Card_Caption_Security_Description", CardFieldKind.Text, text: dto?.Description ?? Model.Description ?? string.Empty, editable: true),
+            new CardField("Card_Caption_Security_Symbol", CardFieldKind.Symbol, symbolId: dto?.SymbolAttachmentId ?? Model.SymbolAttachmentId, editable: dto?.Id != Guid.Empty)
         };
 
         var record = new CardRecord(fields, dto);
@@ -319,5 +322,38 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         {
             // swallow
         }
+    }
+
+    // Apply known pending field values into the EditModel so BuildRequestFromModel can rely on Model as source of truth
+    private void ApplyPendingValuesToModel()
+    {
+        try
+        {
+            if (_pendingFieldValues.TryGetValue("Card_Caption_Security_Name", out var vName) && vName is string sName)
+                Model.Name = sName;
+            if (_pendingFieldValues.TryGetValue("Card_Caption_Security_Identifier", out var vIdent) && vIdent is string sIdent)
+                Model.Identifier = sIdent;
+            if (_pendingFieldValues.TryGetValue("Card_Caption_Security_AlphaVantage", out var vAlpha) && vAlpha is string sAlpha)
+                Model.AlphaVantageCode = sAlpha;
+            if (_pendingFieldValues.TryGetValue("Card_Caption_Security_Currency", out var vCurr) && vCurr is string sCurr)
+                Model.CurrencyCode = sCurr;
+            if (_pendingFieldValues.TryGetValue("Card_Caption_Security_Description", out var vDesc) && vDesc is string sDesc)
+                Model.Description = sDesc;
+            if (_pendingFieldValues.TryGetValue("Card_Caption_Security_Category", out var vCat))
+            {
+                switch (vCat)
+                {
+                    case FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem li:
+                        Model.CategoryId = li.Key;
+                        break;
+                    case Guid g:
+                        Model.CategoryId = g;
+                        break;
+                    case string s when Guid.TryParse(s, out var pg):
+                        Model.CategoryId = pg; break;
+                }
+            }
+        }
+        catch { /* don't fail saving due to model mapping issues */ }
     }
 }
