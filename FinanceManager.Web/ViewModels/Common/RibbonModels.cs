@@ -26,7 +26,7 @@ public sealed record UiRibbonAction(
     Func<Task>? Callback
 );
 
-public sealed record UiRibbonTab(string Title, List<UiRibbonAction> Items);
+public sealed record UiRibbonTab(string Title, List<UiRibbonAction> Items, int Sort = 0);
 
 public sealed record UiRibbonRegister(UiRibbonRegisterKind Kind, List<UiRibbonTab>? Tabs)
 {

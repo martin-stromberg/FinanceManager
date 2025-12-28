@@ -816,7 +816,7 @@
   <data name="Ribbon_Edit" xml:space="preserve">
     <value>Bearbeiten</value>
   </data>
-  <data name="Ribbon_ReadOnly" xml:space="preserve">
+  <data name="#" xml:space="preserve">
     <value>Ansicht</value>
   </data>
   <data name="Ribbon_ResetDuplicate" xml:space="preserve">
@@ -902,5 +902,260 @@
   </data>
   <data name="Validation_Valid" xml:space="preserve">
     <value> </value>
+  </data>
+  <data name="Ribbon_RebuildAggregates" xml:space="preserve">
+    <value>Aggregatposten neu berechnen</value>
+  </data>
+  <data name="Ribbon_Detect_Timezone" xml:space="preserve">
+    <value>Zeitzone ermitteln</value>
+  </data>
+  <data name="Setup_Section_Profile" xml:space="preserve">
+    <value>Profil</value>
+  </data>
+  <data name="Setup_Section_Notifications" xml:space="preserve">
+    <value>Benachrichtigungen</value>
+  </data>
+  <data name="Setup_Section_Attachments" xml:space="preserve">
+    <value>Anhänge</value>
+  </data>
+  <data name="Setup_Section_Backup" xml:space="preserve">
+    <value>Sicherung</value>
+  </data>
+  <data name="Setup_Section_Security" xml:space="preserve">
+    <value>Sicherheit</value>
+  </data>
+  <data name="SetupProfile_Title" xml:space="preserve">
+    <value>Profil</value>
+  </data>
+  <data name="SetupProfile_Msg_Loading" xml:space="preserve">
+    <value>Laden…</value>
+  </data>
+  <data name="SetupProfile_Label_Language" xml:space="preserve">
+    <value>Sprache</value>
+  </data>
+  <data name="SetupProfile_Language_Auto" xml:space="preserve">
+    <value>Automatisch</value>
+  </data>
+  <data name="SetupProfile_Label_TimeZone" xml:space="preserve">
+    <value>Zeitzone</value>
+  </data>
+  <data name="SetupProfile_Help_TimeZone" xml:space="preserve">
+    <value>Zeitzone (z. B. Europe/Berlin)</value>
+  </data>
+  <data name="SetupProfile_Label_AlphaVantageKey" xml:space="preserve">
+    <value>AlphaVantage API-Schlüssel</value>
+  </data>
+  <data name="SetupProfile_Placeholder_AlphaVantageKey" xml:space="preserve">
+    <value>AlphaVantage API-Schlüssel eingeben</value>
+  </data>
+  <data name="SetupProfile_Msg_KeyPresent" xml:space="preserve">
+    <value>Schlüssel vorhanden</value>
+  </data>
+  <data name="SetupProfile_Msg_KeyMissing" xml:space="preserve">
+    <value>Kein Schlüssel vorhanden</value>
+  </data>
+  <data name="SetupProfile_Label_ShareKey" xml:space="preserve">
+    <value>Schlüssel freigeben</value>
+  </data>
+  <data name="SetupProfile_Help_ShareKey" xml:space="preserve">
+    <value>Diesen Schlüssel für andere Benutzer freigeben</value>
+  </data>
+  <data name="Setup_Section_Statements" xml:space="preserve">
+    <value>Kontoauszüge</value>
+  </data>
+  <data name="ImportSplit_TabTitle" xml:space="preserve">
+    <value>Import-Aufteilung</value>
+  </data>
+  <data name="ImportSplit_Mode_Label" xml:space="preserve">
+    <value>Modus</value>
+  </data>
+  <data name="ImportSplit_Mode_FixedSize" xml:space="preserve">
+    <value>Feste Größe</value>
+  </data>
+  <data name="ImportSplit_Mode_Monthly" xml:space="preserve">
+    <value>Monatlich</value>
+  </data>
+  <data name="ImportSplit_Mode_MonthlyOrFixed" xml:space="preserve">
+    <value>Monatlich oder feste Größe</value>
+  </data>
+  <data name="ImportSplit_MaxEntries" xml:space="preserve">
+    <value>Maximale Einträge</value>
+  </data>
+  <data name="ImportSplit_MonthlyThreshold" xml:space="preserve">
+    <value>Schwelle für monatliche Aufteilung</value>
+  </data>
+  <data name="ImportSplit_MinEntries" xml:space="preserve">
+    <value>Minimale Einträge</value>
+  </data>
+  <data name="ImportSplit_Help_Title" xml:space="preserve">
+    <value>Hilfe zur Importaufteilung</value>
+  </data>
+  <data name="ImportSplit_Help_Mode_FixedSize" xml:space="preserve">
+    <value>Erstellt Entwürfe mit fester Anzahl von Einträgen.</value>
+  </data>
+  <data name="ImportSplit_Help_Mode_Monthly" xml:space="preserve">
+    <value>Teilt nach Monat, wenn möglich.</value>
+  </data>
+  <data name="ImportSplit_Help_Mode_Hybrid" xml:space="preserve">
+    <value>Kombiniert monatliche Aufteilung und feste Größen je nach Schwelle.</value>
+  </data>
+  <data name="ImportSplit_Help_MaxEntries" xml:space="preserve">
+    <value>Maximale Anzahl Einträge pro Entwurf.</value>
+  </data>
+  <data name="ImportSplit_Help_MonthlyThreshold" xml:space="preserve">
+    <value>Wenn Einträge ≥ Schwelle, wird die monatliche Aufteilung bevorzugt.</value>
+  </data>
+  <data name="ImportSplit_Help_MinEntries" xml:space="preserve">
+    <value>Minimale Anzahl Einträge pro Entwurf.</value>
+  </data>
+  <data name="ImportSplit_Help_Example" xml:space="preserve">
+    <value>Beispiel: 100 Einträge mit Max. 30 → 4 Entwürfe.</value>
+  </data>
+  <data name="ImportSplit_SaveSuccess" xml:space="preserve">
+    <value>Einstellungen gespeichert</value>
+  </data>
+  <data name="Notifications_TabTitle" xml:space="preserve">
+    <value>Benachrichtigungen</value>
+  </data>
+  <data name="Notifications_MonthlyReminder" xml:space="preserve">
+    <value>Monatsabschluss-Hinweis aktivieren</value>
+  </data>
+  <data name="Notifications_MonthlyReminder_Help" xml:space="preserve">
+    <value>Am letzten Werktag des Monats eine Erinnerung auf der Startseite anzeigen.</value>
+  </data>
+  <data name="Notifications_MonthlyReminder_Time" xml:space="preserve">
+    <value>Uhrzeit (lokal)</value>
+  </data>
+  <data name="Notifications_MonthlyReminder_Time_Help" xml:space="preserve">
+    <value>Bevorzugte Uhrzeit für die Erinnerung (HH:mm). Standard 09:00.</value>
+  </data>
+  <data name="Notifications_Holidays_Provider" xml:space="preserve">
+    <value>Feiertags-Quelle</value>
+  </data>
+  <data name="Notifications_Holidays_Provider_Help" xml:space="preserve">
+    <value>Quelle für den Feiertagskalender: Memory (einfach, nur Land) oder Nager.Date (Land + Region/Counties).</value>
+  </data>
+  <data name="Notifications_Holidays_Region" xml:space="preserve">
+    <value>Feiertags-Region</value>
+  </data>
+  <data name="Notifications_Holidays_Region_Help" xml:space="preserve">
+    <value>Land (z.B. DE) und optional Bundesland/Region (z.B. DE-BY) zur Berücksichtigung gesetzlicher Feiertage.</value>
+  </data>
+  <data name="Notifications_SaveSuccess" xml:space="preserve">
+    <value>Einstellungen gespeichert.</value>
+  </data>
+  <data name="AttachmentCategories_TabTitle" xml:space="preserve">
+    <value>Anhang-Kategorien</value>
+  </data>
+  <data name="AttachmentCategories_Label_NewName" xml:space="preserve">
+    <value>Neue Kategorie</value>
+  </data>
+  <data name="AttachmentCategories_ActionSuccess" xml:space="preserve">
+    <value>Aktion abgeschlossen</value>
+  </data>
+  <data name="AttachmentCategories_Th_IsSystem" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="AttachmentCategories_NoEntries" xml:space="preserve">
+    <value>Keine Kategorien</value>
+  </data>
+  <data name="AttachmentCategories_Th_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="AttachmentCategories_Th_Actions" xml:space="preserve">
+    <value>Aktionen</value>
+  </data>
+  <data name="Err_Category_is_in_use" xml:space="preserve">
+    <value>Die Kategorie ist zugewiesen.</value>
+  </data>
+  <data name="Err_System_category_cannot_be_deleted" xml:space="preserve">
+    <value>Eine vom System angelegte Kategorie kann nicht gelöscht werden.</value>
+  </data>
+  <data name="Ribbon_Restore" xml:space="preserve">
+    <value>Wiederherstellen</value>
+  </data>
+  <data name="SetupBackup_Th_Actions" xml:space="preserve">
+    <value>Aktionen</value>
+  </data>
+  <data name="SetupBackup_Th_Source" xml:space="preserve">
+    <value>Herkunft</value>
+  </data>
+  <data name="SetupBackup_Th_Size" xml:space="preserve">
+    <value>Größe</value>
+  </data>
+  <data name="SetupBackup_Th_File" xml:space="preserve">
+    <value>Datei</value>
+  </data>
+  <data name="SetupBackup_Th_Created" xml:space="preserve">
+    <value>Erzeugt am</value>
+  </data>
+  <data name="SetupBackup_Titel" xml:space="preserve">
+    <value>Datensicherungen</value>
+  </data>
+  <data name="Ribbon_CreateBackup" xml:space="preserve">
+    <value>Backup erstellen</value>
+  </data>
+  <data name="Ribbon_UploadBackup" xml:space="preserve">
+    <value>Backup einlesen</value>
+  </data>
+  <data name="Hint_UploadBackup" xml:space="preserve">
+    <value>Liest eine Sicherungsdatei ein.</value>
+  </data>
+  <data name="Hint_CreateBackup" xml:space="preserve">
+    <value>Erstelle eine Sicherungsdatei deine Daten.</value>
+  </data>
+  <data name="SetupSecurity_Title" xml:space="preserve">
+    <value>IP-Sperrliste</value>
+  </data>
+  <data name="SetupSecurity_Ip_Placeholder" xml:space="preserve">
+    <value>IP Adresse</value>
+  </data>
+  <data name="SetupSecurity_Reason_Placeholder" xml:space="preserve">
+    <value>Begründung (optional)</value>
+  </data>
+  <data name="SetupSecurity_BlockOnCreate" xml:space="preserve">
+    <value>Sofort sperren</value>
+  </data>
+  <data name="SetupSecurit_Action_Add" xml:space="preserve">
+    <value>Hinzufügen</value>
+  </data>
+  <data name="SetupSecurity_Th_IpAddress" xml:space="preserve">
+    <value>IP Adresse</value>
+  </data>
+  <data name="SetupSecurity_Th_Blocked" xml:space="preserve">
+    <value>Gesperrt</value>
+  </data>
+  <data name="SetupSecurity_Th_BlockedAt" xml:space="preserve">
+    <value>Gesperrt am</value>
+  </data>
+  <data name="SetupSecurity_Th_Reason" xml:space="preserve">
+    <value>Grund</value>
+  </data>
+  <data name="SetupSecurity_Th_UnknownFails" xml:space="preserve">
+    <value>Fehlversuche (unbek. Nutzer)</value>
+  </data>
+  <data name="SetupSecurity_Th_LastFail" xml:space="preserve">
+    <value>Letzter Fehlversuch</value>
+  </data>
+  <data name="SetupSecurity_Th_Actions" xml:space="preserve">
+    <value>Aktionen</value>
+  </data>
+  <data name="SetupSecurity_Action_Block" xml:space="preserve">
+    <value>Sperren</value>
+  </data>
+  <data name="SetupSecurity_Action_Unblock" xml:space="preserve">
+    <value>Entsperren</value>
+  </data>
+  <data name="SetupSecurity_Action_Reset" xml:space="preserve">
+    <value>Zurücksetzen</value>
+  </data>
+  <data name="SetupSecurity_Action_Delete" xml:space="preserve">
+    <value>Entfernen</value>
+  </data>
+  <data name="Error_IpRequired" xml:space="preserve">
+    <value>Es ist keine IP Adresse angegeben.</value>
+  </data>
+  <data name="Error_AdminAccessRequired" xml:space="preserve">
+    <value>Diese Aktion ist nur für Administratoren vorgesehen.</value>
   </data>
 </root>

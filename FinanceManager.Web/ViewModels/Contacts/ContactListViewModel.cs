@@ -82,7 +82,7 @@ public sealed class ContactListViewModel : BaseListViewModel<ContactListItem>
         }, i)).ToList();
     }
 
-    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var tab = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
         {

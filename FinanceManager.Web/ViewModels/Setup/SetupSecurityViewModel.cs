@@ -3,14 +3,12 @@ using FinanceManager.Shared;
 
 namespace FinanceManager.Web.ViewModels.Setup;
 
-public sealed class SetupIpBlocksViewModel : ViewModelBase
+public sealed class SetupSecurityViewModel : BaseViewModel
 {
-    private readonly IApiClient _api;
     private readonly ICurrentUserService _current;
 
-    public SetupIpBlocksViewModel(IServiceProvider sp) : base(sp)
+    public SetupSecurityViewModel(IServiceProvider sp) : base(sp)
     {
-        _api = sp.GetRequiredService<IApiClient>();
         _current = sp.GetRequiredService<ICurrentUserService>();
     }
 
@@ -32,23 +30,16 @@ public sealed class SetupIpBlocksViewModel : ViewModelBase
     public string Ip { get; set; } = string.Empty;
     public string? Reason { get; set; }
     public bool BlockOnCreate { get; set; } = true;
-    public string? Error { get; private set; }
     public bool IsAdmin => _current.IsAdmin;
-
-    public override async ValueTask InitializeAsync(CancellationToken ct = default)
-    {
-        if (IsAuthenticated && IsAdmin)
-        {
-            await ReloadAsync(ct);
-        }
-    }
 
     public async Task ReloadAsync(CancellationToken ct = default)
     {
         try
         {
-            Error = null;
-            var list = await _api.Admin_ListIpBlocksAsync(null, ct);
+            CheckAuthentication();
+            CheckAdmin();
+            SetError(null, null);
+            var list = await ApiClient.Admin_ListIpBlocksAsync(null, ct);
             Items = (list ?? Array.Empty<IpBlockDto>())
                 .Select(d => new IpBlockItem
                 {
@@ -70,50 +61,55 @@ public sealed class SetupIpBlocksViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Error = ex.Message;
+            SetError(ApiClient.LastErrorCode, ApiClient.LastError ?? ex.Message);
         }
         finally { RaiseStateChanged(); }
     }
 
+    private void CheckAdmin()
+    {
+        if (!IsAdmin) throw new UnauthorizedAccessException("Error_AdminAccessRequired");
+    }
+
     public async Task CreateAsync(CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(Ip)) { Error = "Error_IpRequired"; RaiseStateChanged(); return; }
+        if (string.IsNullOrWhiteSpace(Ip)) { SetError("Error_IpRequired", ""); RaiseStateChanged(); return; }
         Busy = true; RaiseStateChanged();
         try
         {
             var req = new IpBlockCreateRequest(Ip.Trim(), Reason, BlockOnCreate);
-            var _ = await _api.Admin_CreateIpBlockAsync(req, ct);
+            var _ = await ApiClient.Admin_CreateIpBlockAsync(req, ct);
             Ip = string.Empty; Reason = null; BlockOnCreate = true;
             await ReloadAsync(ct);
         }
         catch (Exception ex)
         {
-            Error = ex.Message;
+            SetError(ApiClient.LastErrorCode, ApiClient.LastError ?? ex.Message);
         }
         finally { Busy = false; RaiseStateChanged(); }
     }
 
     public async Task BlockAsync(Guid id, CancellationToken ct = default)
     {
-        try { await _api.Admin_BlockIpAsync(id, null, ct); }
+        try { await ApiClient.Admin_BlockIpAsync(id, null, ct); }
         catch { }
         await ReloadAsync(ct);
     }
     public async Task UnblockAsync(Guid id, CancellationToken ct = default)
     {
-        try { await _api.Admin_UnblockIpAsync(id, ct); }
+        try { await ApiClient.Admin_UnblockIpAsync(id, ct); }
         catch { }
         await ReloadAsync(ct);
     }
     public async Task ResetCountersAsync(Guid id, CancellationToken ct = default)
     {
-        try { await _api.Admin_ResetCountersAsync(id, ct); }
+        try { await ApiClient.Admin_ResetCountersAsync(id, ct); }
         catch { }
         await ReloadAsync(ct);
     }
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        try { await _api.Admin_DeleteIpBlockAsync(id, ct); }
+        try { await ApiClient.Admin_DeleteIpBlockAsync(id, ct); }
         catch { }
         await ReloadAsync(ct);
     }

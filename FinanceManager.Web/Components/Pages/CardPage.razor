@@ -1,3 +1,4 @@
+@page "/card/{Kind}"
 @page "/card/{Kind}/{Id:guid}"
 @page "/card/{Kind}/{SubKind?}/{Id:guid}"
 @page "/card/{Kind}/new"
@@ -32,6 +33,8 @@ else
     <PageTitle>@($"{GetKindTitle()}: {_vm.Title}")</PageTitle>
 
     <Ribbon TTabEnum="TabId" Provider="_vm" Localizer="Localizer" />
+
+    <BackgroundTaskStatusPanel AllowedTypes="@((_vm as BaseViewModel)?.VisibleBackgroundTaskTypes)" />
 
     <EmbeddedPanelHost TKeyValue="(string,string)" Provider="_vm" Position="EmbeddedPanelPosition.AfterRibbon" />
     <GenericCardPage TKeyValue="(string, string)" Provider="_vm" Localizer="Localizer" LoadingText="@Localizer["General_Loading"]" />

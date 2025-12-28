@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>FinanceManager.Domain</name>
+    </assembly>
+    <members>
+        <member name="T:FinanceManager.Domain.Reports.HomeKpi">
+            <summary>
+            A single KPI configuration entry on the home dashboard for a specific user.
+            Can point to a predefined KPI or a report favorite.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Reports.ReportEntityGroup">
+            <summary>
+            Primary grouping axis for configurable reports.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Reports.ReportFavorite">
+            <summary>
+            A user defined favorite configuration for an aggregate report dashboard (FA-REP-008).
+            Stored per user and referenced via GUID.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Savings.SavingsPlan.AdvanceTargetDateIfDue(System.DateTime)">
+            <summary>
+            Advances the TargetDate for recurring plans while the due date is reached or passed.
+            Month-end rule:
+            - If the original date was the last day of the month, the advanced date will also be set to the last day of the new month.
+            - Otherwise, the day is capped to the last day of the new month (e.g. 31st -> 30th/28th/29th if needed).
+            No business-day logic is applied.
+            </summary>
+            <param name="asOfUtc">Cutoff date (UTC) to compare against.</param>
+            <returns>True if the target date was advanced at least once; otherwise false.</returns>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraft.UploadGroupId">
+            <summary>
+            Gemeinsame Upload-Gruppen-ID aller StatementDrafts, die aus demselben Datei-Upload hervorgegangen sind.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.MonthlyReminderHour">
+            <summary>
+            Local time (user time zone) hour/minute for monthly reminder. Null => default 09:00.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.HolidayCountryCode">
+            <summary>
+            ISO 3166-1 alpha-2 country code for public holiday calendar (e.g., "DE"). Optional.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.HolidaySubdivisionCode">
+            <summary>
+            ISO 3166-2 subdivision/state code (e.g., "DE-BY"). Optional.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.TimeZoneId">
+            <summary>
+            IANA time zone identifier (e.g., "Europe/Berlin"). Optional; null means not set.
+            </summary>
+        </member>
+    </members>
+</doc>

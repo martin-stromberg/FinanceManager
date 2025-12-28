@@ -101,7 +101,7 @@ public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPric
     }
 
     // Provide ribbon actions for the list page: Navigation (Back) and Manage (Backfill prices)
-    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var tabs = new List<UiRibbonTab>
         {

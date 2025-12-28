@@ -120,7 +120,7 @@ public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string
 
     public override async Task ReloadAsync() => await LoadAsync(Id);
 
-    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(Microsoft.Extensions.Localization.IStringLocalizer localizer)
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
         var nav = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
         {

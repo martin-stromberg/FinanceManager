@@ -1,14 +1,13 @@
 using FinanceManager.Shared;
+using Microsoft.Extensions.Localization;
+using FinanceManager.Web.ViewModels.Common;
 
 namespace FinanceManager.Web.ViewModels.Setup;
 
-public sealed class SetupProfileViewModel : ViewModelBase
+public sealed class SetupProfileViewModel : BaseViewModel
 {
-    private readonly IApiClient _api;
-
     public SetupProfileViewModel(IServiceProvider sp) : base(sp)
     {
-        _api = sp.GetRequiredService<IApiClient>();
     }
 
     public UserProfileSettingsDto Model { get; private set; } = new();
@@ -25,18 +24,13 @@ public sealed class SetupProfileViewModel : ViewModelBase
     public bool ShareKey { get; set; }
     public string KeyInput { get; set; } = string.Empty;
     private bool _clearRequested;
-
-    public override async ValueTask InitializeAsync(CancellationToken ct = default)
-    {
-        await LoadAsync(ct);
-    }
-
+    
     public async Task LoadAsync(CancellationToken ct = default)
     {
         Loading = true; Error = null; SaveError = null; SavedOk = false; RaiseStateChanged();
         try
         {
-            var dto = await _api.UserSettings_GetProfileAsync(ct);
+            var dto = await ApiClient.UserSettings_GetProfileAsync(ct);
             Model = dto ?? new();
             _original = Clone(Model);
 
@@ -67,7 +61,7 @@ public sealed class SetupProfileViewModel : ViewModelBase
                 ShareAlphaVantageApiKey: ShareKey
             );
 
-            var ok = await _api.UserSettings_UpdateProfileAsync(request, ct);
+            var ok = await ApiClient.UserSettings_UpdateProfileAsync(request, ct);
             if (ok)
             {
                 Model.ShareAlphaVantageApiKey = ShareKey;
@@ -80,7 +74,7 @@ public sealed class SetupProfileViewModel : ViewModelBase
             }
             else
             {
-                SaveError = _api.LastError ?? "Save failed";
+                SaveError = ApiClient.LastError ?? "Save failed";
             }
         }
         catch (Exception ex)
@@ -116,7 +110,7 @@ public sealed class SetupProfileViewModel : ViewModelBase
         RaiseStateChanged();
     }
 
-    public void SetDetected(string? lang, string? tz)
+    public void SetDetectedTimezone(string? lang, string? tz)
     {
         if (!string.IsNullOrWhiteSpace(lang)) { Model.PreferredLanguage = lang[..Math.Min(lang.Length, 10)]; }
         if (!string.IsNullOrWhiteSpace(tz)) { Model.TimeZoneId = tz[..Math.Min(tz.Length, 100)]; }
@@ -137,4 +131,54 @@ public sealed class SetupProfileViewModel : ViewModelBase
         HasAlphaVantageApiKey = src.HasAlphaVantageApiKey,
         ShareAlphaVantageApiKey = src.ShareAlphaVantageApiKey
     };
+
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer localizer)
+    {
+        var lblGroup = Localizer?["Ribbon_Group_Manage"].Value;
+        var lblSave = Localizer?["Ribbon_Save"].Value;
+        var lblReset = Localizer?["Ribbon_Reset"].Value;
+        var lblActionsGroup = Localizer?["Ribbon_Group_Actions"].Value;
+        var lblDetect = Localizer?["Ribbon_Detect_Timezone"].Value;
+
+        var saveAction = new UiRibbonAction(
+            "Save",
+            lblSave,
+            "<svg><use href='/icons/sprite.svg#save'/></svg>",
+            UiRibbonItemSize.Small,
+            !Dirty || Saving,
+            null,
+            "Save",
+            new Func<Task>(async () => await SaveAsync())
+        );
+
+        var resetAction = new UiRibbonAction(
+            "Reset",
+            lblReset,
+            "<svg><use href='/icons/sprite.svg#undo'/></svg>",
+            UiRibbonItemSize.Small,
+            !Dirty || Saving,
+            null,
+            "Reset",
+            new Func<Task>(async () => { Reset(); await Task.CompletedTask; })
+        );
+
+        var detectAction = new UiRibbonAction(
+            "DetectTimezone",
+            lblDetect,
+            "<svg><use href='/icons/sprite.svg#refresh'/></svg>",
+            UiRibbonItemSize.Small,
+            false,
+            null,
+            "DetectTimezone",
+            new Func<Task>(async () => { RaiseUiActionRequested("DetectTimezone"); await Task.CompletedTask; })
+        );
+
+        var tabs = new List<UiRibbonTab>
+        {
+            new UiRibbonTab(lblGroup, new List<UiRibbonAction> { saveAction, resetAction }),
+            new UiRibbonTab(lblActionsGroup, new List<UiRibbonAction> { detectAction })
+        };
+
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
+    }
 }

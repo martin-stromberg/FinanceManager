@@ -211,7 +211,7 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
     }
 
     // --- Ribbon provider ---
-    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         // Only allow saving when there are pending changes and required fields (Name + Identifier) are present.
         // CardRecord already reflects pending overrides via ApplyPendingValues.

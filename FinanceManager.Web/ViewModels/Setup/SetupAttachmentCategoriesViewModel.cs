@@ -3,21 +3,16 @@ namespace FinanceManager.Web.ViewModels.Setup;
 using FinanceManager.Shared;
 using FinanceManager.Shared.Dtos.Attachments;
 
-public sealed class SetupAttachmentCategoriesViewModel : ViewModelBase
+public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
 {
-    private readonly IApiClient _api;
 
     public SetupAttachmentCategoriesViewModel(IServiceProvider sp) : base(sp)
     {
-        _api = sp.GetRequiredService<IApiClient>();
     }
 
     public List<AttachmentCategoryDto> Items { get; } = new();
 
-    public bool Loading { get; private set; }
     public bool Busy { get; private set; }
-    public string? Error { get; private set; }
-    public string? ActionError { get; private set; }
     public bool ActionOk { get; private set; }
 
     public string NewName { get; set; } = string.Empty;
@@ -27,22 +22,17 @@ public sealed class SetupAttachmentCategoriesViewModel : ViewModelBase
     public string EditName { get; set; } = string.Empty;
     public bool CanSaveEdit => !string.IsNullOrWhiteSpace(EditName) && EditName.Trim().Length >= 2;
 
-    public override async ValueTask InitializeAsync(CancellationToken ct = default)
-    {
-        await LoadAsync(ct);
-    }
-
     public void OnChanged()
     {
-        ActionOk = false; ActionError = null; RaiseStateChanged();
+        ActionOk = false; SetError(null,null); RaiseStateChanged();
     }
 
     public async Task LoadAsync(CancellationToken ct = default)
     {
-        Loading = true; Error = null; ActionError = null; ActionOk = false; EditId = Guid.Empty; EditName = string.Empty; RaiseStateChanged();
+        Loading = true; SetError(null, null); ActionOk = false; EditId = Guid.Empty; EditName = string.Empty; RaiseStateChanged();
         try
         {
-            var list = await _api.Attachments_ListCategoriesAsync(ct);
+            var list = await ApiClient.Attachments_ListCategoriesAsync(ct);
             Items.Clear();
             if (list is not null)
             {
@@ -51,7 +41,7 @@ public sealed class SetupAttachmentCategoriesViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Error = ex.Message;
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
         }
         finally { Loading = false; RaiseStateChanged(); }
     }
@@ -60,10 +50,10 @@ public sealed class SetupAttachmentCategoriesViewModel : ViewModelBase
     {
         var name = NewName?.Trim() ?? string.Empty;
         if (name.Length < 2) { return; }
-        Busy = true; ActionError = null; ActionOk = false; RaiseStateChanged();
+        Busy = true; SetError(null,null); ActionOk = false; RaiseStateChanged();
         try
         {
-            var dto = await _api.Attachments_CreateCategoryAsync(name, ct);
+            var dto = await ApiClient.Attachments_CreateCategoryAsync(name, ct);
             if (dto is not null)
             {
                 Items.Add(dto);
@@ -74,7 +64,7 @@ public sealed class SetupAttachmentCategoriesViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            ActionError = ex.Message;
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
         }
         finally { Busy = false; RaiseStateChanged(); }
     }
@@ -82,12 +72,12 @@ public sealed class SetupAttachmentCategoriesViewModel : ViewModelBase
     public void BeginEdit(Guid id, string currentName)
     {
         if (Busy) { return; }
-        EditId = id; EditName = currentName; ActionError = null; ActionOk = false; RaiseStateChanged();
+        EditId = id; EditName = currentName; SetError(null,null); ActionOk = false; RaiseStateChanged();
     }
 
     public void CancelEdit()
     {
-        EditId = Guid.Empty; EditName = string.Empty; ActionError = null; RaiseStateChanged();
+        EditId = Guid.Empty; EditName = string.Empty; SetError(null,null); RaiseStateChanged();
     }
 
     public async Task SaveEditAsync(CancellationToken ct = default)
@@ -95,10 +85,10 @@ public sealed class SetupAttachmentCategoriesViewModel : ViewModelBase
         if (EditId == Guid.Empty) { return; }
         var name = EditName?.Trim() ?? string.Empty;
         if (name.Length < 2) { return; }
-        Busy = true; ActionError = null; ActionOk = false; RaiseStateChanged();
+        Busy = true; SetError(null,null); ActionOk = false; RaiseStateChanged();
         try
         {
-            var dto = await _api.Attachments_UpdateCategoryNameAsync(EditId, name, ct);
+            var dto = await ApiClient.Attachments_UpdateCategoryNameAsync(EditId, name, ct);
             if (dto is not null)
             {
                 var idx = Items.FindIndex(x => x.Id == dto.Id);
@@ -111,27 +101,31 @@ public sealed class SetupAttachmentCategoriesViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            ActionError = ex.Message;
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
         }
         finally { Busy = false; RaiseStateChanged(); }
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        Busy = true; ActionError = null; ActionOk = false; RaiseStateChanged();
+        Busy = true; SetError(null,null); ActionOk = false; RaiseStateChanged();
         try
         {
-            var ok = await _api.Attachments_DeleteCategoryAsync(id, ct);
+            var ok = await ApiClient.Attachments_DeleteCategoryAsync(id, ct);
             if (ok)
             {
                 var idx = Items.FindIndex(x => x.Id == id);
                 if (idx >= 0) { Items.RemoveAt(idx); }
                 ActionOk = true;
             }
+            else
+            {
+                SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Delete failed");
+            }
         }
         catch (Exception ex)
         {
-            ActionError = ex.Message;
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Delete failed");
         }
         finally { Busy = false; RaiseStateChanged(); }
     }

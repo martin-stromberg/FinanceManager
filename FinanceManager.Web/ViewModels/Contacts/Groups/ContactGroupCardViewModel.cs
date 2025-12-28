@@ -140,7 +140,7 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
         await LoadAsync(Id);
     }
 
-    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(Microsoft.Extensions.Localization.IStringLocalizer localizer)
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
         var nav = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
         {

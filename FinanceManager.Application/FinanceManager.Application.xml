@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>FinanceManager.Application</name>
+    </assembly>
+    <members>
+        <member name="T:FinanceManager.Application.Notifications.IHolidayProvider">
+            <summary>
+            Provides information about public holidays for a given date and region.
+            Implementations may call external APIs or use embedded calendars.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Notifications.IHolidayProvider.IsPublicHoliday(System.DateTime,System.String,System.String)">
+            <summary>
+            Returns true if the specified local date is a public holiday in the given region.
+            </summary>
+            <param name="dateLocal">The local calendar date (no time component required).</param>
+            <param name="countryCode">ISO 3166-1 alpha-2 country code (e.g., "DE", "US"). Nullable ? no holidays.</param>
+            <param name="subdivisionCode">Optional ISO 3166-2 subdivision/state code (e.g., "DE-BY"). Nullable ? country-level only.</param>
+        </member>
+        <member name="T:FinanceManager.Application.Reports.IHomeKpiService">
+            <summary>
+            CRUD operations for user-scoped Home KPI configurations (FA-KPI-007).
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Reports.IPostingTimeSeriesService">
+            <summary>
+            Provides aggregated posting time series (already pre-aggregated in PostingAggregates) for different posting kinds / entities.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IPostingTimeSeriesService.GetAsync(System.Guid,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Guid,FinanceManager.Domain.Postings.AggregatePeriod,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Returns an ordered (ascending by PeriodStart) list of aggregate points or null when the entity does not belong to the user.
+            Optional maxYearsBack (1..10) limits the earliest PeriodStart considered.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IPostingTimeSeriesService.GetAllAsync(System.Guid,FinanceManager.Shared.Dtos.Postings.PostingKind,FinanceManager.Domain.Postings.AggregatePeriod,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Returns an ordered (ascending) list of aggregate points across ALL owned entities of the given posting kind.
+            If the user owns no entities of that kind, an empty list is returned.
+            Optional maxYearsBack (1..10) limits the earliest PeriodStart considered.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Reports.IReportAggregationService">
+            <summary>
+            Provides dynamic aggregation for configurable reports (FA-REP-008).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IReportAggregationService.QueryAsync(FinanceManager.Shared.Dtos.Reports.ReportAggregationQuery,System.Threading.CancellationToken)">
+            <summary>
+            Executes an aggregation query and returns the result.
+            </summary>
+            <param name="query">The aggregation query payload.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Aggregation result with points and comparison flags.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Reports.IReportFavoriteService">
+            <summary>
+            CRUD operations for user scoped report favorites (FA-REP-008).
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Statements.IStatementFileReader">
+            <summary>
+            Interface for reading and parsing bank statement files.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementFileReader.Parse(System.String,System.Byte[])">
+            <summary>
+            Tries to parse the given file and returns header info and movements if successful.
+            </summary>
+            <param name="fileName">Original file name (for format detection).</param>
+            <param name="fileBytes">File content as byte array.</param>
+            <returns>ParseResult with header and movements, or null if format not supported.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Statements.StatementParseResult">
+            <summary>
+            Result of parsing a statement file.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.StatementParseResult.#ctor(FinanceManager.Application.Statements.StatementHeader,System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Statements.StatementMovement})">
+            <summary>
+            Result of parsing a statement file.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Statements.StatementHeader">
+            <summary>
+            Header data extracted from the statement file.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.StatementHeader.#ctor">
+            <summary>
+            Header data extracted from the statement file.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Statements.StatementMovement">
+            <summary>
+            Single movement/transaction from the statement file.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.StatementMovement.#ctor">
+            <summary>
+            Single movement/transaction from the statement file.
+            </summary>
+        </member>
+    </members>
+</doc>

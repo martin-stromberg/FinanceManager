@@ -741,7 +741,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         }
     }
 
-    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var tabs = new List<UiRibbonTab>();
 
@@ -850,7 +850,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
          }
 
         var registers = new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
-        var baseRegs = base.GetRibbonRegisters(localizer);
+        var baseRegs = base.GetRibbonRegisterDefinition(localizer);
         if (baseRegs != null) registers.AddRange(baseRegs);
         return registers.Count == 0 ? null : registers;
     }

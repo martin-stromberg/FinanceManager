@@ -125,7 +125,7 @@
                 var groupTitle = !string.IsNullOrWhiteSpace(tab.Title) ? tab.Title : reg.Kind.ToString();
                 if (!groupMap.TryGetValue(groupTitle, out var existingGroup))
                 {
-                    existingGroup = new RibbonGroup { Title = groupTitle, Items = new List<RibbonItem>() };
+                    existingGroup = new RibbonGroup { Title = groupTitle, Items = new List<RibbonItem>(), Sort = tab.Sort };
                     groupMap[groupTitle] = existingGroup;
                     groupOrder.Add(groupTitle);
                 }
@@ -172,7 +172,7 @@
             {
                 Id = id,
                 Title = firstTitle ?? string.Empty,
-                Groups = groups
+                Groups = groups.OrderBy(g => g.Sort).ToList()
             }
         };
     }
@@ -267,6 +267,7 @@
     {
         public required string Title { get; set; }
         public List<RibbonItem> Items { get; set; } = new();
+        public int Sort { get; set; } = 0;
     }
     private class RibbonItem
     {

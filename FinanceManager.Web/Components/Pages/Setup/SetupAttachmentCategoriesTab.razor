@@ -1,7 +1,7 @@
 ﻿@using System.Net.Http.Json
 @using FinanceManager.Shared.Dtos
 @using FinanceManager.Web.ViewModels.Setup
-@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Pages.Setup> Localizer
+@inject Microsoft.Extensions.Localization.IStringLocalizer<Pages> Localizer
 @inject IServiceProvider Services
 @using FinanceManager.Web.ViewModels
 @using Microsoft.Extensions.DependencyInjection
@@ -12,13 +12,6 @@
     @if (_vm!.Loading)
     {
         <div>@Localizer["Msg_Loading"]</div>
-    }
-    else if (!string.IsNullOrWhiteSpace(_vm!.Error))
-    {
-        <div class="error">@_vm!.Error</div>
-        <button class="icon-btn" @onclick="(()=> _vm!.LoadAsync())" title="@Localizer["Btn_Retry"]">
-            <svg class="icon"><use href="icons/sprite.svg#refresh" /></svg>
-        </button>
     }
     else
     {
@@ -32,9 +25,9 @@
             </div>
         </div>
 
-        @if (!string.IsNullOrWhiteSpace(_vm!.ActionError))
+        @if (!string.IsNullOrWhiteSpace(_vm!.LastError))
         {
-            <div class="error" style="margin:.5rem 0;">@_vm!.ActionError</div>
+            <div class="error" style="margin:.5rem 0;">@_vm!.LastError</div>
         }
         @if (_vm!.ActionOk)
         {
@@ -45,9 +38,9 @@
             <table class="fm-table wide">
                 <thead>
                     <tr>
-                        <th>@Localizer["Th_Name"]</th>
+                        <th>@Localizer["AttachmentCategories_Th_Name"]</th>
                         <th style="width:10rem;">@Localizer["AttachmentCategories_Th_IsSystem"]</th>
-                        <th style="width:8rem;">@Localizer["Th_Actions"]</th>
+                        <th style="width:8rem;">@Localizer["AttachmentCategories_Th_Actions"]</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -71,7 +64,7 @@
                                         @c.Name
                                     }
                                 </td>
-                                <td>@(c.IsSystem ? "✔" : "-")</td>
+                                <td>@(c.IsSystem ? "✔" : "")</td>
                                 <td>
                                     @if (isEditing)
                                     {
@@ -87,7 +80,7 @@
                                         <button class="icon-btn" title="@Localizer["Btn_Edit"]" disabled="@_vm!.Busy" @onclick="(()=> _vm!.BeginEdit(c.Id, c.Name))">
                                             <svg class="icon"><use href="icons/sprite.svg#edit" /></svg>
                                         </button>
-                                        <button class="icon-btn danger" title="@Localizer["Btn_Delete"]" disabled="@(c.IsSystem || _vm!.Busy)" @onclick="(() => _vm!.DeleteAsync(c.Id))">
+                                        <button class="icon-btn danger" title="@Localizer["Btn_Delete"]" disabled="@(c.IsSystem || _vm!.Busy)" @onclick="async () => await _vm!.DeleteAsync(c.Id)">
                                             <svg class="icon"><use href="icons/sprite.svg#delete" /></svg>
                                         </button>
                                     }
@@ -102,12 +95,27 @@
 </div>
 
 @code {
+    [Parameter] public SetupAttachmentCategoriesViewModel? ViewModel { get; set; }
+
     private SetupAttachmentCategoriesViewModel? _vm;
+    private EventHandler? _stateChangedHandler;
 
     protected override async Task OnInitializedAsync()
     {
-        _vm = ActivatorUtilities.CreateInstance<SetupAttachmentCategoriesViewModel>(Services);
-        _vm.StateChanged += (_, __) => { _ = InvokeAsync(StateHasChanged); };
-        await _vm.InitializeAsync();
+        _vm = ViewModel;
+        if (_vm is not null)
+        {
+            _stateChangedHandler = (_, __) => { _ = InvokeAsync(StateHasChanged); };
+            _vm.StateChanged += _stateChangedHandler;
+            await _vm.LoadAsync();
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_vm is not null && _stateChangedHandler is not null)
+        {
+            _vm.StateChanged -= _stateChangedHandler;
+        }
     }
 }

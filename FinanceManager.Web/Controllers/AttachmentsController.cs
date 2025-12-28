@@ -371,7 +371,7 @@ public sealed class AttachmentsController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new ApiErrorDto(ex.Message));
+            return Conflict(new { error = $"Err_{ex.Message.Replace(" ", "_")}", message = ex.Message });
         }
     }
 }

@@ -78,8 +78,7 @@ public sealed class HomeViewModel : ViewModelBase
             RaiseStateChanged();
         }
     }
-
-    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         // Build registers with tabs that act as groups in the UI
         var importAction = new UiRibbonAction(

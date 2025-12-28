@@ -1,0 +1,66 @@
+.form-grid {
+    /* ensure vertical stacking and full-width rows, override any global centering */
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+    align-items: stretch !important;
+    text-align: left !important;
+}
+
+.form-row {
+    /* make each row a left-aligned horizontal flex container */
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 0.5rem !important;
+    flex-wrap: nowrap !important;
+}
+
+.form-row label {
+    /* keep consistent label width so inputs align */
+    min-width: 10rem;
+}
+
+/* ensure time inputs stay inline */
+.form-row input[type="number"] {
+    width: 5rem;
+    flex: 0 0 auto !important; /* prevent shrinking/wrapping */
+    display: inline-block !important;
+}
+
+/* small helper to keep help text not forcing centering */
+.form-row span {
+    opacity: 0.8;
+    flex: 0 0 auto !important;
+}
+
+/* make sure .time-row keeps its inputs aligned inline */
+.form-row.time-row {
+    /* keep items at the top/left of the row so labels and help text align; do NOT center the whole block */
+    flex-wrap: nowrap !important;
+    align-items: flex-start !important; /* ensure vertical alignment at top */
+}
+
+/* explicit inline group around hour/min inputs */
+.time-group {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 0.25rem !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+}
+
+/* time-group children: do not wrap or shrink; keep inline */
+.time-group > * {
+    white-space: nowrap !important;
+    flex: 0 0 auto !important;
+    display: inline-block !important;
+}
+
+/* ensure select/input elements maintain their width and stay inline */
+.form-row input,
+.form-row select,
+.form-row button {
+    flex: 0 0 auto !important;
+    display: inline-block !important;
+}

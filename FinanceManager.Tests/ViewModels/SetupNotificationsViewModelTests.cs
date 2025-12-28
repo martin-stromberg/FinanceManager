@@ -45,7 +45,7 @@ public sealed class SetupNotificationsViewModelTests
         apiMock.Setup(a => a.Meta_GetHolidaySubdivisionsAsync("NagerDate", "DE", It.IsAny<CancellationToken>()))
             .ReturnsAsync(subs);
 
-        await vm.InitializeAsync();
+        await vm.LoadAsync();
 
         Assert.False(vm.Loading);
         Assert.True(vm.Model.MonthlyReminderEnabled);
@@ -69,7 +69,7 @@ public sealed class SetupNotificationsViewModelTests
         apiMock.Setup(a => a.User_GetNotificationSettingsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(dto);
 
-        await vm.InitializeAsync();
+        await vm.LoadAsync();
 
         vm.Model.HolidayProvider = "Memory";
         await vm.OnProviderChanged();
@@ -98,7 +98,7 @@ public sealed class SetupNotificationsViewModelTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        await vm.InitializeAsync();
+        await vm.LoadAsync();
 
         vm.Model.MonthlyReminderEnabled = true;
         vm.Hour = 10;

@@ -17,6 +17,8 @@ namespace FinanceManager.Web.ViewModels.Common
         {
             ServiceProvider = serviceProvider;
         }
+        private readonly List<IAsyncDisposable> _children = new();
+        private readonly List<BaseViewModel> _childViewModels = new();
         private IApiClient _ApiClient = null;
         public virtual string Title { get; } = string.Empty;
         public bool Loading { get; protected set; }
@@ -115,6 +117,30 @@ namespace FinanceManager.Web.ViewModels.Common
             var spec = new UiOverlaySpec(typeof(AttachmentsPanel), parameters);
             RaiseUiActionRequested("OpenAttachments", spec);
         }
+
+        #region Child View Models
+        private Dictionary<Type, BaseViewModel> _singletonChildViewModels = new();
+        protected T CreateSubViewModel<T>(bool singletonPerType = false, Action<T>? configure = null) where T : BaseViewModel
+        {
+            if (singletonPerType)
+            {
+                if (_singletonChildViewModels.TryGetValue(typeof(T), out var existing))
+                {
+                    configure?.Invoke((T)existing);
+                    return (T)existing;
+                }
+            }
+            var vm = ActivatorUtilities.CreateInstance<T>(ServiceProvider);
+            vm.StateChanged += (_, __) => RaiseStateChanged();
+            vm.AuthenticationRequired += (_, ret) => AuthenticationRequired?.Invoke(this, ret);
+            vm.UiActionRequested += (_, act) => UiActionRequested?.Invoke(this, act);
+            _singletonChildViewModels.Add(typeof(T), vm);
+            _children.Add(vm);
+            _childViewModels.Add(vm);
+            configure?.Invoke(vm);
+            return vm;
+        }
+        #endregion
 
         #region Lookup Values
         public virtual async Task<IReadOnlyList<LookupItem>> QueryLookupAsync(CardField field, string? q, int skip, int take)
@@ -268,10 +294,32 @@ namespace FinanceManager.Web.ViewModels.Common
             }
             return null;
         }
+        
+        protected virtual bool IsChildViewModelActive(BaseViewModel vm)
+        {
+            return true;
+        }
         // IRibbonProvider implementation
-        public virtual IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer) => null;
+        public virtual IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+        {
+            var regs = GetRibbonRegisterDefinition(localizer);
+            var registers = new List<UiRibbonRegister>(regs ?? new UiRibbonRegister[0]);
+
+            // Aggregate registers from child viewmodels
+            foreach (var vm in _childViewModels.Where(vm => IsChildViewModelActive(vm)))
+            {
+                if (vm is IRibbonProvider rp)
+                {
+                    var child = rp.GetRibbonRegisters(localizer);
+                    if (child != null) registers.AddRange(child);
+                }
+            }
+
+            return registers.Count == 0 ? null : registers;
+        }
+        protected virtual IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer) => null;
         // Compatibility: legacy tests and callers expect a method named GetRibbon
-        public IReadOnlyList<UiRibbonRegister>? GetRibbon(IStringLocalizer localizer) => GetRibbonRegisters(localizer);
+        public IReadOnlyList<UiRibbonRegister>? GetRibbon(IStringLocalizer localizer) => GetRibbonRegisterDefinition(localizer);
         public void SetActiveTab<TTabEnum>(TTabEnum id)
         {
         }

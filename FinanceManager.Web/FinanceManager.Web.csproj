@@ -4,7 +4,13 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <DocumentationFile>FinanceManager.Web.xml</DocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\css\app.SetupNotificationsTab.css" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\FinanceManager.Application\FinanceManager.Application.csproj" />

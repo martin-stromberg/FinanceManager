@@ -442,7 +442,19 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.DeleteAsync($"/api/attachments/categories/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        if (resp.StatusCode == System.Net.HttpStatusCode.Conflict) return false;
+        //if (resp.StatusCode == System.Net.HttpStatusCode.Conflict)
+        //{
+        //    // read error message from response body and expose via LastError for UI
+        //    try
+        //    {
+        //        LastError = await resp.Content.ReadAsStringAsync(ct);
+        //    }
+        //    catch
+        //    {
+        //        LastError = "Conflict";
+        //    }
+        //    return false;
+        //}
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }

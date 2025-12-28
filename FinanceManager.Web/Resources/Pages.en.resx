@@ -816,7 +816,7 @@
   <data name="Ribbon_Edit" xml:space="preserve">
     <value>Edit</value>
   </data>
-  <data name="Ribbon_ReadOnly" xml:space="preserve">
+  <data name="#" xml:space="preserve">
     <value>Read only</value>
   </data>
   <data name="Ribbon_ResetDuplicate" xml:space="preserve">
@@ -902,5 +902,260 @@
   </data>
   <data name="Validation_Valid" xml:space="preserve">
     <value> </value>
+  </data>
+  <data name="Ribbon_RebuildAggregates" xml:space="preserve">
+    <value>Rebuild aggregates</value>
+  </data>
+  <data name="Ribbon_Detect_Timezone" xml:space="preserve">
+    <value>Detect time zone</value>
+  </data>
+  <data name="Setup_Section_Profile" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="Setup_Section_Notifications" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="Setup_Section_Attachments" xml:space="preserve">
+    <value>Attachments</value>
+  </data>
+  <data name="Setup_Section_Backup" xml:space="preserve">
+    <value>Backup</value>
+  </data>
+  <data name="Setup_Section_Security" xml:space="preserve">
+    <value>Security</value>
+  </data>
+  <data name="SetupProfile_Title" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="SetupProfile_Msg_Loading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="SetupProfile_Label_Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="SetupProfile_Language_Auto" xml:space="preserve">
+    <value>Automatic</value>
+  </data>
+  <data name="SetupProfile_Label_TimeZone" xml:space="preserve">
+    <value>Time zone</value>
+  </data>
+  <data name="SetupProfile_Help_TimeZone" xml:space="preserve">
+    <value>Time zone (e.g. Europe/Berlin)</value>
+  </data>
+  <data name="SetupProfile_Label_AlphaVantageKey" xml:space="preserve">
+    <value>AlphaVantage API key</value>
+  </data>
+  <data name="SetupProfile_Placeholder_AlphaVantageKey" xml:space="preserve">
+    <value>Enter AlphaVantage API key</value>
+  </data>
+  <data name="SetupProfile_Msg_KeyPresent" xml:space="preserve">
+    <value>Key present</value>
+  </data>
+  <data name="SetupProfile_Msg_KeyMissing" xml:space="preserve">
+    <value>No key present</value>
+  </data>
+  <data name="SetupProfile_Label_ShareKey" xml:space="preserve">
+    <value>Share key</value>
+  </data>
+  <data name="SetupProfile_Help_ShareKey" xml:space="preserve">
+    <value>Share this key with other users.</value>
+  </data>
+  <data name="Setup_Section_Statements" xml:space="preserve">
+    <value>Statements</value>
+  </data>
+  <data name="ImportSplit_TabTitle" xml:space="preserve">
+    <value>Import split</value>
+  </data>
+  <data name="ImportSplit_Mode_Label" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="ImportSplit_Mode_FixedSize" xml:space="preserve">
+    <value>Fixed size</value>
+  </data>
+  <data name="ImportSplit_Mode_Monthly" xml:space="preserve">
+    <value>Monthly</value>
+  </data>
+  <data name="ImportSplit_Mode_MonthlyOrFixed" xml:space="preserve">
+    <value>Monthly or fixed size</value>
+  </data>
+  <data name="ImportSplit_MaxEntries" xml:space="preserve">
+    <value>Max entries</value>
+  </data>
+  <data name="ImportSplit_MonthlyThreshold" xml:space="preserve">
+    <value>Monthly threshold</value>
+  </data>
+  <data name="ImportSplit_MinEntries" xml:space="preserve">
+    <value>Min entries</value>
+  </data>
+  <data name="ImportSplit_Help_Title" xml:space="preserve">
+    <value>Import split help</value>
+  </data>
+  <data name="ImportSplit_Help_Mode_FixedSize" xml:space="preserve">
+    <value>Creates drafts with a fixed number of entries.</value>
+  </data>
+  <data name="ImportSplit_Help_Mode_Monthly" xml:space="preserve">
+    <value>Split by month when possible.</value>
+  </data>
+  <data name="ImportSplit_Help_Mode_Hybrid" xml:space="preserve">
+    <value>Combine monthly split and fixed sizes based on threshold.</value>
+  </data>
+  <data name="ImportSplit_Help_MaxEntries" xml:space="preserve">
+    <value>Maximum entries per draft.</value>
+  </data>
+  <data name="ImportSplit_Help_MonthlyThreshold" xml:space="preserve">
+    <value>If entries ≥ threshold, monthly split is preferred.</value>
+  </data>
+  <data name="ImportSplit_Help_MinEntries" xml:space="preserve">
+    <value>Minimum entries per draft.</value>
+  </data>
+  <data name="ImportSplit_Help_Example" xml:space="preserve">
+    <value>Example: 100 entries with max 30 → 4 drafts.</value>
+  </data>
+  <data name="ImportSplit_SaveSuccess" xml:space="preserve">
+    <value>Settings saved</value>
+  </data>
+  <data name="Notifications_TabTitle" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="Notifications_MonthlyReminder" xml:space="preserve">
+    <value>Enable month-end reminder</value>
+  </data>
+  <data name="Notifications_MonthlyReminder_Help" xml:space="preserve">
+    <value>Show a reminder on the last business day of the month on the home page.</value>
+  </data>
+  <data name="Notifications_MonthlyReminder_Time" xml:space="preserve">
+    <value>Time (local)</value>
+  </data>
+  <data name="Notifications_MonthlyReminder_Time_Help" xml:space="preserve">
+    <value>Preferred time to receive the reminder (HH:mm). Default 09:00.</value>
+  </data>
+  <data name="Notifications_Holidays_Provider" xml:space="preserve">
+    <value>Holiday source</value>
+  </data>
+  <data name="Notifications_Holidays_Provider_Help" xml:space="preserve">
+    <value>Source for public holidays: Memory (simple, country only) or Nager.Date (country + region/counties).</value>
+  </data>
+  <data name="Notifications_Holidays_Region" xml:space="preserve">
+    <value>Holiday region</value>
+  </data>
+  <data name="Notifications_Holidays_Region_Help" xml:space="preserve">
+    <value>Country (e.g., DE) and optional subdivision (e.g., DE-BY) to consider public holidays.</value>
+  </data>
+  <data name="Notifications_SaveSuccess" xml:space="preserve">
+    <value>Settings saved.</value>
+  </data>
+  <data name="AttachmentCategories_TabTitle" xml:space="preserve">
+    <value>Attachment categories</value>
+  </data>
+  <data name="AttachmentCategories_Label_NewName" xml:space="preserve">
+    <value>New category</value>
+  </data>
+  <data name="AttachmentCategories_ActionSuccess" xml:space="preserve">
+    <value>Action completed</value>
+  </data>
+  <data name="AttachmentCategories_Th_IsSystem" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="AttachmentCategories_NoEntries" xml:space="preserve">
+    <value>No categories</value>
+  </data>
+  <data name="AttachmentCategories_Th_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="AttachmentCategories_Th_Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Err_Category_is_in_use" xml:space="preserve">
+    <value>The Category is in use.</value>
+  </data>
+  <data name="Err_System_category_cannot_be_deleted" xml:space="preserve">
+    <value>A system category cannot be deleted.</value>
+  </data>
+  <data name="Ribbon_Restore" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="SetupBackup_Th_Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="SetupBackup_Th_Source" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="SetupBackup_Th_Size" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="SetupBackup_Th_File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="SetupBackup_Th_Created" xml:space="preserve">
+    <value>Created at</value>
+  </data>
+  <data name="SetupBackup_Titel" xml:space="preserve">
+    <value>Backups</value>
+  </data>
+  <data name="Ribbon_CreateBackup" xml:space="preserve">
+    <value>Create backup</value>
+  </data>
+  <data name="Ribbon_UploadBackup" xml:space="preserve">
+    <value>Upload backup</value>
+  </data>
+  <data name="Hint_UploadBackup" xml:space="preserve">
+    <value>Imports a backup from a backup file.</value>
+  </data>
+  <data name="Hint_CreateBackup" xml:space="preserve">
+    <value>Create a backup file for all of data.</value>
+  </data>
+  <data name="SetupSecurity_Title" xml:space="preserve">
+    <value>IP Block List</value>
+  </data>
+  <data name="SetupSecurity_Ip_Placeholder" xml:space="preserve">
+    <value>IP address</value>
+  </data>
+  <data name="SetupSecurity_Reason_Placeholder" xml:space="preserve">
+    <value>Reason (optional)</value>
+  </data>
+  <data name="SetupSecurity_BlockOnCreate" xml:space="preserve">
+    <value>Block immediately</value>
+  </data>
+  <data name="SetupSecurit_Action_Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="SetupSecurity_Th_IpAddress" xml:space="preserve">
+    <value>IP address</value>
+  </data>
+  <data name="SetupSecurity_Th_Blocked" xml:space="preserve">
+    <value>Blocked</value>
+  </data>
+  <data name="SetupSecurity_Th_BlockedAt" xml:space="preserve">
+    <value>Blocked at</value>
+  </data>
+  <data name="SetupSecurity_Th_Reason" xml:space="preserve">
+    <value>Reason</value>
+  </data>
+  <data name="SetupSecurity_Th_UnknownFails" xml:space="preserve">
+    <value>Unknown fails</value>
+  </data>
+  <data name="SetupSecurity_Th_LastFail" xml:space="preserve">
+    <value>Last fail</value>
+  </data>
+  <data name="SetupSecurity_Th_Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="SetupSecurity_Action_Block" xml:space="preserve">
+    <value>Block</value>
+  </data>
+  <data name="SetupSecurity_Action_Unblock" xml:space="preserve">
+    <value>Unblock</value>
+  </data>
+  <data name="SetupSecurity_Action_Reset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="SetupSecurity_Action_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Error_IpRequired" xml:space="preserve">
+    <value>No ip address is set.</value>
+  </data>
+  <data name="Error_AdminAccessRequired" xml:space="preserve">
+    <value>This action needs admin access.</value>
   </data>
 </root>

@@ -65,7 +65,7 @@ public sealed class SecurityCategoriesListViewModel : BaseListViewModel<Security
         }, i)).ToList();
     }
 
-    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var actions = new List<UiRibbonAction>
         {

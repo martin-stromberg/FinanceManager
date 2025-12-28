@@ -1,14 +1,13 @@
 using FinanceManager.Shared;
+using Microsoft.Extensions.Localization;
+using System.Collections.Generic;
 
 namespace FinanceManager.Web.ViewModels.Setup;
 
-public sealed class SetupImportSplitViewModel : ViewModelBase
+public sealed class SetupStatementsViewModel : BaseViewModel
 {
-    private readonly IApiClient _api;
-
-    public SetupImportSplitViewModel(IServiceProvider sp) : base(sp)
+    public SetupStatementsViewModel(IServiceProvider sp) : base(sp)
     {
-        _api = sp.GetRequiredService<IApiClient>();
     }
 
     public ImportSplitSettingsDto? Model { get; private set; }
@@ -23,17 +22,12 @@ public sealed class SetupImportSplitViewModel : ViewModelBase
     public bool HasValidationError { get; private set; }
     public bool Dirty { get; private set; }
 
-    public override async ValueTask InitializeAsync(CancellationToken ct = default)
-    {
-        await LoadAsync(ct);
-    }
-
     public async Task LoadAsync(CancellationToken ct = default)
     {
         Loading = true; Error = null; SaveError = null; SavedOk = false; RaiseStateChanged();
         try
         {
-            var dto = await _api.UserSettings_GetImportSplitAsync(ct);
+            var dto = await ApiClient.UserSettings_GetImportSplitAsync(ct);
             Model = dto ?? new ImportSplitSettingsDto();
             _original = Clone(Model);
             RecomputeDirty();
@@ -60,7 +54,7 @@ public sealed class SetupImportSplitViewModel : ViewModelBase
                 MinEntriesPerDraft: Model.MinEntriesPerDraft
             );
 
-            var ok = await _api.UserSettings_UpdateImportSplitAsync(request, ct);
+            var ok = await ApiClient.UserSettings_UpdateImportSplitAsync(request, ct);
             if (ok)
             {
                 _original = Clone(Model);
@@ -69,7 +63,7 @@ public sealed class SetupImportSplitViewModel : ViewModelBase
             }
             else
             {
-                SaveError = _api.LastError ?? "Save failed";
+                SaveError = ApiClient.LastError ?? "Save failed";
             }
         }
         catch (Exception ex)
@@ -152,4 +146,42 @@ public sealed class SetupImportSplitViewModel : ViewModelBase
         MonthlySplitThreshold = src.MonthlySplitThreshold,
         MinEntriesPerDraft = src.MinEntriesPerDraft
     };
+
+    // Provide ribbon actions for this child ViewModel; parent/host will merge them automatically
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
+    {
+        var actions = new List<UiRibbonAction>();
+
+        // Save action
+        actions.Add(new UiRibbonAction(
+            "SaveImportSplit",
+            localizer["Ribbon_Save"].Value,
+            "<svg><use href='/icons/sprite.svg#save'/></svg>",
+            UiRibbonItemSize.Large,
+            false,
+            localizer["Hint_Save"].Value ?? string.Empty,
+            "SaveImportSplit",
+            new Func<Task>(async () =>
+            {
+                try { await SaveAsync(); } catch { }
+            })));
+
+        // Reset action
+        actions.Add(new UiRibbonAction(
+            "ResetImportSplit",
+            localizer["Ribbon_Reset"].Value,
+            "<svg><use href='/icons/sprite.svg#undo'/></svg>",
+            UiRibbonItemSize.Large,
+            false,
+            localizer["Hint_Reset"].Value ?? string.Empty,
+            "ResetImportSplit",
+            new Func<Task>(() => { Reset(); return Task.CompletedTask; })));
+
+        var tabs = new List<UiRibbonTab>
+        {
+            new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, actions)
+        };
+
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
+    }
 }

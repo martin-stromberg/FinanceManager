@@ -106,7 +106,7 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
         public virtual string GetExportUrl(string format) => string.Empty;
 
         // Default Ribbon for postings lists: Navigation (Back) and Export (CSV/XLSX)
-        public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+        protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
         {
             var tabs = new List<UiRibbonTab>
             {

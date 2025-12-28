@@ -1,6 +1,9 @@
+using Microsoft.Extensions.Localization;
+using System.Collections.Generic;
+
 namespace FinanceManager.Web.ViewModels.Setup;
 
-public sealed class SetupNotificationsViewModel : ViewModelBase
+public sealed class SetupNotificationsViewModel : BaseViewModel
 {
     private readonly Shared.IApiClient _api;
 
@@ -23,11 +26,6 @@ public sealed class SetupNotificationsViewModel : ViewModelBase
     public int? Minute { get; set; }
 
     public string[]? Subdivisions { get; private set; }
-
-    public override async ValueTask InitializeAsync(CancellationToken ct = default)
-    {
-        await LoadAsync(ct);
-    }
 
     public async Task LoadAsync(CancellationToken ct = default)
     {
@@ -167,4 +165,38 @@ public sealed class SetupNotificationsViewModel : ViewModelBase
         HolidayCountryCode = src.HolidayCountryCode,
         HolidaySubdivisionCode = src.HolidaySubdivisionCode
     };
+
+    // Provide ribbon actions for Save and Reset so host can merge them
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
+    {
+        var actions = new List<UiRibbonAction>();
+
+        actions.Add(new UiRibbonAction(
+            "SaveNotifications",
+            localizer["Ribbon_Save"].Value,
+            "<svg><use href='/icons/sprite.svg#save'/></svg>",
+            UiRibbonItemSize.Large,
+            false,
+            localizer["Hint_Save"].Value ?? string.Empty,
+            "SaveNotifications",
+            new Func<Task>(async () =>
+            {
+                try { await SaveAsync(); } catch { }
+            })));
+        actions.Add(new UiRibbonAction(
+            "ResetNotifications",
+            localizer["Ribbon_Reset"].Value,
+            "<svg><use href='/icons/sprite.svg#undo'/></svg>",
+            UiRibbonItemSize.Large,
+            false,
+            localizer["Hint_Reset"].Value ?? string.Empty,
+            "ResetNotifications",
+            new Func<Task>(() => { Reset(); return Task.CompletedTask; })));
+        var tabs = new List<UiRibbonTab>
+        {
+            new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, actions)
+        };
+
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
+    }
 }

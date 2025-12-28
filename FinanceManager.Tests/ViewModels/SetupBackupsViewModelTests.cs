@@ -1,4 +1,5 @@
 using FinanceManager.Application;
+using FinanceManager.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Text;
@@ -27,10 +28,11 @@ public sealed class SetupBackupsViewModelTests
         public bool IsAdmin { get; set; }
     }
 
-    private static IServiceProvider CreateSp()
+    private static IServiceProvider CreateSp(IApiClient apiClient)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService());
+        services.AddSingleton<IApiClient>(apiClient);
         return services.BuildServiceProvider();
     }
 
@@ -55,8 +57,8 @@ public sealed class SetupBackupsViewModelTests
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         });
 
-        var vm = new SetupBackupsViewModel(CreateSp(), api);
-        await vm.InitializeAsync();
+        var vm = new SetupBackupsViewModel(CreateSp(api));
+        await vm.LoadBackupsAsync();
 
         Assert.NotNull(vm.Backups);
         Assert.Single(vm.Backups);
@@ -84,8 +86,8 @@ public sealed class SetupBackupsViewModelTests
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         });
 
-        var vm = new SetupBackupsViewModel(CreateSp(), api);
-        await vm.InitializeAsync();
+        var vm = new SetupBackupsViewModel(CreateSp(api));
+        await vm.LoadBackupsAsync();
 
         await vm.CreateAsync();
         Assert.Single(vm.Backups!);
@@ -112,8 +114,8 @@ public sealed class SetupBackupsViewModelTests
             }
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         });
-        var vm = new SetupBackupsViewModel(CreateSp(), api);
-        await vm.InitializeAsync();
+        var vm = new SetupBackupsViewModel(CreateSp(api));
+        await vm.LoadBackupsAsync();
 
         await vm.StartApplyAsync(id);
         Assert.True(vm.HasActiveRestore);

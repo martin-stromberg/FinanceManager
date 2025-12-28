@@ -38,7 +38,7 @@ public sealed class SetupAttachmentCategoriesViewModelTests
         apiMock.Setup(a => a.Attachments_ListCategoriesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(categories);
 
-        await vm.InitializeAsync();
+        await vm.LoadAsync();
 
         Assert.Equal(2, vm.Items.Count);
         Assert.Equal(new[] { "A", "B" }, vm.Items.Select(x => x.Name).ToArray());
@@ -56,7 +56,7 @@ public sealed class SetupAttachmentCategoriesViewModelTests
         apiMock.Setup(a => a.Attachments_CreateCategoryAsync("Zeta", It.IsAny<CancellationToken>()))
             .ReturnsAsync(created);
 
-        await vm.InitializeAsync();
+        await vm.LoadAsync();
         vm.NewName = "Zeta";
         await vm.AddAsync();
 
@@ -79,7 +79,7 @@ public sealed class SetupAttachmentCategoriesViewModelTests
         apiMock.Setup(a => a.Attachments_UpdateCategoryNameAsync(id, "New", It.IsAny<CancellationToken>()))
             .ReturnsAsync(updated);
 
-        await vm.InitializeAsync();
+        await vm.LoadAsync();
 
         vm.BeginEdit(id, "Old");
         Assert.Equal(id, vm.EditId);
@@ -104,7 +104,7 @@ public sealed class SetupAttachmentCategoriesViewModelTests
         apiMock.Setup(a => a.Attachments_DeleteCategoryAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        await vm.InitializeAsync();
+        await vm.LoadAsync();
 
         Assert.Single(vm.Items);
         await vm.DeleteAsync(id);

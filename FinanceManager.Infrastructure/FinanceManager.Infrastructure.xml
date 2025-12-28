@@ -1,0 +1,842 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>FinanceManager.Infrastructure</name>
+    </assembly>
+    <members>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity._20251027_AddIdentityUsers">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity._20251027_AddIdentityUsers.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity._20251027_AddIdentityUsers.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity._20251027_AddIdentityUsers.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.RemoveUserLockFields">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.RemoveUserLockFields.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.RemoveUserLockFields.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.RemoveUserLockFields.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.AddPostingsValutaDate">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddPostingsValutaDate.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddPostingsValutaDate.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddPostingsValutaDate.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.AddPostingsParentId">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddPostingsParentId.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddPostingsParentId.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddPostingsParentId.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.AddReportFavoriteSettings2">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddReportFavoriteSettings2.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddReportFavoriteSettings2.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddReportFavoriteSettings2.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.AddValutaDateAggregates">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddValutaDateAggregates.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddValutaDateAggregates.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddValutaDateAggregates.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.AddAccountSymbols">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddAccountSymbols.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddAccountSymbols.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddAccountSymbols.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.AddAttachmentRole">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddAttachmentRole.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddAttachmentRole.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddAttachmentRole.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.AddSymbolAttachmentIds">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddSymbolAttachmentIds.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddSymbolAttachmentIds.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddSymbolAttachmentIds.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.AddSavingsPlanExpectation">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddSavingsPlanExpectation.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddSavingsPlanExpectation.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddSavingsPlanExpectation.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.AddLinkedPostings">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddLinkedPostings.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddLinkedPostings.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddLinkedPostings.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.InitialCreate">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.InitialCreate.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.InitialCreate.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.InitialCreate.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202509011600_ExtendStatementEntries">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509011600_ExtendStatementEntries.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509011600_ExtendStatementEntries.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509011600_ExtendStatementEntries.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202509011705_AddDraftEntryStatusAndContact">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509011705_AddDraftEntryStatusAndContact.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509011705_AddDraftEntryStatusAndContact.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509011705_AddDraftEntryStatusAndContact.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202509011900_AddContactDescription">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509011900_AddContactDescription.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509011900_AddContactDescription.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509011900_AddContactDescription.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202509020802_AddContactAsPaymentIntermediary">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509020802_AddContactAsPaymentIntermediary.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509020802_AddContactAsPaymentIntermediary.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509020802_AddContactAsPaymentIntermediary.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202509022022_AddStatementDraftAccountName">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddStatementDraftAccountName.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddStatementDraftAccountName.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddStatementDraftAccountName.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202509022022_AddStatementDraftEntryCostNeutral">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddStatementDraftEntryCostNeutral.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddStatementDraftEntryCostNeutral.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddStatementDraftEntryCostNeutral.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202509022022_AddStatementDraftEntryCostNeutral2">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddStatementDraftEntryCostNeutral2.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddStatementDraftEntryCostNeutral2.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddStatementDraftEntryCostNeutral2.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202509022022_AddSavingsPlan">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddSavingsPlan.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddSavingsPlan.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddSavingsPlan.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202509022022_AddStatementEntrySavingsPlanAssignment">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddStatementEntrySavingsPlanAssignment.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddStatementEntrySavingsPlanAssignment.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddStatementEntrySavingsPlanAssignment.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202509022022_AddSavingsPlanCategory">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddSavingsPlanCategory.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddSavingsPlanCategory.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddSavingsPlanCategory.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202509022022_AddSplitDraftId">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddSplitDraftId.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddSplitDraftId.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddSplitDraftId.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202509022022_AddDraftFile">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddDraftFile.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddDraftFile.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202509022022_AddDraftFile.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddSecurities">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurities.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurities.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurities.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddSecurityCategories">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurityCategories.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurityCategories.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurityCategories.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddSecurityCategoryRelation">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurityCategoryRelation.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurityCategoryRelation.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurityCategoryRelation.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddDraftSecurityAssignments">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddDraftSecurityAssignments.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddDraftSecurityAssignments.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddDraftSecurityAssignments.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddFieldsToPostings">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddFieldsToPostings.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddFieldsToPostings.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddFieldsToPostings.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddFieldsToPostings2">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddFieldsToPostings2.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddFieldsToPostings2.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddFieldsToPostings2.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddContractNumberoSavingsPlan">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddContractNumberoSavingsPlan.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddContractNumberoSavingsPlan.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddContractNumberoSavingsPlan.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddArchiveSavingsPlanByBooking">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddArchiveSavingsPlanByBooking.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddArchiveSavingsPlanByBooking.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddArchiveSavingsPlanByBooking.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddRefactoringStatementDraftService">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddRefactoringStatementDraftService.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddRefactoringStatementDraftService.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddRefactoringStatementDraftService.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddMoreSubTypesToSecurityEntries">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddMoreSubTypesToSecurityEntries.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddMoreSubTypesToSecurityEntries.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddMoreSubTypesToSecurityEntries.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddQuantityToSecurityEntry">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddQuantityToSecurityEntry.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddQuantityToSecurityEntry.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddQuantityToSecurityEntry.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddSecurityPriceTable">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurityPriceTable.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurityPriceTable.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurityPriceTable.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddAggregateIndex">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddAggregateIndex.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddAggregateIndex.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddAggregateIndex.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddBackups">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddBackups.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddBackups.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddBackups.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddUserImportSplitSettings">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserImportSplitSettings.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserImportSplitSettings.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserImportSplitSettings.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.FixUserImportSplitSettings">
+            <summary>
+            Safety migration to (re)apply missing user import split settings columns if they were not created previously.
+            Uses raw SQL with IF NOT EXISTS to avoid duplicate column errors in SQLite.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddUploadId">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUploadId.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUploadId.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUploadId.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddMinCountInStatementDrafts">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddMinCountInStatementDrafts.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddMinCountInStatementDrafts.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddMinCountInStatementDrafts.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddReportFavorites">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddReportFavorites.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddReportFavorites.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddReportFavorites.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.RemoveEntityGroup">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.RemoveEntityGroup.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.RemoveEntityGroup.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.RemoveEntityGroup.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddMultiEntityReporting">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddMultiEntityReporting.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddMultiEntityReporting.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddMultiEntityReporting.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddReportFilter">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddReportFilter.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddReportFilter.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddReportFilter.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddHomeKPISettings">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddHomeKPISettings.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddHomeKPISettings.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddHomeKPISettings.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddHomeKPITitle">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddHomeKPITitle.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddHomeKPITitle.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddHomeKPITitle.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddReportFavoriteSettings">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddReportFavoriteSettings.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddReportFavoriteSettings.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddReportFavoriteSettings.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddHomeKPISettings2">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddHomeKPISettings2.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddHomeKPISettings2.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddHomeKPISettings2.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddIPFilter">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddIPFilter.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddIPFilter.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddIPFilter.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddNotifications">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddNotifications.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddNotifications.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddNotifications.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddUserNotificationSettings">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserNotificationSettings.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserNotificationSettings.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserNotificationSettings.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddUserTimeZone">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserTimeZone.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserTimeZone.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserTimeZone.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddUserNotificationTime">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserNotificationTime.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserNotificationTime.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserNotificationTime.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddUserHolidayRegion">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserHolidayRegion.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserHolidayRegion.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserHolidayRegion.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddUserHolidayProvider">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserHolidayProvider.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserHolidayProvider.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUserHolidayProvider.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddAttachments">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddAttachments.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddAttachments.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddAttachments.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddAttachmentCategories">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddAttachmentCategories.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddAttachmentCategories.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddAttachmentCategories.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.ReplaceOriginalFileWithAttachmentsInStatementDraft">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.ReplaceOriginalFileWithAttachmentsInStatementDraft.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.ReplaceOriginalFileWithAttachmentsInStatementDraft.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.ReplaceOriginalFileWithAttachmentsInStatementDraft.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AppReferenceAttachmentId">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AppReferenceAttachmentId.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AppReferenceAttachmentId.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AppReferenceAttachmentId.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddAlphaVantageSettings">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddAlphaVantageSettings.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddAlphaVantageSettings.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddAlphaVantageSettings.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddAlphaVantageSecurityErrors">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddAlphaVantageSecurityErrors.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddAlphaVantageSecurityErrors.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddAlphaVantageSecurityErrors.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddUniqueIndexForSelfContacts">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUniqueIndexForSelfContacts.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUniqueIndexForSelfContacts.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddUniqueIndexForSelfContacts.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddSecuritySubTypeToReportFavorite">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecuritySubTypeToReportFavorite.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecuritySubTypeToReportFavorite.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecuritySubTypeToReportFavorite.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddSecuritySubTypeToPostingAggregates">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecuritySubTypeToPostingAggregates.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecuritySubTypeToPostingAggregates.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecuritySubTypeToPostingAggregates.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddSecurityDividendTaxConnectionInReports">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurityDividendTaxConnectionInReports.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurityDividendTaxConnectionInReports.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurityDividendTaxConnectionInReports.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Notifications.InMemoryHolidayProvider">
+            <summary>
+            Simple in-memory holiday provider with a small built-in set and extension points.
+            Supports country-level days. Subdivision code currently ignored unless explicitly added.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Notifications.NagerDateHolidayProvider">
+            <summary>
+            Provider using https://date.nager.at API. Supports country-wide and regional (counties) holidays.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Setup.SchemaPatcher">
+            <summary>
+            Runtime safety patcher that ensures schema/runtime consistency after applying migrations.
+            Also triggers long-running background work that cannot/should not be executed inside migrations
+            (for example: rebuilding aggregates).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Setup.SchemaPatcher.RunPostMigrationPatches(System.IServiceProvider,FinanceManager.Infrastructure.AppDbContext,Microsoft.Extensions.Logging.ILogger)">
+            <summary>
+            Apply runtime fixes after migrations have been applied. This is executed from ProgramExtensions after
+            calling <c>db.Database.Migrate()</c>. It may enqueue background tasks to rebuild aggregates if needed.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftService.ApplyMonthlyMinMerge(System.Collections.Generic.List{System.ValueTuple{System.String,System.Collections.Generic.List{FinanceManager.Application.Statements.StatementMovement},System.Boolean,System.Nullable{System.Int32},System.Nullable{System.Int32}}},System.Int32)">
+            <summary>
+            Wendet die Mindestanzahl-Regel auf monatliche (nicht weiter gesplittete) Gruppen an.
+            Strategien (aus Tests abgeleitet):
+            1. Führende kleine Monate vor erstem großen: in Blöcken >= Min bündeln; Rest mit erstem großen Monat mergen.
+            2. Kleine Monate am Ende analog (wenn eigenständiger Block >= Min bildbar, separat lassen; sonst mit letztem großen mergen).
+            3. Einzelner kleiner Monat zwischen zwei großen -> an rechten großen hängen (Test {20,3,20} -> {20,23}).
+            4. Mehrere kleine Monate zwischen zwei großen -> balanciert verteilen, indem immer die aktuell kleinere Seite den nächsten kleinen Monat übernimmt (Test {19,1,1,19} -> {20,20}).
+            5. Reine Sequenz nur kleiner Monate -> greedy Blöcke bilden bis >= Min, letzter evtl. kleiner Block mit vorigem mergen.
+            6. Folge kleiner Monate vor großem Monatsblock: Baue möglichst Blöcke exakt = Min (Test 1,1,1,1,1,1,20 Min=5 -> {5,21}).
+            </summary>
+        </member>
+    </members>
+</doc>

@@ -213,7 +213,7 @@ public sealed class UsersViewModel : ViewModelBase
         LastResetUserId = Guid.Empty; LastResetPassword = null; RaiseStateChanged();
     }
 
-    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var tabs = new List<UiRibbonTab>();
 

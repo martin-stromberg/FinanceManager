@@ -39,7 +39,7 @@ public sealed class ReportsHomeViewModel : ViewModelBase
         finally { Loading = false; RaiseStateChanged(); }
     }
 
-    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(Microsoft.Extensions.Localization.IStringLocalizer localizer)
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
         var actions = new List<UiRibbonAction>
         {

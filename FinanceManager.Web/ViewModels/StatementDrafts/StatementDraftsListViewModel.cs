@@ -98,7 +98,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
         }, i as object)).ToList();
     }
 
-    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var tabs = new List<UiRibbonTab>
         {

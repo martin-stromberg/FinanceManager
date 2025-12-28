@@ -346,7 +346,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
     }
 
     // --- Ribbon provider ---
-    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var canSave = !string.IsNullOrWhiteSpace(Model.Name) && Model.Name.Trim().Length >= 2 && HasPendingChanges;
 
@@ -425,7 +425,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
 
         var tabs = new List<UiRibbonTab> { nav, manage, linked, analysis };
         var registers = new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
-        var baseRegs = base.GetRibbonRegisters(localizer);
+        var baseRegs = base.GetRibbonRegisterDefinition(localizer);
         if (baseRegs != null) registers.AddRange(baseRegs);
         return registers;
     }

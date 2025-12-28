@@ -122,6 +122,10 @@ public abstract class ViewModelBase : IAsyncDisposable, IRibbonProvider
     // New ribbon API: aggregate registers from children
     public virtual IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
     {
+        return GetRibbonRegisterDefinition(localizer);
+    }
+    protected virtual IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
+    {
         var registers = new List<UiRibbonRegister>();
 
 
@@ -139,7 +143,7 @@ public abstract class ViewModelBase : IAsyncDisposable, IRibbonProvider
     }
 
     // Backwards-compatible helper used by tests and older callers
-    public IReadOnlyList<UiRibbonRegister>? GetRibbon(IStringLocalizer localizer) => GetRibbonRegisters(localizer);
+    public IReadOnlyList<UiRibbonRegister>? GetRibbon(IStringLocalizer localizer) => GetRibbonRegisterDefinition(localizer);
 
     // Default ActiveTab handling: VMs can override to persist/return a tab id
     public virtual TTabEnum? GetActiveTab<TTabEnum>() => default;

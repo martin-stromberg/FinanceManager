@@ -16,14 +16,14 @@ public sealed class SetupIpBlocksViewModelTests
         public bool IsAdmin { get; set; } = true;
     }
 
-    private static (SetupIpBlocksViewModel vm, Mock<IApiClient> apiMock) CreateVm()
+    private static (SetupSecurityViewModel vm, Mock<IApiClient> apiMock) CreateVm()
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService());
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
         var sp = services.BuildServiceProvider();
-        var vm = new SetupIpBlocksViewModel(sp);
+        var vm = new SetupSecurityViewModel(sp);
         return (vm, apiMock);
     }
 

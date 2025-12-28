@@ -252,7 +252,7 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
         RaiseStateChanged();
     }
 
-    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var actions = new List<UiRibbonAction>
         {

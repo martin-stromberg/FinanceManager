@@ -31,7 +31,7 @@ public sealed class SetupProfileViewModelTests
         apiMock.Setup(a => a.UserSettings_GetProfileAsync(It.IsAny<CancellationToken>())).ReturnsAsync(dto);
 
         var vm = new SetupProfileViewModel(CreateSp(apiMock.Object));
-        await vm.InitializeAsync();
+        await vm.LoadAsync();
 
         Assert.False(vm.Loading);
         Assert.Equal("de", vm.Model.PreferredLanguage);
@@ -49,7 +49,7 @@ public sealed class SetupProfileViewModelTests
         apiMock.Setup(a => a.UserSettings_UpdateProfileAsync(It.IsAny<UserProfileSettingsUpdateRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var vm = new SetupProfileViewModel(CreateSp(apiMock.Object));
-        await vm.InitializeAsync();
+        await vm.LoadAsync();
 
         vm.Model.PreferredLanguage = "en";
         vm.KeyInput = "abc";
@@ -73,7 +73,7 @@ public sealed class SetupProfileViewModelTests
         apiMock.Setup(a => a.UserSettings_UpdateProfileAsync(It.IsAny<UserProfileSettingsUpdateRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var vm = new SetupProfileViewModel(CreateSp(apiMock.Object));
-        await vm.InitializeAsync();
+        await vm.LoadAsync();
 
         vm.ClearKey();
         Assert.True(vm.Dirty);
@@ -91,7 +91,7 @@ public sealed class SetupProfileViewModelTests
     {
         var apiMock = new Mock<IApiClient>();
         var vm = new SetupProfileViewModel(CreateSp(apiMock.Object));
-        vm.SetDetected("de-DE", "Europe/Berlin");
+        vm.SetDetectedTimezone("de-DE", "Europe/Berlin");
         Assert.Equal("de-DE", vm.Model.PreferredLanguage);
         Assert.Equal("Europe/Berlin", vm.Model.TimeZoneId);
         Assert.True(vm.Dirty);

@@ -88,7 +88,7 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
     protected override (Domain.Attachments.AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent() => (Domain.Attachments.AttachmentEntityKind.StatementDraft, DraftId);
     protected override Task AssignNewSymbolAsync(Guid? attachmentId) => Task.CompletedTask;
 
-    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var tabs = new List<UiRibbonTab>();
 
@@ -128,7 +128,7 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, linkedItems));
 
         var registers = new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
-        var baseRegs = base.GetRibbonRegisters(localizer);
+        var baseRegs = base.GetRibbonRegisterDefinition(localizer);
         if (baseRegs != null) registers.AddRange(baseRegs);
         return registers.Count == 0 ? null : registers;
     }

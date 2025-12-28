@@ -68,7 +68,7 @@ public sealed class PostingsCardViewModel : BaseCardViewModel<(string Key, strin
         return Task.FromResult(record);
     }
 
-    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var kindLower = Posting?.Kind.ToString().ToLowerInvariant() switch
         {

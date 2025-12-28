@@ -117,7 +117,7 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
         }, i)).ToList();
     }
 
-    public override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         // Actions tab
         var actions = new List<UiRibbonAction>

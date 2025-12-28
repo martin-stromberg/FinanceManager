@@ -1,0 +1,1585 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>FinanceManager.Web</name>
+    </assembly>
+    <members>
+        <member name="T:FinanceManager.Web.Controllers.AccountsController">
+            <summary>
+            Provides CRUD operations for bank accounts owned by the current user, including linking to a bank contact and symbol management.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AccountsController.ListAsync(System.Int32,System.Int32,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Returns a (paged) list of accounts owned by the current user. Optional filter by bank contact id.
+            </summary>
+            <param name="skip">Number of items to skip.</param>
+            <param name="take">Max items to return (1..200).</param>
+            <param name="bankContactId">Optional bank contact filter.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AccountsController.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single account by id (must be owned by current user).
+            </summary>
+            <param name="id">Account id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AccountsController.CreateAsync(FinanceManager.Shared.Dtos.Accounts.AccountCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new account. Either an existing bank contact id or a new bank contact name must be provided.
+            </summary>
+            <param name="req">Account creation payload.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AccountsController.UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Accounts.AccountUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing account (including optional bank contact change and symbol assignment).
+            </summary>
+            <param name="id">Account id.</param>
+            <param name="req">Update payload.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AccountsController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an account owned by the current user.
+            </summary>
+            <param name="id">Account id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AccountsController.SetSymbolAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Assigns an existing attachment as symbol for the account.
+            </summary>
+            <param name="id">Account id.</param>
+            <param name="attachmentId">Attachment id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AccountsController.ClearSymbolAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Clears any symbol attachment from the account.
+            </summary>
+            <param name="id">Account id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.AdminController">
+            <summary>
+            Administrative endpoints for managing users and IP blocks.
+            Provides CRUD for users (including password reset, unlock) and operations on IP block entries.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AdminController.ListUsersAsync(System.Threading.CancellationToken)">
+            <summary>
+            Returns all users (no paging by design for admin view).
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>List of users.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AdminController.GetUserAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single user by id.
+            </summary>
+            <param name="id">User id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>User details or NotFound.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AdminController.CreateUserAsync(FinanceManager.Shared.Dtos.Users.CreateUserRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new user account.
+            </summary>
+            <param name="req">Creation payload (username, password, admin flag).</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Created user details.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AdminController.UpdateUserAsync(System.Guid,FinanceManager.Shared.Dtos.Users.UpdateUserRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates basic user data (username, admin flag, active, preferred language).
+            </summary>
+            <param name="id">User id.</param>
+            <param name="req">Update payload.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Updated user details or NotFound.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AdminController.ResetPasswordAsync(System.Guid,FinanceManager.Shared.Dtos.Users.ResetPasswordRequest,System.Threading.CancellationToken)">
+            <summary>
+            Resets the password of a user.
+            </summary>
+            <param name="id">User id.</param>
+            <param name="req">New password payload.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>NoContent or NotFound.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AdminController.UnlockUserAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Unlocks a previously locked user account (e.g. after failed login attempts).
+            </summary>
+            <param name="id">User id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>NoContent or NotFound.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AdminController.DeleteUserAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a user account permanently.
+            </summary>
+            <param name="id">User id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>NoContent or NotFound.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AdminController.ListIpBlocksAsync(System.Nullable{System.Boolean},System.Threading.CancellationToken)">
+            <summary>
+            Lists IP block entries (optionally only currently blocked ones).
+            </summary>
+            <param name="onlyBlocked">True to return only blocked entries.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>List of IP blocks.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AdminController.CreateIpBlockAsync(FinanceManager.Shared.Dtos.Security.IpBlockCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new IP block entry.
+            </summary>
+            <param name="req">Creation payload.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Created IP block details.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AdminController.GetIpBlockAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single IP block entry by id.
+            </summary>
+            <param name="id">Entry id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>IP block details or NotFound.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AdminController.UpdateIpBlockAsync(System.Guid,FinanceManager.Shared.Dtos.Security.IpBlockUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates core properties of an IP block entry.
+            </summary>
+            <param name="id">Entry id.</param>
+            <param name="req">Update payload.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Updated IP block details or NotFound.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AdminController.BlockIpAsync(System.Guid,FinanceManager.Shared.Dtos.Security.IpBlockUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Blocks an IP immediately.
+            </summary>
+            <param name="id">Entry id.</param>
+            <param name="req">Reason payload.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>NoContent or NotFound.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AdminController.UnblockIpAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Removes the block from an IP.
+            </summary>
+            <param name="id">Entry id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>NoContent or NotFound.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AdminController.ResetCountersAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Resets counters (e.g. failed attempts) of an IP block entry.
+            </summary>
+            <param name="id">Entry id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>NoContent or NotFound.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AdminController.DeleteIpBlockAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an IP block entry.
+            </summary>
+            <param name="id">Entry id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>NoContent or NotFound.</returns>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.AttachmentsController">
+            <summary>
+            Manages file and URL attachments plus their categories for the authenticated user.
+            Supports upload, listing (paged), download (with optional short-lived token), update and deletion.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AttachmentsController.ListAsync(System.Int16,System.Guid,System.Int32,System.Int32,System.Nullable{System.Guid},System.Nullable{System.Boolean},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Returns a paged list of attachments for an entity (optional filtering by category, URL/file, search term).
+            </summary>
+            <param name="entityKind">Attachment entity kind enum value.</param>
+            <param name="entityId">Entity id.</param>
+            <param name="skip">Number of items to skip.</param>
+            <param name="take">Max items to return (capped).</param>
+            <param name="categoryId">Optional category filter.</param>
+            <param name="isUrl">True to filter URL attachments only, false for files only.</param>
+            <param name="q">Optional search term (file name / url substring).</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AttachmentsController.UploadAsync(System.Int16,System.Guid,Microsoft.AspNetCore.Http.IFormFile,System.Nullable{System.Guid},System.String,System.Threading.CancellationToken,System.Nullable{FinanceManager.Domain.Attachments.AttachmentRole})">
+            <summary>
+            Uploads a file or creates a URL attachment. Optionally sets category and role (e.g. Symbol).
+            </summary>
+            <param name="entityKind">Target entity kind.</param>
+            <param name="entityId">Target entity id.</param>
+            <param name="file">File content (if not a URL attachment).</param>
+            <param name="categoryId">Optional category id.</param>
+            <param name="url">External URL (if not a file upload).</param>
+            <param name="ct">Cancellation token.</param>
+            <param name="role">Attachment role to assign (optional).</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AttachmentsController.CreateDownloadTokenAsync(System.Guid,System.Int32)">
+            <summary>
+            Creates a short-lived download token for an attachment owned by the current user.
+            </summary>
+            <param name="id">Attachment id.</param>
+            <param name="validSeconds">Validity in seconds (10..3600).</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AttachmentsController.DownloadAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Downloads an attachment. If authenticated: direct access. If anonymous: token validation required.
+            </summary>
+            <param name="id">Attachment id.</param>
+            <param name="token">Download token for anonymous access.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AttachmentsController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an attachment owned by the current user.
+            </summary>
+            <param name="id">Attachment id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AttachmentsController.UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Attachments.AttachmentUpdateCoreRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates file name and category of an attachment.
+            </summary>
+            <param name="id">Attachment id.</param>
+            <param name="req">Update payload.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AttachmentsController.UpdateCategoryAsync(System.Guid,FinanceManager.Shared.Dtos.Attachments.AttachmentUpdateCategoryRequest,System.Threading.CancellationToken)">
+            <summary>
+            Sets only the category of an attachment.
+            </summary>
+            <param name="id">Attachment id.</param>
+            <param name="req">Category update request.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AttachmentsController.ListCategoriesAsync(System.Threading.CancellationToken)">
+            <summary>
+            Lists all categories of the current user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AttachmentsController.CreateCategoryAsync(FinanceManager.Shared.Dtos.Attachments.AttachmentCreateCategoryRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new attachment category.
+            </summary>
+            <param name="req">Category creation request.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AttachmentsController.UpdateCategoryNameAsync(System.Guid,FinanceManager.Shared.Dtos.Attachments.AttachmentUpdateCategoryNameRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates the name of an attachment category.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="req">Update payload containing new name.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AttachmentsController.DeleteCategoryAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a category if allowed (e.g. not system protected).
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.AuthController">
+            <summary>
+            Handles user authentication: login, registration and logout using JWT cookie tokens.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AuthController.LoginAsync(FinanceManager.Shared.Dtos.Users.LoginRequest,System.Threading.CancellationToken)">
+            <summary>
+            Authenticates a user with username and password, returning a JWT (cookie) and user info.
+            </summary>
+            <param name="request">Login request payload.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AuthController.RegisterAsync(FinanceManager.Shared.Dtos.Users.RegisterRequest,System.Threading.CancellationToken)">
+            <summary>
+            Registers a new user account and returns a JWT (cookie) for immediate authentication.
+            </summary>
+            <param name="request">Registration request payload.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.AuthController.Logout">
+            <summary>
+            Logs the current user out by clearing the auth cookie and in-memory token.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.BackgroundTasksController">
+            <summary>
+            Provides endpoints to enqueue and manage background tasks for the current user,
+            including generic task enqueue, detail retrieval, cancellation/removal, and
+            specialized aggregate rebuild operations.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BackgroundTasksController.Enqueue(FinanceManager.Shared.Dtos.Admin.BackgroundTaskType,System.Boolean)">
+            <summary>
+            Enqueues a new background task of a given type for the current user.
+            </summary>
+            <param name="type">Task type to enqueue.</param>
+            <param name="allowDuplicate">If true, allows enqueueing even if a task of same type is already running/queued.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BackgroundTasksController.GetActiveAndQueued">
+            <summary>
+            Returns active or queued tasks for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BackgroundTasksController.GetDetail(System.Guid)">
+            <summary>
+            Gets detailed information about a single background task (if owned by current user).
+            </summary>
+            <param name="id">Task id.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BackgroundTasksController.CancelOrRemove(System.Guid)">
+            <summary>
+            Cancels a running task or removes a queued task. Only running or queued tasks are affected.
+            </summary>
+            <param name="id">Task id.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BackgroundTasksController.RebuildAggregates(System.Boolean)">
+            <summary>
+            Enqueues an aggregates rebuild task or returns existing running/queued task status.
+            </summary>
+            <param name="allowDuplicate">Allows new enqueue even if one is already running/queued.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BackgroundTasksController.GetRebuildAggregatesStatus">
+            <summary>
+            Returns status of the most recent running or queued aggregates rebuild task for the user.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.BackupsController">
+            <summary>
+            Provides endpoints to manage user database backups: list, create, upload, download,
+            apply (immediate or queued background restore), cancel and delete.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BackupsController.ListAsync(System.Threading.CancellationToken)">
+            <summary>
+            Lists all backups created or uploaded by the current user (most recent first client-side).
+            </summary>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BackupsController.CreateAsync(System.Threading.CancellationToken)">
+            <summary>
+            Creates a new backup snapshot for the current user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BackupsController.UploadAsync(Microsoft.AspNetCore.Http.IFormFile,System.Threading.CancellationToken)">
+            <summary>
+            Uploads an existing backup file (binary) to make it available for restore operations.
+            </summary>
+            <param name="file">Backup file to upload.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BackupsController.DownloadAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Downloads a backup file by id (range processing enabled for large files).
+            </summary>
+            <param name="id">Backup id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BackupsController.ApplyAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Immediately applies (restores) the specified backup. Legacy synchronous variant; may block longer.
+            </summary>
+            <param name="id">Backup id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BackupsController.StartApplyAsync(System.Guid)">
+            <summary>
+            Enqueues a background restore task for a backup if none is currently running or queued.
+            Returns current status if a task is already active.
+            </summary>
+            <param name="id">Backup id to restore.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BackupsController.GetStatus">
+            <summary>
+            Gets status of current or last backup restore task for the user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BackupsController.Cancel">
+            <summary>
+            Cancels the currently running backup restore task if present.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BackupsController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a backup owned by the current user.
+            </summary>
+            <param name="id">Backup id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.ContactCategoriesController">
+            <summary>
+            Manages contact categories for the current user: CRUD operations and symbol assignment.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactCategoriesController.ListAsync(System.Threading.CancellationToken)">
+            <summary>
+            Lists all contact categories owned by the current user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactCategoriesController.CreateAsync(FinanceManager.Shared.Dtos.Contacts.ContactCategoryCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new contact category.
+            </summary>
+            <param name="req">Creation payload.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactCategoriesController.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single contact category by id.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactCategoriesController.UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Contacts.ContactCategoryUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates the name of a contact category.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="req">Update payload.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactCategoriesController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a category owned by the current user.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactCategoriesController.SetSymbolAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Assigns a symbol attachment to the category.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="attachmentId">Attachment id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactCategoriesController.ClearSymbolAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Clears any symbol attachment from the category.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.ContactsController">
+            <summary>
+            Manages contacts for the current user: list, detail, create, update, delete, count, aliases,
+            merging and symbol assignment.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactsController.ListAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Contacts.ContactType},System.Boolean,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Lists contacts with optional paging, filtering by type and name, or returning all if <c>all=true</c>.
+            </summary>
+            <param name="skip">Items to skip.</param>
+            <param name="take">Maximum items to return (ignored when all=true).</param>
+            <param name="type">Optional contact type filter.</param>
+            <param name="all">If true returns all contacts ignoring paging.</param>
+            <param name="nameFilter">Optional name filter (substring).</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactsController.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single contact by id.
+            </summary>
+            <param name="id">Contact id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactsController.CreateAsync(FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new contact.
+            </summary>
+            <param name="req">Creation payload.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactsController.UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Contacts.ContactUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing contact.
+            </summary>
+            <param name="id">Contact id.</param>
+            <param name="req">Update payload.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactsController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a contact owned by the current user.
+            </summary>
+            <param name="id">Contact id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactsController.GetAliasAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists all alias patterns for a contact.
+            </summary>
+            <param name="id">Contact id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactsController.AddAliasAsync(System.Guid,FinanceManager.Shared.Dtos.Contacts.AliasCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Adds a new alias pattern to the contact.
+            </summary>
+            <param name="id">Contact id.</param>
+            <param name="req">Alias creation payload.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactsController.DeleteAliasAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an alias from the contact.
+            </summary>
+            <param name="id">Contact id.</param>
+            <param name="aliasId">Alias id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactsController.MergeAsync(System.Guid,FinanceManager.Shared.Dtos.Contacts.ContactMergeRequest,System.Threading.CancellationToken)">
+            <summary>
+            Merges one contact into another target contact.
+            </summary>
+            <param name="id">Source contact id.</param>
+            <param name="req">Merge request containing target id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.ContactsController.CountResponse">
+            <summary>
+            Simple count endpoint returning number of contacts owned by user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactsController.CountResponse.#ctor(System.Int32)">
+            <summary>
+            Simple count endpoint returning number of contacts owned by user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactsController.CountAsync(System.Threading.CancellationToken)">
+            <summary>
+            Returns total number of contacts for the current user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactsController.SetSymbolAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Assigns a symbol attachment to the contact.
+            </summary>
+            <param name="id">Contact id.</param>
+            <param name="attachmentId">Attachment id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ContactsController.ClearSymbolAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Clears any symbol attachment from the contact.
+            </summary>
+            <param name="id">Contact id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.HomeKpisController">
+            <summary>
+            Manages Home KPI widgets for the signed-in user: list, create, update, delete and retrieve single entries.
+            Supports predefined KPIs and custom report favorite based KPIs.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.HomeKpisController.ListAsync(System.Threading.CancellationToken)">
+            <summary>
+            Lists all KPI widgets configured by the current user (order determined by <c>SortOrder</c> client-side).
+            </summary>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.HomeKpisController.CreateRequest">
+            <summary>
+            Request payload for creating a new Home KPI widget.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.Controllers.HomeKpisController.CreateRequest.Kind">
+            <summary>Widget kind definition.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Controllers.HomeKpisController.CreateRequest.ReportFavoriteId">
+            <summary>Optional report favorite id if <see cref="!:HomeKpiKind.Report"/>.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Controllers.HomeKpisController.CreateRequest.PredefinedType">
+            <summary>Optional predefined KPI type if <see cref="F:FinanceManager.Shared.Dtos.HomeKpi.HomeKpiKind.Predefined"/>.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Controllers.HomeKpisController.CreateRequest.Title">
+            <summary>Optional custom title (max 120 chars).</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Controllers.HomeKpisController.CreateRequest.DisplayMode">
+            <summary>Display mode (e.g. Compact / Expanded).</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Controllers.HomeKpisController.CreateRequest.SortOrder">
+            <summary>Sorting order (ascending).</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.HomeKpisController.CreateAsync(FinanceManager.Web.Controllers.HomeKpisController.CreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new KPI widget for the current user.
+            </summary>
+            <param name="req">Create request payload.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.HomeKpisController.UpdateRequest">
+            <summary>
+            Request payload for updating an existing KPI widget.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.HomeKpisController.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Retrieves a single KPI widget by id.
+            </summary>
+            <param name="id">KPI id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.HomeKpisController.UpdateAsync(System.Guid,FinanceManager.Web.Controllers.HomeKpisController.UpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates a KPI widget (kind, display settings, linkage, sort order).
+            </summary>
+            <param name="id">KPI id.</param>
+            <param name="req">Update request.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.HomeKpisController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a KPI widget owned by the current user.
+            </summary>
+            <param name="id">KPI id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.MetaHolidaysController">
+            <summary>
+            Provides metadata endpoints for holiday provider info: providers, supported countries and subdivisions.
+            Used for configuring notification settings.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.MetaHolidaysController.GetProviders">
+            <summary>
+            Returns available holiday provider kinds.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.MetaHolidaysController.GetCountries">
+            <summary>
+            Returns the list of supported country ISO codes for holiday data.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.MetaHolidaysController.GetSubdivisions(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Returns subdivision (state / region) codes for a given provider + country combination.
+            </summary>
+            <param name="provider">Provider kind (enum name, case insensitive).</param>
+            <param name="country">ISO country code.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.NotificationsController">
+            <summary>
+            Provides endpoints for listing active notifications and dismissing a notification for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.NotificationsController.ListAsync(System.Threading.CancellationToken)">
+            <summary>
+            Lists currently active notifications for the signed-in user (filtered by current UTC time).
+            </summary>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.NotificationsController.DismissAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Dismisses a notification by id for the current user.
+            </summary>
+            <param name="id">Notification id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.PostingsController">
+            <summary>
+            Provides consolidated posting endpoints for querying, exporting and retrieving aggregate time series
+            across accounts, contacts, savings plans and securities for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.GetById(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single posting by identifier including linked posting and group bank posting metadata.
+            </summary>
+            <param name="id">Posting id.</param>
+            <param name="ct">Cancellation token.</param>
+            <response code="200">Returns the posting details.</response>
+            <response code="404">Posting not found.</response>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.GetAccountPostings(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
+            <summary>
+            Lists postings for an account with optional paging, search and date filters.
+            </summary>
+            <param name="accountId">Account identifier.</param>
+            <param name="skip">Number of records to skip (for pagination).</param>
+            <param name="take">Number of records to take (max 250).</param>
+            <param name="q">Optional search query.</param>
+            <param name="from">Optional start date for filtering.</param>
+            <param name="to">Optional end date for filtering.</param>
+            <param name="ct">Cancellation token.</param>
+            <response code="200">Returns the list of postings.</response>
+            <response code="404">Account not found or no postings.</response>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.GetContactPostings(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
+            <summary>
+            Lists postings for a contact with optional paging, search and date filters.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.GetSavingsPlanPostings(System.Guid,System.Int32,System.Int32,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Lists postings for a savings plan with optional paging and filters.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.GetSecurityPostings(System.Guid,System.Int32,System.Int32,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
+            <summary>
+            Lists postings for a security with optional paging and date filters.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.GetGroupLinksAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns group linkage (first account/contact/savings/security id) for a posting group.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.ExportAccountAsync(System.Guid,FinanceManager.Shared.Dtos.Postings.PostingExportRequest,System.Threading.CancellationToken)">
+            <summary>
+            Exports postings for an account in CSV or XLSX format.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.ExportContactAsync(System.Guid,FinanceManager.Shared.Dtos.Postings.PostingExportRequest,System.Threading.CancellationToken)">
+            <summary>
+            Exports postings for a contact in CSV or XLSX format.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.ExportSavingsPlanAsync(System.Guid,FinanceManager.Shared.Dtos.Postings.PostingExportRequest,System.Threading.CancellationToken)">
+            <summary>
+            Exports postings for a savings plan in CSV or XLSX format.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.ExportSecurityAsync(System.Guid,FinanceManager.Shared.Dtos.Postings.PostingExportRequest,System.Threading.CancellationToken)">
+            <summary>
+            Exports postings for a security in CSV or XLSX format.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.GetAccountAggregates(System.Guid,System.String,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Returns aggregate time series for a single account.
+            </summary>
+            <param name="accountId">Account identifier.</param>
+            <param name="period">Optional period filter (default: Month).</param>
+            <param name="take">Optional limit on number of periods (default: 36).</param>
+            <param name="maxYearsBack">Optional maximum years back (default: null).</param>
+            <param name="ct">Cancellation token.</param>
+            <response code="200">Returns the aggregate data.</response>
+            <response code="404">Account not found.</response>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.GetAccountsAllAggregates(System.String,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Returns aggregate time series across all accounts.
+            </summary>
+            <param name="period">Optional period filter (default: Month).</param>
+            <param name="take">Optional limit on number of periods (default: 36).</param>
+            <param name="maxYearsBack">Optional maximum years back (default: null).</param>
+            <param name="ct">Cancellation token.</param>
+            <response code="200">Returns the aggregate data.</response>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.GetContactAggregates(System.Guid,System.String,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Returns aggregate time series for a single contact.
+            </summary>
+            <param name="contactId">Contact identifier.</param>
+            <param name="period">Optional period filter (default: Month).</param>
+            <param name="take">Optional limit on number of periods (default: 36).</param>
+            <param name="maxYearsBack">Optional maximum years back (default: null).</param>
+            <param name="ct">Cancellation token.</param>
+            <response code="200">Returns the aggregate data.</response>
+            <response code="404">Contact not found.</response>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.GetSavingsPlanAggregates(System.Guid,System.String,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Returns aggregate time series for a single savings plan.
+            </summary>
+            <param name="planId">Savings plan identifier.</param>
+            <param name="period">Optional period filter (default: Month).</param>
+            <param name="take">Optional limit on number of periods (default: 36).</param>
+            <param name="maxYearsBack">Optional maximum years back (default: null).</param>
+            <param name="ct">Cancellation token.</param>
+            <response code="200">Returns the aggregate data.</response>
+            <response code="404">Savings plan not found.</response>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.GetSavingsPlansAllAggregates(System.String,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Returns aggregate time series across all savings plans.
+            </summary>
+            <param name="period">Optional period filter (default: Month).</param>
+            <param name="take">Optional limit on number of periods (default: 36).</param>
+            <param name="maxYearsBack">Optional maximum years back (default: null).</param>
+            <param name="ct">Cancellation token.</param>
+            <response code="200">Returns the aggregate data.</response>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.ReportsController">
+            <summary>
+            Provides reporting endpoints: aggregation queries and management of report favorites.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ReportsController.QueryAsync(FinanceManager.Shared.Dtos.Reports.ReportAggregatesQueryRequest,System.Threading.CancellationToken)">
+            <summary>
+            Executes a report aggregation query returning interval-based totals and optional comparisons.
+            Supports multi-kind fallback via query string (?postingKinds=0,1,2) and optional analysis date.
+            </summary>
+            <param name="req">Aggregation request.</param>
+            <param name="ct">Cancellation token.</param>
+            <response code="200">Success - returns the aggregation result.</response>
+            <response code="400">Bad Request - validation errors in the request.</response>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ReportsController.ListFavoritesAsync(System.Threading.CancellationToken)">
+            <summary>
+            Lists all report favorites for the current user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <response code="200">Success - returns the list of report favorites.</response>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ReportsController.GetFavoriteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single report favorite by id.
+            </summary>
+            <param name="id">Favorite id.</param>
+            <param name="ct">Cancellation token.</param>
+            <response code="200">Success - returns the report favorite details.</response>
+            <response code="404">Not Found - if the favorite with the specified id does not exist.</response>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ReportsController.CreateFavoriteAsync(FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateApiRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new report favorite definition.
+            </summary>
+            <param name="req">Creation request payload.</param>
+            <param name="ct">Cancellation token.</param>
+            <response code="201">Created - returns the created report favorite.</response>
+            <response code="400">Bad Request - validation errors in the creation request.</response>
+            <response code="409">Conflict - if a favorite with the same criteria already exists.</response>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ReportsController.UpdateFavoriteAsync(System.Guid,FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateApiRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing report favorite definition.
+            </summary>
+            <param name="id">Favorite id.</param>
+            <param name="req">Update request payload.</param>
+            <param name="ct">Cancellation token.</param>
+            <response code="200">Success - returns the updated report favorite.</response>
+            <response code="404">Not Found - if the favorite with the specified id does not exist.</response>
+            <response code="400">Bad Request - validation errors in the update request.</response>
+            <response code="409">Conflict - if the update would conflict with existing favorites.</response>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.ReportsController.DeleteFavoriteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a report favorite.
+            </summary>
+            <param name="id">Favorite id.</param>
+            <param name="ct">Cancellation token.</param>
+            <response code="204">No Content - if the favorite was successfully deleted.</response>
+            <response code="404">Not Found - if the favorite with the specified id does not exist.</response>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.SavingsPlansController">
+            <summary>
+            Provides CRUD, analysis, archiving and symbol management endpoints for savings plans owned by the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.ListAsync(System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Lists savings plans (optionally only active ones).
+            </summary>
+            <param name="onlyActive">If true returns only non-archived plans.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.CountAsync(System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Returns count of savings plans (optionally only active ones).
+            </summary>
+            <param name="onlyActive">If true counts only non-archived plans.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single savings plan by id.
+            </summary>
+            <param name="id">Plan id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.AnalyzeAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Performs analytical aggregation for a savings plan (growth, progress etc.).
+            </summary>
+            <param name="id">Plan id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.CreateAsync(FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new savings plan.
+            </summary>
+            <param name="req">Creation request.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing savings plan.
+            </summary>
+            <param name="id">Plan id.</param>
+            <param name="req">Update request (same shape as create).</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.ArchiveAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Archives (soft-hides) a savings plan.
+            </summary>
+            <param name="id">Plan id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Permanently deletes a savings plan.
+            </summary>
+            <param name="id">Plan id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.SetSymbolAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Assigns a symbol attachment to the savings plan.
+            </summary>
+            <param name="id">Plan id.</param>
+            <param name="attachmentId">Attachment id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.ClearSymbolAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Clears any symbol attachment from the savings plan.
+            </summary>
+            <param name="id">Plan id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.UploadSymbolAsync(System.Guid,Microsoft.AspNetCore.Http.IFormFile,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Uploads a new symbol file and assigns it to the savings plan.
+            </summary>
+            <param name="id">Plan id.</param>
+            <param name="file">Uploaded file.</param>
+            <param name="categoryId">Optional attachment category id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.SecuritiesController">
+            <summary>
+            Manages securities: CRUD, symbol attachment, price queries, time series aggregates,
+            dividends aggregation and background price backfill tasks.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.ListAsync(System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Lists securities for the current user (optionally only active).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.CountAsync(System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Returns count of securities (optionally only active).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single security by id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.CreateAsync(FinanceManager.Shared.Dtos.Securities.SecurityRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new security.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Securities.SecurityRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing security.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.ArchiveAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Archives (soft-hides) a security.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a security permanently.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.SetSymbolAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Assigns a symbol attachment to a security.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.ClearSymbolAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Clears a symbol attachment from the security.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.UploadSymbolAsync(System.Guid,Microsoft.AspNetCore.Http.IFormFile,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Uploads and assigns a new symbol file to the security.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetAggregatesAsync(System.Guid,System.String,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Returns time series aggregates for a security.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetPricesAsync(System.Guid,System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Returns historical prices (paged latest first) for a security.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.EnqueueBackfill(FinanceManager.Shared.Dtos.Securities.SecurityBackfillRequest)">
+            <summary>
+            Enqueues a background task for backfilling security prices.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetDividendsAsync(System.String,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Returns quarterly dividend aggregates for the past year across all owned securities.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.SecurityCategoriesController">
+            <summary>
+            Manages security categories (CRUD and symbol attachment) for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecurityCategoriesController.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single security category by id.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecurityCategoriesController.ListAsync(System.Threading.CancellationToken)">
+            <summary>
+            Lists all security categories for the current user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecurityCategoriesController.CreateAsync(FinanceManager.Shared.Dtos.Securities.SecurityCategoryRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new security category.
+            </summary>
+            <param name="req">Category creation request.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecurityCategoriesController.UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Securities.SecurityCategoryRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing security category.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="req">Update request.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecurityCategoriesController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a security category.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecurityCategoriesController.SetSymbolAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Assigns a symbol attachment to the security category.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="attachmentId">Attachment id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecurityCategoriesController.ClearSymbolAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Clears any symbol attachment from the security category.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.StatementDraftsController">
+            <summary>
+            Manages bank statement draft lifecycle: upload/import (including splitting), listing, classification,
+            editing entries, validation, booking (single or mass), and attachment download of original files.
+            Provides background task endpoints for mass classification and mass booking operations.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.GetOpenAsync(System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Lists open (not booked / cancelled) statement drafts with paging (max 3 per page).
+            </summary>
+            <param name="skip">Items to skip for paging.</param>
+            <param name="take">Items to take (1..3).</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.GetOpenCountAsync(System.Threading.CancellationToken)">
+            <summary>
+            Returns the total number of open drafts for the current user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.DeleteAllAsync(System.Threading.CancellationToken)">
+            <summary>
+            Deletes all open drafts for the current user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.UploadAsync(Microsoft.AspNetCore.Http.IFormFile,System.Threading.CancellationToken)">
+            <summary>
+            Uploads a statement file (CSV/PDF etc.) and creates one or more draft records (supports split imports).
+            Returns first draft plus optional import split metadata.
+            </summary>
+            <param name="file">Uploaded file.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.GetClassifyStatus">
+            <summary>
+            Returns status of the background classification task (classify all drafts).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.ClassifyAllAsync">
+            <summary>
+            Enqueues classification of all open drafts if not already running.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.GetBookAllStatus">
+            <summary>
+            Returns status of mass booking background task.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.BookAllAsync(FinanceManager.Shared.Dtos.Statements.StatementDraftMassBookRequest)">
+            <summary>
+            Enqueues booking of all drafts (mass booking) unless already running.
+            </summary>
+            <param name="req">Mass booking options.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.CancelBookAll">
+            <summary>
+            Attempts to cancel a running mass booking task.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.GetAsync(System.Guid,System.Boolean,System.String,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Gets header or full detail for a draft including neighbor draft ids.
+            </summary>
+            <param name="draftId">Draft id.</param>
+            <param name="headerOnly">If true only header/entries metadata is returned.</param>
+            <param name="src">Optional source hint.</param>
+            <param name="fromEntryDraftId">Optional originating draft id (navigation aid).</param>
+            <param name="fromEntryId">Optional originating entry id (navigation aid).</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.GetEntryAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets detailed information about a single draft entry including previous/next and split summary.
+            </summary>
+            <param name="draftId">Draft id.</param>
+            <param name="entryId">Entry id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.AddEntryAsync(System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftAddEntryRequest,System.Threading.CancellationToken)">
+            <summary>
+            Adds a new manual entry to a draft.
+            </summary>
+            <param name="draftId">Draft id.</param>
+            <param name="req">Entry creation payload.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.ClassifyAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Classifies draft entries (attempts to detect account, contacts etc.).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.SetAccountAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Sets the detected account for a draft.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.CommitAsync(System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftCommitRequest,System.Threading.CancellationToken)">
+            <summary>
+            Commits a draft by creating statement entries from its content (without booking them yet).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.SetEntryContactAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSetContactRequest,System.Threading.CancellationToken)">
+            <summary>
+            Sets the contact reference for a draft entry.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.SetEntryCostNeutralAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSetCostNeutralRequest,System.Threading.CancellationToken)">
+            <summary>
+            Marks a draft entry as cost neutral or not.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.SetEntrySavingPlanAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSetSavingsPlanRequest,System.Threading.CancellationToken)">
+            <summary>
+            Associates a savings plan with a draft entry.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.SetEntrySplitDraftAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSetSplitDraftRequest,System.Threading.CancellationToken)">
+            <summary>
+            Assigns or clears a split draft group for a draft entry and returns updated split difference.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.CancelAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Cancels (removes) a draft.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.DownloadOriginalAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Downloads the original uploaded statement file for a draft.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.UpdateEntryCoreAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftUpdateEntryCoreRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates core fields of a draft entry (dates, amount, textual fields).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.SetEntrySecurityAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSetEntrySecurityRequest,System.Threading.CancellationToken)">
+            <summary>
+            Sets security metadata for a draft entry (transaction type, quantity, fees, taxes).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.SetEntryArchiveSavingsPlanOnBookingAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSetArchiveSavingsPlanOnBookingRequest,System.Threading.CancellationToken)">
+            <summary>
+            Configures whether a savings plan is archived automatically when booking this entry.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.ValidateAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Validates a draft (all entries) and returns validation messages.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.ValidateEntryAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Validates a single draft entry and returns validation messages.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.BookAsync(System.Guid,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Books a draft (all entries) creating postings; warns or errors based on validation outcome.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.BookEntryAsync(System.Guid,System.Guid,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Books a single draft entry creating postings; warns or errors based on validation outcome.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.SaveEntryAllAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSaveEntryAllRequest,System.Threading.CancellationToken)">
+            <summary>
+            Saves all entry-related fields (contact, cost-neutral, savings plan, security) in one operation.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.DeleteEntryAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Permanently deletes a draft entry.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.ResetDuplicateAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Resets duplicate detection flags for a draft entry.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.ClassifyEntryAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Classifies a single entry (heuristics / ML) and returns updated draft detail.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.UsersController">
+            <summary>
+            User management (read-only placeholder). Forwards calls to services and catches unexpected exceptions.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.UsersController.HasAnyUsersAsync(System.Threading.CancellationToken)">
+            <summary>
+            Returns true if any user exists in the system.
+            </summary>
+            <remarks>
+            This is a minimal endpoint; more administration endpoints (list, create, lock, etc.) will be added later.
+            </remarks>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.UserSettingsController">
+            <summary>
+            Manages user settings for the signed-in account: profile, notification preferences, and import split configuration.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.UserSettingsController.GetProfileAsync(System.Threading.CancellationToken)">
+            <summary>
+            Returns profile settings of the current user (language, timezone, API key flags).
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>User profile settings DTO.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.UserSettingsController.UpdateProfileAsync(FinanceManager.Shared.Dtos.Users.UserProfileSettingsUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates profile settings of the current user.
+            </summary>
+            <param name="req">Profile update payload.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>No content response on success.</returns>
+            <response code="204">Profile settings updated successfully.</response>
+            <response code="400">Invalid profile update data.</response>
+            <response code="404">User not found.</response>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.UserSettingsController.GetNotificationsAsync(System.Threading.CancellationToken)">
+            <summary>
+            Returns notification settings like monthly reminder and holiday region/provider.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>Notification settings DTO.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.UserSettingsController.UpdateNotificationsAsync(FinanceManager.Shared.Dtos.Admin.UserNotificationSettingsUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates notification settings (monthly reminder time and holiday provider/region).
+            </summary>
+            <param name="req">Notification settings update payload.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>No content response on success.</returns>
+            <response code="204">Notification settings updated successfully.</response>
+            <response code="400">Invalid notification settings data.</response>
+            <response code="404">User not found.</response>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.UserSettingsController.GetImportSplitAsync(System.Threading.CancellationToken)">
+            <summary>
+            Returns import split settings (mode, thresholds and sizes).
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>Import split settings DTO.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.UserSettingsController.UpdateImportSplitAsync(FinanceManager.Shared.Dtos.Statements.ImportSplitSettingsUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates import split settings (mode, thresholds and sizes) for the current user.
+            </summary>
+            <param name="req">Import split settings update payload.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>No content response on success.</returns>
+            <response code="204">Import split settings updated successfully.</response>
+            <response code="400">Invalid import split settings data.</response>
+            <response code="404">User not found.</response>
+        </member>
+        <member name="M:FinanceManager.Web.Extensions.NavigationManagerExtensions.NavigateToModelCard(Microsoft.AspNetCore.Components.NavigationManager,System.Object)">
+            <summary>
+            Inspect a result object and navigate to an appropriate page when possible.
+            Currently recognizes:
+            - FinanceManager.Shared.Dtos.Contacts.ContactDto (navigates to /card/contacts/{id})
+            - Guid (navigates to /card/contacts/{guid})
+            - string (navigates to the string as URI)
+            - any object with an "Id" property of type Guid (navigates to contact card)
+            Returns true when a navigation was performed.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Extensions.NavigationManagerExtensions.NavigateToModelCreate(Microsoft.AspNetCore.Components.NavigationManager,System.String,System.String)">
+            <summary>
+            Navigate to the creation page for the provided kind segment (e.g. "securities", "accounts").
+            An optional subKind segment may be included in the generated URL.
+            Throws NotSupportedException when kind is empty or invalid.
+            Returns true when navigation was performed.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Extensions.NavigationManagerExtensions.NavigateToModelCreate(Microsoft.AspNetCore.Components.NavigationManager,FinanceManager.Shared.Dtos.Postings.PostingKind,System.String)">
+            <summary>
+            Backwards-compatible overload accepting PostingKind; forwards to string-based method.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.Infrastructure.IpBlockMiddleware">
+            <summary>
+            Middleware that denies requests from IP addresses present in the IP block list.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.Infrastructure.StreamCallbackResult">
+            <summary>
+            Streams a response body using a provided async callback, setting Content-Type and Content-Disposition.
+            Avoids manual Response usage in controllers while supporting large streaming writes.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.Infrastructure.UserPreferenceRequestCultureProvider">
+            <summary>
+            Resolves request culture from user preferences.
+            Order of resolution:
+            1) JWT claim "pref_lang" (set at login/registration)
+            2) Database fallback (User.PreferredLanguage)
+            3) null -> next provider (cookie/query/header)
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Services.BusinessDayCalculator.GetLastBusinessDay(System.DateTime)">
+            <summary>
+            Returns the last business day (Mon-Fri) of the month for the given calendar date.
+            The input is treated as a calendar date (no timezone conversion); Kind is ignored.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Services.BusinessDayCalculator.IsBusinessDay(System.DateTime,FinanceManager.Application.Notifications.IHolidayProvider,System.String,System.String)">
+            <summary>
+            Determines if a date is a business day given a holiday provider and optional region codes.
+            Weekend (Sat/Sun) are non-business days. Holidays provided by IHolidayProvider are non-business.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Services.MonthlyReminderJob.RunAsync(FinanceManager.Infrastructure.AppDbContext,System.DateTime,System.Threading.CancellationToken)">
+            <summary>
+            Schedules monthly reminders considering each user's local time zone (if available).
+            A reminder is created once per user on that user's last local business day of the month
+            at or after configured local time (default 09:00). Fallback: server calendar/time if timezone is missing/invalid.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Common.BaseCardViewModel`1.EmbeddedList">
+            <summary>
+            Optional embedded list view model that can be rendered together with the card (e.g. entries for a statement draft).
+            When set, the UI may initialize and display the list below the card details.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Common.BaseCardViewModel`1.IsSymbolUploadAllowed">
+            <summary>
+            Determine whether a symbol upload is permitted. Derived classes may override and throw exceptions
+            or return false to disallow the upload.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Common.BaseCardViewModel`1.GetSymbolParent">
+            <summary>
+            Provides the Attachment parent kind and id to be used for uploading the symbol file.
+            Implementations should return the appropriate AttachmentEntityKind and the (possibly Guid.Empty) parent id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Common.BaseCardViewModel`1.AssignNewSymbolAsync(System.Nullable{System.Guid})">
+            <summary>
+            Called after a successful upload so the derived ViewModel can persist the new symbol attachment id
+            (for example by calling the API to set the symbol on the entity) and update its Model/state.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Common.BaseCardViewModel`1.ValidateSymbolAsync(System.IO.Stream,System.String,System.String)">
+            <summary>
+            Validate and upload a symbol file for this card's entity. Base implementation performs permission
+            check, uploads the file as a Symbol role attachment and then calls AssignNewSymbolAsync.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Common.BaseViewModel.RaiseUiEmbeddedPanelRequested(FinanceManager.Web.ViewModels.Common.BaseViewModel.EmbeddedPanelSpec)">
+            <summary>
+            Convenience helper to request an embedded inline panel on the Card page.
+            View pages will render the supplied EmbeddedPanelSpec at the requested position.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Common.BaseViewModel.RequestOpenAttachments(FinanceManager.Domain.Attachments.AttachmentEntityKind,System.Guid)">
+            <summary>
+            Convenience helper for requesting the Attachments overlay from any ViewModel.
+            View pages can render the supplied UiOverlaySpec generically (DynamicComponent).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Common.BaseViewModel.IsAuthenticated">
+            <summary>
+            Returns true when a current user service is available and the user is authenticated.
+            This provides a simple way for viewmodels and components to check authentication state.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Common.BaseViewModel.CheckAuthentication">
+            <summary>
+            Checks the current authentication state using ICurrentUserService and raises
+            the <see cref="E:FinanceManager.Web.ViewModels.Common.BaseViewModel.AuthenticationRequired"/> event when the user is not authenticated.
+            Returns true when the user is authenticated (or no current-user service is available).
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Common.ISymbolAssignableCard">
+            <summary>
+            Provides information whether a ViewModel can accept symbol attachments and for which entity.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Common.IUploadFilesViewModel.UploadFilesAsync(System.String,System.Collections.Generic.IEnumerable{System.ValueTuple{System.IO.Stream,System.String}},System.Threading.CancellationToken)">
+            <summary>
+            Upload multiple files with a payload describing the upload kind (e.g. "statementdraft").
+            Returns an UploadResult containing any provider-specific result details.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Common.UploadResult">
+            <summary>
+            Generic upload result container returned by viewmodels when handling file uploads.
+            Properties are generic; consumers can inspect StatementDraftResult for statement-draft specific information.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Contacts.ContactCardViewModel.RequestOpenMerge(System.Guid,System.String)">
+            <summary>
+            Convenience helper for requesting the Contact Merge overlay from any ViewModel.
+            Pages can render the supplied UiOverlaySpec generically (DynamicComponent).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftsListViewModel.DeleteAllAsync">
+            <summary>
+            Deletes all open statement drafts for the current user and resets list state.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftsListViewModel.StartClassifyAsync">
+            <summary>
+            Starts a background classification task (classify all drafts) if not already running.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftsListViewModel.RefreshClassifyStatusAsync">
+            <summary>
+            Refreshes classification status; when completed reloads the list.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftsListViewModel.StartBookAllAsync(System.Boolean,System.Boolean,System.Boolean)">
+            <summary>
+            Starts mass booking (book-all) background task.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftsListViewModel.RefreshBookStatusAsync">
+            <summary>
+            Refreshes book-all status; when completed reloads the list.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftsListViewModel.CancelBookingAsync">
+            <summary>
+            Attempts to cancel running book-all background task.
+            </summary>
+        </member>
+        <member name="T:SavingsPlanCategoriesController">
+            <summary>
+            Manages savings plan categories for the current user (CRUD and symbol attachment operations).
+            </summary>
+        </member>
+        <member name="M:SavingsPlanCategoriesController.ListAsync(System.Threading.CancellationToken)">
+            <summary>
+            Lists all savings plan categories for the user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:SavingsPlanCategoriesController.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single category by id.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:SavingsPlanCategoriesController.CreateAsync(FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCategoryDto,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new savings plan category.
+            </summary>
+            <param name="dto">Category data (only name is used).</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:SavingsPlanCategoriesController.UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCategoryDto,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing savings plan category's name.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="dto">Category data (new name).</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:SavingsPlanCategoriesController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a savings plan category.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:SavingsPlanCategoriesController.SetSymbolAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Assigns a symbol attachment to the category.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="attachmentId">Attachment id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:SavingsPlanCategoriesController.ClearSymbolAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Clears any symbol attachment from the category.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+    </members>
+</doc>

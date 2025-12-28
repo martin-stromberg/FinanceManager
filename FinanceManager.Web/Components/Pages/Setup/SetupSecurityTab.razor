@@ -1,0 +1,105 @@
+﻿@using System.Net.Http.Json
+@using FinanceManager.Web.ViewModels.Setup
+@inject FinanceManager.Application.ICurrentUserService CurrentUser
+@inject Microsoft.Extensions.Localization.IStringLocalizer<Pages> L
+@inject IServiceProvider Services
+@using FinanceManager.Web.ViewModels
+@using Microsoft.Extensions.DependencyInjection
+
+@if (!CurrentUser.IsAuthenticated || !CurrentUser.IsAdmin)
+{
+    <p>@L["Access_AdminOnly"]</p>
+}
+else
+{
+    <h4 style="margin-top:0;">@L["SetupSecurity_Title"]</h4>
+
+    <div class="create-ip-form" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin:.5rem 0 1rem 0;">
+        <input placeholder="@L["SetupSecurity_Ip_Placeholder"]" @bind="_vm!.Ip" style="min-width:14rem;" />
+        <input placeholder="@L["SetupSecurity_Reason_Placeholder"]" @bind="_vm!.Reason" style="min-width:18rem;" />
+        <label style="display:inline-flex;align-items:center;gap:.4rem;">
+            <input type="checkbox" @bind="_vm!.BlockOnCreate" /> @L["SetupSecurity_BlockOnCreate"]
+        </label>
+        <button @onclick="(() => _vm!.CreateAsync())" disabled="@_vm!.Busy">@L["SetupSecurit_Action_Add"]</button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_vm?.LastError))
+    {
+        <div class="error">@_vm!.LastError</div>
+    }
+
+    <div class="table-responsive">
+        <table class="fm-table">
+            <thead>
+                <tr>
+                    <th>@L["SetupSecurity_Th_IpAddress"]</th>
+                    <th>@L["SetupSecurity_Th_Blocked"]</th>
+                    <th>@L["SetupSecurity_Th_BlockedAt"]</th>
+                    <th>@L["SetupSecurity_Th_Reason"]</th>
+                    <th>@L["SetupSecurity_Th_UnknownFails"]</th>
+                    <th>@L["SetupSecurity_Th_LastFail"]</th>
+                    <th>@L["SetupSecurity_Th_Actions"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var b in _vm!.Items)
+                {
+                    <tr>
+                        <td>@b.IpAddress</td>
+                        <td>@(b.IsBlocked?"✓":"-")</td>
+                        <td>@(b.BlockedAtUtc?.ToString("u") ?? "-")</td>
+                        <td>@(b.BlockReason ?? "-")</td>
+                        <td>@b.UnknownUserFailedAttempts</td>
+                        <td>@(b.UnknownUserLastFailedUtc?.ToString("u") ?? "-")</td>
+                        <td style="white-space:nowrap;">
+                            @if (!b.IsBlocked)
+                            {
+                                <button @onclick="(() => _vm!.BlockAsync(b.Id))">@L["SetupSecurity_Action_Block"]</button>
+                            }
+                            else
+                            {
+                                <button @onclick="(() => _vm!.UnblockAsync(b.Id))">@L["SetupSecurity_Action_Unblock"]</button>
+                            }
+                            <button @onclick="(() => _vm!.ResetCountersAsync(b.Id))">@L["SetupSecurity_Action_Reset"]</button>
+                            <button class="danger" @onclick="(()=>_vm!.DeleteAsync(b.Id))">@L["SetupSecurity_Action_Delete"]</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter] public SetupSecurityViewModel? ViewModel { get; set; }
+
+    private SetupSecurityViewModel? _vm;
+    private EventHandler? _stateChangedHandler;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // require the host to provide the ViewModel
+        _vm = ViewModel ?? throw new InvalidOperationException("ViewModel parameter is required for SetupSecurityTab.");
+        _stateChangedHandler = (_, __) => { _ = InvokeAsync(StateHasChanged); };
+        _vm.StateChanged += _stateChangedHandler;
+        await _vm.ReloadAsync();
+    }
+
+    private void VmOnStateChanged(object? sender, EventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_vm != null)
+            {
+                if (_stateChangedHandler is not null) _vm.StateChanged -= _stateChangedHandler;
+                await _vm.DisposeAsync();
+            }
+        }
+        catch { }
+    }
+}

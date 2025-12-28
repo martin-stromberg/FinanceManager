@@ -1,32 +1,34 @@
 @using FinanceManager.Shared.Dtos
 @using FinanceManager.Web.ViewModels.Setup
-@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Pages.Setup> Localizer
-@inject IServiceProvider Services
-@using FinanceManager.Web.ViewModels
+@inject Microsoft.Extensions.Localization.IStringLocalizer<Pages> Localizer
 @using Microsoft.Extensions.DependencyInjection
 
 <div>
     <h4 class="tab-heading">@Localizer["ImportSplit_TabTitle"]</h4>
 
-    @if (_vm!.Loading)
+    @if (_vm == null)
     {
         <div>@Localizer["Msg_Loading"]</div>
     }
-    else if (!string.IsNullOrWhiteSpace(_vm!.Error))
+    else if (_vm.Loading)
     {
-        <div class="error">@_vm!.Error</div>
-        <button class="icon-btn" @onclick="(()=> _vm!.LoadAsync())" title="@Localizer["Btn_Retry"]">
+        <div>@Localizer["Msg_Loading"]</div>
+    }
+    else if (!string.IsNullOrWhiteSpace(_vm.Error))
+    {
+        <div class="error">@_vm.Error</div>
+        <button class="icon-btn" @onclick="(()=> _vm.LoadAsync())" title="@Localizer["Btn_Retry"]">
             <svg class="icon"><use href="icons/sprite.svg#refresh" /></svg>
         </button>
     }
-    else if (_vm!.Model != null)
+    else if (_vm.Model != null)
     {
-        <EditForm Model="_vm!.Model" OnValidSubmit="SaveAsync">
+        <EditForm Model="_vm.Model" OnValidSubmit="SaveAsync">
             <DataAnnotationsValidator />
             <div class="form-grid">
                 <div class="form-row">
                     <label>@Localizer["ImportSplit_Mode_Label"]</label>
-                    <select @bind="_vm!.Model.Mode" @bind:after="(()=> _vm!.OnModeChanged())">
+                    <select @bind="_vm.Model.Mode" @bind:after="(()=> _vm.OnModeChanged())">
                         <option value="@ImportSplitMode.FixedSize">@Localizer["ImportSplit_Mode_FixedSize"]</option>
                         <option value="@ImportSplitMode.Monthly">@Localizer["ImportSplit_Mode_Monthly"]</option>
                         <option value="@ImportSplitMode.MonthlyOrFixed">@Localizer["ImportSplit_Mode_MonthlyOrFixed"]</option>
@@ -34,15 +36,15 @@
                 </div>
                 <div class="form-row">
                     <label>@Localizer["ImportSplit_MaxEntries"]</label>
-                    <input type="number" min="1" @bind="_vm!.Model.MaxEntriesPerDraft" @bind:after="(()=> _vm!.Validate())" />
+                    <input type="number" min="1" @bind="_vm.Model.MaxEntriesPerDraft" @bind:after="(()=> _vm.Validate())" />
                 </div>
-                <div class="form-row" hidden="@(_vm!.Model.Mode != ImportSplitMode.MonthlyOrFixed)">
+                <div class="form-row" hidden="@(_vm.Model.Mode != ImportSplitMode.MonthlyOrFixed)">
                     <label>@Localizer["ImportSplit_MonthlyThreshold"]</label>
-                    <input type="number" min="1" @bind="_vm!.Model.MonthlySplitThreshold" @bind:after="(()=> _vm!.Validate())" />
+                    <input type="number" min="1" @bind="_vm.Model.MonthlySplitThreshold" @bind:after="(()=> _vm.Validate())" />
                 </div>
-                <div class="form-row" hidden="@(_vm!.Model.Mode == ImportSplitMode.FixedSize)">
+                <div class="form-row" hidden="@(_vm.Model.Mode == ImportSplitMode.FixedSize)">
                     <label>@Localizer["ImportSplit_MinEntries"]</label>
-                    <input type="number" min="1" @bind="_vm!.Model.MinEntriesPerDraft" @bind:after="(()=> _vm!.Validate())" />
+                    <input type="number" min="1" @bind="_vm.Model.MinEntriesPerDraft" @bind:after="(()=> _vm.Validate())" />
                 </div>
             </div>
 
@@ -54,52 +56,43 @@
                     <li><em>@Localizer["ImportSplit_Mode_MonthlyOrFixed"]:</em> @Localizer["ImportSplit_Help_Mode_Hybrid"]</li>
                 </ul>
                 <p class="help-field"><strong>@Localizer["ImportSplit_MaxEntries"]:</strong> @Localizer["ImportSplit_Help_MaxEntries"]</p>
-                <p class="help-field" hidden="@(_vm!.Model.Mode != ImportSplitMode.MonthlyOrFixed)">
+                <p class="help-field" hidden="@(_vm.Model.Mode != ImportSplitMode.MonthlyOrFixed)">
                     <strong>@Localizer["ImportSplit_MonthlyThreshold"]:</strong> @Localizer["ImportSplit_Help_MonthlyThreshold"]
                 </p>
-                <p class="help-field" hidden="@(_vm!.Model.Mode == ImportSplitMode.FixedSize)">
+                <p class="help-field" hidden="@(_vm.Model.Mode == ImportSplitMode.FixedSize)">
                     <strong>@Localizer["ImportSplit_MinEntries"]:</strong> @Localizer["ImportSplit_Help_MinEntries"]
                 </p>
                 <p class="help-example">@Localizer["ImportSplit_Help_Example"]</p>
             </div>
 
-            @if (_vm!.ValidationMessage != null)
+            @if (_vm.ValidationMessage != null)
             {
-                <div class="error error-margin">@Localizer[_vm!.ValidationMessage]</div>
+                <div class="error error-margin">@Localizer[_vm.ValidationMessage]</div>
             }
 
-            <div class="form-actions">
-                <button type="submit" class="icon-btn" disabled="@(!_vm!.Dirty || _vm!.Saving || _vm!.HasValidationError)">
-                    <svg class="icon"><use href="icons/sprite.svg#save" /></svg>
-                </button>
-                <button type="button" class="icon-btn" disabled="@(!_vm!.Dirty || _vm!.Saving)" title="@Localizer["Btn_Reset"]" @onclick="Reset">
-                    <svg class="icon"><use href="icons/sprite.svg#undo" /></svg>
-                </button>
-            </div>
-
-            @if (_vm!.SavedOk)
+            @if (!string.IsNullOrWhiteSpace(_vm.SaveError))
             {
-                <div class="success success-margin">@Localizer["ImportSplit_SaveSuccess"]</div>
-            }
-            else if (!string.IsNullOrWhiteSpace(_vm!.SaveError))
-            {
-                <div class="error error-margin">@_vm!.SaveError</div>
+                <div class="error error-margin">@_vm.SaveError</div>
             }
         </EditForm>
     }
 </div>
 
 @code {
-    private SetupImportSplitViewModel? _vm;
+    [Parameter] public SetupStatementsViewModel? ViewModel { get; set; }
+
+    private SetupStatementsViewModel? _vm;
 
     protected override async Task OnInitializedAsync()
     {
-        _vm = ActivatorUtilities.CreateInstance<SetupImportSplitViewModel>(Services);
-        _vm.StateChanged += (_, __) => { _ = InvokeAsync(StateHasChanged); };
-        await _vm.InitializeAsync();
+        _vm = ViewModel;
+        if (_vm != null)
+        {
+            _vm.StateChanged += (_, __) => { _ = InvokeAsync(StateHasChanged); };
+            await _vm.LoadAsync();
+        }
     }
 
     private Task SaveAsync() => _vm!.SaveAsync();
-
     private void Reset() => _vm!.Reset();
 }
