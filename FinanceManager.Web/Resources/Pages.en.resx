@@ -1197,4 +1197,64 @@
   <data name="Ribbon_Group_Import" xml:space="preserve">
     <value>Import</value>
   </data>
+  <data name="Ribbon_Kpi_Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Ribbon_Kpi_Done" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="Ribbon_Group_KPI" xml:space="preserve">
+    <value>KPI</value>
+  </data>
+  <data name="Chart_Title_AllAccounts" xml:space="preserve">
+    <value>Monthly Turnover</value>
+  </data>
+  <data name="Chart_Title_MonthlySaving" xml:space="preserve">
+    <value>Monthly Savings</value>
+  </data>
+  <data name="Chart_Title_DividendsQuarterly" xml:space="preserve">
+    <value>Quarterly Dividend</value>
+  </data>
+  <data name="Kpi_ActiveSavingsPlansCount" xml:space="preserve">
+    <value>Active savings plans</value>
+  </data>
+  <data name="Kpi_ContactsCount" xml:space="preserve">
+    <value>Contacts</value>
+  </data>
+  <data name="Kpi_SecuritiesCount" xml:space="preserve">
+    <value>Securities</value>
+  </data>
+  <data name="Kpi_OpenStatementDraftsCount" xml:space="preserve">
+    <value>Open drafts</value>
+  </data>
+  <data name="AddKpi_Title" xml:space="preserve">
+    <value>Add KPI</value>
+  </data>
+  <data name="Kpi_Tab_Predefined" xml:space="preserve">
+    <value>Predefined</value>
+  </data>
+  <data name="Kpi_Tab_Favorites" xml:space="preserve">
+    <value>Favorites</value>
+  </data>
+  <data name="Kpi_Display_TotalOnly" xml:space="preserve">
+    <value>Total only</value>
+  </data>
+  <data name="Kpi_Display_TotalWithComparisons" xml:space="preserve">
+    <value>Total + comparisons</value>
+  </data>
+  <data name="Kpi_Display_ReportGraph" xml:space="preserve">
+    <value>Report graph</value>
+  </data>
+  <data name="Kpi_Display" xml:space="preserve">
+    <value>Display</value>
+  </data>
+  <data name="Dialog_Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Dialog_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Home_PageTitle" xml:space="preserve">
+    <value>Finance Manager</value>
+  </data>
 </root>

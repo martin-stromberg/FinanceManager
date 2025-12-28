@@ -1197,4 +1197,64 @@
   <data name="Ribbon_Group_Import" xml:space="preserve">
     <value>Importieren</value>
   </data>
+  <data name="Ribbon_Kpi_Edit" xml:space="preserve">
+    <value>Bearbeiten</value>
+  </data>
+  <data name="Ribbon_Kpi_Done" xml:space="preserve">
+    <value>Fertig</value>
+  </data>
+  <data name="Ribbon_Group_KPI" xml:space="preserve">
+    <value>Kennzahlen</value>
+  </data>
+  <data name="Chart_Title_AllAccounts" xml:space="preserve">
+    <value>Monatsumsatz</value>
+  </data>
+  <data name="Chart_Title_MonthlySaving" xml:space="preserve">
+    <value>Monatssparraten</value>
+  </data>
+  <data name="Chart_Title_DividendsQuarterly" xml:space="preserve">
+    <value>Quartalsdividenden</value>
+  </data>
+  <data name="Kpi_ActiveSavingsPlansCount" xml:space="preserve">
+    <value>Aktive Sparpläne</value>
+  </data>
+  <data name="Kpi_ContactsCount" xml:space="preserve">
+    <value>Kontakte</value>
+  </data>
+  <data name="Kpi_SecuritiesCount" xml:space="preserve">
+    <value>Wertpapiere</value>
+  </data>
+  <data name="Kpi_OpenStatementDraftsCount" xml:space="preserve">
+    <value>Offene Auszüge</value>
+  </data>
+  <data name="AddKpi_Title" xml:space="preserve">
+    <value>KPI hinzufügen</value>
+  </data>
+  <data name="Kpi_Tab_Predefined" xml:space="preserve">
+    <value>Vordefiniert</value>
+  </data>
+  <data name="Kpi_Tab_Favorites" xml:space="preserve">
+    <value>Favoriten</value>
+  </data>
+  <data name="Kpi_Display_TotalOnly" xml:space="preserve">
+    <value>Nur Gesamtbetrag</value>
+  </data>
+  <data name="Kpi_Display_TotalWithComparisons" xml:space="preserve">
+    <value>Gesamtbetrag + Vergleiche</value>
+  </data>
+  <data name="Kpi_Display_ReportGraph" xml:space="preserve">
+    <value>Berichtsgrafik</value>
+  </data>
+  <data name="Kpi_Display" xml:space="preserve">
+    <value>Anzeige</value>
+  </data>
+  <data name="Dialog_Add" xml:space="preserve">
+    <value>Hinzufügen</value>
+  </data>
+  <data name="Dialog_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="Home_PageTitle" xml:space="preserve">
+    <value>Finanzverwaltung</value>
+  </data>
 </root>

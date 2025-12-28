@@ -104,7 +104,7 @@ public sealed class HomeViewModel : ViewModelBase
         );
 
         var importTab = new UiRibbonTab(localizer["Ribbon_Group_Import"], new List<UiRibbonAction> { importAction });
-        var kpiTab = new UiRibbonTab(localizer["Ribbon_Group_Kpi"], new List<UiRibbonAction> { kpiAction });
+        var kpiTab = new UiRibbonTab(localizer["Ribbon_Group_KPI"], new List<UiRibbonAction> { kpiAction });
 
         var register = new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { importTab, kpiTab });
 
