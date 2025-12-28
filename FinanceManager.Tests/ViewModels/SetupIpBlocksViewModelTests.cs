@@ -39,7 +39,7 @@ public sealed class SetupIpBlocksViewModelTests
         apiMock.Setup(a => a.Admin_ListIpBlocksAsync(null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(items);
 
-        await vm.InitializeAsync();
+        await vm.ReloadAsync();
 
         Assert.Single(vm.Items);
         Assert.Equal("1.2.3.4", vm.Items[0].IpAddress);

@@ -2,6 +2,7 @@ namespace FinanceManager.Domain.Attachments;
 
 public enum AttachmentEntityKind : short
 {
+    None = -1,
     StatementDraftEntry = 0,
     StatementEntry = 1,
     Contact = 2,
@@ -10,8 +11,9 @@ public enum AttachmentEntityKind : short
     Account = 5,
     StatementImport = 6,
     Posting = 7,
-    StatementDraft = 8, // newly added for original uploaded statement files per draft
-    ContactCategory = 9, // symbol for contact category
-    SavingsPlanCategory = 10, // symbol for savings plan category
-    SecurityCategory = 11 // symbol for security category
+    StatementDraft = 8, 
+    ContactCategory = 9,
+    SavingsPlanCategory = 10, 
+    SecurityCategory = 11
+    
 }

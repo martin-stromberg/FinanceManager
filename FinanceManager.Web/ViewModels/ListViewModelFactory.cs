@@ -86,10 +86,13 @@ namespace FinanceManager.Web.ViewModels
                     // list of statement drafts
                     var sdVm = ActivatorUtilities.CreateInstance<StatementDraftsListViewModel>(_sp);
                     return new ListFactoryResult(sdVm);
-                 default:
-                     return null;
-             }
-         }
+                case "users":
+                    var uvm = ActivatorUtilities.CreateInstance<Setup.UserListViewModel>(_sp);
+                    return new ListFactoryResult(uvm);
+                default:
+                    return null;
+            }
+        }
 
         // Create postings list providers with optional subkind (e.g. 'account', 'contact') and optional id filter
         private ListFactoryResult? CreatePostings(string subKind, Guid? id)
