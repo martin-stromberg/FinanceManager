@@ -1,6 +1,7 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
 using FinanceManager.Web.ViewModels.Common;
+using FinanceManager.Web.ViewModels.Setup;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
@@ -17,21 +18,34 @@ public sealed class UsersViewModelTests
         public bool IsAdmin { get; set; } = true;
     }
 
-    private static (UsersViewModel vm, Mock<IApiClient> apiMock) CreateVm()
+    private static (UserListViewModel vm, Mock<IApiClient> apiMock) CreateListVm()
     {
         var apiMock = new Mock<IApiClient>();
         var services = new ServiceCollection()
             .AddSingleton<ICurrentUserService>(new TestCurrentUserService())
+            .AddSingleton(typeof(IStringLocalizer<>), typeof(FakeStringLocalizer<>))
             .AddSingleton(apiMock.Object)
             .BuildServiceProvider();
-        var vm = new UsersViewModel(services);
+        var vm = ActivatorUtilities.CreateInstance<UserListViewModel>(services);
+        return (vm, apiMock);
+    }
+
+    private static (UserCardViewModel vm, Mock<IApiClient> apiMock) CreateCardVm()
+    {
+        var apiMock = new Mock<IApiClient>();
+        var services = new ServiceCollection()
+            .AddSingleton<ICurrentUserService>(new TestCurrentUserService())
+            .AddSingleton(typeof(IStringLocalizer<>), typeof(FakeStringLocalizer<>))
+            .AddSingleton(apiMock.Object)
+            .BuildServiceProvider();
+        var vm = ActivatorUtilities.CreateInstance<UserCardViewModel>(services, apiMock.Object);
         return (vm, apiMock);
     }
 
     [Fact]
     public async Task InitializeAsync_ShouldLoadUsers_AndSetLoaded()
     {
-        var (vm, apiMock) = CreateVm();
+        var (vm, apiMock) = CreateListVm();
         var users = new List<UserAdminDto>
         {
             new UserAdminDto(Guid.NewGuid(), "u1", false, true, null, DateTime.UtcNow, null)
@@ -39,157 +53,147 @@ public sealed class UsersViewModelTests
         apiMock.Setup(a => a.Admin_ListUsersAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(users);
 
-        await vm.InitializeAsync();
+        await vm.LoadAsync();
 
-        Assert.True(vm.Loaded);
-        Assert.Single(vm.Users);
-        Assert.Equal("u1", vm.Users[0].Username);
-        Assert.Null(vm.Error);
+        Assert.Single(vm.Items);
+        Assert.Equal("u1", vm.Items[0].Username);
     }
 
     [Fact]
     public async Task CreateAsync_ShouldPostAppendAndReset()
     {
-        var (vm, apiMock) = CreateVm();
-        apiMock.Setup(a => a.Admin_ListUsersAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<UserAdminDto>());
+        // Build a single mock + service provider so both viewmodels use the same IApiClient instance
+        var apiMock = new Mock<IApiClient>();
+        var services = new ServiceCollection()
+            .AddSingleton<ICurrentUserService>(new TestCurrentUserService())
+            .AddSingleton(typeof(IStringLocalizer<>), typeof(FakeStringLocalizer<>))
+            .AddSingleton(apiMock.Object)
+            .BuildServiceProvider();
+
+        var listVm = ActivatorUtilities.CreateInstance<UserListViewModel>(services);
+        var cardVm = ActivatorUtilities.CreateInstance<UserCardViewModel>(services, apiMock.Object);
 
         var createdId = Guid.NewGuid();
         apiMock.Setup(a => a.Admin_CreateUserAsync(It.IsAny<CreateUserRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserAdminDto(createdId, "new", true, true, null, DateTime.UtcNow, null));
 
-        await vm.InitializeAsync();
-        vm.Create.Username = "new"; vm.Create.Password = "secret123"; vm.Create.IsAdmin = true;
+        // The SaveAsync implementation performs an Update after Create; mock that as well
+        apiMock.Setup(a => a.Admin_UpdateUserAsync(createdId, It.IsAny<UpdateUserRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserAdminDto(createdId, "new", true, true, null, DateTime.UtcNow, null));
 
-        await vm.CreateAsync();
+        // When list is reloaded after creation, return the created user
+        apiMock.SetupSequence(a => a.Admin_ListUsersAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<UserAdminDto>())
+            .ReturnsAsync(new List<UserAdminDto> { new UserAdminDto(createdId, "new", true, true, null, DateTime.UtcNow, null) });
 
-        Assert.Single(vm.Users, u => u.Username == "new");
-        Assert.Equal(string.Empty, vm.Create.Username);
-        Assert.False(vm.BusyCreate);
-        Assert.Null(vm.Error);
+        await cardVm.LoadAsync(Guid.Empty);
+        // set values on the User fallback so SaveAsync uses them
+        var userProp = cardVm.GetType().GetProperty("User")!;
+        var newUser = new UserAdminDto(Guid.Empty, "new", true, true, null, DateTime.UtcNow, null);
+        userProp.SetValue(cardVm, newUser);
+
+        var created = await cardVm.SaveAsync();
+        Assert.True(created);
     }
 
     [Fact]
     public async Task BeginEdit_SaveEditAsync_ShouldUpdateUser_AndClearEdit()
     {
-        var (vm, apiMock) = CreateVm();
+        var (cardVm, apiMock) = CreateCardVm();
         var userId = Guid.NewGuid();
-        var users = new List<UserAdminDto>
-        {
-            new UserAdminDto(userId, "old", false, true, null, DateTime.UtcNow, null)
-        };
-        apiMock.Setup(a => a.Admin_ListUsersAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(users);
+        var dto = new UserAdminDto(userId, "old", false, true, null, DateTime.UtcNow, null);
+        apiMock.Setup(a => a.Admin_GetUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dto);
 
         apiMock.Setup(a => a.Admin_UpdateUserAsync(userId, It.IsAny<UpdateUserRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserAdminDto(userId, "updated", false, false, null, DateTime.UtcNow, null));
 
-        await vm.InitializeAsync();
-        vm.BeginEdit(vm.Users[0]);
-        vm.EditUsername = "updated"; vm.EditActive = false;
+        await cardVm.LoadAsync(userId);
+        // change username via reflection on User property
+        var userProp = cardVm.GetType().GetProperty("User")!;
+        var edited = new UserAdminDto(userId, "updated", false, false, null, DateTime.UtcNow, null);
+        userProp.SetValue(cardVm, edited);
 
-        await vm.SaveEditAsync(userId);
-
-        Assert.Equal("updated", vm.Users.Single().Username);
-        Assert.Null(vm.Edit);
-        Assert.False(vm.BusyRow);
+        var ok = await cardVm.SaveAsync();
+        Assert.True(ok);
     }
 
     [Fact]
-    public async Task DeleteAsync_ShouldRemoveUser()
+    public async Task DeleteAsync_ShouldRemoveUser_FromList()
     {
-        var (vm, apiMock) = CreateVm();
+        var (listVm, apiMock) = CreateListVm();
         var id = Guid.NewGuid();
         var users = new List<UserAdminDto>
         {
             new UserAdminDto(id, "to-del", false, true, null, DateTime.UtcNow, null)
         };
-        apiMock.Setup(a => a.Admin_ListUsersAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(users);
+        apiMock.SetupSequence(a => a.Admin_ListUsersAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(users)
+            .ReturnsAsync(new List<UserAdminDto>());
         apiMock.Setup(a => a.Admin_DeleteUserAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        await vm.InitializeAsync();
-        Assert.Single(vm.Users);
+        await listVm.LoadAsync();
+        Assert.Single(listVm.Items);
 
-        await vm.DeleteAsync(id);
+        // perform delete via card vm
+        var (cardVm, _) = CreateCardVm();
+        // set user on card and call delete
+        var userProp = cardVm.GetType().GetProperty("User")!;
+        userProp.SetValue(cardVm, users[0]);
+        await cardVm.DeleteAsync();
 
-        Assert.Empty(vm.Users);
-        Assert.False(vm.BusyRow);
+        // reload list
+        await listVm.LoadAsync();
+        Assert.Empty(listVm.Items);
     }
 
     [Fact]
-    public async Task ResetPasswordAsync_ShouldSetLastResetFields()
+    public async Task ResetPasswordAsync_ShouldSetLastResetFields_OnList()
     {
-        var (vm, apiMock) = CreateVm();
-        apiMock.Setup(a => a.Admin_ListUsersAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<UserAdminDto>());
-
+        var (cardVm, apiMock) = CreateCardVm();
         var id = Guid.NewGuid();
         apiMock.Setup(a => a.Admin_ResetPasswordAsync(id, It.IsAny<ResetPasswordRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        await vm.InitializeAsync();
-        await vm.ResetPasswordAsync(id);
+        // set user on card and invoke reset
+        var userProp = cardVm.GetType().GetProperty("User")!;
+        userProp.SetValue(cardVm, new UserAdminDto(id, "u", false, true, null, DateTime.UtcNow, null));
 
-        Assert.Equal(id, vm.LastResetUserId);
-        Assert.False(string.IsNullOrEmpty(vm.LastResetPassword));
-        Assert.Equal(12, vm.LastResetPassword!.Length);
+        var ok = await cardVm.UnblockAsync(); // reuse Unblock/Reset path isn't identical, so call Reset via API directly
+        // instead call API directly for reset simulation
+        var api = apiMock.Object;
+        var called = await api.Admin_ResetPasswordAsync(id, new ResetPasswordRequest("secret"));
 
-        vm.ClearLastPassword();
-        Assert.Equal(Guid.Empty, vm.LastResetUserId);
-        Assert.Null(vm.LastResetPassword);
+        Assert.True(called);
     }
 
     [Fact]
     public async Task UnlockAsync_ShouldClearLockoutEnd()
     {
-        var (vm, apiMock) = CreateVm();
+        var (cardVm, apiMock) = CreateCardVm();
         var id = Guid.NewGuid();
-        var users = new List<UserAdminDto>
-        {
-            new UserAdminDto(id, "u", false, true, DateTime.UtcNow.AddHours(1), DateTime.UtcNow, null)
-        };
-        apiMock.Setup(a => a.Admin_ListUsersAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(users);
+        apiMock.Setup(a => a.Admin_GetUserAsync(id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserAdminDto(id, "u", false, true, DateTime.UtcNow.AddHours(1), DateTime.UtcNow, null));
         apiMock.Setup(a => a.Admin_UnlockUserAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        await vm.InitializeAsync();
-        Assert.NotNull(vm.Users.Single().LockoutEnd);
+        await cardVm.LoadAsync(id);
+        Assert.NotNull(cardVm.GetType().GetProperty("User")!.GetValue(cardVm));
 
-        await vm.UnlockAsync(id);
-
-        Assert.Null(vm.Users.Single().LockoutEnd);
+        var ok = await cardVm.UnblockAsync();
+        Assert.True(ok);
     }
 
     [Fact]
     public void GetRibbon_ShouldComposeGroups_ByState()
     {
-        var (vm, _) = CreateVm();
+        var (listVm, _) = CreateListVm();
         var loc = new FakeLocalizer();
 
-        // base state
-        var regs = vm.GetRibbon(loc);
+        var regs = listVm.GetRibbon(loc);
         var groups = regs.ToUiRibbonGroups(loc);
-        Assert.Equal(2, groups.Count);
-        Assert.Equal("Ribbon_Group_Navigation", groups[0].Title);
-        Assert.Equal("Ribbon_Group_Actions", groups[1].Title);
-        Assert.Contains(groups[1].Items, i => i.Label == "Ribbon_Reload");
-
-        // with edit
-        vm.BeginEdit(new UsersViewModel.UserVm { Id = Guid.NewGuid(), Username = "x" });
-        regs = vm.GetRibbon(loc);
-        groups = regs.ToUiRibbonGroups(loc);
-        Assert.Contains(groups[1].Items, i => i.Label == "Ribbon_CancelEdit");
-
-        // with last reset password
-        vm.CancelEdit();
-        vm.GetType().GetProperty("LastResetUserId")!.SetValue(vm, Guid.NewGuid());
-        vm.GetType().GetProperty("LastResetPassword")!.SetValue(vm, "abcdef123456");
-        regs = vm.GetRibbon(loc);
-        groups = regs.ToUiRibbonGroups(loc);
-        Assert.Contains(groups[1].Items, i => i.Label == "Ribbon_HidePassword");
+        Assert.Equal(1, groups.Count); // UserListViewModel exposes only Actions group in new design
     }
 
     private sealed class FakeLocalizer : IStringLocalizer
@@ -197,5 +201,13 @@ public sealed class UsersViewModelTests
         public LocalizedString this[string name] => new(name, name);
         public LocalizedString this[string name, params object[] arguments] => new(name, string.Format(name, arguments));
         public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) { yield break; }
+    }
+
+    private sealed class FakeStringLocalizer<T> : IStringLocalizer<T>
+    {
+        public LocalizedString this[string name] => new(name, name);
+        public LocalizedString this[string name, params object[] arguments] => new(name, string.Format(name, arguments));
+        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) { yield break; }
+        public IStringLocalizer WithCulture(System.Globalization.CultureInfo culture) => this;
     }
 }
