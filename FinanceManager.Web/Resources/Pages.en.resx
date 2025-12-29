@@ -1257,4 +1257,28 @@
   <data name="Home_PageTitle" xml:space="preserve">
     <value>Finance Manager</value>
   </data>
+  <data name="Chart_Title_Contact_Aggregates" xml:space="preserve">
+    <value>Aggregates</value>
+  </data>
+  <data name="UserList_Th_Username" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="UserList_Th_Admin" xml:space="preserve">
+    <value>Admin</value>
+  </data>
+  <data name="UserList_Th_Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="UserList_Th_LockedUntil" xml:space="preserve">
+    <value>Locked until</value>
+  </data>
+  <data name="UserList_Th_LastLogin" xml:space="preserve">
+    <value>Last login</value>
+  </data>
+  <data name="Value_Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Value_No" xml:space="preserve">
+    <value>No</value>
+  </data>
 </root>
