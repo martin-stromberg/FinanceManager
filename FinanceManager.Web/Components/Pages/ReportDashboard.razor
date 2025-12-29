@@ -500,6 +500,7 @@ else
     {
         _vm = ActivatorUtilities.CreateInstance<ReportDashboardViewModel>(Services);
         _vm.StateChanged += (_, __) => { InvokeAsync(StateHasChanged); };
+        _vm.UiActionRequestedEx += (_, e) => { HandleRibbonAction(e.Action); };
         await base.OnInitializedAsync();
     }
 
