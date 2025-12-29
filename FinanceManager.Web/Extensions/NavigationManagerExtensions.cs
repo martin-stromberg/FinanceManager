@@ -63,6 +63,17 @@ public static class NavigationManagerExtensions
             }
             return false;
         }
+        if (string.Equals(t.Name, "StatementDraftEntryDto", StringComparison.OrdinalIgnoreCase)
+            || (t.FullName != null && t.FullName.EndsWith(".StatementDraftEntryDto", StringComparison.OrdinalIgnoreCase)))
+        {
+            var pid = t.GetProperty("Id")?.GetValue(result);
+            if (pid is Guid gid)
+            {
+                nav.NavigateTo($"/card/statement-drafts/entries/{gid}");
+                return true;
+            }
+            return false;
+        }
 
         // Fallback: try to find an Id property of type Guid
         var prop = t.GetProperty("Id");

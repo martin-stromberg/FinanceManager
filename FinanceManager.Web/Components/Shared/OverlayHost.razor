@@ -10,7 +10,28 @@
     <div class="split-center" @onclick="(()=> CloseOverlay())">
         <div class="split-dialog" style="max-width:90vH;" @onclick:stopPropagation="true">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
-                <h3 style="margin:0;font-size:1rem;">@GetOverlayTitle()</h3>
+              <div class="overlay-header">
+                @* Prefer 'Title' parameter passed in UiOverlaySpec.Parameters; fallback to Attachments_Title *@
+                @{
+                    string? overlayTitle = null;
+                    try
+                    {
+                        if (_spec.Parameters != null && _spec.Parameters.TryGetValue("Title", out var t) && t is string s && !string.IsNullOrWhiteSpace(s))
+                        {
+                            overlayTitle = s;
+                        }
+                    }
+                    catch { /* ignore */ }
+                }
+                @if (!string.IsNullOrWhiteSpace(overlayTitle))
+                {
+                    <h2>@overlayTitle</h2>
+                }
+                else
+                {
+                        <h2>@GetOverlayTitle()</h2>
+                }
+              </div>
                 <button class="icon-btn" title='@Localizer["Btn_Close"]' @onclick="(()=> CloseOverlay())"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
             </div>
             @{ 

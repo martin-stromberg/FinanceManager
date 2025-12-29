@@ -60,7 +60,7 @@ public sealed partial class StatementDraftService
         if (parentDraft == null) { return; }
         var assignedDraft = await _db.StatementDrafts.FirstOrDefaultAsync(d => d.Id == splitDraftId && d.OwnerUserId == ownerUserId, ct);
         if (parentDraft == null) { return; }
-        var assignedDrafts = await _db.StatementDrafts.Where(d => d.UploadGroupId == assignedDraft.UploadGroupId).Select(d => d.Id).ToListAsync(ct);
+        var assignedDrafts = await _db.StatementDrafts.Where(d => (assignedDraft.UploadGroupId != null &&  d.UploadGroupId == assignedDraft.UploadGroupId) || (d.Id == assignedDraft.Id)).Select(d => d.Id).ToListAsync(ct);
         var total = await _db.StatementDraftEntries.Where(e => assignedDrafts.Contains(e.DraftId)).SumAsync(e => e.Amount, ct);
         if (total == parentEntry.Amount && parentEntry.ContactId != null && parentEntry.Status != StatementDraftEntryStatus.Accounted)
         {

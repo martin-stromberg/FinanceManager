@@ -1281,4 +1281,34 @@
   <data name="Value_No" xml:space="preserve">
     <value>No</value>
   </data>
+  <data name="Ribbon_OpenAssignedStatement" xml:space="preserve">
+    <value>Assigned Statement</value>
+  </data>
+  <data name="Ribbon_AssignStatement" xml:space="preserve">
+    <value>Assign Statement</value>
+  </data>
+  <data name="Btn_Assign" xml:space="preserve">
+    <value>Assign</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_SumAmounts" xml:space="preserve">
+    <value>Total amount of entries</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_AssignedAmount" xml:space="preserve">
+    <value>Assigned amount</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Difference" xml:space="preserve">
+    <value>Difference</value>
+  </data>
+  <data name="Select_None" xml:space="preserve">
+    <value>Please select</value>
+  </data>
+  <data name="AssignStatement_Select" xml:space="preserve">
+    <value>Statement assignment</value>
+  </data>
+  <data name="AssignStatement_Title" xml:space="preserve">
+    <value>Assign statement</value>
+  </data>
+  <data name="Ribbon_UnassignStatement" xml:space="preserve">
+    <value>Unassign statement</value>
+  </data>
 </root>

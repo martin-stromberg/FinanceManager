@@ -1281,4 +1281,34 @@
   <data name="Value_No" xml:space="preserve">
     <value>Nein</value>
   </data>
+  <data name="Ribbon_OpenAssignedStatement" xml:space="preserve">
+    <value>Zugeordneter Kontoauszug</value>
+  </data>
+  <data name="Ribbon_AssignStatement" xml:space="preserve">
+    <value>Aufteilungsaufzug zuordnen</value>
+  </data>
+  <data name="Btn_Assign" xml:space="preserve">
+    <value>Zuordnen</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_SumAmounts" xml:space="preserve">
+    <value>Summe der Einträge</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_AssignedAmount" xml:space="preserve">
+    <value>Zugeordneter Betrag</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Difference" xml:space="preserve">
+    <value>Differenz</value>
+  </data>
+  <data name="Select_None" xml:space="preserve">
+    <value>Bitte auswählen</value>
+  </data>
+  <data name="AssignStatement_Select" xml:space="preserve">
+    <value>Kontoauszugzuordnung</value>
+  </data>
+  <data name="AssignStatement_Title" xml:space="preserve">
+    <value>Aufteilungsaufzug zuordnen</value>
+  </data>
+  <data name="Ribbon_UnassignStatement" xml:space="preserve">
+    <value>Kontoauszugzuordnung entfernen</value>
+  </data>
 </root>

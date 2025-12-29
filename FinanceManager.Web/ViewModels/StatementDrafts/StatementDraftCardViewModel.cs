@@ -1,3 +1,4 @@
+using System.Globalization;
 using FinanceManager.Shared.Dtos.Statements;
 using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.Localization;
@@ -43,13 +44,26 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
             }
 
             // Build card record
+            // Compute sum of entry amounts for display
+            var sumAmounts = Draft.Entries?.Where(e => e.Status != StatementDraftEntryStatus.AlreadyBooked && e.Status != StatementDraftEntryStatus.Announced).Sum(e => e.Amount) ?? 0m;
             var fields = new List<CardField>
             {
                 new CardField("Card_Caption_StatementDrafts_File", CardFieldKind.Text, text: Draft.OriginalFileName ?? string.Empty),
                 new CardField("Card_Caption_StatementDrafts_Description", CardFieldKind.Text, text: Draft.Description ?? string.Empty),
                 new CardField("Card_Caption_StatementDrafts_Status", CardFieldKind.Text, text: Draft.Status.ToString()),
-                new CardField("Card_Caption_StatementDrafts_Entries", CardFieldKind.Text, text: (Draft.Entries?.Count ?? 0).ToString())
+                new CardField("Card_Caption_StatementDrafts_Entries", CardFieldKind.Text, text: $"{(Draft.Entries?.Count(e => e.Status != StatementDraftEntryStatus.Announced && e.Status != StatementDraftEntryStatus.AlreadyBooked) ?? 0)} ({(Draft.Entries?.Count ?? 0)})"),
+                // Sum of all entry amounts
+                new CardField("Card_Caption_StatementDrafts_SumAmounts", CardFieldKind.Currency, text: sumAmounts.ToString("C", CultureInfo.CurrentCulture), amount: sumAmounts)
             };
+
+            // If this draft is assigned to an entry, show assigned amount and the difference
+            if (Draft.ParentEntryId.HasValue || Draft.ParentEntryAmount.HasValue)
+            {
+                var assigned = Draft.ParentEntryAmount ?? 0m;
+                var diff = assigned - sumAmounts;
+                fields.Add(new CardField("Card_Caption_StatementDrafts_AssignedAmount", CardFieldKind.Currency, text: assigned.ToString("C", CultureInfo.CurrentCulture), amount: assigned));
+                fields.Add(new CardField("Card_Caption_StatementDrafts_Difference", CardFieldKind.Currency, text: diff.ToString("C", CultureInfo.CurrentCulture), amount: diff));
+            }
 
             CardRecord = new CardRecord(fields, Draft);
 

@@ -408,7 +408,7 @@ public interface IApiClient
     /// <summary>Deletes a statement draft. Returns false when not found.</summary>
     Task<bool> StatementDrafts_DeleteAsync(Guid draftId, CancellationToken ct = default);
     // Add to IApiClient interface in the Statement Drafts region:
-    Task<StatementDraftEntryDto?> StatementDrafts_SetEntrySplitDraftAsync(Guid draftId, Guid entryId, StatementDraftSetSplitDraftRequest req, CancellationToken ct = default);
+    Task<StatementDraftSetEntrySplitDraftResultDto?> StatementDrafts_SetEntrySplitDraftAsync(Guid draftId, Guid entryId, StatementDraftSetSplitDraftRequest req, CancellationToken ct = default);
     // Users
     /// <summary>Checks if any users exist in the system.</summary>
     Task<bool> Users_HasAnyAsync(CancellationToken ct = default);

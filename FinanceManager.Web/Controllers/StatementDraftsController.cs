@@ -255,8 +255,11 @@ public sealed class StatementDraftsController : ControllerBase
     public async Task<IActionResult> GetEntryAsync(Guid draftId, Guid entryId, CancellationToken ct)
     {
         var draft = await _drafts.GetDraftHeaderAsync(draftId, _current.UserId, ct);
-        var ordered = (await _drafts.GetDraftEntriesAsync(draftId, ct)).OrderBy(e => e.BookingDate).ThenBy(e => e.Id).ToList();
-        var entry = await _drafts.GetDraftEntryAsync(draftId, entryId, ct);
+        if (draft is null && draftId == Guid.Empty)
+            draft = await _drafts.FindDraftHeaderAsync(entryId, _current.UserId, ct);        
+
+        var ordered = (await _drafts.GetDraftEntriesAsync(draft.DraftId, ct)).OrderBy(e => e.BookingDate).ThenBy(e => e.Id).ToList();
+        var entry = await _drafts.GetDraftEntryAsync(draft.DraftId, entryId, ct);
         if (entry is null) { return NotFound(); }
         var index = ordered.FindIndex(e => e.Id == entryId);
         var prev = index > 0 ? ordered[index - 1].Id : (Guid?)null;
@@ -387,7 +390,7 @@ public sealed class StatementDraftsController : ControllerBase
     /// Assigns or clears a split draft group for a draft entry and returns updated split difference.
     /// </summary>
     [HttpPost("{draftId:guid}/entries/{entryId:guid}/split")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(FinanceManager.Shared.Dtos.Statements.StatementDraftSetEntrySplitDraftResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SetEntrySplitDraftAsync(Guid draftId, Guid entryId, [FromBody] StatementDraftSetSplitDraftRequest body, CancellationToken ct)
     {
@@ -402,7 +405,8 @@ public sealed class StatementDraftsController : ControllerBase
                 splitSum = await _drafts.GetSplitGroupSumAsync(entry.SplitDraftId.Value, _current.UserId, ct);
                 if (splitSum.HasValue) { diff = entry.Amount - splitSum.Value; }
             }
-            return Ok(new { Entry = entry, SplitSum = splitSum, Difference = diff });
+            var result = new FinanceManager.Shared.Dtos.Statements.StatementDraftSetEntrySplitDraftResultDto(entry, splitSum, diff);
+            return Ok(result);
         }
         catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }

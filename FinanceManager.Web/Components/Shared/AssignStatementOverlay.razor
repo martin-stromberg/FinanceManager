@@ -1,0 +1,75 @@
+@using FinanceManager.Shared.Dtos.Statements
+@using Microsoft.AspNetCore.Components.Forms
+@using FinanceManager.Web.ViewModels.Common
+@inject IServiceProvider Services
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
+
+@if (options == null)
+{
+    <p>@Localizer["Loading"]</p>
+}
+else
+{
+    <div style="display:flex;flex-direction:column;gap:.5rem;">
+        @if (!string.IsNullOrWhiteSpace(Title))
+        {
+            <h3>@Title</h3>
+        }
+        <label>@Localizer["AssignStatement_Select"]</label>
+        <select @bind="selectedId">
+            <option value="">@Localizer["Select_None"]</option>
+            @foreach (var o in options)
+            {
+                <option value="@o.Key">@o.Name</option>
+            }
+        </select>
+        <div style="display:flex;justify-content:flex-end;gap:.5rem;">
+            <button class="btn" @onclick="Close">@Localizer["Btn_Cancel"]</button>
+            <button class="btn btn-primary" @onclick="Assign">@Localizer["Btn_Assign"]</button>
+        </div>
+    </div>
+}
+
+@code {
+    [CascadingParameter(Name = "OverlayClose")] public Action? OverlayClose { get; set; }
+    [CascadingParameter(Name = "OverlayOnFinished")] public Action<object>? OverlayOnFinished { get; set; }
+
+    [Parameter] public Guid? DraftId { get; set; }
+    [Parameter] public Guid? EntryId { get; set; }
+    [Parameter] public Guid? BankContactId { get; set; }
+
+    // Overlay payload uses key 'Candidates' when spec is created; accept both names for compatibility
+    [Parameter] public IEnumerable<FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem>? Candidates { get; set; }
+    [Parameter] public IEnumerable<FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem>? CurrentCandidates { get; set; }
+
+    private List<FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem>? options;
+    private Guid? selectedId;
+    [Parameter] public string? Title { get; set; }
+
+    protected override Task OnInitializedAsync()
+    {
+        // Initialize options from provided candidates; prefer 'Candidates' key if present
+        options = (Candidates ?? CurrentCandidates)?.ToList() ?? new List<FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem>();
+        return Task.CompletedTask;
+    }
+
+    private void Close() => OverlayClose?.Invoke();
+
+    private async Task Assign()
+    {
+        if (selectedId == null || DraftId == null || EntryId == null) { Close(); return; }
+        var api = Services.GetRequiredService<FinanceManager.Shared.IApiClient>();
+        try
+        {
+            var req = new StatementDraftSetSplitDraftRequest(selectedId);
+            var result = await api.StatementDrafts_SetEntrySplitDraftAsync(DraftId.Value, EntryId.Value, req, CancellationToken.None);
+            if (result != null && result.Entry != null)
+            {
+                OverlayOnFinished?.Invoke(result.Entry);
+                return;
+            }
+        }
+        catch { }
+        Close();
+    }
+}

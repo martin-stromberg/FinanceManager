@@ -2452,6 +2452,16 @@
             Request to assign security details to a statement draft entry (trade, dividend, fees, taxes).
             </summary>
         </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.StatementDraftSetEntrySplitDraftResultDto">
+            <summary>
+            Result payload for assigning/clearing a split draft on an entry.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Statements.StatementDraftSetEntrySplitDraftResultDto.#ctor(FinanceManager.Shared.Dtos.Statements.StatementDraftEntryDto,System.Nullable{System.Decimal},System.Nullable{System.Decimal})">
+            <summary>
+            Result payload for assigning/clearing a split draft on an entry.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Statements.StatementDraftSetSavingsPlanRequest">
             <summary>
             Request to set or clear an associated savings plan for a statement draft entry.

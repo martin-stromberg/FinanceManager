@@ -1634,7 +1634,7 @@ public class ApiClient : IApiClient
     /// <summary>
      /// Assigns or clears a split draft group for a draft entry and returns updated split difference.
      /// </summary>
-    public async Task<StatementDraftEntryDto?> StatementDrafts_SetEntrySplitDraftAsync(Guid draftId, Guid entryId, StatementDraftSetSplitDraftRequest req, CancellationToken ct = default)
+    public async Task<StatementDraftSetEntrySplitDraftResultDto?> StatementDrafts_SetEntrySplitDraftAsync(Guid draftId, Guid entryId, StatementDraftSetSplitDraftRequest req, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/split", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
@@ -1644,13 +1644,10 @@ public class ApiClient : IApiClient
             return null;
         }
         await EnsureSuccessOrSetErrorAsync(resp);
-        var json = await resp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
-        if (json.TryGetProperty("Entry", out var entryProp))
-        {
-            return entryProp.Deserialize<StatementDraftEntryDto>();
-        }
-        return null;
+        var result = await resp.Content.ReadFromJsonAsync<StatementDraftSetEntrySplitDraftResultDto>();
+        return result;
     }
+
     #endregion Statement Drafts
 
     #region Statement Drafts Background Tasks

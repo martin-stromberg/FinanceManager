@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using FinanceManager.Shared.Dtos.Securities;
 using FinanceManager.Shared.Dtos.Accounts;
 using FinanceManager.Shared.Dtos.Contacts;
+using Microsoft.EntityFrameworkCore.Update;
 
 namespace FinanceManager.Web.ViewModels.StatementDrafts;
 
@@ -33,6 +34,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
     private string _savingsPlanName = string.Empty;
     private string _securityName = string.Empty;
     private bool _contactIsSelf = false;
+    private bool _contactIsPaymentIntermediary = false;
     private bool _accountAllowsSavings = true;
 
     // Temporary marker carrying created entity info when returning from create flow (createdKind, createdId)
@@ -92,7 +94,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
 
         // Security-related fields are only shown when the selected contact equals the bank contact of the statement draft
         var contactIsBankContact = (_entryDetail?.BankContactId.HasValue == true && entry.ContactId.HasValue && _entryDetail!.BankContactId == entry.ContactId);
-        if (contactIsBankContact)
+        if (contactIsBankContact || (entry.SecurityId is not null && entry.SecurityId != Guid.Empty))
         {
             fields.Add(new CardField("Card_Caption_StatementDrafts_Security", CardFieldKind.Text, text: _securityName, editable: true, lookupType: "Security", lookupField: "Name", valueId: entry.SecurityId, allowAdd: true, recordCreationNameSuggestion: entry.Subject));
             // Show localized enum label so the lookup's localized names match and the dropdown selection displays correctly
@@ -114,6 +116,21 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             fields.Add(new CardField("Card_Caption_StatementDrafts_Fee", CardFieldKind.Currency, text: entry.SecurityFeeAmount?.ToString(), amount: entry.SecurityFeeAmount, editable: true));
             fields.Add(new CardField("Card_Caption_StatementDrafts_Tax", CardFieldKind.Currency, text: entry.SecurityTaxAmount?.ToString(), amount: entry.SecurityTaxAmount, editable: true));
         }
+
+        // If this entry is associated with a split/group draft, show assigned amount and difference immediately after Amount
+        try
+        {
+            if (_entryDetail?.SplitSum.HasValue == true)
+            {
+                var assigned = _entryDetail.SplitSum.Value;
+                var diff = _entryDetail.Difference;
+                var insertIndex = 3; // after Date, Valuta, Amount
+                if (insertIndex > fields.Count) insertIndex = fields.Count;
+                fields.Insert(insertIndex, new CardField("Card_Caption_StatementDrafts_AssignedAmount", CardFieldKind.Currency, text: assigned.ToString("C", CultureInfo.CurrentCulture), amount: assigned));
+                fields.Insert(insertIndex + 1, new CardField("Card_Caption_StatementDrafts_Difference", CardFieldKind.Currency, text: (diff ?? 0m).ToString("C", CultureInfo.CurrentCulture), amount: diff));
+            }
+        }
+        catch { /* ignore formatting failures */ }
 
         return fields;
     }
@@ -178,7 +195,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             }
             catch { /* ignore */ }
 
-            if (EntryId == Guid.Empty || DraftId == Guid.Empty)
+            if (EntryId == Guid.Empty)
             {
                 Entry = null;
                 CardRecord = new CardRecord(new List<CardField>());
@@ -196,6 +213,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
 
             _entryDetail = dto;
             Entry = dto.Entry;
+            DraftId = dto.DraftId;
 
             // If user returned from create flow with a new entity, try to assign it to this entry
             try
@@ -234,6 +252,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                     var contactDto = await _api.Contacts_GetAsync(Entry.ContactId.Value, CancellationToken.None);
                     _contactName = contactDto?.Name ?? string.Empty;
                     _contactIsSelf = contactDto?.Type == ContactType.Self;
+                    _contactIsPaymentIntermediary = contactDto?.IsPaymentIntermediary == true;
                 }
                 catch { _contactName = string.Empty; }
             }
@@ -396,7 +415,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
 
             // track whether user explicitly provided savings plan lookup (for clear vs preserve)
             var savingsPlanProvided = PendingFieldValues.ContainsKey(kSavingsPlan);
-            // separate: was the security lookup explicitly provided/cleared, and were other security-related fields changed?
+            // separate: was the security lookup explicitly provided, and were other security-related fields changed?
             var securityLookupProvided = PendingFieldValues.ContainsKey(kSecurity);
             var securityOtherProvided = PendingFieldValues.ContainsKey(kTransactionType) || PendingFieldValues.ContainsKey(kQuantity) || PendingFieldValues.ContainsKey(kFee) || PendingFieldValues.ContainsKey(kTax);
             // overall we consider security-related changes present when either lookup or other security fields were changed
@@ -631,7 +650,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                     if (draftHeader?.DetectedAccountId is Guid acctId)
                     {
                         var detectedAccount = await _api.GetAccountAsync(acctId, CancellationToken.None);
-                        if (detectedAccount != null)
+			            if (detectedAccount != null)
                         {
                             _accountAllowsSavings = detectedAccount.SavingsPlanExpectation != SavingsPlanExpectation.None;
                         }
@@ -825,6 +844,70 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         };
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, linkedActions));
 
+        // If the entry's contact equals the bank contact for the draft, allow assigning/opening a linked statement
+        try
+        {
+            // Offer assign/open statement actions when the assigned contact on the entry is a payment intermediary.
+            if (_contactIsPaymentIntermediary)
+            {
+                 // If there is already a SplitDraft assigned, allow opening it
+                 if (Entry?.SplitDraftId != null && Entry.SplitDraftId != Guid.Empty)
+                 {
+                    var openLabel = localizer["Ribbon_OpenAssignedStatement"].Value;
+                    linkedActions.Add(new UiRibbonAction("OpenAssignedStatement", openLabel, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, false, null, "OpenAssignedStatement", () => {
+                        var url = $"/card/statement-drafts/{Entry.SplitDraftId}";
+                        RaiseUiActionRequested("OpenPostings", url);
+                        return Task.CompletedTask;
+                    }));
+                    // Allow unassigning the association
+                    var unassignLabel = localizer["Ribbon_UnassignStatement"].Value;
+                    actions.Add(new UiRibbonAction("UnassignStatement", unassignLabel, "<svg><use href='/icons/sprite.svg#unlink'/></svg>", UiRibbonItemSize.Small, false, null, "UnassignStatement", async () => { await UnassignStatementAsync(); }));
+                 }
+                 else
+                 {
+                    var assignLabel = localizer["Ribbon_AssignStatement"].Value;
+                    actions.Add(new UiRibbonAction("AssignStatement", assignLabel, "<svg><use href='/icons/sprite.svg#link'/></svg>", UiRibbonItemSize.Small, false, null, "AssignStatement", async () => {
+                        try
+                        {
+                            // Load open drafts and filter to those without detected account assignment and not the current draft
+                            var drafts = await _api.StatementDrafts_ListOpenAsync(skip: 0, take: 200, CancellationToken.None);
+                            var candidates = drafts?
+                                .Where(d => d.DraftId != DraftId && d.DetectedAccountId == null)
+                                .Select(d => new FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem(d.DraftId, d.OriginalFileName))
+                                .ToList() ?? new List<FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem>();
+
+                            var specParams = new Dictionary<string, object?>
+                            {
+                                ["DraftId"] = DraftId,
+                                ["EntryId"] = EntryId,
+                                ["BankContactId"] = _entryDetail?.BankContactId,
+                                ["Candidates"] = candidates,
+                                ["Title"] = localizer["AssignStatement_Title"].Value
+                            };
+                            var spec = new FinanceManager.Web.ViewModels.Common.BaseViewModel.UiOverlaySpec(typeof(FinanceManager.Web.Components.Shared.AssignStatementOverlay), specParams);
+                            RaiseUiActionRequested("AssignStatement", spec);
+                        }
+                        catch
+                        {
+                            // ignore failures to load candidates - still open overlay with empty list
+                            var specParams = new Dictionary<string, object?>
+                            {
+                                ["DraftId"] = DraftId,
+                                ["EntryId"] = EntryId,
+                                ["BankContactId"] = _entryDetail?.BankContactId,
+                                ["Candidates"] = new List<FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem>(),
+                                ["Title"] = localizer["AssignStatement_Title"].Value
+                            };
+                            var spec = new FinanceManager.Web.ViewModels.Common.BaseViewModel.UiOverlaySpec(typeof(FinanceManager.Web.Components.Shared.AssignStatementOverlay), specParams);
+                            RaiseUiActionRequested("AssignStatement", spec);
+                        }
+                        return;
+                    }));
+                 }
+            }
+        }
+        catch { }
+
         // Edit/Read-only toggle or Reset for AlreadyBooked
         if (Entry != null && Entry.Status == StatementDraftEntryStatus.AlreadyBooked)
         {
@@ -969,6 +1052,43 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             }
             // After reset editing becomes available according to rules
             _isEditMode = false;
+            CardRecord = new CardRecord(BuildFields(), Entry);
+            RaiseStateChanged();
+        }
+        catch (Exception ex)
+        {
+            SetError(null, ex.Message);
+        }
+        finally
+        {
+            Loading = false; RaiseStateChanged();
+        }
+    }
+
+    private async Task UnassignStatementAsync()
+    {
+        if (Entry == null || EntryId == Guid.Empty || DraftId == Guid.Empty) return;
+        Loading = true; SetError(null, null); RaiseStateChanged();
+        try
+        {
+            // Clear association by sending null SplitDraftId
+            var req = new Shared.Dtos.Statements.StatementDraftSetSplitDraftRequest(null);
+            var updated = await _api.StatementDrafts_SetEntrySplitDraftAsync(DraftId, EntryId, req, CancellationToken.None);
+            if (updated == null)
+            {
+                if (!string.IsNullOrWhiteSpace(_api.LastError)) SetError(_api.LastErrorCode ?? null, _api.LastError);
+                else SetError(null, "Unassign failed");
+                return;
+            }
+
+            // refresh local state
+            Entry = updated.Entry;
+            var refreshed = await _api.StatementDrafts_GetEntryAsync(DraftId, EntryId, CancellationToken.None);
+            if (refreshed != null)
+            {
+                _entryDetail = refreshed;
+                Entry = refreshed.Entry;
+            }
             CardRecord = new CardRecord(BuildFields(), Entry);
             RaiseStateChanged();
         }
