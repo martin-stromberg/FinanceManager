@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Localization;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace FinanceManager.Web.ViewModels.Home;
 
@@ -89,8 +90,21 @@ public sealed class HomeViewModel : ViewModelBase
             Disabled: false,
             Tooltip: null,
             Action: "Import",
-            Callback: new Func<Task>(() => { /* signal page to open import overlay */ RaiseUiActionRequested("Import"); return Task.CompletedTask; })
-        );
+            Callback: null
+        )
+        {
+            FileCallback = async (InputFileChangeEventArgs e) =>
+            {
+                var files = e.GetMultipleFiles();
+                if (files == null || files.Count == 0) return;
+                StartUpload(files.Count);
+                foreach (var file in files)
+                {
+                    await using var stream = file.OpenReadStream(10_000_000);
+                    await UploadFileAsync(stream, file.Name);
+                }
+            }
+        };
 
         var kpiAction = new UiRibbonAction(
             Id: "ToggleKpi",

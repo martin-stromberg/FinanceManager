@@ -3,6 +3,7 @@ using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using FinanceManager.Web.ViewModels;
 using FinanceManager.Shared.Dtos.Admin;
 
@@ -154,7 +155,40 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
                     false,
                     null,
                     "Import",
-                    new Func<Task>(async () => { RaiseUiActionRequested("Import"); }))
+                    null)
+                {
+                    FileCallback = async (InputFileChangeEventArgs e) =>
+                    {
+                        var files = e.GetMultipleFiles();
+                        if (files == null || files.Count == 0) return;
+
+                        var streams = new List<(Stream Stream, string FileName)>();
+                        try
+                        {
+                            foreach (var f in files)
+                            {
+                                streams.Add((f.OpenReadStream(10_000_000), f.Name));
+                            }
+
+                            var uploadResult = await ((FinanceManager.Web.ViewModels.Common.IUploadFilesViewModel)this).UploadFilesAsync("statementdraft", streams, CancellationToken.None);
+                            if (uploadResult?.StatementDraftResult?.FirstDraft != null && FirstDraftId == null)
+                            {
+                                FirstDraftId = uploadResult.StatementDraftResult.FirstDraft.DraftId;
+                            }
+                        }
+                        finally
+                        {
+                            foreach (var (s, _) in streams)
+                            {
+                                try { s.Dispose(); } catch { }
+                            }
+                        }
+
+                        // refresh list after upload
+                        ResetAndSearch();
+                        await LoadAsync();
+                    }
+                }
             })
         };
 

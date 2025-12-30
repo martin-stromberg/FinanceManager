@@ -1311,4 +1311,22 @@
   <data name="Ribbon_UnassignStatement" xml:space="preserve">
     <value>Unassign statement</value>
   </data>
+  <data name="Upload_Progress_Title" xml:space="preserve">
+    <value>Upload progess</value>
+  </data>
+  <data name="Upload_Progress_DoneOfTotal" xml:space="preserve">
+    <value>{0}/{1}</value>
+  </data>
+  <data name="Upload_Progress_CurrentFile" xml:space="preserve">
+    <value>Current file</value>
+  </data>
+  <data name="Import_SplitInfo_Monthly" xml:space="preserve">
+    <value>{0} entries will be splittet into {1} monthly drafts.</value>
+  </data>
+  <data name="Import_SplitInfo_Fixed" xml:space="preserve">
+    <value>{0} Entries will be splittet into {1} drafts.</value>
+  </data>
+  <data name="Import_SplitInfo_Details" xml:space="preserve">
+    <value>Mode: {0}, Max. Entries/Draft: {1}, Largest Draft: {2}</value>
+  </data>
 </root>

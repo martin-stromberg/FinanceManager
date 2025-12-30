@@ -1132,7 +1132,7 @@
     <value>Grund</value>
   </data>
   <data name="SetupSecurity_Th_UnknownFails" xml:space="preserve">
-    <value>Fehlversuche (unbek. Nutzer)</value>
+    <value>Fehlversuche (unbekannt)</value>
   </data>
   <data name="SetupSecurity_Th_LastFail" xml:space="preserve">
     <value>Letzter Fehlversuch</value>
@@ -1287,6 +1287,15 @@
   <data name="Ribbon_AssignStatement" xml:space="preserve">
     <value>Aufteilungsaufzug zuordnen</value>
   </data>
+  <data name="Upload_Progress_Title" xml:space="preserve">
+    <value>Upload-Fortschritt</value>
+  </data>
+  <data name="Upload_Progress_DoneOfTotal" xml:space="preserve">
+    <value>{0}/{1}</value>
+  </data>
+  <data name="Upload_Progress_CurrentFile" xml:space="preserve">
+    <value>Aktuelle Datei</value>
+  </data>
   <data name="Btn_Assign" xml:space="preserve">
     <value>Zuordnen</value>
   </data>
@@ -1310,5 +1319,14 @@
   </data>
   <data name="Ribbon_UnassignStatement" xml:space="preserve">
     <value>Kontoauszugzuordnung entfernen</value>
+  </data>
+  <data name="Import_SplitInfo_Monthly" xml:space="preserve">
+    <value>{0} Buchungen werden in {1} monatliche Entwürfe aufgeteilt.</value>
+  </data>
+  <data name="Import_SplitInfo_Fixed" xml:space="preserve">
+    <value>{0} Buchungen werden in {1} Entwürfe aufgeteilt.</value>
+  </data>
+  <data name="Import_SplitInfo_Details" xml:space="preserve">
+    <value>Modus: {0}, Max. Einträge/Entwurf: {1}, Größter Entwurf: {2}</value>
   </data>
 </root>

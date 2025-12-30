@@ -24,7 +24,11 @@ public sealed record UiRibbonAction(
     string? Tooltip,
     string? Action,
     Func<Task>? Callback
-);
+)
+{
+    // Optional file-change callback for Import actions. Kept as init-only to remain backwards compatible with positional ctor.
+    public Func<Microsoft.AspNetCore.Components.Forms.InputFileChangeEventArgs, System.Threading.Tasks.Task>? FileCallback { get; init; }
+};
 
 public sealed record UiRibbonTab(string Title, List<UiRibbonAction> Items, int Sort = 0);
 

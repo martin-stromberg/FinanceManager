@@ -47,9 +47,6 @@ else
                      EndOfListText="@Localizer["List_Result_EndOfList"]"
                      ItemClick="OnItemClick" />
 
-    @* Hidden input for list import (statement-drafts) - restored *@
-    <InputFile id="list-import-input" OnChange="OnListFileChanged" multiple style="position:fixed; left:-9999px; width:1px; height:1px; opacity:0; pointer-events:none;" />
-
     
     @* Generic overlay rendering for list providers *@
     @if (_overlayVisible && _overlaySpec is not null)
@@ -259,90 +256,8 @@ else
                 }
                 break;
             case "Import":
-                // only supported for statement-drafts list
-                if ((Kind ?? string.Empty).Trim().ToLowerInvariant() == "statement-drafts")
-                {
-                    await TriggerListImportAsync();
-                }
+                // Import handled by Ribbon FileCallback; no page-local input invocation required.
                 break;
-        }
-    }
-
-    // Import support: hidden file input for statement-drafts list
-    private async Task TriggerListImportAsync()
-    {
-        try
-        {
-            // Directly trigger the hidden file input. This must be called from a user gesture (button click).
-            await JS.InvokeVoidAsync("eval", "document.getElementById('list-import-input')?.click();");
-        }
-        catch
-        {
-            // swallow — UI will remain unchanged; OnListFileChanged handles nothing selected
-        }
-    }
-
-    private IEnumerable<(Stream Stream, string FileName)> CreateStreamList(IReadOnlyList<IBrowserFile> files)
-    {
-        foreach (var file in files)
-        {
-            var stream = file.OpenReadStream(10_000_000);
-            yield return (stream, file.Name);
-        }
-    }
-
-    private async Task OnListFileChanged(InputFileChangeEventArgs e)
-    {
-        if ((Kind ?? string.Empty).Trim().ToLowerInvariant() != "statement-drafts") return;
-        IReadOnlyList<IBrowserFile> files;
-        try
-        {
-            files = e.GetMultipleFiles(_maxUploadFiles);
-        }
-        catch (InvalidOperationException ex)
-        {
-            // InputFile throws when more files than allowed are supplied. Show friendly message.
-            _uploadError = string.Format(CultureInfo.CurrentCulture, Localizer["Err_TooManyFiles"].Value ?? "The maximum number of files accepted is {0}.", _maxUploadFiles);
-            StateHasChanged();
-            return;
-        }
-
-        if (files == null || files.Count == 0) return;
-
-        // clear previous upload page error
-        _uploadError = null;
-
-        if (_provider is FinanceManager.Web.ViewModels.Common.IUploadFilesViewModel upl)
-        {
-            // reset page-level result
-            _uploadCreatedCount = 0;
-            _firstCreatedDraftId = null;
-
-            var streamList = CreateStreamList(files).ToList();
-            try
-            {
-                var uploadResult = await upl.UploadFilesAsync("statementdraft", streamList, CancellationToken.None);
-                if (uploadResult != null)
-                {
-                    _uploadCreatedCount = uploadResult.CreatedCount;
-                    _firstCreatedDraftId = uploadResult.StatementDraftResult?.FirstDraft?.DraftId;
-                }
-            }
-            finally
-            {
-                foreach (var (s, _) in streamList)
-                {
-                    try { s.Dispose(); } catch { }
-                }
-            }
-
-            // refresh provider list
-            if (_provider != null)
-            {
-                _provider.ResetAndSearch();
-                await _provider.LoadAsync();
-            }
-            return;
         }
     }
 

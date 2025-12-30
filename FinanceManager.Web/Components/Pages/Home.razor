@@ -40,7 +40,7 @@
     {
         <div class="alert alert-success import-success">
             @Localizer["Import_Success"]
-            <a href="@($"/statement-drafts/{_vm.FirstDraftId}")" class="alert-link">@Localizer["Import_ShowDetails"]</a>
+            <a href="@($"/card/statement-drafts/{_vm.FirstDraftId}")" class="alert-link">@Localizer["Import_ShowDetails"]</a>
         </div>
     }
     @if (_vm?.SplitInfo != null)
@@ -61,9 +61,6 @@
     <div class="kpi-grid">
         <HomeKpiGrid EditMode="@(_vm?.KpiEditMode == true)" />
     </div>
-
-    <!-- File input used for import. Normally off-screen; moved over the Import button for iOS taps. -->
-    <InputFile id="home-import-input" OnChange="OnFileChanged" multiple style="position:fixed; left:-9999px; width:1px; height:1px; opacity:0;" />
 }
 else
 {
@@ -90,72 +87,12 @@ else
 
     private void VmOnUiActionRequested(object? _, string? action)
     {
-        if (string.Equals(action, "Import", StringComparison.OrdinalIgnoreCase))
-        {
-            _ = InvokeAsync(TriggerImportOverlayAsync);
-        }
+        // Import action is handled by the Ribbon FileCallback; page does not need to trigger a file input click anymore.
     }
 
     private void VmOnStateChanged(object? _, EventArgs? __)
     {
         _ = InvokeAsync(StateHasChanged);
-    }
-
-    private async Task TriggerImportOverlayAsync()
-    {
-        // Position input over the button and immediately click it in the same user gesture.
-        var js = @"(function(){
-            var btn = document.getElementById('home-import-btn');
-            var inp = document.getElementById('home-import-input');
-            if(!btn || !inp) return false;
-            var r = btn.getBoundingClientRect();
-            var scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-            var scrollY = window.pageYOffset || document.documentElement.scrollTop;
-            inp.style.position='absolute';
-            inp.style.left = (r.left + scrollX) + 'px';
-            inp.style.top = (r.top + scrollY) + 'px';
-            inp.style.width = r.width + 'px';
-            inp.style.height = r.height + 'px';
-            inp.style.opacity = '0.01';
-            inp.style.pointerEvents = 'auto';
-            try { inp.click(); } catch(e) {}
-            return true;
-        })();";
-        try
-        {
-            var ok = await JS.InvokeAsync<bool>("eval", js);
-            if (!ok)
-            {
-                await JS.InvokeVoidAsync("eval", "document.getElementById('home-import-input')?.click();");
-            }
-        }
-        catch
-        {
-            Nav.NavigateTo("/statement-drafts");
-        }
-    }
-
-    private async Task OnFileChanged(InputFileChangeEventArgs e)
-    {
-        if (_vm == null) return;
-
-        var files = e.GetMultipleFiles();
-        if (files == null || files.Count == 0)
-        {
-            await JS.InvokeVoidAsync("eval", "(function(){var inp=document.getElementById('home-import-input'); if(inp){inp.style.left='-9999px';inp.style.opacity='0';inp.style.pointerEvents='none';}})()");
-            return;
-        }
-
-        _vm.StartUpload(files.Count);
-
-        foreach (var file in files)
-        {
-            await using var stream = file.OpenReadStream(10_000_000);
-            await _vm.UploadFileAsync(stream, file.Name);
-        }
-
-        // Hide input again
-        await JS.InvokeVoidAsync("eval", "(function(){var inp=document.getElementById('home-import-input'); if(inp){inp.style.left='-9999px';inp.style.opacity='0';inp.style.pointerEvents='none';}})()");
     }
 
     public void Dispose()

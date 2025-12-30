@@ -42,6 +42,12 @@ html, body { margin: 0; padding: 0; }
     max-height: 32px; 
 }
 
+    .mobile-brand .brand-logo {
+        width: 24px;
+        height: 24px;
+        max-height: 32px;
+    }
+
 .nav-links { 
     list-style: none; 
     margin: 5 0; 
