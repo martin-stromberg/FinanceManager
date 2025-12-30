@@ -31,9 +31,8 @@
 }
 else
 {
-    <PageTitle>@($"{GetKindTitle()}: {_vm.Title}")</PageTitle>
-
     <Ribbon TTabEnum="TabId" Provider="_vm" Localizer="Localizer" />
+    <PageTitle>@($"{GetKindTitle()}: {_vm.Title}")</PageTitle>
 
     <BackgroundTaskStatusPanel AllowedTypes="@((_vm as BaseViewModel)?.VisibleBackgroundTaskTypes)" />
 

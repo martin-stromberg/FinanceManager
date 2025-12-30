@@ -16,17 +16,18 @@
 
 <PageTitle>@($"{Localizer["General_PageTitle"]}: {GetKindTitle()}")</PageTitle>
 
-<h3>@Localizer["General_PageTitle"]: @GetKindTitle()</h3>
-
-
 @if (_provider == null)
 {
+    <h3>@Localizer["General_PageTitle"]: @GetKindTitle()</h3>
+
     <p>@Localizer["General_Loading"]</p>
 }
 else
 {
     @* Render ribbon here so upload UI can be positioned directly under it *@
     <Ribbon TTabEnum="TabId" Provider="(IRibbonProvider)_provider" Localizer="Localizer" />
+
+    <h3>@Localizer["General_PageTitle"]: @GetKindTitle()</h3>
 
     <UploadStatus ViewModel="@(_provider as FinanceManager.Web.ViewModels.Common.IUploadFilesViewModel)"
                   CreatedCount="@_uploadCreatedCount"
