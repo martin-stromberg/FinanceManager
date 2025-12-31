@@ -859,6 +859,21 @@ public sealed partial class StatementDraftService : IStatementDraftService
         return draft;
     }
 
+    // New: create an empty draft (no parsed file) and return DTO
+    public async Task<StatementDraftDto> CreateEmptyDraftAsync(Guid ownerUserId, string originalFileName, CancellationToken ct)
+    {
+        // Create draft with no account number / description
+        var draft = new StatementDraft(ownerUserId, originalFileName, accountNumber: null, description: null);
+        _db.StatementDrafts.Add(draft);
+        await _db.SaveChangesAsync(ct);
+
+        // Classify (will run internal classification logic) and persist any changes
+        await ClassifyInternalAsync(draft, null, ownerUserId, ct);
+        await _db.SaveChangesAsync(ct);
+
+        return Map(draft);
+    }
+
     private async Task<StatementDraftDto> FinishDraftAsync(StatementDraft draft, Guid ownerUserId, CancellationToken ct)
     {
         _db.StatementDrafts.Add(draft);
@@ -2160,4 +2175,17 @@ public sealed partial class StatementDraftService : IStatementDraftService
             entry.SecurityTaxAmount);
     }
 
+    public async Task<StatementDraftDto?> SetDescriptionAsync(Guid draftId, Guid ownerUserId, string? description, CancellationToken ct)
+    {
+        var draft = await _db.StatementDrafts.Include(d => d.Entries)
+            .FirstOrDefaultAsync(d => d.Id == draftId && d.OwnerUserId == ownerUserId, ct);
+        if (draft == null || draft.Status != StatementDraftStatus.Draft) { return null; }
+
+        draft.Description = string.IsNullOrWhiteSpace(description) ? null : description;
+
+        // Re-run classification to refresh derived metadata if needed
+        await ClassifyInternalAsync(draft, null, ownerUserId, ct);
+        await _db.SaveChangesAsync(ct);
+        return await GetDraftAsync(draft.Id, ownerUserId, ct);
+    }
 }

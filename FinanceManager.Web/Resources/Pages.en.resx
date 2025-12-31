@@ -763,7 +763,7 @@
     <value>Amount</value>
   </data>
   <data name="Card_Caption_StatementDrafts_BookingDescription" xml:space="preserve">
-    <value>Subject / booking description</value>
+    <value>booking description</value>
   </data>
   <data name="Card_Caption_StatementDrafts_Recipient" xml:space="preserve">
     <value>Recipient</value>
@@ -1328,5 +1328,17 @@
   </data>
   <data name="Import_SplitInfo_Details" xml:space="preserve">
     <value>Mode: {0}, Max. Entries/Draft: {1}, Largest Draft: {2}</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_AssignedAccount" xml:space="preserve">
+    <value>Bank account</value>
+  </data>
+  <data name="StatementDrafts_SuggestedDescription" xml:space="preserve">
+    <value>Postings of {0}</value>
+  </data>
+  <data name="Ribbon_NewEntry" xml:space="preserve">
+    <value>New entry</value>
+  </data>
+  <data name="StatementDraftEntry_SuggestedBookingDescription" xml:space="preserve">
+    <value>Manual posting</value>
   </data>
 </root>

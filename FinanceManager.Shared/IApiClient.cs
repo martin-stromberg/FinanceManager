@@ -351,6 +351,8 @@ public interface IApiClient
     Task<bool> StatementDrafts_DeleteAllAsync(CancellationToken ct = default);
     /// <summary>Uploads a statement file for processing.</summary>
     Task<StatementDraftUploadResult?> StatementDrafts_UploadAsync(Stream stream, string fileName, CancellationToken ct = default);
+    /// <summary>Creates an empty statement draft (no file) for the current user and returns its detail.</summary>
+    Task<StatementDraftDetailDto?> StatementDrafts_CreateAsync(string? fileName = null, CancellationToken ct = default);
     /// <summary>Gets the detail of a statement draft by id.</summary>
     Task<StatementDraftDetailDto?> StatementDrafts_GetAsync(Guid draftId, bool headerOnly = false, string? src = null, Guid? fromEntryDraftId = null, Guid? fromEntryId = null, CancellationToken ct = default);
     /// <summary>Gets the detail of a specific entry in a statement draft.</summary>
@@ -409,6 +411,8 @@ public interface IApiClient
     Task<bool> StatementDrafts_DeleteAsync(Guid draftId, CancellationToken ct = default);
     // Add to IApiClient interface in the Statement Drafts region:
     Task<StatementDraftSetEntrySplitDraftResultDto?> StatementDrafts_SetEntrySplitDraftAsync(Guid draftId, Guid entryId, StatementDraftSetSplitDraftRequest req, CancellationToken ct = default);
+    /// <summary>Sets the description of a statement draft and returns updated detail or null when not found.</summary>
+    Task<StatementDraftDetailDto?> StatementDrafts_SetDescriptionAsync(Guid draftId, string? description, CancellationToken ct = default);
     // Users
     /// <summary>Checks if any users exist in the system.</summary>
     Task<bool> Users_HasAnyAsync(CancellationToken ct = default);

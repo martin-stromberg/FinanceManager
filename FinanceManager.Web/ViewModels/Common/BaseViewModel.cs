@@ -5,6 +5,7 @@ using FinanceManager.Web.Components.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using FinanceManager.Application;
 using FinanceManager.Shared.Dtos.Admin;
+using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Web.ViewModels.Common
 {
@@ -20,6 +21,7 @@ namespace FinanceManager.Web.ViewModels.Common
         private readonly List<IAsyncDisposable> _children = new();
         private readonly List<BaseViewModel> _childViewModels = new();
         private IApiClient _ApiClient = null;
+        private NavigationManager _Navigation = null;
         public virtual string Title { get; } = string.Empty;
         public bool Loading { get; protected set; }
         public string? LastError { get; protected set; }
@@ -38,7 +40,7 @@ namespace FinanceManager.Web.ViewModels.Common
         }
         protected IServiceProvider ServiceProvider { get; }
         protected IApiClient ApiClient  => _ApiClient ??= ServiceProvider.GetRequiredService<IApiClient>();
-
+        protected NavigationManager Navigation => _Navigation ??= ServiceProvider.GetRequiredService<NavigationManager>();
         // Lazy-resolved localizer. Resolve on first access and swallow resolution errors (e.g. provider disposed).
         private IStringLocalizer<Pages>? _localizerCache;
         protected IStringLocalizer? Localizer
@@ -163,6 +165,10 @@ namespace FinanceManager.Web.ViewModels.Common
             if (string.Equals(field.LookupType, "Security", StringComparison.OrdinalIgnoreCase))
                 return await QuerySecurityLookupAsync(field, q, skip, take);
 
+            // Bank account lookup support
+            if (string.Equals(field.LookupType, "bankaccount", StringComparison.OrdinalIgnoreCase) || string.Equals(field.LookupType, "Account", StringComparison.OrdinalIgnoreCase))
+                return await QueryAccountLookupAsync(field, q, skip, take);
+
             return Array.Empty<LookupItem>();
         }
 
@@ -215,6 +221,27 @@ namespace FinanceManager.Web.ViewModels.Common
                 .Where(sx => string.IsNullOrWhiteSpace(q) || (sx.Name?.Contains(q, StringComparison.OrdinalIgnoreCase) == true) || (sx.Identifier?.Contains(q, StringComparison.OrdinalIgnoreCase) == true))
                 .Skip(skip).Take(take)
                 .Select(sx => new LookupItem(sx.Id, sx.Name))
+                .ToList();
+            return filtered;
+        }
+
+        private async Task<IReadOnlyList<LookupItem>> QueryAccountLookupAsync(CardField field, string? q, int skip, int take)
+        {
+            var api = ServiceProvider.GetRequiredService<IApiClient>();
+            Guid? bankContactId = null;
+            if (!string.IsNullOrWhiteSpace(field.LookupFilter))
+            {
+                var parts = field.LookupFilter.Split('=', 2);
+                if (parts.Length == 2 && string.Equals(parts[0].Trim(), "BankContactId", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (Guid.TryParse(parts[1].Trim(), out var parsed)) bankContactId = parsed;
+                }
+            }
+
+            var results = await api.GetAccountsAsync(skip, take, bankContactId, CancellationToken.None);
+            var filtered = results
+                .Where(a => string.IsNullOrWhiteSpace(q) || (a.Name?.Contains(q, StringComparison.OrdinalIgnoreCase) == true) || (a.Iban?.Contains(q, StringComparison.OrdinalIgnoreCase) == true))
+                .Select(a => new LookupItem(a.Id, string.IsNullOrWhiteSpace(a.Iban) ? a.Name : $"{a.Name} ({a.Iban})"))
                 .ToList();
             return filtered;
         }

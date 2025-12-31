@@ -254,6 +254,11 @@
         <member name="M:FinanceManager.Shared.ApiClient.Notifications_DismissAsync(System.Guid,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_CreateAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Creates an empty statement draft (no file) for the current user.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_SetEntrySplitDraftAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSetSplitDraftRequest,System.Threading.CancellationToken)">
             <summary>
             Assigns or clears a split draft group for a draft entry and returns updated split difference.
@@ -3227,6 +3232,9 @@
         <member name="M:FinanceManager.Shared.IApiClient.StatementDrafts_UploadAsync(System.IO.Stream,System.String,System.Threading.CancellationToken)">
             <summary>Uploads a statement file for processing.</summary>
         </member>
+        <member name="M:FinanceManager.Shared.IApiClient.StatementDrafts_CreateAsync(System.String,System.Threading.CancellationToken)">
+            <summary>Creates an empty statement draft (no file) for the current user and returns its detail.</summary>
+        </member>
         <member name="M:FinanceManager.Shared.IApiClient.StatementDrafts_GetAsync(System.Guid,System.Boolean,System.String,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Threading.CancellationToken)">
             <summary>Gets the detail of a statement draft by id.</summary>
         </member>
@@ -3309,6 +3317,9 @@
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.StatementDrafts_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>Deletes a statement draft. Returns false when not found.</summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.StatementDrafts_SetDescriptionAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>Sets the description of a statement draft and returns updated detail or null when not found.</summary>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.Users_HasAnyAsync(System.Threading.CancellationToken)">
             <summary>Checks if any users exist in the system.</summary>

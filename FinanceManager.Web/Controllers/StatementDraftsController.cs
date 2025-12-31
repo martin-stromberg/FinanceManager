@@ -179,7 +179,7 @@ public sealed class StatementDraftsController : ControllerBase
     /// <param name="fromEntryDraftId">Optional originating draft id (navigation aid).</param>
     /// <param name="fromEntryId">Optional originating entry id (navigation aid).</param>
     /// <param name="ct">Cancellation token.</param>
-    [HttpGet("{draftId:guid}")]
+    [HttpGet("{draftId:guid}", Name = "GetStatementDraft")]
     [ProducesResponseType(typeof(StatementDraftDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAsync(Guid draftId, [FromQuery] bool headerOnly = false, [FromQuery] string? src = null, [FromQuery] Guid? fromEntryDraftId = null, [FromQuery] Guid? fromEntryId = null, CancellationToken ct = default)
@@ -256,7 +256,8 @@ public sealed class StatementDraftsController : ControllerBase
     {
         var draft = await _drafts.GetDraftHeaderAsync(draftId, _current.UserId, ct);
         if (draft is null && draftId == Guid.Empty)
-            draft = await _drafts.FindDraftHeaderAsync(entryId, _current.UserId, ct);        
+            draft = await _drafts.FindDraftHeaderAsync(entryId, _current.UserId, ct);
+        if (draft is null) return null;
 
         var ordered = (await _drafts.GetDraftEntriesAsync(draft.DraftId, ct)).OrderBy(e => e.BookingDate).ThenBy(e => e.Id).ToList();
         var entry = await _drafts.GetDraftEntryAsync(draft.DraftId, entryId, ct);
@@ -619,5 +620,33 @@ public sealed class StatementDraftsController : ControllerBase
             return Ok(dto);
         }
         catch (Exception ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    /// <summary>
+    /// Creates an empty statement draft (no file) for the current user.
+    /// </summary>
+    [HttpPost]
+    [ProducesResponseType(typeof(StatementDraftDetailDto), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateAsync([FromQuery] string? fileName = null, CancellationToken ct = default)
+    {
+        var name = string.IsNullOrWhiteSpace(fileName) ? "new-draft" : fileName;
+        var draft = await _drafts.CreateEmptyDraftAsync(_current.UserId, name, ct);
+        if (draft == null) return BadRequest();
+        // Return 201 Created with location header pointing to GetAsync via named route
+        return CreatedAtRoute("GetStatementDraft", new { draftId = draft.DraftId }, draft);
+    }
+
+    /// <summary>
+    /// Sets the description for a draft.
+    /// </summary>
+    [HttpPost("{draftId:guid}/description")]
+    [ProducesResponseType(typeof(StatementDraftDetailDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> SetDescriptionAsync(Guid draftId, [FromBody] string? description, CancellationToken ct)
+    {
+        var draft = await _drafts.SetDescriptionAsync(draftId, _current.UserId, description, ct);
+        if (draft == null) return NotFound();
+        var neighbors = await _drafts.GetUploadGroupNeighborsAsync(draft.DraftId, _current.UserId, ct);
+        var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId);
+        return Ok(dto);
     }
 }

@@ -19,6 +19,11 @@ public interface IStatementDraftService
     Task<bool> CancelAsync(Guid draftId, Guid ownerUserId, CancellationToken ct);
     Task<StatementDraftDto?> ClassifyAsync(Guid? draftId, Guid? entryId, Guid ownerUserId, CancellationToken ct);
     Task<StatementDraftDto?> SetAccountAsync(Guid draftId, Guid ownerUserId, Guid accountId, CancellationToken ct);
+    Task<StatementDraftDto?> SetDescriptionAsync(Guid draftId, Guid ownerUserId, string? description, CancellationToken ct);
+    /// <summary>
+    /// Creates an empty statement draft (no file) for the given user and returns its DTO.
+    /// </summary>
+    Task<StatementDraftDto?> CreateEmptyDraftAsync(Guid ownerUserId, string originalFileName, CancellationToken ct);
     Task<StatementDraftDto?> SetEntryContactAsync(Guid draftId, Guid entryId, Guid? contactId, Guid ownerUserId, CancellationToken ct);
     Task<StatementDraftDto?> SetEntryCostNeutralAsync(Guid draftId, Guid entryId, bool? isCostNeutral, Guid ownerUserId, CancellationToken ct);
     Task<StatementDraftDto> AssignSavingsPlanAsync(Guid draftId, Guid entryId, Guid? savingsPlanId, Guid ownerUserId, CancellationToken ct);

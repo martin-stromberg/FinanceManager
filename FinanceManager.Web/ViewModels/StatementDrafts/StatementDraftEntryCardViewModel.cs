@@ -22,7 +22,6 @@ namespace FinanceManager.Web.ViewModels.StatementDrafts;
 [FinanceManager.Web.ViewModels.Common.CardRoute("statement-drafts", "entries")]
 public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string Key, string Value)>
 {
-    private readonly IApiClient _api;
     private StatementDraftEntryDetailDto? _entryDetail;
 
     // Mode: when false core fields are read-only; when true core fields editable
@@ -42,7 +41,6 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
 
     public StatementDraftEntryCardViewModel(IServiceProvider sp) : base(sp)
     {
-        _api = sp.GetRequiredService<IApiClient>();
     }
 
     public Guid EntryId { get; private set; }
@@ -197,15 +195,36 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
 
             if (EntryId == Guid.Empty)
             {
+                // New entry mode for a given draft: show editable fields to create an entry
                 Entry = null;
-                CardRecord = new CardRecord(new List<CardField>());
+                _isEditMode = true;
+
+                // Suggested defaults
+                var suggestedDate = DateTime.Now.Date;
+                var suggestedValuta = (DateTime?)null;
+                var suggestedAmount = 0m;
+                var suggestedSubject = string.Empty;
+                var suggestedBookingDescription = Localizer["StatementDraftEntry_SuggestedBookingDescription"];
+
+                var createFieldsNew = new List<CardField>
+                {
+                    new CardField("Card_Caption_StatementDrafts_Date", CardFieldKind.Date, text: suggestedDate.ToString("d", CultureInfo.CurrentCulture), editable: true),
+                    new CardField("Card_Caption_StatementDrafts_Valuta", CardFieldKind.Date, text: suggestedDate.ToString("d", CultureInfo.CurrentCulture), editable: true),
+                    new CardField("Card_Caption_StatementDrafts_Amount", CardFieldKind.Currency, text: suggestedAmount.ToString(CultureInfo.CurrentCulture), amount: suggestedAmount, editable: true),
+                    new CardField("Card_Caption_StatementDrafts_Recipient", CardFieldKind.Text, text: string.Empty, editable: true),
+                    new CardField("Card_Caption_StatementDrafts_Subject", CardFieldKind.Text, text: suggestedSubject, editable: true),                    
+                    new CardField("Card_Caption_StatementDrafts_BookingDescription", CardFieldKind.Text, text: suggestedBookingDescription, editable: true)
+                };
+
+                CardRecord = new CardRecord(createFieldsNew);
+                Loading = false; RaiseStateChanged();
                 return;
             }
 
-            var dto = await _api.StatementDrafts_GetEntryAsync(DraftId, EntryId, CancellationToken.None);
+            var dto = await ApiClient.StatementDrafts_GetEntryAsync(DraftId, EntryId, CancellationToken.None);
             if (dto == null)
             {
-                SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Entry not found");
+                SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Entry not found");
                 Entry = null;
                 CardRecord = new CardRecord(new List<CardField>());
                 return;
@@ -224,17 +243,17 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                     var nid = _pendingCreated.createdId.Value;
                     if (ck == "contacts" || ck == "contact")
                     {
-                        var updated = await _api.StatementDrafts_SetEntryContactAsync(DraftId, EntryId, new Shared.Dtos.Statements.StatementDraftSetContactRequest(nid), CancellationToken.None);
+                        var updated = await ApiClient.StatementDrafts_SetEntryContactAsync(DraftId, EntryId, new Shared.Dtos.Statements.StatementDraftSetContactRequest(nid), CancellationToken.None);
                         if (updated != null) Entry = updated;
                     }
                     else if (ck == "savings-plans" || ck == "savingsplan")
                     {
-                        var updated = await _api.StatementDrafts_SetEntrySavingsPlanAsync(DraftId, EntryId, new Shared.Dtos.Statements.StatementDraftSetSavingsPlanRequest(nid), CancellationToken.None);
+                        var updated = await ApiClient.StatementDrafts_SetEntrySavingsPlanAsync(DraftId, EntryId, new Shared.Dtos.Statements.StatementDraftSetSavingsPlanRequest(nid), CancellationToken.None);
                         if (updated != null) Entry = updated;
                     }
                     else if (ck == "securities" || ck == "security")
                     {
-                        var updated = await _api.StatementDrafts_SetEntrySecurityAsync(DraftId, EntryId, new Shared.Dtos.Statements.StatementDraftSetEntrySecurityRequest(nid, (FinanceManager.Shared.Dtos.Securities.SecurityTransactionType?)null, null, null, null), CancellationToken.None);
+                        var updated = await ApiClient.StatementDrafts_SetEntrySecurityAsync(DraftId, EntryId, new Shared.Dtos.Statements.StatementDraftSetEntrySecurityRequest(nid, (FinanceManager.Shared.Dtos.Securities.SecurityTransactionType?)null, null, null, null), CancellationToken.None);
                         if (updated != null) Entry = updated;
                     }
                 }                
@@ -249,7 +268,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             {
                 try
                 {
-                    var contactDto = await _api.Contacts_GetAsync(Entry.ContactId.Value, CancellationToken.None);
+                    var contactDto = await ApiClient.Contacts_GetAsync(Entry.ContactId.Value, CancellationToken.None);
                     _contactName = contactDto?.Name ?? string.Empty;
                     _contactIsSelf = contactDto?.Type == ContactType.Self;
                     _contactIsPaymentIntermediary = contactDto?.IsPaymentIntermediary == true;
@@ -260,10 +279,10 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             // Try to detect account settings via draft header
             try
             {
-                var draftHeader = await _api.StatementDrafts_GetAsync(DraftId, headerOnly: true, src: null, fromEntryDraftId: null, fromEntryId: null, CancellationToken.None);
+                var draftHeader = await ApiClient.StatementDrafts_GetAsync(DraftId, headerOnly: true, src: null, fromEntryDraftId: null, fromEntryId: null, CancellationToken.None);
                 if (draftHeader?.DetectedAccountId is Guid acctId)
                 {
-                    var detectedAccount = await _api.GetAccountAsync(acctId, CancellationToken.None);
+                    var detectedAccount = await ApiClient.GetAccountAsync(acctId, CancellationToken.None);
                     if (detectedAccount != null)
                     {
                         _accountAllowsSavings = detectedAccount.SavingsPlanExpectation != SavingsPlanExpectation.None;
@@ -276,7 +295,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             {
                 try
                 {
-                    var sp = await _api.SavingsPlans_GetAsync(Entry.SavingsPlanId.Value, CancellationToken.None);
+                    var sp = await ApiClient.SavingsPlans_GetAsync(Entry.SavingsPlanId.Value, CancellationToken.None);
                     _savingsPlanName = sp?.Name ?? string.Empty;
                 }
                 catch { _savingsPlanName = string.Empty; }
@@ -286,7 +305,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             {
                 try
                 {
-                    var sx = await _api.Securities_GetAsync(Entry.SecurityId.Value, CancellationToken.None);
+                    var sx = await ApiClient.Securities_GetAsync(Entry.SecurityId.Value, CancellationToken.None);
                     _securityName = sx?.Name ?? string.Empty;
                 }
                 catch { _securityName = string.Empty; }
@@ -311,12 +330,139 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
 
     public override async Task<bool> SaveAsync()
     {
-        if (Entry == null || EntryId == Guid.Empty || DraftId == Guid.Empty) return false;
+        // Allow creating a new entry (EntryId == Guid.Empty). Only invalid when DraftId is missing.
+        if (DraftId == Guid.Empty) return false;
+        // For editing existing entries ensure we have an Entry and EntryId
+        if (EntryId != Guid.Empty && Entry == null) return false;
         if (!HasPendingChanges) return true;
 
         Loading = true; SetError(null, null); RaiseStateChanged();
         try
         {
+            // If this is a new entry creation flow (EntryId was empty originally), create via API
+            var isNewEntry = false;
+            try
+            {
+                // detect creation mode: when Entry was null at start and EntryId was Guid.Empty
+                if (_entryDetail == null && EntryId == Guid.Empty)
+                {
+                    isNewEntry = true;
+                }
+            }
+            catch { }
+
+            if (isNewEntry)
+            {
+                // Build creation payload from pending fields
+                var newBookingDate = DateTime.Now.Date;
+                DateTime? newValuta = null;
+                decimal newAmount = 0m;
+                string newSubject = string.Empty;
+
+                if (PendingFieldValues.TryGetValue("Card_Caption_StatementDrafts_Date", out var pd))
+                {
+                    if (pd is DateTime dt) newBookingDate = dt;
+                    else if (pd is string sdt && DateTime.TryParse(sdt, out var pdt)) newBookingDate = pdt;
+                }
+                if (PendingFieldValues.TryGetValue("Card_Caption_StatementDrafts_Valuta", out var pv))
+                {
+                    if (pv is DateTime vdt) newValuta = vdt;
+                    else if (pv is string sv && DateTime.TryParse(sv, out var pvv)) newValuta = pvv;
+                }
+                if (PendingFieldValues.TryGetValue("Card_Caption_StatementDrafts_Amount", out var pa))
+                {
+                    if (pa is decimal d) newAmount = d;
+                    else if (pa is string sa && decimal.TryParse(sa, out var pdv)) newAmount = pdv;
+                }
+                if (PendingFieldValues.TryGetValue("Card_Caption_StatementDrafts_Subject", out var psub))
+                {
+                    if (psub is string ss) newSubject = ss;
+                    else newSubject = psub?.ToString() ?? string.Empty;
+                }
+
+                // capture recipient and booking description from pending fields (if any)
+                string? newRecipient = null;
+                string? newBookingDesc = null;
+                if (PendingFieldValues.TryGetValue("Card_Caption_StatementDrafts_Recipient", out var prec))
+                {
+                    if (prec is string rs) newRecipient = rs;
+                    else newRecipient = prec?.ToString();
+                }
+                if (PendingFieldValues.TryGetValue("Card_Caption_StatementDrafts_BookingDescription", out var pbd))
+                {
+                    if (pbd is string bds) newBookingDesc = bds;
+                    else newBookingDesc = pbd?.ToString();
+                }
+
+                var req = new FinanceManager.Shared.Dtos.Statements.StatementDraftAddEntryRequest(newBookingDate, newAmount, newSubject);
+                var created = await ApiClient.StatementDrafts_AddEntryAsync(DraftId, req, CancellationToken.None);
+                if (created == null)
+                {
+                    SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Create failed");
+                    return false;
+                }
+
+                // created likely contains info about the created entry; try to find entry id
+                Guid? createdEntryId = null;
+                try
+                {
+                    if (created is FinanceManager.Shared.Dtos.Statements.StatementDraftDetailDto sd)
+                    {
+                        // Try to find the created entry by matching core properties (best-effort)
+                        var match = sd.Entries?.FirstOrDefault(e => e.BookingDate.Date == newBookingDate.Date && e.Amount == newAmount && string.Equals(e.Subject, newSubject, StringComparison.OrdinalIgnoreCase));
+                        if (match != null)
+                        {
+                            createdEntryId = match.Id; // StatementDraftEntryDto.Id
+                        }
+                    }
+                }
+                catch { }
+
+                // If we found the created entry id, persist additional core fields (valuta, recipient, bookingDesc) if provided
+                if (createdEntryId.HasValue)
+                {
+                    try
+                    {
+                        var needUpdateCore = newValuta.HasValue || !string.IsNullOrWhiteSpace(newRecipient) || !string.IsNullOrWhiteSpace(newBookingDesc);
+                        if (needUpdateCore)
+                        {
+                            // currency not available for newly created entry -> pass empty string and let server default
+                            var coreReq = new StatementDraftUpdateEntryCoreRequest(newBookingDate, newValuta, newAmount, newSubject, newRecipient, string.Empty, newBookingDesc);
+                            var updated = await ApiClient.StatementDrafts_UpdateEntryCoreAsync(DraftId, createdEntryId.Value, coreReq, CancellationToken.None);
+                            if (updated != null)
+                            {
+                                _ = await ApiClient.StatementDrafts_ClassifyEntryAsync(DraftId, createdEntryId.Value, CancellationToken.None);
+
+                                // update succeeded, navigate to created entry using Saved event with proper URL
+                                var entryUrl = $"{createdEntryId.Value}?draftId={DraftId}";
+                                RaiseUiActionRequested("Saved", entryUrl);
+                                return true;
+                            }
+                            else
+                            {
+                                // If update failed, surface API error and navigate to draft
+                                if (!string.IsNullOrWhiteSpace(ApiClient.LastError)) SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError);
+                                var draftUrl = $"/card/statement-drafts/{DraftId}";
+                                RaiseUiActionRequested("Saved", draftUrl);
+                                return true;
+                            }
+                        }
+                    }
+                    catch { /* best-effort, ignore update failures */ }
+
+                    // No extra core fields to update -> navigate to created entry using Saved event and correct URL
+                    var entryUrl2 = $"{createdEntryId.Value}?draftId={DraftId}";
+                    RaiseUiActionRequested("Saved", entryUrl2);
+                     return true;
+                 }
+
+                 // Fallbacks: if created contains DraftId only, navigate back to draft card
+                 // Navigate back to parent draft card if we don't have entry id
+                var fallbackUrl = $"/card/statement-drafts/{DraftId}";
+                RaiseUiActionRequested("Saved", fallbackUrl);
+                 return true;
+            }
+
             // Use the field label keys used when building CardField instances
             const string kDate = "Card_Caption_StatementDrafts_Date";
             const string kValuta = "Card_Caption_StatementDrafts_Valuta";
@@ -393,10 +539,10 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             if (_isEditMode && coreProvided)
             {
                 var reqCore = new StatementDraftUpdateEntryCoreRequest(bookingDate, valuta, amount, subject, recipient, currency, bookingDesc);
-                var updated = await _api.StatementDrafts_UpdateEntryCoreAsync(DraftId, EntryId, reqCore, CancellationToken.None);
+                var updated = await ApiClient.StatementDrafts_UpdateEntryCoreAsync(DraftId, EntryId, reqCore, CancellationToken.None);
                 if (updated == null)
                 {
-                    SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Save failed");
+                    SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Save failed");
                     return false;
                 }
                 Entry = updated;
@@ -591,13 +737,13 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                 var allReq = new StatementDraftSaveEntryAllRequest(contactId, isCostNeutral, savingsPlanId, archiveOnBooking, securityId, txType, quantity, fee, tax);
                 try
                 {
-                    await _api.StatementDrafts_SaveEntryAllAsync(DraftId, EntryId, allReq, CancellationToken.None);
+                    await ApiClient.StatementDrafts_SaveEntryAllAsync(DraftId, EntryId, allReq, CancellationToken.None);
                 }
                 catch (Exception ex)
                 {
-                    if (!string.IsNullOrWhiteSpace(_api.LastError))
+                    if (!string.IsNullOrWhiteSpace(ApiClient.LastError))
                     {
-                        SetError(_api.LastErrorCode ?? null, _api.LastError);
+                        SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError);
                         return false;
                     }
 
@@ -607,14 +753,14 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                 }
 
                 // If API client reported a domain/validation error, show it
-                if (!string.IsNullOrWhiteSpace(_api.LastError))
+                if (!string.IsNullOrWhiteSpace(ApiClient.LastError))
                 {
-                    SetError(_api.LastErrorCode ?? null, _api.LastError);
+                    SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError);
                     return false;
                 }
 
                 // Refresh entry to pick up all persisted changes
-                var refreshed = await _api.StatementDrafts_GetEntryAsync(DraftId, EntryId, CancellationToken.None);
+                var refreshed = await ApiClient.StatementDrafts_GetEntryAsync(DraftId, EntryId, CancellationToken.None);
                 if (refreshed != null)
                 {
                     _entryDetail = refreshed;
@@ -626,7 +772,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             // Ensure we have the latest Entry state by fetching if necessary.
             if (Entry == null)
             {
-                var refreshed2 = await _api.StatementDrafts_GetEntryAsync(DraftId, EntryId, CancellationToken.None);
+                var refreshed2 = await ApiClient.StatementDrafts_GetEntryAsync(DraftId, EntryId, CancellationToken.None);
                 if (refreshed2 != null)
                 {
                     _entryDetail = refreshed2;
@@ -640,16 +786,16 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                 _contactName = string.Empty; _savingsPlanName = string.Empty; _securityName = string.Empty; _contactIsSelf = false;
                 if (Entry?.ContactId.HasValue == true)
                 {
-                    var c = await _api.Contacts_GetAsync(Entry.ContactId.Value, CancellationToken.None);
+                    var c = await ApiClient.Contacts_GetAsync(Entry.ContactId.Value, CancellationToken.None);
                     _contactName = c?.Name ?? string.Empty;
                     _contactIsSelf = c?.Type == ContactType.Self;
                 }
                 try
                 {
-                    var draftHeader = await _api.StatementDrafts_GetAsync(DraftId, headerOnly: true, src: null, fromEntryDraftId: null, fromEntryId: null, CancellationToken.None);
+                    var draftHeader = await ApiClient.StatementDrafts_GetAsync(DraftId, headerOnly: true, src: null, fromEntryDraftId: null, fromEntryId: null, CancellationToken.None);
                     if (draftHeader?.DetectedAccountId is Guid acctId)
                     {
-                        var detectedAccount = await _api.GetAccountAsync(acctId, CancellationToken.None);
+                        var detectedAccount = await ApiClient.GetAccountAsync(acctId, CancellationToken.None);
 			            if (detectedAccount != null)
                         {
                             _accountAllowsSavings = detectedAccount.SavingsPlanExpectation != SavingsPlanExpectation.None;
@@ -659,12 +805,12 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                 catch { /* ignore */ }
                 if (Entry?.SavingsPlanId.HasValue == true)
                 {
-                    var sp = await _api.SavingsPlans_GetAsync(Entry.SavingsPlanId.Value, CancellationToken.None);
+                    var sp = await ApiClient.SavingsPlans_GetAsync(Entry.SavingsPlanId.Value, CancellationToken.None);
                     _savingsPlanName = sp?.Name ?? string.Empty;
                 }
                 if (Entry?.SecurityId.HasValue == true)
                 {
-                    var sx = await _api.Securities_GetAsync(Entry.SecurityId.Value, CancellationToken.None);
+                    var sx = await ApiClient.Securities_GetAsync(Entry.SecurityId.Value, CancellationToken.None);
                     _securityName = sx?.Name ?? string.Empty;
                 }
             }
@@ -680,7 +826,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         }
         catch (Exception ex)
         {
-            SetError(null, ex.Message);
+            SetError(ApiClient.LastErrorCode, ApiClient.LastError ?? ex.Message);
             return false;
         }
         finally
@@ -695,7 +841,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         Loading = true; SetError(null, null); RaiseStateChanged();
         try
         {
-            var res = await _api.StatementDrafts_ValidateEntryAsync(DraftId, EntryId, CancellationToken.None);
+            var res = await ApiClient.StatementDrafts_ValidateEntryAsync(DraftId, EntryId, CancellationToken.None);
             return res;
         }
         catch (Exception ex)
@@ -715,7 +861,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         Loading = true; SetError(null, null); RaiseStateChanged();
         try
         {
-            var res = await _api.StatementDrafts_BookEntryAsync(DraftId, EntryId, forceWarnings, CancellationToken.None);
+            var res = await ApiClient.StatementDrafts_BookEntryAsync(DraftId, EntryId, forceWarnings, CancellationToken.None);
 
             // If booking succeeded (and wasn't withheld due to warnings), navigate to next/previous entry.
             // Use neighbor information from the currently loaded entry detail (_entryDetail) which was populated when the entry was loaded.
@@ -775,7 +921,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
 
         var actions = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Small, Entry == null, null, "Save", new Func<Task>(async () => { await SaveAsync(); })),
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Small, (Entry == null && EntryId != Guid.Empty), null, "Save", new Func<Task>(async () => { await SaveAsync(); })),
             new UiRibbonAction("Validate", localizer["Ribbon_Validate"].Value, "<svg><use href='/icons/sprite.svg#check'/></svg>", UiRibbonItemSize.Small, Entry == null, null, "Validate", new Func<Task>(async () => { await ValidateAsync(); })),
             new UiRibbonAction("BookEntry", localizer["Ribbon_Book"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Entry == null, null, "Book", new Func<Task>(async () => { await BookEntryAsync(false); }))
         };
@@ -870,7 +1016,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                         try
                         {
                             // Load open drafts and filter to those without detected account assignment and not the current draft
-                            var drafts = await _api.StatementDrafts_ListOpenAsync(skip: 0, take: 200, CancellationToken.None);
+                            var drafts = await ApiClient.StatementDrafts_ListOpenAsync(skip: 0, take: 200, CancellationToken.None);
                             var candidates = drafts?
                                 .Where(d => d.DraftId != DraftId && d.DetectedAccountId == null)
                                 .Select(d => new FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem(d.DraftId, d.OriginalFileName))
@@ -1037,14 +1183,14 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         try
         {
             // Call API to reset duplicate entry status
-            await _api.StatementDrafts_ResetDuplicateEntryAsync(DraftId, EntryId, CancellationToken.None);
-            if (!string.IsNullOrWhiteSpace(_api.LastError))
+            await ApiClient.StatementDrafts_ResetDuplicateEntryAsync(DraftId, EntryId, CancellationToken.None);
+            if (!string.IsNullOrWhiteSpace(ApiClient.LastError))
             {
-                SetError(_api.LastErrorCode ?? null, _api.LastError);
+                SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError);
                 return;
             }
             // Refresh entry
-            var refreshed = await _api.StatementDrafts_GetEntryAsync(DraftId, EntryId, CancellationToken.None);
+            var refreshed = await ApiClient.StatementDrafts_GetEntryAsync(DraftId, EntryId, CancellationToken.None);
             if (refreshed != null)
             {
                 _entryDetail = refreshed;
@@ -1073,17 +1219,17 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         {
             // Clear association by sending null SplitDraftId
             var req = new Shared.Dtos.Statements.StatementDraftSetSplitDraftRequest(null);
-            var updated = await _api.StatementDrafts_SetEntrySplitDraftAsync(DraftId, EntryId, req, CancellationToken.None);
+            var updated = await ApiClient.StatementDrafts_SetEntrySplitDraftAsync(DraftId, EntryId, req, CancellationToken.None);
             if (updated == null)
             {
-                if (!string.IsNullOrWhiteSpace(_api.LastError)) SetError(_api.LastErrorCode ?? null, _api.LastError);
+                if (!string.IsNullOrWhiteSpace(ApiClient.LastError)) SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError);
                 else SetError(null, "Unassign failed");
                 return;
             }
 
             // refresh local state
             Entry = updated.Entry;
-            var refreshed = await _api.StatementDrafts_GetEntryAsync(DraftId, EntryId, CancellationToken.None);
+            var refreshed = await ApiClient.StatementDrafts_GetEntryAsync(DraftId, EntryId, CancellationToken.None);
             if (refreshed != null)
             {
                 _entryDetail = refreshed;
@@ -1113,10 +1259,10 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         Loading = true; SetError(null, null); RaiseStateChanged();
         try
         {
-            var ok = await _api.StatementDrafts_DeleteEntryAsync(DraftId, EntryId, CancellationToken.None);
+            var ok = await ApiClient.StatementDrafts_DeleteEntryAsync(DraftId, EntryId, CancellationToken.None);
             if (!ok)
             {
-                if (!string.IsNullOrWhiteSpace(_api.LastError)) SetError(_api.LastErrorCode ?? null, _api.LastError);
+                if (!string.IsNullOrWhiteSpace(ApiClient.LastError)) SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError);
                 else SetError(null, "Delete failed");
                 return false;
             }

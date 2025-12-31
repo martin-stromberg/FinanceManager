@@ -106,6 +106,15 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
             new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, new List<UiRibbonAction>
             {
                 new UiRibbonAction(
+                    "New",
+                    localizer["Ribbon_New"].Value,
+                    "<svg><use href='/icons/sprite.svg#new'/></svg>",
+                    UiRibbonItemSize.Large,
+                    false,
+                    null,
+                    "New",
+                    new Func<Task>(async () => { _nav.NavigateTo($"/card/statement-drafts/new"); await Task.CompletedTask; })),
+                new UiRibbonAction(
                     "DeleteAll",
                     localizer["Ribbon_DeleteAll"].Value,
                     "<svg><use href='/icons/sprite.svg#delete'/></svg>",

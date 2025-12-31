@@ -1283,6 +1283,16 @@
             Classifies a single entry (heuristics / ML) and returns updated draft detail.
             </summary>
         </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.CreateAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Creates an empty statement draft (no file) for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.SetDescriptionAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Sets the description for a draft.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.Controllers.UsersController">
             <summary>
             User management (read-only placeholder). Forwards calls to services and catches unexpected exceptions.

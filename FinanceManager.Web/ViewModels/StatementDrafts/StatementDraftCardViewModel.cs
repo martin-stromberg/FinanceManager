@@ -8,11 +8,9 @@ namespace FinanceManager.Web.ViewModels.StatementDrafts;
 [FinanceManager.Web.ViewModels.Common.CardRoute("statement-drafts")]
 public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
 {
-    private readonly Shared.IApiClient _api;
 
     public StatementDraftCardViewModel(IServiceProvider sp) : base(sp)
     {
-        _api = sp.GetRequiredService<Shared.IApiClient>();
     }
 
     public Guid DraftId { get; private set; }
@@ -30,17 +28,77 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
             if (id == Guid.Empty)
             {
                 Draft = null;
-                CardRecord = new CardRecord(new List<CardField>());
+
+                // Resolve localized suggested description: "Bookings from {0}" / "Buchungen vom {0}"
+                string suggestedDescription = string.Empty;
+                try
+                {
+                    var localizer = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
+                    var fmt = localizer["StatementDrafts_SuggestedDescription"].Value;
+                    suggestedDescription = string.Format(CultureInfo.CurrentCulture, fmt, DateTime.Now.ToString("d", CultureInfo.CurrentCulture));
+                }
+                catch { /* best-effort only */ }
+
+                // When creating a new statement draft, only show a lookup field to select the target bank account.
+                var createFields = new List<CardField>
+                {
+                    new CardField(
+                        "Card_Caption_StatementDrafts_AssignedAccount",
+                        CardFieldKind.Text,
+                        text: string.Empty,
+                        symbolId: null,
+                        amount: null,
+                        boolValue: null,
+                        editable: true,
+                        lookupType: "bankaccount",
+                        lookupField: "Name",
+                        valueId: null,
+                        lookupFilter: null,
+                        hint: null,
+                        allowAdd: true),
+                    // allow entering a description when creating a draft
+                    new CardField(
+                        "Card_Caption_StatementDrafts_Description",
+                        CardFieldKind.Text,
+                        text: suggestedDescription,
+                        symbolId: null,
+                        amount: null,
+                        boolValue: null,
+                        editable: true,
+                        lookupType: null,
+                        lookupField: null,
+                        valueId: null,
+                        lookupFilter: null,
+                        hint: null,
+                        allowAdd: false)
+                };
+
+                CardRecord = new CardRecord(createFields);
                 return;
             }
 
             // Load full draft details so we can show counts and description
-            Draft = await _api.StatementDrafts_GetAsync(id, headerOnly: false, ct: CancellationToken.None);
+            Draft = await ApiClient.StatementDrafts_GetAsync(id, headerOnly: false, ct: CancellationToken.None);
             if (Draft == null)
             {
-                SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Draft not found");
+                SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Draft not found");
                 CardRecord = new CardRecord(new List<CardField>());
                 return;
+            }
+
+            // Resolve detected account name for display if available
+            string assignedAccountText = string.Empty;
+            if (Draft.DetectedAccountId.HasValue)
+            {
+                try
+                {
+                    var acct = await ApiClient.GetAccountAsync(Draft.DetectedAccountId.Value, CancellationToken.None);
+                    if (acct != null)
+                    {
+                        assignedAccountText = string.IsNullOrWhiteSpace(acct.Iban) ? acct.Name : $"{acct.Name} ({acct.Iban})";
+                    }
+                }
+                catch { /* swallow - best effort only */ }
             }
 
             // Build card record
@@ -48,6 +106,22 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
             var sumAmounts = Draft.Entries?.Where(e => e.Status != StatementDraftEntryStatus.AlreadyBooked && e.Status != StatementDraftEntryStatus.Announced).Sum(e => e.Amount) ?? 0m;
             var fields = new List<CardField>
             {
+                // Assigned bank account lookup (editable) - show for existing drafts as well
+                new CardField(
+                    "Card_Caption_StatementDrafts_AssignedAccount",
+                    CardFieldKind.Text,
+                    text: assignedAccountText,
+                    symbolId: null,
+                    amount: null,
+                    boolValue: null,
+                    editable: true,
+                    lookupType: "bankaccount",
+                    lookupField: "Name",
+                    valueId: Draft.DetectedAccountId,
+                    lookupFilter: null,
+                    hint: null,
+                    allowAdd: true),
+
                 new CardField("Card_Caption_StatementDrafts_File", CardFieldKind.Text, text: Draft.OriginalFileName ?? string.Empty),
                 new CardField("Card_Caption_StatementDrafts_Description", CardFieldKind.Text, text: Draft.Description ?? string.Empty),
                 new CardField("Card_Caption_StatementDrafts_Status", CardFieldKind.Text, text: Draft.Status.ToString()),
@@ -88,7 +162,7 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         if (DraftId == Guid.Empty) return false;
         try
         {
-            var ok = await _api.StatementDrafts_DeleteAsync(DraftId, CancellationToken.None);
+            var ok = await ApiClient.StatementDrafts_DeleteAsync(DraftId, CancellationToken.None);
             return ok;
         }
         catch
@@ -118,7 +192,8 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         // Manage group
         var manageItems = new List<UiRibbonAction>
         {
-            // Book now handled by this ViewModel to perform server-side booking and show warnings if present
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, false, null, "Save", new Func<Task>(async () => { await SaveAsync(); })),
+            new UiRibbonAction("Add", localizer["Ribbon_NewEntry"].Value, "<svg><use href='/icons/sprite.svg#new'/></svg>", UiRibbonItemSize.Small, Draft == null, null, "Add", new Func<Task>(async () => { Navigation.NavigateTo($"/card/statement-drafts/entries/new?draftId={DraftId}"); await Task.CompletedTask; })),
             new UiRibbonAction("Book", localizer["Ribbon_Book"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Draft == null, null, "Book", new Func<Task>(async () => { await BookAsync(); })),
             new UiRibbonAction("DeleteDraft", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Draft == null, null, "DeleteDraft", new Func<Task>(() => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })),
             new UiRibbonAction("Classify", localizer["Ribbon_Reclassify"].Value, "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, Draft == null, null, "Classify", new Func<Task>(async () => { await ClassifyAsync(); })),
@@ -153,10 +228,10 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         Loading = true; SetError(null, null); RaiseStateChanged();
         try
         {
-            var updated = await _api.StatementDrafts_ClassifyAsync(DraftId, CancellationToken.None);
+            var updated = await ApiClient.StatementDrafts_ClassifyAsync(DraftId, CancellationToken.None);
             if (updated == null)
             {
-                SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Classification failed");
+                SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Classification failed");
                 return;
             }
 
@@ -192,10 +267,10 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         Loading = true; SetError(null, null); RaiseStateChanged();
         try
         {
-            var result = await _api.StatementDrafts_ValidateAsync(DraftId, CancellationToken.None);
+            var result = await ApiClient.StatementDrafts_ValidateAsync(DraftId, CancellationToken.None);
             if (result == null)
             {
-                SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Validation failed");
+                SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Validation failed");
                 LastValidationResult = null;
                 return;
             }
@@ -234,10 +309,10 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         Loading = true; SetError(null, null); LastValidationResult = null; RaiseStateChanged();
         try
         {
-            var res = await _api.StatementDrafts_BookAsync(DraftId, false, CancellationToken.None);
+            var res = await ApiClient.StatementDrafts_BookAsync(DraftId, false, CancellationToken.None);
             if (res == null)
             {
-                SetError(_api.LastErrorCode ?? null, _api.LastError ?? "Booking failed");
+                SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Booking failed");
                 return;
             }
 
@@ -291,6 +366,129 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         finally
         {
             Loading = false; RaiseStateChanged();
+        }
+    }
+
+    public override async Task<bool> SaveAsync()
+    {
+        // Save pending account selection for this statement draft
+        try
+        {
+            SetError(null, null);
+            // Check pending values for assigned account key or description
+            var hasAccountPending = _pendingFieldValues.TryGetValue("Card_Caption_StatementDrafts_AssignedAccount", out var pendingAccount);
+            var hasDescriptionPending = _pendingFieldValues.TryGetValue("Card_Caption_StatementDrafts_Description", out var pendingDescription);
+            if (!hasAccountPending && !hasDescriptionPending)
+            {
+                // nothing to save
+                return true;
+            }
+
+            Guid? accountId = null;
+            if (hasAccountPending)
+            {
+                if (pendingAccount is LookupItem li)
+                {
+                    accountId = li.Key;
+                }
+                else if (pendingAccount is Guid g)
+                {
+                    accountId = g;
+                }
+                else if (pendingAccount is string s && Guid.TryParse(s, out var sg))
+                {
+                    accountId = sg;
+                }
+
+                if (!accountId.HasValue)
+                {
+                    SetError(null, "No account selected");
+                    return false;
+                }
+            }
+
+            string? description = null;
+            if (hasDescriptionPending)
+            {
+                if (pendingDescription is string ds)
+                {
+                    description = ds;
+                }
+                else if (pendingDescription != null)
+                {
+                    description = pendingDescription.ToString();
+                }
+            }
+
+            // If draft is newly created and user didn't touch the description field, use the suggested description
+            bool wasNew = DraftId == Guid.Empty;
+            if (!hasDescriptionPending && wasNew)
+            {
+                try
+                {
+                    var localizer = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
+                    var fmt = localizer["StatementDrafts_SuggestedDescription"].Value;
+                    description = string.Format(CultureInfo.CurrentCulture, fmt, DateTime.Now.ToString("d", CultureInfo.CurrentCulture));
+                }
+                catch { /* best-effort only */ }
+            }
+
+            // If draft does not exist yet, create an empty draft first            
+            if (wasNew)
+            {
+                var created = await ApiClient.StatementDrafts_CreateAsync(null, CancellationToken.None);
+                if (created == null)
+                {
+                    SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Failed to create draft");
+                    return false;
+                }
+                Draft = created;
+                DraftId = created.DraftId;
+            }
+
+            // Apply account if pending
+            if (hasAccountPending && accountId.HasValue)
+            {
+                var updated = await ApiClient.StatementDrafts_SetAccountAsync(DraftId, accountId.Value, CancellationToken.None);
+                if (updated == null)
+                {
+                    SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Failed to set account");
+                    return false;
+                }
+                Draft = updated;
+            }
+
+            // Apply description if pending or for newly created draft when we have a suggestion
+            if ((hasDescriptionPending || wasNew) && description != null)
+            {
+                var updatedDesc = await ApiClient.StatementDrafts_SetDescriptionAsync(DraftId, description, CancellationToken.None);
+                if (updatedDesc == null)
+                {
+                    SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Failed to set description");
+                    return false;
+                }
+                Draft = updatedDesc;
+            }
+
+            // refresh local state
+            ClearPendingChanges();
+
+            // If this was a newly created draft, navigate to its card view so UI shows saved state
+            if (wasNew)
+            {
+                // Notify page to navigate to the saved card (CardPage builds URL from id)
+                RaiseUiActionRequested("Saved", DraftId.ToString());
+                return true;
+            }
+
+            // existing draft -> reload to reflect changes
+            await LoadAsync(DraftId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            SetError(null, ex.Message);
+            return false;
         }
     }
 }

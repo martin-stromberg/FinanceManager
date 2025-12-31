@@ -59,6 +59,11 @@
             CRUD operations for user scoped report favorites (FA-REP-008).
             </summary>
         </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.CreateEmptyDraftAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Creates an empty statement draft (no file) for the given user and returns its DTO.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Application.Statements.IStatementFileReader">
             <summary>
             Interface for reading and parsing bank statement files.

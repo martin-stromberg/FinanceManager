@@ -30,10 +30,44 @@ public class ApiClient : IApiClient
                     using var doc = JsonDocument.Parse(content);
                     if (doc.RootElement.ValueKind == JsonValueKind.Object)
                     {
+                        // Standard message/error properties
                         if (doc.RootElement.TryGetProperty("message", out var m) && m.ValueKind == JsonValueKind.String)
                             LastError = m.GetString();
                         if (doc.RootElement.TryGetProperty("error", out var e) && e.ValueKind == JsonValueKind.String)
                             LastErrorCode = e.GetString();
+
+                        // RFC-style validation problem details with an "errors" object
+                        if (doc.RootElement.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Object)
+                        {
+                            var messages = new List<string>();
+                            foreach (var prop in errors.EnumerateObject())
+                            {
+                                try
+                                {
+                                    if (prop.Value.ValueKind == JsonValueKind.Array)
+                                    {
+                                        foreach (var item in prop.Value.EnumerateArray())
+                                        {
+                                            if (item.ValueKind == JsonValueKind.String)
+                                            {
+                                                messages.Add($"{prop.Name}: {item.GetString()}");
+                                            }
+                                        }
+                                    }
+                                    else if (prop.Value.ValueKind == JsonValueKind.String)
+                                    {
+                                        messages.Add($"{prop.Name}: {prop.Value.GetString()}");
+                                    }
+                                }
+                                catch { /* best-effort */ }
+                            }
+
+                            if (messages.Count > 0)
+                            {
+                                // Prefer aggregated validation messages over generic message
+                                LastError = string.Join("; ", messages);
+                            }
+                        }
                     }
                 }
                 catch
@@ -1432,6 +1466,22 @@ public class ApiClient : IApiClient
         return null;
     }
 
+    /// <summary>
+    /// Creates an empty statement draft (no file) for the current user.
+    /// </summary>
+    public async Task<StatementDraftDetailDto?> StatementDrafts_CreateAsync(string? fileName = null, CancellationToken ct = default)
+    {
+        var url = "/api/statement-drafts";
+        if (!string.IsNullOrWhiteSpace(fileName)) url += $"?fileName={Uri.EscapeDataString(fileName)}";
+        var resp = await _http.PostAsync(url, content: null, ct);
+        if (!resp.IsSuccessStatusCode)
+        {
+            await EnsureSuccessOrSetErrorAsync(resp);
+            return null;
+        }
+        return await resp.Content.ReadFromJsonAsync<StatementDraftDetailDto>(cancellationToken: ct);
+    }
+
     public async Task<StatementDraftDetailDto?> StatementDrafts_GetAsync(Guid draftId, bool headerOnly = false, string? src = null, Guid? fromEntryDraftId = null, Guid? fromEntryId = null, CancellationToken ct = default)
     {
         var url = $"/api/statement-drafts/{draftId}?headerOnly={(headerOnly ? "true" : "false")}";
@@ -1440,7 +1490,7 @@ public class ApiClient : IApiClient
         if (fromEntryId.HasValue) url += $"&fromEntryId={fromEntryId.Value}";
         var resp = await _http.GetAsync(url, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<StatementDraftDetailDto>(cancellationToken: ct);
     }
 
@@ -1448,7 +1498,7 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.GetAsync($"/api/statement-drafts/{draftId}/entries/{entryId}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<StatementDraftEntryDetailDto>(cancellationToken: ct);
     }
 
@@ -1463,9 +1513,8 @@ public class ApiClient : IApiClient
     public async Task<StatementDraftDetailDto?> StatementDrafts_AddEntryAsync(Guid draftId, StatementDraftAddEntryRequest req, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/entries", req, ct);
-        if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest) return null;
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<StatementDraftDetailDto>(cancellationToken: ct);
     }
 
@@ -1474,7 +1523,7 @@ public class ApiClient : IApiClient
         var resp = await _http.PostAsync($"/api/statement-drafts/{draftId}/classify", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest) return null;
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<StatementDraftDetailDto>(cancellationToken: ct);
     }
 
@@ -1482,7 +1531,15 @@ public class ApiClient : IApiClient
     {
         var resp = await _http.PostAsync($"/api/statement-drafts/{draftId}/account/{accountId}", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<StatementDraftDetailDto>(cancellationToken: ct);
+    }
+
+    public async Task<StatementDraftDetailDto?> StatementDrafts_SetDescriptionAsync(Guid draftId, string? description, CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/description", description, ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<StatementDraftDetailDto>(cancellationToken: ct);
     }
 
