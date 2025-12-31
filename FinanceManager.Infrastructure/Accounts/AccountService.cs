@@ -130,12 +130,29 @@ public sealed class AccountService : IAccountService
 
     public async Task<IReadOnlyList<AccountDto>> ListAsync(Guid ownerUserId, int skip, int take, CancellationToken ct)
     {
-        return await _db.Accounts.AsNoTracking()
-            .Where(a => a.OwnerUserId == ownerUserId)
-            .OrderBy(a => a.Name)
-            .Skip(skip).Take(take)
-            .Select(a => new AccountDto(a.Id, a.Name, a.Type, a.Iban, a.CurrentBalance, a.BankContactId, a.SymbolAttachmentId, a.SavingsPlanExpectation))
-            .ToListAsync(ct);
+        // Left join Accounts -> Contacts -> ContactCategories to resolve fallback symbol attachment id
+        var query = from a in _db.Accounts.AsNoTracking()
+                    where a.OwnerUserId == ownerUserId
+                    join c in _db.Contacts.AsNoTracking() on a.BankContactId equals c.Id into cj
+                    from c in cj.DefaultIfEmpty()
+                    join cat in _db.ContactCategories.AsNoTracking() on c.CategoryId equals cat.Id into catj
+                    from cat in catj.DefaultIfEmpty()
+                    orderby a.Name
+                    select new AccountDto(
+                        a.Id,
+                        a.Name,
+                        a.Type,
+                        a.Iban,
+                        a.CurrentBalance,
+                        a.BankContactId,
+                        // Treat Guid.Empty as not present and fall back to contact then category
+                        (a.SymbolAttachmentId.HasValue && a.SymbolAttachmentId.Value != Guid.Empty) ? a.SymbolAttachmentId
+                            : (c != null && c.SymbolAttachmentId.HasValue && c.SymbolAttachmentId.Value != Guid.Empty) ? c.SymbolAttachmentId
+                            : cat.SymbolAttachmentId,
+                        a.SavingsPlanExpectation
+                    );
+
+        return await query.Skip(skip).Take(take).ToListAsync(ct);
     }
 
     public async Task<AccountDto?> GetAsync(Guid id, Guid ownerUserId, CancellationToken ct)

@@ -1341,4 +1341,13 @@
   <data name="StatementDraftEntry_SuggestedBookingDescription" xml:space="preserve">
     <value>Manual posting</value>
   </data>
+  <data name="MonthlyReminder_Title" xml:space="preserve">
+    <value>Month-end closing</value>
+  </data>
+  <data name="MonthlyReminder_Message" xml:space="preserve">
+    <value>It is the last business day of the month. Please perform your month-end closing.</value>
+  </data>
+  <data name="Attachments_Title" xml:space="preserve">
+    <value>Attachments</value>
+  </data>
 </root>
