@@ -33,6 +33,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
         public string? Description { get; set; }
         public StatementDraftStatus Status { get; set; }
         public int PendingEntries { get; set; }
+        public Guid? AttachmentSymbolId { get; set; }
 
         public string GetNavigateUrl() => $"/card/statement-drafts/{Id}";
     }
@@ -64,7 +65,8 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
                     FileName = d.OriginalFileName,
                     Description = d.Description,
                     Status = d.Status,
-                    PendingEntries = pending
+                    PendingEntries = pending,
+                    AttachmentSymbolId = d.AttachmentSymbolId,
                 });
             }
             _skip += list.Count;
@@ -82,7 +84,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
         var L = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
         Columns = new List<ListColumn>
         {
-            new ListColumn("", string.Empty, "2rem", ListColumnAlign.Left),
+            new ListColumn("", string.Empty, "48px", ListColumnAlign.Left),
             new ListColumn("file", L["List_Th_StatementDrafts_File"].Value, "", ListColumnAlign.Left),
             new ListColumn("description", L["List_Th_StatementDrafts_Description"].Value, "", ListColumnAlign.Left),
             new ListColumn("status", L["List_Th_StatementDrafts_Status"].Value, "160px", ListColumnAlign.Left),
@@ -91,7 +93,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
 
         Records = Items.Select(i => new ListRecord(new List<ListCell>
         {
-            new ListCell(ListCellKind.Text, Text: string.Empty),
+            new ListCell(ListCellKind.Symbol, SymbolId:i.AttachmentSymbolId, Text: string.Empty),
             new ListCell(ListCellKind.Text, Text: i.FileName),
             new ListCell(ListCellKind.Text, Text: i.Description ?? string.Empty),
             new ListCell(ListCellKind.Text, Text: i.Status.ToString()),

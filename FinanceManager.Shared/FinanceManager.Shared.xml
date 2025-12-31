@@ -2275,7 +2275,7 @@
             DTO representing a statement draft with optional split and upload group information.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Statements.StatementDraftDto.#ctor(System.Guid,System.String,System.String,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Statements.StatementDraftStatus,System.Decimal,System.Boolean,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Decimal},System.Nullable{System.Guid},System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Statements.StatementDraftEntryDto})">
+        <member name="M:FinanceManager.Shared.Dtos.Statements.StatementDraftDto.#ctor(System.Guid,System.String,System.String,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Statements.StatementDraftStatus,System.Decimal,System.Boolean,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Decimal},System.Nullable{System.Guid},System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Statements.StatementDraftEntryDto})">
             <summary>
             DTO representing a statement draft with optional split and upload group information.
             </summary>

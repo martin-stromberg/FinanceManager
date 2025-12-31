@@ -1,4 +1,5 @@
-﻿using FinanceManager.Application.Aggregates;
+﻿using FinanceManager.Application.Accounts;
+using FinanceManager.Application.Aggregates;
 using FinanceManager.Application.Attachments; // added
 using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Accounts; // added for Account type
@@ -19,6 +20,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
     private readonly AppDbContext _db;
     private readonly IReadOnlyList<IStatementFileReader> _statementFileReaders;
     private readonly IPostingAggregateService _aggregateService;
+    private readonly IAccountService _accountService;
     private readonly ILogger<StatementDraftService> _logger; // added
     private readonly IAttachmentService? _attachments; // optional to keep compatibility with tests
     private List<StatementDraftDto>? allDrafts = null;
@@ -53,10 +55,11 @@ public sealed partial class StatementDraftService : IStatementDraftService
         int MonthlyThreshold
     );
 
-    public StatementDraftService(AppDbContext db, IPostingAggregateService aggregateService, IEnumerable<IStatementFileReader>? readers = null, ILogger<StatementDraftService>? logger = null, IAttachmentService? attachments = null) // logger param added
+    public StatementDraftService(AppDbContext db, IPostingAggregateService aggregateService, IAccountService accountService, IEnumerable<IStatementFileReader>? readers = null, ILogger<StatementDraftService>? logger = null, IAttachmentService? attachments = null) // logger param added
     {
         _db = db;
         _aggregateService = aggregateService;
+        _accountService = accountService;
         _logger = logger ?? NullLogger<StatementDraftService>.Instance;
         _attachments = attachments;
         _statementFileReaders = (readers is not null && readers.ToList().Any()) ? readers.ToList() : new List<IStatementFileReader>
@@ -900,7 +903,104 @@ public sealed partial class StatementDraftService : IStatementDraftService
             .GroupBy(x => x.SplitDraftId!.Value)
             .ToDictionary(g => g.Key, g => (dynamic)g.First());
 
-        return drafts.Select(d => Map(d, bySplitId)).ToList();
+        // collect detected account ids to resolve bank contact and symbol attachments in batch
+        var accountIds = drafts.Where(d => d.DetectedAccountId.HasValue).Select(d => d.DetectedAccountId!.Value).Distinct().ToList();
+        var accounts = accountIds.Count > 0
+            ? await _db.Accounts.AsNoTracking().Where(a => accountIds.Contains(a.Id)).ToListAsync(ct)
+            : new List<Domain.Accounts.Account>();
+
+        var contactIds = accounts.Where(a => a.BankContactId != Guid.Empty).Select(a => a.BankContactId).Distinct().ToList();
+        var contacts = contactIds.Count > 0
+            ? await _db.Contacts.AsNoTracking().Where(c => contactIds.Contains(c.Id)).ToListAsync(ct)
+            : new List<Domain.Contacts.Contact>();
+
+        var categoryIds = contacts.Where(c => c.CategoryId.HasValue).Select(c => c.CategoryId!.Value).Distinct().ToList();
+        var categories = categoryIds.Count > 0
+            ? await _db.ContactCategories.AsNoTracking().Where(cat => categoryIds.Contains(cat.Id)).ToListAsync(ct)
+            : new List<Domain.Contacts.ContactCategory>();
+
+        var result = new List<StatementDraftDto>(drafts.Count);
+        foreach (var draft in drafts)
+        {
+            dynamic? refInfo = null;
+            bySplitId.TryGetValue(draft.Id, out refInfo);
+            Guid? parentDraftId = refInfo?.DraftId;
+            Guid? parentEntryId = refInfo?.Id;
+            decimal? parentEntryAmount = refInfo?.Amount;
+
+            Guid? detectedAccountBankContactId = null;
+            Guid? attachmentSymbolId = null;
+            if (draft.DetectedAccountId.HasValue)
+            {
+                var acct = accounts.FirstOrDefault(a => a.Id == draft.DetectedAccountId.Value);
+                if (acct != null)
+                {
+                    detectedAccountBankContactId = acct.BankContactId;
+                    // resolve symbol: account -> contact -> category, treat Guid.Empty as null
+                    if (acct.SymbolAttachmentId.HasValue && acct.SymbolAttachmentId.Value != Guid.Empty)
+                    {
+                        attachmentSymbolId = acct.SymbolAttachmentId;
+                    }
+                    else
+                    {
+                        var bc = contacts.FirstOrDefault(c => c.Id == acct.BankContactId);
+                        if (bc != null && bc.SymbolAttachmentId.HasValue && bc.SymbolAttachmentId.Value != Guid.Empty)
+                        {
+                            attachmentSymbolId = bc.SymbolAttachmentId;
+                        }
+                        else if (bc != null && bc.CategoryId.HasValue)
+                        {
+                            var cat = categories.FirstOrDefault(x => x.Id == bc.CategoryId.Value);
+                            if (cat != null && cat.SymbolAttachmentId.HasValue && cat.SymbolAttachmentId.Value != Guid.Empty)
+                            {
+                                attachmentSymbolId = cat.SymbolAttachmentId;
+                            }
+                        }
+                    }
+                }
+            }
+
+            var total = draft.Entries.Sum(e => e.Amount);
+            var dto = new StatementDraftDto(
+                draft.Id,
+                draft.OriginalFileName,
+                draft.Description,
+                draft.DetectedAccountId,
+                detectedAccountBankContactId,
+                attachmentSymbolId,
+                draft.Status,
+                total,
+                parentDraftId != null,
+                parentDraftId,
+                parentEntryId,
+                parentEntryAmount,
+                draft.UploadGroupId,
+                draft.Entries.Select(e => new StatementDraftEntryDto(
+                    e.Id,
+                    e.BookingDate,
+                    e.ValutaDate,
+                    e.Amount,
+                    e.CurrencyCode,
+                    e.Subject,
+                    e.RecipientName,
+                    e.BookingDescription,
+                    e.IsAnnounced,
+                    e.IsCostNeutral,
+                    e.Status,
+                    e.ContactId,
+                    e.SavingsPlanId,
+                    e.ArchiveSavingsPlanOnBooking,
+                    e.SplitDraftId,
+                    e.SecurityId,
+                    e.SecurityTransactionType,
+                    e.SecurityQuantity,
+                    e.SecurityFeeAmount,
+                    e.SecurityTaxAmount)).ToList());
+
+            result.Add(dto);
+        }
+
+        return result;
     }
 
     public async Task<IReadOnlyList<StatementDraftDto>> GetOpenDraftsAsync(Guid ownerUserId, int skip, int take, CancellationToken ct)
@@ -928,12 +1028,16 @@ public sealed partial class StatementDraftService : IStatementDraftService
             .GroupBy(x => x.SplitDraftId!.Value)
             .ToDictionary(g => g.Key, g => (dynamic)g.First());
 
-        return drafts.Select(d => Map(d, bySplitId)).ToList();
+        return drafts.Select(d =>
+        {
+            var account = _accountService.Get(d.DetectedAccountId.Value, d.OwnerUserId);
+            return Map(d, bySplitId, account);
+        }).ToList();
     }
 
-    public Task<int> GetOpenDraftsCountAsync(Guid userId, CancellationToken token)
+    public async Task<int> GetOpenDraftsCountAsync(Guid userId, CancellationToken token)
     {
-        return _db.StatementDrafts
+        return await _db.StatementDrafts
              .Include(d => d.Entries)
              .Where(d => d.OwnerUserId == userId && d.Status == StatementDraftStatus.Draft)
              .AsNoTracking()
@@ -1753,7 +1857,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
                         var candidates = await _db.Postings
                             .Where(p => p.Kind == PostingKind.Contact
                                         && p.ContactId == newContactPost.ContactId
-                                        && p.Amount == -newContactPost.Amount
+                                        //&& p.Amount == -newContactPost.Amount
                                         && p.LinkedPostingId == null
                                         && p.SourceId != newContactPost.SourceId
                                         && p.Subject == newContactPost.Subject)

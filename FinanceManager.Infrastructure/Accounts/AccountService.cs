@@ -157,10 +157,51 @@ public sealed class AccountService : IAccountService
 
     public async Task<AccountDto?> GetAsync(Guid id, Guid ownerUserId, CancellationToken ct)
     {
-        return await _db.Accounts.AsNoTracking()
-            .Where(a => a.Id == id && a.OwnerUserId == ownerUserId)
-            .Select(a => new AccountDto(a.Id, a.Name, a.Type, a.Iban, a.CurrentBalance, a.BankContactId, a.SymbolAttachmentId, a.SavingsPlanExpectation))
-            .FirstOrDefaultAsync(ct);
+        var query = from a in _db.Accounts.AsNoTracking()
+                    where a.OwnerUserId == ownerUserId && a.Id == id
+                    join c in _db.Contacts.AsNoTracking() on a.BankContactId equals c.Id into cj
+                    from c in cj.DefaultIfEmpty()
+                    join cat in _db.ContactCategories.AsNoTracking() on c.CategoryId equals cat.Id into catj
+                    from cat in catj.DefaultIfEmpty()
+                    orderby a.Name
+                    select new AccountDto(
+                        a.Id,
+                        a.Name,
+                        a.Type,
+                        a.Iban,
+                        a.CurrentBalance,
+                        a.BankContactId,
+                        (a.SymbolAttachmentId.HasValue && a.SymbolAttachmentId.Value != Guid.Empty) ? a.SymbolAttachmentId
+                            : (c != null && c.SymbolAttachmentId.HasValue && c.SymbolAttachmentId.Value != Guid.Empty) ? c.SymbolAttachmentId
+                            : cat.SymbolAttachmentId,
+                        a.SavingsPlanExpectation
+                    );
+
+        return await query.FirstOrDefaultAsync(ct);
+    }
+    public AccountDto? Get(Guid id, Guid ownerUserId)
+    {
+        var query = from a in _db.Accounts.AsNoTracking()
+                    where a.OwnerUserId == ownerUserId && a.Id == id
+                    join c in _db.Contacts.AsNoTracking() on a.BankContactId equals c.Id into cj
+                    from c in cj.DefaultIfEmpty()
+                    join cat in _db.ContactCategories.AsNoTracking() on c.CategoryId equals cat.Id into catj
+                    from cat in catj.DefaultIfEmpty()
+                    orderby a.Name
+                    select new AccountDto(
+                        a.Id,
+                        a.Name,
+                        a.Type,
+                        a.Iban,
+                        a.CurrentBalance,
+                        a.BankContactId,
+                        (a.SymbolAttachmentId.HasValue && a.SymbolAttachmentId.Value != Guid.Empty) ? a.SymbolAttachmentId
+                            : (c != null && c.SymbolAttachmentId.HasValue && c.SymbolAttachmentId.Value != Guid.Empty) ? c.SymbolAttachmentId
+                            : cat.SymbolAttachmentId,
+                        a.SavingsPlanExpectation
+                    );
+
+        return query.FirstOrDefault();
     }
 
     public async Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct)

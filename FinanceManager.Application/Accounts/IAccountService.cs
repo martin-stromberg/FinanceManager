@@ -7,5 +7,6 @@ public interface IAccountService
     Task<bool> DeleteAsync(Guid id, Guid ownerUserId, CancellationToken ct);
     Task<IReadOnlyList<AccountDto>> ListAsync(Guid ownerUserId, int skip, int take, CancellationToken ct);
     Task<AccountDto?> GetAsync(Guid id, Guid ownerUserId, CancellationToken ct);
+    AccountDto? Get(Guid id, Guid ownerUserId);
     Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct);
 }

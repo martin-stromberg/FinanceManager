@@ -8,6 +8,8 @@ public sealed record StatementDraftDto(
     string OriginalFileName,
     string? Description,
     Guid? DetectedAccountId,
+    Guid? AccountBankContactId,
+    Guid? AttachmentSymbolId,
     StatementDraftStatus Status,
     decimal TotalAmount,
     bool IsSplitDraft,
