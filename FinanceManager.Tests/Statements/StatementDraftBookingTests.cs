@@ -8,11 +8,37 @@ using FinanceManager.Infrastructure.Aggregates;
 using FinanceManager.Infrastructure.Statements;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using FinanceManager.Application.Accounts;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Statements;
 
 public sealed class StatementDraftBookingTests
 {
+    private sealed class TestAccountService : IAccountService
+    {
+        public Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<bool> DeleteAsync(Guid id, Guid ownerUserId, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<IReadOnlyList<AccountDto>> ListAsync(Guid ownerUserId, int skip, int take, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<AccountDto?> GetAsync(Guid id, Guid ownerUserId, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public AccountDto? Get(Guid id, Guid ownerUserId)
+            => throw new NotImplementedException();
+
+        public Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct)
+            => throw new NotImplementedException();
+    }
+
     private static (StatementDraftService sut, AppDbContext db, SqliteConnection conn, Guid owner) Create()
     {
         var conn = new SqliteConnection("DataSource=:memory:");
@@ -29,7 +55,8 @@ public sealed class StatementDraftBookingTests
         var self = new Contact(ownerUser.Id, "Ich", ContactType.Self, null, null);
         db.Contacts.Add(self);
         db.SaveChanges();
-        var sut = new StatementDraftService(db, new PostingAggregateService(db));
+        var accountService = new TestAccountService();
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, conn, ownerUser.Id);
     }
 
@@ -79,7 +106,7 @@ public sealed class StatementDraftBookingTests
         // IMPORTANT: simulate production by using a fresh DbContext (new scope)
         var freshOptions = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(conn).Options;
         using var freshDb = new AppDbContext(freshOptions);
-        var freshSut = new StatementDraftService(freshDb, new PostingAggregateService(freshDb));
+        var freshSut = new StatementDraftService(freshDb, new PostingAggregateService(freshDb), new TestAccountService(), null, NullLogger<StatementDraftService>.Instance, null);
 
         // Act: book only first entry on fresh context
         var res = await freshSut.BookAsync(draft.Id, e1.Id, owner, false, CancellationToken.None);

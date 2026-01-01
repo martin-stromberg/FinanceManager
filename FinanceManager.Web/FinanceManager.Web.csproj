@@ -4,7 +4,13 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <DocumentationFile>FinanceManager.Web.xml</DocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\css\app.SetupNotificationsTab.css" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\FinanceManager.Application\FinanceManager.Application.csproj" />
@@ -12,6 +18,14 @@
     <ProjectReference Include="..\FinanceManager.Domain\FinanceManager.Domain.csproj" />
     <ProjectReference Include="..\FinanceManager.Shared\FinanceManager.Shared.csproj" />
   </ItemGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<WarningsAsErrors>$(WarningsAsErrors);NU1605;CS1591;</WarningsAsErrors>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<WarningsAsErrors>$(WarningsAsErrors);NU1605;CS1591;</WarningsAsErrors>
+	</PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="itext.bouncy-castle-adapter" Version="9.4.0" />

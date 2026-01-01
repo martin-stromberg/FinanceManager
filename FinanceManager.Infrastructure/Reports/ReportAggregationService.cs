@@ -4,11 +4,34 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Infrastructure.Reports;
 
+/// <summary>
+/// Service that computes aggregated report data from posting aggregates and postings.
+/// Provides complex grouping, category and type rollups as well as support for special security dividend net calculations.
+/// </summary>
 public sealed class ReportAggregationService : IReportAggregationService
 {
     private readonly AppDbContext _db;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ReportAggregationService"/> class.
+    /// </summary>
+    /// <param name="db">The application's <see cref="AppDbContext"/> used to query aggregates and postings.</param>
     public ReportAggregationService(AppDbContext db) => _db = db;
 
+    /// <summary>
+    /// Executes the report aggregation query and returns a structured result containing time-series points grouped by entity/category/type.
+    /// </summary>
+    /// <param name="query">The <see cref="ReportAggregationQuery"/> describing the requested kinds, filters, interval and other options.</param>
+    /// <param name="ct">A <see cref="CancellationToken"/> used to cancel the operation.</param>
+    /// <returns>
+    /// A <see cref="ReportAggregationResult"/> containing the computed points. The result may be empty when no data is found or after ownership filtering.
+    /// </returns>
+    /// <exception cref="UnauthorizedAccessException">Thrown when the request targets entities not owned by the querying user (ownership checks).</exception>
+    /// <exception cref="InvalidOperationException">Thrown for unsupported context or unexpected internal conditions.</exception>
+    /// <remarks>
+    /// The method performs multiple database reads and in-memory transformations. It may return early when specialized paths are used
+    /// (for example security dividend net calculation). Cancellation is observed where database operations support it.
+    /// </remarks>
     public async Task<ReportAggregationResult> QueryAsync(ReportAggregationQuery query, CancellationToken ct)
     {
         // Resolve requested kinds (multi or legacy single)
@@ -650,6 +673,13 @@ public sealed class ReportAggregationService : IReportAggregationService
         return new ReportAggregationResult(query.Interval, points, query.ComparePrevious, query.CompareYear);
     }
 
+    /// <summary>
+    /// Specialized path that computes net dividend amounts per security by grouping postings by GroupId and applying subtype netting
+    /// (dividend + fees + taxes). Used for security-focused dividend reports.
+    /// </summary>
+    /// <param name="query">The original aggregation query (only security-related filters are honoured).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A <see cref="ReportAggregationResult"/> containing monthly (or transformed) points per security and optional categories.</returns>
     private async Task<ReportAggregationResult> QuerySecurityDividendsNetAsync(ReportAggregationQuery query, CancellationToken ct)
     {
         var today = DateTime.UtcNow.Date;
@@ -892,7 +922,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                 }
             }
         }
-
+               
         // Compute comparisons
         if (query.ComparePrevious)
         {

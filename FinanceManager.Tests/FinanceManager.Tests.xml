@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>FinanceManager.Tests</name>
+    </assembly>
+    <members>
+        <member name="M:FinanceManager.Tests.Reports.ReportAggregationServiceTests.SeedAllKindsAsync(FinanceManager.Infrastructure.AppDbContext,System.Guid,System.DateTime,System.Int32)">
+            <summary>
+            Seeds two accounts, two contacts, two savings plans, two securities and creates monthly aggregates for the last N months.
+            For each entity and month two postings are added (1st and 15th), with a global amount counter starting at 1.00€ and increasing by 0.01€ per posting to ensure uniqueness.
+            Returns the created entities, the list of months and a sum lookup for expected assertions.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Reports.ReportAggregationServiceTests.GetMonthlyExpected(FinanceManager.Tests.Reports.ReportAggregationServiceTests.SeedResult,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.DateTime)">
+            <summary>
+            Hilfsfunktion: Erwartete Monats?Summe je Entität und Vergleichswerte (Vormonat, Vorjahr) aus Seed?Lookup berechnen.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Reports.ReportAggregationServiceTests.QueryAsync_Monthly_AllKinds_VerifyPrevAndYear_ForTwoEntities">
+            <summary>
+            Seeds 24 months for 2 accounts/contacts/savings/securities with unique amounts (1.00€ + 0.01€ per posting), two postings per month (1st/15th).
+            Builds a monthly report for Bank, Contact, SavingsPlan, Security with comparisons (prev + year) and verifies the latest month's balances for both entities.
+            Expected: Amount equals seeded monthly sum; Previous equals exact previous month; YearAgo equals same month last year.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Reports.ReportAggregationServiceTests.QueryAsync_Monthly_SelectOtherEntities_ShouldBeEmpty">
+            <summary>
+            With the same seeded postings, query with filters that select non-existing entities. Expect an empty result (no rows).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Reports.ReportAggregationServiceTests.QueryAsync_VariousIntervals_Bank_VerifySums(FinanceManager.Shared.Dtos.Reports.ReportInterval)">
+            <summary>
+            Quarterly/HalfYearly/Yearly/YTD/AllHistory: Verify that the aggregation sums match the seeded per-month sums grouped per interval for Bank postings.
+            Previous comparisons are checked for the exact previous interval when applicable, YearAgo for yearly.
+            For AllHistory, verify total across all returned periods equals the seeded total.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.Statements.StatementDraftImportSplitTests">
+            <summary>
+            Tests the import split logic (CreateDraftAsync) for fixed, monthly and hybrid modes.
+            NOTE: MinEntriesPerDraft (new feature) is NOT yet applied by the implementation – tests document current behaviour (TDD baseline).
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.Statements.StatementDraftUploadGroupSplitTests">
+            <summary>
+            Tests for booking split drafts that are grouped only by a shared UploadGroupId (multi-part upload) instead of a single explicit SplitDraftId link.
+            Expected behaviour:
+             - Parent draft has an intermediary entry (Contact.IsPaymentIntermediary = true).
+             - User links ONE of the child drafts (same upload group) via SetEntrySplitDraft.
+             - Validation and booking must treat ALL drafts of that upload group (without account + still Draft) as children.
+             - Sum check compares parent entry amount with sum of ALL child draft entry amounts across the group.
+             - Booking parent books all grouped child drafts (and commits them) while unrelated drafts remain untouched.
+            </summary>
+        </member>
+    </members>
+</doc>

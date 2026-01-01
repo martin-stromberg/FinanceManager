@@ -1,7 +1,8 @@
 using FinanceManager.Application;
 using FinanceManager.Shared; // added
-using FinanceManager.Web.ViewModels;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -29,11 +30,25 @@ public sealed class StatementDraftsViewModelTests
         public bool IsAdmin { get; set; } = false;
     }
 
-    private static IServiceProvider CreateSp()
+    private static IServiceProvider CreateSp(Shared.IApiClient? api = null)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService());
+        // Provide a simple test string localizer for all IStringLocalizer<T> requests
+        services.AddSingleton(typeof(Microsoft.Extensions.Localization.IStringLocalizer<>), typeof(TestStringLocalizer<>));
+        if (api != null) services.AddSingleton<Shared.IApiClient>(api);
+        services.AddSingleton<NavigationManager>(new TestNavigationManager());
         return services.BuildServiceProvider();
+    }
+
+    private sealed class TestNavigationManager : NavigationManager
+    {
+        public TestNavigationManager()
+        {
+            Initialize("http://localhost/", "http://localhost/");
+        }
+
+        protected override void NavigateToCore(string uri, bool forceLoad) { /* no-op for tests */ }
     }
 
     private static string Json(object obj) => JsonSerializer.Serialize(obj);
@@ -60,7 +75,7 @@ public sealed class StatementDraftsViewModelTests
         });
 
         var api = new ApiClient(client);
-        var vm = new StatementDraftsViewModel(CreateSp(), api);
+        var vm = new FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftsListViewModel(CreateSp(api));
         await vm.InitializeAsync();
 
         Assert.Equal(3, vm.Items.Count);
@@ -96,7 +111,7 @@ public sealed class StatementDraftsViewModelTests
         });
 
         var api = new ApiClient(client);
-        var vm = new StatementDraftsViewModel(CreateSp(), api);
+        var vm = new FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftsListViewModel(CreateSp(api));
         await vm.InitializeAsync();
         Assert.Equal(3, vm.Items.Count);
         Assert.True(vm.CanLoadMore);
@@ -126,7 +141,7 @@ public sealed class StatementDraftsViewModelTests
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         });
         var api = new ApiClient(client);
-        var vm = new StatementDraftsViewModel(CreateSp(), api);
+        var vm = new FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftsListViewModel(CreateSp(api));
         await vm.InitializeAsync();
         Assert.Single(vm.Items);
 
@@ -153,9 +168,12 @@ public sealed class StatementDraftsViewModelTests
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         });
         var api = new ApiClient(client);
-        var vm = new StatementDraftsViewModel(CreateSp(), api);
+        var vm = new FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftsListViewModel(CreateSp(api));
         await using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
-        var id = await vm.UploadAsync(stream, "x.pdf");
+        var upl = (FinanceManager.Web.ViewModels.Common.IUploadFilesViewModel?)vm;
+        var files = new List<(Stream Stream, string FileName)> { (stream, "x.pdf") };
+        var res = await upl!.UploadFilesAsync("statementdraft", files, CancellationToken.None);
+        var id = res?.StatementDraftResult?.FirstDraft?.DraftId;
         Assert.Equal(firstId, id);
     }
 
@@ -196,7 +214,7 @@ public sealed class StatementDraftsViewModelTests
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         });
         var api = new ApiClient(client);
-        var vm = new StatementDraftsViewModel(CreateSp(), api);
+        var vm = new FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftsListViewModel(CreateSp(api));
         await vm.InitializeAsync();
         Assert.Single(vm.Items);
 
@@ -248,7 +266,7 @@ public sealed class StatementDraftsViewModelTests
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         });
         var api = new ApiClient(client);
-        var vm = new StatementDraftsViewModel(CreateSp(), api);
+        var vm = new FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftsListViewModel(CreateSp(api));
         await vm.InitializeAsync();
         Assert.Single(vm.Items);
 
@@ -261,5 +279,32 @@ public sealed class StatementDraftsViewModelTests
 
         await vm.CancelBookingAsync();
         // no exception means ok
+    }
+}
+
+
+// Minimal IStringLocalizer<T> implementation for tests that returns the key as value.
+public sealed class TestStringLocalizer<T> : Microsoft.Extensions.Localization.IStringLocalizer<T>
+{
+    public LocalizedString this[string name]
+        => new LocalizedString(name, name, resourceNotFound: false);
+
+    public LocalizedString this[string name, params object[] arguments]
+    {
+        get
+        {
+            var val = string.Format(name, arguments);
+            return new LocalizedString(name, val, resourceNotFound: false);
+        }
+    }
+
+    public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures)
+    {
+        return Array.Empty<LocalizedString>();
+    }
+
+    public IStringLocalizer WithCulture(System.Globalization.CultureInfo culture)
+    {
+        return this;
     }
 }

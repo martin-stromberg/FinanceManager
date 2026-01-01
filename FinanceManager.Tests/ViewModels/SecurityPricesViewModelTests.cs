@@ -1,9 +1,11 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
-using FinanceManager.Shared.Dtos.Admin;
-using FinanceManager.Shared.Dtos.Securities;
-using FinanceManager.Web.ViewModels;
+using FinanceManager.Web;
+using FinanceManager.Web.Services;
+using FinanceManager.Web.ViewModels.Securities.Prices;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
@@ -18,14 +20,17 @@ public sealed class SecurityPricesViewModelTests
         public bool IsAdmin { get; set; } = false;
     }
 
-    private static (SecurityPricesViewModel vm, Mock<IApiClient> apiMock) CreateVm()
+    private static (SecurityPricesListViewModel vm, Mock<IApiClient> apiMock) CreateVm()
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService());
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
+        services.AddLocalization(options => options.ResourcesPath = "Resources");
+        services.AddSingleton(typeof(IStringLocalizer<Pages>), new PagesStringLocalizer());
+        services.AddSingleton<NavigationManager>(new TestNavigationManager());
         var sp = services.BuildServiceProvider();
-        var vm = new SecurityPricesViewModel(sp);
+        var vm = new SecurityPricesListViewModel(sp, Guid.NewGuid());
         return (vm, apiMock);
     }
 
@@ -46,7 +51,6 @@ public sealed class SecurityPricesViewModelTests
 
         var events = 0;
         vm.StateChanged += (_, __) => events++;
-        vm.ForSecurity(Guid.NewGuid());
 
         await vm.InitializeAsync();
 
@@ -68,8 +72,6 @@ public sealed class SecurityPricesViewModelTests
                 return CreatePrices(call == 1 ? 100 : 50);
             });
 
-        vm.ForSecurity(Guid.NewGuid());
-
         await vm.InitializeAsync();
         Assert.Equal(100, vm.Items.Count);
         Assert.True(vm.CanLoadMore);
@@ -81,77 +83,38 @@ public sealed class SecurityPricesViewModelTests
     }
 
     [Fact]
-    public void OpenBackfillDialog_SetsDefaultsAndOpens()
+    public void RequestOpenBackfill_RaisesUiAction()
     {
         var (vm, _) = CreateVm();
+        FinanceManager.Web.ViewModels.Common.BaseViewModel.UiActionEventArgs? received = null;
+        vm.UiActionRequested += (_, e) => received = e;
 
-        vm.OpenBackfillDialogDefaultPeriod();
+        vm.RequestOpenBackfill();
 
-        Assert.True(vm.ShowBackfillDialog);
-        Assert.NotNull(vm.FromDate);
-        Assert.NotNull(vm.ToDate);
-        Assert.False(vm.Submitting);
-        Assert.Null(vm.DialogErrorKey);
+        Assert.NotNull(received);
+        Assert.Equal("OpenOverlay", received!.Action);
+        Assert.Null(received.Payload);
+        Assert.NotNull(received.PayloadObject);
     }
 
-    [Fact]
-    public async Task ConfirmBackfill_ValidationErrors()
+    private sealed class TestLocalizer<T> : Microsoft.Extensions.Localization.IStringLocalizer<T>
     {
-        var (vm, _) = CreateVm();
-        vm.ForSecurity(Guid.NewGuid());
-
-        await vm.ConfirmBackfillAsync();
-        Assert.Equal("Dlg_InvalidDates", vm.DialogErrorKey);
-
-        vm.FromDate = DateTime.UtcNow.Date;
-        vm.ToDate = vm.FromDate.Value.AddDays(-1);
-        await vm.ConfirmBackfillAsync();
-        Assert.Equal("Dlg_FromAfterTo", vm.DialogErrorKey);
-
-        vm.ToDate = DateTime.UtcNow.Date.AddDays(1);
-        await vm.ConfirmBackfillAsync();
-        Assert.Equal("Dlg_ToInFuture", vm.DialogErrorKey);
+        public Microsoft.Extensions.Localization.LocalizedString this[string name] => new(name, name);
+        public Microsoft.Extensions.Localization.LocalizedString this[string name, params object[] arguments] => new(name, string.Format(name, arguments));
+        public IEnumerable<Microsoft.Extensions.Localization.LocalizedString> GetAllStrings(bool includeParentCultures) { yield break; }
     }
 
-    [Fact]
-    public async Task ConfirmBackfill_PostsAndCloses_OnSuccess()
+    private sealed class TestNavigationManager : NavigationManager
     {
-        var (vm, apiMock) = CreateVm();
-        var backfillInfo = new BackgroundTaskInfo(
-            Guid.NewGuid(),
-            BackgroundTaskType.SecurityPricesBackfill,
-            Guid.NewGuid(),
-            DateTime.UtcNow,
-            BackgroundTaskStatus.Queued,
-            null, null, null, 0, 0, null, null, null, null, null, null, null);
+        public TestNavigationManager()
+        {
+            // initialize with a base and current URI
+            Initialize("http://localhost/", "http://localhost/");
+        }
 
-        apiMock.Setup(a => a.Securities_EnqueueBackfillAsync(It.IsAny<Guid?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(backfillInfo);
-
-        vm.ForSecurity(Guid.NewGuid());
-        vm.OpenBackfillDialogDefaultPeriod();
-
-        await vm.ConfirmBackfillAsync();
-
-        Assert.False(vm.ShowBackfillDialog);
-        Assert.Null(vm.DialogErrorKey);
-        apiMock.Verify(a => a.Securities_EnqueueBackfillAsync(It.IsAny<Guid?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task ConfirmBackfill_SetsError_OnFailure()
-    {
-        var (vm, apiMock) = CreateVm();
-        apiMock.Setup(a => a.Securities_EnqueueBackfillAsync(It.IsAny<Guid?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception("fail"));
-
-        vm.ForSecurity(Guid.NewGuid());
-        vm.OpenBackfillDialogDefaultPeriod();
-
-        await vm.ConfirmBackfillAsync();
-
-        Assert.True(vm.ShowBackfillDialog);
-        Assert.Equal("Dlg_EnqueueFailed", vm.DialogErrorKey);
-        Assert.False(vm.Submitting);
+        protected override void NavigateToCore(string uri, bool forceLoad)
+        {
+            // no-op for tests
+        }
     }
 }

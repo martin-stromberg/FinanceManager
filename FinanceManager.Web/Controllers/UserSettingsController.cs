@@ -11,6 +11,7 @@ namespace FinanceManager.Web.Controllers;
 
 /// <summary>
 /// Manages user settings for the signed-in account: profile, notification preferences, and import split configuration.
+/// All endpoints operate on the currently authenticated user resolved via <see cref="ICurrentUserService"/>.
 /// </summary>
 [ApiController]
 [Route("api/user/settings")]
@@ -22,6 +23,12 @@ public sealed class UserSettingsController : ControllerBase
     private readonly ICurrentUserService _current;
     private readonly ILogger<UserSettingsController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="UserSettingsController"/>
+    /// </summary>
+    /// <param name="db">Database context used to access user settings.</param>
+    /// <param name="current">Service that exposes current user information.</param>
+    /// <param name="logger">Logger instance for diagnostics and error reporting.</param>
     public UserSettingsController(AppDbContext db, ICurrentUserService current, ILogger<UserSettingsController> logger)
     { _db = db; _current = current; _logger = logger; }
 
@@ -29,7 +36,7 @@ public sealed class UserSettingsController : ControllerBase
     /// Returns profile settings of the current user (language, timezone, API key flags).
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>User profile settings DTO.</returns>
+    /// <returns>User profile settings DTO wrapped in an <see cref="IActionResult"/> (200 OK).</returns>
     // GET api/user/settings/profile
     [HttpGet("profile")]
     [ProducesResponseType(typeof(UserProfileSettingsDto), StatusCodes.Status200OK)]
@@ -54,7 +61,7 @@ public sealed class UserSettingsController : ControllerBase
     /// </summary>
     /// <param name="req">Profile update payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>No content response on success.</returns>
+    /// <returns>No content response on success or validation/problem responses on failure.</returns>
     /// <response code="204">Profile settings updated successfully.</response>
     /// <response code="400">Invalid profile update data.</response>
     /// <response code="404">User not found.</response>
@@ -113,7 +120,7 @@ public sealed class UserSettingsController : ControllerBase
     /// Returns notification settings like monthly reminder and holiday region/provider.
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Notification settings DTO.</returns>
+    /// <returns>Notification settings DTO wrapped in an <see cref="IActionResult"/> (200 OK).</returns>
     // GET api/user/settings/notifications
     [HttpGet("notifications")]
     [ProducesResponseType(typeof(NotificationSettingsDto), StatusCodes.Status200OK)]
@@ -140,7 +147,7 @@ public sealed class UserSettingsController : ControllerBase
     /// </summary>
     /// <param name="req">Notification settings update payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>No content response on success.</returns>
+    /// <returns>No content response on success or validation responses on failure.</returns>
     /// <response code="204">Notification settings updated successfully.</response>
     /// <response code="400">Invalid notification settings data.</response>
     /// <response code="404">User not found.</response>
@@ -174,7 +181,7 @@ public sealed class UserSettingsController : ControllerBase
     /// Returns import split settings (mode, thresholds and sizes).
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Import split settings DTO.</returns>
+    /// <returns>Import split settings DTO wrapped in an <see cref="IActionResult"/> (200 OK).</returns>
     // GET api/user/settings/import-split
     [HttpGet("import-split")]
     [ProducesResponseType(typeof(ImportSplitSettingsDto), StatusCodes.Status200OK)]
@@ -199,7 +206,7 @@ public sealed class UserSettingsController : ControllerBase
     /// </summary>
     /// <param name="req">Import split settings update payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>No content response on success.</returns>
+    /// <returns>No content response on success or validation responses on failure.</returns>
     /// <response code="204">Import split settings updated successfully.</response>
     /// <response code="400">Invalid import split settings data.</response>
     /// <response code="404">User not found.</response>

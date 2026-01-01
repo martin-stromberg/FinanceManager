@@ -4,14 +4,34 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Infrastructure.Reports;
 
+/// <summary>
+/// Service that provides time series of posting aggregates for reporting purposes.
+/// Supports fetching series for a single entity (account/contact/savings plan/security) or aggregated across all entities of a kind.
+/// </summary>
 public sealed class PostingTimeSeriesService : IPostingTimeSeriesService
 {
     private readonly AppDbContext _db;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PostingTimeSeriesService"/> class.
+    /// </summary>
+    /// <param name="db">The application's <see cref="AppDbContext"/> used to query posting aggregates and ownership information.</param>
     public PostingTimeSeriesService(AppDbContext db) { _db = db; }
 
+    /// <summary>
+    /// Helper to clamp the requested number of points to a sensible default and range based on the period.
+    /// </summary>
+    /// <param name="period">The aggregate period requested.</param>
+    /// <param name="take">Requested number of points; when &lt;= 0 a default value based on the period is used.</param>
+    /// <returns>A clamped value between 1 and 200.</returns>
     private static int ClampTake(AggregatePeriod period, int take)
         => Math.Clamp(take <= 0 ? (period == AggregatePeriod.Month ? 36 : period == AggregatePeriod.Quarter ? 16 : period == AggregatePeriod.HalfYear ? 12 : 10) : take, 1, 200);
 
+    /// <summary>
+    /// Computes the minimum period start date when restricting series by a maximum number of years back.
+    /// </summary>
+    /// <param name="maxYearsBack">Optional maximum years back to include in the series. When null no minimum is applied.</param>
+    /// <returns>The month-aligned minimum <see cref="DateTime"/>, or <c>null</c> when <paramref name="maxYearsBack"/> is null.</returns>
     private static DateTime? ComputeMinDate(int? maxYearsBack)
     {
         if (!maxYearsBack.HasValue) { return null; }
@@ -20,6 +40,20 @@ public sealed class PostingTimeSeriesService : IPostingTimeSeriesService
         return new DateTime(today.Year - v, today.Month, 1); // month aligned
     }
 
+    /// <summary>
+    /// Gets a time series of aggregate points for a single entity (account/contact/savings plan/security).
+    /// The service validates ownership and returns <c>null</c> when the entity is not owned by the specified user.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user identifier used to validate access to the requested entity.</param>
+    /// <param name="kind">Kind of posting (Bank / Contact / SavingsPlan / Security).</param>
+    /// <param name="entityId">Identifier of the entity for which to return the series.</param>
+    /// <param name="period">Aggregate period (Month/Quarter/HalfYear/Year) to use for the series.</param>
+    /// <param name="take">Number of points to return; when &lt;= 0 a period-specific default is used. The value is clamped to [1,200].</param>
+    /// <param name="maxYearsBack">Optional maximum number of years to include; when provided the series will be truncated to start no earlier than this many years ago.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// An ordered list of <see cref="AggregatePointDto"/> instances (ascending by period start) or <c>null</c> when the specified entity is not owned by the user.
+    /// </returns>
     public async Task<IReadOnlyList<AggregatePointDto>?> GetAsync(
         Guid ownerUserId,
         PostingKind kind,
@@ -61,6 +95,17 @@ public sealed class PostingTimeSeriesService : IPostingTimeSeriesService
         return latest.OrderBy(a => a.PeriodStart).Select(a => new AggregatePointDto(a.PeriodStart, a.Amount)).ToList();
     }
 
+    /// <summary>
+    /// Gets an aggregated time series across all entities of the given kind that are owned by the user.
+    /// The method groups aggregated rows by period start and sums amounts across entities.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user identifier to scope which entities are considered.</param>
+    /// <param name="kind">Kind of postings to aggregate across.</param>
+    /// <param name="period">Aggregate period to use for the series.</param>
+    /// <param name="take">Number of points to return; when &lt;= 0 a period-specific default is used. The value is clamped to [1,200].</param>
+    /// <param name="maxYearsBack">Optional maximum number of years to include; when provided the series will be truncated to start no earlier than this many years ago.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>An ordered list of <see cref="AggregatePointDto"/> representing the summed series across all owned entities of the requested kind.</returns>
     public async Task<IReadOnlyList<AggregatePointDto>> GetAllAsync(
         Guid ownerUserId,
         PostingKind kind,

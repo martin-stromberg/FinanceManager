@@ -2,19 +2,61 @@ using System.Collections.Concurrent;
 
 namespace FinanceManager.Application
 {
+    /// <summary>
+    /// Manager interface for enqueueing and querying background tasks.
+    /// Implementations coordinate task queueing, cancellation and status updates.
+    /// </summary>
     public interface IBackgroundTaskManager
     {
+        /// <summary>
+        /// Enqueues a background task.
+        /// </summary>
+        /// <param name="type">Type of the background task.</param>
+        /// <param name="userId">User id the task belongs to.</param>
+        /// <param name="payload">Optional payload object provided to the task.</param>
+        /// <param name="allowDuplicate">When true allows enqueuing a duplicate task.</param>
+        /// <returns>Information about the enqueued task.</returns>
         BackgroundTaskInfo Enqueue(BackgroundTaskType type, Guid userId, object? payload = null, bool allowDuplicate = false);
+
+        /// <summary>
+        /// Returns all known tasks (queued, running, completed) managed by the instance.
+        /// </summary>
         IReadOnlyList<BackgroundTaskInfo> GetAll();
+
+        /// <summary>
+        /// Gets the task info for the specified id or null when not found.
+        /// </summary>
         BackgroundTaskInfo? Get(Guid id);
+
+        /// <summary>
+        /// Tries to cancel the specified task. Returns true when cancellation requested.
+        /// </summary>
         bool TryCancel(Guid id);
+
+        /// <summary>
+        /// Attempts to remove a queued task prior to execution.
+        /// </summary>
         bool TryRemoveQueued(Guid id);
-        // Runner operations
+
+        /// <summary>
+        /// Attempts to dequeue the next queued task id for processing.
+        /// </summary>
         bool TryDequeueNext(out Guid id);
+
+        /// <summary>
+        /// Updates stored information about a background task (status/progress/message).
+        /// </summary>
         void UpdateTaskInfo(BackgroundTaskInfo info);
+
+        /// <summary>
+        /// Semaphore to coordinate single consumer processing.
+        /// </summary>
         SemaphoreSlim Semaphore { get; }
     }
 
+    /// <summary>
+    /// Default in-memory implementation of <see cref="IBackgroundTaskManager"/> used for queuing and managing background tasks.
+    /// </summary>
     public sealed class BackgroundTaskManager : IBackgroundTaskManager
     {
         private readonly ConcurrentQueue<Guid> _queue = new();
@@ -22,6 +64,9 @@ namespace FinanceManager.Application
         private readonly SemaphoreSlim _semaphore = new(1, 1);
         private readonly object _lock = new();
 
+        /// <summary>
+        /// Enqueues a background task and returns its info record.
+        /// </summary>
         public BackgroundTaskInfo Enqueue(BackgroundTaskType type, Guid userId, object? payload = null, bool allowDuplicate = false)
         {
             lock (_lock)
@@ -67,17 +112,26 @@ namespace FinanceManager.Application
             }
         }
 
+        /// <summary>
+        /// Returns all known tasks.
+        /// </summary>
         public IReadOnlyList<BackgroundTaskInfo> GetAll()
         {
             return new List<BackgroundTaskInfo>(_tasks.Values);
         }
 
+        /// <summary>
+        /// Gets a specific task by id or null when not found.
+        /// </summary>
         public BackgroundTaskInfo? Get(Guid id)
         {
             _tasks.TryGetValue(id, out var info);
             return info;
         }
 
+        /// <summary>
+        /// Attempts to cancel a task by id.
+        /// </summary>
         public bool TryCancel(Guid id)
         {
             lock (_lock)
@@ -93,6 +147,9 @@ namespace FinanceManager.Application
             }
         }
 
+        /// <summary>
+        /// Attempts to remove a queued task prior to start.
+        /// </summary>
         public bool TryRemoveQueued(Guid id)
         {
             lock (_lock)
@@ -114,19 +171,25 @@ namespace FinanceManager.Application
             }
         }
 
-        // Für Runner: Hole nächste TaskId aus Queue
+        /// <summary>
+        /// Attempts to dequeue the next queued task id for processing.
+        /// </summary>
         public bool TryDequeueNext(out Guid id)
         {
             return _queue.TryDequeue(out id);
         }
 
-        // Für Runner: Setze TaskInfo (Status/Fortschritt)
+        /// <summary>
+        /// Updates stored information about a background task.
+        /// </summary>
         public void UpdateTaskInfo(BackgroundTaskInfo info)
         {
             _tasks[info.Id] = info;
         }
 
-        // Für Runner: Semaphore für exklusiven Task
+        /// <summary>
+        /// Semaphore used to coordinate background task processing.
+        /// </summary>
         public SemaphoreSlim Semaphore => _semaphore;
     }
 }

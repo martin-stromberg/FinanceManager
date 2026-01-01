@@ -3,12 +3,35 @@ using Microsoft.Extensions.Logging;
 
 namespace FinanceManager.Application
 {
+    /// <summary>
+    /// Context information provided to a background task executor when executing a task.
+    /// </summary>
     public sealed class BackgroundTaskContext
     {
+        /// <summary>
+        /// Unique identifier of the background task.
+        /// </summary>
         public Guid TaskId { get; }
+
+        /// <summary>
+        /// Owner user identifier for whom the task runs.
+        /// </summary>
         public Guid UserId { get; }
+
+        /// <summary>
+        /// Optional payload object passed to the task.
+        /// </summary>
         public object? Payload { get; }
+
+        /// <summary>
+        /// Delegate used by the task to report progress updates.
+        /// Signature: (processed, total?, message?, processed2, total2)
+        /// </summary>
         public Action<int, int?, string?, int, int> ReportProgress { get; }
+
+        /// <summary>
+        /// Creates a new BackgroundTaskContext instance.
+        /// </summary>
         public BackgroundTaskContext(Guid taskId, Guid userId, object? payload, Action<int, int?, string?, int, int> reportProgress)
         {
             TaskId = taskId;
@@ -18,18 +41,34 @@ namespace FinanceManager.Application
         }
     }
 
+    /// <summary>
+    /// Executor interface that background task implementations must implement.
+    /// </summary>
     public interface IBackgroundTaskExecutor
     {
+        /// <summary>
+        /// The background task type handled by this executor.
+        /// </summary>
         BackgroundTaskType Type { get; }
+
+        /// <summary>
+        /// Executes a background task with the provided context.
+        /// </summary>
         Task ExecuteAsync(BackgroundTaskContext context, CancellationToken ct);
     }
 
+    /// <summary>
+    /// Background service that runs and dispatches background tasks using registered executors.
+    /// </summary>
     public sealed class BackgroundTaskRunner : BackgroundService
     {
         private readonly IBackgroundTaskManager _manager;
         private readonly ILogger<BackgroundTaskRunner> _logger;
         private readonly IEnumerable<IBackgroundTaskExecutor> _executors;
 
+        /// <summary>
+        /// Creates a new BackgroundTaskRunner.
+        /// </summary>
         public BackgroundTaskRunner(IBackgroundTaskManager manager, ILogger<BackgroundTaskRunner> logger, IEnumerable<IBackgroundTaskExecutor> executors)
         {
             _manager = manager;
@@ -37,6 +76,10 @@ namespace FinanceManager.Application
             _executors = executors;
         }
 
+        /// <summary>
+        /// Main execution loop for background task processing.
+        /// </summary>
+        /// <param name="stoppingToken">Cancellation token used to stop the background service.</param>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)

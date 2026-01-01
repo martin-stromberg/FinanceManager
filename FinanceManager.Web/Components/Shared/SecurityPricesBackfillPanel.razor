@@ -1,0 +1,96 @@
+@using Microsoft.Extensions.Localization
+@inject FinanceManager.Shared.IApiClient Api
+@inject IStringLocalizer<Pages> Localizer
+
+<div style="min-width:320px;">
+    <div class="row">
+        <label>@Localizer["Dlg_From"]</label>
+        <input type="date" @bind-value="FromDate" @bind-value:event="onchange" />
+    </div>
+    <div class="row">
+        <label>@Localizer["Dlg_To"]</label>
+        <input type="date" @bind-value="ToDate" @bind-value:event="onchange" />
+    </div>
+
+    @if (!string.IsNullOrEmpty(DialogErrorKey))
+    {
+        <div class="dialog-error">@Localizer[DialogErrorKey]</div>
+    }
+
+    <div class="dialog-actions">
+        <button class="btn" disabled="@Submitting" @onclick="OnStartAsync">@((Submitting) ? Localizer["Dlg_Starting"] : Localizer["Dlg_Start"])</button>
+        <button class="btn secondary" disabled="@Submitting" @onclick="Close">@Localizer["Dlg_Cancel"]</button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid SecurityId { get; set; }
+
+    // Close action provided by hosting page via CascadingValue
+    [CascadingParameter(Name = "OverlayClose")] public Action? OverlayClose { get; set; }
+    [CascadingParameter(Name = "OverlayOnFinished")] public Action<object>? OverlayOnFinished { get; set; }
+
+    private DateTime? FromDate { get; set; }
+    private DateTime? ToDate { get; set; }
+    private bool Submitting { get; set; }
+    private string? DialogErrorKey { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        var end = DateTime.UtcNow.Date.AddDays(-1);
+        FromDate = end.AddYears(-2);
+        ToDate = end;
+        DialogErrorKey = null;
+    }
+
+    private void Close()
+    {
+        OverlayClose?.Invoke();
+    }
+
+    private async Task OnStartAsync()
+    {
+        if (Submitting) return;
+        DialogErrorKey = null;
+        if (!FromDate.HasValue || !ToDate.HasValue)
+        {
+            DialogErrorKey = "Dlg_InvalidDates";
+            return;
+        }
+        var from = FromDate.Value.Date;
+        var to = ToDate.Value.Date;
+        if (from > to)
+        {
+            DialogErrorKey = "Dlg_FromAfterTo";
+            return;
+        }
+        if (to > DateTime.UtcNow.Date)
+        {
+            DialogErrorKey = "Dlg_ToInFuture";
+            return;
+        }
+
+        Submitting = true;
+        try
+        {
+            var info = await Api.Securities_EnqueueBackfillAsync(SecurityId, from, to);
+            if (info == null)
+            {
+                DialogErrorKey = "Dlg_EnqueueFailed";
+                return;
+            }
+            // close overlay and optionally notify host
+            OverlayClose?.Invoke();
+        }
+        catch
+        {
+            DialogErrorKey = "Dlg_EnqueueFailed";
+        }
+        finally
+        {
+            Submitting = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -4,15 +4,29 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Infrastructure.Aggregates;
 
+/// <summary>
+/// Service responsible for maintaining posting aggregates (pre-computed sums) used by reporting and KPI features.
+/// Provides methods to upsert aggregates incrementally for a single posting and to rebuild all aggregates for a user.
+/// </summary>
 public sealed class PostingAggregateService : IPostingAggregateService
 {
     private readonly AppDbContext _db;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PostingAggregateService"/> class.
+    /// </summary>
+    /// <param name="db">The application's <see cref="AppDbContext"/> used to persist aggregate rows.</param>
     public PostingAggregateService(AppDbContext db)
     {
         _db = db;
     }
 
+    /// <summary>
+    /// Determines the start date of the requested aggregate period that contains the provided date.
+    /// </summary>
+    /// <param name="date">The date for which the period start should be computed.</param>
+    /// <param name="p">The aggregate period (Month/Quarter/HalfYear/Year).</param>
+    /// <returns>The date representing the start of the period (time component set to midnight).</returns>
     private static DateTime GetPeriodStart(DateTime date, AggregatePeriod p)
     {
         var d = date.Date;
@@ -26,6 +40,13 @@ public sealed class PostingAggregateService : IPostingAggregateService
         };
     }
 
+    /// <summary>
+    /// Upserts (creates or updates) aggregate rows that are affected by the provided posting.
+    /// The method updates aggregates for multiple periods (month, quarter, half-year, year) and for both booking and valuta dates.
+    /// </summary>
+    /// <param name="posting">The posting for which aggregates should be adjusted. Postings with <c>Amount == 0</c> are ignored.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the aggregates have been adjusted in memory. Changes are not automatically saved outside the calling transaction; callers are responsible for SaveChanges if needed.</returns>
     public async Task UpsertForPostingAsync(Posting posting, CancellationToken ct)
     {
         if (posting.Amount == 0m) { return; }
@@ -93,6 +114,15 @@ public sealed class PostingAggregateService : IPostingAggregateService
         }
     }
 
+    /// <summary>
+    /// Rebuilds all posting aggregates for the specified user from scratch.
+    /// The method deletes existing aggregates for the user's scope and re-creates aggregates based on current postings.
+    /// Progress is reported via the provided callback.
+    /// </summary>
+    /// <param name="userId">The owner user identifier whose aggregates should be rebuilt.</param>
+    /// <param name="progressCallback">Callback invoked with (processed, total) progress updates during batch insert operations.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the rebuild operation has finished.</returns>
     public async Task RebuildForUserAsync(Guid userId, Action<int, int> progressCallback, CancellationToken ct)
     {
         // 1) User-Scope bestimmen

@@ -15,6 +15,11 @@ public sealed class UsersController : ControllerBase
     private readonly IUserReadService _userReadService;
     private readonly ILogger<UsersController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UsersController"/> class.
+    /// </summary>
+    /// <param name="userReadService">Service used to read user information.</param>
+    /// <param name="logger">Logger instance for this controller.</param>
     public UsersController(IUserReadService userReadService, ILogger<UsersController> logger)
     {
         _userReadService = userReadService;
@@ -24,9 +29,17 @@ public sealed class UsersController : ControllerBase
     /// <summary>
     /// Returns true if any user exists in the system.
     /// </summary>
+    /// <param name="ct">Cancellation token used to cancel the operation.</param>
+    /// <returns>
+    /// An <see cref="IActionResult"/> which contains a 200 OK response with an <see cref="AnyUsersResponse"/> value when successful.
+    /// In case of cancellation a ProblemDetails response with status code 499 (Client Closed Request) is returned.
+    /// For unexpected errors a 500 Internal Server Error ProblemDetails response is returned.
+    /// </returns>
     /// <remarks>
     /// This is a minimal endpoint; more administration endpoints (list, create, lock, etc.) will be added later.
     /// </remarks>
+    /// <exception cref="OperationCanceledException">When the provided cancellation token is triggered. This is handled and mapped to a 499 response.</exception>
+    /// <exception cref="Exception">An unexpected exception that is logged and results in a 500 response.</exception>
     [HttpGet("exists")]
     [ProducesResponseType(typeof(AnyUsersResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]

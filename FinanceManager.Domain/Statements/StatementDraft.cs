@@ -2,10 +2,27 @@ namespace FinanceManager.Domain.Statements;
 
 
 
+/// <summary>
+/// Represents a draft of a statement file uploaded by a user. Contains metadata and a collection of draft entries
+/// derived from the statement for later processing or manual matching.
+/// </summary>
 public sealed class StatementDraft : Entity, IAggregateRoot
 {
     private readonly List<StatementDraftEntry> _entries = new();
+
+    /// <summary>
+    /// Parameterless constructor for ORM/deserialization.
+    /// </summary>
     private StatementDraft() { }
+
+    /// <summary>
+    /// Creates a new <see cref="StatementDraft"/> instance for the specified user and original filename.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user identifier. Must not be an empty GUID.</param>
+    /// <param name="originalFileName">Original uploaded file name. Must not be null or whitespace.</param>
+    /// <param name="accountNumber">Optional account name or number detected from the file.</param>
+    /// <param name="description">Optional description; when null the file name (without extension) is used.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="ownerUserId"/> is empty or <paramref name="originalFileName"/> is null/whitespace (via guards).</exception>
     public StatementDraft(Guid ownerUserId, string originalFileName, string? accountNumber, string? description)
     {
         OwnerUserId = Guards.NotEmpty(ownerUserId, nameof(ownerUserId));
@@ -14,24 +31,71 @@ public sealed class StatementDraft : Entity, IAggregateRoot
         Status = StatementDraftStatus.Draft;
         Description = description ?? Path.GetFileNameWithoutExtension(originalFileName);
     }
+
+    /// <summary>
+    /// Creates a new <see cref="StatementDraft"/> with an explicit initial <paramref name="status"/>.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="originalFileName">Original uploaded file name.</param>
+    /// <param name="accountNumber">Optional account name or number.</param>
+    /// <param name="description">Optional description.</param>
+    /// <param name="status">Initial draft status.</param>
     public StatementDraft(Guid ownerUserId, string originalFileName, string? accountNumber, string? description, StatementDraftStatus status)
         : this(ownerUserId, originalFileName, accountNumber, description)
     {
         Status = status;
     }
+
+    /// <summary>
+    /// Identifier of the user who owns this draft.
+    /// </summary>
+    /// <value>The owner user GUID.</value>
     public Guid OwnerUserId { get; private set; }
+
+    /// <summary>
+    /// Original file name of the uploaded statement.
+    /// </summary>
+    /// <value>Original file name string.</value>
     public string OriginalFileName { get; private set; } = null!;
+
+    /// <summary>
+    /// Optional account name/number extracted from the statement file.
+    /// </summary>
+    /// <value>Account name or null.</value>
     public string? AccountName { get; set; }
+
+    /// <summary>
+    /// Optional description for the draft. Defaults to file name without extension when not provided.
+    /// </summary>
     public string? Description { get; set; }
+
+    /// <summary>
+    /// Optional detected account id that was matched against the statement content.
+    /// </summary>
+    /// <value>Detected account GUID or null.</value>
     public Guid? DetectedAccountId { get; private set; }
+
+    /// <summary>
+    /// Current status of the draft (Draft, Committed, Expired, ...).
+    /// </summary>
     public StatementDraftStatus Status { get; private set; }
+
+    /// <summary>
+    /// Collection of entries parsed from the statement file.
+    /// </summary>
+    /// <value>Collection of <see cref="StatementDraftEntry"/> objects.</value>
     public ICollection<StatementDraftEntry> Entries => _entries;
 
     /// <summary>
-    /// Gemeinsame Upload-Gruppen-ID aller StatementDrafts, die aus demselben Datei-Upload hervorgegangen sind.
+    /// Upload group identifier shared by drafts that originate from the same file upload operation.
     /// </summary>
+    /// <value>Upload group GUID or null.</value>
     public Guid? UploadGroupId { get; private set; }
 
+    /// <summary>
+    /// Sets the upload group id if not already set.
+    /// </summary>
+    /// <param name="uploadGroupId">The upload group identifier to set.</param>
     public void SetUploadGroup(Guid uploadGroupId)
     {
         if (UploadGroupId == null)
@@ -41,13 +105,35 @@ public sealed class StatementDraft : Entity, IAggregateRoot
         }
     }
 
+    /// <summary>
+    /// Sets the detected account id for this draft.
+    /// </summary>
+    /// <param name="accountId">Detected account GUID.</param>
     public void SetDetectedAccount(Guid accountId) { DetectedAccountId = accountId; Touch(); }
 
-    // Existing simple variant (backwards compatibility)
+    /// <summary>
+    /// Adds a simple entry to the draft using required fields. This is a convenience overload.
+    /// </summary>
+    /// <param name="bookingDate">Booking date of the entry.</param>
+    /// <param name="amount">Monetary amount.</param>
+    /// <param name="subject">Subject/description text.</param>
+    /// <returns>The created <see cref="StatementDraftEntry"/>.</returns>
     public StatementDraftEntry AddEntry(DateTime bookingDate, decimal amount, string subject)
         => AddEntry(bookingDate, amount, subject, null, null, null, null, false, false);
 
-    // Extended variant with additional data
+    /// <summary>
+    /// Adds an entry to the draft with extended metadata.
+    /// </summary>
+    /// <param name="bookingDate">Booking date of the entry.</param>
+    /// <param name="amount">Monetary amount.</param>
+    /// <param name="subject">Subject/description text.</param>
+    /// <param name="recipientName">Optional recipient name.</param>
+    /// <param name="valutaDate">Optional valuta/date-of-value.</param>
+    /// <param name="currencyCode">Optional currency code (defaults to EUR when null).</param>
+    /// <param name="bookingDescription">Optional booking description.</param>
+    /// <param name="isAnnounced">Whether the entry was announced (pre-booked) in the source system.</param>
+    /// <param name="isCostNeutral">Whether the entry is cost-neutral and should not affect totals.</param>
+    /// <returns>The created <see cref="StatementDraftEntry"/> instance.</returns>
     public StatementDraftEntry AddEntry(
         DateTime bookingDate,
         decimal amount,
@@ -76,13 +162,43 @@ public sealed class StatementDraft : Entity, IAggregateRoot
         Touch();
         return entry;
     }
+
+    /// <summary>
+    /// Marks the draft as committed (ready to be applied to account postings).
+    /// </summary>
     public void MarkCommitted() { Status = StatementDraftStatus.Committed; Touch(); }
+
+    /// <summary>
+    /// Expires the draft and sets its status to Expired.
+    /// </summary>
     public void Expire() { Status = StatementDraftStatus.Expired; Touch(); }
 }
 
+/// <summary>
+/// Represents a single parsed entry from a statement draft. Contains matching and accounting metadata used during processing.
+/// </summary>
 public sealed class StatementDraftEntry : Entity
 {
+    /// <summary>
+    /// Parameterless constructor for ORM/deserialization.
+    /// </summary>
     private StatementDraftEntry() { }
+
+    /// <summary>
+    /// Creates a new <see cref="StatementDraftEntry"/> associated with a draft.
+    /// </summary>
+    /// <param name="draftId">Identifier of the owning draft. Must not be empty.</param>
+    /// <param name="bookingDate">Booking date of the entry.</param>
+    /// <param name="amount">Monetary amount.</param>
+    /// <param name="subject">Subject or short description.</param>
+    /// <param name="recipientName">Optional recipient name.</param>
+    /// <param name="valutaDate">Optional valuta date.</param>
+    /// <param name="currencyCode">Currency code (defaults to "EUR" when null or whitespace).</param>
+    /// <param name="bookingDescription">Optional longer booking description.</param>
+    /// <param name="isAnnounced">Whether the entry was announced (pre-booked).</param>
+    /// <param name="isCostNeutral">Whether the entry is cost-neutral.</param>
+    /// <param name="status">Initial processing status for the entry.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="draftId"/> is empty (via guards).</exception>
     public StatementDraftEntry(
         Guid draftId,
         DateTime bookingDate,
@@ -108,27 +224,117 @@ public sealed class StatementDraftEntry : Entity
         IsCostNeutral = isCostNeutral;
         Status = status;
     }
+
+    /// <summary>
+    /// Draft identifier that owns this entry.
+    /// </summary>
     public Guid DraftId { get; private set; }
+
+    /// <summary>
+    /// Booking date of the entry.
+    /// </summary>
     public DateTime BookingDate { get; private set; }
+
+    /// <summary>
+    /// Optional valuta/date-of-value for the entry.
+    /// </summary>
     public DateTime? ValutaDate { get; private set; }
+
+    /// <summary>
+    /// Monetary amount of the entry.
+    /// </summary>
     public decimal Amount { get; private set; }
+
+    /// <summary>
+    /// Short subject or description.
+    /// </summary>
     public string Subject { get; private set; } = null!;
+
+    /// <summary>
+    /// Optional recipient name extracted from the statement.
+    /// </summary>
     public string? RecipientName { get; private set; }
+
+    /// <summary>
+    /// Currency code for the amount (ISO code). Default is "EUR".
+    /// </summary>
     public string CurrencyCode { get; private set; } = "EUR";
+
+    /// <summary>
+    /// Optional booking description (longer textual information).
+    /// </summary>
     public string? BookingDescription { get; private set; }
+
+    /// <summary>
+    /// Whether the entry was marked as announced/pre-booked in the source.
+    /// </summary>
     public bool IsAnnounced { get; private set; }
+
+    /// <summary>
+    /// Processing status of the draft entry.
+    /// </summary>
     public StatementDraftEntryStatus Status { get; private set; }
+
+    /// <summary>
+    /// Optional resolved contact id when the entry is accounted to a contact.
+    /// </summary>
     public Guid? ContactId { get; private set; }
+
+    /// <summary>
+    /// Optional assigned savings plan id.
+    /// </summary>
     public Guid? SavingsPlanId { get; private set; }
+
+    /// <summary>
+    /// When true, the assigned savings plan will be archived upon booking.
+    /// </summary>
     public bool ArchiveSavingsPlanOnBooking { get; private set; }
+
+    /// <summary>
+    /// Whether the entry is cost-neutral and should not affect totals.
+    /// </summary>
     public bool IsCostNeutral { get; private set; } = false;
+
+    /// <summary>
+    /// Optional split draft id when the entry was split into multiple drafts.
+    /// </summary>
     public Guid? SplitDraftId { get; private set; }
+
+    /// <summary>
+    /// Optional assigned security id for securities-related entries.
+    /// </summary>
     public Guid? SecurityId { get; private set; }
+
+    /// <summary>
+    /// Optional security transaction type for securities bookings.
+    /// </summary>
     public SecurityTransactionType? SecurityTransactionType { get; private set; }
+
+    /// <summary>
+    /// Optional quantity for security transactions.
+    /// </summary>
     public decimal? SecurityQuantity { get; private set; }
+
+    /// <summary>
+    /// Optional fee amount related to a security transaction.
+    /// </summary>
     public decimal? SecurityFeeAmount { get; private set; }
+
+    /// <summary>
+    /// Optional tax amount related to a security transaction.
+    /// </summary>
     public decimal? SecurityTaxAmount { get; private set; }
 
+    /// <summary>
+    /// Updates core fields of the draft entry.
+    /// </summary>
+    /// <param name="bookingDate">New booking date.</param>
+    /// <param name="valutaDate">New valuta date.</param>
+    /// <param name="amount">New amount.</param>
+    /// <param name="subject">New subject text.</param>
+    /// <param name="recipientName">New recipient name.</param>
+    /// <param name="currencyCode">Currency code (when null/whitespace the existing value is preserved).</param>
+    /// <param name="bookingDescription">Booking description (null/whitespace clears the value).</param>
     public void UpdateCore(DateTime bookingDate, DateTime? valutaDate, decimal amount, string subject, string? recipientName, string? currencyCode, string? bookingDescription)
     {
         BookingDate = bookingDate;
@@ -140,13 +346,26 @@ public sealed class StatementDraftEntry : Entity
         BookingDescription = string.IsNullOrWhiteSpace(bookingDescription) ? null : bookingDescription!.Trim();
         Touch();
     }
+
+    /// <summary>
+    /// Marks the entry as already booked (duplicate or already applied in the system).
+    /// </summary>
     public void MarkAlreadyBooked() { Status = StatementDraftEntryStatus.AlreadyBooked; Touch(); }
+
+    /// <summary>
+    /// Marks the entry as accounted and assigns the contact id.
+    /// </summary>
+    /// <param name="contactId">Contact id that the entry was accounted to.</param>
     public void MarkAccounted(Guid contactId)
     {
         ContactId = contactId;
         Status = StatementDraftEntryStatus.Accounted;
         Touch();
     }
+
+    /// <summary>
+    /// Clears the resolved contact assignment and resets status to Open or Announced depending on <see cref="IsAnnounced"/>.
+    /// </summary>
     public void ClearContact()
     {
         ContactId = null;
@@ -156,25 +375,47 @@ public sealed class StatementDraftEntry : Entity
         }
         Touch();
     }
+
+    /// <summary>
+    /// Resets the entry to open processing state and clears cost-neutral flag.
+    /// </summary>
     public void ResetOpen()
     {
         Status = IsAnnounced ? StatementDraftEntryStatus.Announced : StatementDraftEntryStatus.Open;
         MarkCostNeutral(false);
         Touch();
     }
+
+    /// <summary>
+    /// Sets or clears the cost-neutral flag for the entry.
+    /// </summary>
+    /// <param name="isCostNeutral">True to mark cost-neutral; false otherwise.</param>
     public void MarkCostNeutral(bool isCostNeutral)
     {
         IsCostNeutral = isCostNeutral;
     }
 
+    /// <summary>
+    /// Assigns a savings plan id to the entry.
+    /// </summary>
+    /// <param name="savingsPlanId">Savings plan GUID or null to clear.</param>
     public void AssignSavingsPlan(Guid? savingsPlanId) => SavingsPlanId = savingsPlanId;
 
+    /// <summary>
+    /// Sets whether the assigned savings plan should be archived when the entry is booked.
+    /// </summary>
+    /// <param name="archive">True to archive on booking; false to leave active.</param>
     public void SetArchiveSavingsPlanOnBooking(bool archive)
     {
         ArchiveSavingsPlanOnBooking = archive;
         Touch();
     }
 
+    /// <summary>
+    /// Assigns a split draft id to this entry. Throws when a split draft is already assigned.
+    /// </summary>
+    /// <param name="splitDraftId">Split draft GUID to assign.</param>
+    /// <exception cref="InvalidOperationException">Thrown when a split draft is already assigned.</exception>
     public void AssignSplitDraft(Guid splitDraftId)
     {
         if (SplitDraftId != null)
@@ -185,6 +426,9 @@ public sealed class StatementDraftEntry : Entity
         Touch();
     }
 
+    /// <summary>
+    /// Clears an assigned split draft id if present.
+    /// </summary>
     public void ClearSplitDraft()
     {
         if (SplitDraftId != null)
@@ -194,12 +438,25 @@ public sealed class StatementDraftEntry : Entity
         }
     }
 
+    /// <summary>
+    /// Assigns a contact id to the entry without marking it as accounted.
+    /// </summary>
+    /// <param name="contactId">Contact GUID to assign.</param>
     public void AssignContactWithoutAccounting(Guid contactId)
     {
         ContactId = contactId;
         // Keep existing status (stay Open/Announced) – do not mark accounted yet.
         Touch();
     }
+
+    /// <summary>
+    /// Assigns security-related data to the entry. When <paramref name="securityId"/> is null, all security fields are cleared.
+    /// </summary>
+    /// <param name="securityId">Security GUID to assign, or null to clear security data.</param>
+    /// <param name="txType">Transaction type for the security booking.</param>
+    /// <param name="quantity">Quantity of the security.</param>
+    /// <param name="fee">Fee amount related to the security booking.</param>
+    /// <param name="tax">Tax amount related to the security booking.</param>
     public void SetSecurity(Guid? securityId, SecurityTransactionType? txType, decimal? quantity, decimal? fee, decimal? tax)
     {
         SecurityId = securityId;
@@ -208,11 +465,20 @@ public sealed class StatementDraftEntry : Entity
         SecurityFeeAmount = securityId == null ? null : fee;
         SecurityTaxAmount = securityId == null ? null : tax;
     }
+
+    /// <summary>
+    /// Overrides the valuta date for this entry.
+    /// </summary>
+    /// <param name="valutaDate">New valuta date or null to clear.</param>
     public void OverrideValutaDate(DateTime? valutaDate)
     {
         ValutaDate = valutaDate;
         Touch();
     }
+
+    /// <summary>
+    /// Marks the entry for manual checking by setting its status to Open.
+    /// </summary>
     public void MarkNeedsCheck()
     {
         Status = StatementDraftEntryStatus.Open;

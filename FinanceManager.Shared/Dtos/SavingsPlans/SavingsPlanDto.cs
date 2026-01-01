@@ -5,10 +5,30 @@ namespace FinanceManager.Shared.Dtos.SavingsPlans;
 /// </summary>
 public sealed class SavingsPlanDto
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SavingsPlanDto"/> class with default values.
+    /// Use this constructor when creating an empty DTO to populate later (e.g. model binding or tests).
+    /// </summary>
     public SavingsPlanDto()
     {
 
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SavingsPlanDto"/> class with the specified values.
+    /// </summary>
+    /// <param name="id">Unique savings plan identifier.</param>
+    /// <param name="name">Display name of the plan.</param>
+    /// <param name="type">Type of the plan.</param>
+    /// <param name="targetAmount">Optional target amount.</param>
+    /// <param name="targetDate">Optional target date.</param>
+    /// <param name="interval">Optional recurrence interval.</param>
+    /// <param name="isActive">Indicates whether the plan is currently active.</param>
+    /// <param name="createdUtc">UTC timestamp when the plan was created.</param>
+    /// <param name="archivedUtc">UTC timestamp when the plan was archived, if any.</param>
+    /// <param name="categoryId">Optional category id the plan belongs to.</param>
+    /// <param name="contractNumber">Optional contract number associated with the plan.</param>
+    /// <param name="symbolAttachmentId">Optional symbol attachment id.</param>
     public SavingsPlanDto(Guid id, string name, SavingsPlanType type, decimal? targetAmount, DateTime? targetDate, SavingsPlanInterval? interval, bool isActive, DateTime createdUtc, DateTime? archivedUtc, Guid? categoryId, string? contractNumber = null, Guid? symbolAttachmentId = null)
         : this()
     {

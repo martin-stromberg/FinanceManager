@@ -2,14 +2,42 @@ namespace FinanceManager.Domain.Postings;
 
 
 
+/// <summary>
+/// Domain entity representing a posting/transaction line that may reference accounts, contacts, savings plans or securities.
+/// </summary>
 public sealed class Posting : Entity, IAggregateRoot
 {
-    private Posting() { }
-
-    // Backwards-compatible constructors that default ValutaDate to BookingDate
+    /// <summary>
+    /// Creates a basic posting with required fields.
+    /// </summary>
+    /// <param name="sourceId">Source id (external system id or import id).</param>
+    /// <param name="kind">Posting kind identifying the domain target.</param>
+    /// <param name="accountId">Optional account id.</param>
+    /// <param name="contactId">Optional contact id.</param>
+    /// <param name="savingsPlanId">Optional savings plan id.</param>
+    /// <param name="securityId">Optional security id.</param>
+    /// <param name="bookingDate">Booking date of the posting.</param>
+    /// <param name="amount">Monetary amount for the posting.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID.</exception>
     public Posting(Guid sourceId, PostingKind kind, Guid? accountId, Guid? contactId, Guid? savingsPlanId, Guid? securityId, DateTime bookingDate, decimal amount)
         : this(sourceId, kind, accountId, contactId, savingsPlanId, securityId, bookingDate, bookingDate, amount, null, null, null, null, null) { }
 
+    /// <summary>
+    /// Creates a posting with detailed information including optional fields.
+    /// </summary>
+    /// <param name="sourceId">Source id (external system id or import id).</param>
+    /// <param name="kind">Posting kind identifying the domain target.</param>
+    /// <param name="accountId">Optional account id.</param>
+    /// <param name="contactId">Optional contact id.</param>
+    /// <param name="savingsPlanId">Optional savings plan id.</param>
+    /// <param name="securityId">Optional security id.</param>
+    /// <param name="bookingDate">Booking date of the posting.</param>
+    /// <param name="amount">Monetary amount for the posting.</param>
+    /// <param name="subject">Optional subject for the posting.</param>
+    /// <param name="recipientName">Optional recipient name.</param>
+    /// <param name="description">Optional description.</param>
+    /// <param name="securitySubType">Optional security subtype.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID.</exception>
     public Posting(
         Guid sourceId,
         PostingKind kind,
@@ -26,6 +54,23 @@ public sealed class Posting : Entity, IAggregateRoot
         : this(sourceId, kind, accountId, contactId, savingsPlanId, securityId, bookingDate, bookingDate, amount, subject, recipientName, description, securitySubType, null) { }
 
     // Backwards-compatible overload including quantity but no valutaDate (defaults valuta to booking)
+    /// <summary>
+    /// Creates a posting with quantity information; valuta date defaults to booking date.
+    /// </summary>
+    /// <param name="sourceId">Source id (external system id or import id).</param>
+    /// <param name="kind">Posting kind identifying the domain target.</param>
+    /// <param name="accountId">Optional account id.</param>
+    /// <param name="contactId">Optional contact id.</param>
+    /// <param name="savingsPlanId">Optional savings plan id.</param>
+    /// <param name="securityId">Optional security id.</param>
+    /// <param name="bookingDate">Booking date of the posting.</param>
+    /// <param name="amount">Monetary amount for the posting.</param>
+    /// <param name="subject">Optional subject for the posting.</param>
+    /// <param name="recipientName">Optional recipient name.</param>
+    /// <param name="description">Optional description.</param>
+    /// <param name="securitySubType">Optional security subtype.</param>
+    /// <param name="quantity">Optional quantity for securities postings.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID.</exception>
     public Posting(
         Guid sourceId,
         PostingKind kind,
@@ -42,7 +87,24 @@ public sealed class Posting : Entity, IAggregateRoot
         decimal? quantity)
         : this(sourceId, kind, accountId, contactId, savingsPlanId, securityId, bookingDate, bookingDate, amount, subject, recipientName, description, securitySubType, quantity) { }
 
-    // New constructor including ValutaDate
+    /// <summary>
+    /// Creates a posting including valuta date for precise financial tracking.
+    /// </summary>
+    /// <param name="sourceId">Source id (external system id or import id).</param>
+    /// <param name="kind">Posting kind identifying the domain target.</param>
+    /// <param name="accountId">Optional account id.</param>
+    /// <param name="contactId">Optional contact id.</param>
+    /// <param name="savingsPlanId">Optional savings plan id.</param>
+    /// <param name="securityId">Optional security id.</param>
+    /// <param name="bookingDate">Booking date of the posting.</param>
+    /// <param name="valutaDate">Valuta date for the posting.</param>
+    /// <param name="amount">Monetary amount for the posting.</param>
+    /// <param name="subject">Optional subject for the posting.</param>
+    /// <param name="recipientName">Optional recipient name.</param>
+    /// <param name="description">Optional description.</param>
+    /// <param name="securitySubType">Optional security subtype.</param>
+    /// <param name="quantity">Optional quantity.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID.</exception>
     public Posting(
         Guid sourceId,
         PostingKind kind,
@@ -77,48 +139,130 @@ public sealed class Posting : Entity, IAggregateRoot
         ParentId = null; // default
     }
 
-    // Keep overload without quantity that forwards to valuta constructor (rare use)
-    public Posting(
-        Guid sourceId,
-        PostingKind kind,
-        Guid? accountId,
-        Guid? contactId,
-        Guid? savingsPlanId,
-        Guid? securityId,
-        DateTime bookingDate,
-        DateTime valutaDate,
-        decimal amount,
-        string? subject,
-        string? recipientName,
-        string? description,
-        SecurityPostingSubType? securitySubType)
-        : this(sourceId, kind, accountId, contactId, savingsPlanId, securityId, bookingDate, valutaDate, amount, subject, recipientName, description, securitySubType, null) { }
+     /// <summary>
+    /// Creates a posting with explicit booking and valuta dates and optional subtype.
+    /// </summary>
+    /// <param name="sourceId">Source identifier (external/import id).</param>
+    /// <param name="kind">Posting kind identifying the target domain.</param>
+    /// <param name="accountId">Optional account id.</param>
+    /// <param name="contactId">Optional contact id.</param>
+    /// <param name="savingsPlanId">Optional savings plan id.</param>
+    /// <param name="securityId">Optional security id.</param>
+    /// <param name="bookingDate">Booking date of the posting.</param>
+    /// <param name="valutaDate">Valuta/date-of-value for the posting.</param>
+    /// <param name="amount">Monetary amount for the posting.</param>
+    /// <param name="text1">Optional text field 1.</param>
+    /// <param name="text2">Optional text field 2.</param>
+    /// <param name="text3">Optional text field 3.</param>
+    /// <param name="subType">Optional security posting sub-type.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID.</exception>
+    public Posting(Guid sourceId, PostingKind kind, Guid? accountId, Guid? contactId, Guid? savingsPlanId, Guid? securityId, DateTime bookingDate, DateTime valutaDate, decimal amount, string? text1, string? text2, string? text3, SecurityPostingSubType? subType)
+        : this(sourceId, kind, accountId, contactId, savingsPlanId, securityId, bookingDate, valutaDate, amount, text1, text2, text3, subType, null) { }
 
+    /// <summary>
+    /// Source identifier (often an external or import id) associated with the posting.
+    /// </summary>
+    /// <value>The source identifier.</value>
     public Guid SourceId { get; private set; }
+
+    /// <summary>
+    /// Group identifier for related postings.
+    /// </summary>
+    /// <value>The group identifier.</value>
     public Guid GroupId { get; private set; }
+
+    /// <summary>
+    /// Kind of posting indicating target domain.
+    /// </summary>
+    /// <value>The posting kind.</value>
     public PostingKind Kind { get; private set; }
+
+    /// <summary>
+    /// Optional account id referenced by the posting.
+    /// </summary>
+    /// <value>The account id or null.</value>
     public Guid? AccountId { get; private set; }
+
+    /// <summary>
+    /// Optional contact id referenced by the posting.
+    /// </summary>
+    /// <value>The contact id or null.</value>
     public Guid? ContactId { get; private set; }
+
+    /// <summary>
+    /// Optional savings plan id referenced by the posting.
+    /// </summary>
+    /// <value>The savings plan id or null.</value>
     public Guid? SavingsPlanId { get; private set; }
+
+    /// <summary>
+    /// Optional security id referenced by the posting.
+    /// </summary>
+    /// <value>The security id or null.</value>
     public Guid? SecurityId { get; private set; }
+    /// <summary>
+    /// Booking date of the posting.
+    /// </summary>
+    /// <value>The booking date.</value>
     public DateTime BookingDate { get; private set; }
-    // New: valuta date
+    /// <summary>
+    /// Valuta date of the posting, used for financial tracking.
+    /// </summary>
+    /// <value>The valuta date.</value>
     public DateTime ValutaDate { get; private set; }
+    /// <summary>
+    /// Monetary amount for the posting.
+    /// </summary>
+    /// <value>The monetary amount.</value>
     public decimal Amount { get; private set; }
+    /// <summary>
+    /// Optional subject for the posting.
+    /// </summary>
+    /// <value>The subject or null.</value>
     public string? Subject { get; private set; }
+    /// <summary>
+    /// Optional recipient name.
+    /// </summary>
+    /// <value>The recipient name or null.</value>
     public string? RecipientName { get; private set; }
+    /// <summary>
+    /// Optional description.
+    /// </summary>
+    /// <value>The description or null.</value>
     public string? Description { get; private set; }
+    /// <summary>
+    /// Optional security subtype.
+    /// </summary>
+    /// <value>The security posting subtype or null.</value>
     public SecurityPostingSubType? SecuritySubType { get; private set; }
 
     // Neu: Menge (nur für Wertpapier-Postings belegt)
+    /// <summary>
+    /// Optional quantity, primarily used for securities postings.
+    /// </summary>
+    /// <value>The quantity or null.</value>
     public decimal? Quantity { get; private set; }
 
     // New: reference to parent posting (used for split/linked postings)
+    /// <summary>
+    /// Optional reference to a parent posting, used for split or linked postings.
+    /// </summary>
+    /// <value>The parent posting id or null.</value>
     public Guid? ParentId { get; private set; }
 
     // New: optional link to counterpart posting for self-transfers
+    /// <summary>
+    /// Optional link to a counterpart posting, used for self-transfers.
+    /// </summary>
+    /// <value>The linked posting id or null.</value>
     public Guid? LinkedPostingId { get; private set; }
 
+    /// <summary>
+    /// Sets the group identifier for the posting.
+    /// </summary>
+    /// <param name="groupId">The group identifier.</param>
+    /// <returns>The updated <see cref="Posting"/> instance (fluent API).</returns>
+    /// <exception cref="ArgumentException">Thrown when the <paramref name="groupId"/> is an empty GUID.</exception>
     public Posting SetGroup(Guid groupId)
     {
         if (groupId == Guid.Empty) { throw new ArgumentException("Group id must not be empty", nameof(groupId)); }
@@ -129,6 +273,12 @@ public sealed class Posting : Entity, IAggregateRoot
         return this;
     }
 
+    /// <summary>
+    /// Sets the parent identifier for the posting.
+    /// </summary>
+    /// <param name="parentId">The parent identifier.</param>
+    /// <returns>The updated <see cref="Posting"/> instance (fluent API).</returns>
+    /// <exception cref="ArgumentException">Thrown when the <paramref name="parentId"/> is an empty GUID.</exception>
     public Posting SetParent(Guid parentId)
     {
         if (parentId == Guid.Empty) throw new ArgumentException("Parent id must not be empty", nameof(parentId));
@@ -139,6 +289,12 @@ public sealed class Posting : Entity, IAggregateRoot
         return this;
     }
 
+    /// <summary>
+    /// Sets the linked posting identifier for self-transfer postings.
+    /// </summary>
+    /// <param name="linkedPostingId">The linked posting identifier.</param>
+    /// <returns>The updated <see cref="Posting"/> instance (fluent API).</returns>
+    /// <exception cref="ArgumentException">Thrown when the <paramref name="linkedPostingId"/> is an empty GUID.</exception>
     public Posting SetLinkedPosting(Guid linkedPostingId)
     {
         if (linkedPostingId == Guid.Empty) throw new ArgumentException("Linked posting id must not be empty", nameof(linkedPostingId));
@@ -149,7 +305,11 @@ public sealed class Posting : Entity, IAggregateRoot
         return this;
     }
 
-    // Allow updating valuta date after construction (used by imports/tests)
+    /// <summary>
+    /// Sets the valuta date for the posting.
+    /// </summary>
+    /// <param name="valutaDate">The valuta date.</param>
+    /// <returns>The updated <see cref="Posting"/> instance (fluent API).</returns>
     public Posting SetValutaDate(DateTime valutaDate)
     {
         ValutaDate = valutaDate;

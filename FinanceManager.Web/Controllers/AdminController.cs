@@ -23,6 +23,13 @@ public sealed class AdminController : ControllerBase
     private readonly ICurrentUserService _current;
     private readonly ILogger<AdminController> _logger;
 
+    /// <summary>
+    /// Creates a new instance of <see cref="AdminController"/>.
+    /// </summary>
+    /// <param name="userSvc">Service for user administration operations.</param>
+    /// <param name="ipSvc">Service for IP block management.</param>
+    /// <param name="current">Service providing information about the current user/context.</param>
+    /// <param name="logger">Logger instance for the controller.</param>
     public AdminController(IUserAdminService userSvc, IIpBlockService ipSvc, ICurrentUserService current, ILogger<AdminController> logger)
     { _userSvc = userSvc; _ipSvc = ipSvc; _current = current; _logger = logger; }
 
@@ -30,7 +37,8 @@ public sealed class AdminController : ControllerBase
     /// Returns all users (no paging by design for admin view).
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>List of users.</returns>
+    /// <returns>HTTP 200 with a list of <see cref="UserAdminDto"/> on success; HTTP 500 on unexpected error.</returns>
+    /// <exception cref="Exception">Thrown when an unexpected error occurs while listing users.</exception>
     [HttpGet("users")]
     [ProducesResponseType(typeof(IReadOnlyList<UserAdminDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListUsersAsync(CancellationToken ct)
@@ -44,7 +52,8 @@ public sealed class AdminController : ControllerBase
     /// </summary>
     /// <param name="id">User id.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>User details or NotFound.</returns>
+    /// <returns>HTTP 200 with <see cref="UserAdminDto"/> when found; HTTP 404 when not found; HTTP 500 on unexpected error.</returns>
+    /// <exception cref="Exception">Thrown when an unexpected error occurs while retrieving the user.</exception>
     [HttpGet("users/{id:guid}", Name = "GetAdminUser")]
     [ProducesResponseType(typeof(UserAdminDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -59,7 +68,9 @@ public sealed class AdminController : ControllerBase
     /// </summary>
     /// <param name="req">Creation payload (username, password, admin flag).</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Created user details.</returns>
+    /// <returns>HTTP 201 with created <see cref="UserAdminDto"/> on success; HTTP 400 for validation errors; HTTP 409 when user already exists.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when a user with the same username already exists.</exception>
+    /// <exception cref="ArgumentException">Thrown when creation parameters are invalid.</exception>
     [HttpPost("users")]
     [ProducesResponseType(typeof(UserAdminDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -79,7 +90,9 @@ public sealed class AdminController : ControllerBase
     /// <param name="id">User id.</param>
     /// <param name="req">Update payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Updated user details or NotFound.</returns>
+    /// <returns>HTTP 200 with updated <see cref="UserAdminDto"/> when successful; HTTP 404 when user not found; HTTP 409 on conflict; HTTP 400 on invalid args.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when update causes a conflict (e.g. username already in use).</exception>
+    /// <exception cref="ArgumentException">Thrown when provided arguments are invalid.</exception>
     [HttpPut("users/{id:guid}")]
     [ProducesResponseType(typeof(UserAdminDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -99,7 +112,8 @@ public sealed class AdminController : ControllerBase
     /// <param name="id">User id.</param>
     /// <param name="req">New password payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>NoContent or NotFound.</returns>
+    /// <returns>HTTP 204 when password reset succeeded; HTTP 404 when user not found; HTTP 400 when request invalid.</returns>
+    /// <exception cref="ArgumentException">Thrown when provided arguments are invalid.</exception>
     [HttpPost("users/{id:guid}/reset-password")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -116,7 +130,8 @@ public sealed class AdminController : ControllerBase
     /// </summary>
     /// <param name="id">User id.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>NoContent or NotFound.</returns>
+    /// <returns>HTTP 204 when unlock succeeded; HTTP 404 when user not found.</returns>
+    /// <exception cref="Exception">Thrown when an unexpected error occurs while unlocking the user.</exception>
     [HttpPost("users/{id:guid}/unlock")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -131,7 +146,8 @@ public sealed class AdminController : ControllerBase
     /// </summary>
     /// <param name="id">User id.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>NoContent or NotFound.</returns>
+    /// <returns>HTTP 204 when deletion succeeded; HTTP 404 when user not found.</returns>
+    /// <exception cref="Exception">Thrown when an unexpected error occurs while deleting the user.</exception>
     [HttpDelete("users/{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -146,7 +162,7 @@ public sealed class AdminController : ControllerBase
     /// </summary>
     /// <param name="onlyBlocked">True to return only blocked entries.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>List of IP blocks.</returns>
+    /// <returns>HTTP 200 with a list of <see cref="IpBlockDto"/> when authorized; HTTP 403 when current user is not admin.</returns>
     [HttpGet("ip-blocks")]
     [ProducesResponseType(typeof(IReadOnlyList<IpBlockDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListIpBlocksAsync([FromQuery] bool? onlyBlocked, CancellationToken ct)
@@ -161,7 +177,9 @@ public sealed class AdminController : ControllerBase
     /// </summary>
     /// <param name="req">Creation payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Created IP block details.</returns>
+    /// <returns>HTTP 201 with created <see cref="IpBlockDto"/> on success; HTTP 409 on conflict; HTTP 400 on invalid request.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when an equivalent block entry already exists.</exception>
+    /// <exception cref="ArgumentException">Thrown when provided arguments are invalid.</exception>
     [HttpPost("ip-blocks")]
     [ProducesResponseType(typeof(IpBlockDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -179,7 +197,7 @@ public sealed class AdminController : ControllerBase
     /// </summary>
     /// <param name="id">Entry id.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>IP block details or NotFound.</returns>
+    /// <returns>HTTP 200 with <see cref="IpBlockDto"/> when found; HTTP 404 when not found; HTTP 403 when not authorized.</returns>
     [HttpGet("ip-blocks/{id:guid}", Name = "GetIpBlock")]
     [ProducesResponseType(typeof(IpBlockDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -197,7 +215,7 @@ public sealed class AdminController : ControllerBase
     /// <param name="id">Entry id.</param>
     /// <param name="req">Update payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Updated IP block details or NotFound.</returns>
+    /// <returns>HTTP 200 with updated <see cref="IpBlockDto"/> when successful; HTTP 404 when not found; HTTP 403 when not authorized.</returns>
     [HttpPut("ip-blocks/{id:guid}")]
     [ProducesResponseType(typeof(IpBlockDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -215,7 +233,7 @@ public sealed class AdminController : ControllerBase
     /// <param name="id">Entry id.</param>
     /// <param name="req">Reason payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>NoContent or NotFound.</returns>
+    /// <returns>HTTP 204 when blocked; HTTP 404 when entry not found; HTTP 403 when not authorized.</returns>
     [HttpPost("ip-blocks/{id:guid}/block")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -231,7 +249,7 @@ public sealed class AdminController : ControllerBase
     /// </summary>
     /// <param name="id">Entry id.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>NoContent or NotFound.</returns>
+    /// <returns>HTTP 204 when unblocked; HTTP 404 when not found; HTTP 403 when not authorized.</returns>
     [HttpPost("ip-blocks/{id:guid}/unblock")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -247,7 +265,7 @@ public sealed class AdminController : ControllerBase
     /// </summary>
     /// <param name="id">Entry id.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>NoContent or NotFound.</returns>
+    /// <returns>HTTP 204 when counters were reset; HTTP 404 when entry not found; HTTP 403 when not authorized.</returns>
     [HttpPost("ip-blocks/{id:guid}/reset-counters")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -263,7 +281,7 @@ public sealed class AdminController : ControllerBase
     /// </summary>
     /// <param name="id">Entry id.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>NoContent or NotFound.</returns>
+    /// <returns>HTTP 204 when deleted; HTTP 404 when not found; HTTP 403 when not authorized.</returns>
     [HttpDelete("ip-blocks/{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

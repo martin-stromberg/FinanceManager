@@ -1,6 +1,5 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
-using FinanceManager.Web.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
@@ -31,8 +30,8 @@ public sealed class SetupImportSplitViewModelTests
         var apiMock = new Mock<IApiClient>();
         apiMock.Setup(a => a.UserSettings_GetImportSplitAsync(It.IsAny<CancellationToken>())).ReturnsAsync(dto);
 
-        var vm = new SetupImportSplitViewModel(CreateSp(apiMock.Object));
-        await vm.InitializeAsync();
+        var vm = new SetupStatementsViewModel(CreateSp(apiMock.Object));
+        await vm.LoadAsync();
 
         Assert.False(vm.Loading);
         Assert.NotNull(vm.Model);
@@ -45,8 +44,8 @@ public sealed class SetupImportSplitViewModelTests
         var apiMock = new Mock<IApiClient>();
         apiMock.Setup(a => a.UserSettings_GetImportSplitAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new ImportSplitSettingsDto());
 
-        var vm = new SetupImportSplitViewModel(CreateSp(apiMock.Object));
-        await vm.InitializeAsync();
+        var vm = new SetupStatementsViewModel(CreateSp(apiMock.Object));
+        await vm.LoadAsync();
 
         vm.Model!.MaxEntriesPerDraft = 10;
         vm.Validate();
@@ -76,8 +75,8 @@ public sealed class SetupImportSplitViewModelTests
         apiMock.Setup(a => a.UserSettings_GetImportSplitAsync(It.IsAny<CancellationToken>())).ReturnsAsync(dto);
         apiMock.Setup(a => a.UserSettings_UpdateImportSplitAsync(It.IsAny<ImportSplitSettingsUpdateRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        var vm = new SetupImportSplitViewModel(CreateSp(apiMock.Object));
-        await vm.InitializeAsync();
+        var vm = new SetupStatementsViewModel(CreateSp(apiMock.Object));
+        await vm.LoadAsync();
 
         vm.Model!.MaxEntriesPerDraft = 300;
         vm.OnModeChanged();

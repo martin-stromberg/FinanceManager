@@ -1,14 +1,13 @@
-@using System.Net.Http.Json
 @using System.Globalization
-@inject HttpClient Http
+@using FinanceManager.Web.ViewModels.Common
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Shared.AggregateBarChart> Localizer
 
-<div class="@($"aggregate-chart-wrapper{(Compact? " compact" : string.Empty)}")" aria-busy="@_loading">
-    @if (!string.IsNullOrWhiteSpace(Title))
+<div class="@($"aggregate-chart-wrapper{(ViewModel?.Compact == true ? " compact" : string.Empty)}")" aria-busy="@_loading">
+    @if (!string.IsNullOrWhiteSpace(TitleToShow))
     {
-        <h4 class="chart-title">@Title</h4>
+        <h4 class="chart-title">@TitleToShow</h4>
     }
-    @if (!HideIntervalSelector)
+    @if (!(ViewModel?.HideIntervalSelector ?? false))
     {
         <div class="interval-selector">
             <label class="lbl-int">@Localizer["LabelInterval"]:</label>
@@ -22,10 +21,10 @@
         </div>
     }
 
-    <div class="chart" style="--bar-color:@PositiveColor;--bar-neg:@NegativeColor;--axis:@AxisColor;">
+    <div class="chart" style="--bar-color:@(ViewModel?.PositiveColor ?? "#2d6cdf");--bar-neg:@(ViewModel?.NegativeColor ?? "#c94");--axis:@(ViewModel?.AxisColor ?? "#555");">
         @if (_loading && _data.Count == 0)
         {
-            <div class="chart-skeleton" role="status" aria-live="polite" style="height:@(BarsHeightPx ?? (Compact?100:180))px;">
+            <div class="chart-skeleton" role="status" aria-live="polite" style="height:@(ViewModel?.BarsHeightPx ?? (ViewModel?.Compact == true ? 100 : 180))px;">
                 @for (int i=0;i<10;i++)
                 {
                     <div class="skeleton-bar" style="animation-delay:@(i*0.06)s"></div>
@@ -46,7 +45,7 @@
         else
         {
             var maxAbs = _data.Select(p => Math.Abs(p.Amount)).DefaultIfEmpty(0m).Max();
-            var barsHeight = BarsHeightPx ?? (Compact ? 100 : 180);
+            var barsHeight = (ViewModel?.BarsHeightPx ?? (ViewModel?.Compact == true ? 100 : 180));
             var halfHeight = (decimal)barsHeight / 2m;
             var scale = maxAbs == 0 ? 0 : halfHeight / maxAbs;
 
@@ -97,71 +96,69 @@
 </div>
 
 @code {
-    [Parameter] public string Endpoint { get; set; } = string.Empty;
-    [Parameter] public string? Title { get; set; }
-    [Parameter] public string PositiveColor { get; set; } = "#2d6cdf";
-    [Parameter] public string NegativeColor { get; set; } = "#c94";
-    [Parameter] public string AxisColor { get; set; } = "#555";
-    [Parameter] public int? Take { get; set; }
-    [Parameter] public int? MaxYearsBack { get; set; }
-    [Parameter] public bool HideIntervalSelector { get; set; }
-    [Parameter] public string? InitialPeriod { get; set; }
-    [Parameter] public bool AutoFit { get; set; } = true;
-    [Parameter] public int MaxVisibleLabels { get; set; } = 18;
-    [Parameter] public bool Compact { get; set; }
-    [Parameter] public int? BarsHeightPx { get; set; }
+    [Parameter] public AggregateBarChartViewModel? ViewModel { get; set; }
 
     private string _period = "Month";
     private bool _loading;
     private bool _multipleYears;
     private readonly List<Point> _data = new();
+    private string? TitleToShow => ViewModel?.Title;
 
     private sealed record Point(DateTime PeriodStart, decimal Amount);
 
     protected override async Task OnParametersSetAsync()
     {
-        if (!string.IsNullOrWhiteSpace(InitialPeriod))
+        if (!string.IsNullOrWhiteSpace(ViewModel?.InitialPeriod))
         {
-            _period = InitialPeriod!;
+            _period = ViewModel!.InitialPeriod!;
         }
-        if (!string.IsNullOrWhiteSpace(Endpoint) && _data.Count == 0)
+        if (ViewModel != null)
         {
-            await LoadAsync();
+            // initialize from VM
+            MapFromViewModel();
+            if ((_data.Count == 0) || ViewModel.Loading)
+            {
+                await ViewModel.LoadAsync(_period);
+                MapFromViewModel();
+            }
         }
     }
 
     private bool ShouldShowLabel(int index, int total)
     {
-        if (!AutoFit) { return true; }
-        if (total <= MaxVisibleLabels) { return true; }
-        int step = (int)Math.Ceiling(total / (double)MaxVisibleLabels);
+        var autoFit = ViewModel?.AutoFit ?? true;
+        var maxLabels = ViewModel?.MaxVisibleLabels ?? 18;
+        if (!autoFit) { return true; }
+        if (total <= maxLabels) { return true; }
+        int step = (int)Math.Ceiling(total / (double)maxLabels);
         return index % step == 0;
+    }
+
+    private void MapFromViewModel()
+    {
+        _data.Clear();
+        if (ViewModel?.Data != null)
+        {
+            foreach (var p in ViewModel.Data)
+            {
+                _data.Add(new Point(p.PeriodStart, p.Amount));
+            }
+            _multipleYears = ViewModel.MultipleYears;
+            _loading = ViewModel.Loading;
+        }
+        else
+        {
+            _multipleYears = false;
+            _loading = false;
+        }
+        StateHasChanged();
     }
 
     private async Task LoadAsync()
     {
-        if (string.IsNullOrWhiteSpace(Endpoint)) { return; }
-        _loading = true;
-        StateHasChanged();
-        try
-        {
-            var baseUrl = Endpoint.Contains('?') ? $"{Endpoint}&period={_period}" : $"{Endpoint}?period={_period}";
-            if (Take.HasValue && Take.Value > 0) { baseUrl += $"&take={Take.Value}"; }
-            if (MaxYearsBack.HasValue && MaxYearsBack.Value > 0) { baseUrl += $"&maxYearsBack={MaxYearsBack.Value}"; }
-            var resp = await Http.GetAsync(baseUrl);
-            if (resp.IsSuccessStatusCode)
-            {
-                var list = await resp.Content.ReadFromJsonAsync<List<TimeSeriesResponse>>() ?? new();
-                _data.Clear();
-                _data.AddRange(list.Select(x => new Point(x.PeriodStart, x.Amount)));
-                _multipleYears = _data.Select(d => d.PeriodStart.Year).Distinct().Skip(1).Any();
-            }
-        }
-        finally
-        {
-            _loading = false;
-            StateHasChanged();
-        }
+        if (ViewModel == null) return;
+        await ViewModel.LoadAsync(_period);
+        MapFromViewModel();
     }
 
     private string FormatLabel(DateTime d)

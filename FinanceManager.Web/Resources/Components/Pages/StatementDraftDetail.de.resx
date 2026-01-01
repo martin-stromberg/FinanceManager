@@ -129,7 +129,7 @@
   <data name="Btn_BackToParent" xml:space="preserve">
     <value>Zurück zum Ursprungs-Eintrag</value>
   </data>
-  <data name="Btn_Back" xml:space="preserve">
+  <data name="Ribbon_Back" xml:space="preserve">
     <value>Zurück</value>
   </data>
   <data name="Btn_ShowOriginal" xml:space="preserve">
@@ -299,5 +299,38 @@
   </data>
   <data name="Ribbon_Group_Related" xml:space="preserve">
     <value>Verknüpfungen</value>
+  </data>
+  <data name="Ribbon_Attachments" xml:space="preserve">
+    <value>Anhänge</value>
+  </data>
+  <data name="Ribbon_Confirmation_Delete" xml:space="preserve">
+    <value>Soll der Kontoauszug gelöscht werden?</value>
+  </data>
+  <data name="Th_Security" xml:space="preserve">
+    <value>Wertpapier</value>
+  </data>
+  <data name="Ribbon_Group_Operations" xml:space="preserve">
+    <value>Verwalten</value>
+  </data>
+  <data name="AssignedAccount" xml:space="preserve">
+    <value>Zugeordnetes Bankkonto</value>
+  </data>
+  <data name="Btn_AssignAccount" xml:space="preserve">
+    <value>Bankkonto zuweisen</value>
+  </data>
+  <data name="AssignAccount_Title" xml:space="preserve">
+    <value>Bankkonto zuweisen</value>
+  </data>
+  <data name="Error_AssignFailed" xml:space="preserve">
+    <value>Zuweisung fehlgeschlagen</value>
+  </data>
+  <data name="Filter" xml:space="preserve">
+    <value>Filter</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>Übernehmen</value>
+  </data>
+  <data name="NoMatches" xml:space="preserve">
+    <value>Keine Treffer</value>
   </data>
 </root>

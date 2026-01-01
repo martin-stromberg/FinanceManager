@@ -1,0 +1,146 @@
+@using FinanceManager.Web.ViewModels.Common
+@using FinanceManager.Web.ViewModels
+@using FinanceManager.Web.Extensions
+@inject NavigationManager NavigationManager
+@typeparam TKeyValue
+
+@if (_specs?.Count > 0)
+{
+    <div style="margin-top:.5rem; display:flex;flex-direction:column;gap:.5rem;">
+        @for (int i = 0; i < _specs.Count; i++)
+        {
+            var s = _specs[i];
+            if (!s.Visible) continue;
+            <div>
+                @{ IDictionary<string, object?>? parms = null;
+                   if (s.Parameters != null)
+                   {
+                       parms = s.Parameters.Where(kvp => !string.Equals(kvp.Key, "Visible", StringComparison.OrdinalIgnoreCase)
+                                                           && !string.Equals(kvp.Key, "Position", StringComparison.OrdinalIgnoreCase)
+                                                           && !string.Equals(kvp.Key, "OverlayTitle", StringComparison.OrdinalIgnoreCase))
+                                   .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                   }
+
+                   var idx = i; // capture
+                   Action embeddedClose = () => CloseEmbeddedPanel(idx);
+                   Action<object> embeddedOnFinished = obj =>
+                   {
+                       CloseEmbeddedPanel(idx);
+                       _ = NavigationManager.NavigateToModelCard(obj);
+                   };
+                }
+                <CascadingValue Name="EmbeddedClose" Value="@(embeddedClose)">
+                    <CascadingValue Name="EmbeddedOnFinished" Value="@(embeddedOnFinished)">
+                        <DynamicComponent Type="s.ComponentType" Parameters="parms" />
+                    </CascadingValue>
+                </CascadingValue>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public BaseCardViewModel<TKeyValue>? Provider { get; set; }
+    [Parameter] public EmbeddedPanelPosition Position { get; set; } = EmbeddedPanelPosition.AfterCard;
+
+    private readonly List<BaseViewModel.EmbeddedPanelSpec> _specs = new();
+
+    private BaseCardViewModel<TKeyValue>? _subscribed;
+
+    protected override void OnParametersSet()
+    {
+        if (_subscribed != Provider)
+        {
+            if (_subscribed != null)
+            {
+                _subscribed.UiActionRequested -= OnUiActionRequested;
+            }
+            _subscribed = Provider;
+            if (_subscribed != null)
+            {
+                _subscribed.UiActionRequested += OnUiActionRequested;
+            }
+        }
+    }
+
+    private bool CheckClearEmbeddedPanel(BaseViewModel.UiActionEventArgs? e)
+    {
+        if (string.Equals(e.Action, "ClearEmbeddedPanel", StringComparison.OrdinalIgnoreCase))
+        {
+            // payload may be EmbeddedPanelPosition, string, or null
+            if (e.PayloadObject is EmbeddedPanelPosition posObj)
+            {
+                _specs.RemoveAll(s => s.Position == posObj);
+            }
+            else if (e.Payload is string posStr && Enum.TryParse<EmbeddedPanelPosition>(posStr, true, out var posParsed))
+            {
+                _specs.RemoveAll(s => s.Position == posParsed);
+            }
+            else
+            {
+                // no payload -> clear all
+                _specs.Clear();
+            }
+            InvokeAsync(StateHasChanged);
+            return true;
+        }
+        return false;
+    }
+
+    private void OnUiActionRequested(object? sender, BaseViewModel.UiActionEventArgs? e)
+    {
+        if (e == null) return;
+
+        if (CheckClearEmbeddedPanel(e)) return;
+
+        // existing handling: support EmbeddedPanelSpec or collections thereof
+        if (e.PayloadObject == null) return;
+
+        // support single spec or array of specs
+        try
+        {
+            if (e.PayloadObject is BaseViewModel.EmbeddedPanelSpec single)
+            {
+                AddSpec(single);
+            }
+            else if (e.PayloadObject is IEnumerable<BaseViewModel.EmbeddedPanelSpec> many)
+            {
+                foreach (var sp in many) AddSpec(sp);
+            }
+            else if (e.PayloadObject is IEnumerable<object> objEnum)
+            {
+                foreach (var o in objEnum)
+                {
+                    if (o is BaseViewModel.EmbeddedPanelSpec sp) AddSpec(sp);
+                }
+            }
+        }
+        catch { }
+
+        // trigger UI update
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void AddSpec(BaseViewModel.EmbeddedPanelSpec spec)
+    {
+        if (spec == null) return;
+        if (spec.Position != Position) return;
+        // add spec as active
+        _specs.Add(spec with { Visible = spec.Visible });
+    }
+
+    private void CloseEmbeddedPanel(int index)
+    {
+        if (index < 0 || index >= _specs.Count) return;
+        _specs[index] = _specs[index] with { Visible = false };
+        // remove invisible specs to keep list tidy
+        _specs.RemoveAll(s => !s.Visible);
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        if (_subscribed != null)
+            _subscribed.UiActionRequested -= OnUiActionRequested;
+    }
+}

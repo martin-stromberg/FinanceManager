@@ -1,0 +1,695 @@
+@typeparam TKeyValue
+@using FinanceManager.Web.ViewModels
+@using FinanceManager.Web.ViewModels.Common
+@using FinanceManager.Web.Components.Shared
+@using FinanceManager.Web.ViewModels.StatementDrafts
+@inject IJSRuntime JS
+@using Microsoft.AspNetCore.Components.Forms
+@inject FinanceManager.Shared.IApiClient Api
+@using FinanceManager.Domain.Attachments
+@using static FinanceManager.Web.ViewModels.Common.BaseViewModel
+@inject NavigationManager Nav
+
+@if (Provider == null)
+{
+    <p style="opacity:.7;">No provider</p>
+}
+else
+{
+    @if (!string.IsNullOrEmpty(Provider.LastError))
+    {
+        <div class="error-msg" style="color:#e66;margin:.5rem 0;padding:.5rem;border:1px solid rgba(230,102,102,.2);background:rgba(230,102,102,.04);border-radius:4px;">@Provider.LastError</div>
+    }
+
+    @if (Provider.Loading)
+    {
+        <p>@LoadingText</p>
+    }
+    else if (Provider.CardRecord is not null)
+    {
+        <div class="card-view" style="margin-top:1.25rem;width:100%;">
+            <table class="fm-table card" style="width:100%;">
+                <tbody>
+                    @foreach (var f in Provider.CardRecord.Fields)
+                    {
+                        <tr>
+                            <th style="width:30%;text-align:left;vertical-align:top;padding:.5rem .6rem;font-weight:600;">@(Localizer?[f.LabelKey] ?? f.LabelKey)</th>
+                            <td style="padding:.5rem .6rem;">@RenderEditableField(f)</td>
+                        </tr>
+                        @if (!string.IsNullOrWhiteSpace(f.Hint))
+                        {
+                            <tr>
+                                <td colspan="2" style="padding:.25rem .6rem .75rem .6rem;color:var(--muted);font-size:.9rem;">@((Localizer != null) ? LocalizeInline(Localizer?[f.Hint] ?? f.Hint) : LocalizeInline(f.Hint))</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @* If the provider exposes an embedded list, render it below the card *@
+    @if (Provider?.EmbeddedList is FinanceManager.Web.ViewModels.Common.BaseListViewModel emb)
+    {
+        <div style="margin-top:1.25rem;">
+            <GenericListPage TItem="object" Provider="@(emb as IListProvider)" Localizer="Localizer" SearchPlaceholder="" RangeFromLabel="" RangeToLabel="" LoadingText="@LoadingText" EmptyText="@Localizer?["List_Result_NoItems"]" EndOfListText="@Localizer?["List_Result_EndOfList"]" ItemClick="OnEmbeddedItemClick" />
+        </div>
+    }
+}
+
+@code {
+    public enum TabId { Card }
+
+    [Parameter] public BaseCardViewModel<TKeyValue>? Provider { get; set; }
+    [Parameter] public Microsoft.Extensions.Localization.IStringLocalizer? Localizer { get; set; }
+
+    [Parameter] public string LoadingText { get; set; } = "Loading";
+
+    private readonly Dictionary<string, List<LookupItem>> _enumOptions = new();
+
+    private string GetKey(TKeyValue kv)
+    {
+        // Default: if kv is (string Key, string Value)
+        if (kv is System.ValueTuple<string, string> t)
+        {
+            return t.Item1;
+        }
+        // fallback to ToString
+        return kv?.ToString() ?? string.Empty;
+    }
+
+    private string GetValue(TKeyValue kv)
+    {
+        if (kv is System.ValueTuple<string, string> t)
+        {
+            return System.Net.WebUtility.HtmlEncode(t.Item2 ?? string.Empty);
+        }
+        return System.Net.WebUtility.HtmlEncode(kv?.ToString() ?? string.Empty);
+    }
+
+    private RenderFragment RenderField(CardField f) => builder =>
+    {
+        switch (f.Kind)
+        {
+            case CardFieldKind.Text:
+                // normal text
+                var raw = !string.IsNullOrWhiteSpace(f.Text) ? f.Text : (f.ValueId?.ToString() ?? string.Empty);
+                var txt = LocalizeInline(raw);
+                builder.AddContent(0, txt);
+                break;
+            case CardFieldKind.Date:
+                {
+                    var rawDate = !string.IsNullOrWhiteSpace(f.Text) ? f.Text : (f.ValueId?.ToString() ?? string.Empty);
+                    if (DateTime.TryParse(rawDate, System.Globalization.CultureInfo.CurrentCulture, System.Globalization.DateTimeStyles.None, out var dt))
+                    {
+                        builder.AddContent(0, dt.ToString("d", System.Globalization.CultureInfo.CurrentCulture));
+                    }
+                    else if (DateTime.TryParse(rawDate, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt2))
+                    {
+                        builder.AddContent(0, dt2.ToString("d", System.Globalization.CultureInfo.CurrentCulture));
+                    }
+                    else
+                    {
+                        var t2 = LocalizeInline(rawDate);
+                        builder.AddContent(0, t2);
+                    }
+                }
+                break;
+            case CardFieldKind.Symbol:
+                if (f.SymbolId.HasValue)
+                {
+                    builder.OpenElement(1, "img");
+                    builder.AddAttribute(2, "src", $"/api/attachments/{f.SymbolId}/download");
+                    builder.AddAttribute(3, "style", "width:36px;height:36px;object-fit:contain;border-radius:6px;border:1px solid var(--border);");
+                    builder.CloseElement();
+                }
+                break;
+            case CardFieldKind.Currency:
+                builder.AddContent(4, (f.Amount ?? 0m).ToString("C", System.Globalization.CultureInfo.CurrentCulture));
+                break;
+            case CardFieldKind.Boolean:
+                var yes = Localizer != null ? Localizer["General_Yes"].Value : "Yes";
+                var no = Localizer != null ? Localizer["General_No"].Value : "No";
+                if (f.BoolValue.HasValue)
+                    builder.AddContent(5, f.BoolValue.Value ? yes : no);
+                break;
+        }
+    };
+
+    // If field is editable or a lookup, render appropriate input controls instead of plain text
+    private readonly Dictionary<CardField, List<LookupItem>> _lookupResults = new();
+    private CardField? _openLookupField;
+    private BaseCardViewModel<TKeyValue>? _subscribedProvider;
+
+    private RenderFragment RenderEditableField(CardField f) => builder =>
+    {
+        if (!f.Editable)
+        {
+            builder.AddContent(0, RenderField(f));
+            return;
+        }
+
+        if (f.Kind == CardFieldKind.Date)
+        {
+            string inputVal = string.Empty;
+            if (!string.IsNullOrWhiteSpace(f.Text))
+            {
+                if (DateTime.TryParse(f.Text, System.Globalization.CultureInfo.CurrentCulture, System.Globalization.DateTimeStyles.None, out var dt))
+                {
+                    inputVal = dt.ToString("yyyy-MM-dd");
+                }
+                else if (DateTime.TryParse(f.Text, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt2))
+                {
+                    inputVal = dt2.ToString("yyyy-MM-dd");
+                }
+            }
+
+            builder.OpenElement(0, "input");
+            builder.AddAttribute(1, "type", "date");
+            builder.AddAttribute(2, "value", inputVal);
+            builder.AddAttribute(3, "class", "card-input");
+            builder.AddAttribute(4, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, (ChangeEventArgs e) => OnEditableTextChanged(f, e)));
+            builder.CloseElement();
+            return;
+        }
+
+        if (f.Kind == CardFieldKind.Boolean)
+        {
+            builder.OpenElement(0, "input");
+            builder.AddAttribute(1, "type", "checkbox");
+            if (f.BoolValue == true) builder.AddAttribute(2, "checked", true);
+            builder.AddAttribute(3, "class", "card-input-checkbox");
+            builder.AddAttribute(4, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, (ChangeEventArgs e) => OnEditableBooleanChanged(f, e)));
+            builder.CloseElement();
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(f.LookupType) && f.LookupType.StartsWith("Enum:", StringComparison.OrdinalIgnoreCase))
+        {
+            // Try to get cached options for this lookupType
+            if (!_enumOptions.TryGetValue(f.LookupType, out var opts) || opts == null)
+            {
+                // show disabled select while loading
+                builder.OpenElement(0, "select");
+                builder.AddAttribute(1, "class", "card-input");
+                builder.AddAttribute(2, "disabled", true);
+                var loadingLabel = Localizer != null ? Localizer["Loading"].Value : "Loading";
+                builder.OpenElement(3, "option"); builder.AddContent(4, loadingLabel); builder.CloseElement();
+                builder.CloseElement();
+                return;
+            }
+
+            builder.OpenElement(10, "select");
+            builder.AddAttribute(11, "class", "card-input");
+            builder.AddAttribute(12, "value", f.Text ?? string.Empty);
+            builder.AddAttribute(13, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, (ChangeEventArgs e) => OnEnumChanged(f, e)));
+
+            var enumName = f.LookupType.Substring("Enum:".Length);
+            foreach (var li in opts)
+            {
+                builder.OpenElement(20, "option");
+                builder.AddAttribute(21, "value", li.Name);
+                if (string.Equals(f.Text, li.Name, StringComparison.OrdinalIgnoreCase)) builder.AddAttribute(22, "selected", true);
+                var displayLabel = li.Name;
+                try
+                {
+                    if (Localizer != null)
+                    {
+                        var key = $"EnumType_{enumName}_{li.Name}";
+                        var val = Localizer[key];
+                        if (!val.ResourceNotFound && !string.IsNullOrWhiteSpace(val.Value)) displayLabel = val.Value;
+                    }
+                }
+                catch { }
+                builder.AddContent(23, displayLabel);
+                builder.CloseElement();
+            }
+
+            builder.CloseElement();
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(f.LookupType))
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "style", "position:relative;display:inline-block;width:100%;");
+            builder.OpenElement(2, "input");
+            builder.AddAttribute(3, "value", f.Text ?? string.Empty);
+            builder.AddAttribute(4, "class", "card-input");
+            builder.AddAttribute(5, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, (ChangeEventArgs e) => OnLookupInputAsync(f, e)));
+            builder.AddAttribute(6, "onfocus", EventCallback.Factory.Create(this, async () => await OnLookupFocusAsync(f)));
+            builder.AddAttribute(7, "onfocusout", EventCallback.Factory.Create(this, () => CloseLookup(f)));
+            builder.AddAttribute(8, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, (ChangeEventArgs e) => OnLookupChangeCommit(f, e)));
+            builder.CloseElement();
+
+            // Add button for creating new lookup items if allowed
+            if (f.AllowAdd)
+            {
+                builder.OpenElement(30, "button");
+                builder.AddAttribute(31, "class", "icon-btn");
+                builder.AddAttribute(32, "style", "position:absolute;right:0;top:0;height:100%;");
+                builder.AddAttribute(33, "title", Localizer?["Ribbon_Add"].Value ?? "Add");
+                // When clicked, navigate to card page for creating new entity. We pass back payload so after save the new card triggers navigation back.
+                builder.AddAttribute(34, "onclick", EventCallback.Factory.Create(this, (Action)(() => OpenCreateForLookup(f))));
+                builder.AddMarkupContent(35, "<svg><use href='/icons/sprite.svg#plus'/></svg>");
+                builder.CloseElement();
+            }
+
+            if (_openLookupField == f && _lookupResults.TryGetValue(f, out var list) && list?.Count > 0)
+            {
+                builder.OpenElement(20, "div");
+                builder.AddAttribute(21, "class", "lookup-overlay");
+                builder.AddAttribute(22, "style", "position:absolute;left:0;right:0;z-index:20;background:var(--panel-bg);border:1px solid var(--border);max-height:200px;overflow:auto;margin-top:.25rem;border-radius:4px;padding:.25rem;");
+                int seq = 23;
+                foreach (var item in list)
+                {
+                    builder.OpenElement(seq++, "div");
+                    builder.AddAttribute(seq++, "class", "lookup-item");
+                    builder.AddAttribute(seq++, "style", "padding:.3rem .5rem;cursor:pointer;");
+                    var id = item.Key; var name = item.Name;
+                    builder.AddAttribute(seq++, "onpointerdown", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.PointerEventArgs>(this, (Microsoft.AspNetCore.Components.Web.PointerEventArgs _) => OnSelectLookupAsync(f, id, name)));
+                    builder.AddContent(seq++, name);
+                    builder.CloseElement();
+                }
+                builder.CloseElement();
+            }
+
+            builder.CloseElement();
+            return;
+        }
+
+        switch (f.Kind)
+        {
+            case CardFieldKind.Text:
+                builder.OpenElement(0, "input");
+                builder.AddAttribute(1, "value", f.Text ?? string.Empty);
+                builder.AddAttribute(2, "class", "card-input");
+                builder.AddAttribute(3, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, (ChangeEventArgs e) => OnEditableTextChanged(f, e)));
+                builder.CloseElement();
+                break;
+            case CardFieldKind.Symbol:
+                builder.OpenElement(0, "div");
+                builder.AddAttribute(1, "style", "display:flex;align-items:center;gap:.5rem;");
+                builder.OpenElement(2, "div");
+                builder.AddAttribute(3, "style", "width:36px;height:36px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:6px;");
+                if (f.SymbolId.HasValue)
+                {
+                    builder.OpenElement(4, "img");
+                    builder.AddAttribute(5, "src", $"/api/attachments/{f.SymbolId}/download");
+                    builder.AddAttribute(6, "alt", "symbol");
+                    builder.AddAttribute(7, "style", "max-width:100%;max-height:100%;display:block;");
+                    builder.CloseElement();
+                }
+                else
+                {
+                    builder.AddMarkupContent(8, "<div style=\"width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);\"><svg style=\"width:18px;height:18px;opacity:.6;\"><use href=\"/icons/sprite.svg#image\" /></svg></div>");
+                }
+                builder.CloseElement();
+                builder.OpenComponent<InputFile>(9);
+                builder.AddAttribute(10, "OnChange", EventCallback.Factory.Create<InputFileChangeEventArgs>(this, (e) => OnInputFileChangeAsync(e, f)));
+                builder.AddAttribute(11, "accept", "image/*");
+                builder.AddAttribute(12, "class", "card-input-file");
+                builder.CloseComponent();
+                builder.CloseElement();
+                break;
+            case CardFieldKind.Currency:
+                builder.OpenElement(9, "input");
+                // Bind visible value to raw text when available so typing (e.g. decimal separator) is not overwritten
+                var culture = System.Globalization.CultureInfo.CurrentCulture;
+                var displayValue = !string.IsNullOrEmpty(f.Text) ? f.Text : (f.Amount ?? 0m).ToString(culture);
+                builder.AddAttribute(10, "value", displayValue);
+                builder.AddAttribute(11, "class", "card-input numeric");
+                builder.AddAttribute(12, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, (ChangeEventArgs e) => OnEditableCurrencyChanged(f, e)));
+                builder.AddAttribute(13, "onblur", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.FocusEventArgs>(this, (Microsoft.AspNetCore.Components.Web.FocusEventArgs e) => OnEditableCurrencyBlur(f, e)));
+                builder.CloseElement();
+                break;
+        }
+    };
+
+    private string LocalizeInline(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return string.Empty;
+        if (Localizer == null) return input;
+        return System.Text.RegularExpressions.Regex.Replace(input, "\\$(\\w+)", m =>
+        {
+            var key = m.Groups[1].Value;
+            var ls = Localizer[key];
+            return ls.ResourceNotFound ? m.Value : ls.Value;
+        });
+    }
+
+    private async Task OnInputFileChangeAsync(InputFileChangeEventArgs e, CardField f)
+    {
+        try
+        {
+            var file = e.File;
+            if (file == null) return;
+
+            if (Provider is ISymbolAssignableCard assignable)
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB
+                var newId = await assignable?.ValidateSymbolAsync(stream, file.Name, file.ContentType ?? "application/octet-stream");
+                if (newId.HasValue)
+                {
+                    f.SymbolId = newId.Value;
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        if (_subscribedProvider != Provider)
+        {
+            if (_subscribedProvider != null) _subscribedProvider.StateChanged -= OnProviderStateChanged;
+            _subscribedProvider = Provider;
+            if (_subscribedProvider != null) _subscribedProvider.StateChanged += OnProviderStateChanged;
+        }
+
+        _enumOptions.Clear();
+        if (Provider?.CardRecord?.Fields != null)
+        {
+            var enumLookupTypes = Provider.CardRecord.Fields
+                .Where(f => !string.IsNullOrWhiteSpace(f.LookupType) && f.LookupType.StartsWith("Enum:", StringComparison.OrdinalIgnoreCase))
+                .Select(f => f.LookupType)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            foreach (var lt in enumLookupTypes)
+            {
+                try
+                {
+                    var items = await Provider.QueryLookupAsync(new CardField("", CardFieldKind.Text, lookupType: lt), null, 0, 200);
+                    _enumOptions[lt] = items?.ToList() ?? new List<LookupItem>();
+                }
+                catch { _enumOptions[lt] = new List<LookupItem>(); }
+            }
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+    }
+
+    private void OnProviderStateChanged(object? _, EventArgs __) => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        if (_subscribedProvider != null) _subscribedProvider.StateChanged -= OnProviderStateChanged;
+    }
+
+    private async Task OnLookupInputAsync(CardField f, ChangeEventArgs e)
+    {
+        try
+        {
+            var q = (e.Value ?? string.Empty).ToString();
+            f.Text = q;
+            if (Provider is not null)
+            {
+                var list = await Provider.QueryLookupAsync(f, q, 0, 10);
+                _lookupResults[f] = list.ToList();
+                _openLookupField = f;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+    }
+
+    private async Task OnLookupFocusAsync(CardField f)
+    {
+        try
+        {
+            if (Provider is null) return;
+            var list = await Provider.QueryLookupAsync(f, string.Empty, 0, 10);
+            _lookupResults[f] = list.ToList();
+            _openLookupField = f;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+    }
+
+    private async Task OnSelectLookupAsync(CardField f, Guid id, string name)
+    {
+        f.ValueId = id;
+        f.Text = name;
+        if (Provider is not null) Provider.ValidateLookupField(f, new LookupItem(id, name));
+        _lookupResults.Remove(f);
+        if (_openLookupField == f) _openLookupField = null;
+        await (Provider?.ReloadAsync() ?? Task.CompletedTask);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseLookup(CardField f)
+    {
+        if (_openLookupField == f) _openLookupField = null;
+        _lookupResults.Remove(f);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void OnLookupChangeCommit(CardField f, ChangeEventArgs e)
+    {
+        var txt = (e.Value ?? string.Empty).ToString();
+        if (Provider is null) return;
+        if (Provider.PendingFieldValues.TryGetValue(f.LabelKey, out var existing) && existing is LookupItem)
+        {
+            return;
+        }
+        Provider.ValidateFieldValue(f, txt);
+    }
+
+    private void OnEditableTextChanged(CardField f, ChangeEventArgs e)
+    {
+        var txt = (e.Value ?? string.Empty).ToString();
+        f.Text = txt;
+        if (Provider is not null) Provider.ValidateFieldValue(f, txt);
+    }
+
+    private void OnEditableCurrencyChanged(CardField f, ChangeEventArgs e)
+    {
+        // Only update visible text while typing. Actual parsing/evaluation occurs when the field loses focus (onblur).
+        var txt = (e.Value ?? string.Empty).ToString();
+        f.Text = txt;
+        if (Provider is not null) Provider.ValidateFieldValue(f, txt);
+    }
+
+    private async Task OnEditableCurrencyBlur(CardField f, Microsoft.AspNetCore.Components.Web.FocusEventArgs _)
+    {
+        try
+        {
+            var stable = f.Text ?? string.Empty;
+            var culture = System.Globalization.CultureInfo.CurrentCulture;
+
+            if (string.IsNullOrWhiteSpace(stable))
+            {
+                f.Amount = null;
+                if (Provider is not null) await InvokeAsync(() => Provider.ValidateFieldValue(f, (object?)null));
+                return;
+            }
+
+            // Try parse direct numeric value first
+            if (decimal.TryParse(stable, System.Globalization.NumberStyles.Number, culture, out var val))
+            {
+                f.Amount = val;
+                f.Text = val.ToString(culture);
+                if (Provider is not null) await InvokeAsync(() => Provider.ValidateFieldValue(f, val));
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            // Try evaluate expression
+            if (stable.IndexOfAny(new[] { '+', '-', '*', '/', '(', ')' }) >= 0)
+            {
+                var eval = EvaluateNumericExpression(stable);
+                if (eval.HasValue)
+                {
+                    f.Amount = eval.Value;
+                    f.Text = eval.Value.ToString(culture);
+                    if (Provider is not null) await InvokeAsync(() => Provider.ValidateFieldValue(f, eval.Value));
+                    await InvokeAsync(StateHasChanged);
+                    return;
+                }
+            }
+
+            // Keep user text if cannot parse/evaluate
+            if (Provider is not null) await InvokeAsync(() => Provider.ValidateFieldValue(f, stable));
+        }
+        catch { }
+    }
+
+    // Evaluate a simple arithmetic expression using decimal arithmetic.
+    // Supports +, -, *, / and parentheses. Uses current culture decimal separator.
+    private decimal? EvaluateNumericExpression(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return null;
+        try
+        {
+            var culture = System.Globalization.CultureInfo.CurrentCulture;
+            var decimalSep = culture.NumberFormat.NumberDecimalSeparator;
+
+            // Tokenize
+            var tokens = new List<string>();
+            var i = 0;
+            while (i < input.Length)
+            {
+                var c = input[i];
+                if (char.IsWhiteSpace(c)) { i++; continue; }
+                if (c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')')
+                {
+                    tokens.Add(c.ToString()); i++; continue;
+                }
+                // number token: digits and decimal separator
+                var sb = new System.Text.StringBuilder();
+                bool hasDigit = false;
+                while (i < input.Length)
+                {
+                    var ch = input[i];
+                    if (char.IsDigit(ch) || ch.ToString() == decimalSep)
+                    {
+                        sb.Append(ch); hasDigit = true; i++; continue;
+                    }
+                    // also allow grouping separator? ignore any other culture-specific chars
+                    break;
+                }
+                if (hasDigit) tokens.Add(sb.ToString());
+                else
+                {
+                    // invalid char -> abort
+                    return null;
+                }
+            }
+
+            if (tokens.Count == 0) return null;
+
+            // Shunting-yard to RPN
+            var output = new List<string>();
+            var ops = new Stack<string>();
+            int Prec(string op) => op switch { "+" or "-" => 1, "*" or "/" => 2, _ => 0 };
+            foreach (var tk in tokens)
+            {
+                if (tk == "+" || tk == "-" || tk == "*" || tk == "/")
+                {
+                    while (ops.Count > 0 && ops.Peek() != "(" && Prec(ops.Peek()) >= Prec(tk)) output.Add(ops.Pop());
+                    ops.Push(tk);
+                }
+                else if (tk == "(") ops.Push(tk);
+                else if (tk == ")")
+                {
+                    while (ops.Count > 0 && ops.Peek() != "(") output.Add(ops.Pop());
+                    if (ops.Count == 0) return null; // mismatched
+                    ops.Pop();
+                }
+                else
+                {
+                    // number
+                    output.Add(tk);
+                }
+            }
+            while (ops.Count > 0)
+            {
+                var op = ops.Pop();
+                if (op == "(" || op == ")") return null; // mismatched
+                output.Add(op);
+            }
+
+            // Evaluate RPN
+            var evalStack = new Stack<decimal>();
+            foreach (var tk in output)
+            {
+                if (tk == "+" || tk == "-" || tk == "*" || tk == "/")
+                {
+                    if (evalStack.Count < 2) return null;
+                    var b = evalStack.Pop(); var a = evalStack.Pop();
+                    decimal r = 0m;
+                    switch (tk)
+                    {
+                        case "+": r = a + b; break;
+                        case "-": r = a - b; break;
+                        case "*": r = a * b; break;
+                        case "/": if (b == 0) return null; r = a / b; break;
+                    }
+                    evalStack.Push(r);
+                }
+                else
+                {
+                    // parse number using current culture
+                    if (decimal.TryParse(tk, System.Globalization.NumberStyles.Number, culture, out var num)) evalStack.Push(num);
+                    else return null;
+                }
+            }
+            if (evalStack.Count != 1) return null;
+            return evalStack.Pop();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private Task OnEmbeddedItemClick(object item)
+    {
+        if (item is IListItemNavigation nav)
+        {
+            var uri = nav.GetNavigateUrl();
+            if (!string.IsNullOrWhiteSpace(uri))
+                Nav.NavigateTo(uri);
+        }
+        return Task.CompletedTask;
+    }
+
+    private void OnEditableBooleanChanged(CardField f, ChangeEventArgs e)
+    {
+        bool val = false;
+        if (e?.Value is bool b) val = b;
+        else if (e?.Value is string s && bool.TryParse(s, out var parsed)) val = parsed;
+        f.BoolValue = val;
+        if (Provider is not null) Provider.ValidateFieldValue(f, val);
+    }
+
+    private void OnEnumChanged(CardField f, ChangeEventArgs e)
+    {
+        var txt = (e.Value ?? string.Empty).ToString();
+        f.Text = txt;
+        if (Provider is not null) Provider.ValidateFieldValue(f, txt);
+    }
+
+    private Task OpenCreateForLookup(CardField f)
+    {
+        try
+        {
+            // Map lookup types to card route kinds
+            string kind = f.LookupType?.ToLowerInvariant() ?? string.Empty;
+            string routeKind = kind switch
+            {
+                "contact" => "contacts",
+                "savingsplan" => "savings-plans",
+                "security" => "securities",
+                _ => kind
+            };
+
+            var back = Nav.Uri;
+            var prefill = Uri.EscapeDataString(f.RecordCreationNameSuggestion ?? f.Text ?? string.Empty);
+            var createUrl = $"/card/{routeKind}/new?back={Uri.EscapeDataString(back)}";
+            if (!string.IsNullOrWhiteSpace(prefill)) createUrl += "&prefill=" + prefill;
+            Nav.NavigateTo(createUrl);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+        return Task.CompletedTask;
+    }
+}
+

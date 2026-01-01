@@ -3,11 +3,22 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FinanceManager.Domain.Users;
 
+/// <summary>
+/// Domain user entity extending ASP.NET Identity's <see cref="IdentityUser{Guid}"/> with application-specific preferences and settings.
+/// </summary>
 public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
 {
+    /// <summary>
+    /// Parameterless constructor for ORM/deserialization.
+    /// </summary>
     private User() { }
 
-    // Existing constructor for callers that already compute a password hash
+    /// <summary>
+    /// Creates a user with a pre-computed password hash. Use this constructor when the caller already computed the password hash.
+    /// </summary>
+    /// <param name="username">The username. Must not be null or whitespace.</param>
+    /// <param name="passwordHash">The pre-computed password hash. Must not be null or whitespace.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="username"/> or <paramref name="passwordHash"/> are null or whitespace (via guards).</exception>
     public User(string username, string passwordHash)
     {
         Rename(username);
@@ -19,12 +30,20 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
         ImportMinEntriesPerDraft = 8; // new default (FA-AUSZ-016-12)
     }
 
-    // Backwards-compatible alias used in other parts of the codebase
+    /// <summary>
+    /// Backwards-compatible alias used in other parts of the codebase. Use <see cref="UserName"/> from the Identity base class instead.
+    /// This property is not mapped to the database and is obsolete.
+    /// </summary>
     [NotMapped]
     [Obsolete("Use UserName property from IdentityUser base class instead.", true)]
     public string Username { get => base.UserName!; set => base.UserName = value; }
 
-    // New constructor to support UserManager.CreateAsync(user, password)
+    /// <summary>
+    /// Creates a user instance intended for use with ASP.NET Identity's <c>UserManager.CreateAsync(user, password)</c> overload.
+    /// Password will be set by the <c>UserManager</c> and not by this constructor.
+    /// </summary>
+    /// <param name="username">The username. Must not be null or whitespace.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="username"/> is null or whitespace (via guards).</exception>
     public User(string username)
     {
         UserName = Guards.NotNullOrWhiteSpace(username, nameof(username));
@@ -36,7 +55,12 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
         ImportMinEntriesPerDraft = 8;
     }
 
-    // New constructor to support creating a user and specifying admin flag
+    /// <summary>
+    /// Creates a new user and sets the admin flag.
+    /// </summary>
+    /// <param name="username">The username. Must not be null or whitespace.</param>
+    /// <param name="isAdmin">Whether the created user should be an administrator.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="username"/> is null or whitespace (via guards).</exception>
     public User(string username, bool isAdmin)
     {
         UserName = Guards.NotNullOrWhiteSpace(username, nameof(username));
@@ -48,7 +72,13 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
         ImportMinEntriesPerDraft = 8;
     }
 
-    // New constructor to preserve older callsites that passed isAdmin flag
+    /// <summary>
+    /// Creates a new user providing a pre-computed password hash and admin flag (backwards-compatible overload).
+    /// </summary>
+    /// <param name="username">The username. Must not be null or whitespace.</param>
+    /// <param name="passwordHash">Pre-computed password hash. Must not be null or whitespace.</param>
+    /// <param name="isAdmin">Whether the user should be an administrator.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="username"/> or <paramref name="passwordHash"/> are null or whitespace (via guards).</exception>
     public User(string username, string passwordHash, bool isAdmin)
     {
         UserName = Guards.NotNullOrWhiteSpace(username, nameof(username));
@@ -61,30 +91,82 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
         ImportMinEntriesPerDraft = 8;
     }
 
+    /// <summary>
+    /// Preferred UI language tag for the user (e.g. "en", "de").
+    /// </summary>
+    /// <value>Language code or <c>null</c> if not set.</value>
     public string? PreferredLanguage { get; private set; }
+
+    /// <summary>
+    /// UTC timestamp of the user's last successful login.
+    /// </summary>
+    /// <value>Last login time in UTC.</value>
     public DateTime LastLoginUtc { get; private set; }
+
+    /// <summary>
+    /// Whether the user account is active. Deactivated users cannot authenticate.
+    /// </summary>
+    /// <value><c>true</c> when active; otherwise <c>false</c>.</value>
     public bool Active { get; private set; } = true;
 
     // --- Import Split Settings (User Preferences) ---
+
+    /// <summary>
+    /// Mode that controls how statement imports are split into drafts.
+    /// </summary>
+    /// <value>The import split mode.</value>
     public ImportSplitMode ImportSplitMode { get; private set; } = ImportSplitMode.MonthlyOrFixed;
+
+    /// <summary>
+    /// Maximum number of entries allowed per generated draft during splitting.
+    /// </summary>
+    /// <value>Maximum entries per draft.</value>
     public int ImportMaxEntriesPerDraft { get; private set; } = 250;
+
+    /// <summary>
+    /// Threshold used in MonthlyOrFixed mode that controls when monthly split is applied. Nullable to allow fallback behavior.
+    /// </summary>
+    /// <value>Threshold value or <c>null</c>.</value>
     public int? ImportMonthlySplitThreshold { get; private set; } = 250; // nullable to allow future unset -> fallback
+
+    /// <summary>
+    /// Minimum number of entries per draft when splitting imports.
+    /// </summary>
+    /// <value>Minimum entries per draft.</value>
     public int ImportMinEntriesPerDraft { get; private set; } = 1; // new minimum entries preference
 
-    // Admin flag persisted in DB
+    /// <summary>
+    /// Admin flag persisted in the database.
+    /// </summary>
+    /// <value><c>true</c> for administrators.</value>
     public bool IsAdmin { get; private set; }
 
-    // Optional user symbol
+    /// <summary>
+    /// Optional reference to a user symbol attachment.
+    /// </summary>
+    /// <value>Attachment GUID or <c>null</c>.</value>
     public Guid? SymbolAttachmentId { get; private set; }
 
     private void Touch() { /* marker for state change — intentionally no-op for now */ }
 
+    /// <summary>
+    /// Sets or clears the administrator flag for the user.
+    /// </summary>
+    /// <param name="isAdmin">True to mark as admin; false to revoke admin rights.</param>
     public void SetAdmin(bool isAdmin)
     {
         IsAdmin = isAdmin;
         Touch();
     }
 
+    /// <summary>
+    /// Sets import split settings for the user.
+    /// </summary>
+    /// <param name="mode">Split mode to apply.</param>
+    /// <param name="maxEntriesPerDraft">Maximum entries per draft. Must be >= 1.</param>
+    /// <param name="monthlySplitThreshold">Monthly split threshold; semantics depend on <paramref name="mode"/>.</param>
+    /// <param name="minEntriesPerDraft">Optional minimum entries per draft. When provided it must be >= 1 and <= <paramref name="maxEntriesPerDraft"/>.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when numeric parameters are outside allowed ranges, or when monthly threshold constraints are violated.</exception>
     public void SetImportSplitSettings(ImportSplitMode mode, int maxEntriesPerDraft, int? monthlySplitThreshold, int? minEntriesPerDraft = null)
     {
         if (maxEntriesPerDraft < 1)
@@ -131,17 +213,49 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
         Touch();
     }
 
+    /// <summary>
+    /// Records the last login time for the user.
+    /// </summary>
+    /// <param name="utcNow">UTC time of the login event.</param>
     public void MarkLogin(DateTime utcNow)
     {
         LastLoginUtc = utcNow;
     }
 
+    /// <summary>
+    /// Sets the preferred UI language for the user.
+    /// </summary>
+    /// <param name="lang">Language tag or null to clear the preference.</param>
     public void SetPreferredLanguage(string? lang) => PreferredLanguage = string.IsNullOrWhiteSpace(lang) ? null : lang.Trim();
+
+    /// <summary>
+    /// Deactivates the user account (prevents authentication).
+    /// </summary>
     public void Deactivate() => Active = false;
+
+    /// <summary>
+    /// Activates the user account.
+    /// </summary>
     public void Activate() => Active = true;
+
+    /// <summary>
+    /// Changes the user's username.
+    /// </summary>
+    /// <param name="newUsername">The new username. Must not be null or whitespace.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="newUsername"/> is null or whitespace (via guards).</exception>
     public void Rename(string newUsername) => base.UserName = Guards.NotNullOrWhiteSpace(newUsername, nameof(newUsername));
+
+    /// <summary>
+    /// Sets the user's password hash. Use Identity's password management APIs when possible.
+    /// </summary>
+    /// <param name="passwordHash">Precomputed password hash. Must not be null or whitespace.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="passwordHash"/> is null or whitespace (via guards).</exception>
     public void SetPasswordHash(string passwordHash) => base.PasswordHash = Guards.NotNullOrWhiteSpace(passwordHash, nameof(passwordHash));
 
+    /// <summary>
+    /// Sets or clears the user's symbol attachment. Passing <see cref="Guid.Empty"/> is treated as clearing the attachment.
+    /// </summary>
+    /// <param name="attachmentId">Attachment GUID to set, or <see cref="Guid.Empty"/>/<c>null</c> to clear.</param>
     public void SetSymbolAttachment(Guid? attachmentId)
     {
         SymbolAttachmentId = attachmentId == Guid.Empty ? null : attachmentId;

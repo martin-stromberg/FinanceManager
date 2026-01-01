@@ -3,8 +3,17 @@ using System.Text;
 
 namespace FinanceManager.Infrastructure.Statements.Reader
 {
+    /// <summary>
+    /// Statement file reader for ING statement exports using template-based parsing.
+    /// Provides templates used by the base <see cref="TemplateStatementFileReader"/> to detect account
+    /// information and table columns. The reader exposes a UTF-8 content reader suitable for PDF-to-text
+    /// conversions that produce UTF-8 encoded bytes.
+    /// </summary>
     public class ING_StatementFileReader : TemplateStatementFileReader, IStatementFileReader
     {
+        /// <summary>
+        /// Legacy templates kept for backwards compatibility with older statement layouts.
+        /// </summary>
         private string[] OldTemplates = new string[]
         {
             @"
@@ -20,6 +29,10 @@ namespace FinanceManager.Infrastructure.Statements.Reader
   </section>
 </template>",
         };
+        /// <summary>
+        /// Templates used by the parsing engine to recognize ING statement layout variations.
+        /// Each template contains sections and field mappings consumed by the base template parser.
+        /// </summary>
         private string[] _Templates = new string[]
         {
             @"
@@ -73,13 +86,26 @@ namespace FinanceManager.Infrastructure.Statements.Reader
 </template>"
         };
 
+        /// <summary>
+        /// Returns the templates that the base parser should use to detect the ING layout.
+        /// </summary>
         protected override string[] Templates => _Templates;
 
+        /// <summary>
+        /// Reads the provided file bytes and returns an enumerable of text lines.
+        /// This implementation normalizes common newline variants (CRLF, CR) to LF and splits on LF.
+        /// </summary>
+        /// <param name="fileBytes">The raw file bytes to convert to textual content.</param>
+        /// <returns>An enumerable of lines extracted from the input bytes.</returns>
+        /// <remarks>
+        /// The method assumes the incoming bytes are UTF-8 encoded. If the bytes use a different
+        /// encoding, callers should convert them to UTF-8 before invoking the parser or override this method.
+        /// </remarks>
         protected override IEnumerable<string> ReadContent(byte[] fileBytes)
         {
             return Encoding.UTF8.GetString(fileBytes)
-                .Replace("\r\n", "\n") // Windows zu Unix
-                .Replace("\r", "\n")   // Mac zu Unix
+                .Replace("\r\n", "\n") // Windows to Unix
+                .Replace("\r", "\n")   // Mac to Unix
                 .Split('\n')
                 .AsEnumerable();
         }

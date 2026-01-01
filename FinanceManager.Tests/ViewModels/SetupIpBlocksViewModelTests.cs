@@ -1,7 +1,6 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
 using FinanceManager.Shared.Dtos.Security;
-using FinanceManager.Web.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
@@ -17,14 +16,14 @@ public sealed class SetupIpBlocksViewModelTests
         public bool IsAdmin { get; set; } = true;
     }
 
-    private static (SetupIpBlocksViewModel vm, Mock<IApiClient> apiMock) CreateVm()
+    private static (SetupSecurityViewModel vm, Mock<IApiClient> apiMock) CreateVm()
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService());
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
         var sp = services.BuildServiceProvider();
-        var vm = new SetupIpBlocksViewModel(sp);
+        var vm = new SetupSecurityViewModel(sp);
         return (vm, apiMock);
     }
 
@@ -40,7 +39,7 @@ public sealed class SetupIpBlocksViewModelTests
         apiMock.Setup(a => a.Admin_ListIpBlocksAsync(null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(items);
 
-        await vm.InitializeAsync();
+        await vm.ReloadAsync();
 
         Assert.Single(vm.Items);
         Assert.Equal("1.2.3.4", vm.Items[0].IpAddress);

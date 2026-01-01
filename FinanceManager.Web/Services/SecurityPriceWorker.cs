@@ -6,17 +6,42 @@ using Microsoft.Extensions.Options;
 
 namespace FinanceManager.Web.Services;
 
+/// <summary>
+/// Background worker that periodically fetches security prices from an external provider
+/// (AlphaVantage) and persists them into the application's database.
+/// </summary>
+/// <remarks>
+/// The worker creates a new scope per run to resolve scoped services (DbContext, providers, notification writer).
+/// It respects configured quota options (<see cref="AlphaVantageQuotaOptions"/>) and handles rate limits and provider errors.
+/// </remarks>
 public sealed class SecurityPriceWorker : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<SecurityPriceWorker> _logger;
     private readonly IOptions<AlphaVantageQuotaOptions> _quota;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="SecurityPriceWorker"/>.
+    /// </summary>
+    /// <param name="scopeFactory">Factory used to create a new scope for each run (resolves scoped services).</param>
+    /// <param name="logger">Logger used for diagnostic messages.</param>
+    /// <param name="quota">Configuration options controlling run quotas (max symbols per run, requests per minute).</param>
     public SecurityPriceWorker(IServiceScopeFactory scopeFactory, ILogger<SecurityPriceWorker> logger, IOptions<AlphaVantageQuotaOptions> quota)
     {
-        _scopeFactory = scopeFactory; _logger = logger; _quota = quota;
+        _scopeFactory = scopeFactory;
+        _logger = logger;
+        _quota = quota;
     }
 
+    /// <summary>
+    /// Main execution loop for the background service. Runs until <paramref name="stoppingToken"/> is signaled.
+    /// </summary>
+    /// <param name="stoppingToken">Token used to indicate service shutdown.</param>
+    /// <returns>A task that completes when the background service stops.</returns>
+    /// <remarks>
+    /// Exceptions during a single run are logged. When a <see cref="RequestLimitExceededException"/> occurs it is
+    /// logged as a warning; other exceptions are logged as errors. After each run the worker pauses for one hour.
+    /// </remarks>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -33,10 +58,32 @@ public sealed class SecurityPriceWorker : BackgroundService
             {
                 _logger.LogError(ex, "SecurityPriceWorker run failed");
             }
-            await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+
+            try
+            {
+                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+            }
+            catch (TaskCanceledException)
+            {
+                // shutting down
+            }
         }
     }
 
+    /// <summary>
+    /// Executes a single run: selects eligible securities, queries prices from the provider,
+    /// writes new price entries and handles provider errors (including marking securities as errored
+    /// and emitting notifications to users).
+    /// </summary>
+    /// <param name="ct">Cancellation token to cancel the run and all IO operations.</param>
+    /// <returns>A task that completes when the run has finished.</returns>
+    /// <remarks>
+    /// - Symbols without an AlphaVantage code or that are inactive are skipped.
+    /// - Weekend dates are ignored when persisting prices.
+    /// - The method respects quota settings from <see cref="AlphaVantageQuotaOptions"/>.
+    /// - Fatal provider errors (here surfaced as <see cref="InvalidOperationException"/>) mark the security as errored
+    ///   and create a system notification for the owner.
+    /// </remarks>
     private async Task RunOnceAsync(CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
@@ -45,7 +92,7 @@ public sealed class SecurityPriceWorker : BackgroundService
         var notifier = scope.ServiceProvider.GetRequiredService<INotificationWriter>(); // NEW
         var resolver = scope.ServiceProvider.GetRequiredService<IAlphaVantageKeyResolver>();
 
-        // Vorab-Check: freigegebener Admin-Key vorhanden?
+        // Check for shared admin key configured
         var sharedKey = await resolver.GetSharedAsync(ct);
         if (string.IsNullOrWhiteSpace(sharedKey))
         {
@@ -62,7 +109,7 @@ public sealed class SecurityPriceWorker : BackgroundService
 
         var maxSymbols = Math.Max(1, _quota.Value.MaxSymbolsPerRun);
         var batch = await db.Securities.AsNoTracking()
-            .Where(s => s.IsActive && s.AlphaVantageCode != null && !s.HasPriceError) // NEW: gesperrte überspringen
+            .Where(s => s.IsActive && s.AlphaVantageCode != null && !s.HasPriceError)
             .Select(s => new
             {
                 Sec = s,
@@ -123,11 +170,11 @@ public sealed class SecurityPriceWorker : BackgroundService
             catch (RequestLimitExceededException ex)
             {
                 _logger.LogWarning(ex, "AlphaVantage rate limit reached while processing {Code}. Stopping this run.", sec.AlphaVantageCode);
-                break; // Tageslimit erreicht -> Lauf beenden
+                break; // stop run on rate limit
             }
             catch (InvalidOperationException ex)
             {
-                // Fachfehler (z. B. ungültiges Symbol von AlphaVantage): Wertpapier sperren und Benutzer benachrichtigen
+                // Domain error (e.g. invalid symbol): mark security as errored and notify user
                 _logger.LogWarning(ex, "Blocking further price fetches for security {SecurityId} ({Code}) due to error.", sec.Id, sec.AlphaVantageCode);
 
                 var entity = await db.Securities.FirstOrDefaultAsync(s => s.Id == sec.Id, ct);
@@ -144,7 +191,7 @@ public sealed class SecurityPriceWorker : BackgroundService
             }
             catch (Exception ex)
             {
-                // Unerwarteter Fehler: loggen, aber nicht sperren (kann transient sein; Retries sind im Provider)
+                // Unexpected error: log but don't mark security as errored (may be transient)
                 _logger.LogError(ex, "Failed to update prices for security {SecurityId} ({Code})", sec.Id, sec.AlphaVantageCode);
             }
 

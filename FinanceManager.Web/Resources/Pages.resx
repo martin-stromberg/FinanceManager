@@ -1,0 +1,1359 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Card_Caption_Account_Balance" xml:space="preserve">
+    <value>Balance</value>
+  </data>
+  <data name="Card_Caption_Account_Contact" xml:space="preserve">
+    <value>Bank contact</value>
+  </data>
+  <data name="Card_Caption_Account_Iban" xml:space="preserve">
+    <value>IBAN</value>
+  </data>
+  <data name="Card_Caption_Account_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Card_Caption_Account_SavingsPlanExpectation" xml:space="preserve">
+    <value>Savings plan expectation</value>
+  </data>
+  <data name="Card_Caption_Account_Symbol" xml:space="preserve">
+    <value>Symbol</value>
+  </data>
+  <data name="Card_Caption_Account_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="EnumType_AccountType_Giro" xml:space="preserve">
+    <value>Giro account</value>
+  </data>
+  <data name="EnumType_AccountType_Savings" xml:space="preserve">
+    <value>Savings account</value>
+  </data>
+  <data name="Err_Invalid_bankContactId" xml:space="preserve">
+    <value>The specified bank contact is invalid.</value>
+  </data>
+  <data name="General_Loading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="General_Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="General_No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="General_PageTitle" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="General_Title_Account" xml:space="preserve">
+    <value>Accounts</value>
+  </data>
+  <data name="General_Title_Contact" xml:space="preserve">
+    <value>Contacts</value>
+  </data>
+  <data name="List_Result_EndOfList" xml:space="preserve">
+    <value>End of list</value>
+  </data>
+  <data name="List_Result_NoItems" xml:space="preserve">
+    <value>No items</value>
+  </data>
+  <data name="List_SearchFrom" xml:space="preserve">
+    <value>From</value>
+  </data>
+  <data name="List_SearchPlaceholder" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="List_SearchTo" xml:space="preserve">
+    <value>To</value>
+  </data>
+  <data name="List_Th_Account_Balance" xml:space="preserve">
+    <value>Balance</value>
+  </data>
+  <data name="List_Th_Account_Iban" xml:space="preserve">
+    <value>IBAN</value>
+  </data>
+  <data name="List_Th_Account_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="List_Th_Account_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="List_Th_Postings_Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="List_Th_Postings_Valuta" xml:space="preserve">
+    <value>Valuta</value>
+  </data>
+  <data name="List_Th_Postings_Amount" xml:space="preserve">
+    <value>Amount</value>
+  </data>
+  <data name="List_Th_Postings_Kind" xml:space="preserve">
+    <value>Kind</value>
+  </data>
+  <data name="List_Th_Postings_Recipient" xml:space="preserve">
+    <value>Recipient</value>
+  </data>
+  <data name="List_Th_Postings_Subject" xml:space="preserve">
+    <value>Subject</value>
+  </data>
+  <data name="List_Th_Postings_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Ribbon_Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="Ribbon_Prev" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="Ribbon_Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Ribbon_Group_Linked" xml:space="preserve">
+    <value>Linked data</value>
+  </data>
+  <data name="Ribbon_Group_Manage" xml:space="preserve">
+    <value>Manage</value>
+  </data>
+  <data name="Ribbon_Group_Navigation" xml:space="preserve">
+    <value>Navigation</value>
+  </data>
+  <data name="Ribbon_OpenPostings" xml:space="preserve">
+    <value>Postings</value>
+  </data>
+  <data name="Ribbon_Reset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="Ribbon_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="EnumType_SavingsPlanExpectation_None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="EnumType_SavingsPlanExpectation_Optional" xml:space="preserve">
+    <value>Optional</value>
+  </data>
+  <data name="EnumType_SavingsPlanExpectation_Required" xml:space="preserve">
+    <value>Required</value>
+  </data>
+  <data name="CardPage_PageTitle" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="Err_Invalid_name" xml:space="preserve">
+    <value>The specified name is invalid.</value>
+  </data>
+  <data name="Ribbon_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Ribbon_New" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="Ribbon_ClearSearch" xml:space="preserve">
+    <value>Clear search</value>
+  </data>
+  <data name="Confirm_Delete_Account" xml:space="preserve">
+    <value>Do you really want the bank account to be deleted?</value>
+  </data>
+  <data name="Confirm_Delete_Item" xml:space="preserve">
+    <value>Do you really want to delete this item?</value>
+  </data>
+  <data name="Confirm_Delete_SecurityCategory" xml:space="preserve">
+    <value>Do you really want the security category to be deleted?</value>
+  </data>
+  <data name="Confirm_Delete_ContactCategory" xml:space="preserve">
+    <value>Do you really want the contact category to be deleted?</value>
+  </data>
+  <data name="Err_OperationNotSupported" xml:space="preserve">
+    <value>The operation is not supported.</value>
+  </data>
+  <data name="Chart_Title_Account_Aggregates" xml:space="preserve">
+    <value>Results</value>
+  </data>
+  <data name="Card_Caption_Posting_Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Card_Caption_Posting_Valuta" xml:space="preserve">
+    <value>Valuta</value>
+  </data>
+  <data name="Card_Caption_Posting_Amount" xml:space="preserve">
+    <value>Amount</value>
+  </data>
+  <data name="Card_Caption_Posting_Kind" xml:space="preserve">
+    <value>Kind</value>
+  </data>
+  <data name="Card_Caption_Posting_Recipient" xml:space="preserve">
+    <value>Recipient</value>
+  </data>
+  <data name="Card_Caption_Posting_Subject" xml:space="preserve">
+    <value>Subject</value>
+  </data>
+  <data name="Card_Caption_Posting_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Ribbon_Group_Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Ribbon_ExportCsv" xml:space="preserve">
+    <value>Export CSV</value>
+  </data>
+  <data name="Ribbon_ExportExcel" xml:space="preserve">
+    <value>Export Excel</value>
+  </data>
+  <data name="Ribbon_Reload" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="List_Th_Contact_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="List_Th_Contact_Group" xml:space="preserve">
+    <value>Group</value>
+  </data>
+  <data name="List_Th_Contact_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Card_Caption_Contact_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Card_Caption_Contact_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Card_Caption_Contact_Category" xml:space="preserve">
+    <value>Group</value>
+  </data>
+  <data name="Card_Caption_Contact_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Card_Caption_Contact_Symbol" xml:space="preserve">
+    <value>Symbol</value>
+  </data>
+  <data name="Card_Caption_Contact_IsPaymentIntermediary" xml:space="preserve">
+    <value>Payment intermediary</value>
+  </data>
+  <data name="EnumType_ContactType_Self" xml:space="preserve">
+    <value>User</value>
+  </data>
+  <data name="EnumType_ContactType_Bank" xml:space="preserve">
+    <value>Bank</value>
+  </data>
+  <data name="EnumType_ContactType_Person" xml:space="preserve">
+    <value>Person</value>
+  </data>
+  <data name="EnumType_ContactType_Organization" xml:space="preserve">
+    <value>Company</value>
+  </data>
+  <data name="EnumType_ContactType_Other" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="EnumType_BooleanSelection_False" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="EnumType_BooleanSelection_True" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Ribbon_Attachments" xml:space="preserve">
+    <value>Attachments</value>
+  </data>
+  <data name="Ribbon_Postings" xml:space="preserve">
+    <value>Postings</value>
+  </data>
+  <data name="Ribbon_Archive" xml:space="preserve">
+    <value>Archive</value>
+  </data>
+  <data name="Ribbon_Recalculate" xml:space="preserve">
+    <value>Recalculate</value>
+  </data>
+  <data name="Ribbon_Merge" xml:space="preserve">
+    <value>Merge</value>
+  </data>
+  <data name="Ribbon_OpenBankContact" xml:space="preserve">
+    <value>Bank contact</value>
+  </data>
+  <data name="Ribbon_AccountDetails" xml:space="preserve">
+    <value>Bank account</value>
+  </data>
+  <data name="Ribbon_ViewOriginal" xml:space="preserve">
+    <value>View original</value>
+  </data>
+  <data name="Ribbon_Download" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="Ribbon_Group_Statement" xml:space="preserve">
+    <value>Statement</value>
+  </data>
+  <data name="Merge_Title" xml:space="preserve">
+    <value>Merge contact</value>
+  </data>
+  <data name="Merge_FilterPlaceholder" xml:space="preserve">
+    <value>Filter contacts by name…</value>
+  </data>
+  <data name="Merge_Confirm" xml:space="preserve">
+    <value>Merge</value>
+  </data>
+  <data name="Merge_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Merge_Hint" xml:space="preserve">
+    <value>Select a target contact to merge the current contact into. Postings, attachments and related data will be reassigned to the target contact.</value>
+  </data>
+  <data name="Merge_Preference_Label" xml:space="preserve">
+    <value>On conflict, prefer:</value>
+  </data>
+  <data name="Merge_Preference_DestinationFirst" xml:space="preserve">
+    <value>Destination first (keep target values)</value>
+  </data>
+  <data name="Merge_Preference_SourceFirst" xml:space="preserve">
+    <value>Source first (use source values)</value>
+  </data>
+  <data name="Card_Caption_ContactCategory_Name" xml:space="preserve">
+    <value>Group name</value>
+  </data>
+  <data name="Card_Caption_ContactCategory_Symbol" xml:space="preserve">
+    <value>Symbol</value>
+  </data>
+  <data name="Ribbon_Groups" xml:space="preserve">
+    <value>Groups</value>
+  </data>
+  <data name="General_Title_Contact_Categories" xml:space="preserve">
+    <value>Contact groups</value>
+  </data>
+  <data name="List_Th_SavingsPlan_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="List_Th_TargetAmount" xml:space="preserve">
+    <value>Target</value>
+  </data>
+  <data name="List_Th_Balance" xml:space="preserve">
+    <value>Balance</value>
+  </data>
+  <data name="List_Th_Remaining" xml:space="preserve">
+    <value>Remaining</value>
+  </data>
+  <data name="List_Th_TargetDate" xml:space="preserve">
+    <value>Target date</value>
+  </data>
+  <data name="List_Th_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="StatusActive" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="StatusDone" xml:space="preserve">
+    <value>Reached</value>
+  </data>
+  <data name="StatusUnreachable" xml:space="preserve">
+    <value>Unreachable</value>
+  </data>
+  <data name="StatusOverdue" xml:space="preserve">
+    <value>Overdue</value>
+  </data>
+  <data name="StatusReachable" xml:space="preserve">
+    <value>Reachable</value>
+  </data>
+  <data name="OnlyActive" xml:space="preserve">
+    <value>Only active</value>
+  </data>
+  <data name="StatusArchived" xml:space="preserve">
+    <value>Archived</value>
+  </data>
+  <data name="Ribbon_Categories" xml:space="preserve">
+    <value>Categories</value>
+  </data>
+  <data name="Ribbon_Group_Filter" xml:space="preserve">
+    <value>Filter</value>
+  </data>
+  <data name="Ribbon_Group_Analysis" xml:space="preserve">
+    <value>Analysis</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_TargetAmount" xml:space="preserve">
+    <value>Target amount</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_TargetDate" xml:space="preserve">
+    <value>Target date</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_Interval" xml:space="preserve">
+    <value>Interval</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_Category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_ContractNumber" xml:space="preserve">
+    <value>Contract number</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_Symbol" xml:space="preserve">
+    <value>Symbol</value>
+  </data>
+  <data name="EnumType_SavingsPlanType_OneTime" xml:space="preserve">
+    <value>One-time</value>
+  </data>
+  <data name="EnumType_SavingsPlanType_Recurring" xml:space="preserve">
+    <value>Recurring</value>
+  </data>
+  <data name="EnumType_SavingsPlanType_Open" xml:space="preserve">
+    <value>Open-ended</value>
+  </data>
+  <data name="EnumType_SavingsPlanInterval_Monthly" xml:space="preserve">
+    <value>Monthly</value>
+  </data>
+  <data name="EnumType_SavingsPlanInterval_BiMonthly" xml:space="preserve">
+    <value>Every two months</value>
+  </data>
+  <data name="EnumType_SavingsPlanInterval_Quarterly" xml:space="preserve">
+    <value>Quarterly</value>
+  </data>
+  <data name="EnumType_SavingsPlanInterval_SemiAnnually" xml:space="preserve">
+    <value>Semi-annually</value>
+  </data>
+  <data name="EnumType_SavingsPlanInterval_Annually" xml:space="preserve">
+    <value>Annually</value>
+  </data>
+  <data name="Err_Invalid_SavingsPlan_IsActive" xml:space="preserve">
+    <value>The savings plan must be archived before it can be deleted.</value>
+  </data>
+  <data name="Err_Invalid_SavingsPlan_StatementEntries" xml:space="preserve">
+    <value>The savings plan is referenced by committed statement entries and cannot be deleted.</value>
+  </data>
+  <data name="Err_Invalid_SavingsPlan_DraftEntries" xml:space="preserve">
+    <value>The savings plan is referenced by draft entries and cannot be deleted.</value>
+  </data>
+  <data name="Err_Invalid_SavingsPlan_Postings" xml:space="preserve">
+    <value>The savings plan is referenced by postings and cannot be deleted.</value>
+  </data>
+  <data name="Err_Invalid_SavingsPlan_ArchiveState" xml:space="preserve">
+    <value>The savings plan has already been archived.</value>
+  </data>
+  <data name="Ribbon_Category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="Card_Caption_SavingsPlanCategory_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Card_Caption_SavingsPlanCategory_Symbol" xml:space="preserve">
+    <value>Symbol</value>
+  </data>
+  <data name="Chart_Title_SavingsPlan_Aggregates" xml:space="preserve">
+    <value>Aggregates</value>
+  </data>
+  <data name="General_Title_SavingsPlans" xml:space="preserve">
+    <value>Savings plans</value>
+  </data>
+  <data name="General_Title_Postings" xml:space="preserve">
+    <value>Postings</value>
+  </data>
+  <data name="General_Title_SavingsPlan_Categories" xml:space="preserve">
+    <value>Savings plan categories</value>
+  </data>
+  <data name="Card_Caption_Security_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Card_Caption_Security_Identifier" xml:space="preserve">
+    <value>Identifier</value>
+  </data>
+  <data name="Card_Caption_Security_AlphaVantage" xml:space="preserve">
+    <value>AlphaVantage</value>
+  </data>
+  <data name="Card_Caption_Security_Currency" xml:space="preserve">
+    <value>Currency</value>
+  </data>
+  <data name="Card_Caption_Security_Category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="Card_Caption_Security_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Card_Caption_Security_Symbol" xml:space="preserve">
+    <value>Symbol</value>
+  </data>
+  <data name="Chart_Title_Security" xml:space="preserve">
+    <value>Aggregates</value>
+  </data>
+  <data name="General_Title_Securities" xml:space="preserve">
+    <value>Securities</value>
+  </data>
+  <data name="List_Th_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="List_Th_Identifier" xml:space="preserve">
+    <value>Identifier</value>
+  </data>
+  <data name="List_Th_AlphaVantage" xml:space="preserve">
+    <value>AlphaVantage</value>
+  </data>
+  <data name="List_Th_Category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="Ribbon_Prices" xml:space="preserve">
+    <value>Prices</value>
+  </data>
+  <data name="Ribbon_ToggleActive" xml:space="preserve">
+    <value>Only active</value>
+  </data>
+  <data name="Ribbon_Group_Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Dlg_Backfill_Title" xml:space="preserve">
+    <value>Backfill prices</value>
+  </data>
+  <data name="Dlg_From" xml:space="preserve">
+    <value>From</value>
+  </data>
+  <data name="Dlg_To" xml:space="preserve">
+    <value>To</value>
+  </data>
+  <data name="Dlg_Starting" xml:space="preserve">
+    <value>Starting…</value>
+  </data>
+  <data name="Dlg_Start" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="Dlg_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Dlg_InvalidDates" xml:space="preserve">
+    <value>Invalid dates</value>
+  </data>
+  <data name="Dlg_FromAfterTo" xml:space="preserve">
+    <value>The start date must be before or equal to the end date</value>
+  </data>
+  <data name="Dlg_ToInFuture" xml:space="preserve">
+    <value>The end date must not be in the future</value>
+  </data>
+  <data name="Dlg_EnqueueFailed" xml:space="preserve">
+    <value>Failed to enqueue backfill job</value>
+  </data>
+  <data name="List_Th_Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="List_Th_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="SecurityPricesBackfill_Title" xml:space="preserve">
+    <value>Load historical prices</value>
+  </data>
+  <data name="Ribbon_Backfill" xml:space="preserve">
+    <value>Load historical prices</value>
+  </data>
+  <data name="Card_Caption_SecurityCategory_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Card_Caption_SecurityCategory_Symbol" xml:space="preserve">
+    <value>Symbol</value>
+  </data>
+  <data name="General_Title_Securities_Categories" xml:space="preserve">
+    <value>Security categories</value>
+  </data>
+  <data name="NoEntries" xml:space="preserve">
+    <value>No entries</value>
+  </data>
+  <data name="PageTitle" xml:space="preserve">
+    <value>Security prices</value>
+  </data>
+  <data name="List_Th_StatementDrafts_File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="List_Th_StatementDrafts_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="List_Th_StatementDrafts_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="List_Th_StatementDrafts_Entries" xml:space="preserve">
+    <value>Entries</value>
+  </data>
+  <data name="Ribbon_DeleteAll" xml:space="preserve">
+    <value>Delete all</value>
+  </data>
+  <data name="Ribbon_Reclassify" xml:space="preserve">
+    <value>Reclassify</value>
+  </data>
+  <data name="Ribbon_MassBooking" xml:space="preserve">
+    <value>Mass booking</value>
+  </data>
+  <data name="Ribbon_Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Err_TooManyFiles" xml:space="preserve">
+    <value>Please select no more than {0} files.</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Entries" xml:space="preserve">
+    <value>Entries</value>
+  </data>
+  <data name="List_Th_Amount" xml:space="preserve">
+    <value>Amount</value>
+  </data>
+  <data name="List_Th_Recipient" xml:space="preserve">
+    <value>Recipient</value>
+  </data>
+  <data name="List_Th_Subject" xml:space="preserve">
+    <value>Subject</value>
+  </data>
+  <data name="List_Th_SavingsPlan" xml:space="preserve">
+    <value>Savings plan</value>
+  </data>
+  <data name="List_Th_Security" xml:space="preserve">
+    <value>Security</value>
+  </data>
+  <data name="Ribbon_Book" xml:space="preserve">
+    <value>Book</value>
+  </data>
+  <data name="Ribbon_Validate" xml:space="preserve">
+    <value>Validate</value>
+  </data>
+  <data name="Confirm_Delete_StatementDraft" xml:space="preserve">
+    <value>Do you really want to delete the statement draft?</value>
+  </data>
+  <data name="Validation_Header" xml:space="preserve">
+    <value>Validation result</value>
+  </data>
+  <data name="Validation_Invalid" xml:space="preserve">
+    <value>General messages</value>
+  </data>
+  <data name="MassBooking_Title" xml:space="preserve">
+    <value>Mass booking — options</value>
+  </data>
+  <data name="MassBooking_IgnoreWarnings" xml:space="preserve">
+    <value>Ignore warnings</value>
+  </data>
+  <data name="MassBooking_AbortOnFirstIssue" xml:space="preserve">
+    <value>Abort on first warning/error</value>
+  </data>
+  <data name="MassBooking_BookEntriesIndividually" xml:space="preserve">
+    <value>Book entries individually</value>
+  </data>
+  <data name="Btn_Start" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="Btn_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Date" xml:space="preserve">
+    <value>Booking date</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Valuta" xml:space="preserve">
+    <value>Valuta</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Amount" xml:space="preserve">
+    <value>Amount</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_BookingDescription" xml:space="preserve">
+    <value>booking description</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Recipient" xml:space="preserve">
+    <value>Recipient</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Subject" xml:space="preserve">
+    <value>Subject</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Announced" xml:space="preserve">
+    <value>Announced</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Contact" xml:space="preserve">
+    <value>Contact</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_CostNeutral" xml:space="preserve">
+    <value>Cost neutral</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_SavingsPlan" xml:space="preserve">
+    <value>Savings plan</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Security" xml:space="preserve">
+    <value>Security</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_TransactionType" xml:space="preserve">
+    <value>Transaction type</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Quantity" xml:space="preserve">
+    <value>Quantity</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Fee" xml:space="preserve">
+    <value>Fee</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Tax" xml:space="preserve">
+    <value>Tax</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Currency" xml:space="preserve">
+    <value>Currency</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_ArchiveOnBooking" xml:space="preserve">
+    <value>Archive on booking</value>
+  </data>
+  <data name="EnumType_SecurityTransactionType_Buy" xml:space="preserve">
+    <value>Buy</value>
+  </data>
+  <data name="EnumType_SecurityTransactionType_Sell" xml:space="preserve">
+    <value>Sell</value>
+  </data>
+  <data name="EnumType_SecurityTransactionType_Dividend" xml:space="preserve">
+    <value>Dividend/Interest</value>
+  </data>
+  <data name="Ribbon_Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="#" xml:space="preserve">
+    <value>Read only</value>
+  </data>
+  <data name="Ribbon_ResetDuplicate" xml:space="preserve">
+    <value>Reset duplicate status</value>
+  </data>
+  <data name="Ribbon_Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Ribbon_OpenContact" xml:space="preserve">
+    <value>Contact</value>
+  </data>
+  <data name="Ribbon_OpenSavingsPlan" xml:space="preserve">
+    <value>Savings plan</value>
+  </data>
+  <data name="Ribbon_OpenSecurity" xml:space="preserve">
+    <value>Security</value>
+  </data>
+  <data name="Title" xml:space="preserve">
+    <value>Prices</value>
+  </data>
+  <data name="General_Title_StatementDrafts" xml:space="preserve">
+    <value>Statement drafts</value>
+  </data>
+  <data name="Import_Success" xml:space="preserve">
+    <value>Import completed</value>
+  </data>
+  <data name="Import_ShowDetails" xml:space="preserve">
+    <value>Show details</value>
+  </data>
+  <data name="Import_Result_Count" xml:space="preserve">
+    <value>{0} statement drafts created.</value>
+  </data>
+  <data name="EnumType_StatementDraftEntryStatus_Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="EnumType_StatementDraftEntryStatus_Announced" xml:space="preserve">
+    <value>Announced</value>
+  </data>
+  <data name="EnumType_StatementDraftEntryStatus_Accounted" xml:space="preserve">
+    <value>Accounted</value>
+  </data>
+  <data name="EnumType_StatementDraftEntryStatus_AlreadyBooked" xml:space="preserve">
+    <value>Already booked</value>
+  </data>
+  <data name="Brand" xml:space="preserve">
+    <value>Finance Manager</value>
+  </data>
+  <data name="Nav_Home" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="Nav_Accounts" xml:space="preserve">
+    <value>Accounts</value>
+  </data>
+  <data name="Nav_StatementDrafts" xml:space="preserve">
+    <value>Statement drafts</value>
+  </data>
+  <data name="Nav_Contacts" xml:space="preserve">
+    <value>Contacts</value>
+  </data>
+  <data name="Nav_Plans" xml:space="preserve">
+    <value>Plans</value>
+  </data>
+  <data name="Nav_Securities" xml:space="preserve">
+    <value>Securities</value>
+  </data>
+  <data name="Nav_Reports" xml:space="preserve">
+    <value>Reports</value>
+  </data>
+  <data name="Nav_Setup" xml:space="preserve">
+    <value>Setup</value>
+  </data>
+  <data name="Nav_Users" xml:space="preserve">
+    <value>Users</value>
+  </data>
+  <data name="Nav_Legal" xml:space="preserve">
+    <value>Legal</value>
+  </data>
+  <data name="Error_Unhandled" xml:space="preserve">
+    <value>An unexpected error has occurred.</value>
+  </data>
+  <data name="Error_Reload" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="Validation_Valid" xml:space="preserve">
+    <value> </value>
+  </data>
+  <data name="Ribbon_RebuildAggregates" xml:space="preserve">
+    <value>Rebuild aggregates</value>
+  </data>
+  <data name="Ribbon_Detect_Timezone" xml:space="preserve">
+    <value>Detect time zone</value>
+  </data>
+  <data name="Setup_Section_Profile" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="Setup_Section_Notifications" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="Setup_Section_Attachments" xml:space="preserve">
+    <value>Attachments</value>
+  </data>
+  <data name="Setup_Section_Backup" xml:space="preserve">
+    <value>Backup</value>
+  </data>
+  <data name="Setup_Section_Security" xml:space="preserve">
+    <value>Security</value>
+  </data>
+  <data name="SetupProfile_Title" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="SetupProfile_Msg_Loading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="SetupProfile_Label_Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="SetupProfile_Language_Auto" xml:space="preserve">
+    <value>Automatic</value>
+  </data>
+  <data name="SetupProfile_Label_TimeZone" xml:space="preserve">
+    <value>Time zone</value>
+  </data>
+  <data name="SetupProfile_Help_TimeZone" xml:space="preserve">
+    <value>Time zone (e.g. Europe/Berlin)</value>
+  </data>
+  <data name="SetupProfile_Label_AlphaVantageKey" xml:space="preserve">
+    <value>AlphaVantage API key</value>
+  </data>
+  <data name="SetupProfile_Placeholder_AlphaVantageKey" xml:space="preserve">
+    <value>Enter AlphaVantage API key</value>
+  </data>
+  <data name="SetupProfile_Msg_KeyPresent" xml:space="preserve">
+    <value>Key present</value>
+  </data>
+  <data name="SetupProfile_Msg_KeyMissing" xml:space="preserve">
+    <value>No key present</value>
+  </data>
+  <data name="SetupProfile_Label_ShareKey" xml:space="preserve">
+    <value>Share key</value>
+  </data>
+  <data name="SetupProfile_Help_ShareKey" xml:space="preserve">
+    <value>Share this key with other users.</value>
+  </data>
+  <data name="Setup_Section_Statements" xml:space="preserve">
+    <value>Statements</value>
+  </data>
+  <data name="ImportSplit_TabTitle" xml:space="preserve">
+    <value>Import split</value>
+  </data>
+  <data name="ImportSplit_Mode_Label" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="ImportSplit_Mode_FixedSize" xml:space="preserve">
+    <value>Fixed size</value>
+  </data>
+  <data name="ImportSplit_Mode_Monthly" xml:space="preserve">
+    <value>Monthly</value>
+  </data>
+  <data name="ImportSplit_Mode_MonthlyOrFixed" xml:space="preserve">
+    <value>Monthly or fixed size</value>
+  </data>
+  <data name="ImportSplit_MaxEntries" xml:space="preserve">
+    <value>Max entries</value>
+  </data>
+  <data name="ImportSplit_MonthlyThreshold" xml:space="preserve">
+    <value>Monthly threshold</value>
+  </data>
+  <data name="ImportSplit_MinEntries" xml:space="preserve">
+    <value>Min entries</value>
+  </data>
+  <data name="ImportSplit_Help_Title" xml:space="preserve">
+    <value>Import split help</value>
+  </data>
+  <data name="ImportSplit_Help_Mode_FixedSize" xml:space="preserve">
+    <value>Creates drafts with a fixed number of entries.</value>
+  </data>
+  <data name="ImportSplit_Help_Mode_Monthly" xml:space="preserve">
+    <value>Split by month when possible.</value>
+  </data>
+  <data name="ImportSplit_Help_Mode_Hybrid" xml:space="preserve">
+    <value>Combine monthly split and fixed sizes based on threshold.</value>
+  </data>
+  <data name="ImportSplit_Help_MaxEntries" xml:space="preserve">
+    <value>Maximum entries per draft.</value>
+  </data>
+  <data name="ImportSplit_Help_MonthlyThreshold" xml:space="preserve">
+    <value>If entries ≥ threshold, monthly split is preferred.</value>
+  </data>
+  <data name="ImportSplit_Help_MinEntries" xml:space="preserve">
+    <value>Minimum entries per draft.</value>
+  </data>
+  <data name="ImportSplit_Help_Example" xml:space="preserve">
+    <value>Example: 100 entries with max 30 → 4 drafts.</value>
+  </data>
+  <data name="ImportSplit_SaveSuccess" xml:space="preserve">
+    <value>Settings saved</value>
+  </data>
+  <data name="Notifications_TabTitle" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="Notifications_MonthlyReminder" xml:space="preserve">
+    <value>Enable month-end reminder</value>
+  </data>
+  <data name="Notifications_MonthlyReminder_Help" xml:space="preserve">
+    <value>Show a reminder on the last business day of the month on the home page.</value>
+  </data>
+  <data name="Notifications_MonthlyReminder_Time" xml:space="preserve">
+    <value>Time (local)</value>
+  </data>
+  <data name="Notifications_MonthlyReminder_Time_Help" xml:space="preserve">
+    <value>Preferred time to receive the reminder (HH:mm). Default 09:00.</value>
+  </data>
+  <data name="Notifications_Holidays_Provider" xml:space="preserve">
+    <value>Holiday source</value>
+  </data>
+  <data name="Notifications_Holidays_Provider_Help" xml:space="preserve">
+    <value>Source for public holidays: Memory (simple, country only) or Nager.Date (country + region/counties).</value>
+  </data>
+  <data name="Notifications_Holidays_Region" xml:space="preserve">
+    <value>Holiday region</value>
+  </data>
+  <data name="Notifications_Holidays_Region_Help" xml:space="preserve">
+    <value>Country (e.g., DE) and optional subdivision (e.g., DE-BY) to consider public holidays.</value>
+  </data>
+  <data name="Notifications_SaveSuccess" xml:space="preserve">
+    <value>Settings saved.</value>
+  </data>
+  <data name="AttachmentCategories_TabTitle" xml:space="preserve">
+    <value>Attachment categories</value>
+  </data>
+  <data name="AttachmentCategories_Label_NewName" xml:space="preserve">
+    <value>New category name</value>
+  </data>
+  <data name="AttachmentCategories_ActionSuccess" xml:space="preserve">
+    <value>Action completed</value>
+  </data>
+  <data name="AttachmentCategories_Th_IsSystem" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="AttachmentCategories_NoEntries" xml:space="preserve">
+    <value>No categories</value>
+  </data>
+  <data name="AttachmentCategories_Th_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="AttachmentCategories_Th_Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Err_Category_is_in_use" xml:space="preserve">
+    <value>The Category is in use.</value>
+  </data>
+  <data name="Err_System_category_cannot_be_deleted" xml:space="preserve">
+    <value>A system category cannot be deleted.</value>
+  </data>
+  <data name="Ribbon_Restore" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="SetupBackup_Th_Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="SetupBackup_Th_Source" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="SetupBackup_Th_Size" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="SetupBackup_Th_File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="SetupBackup_Th_Created" xml:space="preserve">
+    <value>Created at</value>
+  </data>
+  <data name="SetupBackup_Titel" xml:space="preserve">
+    <value>Backups</value>
+  </data>
+  <data name="Ribbon_CreateBackup" xml:space="preserve">
+    <value>Create backup</value>
+  </data>
+  <data name="Ribbon_UploadBackup" xml:space="preserve">
+    <value>Upload backup</value>
+  </data>
+  <data name="Hint_UploadBackup" xml:space="preserve">
+    <value>Imports a backup from a backup file.</value>
+  </data>
+  <data name="Hint_CreateBackup" xml:space="preserve">
+    <value>Create a backup file for all of data.</value>
+  </data>
+  <data name="SetupSecurity_Title" xml:space="preserve">
+    <value>IP Block List</value>
+  </data>
+  <data name="SetupSecurity_Ip_Placeholder" xml:space="preserve">
+    <value>IP address</value>
+  </data>
+  <data name="SetupSecurity_Reason_Placeholder" xml:space="preserve">
+    <value>Reason (optional)</value>
+  </data>
+  <data name="SetupSecurity_BlockOnCreate" xml:space="preserve">
+    <value>Block immediately</value>
+  </data>
+  <data name="SetupSecurit_Action_Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="SetupSecurity_Th_IpAddress" xml:space="preserve">
+    <value>IP address</value>
+  </data>
+  <data name="SetupSecurity_Th_Blocked" xml:space="preserve">
+    <value>Blocked</value>
+  </data>
+  <data name="SetupSecurity_Th_BlockedAt" xml:space="preserve">
+    <value>Blocked at</value>
+  </data>
+  <data name="SetupSecurity_Th_Reason" xml:space="preserve">
+    <value>Reason</value>
+  </data>
+  <data name="SetupSecurity_Th_UnknownFails" xml:space="preserve">
+    <value>Unknown failed</value>
+  </data>
+  <data name="SetupSecurity_Th_LastFail" xml:space="preserve">
+    <value>Last fail</value>
+  </data>
+  <data name="SetupSecurity_Th_Actions" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="SetupSecurity_Action_Block" xml:space="preserve">
+    <value>Block</value>
+  </data>
+  <data name="SetupSecurity_Action_Unblock" xml:space="preserve">
+    <value>Unblock</value>
+  </data>
+  <data name="SetupSecurity_Action_Reset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="SetupSecurity_Action_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Error_IpRequired" xml:space="preserve">
+    <value>No ip address is set.</value>
+  </data>
+  <data name="Error_AdminAccessRequired" xml:space="preserve">
+    <value>This action needs admin access.</value>
+  </data>
+  <data name="Ribbon_Deactivate" xml:space="preserve">
+    <value>Deactivate</value>
+  </data>
+  <data name="Card_Caption_User_Username" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="Card_Caption_User_IsAdmin" xml:space="preserve">
+    <value>Admin</value>
+  </data>
+  <data name="Card_Caption_User_Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Card_Caption_User_LockedUntil" xml:space="preserve">
+    <value>Locked until</value>
+  </data>
+  <data name="Card_Caption_User_LastLogin" xml:space="preserve">
+    <value>Last login</value>
+  </data>
+  <data name="Ribbon_Activate" xml:space="preserve">
+    <value>Activate</value>
+  </data>
+  <data name="Ribbon_SetPassword" xml:space="preserve">
+    <value>Set Password</value>
+  </data>
+  <data name="User_SetPassword_Placeholder" xml:space="preserve">
+    <value>New password</value>
+  </data>
+  <data name="User_SetPassword_ConfirmPlaceholder" xml:space="preserve">
+    <value>Confirm password</value>
+  </data>
+  <data name="Users_SetPassword_Title" xml:space="preserve">
+    <value>Change password</value>
+  </data>
+  <data name="Btn_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Ribbon_Group_Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Ribbon_Kpi_Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Ribbon_Kpi_Done" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="Ribbon_Group_KPI" xml:space="preserve">
+    <value>KPI</value>
+  </data>
+  <data name="Chart_Title_AllAccounts" xml:space="preserve">
+    <value>Monthly Turnover</value>
+  </data>
+  <data name="Chart_Title_MonthlySaving" xml:space="preserve">
+    <value>Monthly Savings</value>
+  </data>
+  <data name="Chart_Title_DividendsQuarterly" xml:space="preserve">
+    <value>Quarterly Dividend</value>
+  </data>
+  <data name="Kpi_ActiveSavingsPlansCount" xml:space="preserve">
+    <value>Active savings plans</value>
+  </data>
+  <data name="Kpi_ContactsCount" xml:space="preserve">
+    <value>Contacts</value>
+  </data>
+  <data name="Kpi_SecuritiesCount" xml:space="preserve">
+    <value>Securities</value>
+  </data>
+  <data name="Kpi_OpenStatementDraftsCount" xml:space="preserve">
+    <value>Open drafts</value>
+  </data>
+  <data name="AddKpi_Title" xml:space="preserve">
+    <value>Add KPI</value>
+  </data>
+  <data name="Kpi_Tab_Predefined" xml:space="preserve">
+    <value>Predefined</value>
+  </data>
+  <data name="Kpi_Tab_Favorites" xml:space="preserve">
+    <value>Favorites</value>
+  </data>
+  <data name="Kpi_Display_TotalOnly" xml:space="preserve">
+    <value>Total only</value>
+  </data>
+  <data name="Kpi_Display_TotalWithComparisons" xml:space="preserve">
+    <value>Total + comparisons</value>
+  </data>
+  <data name="Kpi_Display_ReportGraph" xml:space="preserve">
+    <value>Report graph</value>
+  </data>
+  <data name="Kpi_Display" xml:space="preserve">
+    <value>Display</value>
+  </data>
+  <data name="Dialog_Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Dialog_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Home_PageTitle" xml:space="preserve">
+    <value>Finance Manager</value>
+  </data>
+  <data name="Chart_Title_Contact_Aggregates" xml:space="preserve">
+    <value>Aggregates</value>
+  </data>
+  <data name="UserList_Th_Username" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="UserList_Th_Admin" xml:space="preserve">
+    <value>Admin</value>
+  </data>
+  <data name="UserList_Th_Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="UserList_Th_LockedUntil" xml:space="preserve">
+    <value>Locked until</value>
+  </data>
+  <data name="UserList_Th_LastLogin" xml:space="preserve">
+    <value>Last login</value>
+  </data>
+  <data name="Value_Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Value_No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Ribbon_OpenAssignedStatement" xml:space="preserve">
+    <value>Assigned Statement</value>
+  </data>
+  <data name="Ribbon_AssignStatement" xml:space="preserve">
+    <value>Assign Statement</value>
+  </data>
+  <data name="Btn_Assign" xml:space="preserve">
+    <value>Assign</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_SumAmounts" xml:space="preserve">
+    <value>Total amount of entries</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_AssignedAmount" xml:space="preserve">
+    <value>Assigned amount</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_Difference" xml:space="preserve">
+    <value>Difference</value>
+  </data>
+  <data name="Select_None" xml:space="preserve">
+    <value>Please select</value>
+  </data>
+  <data name="AssignStatement_Select" xml:space="preserve">
+    <value>Statement assignment</value>
+  </data>
+  <data name="AssignStatement_Title" xml:space="preserve">
+    <value>Assign statement</value>
+  </data>
+  <data name="Ribbon_UnassignStatement" xml:space="preserve">
+    <value>Unassign statement</value>
+  </data>
+  <data name="Upload_Progress_Title" xml:space="preserve">
+    <value>Upload progress</value>
+  </data>
+  <data name="Upload_Progress_DoneOfTotal" xml:space="preserve">
+    <value>{0}/{1}</value>
+  </data>
+  <data name="Upload_Progress_CurrentFile" xml:space="preserve">
+    <value>Current file</value>
+  </data>
+  <data name="Import_SplitInfo_Monthly" xml:space="preserve">
+    <value>{0} entries will be splittet into {1} monthly drafts.</value>
+  </data>
+  <data name="Import_SplitInfo_Fixed" xml:space="preserve">
+    <value>{0} Entries will be splittet into {1} drafts.</value>
+  </data>
+  <data name="Import_SplitInfo_Details" xml:space="preserve">
+    <value>Mode: {0}, Max. Entries/Draft: {1}, Largest Draft: {2}</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_AssignedAccount" xml:space="preserve">
+    <value>Bank account</value>
+  </data>
+  <data name="StatementDrafts_SuggestedDescription" xml:space="preserve">
+    <value>Postings of {0}</value>
+  </data>
+  <data name="Ribbon_NewEntry" xml:space="preserve">
+    <value>New entry</value>
+  </data>
+  <data name="StatementDraftEntry_SuggestedBookingDescription" xml:space="preserve">
+    <value>Manual posting</value>
+  </data>
+  <data name="MonthlyReminder_Title" xml:space="preserve">
+    <value>Month-end closing</value>
+  </data>
+  <data name="MonthlyReminder_Message" xml:space="preserve">
+    <value>It is the last business day of the month. Please perform your month-end closing.</value>
+  </data>
+  <data name="Attachments_Title" xml:space="preserve">
+    <value>Attachments</value>
+  </data>
+  <data name="RB_Start" xml:space="preserve">
+    <value>Start processing</value>
+  </data>
+  <data name="RB_Progress" xml:space="preserve">
+    <value>Processing</value>
+  </data>
+</root>

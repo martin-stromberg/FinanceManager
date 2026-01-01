@@ -30,6 +30,15 @@ public sealed class PostingsController : ControllerBase
     private const int MaxTake = 250;
     private const int DefaultMaxRows = 50_000;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PostingsController"/>.
+    /// </summary>
+    /// <param name="db">Database context used to query postings and related entities.</param>
+    /// <param name="current">Service providing information about the current user.</param>
+    /// <param name="postingsQuery">Service used to query postings for different contexts.</param>
+    /// <param name="exportService">Service used to export postings to CSV/XLSX formats.</param>
+    /// <param name="config">Configuration used to read export limits and options.</param>
+    /// <param name="series">Service providing aggregate time series data for postings.</param>
     public PostingsController(AppDbContext db, ICurrentUserService current, IPostingsQueryService postingsQuery, IPostingExportService exportService, IConfiguration config, IPostingTimeSeriesService series)
     { _db = db; _current = current; _postingsQuery = postingsQuery; _exportService = exportService; _config = config; _series = series; }
 
@@ -293,6 +302,17 @@ public sealed class PostingsController : ControllerBase
     public Task<IActionResult> ExportSecurityAsync(Guid securityId, [FromQuery] PostingExportRequest req, CancellationToken ct = default)
         => ExportAsync(PostingKind.Security, securityId, req, ct);
 
+    /// <summary>
+    /// Performs the export operation for the specified context and returns a file result.
+    /// The method validates the requested format, enforces configured row limits and delegates the actual export to <see cref="IPostingExportService"/>.
+    /// </summary>
+    /// <param name="kind">Context kind for the export (account/contact/savings-plan/security).</param>
+    /// <param name="contextId">Identifier of the context entity.</param>
+    /// <param name="req">Export request containing format and optional filters.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>An <see cref="IActionResult"/> that either contains a file download or an appropriate Problem/NotFound result.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the requested format is invalid.</exception>
+    /// <exception cref="UnauthorizedAccessException">Thrown by the export service when the context is not accessible.</exception>
     private async Task<IActionResult> ExportAsync(PostingKind kind, Guid contextId, PostingExportRequest req, CancellationToken ct)
     {
         if (!TryParseFormat(req.Format, out var exportFormat))

@@ -12,3 +12,16 @@ global using FinanceManager.Shared.Dtos.Securities;
 global using FinanceManager.Shared.Dtos.Security;
 global using FinanceManager.Shared.Dtos.Statements;
 global using FinanceManager.Shared.Dtos.Users;
+
+global using FinanceManager.Web.ViewModels.Accounts;
+global using FinanceManager.Web.ViewModels.Common;
+global using FinanceManager.Web.ViewModels.Contacts;
+global using FinanceManager.Web.ViewModels.Home;
+global using FinanceManager.Web.ViewModels.Postings;
+global using FinanceManager.Web.ViewModels.Reports;
+global using FinanceManager.Web.ViewModels.SavingsPlans;
+global using FinanceManager.Web.ViewModels.Securities;
+global using FinanceManager.Web.ViewModels.Setup;
+global using FinanceManager.Web.ViewModels.StatementDrafts;
+
+global using FinanceManager.Web;

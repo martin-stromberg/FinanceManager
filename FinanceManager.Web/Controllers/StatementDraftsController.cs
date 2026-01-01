@@ -1,6 +1,9 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Attachments; // new
+using FinanceManager.Application.Contacts; // added
+using FinanceManager.Application.Savings; // added
+using FinanceManager.Application.Securities;
 using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Attachments; // new
 using FinanceManager.Infrastructure.Statements; // for ImportSplitInfo
@@ -28,6 +31,14 @@ public sealed class StatementDraftsController : ControllerBase
     private readonly IBackgroundTaskManager _taskManager; // unified background task system
     private readonly IAttachmentService _attachments; // new
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="StatementDraftsController"/>.
+    /// </summary>
+    /// <param name="drafts">Service for managing statement drafts.</param>
+    /// <param name="current">Service providing the current authenticated user context.</param>
+    /// <param name="logger">Logger instance for the controller.</param>
+    /// <param name="taskManager">Background task manager used to enqueue/inspect background jobs.</param>
+    /// <param name="attachments">Attachment service used to list and download attachments.</param>
     public StatementDraftsController(IStatementDraftService drafts, ICurrentUserService current, ILogger<StatementDraftsController> logger, IBackgroundTaskManager taskManager, IAttachmentService attachments)
     { _drafts = drafts; _current = current; _logger = logger; _taskManager = taskManager; _attachments = attachments; }
 
@@ -37,6 +48,7 @@ public sealed class StatementDraftsController : ControllerBase
     /// <param name="skip">Items to skip for paging.</param>
     /// <param name="take">Items to take (1..3).</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with a list of <see cref="StatementDraftDto"/>.</returns>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<StatementDraftDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOpenAsync([FromQuery] int skip = 0, [FromQuery] int take = 3, CancellationToken ct = default)
@@ -50,6 +62,7 @@ public sealed class StatementDraftsController : ControllerBase
     /// Returns the total number of open drafts for the current user.
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with an object containing the count.</returns>
     [HttpGet("count")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOpenCountAsync(CancellationToken ct)
@@ -62,6 +75,7 @@ public sealed class StatementDraftsController : ControllerBase
     /// Deletes all open drafts for the current user.
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the number of deleted drafts.</returns>
     [HttpDelete("all")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteAllAsync(CancellationToken ct)
@@ -73,10 +87,11 @@ public sealed class StatementDraftsController : ControllerBase
 
     /// <summary>
     /// Uploads a statement file (CSV/PDF etc.) and creates one or more draft records (supports split imports).
-    /// Returns first draft plus optional import split metadata.
+    /// Returns the first created draft plus optional import split metadata.
     /// </summary>
     /// <param name="file">Uploaded file.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with <see cref="StatementDraftUploadResult"/>, or 400 Bad Request when file is missing.</returns>
     [HttpPost("upload")]
     [RequestSizeLimit(10_000_000)]
     [ProducesResponseType(typeof(StatementDraftUploadResult), StatusCodes.Status200OK)]
@@ -100,6 +115,7 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Returns status of the background classification task (classify all drafts).
     /// </summary>
+    /// <returns>200 OK with task run state and progress.</returns>
     [HttpGet("classify/status")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public IActionResult GetClassifyStatus()
@@ -115,6 +131,7 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Enqueues classification of all open drafts if not already running.
     /// </summary>
+    /// <returns>202 Accepted indicating the task was queued or already running.</returns>
     [HttpPost("classify")]
     [ProducesResponseType(typeof(object), StatusCodes.Status202Accepted)]
     public IActionResult ClassifyAllAsync()
@@ -129,6 +146,7 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Returns status of mass booking background task.
     /// </summary>
+    /// <returns>200 OK with <see cref="StatementDraftMassBookStatusDto"/> describing current task state.</returns>
     [HttpGet("book-all/status")]
     [ProducesResponseType(typeof(StatementDraftMassBookStatusDto), StatusCodes.Status200OK)]
     public IActionResult GetBookAllStatus()
@@ -142,6 +160,7 @@ public sealed class StatementDraftsController : ControllerBase
     /// Enqueues booking of all drafts (mass booking) unless already running.
     /// </summary>
     /// <param name="req">Mass booking options.</param>
+    /// <returns>202 Accepted with initial task status.</returns>
     [HttpPost("book-all")]
     [ProducesResponseType(typeof(StatementDraftMassBookStatusDto), StatusCodes.Status202Accepted)]
     public IActionResult BookAllAsync([FromBody] StatementDraftMassBookRequest req)
@@ -157,6 +176,7 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Attempts to cancel a running mass booking task.
     /// </summary>
+    /// <returns>202 Accepted.</returns>
     [HttpPost("book-all/cancel")]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     public IActionResult CancelBookAll()
@@ -176,7 +196,8 @@ public sealed class StatementDraftsController : ControllerBase
     /// <param name="fromEntryDraftId">Optional originating draft id (navigation aid).</param>
     /// <param name="fromEntryId">Optional originating entry id (navigation aid).</param>
     /// <param name="ct">Cancellation token.</param>
-    [HttpGet("{draftId:guid}")]
+    /// <returns>200 OK with <see cref="StatementDraftDetailDto"/>, or 404 Not Found when draft is missing.</returns>
+    [HttpGet("{draftId:guid}", Name = "GetStatementDraft")]
     [ProducesResponseType(typeof(StatementDraftDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAsync(Guid draftId, [FromQuery] bool headerOnly = false, [FromQuery] string? src = null, [FromQuery] Guid? fromEntryDraftId = null, [FromQuery] Guid? fromEntryId = null, CancellationToken ct = default)
@@ -184,7 +205,59 @@ public sealed class StatementDraftsController : ControllerBase
         StatementDraftDto? draft = headerOnly ? await _drafts.GetDraftHeaderAsync(draftId, _current.UserId, ct) : await _drafts.GetDraftAsync(draftId, _current.UserId, ct);
         if (draft is null) { return NotFound(); }
         var neighbors = await _drafts.GetUploadGroupNeighborsAsync(draftId, _current.UserId, ct);
-        var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId);
+
+        // Build symbol maps
+        IReadOnlyDictionary<Guid, Guid?>? contactSymbols = null;
+        IReadOnlyDictionary<Guid, Guid?>? planSymbols = null;
+        IReadOnlyDictionary<Guid, string>? planNames = null;
+        IReadOnlyDictionary<Guid, Guid?>? securitySymbols = null;
+        IReadOnlyDictionary<Guid, string>? securityNames = null;
+        try
+        {
+            var contactSvc = HttpContext.RequestServices.GetRequiredService<IContactService>();
+            var categorySvc = HttpContext.RequestServices.GetRequiredService<IContactCategoryService>();
+            var planSvc = HttpContext.RequestServices.GetRequiredService<ISavingsPlanService>();
+            var securitySvc = HttpContext.RequestServices.GetRequiredService<ISecurityService>();
+            var cMap = new Dictionary<Guid, Guid?>();
+            var pMap = new Dictionary<Guid, Guid?>();
+            var pNames = new Dictionary<Guid, string>();
+            var sMap = new Dictionary<Guid, Guid?>();
+            var sNames = new Dictionary<Guid, string>();
+            foreach (var e in draft.Entries)
+            {
+                if (e.ContactId.HasValue)
+                {
+                    var c = await contactSvc.GetAsync(e.ContactId.Value, _current.UserId, ct);
+                    Guid? symbol = c?.SymbolAttachmentId;
+                    if (symbol == null && c?.CategoryId != null)
+                    {
+                        var cat = await categorySvc.GetAsync(c.CategoryId.Value, _current.UserId, ct);
+                        symbol = cat?.SymbolAttachmentId;
+                    }
+                    cMap[e.Id] = symbol;
+                }
+                if (e.SavingsPlanId.HasValue)
+                {
+                    var p = await planSvc.GetAsync(e.SavingsPlanId.Value, _current.UserId, ct);
+                    pMap[e.Id] = p?.SymbolAttachmentId;
+                    if (p != null) { pNames[e.Id] = p.Name; }
+                }
+                if (e.SecurityId.HasValue)
+                {
+                    var s = await securitySvc.GetAsync(e.SecurityId.Value, _current.UserId, ct);
+                    sMap[e.Id] = s?.SymbolAttachmentId;
+                    if (s != null) { sNames[e.Id] = s.Name; }
+                }
+            }
+            contactSymbols = cMap;
+            planSymbols = pMap;
+            planNames = pNames;
+            securitySymbols = sMap;
+            securityNames = sNames;
+        }
+        catch { }
+
+        var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId, contactSymbols, planSymbols, planNames, securitySymbols, securityNames);
         return Ok(dto);
     }
 
@@ -194,19 +267,26 @@ public sealed class StatementDraftsController : ControllerBase
     /// <param name="draftId">Draft id.</param>
     /// <param name="entryId">Entry id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with <see cref="StatementDraftEntryDetailDto"/> or 404 Not Found when entry not found.</returns>
     [HttpGet("{draftId:guid}/entries/{entryId:guid}")]
     [ProducesResponseType(typeof(StatementDraftEntryDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetEntryAsync(Guid draftId, Guid entryId, CancellationToken ct)
     {
         var draft = await _drafts.GetDraftHeaderAsync(draftId, _current.UserId, ct);
-        var ordered = (await _drafts.GetDraftEntriesAsync(draftId, ct)).OrderBy(e => e.BookingDate).ThenBy(e => e.Id).ToList();
-        var entry = await _drafts.GetDraftEntryAsync(draftId, entryId, ct);
+        if (draft is null && draftId == Guid.Empty)
+            draft = await _drafts.FindDraftHeaderAsync(entryId, _current.UserId, ct);
+        if (draft is null) return null;
+
+        var ordered = (await _drafts.GetDraftEntriesAsync(draft.DraftId, ct)).OrderBy(e => e.BookingDate).ThenBy(e => e.Id).ToList();
+        var entry = await _drafts.GetDraftEntryAsync(draft.DraftId, entryId, ct);
         if (entry is null) { return NotFound(); }
         var index = ordered.FindIndex(e => e.Id == entryId);
         var prev = index > 0 ? ordered[index - 1].Id : (Guid?)null;
         var next = index < ordered.Count - 1 ? ordered[index + 1].Id : (Guid?)null;
-        var nextOpen = ordered.Skip(index + 1).FirstOrDefault(e => e.Status == StatementDraftEntryStatus.Open || e.Status == StatementDraftEntryStatus.Announced)?.Id;
+        // Prefer the next entry that is Open or Announced. If none found, fall back to the immediate next entry regardless of status.
+        var nextOpen = ordered.Skip(index + 1).FirstOrDefault(e => e.Status == StatementDraftEntryStatus.Open || e.Status == StatementDraftEntryStatus.Announced)?.Id
+            ?? (index < ordered.Count - 1 ? ordered[index + 1].Id : (Guid?)null);
         decimal? splitSum = null; decimal? diff = null;
         if (entry.SplitDraftId != null)
         {
@@ -230,6 +310,7 @@ public sealed class StatementDraftsController : ControllerBase
     /// <param name="draftId">Draft id.</param>
     /// <param name="req">Entry creation payload.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with updated <see cref="StatementDraftDetailDto"/> or 400 Bad Request on validation errors.</returns>
     [HttpPost("{draftId:guid}/entries")]
     [ProducesResponseType(typeof(StatementDraftDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -246,6 +327,9 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Classifies draft entries (attempts to detect account, contacts etc.).
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with updated <see cref="StatementDraftDetailDto"/>, or 400 Bad Request on error.</returns>
     [HttpPost("{draftId:guid}/classify")]
     [ProducesResponseType(typeof(StatementDraftDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -265,6 +349,10 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Sets the detected account for a draft.
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="accountId">Account id to set.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with updated <see cref="StatementDraftDetailDto"/>, or 404 Not Found when draft missing.</returns>
     [HttpPost("{draftId:guid}/account/{accountId:guid}")]
     [ProducesResponseType(typeof(StatementDraftDetailDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> SetAccountAsync(Guid draftId, Guid accountId, CancellationToken ct)
@@ -279,6 +367,10 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Commits a draft by creating statement entries from its content (without booking them yet).
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="req">Commit options including target account and format.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with commit result or 404 Not Found when draft missing.</returns>
     [HttpPost("{draftId:guid}/commit")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> CommitAsync(Guid draftId, [FromBody] StatementDraftCommitRequest req, CancellationToken ct)
@@ -290,6 +382,11 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Sets the contact reference for a draft entry.
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="entryId">Entry id.</param>
+    /// <param name="body">Request body containing contact id to set.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the updated entry or 404 Not Found when draft/entry missing.</returns>
     [HttpPost("{draftId:guid}/entries/{entryId:guid}/contact")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> SetEntryContactAsync(Guid draftId, Guid entryId, [FromBody] StatementDraftSetContactRequest body, CancellationToken ct)
@@ -303,6 +400,11 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Marks a draft entry as cost neutral or not.
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="entryId">Entry id.</param>
+    /// <param name="body">Request containing the cost-neutral flag.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with updated entry or 404 Not Found when draft/entry missing.</returns>
     [HttpPost("{draftId:guid}/entries/{entryId:guid}/costneutral")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> SetEntryCostNeutralAsync(Guid draftId, Guid entryId, [FromBody] StatementDraftSetCostNeutralRequest body, CancellationToken ct)
@@ -316,6 +418,11 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Associates a savings plan with a draft entry.
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="entryId">Entry id.</param>
+    /// <param name="body">Request containing savings plan id to assign.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with updated entry or 404 Not Found when draft/entry missing.</returns>
     [HttpPost("{draftId:guid}/entries/{entryId:guid}/savingsplan")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> SetEntrySavingPlanAsync(Guid draftId, Guid entryId, [FromBody] StatementDraftSetSavingsPlanRequest body, CancellationToken ct)
@@ -329,8 +436,13 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Assigns or clears a split draft group for a draft entry and returns updated split difference.
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="entryId">Entry id.</param>
+    /// <param name="body">Request containing split draft id or clear flag.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with split summary dto or 400 Bad Request on invalid operation.</returns>
     [HttpPost("{draftId:guid}/entries/{entryId:guid}/split")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(FinanceManager.Shared.Dtos.Statements.StatementDraftSetEntrySplitDraftResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SetEntrySplitDraftAsync(Guid draftId, Guid entryId, [FromBody] StatementDraftSetSplitDraftRequest body, CancellationToken ct)
     {
@@ -345,7 +457,8 @@ public sealed class StatementDraftsController : ControllerBase
                 splitSum = await _drafts.GetSplitGroupSumAsync(entry.SplitDraftId.Value, _current.UserId, ct);
                 if (splitSum.HasValue) { diff = entry.Amount - splitSum.Value; }
             }
-            return Ok(new { Entry = entry, SplitSum = splitSum, Difference = diff });
+            var result = new FinanceManager.Shared.Dtos.Statements.StatementDraftSetEntrySplitDraftResultDto(entry, splitSum, diff);
+            return Ok(result);
         }
         catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
@@ -353,6 +466,9 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Cancels (removes) a draft.
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content on success or 404 Not Found when draft missing.</returns>
     [HttpDelete("{draftId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -365,6 +481,9 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Downloads the original uploaded statement file for a draft.
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the file content as a downloadable file, or 404 Not Found when not available.</returns>
     [HttpGet("{draftId:guid}/file")]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -372,18 +491,27 @@ public sealed class StatementDraftsController : ControllerBase
     {
         var draft = await _drafts.GetDraftHeaderAsync(draftId, _current.UserId, ct);
         if (draft == null) { return NotFound(); }
-        var list = await _attachments.ListAsync(_current.UserId, AttachmentEntityKind.StatementDraft, draftId, 0, 1, ct);
+        // ListAsync signature expects additional optional parameters (categoryId, isUrl, filter)
+        var list = await _attachments.ListAsync(_current.UserId, AttachmentEntityKind.StatementDraft, draftId, 0, 1, /*categoryId*/ null, /*isUrl*/ false, /*filter*/ null, ct);
         var fileMeta = list.FirstOrDefault();
         if (fileMeta == null) { return NotFound(); }
         var payload = await _attachments.DownloadAsync(_current.UserId, fileMeta.Id, ct);
         if (payload == null) { return NotFound(); }
-        var (content, fileName, contentType) = payload.Value;
+        var downloaded = payload.Value; 
+        var content = downloaded.Item1;
+        var fileName = downloaded.Item2;
+        var contentType = downloaded.Item3;
         return File(content, string.IsNullOrWhiteSpace(contentType) ? MediaTypeNames.Application.Octet : contentType, fileName);
     }
 
     /// <summary>
     /// Updates core fields of a draft entry (dates, amount, textual fields).
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="entryId">Entry id.</param>
+    /// <param name="body">Request containing core field values.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with updated entry or 404 Not Found when missing.</returns>
     [HttpPost("{draftId:guid}/entries/{entryId:guid}/edit-core")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateEntryCoreAsync(Guid draftId, Guid entryId, [FromBody] StatementDraftUpdateEntryCoreRequest body, CancellationToken ct)
@@ -395,6 +523,11 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Sets security metadata for a draft entry (transaction type, quantity, fees, taxes).
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="entryId">Entry id.</param>
+    /// <param name="body">Request containing security metadata.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with updated entry or 404 Not Found when missing.</returns>
     [HttpPost("{draftId:guid}/entries/{entryId:guid}/security")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> SetEntrySecurityAsync(Guid draftId, Guid entryId, [FromBody] StatementDraftSetEntrySecurityRequest body, CancellationToken ct)
@@ -408,6 +541,11 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Configures whether a savings plan is archived automatically when booking this entry.
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="entryId">Entry id.</param>
+    /// <param name="body">Request containing the archive-on-booking flag.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with updated entry or 404 Not Found when missing.</returns>
     [HttpPost("{draftId:guid}/entries/{entryId:guid}/savingsplan/archive-on-booking")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> SetEntryArchiveSavingsPlanOnBookingAsync(Guid draftId, Guid entryId, [FromBody] StatementDraftSetArchiveSavingsPlanOnBookingRequest body, CancellationToken ct)
@@ -421,6 +559,9 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Validates a draft (all entries) and returns validation messages.
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with <see cref="DraftValidationResultDto"/>.</returns>
     [HttpGet("{draftId:guid}/validate")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> ValidateAsync(Guid draftId, CancellationToken ct)
@@ -432,6 +573,10 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Validates a single draft entry and returns validation messages.
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="entryId">Entry id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with <see cref="DraftValidationResultDto"/>.</returns>
     [HttpGet("{draftId:guid}/entries/{entryId:guid}/validate")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> ValidateEntryAsync(Guid draftId, Guid entryId, CancellationToken ct)
@@ -443,6 +588,10 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Books a draft (all entries) creating postings; warns or errors based on validation outcome.
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="forceWarnings">When true warnings are ignored and booking proceeds if possible.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with <see cref="BookingResult"/>, 400 Bad Request or 428 Precondition Required depending on validation.</returns>
     [HttpPost("{draftId:guid}/book")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -458,6 +607,11 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Books a single draft entry creating postings; warns or errors based on validation outcome.
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="entryId">Entry id.</param>
+    /// <param name="forceWarnings">When true warnings are ignored and booking proceeds if possible.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with <see cref="BookingResult"/>, 400 Bad Request or 428 Precondition Required depending on validation.</returns>
     [HttpPost("{draftId:guid}/entries/{entryId:guid}/book")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -473,6 +627,11 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Saves all entry-related fields (contact, cost-neutral, savings plan, security) in one operation.
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="entryId">Entry id.</param>
+    /// <param name="body">Request containing fields to save.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with updated entry DTO, 400 Bad Request for domain validation, or 500 on unexpected errors.</returns>
     [HttpPost("{draftId:guid}/entries/{entryId:guid}/save-all")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> SaveEntryAllAsync(Guid draftId, Guid entryId, [FromBody] StatementDraftSaveEntryAllRequest body, CancellationToken ct)
@@ -492,13 +651,39 @@ public sealed class StatementDraftsController : ControllerBase
             }
             return Ok(new { Entry = entry, SplitSum = splitSum, Difference = diff });
         }
-        var dto = await _drafts.SaveEntryAllAsync(draftId, entryId, _current.UserId, body.ContactId, body.IsCostNeutral, body.SavingsPlanId, body.ArchiveOnBooking, body.SecurityId, body.TransactionType, body.Quantity, body.FeeAmount, body.TaxAmount, ct);
-        return dto == null ? NotFound() : Ok(dto);
+        try
+        {
+            var dto = await _drafts.SaveEntryAllAsync(draftId, entryId, _current.UserId, body.ContactId, body.IsCostNeutral, body.SavingsPlanId, body.ArchiveOnBooking, body.SecurityId, body.TransactionType, body.Quantity, body.FeeAmount, body.TaxAmount, ct);
+            return dto == null ? NotFound() : Ok(dto);
+        }
+        catch (FinanceManager.Application.Exceptions.DomainValidationException dex)
+        {
+            // Map domain validation to a consistent shape (error + message) that the ApiClient expects
+            var code = string.IsNullOrWhiteSpace(dex.Code) ? "DOMAIN_VALIDATION" : dex.Code;
+            _logger.LogInformation("Domain validation when saving entry {EntryId} in draft {DraftId}: {Code} - {Message}", entryId, draftId, code, dex.Message);
+            return BadRequest(new { error = code, message = dex.Message });
+        }
+        catch (InvalidOperationException ioex)
+        {
+            // existing usage of InvalidOperationException mapped to BadRequest in other endpoints — keep compatible
+            _logger.LogInformation(ioex, "Invalid operation when saving entry {EntryId} in draft {DraftId}", entryId, draftId);
+            return BadRequest(new { error = "InvalidOperation", message = ioex.Message });
+        }
+        catch (Exception ex)
+        {
+            // Unexpected errors -> 500 but provide message in same shape so client can surface details
+            _logger.LogError(ex, "Unexpected error in SaveEntryAllAsync for draft {DraftId} entry {EntryId}", draftId, entryId);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "ERR_INTERNAL", message = ex.Message });
+        }
     }
 
     /// <summary>
     /// Permanently deletes a draft entry.
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="entryId">Entry id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content on success or 404 Not Found when draft/entry missing.</returns>
     [HttpDelete("{draftId:guid}/entries/{entryId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -511,6 +696,10 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Resets duplicate detection flags for a draft entry.
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="entryId">Entry id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the reset entry or 404 Not Found when draft/entry missing.</returns>
     [HttpPost("{draftId:guid}/entries/{entryId:guid}/reset-duplicate")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> ResetDuplicateAsync(Guid draftId, Guid entryId, CancellationToken ct)
@@ -522,6 +711,10 @@ public sealed class StatementDraftsController : ControllerBase
     /// <summary>
     /// Classifies a single entry (heuristics / ML) and returns updated draft detail.
     /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="entryId">Entry id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with updated <see cref="StatementDraftDetailDto"/>, or 400 Bad Request on error.</returns>
     [HttpPost("{draftId:guid}/entries/{entryId:guid}/classify-entry")]
     [ProducesResponseType(typeof(StatementDraftDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -536,5 +729,40 @@ public sealed class StatementDraftsController : ControllerBase
             return Ok(dto);
         }
         catch (Exception ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    /// <summary>
+    /// Creates an empty statement draft (no file) for the current user.
+    /// </summary>
+    /// <param name="fileName">Optional initial file name for the draft.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>201 Created with the new draft <see cref="StatementDraftDetailDto"/>.</returns>
+    [HttpPost]
+    [ProducesResponseType(typeof(StatementDraftDetailDto), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateAsync([FromQuery] string? fileName = null, CancellationToken ct = default)
+    {
+        var name = string.IsNullOrWhiteSpace(fileName) ? "new-draft" : fileName;
+        var draft = await _drafts.CreateEmptyDraftAsync(_current.UserId, name, ct);
+        if (draft == null) return BadRequest();
+        // Return 201 Created with location header pointing to GetAsync via named route
+        return CreatedAtRoute("GetStatementDraft", new { draftId = draft.DraftId }, draft);
+    }
+
+    /// <summary>
+    /// Sets the description for a draft.
+    /// </summary>
+    /// <param name="draftId">Draft id.</param>
+    /// <param name="description">Description text.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with updated <see cref="StatementDraftDetailDto"/>, or 404 Not Found when draft missing.</returns>
+    [HttpPost("{draftId:guid}/description")]
+    [ProducesResponseType(typeof(StatementDraftDetailDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> SetDescriptionAsync(Guid draftId, [FromBody] string? description, CancellationToken ct)
+    {
+        var draft = await _drafts.SetDescriptionAsync(draftId, _current.UserId, description, ct);
+        if (draft == null) return NotFound();
+        var neighbors = await _drafts.GetUploadGroupNeighborsAsync(draft.DraftId, _current.UserId, ct);
+        var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId);
+        return Ok(dto);
     }
 }

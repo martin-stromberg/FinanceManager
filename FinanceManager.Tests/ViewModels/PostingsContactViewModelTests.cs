@@ -1,7 +1,5 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
-using FinanceManager.Shared.Dtos.Postings;
-using FinanceManager.Web.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
@@ -17,14 +15,14 @@ public sealed class PostingsContactViewModelTests
         public bool IsAdmin { get; set; }
     }
 
-    private static (PostingsContactViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool authenticated = true)
+    private static (FinanceManager.Web.ViewModels.Postings.ContactPostingsListViewModel vm, Mock<IApiClient> apiMock) CreateVm(Guid contactId, bool authenticated = true)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService { IsAuthenticated = authenticated });
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
         var sp = services.BuildServiceProvider();
-        var vm = new PostingsContactViewModel(sp);
+        var vm = new FinanceManager.Web.ViewModels.Postings.ContactPostingsListViewModel(sp, contactId);
         return (vm, apiMock);
     }
 
@@ -62,22 +60,23 @@ public sealed class PostingsContactViewModelTests
     [Fact]
     public async Task Initialize_LoadsFirstPage_SetsItemsAndFlags()
     {
-        var (vm, apiMock) = CreateVm();
+        var (vm, apiMock) = CreateVm(Guid.NewGuid());
         apiMock.Setup(a => a.Postings_GetContactAsync(It.IsAny<Guid>(), 0, 50, It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreatePostings(7));
 
-        vm.Configure(Guid.NewGuid());
+        // vm is already bound to the contact id via constructor
         await vm.InitializeAsync();
 
         Assert.False(vm.Loading);
         Assert.Equal(7, vm.Items.Count);
-        Assert.True(vm.CanLoadMore);
+        // When fewer items than the page size are returned, there is no further page to load
+        Assert.False(vm.CanLoadMore);
     }
 
     [Fact]
     public async Task LoadMore_AppendsItems_StopsWhenBelowPageSize()
     {
-        var (vm, apiMock) = CreateVm();
+        var (vm, apiMock) = CreateVm(Guid.NewGuid());
         int call = 0;
         apiMock.Setup(a => a.Postings_GetContactAsync(It.IsAny<Guid>(), It.IsAny<int>(), 50, It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() =>
@@ -86,7 +85,7 @@ public sealed class PostingsContactViewModelTests
                 return CreatePostings(call == 1 ? 50 : 0);
             });
 
-        vm.Configure(Guid.NewGuid());
+        // vm is already bound to the contact id via constructor
         await vm.InitializeAsync();
         Assert.Equal(50, vm.Items.Count);
         Assert.True(vm.CanLoadMore);
@@ -97,11 +96,12 @@ public sealed class PostingsContactViewModelTests
     }
 
     [Fact]
-    public void GetExportUrl_ComposesQuery()
+    public async Task GetExportUrl_ComposesQuery()
     {
-        var (vm, _) = CreateVm();
-        vm.Configure(Guid.Parse("11111111-1111-1111-1111-111111111111"));
+        var contactId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        (var vm, _) = CreateVm(contactId);
         vm.SetSearch("x y");
+        await vm.InitializeAsync();
         var url = vm.GetExportUrl("xlsx");
         Assert.StartsWith("/api/postings/contact/11111111-1111-1111-1111-111111111111/export", url);
         Assert.Contains("format=xlsx", url);

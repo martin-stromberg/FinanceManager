@@ -1,0 +1,2128 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>FinanceManager.Application</name>
+    </assembly>
+    <members>
+        <member name="T:FinanceManager.Application.Accounts.IAccountService">
+            <summary>
+            Service interface for managing accounts (create, update, delete, list and symbol assignment).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Accounts.IAccountService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new account for the specified owner.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="name">Account display name.</param>
+            <param name="type">Account type.</param>
+            <param name="iban">Optional IBAN string.</param>
+            <param name="bankContactId">Bank contact identifier associated with the account.</param>
+            <param name="expectation">Savings plan expectation for the account.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Accounts.AccountDto"/>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Accounts.IAccountService.UpdateAsync(System.Guid,System.Guid,System.String,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing account. Returns null when not found.
+            </summary>
+            <param name="id">Account identifier.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="name">New display name.</param>
+            <param name="iban">New IBAN or null to clear.</param>
+            <param name="bankContactId">Bank contact identifier.</param>
+            <param name="expectation">Savings plan expectation.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Updated <see cref="T:FinanceManager.Shared.Dtos.Accounts.AccountDto"/> or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Accounts.IAccountService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an account. Returns true when deleted.
+            </summary>
+            <param name="id">Account id to delete.</param>
+            <param name="ownerUserId">Owner user id performing the deletion.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>True when deletion succeeded; otherwise false.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Accounts.IAccountService.ListAsync(System.Guid,System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Lists accounts for the owner with paging.
+            </summary>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="skip">Number of items to skip.</param>
+            <param name="take">Number of items to take.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Read-only list of <see cref="T:FinanceManager.Shared.Dtos.Accounts.AccountDto"/>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Accounts.IAccountService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single account by id for the owner or null when not found.
+            </summary>
+            <param name="id">Account id.</param>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The matching <see cref="T:FinanceManager.Shared.Dtos.Accounts.AccountDto"/> or null.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Accounts.IAccountService.Get(System.Guid,System.Guid)">
+            <summary>
+            Synchronous get helper that returns the account dto or null when not found.
+            </summary>
+            <param name="id">Account id.</param>
+            <param name="ownerUserId">Owner user id.</param>
+            <returns>Account DTO or null.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Accounts.IAccountService.SetSymbolAttachmentAsync(System.Guid,System.Guid,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Assigns or clears a symbol attachment on the account.
+            </summary>
+            <param name="id">Account id.</param>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="attachmentId">Attachment id to set as symbol or null to clear.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Application.Aggregates.IPostingAggregateService">
+            <summary>
+            Service responsible for maintaining posting aggregates for reporting and analysis.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Aggregates.IPostingAggregateService.UpsertForPostingAsync(FinanceManager.Domain.Postings.Posting,System.Threading.CancellationToken)">
+            <summary>
+            Upserts aggregate entries related to the given posting. Implementations should update or create the necessary PostingAggregate records.
+            </summary>
+            <param name="posting">Posting instance to upsert aggregates for.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Aggregates.IPostingAggregateService.RebuildForUserAsync(System.Guid,System.Action{System.Int32,System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Rebuilds all posting aggregates for the given user and invokes a progress callback while processing.
+            </summary>
+            <param name="userId">User identifier whose aggregates should be rebuilt.</param>
+            <param name="progressCallback">Callback to report progress. Receives processed count and total count.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Application.Attachments.IAttachmentCategoryService">
+            <summary>
+            Service to manage attachment categories for a user (list, create, update, delete).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Attachments.IAttachmentCategoryService.ListAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists all attachment categories for the owner.
+            </summary>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Read-only list of attachment category DTOs.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Attachments.IAttachmentCategoryService.CreateAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new attachment category.
+            </summary>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="name">Category name.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Created attachment category DTO.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Attachments.IAttachmentCategoryService.CreateAsync(System.Guid,System.String,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Creates a system category (protected) for the owner.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Attachments.IAttachmentCategoryService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a category if allowed.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Attachments.IAttachmentCategoryService.UpdateAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Updates the name of a category. Returns the updated DTO or null when not found.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Attachments.IAttachmentService">
+            <summary>
+            Service for managing attachments (upload, list, download, update, reassign and delete) for a user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Attachments.IAttachmentService.UploadAsync(System.Guid,FinanceManager.Domain.Attachments.AttachmentEntityKind,System.Guid,System.IO.Stream,System.String,System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Uploads a file attachment for the specified entity.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="kind">Kind of entity the attachment belongs to.</param>
+            <param name="entityId">Entity identifier.</param>
+            <param name="content">Stream with file content.</param>
+            <param name="fileName">Original file name.</param>
+            <param name="contentType">MIME content type.</param>
+            <param name="categoryId">Optional category id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Created <see cref="T:FinanceManager.Shared.Dtos.Attachments.AttachmentDto"/>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Attachments.IAttachmentService.UploadAsync(System.Guid,FinanceManager.Domain.Attachments.AttachmentEntityKind,System.Guid,System.IO.Stream,System.String,System.String,System.Nullable{System.Guid},FinanceManager.Domain.Attachments.AttachmentRole,System.Threading.CancellationToken)">
+            <summary>
+            Uploads a file attachment with an explicit role.
+            </summary>
+            <remarks>Same as <see cref="M:FinanceManager.Application.Attachments.IAttachmentService.UploadAsync(System.Guid,FinanceManager.Domain.Attachments.AttachmentEntityKind,System.Guid,System.IO.Stream,System.String,System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)"/> but with a role parameter.</remarks>
+        </member>
+        <member name="M:FinanceManager.Application.Attachments.IAttachmentService.CreateUrlAsync(System.Guid,FinanceManager.Domain.Attachments.AttachmentEntityKind,System.Guid,System.String,System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Creates a URL attachment for an entity.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Attachments.IAttachmentService.ListAsync(System.Guid,FinanceManager.Domain.Attachments.AttachmentEntityKind,System.Guid,System.Int32,System.Int32,System.Nullable{System.Guid},System.Nullable{System.Boolean},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Lists attachments for an entity with paging and optional filters.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Attachments.IAttachmentService.CountAsync(System.Guid,FinanceManager.Domain.Attachments.AttachmentEntityKind,System.Guid,System.Nullable{System.Guid},System.Nullable{System.Boolean},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Counts attachments for an entity matching optional filters.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Attachments.IAttachmentService.DownloadAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Downloads an attachment if available to the owner.
+            </summary>
+            <returns>Tuple (Content stream, FileName, ContentType) or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Attachments.IAttachmentService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an attachment owned by the user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Attachments.IAttachmentService.UpdateCategoryAsync(System.Guid,System.Guid,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Updates the category of an attachment.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Attachments.IAttachmentService.UpdateCoreAsync(System.Guid,System.Guid,System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Updates core properties of an attachment such as filename and category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Attachments.IAttachmentService.ReassignAsync(FinanceManager.Domain.Attachments.AttachmentEntityKind,System.Guid,FinanceManager.Domain.Attachments.AttachmentEntityKind,System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Reassigns all attachments from one entity to another.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Attachments.IAttachmentService.CreateReferenceAsync(System.Guid,FinanceManager.Domain.Attachments.AttachmentEntityKind,System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new referencing attachment entry pointing to an existing master attachment.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.IBackgroundTaskManager">
+            <summary>
+            Manager interface for enqueueing and querying background tasks.
+            Implementations coordinate task queueing, cancellation and status updates.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.IBackgroundTaskManager.Enqueue(FinanceManager.Shared.Dtos.Admin.BackgroundTaskType,System.Guid,System.Object,System.Boolean)">
+            <summary>
+            Enqueues a background task.
+            </summary>
+            <param name="type">Type of the background task.</param>
+            <param name="userId">User id the task belongs to.</param>
+            <param name="payload">Optional payload object provided to the task.</param>
+            <param name="allowDuplicate">When true allows enqueuing a duplicate task.</param>
+            <returns>Information about the enqueued task.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.IBackgroundTaskManager.GetAll">
+            <summary>
+            Returns all known tasks (queued, running, completed) managed by the instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.IBackgroundTaskManager.Get(System.Guid)">
+            <summary>
+            Gets the task info for the specified id or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.IBackgroundTaskManager.TryCancel(System.Guid)">
+            <summary>
+            Tries to cancel the specified task. Returns true when cancellation requested.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.IBackgroundTaskManager.TryRemoveQueued(System.Guid)">
+            <summary>
+            Attempts to remove a queued task prior to execution.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.IBackgroundTaskManager.TryDequeueNext(System.Guid@)">
+            <summary>
+            Attempts to dequeue the next queued task id for processing.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.IBackgroundTaskManager.UpdateTaskInfo(FinanceManager.Shared.Dtos.Admin.BackgroundTaskInfo)">
+            <summary>
+            Updates stored information about a background task (status/progress/message).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.IBackgroundTaskManager.Semaphore">
+            <summary>
+            Semaphore to coordinate single consumer processing.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.BackgroundTaskManager">
+            <summary>
+            Default in-memory implementation of <see cref="T:FinanceManager.Application.IBackgroundTaskManager"/> used for queuing and managing background tasks.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.BackgroundTaskManager.Enqueue(FinanceManager.Shared.Dtos.Admin.BackgroundTaskType,System.Guid,System.Object,System.Boolean)">
+            <summary>
+            Enqueues a background task and returns its info record.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.BackgroundTaskManager.GetAll">
+            <summary>
+            Returns all known tasks.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.BackgroundTaskManager.Get(System.Guid)">
+            <summary>
+            Gets a specific task by id or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.BackgroundTaskManager.TryCancel(System.Guid)">
+            <summary>
+            Attempts to cancel a task by id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.BackgroundTaskManager.TryRemoveQueued(System.Guid)">
+            <summary>
+            Attempts to remove a queued task prior to start.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.BackgroundTaskManager.TryDequeueNext(System.Guid@)">
+            <summary>
+            Attempts to dequeue the next queued task id for processing.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.BackgroundTaskManager.UpdateTaskInfo(FinanceManager.Shared.Dtos.Admin.BackgroundTaskInfo)">
+            <summary>
+            Updates stored information about a background task.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.BackgroundTaskManager.Semaphore">
+            <summary>
+            Semaphore used to coordinate background task processing.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.BackgroundTaskContext">
+            <summary>
+            Context information provided to a background task executor when executing a task.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.BackgroundTaskContext.TaskId">
+            <summary>
+            Unique identifier of the background task.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.BackgroundTaskContext.UserId">
+            <summary>
+            Owner user identifier for whom the task runs.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.BackgroundTaskContext.Payload">
+            <summary>
+            Optional payload object passed to the task.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.BackgroundTaskContext.ReportProgress">
+            <summary>
+            Delegate used by the task to report progress updates.
+            Signature: (processed, total?, message?, processed2, total2)
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.BackgroundTaskContext.#ctor(System.Guid,System.Guid,System.Object,System.Action{System.Int32,System.Nullable{System.Int32},System.String,System.Int32,System.Int32})">
+            <summary>
+            Creates a new BackgroundTaskContext instance.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.IBackgroundTaskExecutor">
+            <summary>
+            Executor interface that background task implementations must implement.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.IBackgroundTaskExecutor.Type">
+            <summary>
+            The background task type handled by this executor.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.IBackgroundTaskExecutor.ExecuteAsync(FinanceManager.Application.BackgroundTaskContext,System.Threading.CancellationToken)">
+            <summary>
+            Executes a background task with the provided context.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.BackgroundTaskRunner">
+            <summary>
+            Background service that runs and dispatches background tasks using registered executors.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.BackgroundTaskRunner.#ctor(FinanceManager.Application.IBackgroundTaskManager,Microsoft.Extensions.Logging.ILogger{FinanceManager.Application.BackgroundTaskRunner},System.Collections.Generic.IEnumerable{FinanceManager.Application.IBackgroundTaskExecutor})">
+            <summary>
+            Creates a new BackgroundTaskRunner.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.BackgroundTaskRunner.ExecuteAsync(System.Threading.CancellationToken)">
+            <summary>
+            Main execution loop for background task processing.
+            </summary>
+            <param name="stoppingToken">Cancellation token used to stop the background service.</param>
+        </member>
+        <member name="T:FinanceManager.Application.Backups.IBackupService">
+            <summary>
+            Service interface for creating, listing, uploading and applying user backups.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Backups.IBackupService.CreateAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new backup snapshot for the specified user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Backups.IBackupService.ListAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists available backups for the specified user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Backups.IBackupService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a backup for the user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Backups.IBackupService.OpenDownloadAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Opens a read stream for downloading a backup or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Backups.IBackupService.ApplyAsync(System.Guid,System.Guid,System.Action{System.String,System.Int32,System.Int32,System.Int32,System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Applies a backup synchronously and reports progress through a callback.
+            </summary>
+            <param name="progressCallback">Callback receiving message and progress values.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Backups.IBackupService.UploadAsync(System.Guid,System.IO.Stream,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Uploads a backup file and returns created metadata DTO.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Contacts.IContactCategoryService">
+            <summary>
+            Service to manage contact categories for a user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactCategoryService.ListAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists all contact categories for the owner.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactCategoryService.CreateAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new contact category for the owner.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactCategoryService.SetSymbolAttachmentAsync(System.Guid,System.Guid,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Sets or clears the symbol attachment for the category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactCategoryService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a contact category by id or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactCategoryService.UpdateAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Updates the name of a contact category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactCategoryService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a contact category.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Contacts.IContactService">
+            <summary>
+            Service for managing contacts and related aliases.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Contacts.ContactType,System.Nullable{System.Guid},System.String,System.Nullable{System.Boolean},System.Threading.CancellationToken)">
+            <summary>
+            Creates a new contact.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactService.UpdateAsync(System.Guid,System.Guid,System.String,FinanceManager.Shared.Dtos.Contacts.ContactType,System.Nullable{System.Guid},System.String,System.Nullable{System.Boolean},System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing contact and returns the updated DTO or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a contact.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactService.ListAsync(System.Guid,System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Contacts.ContactType},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Lists contacts with optional filtering by type and name.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a contact by id or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactService.AddAliasAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Adds an alias pattern to a contact.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactService.DeleteAliasAsync(System.Guid,System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an alias by id for the given contact.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactService.ListAliases(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists aliases for the given contact.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactService.MergeAsync(System.Guid,System.Guid,System.Guid,System.Threading.CancellationToken,FinanceManager.Shared.Dtos.Contacts.MergePreference)">
+            <summary>
+            Merges two contacts into a single target contact according to the preference strategy.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactService.CountAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the total number of contacts for the owner.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IContactService.SetSymbolAttachmentAsync(System.Guid,System.Guid,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Assigns or clears a symbol attachment for a contact.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Exceptions.DomainValidationException">
+            <summary>
+            Exception type used to represent domain validation failures.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Exceptions.DomainValidationException.Code">
+            <summary>
+            Optional machine-friendly error code for the validation failure.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Exceptions.DomainValidationException.#ctor(System.String)">
+            <summary>
+            Creates a new DomainValidationException with a message.
+            </summary>
+            <param name="message">Error message.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Exceptions.DomainValidationException.#ctor(System.String,System.String)">
+            <summary>
+            Creates a new DomainValidationException with a code and message.
+            </summary>
+            <param name="code">Machine-friendly code representing the error.</param>
+            <param name="message">Error message.</param>
+        </member>
+        <member name="T:FinanceManager.Application.ICurrentUserService">
+            <summary>
+            Provides information about the current authenticated user and their context.
+            Implementations typically read this from the request principal or test doubles.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.ICurrentUserService.UserId">
+            <summary>
+            Identifier of the current user.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.ICurrentUserService.PreferredLanguage">
+            <summary>
+            Preferred language/culture of the current user (e.g. "en", "de").
+            May be null when not available.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.ICurrentUserService.IsAuthenticated">
+            <summary>
+            Indicates whether the current request is authenticated.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.ICurrentUserService.IsAdmin">
+            <summary>
+            Indicates whether the current user has administrative privileges.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.IDateTimeProvider">
+            <summary>
+            Provides the current system time in UTC. Abstraction useful for testing.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.IDateTimeProvider.UtcNow">
+            <summary>
+            Gets the current UTC date/time.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Notifications.IHolidayProvider">
+            <summary>
+            Provides information about public holidays for a given date and region.
+            Implementations may call external APIs or use embedded calendars.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Notifications.IHolidayProvider.IsPublicHoliday(System.DateTime,System.String,System.String)">
+            <summary>
+            Returns true if the specified local date is a public holiday in the given region.
+            </summary>
+            <param name="dateLocal">The local calendar date (no time component required).</param>
+            <param name="countryCode">ISO 3166-1 alpha-2 country code (e.g., "DE", "US"). Nullable ? no holidays.</param>
+            <param name="subdivisionCode">Optional ISO 3166-2 subdivision/state code (e.g., "DE-BY"). Nullable ? country-level only.</param>
+        </member>
+        <member name="T:FinanceManager.Application.Notifications.IHolidayProviderResolver">
+            <summary>
+            Resolves a holiday provider implementation for a given provider kind.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Notifications.IHolidayProviderResolver.Resolve(FinanceManager.Domain.Notifications.HolidayProviderKind)">
+            <summary>
+            Returns the holiday provider instance for the specified kind.
+            </summary>
+            <param name="kind">Holiday provider kind.</param>
+            <returns>Resolved IHolidayProvider instance.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Notifications.IHolidaySubdivisionService">
+            <summary>
+            Service to provide administrative subdivisions (states/provinces) for a holiday provider and country.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Notifications.IHolidaySubdivisionService.GetSubdivisionsAsync(FinanceManager.Domain.Notifications.HolidayProviderKind,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Returns the subdivision codes for the specified provider and country.
+            </summary>
+            <param name="provider">Holiday provider kind.</param>
+            <param name="countryCode">Two-letter ISO country code (e.g. "DE").</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Array of subdivision identifiers.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Notifications.INotificationService">
+            <summary>
+            Service to list and dismiss notifications for a user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Notifications.INotificationService.ListActiveAsync(System.Guid,System.DateTime,System.Threading.CancellationToken)">
+            <summary>
+            Lists active notifications for the owner at the specified time.
+            </summary>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="asOfUtc">Point in time to evaluate active notifications (UTC).</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Notifications.INotificationService.DismissAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Dismisses a notification for the owner.
+            </summary>
+            <param name="id">Notification id.</param>
+            <param name="ownerUserId">Owner user id requesting dismissal.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Application.Notifications.INotificationWriter">
+            <summary>
+            Helper used to create notifications for users, admins or global audiences.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Notifications.INotificationWriter.CreateForUserAsync(System.Guid,System.String,System.String,FinanceManager.Domain.Notifications.NotificationType,FinanceManager.Domain.Notifications.NotificationTarget,System.DateTime,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Creates a notification for a specific user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Notifications.INotificationWriter.CreateForAdminsAsync(System.String,System.String,FinanceManager.Domain.Notifications.NotificationType,FinanceManager.Domain.Notifications.NotificationTarget,System.DateTime,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Creates a notification targeted at administrators.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Notifications.INotificationWriter.CreateGlobalAsync(System.String,System.String,FinanceManager.Domain.Notifications.NotificationType,FinanceManager.Domain.Notifications.NotificationTarget,System.DateTime,System.Threading.CancellationToken)">
+            <summary>
+            Creates a global notification visible to all users.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Reports.IHomeKpiService">
+            <summary>
+            Service to manage home page KPI widgets (create, list, update, delete) for a user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IHomeKpiService.ListAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists home KPIs for the specified owner.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IHomeKpiService.CreateAsync(System.Guid,FinanceManager.Shared.Dtos.HomeKpi.HomeKpiCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new home KPI for the owner.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IHomeKpiService.UpdateAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.HomeKpi.HomeKpiUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing home KPI and returns the updated DTO or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IHomeKpiService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a home KPI.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Reports.PostingExportFormat">
+            <summary>
+            Supported file formats for posting exports.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Application.Reports.PostingExportFormat.Csv">
+            <summary>
+            Comma-separated values.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Application.Reports.PostingExportFormat.Xlsx">
+            <summary>
+            Excel .xlsx format.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Reports.PostingExportQuery">
+            <summary>
+            Query object used to request an export of postings.
+            </summary>
+            <param name="OwnerUserId">Owner user identifier performing the export.</param>
+            <param name="ContextKind">Posting kind that defines the context (Account/Contact/SavingsPlan/Security).</param>
+            <param name="ContextId">Context entity id.</param>
+            <param name="Format">Export format.</param>
+            <param name="MaxRows">Maximum number of rows to include.</param>
+            <param name="From">Optional from date filter.</param>
+            <param name="To">Optional to date filter.</param>
+            <param name="Q">Optional search query.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.PostingExportQuery.#ctor(System.Guid,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Guid,FinanceManager.Application.Reports.PostingExportFormat,System.Int32,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.String)">
+            <summary>
+            Query object used to request an export of postings.
+            </summary>
+            <param name="OwnerUserId">Owner user identifier performing the export.</param>
+            <param name="ContextKind">Posting kind that defines the context (Account/Contact/SavingsPlan/Security).</param>
+            <param name="ContextId">Context entity id.</param>
+            <param name="Format">Export format.</param>
+            <param name="MaxRows">Maximum number of rows to include.</param>
+            <param name="From">Optional from date filter.</param>
+            <param name="To">Optional to date filter.</param>
+            <param name="Q">Optional search query.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportQuery.OwnerUserId">
+            <summary>Owner user identifier performing the export.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportQuery.ContextKind">
+            <summary>Posting kind that defines the context (Account/Contact/SavingsPlan/Security).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportQuery.ContextId">
+            <summary>Context entity id.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportQuery.Format">
+            <summary>Export format.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportQuery.MaxRows">
+            <summary>Maximum number of rows to include.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportQuery.From">
+            <summary>Optional from date filter.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportQuery.To">
+            <summary>Optional to date filter.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportQuery.Q">
+            <summary>Optional search query.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Reports.PostingExportRow">
+            <summary>
+            Single row representation used when streaming or generating posting export content.
+            </summary>
+            <param name="BookingDate">Booking date of the posting.</param>
+            <param name="ValutaDate">Valuta/value date of the posting.</param>
+            <param name="Amount">Monetary amount.</param>
+            <param name="Kind">Posting kind.</param>
+            <param name="Subject">Optional subject/short description.</param>
+            <param name="RecipientName">Optional recipient name.</param>
+            <param name="Description">Optional description text.</param>
+            <param name="AccountId">Optional account id referenced.</param>
+            <param name="ContactId">Optional contact id referenced.</param>
+            <param name="SavingsPlanId">Optional savings plan id referenced.</param>
+            <param name="SecurityId">Optional security id referenced.</param>
+            <param name="SecuritySubType">Optional security posting subtype.</param>
+            <param name="Quantity">Optional quantity for security postings.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.PostingExportRow.#ctor(System.DateTime,System.DateTime,System.Decimal,FinanceManager.Shared.Dtos.Postings.PostingKind,System.String,System.String,System.String,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType},System.Nullable{System.Decimal})">
+            <summary>
+            Single row representation used when streaming or generating posting export content.
+            </summary>
+            <param name="BookingDate">Booking date of the posting.</param>
+            <param name="ValutaDate">Valuta/value date of the posting.</param>
+            <param name="Amount">Monetary amount.</param>
+            <param name="Kind">Posting kind.</param>
+            <param name="Subject">Optional subject/short description.</param>
+            <param name="RecipientName">Optional recipient name.</param>
+            <param name="Description">Optional description text.</param>
+            <param name="AccountId">Optional account id referenced.</param>
+            <param name="ContactId">Optional contact id referenced.</param>
+            <param name="SavingsPlanId">Optional savings plan id referenced.</param>
+            <param name="SecurityId">Optional security id referenced.</param>
+            <param name="SecuritySubType">Optional security posting subtype.</param>
+            <param name="Quantity">Optional quantity for security postings.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportRow.BookingDate">
+            <summary>Booking date of the posting.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportRow.ValutaDate">
+            <summary>Valuta/value date of the posting.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportRow.Amount">
+            <summary>Monetary amount.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportRow.Kind">
+            <summary>Posting kind.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportRow.Subject">
+            <summary>Optional subject/short description.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportRow.RecipientName">
+            <summary>Optional recipient name.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportRow.Description">
+            <summary>Optional description text.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportRow.AccountId">
+            <summary>Optional account id referenced.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportRow.ContactId">
+            <summary>Optional contact id referenced.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportRow.SavingsPlanId">
+            <summary>Optional savings plan id referenced.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportRow.SecurityId">
+            <summary>Optional security id referenced.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportRow.SecuritySubType">
+            <summary>Optional security posting subtype.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Reports.PostingExportRow.Quantity">
+            <summary>Optional quantity for security postings.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Reports.IPostingExportService">
+            <summary>
+            Service supporting querying and generation of posting exports in various formats.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IPostingExportService.QueryAsync(FinanceManager.Application.Reports.PostingExportQuery,System.Threading.CancellationToken)">
+            <summary>
+            Streams posting export rows matching the given query.
+            </summary>
+            <param name="query">Query describing the export criteria and limits.</param>
+            <param name="ct">Cancellation token to cancel the streaming operation.</param>
+            <returns>An async sequence of <see cref="T:FinanceManager.Application.Reports.PostingExportRow"/> instances matching the query.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IPostingExportService.GenerateAsync(FinanceManager.Application.Reports.PostingExportQuery,System.Threading.CancellationToken)">
+            <summary>
+            Generates a file for the given query and returns content type, file name and a readable stream with the generated content.
+            Caller is responsible for disposing the returned <see cref="T:System.IO.Stream"/> when finished.
+            </summary>
+            <param name="query">Query describing the export to generate.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>
+            A tuple containing the content type (e.g. "text/csv"), the suggested file name and a stream with file content.
+            The returned stream is readable from the beginning.
+            </returns>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IPostingExportService.CountAsync(FinanceManager.Application.Reports.PostingExportQuery,System.Threading.CancellationToken)">
+            <summary>
+            Counts the total number of rows that would be produced for the given export query.
+            </summary>
+            <param name="query">Export query to evaluate.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Total number of matching rows (non-negative integer).</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IPostingExportService.StreamCsvAsync(FinanceManager.Application.Reports.PostingExportQuery,System.IO.Stream,System.Threading.CancellationToken)">
+            <summary>
+            Streams CSV content for the given query directly to the provided output stream.
+            This method writes CSV text into the supplied <paramref name="output"/> stream and does not return a separate buffer.
+            </summary>
+            <param name="query">Export query describing which rows to include.</param>
+            <param name="output">Destination stream to which CSV content will be written. The caller remains owner of the stream.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A task that completes when streaming has finished or an exception is thrown.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Reports.IPostingTimeSeriesService">
+            <summary>
+            Provides aggregated posting time series (already pre-aggregated in PostingAggregates) for different posting kinds / entities.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IPostingTimeSeriesService.GetAsync(System.Guid,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Guid,FinanceManager.Domain.Postings.AggregatePeriod,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Returns an ordered (ascending by PeriodStart) list of aggregate points or null when the entity does not belong to the user.
+            Optional maxYearsBack (1..10) limits the earliest PeriodStart considered.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IPostingTimeSeriesService.GetAllAsync(System.Guid,FinanceManager.Shared.Dtos.Postings.PostingKind,FinanceManager.Domain.Postings.AggregatePeriod,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Returns an ordered (ascending) list of aggregate points across ALL owned entities of the given posting kind.
+            If the user owns no entities of that kind, an empty list is returned.
+            Optional maxYearsBack (1..10) limits the earliest PeriodStart considered.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Reports.IReportAggregationService">
+            <summary>
+            Provides dynamic aggregation for configurable reports (FA-REP-008).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IReportAggregationService.QueryAsync(FinanceManager.Shared.Dtos.Reports.ReportAggregationQuery,System.Threading.CancellationToken)">
+            <summary>
+            Executes an aggregation query and returns the result.
+            </summary>
+            <param name="query">The aggregation query payload.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Aggregation result with points and comparison flags.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Reports.IReportFavoriteService">
+            <summary>
+            Service for managing report favorites (saved report configurations) for a user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IReportFavoriteService.ListAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists report favorites for the specified owner.
+            </summary>
+            <param name="ownerUserId">Owner user identifier for which to list favorites.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A read-only list of <see cref="T:FinanceManager.Shared.Dtos.Reports.ReportFavoriteDto"/> instances belonging to the owner.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IReportFavoriteService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a specific report favorite by id for the owner.
+            </summary>
+            <param name="id">Identifier of the report favorite to retrieve.</param>
+            <param name="ownerUserId">Owner user identifier requesting the favorite.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The matching <see cref="T:FinanceManager.Shared.Dtos.Reports.ReportFavoriteDto"/>, or <c>null</c> if not found.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> or <paramref name="ownerUserId"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IReportFavoriteService.CreateAsync(System.Guid,FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new report favorite for the owner.
+            </summary>
+            <param name="ownerUserId">Owner user identifier creating the favorite.</param>
+            <param name="request">Creation request containing favorite details.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Reports.ReportFavoriteDto"/>.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="request"/> is <c>null</c> or required fields are missing.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IReportFavoriteService.UpdateAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing report favorite.
+            </summary>
+            <param name="id">Identifier of the report favorite to update.</param>
+            <param name="ownerUserId">Owner user identifier performing the update.</param>
+            <param name="request">Update request payload containing fields to change.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The updated <see cref="T:FinanceManager.Shared.Dtos.Reports.ReportFavoriteDto"/>, or <c>null</c> if the favorite does not exist.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> or <paramref name="ownerUserId"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="request"/> is <c>null</c>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Reports.IReportFavoriteService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a report favorite for the owner.
+            </summary>
+            <param name="id">Identifier of the report favorite to delete.</param>
+            <param name="ownerUserId">Owner user identifier performing the deletion.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns><c>true</c> when the favorite was deleted; otherwise <c>false</c> (for example, when not found).</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> or <paramref name="ownerUserId"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="T:FinanceManager.Application.Savings.ISavingsPlanCategoryService">
+            <summary>
+            Service to manage savings plan categories for a user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Savings.ISavingsPlanCategoryService.ListAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists all savings plan categories for the specified owner.
+            </summary>
+            <param name="ownerUserId">The owner user identifier for which to list categories.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A read-only list of <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCategoryDto"/> instances belonging to the owner.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Savings.ISavingsPlanCategoryService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single savings plan category by id for the specified owner.
+            </summary>
+            <param name="id">The category identifier to retrieve.</param>
+            <param name="ownerUserId">The owner user identifier.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The matching <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCategoryDto"/>, or <c>null</c> if not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Savings.ISavingsPlanCategoryService.CreateAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new savings plan category for the specified owner.
+            </summary>
+            <param name="ownerUserId">The owner user identifier.</param>
+            <param name="name">Display name of the new category.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The created <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCategoryDto"/>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Savings.ISavingsPlanCategoryService.UpdateAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Updates the name of an existing savings plan category.
+            </summary>
+            <param name="id">Identifier of the category to update.</param>
+            <param name="ownerUserId">Owner user identifier performing the update.</param>
+            <param name="name">New display name for the category.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The updated <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCategoryDto"/>, or <c>null</c> if the category does not exist.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Savings.ISavingsPlanCategoryService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a savings plan category.
+            </summary>
+            <param name="id">Identifier of the category to delete.</param>
+            <param name="ownerUserId">Owner user identifier performing the deletion.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns><c>true</c> when the category was deleted; otherwise <c>false</c> (for example, when not found or protected).</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Savings.ISavingsPlanCategoryService.SetSymbolAttachmentAsync(System.Guid,System.Guid,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Sets or clears the symbol attachment for a savings plan category.
+            </summary>
+            <param name="id">Identifier of the category to update.</param>
+            <param name="ownerUserId">Owner user identifier performing the update.</param>
+            <param name="attachmentId">Attachment id to set as symbol, or <c>null</c> to clear.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+        </member>
+        <member name="T:FinanceManager.Application.Savings.ISavingsPlanService">
+            <summary>
+            Service to manage savings plans: list, get, create, update, archive, delete, analyze.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Savings.ISavingsPlanService.ListAsync(System.Guid,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Lists savings plans for the specified owner.
+            </summary>
+            <param name="ownerUserId">Identifier of the owner whose savings plans should be returned.</param>
+            <param name="onlyActive">When <c>true</c> returns only active plans; when <c>false</c> returns only archived/inactive plans.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A read-only list of <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto"/> matching the criteria.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Savings.ISavingsPlanService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a savings plan by identifier for the specified owner.
+            </summary>
+            <param name="id">Identifier of the savings plan to retrieve.</param>
+            <param name="ownerUserId">Identifier of the owner requesting the savings plan.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The matching <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto"/>, or <c>null</c> when not found.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> or <paramref name="ownerUserId"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Savings.ISavingsPlanService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType,System.Nullable{System.Decimal},System.Nullable{System.DateTime},System.Nullable{FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanInterval},System.Nullable{System.Guid},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new savings plan for the specified owner.
+            </summary>
+            <param name="ownerUserId">Identifier of the owner creating the savings plan.</param>
+            <param name="name">Display name of the savings plan. Required.</param>
+            <param name="type">Type of savings plan.</param>
+            <param name="targetAmount">Optional target amount to save towards.</param>
+            <param name="targetDate">Optional target date for achieving the goal.</param>
+            <param name="interval">Optional contribution interval for automated contributions.</param>
+            <param name="categoryId">Optional category id grouping the plan.</param>
+            <param name="contractNumber">Optional contract number or reference.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The created <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto"/>.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="name"/> is <c>null</c> or empty.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Savings.ISavingsPlanService.UpdateAsync(System.Guid,System.Guid,System.String,FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType,System.Nullable{System.Decimal},System.Nullable{System.DateTime},System.Nullable{FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanInterval},System.Nullable{System.Guid},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing savings plan and returns the updated DTO or <c>null</c> when not found.
+            </summary>
+            <param name="id">Identifier of the savings plan to update.</param>
+            <param name="ownerUserId">Identifier of the owner performing the update.</param>
+            <param name="name">New display name. Required.</param>
+            <param name="type">Updated savings plan type.</param>
+            <param name="targetAmount">Optional updated target amount.</param>
+            <param name="targetDate">Optional updated target date.</param>
+            <param name="interval">Optional updated contribution interval.</param>
+            <param name="categoryId">Optional updated category id.</param>
+            <param name="contractNumber">Optional updated contract number.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The updated <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto"/>, or <c>null</c> if the plan does not exist.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> or <paramref name="ownerUserId"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="name"/> is <c>null</c> or empty.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Savings.ISavingsPlanService.ArchiveAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Archives (deactivates) a savings plan.
+            </summary>
+            <param name="id">Identifier of the savings plan to archive.</param>
+            <param name="ownerUserId">Identifier of the owner performing the archive action.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns><c>true</c> when the plan was successfully archived; otherwise <c>false</c>.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> or <paramref name="ownerUserId"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Savings.ISavingsPlanService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a savings plan permanently.
+            </summary>
+            <param name="id">Identifier of the savings plan to delete.</param>
+            <param name="ownerUserId">Identifier of the owner performing the deletion.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns><c>true</c> when the plan was deleted; otherwise <c>false</c>.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> or <paramref name="ownerUserId"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Savings.ISavingsPlanService.AnalyzeAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Performs analysis for the given savings plan, returning forecasting and scheduling information.
+            </summary>
+            <param name="id">Identifier of the savings plan to analyze.</param>
+            <param name="ownerUserId">Identifier of the owner requesting the analysis.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanAnalysisDto"/> containing analysis results.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> or <paramref name="ownerUserId"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Savings.ISavingsPlanService.CountAsync(System.Guid,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Returns the count of savings plans for the specified owner, optionally filtered by active state.
+            </summary>
+            <param name="ownerUserId">Identifier of the owner whose plans are counted.</param>
+            <param name="onlyActive">When <c>true</c> counts only active plans; when <c>false</c> counts only archived plans.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>Non-negative integer representing the number of matching savings plans.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Savings.ISavingsPlanService.SetSymbolAttachmentAsync(System.Guid,System.Guid,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Sets or clears the symbol attachment for a savings plan.
+            </summary>
+            <param name="id">Identifier of the savings plan to update.</param>
+            <param name="ownerUserId">Identifier of the owner performing the update.</param>
+            <param name="attachmentId">Attachment id to set as symbol, or <c>null</c> to clear the symbol.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A task that completes when the operation has finished.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> or <paramref name="ownerUserId"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ISecurityCategoryService">
+            <summary>
+            Service to manage security categories for a user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityCategoryService.ListAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists security categories for the specified owner.
+            </summary>
+            <param name="ownerUserId">Identifier of the owner whose categories should be listed.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A read-only list of <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityCategoryDto"/> instances belonging to the owner.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityCategoryService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a security category by id for the specified owner.
+            </summary>
+            <param name="id">Identifier of the category to retrieve.</param>
+            <param name="ownerUserId">Identifier of the owner requesting the category.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The matching <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityCategoryDto"/>, or <c>null</c> if not found.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> or <paramref name="ownerUserId"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityCategoryService.CreateAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new security category for the specified owner.
+            </summary>
+            <param name="ownerUserId">Identifier of the owner creating the category.</param>
+            <param name="name">Display name of the category. Required.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityCategoryDto"/> representing the new category.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="name"/> is <c>null</c> or empty.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityCategoryService.UpdateAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Updates the display name of an existing security category.
+            </summary>
+            <param name="id">Identifier of the category to update.</param>
+            <param name="ownerUserId">Identifier of the owner performing the update.</param>
+            <param name="name">New display name for the category.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The updated <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityCategoryDto"/>, or <c>null</c> if the category does not exist.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> or <paramref name="ownerUserId"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="name"/> is <c>null</c> or empty.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityCategoryService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a security category.
+            </summary>
+            <param name="id">Identifier of the category to delete.</param>
+            <param name="ownerUserId">Identifier of the owner performing the deletion.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns><c>true</c> when the category was deleted; otherwise <c>false</c> (for example when not found or protected).</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> or <paramref name="ownerUserId"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityCategoryService.SetSymbolAttachmentAsync(System.Guid,System.Guid,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Sets or clears the symbol attachment for a security category.
+            </summary>
+            <param name="id">Identifier of the category to update.</param>
+            <param name="ownerUserId">Identifier of the owner performing the update.</param>
+            <param name="attachmentId">Attachment id to set as symbol, or <c>null</c> to clear.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A task that completes when the operation has finished.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> or <paramref name="ownerUserId"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ISecurityService">
+            <summary>
+            Service to manage securities (list, get, create, update, archive, delete, count).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityService.ListAsync(System.Guid,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Lists securities for the specified owner, optionally filtering by active state.
+            </summary>
+            <param name="ownerUserId">Identifier of the owner whose securities should be listed.</param>
+            <param name="onlyActive">If <c>true</c>, returns only active securities; if <c>false</c>, returns only inactive securities; if <c>null</c>, returns all securities.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A read-only list of <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityDto"/> instances matching the criteria.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a security by its identifier for the specified owner.
+            </summary>
+            <param name="id">Identifier of the security to retrieve.</param>
+            <param name="ownerUserId">Identifier of the owner requesting the security.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The matching <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityDto"/>, or <c>null</c> when not found.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityService.CreateAsync(System.Guid,System.String,System.String,System.String,System.String,System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Creates a new security for the specified owner.
+            </summary>
+            <param name="ownerUserId">Identifier of the owner creating the security.</param>
+            <param name="name">Display name of the security. Required.</param>
+            <param name="identifier">An external identifier (e.g. ISIN) or internal symbol. Required.</param>
+            <param name="description">Optional description text.</param>
+            <param name="alphaVantageCode">Optional code used for external price lookups (AlphaVantage).</param>
+            <param name="currencyCode">ISO currency code (e.g. "USD", "EUR"). Required.</param>
+            <param name="categoryId">Optional category id grouping the security.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityDto"/> representing the new security.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="name"/>, <paramref name="identifier"/> or <paramref name="currencyCode"/> is <c>null</c> or empty.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityService.UpdateAsync(System.Guid,System.Guid,System.String,System.String,System.String,System.String,System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing security and returns the updated DTO.
+            </summary>
+            <param name="id">Identifier of the security to update.</param>
+            <param name="ownerUserId">Identifier of the owner performing the update.</param>
+            <param name="name">New display name. Required.</param>
+            <param name="identifier">New identifier/symbol. Required.</param>
+            <param name="description">Optional description text.</param>
+            <param name="alphaVantageCode">Optional external lookup code.</param>
+            <param name="currencyCode">ISO currency code. Required.</param>
+            <param name="categoryId">Optional category id.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The updated <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityDto"/>, or <c>null</c> if the security does not exist.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="name"/>, <paramref name="identifier"/> or <paramref name="currencyCode"/> is <c>null</c> or empty.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityService.ArchiveAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Archives (marks as inactive) the specified security.
+            </summary>
+            <param name="id">Identifier of the security to archive.</param>
+            <param name="ownerUserId">Identifier of the owner performing the archive action.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns><c>true</c> when the security was archived; otherwise <c>false</c> (for example, when not found).</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes the specified security permanently.
+            </summary>
+            <param name="id">Identifier of the security to delete.</param>
+            <param name="ownerUserId">Identifier of the owner performing the deletion.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns><c>true</c> when the security was deleted; otherwise <c>false</c>.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityService.CountAsync(System.Guid,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Returns the count of securities for the specified owner, optionally filtered by active state.
+            </summary>
+            <param name="ownerUserId">Identifier of the owner whose securities are counted.</param>
+            <param name="onlyActive">If <c>true</c>, counts only active securities; if <c>false</c>, only inactive; if <c>null</c>, counts all.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>Non-negative integer representing the number of matching securities.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityService.SetSymbolAttachmentAsync(System.Guid,System.Guid,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Sets or clears the symbol attachment for a security.
+            </summary>
+            <param name="id">Identifier of the security to update.</param>
+            <param name="ownerUserId">Identifier of the owner performing the update.</param>
+            <param name="attachmentId">Attachment id to set as symbol, or <c>null</c> to clear the symbol.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A task that completes when the operation has finished.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="T:FinanceManager.Application.Security.IIpBlockService">
+            <summary>
+            Service to manage IP blocks and rate-limit related operations.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Security.IIpBlockService.ListAsync(System.Nullable{System.Boolean},System.Threading.CancellationToken)">
+            <summary>
+            Lists IP block entries.
+            </summary>
+            <param name="onlyBlocked">If <c>true</c>, only currently blocked entries will be returned; if <c>false</c>, only unblocked entries; if <c>null</c>, all entries.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A read-only list of <see cref="T:FinanceManager.Shared.Dtos.Security.IpBlockDto"/> representing matching IP block entries.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Security.IIpBlockService.CreateAsync(System.String,System.String,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new IP block entry for the specified IP address.
+            </summary>
+            <param name="ipAddress">IP address to block (IPv4 or IPv6 string).</param>
+            <param name="reason">Optional reason for the block; may be <c>null</c>.</param>
+            <param name="isBlocked">Initial blocked state for the entry.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Security.IpBlockDto"/> describing the new entry.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="ipAddress"/> is <c>null</c> or empty.</exception>
+            <exception cref="T:System.FormatException">Thrown when <paramref name="ipAddress"/> is not a valid IP address format.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Security.IIpBlockService.UpdateAsync(System.Guid,System.String,System.Nullable{System.Boolean},System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing IP block entry.
+            </summary>
+            <param name="id">Identifier of the IP block entry to update.</param>
+            <param name="reason">New reason text or <c>null</c> to clear.</param>
+            <param name="isBlocked">New blocked state or <c>null</c> to leave unchanged.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>The updated <see cref="T:FinanceManager.Shared.Dtos.Security.IpBlockDto"/>, or <c>null</c> if no entry with the specified id exists.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Security.IIpBlockService.BlockAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Marks the specified IP block entry as blocked.
+            </summary>
+            <param name="id">Identifier of the IP block entry to block.</param>
+            <param name="reason">Optional reason for blocking or <c>null</c> to leave existing reason unchanged.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns><c>true</c> if the entry was successfully marked as blocked; otherwise <c>false</c> (for example, when not found).</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Security.IIpBlockService.UnblockAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Unblocks the specified IP block entry.
+            </summary>
+            <param name="id">Identifier of the IP block entry to unblock.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns><c>true</c> if the entry was successfully unblocked; otherwise <c>false</c> (for example, when not found).</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Security.IIpBlockService.ResetCountersAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Resets failure counters (e.g. login attempt counters) associated with the specified IP block entry.
+            </summary>
+            <param name="id">Identifier of the IP block entry whose counters should be reset.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns><c>true</c> when counters were successfully reset; otherwise <c>false</c>.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Security.IIpBlockService.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an IP block entry permanently.
+            </summary>
+            <param name="id">Identifier of the IP block entry to delete.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns><c>true</c> if the entry was deleted; otherwise <c>false</c> (for example, when not found).</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Security.IIpBlockService.RegisterUnknownUserFailureAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Registers a login failure observed for an unknown or unauthenticated user that originated from the given IP address.
+            Implementations typically increment failure counters and may trigger blocking rules.
+            </summary>
+            <param name="ipAddress">IP address where the failure originated.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A task that completes when the failure has been recorded.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="ipAddress"/> is <c>null</c> or empty.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Security.IIpBlockService.BlockByAddressAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Immediately blocks the specified IP address by address (creating an entry if required).
+            </summary>
+            <param name="ipAddress">IP address to block (IPv4 or IPv6 string).</param>
+            <param name="reason">Optional reason for the block.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A task that completes when the block operation has finished.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="ipAddress"/> is <c>null</c> or empty.</exception>
+            <exception cref="T:System.FormatException">Thrown when <paramref name="ipAddress"/> is not a valid IP address format.</exception>
+        </member>
+        <member name="T:FinanceManager.Application.Setup.ISetupImportService">
+            <summary>
+            Service for importing initial setup data (e.g. from a previously exported configuration).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Setup.ISetupImportService.ImportAsync(System.Guid,System.IO.Stream,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Imports a setup file for the specified user.
+            </summary>
+            <param name="userId">User identifier that owns the imported data.</param>
+            <param name="fileStream">Stream containing the import file content.</param>
+            <param name="replaceExisting">When true, existing data may be replaced by the import.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Application.Statements.IStatementDraftService">
+            <summary>
+            Service to create and manage statement import drafts and their entries.
+            Provides operations to create drafts from uploaded files, query and modify drafts and entries,
+            validate and book drafts into the system.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.CreateDraftAsync(System.Guid,System.String,System.Byte[],System.Threading.CancellationToken)">
+            <summary>
+            Creates a new statement draft from the supplied file bytes and yields progress via an async stream
+            of created <see cref="T:FinanceManager.Shared.Dtos.Statements.StatementDraftDto"/> instances. Implementations may yield intermediate
+            drafts for preview or when processing multiple contained statements.
+            </summary>
+            <param name="ownerUserId">Identifier of the owner user for whom the draft is created.</param>
+            <param name="originalFileName">Original file name of the uploaded statement (used for logging and display).</param>
+            <param name="fileBytes">Raw file bytes to import. Must not be <c>null</c>.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>An asynchronous stream of <see cref="T:FinanceManager.Shared.Dtos.Statements.StatementDraftDto"/> representing created/parsed drafts.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="fileBytes"/> is <c>null</c>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.GetDraftAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a draft by id or <c>null</c> when not found.
+            </summary>
+            <param name="draftId">Identifier of the draft to retrieve.</param>
+            <param name="ownerUserId">Owner user identifier used to scope the draft lookup.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The <see cref="T:FinanceManager.Shared.Dtos.Statements.StatementDraftDto"/> when found; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.GetDraftHeaderAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets draft header information (metadata only) by draft id or <c>null</c> when not found.
+            </summary>
+            <param name="draftId">Identifier of the draft.</param>
+            <param name="ownerUserId">Owner user identifier used to scope the draft lookup.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The draft header DTO when found; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.FindDraftHeaderAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Finds a draft header that contains the specified entry id.
+            </summary>
+            <param name="entryId">Identifier of the draft entry used to locate its parent draft.</param>
+            <param name="ownerUserId">Owner user identifier used to scope the lookup.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The draft header DTO when found; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.GetDraftEntriesAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns entries for the specified draft.
+            </summary>
+            <param name="draftId">Identifier of the draft.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A collection of <see cref="T:FinanceManager.Shared.Dtos.Statements.StatementDraftEntryDto"/> for the draft (may be empty).</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.GetDraftEntryAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a specific draft entry by draft and entry id.
+            </summary>
+            <param name="draftId">Identifier of the draft containing the entry.</param>
+            <param name="entryId">Identifier of the entry to retrieve.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The entry DTO when found; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.GetOpenDraftsAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns a list of open drafts for the owner.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>List of open draft DTOs.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.GetOpenDraftsAsync(System.Guid,System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Returns a paged list of open drafts with skip/take for pagination.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="skip">Number of items to skip.</param>
+            <param name="take">Number of items to take.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>List of open draft DTOs for the requested page.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.GetOpenDraftsCountAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the count of open drafts for a user.
+            </summary>
+            <param name="userId">Owner user identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>The number of open drafts for the user.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.AddEntryAsync(System.Guid,System.Guid,System.DateTime,System.Decimal,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Adds a draft entry with minimal required data and returns the updated draft DTO when successful.
+            </summary>
+            <param name="draftId">Identifier of the draft to add the entry to.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="bookingDate">Booking date of the new entry.</param>
+            <param name="amount">Amount of the new entry.</param>
+            <param name="subject">Subject/description of the new entry.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The updated draft DTO when the entry was added; otherwise <c>null</c> when the draft was not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.CommitAsync(System.Guid,System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.ImportFormat,System.Threading.CancellationToken)">
+            <summary>
+            Commits a draft into the system for a specific account using the provided import format.
+            </summary>
+            <param name="draftId">Identifier of the draft to commit.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="accountId">Target account identifier for the commit.</param>
+            <param name="format">Import format to use for booking.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A <see cref="T:FinanceManager.Shared.Dtos.Statements.CommitResult"/> describing the outcome when successful; otherwise <c>null</c> if commit could not be prepared.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.CancelAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Cancels an existing draft and removes any associated temporary data.
+            </summary>
+            <param name="draftId">Identifier of the draft to cancel.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns><c>true</c> when the draft was found and cancelled; otherwise <c>false</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.ClassifyAsync(System.Nullable{System.Guid},System.Nullable{System.Guid},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Classifies a draft or a single entry using configured matching rules and returns the updated draft DTO.
+            </summary>
+            <param name="draftId">Optional draft id to limit classification to a specific draft.</param>
+            <param name="entryId">Optional entry id to limit classification to a single entry.</param>
+            <param name="ownerUserId">Owner user identifier used to scope lookups.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The updated draft DTO when classification changed state; otherwise <c>null</c> when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.SetAccountAsync(System.Guid,System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Sets the account for a draft and returns the updated draft DTO.
+            </summary>
+            <param name="draftId">Identifier of the draft.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="accountId">Account identifier to set on the draft.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The updated draft DTO when successful; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.SetDescriptionAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Sets a human description for a draft and returns the updated draft DTO.
+            </summary>
+            <param name="draftId">Identifier of the draft.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="description">Optional human readable description to attach to the draft.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The updated draft DTO when successful; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.CreateEmptyDraftAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Creates an empty draft (without file) for the owner and returns the created draft DTO.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="originalFileName">Optional original file name used as label for the draft.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The created draft DTO when successful; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.SetEntryContactAsync(System.Guid,System.Guid,System.Nullable{System.Guid},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Sets the contact for a specific draft entry and returns the updated draft DTO.
+            </summary>
+            <param name="draftId">Identifier of the draft containing the entry.</param>
+            <param name="entryId">Identifier of the entry to update.</param>
+            <param name="contactId">Contact identifier to assign to the entry (or <c>null</c> to clear).</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The updated draft DTO when successful; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.SetEntryCostNeutralAsync(System.Guid,System.Guid,System.Nullable{System.Boolean},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Sets whether an entry is cost-neutral and returns the updated draft DTO.
+            </summary>
+            <param name="draftId">Identifier of the draft.</param>
+            <param name="entryId">Identifier of the entry to update.</param>
+            <param name="isCostNeutral">Flag indicating whether the entry is cost-neutral; <c>null</c> means unchanged.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The updated draft DTO when successful; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.AssignSavingsPlanAsync(System.Guid,System.Guid,System.Nullable{System.Guid},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Assigns a savings plan to a draft entry and returns the updated draft DTO.
+            </summary>
+            <param name="draftId">Identifier of the draft containing the entry.</param>
+            <param name="entryId">Identifier of the entry to update.</param>
+            <param name="savingsPlanId">Savings plan identifier to assign, or <c>null</c> to clear.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The updated draft DTO reflecting the assigned savings plan.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.SetEntrySplitDraftAsync(System.Guid,System.Guid,System.Nullable{System.Guid},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Sets the split draft id for an entry (used for splitting amounts across groups) and returns the updated draft DTO.
+            </summary>
+            <param name="draftId">Identifier of the draft.</param>
+            <param name="entryId">Identifier of the entry.</param>
+            <param name="splitDraftId">Identifier of the split draft to assign, or <c>null</c> to clear.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The updated draft DTO when successful; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.UpdateEntryCoreAsync(System.Guid,System.Guid,System.Guid,System.DateTime,System.Nullable{System.DateTime},System.Decimal,System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Updates core fields for an entry and returns the updated entry DTO.
+            </summary>
+            <param name="draftId">Identifier of the draft containing the entry.</param>
+            <param name="entryId">Identifier of the entry to update.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="bookingDate">New booking date for the entry.</param>
+            <param name="valutaDate">Optional valuta date for the entry.</param>
+            <param name="amount">New amount.</param>
+            <param name="subject">New subject/description.</param>
+            <param name="recipientName">Optional recipient name.</param>
+            <param name="currencyCode">Optional currency code.</param>
+            <param name="bookingDescription">Optional booking description.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The updated <see cref="T:FinanceManager.Shared.Dtos.Statements.StatementDraftEntryDto"/> when successful; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.SetEntryArchiveSavingsPlanOnBookingAsync(System.Guid,System.Guid,System.Boolean,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Sets a flag whether the linked savings plan should be archived on booking and returns the updated draft DTO.
+            </summary>
+            <param name="draftId">Identifier of the draft.</param>
+            <param name="entryId">Identifier of the entry.</param>
+            <param name="archive">Flag indicating whether to archive the linked savings plan when the entry is booked.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The updated draft DTO when successful; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.SetEntrySecurityAsync(System.Guid,System.Guid,System.Nullable{System.Guid},System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityTransactionType},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Sets security related fields for an entry (security id, transaction type, quantities/prices) and returns the draft entity.
+            Note: this operation returns the domain draft when successful to allow further domain-level operations by the caller.
+            </summary>
+            <param name="draftId">Identifier of the draft containing the entry.</param>
+            <param name="entryId">Identifier of the entry to update.</param>
+            <param name="securityId">Security identifier to assign, or <c>null</c> to clear.</param>
+            <param name="txType">Optional security transaction type (buy/sell/etc.).</param>
+            <param name="quantity">Optional security quantity.</param>
+            <param name="price">Optional security price (per unit).</param>
+            <param name="fee">Optional fee amount for the security transaction.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The domain <see cref="T:FinanceManager.Domain.Statements.StatementDraft"/> when the operation succeeded; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.ValidateAsync(System.Guid,System.Nullable{System.Guid},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Validates the draft (or a single entry) and returns a <see cref="T:FinanceManager.Shared.Dtos.Statements.DraftValidationResultDto"/> describing warnings and errors.
+            </summary>
+            <param name="draftId">Identifier of the draft to validate.</param>
+            <param name="entryId">Optional entry id to validate a single entry.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A <see cref="T:FinanceManager.Shared.Dtos.Statements.DraftValidationResultDto"/> containing validation messages and state.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.BookAsync(System.Guid,System.Nullable{System.Guid},System.Guid,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Books a draft or single entry into posted statement entries. Returns booking result which includes created postings and any warnings/errors.
+            </summary>
+            <param name="draftId">Identifier of the draft.</param>
+            <param name="entryId">Optional entry id to book a single entry.</param>
+            <param name="ownerUserId">Owner user identifier performing the booking.</param>
+            <param name="forceWarnings">When <c>true</c> warnings are ignored and booking proceeds if possible.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A <see cref="T:FinanceManager.Shared.Dtos.Statements.BookingResult"/> describing success, created postings and any issues encountered.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.SaveEntryAllAsync(System.Guid,System.Guid,System.Guid,System.Nullable{System.Guid},System.Nullable{System.Boolean},System.Nullable{System.Guid},System.Nullable{System.Boolean},System.Nullable{System.Guid},System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityTransactionType},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Threading.CancellationToken)">
+            <summary>
+            Saves all entry properties including optional linking to savings plans and securities and returns the updated entry DTO.
+            </summary>
+            <param name="draftId">Identifier of the draft.</param>
+            <param name="entryId">Identifier of the entry.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="splitDraftId">Optional split draft id to assign.</param>
+            <param name="isCostNeutral">Optional cost-neutral flag.</param>
+            <param name="contactId">Optional contact id to assign.</param>
+            <param name="archiveSavingsPlanOnBooking">Optional flag whether to archive linked savings plan on booking.</param>
+            <param name="savingsPlanId">Optional savings plan id to assign.</param>
+            <param name="txType">Optional security transaction type.</param>
+            <param name="quantity">Optional quantity for securities.</param>
+            <param name="price">Optional price for securities.</param>
+            <param name="fee">Optional fee for securities.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The updated <see cref="T:FinanceManager.Shared.Dtos.Statements.StatementDraftEntryDto"/> when saved; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.AddStatementDetailsAsync(System.Guid,System.String,System.Byte[],System.Threading.CancellationToken)">
+            <summary>
+            Adds additional statement details such as original file attachment to the draft.
+            </summary>
+            <param name="id">Identifier of the draft to update.</param>
+            <param name="fileName">Original file name of the attachment.</param>
+            <param name="fileData">Raw bytes of the file to attach.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A task that completes when the details have been persisted.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="fileData"/> is <c>null</c>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.DeleteEntryAsync(System.Guid,System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a single draft entry.
+            </summary>
+            <param name="draftId">Identifier of the draft containing the entry.</param>
+            <param name="entryId">Identifier of the entry to delete.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns><c>true</c> when the entry was found and deleted; otherwise <c>false</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.DeleteAllAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes all drafts for the owner and returns the number of deleted drafts.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Number of drafts that were deleted.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.GetSplitGroupSumAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the sum of amounts for a split group identified by <paramref name="splitDraftId"/>.
+            </summary>
+            <param name="splitDraftId">Identifier of the split draft group.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The sum of group amounts or <c>null</c> when the group has no entries.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.GetUploadGroupNeighborsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns neighbor ids for the upload group (previous, next) to navigate uploads within the same upload group.
+            </summary>
+            <param name="draftId">Identifier of the draft to locate neighbors for.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A tuple containing previous and next draft ids (each may be <c>null</c>).</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.ResetDuplicateEntryAsync(System.Guid,System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Resets duplicate detection state for an entry and returns the updated entry DTO.
+            </summary>
+            <param name="draftId">Identifier of the draft containing the entry.</param>
+            <param name="entryId">Identifier of the entry to reset.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The updated <see cref="T:FinanceManager.Shared.Dtos.Statements.StatementDraftEntryDto"/> when successful; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Statements.IStatementFileReader">
+            <summary>
+            Interface for parsing statement files and extracting header and movement details.
+            Implementations should attempt to recognize the file format and extract header information and a list of movements.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementFileReader.Parse(System.String,System.Byte[])">
+            <summary>
+            Attempts to parse statement contents and produce a <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/>.
+            This method is the primary parsing entry and may include format detection and mapping of movements.
+            Implementations return <c>null</c> when the provided bytes do not represent a supported format.
+            </summary>
+            <param name="fileName">The original file name (used for format hints and metadata extraction).</param>
+            <param name="fileBytes">The raw file content as a byte array.</param>
+            <returns>
+            A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing parsed header and movements when parsing succeeded;
+            otherwise <c>null</c> when the format is not supported or parsing failed.
+            </returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementFileReader.ParseDetails(System.String,System.Byte[])">
+            <summary>
+            Attempts to parse only supplemental details from statement files (for example fees, taxes or security quantities)
+            that may be provided in separate files or detail exports. Returns <c>null</c> when parsing fails or no details found.
+            </summary>
+            <param name="originalFileName">The original file name (used for format hints and metadata extraction).</param>
+            <param name="fileBytes">The raw file content as a byte array.</param>
+            <returns>
+            A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> with header and movements when details were successfully extracted;
+            otherwise <c>null</c> when no details could be parsed or the format is unsupported.
+            </returns>
+        </member>
+        <member name="T:FinanceManager.Application.Statements.StatementHeader">
+            <summary>
+            Statement file header information extracted by a reader.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementHeader.AccountNumber">
+            <summary>
+            Account number found in the statement.
+            </summary>
+            <value>Account number string; empty when not present.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementHeader.IBAN">
+            <summary>
+            Optional IBAN found in the statement.
+            </summary>
+            <value>IBAN string or <c>null</c> when not present.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementHeader.BankCode">
+            <summary>
+            Optional bank code or BLZ.
+            </summary>
+            <value>Bank code string or <c>null</c> when not present.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementHeader.AccountHolder">
+            <summary>
+            Optional account holder name.
+            </summary>
+            <value>Account holder name or <c>null</c> when not present.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementHeader.PeriodStart">
+            <summary>
+            Optional period start date from the statement.
+            </summary>
+            <value>Start date of the statement period or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementHeader.PeriodEnd">
+            <summary>
+            Optional period end date from the statement.
+            </summary>
+            <value>End date of the statement period or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementHeader.Description">
+            <summary>
+            Human readable description found in the statement header.
+            </summary>
+            <value>Description text; empty when not present.</value>
+        </member>
+        <member name="T:FinanceManager.Application.Statements.StatementMovement">
+            <summary>
+            Represents a single movement/transaction parsed from a statement file.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementMovement.BookingDate">
+            <summary>
+            Booking date of the movement.
+            </summary>
+            <value>Booking date.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementMovement.Amount">
+            <summary>
+            Amount associated with the movement.
+            </summary>
+            <value>Monetary amount (positive/negative).</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementMovement.Subject">
+            <summary>
+            Optional subject or brief description.
+            </summary>
+            <value>Subject text or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementMovement.Counterparty">
+            <summary>
+            Optional counterparty name.
+            </summary>
+            <value>Counterparty name or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementMovement.ValutaDate">
+            <summary>
+            Valuta / value date of the movement.
+            </summary>
+            <value>Valuta/date-of-value.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementMovement.PostingDescription">
+            <summary>
+            Optional posting description.
+            </summary>
+            <value>Longer booking description or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementMovement.CurrencyCode">
+            <summary>
+            Optional currency code.
+            </summary>
+            <value>ISO currency code (e.g. "EUR") or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementMovement.IsPreview">
+            <summary>
+            Indicates if the movement is a preview (not final in the source system).
+            </summary>
+            <value><c>true</c> when the movement is a preview; otherwise <c>false</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementMovement.IsError">
+            <summary>
+            Indicates if there was an error while parsing or interpreting the movement.
+            </summary>
+            <value><c>true</c> when the movement contains an error marker; otherwise <c>false</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementMovement.ContactId">
+            <summary>
+            Associated contact ID as identified by the parser (may be <c>Guid.Empty</c> when not resolved).
+            </summary>
+            <value>Contact identifier.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementMovement.Quantity">
+            <summary>
+            Optional quantity related to the movement (e.g., securities quantity).
+            </summary>
+            <value>Quantity or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementMovement.TaxAmount">
+            <summary>
+            Optional tax amount related to the movement.
+            </summary>
+            <value>Tax amount or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementMovement.FeeAmount">
+            <summary>
+            Optional fee amount related to the movement.
+            </summary>
+            <value>Fee amount or <c>null</c>.</value>
+        </member>
+        <member name="T:FinanceManager.Application.Statements.StatementParseResult">
+            <summary>
+            Result of parsing a statement file. Contains an extracted header and the list of movements.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.StatementParseResult.#ctor(FinanceManager.Application.Statements.StatementHeader,System.Collections.Generic.IReadOnlyCollection{FinanceManager.Application.Statements.StatementMovement})">
+            <summary>
+            Creates a new instance of <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/>.
+            </summary>
+            <param name="header">Parsed statement header. Must not be null.</param>
+            <param name="movements">Parsed movements. Must not be null.</param>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="header"/> or <paramref name="movements"/> is null.</exception>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementParseResult.Header">
+            <summary>
+            Parsed statement header information.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementParseResult.Movements">
+            <summary>
+            Collection of parsed movements/transactions from the statement file.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.SystemDateTimeProvider">
+            <summary>
+            Production implementation of <see cref="T:FinanceManager.Application.IDateTimeProvider"/> that returns system UTC time.
+            Use this implementation for runtime; tests can replace it with a deterministic provider.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.SystemDateTimeProvider.UtcNow">
+            <summary>
+            Gets the current UTC date and time from the system clock.
+            </summary>
+            <value>The current <see cref="T:System.DateTime"/> in UTC.</value>
+        </member>
+        <member name="T:FinanceManager.Application.Users.IUserAdminService">
+            <summary>
+            Administrative user management service used by UI/administration components to list, create, update
+            and remove users as well as manage passwords and locks.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Users.IUserAdminService.ListAsync(System.Threading.CancellationToken)">
+            <summary>
+            Returns a list of all users suitable for administrative overview.
+            </summary>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Users.UserAdminDto"/> instances.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Users.IUserAdminService.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Retrieves a single user by id for administrative purposes.
+            </summary>
+            <param name="id">Identifier of the user to retrieve.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A task that resolves to the <see cref="T:FinanceManager.Shared.Dtos.Users.UserAdminDto"/> for the user, or null when the user was not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Users.IUserAdminService.CreateAsync(System.String,System.String,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new user with the specified username and password and returns the created user representation.
+            </summary>
+            <param name="username">Desired username for the new user.</param>
+            <param name="password">Plain-text password for the new user. The implementation is responsible for hashing and validation.</param>
+            <param name="isAdmin">Whether the new user should be created with administrative privileges.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A task that resolves to the created <see cref="T:FinanceManager.Shared.Dtos.Users.UserAdminDto"/>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Users.IUserAdminService.UpdateAsync(System.Guid,System.String,System.Nullable{System.Boolean},System.Nullable{System.Boolean},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing user's mutable fields.
+            </summary>
+            <param name="id">Identifier of the user to update.</param>
+            <param name="username">New username or null to leave unchanged.</param>
+            <param name="isAdmin">New admin flag or null to leave unchanged.</param>
+            <param name="active">New active flag or null to leave unchanged.</param>
+            <param name="preferredLanguage">New preferred language or null to leave unchanged.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A task that resolves to the updated <see cref="T:FinanceManager.Shared.Dtos.Users.UserAdminDto"/>, or null if the user was not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Users.IUserAdminService.ResetPasswordAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Resets the password for a user to a new password.
+            </summary>
+            <param name="id">Identifier of the user whose password will be reset.</param>
+            <param name="newPassword">New plain-text password. The implementation must validate and hash this password.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A task that resolves to <c>true</c> when the password was successfully reset; otherwise <c>false</c> (for example when the user was not found or validation failed).</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Users.IUserAdminService.UnlockAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Unlocks a user by clearing any lockout state.
+            </summary>
+            <param name="id">Identifier of the user to unlock.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A task that resolves to <c>true</c> when the user was unlocked; otherwise <c>false</c> (for example when the user was not found or not locked).</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Users.IUserAdminService.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a user permanently.
+            </summary>
+            <param name="id">Identifier of the user to delete.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A task that resolves to <c>true</c> when the user was successfully deleted; otherwise <c>false</c>.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Users.IUserAuthService">
+            <summary>
+            Service handling user authentication and registration use-cases.
+            Implementations are responsible for validating input, creating users and issuing authentication tokens.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Users.IUserAuthService.RegisterAsync(FinanceManager.Application.Users.RegisterUserCommand,System.Threading.CancellationToken)">
+            <summary>
+            Registers a new user according to the provided command and returns an authentication result on success.
+            </summary>
+            <param name="command">Registration command containing username, password and optional preferences.</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>
+            A <see cref="T:FinanceManager.Domain.Result`1"/> indicating success and containing <see cref="T:FinanceManager.Application.Users.AuthResult"/> on success,
+            or a failed <see cref="T:FinanceManager.Domain.Result`1"/> with an error message.
+            </returns>
+        </member>
+        <member name="M:FinanceManager.Application.Users.IUserAuthService.LoginAsync(FinanceManager.Application.Users.LoginCommand,System.Threading.CancellationToken)">
+            <summary>
+            Attempts to authenticate a user with the supplied login command and returns an authentication result on success.
+            </summary>
+            <param name="command">Login command containing credentials and optional client context (IP, language, timezone).</param>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>
+            A <see cref="T:FinanceManager.Domain.Result`1"/> indicating success and containing <see cref="T:FinanceManager.Application.Users.AuthResult"/> on success,
+            or a failed <see cref="T:FinanceManager.Domain.Result`1"/> with an error message when authentication fails.
+            </returns>
+        </member>
+        <member name="T:FinanceManager.Application.Users.IUserReadService">
+            <summary>
+            Read-only user-related queries used by UI and services to determine existence or retrieve lightweight information.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Users.IUserReadService.HasAnyUsersAsync(System.Threading.CancellationToken)">
+            <summary>
+            Determines whether any user accounts exist in the system.
+            </summary>
+            <param name="ct">Cancellation token to cancel the operation.</param>
+            <returns>A task that resolves to <c>true</c> when at least one user exists; otherwise <c>false</c>.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Users.RegisterUserCommand">
+            <summary>
+            Command used to register a new user with username and password and optional preferences.
+            </summary>
+            <param name="Username">Desired username for the new account.</param>
+            <param name="Password">Plain-text password provided by the user (should be validated and hashed by the caller/service).</param>
+            <param name="PreferredLanguage">Optional preferred UI language tag (e.g. "en", "de").</param>
+            <param name="TimeZoneId">Optional IANA time zone identifier (e.g. "Europe/Berlin").</param>
+        </member>
+        <member name="M:FinanceManager.Application.Users.RegisterUserCommand.#ctor(System.String,System.String,System.String,System.String)">
+            <summary>
+            Command used to register a new user with username and password and optional preferences.
+            </summary>
+            <param name="Username">Desired username for the new account.</param>
+            <param name="Password">Plain-text password provided by the user (should be validated and hashed by the caller/service).</param>
+            <param name="PreferredLanguage">Optional preferred UI language tag (e.g. "en", "de").</param>
+            <param name="TimeZoneId">Optional IANA time zone identifier (e.g. "Europe/Berlin").</param>
+        </member>
+        <member name="P:FinanceManager.Application.Users.RegisterUserCommand.Username">
+            <summary>Desired username for the new account.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Users.RegisterUserCommand.Password">
+            <summary>Plain-text password provided by the user (should be validated and hashed by the caller/service).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Users.RegisterUserCommand.PreferredLanguage">
+            <summary>Optional preferred UI language tag (e.g. "en", "de").</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Users.RegisterUserCommand.TimeZoneId">
+            <summary>Optional IANA time zone identifier (e.g. "Europe/Berlin").</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Users.LoginCommand">
+            <summary>
+            Command used to authenticate a user with username and password and optional context information.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Users.LoginCommand.Username">
+            <summary>
+            Username provided for authentication.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Users.LoginCommand.Password">
+            <summary>
+            Plain-text password provided for authentication.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Users.LoginCommand.IpAddress">
+            <summary>
+            Optional IP address of the client performing the login.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Users.LoginCommand.PreferredLanguage">
+            <summary>
+            Optional preferred language reported by the client at login time.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Users.LoginCommand.TimeZoneId">
+            <summary>
+            Optional IANA time zone identifier reported by the client at login time.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Users.LoginCommand.#ctor(System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Creates a new <see cref="T:FinanceManager.Application.Users.LoginCommand"/> instance.
+            </summary>
+            <param name="username">Username for authentication.</param>
+            <param name="password">Password for authentication.</param>
+            <param name="ipAddress">Optional client IP address.</param>
+            <param name="preferredLanguage">Optional preferred language reported by the client.</param>
+            <param name="timeZoneId">Optional IANA time zone identifier reported by the client.</param>
+        </member>
+        <member name="T:FinanceManager.Application.Users.AuthResult">
+            <summary>
+            Result returned after successful authentication containing identifying information and a token.
+            </summary>
+            <param name="UserId">Identifier of the authenticated user.</param>
+            <param name="Username">Username of the authenticated user.</param>
+            <param name="IsAdmin">Whether the authenticated user has administrative privileges.</param>
+            <param name="Token">Authentication token (e.g. JWT) to be used for subsequent requests.</param>
+            <param name="ExpiresUtc">UTC expiration time of the token.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Users.AuthResult.#ctor(System.Guid,System.String,System.Boolean,System.String,System.DateTime)">
+            <summary>
+            Result returned after successful authentication containing identifying information and a token.
+            </summary>
+            <param name="UserId">Identifier of the authenticated user.</param>
+            <param name="Username">Username of the authenticated user.</param>
+            <param name="IsAdmin">Whether the authenticated user has administrative privileges.</param>
+            <param name="Token">Authentication token (e.g. JWT) to be used for subsequent requests.</param>
+            <param name="ExpiresUtc">UTC expiration time of the token.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Users.AuthResult.UserId">
+            <summary>Identifier of the authenticated user.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Users.AuthResult.Username">
+            <summary>Username of the authenticated user.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Users.AuthResult.IsAdmin">
+            <summary>Whether the authenticated user has administrative privileges.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Users.AuthResult.Token">
+            <summary>Authentication token (e.g. JWT) to be used for subsequent requests.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Users.AuthResult.ExpiresUtc">
+            <summary>UTC expiration time of the token.</summary>
+        </member>
+    </members>
+</doc>

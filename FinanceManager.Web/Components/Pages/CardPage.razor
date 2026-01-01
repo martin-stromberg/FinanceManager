@@ -1,0 +1,354 @@
+@page "/card/{Kind}"
+@page "/card/{Kind}/{Id:guid}"
+@page "/card/{Kind}/{SubKind?}/{Id:guid}"
+@page "/card/{Kind}/new"
+@page "/card/{Kind}/{SubKind?}/new"
+@rendermode InteractiveServer
+@inject IServiceProvider Services
+@inject NavigationManager NavigationManager
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
+@inject IJSRuntime JS
+@using System
+@using FinanceManager.Shared.Dtos
+@using FinanceManager.Web.Components.Shared
+@using FinanceManager.Web.Extensions
+@using FinanceManager.Web.ViewModels
+@using FinanceManager.Web.ViewModels.Accounts
+@using FinanceManager.Web.ViewModels.Common
+@using FinanceManager.Web.ViewModels.Contacts
+@using FinanceManager.Web.ViewModels.Contacts.Groups
+@using FinanceManager.Web.ViewModels.Postings
+@using FinanceManager.Web.ViewModels.Postings.Common
+@using FinanceManager.Web.ViewModels.SavingsPlans.Categories
+@using FinanceManager.Web.ViewModels.Securities.Categories
+@using Microsoft.AspNetCore.Components
+@using FinanceManager.Web.ViewModels.Setup
+
+@if (_vm == null)
+{
+    <PageTitle>@($"{Localizer["CardPage_PageTitle"]}: {GetKindTitle()}")</PageTitle>
+    <p>@Localizer["General_Loading"]</p>
+}
+else
+{
+    <Ribbon TTabEnum="TabId" Provider="_vm" Localizer="Localizer" />
+    <PageTitle>@($"{GetKindTitle()}: {_vm.Title}")</PageTitle>
+
+    <BackgroundTaskStatusPanel AllowedTypes="@((_vm as BaseViewModel)?.VisibleBackgroundTaskTypes)" />
+
+    <EmbeddedPanelHost TKeyValue="(string,string)" Provider="_vm" Position="EmbeddedPanelPosition.AfterRibbon" />
+    <GenericCardPage TKeyValue="(string, string)" Provider="_vm" Localizer="Localizer" LoadingText="@Localizer["General_Loading"]" />
+    <EmbeddedPanelHost TKeyValue="(string,string)" Provider="_vm" Position="EmbeddedPanelPosition.AfterCard" />
+
+    @if (_vm.ChartViewModel != null)
+    {
+        <div style="margin-top:1.25rem;">
+            <AggregateBarChart ViewModel="_vm.ChartViewModel" />
+        </div>
+    }
+
+    @* Overlay host: delegates rendering of overlay components requested by ViewModels *@
+    <OverlayHost TKeyValue="(string,string)" Provider="_vm" Localizer="Localizer" />
+}
+
+@code {
+    public enum TabId { Card }
+
+    [Parameter] public string Kind { get; set; } = string.Empty;
+    [Parameter] public string? SubKind { get; set; }
+    [Parameter] public Guid Id { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = "back")] public string? Back { get; set; }
+    [Parameter, SupplyParameterFromQuery(Name = "prefill")] public string? Prefill { get; set; }
+
+
+    private BaseCardViewModel<(string Key, string Value)>? _vm;
+
+    private string BuildListPath()
+    {
+        var kind = (Kind ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(SubKind)) return $"/list/{kind}";
+        return $"/list/{kind}/{SubKind}";
+    }
+
+    private string BuildCardPath(string kind, string? subKind, string id, string? back)
+    {
+        var k = kind.Trim();
+        var basePath = string.IsNullOrWhiteSpace(subKind) ? $"/card/{k}/{id}" : $"/card/{k}/{subKind}/{id}";
+        if (string.IsNullOrWhiteSpace(back)) return basePath;
+        return basePath + "?back=" + Uri.EscapeDataString(back);
+    }
+
+    private Task SetViewModel(BaseCardViewModel<(string Key, string Value)> vm)
+    {
+        if (_vm is not null)
+        {
+            _vm.StateChanged -= ViewModelSatteChanged;
+            _vm.UiActionRequested -= OnUiActionRequested;
+        }
+        _vm = vm;
+        _vm.StateChanged += ViewModelSatteChanged;
+        _vm.UiActionRequested += OnUiActionRequested;
+        return Task.CompletedTask;
+    }
+
+    private void ViewModelSatteChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
+
+    private async void OnUiActionRequested(object? sender, FinanceManager.Web.ViewModels.Common.BaseViewModel.UiActionEventArgs? e)
+    {
+        await InvokeAsync(async () =>
+        {
+            // Overlay requests are handled by OverlayHost component subscribed to the ViewModel
+
+            var action = e?.Action;
+            var payload = e?.Payload;
+            switch (action)
+            {
+                case "Back":
+                    // prefer explicit Back query param if present
+                    if (!string.IsNullOrWhiteSpace(Back))
+                    {
+                        NavigationManager.NavigateTo(Back);
+                        break;
+                    }
+
+                    // If payload is a GUID and this is a statement-draft entry card,
+                    // navigate back to the parent draft card instead of the list.
+                    if (!string.IsNullOrWhiteSpace(payload) && Guid.TryParse(payload, out var draftGuid))
+                    {
+                        var kindNorm = (Kind ?? string.Empty).Trim().ToLowerInvariant();
+                        var subNorm = (SubKind ?? string.Empty).Trim().ToLowerInvariant();
+                        if (kindNorm == "statement-drafts" || subNorm == "entries" || _vm is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntryCardViewModel)
+                        {
+                            NavigationManager.NavigateTo($"/card/statement-drafts/{draftGuid}");
+                            break;
+                        }
+                    }
+
+                    // payload may contain subtype (e.g., categories) - fallback to list or typed list route
+                    if (string.IsNullOrWhiteSpace(payload))
+                    {
+                        NavigationManager.NavigateTo(BuildListPath());
+                        break;
+                    }
+
+                    // support comma-separated payload: e.g. "card,{id}" or "list,{subtype}".
+                    var parts = payload.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToArray();
+                    if (parts.Length == 1)
+                    {
+                        // legacy behavior: payload denotes subtype for list route
+                        NavigationManager.NavigateTo($"/list/{Kind}/{parts[0]}");
+                        break;
+                    }
+
+                    var mode = parts[0].ToLowerInvariant();
+                    var arg = parts.Length > 1 ? parts[1] : string.Empty;
+                    if (mode == "card")
+                    {
+                        // navigate to card for current kind using provided id
+                        NavigationManager.NavigateTo($"/card/{Kind}/{arg}");
+                        break;
+                    }
+                    else if (mode == "list")
+                    {
+                        // navigate to list for current kind and provided subtype
+                        NavigationManager.NavigateTo($"/list/{Kind}/{arg}");
+                        break;
+                    }
+
+                    // fallback to original behavior
+                    NavigationManager.NavigateTo(BuildListPath());
+                    break;
+                case "OpenPostings":
+                    if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
+                    break;
+                case "OpenPrices":
+                    if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
+                    break;
+                case "OpenBankContact":
+                {
+                    var bankParts = (payload ?? string.Empty).Split(',', 2);
+                    if (bankParts.Length == 2 && Guid.TryParse(bankParts[1], out var cid))
+                    {
+                        var kind = bankParts[0];
+                        var back = BuildCardPath(Kind, SubKind, Id.ToString(), Back);
+                        NavigationManager.NavigateTo($"/card/{kind}/{cid}?back={Uri.EscapeDataString(back)}");
+                    }
+                    break;
+                }
+                case "OpenAccountDetails":
+                {
+                    // payload may contain account id; fallback to Draft.DetectedAccountId from viewmodel
+                    Guid? accountId = null;
+                    if (!string.IsNullOrWhiteSpace(payload) && Guid.TryParse(payload, out var pid)) accountId = pid;
+                    else if (_vm is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel sd && sd.Draft?.DetectedAccountId != null) accountId = sd.Draft.DetectedAccountId;
+                    if (accountId.HasValue)
+                    {
+                        var back = BuildCardPath(Kind, SubKind, Id.ToString(), Back);
+                        NavigationManager.NavigateTo($"/card/accounts/{accountId.Value}?back={Uri.EscapeDataString(back)}");
+                    }
+                    break;
+                }
+                case "OpenCategory":
+                    if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
+                    break;
+                case "OpenAttachments":
+                    // Attachments are handled via UiOverlaySpec payloads emitted by viewmodels. No fallback.
+                    break;
+                case "DownloadOriginal":
+                {
+                    // Attempt client-side download of original statement file for statement-draft card
+                    if (_vm is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel sd && sd.DraftId != Guid.Empty)
+                    {
+                        var downloadUrl = $"/api/statement-drafts/{sd.DraftId}/file";
+                        var js = $"(function(){{var a=document.createElement('a'); a.href={System.Text.Json.JsonSerializer.Serialize(downloadUrl)}; a.download=''; a.style.display='none'; document.body.appendChild(a); a.click(); setTimeout(()=>document.body.removeChild(a),200);}})()";
+                        try
+                        {
+                            await JS.InvokeVoidAsync("eval", js);
+                        }
+                        catch
+                        {
+                            NavigationManager.NavigateTo(downloadUrl, forceLoad: true);
+                        }
+                    }
+                    break;
+                }
+                case "ViewOriginal":
+                {
+                    // Open original in a new tab/window so browser can display inline when supported
+                    if (_vm is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel sd2 && sd2.DraftId != Guid.Empty)
+                    {
+                        var viewUrl = $"/api/statement-drafts/{sd2.DraftId}/file";
+                        try
+                        {
+                            await JS.InvokeVoidAsync("open", viewUrl, "_blank");
+                        }
+                        catch
+                        {
+                            NavigationManager.NavigateTo(viewUrl, forceLoad: true);
+                        }
+                    }
+                    break;
+                }
+                case "OpenMerge":
+                    // OpenMerge is handled by viewmodels emitting a UiOverlaySpec payload (handled above). No fallback here.
+                    break;
+                case "Delete":
+                    _ = HandleDeleteAsync();
+                    break;
+                case "Deleted":
+                    // when deleted navigate back to list (prefer Back)
+                    if (!string.IsNullOrWhiteSpace(Back)) NavigationManager.NavigateTo(Back);
+                    else NavigationManager.NavigateTo(BuildListPath());
+                    break;
+                case "Saved":
+                    var kindLower = (Kind ?? string.Empty).Trim().ToLowerInvariant();
+                    var savedId = payload;
+                    if (!string.IsNullOrWhiteSpace(Back) && !string.IsNullOrWhiteSpace(savedId))
+                    {
+                        try
+                        {
+                            // navigate back to Back URL and include created info so the parent page can pick it up
+                            var backUri = new Uri(Back);
+                            var qb = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(backUri.Query)
+                                        .ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString());
+                            qb["createdKind"] = kindLower;
+                            qb["createdId"] = savedId;
+                            var basePath = backUri.GetLeftPart(UriPartial.Path);
+                            var newQuery = string.Join("&", qb.Select(kvp => Uri.EscapeDataString(kvp.Key) + "=" + Uri.EscapeDataString(kvp.Value)));
+                            NavigationManager.NavigateTo(basePath + (string.IsNullOrWhiteSpace(newQuery) ? string.Empty : "?" + newQuery));
+                        }
+                        catch
+                        {
+                            // fallback
+                            var url = BuildCardPath(kindLower, SubKind, savedId ?? Id.ToString(), Back);
+                            NavigationManager.NavigateTo(url);
+                        }
+                    }
+                    else
+                    {
+                        var url = BuildCardPath(kindLower, SubKind, savedId ?? Id.ToString(), Back);
+                        NavigationManager.NavigateTo(url);
+                    }
+                     break;
+            }
+        });
+    }
+
+    // NOTE: no fallback for OpenAttachments — viewmodels must send UiOverlaySpec via RaiseUiActionRequested
+
+    private string GetKindTitle() => (Kind ?? string.Empty).Trim().ToLowerInvariant() switch
+    {
+        "accounts" => Localizer["General_Title_Account"],
+        "contacts" => Localizer["General_Title_Contact"],
+        "savings-plans" => (SubKind ?? string.Empty).Trim().ToLowerInvariant() == "categories" ? Localizer["General_Title_SavingsPlan_Categories"] : Localizer["General_Title_SavingsPlans"],
+        _ => Kind
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var kind = (Kind ?? string.Empty).Trim().ToLowerInvariant();
+        var sub = (SubKind ?? string.Empty).Trim().ToLowerInvariant();
+
+        // Try dynamic resolution using CardRouteAttribute / ICardInitializable
+        var resolvedType = CardViewModelResolver.Resolve(kind, sub);
+        if (resolvedType != null)
+        {
+            var instance = ActivatorUtilities.CreateInstance(Services, resolvedType);
+            if (instance is ICardInitializable init)
+            {
+                init.SetBackNavigation(Back);
+                init.SetInitValue(Prefill);
+                await SetViewModel((BaseCardViewModel<(string Key, string Value)>)instance);
+                await init.InitializeAsync(Id);
+                return;
+            }
+        }
+
+        // If no resolver matched, navigate back to list as a graceful fallback
+        NavigationManager.NavigateTo(BuildListPath());
+        return;
+    }
+
+    private async Task HandleDeleteAsync()
+    {
+        try
+        {
+            // choose confirmation message depending on current kind/subkind
+            var kindLower = (Kind ?? string.Empty).Trim().ToLowerInvariant();
+            var subLower = (SubKind ?? string.Empty).Trim().ToLowerInvariant();
+            var confirmKey = "Confirm_Delete_Item"; // fallback
+            if (kindLower == "accounts") confirmKey = "Confirm_Delete_Account";
+            else if (kindLower == "securities" && subLower == "categories") confirmKey = "Confirm_Delete_SecurityCategory";
+            else if (kindLower == "contacts" && subLower == "categories") confirmKey = "Confirm_Delete_ContactCategory";
+            else if (kindLower == "statement-drafts") confirmKey = "Confirm_Delete_StatementDraft";
+
+            var confirmed = true;
+            try { confirmed = await JS.InvokeAsync<bool>("confirm", Localizer[confirmKey].Value ?? Localizer["Confirm_Delete_Item"].Value ?? "Delete item?"); } catch { }
+            if (!confirmed) return;
+
+            if (_vm is FinanceManager.Web.ViewModels.Common.IDeletableViewModel deletable)
+            {
+                var ok = await deletable.DeleteAsync();
+                if (ok)
+                {
+                    if (!string.IsNullOrWhiteSpace(Back)) NavigationManager.NavigateTo(Back); else NavigationManager.NavigateTo(BuildListPath());
+                }
+                else
+                {
+                    var msg = deletable.LastError ?? "Delete failed";
+                    await JS.InvokeVoidAsync("alert", msg);
+                }
+            }
+            else
+            {
+                // Fallback: not supported for other kinds
+                await JS.InvokeVoidAsync("alert", Localizer["Err_OperationNotSupported"].Value ?? "Operation not supported");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", ex.Message);
+        }
+    }
+}

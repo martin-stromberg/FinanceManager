@@ -1,6 +1,5 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
-using FinanceManager.Web.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
@@ -60,15 +59,14 @@ public sealed class PostingsSecurityViewModelTests
     {
         var apiMock = new Mock<IApiClient>();
         apiMock.Setup(a => a.Postings_GetSecurityAsync(It.IsAny<Guid>(), 0, 50, It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CreatePostings(12));
+            .ReturnsAsync(CreatePostings(50));
 
-        var vm = new PostingsSecurityViewModel(CreateSp(apiMock));
-        vm.Configure(Guid.NewGuid());
-
+        var securityId = Guid.NewGuid();
+        var vm = new FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel(CreateSp(apiMock), securityId);
         await vm.InitializeAsync();
 
         Assert.False(vm.Loading);
-        Assert.Equal(12, vm.Items.Count);
+        Assert.Equal(50, vm.Items.Count);
         Assert.True(vm.CanLoadMore);
     }
 
@@ -84,9 +82,8 @@ public sealed class PostingsSecurityViewModelTests
                 return CreatePostings(call == 1 ? 50 : 5);
             });
 
-        var vm = new PostingsSecurityViewModel(CreateSp(apiMock));
-        vm.Configure(Guid.NewGuid());
-
+        var securityId = Guid.NewGuid();
+        var vm = new FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel(CreateSp(apiMock), securityId);
         await vm.InitializeAsync();
         Assert.Equal(50, vm.Items.Count);
         Assert.True(vm.CanLoadMore);

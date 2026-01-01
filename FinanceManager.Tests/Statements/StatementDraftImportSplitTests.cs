@@ -7,6 +7,8 @@ using FinanceManager.Infrastructure.Statements;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
+using FinanceManager.Application.Accounts;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Statements;
 
@@ -30,8 +32,33 @@ public sealed class StatementDraftImportSplitTests
         // ensure required Self contact exists for classification
         db.Contacts.Add(new Contact(user.Id, "Me", ContactType.Self, null));
         db.SaveChanges();
-        var svc = new StatementDraftService(db, new PostingAggregateService(db));
+        var accountService = new TestAccountService();
+        var svc = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, NullLogger<StatementDraftService>.Instance, null);
         return (svc, db, conn, user.Id);
+    }
+
+    private sealed class TestAccountService : IAccountService
+    {
+        public Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<bool> DeleteAsync(Guid id, Guid ownerUserId, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<IReadOnlyList<AccountDto>> ListAsync(Guid ownerUserId, int skip, int take, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<AccountDto?> GetAsync(Guid id, Guid ownerUserId, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public AccountDto? Get(Guid id, Guid ownerUserId)
+            => throw new NotImplementedException();
+
+        public Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct)
+            => throw new NotImplementedException();
     }
 
     private static string BuildBackupPayload(IEnumerable<(DateTime date, decimal amount, string subject)> lines, string? iban = "DE00", string? description = "Test")

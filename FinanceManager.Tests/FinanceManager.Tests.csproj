@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <DocumentationFile>FinanceManager.Tests.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

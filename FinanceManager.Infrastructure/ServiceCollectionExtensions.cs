@@ -9,6 +9,7 @@ using FinanceManager.Application.Reports;
 using FinanceManager.Application.Savings;
 using FinanceManager.Application.Securities;
 using FinanceManager.Application.Security; // new
+using FinanceManager.Application.Setup;
 using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure.Accounts;
@@ -31,8 +32,27 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace FinanceManager.Infrastructure;
 
+/// <summary>
+/// Provides extension methods to register infrastructure services into the application's <see cref="IServiceCollection"/>.
+/// </summary>
 public static class ServiceCollectionExtensions
 {
+    /// <summary>
+    /// Registers the infrastructure dependencies (EF DbContext, repositories, services and related helpers) into the
+    /// provided <see cref="IServiceCollection"/>.
+    /// </summary>
+    /// <param name="services">The service collection to register services on.</param>
+    /// <param name="connectionString">
+    /// Optional database connection string. When <c>null</c> a default SQLite database file
+    /// ("financemanager.db") will be used.
+    /// </param>
+    /// <returns>The same <see cref="IServiceCollection"/> instance to allow fluent chaining.</returns>
+    /// <remarks>
+    /// The method registers scoped services for db context and other infrastructure services. Lifetimes follow the project's
+    /// DI conventions: scoped for EF DbContext and services that depend on it. It also registers an Identity role store
+    /// for <see cref="IdentityRole{Guid}"/> based roles (RoleManager is expected to be configured separately).
+    /// </remarks>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="services"/> is <c>null</c>.</exception>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, string? connectionString)
     {
         services.AddDbContext<AppDbContext>(options =>

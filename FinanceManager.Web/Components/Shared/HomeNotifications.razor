@@ -2,7 +2,7 @@
 @inject HttpClient Http
 @inject FinanceManager.Shared.IApiClient Api
 @inject FinanceManager.Application.ICurrentUserService CurrentUser
-@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Shared.HomeNotifications> L
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
 @inject NavigationManager Nav
 
 @if (CurrentUser.IsAuthenticated && _items.Count > 0)

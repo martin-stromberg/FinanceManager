@@ -20,6 +20,12 @@ public sealed class HomeKpisController : ControllerBase
     private readonly ICurrentUserService _current;
     private readonly ILogger<HomeKpisController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="HomeKpisController"/>.
+    /// </summary>
+    /// <param name="service">Service implementing KPI management usecases.</param>
+    /// <param name="current">Service providing current user context.</param>
+    /// <param name="logger">Logger used to record unexpected errors and diagnostics.</param>
     public HomeKpisController(IHomeKpiService service, ICurrentUserService current, ILogger<HomeKpisController> logger)
     { _service = service; _current = current; _logger = logger; }
 
@@ -27,6 +33,10 @@ public sealed class HomeKpisController : ControllerBase
     /// Lists all KPI widgets configured by the current user (order determined by <c>SortOrder</c> client-side).
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// Returns 200 OK with a read-only list of <see cref="HomeKpiDto"/> instances for the current user.
+    /// </returns>
+    /// <exception cref="HttpRequestException">If the underlying service call fails.</exception>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<HomeKpiDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListAsync(CancellationToken ct)
@@ -59,6 +69,13 @@ public sealed class HomeKpisController : ControllerBase
     /// </summary>
     /// <param name="req">Create request payload.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 201 Created with the created <see cref="HomeKpiDto"/> when successful;
+    /// 400 Bad Request when the request is invalid;
+    /// 409 Conflict when the requested linkage is invalid or already exists.
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown when the service detects invalid arguments (mapped to 400).</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the service detects a conflict (mapped to 409).</exception>
     [HttpPost]
     [ProducesResponseType(typeof(HomeKpiDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
@@ -81,11 +98,17 @@ public sealed class HomeKpisController : ControllerBase
     /// </summary>
     public sealed class UpdateRequest
     {
+        /// <summary>Widget kind definition.</summary>
         [Required] public HomeKpiKind Kind { get; set; }
+        /// <summary>Optional report favorite id if <see cref="HomeKpiKind.Report"/>.</summary>
         public Guid? ReportFavoriteId { get; set; }
+        /// <summary>Optional predefined KPI type if <see cref="HomeKpiKind.Predefined"/>.</summary>
         public HomeKpiPredefined? PredefinedType { get; set; }
+        /// <summary>Optional custom title (max 120 chars).</summary>
         [MaxLength(120)] public string? Title { get; set; }
+        /// <summary>Display mode (e.g. Compact / Expanded).</summary>
         [Required] public HomeKpiDisplayMode DisplayMode { get; set; }
+        /// <summary>Sorting order (ascending).</summary>
         [Range(0, int.MaxValue)] public int SortOrder { get; set; }
     }
 
@@ -94,6 +117,9 @@ public sealed class HomeKpisController : ControllerBase
     /// </summary>
     /// <param name="id">KPI id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 OK with the <see cref="HomeKpiDto"/> when found; 404 Not Found when the KPI does not exist or does not belong to the current user.
+    /// </returns>
     [HttpGet("{id:guid}", Name = "GetHomeKpi")]
     [ProducesResponseType(typeof(HomeKpiDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -110,6 +136,14 @@ public sealed class HomeKpisController : ControllerBase
     /// <param name="id">KPI id.</param>
     /// <param name="req">Update request.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 OK with the updated <see cref="HomeKpiDto"/> when the update succeeds;
+    /// 400 Bad Request when input is invalid;
+    /// 404 Not Found when the KPI does not exist;
+    /// 409 Conflict when the requested update cannot be applied.
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown when arguments are invalid (mapped to 400).</exception>
+    /// <exception cref="InvalidOperationException">Thrown when a conflict occurs (mapped to 409).</exception>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(HomeKpiDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
@@ -133,6 +167,10 @@ public sealed class HomeKpisController : ControllerBase
     /// </summary>
     /// <param name="id">KPI id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 No Content when deletion succeeded; 404 Not Found when the KPI does not exist.
+    /// </returns>
+    /// <exception cref="HttpRequestException">Thrown when the underlying service call fails.</exception>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

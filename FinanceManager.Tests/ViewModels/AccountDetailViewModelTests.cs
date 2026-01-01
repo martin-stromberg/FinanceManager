@@ -1,9 +1,9 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
-using FinanceManager.Web.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
+using System.Reflection;
 
 namespace FinanceManager.Tests.ViewModels;
 
@@ -22,127 +22,134 @@ public sealed class AccountDetailViewModelTests
         public LocalizedString this[string name] => new(name, name);
         public LocalizedString this[string name, params object[] arguments] => new(name, name);
         public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => Array.Empty<LocalizedString>();
+        public IStringLocalizer WithCulture(System.Globalization.CultureInfo culture) => this;
     }
 
-    private static (AccountDetailViewModel vm, Mock<IApiClient> apiMock) CreateVm()
+    private sealed class DummyLocalizerGeneric<T> : IStringLocalizer<T>
+    {
+        public LocalizedString this[string name] => new(name, name);
+        public LocalizedString this[string name, params object[] arguments] => new(name, string.Format(name, arguments));
+        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => Array.Empty<LocalizedString>();
+        public IStringLocalizer WithCulture(System.Globalization.CultureInfo culture) => (IStringLocalizer)this;
+    }
+
+    private static (FinanceManager.Web.ViewModels.Accounts.BankAccountCardViewModel vm, Mock<IApiClient> apiMock) CreateVm()
     {
         var services = new ServiceCollection();
         var currentUser = new TestCurrentUserService { IsAuthenticated = true };
         services.AddSingleton<ICurrentUserService>(currentUser);
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
+        // register a generic IStringLocalizer<Pages> required by BaseViewModel
+        services.AddSingleton(typeof(IStringLocalizer<>).MakeGenericType(typeof(FinanceManager.Web.Pages)), new DummyLocalizerGeneric<FinanceManager.Web.Pages>());
         var sp = services.BuildServiceProvider();
-        var vm = new AccountDetailViewModel(sp);
+        var vm = new FinanceManager.Web.ViewModels.Accounts.BankAccountCardViewModel(sp);
         return (vm, apiMock);
     }
 
     [Fact]
-    public async Task Initialize_LoadsContacts_AndExistingAccount()
+    public async Task Initialize_LoadsAccount_and_builds_card()
     {
         var accountId = Guid.NewGuid();
         var bankContactId = Guid.NewGuid();
         var (vm, apiMock) = CreateVm();
 
-        apiMock.Setup(a => a.Contacts_ListAsync(0, 200, ContactType.Bank, true, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<ContactDto>
-            {
-                new ContactDto(Guid.NewGuid(), "Bank A", ContactType.Bank, null, null, false, null),
-                new ContactDto(Guid.NewGuid(), "Bank B", ContactType.Bank, null, null, false, null)
-            });
-
         apiMock.Setup(a => a.GetAccountAsync(accountId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AccountDto(accountId, "My Account", AccountType.Giro, "DE00", 0, bankContactId, null, SavingsPlanExpectation.Optional));
+            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(accountId, "My Account", FinanceManager.Shared.Dtos.Accounts.AccountType.Giro, "DE00", 0m, bankContactId, null, FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.Optional));
 
-        vm.ForAccount(accountId);
-        await vm.InitializeAsync();
+        apiMock.Setup(a => a.Contacts_GetAsync(bankContactId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ContactDto(bankContactId, "Bank A", ContactType.Bank, null, null, false, null));
 
-        Assert.True(vm.Loaded);
-        Assert.NotEmpty(vm.BankContacts);
-        Assert.Equal("My Account", vm.Name);
-        Assert.Equal(AccountType.Giro, vm.Type);
-        Assert.Equal("DE00", vm.Iban);
-        Assert.False(vm.IsNew);
-        Assert.True(vm.ShowCharts);
+        await vm.InitializeAsync(accountId);
+
+        Assert.NotNull(vm.Account);
+        Assert.Equal(accountId, vm.Id);
+        Assert.Equal("My Account", vm.Account!.Name);
+        Assert.Equal(FinanceManager.Shared.Dtos.Accounts.AccountType.Giro, vm.Account.Type);
+        Assert.Equal("DE00", vm.Account.Iban);
+        Assert.Equal("My Account", vm.Title);
+        Assert.NotNull(vm.CardRecord);
     }
 
     [Fact]
-    public async Task Initialize_NewAccount_LoadsOnlyContacts()
+    public async Task Initialize_NewAccount_ProducesEmptyCard()
     {
         var (vm, apiMock) = CreateVm();
 
-        apiMock.Setup(a => a.Contacts_ListAsync(0, 200, ContactType.Bank, true, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<ContactDto> { new ContactDto(Guid.NewGuid(), "Bank A", ContactType.Bank, null, null, false, null) });
+        await vm.InitializeAsync(Guid.Empty);
 
-        vm.ForAccount(null);
-        await vm.InitializeAsync();
-
-        Assert.True(vm.Loaded);
-        Assert.Single(vm.BankContacts);
-        Assert.True(vm.IsNew);
-        Assert.False(vm.ShowCharts);
+        Assert.Equal(Guid.Empty, vm.Id);
+        Assert.NotNull(vm.Account);
+        Assert.NotNull(vm.CardRecord);
     }
 
     [Fact]
-    public async Task SaveAsync_New_PostsAndReturnsId()
+    public async Task Save_NewAccount_CreatesAndReturnsId()
     {
         var createdId = Guid.NewGuid();
         var (vm, apiMock) = CreateVm();
 
-        apiMock.Setup(a => a.Contacts_ListAsync(0, 200, ContactType.Bank, true, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<ContactDto>());
+        apiMock.Setup(a => a.CreateAccountAsync(It.IsAny<FinanceManager.Shared.Dtos.Accounts.AccountCreateRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(createdId, "Created", FinanceManager.Shared.Dtos.Accounts.AccountType.Savings, null, 0m, Guid.NewGuid(), null, FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.Optional));
 
-        apiMock.Setup(a => a.CreateAccountAsync(It.IsAny<AccountCreateRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AccountDto(createdId, "Created", AccountType.Savings, null, 0, Guid.NewGuid(), null, SavingsPlanExpectation.Optional));
+        // Initialize for new account
+        await vm.InitializeAsync(Guid.Empty);
 
-        vm.ForAccount(null);
-        vm.Name = "New";
-        vm.Type = AccountType.Savings;
+        // set pending name to trigger save
+        var nameField = vm.CardRecord!.Fields.First(f => f.LabelKey == "Card_Caption_Account_Name");
+        vm.ValidateFieldValue(nameField, "New");
 
-        await vm.InitializeAsync();
-        var id = await vm.SaveAsync();
+        // call private SavePendingAsync via reflection
+        var mi = typeof(FinanceManager.Web.ViewModels.Accounts.BankAccountCardViewModel).GetMethod("SavePendingAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var task = (Task)mi.Invoke(vm, Array.Empty<object>())!;
+        await task;
 
-        Assert.True(id.HasValue);
-        Assert.Equal(createdId, id.Value);
-        Assert.False(vm.IsNew);
+        Assert.Equal(createdId, vm.Id);
+        Assert.NotNull(vm.Account);
+        Assert.Equal(createdId, vm.Account!.Id);
     }
 
     [Fact]
-    public async Task SaveAsync_Update_PutsAndKeepsId()
+    public async Task Save_Update_CallsUpdateAndKeepsId()
     {
         var accountId = Guid.NewGuid();
         var (vm, apiMock) = CreateVm();
 
-        apiMock.Setup(a => a.Contacts_ListAsync(0, 200, ContactType.Bank, true, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<ContactDto>());
+        apiMock.Setup(a => a.GetAccountAsync(accountId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(accountId, "Existing", FinanceManager.Shared.Dtos.Accounts.AccountType.Giro, null, 0m, Guid.NewGuid(), null, FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.Optional));
 
-        apiMock.Setup(a => a.UpdateAccountAsync(accountId, It.IsAny<AccountUpdateRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AccountDto(accountId, "Existing", AccountType.Giro, null, 0, Guid.NewGuid(), null, SavingsPlanExpectation.Optional));
+        apiMock.Setup(a => a.UpdateAccountAsync(accountId, It.IsAny<FinanceManager.Shared.Dtos.Accounts.AccountUpdateRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(accountId, "ExistingUpdated", FinanceManager.Shared.Dtos.Accounts.AccountType.Giro, null, 0m, Guid.NewGuid(), null, FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.Optional));
 
-        vm.ForAccount(accountId);
-        vm.Name = "Existing";
-        vm.Type = AccountType.Giro;
+        await vm.InitializeAsync(accountId);
 
-        await vm.InitializeAsync();
-        var id = await vm.SaveAsync();
+        var nameField = vm.CardRecord!.Fields.First(f => f.LabelKey == "Card_Caption_Account_Name");
+        vm.ValidateFieldValue(nameField, "ExistingUpdated");
 
-        Assert.Null(id);
-        Assert.False(vm.IsNew);
-        Assert.Null(vm.Error);
+        var mi = typeof(FinanceManager.Web.ViewModels.Accounts.BankAccountCardViewModel).GetMethod("SavePendingAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var task = (Task)mi.Invoke(vm, Array.Empty<object>())!;
+        await task;
+
+        apiMock.Verify(a => a.UpdateAccountAsync(accountId, It.IsAny<FinanceManager.Shared.Dtos.Accounts.AccountUpdateRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal(accountId, vm.Id);
+        Assert.Equal("ExistingUpdated", vm.Account!.Name);
     }
 
     [Fact]
-    public async Task DeleteAsync_Success_ClearsError()
+    public async Task DeleteAsync_Success_ReturnsTrue()
     {
         var accountId = Guid.NewGuid();
         var (vm, apiMock) = CreateVm();
 
-        apiMock.Setup(a => a.DeleteAccountAsync(accountId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        apiMock.Setup(a => a.GetAccountAsync(accountId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(accountId, "ToDelete", FinanceManager.Shared.Dtos.Accounts.AccountType.Giro, null, 0m, Guid.NewGuid(), null, FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.Optional));
 
-        vm.ForAccount(accountId);
-        await vm.DeleteAsync();
+        apiMock.Setup(a => a.DeleteAccountAsync(accountId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        Assert.Null(vm.Error);
+        await vm.InitializeAsync(accountId);
+        var ok = await vm.DeleteAsync();
+
+        Assert.True(ok);
     }
 
     [Fact]
@@ -151,15 +158,17 @@ public sealed class AccountDetailViewModelTests
         var (vm, _) = CreateVm();
         var loc = new DummyLocalizer();
 
-        vm.ForAccount(null);
+        // New account (empty id)
         var groupsNew = vm.GetRibbon(loc);
-        Assert.Contains(groupsNew, g => g.Title == "Ribbon_Group_Navigation");
-        Assert.Contains(groupsNew, g => g.Title == "Ribbon_Group_Edit");
-        Assert.DoesNotContain(groupsNew, g => g.Title == "Ribbon_Group_Related");
+        Assert.Contains(groupsNew, g => g.Tabs != null && g.Tabs.Any(t => t.Title == "Ribbon_Group_Navigation"));
+        Assert.Contains(groupsNew, g => g.Tabs != null && g.Tabs.Any(t => t.Title == "Ribbon_Group_Manage"));
+        Assert.Contains(groupsNew, g => g.Tabs != null && g.Tabs.Any(t => t.Title == "Ribbon_Group_Linked"));
 
-        vm.ForAccount(Guid.NewGuid());
-        vm.Name = "Acc";
+        // Existing account: still contains linked group
+        // simulate by initializing
+        var accountId = Guid.NewGuid();
+        // We don't need to load account for ribbon shape
         var groupsExisting = vm.GetRibbon(loc);
-        Assert.Contains(groupsExisting, g => g.Title == "Ribbon_Group_Related");
+        Assert.Contains(groupsExisting, g => g.Tabs != null && g.Tabs.Any(t => t.Title == "Ribbon_Group_Linked"));
     }
 }

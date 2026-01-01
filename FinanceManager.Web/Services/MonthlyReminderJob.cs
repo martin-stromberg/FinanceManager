@@ -6,12 +6,22 @@ using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.Services;
 
+/// <summary>
+/// Background job responsible for scheduling monthly reminder notifications for users.
+/// The job computes each user's last local business day of the month (respecting configured holiday providers and subdivisions)
+/// and creates a single MonthlyReminder notification per user per scheduled UTC day when the configured trigger time is reached.
+/// </summary>
 public sealed class MonthlyReminderJob
 {
-    private readonly IStringLocalizer<MonthlyReminderJob> _localizer;
+    private readonly IStringLocalizer _localizer;
     private readonly IHolidayProviderResolver _holidayResolver;
 
-    public MonthlyReminderJob(IStringLocalizer<MonthlyReminderJob> localizer, IHolidayProviderResolver holidayResolver)
+    /// <summary>
+    /// Initializes a new instance of <see cref="MonthlyReminderJob"/>.
+    /// </summary>
+    /// <param name="localizer">Localizer used to produce localized notification text.</param>
+    /// <param name="holidayResolver">Resolver used to obtain holiday providers for region-specific business day calculation.</param>
+    public MonthlyReminderJob(IStringLocalizer<Pages> localizer, IHolidayProviderResolver holidayResolver)
     {
         _localizer = localizer;
         _holidayResolver = holidayResolver;
@@ -22,6 +32,12 @@ public sealed class MonthlyReminderJob
     /// A reminder is created once per user on that user's last local business day of the month
     /// at or after configured local time (default 09:00). Fallback: server calendar/time if timezone is missing/invalid.
     /// </summary>
+    /// <param name="db">Application database context used to query users and persist notifications. The context is expected to be scoped to the caller.</param>
+    /// <param name="nowUtc">Current UTC date/time used as the reference point for scheduling decisions.</param>
+    /// <param name="ct">Cancellation token used to cancel long-running operations (propagated to EF calls).</param>
+    /// <returns>A task that completes when scheduling has finished. Newly created notifications are saved to the database.</returns>
+    /// <exception cref="OperationCanceledException">Thrown when the provided <paramref name="ct"/> requests cancellation.</exception>
+    /// <exception cref="DbUpdateException">May be thrown when saving notifications to the database fails.</exception>
     public async Task RunAsync(AppDbContext db, DateTime nowUtc, CancellationToken ct)
     {
         var users = await db.Users.AsNoTracking()

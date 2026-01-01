@@ -18,34 +18,73 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace FinanceManager.Infrastructure;
 
+/// <summary>
+/// EF Core <see cref="DbContext"/> for the FinanceManager application.
+/// Exposes DbSet properties for all domain aggregates and configures the model mappings.
+/// Inherits from IdentityDbContext to include ASP.NET Identity user/role stores.
+/// </summary>
 public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 {
+    /// <summary>
+    /// Creates a new instance of <see cref="AppDbContext"/> using the provided options.
+    /// </summary>
+    /// <param name="options">The options to configure the context (provider, connection string, etc.).</param>
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
+    /// <summary>Users (Identity + application user extensions).</summary>
     public DbSet<User> Users => Set<User>();
+    /// <summary>Bank accounts.</summary>
     public DbSet<Account> Accounts => Set<Account>();
+    /// <summary>Account sharing links.</summary>
     public DbSet<AccountShare> AccountShares => Set<AccountShare>();
+    /// <summary>Contacts (counterparties, banks, self).</summary>
     public DbSet<Contact> Contacts => Set<Contact>();
+    /// <summary>Contact categories.</summary>
     public DbSet<ContactCategory> ContactCategories => Set<ContactCategory>();
+    /// <summary>Alias names for contact matching.</summary>
     public DbSet<AliasName> AliasNames => Set<AliasName>();
+    /// <summary>Statement import batches metadata.</summary>
     public DbSet<StatementImport> StatementImports => Set<StatementImport>();
+    /// <summary>Statement entry records created from imports.</summary>
     public DbSet<StatementEntry> StatementEntries => Set<StatementEntry>();
+    /// <summary>Postings (ledger entries).</summary>
     public DbSet<Posting> Postings => Set<Posting>();
+    /// <summary>Statement import drafts.</summary>
     public DbSet<StatementDraft> StatementDrafts => Set<StatementDraft>();
+    /// <summary>Entries inside statement drafts.</summary>
     public DbSet<StatementDraftEntry> StatementDraftEntries => Set<StatementDraftEntry>();
+    /// <summary>Savings plans.</summary>
     public DbSet<SavingsPlan> SavingsPlans => Set<SavingsPlan>();
+    /// <summary>Savings plan categories.</summary>
     public DbSet<SavingsPlanCategory> SavingsPlanCategories { get; set; } = null!;
+    /// <summary>Securities / stocks.</summary>
     public DbSet<FinanceManager.Domain.Securities.Security> Securities => Set<FinanceManager.Domain.Securities.Security>();
+    /// <summary>Security categories.</summary>
     public DbSet<SecurityCategory> SecurityCategories => Set<SecurityCategory>();
+    /// <summary>Aggregated posting values (pre-computed).</summary>
     public DbSet<PostingAggregate> PostingAggregates => Set<PostingAggregate>();
+    /// <summary>Security historical prices.</summary>
     public DbSet<SecurityPrice> SecurityPrices => Set<SecurityPrice>();
+    /// <summary>Backup records stored for the user.</summary>
     public DbSet<BackupRecord> Backups => Set<BackupRecord>();
+    /// <summary>Saved report favorites.</summary>
     public DbSet<ReportFavorite> ReportFavorites => Set<ReportFavorite>(); // new
+    /// <summary>Home KPI configuration records.</summary>
     public DbSet<HomeKpi> HomeKpis => Set<HomeKpi>(); // new
+    /// <summary>IP blocks for rate limiting / security.</summary>
     public DbSet<IpBlock> IpBlocks => Set<IpBlock>(); // new
+    /// <summary>Notification entities for user notifications.</summary>
     public DbSet<Notification> Notifications => Set<Notification>(); // new
+    /// <summary>Attachments stored in the database (binary or URL references).</summary>
     public DbSet<Attachment> Attachments => Set<Attachment>(); // new
+    /// <summary>Attachment categories.</summary>
     public DbSet<AttachmentCategory> AttachmentCategories => Set<AttachmentCategory>(); // new
+
+    /// <summary>
+    /// Configure the EF Core model: indexes, constraints and relationships.
+    /// </summary>
+    /// <param name="modelBuilder">The model builder to configure entities on. Must not be <c>null</c>.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="modelBuilder"/> is <c>null</c>.</exception>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -330,11 +369,24 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.HasIndex(x => new { x.OwnerUserId, x.Name }).IsUnique();
         });
     }
+    /// <summary>
+    /// Configure warnings and other runtime options for the DbContext.
+    /// </summary>
+    /// <param name="optionsBuilder">The options builder to configure. Must not be <c>null</c>.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsBuilder"/> is <c>null</c>.</exception>
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.NonTransactionalMigrationOperationWarning));
     }
 
+    /// <summary>
+    /// Clears all user-specific data from the database. This operation is destructive and should be used with care.
+    /// The method reports progress via the provided callback.
+    /// </summary>
+    /// <param name="userId">The user identifier whose data should be removed.</param>
+    /// <param name="progressCallback">Callback invoked after each sub-step with (step, total).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the clear operation has finished.</returns>
     internal async Task ClearUserDataAsync(Guid userId, Action<int, int> progressCallback, CancellationToken ct)
     {
         var total = 23;
@@ -467,7 +519,11 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         progressCallback(++count, total);
     }
 
-    // Bestehende sync-Methode (legacy) ruft neue Async-Variante
+    /// <summary>
+    /// Legacy synchronous wrapper for <see cref="ClearUserDataAsync(Guid, Action{int,int}, CancellationToken)"/>.
+    /// </summary>
+    /// <param name="userId">The user identifier whose data should be removed.</param>
+    /// <param name="progressCallback">Callback invoked after each sub-step with (step, total).</param>
     internal void ClearUserData(Guid userId, Action<int, int> progressCallback)
         => ClearUserDataAsync(userId, progressCallback, CancellationToken.None).GetAwaiter().GetResult();
 }

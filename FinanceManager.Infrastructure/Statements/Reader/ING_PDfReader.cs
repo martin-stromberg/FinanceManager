@@ -6,12 +6,23 @@ using System.Xml;
 
 namespace FinanceManager.Infrastructure.Statements.Reader
 {
+    /// <summary>
+    /// Statement file reader implementation for ING PDF exports.
+    /// Parses ING-specific PDF content to extract statement header information and movement details.
+    /// This reader provides an enhanced Detail parser for securities transactions as well as a table parser for standard bank movements.
+    /// </summary>
     public class ING_PDfReader : PDFStatementFilereader, IStatementFileReader
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ING_PDfReader"/> class.
+        /// </summary>
         public ING_PDfReader()
         {
         }
 
+        /// <summary>
+        /// XML templates used by the base PDF parsing engine to detect fields and table patterns.
+        /// </summary>
         private string[] _Templates = new string[]
         {
             @"
@@ -32,11 +43,31 @@ namespace FinanceManager.Infrastructure.Statements.Reader
 </template>"
         };
 
+        /// <summary>
+        /// Placeholder for potential XML regular expression configuration.
+        /// </summary>
         string xmlRegExp = "";
 
+        /// <summary>
+        /// Helper regex used for some inline parsing scenarios.
+        /// </summary>
         Regex regex = new Regex(@"^(?<Datum>\d{2}\.\d{2}\.\d{4})\s+(?<Beschreibung>.*?)(?:\s+(?<Betrag>[+-]?\d{1,3}(?:\.\d{3})*,\d{2}))?$");
+
+        /// <summary>
+        /// Templates exposed to the base parser.
+        /// </summary>
         protected override string[] Templates => _Templates;
 
+        /// <summary>
+        /// Attempts to parse supplemental statement details (security taxes, fees, quantities) from an ING PDF export.
+        /// Returns <c>null</c> when parsing fails or no meaningful details were found.
+        /// </summary>
+        /// <param name="originalFileName">Original file name of the uploaded document (used for header description).</param>
+        /// <param name="fileBytes">Raw file bytes to parse.</param>
+        /// <returns>
+        /// A <see cref="StatementParseResult"/> containing a header and a single movement with parsed details when successful;
+        /// otherwise <c>null</c> when parsing could not extract a valid amount or the format is not recognized.
+        /// </returns>
         public override StatementParseResult? ParseDetails(string originalFileName, byte[] fileBytes)
         {
             try
@@ -300,6 +331,15 @@ namespace FinanceManager.Infrastructure.Statements.Reader
 
         private StatementMovement _RecordDelay = null;
         private int _additionalRecordInformationCount = 0;
+
+        /// <summary>
+        /// Parses a single table record. The ING PDF table format sometimes emits records that span multiple rows;
+        /// this method defers the first row until the additional information row has been read and parsed.
+        /// </summary>
+        /// <param name="line">The input line to parse from the table section.</param>
+        /// <returns>
+        /// A <see cref="StatementMovement"/> when a complete record could be parsed; otherwise <c>null</c> if parsing is incomplete and the record is deferred.
+        /// </returns>
         protected override StatementMovement ParseTableRecord(string line)
         {
             if (_RecordDelay is null)
@@ -315,6 +355,12 @@ namespace FinanceManager.Infrastructure.Statements.Reader
                 return ParseSecondRow(line);
             }
         }
+
+        /// <summary>
+        /// Attempts to parse the second row that contains additional information for a previously delayed record.
+        /// </summary>
+        /// <param name="line">The second-line input from the table section.</param>
+        /// <returns>The completed <see cref="StatementMovement"/> when parsing succeeded; otherwise <c>null</c>.</returns>
         private StatementMovement ParseSecondRow(string line)
         {
             var isNextRecord = false;
@@ -333,6 +379,11 @@ namespace FinanceManager.Infrastructure.Statements.Reader
             return outputRecord;
 
         }
+
+        /// <summary>
+        /// Returns the currently delayed record and resets the internal delay state.
+        /// </summary>
+        /// <returns>The delayed <see cref="StatementMovement"/> instance.</returns>
         private StatementMovement ReturnCurrentDelayedRecord()
         {
             var outputRecord = _RecordDelay;
@@ -340,12 +391,25 @@ namespace FinanceManager.Infrastructure.Statements.Reader
             _additionalRecordInformationCount = 0;
             return outputRecord;
         }
+
+        /// <summary>
+        /// Overrides the base parser behaviour to skip additional/regExp entries (they are handled in <see cref="OwnParseRegularExpression"/>).
+        /// </summary>
+        /// <param name="input">Input text to apply the regular expression to.</param>
+        /// <param name="field">XML node describing the regular expression.</param>
         protected override void ParseRegularExpression(string input, XmlNode field)
         {
             var type = field.Attributes.GetNamedItem("type")?.Value;
             if (type != "additional")
                 base.ParseRegularExpression(input, field);
         }
+
+        /// <summary>
+        /// Custom parsing for "additional" regular expression fields. When an additional pattern matches it augments the delayed record's fields.
+        /// </summary>
+        /// <param name="input">The input text to match.</param>
+        /// <param name="field">XML node defining the regex pattern and multiplier.</param>
+        /// <returns><c>true</c> when the input completed parsing for the delayed record (no further additional lines required); otherwise <c>false</c>.</returns>
         private bool OwnParseRegularExpression(string input, XmlNode field)
         {
             var pattern = field.Attributes["pattern"].Value;

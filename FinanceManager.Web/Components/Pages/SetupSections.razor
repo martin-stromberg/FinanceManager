@@ -1,0 +1,52 @@
+@using FinanceManager.Web.ViewModels.Setup
+@using Microsoft.AspNetCore.Components
+
+@if (Provider == null)
+{
+    <div>@("Loading...")</div>
+}
+else
+{
+    <div class="setup-sections" style="display:flex;flex-direction:row;gap:.5rem;flex-wrap:wrap;margin-top:.5rem;">
+        @foreach (var kv in Provider.SettingSections)
+        {
+            var key = kv.Key;
+            var label = kv.Value;
+            var isActive = string.Equals(Provider.SelectedSection, key, StringComparison.OrdinalIgnoreCase);
+            <button class="btn" style="padding:.375rem .75rem;border:1px solid var(--fm-border,#ccc);background:@(isActive?"var(--fm-primary,#007bff)":"transparent");color:@(isActive?"white":"inherit");border-radius:.25rem;" @onclick="() => OnClick(key)">
+                @label
+            </button>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public SetupCardViewModel? Provider { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        if (Provider != null)
+        {
+            Provider.StateChanged -= Provider_StateChanged;
+            Provider.StateChanged += Provider_StateChanged;
+        }
+    }
+
+    private void Provider_StateChanged(object? sender, EventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void OnClick(string key)
+    {
+        if (Provider == null) return;
+        Provider.ChangeView(key);
+    }
+
+    public void Dispose()
+    {
+        if (Provider != null)
+            Provider.StateChanged -= Provider_StateChanged;
+    }
+}

@@ -10,17 +10,33 @@ using System.Text;
 
 namespace FinanceManager.Infrastructure.Reports;
 
+/// <summary>
+/// Service responsible for exporting postings for a given context (Account/Contact/SavingsPlan/Security).
+/// Supports streaming queries, counting, CSV streaming and generating full CSV/XLSX exports.
+/// </summary>
 public sealed class PostingExportService : IPostingExportService
 {
     private readonly AppDbContext _db;
     private readonly ILogger<PostingExportService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PostingExportService"/> class.
+    /// </summary>
+    /// <param name="db">Database context used to read postings and related data.</param>
+    /// <param name="logger">Logger for informational and diagnostic messages.</param>
     public PostingExportService(AppDbContext db, ILogger<PostingExportService> logger)
     {
         _db = db;
         _logger = logger;
     }
 
+    /// <summary>
+    /// Executes the export query and yields matching rows asynchronously. The sequence may contain at most <see cref="PostingExportQuery.MaxRows"/> + 1 rows
+    /// because the caller uses an extra row to detect overflow.
+    /// </summary>
+    /// <param name="query">The export query specifying context, filters and limits.</param>
+    /// <param name="ct">Cancellation token to cancel the operation.</param>
+    /// <returns>An asynchronous sequence of <see cref="PostingExportRow"/> matching the query.</returns>
     public async IAsyncEnumerable<PostingExportRow> QueryAsync(PostingExportQuery query, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct)
     {
         var baseQuery = BuildFilteredJoinedQuery(query);
@@ -51,7 +67,11 @@ public sealed class PostingExportService : IPostingExportService
         }
     }
 
-    // Centralizes building the filtered base query used by count/query
+    /// <summary>
+    /// Builds the filtered joined query used by listing and counting methods. Applies date and text filters.
+    /// </summary>
+    /// <param name="query">The export query containing filters.</param>
+    /// <returns>An <see cref="IQueryable{T}"/> of internal joined projection representing postings with resolved text fields.</returns>
     private IQueryable<Joined> BuildFilteredJoinedQuery(PostingExportQuery query)
     {
         var baseQuery = BuildBaseQuery(query);
@@ -80,6 +100,13 @@ public sealed class PostingExportService : IPostingExportService
         return baseQuery;
     }
 
+    /// <summary>
+    /// Builds the base join and applies ownership validation for the requested context.
+    /// </summary>
+    /// <param name="query">The export query containing context and owner information.</param>
+    /// <returns>An <see cref="IQueryable{Joined}"/> representing postings joined with optional statement entries.</returns>
+    /// <exception cref="UnauthorizedAccessException">Thrown when the requested context entity is not owned by the querying user.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the context kind is not supported.</exception>
     private IQueryable<Joined> BuildBaseQuery(PostingExportQuery query)
     {
         // Ownership per context
@@ -136,6 +163,9 @@ public sealed class PostingExportService : IPostingExportService
         return joined;
     }
 
+    /// <summary>
+    /// Internal projection type used by the export queries to combine postings with optional statement entry fields.
+    /// </summary>
     private sealed class Joined
     {
         public Domain.Postings.Posting P { get; set; } = null!;
@@ -144,6 +174,13 @@ public sealed class PostingExportService : IPostingExportService
         public string? Description { get; set; }
     }
 
+    /// <summary>
+    /// Generates a full export file (CSV or XLSX) for the provided query and returns the content stream and metadata.
+    /// </summary>
+    /// <param name="query">The posting export query.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Tuple containing the content type, suggested file name and a stream containing the file content. The returned stream is positioned at the beginning.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the export exceeds the configured maximum rows or when an unknown format is requested.</exception>
     public async Task<(string ContentType, string FileName, Stream Content)> GenerateAsync(PostingExportQuery query, CancellationToken ct)
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -221,12 +258,25 @@ public sealed class PostingExportService : IPostingExportService
         return (contentType, fileName, stream);
     }
 
+    /// <summary>
+    /// Counts the number of rows matching the provided export query.
+    /// </summary>
+    /// <param name="query">The export query.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The number of matching rows.</returns>
     public async Task<int> CountAsync(PostingExportQuery query, CancellationToken ct)
     {
         var filtered = BuildFilteredJoinedQuery(query);
         return await filtered.CountAsync(ct);
     }
 
+    /// <summary>
+    /// Streams CSV formatted postings directly to the provided output stream. This method performs a streaming DB query
+    /// and writes rows sequentially to the output to avoid loading the entire result set into memory.
+    /// </summary>
+    /// <param name="query">The export query.</param>
+    /// <param name="output">The output stream where CSV data will be written. Stream is left open.</param>
+    /// <param name="ct">Cancellation token.</param>
     public async Task StreamCsvAsync(PostingExportQuery query, Stream output, CancellationToken ct)
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -339,6 +389,16 @@ public sealed class PostingExportService : IPostingExportService
         _logger.LogInformation("Posting export streamed: Kind={Kind}, Id={Id}, Format=CSV, DurationMs={Ms}", query.ContextKind, query.ContextId, sw.ElapsedMilliseconds);
     }
 
+    /// <summary>
+    /// Writes CSV content for an in-memory set of rows to the provided stream. The stream is left open.
+    /// </summary>
+    /// <param name="output">Output stream to write to.</param>
+    /// <param name="rows">Rows to write.</param>
+    /// <param name="accountNames">Mapping of account ids to names.</param>
+    /// <param name="contactNames">Mapping of contact ids to names.</param>
+    /// <param name="savingsNames">Mapping of savings plan ids to names.</param>
+    /// <param name="securityNames">Mapping of security ids to names.</param>
+    /// <param name="ct">Cancellation token.</param>
     private static async Task WriteCsvAsync(Stream output, IReadOnlyList<PostingExportRow> rows,
         IReadOnlyDictionary<Guid, string> accountNames,
         IReadOnlyDictionary<Guid, string> contactNames,
@@ -378,6 +438,11 @@ public sealed class PostingExportService : IPostingExportService
         await writer.FlushAsync();
     }
 
+    /// <summary>
+    /// Escapes a string value for inclusion in a CSV field by removing newlines and quoting double-quotes.
+    /// </summary>
+    /// <param name="value">Input string value to escape.</param>
+    /// <returns>CSV-safe quoted string, or empty string when input is null or empty.</returns>
     private static string CsvEscape(string? value)
     {
         if (string.IsNullOrEmpty(value)) { return string.Empty; }
@@ -385,6 +450,16 @@ public sealed class PostingExportService : IPostingExportService
         return $"\"{v}\"";
     }
 
+    /// <summary>
+    /// Writes an XLSX workbook to the provided stream containing the provided rows.
+    /// The method uses OpenXML to construct a simple sheet with stringified values.
+    /// </summary>
+    /// <param name="output">Output stream where the XLSX file will be written. The stream is left open.</param>
+    /// <param name="rows">Rows to include in the workbook.</param>
+    /// <param name="accountNames">Mapping of account ids to names.</param>
+    /// <param name="contactNames">Mapping of contact ids to names.</param>
+    /// <param name="savingsNames">Mapping of savings plan ids to names.</param>
+    /// <param name="securityNames">Mapping of security ids to names.</param>
     private static void WriteXlsx(Stream output, IReadOnlyList<PostingExportRow> rows,
         IReadOnlyDictionary<Guid, string> accountNames,
         IReadOnlyDictionary<Guid, string> contactNames,
@@ -433,6 +508,11 @@ public sealed class PostingExportService : IPostingExportService
         wbPart.Workbook.Save();
     }
 
+    /// <summary>
+    /// Creates an OpenXML row for the supplied values. Dates are formatted as ISO strings and decimals as invariant numbers.
+    /// </summary>
+    /// <param name="values">Array of cell values. Supported types: DateTime, decimal, string, Enum; other types are written via ToString().</param>
+    /// <returns>An OpenXML <see cref="Row"/> representing the provided values.</returns>
     private static Row CreateRow(object[] values)
     {
         var row = new Row();

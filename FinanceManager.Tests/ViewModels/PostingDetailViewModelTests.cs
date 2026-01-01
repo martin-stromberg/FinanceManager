@@ -1,7 +1,5 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
-using FinanceManager.Shared.Dtos.Postings;
-using FinanceManager.Web.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
@@ -17,14 +15,14 @@ public sealed class PostingDetailViewModelTests
         public bool IsAdmin { get; set; }
     }
 
-    private static (PostingDetailViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool authenticated = true)
+    private static (FinanceManager.Web.ViewModels.Postings.Common.PostingsCardViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool authenticated = true)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService { IsAuthenticated = authenticated });
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
         var sp = services.BuildServiceProvider();
-        var vm = new PostingDetailViewModel(sp);
+        var vm = new FinanceManager.Web.ViewModels.Postings.Common.PostingsCardViewModel(sp);
         return (vm, apiMock);
     }
 
@@ -69,12 +67,11 @@ public sealed class PostingDetailViewModelTests
         apiMock.Setup(a => a.Postings_GetGroupLinksAsync(groupId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(links);
 
-        vm.Configure(id);
-        await vm.InitializeAsync();
+        // directly initialize the card view model with the posting id
+        await vm.InitializeAsync(id);
 
         Assert.False(vm.Loading);
-        Assert.NotNull(vm.Detail);
-        Assert.Equal(linkedAccountId, vm.LinkedAccountId);
-        Assert.False(vm.LinksLoading);
+        Assert.NotNull(vm.Posting);
+        Assert.Equal(id, vm.Posting!.Id);
     }
 }

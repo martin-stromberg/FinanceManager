@@ -5,22 +5,51 @@ using System.Text.Json;
 
 namespace FinanceManager.Web.Services
 {
+    /// <summary>
+    /// Background task executor that performs mass booking of open statement drafts for a user.
+    /// The executor processes open drafts in batches, reports progress to the BackgroundTaskManager
+    /// and obeys provided options such as ignoring warnings or aborting on first issue.
+    /// </summary>
     public sealed class BookingTaskExecutor : IBackgroundTaskExecutor
     {
+        /// <summary>
+        /// The background task type handled by this executor.
+        /// </summary>
         public BackgroundTaskType Type => BackgroundTaskType.BookAllDrafts;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<BookingTaskExecutor> _logger;
-        private readonly IStringLocalizer<BookingTaskExecutor> _localizer;
+        private readonly IStringLocalizer _localizer;
 
+        /// <summary>
+        /// Options parsed from the task payload that control booking behavior.
+        /// </summary>
+        /// <param name="IgnoreWarnings">When true warnings are ignored and booking proceeds.</param>
+        /// <param name="AbortOnFirstIssue">When true the executor stops at the first error or warning condition.</param>
+        /// <param name="BookEntriesIndividually">When true postings are booked entry-by-entry instead of per-draft.</param>
         private sealed record Options(bool IgnoreWarnings, bool AbortOnFirstIssue, bool BookEntriesIndividually);
 
-        public BookingTaskExecutor(IServiceScopeFactory scopeFactory, ILogger<BookingTaskExecutor> logger, IStringLocalizer<BookingTaskExecutor> localizer)
+        /// <summary>
+        /// Initializes a new instance of <see cref="BookingTaskExecutor"/>
+        /// </summary>
+        /// <param name="scopeFactory">Factory to create a scoped service provider for resolving scoped services during execution.</param>
+        /// <param name="logger">Logger used to record errors and informational events.</param>
+        /// <param name="localizer">Localizer used to produce localized progress messages.</param>
+        public BookingTaskExecutor(IServiceScopeFactory scopeFactory, ILogger<BookingTaskExecutor> logger, IStringLocalizer<Pages> localizer)
         {
             _scopeFactory = scopeFactory;
             _logger = logger;
             _localizer = localizer;
         }
 
+        /// <summary>
+        /// Executes the mass booking background task using the provided <paramref name="context"/>.
+        /// Progress is continuously reported via <see cref="BackgroundTaskContext.ReportProgress(int,int,string,int,int)"/>.
+        /// </summary>
+        /// <param name="context">Background task execution context containing TaskId, UserId and Payload.</param>
+        /// <param name="ct">Cancellation token that may be used to cancel execution.</param>
+        /// <returns>A task that completes when processing has finished or the operation is cancelled.</returns>
+        /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the provided <paramref name="ct"/>.</exception>
+        /// <exception cref="JsonException">May be thrown when the task payload contains malformed JSON while parsing options.</exception>
         public async Task ExecuteAsync(BackgroundTaskContext context, CancellationToken ct)
         {
             var opts = ParseOptions(context.Payload);
@@ -145,6 +174,13 @@ namespace FinanceManager.Web.Services
             context.ReportProgress(processedDrafts + failedDrafts, totalDrafts, _localizer["BK_Completed"], warnings, errors);
         }
 
+        /// <summary>
+        /// Parses booking options from the task payload. The payload is expected to be a JSON object with boolean properties
+        /// <c>IgnoreWarnings</c>, <c>AbortOnFirstIssue</c> and <c>BookEntriesIndividually</c>. When parsing fails the default
+        /// options (all false) are returned.
+        /// </summary>
+        /// <param name="payload">Task payload provided when the background job was enqueued. May be <c>null</c> or a JSON string.</param>
+        /// <returns>An <see cref="Options"/> instance with the parsed settings or defaults when parsing fails.</returns>
         private static Options ParseOptions(object? payload)
         {
             if (payload is string s && !string.IsNullOrWhiteSpace(s))

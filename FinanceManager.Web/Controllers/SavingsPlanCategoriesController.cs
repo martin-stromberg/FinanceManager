@@ -1,4 +1,5 @@
 using FinanceManager.Application;
+using FinanceManager.Application.Savings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +15,11 @@ public sealed class SavingsPlanCategoriesController : ControllerBase
     private readonly ISavingsPlanCategoryService _service;
     private readonly ICurrentUserService _current;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SavingsPlanCategoriesController"/> class.
+    /// </summary>
+    /// <param name="service">Service implementing savings plan category use-cases.</param>
+    /// <param name="current">Service providing the current authenticated user context.</param>
     public SavingsPlanCategoriesController(ISavingsPlanCategoryService service, ICurrentUserService current)
     { _service = service; _current = current; }
 
@@ -21,6 +27,7 @@ public sealed class SavingsPlanCategoriesController : ControllerBase
     /// Lists all savings plan categories for the user.
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of <see cref="SavingsPlanCategoryDto"/> instances for the current user (200 OK).</returns>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<SavingsPlanCategoryDto>), StatusCodes.Status200OK)]
     public async Task<IReadOnlyList<SavingsPlanCategoryDto>> ListAsync(CancellationToken ct)
@@ -31,6 +38,7 @@ public sealed class SavingsPlanCategoriesController : ControllerBase
     /// </summary>
     /// <param name="id">Category id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>Category DTO (200 OK) when found; otherwise 404 Not Found.</returns>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(SavingsPlanCategoryDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -42,6 +50,7 @@ public sealed class SavingsPlanCategoriesController : ControllerBase
     /// </summary>
     /// <param name="dto">Category data (only name is used).</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>The created category DTO (201 Created) or 400 Bad Request when the request is invalid.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(SavingsPlanCategoryDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -54,6 +63,7 @@ public sealed class SavingsPlanCategoriesController : ControllerBase
     /// <param name="id">Category id.</param>
     /// <param name="dto">Category data (new name).</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>The updated category DTO (200 OK) when successful; 404 Not Found when the category does not exist; 400 Bad Request when input is invalid.</returns>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(SavingsPlanCategoryDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -66,6 +76,7 @@ public sealed class SavingsPlanCategoriesController : ControllerBase
     /// </summary>
     /// <param name="id">Category id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>No content (204) when deleted; 404 Not Found when the category does not exist.</returns>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -78,6 +89,8 @@ public sealed class SavingsPlanCategoriesController : ControllerBase
     /// <param name="id">Category id.</param>
     /// <param name="attachmentId">Attachment id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>No content (204) when the symbol was set; 404 Not Found when the category or attachment does not exist.</returns>
+    /// <exception cref="ArgumentException">May be thrown by the underlying service when the category or attachment is not found (mapped to 404).</exception>
     [HttpPost("{id:guid}/symbol/{attachmentId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -92,6 +105,8 @@ public sealed class SavingsPlanCategoriesController : ControllerBase
     /// </summary>
     /// <param name="id">Category id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>No content (204) when the symbol was cleared; 404 Not Found when the category does not exist.</returns>
+    /// <exception cref="ArgumentException">May be thrown by the underlying service when the category is not found (mapped to 404).</exception>
     [HttpDelete("{id:guid}/symbol")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

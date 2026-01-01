@@ -12,6 +12,8 @@ public sealed partial class StatementDraftService
             draft.OriginalFileName,
             draft.Description,
             draft.DetectedAccountId,
+            null,
+            null,
             draft.Status,
             total,
             false,
@@ -47,7 +49,7 @@ public sealed partial class StatementDraftService
             e.SecurityTaxAmount);
     }
 
-    private static StatementDraftDto Map(StatementDraft draft, IDictionary<Guid, dynamic> splitRefLookup)
+    private static StatementDraftDto Map(StatementDraft draft, IDictionary<Guid, dynamic> splitRefLookup, AccountDto? account = null)
     {
         var total = draft.Entries.Sum(e => e.Amount);
         dynamic? refInfo = null;
@@ -61,6 +63,8 @@ public sealed partial class StatementDraftService
             draft.OriginalFileName,
             draft.Description,
             draft.DetectedAccountId,
+            account?.BankContactId,
+            account?.SymbolAttachmentId,
             draft.Status,
             total,
             parentDraftId != null,

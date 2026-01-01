@@ -1,0 +1,69 @@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Pages> Localizer
+
+<div style="padding:1rem;min-width:320px;">
+    <h3 style="margin-top:0;margin-bottom:0.5rem;">@((OverlayTitle != null) ? OverlayTitle : (Localizer?["MassBooking_Title"] ?? "Mass booking options"))</h3>
+
+    <div style="margin-top:.75rem;">
+        <label style="display:flex;align-items:center;gap:.5rem;">
+            <input type="checkbox" @bind="IgnoreWarnings" />
+            <span>@(Localizer?["MassBooking_IgnoreWarnings"] ?? "Ignore warnings")</span>
+        </label>
+    </div>
+
+    <div style="margin-top:.5rem;">
+        <label style="display:flex;align-items:center;gap:.5rem;">
+            <input type="checkbox" @bind="AbortOnFirstIssue" />
+            <span>@(Localizer?["MassBooking_AbortOnFirstIssue"] ?? "Abort on first warning/error")</span>
+        </label>
+    </div>
+
+    <div style="margin-top:.5rem;">
+        <label style="display:flex;align-items:center;gap:.5rem;">
+            <input type="checkbox" @bind="BookEntriesIndividually" />
+            <span>@(Localizer?["MassBooking_BookEntriesIndividually"] ?? "Book entries individually")</span>
+        </label>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem;">
+        <button class="btn" @onclick="OnCancel">@((Localizer?["Btn_Cancel"] ?? "Cancel"))</button>
+        <button class="btn primary" @onclick="OnStart">@((Localizer?["Btn_Start"] ?? "Start"))</button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Func<bool, bool, bool, Task>? StartCallback { get; set; }
+    [Parameter] public string? OverlayTitle { get; set; }
+
+    [CascadingParameter(Name = "OverlayClose")] private Action? OverlayClose { get; set; }
+    [CascadingParameter(Name = "OverlayOnFinished")] private Action<object>? OverlayOnFinished { get; set; }
+
+    private bool IgnoreWarnings { get; set; } = false;
+    private bool AbortOnFirstIssue { get; set; } = false;
+    private bool BookEntriesIndividually { get; set; } = false;
+
+    private async Task OnStart()
+    {
+        try
+        {
+            if (StartCallback != null)
+            {
+                await StartCallback(IgnoreWarnings, AbortOnFirstIssue, BookEntriesIndividually);
+            }
+        }
+        catch
+        {
+            // swallow — errors are shown by VM
+        }
+        finally
+        {
+            OverlayClose?.Invoke();
+        }
+    }
+
+    private void OnCancel()
+    {
+        OverlayClose?.Invoke();
+    }
+}

@@ -1,7 +1,5 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
-using FinanceManager.Shared.Dtos.Accounts;
-using FinanceManager.Web.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
@@ -23,16 +21,27 @@ public sealed class AccountsViewModelTests
         public LocalizedString this[string name] => new(name, name);
         public LocalizedString this[string name, params object[] arguments] => new(name, name);
         public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => Array.Empty<LocalizedString>();
+        public IStringLocalizer WithCulture(System.Globalization.CultureInfo culture) => this;
     }
 
-    private static (AccountsViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool isAuthenticated = true)
+    private sealed class DummyGenericLocalizer<T> : IStringLocalizer<T>
+    {
+        public LocalizedString this[string name] => new(name, name);
+        public LocalizedString this[string name, params object[] arguments] => new(name, name);
+        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => Array.Empty<LocalizedString>();
+        public IStringLocalizer WithCulture(System.Globalization.CultureInfo culture) => this;
+    }
+
+    private static (FinanceManager.Web.ViewModels.Accounts.BankAccountListViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool isAuthenticated = true)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService { IsAuthenticated = isAuthenticated });
+        // register generic localizer so viewmodels resolving IStringLocalizer<Pages> succeed
+        services.AddSingleton(typeof(IStringLocalizer<>), typeof(DummyGenericLocalizer<>));
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
         var sp = services.BuildServiceProvider();
-        var vm = new AccountsViewModel(sp);
+        var vm = new FinanceManager.Web.ViewModels.Accounts.BankAccountListViewModel(sp);
         return (vm, apiMock);
     }
 
@@ -45,14 +54,14 @@ public sealed class AccountsViewModelTests
             new AccountDto(Guid.NewGuid(), "A", AccountType.Giro, "DE00", 10m, Guid.NewGuid(), null, SavingsPlanExpectation.Optional),
             new AccountDto(Guid.NewGuid(), "B", AccountType.Savings, null, 20m, Guid.NewGuid(), null, SavingsPlanExpectation.Optional)
         };
-        apiMock.Setup(a => a.GetAccountsAsync(0, 100, null, It.IsAny<CancellationToken>()))
+        apiMock.Setup(a => a.GetAccountsAsync(0, 50, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(accounts);
 
         await vm.InitializeAsync();
 
         Assert.True(vm.Loaded);
-        Assert.Equal(2, vm.Accounts.Count);
-        Assert.All(vm.Accounts, a => Assert.False(string.IsNullOrWhiteSpace(a.Name)));
+        Assert.Equal(2, vm.Items.Count);
+        Assert.All(vm.Items, a => Assert.False(string.IsNullOrWhiteSpace(a.Name)));
     }
 
     [Fact]
@@ -74,17 +83,17 @@ public sealed class AccountsViewModelTests
     {
         var (vm, apiMock) = CreateVm();
         var filterId = Guid.NewGuid();
-        apiMock.Setup(a => a.GetAccountsAsync(0, 100, filterId, It.IsAny<CancellationToken>()))
+        apiMock.Setup(a => a.GetAccountsAsync(0, 50, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<AccountDto>());
 
-        vm.SetFilter(filterId);
+        vm.SetSearch("A");
         await vm.InitializeAsync();
 
-        apiMock.Verify(a => a.GetAccountsAsync(0, 100, filterId, It.IsAny<CancellationToken>()), Times.Once);
+        apiMock.Verify(a => a.GetAccountsAsync(0, 50, null, It.IsAny<CancellationToken>()), Times.Once);
 
         var loc = new DummyLocalizer();
         var groups = vm.GetRibbon(loc);
-        Assert.Contains(groups, g => g.Items.Any(i => i.Action == "ClearFilter"));
+        Assert.Contains(groups, g => g.Items.Any(i => i.Action == "ClearSearch"));
     }
 
     [Fact]

@@ -126,31 +126,31 @@
   <data name="Loading" xml:space="preserve">
     <value>Lade...</value>
   </data>
-  <data name="BtnBack" xml:space="preserve">
+  <data name="Ribbon_Back" xml:space="preserve">
     <value>Zurück</value>
   </data>
-  <data name="BtnSave" xml:space="preserve">
+  <data name="Ribbon_Save" xml:space="preserve">
     <value>Speichern</value>
   </data>
-  <data name="BtnReclassify" xml:space="preserve">
+  <data name="Ribbon_Reclassify" xml:space="preserve">
     <value>Neu klassifizieren</value>
   </data>
-  <data name="BtnValidate" xml:space="preserve">
+  <data name="Ribbon_Validate" xml:space="preserve">
     <value>Prüfen</value>
   </data>
-  <data name="BtnAssignSplit" xml:space="preserve">
+  <data name="Ribbon_AssignSplit" xml:space="preserve">
     <value>Aufteilungs-Auszug zuordnen</value>
   </data>
-  <data name="BtnBook" xml:space="preserve">
+  <data name="Ribbon_Book" xml:space="preserve">
     <value>Buchen</value>
   </data>
-  <data name="BtnOpenContact" xml:space="preserve">
+  <data name="Ribbon_OpenContact" xml:space="preserve">
     <value>Kontakt öffnen</value>
   </data>
-  <data name="BtnOpenSecurity" xml:space="preserve">
+  <data name="Ribbon_OpenSecurity" xml:space="preserve">
     <value>Wertpapier öffnen</value>
   </data>
-  <data name="BtnOpenSavingsPlan" xml:space="preserve">
+  <data name="Ribbon_OpenSavingsPlan" xml:space="preserve">
     <value>Sparplan öffnen</value>
   </data>
   <data name="BtnOpenLinkedSplit" xml:space="preserve">
@@ -159,10 +159,10 @@
   <data name="BtnRemoveAssignment" xml:space="preserve">
     <value>Zuordnung entfernen</value>
   </data>
-  <data name="BtnPrevEntry" xml:space="preserve">
+  <data name="Ribbon_Prev" xml:space="preserve">
     <value>Vorheriger Eintrag</value>
   </data>
-  <data name="BtnNextOpenEntry" xml:space="preserve">
+  <data name="Ribbon_NextOpen" xml:space="preserve">
     <value>Nächster offener Eintrag</value>
   </data>
   <data name="DraftFile" xml:space="preserve">
@@ -189,7 +189,7 @@
   <data name="Msg_ReadOnlyAlreadyBooked" xml:space="preserve">
     <value>Dieser Eintrag wurde bereits gebucht und kann nicht bearbeitet werden. Zum Bearbeiten bitte zuerst als Duplikat zurücksetzen.</value>
   </data>
-  <data name="Btn_ResetDuplicate" xml:space="preserve">
+  <data name="Ribbon_ResetDuplicate" xml:space="preserve">
     <value>Duplikat zurücksetzen</value>
   </data>
   <data name="Confirm_ResetDuplicate" xml:space="preserve">
@@ -354,7 +354,7 @@
   <data name="Err_Book" xml:space="preserve">
     <value>Buchung fehlgeschlagen.</value>
   </data>
-  <data name="BtnDelete" xml:space="preserve">
+  <data name="Ribbon_DeleteEntry" xml:space="preserve">
     <value>Eintrag löschen</value>
   </data>
   <data name="Ribbon_Group_Navigation" xml:space="preserve">

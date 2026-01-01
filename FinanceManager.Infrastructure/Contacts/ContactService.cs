@@ -5,11 +5,32 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Infrastructure.Contacts;
 
+/// <summary>
+/// Service that manages contacts (CRUD, aliases and merging) for a user.
+/// Implements <see cref="IContactService"/> and performs validation and related cleanup operations (attachments, aliases).
+/// </summary>
 public sealed class ContactService : IContactService
 {
     private readonly AppDbContext _db;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ContactService"/> class.
+    /// </summary>
+    /// <param name="db">The application database context.</param>
     public ContactService(AppDbContext db) { _db = db; }
 
+    /// <summary>
+    /// Creates a new contact for the specified owner.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="name">Contact display name.</param>
+    /// <param name="type">Contact type (Organization, Bank, Self, etc.).</param>
+    /// <param name="categoryId">Optional contact category id.</param>
+    /// <param name="description">Optional description text.</param>
+    /// <param name="isPaymentIntermediary">Optional flag indicating if the contact is a payment intermediary.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The created <see cref="ContactDto"/>.</returns>
+    /// <exception cref="ArgumentException">Thrown when attempting to create a contact of type <see cref="ContactType.Self"/>.</exception>
     public async Task<ContactDto> CreateAsync(Guid ownerUserId, string name, ContactType type, Guid? categoryId, string? description, bool? isPaymentIntermediary, CancellationToken ct)
     {
         if (type == ContactType.Self)
@@ -22,6 +43,19 @@ public sealed class ContactService : IContactService
         return new ContactDto(contact.Id, contact.Name, contact.Type, contact.CategoryId, contact.Description, contact.IsPaymentIntermediary, contact.SymbolAttachmentId);
     }
 
+    /// <summary>
+    /// Updates an existing contact's data.
+    /// </summary>
+    /// <param name="id">Identifier of the contact to update.</param>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="name">New display name.</param>
+    /// <param name="type">New contact type.</param>
+    /// <param name="categoryId">Optional category id.</param>
+    /// <param name="description">Optional description text.</param>
+    /// <param name="isPaymentIntermediary">Optional payment intermediary flag.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The updated <see cref="ContactDto"/>, or <c>null</c> when the contact was not found.</returns>
+    /// <exception cref="ArgumentException">Thrown when attempting to change a 'Self' contact's type or to set a contact's type to 'Self'.</exception>
     public async Task<ContactDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, ContactType type, Guid? categoryId, string? description, bool? isPaymentIntermediary, CancellationToken ct)
     {
         var contact = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == id && c.OwnerUserId == ownerUserId, ct);
@@ -49,6 +83,14 @@ public sealed class ContactService : IContactService
         return new ContactDto(contact.Id, contact.Name, contact.Type, contact.CategoryId, contact.Description, contact.IsPaymentIntermediary, contact.SymbolAttachmentId);
     }
 
+    /// <summary>
+    /// Deletes a contact and related attachments. The 'Self' contact cannot be deleted.
+    /// </summary>
+    /// <param name="id">Identifier of the contact to delete.</param>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when a contact was deleted; otherwise <c>false</c> when not found.</returns>
+    /// <exception cref="ArgumentException">Thrown when attempting to delete the 'Self' contact.</exception>
     public async Task<bool> DeleteAsync(Guid id, Guid ownerUserId, CancellationToken ct)
     {
         var contact = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == id && c.OwnerUserId == ownerUserId, ct);
@@ -79,6 +121,17 @@ public sealed class ContactService : IContactService
         return true;
     }
 
+    /// <summary>
+    /// Lists contacts for the given owner with optional type and name filtering.
+    /// Returns contact DTOs with symbol attachment fallback to category when needed.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="skip">Items to skip for paging.</param>
+    /// <param name="take">Items to take for paging.</param>
+    /// <param name="type">Optional contact type filter.</param>
+    /// <param name="nameFilter">Optional name filter (LIKE search).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of <see cref="ContactDto"/> matching the query.</returns>
     public async Task<IReadOnlyList<ContactDto>> ListAsync(Guid ownerUserId, int skip, int take, ContactType? type, string? nameFilter, CancellationToken ct)
     {
         var query = _db.Contacts.AsNoTracking()
@@ -95,14 +148,36 @@ public sealed class ContactService : IContactService
             query = query.Where(c => EF.Functions.Like(c.Name, pattern));
         }
 
-        return await query
+        // Left-join contact categories to fall back to category symbol when contact has none
+        var q = query
             .OrderBy(c => c.Name)
             .Skip(skip)
             .Take(take)
-            .Select(c => new ContactDto(c.Id, c.Name, c.Type, c.CategoryId, c.Description, c.IsPaymentIntermediary, c.SymbolAttachmentId))
+            .GroupJoin(_db.ContactCategories.Where(cat => cat.OwnerUserId == ownerUserId),
+                c => c.CategoryId,
+                cat => cat.Id,
+                (c, cats) => new { Contact = c, Categories = cats })
+            .SelectMany(x => x.Categories.DefaultIfEmpty(), (x, cat) => new { x.Contact, Category = cat });
+
+        return await q.Select(x => new ContactDto(
+                x.Contact.Id,
+                x.Contact.Name,
+                x.Contact.Type,
+                x.Contact.CategoryId,
+                x.Contact.Description,
+                x.Contact.IsPaymentIntermediary,
+                x.Contact.SymbolAttachmentId ?? (x.Category != null ? x.Category.SymbolAttachmentId : null)
+            ))
             .ToListAsync(ct);
     }
 
+    /// <summary>
+    /// Retrieves a contact by id for the specified owner.
+    /// </summary>
+    /// <param name="id">Contact identifier.</param>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The mapped <see cref="ContactDto"/>, or <c>null</c> when not found.</returns>
     public async Task<ContactDto?> GetAsync(Guid id, Guid ownerUserId, CancellationToken ct)
     {
         return await _db.Contacts.AsNoTracking()
@@ -111,6 +186,15 @@ public sealed class ContactService : IContactService
             .FirstOrDefaultAsync(ct);
     }
 
+    /// <summary>
+    /// Adds an alias name to the specified contact.
+    /// </summary>
+    /// <param name="contactId">Identifier of the contact.</param>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="pattern">Alias pattern to add.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the alias has been added.</returns>
+    /// <exception cref="ArgumentException">Thrown when the contact is not found or the pattern is empty or already exists.</exception>
     public async Task AddAliasAsync(Guid contactId, Guid ownerUserId, string pattern, CancellationToken ct)
     {
         var contact = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == contactId && c.OwnerUserId == ownerUserId, ct);
@@ -139,6 +223,15 @@ public sealed class ContactService : IContactService
         }
     }
 
+    /// <summary>
+    /// Deletes an alias name for a contact.
+    /// </summary>
+    /// <param name="contactId">Identifier of the contact.</param>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="aliasId">Alias identifier to delete.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the alias has been deleted.</returns>
+    /// <exception cref="ArgumentException">Thrown when contact or alias cannot be found.</exception>
     public async Task DeleteAliasAsync(Guid contactId, Guid ownerUserId, Guid aliasId, CancellationToken ct)
     {
         var contact = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == contactId && c.OwnerUserId == ownerUserId, ct);
@@ -151,6 +244,13 @@ public sealed class ContactService : IContactService
         await _db.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Lists alias names for the specified contact.
+    /// </summary>
+    /// <param name="id">Contact identifier.</param>
+    /// <param name="userId">Owner user identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of <see cref="AliasNameDto"/> for the contact.</returns>
     public async Task<IReadOnlyList<AliasNameDto>> ListAliases(Guid id, Guid userId, CancellationToken ct)
     {
         return await _db.AliasNames.AsNoTracking()
@@ -160,7 +260,15 @@ public sealed class ContactService : IContactService
             .ToListAsync(ct);
     }
 
-    // new: set/clear symbol attachment for contact
+    /// <summary>
+    /// Sets or clears the symbol attachment for a contact.
+    /// </summary>
+    /// <param name="id">Contact identifier.</param>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="attachmentId">Attachment identifier to set, or <c>null</c> to clear.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the operation has finished.</returns>
+    /// <exception cref="ArgumentException">Thrown when the contact was not found for the specified id and owner.</exception>
     public async Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct)
     {
         var contact = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == id && c.OwnerUserId == ownerUserId, ct);
@@ -169,7 +277,17 @@ public sealed class ContactService : IContactService
         await _db.SaveChangesAsync(ct);
     }
 
-    public async Task<ContactDto> MergeAsync(Guid ownerUserId, Guid sourceContactId, Guid targetContactId, CancellationToken ct)
+    /// <summary>
+    /// Merges two contacts into one target contact and reassigns related data according to the specified <paramref name="preference"/>.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="sourceContactId">Identifier of the contact to be merged/removed.</param>
+    /// <param name="targetContactId">Identifier of the contact to keep.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <param name="preference">Merge preference determining which side wins for conflicting fields.</param>
+    /// <returns>The resulting merged <see cref="ContactDto"/> for the target contact.</returns>
+    /// <exception cref="ArgumentException">Thrown when identifiers are equal, contacts are missing, merge rules are violated (Self/Bank), or other validation fails.</exception>
+    public async Task<ContactDto> MergeAsync(Guid ownerUserId, Guid sourceContactId, Guid targetContactId, CancellationToken ct, FinanceManager.Shared.Dtos.Contacts.MergePreference preference = FinanceManager.Shared.Dtos.Contacts.MergePreference.DestinationFirst)
     {
         if (sourceContactId == targetContactId)
         {
@@ -206,7 +324,6 @@ public sealed class ContactService : IContactService
             .Select(a => a.Pattern.ToLower())
             .ToListAsync(ct);
 
-        // ensure target name is included in checks
         var targetNameLower = target.Name.ToLower();
 
         if (!string.Equals(source.Name, target.Name, StringComparison.OrdinalIgnoreCase)
@@ -266,6 +383,7 @@ public sealed class ContactService : IContactService
             var postings = await _db.Postings.Where(p => p.ContactId == source.Id).ToListAsync(ct);
             foreach (var p in postings)
             {
+                // private setter -> set via EF entry
                 _db.Entry(p).Property<Guid?>("ContactId").CurrentValue = target.Id;
             }
         }
@@ -303,6 +421,78 @@ public sealed class ContactService : IContactService
             }
         }
 
+        // Field-level merge according to preference
+        // Fields of interest: Name, CategoryId, Description, IsPaymentIntermediary, SymbolAttachmentId
+        // DestinationFirst: keep target value when present; otherwise take from source
+        // SourceFirst: overwrite target with source when source has value
+        
+        // Name: prefer target or source per preference
+        if (preference == FinanceManager.Shared.Dtos.Contacts.MergePreference.SourceFirst)
+        {
+            if (!string.IsNullOrWhiteSpace(source.Name) && !string.Equals(source.Name, target.Name, StringComparison.Ordinal))
+            {
+                target.Rename(source.Name);
+            }
+        }
+        else
+        {
+            // DestinationFirst: keep target if present; if empty and source has, adopt
+            if (string.IsNullOrWhiteSpace(target.Name) && !string.IsNullOrWhiteSpace(source.Name))
+            {
+                target.Rename(source.Name);
+            }
+        }
+
+        // Category
+        if (preference == FinanceManager.Shared.Dtos.Contacts.MergePreference.SourceFirst)
+        {
+            if (source.CategoryId.HasValue && source.CategoryId.Value != Guid.Empty)
+            {
+                target.SetCategory(source.CategoryId);
+            }
+        }
+        else
+        {
+            if (!target.CategoryId.HasValue || target.CategoryId.Value == Guid.Empty)
+            {
+                target.SetCategory(source.CategoryId);
+            }
+        }
+
+        // Description
+        if (preference == FinanceManager.Shared.Dtos.Contacts.MergePreference.SourceFirst)
+        {
+            if (!string.IsNullOrWhiteSpace(source.Description)) target.SetDescription(source.Description);
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(target.Description) && !string.IsNullOrWhiteSpace(source.Description)) target.SetDescription(source.Description);
+        }
+
+        // IsPaymentIntermediary
+        if (preference == FinanceManager.Shared.Dtos.Contacts.MergePreference.SourceFirst)
+        {
+            target.SetPaymentIntermediary(source.IsPaymentIntermediary);
+        }
+        else
+        {
+            // DestinationFirst: only set if target is false and source true? Keep target if it is true.
+            if (!target.IsPaymentIntermediary && source.IsPaymentIntermediary)
+            {
+                target.SetPaymentIntermediary(true);
+            }
+        }
+
+        // Symbol attachment
+        if (preference == FinanceManager.Shared.Dtos.Contacts.MergePreference.SourceFirst)
+        {
+            if (source.SymbolAttachmentId.HasValue) target.SetSymbolAttachment(source.SymbolAttachmentId);
+        }
+        else
+        {
+            if (!target.SymbolAttachmentId.HasValue && source.SymbolAttachmentId.HasValue) target.SetSymbolAttachment(source.SymbolAttachmentId);
+        }
+
         // Reassign attachments from source contact to target contact
         if (_db.Database.IsRelational())
         {
@@ -326,6 +516,12 @@ public sealed class ContactService : IContactService
         return new ContactDto(target.Id, target.Name, target.Type, target.CategoryId, target.Description, target.IsPaymentIntermediary, target.SymbolAttachmentId);
     }
 
+    /// <summary>
+    /// Counts the number of contacts for the given owner.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The number of contacts owned by the user.</returns>
     public Task<int> CountAsync(Guid ownerUserId, CancellationToken ct)
     {
         return _db.Contacts.AsNoTracking().Where(c => c.OwnerUserId == ownerUserId).CountAsync(ct);

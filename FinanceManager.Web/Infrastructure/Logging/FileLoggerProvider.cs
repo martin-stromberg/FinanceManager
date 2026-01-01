@@ -5,6 +5,10 @@ using System.Text;
 
 namespace FinanceManager.Web.Infrastructure.Logging;
 
+/// <summary>
+/// Logger provider that writes log entries to files on disk according to <see cref="FileLoggerOptions"/>.
+/// Supports daily file naming, optional rolling by file size and retention of old log files.
+/// </summary>
 public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
 {
     private readonly IOptionsMonitor<FileLoggerOptions> _optionsMonitor;
@@ -17,6 +21,10 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
     private string _currentDateStamp = string.Empty;
     private readonly ConcurrentDictionary<string, FileLogger> _loggers = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FileLoggerProvider"/> class.
+    /// </summary>
+    /// <param name="optionsMonitor">Options monitor used to observe changes to <see cref="FileLoggerOptions"/>.</param>
     public FileLoggerProvider(IOptionsMonitor<FileLoggerOptions> optionsMonitor)
     {
         _optionsMonitor = optionsMonitor;
@@ -25,9 +33,17 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
         RotateIfNeeded(force: true);
     }
 
+    /// <summary>
+    /// Creates or returns an existing logger for the specified category name.
+    /// </summary>
+    /// <param name="categoryName">Category name for the logger.</param>
+    /// <returns>An <see cref="ILogger"/> instance that writes to the configured file target.</returns>
     public ILogger CreateLogger(string categoryName)
         => _loggers.GetOrAdd(categoryName, name => new FileLogger(this, name));
 
+    /// <summary>
+    /// Disposes the provider and flushes any outstanding log data to disk.
+    /// </summary>
     public void Dispose()
     {
         _onChange.Dispose();
@@ -39,8 +55,22 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
         }
     }
 
+    /// <summary>
+    /// Sets the external scope provider used to capture logging scopes in output.
+    /// </summary>
+    /// <param name="scopeProvider">Scope provider instance.</param>
     public void SetScopeProvider(IExternalScopeProvider scopeProvider) => _scopeProvider = scopeProvider;
 
+    /// <summary>
+    /// Writes a log entry to the current log file, rotating files if necessary.
+    /// This method is called by <see cref="FileLogger"/> instances and is thread-safe.
+    /// </summary>
+    /// <param name="category">Logging category for the entry.</param>
+    /// <param name="level">Logging level.</param>
+    /// <param name="eventId">Event id associated with the entry.</param>
+    /// <param name="message">Formatted log message text.</param>
+    /// <param name="exception">Optional exception associated with the entry.</param>
+    /// <param name="includeScopes">When true, the current logging scopes are appended to the message when available.</param>
     internal void Log(string category, LogLevel level, EventId eventId, string message, Exception? exception, bool includeScopes)
     {
         var now = _options.UseUtcTimestamp ? DateTimeOffset.UtcNow : DateTimeOffset.Now;
@@ -88,6 +118,10 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
         }
     }
 
+    /// <summary>
+    /// Ensures the current writer targets the correct file for the current date and roll/size settings.
+    /// </summary>
+    /// <param name="force">When <c>true</c> forces rotation even if the target path matches the current path.</param>
     private void RotateIfNeeded(bool force)
     {
         var dateStamp = (_options.UseUtcTimestamp ? DateTime.UtcNow : DateTime.Now).ToString("yyyyMMdd", CultureInfo.InvariantCulture);
@@ -124,6 +158,11 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
         EnforceRetention();
     }
 
+    /// <summary>
+    /// Builds the full file path for the configured path format by replacing the date token and resolving relative paths.
+    /// </summary>
+    /// <param name="dateStamp">Date stamp string (yyyyMMdd) to substitute into the path format.</param>
+    /// <returns>Absolute file path used for logging.</returns>
     private string BuildFilePath(string dateStamp)
     {
         var baseDir = AppContext.BaseDirectory;
@@ -132,6 +171,11 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
         return full;
     }
 
+    /// <summary>
+    /// Computes the next available file path when rolling by size. The new file name uses a numeric suffix (e.g. _001).
+    /// </summary>
+    /// <param name="basePath">Base file path to derive the next sized path for.</param>
+    /// <returns>Path for the next rolled file.</returns>
     private static string NextSizedPath(string basePath)
     {
         var dir = Path.GetDirectoryName(basePath)!;
@@ -149,6 +193,10 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
         return candidate;
     }
 
+    /// <summary>
+    /// Enforces the configured retention policy by deleting older log files beyond the retained count.
+    /// Failures are intentionally ignored to avoid impacting logging.
+    /// </summary>
     private void EnforceRetention()
     {
         try
@@ -176,21 +224,46 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
     }
 }
 
+/// <summary>
+/// Logger implementation that delegates formatted log entries to its owning <see cref="FileLoggerProvider"/>.
+/// </summary>
 internal sealed class FileLogger : ILogger
 {
     private readonly FileLoggerProvider _provider;
     private readonly string _category;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="FileLogger"/> for the specified category.
+    /// </summary>
+    /// <param name="provider">Owning file logger provider.</param>
+    /// <param name="category">Logging category name.</param>
     public FileLogger(FileLoggerProvider provider, string category)
     {
         _provider = provider;
         _category = category;
     }
 
+    /// <summary>
+    /// Begins a logical operation scope. This implementation does not support scopes and returns <c>null</c>.
+    /// </summary>
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default!;
 
+    /// <summary>
+    /// Indicates whether logging is enabled for the specified log level.
+    /// </summary>
+    /// <param name="logLevel">Log level to test.</param>
+    /// <returns><c>true</c> when the provider accepts the level; otherwise <c>false</c>.</returns>
     public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None;
 
+    /// <summary>
+    /// Formats and emits a log entry via the owning provider.
+    /// </summary>
+    /// <typeparam name="TState">State type provided by the logger caller.</typeparam>
+    /// <param name="logLevel">The log level for the entry.</param>
+    /// <param name="eventId">Event id associated with the entry.</param>
+    /// <param name="state">State object provided by the caller.</param>
+    /// <param name="exception">Optional exception associated with the entry.</param>
+    /// <param name="formatter">Function that formats the state and exception into a message string.</param>
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
         Func<TState, Exception?, string> formatter)
     {

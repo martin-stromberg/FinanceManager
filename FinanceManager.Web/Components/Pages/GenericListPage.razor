@@ -1,0 +1,230 @@
+@typeparam TItem
+@using FinanceManager.Web.Components.Shared
+@using FinanceManager.Web.ViewModels
+@using FinanceManager.Web.ViewModels.Common
+@inject IJSRuntime JS
+
+@if (Provider == null)
+{
+    <p style="opacity:.7;">No provider</p>
+}
+else
+{
+
+    <div style="margin-bottom:.75rem;display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;">
+        @if (ShowSearch && Provider.AllowSearchFiltering)
+        {
+            <input placeholder="@SearchPlaceholder" value="@Provider.Search" @oninput="OnSearchInput" style="min-width:220px;" />
+        }
+        @if (ShowRange && Provider.AllowRangeFiltering)
+        {
+            <div style="display:flex;align-items:center;gap:.25rem;font-size:.7rem;">
+                <label>@RangeFromLabel</label>
+                <InputDate @bind-Value="_from" @bind-Value:after="(()=>OnRangeChanged())" />
+                <label>@RangeToLabel</label>
+                <InputDate @bind-Value="_to" @bind-Value:after="(()=>OnRangeChanged())" />
+            </div>
+        }
+    </div>
+
+    @if ((Provider.Loading) && (Provider.Items.Count == 0))
+    {
+        <p>@LoadingText</p>
+    }
+    else
+    {
+        @* If any column uses pixel widths, enable fixed table layout so px widths are honored *@
+        var hasPixelWidths = Provider.Columns?.Any(c => !string.IsNullOrWhiteSpace(c.Width) && c.Width.Trim().EndsWith("px", StringComparison.OrdinalIgnoreCase)) ?? false;
+        <table class="fm-table wide @(hasPixelWidths ? "fixed-layout" : null)">
+            @if (Provider.Columns?.Count > 0)
+            {
+                <thead>
+                    <tr>
+                        @foreach (var col in Provider.Columns)
+                        {
+                            var alignStyle = col.Align == ListColumnAlign.Right ? "text-align:right;" : col.Align == ListColumnAlign.Center ? "text-align:center;" : null;
+                            <th style="@(string.IsNullOrWhiteSpace(col.Width) ? alignStyle : (alignStyle + $"width:{col.Width}"))">@col.Title</th>
+                        }
+                    </tr>
+                </thead>
+            }
+            <tbody>
+                @foreach (var rec in Provider.Records)
+                {
+                    // row is muted if any cell has Muted == true
+                    var isMuted = rec.Cells.Any(c => c.Muted);
+                    var rowStyle = isMuted ? "cursor:pointer;opacity:.6;" : "cursor:pointer;";
+                    <tr class="@(isMuted ? "muted-row" : null)" style="@rowStyle" @onclick="(()=> OnItemClicked(rec.Item))">
+                        @for (int ci = 0; ci < rec.Cells.Count; ci++)
+                        {
+                            var cell = rec.Cells[ci];
+                            var col = (Provider.Columns?.Count > ci) ? Provider.Columns[ci] : null;
+                            var alignStyle = col != null && col.Align == ListColumnAlign.Right ? "text-align:right;vertical-align:middle;" : null;
+                            var cellStyle = alignStyle + $"width:{col.Width}";
+                            if (cell.Muted)
+                            {
+                                // emphasize muted cells slightly by using less contrast
+                                cellStyle += ";opacity:.7;color:var(--muted);";
+                            }
+                            <td style="@cellStyle">
+                                @switch(cell.Kind)
+                                {
+                                    case ListCellKind.Text:
+                                        {
+                                            var txt = cell.Text ?? string.Empty;
+                                            if (txt.Contains("<svg", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                @((MarkupString)txt)
+                                            }
+                                            else
+                                            {
+                                                @txt
+                                            }
+                                        }
+                                        break;
+                                    case ListCellKind.Symbol:
+                                        if (cell.SymbolId.HasValue)
+                                        {
+                                            <img src="@($"/api/attachments/{cell.SymbolId}/download")" alt="symbol" style="width:36px;height:36px;object-fit:contain;border-radius:6px;border:1px solid var(--border);" />
+                                        }
+                                        else
+                                        {
+                                            <div style="width:36px;height:36px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);">
+                                                <svg style="width:18px;height:18px;opacity:.6;"><use href="/icons/sprite.svg#image" /></svg>
+                                            </div>
+                                        }
+                                        break;
+                                    case ListCellKind.Currency:
+                                        @((cell.Amount ?? 0m).ToString("C", System.Globalization.CultureInfo.CurrentCulture))
+                                        break;
+                                }
+                            </td>
+                        }
+                    </tr>
+                    @if (!string.IsNullOrWhiteSpace(rec.Hint))
+                    {
+                        <tr>
+                            <td colspan="@rec.Cells.Count" style="padding:.25rem .6rem .75rem .6rem;color:var(--muted);font-size:.9rem;">@((Localizer != null) ? LocalizeInline(Localizer?[rec.Hint] ?? rec.Hint) : LocalizeInline(rec.Hint))</td>
+                        </tr>
+                    }
+                }
+                @if (Provider.Loading)
+                {
+                    <tr><td colspan="99" style="opacity:.6;">@LoadingText</td></tr>
+                }
+            </tbody>
+        </table>
+        <div style="margin-top:.5rem;">
+            @if(Provider.CanLoadMore)
+            {
+                <div @ref="_sentinel" class="infinite-sentinel" aria-hidden="true"></div>
+            }
+            else if(Provider.Items.Count==0 && !Provider.Loading)
+            {
+                <span style="opacity:.6;font-size:.75rem;">@EmptyText</span>
+            }
+            else if(!Provider.CanLoadMore)
+            {
+                <div class="end-of-list" style="opacity:.6;font-size:.65rem;">@EndOfListText</div>
+            }
+        </div>
+    }
+}
+
+@code {
+    public enum TabId { List }
+    [Parameter] public IListProvider? Provider { get; set; }
+    [Parameter] public EventCallback<object> ItemClick { get; set; }
+
+    [Parameter] public bool ShowSearch { get; set; } = true;
+    [Parameter] public bool ShowRange { get; set; } = true;
+
+    [Parameter] public string SearchPlaceholder { get; set; } = "Search";
+    [Parameter] public string RangeFromLabel { get; set; } = "From:";
+    [Parameter] public string RangeToLabel { get; set; } = "To:";
+    [Parameter] public string LoadingText { get; set; } = "Loading";
+    [Parameter] public string EmptyText { get; set; } = "No items";
+    [Parameter] public string EndOfListText { get; set; } = "End of list";
+    [Parameter] public Microsoft.Extensions.Localization.IStringLocalizer? Localizer { get; set; }
+
+    private ElementReference _sentinel;
+    private DotNetObjectReference<GenericListPage<TItem>>? _selfRef;
+    private bool _observerAttached;
+    private DateTime? _from; private DateTime? _to;
+
+    protected override void OnParametersSet()
+    {
+        if (Provider != null)
+        {
+            Provider.StateChanged -= OnProviderStateChanged;
+            Provider.StateChanged += OnProviderStateChanged;
+        }
+    }
+
+    private void OnProviderStateChanged(object? sender, EventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_observerAttached || !(Provider?.CanLoadMore ?? false) || (Provider?.Loading ?? false)) { return; }
+        if (_sentinel.Context is null) { return; }
+        try
+        {
+            _selfRef ??= DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("fmInfinite.observe", _sentinel, _selfRef, null);
+            _observerAttached = true;
+        }
+        catch (JSException)
+        {
+            await Task.Yield();
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public async Task LoadMoreFromJs()
+    {
+        if (Provider == null) return;
+        await Provider.LoadMoreAsync();
+        if (Provider.CanLoadMore) { await JS.InvokeVoidAsync("fmInfinite.refresh"); }
+        else { StateHasChanged(); }
+    }
+
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        if (Provider == null) return;
+        Provider.SetSearch(e.Value?.ToString() ?? string.Empty);
+        Provider.ResetAndSearch();
+        _observerAttached = false; // reattach observer after reload
+        await Provider.LoadAsync();
+    }
+
+    private async Task OnRangeChanged()
+    {
+        if (Provider == null) return;
+        Provider.SetRange(_from, _to);
+        Provider.ResetAndSearch();
+        _observerAttached = false;
+        await Provider.LoadAsync();
+    }
+
+    private async Task OnItemClicked(object item)
+    {
+        if (ItemClick.HasDelegate)
+            await ItemClick.InvokeAsync(item);
+    }
+
+    private string LocalizeInline(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return string.Empty;
+        if (Localizer == null) return input;
+        return System.Text.RegularExpressions.Regex.Replace(input, "\\$(\\w+)", m =>
+        {
+            var key = m.Groups[1].Value;
+            var ls = Localizer[key];
+            return ls.ResourceNotFound ? m.Value : ls.Value;
+        });
+    }
+}

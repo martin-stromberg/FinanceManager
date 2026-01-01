@@ -19,6 +19,11 @@ namespace FinanceManager.Web.Controllers
         private readonly IBackgroundTaskManager _taskManager;
         private readonly ILogger<BackgroundTasksController> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="BackgroundTasksController"/>.
+        /// </summary>
+        /// <param name="taskManager">Background task manager used to enqueue and query tasks.</param>
+        /// <param name="logger">Logger instance for controller diagnostics.</param>
         public BackgroundTasksController(IBackgroundTaskManager taskManager, ILogger<BackgroundTasksController> logger)
         {
             _taskManager = taskManager;
@@ -28,10 +33,12 @@ namespace FinanceManager.Web.Controllers
         private Guid GetUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         /// <summary>
-        /// Enqueues a new background task of a given type for the current user.
+        /// Enqueues a new background task of the specified type for the current user.
         /// </summary>
-        /// <param name="type">Task type to enqueue.</param>
-        /// <param name="allowDuplicate">If true, allows enqueueing even if a task of same type is already running/queued.</param>
+        /// <param name="type">Type of background task to enqueue.</param>
+        /// <param name="allowDuplicate">When <c>true</c>, allows enqueueing even if a task of the same type is already running or queued for the user.</param>
+        /// <returns>HTTP 200 with a <see cref="BackgroundTaskInfo"/> describing the enqueued task.</returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="type"/> is not supported.</exception>
         [HttpPost("{type}")]
         [ProducesResponseType(typeof(BackgroundTaskInfo), StatusCodes.Status200OK)]
         public ActionResult<BackgroundTaskInfo> Enqueue([FromRoute] BackgroundTaskType type, [FromQuery] bool allowDuplicate = false)
@@ -43,8 +50,9 @@ namespace FinanceManager.Web.Controllers
         }
 
         /// <summary>
-        /// Returns active or queued tasks for the current user.
+        /// Returns active or queued background tasks for the current user.
         /// </summary>
+        /// <returns>HTTP 200 with an enumerable of <see cref="BackgroundTaskInfo"/> representing running or queued tasks.</returns>
         [HttpGet("active")]
         [ProducesResponseType(typeof(IEnumerable<BackgroundTaskInfo>), StatusCodes.Status200OK)]
         public ActionResult<IEnumerable<BackgroundTaskInfo>> GetActiveAndQueued()
@@ -55,9 +63,13 @@ namespace FinanceManager.Web.Controllers
         }
 
         /// <summary>
-        /// Gets detailed information about a single background task (if owned by current user).
+        /// Gets detailed information about a single background task if it is owned by the current user.
         /// </summary>
-        /// <param name="id">Task id.</param>
+        /// <param name="id">Identifier of the background task to retrieve.</param>
+        /// <returns>
+        /// HTTP 200 with <see cref="BackgroundTaskInfo"/> when the task is found and owned by the current user;
+        /// HTTP 404 when the task does not exist or is not owned by the user.
+        /// </returns>
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(BackgroundTaskInfo), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -70,9 +82,14 @@ namespace FinanceManager.Web.Controllers
         }
 
         /// <summary>
-        /// Cancels a running task or removes a queued task. Only running or queued tasks are affected.
+        /// Cancels a running task or removes a queued task owned by the current user. Only tasks in Running or Queued status are affected.
         /// </summary>
-        /// <param name="id">Task id.</param>
+        /// <param name="id">Identifier of the task to cancel or remove.</param>
+        /// <returns>
+        /// HTTP 204 when cancellation/removal succeeded.
+        /// HTTP 400 with an <see cref="ApiErrorDto"/> when the operation could not be performed.
+        /// HTTP 404 when the task was not found or not owned by the user.
+        /// </returns>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
@@ -96,9 +113,10 @@ namespace FinanceManager.Web.Controllers
         }
 
         /// <summary>
-        /// Enqueues an aggregates rebuild task or returns existing running/queued task status.
+        /// Enqueues an aggregates rebuild task or returns the existing running/queued task status for the user.
         /// </summary>
-        /// <param name="allowDuplicate">Allows new enqueue even if one is already running/queued.</param>
+        /// <param name="allowDuplicate">If <c>true</c>, allows enqueueing even when an aggregates rebuild task is already running or queued for the user.</param>
+        /// <returns>HTTP 202 with an <see cref="AggregatesRebuildStatusDto"/> describing the queued or existing rebuild task.</returns>
         [HttpPost("aggregates/rebuild")]
         [ProducesResponseType(typeof(AggregatesRebuildStatusDto), StatusCodes.Status202Accepted)]
         public IActionResult RebuildAggregates([FromQuery] bool allowDuplicate = false)
@@ -117,8 +135,9 @@ namespace FinanceManager.Web.Controllers
         }
 
         /// <summary>
-        /// Returns status of the most recent running or queued aggregates rebuild task for the user.
+        /// Returns the status of the most recent running or queued aggregates rebuild task for the current user.
         /// </summary>
+        /// <returns>HTTP 200 with an <see cref="AggregatesRebuildStatusDto"/> indicating whether a rebuild is active and progress values when available.</returns>
         [HttpGet("aggregates/rebuild/status")]
         [ProducesResponseType(typeof(AggregatesRebuildStatusDto), StatusCodes.Status200OK)]
         public IActionResult GetRebuildAggregatesStatus()

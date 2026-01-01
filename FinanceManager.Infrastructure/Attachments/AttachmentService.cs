@@ -6,22 +6,55 @@ using System.Security.Cryptography;
 
 namespace FinanceManager.Infrastructure.Attachments;
 
+/// <summary>
+/// Service for storing and managing attachments in the application database.
+/// Provides upload, listing, download, deletion and metadata operations.
+/// </summary>
 public sealed class AttachmentService : IAttachmentService
 {
     private readonly AppDbContext _db;
     private readonly ILogger<AttachmentService> _logger;
     private const int MaxTake = 200;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AttachmentService"/> class.
+    /// </summary>
+    /// <param name="db">The application database context.</param>
+    /// <param name="logger">Logger instance for diagnostic output.</param>
     public AttachmentService(AppDbContext db, ILogger<AttachmentService> logger)
     {
         _db = db; _logger = logger;
     }
 
-    // Backwards-compatible existing signature
+    /// <summary>
+    /// Uploads binary content as an attachment and stores it in the database.
+    /// This overload preserves backwards compatibility and assigns the <see cref="AttachmentRole.Regular"/> role.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id for scoping the attachment.</param>
+    /// <param name="kind">Entity kind the attachment belongs to.</param>
+    /// <param name="entityId">Identifier of the target entity instance.</param>
+    /// <param name="content">Stream containing the file content. The stream will be read but not disposed by this method.</param>
+    /// <param name="fileName">Original file name.</param>
+    /// <param name="contentType">MIME content type of the file.</param>
+    /// <param name="categoryId">Optional attachment category id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The created <see cref="AttachmentDto"/> describing the stored attachment.</returns>
     public Task<AttachmentDto> UploadAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, Stream content, string fileName, string contentType, Guid? categoryId, CancellationToken ct)
         => UploadAsync(ownerUserId, kind, entityId, content, fileName, contentType, categoryId, AttachmentRole.Regular, ct);
 
-    // New overload with role
+    /// <summary>
+    /// Uploads binary content as an attachment and stores it in the database with the specified role.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id for scoping the attachment.</param>
+    /// <param name="kind">Entity kind the attachment belongs to.</param>
+    /// <param name="entityId">Identifier of the target entity instance.</param>
+    /// <param name="content">Stream containing the file content. The stream will be read but not disposed by this method.</param>
+    /// <param name="fileName">Original file name.</param>
+    /// <param name="contentType">MIME content type of the file.</param>
+    /// <param name="categoryId">Optional attachment category id.</param>
+    /// <param name="role">Role of the attachment (regular, preview, etc.).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The created <see cref="AttachmentDto"/> describing the stored attachment.</returns>
     public async Task<AttachmentDto> UploadAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, Stream content, string fileName, string contentType, Guid? categoryId, AttachmentRole role, CancellationToken ct)
     {
         using var ms = new MemoryStream();
@@ -37,6 +70,18 @@ public sealed class AttachmentService : IAttachmentService
         return Map(entity);
     }
 
+    /// <summary>
+    /// Creates a URL attachment that references an external resource instead of storing binary data.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id for scoping the attachment.</param>
+    /// <param name="kind">Entity kind the attachment belongs to.</param>
+    /// <param name="entityId">Identifier of the target entity instance.</param>
+    /// <param name="url">URL pointing to the external resource.</param>
+    /// <param name="fileName">Optional display file name; when null the URL path segment or the full URL is used.</param>
+    /// <param name="categoryId">Optional attachment category id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The created <see cref="AttachmentDto"/> describing the URL attachment.</returns>
+    /// <exception cref="UriFormatException">If the provided url is not a valid absolute or relative URI.</exception>
     public async Task<AttachmentDto> CreateUrlAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, string url, string? fileName, Guid? categoryId, CancellationToken ct)
     {
         var name = string.IsNullOrWhiteSpace(fileName) ? new Uri(url).Segments.LastOrDefault() ?? url : fileName;
@@ -47,6 +92,16 @@ public sealed class AttachmentService : IAttachmentService
         return Map(entity);
     }
 
+    /// <summary>
+    /// Lists attachments for the specified owner/entity using the legacy overload (no filtering by category or url flag).
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id.</param>
+    /// <param name="kind">Entity kind.</param>
+    /// <param name="entityId">Entity identifier.</param>
+    /// <param name="skip">Number of items to skip for paging.</param>
+    /// <param name="take">Number of items to take for paging.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of <see cref="AttachmentDto"/> matching the query.</returns>
     public Task<IReadOnlyList<AttachmentDto>> ListAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, int skip, int take, CancellationToken ct)
         => ListAsync(ownerUserId, kind, entityId, skip, take, categoryId: null, isUrl: null, q: null, ct);
 
@@ -70,6 +125,19 @@ public sealed class AttachmentService : IAttachmentService
         return qry;
     }
 
+    /// <summary>
+    /// Lists attachments for the specified owner/entity and supports filtering by category, url flag and filename query.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id.</param>
+    /// <param name="kind">Entity kind.</param>
+    /// <param name="entityId">Entity identifier.</param>
+    /// <param name="skip">Number of items to skip for paging.</param>
+    /// <param name="take">Number of items to take for paging (clamped to a maximum).</param>
+    /// <param name="categoryId">Optional category id to filter attachments.</param>
+    /// <param name="isUrl">Optional flag to filter only URL attachments (true) or only binary attachments (false); when null no filtering applied.</param>
+    /// <param name="q">Optional search query matched against file name.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of <see cref="AttachmentDto"/> matching the query.</returns>
     public async Task<IReadOnlyList<AttachmentDto>> ListAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, int skip, int take, Guid? categoryId, bool? isUrl, string? q, CancellationToken ct)
     {
         take = Math.Clamp(take, 1, MaxTake);
@@ -85,12 +153,32 @@ public sealed class AttachmentService : IAttachmentService
             .ToListAsync(ct);
     }
 
+    /// <summary>
+    /// Counts attachments for the specified owner/entity with optional filters.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id.</param>
+    /// <param name="kind">Entity kind.</param>
+    /// <param name="entityId">Entity identifier.</param>
+    /// <param name="categoryId">Optional category id filter.</param>
+    /// <param name="isUrl">Optional flag to filter only URL attachments (true) or only binary attachments (false).</param>
+    /// <param name="q">Optional filename search query.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Number of matching attachments.</returns>
     public async Task<int> CountAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, Guid? categoryId, bool? isUrl, string? q, CancellationToken ct)
     {
         var qry = BuildQuery(ownerUserId, kind, entityId, categoryId, isUrl, q);
         return await qry.CountAsync(ct);
     }
 
+    /// <summary>
+    /// Downloads the binary content of an attachment. For reference attachments the master attachment is resolved.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id.</param>
+    /// <param name="attachmentId">Attachment identifier to download.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// A tuple of <c>(Content, FileName, ContentType)</c> when binary content is available; otherwise <c>null</c> (for URL-only attachments or missing content).
+    /// </returns>
     public async Task<(Stream Content, string FileName, string ContentType)?> DownloadAsync(Guid ownerUserId, Guid attachmentId, CancellationToken ct)
     {
         var a = await _db.Attachments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == attachmentId && a.OwnerUserId == ownerUserId, ct);
@@ -106,6 +194,13 @@ public sealed class AttachmentService : IAttachmentService
         return (new MemoryStream(a.Content, writable: false), a.FileName, a.ContentType);
     }
 
+    /// <summary>
+    /// Deletes the specified attachment. If the attachment is a reference, the master attachment (and thereby all references) will be deleted.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id.</param>
+    /// <param name="attachmentId">Attachment identifier to delete.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> if deletion succeeded or the attachment was found and removed; otherwise <c>false</c>.</returns>
     public async Task<bool> DeleteAsync(Guid ownerUserId, Guid attachmentId, CancellationToken ct)
     {
         var a = await _db.Attachments.FirstOrDefaultAsync(a => a.Id == attachmentId && a.OwnerUserId == ownerUserId, ct);
@@ -136,6 +231,14 @@ public sealed class AttachmentService : IAttachmentService
         return true;
     }
 
+    /// <summary>
+    /// Updates the category of an attachment.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id.</param>
+    /// <param name="attachmentId">Attachment identifier.</param>
+    /// <param name="categoryId">Category id to set, or null to clear.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the update was applied; otherwise <c>false</c> when the attachment was not found.</returns>
     public async Task<bool> UpdateCategoryAsync(Guid ownerUserId, Guid attachmentId, Guid? categoryId, CancellationToken ct)
     {
         var a = await _db.Attachments.FirstOrDefaultAsync(a => a.Id == attachmentId && a.OwnerUserId == ownerUserId, ct);
@@ -145,6 +248,15 @@ public sealed class AttachmentService : IAttachmentService
         return true;
     }
 
+    /// <summary>
+    /// Updates core metadata of an attachment (file name and category) and propagates name changes to references.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id.</param>
+    /// <param name="attachmentId">Attachment identifier.</param>
+    /// <param name="fileName">Optional new file name; when null the name is not changed.</param>
+    /// <param name="categoryId">Optional category id to set, or null to clear.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the update was applied; otherwise <c>false</c> when the attachment was not found.</returns>
     public async Task<bool> UpdateCoreAsync(Guid ownerUserId, Guid attachmentId, string? fileName, Guid? categoryId, CancellationToken ct)
     {
         var a = await _db.Attachments.FirstOrDefaultAsync(x => x.Id == attachmentId && x.OwnerUserId == ownerUserId, ct);
@@ -164,6 +276,15 @@ public sealed class AttachmentService : IAttachmentService
         return true;
     }
 
+    /// <summary>
+    /// Reassigns attachments from one entity to another (used when committing drafts to accounts etc.).
+    /// </summary>
+    /// <param name="fromKind">Source entity kind.</param>
+    /// <param name="fromId">Source entity id.</param>
+    /// <param name="toKind">Destination entity kind.</param>
+    /// <param name="toId">Destination entity id.</param>
+    /// <param name="ownerUserId">Owner user id.</param>
+    /// <param name="ct">Cancellation token.</param>
     public async Task ReassignAsync(AttachmentEntityKind fromKind, Guid fromId, AttachmentEntityKind toKind, Guid toId, Guid ownerUserId, CancellationToken ct)
     {
         await _db.Attachments
@@ -171,7 +292,17 @@ public sealed class AttachmentService : IAttachmentService
             .ExecuteUpdateAsync(s => s.SetProperty(a => a.EntityKind, toKind).SetProperty(a => a.EntityId, toId), ct);
     }
 
-    // NEW: create reference attachment pointing to a master attachment (bank posting main)
+    /// <summary>
+    /// Creates a lightweight reference attachment that points to a master attachment.
+    /// The created reference does not store content itself but links to the master attachment id.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id.</param>
+    /// <param name="kind">Entity kind for which the reference is created (usually Posting).</param>
+    /// <param name="entityId">Entity id to associate the reference with.</param>
+    /// <param name="masterAttachmentId">Identifier of the existing master attachment to reference.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The created <see cref="AttachmentDto"/> for the reference.</returns>
+    /// <exception cref="ArgumentException">Thrown when the master attachment cannot be found for the owner.</exception>
     public async Task<AttachmentDto> CreateReferenceAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, Guid masterAttachmentId, CancellationToken ct)
     {
         var master = await _db.Attachments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == masterAttachmentId && a.OwnerUserId == ownerUserId, ct);

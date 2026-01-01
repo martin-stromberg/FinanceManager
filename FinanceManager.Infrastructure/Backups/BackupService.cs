@@ -10,6 +10,10 @@ using System.Text.Json;
 
 namespace FinanceManager.Infrastructure.Backups;
 
+/// <summary>
+/// Service responsible for creating, uploading, listing and applying user backups.
+/// Backups are stored as ZIP files containing an NDJSON payload and a record is persisted in the database.
+/// </summary>
 public sealed class BackupService : IBackupService
 {
     private readonly AppDbContext _db;
@@ -17,11 +21,22 @@ public sealed class BackupService : IBackupService
     private readonly ILogger<BackupService> _logger;
     private readonly IServiceProvider _services;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BackupService"/> class.
+    /// </summary>
+    /// <param name="db">Database context used to persist backup metadata.</param>
+    /// <param name="env">Host environment used to resolve the content root for file storage.</param>
+    /// <param name="logger">Logger instance for diagnostic messages.</param>
+    /// <param name="services">Service provider used to create scoped services when applying backups.</param>
     public BackupService(AppDbContext db, IHostEnvironment env, ILogger<BackupService> logger, IServiceProvider services)
     {
         _db = db; _env = env; _logger = logger; _services = services;
     }
 
+    /// <summary>
+    /// Resolves the root folder where backup files are stored on the host file system and ensures it exists.
+    /// </summary>
+    /// <returns>Absolute path to the backups directory.</returns>
     private string GetRoot()
     {
         var root = Path.Combine(_env.ContentRootPath, "backups");
@@ -29,6 +44,13 @@ public sealed class BackupService : IBackupService
         return root;
     }
 
+    /// <summary>
+    /// Creates a backup for the specified user and writes a ZIP file containing an NDJSON payload.
+    /// A database record describing the backup is created and returned.
+    /// </summary>
+    /// <param name="userId">Owner user identifier for whom the backup is created.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A <see cref="BackupDto"/> describing the created backup.</returns>
     public async Task<BackupDto> CreateAsync(Guid userId, CancellationToken ct)
     {
         // Build backup content (NDJSON with meta + data)
@@ -66,6 +88,16 @@ public sealed class BackupService : IBackupService
         return Map(rec);
     }
 
+    /// <summary>
+    /// Uploads a user-provided backup file. If the file is not a ZIP it will be wrapped into a ZIP containing the NDJSON payload.
+    /// A database record will be created referencing the stored file.
+    /// </summary>
+    /// <param name="userId">Owner user identifier.</param>
+    /// <param name="stream">Stream containing the uploaded file content.</param>
+    /// <param name="fileName">Original file name provided by the client.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A <see cref="BackupDto"/> describing the stored upload.</returns>
+    /// <exception cref="FileLoadException">Thrown when a backup with the target file name already exists for the user.</exception>
     public async Task<BackupDto> UploadAsync(Guid userId, Stream stream, string fileName, CancellationToken ct)
     {
         var safeName = Path.GetFileName(fileName);
@@ -106,6 +138,12 @@ public sealed class BackupService : IBackupService
         return Map(rec);
     }
 
+    /// <summary>
+    /// Lists all backup records for the specified user ordered by creation time descending.
+    /// </summary>
+    /// <param name="userId">Owner user identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A list of <see cref="BackupDto"/> instances.</returns>
     public async Task<IReadOnlyList<BackupDto>> ListAsync(Guid userId, CancellationToken ct)
     {
         return await _db.Backups.AsNoTracking()
@@ -115,6 +153,13 @@ public sealed class BackupService : IBackupService
             .ToListAsync(ct);
     }
 
+    /// <summary>
+    /// Deletes a backup record and removes the underlying file from storage when possible.
+    /// </summary>
+    /// <param name="userId">Owner user identifier.</param>
+    /// <param name="id">Identifier of the backup record to delete.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the backup existed and was removed; otherwise <c>false</c>.</returns>
     public async Task<bool> DeleteAsync(Guid userId, Guid id, CancellationToken ct)
     {
         var rec = await _db.Backups.FirstOrDefaultAsync(b => b.Id == id && b.OwnerUserId == userId, ct);
@@ -126,6 +171,13 @@ public sealed class BackupService : IBackupService
         return true;
     }
 
+    /// <summary>
+    /// Opens a read-only stream for downloading the backup file referenced by the specified record.
+    /// </summary>
+    /// <param name="userId">Owner user identifier.</param>
+    /// <param name="id">Backup record identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A read-only <see cref="Stream"/> for the file, or <c>null</c> when not found.</returns>
     public async Task<Stream?> OpenDownloadAsync(Guid userId, Guid id, CancellationToken ct)
     {
         var rec = await _db.Backups.AsNoTracking().FirstOrDefaultAsync(b => b.Id == id && b.OwnerUserId == userId, ct);
@@ -135,6 +187,15 @@ public sealed class BackupService : IBackupService
         return File.OpenRead(full);
     }
 
+    /// <summary>
+    /// Applies the specified backup for the user by reading the NDJSON payload and invoking the importer.
+    /// Progress updates reported by the importer are forwarded to the provided callback.
+    /// </summary>
+    /// <param name="userId">Owner user identifier.</param>
+    /// <param name="id">Identifier of the backup record to apply.</param>
+    /// <param name="progressCallback">Callback that receives progress updates. Parameters: stepDescription, step, total, subStep, subTotal.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the backup was applied; otherwise <c>false</c> when the record or file was missing or reading failed.</returns>
     public async Task<bool> ApplyAsync(Guid userId, Guid id, Action<string, int, int, int, int> progressCallback, CancellationToken ct)
     {
         var rec = await _db.Backups.AsNoTracking().FirstOrDefaultAsync(b => b.Id == id && b.OwnerUserId == userId, ct);
@@ -171,6 +232,12 @@ public sealed class BackupService : IBackupService
         return true;
     }
 
+    /// <summary>
+    /// Reads the NDJSON content from either an NDJSON file or a ZIP containing an NDJSON entry.
+    /// </summary>
+    /// <param name="filePath">Full path to the backup file.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Tuple indicating success and the memory stream containing the NDJSON payload when successful.</returns>
     private static async Task<(bool ok, MemoryStream? content)> ReadNdjsonAsync(string filePath, CancellationToken ct)
     {
         var isZip = filePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
@@ -198,6 +265,13 @@ public sealed class BackupService : IBackupService
         return (true, outMs);
     }
 
+    /// <summary>
+    /// Builds the in-memory object graph that will be serialized into the NDJSON backup payload.
+    /// The returned object contains only the minimal required properties for restore operations.
+    /// </summary>
+    /// <param name="userId">Owner user identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>An anonymous object representing the backup payload.</returns>
     private async Task<object> BuildBackupDataAsync(Guid userId, CancellationToken ct)
     {
         // Master data
@@ -349,6 +423,11 @@ public sealed class BackupService : IBackupService
         };
     }
 
+    /// <summary>
+    /// Maps a persistent <see cref="BackupRecord"/> to a DTO used by the application layer.
+    /// </summary>
+    /// <param name="r">The backup record to map.</param>
+    /// <returns>A <see cref="BackupDto"/> instance.</returns>
     private static BackupDto Map(BackupRecord r) => new BackupDto
     {
         Id = r.Id,

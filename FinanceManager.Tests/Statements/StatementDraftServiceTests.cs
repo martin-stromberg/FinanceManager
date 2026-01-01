@@ -8,6 +8,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Text;
+using FinanceManager.Application.Accounts;
 
 namespace FinanceManager.Tests.Statements;
 
@@ -20,6 +21,31 @@ public sealed class StatementDraftServiceTests
         public bool IsAdmin => false;
         public string? PreferredLanguage => null;
     }
+
+    private sealed class TestAccountService : IAccountService
+    {
+        public Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<bool> DeleteAsync(Guid id, Guid ownerUserId, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<IReadOnlyList<AccountDto>> ListAsync(Guid ownerUserId, int skip, int take, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<AccountDto?> GetAsync(Guid id, Guid ownerUserId, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public AccountDto? Get(Guid id, Guid ownerUserId)
+            => throw new NotImplementedException();
+
+        public Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct)
+            => throw new NotImplementedException();
+    }
+
     private static (StatementDraftService sut, AppDbContext db, Guid ownerId) Create()
     {
         var conn = new SqliteConnection("DataSource=:memory:");
@@ -41,7 +67,8 @@ public sealed class StatementDraftServiceTests
             UserId = owner.Id
         };
 
-        var sut = new StatementDraftService(db, new PostingAggregateService(db));
+        var accountService = new TestAccountService();
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, owner.Id);
     }
 
@@ -63,7 +90,8 @@ public sealed class StatementDraftServiceTests
 
         var agg = new PostingAggregateService(db);
         var attachments = new AttachmentService(db, NullLogger<AttachmentService>.Instance);
-        var sut = new StatementDraftService(db, agg, logger: NullLogger<StatementDraftService>.Instance, attachments: attachments);
+        var accountService = new TestAccountService();
+        var sut = new StatementDraftService(db, agg, accountService, null, NullLogger<StatementDraftService>.Instance, attachments);
         return (sut, db, owner.Id);
     }
 

@@ -10,6 +10,10 @@ using Microsoft.Extensions.Logging;
 
 namespace FinanceManager.Infrastructure.Auth;
 
+/// <summary>
+/// Service responsible for user authentication and registration flows.
+/// Provides user registration, login, and auxiliary helpers used by the web layer.
+/// </summary>
 public sealed class UserAuthService : IUserAuthService
 {
     private readonly AppDbContext _db;
@@ -22,11 +26,32 @@ public sealed class UserAuthService : IUserAuthService
     private readonly IIpBlockService _ipBlocks;
     private readonly RoleManager<IdentityRole<Guid>>? _roleManager;
 
-    // Backwards-compatible ctor for existing tests/usages
+    /// <summary>
+    /// Backwards-compatible constructor overload for tests and legacy callers.
+    /// </summary>
+    /// <param name="db">Application <see cref="AppDbContext"/>.</param>
+    /// <param name="userManager">ASP.NET Identity <see cref="UserManager{TUser}"/> instance.</param>
+    /// <param name="signInManager">ASP.NET Identity <see cref="SignInManager{TUser}"/> instance.</param>
+    /// <param name="jwt">JWT token creation service.</param>
+    /// <param name="passwordHasher">Password hashing service.</param>
+    /// <param name="clock">Clock provider for date/time.</param>
+    /// <param name="logger">Logger instance.</param>
     public UserAuthService(AppDbContext db, UserManager<User> userManager, SignInManager<User> signInManager, IJwtTokenService jwt, IPasswordHashingService passwordHasher, IDateTimeProvider clock, ILogger<UserAuthService> logger)
         : this(db, userManager, signInManager, jwt, passwordHasher, clock, logger, new NoopIpBlockService(), null)
     { }
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="UserAuthService"/>.
+    /// </summary>
+    /// <param name="db">Application <see cref="AppDbContext"/>.</param>
+    /// <param name="userManager">ASP.NET Identity <see cref="UserManager{TUser}"/> instance.</param>
+    /// <param name="signInManager">ASP.NET Identity <see cref="SignInManager{TUser}"/> instance.</param>
+    /// <param name="jwt">JWT token creation service.</param>
+    /// <param name="passwordHasher">Password hashing service.</param>
+    /// <param name="clock">Clock provider for date/time.</param>
+    /// <param name="logger">Logger instance.</param>
+    /// <param name="ipBlocks">IP block service used for rate-limiting / blocking decisions.</param>
+    /// <param name="roleManager">Optional RoleManager used to create initial roles.</param>
     public UserAuthService(
         AppDbContext db,
         UserManager<User> userManager,
@@ -49,6 +74,16 @@ public sealed class UserAuthService : IUserAuthService
         _roleManager = roleManager;
     }
 
+    /// <summary>
+    /// Registers a new user and returns an authentication result including a JWT when successful.
+    /// </summary>
+    /// <param name="command">Registration command containing username, password and optional preferences.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// A <see cref="Result{AuthResult}"/> containing an <see cref="AuthResult"/> with token information on success or a failure result with an error message.
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown when required command values are missing (username/password).</exception>
+    /// <exception cref="InvalidOperationException">May be thrown when user creation fails due to duplicate username or identity store errors.</exception>
     public async Task<Result<AuthResult>> RegisterAsync(RegisterUserCommand command, CancellationToken ct)
     {
         _logger.LogInformation("Registering user {Username}", command.Username);
@@ -153,6 +188,14 @@ public sealed class UserAuthService : IUserAuthService
         return Result<AuthResult>.Ok(new AuthResult(user.Id, user.UserName, isAdmin, token, expires));
     }
 
+    /// <summary>
+    /// Attempts to authenticate a user with username and password and returns a JWT on success.
+    /// </summary>
+    /// <param name="command">Login command including username, password and optional client metadata (IP, language, timezone).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// A <see cref="Result{AuthResult}"/> containing an <see cref="AuthResult"/> with token information on success or a failure result with an error message.
+    /// </returns>
     public async Task<Result<AuthResult>> LoginAsync(LoginCommand command, CancellationToken ct)
     {
         _logger.LogInformation("Login attempt for {Username} from {Ip}", command.Username, command.IpAddress ?? "*hidden*");
@@ -212,18 +255,30 @@ public sealed class UserAuthService : IUserAuthService
         => _userManager.CreateAsync(user, password);
 
     // Minimal no-op implementation to keep legacy constructors/tests working
+    /// <summary>
+    /// Lightweight no-op implementation of <see cref="IIpBlockService"/> used by legacy constructors and tests.
+    /// </summary>
     public sealed class NoopIpBlockService : IIpBlockService
     {
+        /// <inheritdoc />
         public Task<bool> BlockAsync(Guid id, string? reason, CancellationToken ct) => Task.FromResult(true);
+        /// <inheritdoc />
         public Task BlockByAddressAsync(string ipAddress, string? reason, CancellationToken ct) => Task.CompletedTask;
+        /// <inheritdoc />
         public Task<IpBlockDto> CreateAsync(string ipAddress, string? reason, bool isBlocked, CancellationToken ct)
             => Task.FromResult(new IpBlockDto(Guid.Empty, ipAddress, isBlocked, DateTime.UtcNow, reason, 0, null, DateTime.UtcNow, null));
+        /// <inheritdoc />
         public Task<bool> DeleteAsync(Guid id, CancellationToken ct) => Task.FromResult(true);
+        /// <inheritdoc />
         public Task<IReadOnlyList<IpBlockDto>> ListAsync(bool? onlyBlocked, CancellationToken ct)
             => Task.FromResult<IReadOnlyList<IpBlockDto>>(Array.Empty<IpBlockDto>());
+        /// <inheritdoc />
         public Task RegisterUnknownUserFailureAsync(string ipAddress, CancellationToken ct) => Task.CompletedTask;
+        /// <inheritdoc />
         public Task<bool> ResetCountersAsync(Guid id, CancellationToken ct) => Task.FromResult(true);
+        /// <inheritdoc />
         public Task<bool> UnblockAsync(Guid id, CancellationToken ct) => Task.FromResult(true);
+        /// <inheritdoc />
         public Task<IpBlockDto?> UpdateAsync(Guid id, string? reason, bool? isBlocked, CancellationToken ct)
             => Task.FromResult<IpBlockDto?>(null);
     }
