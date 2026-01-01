@@ -54,4 +54,35 @@ public sealed class SecurityPrice
         Date = date.Date;
         Close = close;
     }
+
+    // Backup DTO
+    /// <summary>
+    /// DTO carrying the serializable state of a <see cref="SecurityPrice"/> for backup purposes.
+    /// </summary>
+    /// <param name="Id">Identifier of the security price record.</param>
+    /// <param name="SecurityId">Identifier of the security this price belongs to.</param>
+    /// <param name="Date">Date of the price (date component only).</param>
+    /// <param name="Close">Closing price value for the date.</param>
+    /// <param name="CreatedUtc">UTC timestamp when the price record was created.</param>
+    public sealed record SecurityPriceBackupDto(Guid Id, Guid SecurityId, DateTime Date, decimal Close, DateTime CreatedUtc);
+
+    /// <summary>
+    /// Creates a backup DTO for this security price record.
+    /// </summary>
+    /// <returns>A <see cref="SecurityPriceBackupDto"/> containing the serializable state of this price record.</returns>
+    public SecurityPriceBackupDto ToBackupDto() => new SecurityPriceBackupDto(Id, SecurityId, Date, Close, CreatedUtc);
+
+    /// <summary>
+    /// Assigns values from a backup DTO to this entity.
+    /// </summary>
+    /// <param name="dto">Backup DTO to read values from.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+    public void AssignBackupDto(SecurityPriceBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        SecurityId = dto.SecurityId;
+        Date = dto.Date;
+        Close = dto.Close;
+        // CreatedUtc handled by ORM
+    }
 }

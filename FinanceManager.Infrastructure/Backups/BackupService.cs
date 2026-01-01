@@ -274,133 +274,129 @@ public sealed class BackupService : IBackupService
     /// <returns>An anonymous object representing the backup payload.</returns>
     private async Task<object> BuildBackupDataAsync(Guid userId, CancellationToken ct)
     {
-        // Master data
-        var contactCategories = await _db.ContactCategories.AsNoTracking()
+        // Load entities and map via ToBackupDto() where available to preserve domain mapping logic.
+
+        // Contact categories
+        var contactCategoryEntities = await _db.ContactCategories.AsNoTracking()
             .Where(c => c.OwnerUserId == userId)
-            .Select(c => new { c.Id, c.Name, c.OwnerUserId, c.CreatedUtc, c.ModifiedUtc })
             .ToListAsync(ct);
+        var contactCategories = contactCategoryEntities.Select(c => c.ToBackupDto()).ToList();
 
-        var contacts = await _db.Contacts.AsNoTracking()
+        // Contacts
+        var contactEntities = await _db.Contacts.AsNoTracking()
             .Where(c => c.OwnerUserId == userId)
-            .Select(c => new { c.Id, c.OwnerUserId, c.Name, c.Type, c.CategoryId, c.Description, IsPaymentIntermediary = c.IsPaymentIntermediary, c.CreatedUtc, c.ModifiedUtc })
             .ToListAsync(ct);
+        var contacts = contactEntities.Select(c => c.ToBackupDto()).ToList();
 
-        var aliasNames = await _db.AliasNames.AsNoTracking()
-            .Where(a => _db.Contacts.Any(c => c.Id == a.ContactId && c.OwnerUserId == userId))
-            .Select(a => new { a.Id, a.ContactId, a.Pattern, a.CreatedUtc, a.ModifiedUtc })
+        // Alias names (only those referencing loaded contacts)
+        var contactIds = contactEntities.Select(c => c.Id).ToList();
+        var aliasEntities = await _db.AliasNames.AsNoTracking()
+            .Where(a => a.ContactId != null && contactIds.Contains(a.ContactId))
             .ToListAsync(ct);
+        var aliasNames = aliasEntities.Select(a => a.ToBackupDto()).ToList();
 
-        var securityCategories = await _db.SecurityCategories.AsNoTracking()
+        // Security categories & securities
+        var securityCategoryEntities = await _db.SecurityCategories.AsNoTracking()
             .Where(sc => sc.OwnerUserId == userId)
-            .Select(sc => new { sc.Id, sc.OwnerUserId, sc.Name })
             .ToListAsync(ct);
+        var securityCategories = securityCategoryEntities.Select(sc => sc.ToBackupDto()).ToList();
 
-        var securities = await _db.Securities.AsNoTracking()
+        var securityEntities = await _db.Securities.AsNoTracking()
             .Where(s => s.OwnerUserId == userId)
-            .Select(s => new { s.Id, s.OwnerUserId, s.Name, s.Identifier, s.Description, s.AlphaVantageCode, s.CurrencyCode, s.CategoryId, s.IsActive, s.CreatedUtc, s.ArchivedUtc })
             .ToListAsync(ct);
+        var securities = securityEntities.Select(s => s.ToBackupDto()).ToList();
 
-        var securityIds = securities.Select(s => s.Id).ToList();
-        var securityPrices = await _db.SecurityPrices.AsNoTracking()
+        var securityIds = securityEntities.Select(s => s.Id).ToList();
+        var securityPriceEntities = await _db.SecurityPrices.AsNoTracking()
             .Where(p => securityIds.Contains(p.SecurityId))
-            .Select(p => new { p.Id, p.SecurityId, p.Date, p.Close, p.CreatedUtc })
             .ToListAsync(ct);
+        var securityPrices = securityPriceEntities.Select(p => p.ToBackupDto()).ToList();
 
-        var savingsPlanCategories = await _db.SavingsPlanCategories.AsNoTracking()
+        // Savings plan categories & plans
+        var savingsPlanCategoryEntities = await _db.SavingsPlanCategories.AsNoTracking()
             .Where(spc => spc.OwnerUserId == userId)
-            .Select(spc => new { spc.Id, spc.OwnerUserId, spc.Name })
             .ToListAsync(ct);
+        var savingsPlanCategories = savingsPlanCategoryEntities.Select(spc => spc.ToBackupDto()).ToList();
 
-        var savingsPlans = await _db.SavingsPlans.AsNoTracking()
+        var savingsPlanEntities = await _db.SavingsPlans.AsNoTracking()
             .Where(sp => sp.OwnerUserId == userId)
-            .Select(sp => new { sp.Id, sp.OwnerUserId, sp.Name, sp.Type, sp.TargetAmount, sp.TargetDate, sp.Interval, sp.IsActive, sp.CreatedUtc, sp.ArchivedUtc, sp.CategoryId, sp.ContractNumber })
             .ToListAsync(ct);
+        var savingsPlans = savingsPlanEntities.Select(sp => sp.ToBackupDto()).ToList();
 
-        var accounts = await _db.Accounts.AsNoTracking()
+        // Accounts
+        var accountEntities = await _db.Accounts.AsNoTracking()
             .Where(a => a.OwnerUserId == userId)
-            .Select(a => new { a.Id, a.OwnerUserId, a.Name, a.Type, a.Iban, a.CurrentBalance, a.BankContactId, a.CreatedUtc, a.ModifiedUtc })
             .ToListAsync(ct);
+        var accounts = accountEntities.Select(a => a.ToBackupDto()).ToList();
 
-        // Statements (imports + entries)
-        var importAccountIds = accounts.Select(a => a.Id).ToList();
-        var statementImports = await _db.StatementImports.AsNoTracking()
+        // Statement imports and entries for accounts owned by user
+        var importAccountIds = accountEntities.Select(a => a.Id).ToList();
+        var statementImportEntities = await _db.StatementImports.AsNoTracking()
             .Where(i => importAccountIds.Contains(i.AccountId))
-            .Select(i => new { i.Id, i.AccountId, i.Format, i.ImportedAtUtc, i.OriginalFileName, i.TotalEntries, i.CreatedUtc, i.ModifiedUtc })
             .ToListAsync(ct);
-        var importIds = statementImports.Select(i => i.Id).ToList();
-        var statementEntries = await _db.StatementEntries.AsNoTracking()
-            .Where(e => importIds.Contains(e.StatementImportId))
-            .Select(e => new { e.Id, e.StatementImportId, e.BookingDate, e.ValutaDate, e.Amount, e.CurrencyCode, e.Subject, e.RecipientName, e.BookingDescription, e.ContactId, e.Status, e.RawHash, e.IsAnnounced, e.IsCostNeutral, e.SavingsPlanId, e.SecurityTransactionId, e.CreatedUtc, e.ModifiedUtc })
-            .ToListAsync(ct);
+        var statementImports = statementImportEntities.Select(i => i.ToBackupDto()).ToList();
 
-        // Postings
-        var contactIds = contacts.Select(c => c.Id).ToList();
-        var savingsPlanIds = savingsPlans.Select(s => s.Id).ToList();
-        var postingQuery = _db.Postings.AsNoTracking()
+        var importIds = statementImportEntities.Select(i => i.Id).ToList();
+        var statementEntryEntities = await _db.StatementEntries.AsNoTracking()
+            .Where(e => importIds.Contains(e.StatementImportId))
+            .ToListAsync(ct);
+        var statementEntries = statementEntryEntities.Select(e => e.ToBackupDto()).ToList();
+
+        // Postings referencing user entities
+        var savingsPlanIds = savingsPlanEntities.Select(s => s.Id).ToList();
+        var postingEntities = await _db.Postings.AsNoTracking()
             .Where(p => (p.AccountId != null && importAccountIds.Contains(p.AccountId.Value))
                      || (p.ContactId != null && contactIds.Contains(p.ContactId.Value))
                      || (p.SavingsPlanId != null && savingsPlanIds.Contains(p.SavingsPlanId.Value))
-                     || (p.SecurityId != null && securityIds.Contains(p.SecurityId.Value)));
-        var postings = await postingQuery
-            .Select(p => new { p.Id, p.SourceId, p.Kind, p.AccountId, p.ContactId, p.SavingsPlanId, p.SecurityId, p.BookingDate, p.Amount, p.Subject, p.RecipientName, p.Description, p.GroupId, SecuritySubType = p.SecuritySubType, Quantity = p.Quantity, p.CreatedUtc, p.ModifiedUtc })
+                     || (p.SecurityId != null && securityIds.Contains(p.SecurityId.Value)))
             .ToListAsync(ct);
+        var postings = postingEntities.Select(p => p.ToBackupDto()).ToList();
 
-        // Drafts
-        var drafts = await _db.StatementDrafts.AsNoTracking()
+        // Statement drafts + entries
+        var draftEntities = await _db.StatementDrafts.AsNoTracking()
             .Where(d => d.OwnerUserId == userId)
-            .Select(d => new { d.Id, d.OwnerUserId, d.AccountName, d.Description, d.DetectedAccountId, d.OriginalFileName, d.Status, d.CreatedUtc, d.ModifiedUtc })
             .ToListAsync(ct);
-        var draftIds = drafts.Select(d => d.Id).ToList();
-        var draftEntries = await _db.StatementDraftEntries.AsNoTracking()
+        var drafts = draftEntities.Select(d => d.ToBackupDto()).ToList();
+
+        var draftIds = draftEntities.Select(d => d.Id).ToList();
+        var draftEntryEntities = await _db.StatementDraftEntries.AsNoTracking()
             .Where(e => draftIds.Contains(e.DraftId))
-            .Select(e => new { e.Id, e.DraftId, e.BookingDate, e.ValutaDate, e.Amount, e.CurrencyCode, e.Subject, e.RecipientName, e.BookingDescription, e.IsAnnounced, e.IsCostNeutral, e.Status, e.ContactId, e.SavingsPlanId, e.ArchiveSavingsPlanOnBooking, e.SplitDraftId, e.SecurityId, e.SecurityTransactionType, e.SecurityQuantity, e.SecurityFeeAmount, e.SecurityTaxAmount, e.CreatedUtc, e.ModifiedUtc })
             .ToListAsync(ct);
+        var draftEntries = draftEntryEntities.Select(e => e.ToBackupDto()).ToList();
 
-        // Favorites & Home KPIs (new in v3)
-        var reportFavorites = await _db.ReportFavorites.AsNoTracking()
+        // Report favorites & Home KPIs
+        var reportFavoriteEntities = await _db.ReportFavorites.AsNoTracking()
             .Where(r => r.OwnerUserId == userId)
-            .Select(r => new
-            {
-                r.Id,
-                r.OwnerUserId,
-                r.Name,
-                r.PostingKind,
-                r.IncludeCategory,
-                r.Interval,
-                r.Take,
-                r.ComparePrevious,
-                r.CompareYear,
-                r.ShowChart,
-                r.Expandable,
-                r.CreatedUtc,
-                r.ModifiedUtc,
-                r.PostingKindsCsv,
-                r.AccountIdsCsv,
-                r.ContactIdsCsv,
-                r.SavingsPlanIdsCsv,
-                r.SecurityIdsCsv,
-                r.ContactCategoryIdsCsv,
-                r.SavingsPlanCategoryIdsCsv,
-                r.SecurityCategoryIdsCsv
-            })
             .ToListAsync(ct);
+        var reportFavorites = reportFavoriteEntities.Select(r => r.ToBackupDto()).ToList();
 
-        var homeKpis = await _db.HomeKpis.AsNoTracking()
+        var homeKpiEntities = await _db.HomeKpis.AsNoTracking()
             .Where(h => h.OwnerUserId == userId)
-            .Select(h => new
-            {
-                h.Id,
-                h.OwnerUserId,
-                h.Kind,
-                h.ReportFavoriteId,
-                h.DisplayMode,
-                h.SortOrder,
-                h.Title,
-                h.PredefinedType,
-                h.CreatedUtc,
-                h.ModifiedUtc
-            })
             .ToListAsync(ct);
+        var homeKpis = homeKpiEntities.Select(h => h.ToBackupDto()).ToList();
+
+        // Attachment categories & attachments
+        var attachmentCategoryEntities = await _db.AttachmentCategories.AsNoTracking()
+            .Where(ac => ac.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var attachmentCategories = attachmentCategoryEntities.Select(ac => ac.ToBackupDto()).ToList();
+
+        var attachmentEntities = await _db.Attachments.AsNoTracking()
+            .Where(a => a.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var attachments = attachmentEntities.Select(a => a.ToBackupDto()).ToList();
+
+        // Notifications
+        var notificationEntities = await _db.Notifications.AsNoTracking()
+            .Where(n => n.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var notifications = notificationEntities.Select(n => n.ToBackupDto()).ToList();
+
+        // Account shares for accounts owned by the user
+        var accountShareEntities = await _db.AccountShares.AsNoTracking()
+            .Where(s => importAccountIds.Contains(s.AccountId) || s.UserId == userId)
+            .ToListAsync(ct);
+        var accountShares = accountShareEntities.Select(s => s.ToBackupDto()).ToList();
 
         return new
         {
@@ -419,7 +415,11 @@ public sealed class BackupService : IBackupService
             StatementDrafts = drafts,
             StatementDraftEntries = draftEntries,
             ReportFavorites = reportFavorites,
-            HomeKpis = homeKpis
+            HomeKpis = homeKpis,
+            AttachmentCategories = attachmentCategories,
+            Attachments = attachments,
+            Notifications = notifications,
+            AccountShares = accountShares
         };
     }
 

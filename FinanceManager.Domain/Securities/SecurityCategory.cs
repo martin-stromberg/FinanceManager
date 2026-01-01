@@ -69,4 +69,33 @@ public sealed class SecurityCategory
     {
         SymbolAttachmentId = attachmentId == Guid.Empty ? null : attachmentId;
     }
+
+    // Backup DTO
+    /// <summary>
+    /// DTO carrying the serializable state of a <see cref="SecurityCategory"/> for backup purposes.
+    /// </summary>
+    /// <param name="Id">Identifier of the category entity.</param>
+    /// <param name="OwnerUserId">Identifier of the user who owns the category.</param>
+    /// <param name="Name">Display name of the category.</param>
+    /// <param name="SymbolAttachmentId">Optional symbol attachment identifier associated with the category.</param>
+    public sealed record SecurityCategoryBackupDto(Guid Id, Guid OwnerUserId, string Name, Guid? SymbolAttachmentId);
+
+    /// <summary>
+    /// Creates a backup DTO for this security category.
+    /// </summary>
+    /// <returns>A <see cref="SecurityCategoryBackupDto"/> containing the data required to restore this category.</returns>
+    public SecurityCategoryBackupDto ToBackupDto() => new SecurityCategoryBackupDto(Id, OwnerUserId, Name, SymbolAttachmentId);
+
+    /// <summary>
+    /// Assigns values from a backup DTO to this category.
+    /// </summary>
+    /// <param name="dto">The <see cref="SecurityCategoryBackupDto"/> containing values to apply to this entity.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+    public void AssignBackupDto(SecurityCategoryBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        OwnerUserId = dto.OwnerUserId;
+        Rename(dto.Name);
+        SetSymbolAttachment(dto.SymbolAttachmentId);
+    }
 }

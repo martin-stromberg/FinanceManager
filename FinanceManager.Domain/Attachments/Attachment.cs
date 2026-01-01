@@ -191,4 +191,36 @@ public sealed class Attachment
         EntityKind = toKind;
         EntityId = toEntityId;
     }
+
+    /// <summary>
+    /// Backup DTO - include Content bytes only if present and small; keep it for restore completeness.
+    /// </summary>
+    public sealed record AttachmentBackupDto(Guid Id, Guid OwnerUserId, AttachmentEntityKind EntityKind, Guid EntityId, string FileName, string ContentType, long SizeBytes, string? Sha256, Guid? CategoryId, DateTime UploadedUtc, byte[]? Content, string? Url, Guid? ReferenceAttachmentId, string? Note, AttachmentRole Role);
+
+    /// <summary>
+    /// Creates a backup DTO for this Attachment. Content bytes are included if available.
+    /// </summary>
+    public AttachmentBackupDto ToBackupDto() => new AttachmentBackupDto(Id, OwnerUserId, EntityKind, EntityId, FileName, ContentType, SizeBytes, Sha256, CategoryId, UploadedUtc, Content, Url, ReferenceAttachmentId, Note, Role);
+
+    /// <summary>
+    /// Assigns values from a backup DTO to this entity.
+    /// </summary>
+    public void AssignBackupDto(AttachmentBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        OwnerUserId = dto.OwnerUserId;
+        EntityKind = dto.EntityKind;
+        EntityId = dto.EntityId;
+        FileName = dto.FileName;
+        ContentType = dto.ContentType;
+        SizeBytes = dto.SizeBytes;
+        Sha256 = dto.Sha256;
+        CategoryId = dto.CategoryId;
+        UploadedUtc = dto.UploadedUtc;
+        Content = dto.Content;
+        Url = dto.Url;
+        ReferenceAttachmentId = dto.ReferenceAttachmentId;
+        Note = dto.Note;
+        Role = dto.Role;
+    }
 }

@@ -1,3 +1,5 @@
+using FinanceManager.Domain.Securities;
+
 namespace FinanceManager.Domain.Statements;
 
 
@@ -125,7 +127,7 @@ public sealed class StatementDraft : Entity, IAggregateRoot
     /// Adds an entry to the draft with extended metadata.
     /// </summary>
     /// <param name="bookingDate">Booking date of the entry.</param>
-    /// <param name="amount">Monetary amount.</param>
+    /// <param name="amount">Monetary amount of the entry.</param>
     /// <param name="subject">Subject/description text.</param>
     /// <param name="recipientName">Optional recipient name.</param>
     /// <param name="valutaDate">Optional valuta/date-of-value.</param>
@@ -172,6 +174,53 @@ public sealed class StatementDraft : Entity, IAggregateRoot
     /// Expires the draft and sets its status to Expired.
     /// </summary>
     public void Expire() { Status = StatementDraftStatus.Expired; Touch(); }
+
+    // Backup DTO
+    /// <summary>
+    /// DTO carrying the serializable state of a <see cref="StatementDraft"/> for backup purposes.
+    /// </summary>
+    /// <param name="Id">Identifier of the draft entity.</param>
+    /// <param name="OwnerUserId">Identifier of the user who owns the draft.</param>
+    /// <param name="OriginalFileName">Original uploaded file name.</param>
+    /// <param name="AccountName">Optional account name/number extracted from the file.</param>
+    /// <param name="Description">Optional human description for the draft.</param>
+    /// <param name="DetectedAccountId">Optional detected account identifier.</param>
+    /// <param name="Status">Current status of the draft.</param>
+    /// <param name="UploadGroupId">Optional upload group id shared by related drafts.</param>
+    /// <param name="CreatedUtc">Creation timestamp in UTC.</param>
+    /// <param name="ModifiedUtc">Last modification timestamp in UTC, if any.</param>
+    /// <param name="Entries">List of contained draft entries as backup DTOs.</param>
+    public sealed record StatementDraftBackupDto(Guid Id, Guid OwnerUserId, string OriginalFileName, string? AccountName, string? Description, Guid? DetectedAccountId, StatementDraftStatus Status, Guid? UploadGroupId, DateTime CreatedUtc, DateTime? ModifiedUtc, List<StatementDraftEntry.StatementDraftEntryBackupDto> Entries);
+
+    /// <summary>
+    /// Creates a backup DTO representing the serializable state of this draft and its entries.
+    /// </summary>
+    /// <returns>A <see cref="StatementDraftBackupDto"/> containing the draft metadata and entry DTOs.</returns>
+    public StatementDraftBackupDto ToBackupDto() => new StatementDraftBackupDto(Id, OwnerUserId, OriginalFileName, AccountName, Description, DetectedAccountId, Status, UploadGroupId, CreatedUtc, ModifiedUtc, _entries.Select(e => e.ToBackupDto()).ToList());
+
+    /// <summary>
+    /// Assigns values from a backup DTO to this draft instance. Existing entries are cleared and replaced by DTO contents.
+    /// </summary>
+    /// <param name="dto">The <see cref="StatementDraftBackupDto"/> to apply.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+    public void AssignBackupDto(StatementDraftBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        OwnerUserId = dto.OwnerUserId;
+        OriginalFileName = dto.OriginalFileName;
+        AccountName = dto.AccountName;
+        Description = dto.Description;
+        DetectedAccountId = dto.DetectedAccountId;
+        Status = dto.Status;
+        UploadGroupId = dto.UploadGroupId;
+        _entries.Clear();
+        foreach (var e in dto.Entries)
+        {
+            var entry = new StatementDraftEntry();
+            entry.AssignBackupDto(e);
+            _entries.Add(entry);
+        }
+    }
 }
 
 /// <summary>
@@ -182,14 +231,14 @@ public sealed class StatementDraftEntry : Entity
     /// <summary>
     /// Parameterless constructor for ORM/deserialization.
     /// </summary>
-    private StatementDraftEntry() { }
+    internal StatementDraftEntry() { }
 
     /// <summary>
     /// Creates a new <see cref="StatementDraftEntry"/> associated with a draft.
     /// </summary>
     /// <param name="draftId">Identifier of the owning draft. Must not be empty.</param>
     /// <param name="bookingDate">Booking date of the entry.</param>
-    /// <param name="amount">Monetary amount.</param>
+    /// <param name="amount">Monetary amount of the entry.</param>
     /// <param name="subject">Subject or short description.</param>
     /// <param name="recipientName">Optional recipient name.</param>
     /// <param name="valutaDate">Optional valuta date.</param>
@@ -259,7 +308,7 @@ public sealed class StatementDraftEntry : Entity
     /// Currency code for the amount (ISO code). Default is "EUR".
     /// </summary>
     public string CurrencyCode { get; private set; } = "EUR";
-
+    
     /// <summary>
     /// Optional booking description (longer textual information).
     /// </summary>
@@ -483,6 +532,69 @@ public sealed class StatementDraftEntry : Entity
     {
         Status = StatementDraftEntryStatus.Open;
         Touch();
+    }
+
+    // Backup DTO
+    /// <summary>
+    /// DTO carrying the serializable state of a <see cref="StatementDraftEntry"/> for backup purposes.
+    /// </summary>
+    /// <param name="Id">Entry identifier.</param>
+    /// <param name="DraftId">Identifier of the owning draft.</param>
+    /// <param name="BookingDate">Booking date of the entry.</param>
+    /// <param name="ValutaDate">Optional valuta/date-of-value.</param>
+    /// <param name="Amount">Monetary amount.</param>
+    /// <param name="Subject">Entry subject.</param>
+    /// <param name="RecipientName">Optional recipient name.</param>
+    /// <param name="CurrencyCode">Currency code (ISO).</param>
+    /// <param name="BookingDescription">Optional longer booking description.</param>
+    /// <param name="IsAnnounced">Whether entry was announced in source.</param>
+    /// <param name="IsCostNeutral">Whether entry is cost-neutral.</param>
+    /// <param name="Status">Processing status of the draft entry.</param>
+    /// <param name="ContactId">Optional resolved contact id.</param>
+    /// <param name="SavingsPlanId">Optional assigned savings plan id.</param>
+    /// <param name="ArchiveSavingsPlanOnBooking">Whether to archive assigned savings plan on booking.</param>
+    /// <param name="SplitDraftId">Optional split draft id.</param>
+    /// <param name="SecurityId">Optional security id.</param>
+    /// <param name="SecurityTransactionType">Optional security transaction type.</param>
+    /// <param name="SecurityQuantity">Optional quantity for security transactions.</param>
+    /// <param name="SecurityFeeAmount">Optional fee amount for security transaction.</param>
+    /// <param name="SecurityTaxAmount">Optional tax amount for security transaction.</param>
+    public sealed record StatementDraftEntryBackupDto(Guid Id, Guid DraftId, DateTime BookingDate, DateTime? ValutaDate, decimal Amount, string Subject, string? RecipientName, string CurrencyCode, string? BookingDescription, bool IsAnnounced, bool IsCostNeutral, StatementDraftEntryStatus Status, Guid? ContactId, Guid? SavingsPlanId, bool ArchiveSavingsPlanOnBooking, Guid? SplitDraftId, Guid? SecurityId, SecurityTransactionType? SecurityTransactionType, decimal? SecurityQuantity, decimal? SecurityFeeAmount, decimal? SecurityTaxAmount);
+
+    /// <summary>
+    /// Creates a backup DTO representing this draft entry.
+    /// </summary>
+    /// <returns>A <see cref="StatementDraftEntryBackupDto"/> with the serializable state.</returns>
+    public StatementDraftEntryBackupDto ToBackupDto() => new StatementDraftEntryBackupDto(Id, DraftId, BookingDate, ValutaDate, Amount, Subject, RecipientName, CurrencyCode, BookingDescription, IsAnnounced, IsCostNeutral, Status, ContactId, SavingsPlanId, ArchiveSavingsPlanOnBooking, SplitDraftId, SecurityId, SecurityTransactionType, SecurityQuantity, SecurityFeeAmount, SecurityTaxAmount);
+
+    /// <summary>
+    /// Assigns values from the provided backup DTO to this draft entry instance.
+    /// </summary>
+    /// <param name="dto">The <see cref="StatementDraftEntryBackupDto"/> to apply.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+    public void AssignBackupDto(StatementDraftEntryBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        DraftId = dto.DraftId;
+        BookingDate = dto.BookingDate;
+        ValutaDate = dto.ValutaDate;
+        Amount = dto.Amount;
+        Subject = dto.Subject;
+        RecipientName = dto.RecipientName;
+        CurrencyCode = dto.CurrencyCode;
+        BookingDescription = dto.BookingDescription;
+        IsAnnounced = dto.IsAnnounced;
+        IsCostNeutral = dto.IsCostNeutral;
+        Status = dto.Status;
+        ContactId = dto.ContactId;
+        SavingsPlanId = dto.SavingsPlanId;
+        ArchiveSavingsPlanOnBooking = dto.ArchiveSavingsPlanOnBooking;
+        SplitDraftId = dto.SplitDraftId;
+        SecurityId = dto.SecurityId;
+        SecurityTransactionType = dto.SecurityTransactionType;
+        SecurityQuantity = dto.SecurityQuantity;
+        SecurityFeeAmount = dto.SecurityFeeAmount;
+        SecurityTaxAmount = dto.SecurityTaxAmount;
     }
 }
 

@@ -183,4 +183,43 @@ public sealed class Security
     {
         SymbolAttachmentId = attachmentId == Guid.Empty ? null : attachmentId;
     }
+
+    // Backup DTO
+    /// <summary>
+    /// DTO carrying the serializable state of a <see cref="Security"/> for backup purposes.
+    /// </summary>
+    /// <param name="Id">Identifier of the security entity.</param>
+    /// <param name="OwnerUserId">Identifier of the user who owns the security.</param>
+    /// <param name="Name">Display name of the security.</param>
+    /// <param name="Identifier">Primary identifier (e.g. WKN or ISIN).</param>
+    /// <param name="Description">Optional description text.</param>
+    /// <param name="AlphaVantageCode">Optional code for external price providers.</param>
+    /// <param name="CurrencyCode">ISO currency code used for prices.</param>
+    /// <param name="CategoryId">Optional category identifier for the security.</param>
+    /// <param name="IsActive">Whether the security is active.</param>
+    /// <param name="CreatedUtc">Creation timestamp in UTC.</param>
+    /// <param name="ArchivedUtc">Archive timestamp in UTC if archived.</param>
+    /// <param name="SymbolAttachmentId">Optional symbol attachment identifier.</param>
+    public sealed record SecurityBackupDto(Guid Id, Guid OwnerUserId, string Name, string Identifier, string? Description, string? AlphaVantageCode, string CurrencyCode, Guid? CategoryId, bool IsActive, DateTime CreatedUtc, DateTime? ArchivedUtc, Guid? SymbolAttachmentId);
+
+    /// <summary>
+    /// Creates a backup DTO representing this security.
+    /// </summary>
+    /// <returns>A <see cref="SecurityBackupDto"/> with serializable security data.</returns>
+    public SecurityBackupDto ToBackupDto() => new SecurityBackupDto(Id, OwnerUserId, Name, Identifier, Description, AlphaVantageCode, CurrencyCode, CategoryId, IsActive, CreatedUtc, ArchivedUtc, SymbolAttachmentId);
+
+    /// <summary>
+    /// Assigns values from a backup DTO to this entity.
+    /// </summary>
+    /// <param name="dto">Backup DTO to apply.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+    public void AssignBackupDto(SecurityBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        OwnerUserId = dto.OwnerUserId;
+        Update(dto.Name, dto.Identifier, dto.Description, dto.AlphaVantageCode, dto.CurrencyCode, dto.CategoryId);
+        if (!dto.IsActive && IsActive) Archive();
+        SymbolAttachmentId = dto.SymbolAttachmentId;
+        // CreatedUtc/ArchivedUtc should be handled by ORM or left as-is
+    }
 }

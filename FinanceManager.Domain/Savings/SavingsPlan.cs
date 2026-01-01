@@ -219,4 +219,50 @@ public sealed class SavingsPlan
 
         return new DateTime(added.Year, added.Month, newDay, date.Hour, date.Minute, date.Second, date.Millisecond, date.Kind);
     }
+
+    // Backup DTO
+    /// <summary>
+    /// DTO carrying the serializable state of a <see cref="SavingsPlan"/> for backup purposes.
+    /// </summary>
+    /// <param name="Id">Identifier of the savings plan entity.</param>
+    /// <param name="OwnerUserId">Identifier of the user who owns the plan.</param>
+    /// <param name="Name">Display name of the savings plan.</param>
+    /// <param name="Type">Type of the savings plan.</param>
+    /// <param name="TargetAmount">Optional target amount for the plan.</param>
+    /// <param name="TargetDate">Optional target date for the plan.</param>
+    /// <param name="Interval">Optional recurrence interval for the plan.</param>
+    /// <param name="IsActive">Indicates whether the plan is active.</param>
+    /// <param name="CreatedUtc">Creation timestamp in UTC.</param>
+    /// <param name="ArchivedUtc">Archive timestamp in UTC, if the plan was archived.</param>
+    /// <param name="CategoryId">Optional category identifier associated with the plan.</param>
+    /// <param name="ContractNumber">Optional contract number for the plan.</param>
+    /// <param name="SymbolAttachmentId">Optional symbol attachment id associated with the plan.</param>
+    public sealed record SavingsPlanBackupDto(Guid Id, Guid OwnerUserId, string Name, SavingsPlanType Type, decimal? TargetAmount, DateTime? TargetDate, SavingsPlanInterval? Interval, bool IsActive, DateTime CreatedUtc, DateTime? ArchivedUtc, Guid? CategoryId, string? ContractNumber, Guid? SymbolAttachmentId);
+
+    /// <summary>
+    /// Creates a backup DTO representing the serializable state of this savings plan.
+    /// </summary>
+    /// <returns>A <see cref="SavingsPlanBackupDto"/> containing the values required to restore this plan.</returns>
+    public SavingsPlanBackupDto ToBackupDto() => new SavingsPlanBackupDto(Id, OwnerUserId, Name, Type, TargetAmount, TargetDate, Interval, IsActive, CreatedUtc, ArchivedUtc, CategoryId, ContractNumber, SymbolAttachmentId);
+
+    /// <summary>
+    /// Assigns values from a backup DTO to this entity.
+    /// Uses the entity's setters where appropriate to preserve invariants.
+    /// </summary>
+    /// <param name="dto">The <see cref="SavingsPlanBackupDto"/> to apply to this entity.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+    public void AssignBackupDto(SavingsPlanBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        OwnerUserId = dto.OwnerUserId;
+        Name = dto.Name;
+        Type = dto.Type;
+        TargetAmount = dto.TargetAmount;
+        TargetDate = dto.TargetDate;
+        Interval = dto.Interval;
+        CategoryId = dto.CategoryId;
+        ContractNumber = dto.ContractNumber;
+        SymbolAttachmentId = dto.SymbolAttachmentId;
+        if (!dto.IsActive && IsActive) Archive();
+    }
 }
