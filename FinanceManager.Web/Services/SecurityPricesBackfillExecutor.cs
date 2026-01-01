@@ -6,8 +6,14 @@ using System.Text.Json;
 
 namespace FinanceManager.Web.Services;
 
+/// <summary>
+/// Background task executor that backfills historical security prices using the configured price provider.
+/// </summary>
 public sealed class SecurityPricesBackfillExecutor : IBackgroundTaskExecutor
 {
+    /// <summary>
+    /// The background task type handled by this executor.
+    /// </summary>
     public BackgroundTaskType Type => BackgroundTaskType.SecurityPricesBackfill;
 
     private readonly IServiceScopeFactory _scopeFactory;
@@ -16,6 +22,12 @@ public sealed class SecurityPricesBackfillExecutor : IBackgroundTaskExecutor
 
     private sealed record Payload(Guid? SecurityId, DateTime? FromDateUtc, DateTime? ToDateUtc);
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="SecurityPricesBackfillExecutor"/>.
+    /// </summary>
+    /// <param name="scopeFactory">Scope factory used to create a scoped service provider for DB and provider services.</param>
+    /// <param name="logger">Logger used for diagnostics and error reporting.</param>
+    /// <param name="localizer">Localizer for user-facing progress messages.</param>
     public SecurityPricesBackfillExecutor(IServiceScopeFactory scopeFactory, ILogger<SecurityPricesBackfillExecutor> logger, IStringLocalizer<Pages> localizer)
     {
         _scopeFactory = scopeFactory;
@@ -23,6 +35,14 @@ public sealed class SecurityPricesBackfillExecutor : IBackgroundTaskExecutor
         _localizer = localizer;
     }
 
+    /// <summary>
+    /// Executes the backfill task for the current background task context. The payload may specify
+    /// an optional security id and from/to date range. Progress is reported to the provided context.
+    /// </summary>
+    /// <param name="context">Context object that provides task payload, user id and progress reporting.</param>
+    /// <param name="ct">Cancellation token to observe for cooperative cancellation.</param>
+    /// <returns>A task that completes when the backfill run has finished or was cancelled.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when no shared AlphaVantage key is configured.</exception>
     public async Task ExecuteAsync(BackgroundTaskContext context, CancellationToken ct)
     {
         // Parse payload

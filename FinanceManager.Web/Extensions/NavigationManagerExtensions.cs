@@ -4,17 +4,22 @@ using FinanceManager.Shared.Dtos.Postings;
 
 namespace FinanceManager.Web.Extensions;
 
+/// <summary>
+/// Provides navigation helper extension methods for <see cref="NavigationManager"/> to navigate to model cards,
+/// create pages and category lists based on model kinds and results.
+/// </summary>
 public static class NavigationManagerExtensions
 {
     /// <summary>
     /// Inspect a result object and navigate to an appropriate page when possible.
-    /// Currently recognizes:
-    /// - FinanceManager.Shared.Dtos.Contacts.ContactDto (navigates to /card/contacts/{id})
-    /// - Guid (navigates to /card/contacts/{guid})
-    /// - string (navigates to the string as URI)
-    /// - any object with an "Id" property of type Guid (navigates to contact card)
-    /// Returns true when a navigation was performed.
+    /// Recognized types include string (navigates to the URI), Guid (navigates to contact card),
+    /// known DTO types with an Id property (ContactDto, UserAdminDto, StatementDraftEntryDto) and
+    /// any object exposing a Guid-typed "Id" property (falls back to contact card path).
     /// </summary>
+    /// <param name="nav">The <see cref="NavigationManager"/> used to perform navigation. Must not be <c>null</c>.</param>
+    /// <param name="result">Arbitrary result object to inspect for navigation target. May be <c>null</c>.</param>
+    /// <returns><c>true</c> when navigation was performed; otherwise <c>false</c>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="nav"/> is <c>null</c>.</exception>
     public static bool NavigateToModelCard(this NavigationManager nav, object? result)
     {
         if (nav == null) throw new ArgumentNullException(nameof(nav));
@@ -92,10 +97,14 @@ public static class NavigationManagerExtensions
 
     /// <summary>
     /// Navigate to the creation page for the provided kind segment (e.g. "securities", "accounts").
-    /// An optional subKind segment may be included in the generated URL.
-    /// Throws NotSupportedException when kind is empty or invalid.
-    /// Returns true when navigation was performed.
+    /// An optional <paramref name="subKind"/> segment may be included in the generated URL.
     /// </summary>
+    /// <param name="nav">The <see cref="NavigationManager"/> instance. Must not be <c>null</c>.</param>
+    /// <param name="kind">Primary kind path segment (for example "contacts" or "securities"). Must be a non-empty path segment.</param>
+    /// <param name="subKind">Optional sub-kind segment to include in the route (for example "prices" or "categories").</param>
+    /// <returns><c>true</c> when navigation was performed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="nav"/> or <paramref name="kind"/> is <c>null</c> or whitespace.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="kind"/> cannot be normalized to a valid path segment.</exception>
     public static bool NavigateToModelCreate(this NavigationManager nav, string kind, string? subKind = null)
     {
         if (nav == null) throw new ArgumentNullException(nameof(nav));
@@ -130,10 +139,18 @@ public static class NavigationManagerExtensions
         return true;
     }
 
+    /// <summary>
+    /// Navigate to the category listing page for the specified model kind (e.g. "/list/contacts/categories").
+    /// </summary>
+    /// <param name="nav">The <see cref="NavigationManager"/> instance. Must not be <c>null</c>.</param>
+    /// <param name="kind">Primary kind path segment (for example "contacts").</param>
+    /// <returns><c>true</c> when navigation was performed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="nav"/> or <paramref name="kind"/> is <c>null</c> or whitespace.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="kind"/> cannot be normalized to a valid path segment.</exception>
     public static bool NavigateToModelCategories(this NavigationManager nav, string kind)
     {
         if (nav == null) throw new ArgumentNullException(nameof(nav));
-        if (string.IsNullOrWhiteSpace(kind)) throw new ArgumentNullException(nameof(kind));
+        if (string.IsNullOrWhiteSpace(kind)) throw new ArgumentNullException(nameof(nav));
 
         var k = kind.Trim().ToLowerInvariant();
         if (k.StartsWith("/")) k = k.TrimStart('/');
@@ -149,8 +166,14 @@ public static class NavigationManagerExtensions
     }
 
     /// <summary>
-    /// Backwards-compatible overload accepting PostingKind; forwards to string-based method.
+    /// Backwards-compatible overload accepting <see cref="PostingKind"/>; forwards to string-based method.
     /// </summary>
+    /// <param name="nav">The <see cref="NavigationManager"/> instance. Must not be <c>null</c>.</param>
+    /// <param name="kind">Posting kind enum value that will be mapped to a path segment.</param>
+    /// <param name="subKind">Optional sub-kind to include in the created path.</param>
+    /// <returns><c>true</c> when navigation was performed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="nav"/> is <c>null</c>.</exception>
+    /// <exception cref="NotSupportedException">Thrown when the provided <paramref name="kind"/> cannot be mapped to a route path.</exception>
     public static bool NavigateToModelCreate(this NavigationManager nav, PostingKind kind, string? subKind = null)
     {
         if (nav == null) throw new ArgumentNullException(nameof(nav));
@@ -161,6 +184,12 @@ public static class NavigationManagerExtensions
         return NavigateToModelCreate(nav, path, subKind);
     }
 
+    /// <summary>
+    /// Maps a <see cref="PostingKind"/> value to the corresponding primary route path segment.
+    /// Returns <c>null</c> when no mapping exists for the supplied kind.
+    /// </summary>
+    /// <param name="kind">Posting kind to map.</param>
+    /// <returns>Path segment string or <c>null</c> when unsupported.</returns>
     private static string? MapPostingKindToPath(PostingKind kind)
     {
         return kind switch

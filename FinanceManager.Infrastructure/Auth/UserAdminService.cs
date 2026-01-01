@@ -7,6 +7,10 @@ using Microsoft.Extensions.Logging;
 
 namespace FinanceManager.Infrastructure.Auth;
 
+/// <summary>
+/// Administrative service for managing application users (list, create, update, password reset, unlock, delete, attachments).
+/// This service is intended for administrative tooling and bypasses some user-facing restrictions (for example creating a Self contact).
+/// </summary>
 public sealed class UserAdminService : IUserAdminService
 {
     private readonly AppDbContext _db;
@@ -14,6 +18,13 @@ public sealed class UserAdminService : IUserAdminService
     private readonly IPasswordHashingService _passwordHasher;
     private readonly ILogger<UserAdminService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UserAdminService"/> class.
+    /// </summary>
+    /// <param name="db">Application database context.</param>
+    /// <param name="userManager">Identity <see cref="UserManager{TUser}"/> used for role operations and lockout handling.</param>
+    /// <param name="passwordHasher">Service used to hash passwords for manual resets/creates.</param>
+    /// <param name="logger">Logger instance for the service.</param>
     public UserAdminService(AppDbContext db, UserManager<User> userManager, IPasswordHashingService passwordHasher, ILogger<UserAdminService> logger)
     {
         _db = db;
@@ -22,6 +33,12 @@ public sealed class UserAdminService : IUserAdminService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Lists all users in the system with administrative metadata.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A list of <see cref="UserAdminDto"/> describing users.</returns>
+    /// <exception cref="System.InvalidOperationException">Rethrows database related exceptions when the underlying query fails.</exception>
     public async Task<IReadOnlyList<UserAdminDto>> ListAsync(CancellationToken ct)
     {
         _logger.LogInformation("Listing users");
@@ -47,6 +64,12 @@ public sealed class UserAdminService : IUserAdminService
         return list;
     }
 
+    /// <summary>
+    /// Gets detailed administrative information for a single user.
+    /// </summary>
+    /// <param name="id">User identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The <see cref="UserAdminDto"/> when the user exists; otherwise <c>null</c>.</returns>
     public async Task<UserAdminDto?> GetAsync(Guid id, CancellationToken ct)
     {
         _logger.LogInformation("Getting user {UserId}", id);
@@ -70,6 +93,18 @@ public sealed class UserAdminService : IUserAdminService
             user.PreferredLanguage);
     }
 
+    /// <summary>
+    /// Creates a new application user and optionally assigns the Admin role.
+    /// The method also creates a Self contact for the user if none exists.
+    /// </summary>
+    /// <param name="username">New user's username. Required.</param>
+    /// <param name="password">Initial password. Required.</param>
+    /// <param name="isAdmin">When <c>true</c> the user will be assigned the Admin role.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The created <see cref="UserAdminDto"/>.</returns>
+    /// <exception cref="ArgumentException">Thrown when required parameters are missing.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when a user with the same username already exists.</exception>
+    /// <exception cref="DbUpdateException">Thrown when persisting user or contact to the database fails.</exception>
     public async Task<UserAdminDto> CreateAsync(string username, string password, bool isAdmin, CancellationToken ct)
     {
         _logger.LogInformation("Creating user {Username} (IsAdmin={IsAdmin})", username, isAdmin);
@@ -135,6 +170,17 @@ public sealed class UserAdminService : IUserAdminService
             user.PreferredLanguage);
     }
 
+    /// <summary>
+    /// Updates an existing user's properties and role membership.
+    /// </summary>
+    /// <param name="id">User identifier to update.</param>
+    /// <param name="username">New username (optional).</param>
+    /// <param name="isAdmin">Request to add/remove the Admin role (optional).</param>
+    /// <param name="active">Active flag to activate/deactivate the user (optional).</param>
+    /// <param name="preferredLanguage">Preferred language code (optional).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The updated <see cref="UserAdminDto"/>, or <c>null</c> when the user was not found.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when username rename conflicts with an existing user.</exception>
     public async Task<UserAdminDto?> UpdateAsync(Guid id, string? username, bool? isAdmin, bool? active, string? preferredLanguage, CancellationToken ct)
     {
         _logger.LogInformation("Updating user {UserId}", id);
@@ -218,6 +264,14 @@ public sealed class UserAdminService : IUserAdminService
             user.PreferredLanguage);
     }
 
+    /// <summary>
+    /// Resets the password for the specified user by setting a new hashed password value.
+    /// </summary>
+    /// <param name="id">User identifier to reset the password for.</param>
+    /// <param name="newPassword">New plaintext password to set (will be hashed).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the user existed and the password was updated; otherwise <c>false</c>.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="newPassword"/> is empty.</exception>
     public async Task<bool> ResetPasswordAsync(Guid id, string newPassword, CancellationToken ct)
     {
         _logger.LogInformation("Resetting password for user {UserId}", id);
@@ -234,6 +288,12 @@ public sealed class UserAdminService : IUserAdminService
         return true;
     }
 
+    /// <summary>
+    /// Clears lockout state for the specified user and resets the failed access count.
+    /// </summary>
+    /// <param name="id">User identifier to unlock.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the unlock operation succeeded; otherwise <c>false</c>.</returns>
     public async Task<bool> UnlockAsync(Guid id, CancellationToken ct)
     {
         _logger.LogInformation("Unlocking user {UserId}", id);
@@ -264,6 +324,12 @@ public sealed class UserAdminService : IUserAdminService
         return true;
     }
 
+    /// <summary>
+    /// Deletes the specified user from the database.
+    /// </summary>
+    /// <param name="id">User identifier to delete.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the user existed and was removed; otherwise <c>false</c>.</returns>
     public async Task<bool> DeleteAsync(Guid id, CancellationToken ct)
     {
         _logger.LogInformation("Deleting user {UserId}", id);
@@ -279,6 +345,15 @@ public sealed class UserAdminService : IUserAdminService
         return true;
     }
 
+    /// <summary>
+    /// Sets or clears a symbol attachment reference for the target user. Intended for admin use.
+    /// </summary>
+    /// <param name="userId">Administrator user id performing the action (for logging / auditing).</param>
+    /// <param name="targetUserId">Target user identifier whose symbol is modified.</param>
+    /// <param name="attachmentId">Attachment id to set or <c>null</c> to clear.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the change has been persisted.</returns>
+    /// <exception cref="ArgumentException">Thrown when the target user is not found.</exception>
     public async Task SetSymbolAttachmentAsync(Guid userId, Guid targetUserId, Guid? attachmentId, CancellationToken ct)
     {
         _logger.LogInformation("Setting symbol for user {TargetUserId} by admin {AdminId}", targetUserId, userId);

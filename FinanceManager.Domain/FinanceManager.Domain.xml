@@ -4,58 +4,2853 @@
         <name>FinanceManager.Domain</name>
     </assembly>
     <members>
+        <member name="T:FinanceManager.Domain.Accounts.Account">
+            <summary>
+            Aggregate root representing a user bank account with balance and metadata.
+            Encapsulates invariants and operations related to an account.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Accounts.Account.#ctor(System.Guid,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.String,System.Guid)">
+            <summary>
+            Creates a new account for the specified owner.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="type">Type of the account.</param>
+            <param name="name">Display name of the account.</param>
+            <param name="iban">Optional IBAN (may be null).</param>
+            <param name="bankContactId">Identifier of the bank contact associated with this account.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.Account.OwnerUserId">
+            <summary>
+            Identifier of the user who owns this account.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.Account.Type">
+            <summary>
+            Account type (e.g. Current, Savings).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.Account.Name">
+            <summary>
+            Display name of the account.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.Account.Iban">
+            <summary>
+            Optional IBAN of the account.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.Account.CurrentBalance">
+            <summary>
+            Current balance of the account.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.Account.BankContactId">
+            <summary>
+            Bank contact identifier associated with the account.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.Account.SymbolAttachmentId">
+            <summary>
+            Optional symbol attachment id assigned to the account.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.Account.SavingsPlanExpectation">
+            <summary>
+            Expected savings plan behavior attached to this account.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Accounts.Account.Rename(System.String)">
+            <summary>
+            Renames the account.
+            </summary>
+            <param name="name">New display name.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Accounts.Account.SetIban(System.String)">
+            <summary>
+            Sets or clears the IBAN for the account.
+            </summary>
+            <param name="iban">New IBAN value or null to clear.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Accounts.Account.SetBankContact(System.Guid)">
+            <summary>
+            Sets the bank contact for this account.
+            </summary>
+            <param name="bankContactId">Bank contact identifier.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Accounts.Account.SetType(FinanceManager.Shared.Dtos.Accounts.AccountType)">
+            <summary>
+            Changes the account type.
+            </summary>
+            <param name="type">New account type.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Accounts.Account.AdjustBalance(System.Decimal)">
+            <summary>
+            Adjusts the current balance by the specified delta.
+            </summary>
+            <param name="delta">Amount to add (positive) or subtract (negative) from the balance.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Accounts.Account.SetSymbolAttachment(System.Nullable{System.Guid})">
+            <summary>
+            Sets or clears the symbol attachment for the account.
+            </summary>
+            <param name="attachmentId">Attachment id to set or null to clear.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Accounts.Account.SetSavingsPlanExpectation(FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation)">
+            <summary>
+            Sets the savings plan expectation for this account.
+            </summary>
+            <param name="expectation">Savings plan expectation value.</param>
+        </member>
+        <member name="T:FinanceManager.Domain.Accounts.AccountShare">
+            <summary>
+            Represents a share/permission of an account granted to another user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Accounts.AccountShare.#ctor(System.Guid,System.Guid,FinanceManager.Domain.AccountShareRole)">
+            <summary>
+            Creates a new account share entry.
+            </summary>
+            <param name="accountId">Id of the shared account.</param>
+            <param name="userId">Id of the user the account is shared with.</param>
+            <param name="role">Role granted to the user.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.AccountShare.AccountId">
+            <summary>
+            Identifier of the shared account.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.AccountShare.UserId">
+            <summary>
+            Identifier of the user who received the share.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.AccountShare.Role">
+            <summary>
+            Role granted by the share (e.g. read/write).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.AccountShare.GrantedUtc">
+            <summary>
+            UTC timestamp when the share was granted.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.AccountShare.RevokedUtc">
+            <summary>
+            UTC timestamp when the share was revoked, if applicable.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Attachments.AttachmentRole">
+            <summary>
+            Attachment roles describing special meaning for attachments (e.g. symbol images).
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Attachments.AttachmentRole.Regular">
+            <summary>
+            Regular attachment without special role.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Attachments.AttachmentRole.Symbol">
+            <summary>
+            Symbol attachment, typically used as an icon for an entity.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Attachments.Attachment">
+            <summary>
+            Domain entity that represents a binary attachment or URL referenced by an entity.
+            Stores metadata and optional content for small attachments.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.Attachment.Id">
+            <summary>
+            Unique attachment identifier.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.Attachment.OwnerUserId">
+            <summary>
+            Owner user identifier.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.Attachment.EntityKind">
+            <summary>
+            Kind of entity this attachment belongs to.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.Attachment.EntityId">
+            <summary>
+            Identifier of the parent entity.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.Attachment.FileName">
+            <summary>
+            Original file name (or URL description for URL attachments).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.Attachment.ContentType">
+            <summary>
+            MIME content type for file attachments.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.Attachment.SizeBytes">
+            <summary>
+            Size in bytes for file attachments.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.Attachment.Sha256">
+            <summary>
+            SHA-256 hex digest of the content when available.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.Attachment.CategoryId">
+            <summary>
+            Optional category id associated with the attachment.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.Attachment.UploadedUtc">
+            <summary>
+            Upload timestamp in UTC.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.Attachment.Content">
+            <summary>
+            Optional binary content stored inline (may be null for large files).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.Attachment.Url">
+            <summary>
+            Optional URL for URL attachments.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.Attachment.ReferenceAttachmentId">
+            <summary>
+            Reference to another attachment (e.g. thumbnail or derived resource).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.Attachment.Note">
+            <summary>
+            Optional human note attached to the attachment entry.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.Attachment.Role">
+            <summary>
+            Attachment role indicating special meaning (default: Regular).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Attachments.Attachment.#ctor(System.Guid,FinanceManager.Domain.Attachments.AttachmentEntityKind,System.Guid,System.String,System.String,System.Int64,System.String,System.Nullable{System.Guid},System.Byte[],System.String,System.Nullable{System.Guid},FinanceManager.Domain.Attachments.AttachmentRole)">
+            <summary>
+            Constructs a new attachment entity.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="entityKind">Kind of parent entity.</param>
+            <param name="entityId">Parent entity identifier.</param>
+            <param name="fileName">Original file name or URL description.</param>
+            <param name="contentType">MIME content type.</param>
+            <param name="sizeBytes">Size in bytes of the attachment.</param>
+            <param name="sha256">Optional SHA-256 hex digest.</param>
+            <param name="categoryId">Optional category identifier.</param>
+            <param name="content">Optional inline content bytes.</param>
+            <param name="url">Optional URL for URL attachments.</param>
+            <param name="referenceAttachmentId">Optional reference to another attachment.</param>
+            <param name="role">Attachment role (e.g. symbol).</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Attachments.Attachment.SetCategory(System.Nullable{System.Guid})">
+            <summary>
+            Sets or clears the category id for the attachment.
+            </summary>
+            <param name="categoryId">Category id to set or null to clear.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Attachments.Attachment.SetNote(System.String)">
+            <summary>
+            Sets a human readable note for the attachment.
+            </summary>
+            <param name="note">Note text or null to clear.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Attachments.Attachment.SetReference(System.Nullable{System.Guid})">
+            <summary>
+            Sets a reference to another attachment.
+            </summary>
+            <param name="referenceId">Reference attachment id or null to clear.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Attachments.Attachment.SetRole(FinanceManager.Domain.Attachments.AttachmentRole)">
+            <summary>
+            Sets the role for the attachment.
+            </summary>
+            <param name="role">New attachment role.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Attachments.Attachment.Rename(System.String)">
+            <summary>
+            Renames the attachment file name (trimmed) and updates the uploaded timestamp.
+            </summary>
+            <param name="fileName">New file name.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Attachments.Attachment.Reassign(FinanceManager.Domain.Attachments.AttachmentEntityKind,System.Guid)">
+            <summary>
+            Reassigns this attachment to a different parent entity.
+            </summary>
+            <param name="toKind">Target entity kind.</param>
+            <param name="toEntityId">Target entity identifier.</param>
+        </member>
+        <member name="T:FinanceManager.Domain.Attachments.AttachmentCategory">
+            <summary>
+            Represents a user-defined attachment category used to classify attachments.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.AttachmentCategory.Id">
+            <summary>
+            Unique category identifier.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.AttachmentCategory.OwnerUserId">
+            <summary>
+            Owner user identifier who created the category.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.AttachmentCategory.Name">
+            <summary>
+            Display name of the category.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Attachments.AttachmentCategory.IsSystem">
+            <summary>
+            When true, the category is a system category and cannot be deleted by normal users.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Attachments.AttachmentCategory.#ctor(System.Guid,System.String,System.Boolean)">
+            <summary>
+            Creates a new attachment category for the given owner.
+            </summary>
+            <param name="ownerUserId">Id of the user who owns the category.</param>
+            <param name="name">Display name of the category.</param>
+            <param name="isSystem">When true, marks the category as system-owned (protected).</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Attachments.AttachmentCategory.Rename(System.String)">
+            <summary>
+            Renames the category.
+            </summary>
+            <param name="name">New display name.</param>
+            <exception cref="T:System.ArgumentException">Thrown when the provided name is null, empty, or consists only of whitespace characters.</exception>
+        </member>
+        <member name="T:FinanceManager.Domain.Attachments.AttachmentEntityKind">
+            <summary>
+            Enum describing the entity kinds that attachments can be associated with.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Attachments.AttachmentEntityKind.None">
+            <summary>
+            No entity specified.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Attachments.AttachmentEntityKind.StatementDraftEntry">
+            <summary>
+            Attachment belongs to a statement draft entry.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Attachments.AttachmentEntityKind.StatementEntry">
+            <summary>
+            Attachment belongs to a statement entry (posted).
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Attachments.AttachmentEntityKind.Contact">
+            <summary>
+            Attachment belongs to a contact.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Attachments.AttachmentEntityKind.SavingsPlan">
+            <summary>
+            Attachment belongs to a savings plan.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Attachments.AttachmentEntityKind.Security">
+            <summary>
+            Attachment belongs to a security.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Attachments.AttachmentEntityKind.Account">
+            <summary>
+            Attachment belongs to an account.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Attachments.AttachmentEntityKind.StatementImport">
+            <summary>
+            Attachment belongs to a statement import.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Attachments.AttachmentEntityKind.Posting">
+            <summary>
+            Attachment belongs to a posting.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Attachments.AttachmentEntityKind.StatementDraft">
+            <summary>
+            Attachment belongs to a statement draft.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Attachments.AttachmentEntityKind.ContactCategory">
+            <summary>
+            Attachment belongs to a contact category.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Attachments.AttachmentEntityKind.SavingsPlanCategory">
+            <summary>
+            Attachment belongs to a savings plan category.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Attachments.AttachmentEntityKind.SecurityCategory">
+            <summary>
+            Attachment belongs to a security category.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Contacts.AliasName">
+            <summary>
+            Represents an alias pattern for a contact used to match imported postings.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Contacts.AliasName.#ctor(System.Guid,System.String)">
+            <summary>
+            Creates a new alias pattern for the specified contact.
+            </summary>
+            <param name="contactId">Contact identifier the alias belongs to.</param>
+            <param name="pattern">Alias pattern string.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Contacts.AliasName.ContactId">
+            <summary>
+            Identifier of the contact this alias is associated with.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Contacts.AliasName.Pattern">
+            <summary>
+            Alias pattern used for matching (e.g. contains or regex pattern).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Contacts.AliasName.ReassignTo(System.Guid)">
+            <summary>
+            Reassigns this alias to a different contact.
+            </summary>
+            <param name="newContactId">Target contact identifier.</param>
+        </member>
+        <member name="T:FinanceManager.Domain.Contacts.Contact">
+            <summary>
+            Domain entity representing a contact belonging to a user.
+            Stores metadata like name, type, category and optional symbol attachment.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Contacts.Contact.#ctor(System.Guid,System.String,FinanceManager.Shared.Dtos.Contacts.ContactType,System.Nullable{System.Guid},System.String,System.Nullable{System.Boolean})">
+            <summary>
+            Creates a new contact for the given owner.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="name">Display name of the contact.</param>
+            <param name="type">Contact type.</param>
+            <param name="categoryId">Optional category id.</param>
+            <param name="description">Optional description text.</param>
+            <param name="isPaymentIntermediary">Optional flag indicating payment intermediary.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Contacts.Contact.OwnerUserId">
+            <summary>
+            Identifier of the user who owns the contact.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Contacts.Contact.Name">
+            <summary>
+            Display name of the contact.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Contacts.Contact.Type">
+            <summary>
+            Type/category of the contact.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Contacts.Contact.CategoryId">
+            <summary>
+            Optional category id the contact belongs to.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Contacts.Contact.Description">
+            <summary>
+            Optional description text for the contact.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Contacts.Contact.IsPaymentIntermediary">
+            <summary>
+            Flag indicating whether this contact is used as a payment intermediary.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Contacts.Contact.SymbolAttachmentId">
+            <summary>
+            Optional symbol attachment id associated with the contact.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Contacts.Contact.Rename(System.String)">
+            <summary>
+            Renames the contact.
+            </summary>
+            <param name="name">New display name.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Contacts.Contact.ChangeType(FinanceManager.Shared.Dtos.Contacts.ContactType)">
+            <summary>
+            Changes the contact type.
+            </summary>
+            <param name="type">New contact type.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Contacts.Contact.SetCategory(System.Nullable{System.Guid})">
+            <summary>
+            Sets or clears the contact category.
+            </summary>
+            <param name="categoryId">Category id or null to clear.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Contacts.Contact.SetDescription(System.String)">
+            <summary>
+            Sets the description text for the contact.
+            </summary>
+            <param name="description">Description text or null to clear.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Contacts.Contact.SetPaymentIntermediary(System.Boolean)">
+            <summary>
+            Sets whether the contact is a payment intermediary.
+            </summary>
+            <param name="value">Boolean flag value.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Contacts.Contact.SetSymbolAttachment(System.Nullable{System.Guid})">
+            <summary>
+            Sets or clears the symbol attachment for the contact.
+            </summary>
+            <param name="attachmentId">Attachment id or null to clear.</param>
+        </member>
+        <member name="T:FinanceManager.Domain.Contacts.ContactCategory">
+            <summary>
+            Category used to group contacts for the user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Contacts.ContactCategory.#ctor(System.Guid,System.String)">
+            <summary>
+            Creates a new contact category for the specified owner.
+            </summary>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="name">Category display name.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Contacts.ContactCategory.OwnerUserId">
+            <summary>
+            Owner user identifier.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Contacts.ContactCategory.Name">
+            <summary>
+            Category display name.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Contacts.ContactCategory.SymbolAttachmentId">
+            <summary>
+            Optional symbol attachment id for the category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Contacts.ContactCategory.Rename(System.String)">
+            <summary>
+            Renames the contact category.
+            </summary>
+            <param name="name">New display name.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Contacts.ContactCategory.SetSymbolAttachment(System.Nullable{System.Guid})">
+            <summary>
+            Sets or clears the symbol attachment for the category.
+            </summary>
+            <param name="attachmentId">Attachment id or null to clear.</param>
+        </member>
+        <member name="T:FinanceManager.Domain.DomainAssemblyMarker">
+            <summary>
+            Marker class used to reference the Domain assembly in DI and reflection scenarios.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Entity">
+            <summary>
+            Base class for domain entities providing a common Id property and timestamps.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Entity.Id">
+            <summary>
+            Numeric or GUID identifier for entities. Derived classes may override or use their own id strategy.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Entity.CreatedUtc">
+            <summary>
+            UTC timestamp when the entity was created.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Entity.ModifiedUtc">
+            <summary>
+            UTC timestamp when the entity was last modified, or null when never modified after creation.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Entity.Touch">
+            <summary>
+            Updates the ModifiedUtc timestamp to the current UTC time.
+            Intended for internal use by aggregate roots when changes are applied.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.IAggregateRoot">
+            <summary>
+            Marker interface to denote aggregate root entities in the domain model.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.AccountShareRole">
+            <summary>
+            Roles for account sharing permissions.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.AccountShareRole.Read">
+            <summary>
+            Read-only access to the shared account.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.AccountShareRole.Write">
+            <summary>
+            Read and write access.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.AccountShareRole.Admin">
+            <summary>
+            Administrative access including management of shares.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.StatementEntryStatus">
+            <summary>
+            Processing status of a statement entry.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.StatementEntryStatus.Pending">
+            <summary>
+            Entry is pending processing.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.StatementEntryStatus.Booked">
+            <summary>
+            Entry has been booked/posted.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.StatementEntryStatus.IgnoredDuplicate">
+            <summary>
+            Entry was recognized as a duplicate and ignored.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Notifications.HolidayProviderKind">
+            <summary>
+            Available holiday provider kinds used by the notifications subsystem.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Notifications.HolidayProviderKind.Memory">
+            <summary>
+            In-memory provider (for testing or static lists).
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Notifications.HolidayProviderKind.NagerDate">
+            <summary>
+            Nager.Date public holiday provider.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Notifications.Notification">
+            <summary>
+            Represents a user or system notification displayed in the UI or scheduled to appear.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Notifications.Notification.Id">
+            <summary>
+            Unique notification identifier.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Notifications.Notification.OwnerUserId">
+            <summary>
+            Optional owner user identifier; when null the notification is global.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Notifications.Notification.Title">
+            <summary>
+            Short title of the notification.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Notifications.Notification.Message">
+            <summary>
+            Detailed message text.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Notifications.Notification.Type">
+            <summary>
+            Notification type used to classify and filter notifications.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Notifications.Notification.Target">
+            <summary>
+            Target area where the notification should be displayed (homepage, dashboard, modal, toast).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Notifications.Notification.ScheduledDateUtc">
+            <summary>
+            Scheduled date in UTC when the notification becomes active.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Notifications.Notification.IsEnabled">
+            <summary>
+            Indicates whether the notification is enabled.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Notifications.Notification.IsDismissed">
+            <summary>
+            Indicates whether the notification has been dismissed by the user.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Notifications.Notification.TriggerEventKey">
+            <summary>
+            Optional event key to trigger the notification.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Notifications.Notification.CreatedUtc">
+            <summary>
+            Creation timestamp in UTC.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Notifications.Notification.ModifiedUtc">
+            <summary>
+            Last modification timestamp in UTC.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Notifications.NotificationTarget">
+            <summary>
+            Target location where a notification should be presented to the user.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Notifications.NotificationTarget.HomePage">
+            <summary>
+            Show on the home page.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Notifications.NotificationTarget.Dashboard">
+            <summary>
+            Show on the dashboard.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Notifications.NotificationTarget.Modal">
+            <summary>
+            Show in a modal dialog.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Notifications.NotificationTarget.Toast">
+            <summary>
+            Show as a transient toast message.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Notifications.NotificationType">
+            <summary>
+            Types of notifications supported by the system.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Notifications.NotificationType.MonthlyReminder">
+            <summary>
+            Monthly reminder type.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Notifications.NotificationType.EventDriven">
+            <summary>
+            Event-driven notification.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Notifications.NotificationType.SystemAlert">
+            <summary>
+            System alert notification.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Postings.Posting">
+            <summary>
+            Domain entity representing a posting/transaction line that may reference accounts, contacts, savings plans or securities.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Postings.Posting.#ctor(System.Guid,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.DateTime,System.Decimal)">
+            <summary>
+            Creates a basic posting with required fields.
+            </summary>
+            <param name="sourceId">Source id (external system id or import id).</param>
+            <param name="kind">Posting kind identifying the domain target.</param>
+            <param name="accountId">Optional account id.</param>
+            <param name="contactId">Optional contact id.</param>
+            <param name="savingsPlanId">Optional savings plan id.</param>
+            <param name="securityId">Optional security id.</param>
+            <param name="bookingDate">Booking date of the posting.</param>
+            <param name="amount">Monetary amount for the posting.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID.</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Postings.Posting.#ctor(System.Guid,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.DateTime,System.Decimal,System.String,System.String,System.String,System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType})">
+            <summary>
+            Creates a posting with detailed information including optional fields.
+            </summary>
+            <param name="sourceId">Source id (external system id or import id).</param>
+            <param name="kind">Posting kind identifying the domain target.</param>
+            <param name="accountId">Optional account id.</param>
+            <param name="contactId">Optional contact id.</param>
+            <param name="savingsPlanId">Optional savings plan id.</param>
+            <param name="securityId">Optional security id.</param>
+            <param name="bookingDate">Booking date of the posting.</param>
+            <param name="amount">Monetary amount for the posting.</param>
+            <param name="subject">Optional subject for the posting.</param>
+            <param name="recipientName">Optional recipient name.</param>
+            <param name="description">Optional description.</param>
+            <param name="securitySubType">Optional security subtype.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID.</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Postings.Posting.#ctor(System.Guid,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.DateTime,System.Decimal,System.String,System.String,System.String,System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType},System.Nullable{System.Decimal})">
+            <summary>
+            Creates a posting with quantity information; valuta date defaults to booking date.
+            </summary>
+            <param name="sourceId">Source id (external system id or import id).</param>
+            <param name="kind">Posting kind identifying the domain target.</param>
+            <param name="accountId">Optional account id.</param>
+            <param name="contactId">Optional contact id.</param>
+            <param name="savingsPlanId">Optional savings plan id.</param>
+            <param name="securityId">Optional security id.</param>
+            <param name="bookingDate">Booking date of the posting.</param>
+            <param name="amount">Monetary amount for the posting.</param>
+            <param name="subject">Optional subject for the posting.</param>
+            <param name="recipientName">Optional recipient name.</param>
+            <param name="description">Optional description.</param>
+            <param name="securitySubType">Optional security subtype.</param>
+            <param name="quantity">Optional quantity for securities postings.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID.</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Postings.Posting.#ctor(System.Guid,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.DateTime,System.DateTime,System.Decimal,System.String,System.String,System.String,System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType},System.Nullable{System.Decimal})">
+            <summary>
+            Creates a posting including valuta date for precise financial tracking.
+            </summary>
+            <param name="sourceId">Source id (external system id or import id).</param>
+            <param name="kind">Posting kind identifying the domain target.</param>
+            <param name="accountId">Optional account id.</param>
+            <param name="contactId">Optional contact id.</param>
+            <param name="savingsPlanId">Optional savings plan id.</param>
+            <param name="securityId">Optional security id.</param>
+            <param name="bookingDate">Booking date of the posting.</param>
+            <param name="valutaDate">Valuta date for the posting.</param>
+            <param name="amount">Monetary amount for the posting.</param>
+            <param name="subject">Optional subject for the posting.</param>
+            <param name="recipientName">Optional recipient name.</param>
+            <param name="description">Optional description.</param>
+            <param name="securitySubType">Optional security subtype.</param>
+            <param name="quantity">Optional quantity.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID.</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Postings.Posting.#ctor(System.Guid,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.DateTime,System.DateTime,System.Decimal,System.String,System.String,System.String,System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType})">
+            <summary>
+            Creates a posting with explicit booking and valuta dates and optional subtype.
+            </summary>
+            <param name="sourceId">Source identifier (external/import id).</param>
+            <param name="kind">Posting kind identifying the target domain.</param>
+            <param name="accountId">Optional account id.</param>
+            <param name="contactId">Optional contact id.</param>
+            <param name="savingsPlanId">Optional savings plan id.</param>
+            <param name="securityId">Optional security id.</param>
+            <param name="bookingDate">Booking date of the posting.</param>
+            <param name="valutaDate">Valuta/date-of-value for the posting.</param>
+            <param name="amount">Monetary amount for the posting.</param>
+            <param name="text1">Optional text field 1.</param>
+            <param name="text2">Optional text field 2.</param>
+            <param name="text3">Optional text field 3.</param>
+            <param name="subType">Optional security posting sub-type.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID.</exception>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.SourceId">
+            <summary>
+            Source identifier (often an external or import id) associated with the posting.
+            </summary>
+            <value>The source identifier.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.GroupId">
+            <summary>
+            Group identifier for related postings.
+            </summary>
+            <value>The group identifier.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.Kind">
+            <summary>
+            Kind of posting indicating target domain.
+            </summary>
+            <value>The posting kind.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.AccountId">
+            <summary>
+            Optional account id referenced by the posting.
+            </summary>
+            <value>The account id or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.ContactId">
+            <summary>
+            Optional contact id referenced by the posting.
+            </summary>
+            <value>The contact id or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.SavingsPlanId">
+            <summary>
+            Optional savings plan id referenced by the posting.
+            </summary>
+            <value>The savings plan id or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.SecurityId">
+            <summary>
+            Optional security id referenced by the posting.
+            </summary>
+            <value>The security id or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.BookingDate">
+            <summary>
+            Booking date of the posting.
+            </summary>
+            <value>The booking date.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.ValutaDate">
+            <summary>
+            Valuta date of the posting, used for financial tracking.
+            </summary>
+            <value>The valuta date.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.Amount">
+            <summary>
+            Monetary amount for the posting.
+            </summary>
+            <value>The monetary amount.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.Subject">
+            <summary>
+            Optional subject for the posting.
+            </summary>
+            <value>The subject or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.RecipientName">
+            <summary>
+            Optional recipient name.
+            </summary>
+            <value>The recipient name or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.Description">
+            <summary>
+            Optional description.
+            </summary>
+            <value>The description or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.SecuritySubType">
+            <summary>
+            Optional security subtype.
+            </summary>
+            <value>The security posting subtype or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.Quantity">
+            <summary>
+            Optional quantity, primarily used for securities postings.
+            </summary>
+            <value>The quantity or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.ParentId">
+            <summary>
+            Optional reference to a parent posting, used for split or linked postings.
+            </summary>
+            <value>The parent posting id or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.LinkedPostingId">
+            <summary>
+            Optional link to a counterpart posting, used for self-transfers.
+            </summary>
+            <value>The linked posting id or null.</value>
+        </member>
+        <member name="M:FinanceManager.Domain.Postings.Posting.SetGroup(System.Guid)">
+            <summary>
+            Sets the group identifier for the posting.
+            </summary>
+            <param name="groupId">The group identifier.</param>
+            <returns>The updated <see cref="T:FinanceManager.Domain.Postings.Posting"/> instance (fluent API).</returns>
+            <exception cref="T:System.ArgumentException">Thrown when the <paramref name="groupId"/> is an empty GUID.</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Postings.Posting.SetParent(System.Guid)">
+            <summary>
+            Sets the parent identifier for the posting.
+            </summary>
+            <param name="parentId">The parent identifier.</param>
+            <returns>The updated <see cref="T:FinanceManager.Domain.Postings.Posting"/> instance (fluent API).</returns>
+            <exception cref="T:System.ArgumentException">Thrown when the <paramref name="parentId"/> is an empty GUID.</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Postings.Posting.SetLinkedPosting(System.Guid)">
+            <summary>
+            Sets the linked posting identifier for self-transfer postings.
+            </summary>
+            <param name="linkedPostingId">The linked posting identifier.</param>
+            <returns>The updated <see cref="T:FinanceManager.Domain.Postings.Posting"/> instance (fluent API).</returns>
+            <exception cref="T:System.ArgumentException">Thrown when the <paramref name="linkedPostingId"/> is an empty GUID.</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Postings.Posting.SetValutaDate(System.DateTime)">
+            <summary>
+            Sets the valuta date for the posting.
+            </summary>
+            <param name="valutaDate">The valuta date.</param>
+            <returns>The updated <see cref="T:FinanceManager.Domain.Postings.Posting"/> instance (fluent API).</returns>
+        </member>
+        <member name="T:FinanceManager.Domain.Postings.AggregatePeriod">
+            <summary>
+            Period granularity used for aggregating postings (month, quarter, half-year, year).
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Postings.AggregatePeriod.Month">
+            <summary>
+            Monthly aggregation.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Postings.AggregatePeriod.Quarter">
+            <summary>
+            Quarterly aggregation.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Postings.AggregatePeriod.HalfYear">
+            <summary>
+            Half-year aggregation.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Postings.AggregatePeriod.Year">
+            <summary>
+            Yearly aggregation.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Postings.AggregateDateKind">
+            <summary>
+            Date kind used to determine which date field of a posting to use for aggregation.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Postings.AggregateDateKind.Booking">
+            <summary>
+            Use the booking date for aggregation.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Postings.AggregateDateKind.Valuta">
+            <summary>
+            Use the valuta/value date for aggregation.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Postings.PostingAggregate">
+            <summary>
+            Aggregate entity that holds aggregated posting amounts for a specific period and grouping.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Postings.PostingAggregate.#ctor(FinanceManager.Shared.Dtos.Postings.PostingKind,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.DateTime,FinanceManager.Domain.Postings.AggregatePeriod,System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType},FinanceManager.Domain.Postings.AggregateDateKind)">
+            <summary>
+            Constructs a new posting aggregate for the specified grouping and period.
+            </summary>
+            <param name="kind">Posting kind this aggregate belongs to.</param>
+            <param name="accountId">Optional account id included in the grouping.</param>
+            <param name="contactId">Optional contact id included in the grouping.</param>
+            <param name="savingsPlanId">Optional savings plan id included in the grouping.</param>
+            <param name="securityId">Optional security id included in the grouping.</param>
+            <param name="periodStart">Start date/time of the period this aggregate represents.</param>
+            <param name="period">Aggregation period granularity.</param>
+            <param name="securitySubType">Optional security posting sub-type.</param>
+            <param name="dateKind">Which posting date kind to use for this aggregate.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.PostingAggregate.Kind">
+            <summary>
+            Kind of postings aggregated by this entity.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.PostingAggregate.AccountId">
+            <summary>
+            Optional account identifier that is part of the grouping key.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.PostingAggregate.ContactId">
+            <summary>
+            Optional contact identifier that is part of the grouping key.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.PostingAggregate.SavingsPlanId">
+            <summary>
+            Optional savings plan identifier that is part of the grouping key.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.PostingAggregate.SecurityId">
+            <summary>
+            Optional security identifier that is part of the grouping key.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.PostingAggregate.SecuritySubType">
+            <summary>
+            Optional sub-type for security postings used to further subdivide aggregates.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.PostingAggregate.DateKind">
+            <summary>
+            Indicates which date kind (booking or valuta) is used for this aggregate.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.PostingAggregate.PeriodStart">
+            <summary>
+            Start date of the aggregated period.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.PostingAggregate.Period">
+            <summary>
+            Aggregation period granularity.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.PostingAggregate.Amount">
+            <summary>
+            Aggregated amount for the period and grouping key.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Postings.PostingAggregate.Add(System.Decimal)">
+            <summary>
+            Adds the specified delta to the aggregate amount.
+            </summary>
+            <param name="delta">Amount to add (may be negative).</param>
+        </member>
         <member name="T:FinanceManager.Domain.Reports.HomeKpi">
             <summary>
             A single KPI configuration entry on the home dashboard for a specific user.
             Can point to a predefined KPI or a report favorite.
             </summary>
         </member>
+        <member name="M:FinanceManager.Domain.Reports.HomeKpi.#ctor">
+            <summary>
+            Parameterless constructor required for persistence/ORM and deserialization.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.HomeKpi.#ctor(System.Guid,FinanceManager.Shared.Dtos.HomeKpi.HomeKpiKind,FinanceManager.Shared.Dtos.HomeKpi.HomeKpiDisplayMode,System.Int32,System.Nullable{System.Guid})">
+            <summary>
+            Creates a new <see cref="T:FinanceManager.Domain.Reports.HomeKpi"/> for a given owner user.
+            </summary>
+            <param name="ownerUserId">The owner user identifier. Must not be empty.</param>
+            <param name="kind">The kind of KPI (predefined or report favorite).</param>
+            <param name="displayMode">How the KPI should be displayed.</param>
+            <param name="sortOrder">Sort order for rendering on the dashboard.</param>
+            <param name="reportFavoriteId">Optional id of a report favorite when <paramref name="kind"/> is <see cref="F:FinanceManager.Shared.Dtos.HomeKpi.HomeKpiKind.ReportFavorite"/>.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="ownerUserId"/> is an empty GUID or when required invariants are not satisfied (see <see cref="M:FinanceManager.Domain.Reports.HomeKpi.Validate"/>).</exception>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.HomeKpi.OwnerUserId">
+            <summary>
+            Identifier of the user who owns this KPI configuration.
+            </summary>
+            <value>The owner user id.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.HomeKpi.Kind">
+            <summary>
+            Kind of the home KPI (e.g. predefined or report favorite).
+            </summary>
+            <value>The KPI kind.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.HomeKpi.ReportFavoriteId">
+            <summary>
+            Optional id of the report favorite this KPI points to.
+            </summary>
+            <value>The report favorite id or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.HomeKpi.DisplayMode">
+            <summary>
+            Display mode used to render the KPI on the dashboard.
+            </summary>
+            <value>The display mode.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.HomeKpi.SortOrder">
+            <summary>
+            Sort order of the KPI on the dashboard.
+            </summary>
+            <value>Sort order (integer).</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.HomeKpi.Title">
+            <summary>
+            Optional custom title provided by the user.
+            </summary>
+            <value>The title or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.HomeKpi.PredefinedType">
+            <summary>
+            Optional predefined KPI type when <see cref="P:FinanceManager.Domain.Reports.HomeKpi.Kind"/> is a predefined KPI.
+            </summary>
+            <value>The predefined KPI type or null.</value>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.HomeKpi.SetDisplayMode(FinanceManager.Shared.Dtos.HomeKpi.HomeKpiDisplayMode)">
+            <summary>
+            Updates the display mode for this KPI.
+            </summary>
+            <param name="mode">The new display mode.</param>
+            <remarks>Callers are expected to persist the entity after modification.</remarks>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.HomeKpi.SetSortOrder(System.Int32)">
+            <summary>
+            Sets the sort order for this KPI.
+            </summary>
+            <param name="order">The new sort order.</param>
+            <remarks>Lower values are rendered earlier. Callers should persist the change.</remarks>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.HomeKpi.SetFavorite(System.Nullable{System.Guid})">
+            <summary>
+            Assigns or clears the report favorite referenced by this KPI.
+            </summary>
+            <param name="favoriteId">The report favorite id to reference, or null to clear it.</param>
+            <returns>None (void). The entity is modified in-place.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when the resulting state does not satisfy domain invariants (see <see cref="M:FinanceManager.Domain.Reports.HomeKpi.Validate"/>).</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.HomeKpi.SetPredefined(System.Nullable{FinanceManager.Shared.Dtos.HomeKpi.HomeKpiPredefined})">
+            <summary>
+            Sets the predefined KPI type for this entry.
+            </summary>
+            <param name="predefined">The predefined KPI type to set, or null to clear it.</param>
+            <exception cref="T:System.ArgumentException">Thrown when the resulting state violates domain invariants (see <see cref="M:FinanceManager.Domain.Reports.HomeKpi.Validate"/>).</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.HomeKpi.SetTitle(System.String)">
+            <summary>
+            Sets a custom title for the KPI. Titles are trimmed and limited to 120 characters.
+            </summary>
+            <param name="title">The title to set, or null/whitespace to clear it.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.HomeKpi.Validate">
+            <summary>
+            Validates domain invariants for the current state of the entity.
+            </summary>
+            <exception cref="T:System.ArgumentException">Thrown when required fields for the configured <see cref="P:FinanceManager.Domain.Reports.HomeKpi.Kind"/> are missing or invalid.</exception>
+        </member>
         <member name="T:FinanceManager.Domain.Reports.ReportEntityGroup">
             <summary>
             Primary grouping axis for configurable reports.
             </summary>
         </member>
+        <member name="F:FinanceManager.Domain.Reports.ReportEntityGroup.Account">
+            <summary>
+            Group results by account.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Reports.ReportEntityGroup.Contact">
+            <summary>
+            Group results by contact.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Reports.ReportEntityGroup.SavingsPlan">
+            <summary>
+            Group results by savings plan.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Domain.Reports.ReportEntityGroup.Security">
+            <summary>
+            Group results by security.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Domain.Reports.ReportFavorite">
             <summary>
-            A user defined favorite configuration for an aggregate report dashboard (FA-REP-008).
+            A user-defined favorite configuration for an aggregate report dashboard.
             Stored per user and referenced via GUID.
             </summary>
         </member>
+        <member name="M:FinanceManager.Domain.Reports.ReportFavorite.#ctor">
+            <summary>
+            Parameterless constructor for persistence/ORM and deserialization.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.ReportFavorite.#ctor(System.Guid,System.String,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Boolean,FinanceManager.Shared.Dtos.Reports.ReportInterval,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Int32)">
+            <summary>
+            Creates a new report favorite configuration for a user.
+            </summary>
+            <param name="ownerUserId">The identifier of the user owning this favorite. Must not be empty.</param>
+            <param name="name">Name of the favorite. Must not be null or whitespace.</param>
+            <param name="postingKind">Primary posting kind for the report.</param>
+            <param name="includeCategory">Whether to include category grouping in the report.</param>
+            <param name="interval">Time interval used for the report aggregation.</param>
+            <param name="comparePrevious">Whether to compare to the previous interval.</param>
+            <param name="compareYear">Whether to compare to the same period in the previous year.</param>
+            <param name="showChart">Whether to show a chart representation.</param>
+            <param name="expandable">Whether the result should be expandable in the UI.</param>
+            <param name="take">How many intervals to include (default 24). Will be clamped to a reasonable range.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="ownerUserId"/> is empty or <paramref name="name"/> is null/whitespace.</exception>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.OwnerUserId">
+            <summary>
+            Owner user identifier for this favorite.
+            </summary>
+            <value>The owner user's GUID.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.Name">
+            <summary>
+            Display name of the favorite configuration.
+            </summary>
+            <value>The name string.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.PostingKind">
+            <summary>
+            Primary posting kind used by the favorite.
+            </summary>
+            <value>The posting kind.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.IncludeCategory">
+            <summary>
+            Whether category grouping is included in the report.
+            </summary>
+            <value>True when categories are included.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.Interval">
+            <summary>
+            Time interval for aggregation in the report.
+            </summary>
+            <value>The report interval.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.ComparePrevious">
+            <summary>
+            Whether the report should compare to the previous interval.
+            </summary>
+            <value>True to compare to previous interval.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.CompareYear">
+            <summary>
+            Whether the report should compare to the same period in the previous year.
+            </summary>
+            <value>True to compare year-on-year.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.ShowChart">
+            <summary>
+            Whether a chart should be shown for this favorite.
+            </summary>
+            <value>True to show a chart.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.Expandable">
+            <summary>
+            Whether the UI can expand details for this favorite.
+            </summary>
+            <value>True if expandable.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.PostingKindsCsv">
+            <summary>
+            Optional CSV of posting kinds when multiple are selected.
+            </summary>
+            <value>CSV string or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.Take">
+            <summary>
+            Number of intervals to take for the report.
+            </summary>
+            <value>Number of intervals (clamped between 1 and 120).</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.AccountIdsCsv">
+            <summary>
+            CSV of filtered account ids.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.ContactIdsCsv">
+            <summary>
+            CSV of filtered contact ids.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.SavingsPlanIdsCsv">
+            <summary>
+            CSV of filtered savings plan ids.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.SecurityIdsCsv">
+            <summary>
+            CSV of filtered security ids.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.ContactCategoryIdsCsv">
+            <summary>
+            CSV of filtered contact category ids.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.SavingsPlanCategoryIdsCsv">
+            <summary>
+            CSV of filtered savings plan category ids.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.SecurityCategoryIdsCsv">
+            <summary>
+            CSV of filtered security category ids.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.SecuritySubTypesCsv">
+            <summary>
+            CSV of filtered security sub-types (integers).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.IncludeDividendRelated">
+            <summary>
+            Optional toggle whether dividend-related entries are included.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportFavorite.UseValutaDate">
+            <summary>
+            When true the report aggregates by ValutaDate instead of BookingDate.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.ReportFavorite.Rename(System.String)">
+            <summary>
+            Renames the favorite.
+            </summary>
+            <param name="name">New name. Must not be null or whitespace.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="name"/> is null or whitespace.</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.ReportFavorite.Update(FinanceManager.Shared.Dtos.Postings.PostingKind,System.Boolean,FinanceManager.Shared.Dtos.Reports.ReportInterval,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Int32,System.Boolean)">
+            <summary>
+            Updates primary configuration values for the favorite.
+            </summary>
+            <param name="postingKind">Primary posting kind.</param>
+            <param name="includeCategory">Whether to include categories.</param>
+            <param name="interval">Aggregation interval.</param>
+            <param name="comparePrevious">Compare to previous interval.</param>
+            <param name="compareYear">Compare to previous year.</param>
+            <param name="showChart">Show chart.</param>
+            <param name="expandable">Expandable in UI.</param>
+            <param name="take">Number of intervals to include; will be clamped.</param>
+            <param name="useValutaDate">Whether to aggregate by ValutaDate.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.ReportFavorite.SetTake(System.Int32)">
+            <summary>
+            Sets and clamps the Take value to acceptable bounds.
+            </summary>
+            <param name="take">Requested number of intervals.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.ReportFavorite.GetPostingKinds">
+            <summary>
+            Returns the selected posting kinds as a read-only collection.
+            </summary>
+            <returns>A collection of posting kinds. If none configured, returns a single-element collection with <see cref="P:FinanceManager.Domain.Reports.ReportFavorite.PostingKind"/>.</returns>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.ReportFavorite.TryParseKind(System.String)">
+            <summary>
+            Attempts to parse a posting kind from string input. Accepts numeric or named values.
+            </summary>
+            <param name="s">String to parse.</param>
+            <returns>The parsed <see cref="P:FinanceManager.Domain.Reports.ReportFavorite.PostingKind"/>, or null if parsing failed.</returns>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.ReportFavorite.SetPostingKinds(System.Collections.Generic.IEnumerable{FinanceManager.Shared.Dtos.Postings.PostingKind})">
+            <summary>
+            Stores the provided posting kinds as CSV.
+            </summary>
+            <param name="kinds">Collection of posting kinds to store.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.ReportFavorite.SetFilters(System.Collections.Generic.IEnumerable{System.Guid},System.Collections.Generic.IEnumerable{System.Guid},System.Collections.Generic.IEnumerable{System.Guid},System.Collections.Generic.IEnumerable{System.Guid},System.Collections.Generic.IEnumerable{System.Guid},System.Collections.Generic.IEnumerable{System.Guid},System.Collections.Generic.IEnumerable{System.Guid},System.Collections.Generic.IEnumerable{System.Int32},System.Nullable{System.Boolean})">
+            <summary>
+            Sets filter lists for the favorite; values are persisted as CSV strings.
+            </summary>
+            <param name="accountIds">Optional list of account ids to filter by.</param>
+            <param name="contactIds">Optional list of contact ids to filter by.</param>
+            <param name="savingsPlanIds">Optional list of savings plan ids to filter by.</param>
+            <param name="securityIds">Optional list of security ids to filter by.</param>
+            <param name="contactCategoryIds">Optional list of contact category ids to filter by.</param>
+            <param name="savingsPlanCategoryIds">Optional list of savings plan category ids to filter by.</param>
+            <param name="securityCategoryIds">Optional list of security category ids to filter by.</param>
+            <param name="securitySubTypes">Optional list of security sub-types (integers).</param>
+            <param name="includeDividendRelated">Optional toggle for including dividend-related entries.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.ReportFavorite.GetFilters">
+            <summary>
+            Retrieves the persisted filters as typed collections.
+            </summary>
+            <returns>
+            A tuple containing optional collections for Accounts, Contacts, SavingsPlans, Securities,
+            ContactCategories, SavingsPlanCategories, SecurityCategories, SecuritySubTypes and the IncludeDividendRelated flag.
+            </returns>
+        </member>
+        <member name="T:FinanceManager.Domain.Result">
+            <summary>
+            Represents the outcome of an operation that can either succeed or fail.
+            Contains a boolean <see cref="P:FinanceManager.Domain.Result.Success"/> flag and an optional error message.
+            </summary>
+            <param name="Success">Indicates whether the operation succeeded.</param>
+            <param name="Error">Error message when the operation failed; <c>null</c> when <see cref="P:FinanceManager.Domain.Result.Success"/> is <c>true</c>.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Result.#ctor(System.Boolean,System.String)">
+            <summary>
+            Represents the outcome of an operation that can either succeed or fail.
+            Contains a boolean <see cref="P:FinanceManager.Domain.Result.Success"/> flag and an optional error message.
+            </summary>
+            <param name="Success">Indicates whether the operation succeeded.</param>
+            <param name="Error">Error message when the operation failed; <c>null</c> when <see cref="P:FinanceManager.Domain.Result.Success"/> is <c>true</c>.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Result.Success">
+            <summary>Indicates whether the operation succeeded.</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Result.Error">
+            <summary>Error message when the operation failed; <c>null</c> when <see cref="P:FinanceManager.Domain.Result.Success"/> is <c>true</c>.</summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Result.Ok">
+            <summary>
+            Returns a successful <see cref="T:FinanceManager.Domain.Result"/> instance.
+            </summary>
+            <returns>A <see cref="T:FinanceManager.Domain.Result"/> with <see cref="P:FinanceManager.Domain.Result.Success"/> set to <c>true</c> and <see cref="P:FinanceManager.Domain.Result.Error"/> set to <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Domain.Result.Fail(System.String)">
+            <summary>
+            Returns a failed <see cref="T:FinanceManager.Domain.Result"/> instance with the specified error message.
+            </summary>
+            <param name="error">A description of the failure. It is recommended to provide a non-empty message for diagnostics.</param>
+            <returns>A <see cref="T:FinanceManager.Domain.Result"/> with <see cref="P:FinanceManager.Domain.Result.Success"/> set to <c>false</c> and <see cref="P:FinanceManager.Domain.Result.Error"/> set to the provided message.</returns>
+        </member>
+        <member name="T:FinanceManager.Domain.Result`1">
+            <summary>
+            Represents the outcome of an operation that can either succeed with a value of type <typeparamref name="T"/>
+            or fail with an error message.
+            </summary>
+            <typeparam name="T">Type of the value returned on success.</typeparam>
+            <param name="Success">Indicates whether the operation succeeded.</param>
+            <param name="Value">Value produced by a successful operation; may be <c>null</c> for reference types or when default is intended.</param>
+            <param name="Error">Error message when the operation failed; <c>null</c> when <see cref="P:FinanceManager.Domain.Result`1.Success"/> is <c>true</c>.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Result`1.#ctor(System.Boolean,`0,System.String)">
+            <summary>
+            Represents the outcome of an operation that can either succeed with a value of type <typeparamref name="T"/>
+            or fail with an error message.
+            </summary>
+            <typeparam name="T">Type of the value returned on success.</typeparam>
+            <param name="Success">Indicates whether the operation succeeded.</param>
+            <param name="Value">Value produced by a successful operation; may be <c>null</c> for reference types or when default is intended.</param>
+            <param name="Error">Error message when the operation failed; <c>null</c> when <see cref="P:FinanceManager.Domain.Result`1.Success"/> is <c>true</c>.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Result`1.Success">
+            <summary>Indicates whether the operation succeeded.</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Result`1.Value">
+            <summary>Value produced by a successful operation; may be <c>null</c> for reference types or when default is intended.</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Result`1.Error">
+            <summary>Error message when the operation failed; <c>null</c> when <see cref="P:FinanceManager.Domain.Result`1.Success"/> is <c>true</c>.</summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Result`1.Ok(`0)">
+            <summary>
+            Returns a successful <see cref="T:FinanceManager.Domain.Result`1"/> containing the specified value.
+            </summary>
+            <param name="value">The value produced by a successful operation. May be <c>null</c> for reference types.</param>
+            <returns>A <see cref="T:FinanceManager.Domain.Result`1"/> with <see cref="P:FinanceManager.Domain.Result`1.Success"/> set to <c>true</c>, <see cref="P:FinanceManager.Domain.Result`1.Value"/> set to <paramref name="value"/>, and <see cref="P:FinanceManager.Domain.Result`1.Error"/> set to <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Domain.Result`1.Fail(System.String)">
+            <summary>
+            Returns a failed <see cref="T:FinanceManager.Domain.Result`1"/> with the specified error message.
+            </summary>
+            <param name="error">A description of the failure. It is recommended to provide a non-empty message for diagnostics.</param>
+            <returns>A <see cref="T:FinanceManager.Domain.Result`1"/> with <see cref="P:FinanceManager.Domain.Result`1.Success"/> set to <c>false</c>, <see cref="P:FinanceManager.Domain.Result`1.Value"/> set to default, and <see cref="P:FinanceManager.Domain.Result`1.Error"/> set to the provided message.</returns>
+        </member>
+        <member name="T:FinanceManager.Domain.Savings.SavingsPlan">
+            <summary>
+            Represents a user's savings plan which may be recurring or one-off and can have a target amount/date, category and optional contract/attachment.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlan.Id">
+            <summary>
+            Gets the identifier of the savings plan.
+            </summary>
+            <value>The savings plan GUID.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlan.OwnerUserId">
+            <summary>
+            Gets the owner user identifier for this savings plan.
+            </summary>
+            <value>The owner's user GUID.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlan.Name">
+            <summary>
+            Gets the name of the savings plan.
+            </summary>
+            <value>The plan name.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlan.Type">
+            <summary>
+            Gets the type of the savings plan (e.g. one-off or recurring).
+            </summary>
+            <value>The <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType"/>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlan.TargetAmount">
+            <summary>
+            Gets the optional target amount for the plan.
+            </summary>
+            <value>The target amount or <c>null</c> if not set.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlan.TargetDate">
+            <summary>
+            Gets the optional target date for the plan.
+            </summary>
+            <value>The target date in UTC or <c>null</c> if not set.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlan.Interval">
+            <summary>
+            Gets the interval used for recurring plans.
+            </summary>
+            <value>The <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanInterval"/> or <c>null</c> for non-recurring plans.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlan.IsActive">
+            <summary>
+            Gets a value indicating whether the plan is active.
+            </summary>
+            <value><c>true</c> if active; otherwise <c>false</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlan.CreatedUtc">
+            <summary>
+            Gets the creation timestamp (UTC) of the plan.
+            </summary>
+            <value>Creation time in UTC.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlan.ArchivedUtc">
+            <summary>
+            Gets the archive timestamp (UTC) when the plan was archived, or <c>null</c> if not archived.
+            </summary>
+            <value>Archive time in UTC or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlan.CategoryId">
+            <summary>
+            Gets the optional category identifier associated with this plan.
+            </summary>
+            <value>Category GUID or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlan.ContractNumber">
+            <summary>
+            Gets the optional contract number associated with this plan.
+            </summary>
+            <value>Contract number or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlan.SymbolAttachmentId">
+            <summary>
+            Optional reference to a symbol attachment associated with the plan.
+            </summary>
+            <value>Attachment GUID or <c>null</c>.</value>
+        </member>
+        <member name="M:FinanceManager.Domain.Savings.SavingsPlan.#ctor(System.Guid,System.String,FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType,System.Nullable{System.Decimal},System.Nullable{System.DateTime},System.Nullable{FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanInterval},System.Nullable{System.Guid})">
+            <summary>
+            Creates a new instance of <see cref="T:FinanceManager.Domain.Savings.SavingsPlan"/>.
+            </summary>
+            <param name="ownerUserId">Identifier of the owning user.</param>
+            <param name="name">Name of the savings plan.</param>
+            <param name="type">Type of the savings plan.</param>
+            <param name="targetAmount">Optional target amount.</param>
+            <param name="targetDate">Optional target date.</param>
+            <param name="interval">Optional interval for recurring plans.</param>
+            <param name="categoryId">Optional category identifier.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Savings.SavingsPlan.Archive">
+            <summary>
+            Archives the savings plan and sets the archive timestamp to now (UTC).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Savings.SavingsPlan.Rename(System.String)">
+            <summary>
+            Renames the savings plan.
+            </summary>
+            <param name="name">The new name.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Savings.SavingsPlan.ChangeType(FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType)">
+            <summary>
+            Changes the plan type.
+            </summary>
+            <param name="type">The new <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType"/>.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Savings.SavingsPlan.SetTarget(System.Nullable{System.Decimal},System.Nullable{System.DateTime})">
+            <summary>
+            Sets or clears the plan target amount and date.
+            </summary>
+            <param name="amount">Target amount to set, or <c>null</c> to clear.</param>
+            <param name="date">Target date to set, or <c>null</c> to clear.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Savings.SavingsPlan.SetInterval(System.Nullable{FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanInterval})">
+            <summary>
+            Sets the recurrence interval for the plan.</summary>
+            <param name="interval">The recurrence interval or <c>null</c> to clear it.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Savings.SavingsPlan.SetCategory(System.Nullable{System.Guid})">
+            <summary>
+            Sets or clears the category for the plan.
+            </summary>
+            <param name="categoryId">Category GUID or <c>null</c> to clear.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Savings.SavingsPlan.SetContractNumber(System.String)">
+            <summary>
+            Sets the contract number. Leading/trailing whitespace is trimmed; whitespace-only values clear the contract number.
+            </summary>
+            <param name="contractNumber">The contract number string or <c>null</c> to clear.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Savings.SavingsPlan.SetSymbolAttachment(System.Nullable{System.Guid})">
+            <summary>
+            Sets or clears the symbol attachment reference. Passing <see cref="F:System.Guid.Empty"/> is treated as <c>null</c>.
+            </summary>
+            <param name="attachmentId">Attachment GUID or <see cref="F:System.Guid.Empty"/> to clear.</param>
+        </member>
         <member name="M:FinanceManager.Domain.Savings.SavingsPlan.AdvanceTargetDateIfDue(System.DateTime)">
             <summary>
-            Advances the TargetDate for recurring plans while the due date is reached or passed.
-            Month-end rule:
-            - If the original date was the last day of the month, the advanced date will also be set to the last day of the new month.
-            - Otherwise, the day is capped to the last day of the new month (e.g. 31st -> 30th/28th/29th if needed).
-            No business-day logic is applied.
+            Advances the <see cref="P:FinanceManager.Domain.Savings.SavingsPlan.TargetDate"/> for recurring plans while the due date is reached or passed relative to <paramref name="asOfUtc"/>.
             </summary>
-            <param name="asOfUtc">Cutoff date (UTC) to compare against.</param>
-            <returns>True if the target date was advanced at least once; otherwise false.</returns>
+            <param name="asOfUtc">Cutoff date (UTC) to compare the current target date against.</param>
+            <returns><c>true</c> if the target date was advanced at least once; otherwise <c>false</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Domain.Savings.SavingsPlan.AddIntervalWithMonthEndRule(System.DateTime,FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanInterval)">
+            <summary>
+            Adds the specified interval to a date while preserving month-end semantics.
+            If the original date was the last day of the month, the resulting date will also be the last day
+            of the target month. Otherwise the day-of-month is capped to the last day of the new month.
+            </summary>
+            <param name="date">The original date.</param>
+            <param name="interval">The interval to add.</param>
+            <returns>The advanced date respecting month-end rules and preserving time-of-day and Kind.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when an unsupported interval value is provided.</exception>
+        </member>
+        <member name="T:FinanceManager.Domain.Savings.SavingsPlanCategory">
+            <summary>
+            Represents a category for savings plans owned by a user. Categories can have an optional symbol attachment.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlanCategory.Id">
+            <summary>
+            Gets the identifier of the savings plan category.
+            </summary>
+            <value>The category GUID.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlanCategory.OwnerUserId">
+            <summary>
+            Gets the owner user identifier for this category.
+            </summary>
+            <value>The owner's user GUID.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlanCategory.Name">
+            <summary>
+            Gets the category name.
+            </summary>
+            <value>The category name string.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlanCategory.SymbolAttachmentId">
+            <summary>
+            Optional reference to a symbol attachment associated with this category.
+            Passing <see cref="F:System.Guid.Empty"/> is treated as <c>null</c> when setting.
+            </summary>
+            <value>Attachment GUID or <c>null</c>.</value>
+        </member>
+        <member name="M:FinanceManager.Domain.Savings.SavingsPlanCategory.#ctor(System.Guid,System.String)">
+            <summary>
+            Creates a new <see cref="T:FinanceManager.Domain.Savings.SavingsPlanCategory"/> instance.
+            </summary>
+            <param name="ownerUserId">The identifier of the user who owns the category.</param>
+            <param name="name">The display name of the category.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Savings.SavingsPlanCategory.Rename(System.String)">
+            <summary>
+            Renames the category.
+            </summary>
+            <param name="name">New name for the category.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Savings.SavingsPlanCategory.SetSymbolAttachment(System.Nullable{System.Guid})">
+            <summary>
+            Sets or clears the symbol attachment reference. Passing <see cref="F:System.Guid.Empty"/> clears the attachment.
+            </summary>
+            <param name="attachmentId">Attachment GUID to set, or <see cref="F:System.Guid.Empty"/>/<c>null</c> to clear.</param>
+        </member>
+        <member name="T:FinanceManager.Domain.Securities.Security">
+            <summary>
+            Represents a financial security (e.g. stock, bond) tracked by a user. Contains metadata, status and optional price error state.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Securities.Security.#ctor">
+            <summary>
+            Parameterless constructor for ORM/deserialization.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Securities.Security.#ctor(System.Guid,System.String,System.String,System.String,System.String,System.String,System.Nullable{System.Guid})">
+            <summary>
+            Creates a new <see cref="T:FinanceManager.Domain.Securities.Security"/> instance for the given owner.
+            </summary>
+            <param name="ownerUserId">Identifier of the user who owns the security.</param>
+            <param name="name">Display name of the security. Must not be null or whitespace.</param>
+            <param name="identifier">Identifier such as WKN or ISIN. Must not be null or whitespace.</param>
+            <param name="description">Optional description.</param>
+            <param name="alphaVantageCode">Optional AlphaVantage symbol/code used for price lookups.</param>
+            <param name="currencyCode">Currency ISO code (e.g. "EUR"). Must not be null or whitespace.</param>
+            <param name="categoryId">Optional category id.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="name"/>, <paramref name="identifier"/> or <paramref name="currencyCode"/> are null or whitespace. See <see cref="M:FinanceManager.Domain.Securities.Security.Update(System.String,System.String,System.String,System.String,System.String,System.Nullable{System.Guid})"/>.</exception>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.Id">
+            <summary>
+            Gets the identifier of the security.
+            </summary>
+            <value>The security GUID.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.OwnerUserId">
+            <summary>
+            Gets the owner user identifier of the security.
+            </summary>
+            <value>The owner's GUID.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.Name">
+            <summary>
+            Gets the display name of the security.
+            </summary>
+            <value>The name string.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.Description">
+            <summary>
+            Gets the optional description of the security.
+            </summary>
+            <value>Description or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.Identifier">
+            <summary>
+            Gets the primary identifier of the security (e.g. WKN or ISIN).
+            </summary>
+            <value>Identifier string.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.AlphaVantageCode">
+            <summary>
+            Optional code used with AlphaVantage or other external price providers.
+            </summary>
+            <value>AlphaVantage symbol or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.CurrencyCode">
+            <summary>
+            ISO currency code used for prices (uppercase).
+            </summary>
+            <value>Currency code, e.g. "EUR".</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.CategoryId">
+            <summary>
+            Optional category identifier for this security.
+            </summary>
+            <value>Category GUID or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.CreatedUtc">
+            <summary>
+            UTC timestamp when the security entry was created.
+            </summary>
+            <value>Creation time in UTC.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.IsActive">
+            <summary>
+            Indicates whether the security is active.
+            </summary>
+            <value><c>true</c> when active; otherwise <c>false</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.ArchivedUtc">
+            <summary>
+            UTC timestamp when the security was archived, or <c>null</c> if still active.
+            </summary>
+            <value>Archive time in UTC or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.HasPriceError">
+            <summary>
+            Indicates that there was an error fetching prices for this security.
+            </summary>
+            <value><c>true</c> if a price error is active; otherwise <c>false</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.PriceErrorMessage">
+            <summary>
+            Optional human-readable price error message.
+            </summary>
+            <value>Error message or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.PriceErrorSinceUtc">
+            <summary>
+            UTC timestamp since when the price error state was active, or <c>null</c> if none.
+            </summary>
+            <value>UTC time or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.SymbolAttachmentId">
+            <summary>
+            Optional reference to a symbol attachment.
+            </summary>
+            <value>Attachment GUID or <c>null</c>.</value>
+        </member>
+        <member name="M:FinanceManager.Domain.Securities.Security.Update(System.String,System.String,System.String,System.String,System.String,System.Nullable{System.Guid})">
+            <summary>
+            Updates core metadata for the security.
+            </summary>
+            <param name="name">Display name. Must not be null or whitespace.</param>
+            <param name="identifier">Primary identifier (WKN/ISIN). Must not be null or whitespace.</param>
+            <param name="description">Optional description.</param>
+            <param name="alphaVantageCode">Optional external provider code.</param>
+            <param name="currencyCode">ISO currency code. Must not be null or whitespace.</param>
+            <param name="categoryId">Optional category id.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="name"/>, <paramref name="identifier"/>, or <paramref name="currencyCode"/> are null or whitespace.</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Securities.Security.Archive">
+            <summary>
+            Archives the security if it is currently active. No-op when already archived.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Securities.Security.SetPriceError(System.String)">
+            <summary>
+            Marks the security as having a price fetch error and records the message and timestamp.
+            </summary>
+            <param name="message">Error message to record. Whitespace-only strings are preserved as provided; if null or whitespace, a default message will be stored by the implementation.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Securities.Security.ClearPriceError">
+            <summary>
+            Clears the price error state and associated metadata.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Securities.Security.SetSymbolAttachment(System.Nullable{System.Guid})">
+            <summary>
+            Sets or clears the symbol attachment reference. Passing <see cref="F:System.Guid.Empty"/> is treated as <c>null</c>.
+            </summary>
+            <param name="attachmentId">Attachment GUID to set, or <see cref="F:System.Guid.Empty"/>/<c>null</c> to clear.</param>
+        </member>
+        <member name="T:FinanceManager.Domain.Securities.SecurityCategory">
+            <summary>
+            Represents a user-defined category for securities. Categories can have an optional symbol attachment.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.SecurityCategory.Id">
+            <summary>
+            Gets the identifier of the category.
+            </summary>
+            <value>The category GUID.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.SecurityCategory.OwnerUserId">
+            <summary>
+            Gets the identifier of the user who owns this category.
+            </summary>
+            <value>The owner user's GUID.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.SecurityCategory.Name">
+            <summary>
+            Gets the display name of the category.
+            </summary>
+            <value>The category name.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.SecurityCategory.SymbolAttachmentId">
+            <summary>
+            Optional reference to a symbol attachment associated with this category.
+            Passing <see cref="F:System.Guid.Empty"/> when setting is treated as clearing the attachment (null).
+            </summary>
+            <value>The attachment GUID or <c>null</c>.</value>
+        </member>
+        <member name="M:FinanceManager.Domain.Securities.SecurityCategory.#ctor">
+            <summary>
+            Parameterless constructor for ORM/deserialization.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Securities.SecurityCategory.#ctor(System.Guid,System.String)">
+            <summary>
+            Creates a new <see cref="T:FinanceManager.Domain.Securities.SecurityCategory"/> for the specified owner with the given name.
+            </summary>
+            <param name="ownerUserId">The identifier of the user who owns this category.</param>
+            <param name="name">The display name of the category. Must not be null or whitespace.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Securities.SecurityCategory.Rename(System.String)">
+            <summary>
+            Renames the category.
+            </summary>
+            <param name="name">New name for the category. Must not be null or whitespace.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="name"/> is null, empty or consists only of white-space characters.</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Securities.SecurityCategory.SetSymbolAttachment(System.Nullable{System.Guid})">
+            <summary>
+            Sets or clears the symbol attachment reference for this category.
+            </summary>
+            <param name="attachmentId">Attachment GUID to set, or <see cref="F:System.Guid.Empty"/>/<c>null</c> to clear.</param>
+        </member>
+        <member name="T:FinanceManager.Domain.Securities.SecurityPrice">
+            <summary>
+            Represents a historical price (closing price) for a specific security on a given date.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.SecurityPrice.Id">
+            <summary>
+            Gets the identifier of the security price record.
+            </summary>
+            <value>The record GUID.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.SecurityPrice.SecurityId">
+            <summary>
+            Gets the identifier of the security this price belongs to.
+            </summary>
+            <value>The security GUID.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.SecurityPrice.Date">
+            <summary>
+            Gets the date of the price. Time part is ignored; stored as date component.
+            </summary>
+            <value>The date of the price (date component only).</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.SecurityPrice.Close">
+            <summary>
+            Gets the closing price value for the security on <see cref="P:FinanceManager.Domain.Securities.SecurityPrice.Date"/>.
+            </summary>
+            <value>Closing price.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.SecurityPrice.CreatedUtc">
+            <summary>
+            Gets the UTC timestamp when this price record was created.
+            </summary>
+            <value>Creation timestamp in UTC.</value>
+        </member>
+        <member name="M:FinanceManager.Domain.Securities.SecurityPrice.#ctor">
+            <summary>
+            Parameterless constructor for ORM/deserialization.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Securities.SecurityPrice.#ctor(System.Guid,System.DateTime,System.Decimal)">
+            <summary>
+            Creates a new <see cref="T:FinanceManager.Domain.Securities.SecurityPrice"/> instance for the specified security and date.
+            </summary>
+            <param name="securityId">Identifier of the security. Must not be <see cref="F:System.Guid.Empty"/>.</param>
+            <param name="date">Date of the price. The time component is ignored.</param>
+            <param name="close">Closing price value.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="securityId"/> is <see cref="F:System.Guid.Empty"/>.</exception>
+        </member>
+        <member name="T:FinanceManager.Domain.Security.IpBlock">
+            <summary>
+            Represents an IP address record that can be blocked/unblocked and tracks failed authentication attempts
+            originating from that IP address.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Security.IpBlock.#ctor">
+            <summary>
+            Parameterless constructor for ORM/deserialization.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Security.IpBlock.#ctor(System.String)">
+            <summary>
+            Creates a new <see cref="T:FinanceManager.Domain.Security.IpBlock"/> for the specified IP address.
+            </summary>
+            <param name="ipAddress">The IP address to track. Must be non-null and not whitespace.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="ipAddress"/> is null or consists only of white-space characters.</exception>
+        </member>
+        <member name="P:FinanceManager.Domain.Security.IpBlock.IpAddress">
+            <summary>
+            The tracked IP address.
+            </summary>
+            <value>IP address string.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Security.IpBlock.IsBlocked">
+            <summary>
+            Whether this IP is currently blocked (blacklisted).
+            </summary>
+            <value><c>true</c> when blocked; otherwise <c>false</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Security.IpBlock.BlockedAtUtc">
+            <summary>
+            UTC timestamp when the IP was blocked, or <c>null</c> if not blocked.
+            </summary>
+            <value>UTC time of block or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Security.IpBlock.BlockReason">
+            <summary>
+            Optional reason provided when the IP was blocked.
+            </summary>
+            <value>The block reason or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Security.IpBlock.UnknownUserFailedAttempts">
+            <summary>
+            Counter for failed attempts that used an unknown or non-existing username from this IP.
+            </summary>
+            <value>Number of failed attempts.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Security.IpBlock.UnknownUserLastFailedUtc">
+            <summary>
+            UTC timestamp of the last failed attempt with an unknown username, or <c>null</c> if none.
+            </summary>
+            <value>UTC time of last failed attempt or null.</value>
+        </member>
+        <member name="M:FinanceManager.Domain.Security.IpBlock.Rename(System.String)">
+            <summary>
+            Renames (updates) the tracked IP address.
+            </summary>
+            <param name="ipAddress">The new IP address. Must be non-null and not whitespace.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="ipAddress"/> is null or consists only of white-space characters.</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Security.IpBlock.RegisterUnknownUserFailure(System.DateTime,System.TimeSpan)">
+            <summary>
+            Registers a failed authentication attempt that used an unknown username from this IP.
+            </summary>
+            <param name="utcNow">The current UTC time when the failure occurred.</param>
+            <param name="resetAfter">Time span after which the failure counter is reset if no failures occurred.</param>
+            <returns>The updated number of consecutive unknown-user failed attempts for this IP.</returns>
+            <remarks>
+            If the time since the last failure is greater than or equal to <paramref name="resetAfter"/>,
+            the counter is reset to zero before incrementing.
+            </remarks>
+        </member>
+        <member name="M:FinanceManager.Domain.Security.IpBlock.ResetUnknownUserCounters">
+            <summary>
+            Resets the unknown-user failure counters for this IP.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Security.IpBlock.Block(System.DateTime,System.String)">
+            <summary>
+            Blocks (blacklists) this IP address.
+            </summary>
+            <param name="utcNow">The UTC time when the block is applied.</param>
+            <param name="reason">Optional reason for blocking; whitespace-only strings are treated as null.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Security.IpBlock.Unblock">
+            <summary>
+            Unblocks (removes blacklist) for this IP address and clears block metadata.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Statements.StatementDraft">
+            <summary>
+            Represents a draft of a statement file uploaded by a user. Contains metadata and a collection of draft entries
+            derived from the statement for later processing or manual matching.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraft.#ctor">
+            <summary>
+            Parameterless constructor for ORM/deserialization.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraft.#ctor(System.Guid,System.String,System.String,System.String)">
+            <summary>
+            Creates a new <see cref="T:FinanceManager.Domain.Statements.StatementDraft"/> instance for the specified user and original filename.
+            </summary>
+            <param name="ownerUserId">Owner user identifier. Must not be an empty GUID.</param>
+            <param name="originalFileName">Original uploaded file name. Must not be null or whitespace.</param>
+            <param name="accountNumber">Optional account name or number detected from the file.</param>
+            <param name="description">Optional description; when null the file name (without extension) is used.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="ownerUserId"/> is empty or <paramref name="originalFileName"/> is null/whitespace (via guards).</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraft.#ctor(System.Guid,System.String,System.String,System.String,FinanceManager.Shared.Dtos.Statements.StatementDraftStatus)">
+            <summary>
+            Creates a new <see cref="T:FinanceManager.Domain.Statements.StatementDraft"/> with an explicit initial <paramref name="status"/>.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="originalFileName">Original uploaded file name.</param>
+            <param name="accountNumber">Optional account name or number.</param>
+            <param name="description">Optional description.</param>
+            <param name="status">Initial draft status.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraft.OwnerUserId">
+            <summary>
+            Identifier of the user who owns this draft.
+            </summary>
+            <value>The owner user GUID.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraft.OriginalFileName">
+            <summary>
+            Original file name of the uploaded statement.
+            </summary>
+            <value>Original file name string.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraft.AccountName">
+            <summary>
+            Optional account name/number extracted from the statement file.
+            </summary>
+            <value>Account name or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraft.Description">
+            <summary>
+            Optional description for the draft. Defaults to file name without extension when not provided.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraft.DetectedAccountId">
+            <summary>
+            Optional detected account id that was matched against the statement content.
+            </summary>
+            <value>Detected account GUID or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraft.Status">
+            <summary>
+            Current status of the draft (Draft, Committed, Expired, ...).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraft.Entries">
+            <summary>
+            Collection of entries parsed from the statement file.
+            </summary>
+            <value>Collection of <see cref="T:FinanceManager.Domain.Statements.StatementDraftEntry"/> objects.</value>
         </member>
         <member name="P:FinanceManager.Domain.Statements.StatementDraft.UploadGroupId">
             <summary>
-            Gemeinsame Upload-Gruppen-ID aller StatementDrafts, die aus demselben Datei-Upload hervorgegangen sind.
+            Upload group identifier shared by drafts that originate from the same file upload operation.
             </summary>
+            <value>Upload group GUID or null.</value>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraft.SetUploadGroup(System.Guid)">
+            <summary>
+            Sets the upload group id if not already set.
+            </summary>
+            <param name="uploadGroupId">The upload group identifier to set.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraft.SetDetectedAccount(System.Guid)">
+            <summary>
+            Sets the detected account id for this draft.
+            </summary>
+            <param name="accountId">Detected account GUID.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraft.AddEntry(System.DateTime,System.Decimal,System.String)">
+            <summary>
+            Adds a simple entry to the draft using required fields. This is a convenience overload.
+            </summary>
+            <param name="bookingDate">Booking date of the entry.</param>
+            <param name="amount">Monetary amount.</param>
+            <param name="subject">Subject/description text.</param>
+            <returns>The created <see cref="T:FinanceManager.Domain.Statements.StatementDraftEntry"/>.</returns>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraft.AddEntry(System.DateTime,System.Decimal,System.String,System.String,System.Nullable{System.DateTime},System.String,System.String,System.Boolean,System.Boolean)">
+            <summary>
+            Adds an entry to the draft with extended metadata.
+            </summary>
+            <param name="bookingDate">Booking date of the entry.</param>
+            <param name="amount">Monetary amount.</param>
+            <param name="subject">Subject/description text.</param>
+            <param name="recipientName">Optional recipient name.</param>
+            <param name="valutaDate">Optional valuta/date-of-value.</param>
+            <param name="currencyCode">Optional currency code (defaults to EUR when null).</param>
+            <param name="bookingDescription">Optional booking description.</param>
+            <param name="isAnnounced">Whether the entry was announced (pre-booked) in the source system.</param>
+            <param name="isCostNeutral">Whether the entry is cost-neutral and should not affect totals.</param>
+            <returns>The created <see cref="T:FinanceManager.Domain.Statements.StatementDraftEntry"/> instance.</returns>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraft.MarkCommitted">
+            <summary>
+            Marks the draft as committed (ready to be applied to account postings).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraft.Expire">
+            <summary>
+            Expires the draft and sets its status to Expired.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Statements.StatementDraftEntry">
+            <summary>
+            Represents a single parsed entry from a statement draft. Contains matching and accounting metadata used during processing.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.#ctor">
+            <summary>
+            Parameterless constructor for ORM/deserialization.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.#ctor(System.Guid,System.DateTime,System.Decimal,System.String,System.String,System.Nullable{System.DateTime},System.String,System.String,System.Boolean,System.Boolean,FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus)">
+            <summary>
+            Creates a new <see cref="T:FinanceManager.Domain.Statements.StatementDraftEntry"/> associated with a draft.
+            </summary>
+            <param name="draftId">Identifier of the owning draft. Must not be empty.</param>
+            <param name="bookingDate">Booking date of the entry.</param>
+            <param name="amount">Monetary amount.</param>
+            <param name="subject">Subject or short description.</param>
+            <param name="recipientName">Optional recipient name.</param>
+            <param name="valutaDate">Optional valuta date.</param>
+            <param name="currencyCode">Currency code (defaults to "EUR" when null or whitespace).</param>
+            <param name="bookingDescription">Optional longer booking description.</param>
+            <param name="isAnnounced">Whether the entry was announced (pre-booked).</param>
+            <param name="isCostNeutral">Whether the entry is cost-neutral.</param>
+            <param name="status">Initial processing status for the entry.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="draftId"/> is empty (via guards).</exception>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.DraftId">
+            <summary>
+            Draft identifier that owns this entry.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.BookingDate">
+            <summary>
+            Booking date of the entry.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.ValutaDate">
+            <summary>
+            Optional valuta/date-of-value for the entry.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.Amount">
+            <summary>
+            Monetary amount of the entry.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.Subject">
+            <summary>
+            Short subject or description.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.RecipientName">
+            <summary>
+            Optional recipient name extracted from the statement.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.CurrencyCode">
+            <summary>
+            Currency code for the amount (ISO code). Default is "EUR".
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.BookingDescription">
+            <summary>
+            Optional booking description (longer textual information).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.IsAnnounced">
+            <summary>
+            Whether the entry was marked as announced/pre-booked in the source.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.Status">
+            <summary>
+            Processing status of the draft entry.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.ContactId">
+            <summary>
+            Optional resolved contact id when the entry is accounted to a contact.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.SavingsPlanId">
+            <summary>
+            Optional assigned savings plan id.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.ArchiveSavingsPlanOnBooking">
+            <summary>
+            When true, the assigned savings plan will be archived upon booking.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.IsCostNeutral">
+            <summary>
+            Whether the entry is cost-neutral and should not affect totals.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.SplitDraftId">
+            <summary>
+            Optional split draft id when the entry was split into multiple drafts.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.SecurityId">
+            <summary>
+            Optional assigned security id for securities-related entries.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.SecurityTransactionType">
+            <summary>
+            Optional security transaction type for securities bookings.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.SecurityQuantity">
+            <summary>
+            Optional quantity for security transactions.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.SecurityFeeAmount">
+            <summary>
+            Optional fee amount related to a security transaction.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.SecurityTaxAmount">
+            <summary>
+            Optional tax amount related to a security transaction.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.UpdateCore(System.DateTime,System.Nullable{System.DateTime},System.Decimal,System.String,System.String,System.String,System.String)">
+            <summary>
+            Updates core fields of the draft entry.
+            </summary>
+            <param name="bookingDate">New booking date.</param>
+            <param name="valutaDate">New valuta date.</param>
+            <param name="amount">New amount.</param>
+            <param name="subject">New subject text.</param>
+            <param name="recipientName">New recipient name.</param>
+            <param name="currencyCode">Currency code (when null/whitespace the existing value is preserved).</param>
+            <param name="bookingDescription">Booking description (null/whitespace clears the value).</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.MarkAlreadyBooked">
+            <summary>
+            Marks the entry as already booked (duplicate or already applied in the system).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.MarkAccounted(System.Guid)">
+            <summary>
+            Marks the entry as accounted and assigns the contact id.
+            </summary>
+            <param name="contactId">Contact id that the entry was accounted to.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.ClearContact">
+            <summary>
+            Clears the resolved contact assignment and resets status to Open or Announced depending on <see cref="P:FinanceManager.Domain.Statements.StatementDraftEntry.IsAnnounced"/>.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.ResetOpen">
+            <summary>
+            Resets the entry to open processing state and clears cost-neutral flag.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.MarkCostNeutral(System.Boolean)">
+            <summary>
+            Sets or clears the cost-neutral flag for the entry.
+            </summary>
+            <param name="isCostNeutral">True to mark cost-neutral; false otherwise.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.AssignSavingsPlan(System.Nullable{System.Guid})">
+            <summary>
+            Assigns a savings plan id to the entry.
+            </summary>
+            <param name="savingsPlanId">Savings plan GUID or null to clear.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.SetArchiveSavingsPlanOnBooking(System.Boolean)">
+            <summary>
+            Sets whether the assigned savings plan should be archived when the entry is booked.
+            </summary>
+            <param name="archive">True to archive on booking; false to leave active.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.AssignSplitDraft(System.Guid)">
+            <summary>
+            Assigns a split draft id to this entry. Throws when a split draft is already assigned.
+            </summary>
+            <param name="splitDraftId">Split draft GUID to assign.</param>
+            <exception cref="T:System.InvalidOperationException">Thrown when a split draft is already assigned.</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.ClearSplitDraft">
+            <summary>
+            Clears an assigned split draft id if present.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.AssignContactWithoutAccounting(System.Guid)">
+            <summary>
+            Assigns a contact id to the entry without marking it as accounted.
+            </summary>
+            <param name="contactId">Contact GUID to assign.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.SetSecurity(System.Nullable{System.Guid},System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityTransactionType},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal})">
+            <summary>
+            Assigns security-related data to the entry. When <paramref name="securityId"/> is null, all security fields are cleared.
+            </summary>
+            <param name="securityId">Security GUID to assign, or null to clear security data.</param>
+            <param name="txType">Transaction type for the security booking.</param>
+            <param name="quantity">Quantity of the security.</param>
+            <param name="fee">Fee amount related to the security booking.</param>
+            <param name="tax">Tax amount related to the security booking.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.OverrideValutaDate(System.Nullable{System.DateTime})">
+            <summary>
+            Overrides the valuta date for this entry.
+            </summary>
+            <param name="valutaDate">New valuta date or null to clear.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.MarkNeedsCheck">
+            <summary>
+            Marks the entry for manual checking by setting its status to Open.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Statements.StatementEntry">
+            <summary>
+            Represents a single entry parsed from an imported statement. Contains booking information and optional
+            resolved references for accounting (contact, savings plan, security transaction).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementEntry.#ctor">
+            <summary>
+            Parameterless constructor for ORM/deserialization.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementEntry.#ctor(System.Guid,System.DateTime,System.Decimal,System.String,System.String,System.String,System.Nullable{System.DateTime},System.String,System.String,System.Boolean,System.Boolean)">
+            <summary>
+            Creates a new <see cref="T:FinanceManager.Domain.Statements.StatementEntry"/> for a given statement import.
+            </summary>
+            <param name="statementImportId">Identifier of the owning statement import. Must not be <see cref="F:System.Guid.Empty"/>.</param>
+            <param name="bookingDate">Booking date of the entry.</param>
+            <param name="amount">Monetary amount. Zero is allowed for neutral items.</param>
+            <param name="subject">Subject or short description. Must not be null or whitespace.</param>
+            <param name="rawHash">A hash identifying the raw line content for deduplication. Must not be null or whitespace.</param>
+            <param name="recipientName">Optional recipient name extracted from the source.</param>
+            <param name="valutaDate">Optional valuta/date-of-value for the amount.</param>
+            <param name="currencyCode">Optional currency code (defaults to "EUR" when null or whitespace).</param>
+            <param name="bookingDescription">Optional longer booking description.</param>
+            <param name="isAnnounced">Whether the entry was announced/pre-booked in the source system.</param>
+            <param name="isCostNeutral">Whether the entry is cost-neutral and should not affect totals.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="statementImportId"/> is <see cref="F:System.Guid.Empty"/>, or when <paramref name="subject"/> or <paramref name="rawHash"/> are null/whitespace (via guards).</exception>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementEntry.StatementImportId">
+            <summary>
+            Identifier of the owning statement import.
+            </summary>
+            <value>The import GUID.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementEntry.BookingDate">
+            <summary>
+            Booking date of the entry.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementEntry.ValutaDate">
+            <summary>
+            Optional valuta/date-of-value for the entry.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementEntry.Amount">
+            <summary>
+            Monetary amount of the entry.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementEntry.Subject">
+            <summary>
+            Short subject or description.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementEntry.RawHash">
+            <summary>
+            Raw content hash used for deduplication of imported lines.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementEntry.RecipientName">
+            <summary>
+            Optional recipient name extracted from the statement.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementEntry.CurrencyCode">
+            <summary>
+            Currency code for the amount (ISO code). Default is "EUR".
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementEntry.BookingDescription">
+            <summary>
+            Optional longer booking description.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementEntry.IsAnnounced">
+            <summary>
+            Whether the entry was announced/pre-booked in the source system.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementEntry.IsCostNeutral">
+            <summary>
+            Whether the entry is cost-neutral and should not affect totals.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementEntry.ContactId">
+            <summary>
+            Optional resolved contact id when the entry is matched to a contact.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementEntry.SavingsPlanId">
+            <summary>
+            Optional assigned savings plan id when the entry is matched to a savings plan.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementEntry.SecurityTransactionId">
+            <summary>
+            Optional security transaction id when the entry is matched to a security booking.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementEntry.Status">
+            <summary>
+            Processing status of this imported entry.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Statements.StatementImport">
+            <summary>
+            Represents a single import operation of a bank statement file for a specific account.
+            Contains metadata about the import (format, original filename, timestamps and totals).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementImport.#ctor">
+            <summary>
+            Parameterless constructor for ORM/deserialization.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Statements.StatementImport.#ctor(System.Guid,FinanceManager.Shared.Dtos.Statements.ImportFormat,System.String)">
+            <summary>
+            Creates a new <see cref="T:FinanceManager.Domain.Statements.StatementImport"/> for the specified account and file.
+            </summary>
+            <param name="accountId">Identifier of the account the statement belongs to. Must not be <see cref="F:System.Guid.Empty"/>.</param>
+            <param name="format">Detected import format.</param>
+            <param name="originalFileName">Original uploaded file name. Must not be null or whitespace.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="accountId"/> is empty or <paramref name="originalFileName"/> is null/whitespace (see guard helpers).</exception>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementImport.AccountId">
+            <summary>
+            Identifier of the account this import belongs to.
+            </summary>
+            <value>The account GUID.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementImport.Format">
+            <summary>
+            Detected import format (CSV, MT940, etc.).
+            </summary>
+            <value>The import format.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementImport.ImportedAtUtc">
+            <summary>
+            Timestamp (UTC) when the file was imported.
+            </summary>
+            <value>The import time in UTC.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementImport.OriginalFileName">
+            <summary>
+            Original uploaded file name as provided by the user.
+            </summary>
+            <value>Original file name string.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementImport.TotalEntries">
+            <summary>
+            Number of entries parsed from the imported statement file.
+            </summary>
+            <value>Total number of parsed entries.</value>
+        </member>
+        <member name="T:FinanceManager.Domain.Users.User">
+            <summary>
+            Partial <see cref="T:FinanceManager.Domain.Users.User"/> type containing settings related to AlphaVantage integration (API key and sharing preference).
+            </summary>
+            <summary>
+            Domain user entity extending ASP.NET Identity's <see cref="T:Microsoft.AspNetCore.Identity.IdentityUser`1"/> with application-specific preferences and settings.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.AlphaVantageApiKey">
+            <summary>
+            User-provided AlphaVantage API key used for price lookups. Null when not set.
+            </summary>
+            <value>The API key string or <c>null</c> if none is configured.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.ShareAlphaVantageApiKey">
+            <summary>
+            Indicates whether the user has chosen to share their AlphaVantage API key with other users (if the application supports sharing).
+            </summary>
+            <value><c>true</c> when the API key may be shared; otherwise <c>false</c>.</value>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.SetAlphaVantageKey(System.String)">
+            <summary>
+            Sets or clears the AlphaVantage API key for the user. Passing a null or whitespace value clears the stored key.
+            </summary>
+            <param name="apiKey">The API key to store, or <c>null</c>/<see cref="F:System.String.Empty"/>/whitespace to clear the key.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.SetShareAlphaVantageKey(System.Boolean)">
+            <summary>
+            Sets the user's preference whether to share their AlphaVantage API key with others.
+            </summary>
+            <param name="share">If <c>true</c>, the key may be shared; otherwise it remains private.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.#ctor">
+            <summary>
+            Parameterless constructor for ORM/deserialization.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.#ctor(System.String,System.String)">
+            <summary>
+            Creates a user with a pre-computed password hash. Use this constructor when the caller already computed the password hash.
+            </summary>
+            <param name="username">The username. Must not be null or whitespace.</param>
+            <param name="passwordHash">The pre-computed password hash. Must not be null or whitespace.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="username"/> or <paramref name="passwordHash"/> are null or whitespace (via guards).</exception>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.Username">
+            <summary>
+            Backwards-compatible alias used in other parts of the codebase. Use <see cref="!:UserName"/> from the Identity base class instead.
+            This property is not mapped to the database and is obsolete.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.#ctor(System.String)">
+            <summary>
+            Creates a user instance intended for use with ASP.NET Identity's <c>UserManager.CreateAsync(user, password)</c> overload.
+            Password will be set by the <c>UserManager</c> and not by this constructor.
+            </summary>
+            <param name="username">The username. Must not be null or whitespace.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="username"/> is null or whitespace (via guards).</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.#ctor(System.String,System.Boolean)">
+            <summary>
+            Creates a new user and sets the admin flag.
+            </summary>
+            <param name="username">The username. Must not be null or whitespace.</param>
+            <param name="isAdmin">Whether the created user should be an administrator.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="username"/> is null or whitespace (via guards).</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.#ctor(System.String,System.String,System.Boolean)">
+            <summary>
+            Creates a new user providing a pre-computed password hash and admin flag (backwards-compatible overload).
+            </summary>
+            <param name="username">The username. Must not be null or whitespace.</param>
+            <param name="passwordHash">Pre-computed password hash. Must not be null or whitespace.</param>
+            <param name="isAdmin">Whether the user should be an administrator.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="username"/> or <paramref name="passwordHash"/> are null or whitespace (via guards).</exception>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.PreferredLanguage">
+            <summary>
+            Preferred UI language tag for the user (e.g. "en", "de").
+            </summary>
+            <value>Language code or <c>null</c> if not set.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.LastLoginUtc">
+            <summary>
+            UTC timestamp of the user's last successful login.
+            </summary>
+            <value>Last login time in UTC.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.Active">
+            <summary>
+            Whether the user account is active. Deactivated users cannot authenticate.
+            </summary>
+            <value><c>true</c> when active; otherwise <c>false</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.ImportSplitMode">
+            <summary>
+            Mode that controls how statement imports are split into drafts.
+            </summary>
+            <value>The import split mode.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.ImportMaxEntriesPerDraft">
+            <summary>
+            Maximum number of entries allowed per generated draft during splitting.
+            </summary>
+            <value>Maximum entries per draft.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.ImportMonthlySplitThreshold">
+            <summary>
+            Threshold used in MonthlyOrFixed mode that controls when monthly split is applied. Nullable to allow fallback behavior.
+            </summary>
+            <value>Threshold value or <c>null</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.ImportMinEntriesPerDraft">
+            <summary>
+            Minimum number of entries per draft when splitting imports.
+            </summary>
+            <value>Minimum entries per draft.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.IsAdmin">
+            <summary>
+            Admin flag persisted in the database.
+            </summary>
+            <value><c>true</c> for administrators.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.SymbolAttachmentId">
+            <summary>
+            Optional reference to a user symbol attachment.
+            </summary>
+            <value>Attachment GUID or <c>null</c>.</value>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.SetAdmin(System.Boolean)">
+            <summary>
+            Sets or clears the administrator flag for the user.
+            </summary>
+            <param name="isAdmin">True to mark as admin; false to revoke admin rights.</param>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:FinanceManager.Domain.Users.User.SetImportSplitSettings(FinanceManager.Shared.Dtos.Statements.ImportSplitMode,System.Int32,System.Nullable{System.Int32},System.Nullable{System.Int32})" -->
+        <member name="M:FinanceManager.Domain.Users.User.MarkLogin(System.DateTime)">
+            <summary>
+            Records the last login time for the user.
+            </summary>
+            <param name="utcNow">UTC time of the login event.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.SetPreferredLanguage(System.String)">
+            <summary>
+            Sets the preferred UI language for the user.
+            </summary>
+            <param name="lang">Language tag or null to clear the preference.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.Deactivate">
+            <summary>
+            Deactivates the user account (prevents authentication).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.Activate">
+            <summary>
+            Activates the user account.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.Rename(System.String)">
+            <summary>
+            Changes the user's username.
+            </summary>
+            <param name="newUsername">The new username. Must not be null or whitespace.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="newUsername"/> is null or whitespace (via guards).</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.SetPasswordHash(System.String)">
+            <summary>
+            Sets the user's password hash. Use Identity's password management APIs when possible.
+            </summary>
+            <param name="passwordHash">Precomputed password hash. Must not be null or whitespace.</param>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="passwordHash"/> is null or whitespace (via guards).</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.SetSymbolAttachment(System.Nullable{System.Guid})">
+            <summary>
+            Sets or clears the user's symbol attachment. Passing <see cref="F:System.Guid.Empty"/> is treated as clearing the attachment.
+            </summary>
+            <param name="attachmentId">Attachment GUID to set, or <see cref="F:System.Guid.Empty"/>/<c>null</c> to clear.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.MonthlyReminderEnabled">
+            <summary>
+            Whether monthly reminder emails/notifications are enabled for the user.
+            </summary>
+            <value><c>true</c> when monthly reminders are enabled; otherwise <c>false</c>.</value>
         </member>
         <member name="P:FinanceManager.Domain.Users.User.MonthlyReminderHour">
             <summary>
-            Local time (user time zone) hour/minute for monthly reminder. Null => default 09:00.
+            Local time (user time zone) hour for monthly reminder. Null => default 09:00.
             </summary>
+            <value>Hour of day in range 0..23 or <c>null</c> for default.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.MonthlyReminderMinute">
+            <summary>
+            Local time (user time zone) minute for monthly reminder. Null => default 00.
+            </summary>
+            <value>Minute in range 0..59 or <c>null</c> for default.</value>
         </member>
         <member name="P:FinanceManager.Domain.Users.User.HolidayCountryCode">
             <summary>
             ISO 3166-1 alpha-2 country code for public holiday calendar (e.g., "DE"). Optional.
             </summary>
+            <value>Country code or <c>null</c> when not configured.</value>
         </member>
         <member name="P:FinanceManager.Domain.Users.User.HolidaySubdivisionCode">
             <summary>
             ISO 3166-2 subdivision/state code (e.g., "DE-BY"). Optional.
             </summary>
+            <value>Subdivision code or <c>null</c> when not configured.</value>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.SetNotificationSettings(System.Boolean)">
+            <summary>
+            Enables or disables notification settings that are applied on a monthly basis.
+            </summary>
+            <param name="monthlyReminderEnabled">True to enable monthly reminders; false to disable.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.SetMonthlyReminderTime(System.Nullable{System.Int32},System.Nullable{System.Int32})">
+            <summary>
+            Sets the preferred local time (hour and minute) for the monthly reminder notification.
+            </summary>
+            <param name="hour">Hour of day in the range 0..23, or <c>null</c> to use the default hour (09).</param>
+            <param name="minute">Minute in the range 0..59, or <c>null</c> to use the default minute (00).</param>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when <paramref name="hour"/> is outside 0..23 or <paramref name="minute"/> is outside 0..59.</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.SetHolidayRegion(System.String,System.String)">
+            <summary>
+            Sets the holiday region used to resolve public holidays for scheduling (country and optional subdivision).
+            </summary>
+            <param name="countryCode">ISO 3166-1 alpha-2 country code (e.g., "DE") or <c>null</c> to clear.</param>
+            <param name="subdivisionCode">ISO 3166-2 subdivision code (e.g., "DE-BY") or <c>null</c> to clear.</param>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when provided codes are shorter or longer than allowed lengths.</exception>
+        </member>
+        <member name="P:FinanceManager.Domain.Users.User.HolidayProviderKind">
+            <summary>
+            The holiday provider kind used to obtain holiday calendars for this user.
+            </summary>
+            <value>The configured <see cref="T:FinanceManager.Domain.Notifications.HolidayProviderKind"/>.</value>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.SetHolidayProvider(FinanceManager.Domain.Notifications.HolidayProviderKind)">
+            <summary>
+            Sets the holiday provider implementation kind used for resolving public holidays.
+            </summary>
+            <param name="kind">The provider kind to use.</param>
         </member>
         <member name="P:FinanceManager.Domain.Users.User.TimeZoneId">
             <summary>
-            IANA time zone identifier (e.g., "Europe/Berlin"). Optional; null means not set.
+            IANA time zone identifier for the user (e.g. "Europe/Berlin").
             </summary>
+            <value>
+            The IANA time zone id string, or <c>null</c> if not set.
+            </value>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.SetTimeZoneId(System.String)">
+            <summary>
+            Sets the user's IANA time zone identifier. Passing <c>null</c> or whitespace clears the value.
+            Trims the provided value and validates maximum length.
+            </summary>
+            <param name="timeZoneId">The IANA time zone identifier (e.g. "Europe/Berlin"), or <c>null</c> to unset.</param>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when <paramref name="timeZoneId"/> exceeds 100 characters after trimming.</exception>
+        </member>
+        <member name="T:FinanceManager.Domain.ValueObject">
+            <summary>
+            Base class for value objects. Value objects are compared by their set of equality components
+            rather than by identity. Derive from this class and implement <see cref="M:FinanceManager.Domain.ValueObject.GetEqualityComponents"/>
+            to provide the sequence of components that determine equality.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.ValueObject.GetEqualityComponents">
+            <summary>
+            Returns an ordered sequence of components that participate in equality comparisons for the value object.
+            Implementations should yield components in a stable order and include nulls when appropriate.
+            </summary>
+            <returns>An <see cref="!:IEnumerable&lt;object&gt;"/> of components used for equality and hash code generation.</returns>
+        </member>
+        <member name="M:FinanceManager.Domain.ValueObject.Equals(System.Object)">
+            <summary>
+            Determines whether the specified object is equal to the current value object.
+            Two value objects are equal when they are of the same runtime type and their equality components
+            are equal in sequence order.
+            </summary>
+            <param name="obj">The object to compare with the current value object.</param>
+            <returns><c>true</c> if the specified object is equal to the current value object; otherwise, <c>false</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Domain.ValueObject.GetHashCode">
+            <summary>
+            Returns a hash code based on the equality components returned by <see cref="M:FinanceManager.Domain.ValueObject.GetEqualityComponents"/>.
+            The implementation combines component hash codes to produce a stable hash for the value object.
+            </summary>
+            <returns>An integer hash code for the current value object.</returns>
         </member>
     </members>
 </doc>

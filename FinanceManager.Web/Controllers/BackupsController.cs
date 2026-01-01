@@ -20,6 +20,12 @@ public sealed class BackupsController : ControllerBase
     private readonly ICurrentUserService _current;
     private readonly IBackgroundTaskManager _taskManager;
 
+    /// <summary>
+    /// Creates a new instance of the <see cref="BackupsController"/>.
+    /// </summary>
+    /// <param name="svc">Backup service used to list, create, upload, download and manage backups.</param>
+    /// <param name="current">Service to access current user context.</param>
+    /// <param name="taskManager">Background task manager used to enqueue restore tasks.</param>
     public BackupsController(IBackupService svc, ICurrentUserService current, IBackgroundTaskManager taskManager)
     { _svc = svc; _current = current; _taskManager = taskManager; }
 
@@ -27,6 +33,7 @@ public sealed class BackupsController : ControllerBase
     /// Lists all backups created or uploaded by the current user (most recent first client-side).
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with a read-only list of <see cref="BackupDto"/> instances.</returns>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<BackupDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListAsync(CancellationToken ct)
@@ -36,6 +43,7 @@ public sealed class BackupsController : ControllerBase
     /// Creates a new backup snapshot for the current user.
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the created <see cref="BackupDto"/>.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(BackupDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> CreateAsync(CancellationToken ct)
@@ -44,8 +52,10 @@ public sealed class BackupsController : ControllerBase
     /// <summary>
     /// Uploads an existing backup file (binary) to make it available for restore operations.
     /// </summary>
-    /// <param name="file">Backup file to upload.</param>
+    /// <param name="file">Backup file to upload (multipart form file).</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the created <see cref="BackupDto"/>, or 400 Bad Request when the file is invalid or duplicate.</returns>
+    /// <exception cref="System.IO.FileLoadException">Thrown when a backup with the same filename already exists (mapped to 400).</exception>
     [HttpPost("upload")]
     [RequestSizeLimit(1_024_000_000)]
     [RequestFormLimits(MultipartBodyLengthLimit = 1_024_000_000)]
@@ -71,6 +81,7 @@ public sealed class BackupsController : ControllerBase
     /// </summary>
     /// <param name="id">Backup id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>File stream result with range support when the backup exists; 404 Not Found otherwise.</returns>
     [HttpGet("{id:guid}/download")]
     public async Task<IActionResult> DownloadAsync(Guid id, CancellationToken ct)
     {
@@ -85,6 +96,7 @@ public sealed class BackupsController : ControllerBase
     /// </summary>
     /// <param name="id">Backup id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content when restore succeeded; 404 Not Found when the backup does not exist.</returns>
     [HttpPost("{id:guid}/apply")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -101,6 +113,7 @@ public sealed class BackupsController : ControllerBase
     /// Returns current status if a task is already active.
     /// </summary>
     /// <param name="id">Backup id to restore.</param>
+    /// <returns>200 OK with a <see cref="FinanceManager.Shared.Dtos.Admin.BackupRestoreStatusDto"/> describing the enqueued or current task status.</returns>
     [HttpPost("{id:guid}/apply/start")]
     [ProducesResponseType(typeof(FinanceManager.Shared.Dtos.Admin.BackupRestoreStatusDto), StatusCodes.Status200OK)]
     public IActionResult StartApplyAsync(Guid id)
@@ -121,6 +134,7 @@ public sealed class BackupsController : ControllerBase
     /// <summary>
     /// Gets status of current or last backup restore task for the user.
     /// </summary>
+    /// <returns>200 OK with a <see cref="FinanceManager.Shared.Dtos.Admin.BackupRestoreStatusDto"/> describing the task status (empty status when none available).</returns>
     [HttpGet("restore/status")]
     [ProducesResponseType(typeof(FinanceManager.Shared.Dtos.Admin.BackupRestoreStatusDto), StatusCodes.Status200OK)]
     public IActionResult GetStatus()
@@ -140,6 +154,7 @@ public sealed class BackupsController : ControllerBase
     /// <summary>
     /// Cancels the currently running backup restore task if present.
     /// </summary>
+    /// <returns>204 No Content always.</returns>
     [HttpPost("restore/cancel")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public IActionResult Cancel()
@@ -157,6 +172,7 @@ public sealed class BackupsController : ControllerBase
     /// </summary>
     /// <param name="id">Backup id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content when deletion succeeded; 404 Not Found when the backup does not exist.</returns>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

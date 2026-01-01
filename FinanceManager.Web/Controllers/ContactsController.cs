@@ -21,6 +21,13 @@ public sealed class ContactsController : ControllerBase
     private readonly ICurrentUserService _current;
     private readonly ILogger<ContactsController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ContactsController"/>.
+    /// </summary>
+    /// <param name="contacts">Service that implements contact management use-cases.</param>
+    /// <param name="current">Service that provides information about the current user.</param>
+    /// <param name="logger">Logger used to record unexpected errors and diagnostics.</param>
+    /// <exception cref="ArgumentNullException">Thrown when any required dependency is null.</exception>
     public ContactsController(IContactService contacts, ICurrentUserService current, ILogger<ContactsController> logger)
     { _contacts = contacts; _current = current; _logger = logger; }
 
@@ -33,6 +40,7 @@ public sealed class ContactsController : ControllerBase
     /// <param name="all">If true returns all contacts ignoring paging.</param>
     /// <param name="nameFilter">Optional name filter (substring).</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with a read-only list of <see cref="ContactDto"/> instances.</returns>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<ContactDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListAsync(
@@ -63,6 +71,7 @@ public sealed class ContactsController : ControllerBase
     /// </summary>
     /// <param name="id">Contact id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the <see cref="ContactDto"/> when found; 404 Not Found otherwise.</returns>
     [HttpGet("{id:guid}", Name = "GetContact")]
     [ProducesResponseType(typeof(ContactDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -85,6 +94,11 @@ public sealed class ContactsController : ControllerBase
     /// </summary>
     /// <param name="req">Creation payload.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 201 Created with the created <see cref="ContactDto"/> when successful;
+    /// 400 Bad Request when input is invalid.
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown when input arguments are invalid (mapped to 400).</exception>
     [HttpPost]
     [ProducesResponseType(typeof(ContactDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
@@ -106,6 +120,7 @@ public sealed class ContactsController : ControllerBase
     /// <param name="id">Contact id.</param>
     /// <param name="req">Update payload.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the updated <see cref="ContactDto"/> when found; 404 Not Found otherwise.</returns>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(ContactDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -126,6 +141,7 @@ public sealed class ContactsController : ControllerBase
     /// </summary>
     /// <param name="id">Contact id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content when deletion succeeded; 404 Not Found when the contact does not exist.</returns>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -144,6 +160,7 @@ public sealed class ContactsController : ControllerBase
     /// </summary>
     /// <param name="id">Contact id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the list of alias patterns.</returns>
     [HttpGet("{id:guid}/aliases")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> GetAliasAsync(Guid id, CancellationToken ct)
@@ -162,6 +179,7 @@ public sealed class ContactsController : ControllerBase
     /// <param name="id">Contact id.</param>
     /// <param name="req">Alias creation payload.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content when the alias was added successfully.</returns>
     [HttpPost("{id:guid}/aliases")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> AddAliasAsync(Guid id, [FromBody] AliasCreateRequest req, CancellationToken ct)
@@ -180,6 +198,7 @@ public sealed class ContactsController : ControllerBase
     /// <param name="id">Contact id.</param>
     /// <param name="aliasId">Alias id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content when the alias was deleted successfully.</returns>
     [HttpDelete("{id:guid}/aliases/{aliasId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteAliasAsync(Guid id, Guid aliasId, CancellationToken ct)
@@ -198,6 +217,8 @@ public sealed class ContactsController : ControllerBase
     /// <param name="id">Source contact id.</param>
     /// <param name="req">Merge request containing target id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the merged <see cref="ContactDto"/> when successful; 400 Bad Request when arguments are invalid.</returns>
+    /// <exception cref="ArgumentException">Thrown when arguments are invalid (mapped to 400).</exception>
     [HttpPost("{id:guid}/merge")]
     [ProducesResponseType(typeof(ContactDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
@@ -216,12 +237,14 @@ public sealed class ContactsController : ControllerBase
     /// <summary>
     /// Simple count endpoint returning number of contacts owned by user.
     /// </summary>
+    /// <param name="count">Total number of contacts.</param>
     public sealed record CountResponse(int count);
 
     /// <summary>
     /// Returns total number of contacts for the current user.
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with a <see cref="CountResponse"/> containing the total count.</returns>
     [HttpGet("count")]
     public async Task<IActionResult> CountAsync(CancellationToken ct = default)
     {
@@ -235,6 +258,7 @@ public sealed class ContactsController : ControllerBase
     /// <param name="id">Contact id.</param>
     /// <param name="attachmentId">Attachment id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content when the assignment succeeded; 404 Not Found when the contact was not found.</returns>
     [HttpPost("{id:guid}/symbol/{attachmentId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -250,6 +274,7 @@ public sealed class ContactsController : ControllerBase
     /// </summary>
     /// <param name="id">Contact id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content when the clear succeeded; 404 Not Found when the contact was not found.</returns>
     [HttpDelete("{id:guid}/symbol")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

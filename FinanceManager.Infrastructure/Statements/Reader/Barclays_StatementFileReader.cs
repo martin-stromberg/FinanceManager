@@ -2,8 +2,18 @@
 
 namespace FinanceManager.Infrastructure.Statements.Reader
 {
+    /// <summary>
+    /// PDF statement file reader implementation for Barclays statement exports.
+    /// Uses template-based parsing (regular expressions and table definitions) inherited from <see cref="PDFStatementFilereader"/>.
+    /// The templates contained in this class target various Barclays PDF layouts and provide section and field mappings
+    /// to build <see cref="StatementMovement"/> instances.
+    /// </summary>
     public class Barclays_StatementFileReader : PDFStatementFilereader, IStatementFileReader
     {
+        /// <summary>
+        /// Array of XML templates (string literals) describing supported Barclays statement layouts.
+        /// Each template is an XML document consumed by the base template parser.
+        /// </summary>
         private string[] _Templates = new string[] {
             @"
 <template>
@@ -86,6 +96,10 @@ namespace FinanceManager.Infrastructure.Statements.Reader
   <section name='BlockEnd' type='ignore'/>
 </template>
 "};
+
+        /// <summary>
+        /// Exposes the templates to the base <see cref="TemplateStatementFileReader"/> parser.
+        /// </summary>
         protected override string[] Templates => _Templates;
 
     }

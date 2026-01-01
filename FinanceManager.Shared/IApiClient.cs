@@ -1,62 +1,154 @@
+using static FinanceManager.Shared.ApiClient;
+
 namespace FinanceManager.Shared;
 
 /// <summary>
 /// Abstraction for the typed FinanceManager API client used via DI by Blazor view models and services.
-/// Provides strongly-typed methods for calling backend endpoints.
+/// Provides strongly-typed asynchronous methods for calling backend endpoints.
+/// Implementations wrap an <see cref="System.Net.Http.HttpClient"/> and translate HTTP responses to DTOs.
 /// </summary>
 public interface IApiClient
 {
     /// <summary>
     /// Holds the last error message returned by the server when a method returns false/null due to a non-success HTTP status.
+    /// Implementations should set this when an operation fails but returns a non-exceptional result (e.g. validation/bad request).
     /// </summary>
     string? LastError { get; }
+
+    /// <summary>
+    /// Optional machine-readable error code extracted from the most recent failed HTTP response.
+    /// </summary>
     string? LastErrorCode { get; }
 
     // Accounts
-    /// <summary>Lists accounts for the current user. Optional filter by bank contact id.</summary>
-    /// <param name="skip">Number of items to skip.</param>
-    /// <param name="take">Max items to return.</param>
-    /// <param name="bankContactId">Optional bank contact filter.</param>
-    /// <param name="ct">Cancellation token.</param>
+
+    /// <summary>
+    /// Lists accounts for the current user with optional bank contact filtering and paging.
+    /// </summary>
+    /// <param name="skip">Number of items to skip for paging (>= 0).</param>
+    /// <param name="take">Maximum number of items to return.</param>
+    /// <param name="bankContactId">Optional bank contact id to filter accounts.</param>
+    /// <param name="ct">Cancellation token to cancel the request.</param>
+    /// <returns>Read-only list of <see cref="AccountDto"/>.</returns>
+    /// <exception cref="System.Net.Http.HttpRequestException">When the HTTP request fails.</exception>
     Task<IReadOnlyList<AccountDto>> GetAccountsAsync(int skip = 0, int take = 100, Guid? bankContactId = null, CancellationToken ct = default);
-    /// <summary>Gets a single account by id or null if not found.</summary>
+
+    /// <summary>
+    /// Gets a single account by id.
+    /// </summary>
+    /// <param name="id">Account identifier.</param>
+    /// <param name="ct">Cancellation token to cancel the request.</param>
+    /// <returns>The account DTO when found; otherwise <c>null</c> when not found.</returns>
     Task<AccountDto?> GetAccountAsync(Guid id, CancellationToken ct = default);
-    /// <summary>Creates a new account.</summary>
+
+    /// <summary>
+    /// Creates a new account.
+    /// </summary>
+    /// <param name="request">Account creation request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The created <see cref="AccountDto"/>.</returns>
     Task<AccountDto> CreateAccountAsync(AccountCreateRequest request, CancellationToken ct = default);
-    /// <summary>Updates an existing account. Returns null when not found.</summary>
+
+    /// <summary>
+    /// Updates an existing account.
+    /// </summary>
+    /// <param name="id">Account id to update.</param>
+    /// <param name="request">Update request with new values.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The updated <see cref="AccountDto"/> when found; otherwise <c>null</c> when not found.</returns>
     Task<AccountDto?> UpdateAccountAsync(Guid id, AccountUpdateRequest request, CancellationToken ct = default);
-    /// <summary>Deletes an account. Returns false when not found.</summary>
+
+    /// <summary>
+    /// Deletes an account.
+    /// </summary>
+    /// <param name="id">Account id to delete.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when deletion succeeded; false when not found.</returns>
     Task<bool> DeleteAccountAsync(Guid id, CancellationToken ct = default);
-    /// <summary>Assigns a symbol attachment to an account.</summary>
+
+    /// <summary>
+    /// Assigns a symbol attachment to an account. Implementation may set <see cref="LastError"/> on failure.
+    /// </summary>
+    /// <param name="id">Account identifier.</param>
+    /// <param name="attachmentId">Attachment id to assign as symbol.</param>
+    /// <param name="ct">Cancellation token.</param>
     Task SetAccountSymbolAsync(Guid id, Guid attachmentId, CancellationToken ct = default);
-    /// <summary>Clears the symbol attachment from an account.</summary>
+
+    /// <summary>
+    /// Clears the symbol attachment from an account.
+    /// </summary>
+    /// <param name="id">Account identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
     Task ClearAccountSymbolAsync(Guid id, CancellationToken ct = default);
 
     // Auth
-    /// <summary>Authenticates an existing user and sets the auth cookie.</summary>
+
+    /// <summary>
+    /// Authenticates an existing user and sets the auth cookie.
+    /// </summary>
+    /// <param name="request">Login request containing credentials.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Authentication result containing user info and token details.</returns>
     Task<AuthOkResponse> Auth_LoginAsync(LoginRequest request, CancellationToken ct = default);
-    /// <summary>Registers a new user and sets the auth cookie.</summary>
+
+    /// <summary>
+    /// Registers a new user and sets the auth cookie.
+    /// </summary>
+    /// <param name="request">Registration request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Authentication result for the newly created user.</returns>
     Task<AuthOkResponse> Auth_RegisterAsync(RegisterRequest request, CancellationToken ct = default);
-    /// <summary>Logs out the current user and clears the auth cookie.</summary>
+
+    /// <summary>
+    /// Logs out the current user and clears the auth cookie.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when logout succeeded.</returns>
     Task<bool> Auth_LogoutAsync(CancellationToken ct = default);
 
     // Background tasks
-    /// <summary>Enqueues a background task.</summary>
+
+    /// <summary>
+    /// Enqueues a background task of the specified type.
+    /// </summary>
+    /// <param name="type">Background task type to enqueue.</param>
+    /// <param name="allowDuplicate">When true, allows enqueuing duplicate tasks.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Information about the enqueued background task.</returns>
     Task<BackgroundTaskInfo> BackgroundTasks_EnqueueAsync(BackgroundTaskType type, bool allowDuplicate = false, CancellationToken ct = default);
-    /// <summary>Gets active background tasks.</summary>
+
+    /// <summary>
+    /// Gets currently active background tasks.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of active background tasks.</returns>
     Task<IReadOnlyList<BackgroundTaskInfo>> BackgroundTasks_GetActiveAsync(CancellationToken ct = default);
-    /// <summary>Gets details for a background task or null if not found.</summary>
+
+    /// <summary>
+    /// Gets details for a background task.
+    /// </summary>
+    /// <param name="id">Background task id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Background task info or null when not found.</returns>
     Task<BackgroundTaskInfo?> BackgroundTasks_GetDetailAsync(Guid id, CancellationToken ct = default);
-    /// <summary>Cancels or removes a background task. Returns false when not found or invalid.</summary>
+
+    /// <summary>
+    /// Cancels or removes a background task.
+    /// </summary>
+    /// <param name="id">Background task id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when task was cancelled/removed; false when not found or invalid request.</returns>
     Task<bool> BackgroundTasks_CancelOrRemoveAsync(Guid id, CancellationToken ct = default);
 
     // Aggregates (Background tasks specialized endpoints)
+
     /// <summary>Starts an aggregates rebuild background task.</summary>
     Task<AggregatesRebuildStatusDto> Aggregates_RebuildAsync(bool allowDuplicate = false, CancellationToken ct = default);
     /// <summary>Gets current status of the aggregates rebuild task.</summary>
     Task<AggregatesRebuildStatusDto> Aggregates_GetRebuildStatusAsync(CancellationToken ct = default);
 
     // Admin - Users
+
     /// <summary>Lists users (admin only).</summary>
     Task<IReadOnlyList<UserAdminDto>> Admin_ListUsersAsync(CancellationToken ct = default);
     /// <summary>Gets a user (admin only) or null if not found.</summary>
@@ -73,6 +165,7 @@ public interface IApiClient
     Task<bool> Admin_DeleteUserAsync(Guid id, CancellationToken ct = default);
 
     // Admin - IP Blocks
+
     /// <summary>Lists IP block entries with optional filter.</summary>
     Task<IReadOnlyList<IpBlockDto>> Admin_ListIpBlocksAsync(bool? onlyBlocked = null, CancellationToken ct = default);
     /// <summary>Creates a new IP block entry.</summary>
@@ -91,6 +184,7 @@ public interface IApiClient
     Task<bool> Admin_DeleteIpBlockAsync(Guid id, CancellationToken ct = default);
 
     // Attachments
+
     /// <summary>Lists attachments for an entity with optional filters.</summary>
     Task<PageResult<AttachmentDto>> Attachments_ListAsync(short entityKind, Guid entityId, int skip = 0, int take = 50, Guid? categoryId = null, bool? isUrl = null, string? q = null, CancellationToken ct = default);
     /// <summary>Uploads a file as an attachment.</summary>
@@ -115,6 +209,7 @@ public interface IApiClient
     Task<AttachmentDownloadTokenDto?> Attachments_CreateDownloadTokenAsync(Guid id, int validSeconds = 60, CancellationToken ct = default);
 
     // Setup - Backups
+
     /// <summary>Lists backups owned by the current user.</summary>
     Task<IReadOnlyList<BackupDto>> Backups_ListAsync(CancellationToken ct = default);
     /// <summary>Creates a new backup for the current user.</summary>
@@ -135,6 +230,7 @@ public interface IApiClient
     Task<bool> Backups_DeleteAsync(Guid id, CancellationToken ct = default);
 
     // Contact Categories
+
     /// <summary>Lists contact categories for the current user.</summary>
     Task<IReadOnlyList<ContactCategoryDto>> ContactCategories_ListAsync(CancellationToken ct = default);
     /// <summary>Gets a single contact category by id or null if not found.</summary>
@@ -151,6 +247,7 @@ public interface IApiClient
     Task<bool> ContactCategories_ClearSymbolAsync(Guid id, CancellationToken ct = default);
 
     // Security Categories
+
     /// <summary>Lists security categories for the current user.</summary>
     Task<IReadOnlyList<SecurityCategoryDto>> SecurityCategories_ListAsync(CancellationToken ct = default);
     /// <summary>Gets a single security category by id or null if not found.</summary>
@@ -167,6 +264,7 @@ public interface IApiClient
     Task<bool> SecurityCategories_ClearSymbolAsync(Guid id, CancellationToken ct = default);
 
     // Contacts
+
     /// <summary>Lists contacts with optional paging/filtering, or all when all=true.</summary>
     Task<IReadOnlyList<ContactDto>> Contacts_ListAsync(int skip = 0, int take = 50, ContactType? type = null, bool all = false, string? nameFilter = null, CancellationToken ct = default);
     /// <summary>Gets a single contact by id or null when not found.</summary>
@@ -193,6 +291,7 @@ public interface IApiClient
     Task<bool> Contacts_ClearSymbolAsync(Guid id, CancellationToken ct = default);
 
     // Home KPIs
+
     /// <summary>Lists home KPIs for the current user.</summary>
     Task<IReadOnlyList<HomeKpiDto>> HomeKpis_ListAsync(CancellationToken ct = default);
     /// <summary>Gets a single home KPI by id or null if not found.</summary>
@@ -205,6 +304,7 @@ public interface IApiClient
     Task<bool> HomeKpis_DeleteAsync(Guid id, CancellationToken ct = default);
 
     // Meta Holidays
+
     /// <summary>
     /// Returns the list of available holiday provider kinds as strings.
     /// </summary>
@@ -227,6 +327,7 @@ public interface IApiClient
     Task<string[]> Meta_GetHolidaySubdivisionsAsync(string provider, string country, CancellationToken ct = default);
 
     // User Settings - Notifications
+
     /// <summary>Gets the current user's notification settings.</summary>
     Task<NotificationSettingsDto?> User_GetNotificationSettingsAsync(CancellationToken ct = default);
     /// <summary>Updates the current user's notification settings.</summary>
@@ -241,6 +342,7 @@ public interface IApiClient
     Task<bool> User_UpdateNotificationSettingsAsync(bool monthlyEnabled, int? hour, int? minute, string? provider, string? country, string? subdivision, CancellationToken ct = default);
 
     // Notifications
+
     /// <summary>
     /// Lists currently active notifications for the signed-in user (filtered server-side by current UTC time).
     /// </summary>
@@ -257,6 +359,7 @@ public interface IApiClient
     Task<bool> Notifications_DismissAsync(Guid id, CancellationToken ct = default);
 
     // Postings
+
     /// <summary>Gets a single posting by id or null if not found or not owned by the current user.</summary>
     Task<PostingServiceDto?> Postings_GetByIdAsync(Guid id, CancellationToken ct = default);
     /// <summary>Lists postings for an account. Returns empty on not found or unauthorized.</summary>
@@ -271,6 +374,7 @@ public interface IApiClient
     Task<GroupLinksDto?> Postings_GetGroupLinksAsync(Guid groupId, CancellationToken ct = default);
 
     // Reports
+
     /// <summary>Executes a report aggregation query.</summary>
     Task<ReportAggregationResult> Reports_QueryAggregatesAsync(ReportAggregatesQueryRequest req, CancellationToken ct = default);
     /// <summary>Lists all report favorites for the current user.</summary>
@@ -285,6 +389,7 @@ public interface IApiClient
     Task<bool> Reports_DeleteFavoriteAsync(Guid id, CancellationToken ct = default);
 
     // Savings Plan Categories
+
     /// <summary>Lists saving plan categories for the current user.</summary>
     Task<IReadOnlyList<SavingsPlanCategoryDto>> SavingsPlanCategories_ListAsync(CancellationToken ct = default);
     /// <summary>Gets a single saving plan category by id or null if not found.</summary>
@@ -301,18 +406,91 @@ public interface IApiClient
     Task<bool> SavingsPlanCategories_ClearSymbolAsync(Guid id, CancellationToken ct = default);
 
     // Savings Plans
+
+    /// <summary>
+    /// Lists savings plans for the current user.
+    /// </summary>
+    /// <param name="onlyActive">When <c>true</c>, returns only active plans; when <c>false</c>, returns all plans.</param>
+    /// <param name="ct">Cancellation token to cancel the request.</param>
+    /// <returns>Read-only list of <see cref="SavingsPlanDto"/>.</returns>
     Task<IReadOnlyList<SavingsPlanDto>> SavingsPlans_ListAsync(bool onlyActive = true, CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns the total count of savings plans (optionally only active plans).
+    /// </summary>
+    /// <param name="onlyActive">When <c>true</c>, counts only active plans.</param>
+    /// <param name="ct">Cancellation token to cancel the request.</param>
+    /// <returns>Integer count of matching savings plans.</returns>
     Task<int> SavingsPlans_CountAsync(bool onlyActive = true, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets a savings plan by its identifier.
+    /// </summary>
+    /// <param name="id">Savings plan identifier.</param>
+    /// <param name="ct">Cancellation token to cancel the request.</param>
+    /// <returns>The <see cref="SavingsPlanDto"/> when found; otherwise <c>null</c>.</returns>
     Task<SavingsPlanDto?> SavingsPlans_GetAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Creates a new savings plan.
+    /// </summary>
+    /// <param name="req">Creation request containing plan details.</param>
+    /// <param name="ct">Cancellation token to cancel the request.</param>
+    /// <returns>The created <see cref="SavingsPlanDto"/>.</returns>
     Task<SavingsPlanDto> SavingsPlans_CreateAsync(SavingsPlanCreateRequest req, CancellationToken ct = default);
+
+    /// <summary>
+    /// Updates an existing savings plan.
+    /// </summary>
+    /// <param name="id">Identifier of the savings plan to update.</param>
+    /// <param name="req">Update request containing new values.</param>
+    /// <param name="ct">Cancellation token to cancel the request.</param>
+    /// <returns>The updated <see cref="SavingsPlanDto"/> when the plan exists; otherwise <c>null</c>.</returns>
     Task<SavingsPlanDto?> SavingsPlans_UpdateAsync(Guid id, SavingsPlanCreateRequest req, CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns analysis data for a savings plan.
+    /// </summary>
+    /// <param name="id">Savings plan identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Analysis DTO for the savings plan.</returns>
     Task<SavingsPlanAnalysisDto> SavingsPlans_AnalyzeAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Archives a savings plan.
+    /// </summary>
+    /// <param name="id">Identifier of the savings plan to archive.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when archived; <c>false</c> when the plan was not found.</returns>
     Task<bool> SavingsPlans_ArchiveAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Deletes a savings plan.
+    /// </summary>
+    /// <param name="id">Identifier of the savings plan to delete.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when deleted; <c>false</c> when not found.</returns>
     Task<bool> SavingsPlans_DeleteAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Assigns a symbol attachment to a savings plan.
+    /// </summary>
+    /// <param name="id">Savings plan identifier.</param>
+    /// <param name="attachmentId">Attachment identifier to set as symbol.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the symbol was set; otherwise <c>false</c>.</returns>
     Task<bool> SavingsPlans_SetSymbolAsync(Guid id, Guid attachmentId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Clears the symbol attachment from a savings plan.
+    /// </summary>
+    /// <param name="id">Savings plan identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when cleared; otherwise <c>false</c>.</returns>
     Task<bool> SavingsPlans_ClearSymbolAsync(Guid id, CancellationToken ct = default);
 
     // Securities
+
     /// <summary>Lists securities for the current user.</summary>
     Task<IReadOnlyList<SecurityDto>> Securities_ListAsync(bool onlyActive = true, CancellationToken ct = default);
     /// <summary>Counts all or active securities.</summary>
@@ -343,6 +521,7 @@ public interface IApiClient
     Task<IReadOnlyList<AggregatePointDto>> Securities_GetDividendsAsync(string? period = null, int? take = null, CancellationToken ct = default);
 
     // Statement Drafts
+
     /// <summary>Lists open statement drafts for the current user.</summary>
     Task<IReadOnlyList<StatementDraftDto>> StatementDrafts_ListOpenAsync(int skip = 0, int take = 3, CancellationToken ct = default);
     /// <summary>Gets the count of open statement drafts.</summary>
@@ -398,9 +577,9 @@ public interface IApiClient
     /// <summary>Downloads the original statement file for a draft.</summary>
     Task<Stream?> StatementDrafts_DownloadOriginalAsync(Guid draftId, CancellationToken ct = default);
     /// <summary>Starts the classification of statement drafts as a background task.</summary>
-    Task<ApiClient.StatementDraftsClassifyStatus?> StatementDrafts_StartClassifyAsync(CancellationToken ct = default);
+    Task<StatementDraftsClassifyStatus?> StatementDrafts_StartClassifyAsync(CancellationToken ct = default);
     /// <summary>Gets the status of the ongoing or last classification task for statement drafts.</summary>
-    Task<ApiClient.StatementDraftsClassifyStatus?> StatementDrafts_GetClassifyStatusAsync(CancellationToken ct = default);
+    Task<StatementDraftsClassifyStatus?> StatementDrafts_GetClassifyStatusAsync(CancellationToken ct = default);
     /// <summary>Starts the booking of all statement drafts as a background task.</summary>
     Task<StatementDraftMassBookStatusDto?> StatementDrafts_StartBookAllAsync(bool ignoreWarnings, bool abortOnFirstIssue, bool bookEntriesIndividually, CancellationToken ct = default);
     /// <summary>Gets the status of the booking all task for statement drafts.</summary>
@@ -410,6 +589,14 @@ public interface IApiClient
     /// <summary>Deletes a statement draft. Returns false when not found.</summary>
     Task<bool> StatementDrafts_DeleteAsync(Guid draftId, CancellationToken ct = default);
     // Add to IApiClient interface in the Statement Drafts region:
+    /// <summary>
+    /// Assigns or clears a split draft group for a draft entry and returns updated split difference.
+    /// </summary>
+    /// <param name="draftId">Draft identifier.</param>
+    /// <param name="entryId">Entry identifier within the draft.</param>
+    /// <param name="req">Split draft assignment request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Result DTO with updated split information or <c>null</c> when not found or invalid.</returns>
     Task<StatementDraftSetEntrySplitDraftResultDto?> StatementDrafts_SetEntrySplitDraftAsync(Guid draftId, Guid entryId, StatementDraftSetSplitDraftRequest req, CancellationToken ct = default);
     /// <summary>Sets the description of a statement draft and returns updated detail or null when not found.</summary>
     Task<StatementDraftDetailDto?> StatementDrafts_SetDescriptionAsync(Guid draftId, string? description, CancellationToken ct = default);

@@ -1,4 +1,5 @@
 using FinanceManager.Application;
+using FinanceManager.Application.Savings;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
 using FinanceManager.Tests.TestHelpers;

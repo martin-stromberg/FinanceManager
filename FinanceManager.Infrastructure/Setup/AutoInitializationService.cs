@@ -1,4 +1,5 @@
 ﻿using FinanceManager.Application.Contacts;
+using FinanceManager.Application.Setup;
 using FinanceManager.Application.Statements;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,11 @@ using Microsoft.Extensions.Logging;
 namespace FinanceManager.Infrastructure.Setup
 {
 
+    /// <summary>
+    /// Service that performs automatic initialization actions from an "init" directory when the application starts.
+    /// It looks up an administrator user and executes scripted actions such as importing setup JSON, creating statement drafts
+    /// and other bulk operations useful for bootstrapping or demo environments.
+    /// </summary>
     public sealed class AutoInitializationService : IAutoInitializationService
     {
         private readonly ILogger<AutoInitializationService> _logger;
@@ -17,6 +23,15 @@ namespace FinanceManager.Infrastructure.Setup
         private readonly IStatementDraftService _statementDraftService;
         private readonly IContactService _contactService;
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="AutoInitializationService"/>.
+        /// </summary>
+        /// <param name="logger">Logger instance for diagnostic output.</param>
+        /// <param name="env">Host environment used to locate content root.</param>
+        /// <param name="db">Database context used by initialization actions.</param>
+        /// <param name="setupImportService">Service used to import setup JSON files.</param>
+        /// <param name="statementDraftService">Service used to create and manipulate statement drafts.</param>
+        /// <param name="contactService">Service used to resolve contacts during scripted actions.</param>
         public AutoInitializationService(
             ILogger<AutoInitializationService> logger,
             IHostEnvironment env,
@@ -33,6 +48,10 @@ namespace FinanceManager.Infrastructure.Setup
             _contactService = contactService;
         }
 
+        /// <summary>
+        /// Executes initialization synchronously. Internally calls <see cref="RunAsync"/> and waits for completion.
+        /// Exceptions are logged but not rethrown to avoid crashing the host during startup.
+        /// </summary>
         public void Run()
         {
             try
@@ -46,6 +65,12 @@ namespace FinanceManager.Infrastructure.Setup
             }
         }
 
+        /// <summary>
+        /// Asynchronously executes initialization actions found in the application's "init" directory when an administrator exists.
+        /// </summary>
+        /// <param name="ct">Cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <exception cref="Exception">Any unexpected exceptions are logged and rethrown by the caller.</exception>
         public async Task RunAsync(CancellationToken ct)
         {
             try
@@ -98,6 +123,12 @@ namespace FinanceManager.Infrastructure.Setup
             }
         }
 
+        /// <summary>
+        /// Executes the scripted actions contained in the init directory for the specified administrator user.
+        /// </summary>
+        /// <param name="admin">Administrator user under which the actions are executed.</param>
+        /// <param name="initDir">Path to the initialization directory containing action files.</param>
+        /// <param name="ct">Cancellation token to cancel the operation.</param>
         private async Task ExecuteActions(Domain.Users.User admin, string initDir, CancellationToken ct)
         {
             var drafts = new List<StatementDraftDto>();
@@ -371,7 +402,7 @@ namespace FinanceManager.Infrastructure.Setup
                                         {
                                             var name = entry.Subject.Replace("WP-ABRECHNUNG ", "").Trim().Split(' ').First();
                                             var security = await _db.Securities.FirstOrDefaultAsync(s => s.Id == entry.SecurityId, ct);
-                                            var line = $"\"statement-set-security\":\"{name}\":\"{security.Name}\":\"\":\"\":\"\":\"\"";
+                                            var line = $"\"statement-set-security\":\"{name}\":\"{security.Name}\":\"\":\"\":\"\"";
                                             value += line + Environment.NewLine;
                                         }
                                     }
@@ -391,6 +422,11 @@ namespace FinanceManager.Infrastructure.Setup
             }
         }
 
+        /// <summary>
+        /// Detects duplicate entries inside the specified draft and removes duplicate rows from the database.
+        /// Duplicates are determined by BookingDate, ValutaDate, Amount, ContactId, SecurityId and SavingsPlanId.
+        /// </summary>
+        /// <param name="draft">Draft to inspect for duplicates.</param>
         private void MarkDuplicates(StatementDraftDto draft)
         {
             // Ermittelt innerhalb des Drafts Duplikate auf Basis der geforderten Felder
@@ -427,6 +463,12 @@ namespace FinanceManager.Infrastructure.Setup
             }
         }
 
+        /// <summary>
+        /// Attempts to book a draft. If booking the entire draft fails, tries to book individual entries to isolate failures.
+        /// </summary>
+        /// <param name="draft">Draft to post.</param>
+        /// <param name="ownerId">Owner user id under which booking should be performed.</param>
+        /// <param name="ct">Cancellation token.</param>
         private async Task PostDraftAsync(StatementDraftDto draft, Guid ownerId, CancellationToken ct)
         {
             try
@@ -446,6 +488,13 @@ namespace FinanceManager.Infrastructure.Setup
             }
         }
 
+        /// <summary>
+        /// Removes draft entries whose recipient name contains the provided text.
+        /// </summary>
+        /// <param name="drafts">List of drafts to search.</param>
+        /// <param name="text">Text to match against recipient names.</param>
+        /// <param name="ownerId">Owner user id used for update operations.</param>
+        /// <param name="ct">Cancellation token.</param>
         private async Task RemoveDraftEntryAsync(List<StatementDraftDto> drafts, string text, Guid ownerId, CancellationToken ct)
         {
             foreach (var currDraft in drafts)
@@ -455,6 +504,15 @@ namespace FinanceManager.Infrastructure.Setup
             }
         }
 
+        /// <summary>
+        /// Assigns split-draft references for entries matching the specified contact across drafts.
+        /// </summary>
+        /// <param name="drafts">Collection of drafts used to locate entries.</param>
+        /// <param name="draft">Target draft to which entries will be assigned.</param>
+        /// <param name="destDraft">Optional destination draft to filter which drafts are affected; when null all drafts are considered.</param>
+        /// <param name="contact">Contact to match; when null no assignments will be performed.</param>
+        /// <param name="ownerId">Owner user id under which assignments are performed.</param>
+        /// <param name="ct">Cancellation token.</param>
         private async Task AssignDraftAsync(List<StatementDraftDto> drafts, StatementDraftDto draft, StatementDraftDto destDraft, ContactDto? contact, Guid ownerId, CancellationToken ct)
         {
             foreach (var currDraft in drafts.Where(d => d.DraftId != draft.DraftId).Where(d => destDraft is null || d.DraftId == destDraft.DraftId))

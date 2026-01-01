@@ -5,11 +5,26 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Infrastructure.Savings;
 
+/// <summary>
+/// Service providing operations for managing savings plans (CRUD, analysis and attachments).
+/// </summary>
 public sealed class SavingsPlanService : ISavingsPlanService
 {
     private readonly AppDbContext _db;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SavingsPlanService"/> class.
+    /// </summary>
+    /// <param name="db">The application's <see cref="AppDbContext"/> used to query and persist savings plans and related entities.</param>
     public SavingsPlanService(AppDbContext db) { _db = db; }
 
+    /// <summary>
+    /// Lists savings plans for a user, optionally filtering to only active plans.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="onlyActive">When <c>true</c> only active plans are returned; otherwise all plans are returned.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A list of <see cref="SavingsPlanDto"/> matching the criteria (may be empty).</returns>
     public async Task<IReadOnlyList<SavingsPlanDto>> ListAsync(Guid ownerUserId, bool onlyActive, CancellationToken ct)
     {
         var plans = from p in _db.SavingsPlans.AsNoTracking()
@@ -35,12 +50,33 @@ public sealed class SavingsPlanService : ISavingsPlanService
         return await plans.ToListAsync(ct);
     }
 
+    /// <summary>
+    /// Gets a savings plan by id for the specified owner.
+    /// </summary>
+    /// <param name="id">Identifier of the savings plan.</param>
+    /// <param name="ownerUserId">Owner user identifier for ownership validation.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The <see cref="SavingsPlanDto"/> when found; otherwise <c>null</c>.</returns>
     public async Task<SavingsPlanDto?> GetAsync(Guid id, Guid ownerUserId, CancellationToken ct)
     {
         var plan = await _db.SavingsPlans.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id && p.OwnerUserId == ownerUserId, ct);
         return plan == null ? null : new SavingsPlanDto(plan.Id, plan.Name, plan.Type, plan.TargetAmount, plan.TargetDate, plan.Interval, plan.IsActive, plan.CreatedUtc, plan.ArchivedUtc, plan.CategoryId, plan.ContractNumber, plan.SymbolAttachmentId);
     }
 
+    /// <summary>
+    /// Creates a new savings plan for the specified owner.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="name">Name of the savings plan. Must be unique per user when provided.</param>
+    /// <param name="type">Type of savings plan.</param>
+    /// <param name="targetAmount">Optional target amount for closed plans.</param>
+    /// <param name="targetDate">Optional target date for reaching the target amount.</param>
+    /// <param name="interval">Optional contribution interval.</param>
+    /// <param name="categoryId">Optional category id.</param>
+    /// <param name="contractNumber">Optional contract number.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The created <see cref="SavingsPlanDto"/>.</returns>
+    /// <exception cref="ArgumentException">Thrown when a plan with the same name already exists for the user.</exception>
     public async Task<SavingsPlanDto> CreateAsync(Guid ownerUserId, string name, SavingsPlanType type, decimal? targetAmount, DateTime? targetDate, SavingsPlanInterval? interval, Guid? categoryId, string? contractNumber, CancellationToken ct)
     {
         if (!string.IsNullOrWhiteSpace(name))
@@ -55,6 +91,21 @@ public sealed class SavingsPlanService : ISavingsPlanService
         return new SavingsPlanDto(plan.Id, plan.Name, plan.Type, plan.TargetAmount, plan.TargetDate, plan.Interval, plan.IsActive, plan.CreatedUtc, plan.ArchivedUtc, plan.CategoryId, plan.ContractNumber, plan.SymbolAttachmentId);
     }
 
+    /// <summary>
+    /// Updates an existing savings plan.
+    /// </summary>
+    /// <param name="id">Identifier of the savings plan to update.</param>
+    /// <param name="ownerUserId">Owner user identifier for ownership validation.</param>
+    /// <param name="name">New name of the plan.</param>
+    /// <param name="type">New type.</param>
+    /// <param name="targetAmount">New target amount.</param>
+    /// <param name="targetDate">New target date.</param>
+    /// <param name="interval">New interval.</param>
+    /// <param name="categoryId">New category id.</param>
+    /// <param name="contractNumber">New contract number.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The updated <see cref="SavingsPlanDto"/>, or <c>null</c> when not found.</returns>
+    /// <exception cref="ArgumentException">Thrown when the new name conflicts with another plan of the same user.</exception>
     public async Task<SavingsPlanDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, SavingsPlanType type, decimal? targetAmount, DateTime? targetDate, SavingsPlanInterval? interval, Guid? categoryId, string? contractNumber, CancellationToken ct)
     {
         var plan = await _db.SavingsPlans.FirstOrDefaultAsync(p => p.Id == id && p.OwnerUserId == ownerUserId, ct);
@@ -74,6 +125,14 @@ public sealed class SavingsPlanService : ISavingsPlanService
         return new SavingsPlanDto(plan.Id, plan.Name, plan.Type, plan.TargetAmount, plan.TargetDate, plan.Interval, plan.IsActive, plan.CreatedUtc, plan.ArchivedUtc, plan.CategoryId, plan.ContractNumber, plan.SymbolAttachmentId);
     }
 
+    /// <summary>
+    /// Archives a savings plan (marks it as inactive).
+    /// </summary>
+    /// <param name="id">Identifier of the plan to archive.</param>
+    /// <param name="ownerUserId">Owner user identifier for ownership validation.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the plan was found and archived; otherwise <c>false</c> when not found.</returns>
+    /// <exception cref="ArgumentException">Thrown when the plan is already archived.</exception>
     public async Task<bool> ArchiveAsync(Guid id, Guid ownerUserId, CancellationToken ct)
     {
         var plan = await _db.SavingsPlans.FirstOrDefaultAsync(p => p.Id == id && p.OwnerUserId == ownerUserId, ct);
@@ -84,6 +143,14 @@ public sealed class SavingsPlanService : ISavingsPlanService
         return true;
     }
 
+    /// <summary>
+    /// Deletes a savings plan if business rules allow it (archived and not referenced).
+    /// </summary>
+    /// <param name="id">Identifier of the plan to delete.</param>
+    /// <param name="ownerUserId">Owner user identifier for ownership validation.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the plan existed and was deleted; otherwise <c>false</c> when not found.</returns>
+    /// <exception cref="ArgumentException">Thrown when deletion is blocked by business rules (active, referenced by entries/postings/drafts).</exception>
     public async Task<bool> DeleteAsync(Guid id, Guid ownerUserId, CancellationToken ct)
     {
         var plan = await _db.SavingsPlans.FirstOrDefaultAsync(p => p.Id == id && p.OwnerUserId == ownerUserId, ct);
@@ -115,6 +182,13 @@ public sealed class SavingsPlanService : ISavingsPlanService
         return true;
     }
 
+    /// <summary>
+    /// Computes an analysis for the savings plan (accumulated contributions, forecast and required monthly amount).
+    /// </summary>
+    /// <param name="id">Identifier of the plan to analyze.</param>
+    /// <param name="ownerUserId">Owner user identifier for ownership validation.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A <see cref="SavingsPlanAnalysisDto"/> containing the analysis results. When the plan is not found a default result with Exists=false is returned.</returns>
     public async Task<SavingsPlanAnalysisDto> AnalyzeAsync(Guid id, Guid ownerUserId, CancellationToken ct)
     {
         var plan = await _db.SavingsPlans.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id && p.OwnerUserId == ownerUserId, ct);
@@ -167,6 +241,13 @@ public sealed class SavingsPlanService : ISavingsPlanService
         return new SavingsPlanAnalysisDto(id, reachable, target, endDate, accumulated, requiredMonthly, monthsRemaining);
     }
 
+    /// <summary>
+    /// Counts savings plans for the owner, optionally filtering to active plans.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="onlyActive">When <c>true</c> only active plans are counted.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The number of matching savings plans.</returns>
     public Task<int> CountAsync(Guid ownerUserId, bool onlyActive, CancellationToken ct)
     {
         var q = _db.SavingsPlans.AsNoTracking().Where(p => p.OwnerUserId == ownerUserId);
@@ -174,7 +255,15 @@ public sealed class SavingsPlanService : ISavingsPlanService
         return q.CountAsync(ct);
     }
 
-    // New: set/clear symbol attachment for savings plan
+    /// <summary>
+    /// Sets or clears a symbol attachment reference for the savings plan.
+    /// </summary>
+    /// <param name="id">Identifier of the savings plan.</param>
+    /// <param name="ownerUserId">Owner user identifier for ownership validation.</param>
+    /// <param name="attachmentId">Attachment identifier to set, or <c>null</c> to clear.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the change has been persisted.</returns>
+    /// <exception cref="ArgumentException">Thrown when the savings plan is not found or not owned by the user.</exception>
     public async Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct)
     {
         var plan = await _db.SavingsPlans.FirstOrDefaultAsync(p => p.Id == id && p.OwnerUserId == ownerUserId, ct);

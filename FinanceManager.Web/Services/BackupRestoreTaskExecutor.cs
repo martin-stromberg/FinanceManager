@@ -5,15 +5,34 @@ using System.Text.Json;
 
 namespace FinanceManager.Web.Services
 {
+    /// <summary>
+    /// Background task executor that applies a previously created backup to the database.
+    /// The executor reads a JSON payload containing a <c>BackupId</c> and an optional <c>ReplaceExisting</c> flag
+    /// and uses <see cref="IBackupService"/> to apply the backup. Progress is reported via the provided <see cref="BackgroundTaskContext"/>.
+    /// </summary>
     public sealed class BackupRestoreTaskExecutor : IBackgroundTaskExecutor
     {
+        /// <summary>
+        /// The <see cref="BackgroundTaskType"/> handled by this executor.
+        /// </summary>
         public BackgroundTaskType Type => BackgroundTaskType.BackupRestore;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<BackupRestoreTaskExecutor> _logger;
         private readonly IStringLocalizer _localizer;
 
+        /// <summary>
+        /// Payload shape expected by the executor when enqueued: JSON object with <c>BackupId</c> (GUID) and optional <c>ReplaceExisting</c> (bool).
+        /// </summary>
+        /// <param name="BackupId">Identifier of the backup to restore.</param>
+        /// <param name="ReplaceExisting">When <c>true</c> existing data will be replaced; when <c>false</c> it may be merged according to service rules.</param>
         private sealed record RestorePayload(Guid BackupId, bool ReplaceExisting);
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="BackupRestoreTaskExecutor"/>.
+        /// </summary>
+        /// <param name="scopeFactory">Factory to create a service scope used to resolve scoped services during execution.</param>
+        /// <param name="logger">Logger instance for the executor.</param>
+        /// <param name="localizer">Localizer used to produce localized progress messages.</param>
         public BackupRestoreTaskExecutor(IServiceScopeFactory scopeFactory, ILogger<BackupRestoreTaskExecutor> logger, IStringLocalizer<Pages> localizer)
         {
             _scopeFactory = scopeFactory;
@@ -21,6 +40,16 @@ namespace FinanceManager.Web.Services
             _localizer = localizer;
         }
 
+        /// <summary>
+        /// Executes the backup restore task. The task <paramref name="context"/> must contain a JSON payload with a <c>BackupId</c> (GUID)
+        /// and optional <c>ReplaceExisting</c> boolean. Progress updates are reported through the <paramref name="context"/>.
+        /// </summary>
+        /// <param name="context">Context object that contains task metadata, payload and progress reporting helpers.</param>
+        /// <param name="ct">Cancellation token that may be used to cancel the operation.</param>
+        /// <returns>A task that completes when the restore has finished.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the task payload is missing or invalid, or when the backup apply operation fails.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the provided <paramref name="ct"/>.</exception>
+        /// <exception cref="System.Exception">Propagates exceptions from underlying services (logged and reported) when unexpected errors occur.</exception>
         public async Task ExecuteAsync(BackgroundTaskContext context, CancellationToken ct)
         {
             if (context.Payload is not string raw || string.IsNullOrWhiteSpace(raw))

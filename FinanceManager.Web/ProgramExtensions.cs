@@ -23,8 +23,21 @@ using System.Text;
 
 namespace FinanceManager.Web
 {
+    /// <summary>
+    /// Extension methods used to configure the web application builder and the resulting WebApplication.
+    /// Encapsulates logging, DI registrations, localization and middleware setup used by the web project.
+    /// </summary>
     public static class ProgramExtensions
     {
+        /// <summary>
+        /// Configures logging providers for the application. Adds console logging and optionally a file logger
+        /// according to configuration section "FileLogging".
+        /// </summary>
+        /// <param name="builder">The <see cref="WebApplicationBuilder"/> to configure.</param>
+        /// <remarks>
+        /// Reads configuration keys under "FileLogging" to determine whether file logging should be enabled
+        /// and to bind <see cref="FileLoggerOptions"/> when enabled.
+        /// </remarks>
         public static void ConfigureLogging(this WebApplicationBuilder builder)
         {
             builder.Logging.ClearProviders();
@@ -40,6 +53,11 @@ namespace FinanceManager.Web
             }
         }
 
+        /// <summary>
+        /// Registers application services, middleware dependencies and framework services required by the Blazor web project.
+        /// This method wires up localization, Razor Components, HTTP clients, background workers, authentication and various app services.
+        /// </summary>
+        /// <param name="builder">The <see cref="WebApplicationBuilder"/> used to register services.</param>
         public static void RegisterAppServices(this WebApplicationBuilder builder)
         {
             // Localization
@@ -206,6 +224,11 @@ namespace FinanceManager.Web
             builder.Services.AddAuthorization();
         }
 
+        /// <summary>
+        /// Configures request localization for the application including supported cultures and a custom request culture provider
+        /// that reads a user preference.
+        /// </summary>
+        /// <param name="app">The <see cref="WebApplication"/> instance to configure.</param>
         public static void ConfigureLocalization(this WebApplication app)
         {
             var supportedCultures = new[] { "de", "en" }.Select(c => new CultureInfo(c)).ToList();
@@ -219,6 +242,11 @@ namespace FinanceManager.Web
             app.UseRequestLocalization(locOptions);
         }
 
+        /// <summary>
+        /// Configures middleware components and routing for the application including authentication, authorization,
+        /// static files, antiforgery and custom middleware such as IP blocking and JWT refresh.
+        /// </summary>
+        /// <param name="app">The <see cref="WebApplication"/> instance to configure.</param>
         public static void ConfigureMiddleware(this WebApplication app)
         {
             app.UseMiddleware<RequestLoggingMiddleware>();
@@ -246,6 +274,16 @@ namespace FinanceManager.Web
             app.MapControllers();
         }
 
+        /// <summary>
+        /// Applies pending EF Core migrations, runs any post-migration patches and ensures the Admin role and domain admin mappings exist.
+        /// </summary>
+        /// <param name="app">The <see cref="WebApplication"/> instance used to create scopes and obtain services.</param>
+        /// <remarks>
+        /// This method will migrate the database and may throw exceptions on failure. It also attempts to run
+        /// a runtime SchemaPatcher and to ensure that domain users with IsAdmin are members of the Admin identity role.
+        /// </remarks>
+        /// <exception cref="Microsoft.Data.Sqlite.SqliteException">May be thrown when running migrations against a SQLite database with an unexpected schema.</exception>
+        /// <exception cref="Exception">Any exception raised during migration will be rethrown after logging.</exception>
         public static void ApplyMigrationsAndSeed(this WebApplication app)
         {
             using var scope = app.Services.CreateScope();
@@ -282,6 +320,13 @@ namespace FinanceManager.Web
             initializer?.Run();
         }
 
+        /// <summary>
+        /// Ensures that the Admin identity role exists and synchronizes role membership with domain users marked as IsAdmin.
+        /// This is an internal helper used by <see cref="ApplyMigrationsAndSeed(WebApplication)"/>.
+        /// </summary>
+        /// <param name="app">The application instance used for logging.</param>
+        /// <param name="scope">A service scope used to resolve scoped services such as RoleManager and UserManager.</param>
+        /// <param name="db">The application database context.</param>
         private static void EnsureAdminRole(WebApplication app, IServiceScope scope, AppDbContext db)
         {
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();

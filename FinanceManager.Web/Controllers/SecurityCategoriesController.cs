@@ -17,6 +17,11 @@ public sealed class SecurityCategoriesController : ControllerBase
     private readonly ISecurityCategoryService _service;
     private readonly ICurrentUserService _current;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SecurityCategoriesController"/> class.
+    /// </summary>
+    /// <param name="service">The security category service used to perform CRUD operations.</param>
+    /// <param name="current">Service that provides information about the currently authenticated user.</param>
     public SecurityCategoriesController(ISecurityCategoryService service, ICurrentUserService current)
     { _service = service; _current = current; }
 
@@ -25,6 +30,10 @@ public sealed class SecurityCategoriesController : ControllerBase
     /// </summary>
     /// <param name="id">Category id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// An <see cref="IActionResult"/> that contains a <see cref="SecurityCategoryDto"/> and a 200 OK status when found,
+    /// or a 404 Not Found when the category does not exist or does not belong to the current user.
+    /// </returns>
     [HttpGet("{id:guid}", Name = "GetSecurityCategory")]
     [ProducesResponseType(typeof(SecurityCategoryDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -38,6 +47,7 @@ public sealed class SecurityCategoriesController : ControllerBase
     /// Lists all security categories for the current user.
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>An <see cref="IActionResult"/> containing a 200 OK response with a list of <see cref="SecurityCategoryDto"/>.</returns>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<SecurityCategoryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListAsync(CancellationToken ct)
@@ -48,6 +58,10 @@ public sealed class SecurityCategoriesController : ControllerBase
     /// </summary>
     /// <param name="req">Category creation request.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// An <see cref="IActionResult"/> that contains the created <see cref="SecurityCategoryDto"/> and a 201 Created status.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="req"/> is null.</exception>
     [HttpPost]
     [ProducesResponseType(typeof(SecurityCategoryDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -64,6 +78,11 @@ public sealed class SecurityCategoriesController : ControllerBase
     /// <param name="id">Category id.</param>
     /// <param name="req">Update request.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// An <see cref="IActionResult"/> that contains the updated <see cref="SecurityCategoryDto"/> and a 200 OK status when the update succeeds,
+    /// or a 404 Not Found when the category does not exist or does not belong to the current user.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="req"/> is null.</exception>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(SecurityCategoryDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -80,6 +99,7 @@ public sealed class SecurityCategoriesController : ControllerBase
     /// </summary>
     /// <param name="id">Category id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>An <see cref="IActionResult"/> with 204 No Content when deletion succeeds or 404 Not Found when not found.</returns>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -95,6 +115,11 @@ public sealed class SecurityCategoriesController : ControllerBase
     /// <param name="id">Category id.</param>
     /// <param name="attachmentId">Attachment id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// An <see cref="IActionResult"/> with 204 No Content when the symbol was set successfully.
+    /// Returns 404 Not Found when the category or attachment cannot be found or is invalid.
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown by the underlying service when arguments are invalid (mapped to 404).</exception>
     [HttpPost("{id:guid}/symbol/{attachmentId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -109,6 +134,11 @@ public sealed class SecurityCategoriesController : ControllerBase
     /// </summary>
     /// <param name="id">Category id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// An <see cref="IActionResult"/> with 204 No Content when the symbol was cleared successfully.
+    /// Returns 404 Not Found when the category cannot be found or the operation is invalid.
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown by the underlying service when arguments are invalid (mapped to 404).</exception>
     [HttpDelete("{id:guid}/symbol")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -9,14 +9,24 @@ using FinanceManager.Shared.Dtos.Admin;
 
 namespace FinanceManager.Web.ViewModels.StatementDrafts;
 
+/// <summary>
+/// ViewModel that exposes the list of statement drafts for the current user and provides
+/// operations for importing, deleting and triggering background tasks such as classification and booking.
+/// </summary>
 public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDraftsListViewModel.DraftItem>, FinanceManager.Web.ViewModels.Common.IUploadFilesViewModel
 {
     private readonly Shared.IApiClient _api;
     private readonly NavigationManager _nav;
 
-    // Show classify and book-all background tasks on pages using this viewmodel
+    /// <summary>
+    /// Background task types that should be visible on pages using this view model.
+    /// </summary>
     public override BackgroundTaskType[]? VisibleBackgroundTaskTypes => new[] { BackgroundTaskType.ClassifyAllDrafts, BackgroundTaskType.BookAllDrafts };
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="StatementDraftsListViewModel"/>.
+    /// </summary>
+    /// <param name="sp">Service provider used to resolve dependencies.</param>
     public StatementDraftsListViewModel(IServiceProvider sp) : base(sp)
     {
         _api = sp.GetRequiredService<Shared.IApiClient>();
@@ -26,21 +36,38 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
         AllowSearchFiltering = false;
     }
 
+    /// <summary>
+    /// Represents a single draft entry shown in the list.
+    /// </summary>
     public sealed class DraftItem : IListItemNavigation
     {
+        /// <summary>Draft identifier.</summary>
         public Guid Id { get; set; }
+        /// <summary>Original file name of the uploaded draft.</summary>
         public string FileName { get; set; } = string.Empty;
+        /// <summary>Optional user-provided description.</summary>
         public string? Description { get; set; }
+        /// <summary>Status of the draft.</summary>
         public StatementDraftStatus Status { get; set; }
+        /// <summary>Number of entries still pending booking.</summary>
         public int PendingEntries { get; set; }
+        /// <summary>Optional symbol attachment id used for list rendering.</summary>
         public Guid? AttachmentSymbolId { get; set; }
 
+        /// <summary>
+        /// Returns the navigate URL for the detail card of this draft.
+        /// </summary>
+        /// <returns>Relative URL to the draft card.</returns>
         public string GetNavigateUrl() => $"/card/statement-drafts/{Id}";
     }
 
     private int _skip;
     private const int PageSize = 3;
 
+    /// <summary>
+    /// Loads a page of drafts. This implementation requests open drafts from the API and appends them to <see cref="Items"/>.
+    /// </summary>
+    /// <param name="resetPaging">When true the paging state is reset and items cleared.</param>
     protected override async Task LoadPageAsync(bool resetPaging)
     {
         if (!IsAuthenticated) return;
@@ -79,6 +106,9 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
         }
     }
 
+    /// <summary>
+    /// Builds the list columns and records used by the list renderer.
+    /// </summary>
     protected override void BuildRecords()
     {
         var L = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
@@ -101,6 +131,11 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
         }, i as object)).ToList();
     }
 
+    /// <summary>
+    /// Builds ribbon register definitions for the list view providing actions such as New, DeleteAll, Reclassify, MassBooking and Import.
+    /// </summary>
+    /// <param name="localizer">Localizer used to resolve action labels.</param>
+    /// <returns>Collection of ribbon registers to render for this view.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var tabs = new List<UiRibbonTab>
@@ -207,19 +242,31 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
     }
 
     // Upload state (for statement-drafts import)
+
+    /// <summary>Indicates whether an import upload operation is in progress.</summary>
     public bool UploadInProgress { get; private set; }
+    /// <summary>Total number of files to upload in current batch.</summary>
     public int UploadTotal { get; private set; }
+    /// <summary>Number of files already uploaded in current batch.</summary>
     public int UploadDone { get; private set; }
+    /// <summary>Name of the file currently being uploaded (or <c>null</c> when none).</summary>
     public string? CurrentFileName { get; private set; }
+    /// <summary>Indicates whether the last import was considered successful.</summary>
     public bool ImportSuccess { get; private set; }
+    /// <summary>Id of the first draft created during the last import batch (if any).</summary>
     public Guid? FirstDraftId { get; private set; }
+    /// <summary>Optional split info returned by the import API when a file contained multiple drafts.</summary>
     public ImportSplitInfoDto? SplitInfo { get; private set; }
 
+    /// <summary>
+    /// Progress percentage computed from upload totals and progress.
+    /// </summary>
     public int UploadPercent => UploadTotal == 0 ? 0 : (int)Math.Round((double)(UploadDone * 100m / UploadTotal));
 
     // Classification background task state
+    /// <summary>Indicates whether a classification background task is running.</summary>
     public bool IsClassifying { get; private set; }
-    // Booking (mass) background task state
+    /// <summary>Indicates whether a booking (mass) background task is running.</summary>
     public bool IsBooking { get; private set; }
     // Polling cancellation for book-all status
     private CancellationTokenSource? _bookPollingCts;
@@ -236,6 +283,13 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
         RaiseStateChanged();
     }
 
+    /// <summary>
+    /// Uploads a single file stream to the statement-drafts API endpoint and updates local upload state.
+    /// </summary>
+    /// <param name="stream">Stream containing file content. The caller remains responsible for disposing the stream.</param>
+    /// <param name="fileName">Original filename.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Upload result DTO when upload succeeded; otherwise <c>null</c>.</returns>
     private async Task<StatementDraftUploadResult?> UploadFileAsync(Stream stream, string fileName, CancellationToken ct = default)
     {
         CurrentFileName = fileName;
@@ -274,6 +328,14 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
         }
     }
 
+    /// <summary>
+    /// Implementation of <see cref="IUploadFilesViewModel.UploadFilesAsync(string, IEnumerable{(Stream, string)}, CancellationToken)"/> for statement-draft imports.
+    /// </summary>
+    /// <param name="payload">Payload identifier (must be "statementdraft").</param>
+    /// <param name="files">Enumerable of streams and filenames to upload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Upload result containing first draft result and created count, or <c>null</c> when payload is unsupported or no files provided.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="payload"/> is null or whitespace.</exception>
     async Task<FinanceManager.Web.ViewModels.Common.UploadResult?> FinanceManager.Web.ViewModels.Common.IUploadFilesViewModel.UploadFilesAsync(string payload, IEnumerable<(Stream Stream, string FileName)> files, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(payload)) throw new ArgumentNullException(nameof(payload));
@@ -304,6 +366,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
     /// <summary>
     /// Deletes all open statement drafts for the current user and resets list state.
     /// </summary>
+    /// <returns>True when deletion succeeded; otherwise false.</returns>
     public async Task<bool> DeleteAllAsync()
     {
         try
@@ -378,6 +441,9 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
     /// <summary>
     /// Starts mass booking (book-all) background task.
     /// </summary>
+    /// <param name="ignoreWarnings">When true ignore non-fatal warnings and continue.</param>
+    /// <param name="abortOnFirstIssue">When true abort on first detected issue.</param>
+    /// <param name="bookEntriesIndividually">When true book entries individually instead of batch.</param>
     public async Task StartBookAllAsync(bool ignoreWarnings, bool abortOnFirstIssue, bool bookEntriesIndividually)
     {
         try

@@ -7,27 +7,57 @@ using FinanceManager.Web.Components.Shared;
 
 namespace FinanceManager.Web.ViewModels.Setup;
 
+/// <summary>
+/// View model responsible for displaying and editing a user in the admin setup area.
+/// Supports creating, updating, deleting, enabling/disabling and unlocking users via the admin API.
+/// </summary>
 [FinanceManager.Web.ViewModels.Common.CardRoute("users")]
 public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Value)>
 {
     private readonly Shared.IApiClient _api;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="UserCardViewModel"/>.
+    /// </summary>
+    /// <param name="sp">Service provider used to resolve additional services such as localizer.</param>
+    /// <param name="apiClient">API client used to call admin user endpoints. Must not be <c>null</c>.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="apiClient"/> is <c>null</c>.</exception>
     public UserCardViewModel(IServiceProvider sp, Shared.IApiClient apiClient) : base(sp)
     {
         _api = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
     }
 
+    /// <summary>
+    /// Currently loaded user identifier.
+    /// </summary>
     public Guid UserId { get; private set; }
+
+    /// <summary>
+    /// DTO representing the loaded user, or <c>null</c> when no user is loaded.
+    /// </summary>
     public UserAdminDto? User { get; private set; }
 
+    /// <summary>
+    /// Title shown on the card header. Falls back to a localized "Users_Title" resource when no username is available.
+    /// </summary>
     public override string Title => User?.Username ?? Localizer?["Users_Title"] ?? "User";
 
+    /// <summary>
+    /// Initializes the view model for the given id by delegating to <see cref="LoadAsync(Guid, CancellationToken)"/>.
+    /// </summary>
+    /// <param name="id">Identifier of the user to initialize the view model for.</param>
     public override async Task InitializeAsync(Guid id)
     {
         await LoadAsync(id);
     }
 
-    // existing loader that accepts CancellationToken
+    /// <summary>
+    /// Loads the user for the supplied <paramref name="id"/>. When <see cref="Guid.Empty"/> a new unsaved user model is prepared.
+    /// </summary>
+    /// <param name="id">Identifier of the user to load or <see cref="Guid.Empty"/> for create mode.</param>
+    /// <param name="ct">Cancellation token to cancel API calls.</param>
+    /// <returns>A task that completes when loading has finished.</returns>
+    /// <exception cref="OperationCanceledException">May be thrown when the provided cancellation token is cancelled by the caller.</exception>
     public async Task LoadAsync(Guid id, CancellationToken ct = default)
     {
         Loading = true; SetError(null, null); RaiseStateChanged();
@@ -78,6 +108,12 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
         finally { Loading = false; RaiseStateChanged(); }
     }
 
+    /// <summary>
+    /// Helper to read a text value from the current <see cref="CardRecord"/> by label key.
+    /// </summary>
+    /// <param name="key">Label key of the card field.</param>
+    /// <param name="fallback">Optional fallback returned when the field is missing or empty.</param>
+    /// <returns>The text value or the provided fallback / empty string.</returns>
     private string GetFieldText(string key, string? fallback = null)
     {
         if (CardRecord?.Fields != null)
@@ -87,6 +123,13 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
         }
         return fallback ?? string.Empty;
     }
+
+    /// <summary>
+    /// Helper to read a boolean value from the current <see cref="CardRecord"/> by label key.
+    /// </summary>
+    /// <param name="key">Label key of the card field.</param>
+    /// <param name="fallback">Optional fallback when the field is missing.</param>
+    /// <returns>Boolean value or the provided fallback (defaults to <c>false</c>).</returns>
     private bool GetFieldBoolean(string key, bool? fallback = null)
     {
         if (CardRecord?.Fields != null)
@@ -97,6 +140,11 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
         return fallback ?? false;
     }
 
+    /// <summary>
+    /// Creates or updates the user using the admin API. When creating a user a random password is generated.
+    /// </summary>
+    /// <param name="ct">Cancellation token to cancel the operation.</param>
+    /// <returns>True when the save operation succeeded; otherwise false.</returns>
     public async Task<bool> SaveAsync(CancellationToken ct = default)
     {
         if (User == null) return false;
@@ -137,6 +185,11 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
         return false;
     }
 
+    /// <summary>
+    /// Deletes the currently loaded user via the admin API.
+    /// </summary>
+    /// <param name="ct">Cancellation token to cancel the delete operation.</param>
+    /// <returns>True when deletion succeeded; otherwise false.</returns>
     public async Task<bool> DeleteAsync(CancellationToken ct = default)
     {
         if (User == null) return false;
@@ -153,6 +206,11 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
         }
     }
 
+    /// <summary>
+    /// Enables (activates) the currently loaded user via the admin API.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when the operation succeeded; otherwise false.</returns>
     public async Task<bool> EnableAsync(CancellationToken ct = default)
     {
         if (User == null) return false;
@@ -170,6 +228,11 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
         }
     }
 
+    /// <summary>
+    /// Disables (deactivates) the currently loaded user via the admin API.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when the operation succeeded; otherwise false.</returns>
     public async Task<bool> DisableAsync(CancellationToken ct = default)
     {
         if (User == null) return false;
@@ -187,6 +250,11 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
         }
     }
 
+    /// <summary>
+    /// Unlocks the currently loaded user if it is locked/blocked.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when the unlock succeeded; otherwise false.</returns>
     public async Task<bool> UnblockAsync(CancellationToken ct = default)
     {
         if (User == null) return false;
@@ -204,22 +272,38 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
     }
 
     // BaseCardViewModel abstract implementations
+    /// <summary>
+    /// Loads the user for the provided id. This implementation delegates to the overload that accepts a cancellation token.
+    /// </summary>
+    /// <param name="id">Identifier of the user to load.</param>
     public override async Task LoadAsync(Guid id)
     {
         await LoadAsync(id, CancellationToken.None);
     }
 
+    /// <summary>
+    /// Users do not support symbol uploads in the current model.
+    /// </summary>
+    /// <returns><c>false</c> always.</returns>
     protected override bool IsSymbolUploadAllowed()
     {
         // Users do not support symbol attachments in current model
         return false;
     }
 
+    /// <summary>
+    /// Returns the attachment parent kind and id for symbol uploads. Returns <see cref="AttachmentEntityKind.None"/>.
+    /// </summary>
+    /// <returns>Tuple containing <see cref="AttachmentEntityKind.None"/> and <see cref="Guid.Empty"/>.</returns>
     protected override (AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent()
     {
         return (AttachmentEntityKind.None, Guid.Empty);
     }
 
+    /// <summary>
+    /// AssignNewSymbol is a no-op for users; exceptions are swallowed.
+    /// </summary>
+    /// <param name="attachmentId">Attachment id to assign or <c>null</c> to clear.</param>
     protected override async Task AssignNewSymbolAsync(Guid? attachmentId)
     {
         // No-op for users; swallow exceptions
@@ -236,6 +320,11 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
         return "";
     }
 
+    /// <summary>
+    /// Builds the card record displayed in the UI based on the provided <see cref="UserAdminDto"/>.
+    /// </summary>
+    /// <param name="u">User DTO or <c>null</c> when creating a new user.</param>
+    /// <returns>A <see cref="CardRecord"/> representing the user's editable and read-only fields.</returns>
     private async Task<CardRecord> BuildCardRecordAsync(UserAdminDto? u)
     {
         var L = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
@@ -257,6 +346,11 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
         return ApplyPendingValues(record);
     }
 
+    /// <summary>
+    /// Builds ribbon register definitions for the user card including navigation and management actions such as Save, Delete, Activate/Deactivate, Unblock and SetPassword.
+    /// </summary>
+    /// <param name="localizer">Localizer used to resolve the labels for ribbon actions.</param>
+    /// <returns>A list of ribbon registers describing available actions for the current view.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var actions = new List<UiRibbonAction>

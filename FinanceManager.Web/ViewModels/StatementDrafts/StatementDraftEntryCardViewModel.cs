@@ -19,6 +19,10 @@ using Microsoft.EntityFrameworkCore.Update;
 
 namespace FinanceManager.Web.ViewModels.StatementDrafts;
 
+/// <summary>
+/// View model for a single statement draft entry card. Responsible for loading, editing, validating and booking
+/// individual statement draft entries and exposing card fields and ribbon actions to the UI.
+/// </summary>
 [FinanceManager.Web.ViewModels.Common.CardRoute("statement-drafts", "entries")]
 public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string Key, string Value)>
 {
@@ -26,6 +30,9 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
 
     // Mode: when false core fields are read-only; when true core fields editable
     private bool _isEditMode = false;
+    /// <summary>
+    /// Indicates whether the card is currently in edit mode. When false core booking fields are read-only.
+    /// </summary>
     public bool IsEditMode => _isEditMode;
 
     // cached display names so toggling edit mode can rebuild UI without further API calls
@@ -39,14 +46,32 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
     // Temporary marker carrying created entity info when returning from create flow (createdKind, createdId)
     private (string? createdKind, Guid? createdId) _pendingCreated = (null, null);
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="StatementDraftEntryCardViewModel"/>.
+    /// </summary>
+    /// <param name="sp">Service provider used to resolve dependencies (API client, navigation, localizer etc.).</param>
     public StatementDraftEntryCardViewModel(IServiceProvider sp) : base(sp)
     {
     }
 
+    /// <summary>
+    /// Identifier of the currently loaded entry. <see cref="Guid.Empty"/> indicates a new (unsaved) entry.
+    /// </summary>
     public Guid EntryId { get; private set; }
+
+    /// <summary>
+    /// Identifier of the parent draft that this entry belongs to.
+    /// </summary>
     public Guid DraftId { get; private set; }
+
+    /// <summary>
+    /// DTO representing the current entry or <c>null</c> when creating a new entry.
+    /// </summary>
     public StatementDraftEntryDto? Entry { get; private set; }
 
+    /// <summary>
+    /// Title shown on the card header; uses the entry subject when available.
+    /// </summary>
     public override string Title => Entry?.Subject ?? base.Title;
 
     // Helper to build the CardField list from the current Entry and cached lookup names
@@ -133,7 +158,11 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         return fields;
     }
 
-    // Toggle edit mode (invoked from ribbon). Rebuilds card fields without making API calls.
+    /// <summary>
+    /// Toggles edit mode for the card. Rebuilds the card UI to reflect new editability rules.
+    /// Edit mode cannot be entered for announced or already booked entries.
+    /// </summary>
+    /// <returns>A completed task when the toggle has been applied.</returns>
     public Task ToggleEditModeAsync()
     {
         // Prevent entering edit mode for announced entries
@@ -168,6 +197,12 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Loads the entry with the specified <paramref name="id"/> and prepares card state for display/editing.
+    /// When <paramref name="id"/> is <see cref="Guid.Empty"/> the view model will prepare create-mode fields for a new entry.
+    /// </summary>
+    /// <param name="id">Identifier of the entry to load or <see cref="Guid.Empty"/> to prepare a new entry.</param>
+    /// <returns>A task that completes when loading has finished.</returns>
     public override async Task LoadAsync(Guid id)
     {
         EntryId = id;
@@ -328,6 +363,10 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         }
     }
 
+    /// <summary>
+    /// Saves pending changes for the current entry. Supports both creation of new entries and updating existing entries.
+    /// </summary>
+    /// <returns>True when save succeeded; otherwise false.</returns>
     public override async Task<bool> SaveAsync()
     {
         // Allow creating a new entry (EntryId == Guid.Empty). Only invalid when DraftId is missing.
@@ -796,7 +835,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                     if (draftHeader?.DetectedAccountId is Guid acctId)
                     {
                         var detectedAccount = await ApiClient.GetAccountAsync(acctId, CancellationToken.None);
-			            if (detectedAccount != null)
+	                    if (detectedAccount != null)
                         {
                             _accountAllowsSavings = detectedAccount.SavingsPlanExpectation != SavingsPlanExpectation.None;
                         }
@@ -835,6 +874,10 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         }
     }
 
+    /// <summary>
+    /// Validates the current entry via the API and returns validation results.
+    /// </summary>
+    /// <returns>A <see cref="DraftValidationResultDto"/> when validation could be performed; otherwise <c>null</c>.</returns>
     public async Task<DraftValidationResultDto?> ValidateAsync()
     {
         if (EntryId == Guid.Empty || DraftId == Guid.Empty) return null;
@@ -855,6 +898,12 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         }
     }
 
+    /// <summary>
+    /// Attempts to book the current entry by calling the API. When booking succeeds the view model will try to navigate
+    /// to the next open entry or previous entry; otherwise it returns the booking result for further handling by the caller.
+    /// </summary>
+    /// <param name="forceWarnings">When true force booking even if warnings are present.</param>
+    /// <returns>A <see cref="BookingResult"/> when booking could be attempted; otherwise <c>null</c>.</returns>
     public async Task<BookingResult?> BookEntryAsync(bool forceWarnings = false)
     {
         if (EntryId == Guid.Empty || DraftId == Guid.Empty) return null;
@@ -906,6 +955,11 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         }
     }
 
+    /// <summary>
+    /// Builds ribbon register definitions for the entry card. This includes navigation, actions and linked information tabs.
+    /// </summary>
+    /// <param name="localizer">Localizer used to resolve UI labels.</param>
+    /// <returns>Collection of ribbon registers or <c>null</c> when none are provided.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var tabs = new List<UiRibbonTab>();
@@ -1084,9 +1138,24 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         return registers.Count == 0 ? null : registers;
     }
 
+    /// <summary>
+    /// Indicates whether symbol upload is allowed for this entry card.
+    /// </summary>
+    /// <returns><c>true</c> when symbol uploads are permitted for statement draft entries.</returns>
     protected override bool IsSymbolUploadAllowed() => true;
+
+    /// <summary>
+    /// Returns the symbol attachment parent kind and id for this entry card.
+    /// </summary>
+    /// <returns>Tuple containing the <see cref="Domain.Attachments.AttachmentEntityKind"/> and the parent id to use for attachments.</returns>
     protected override (Domain.Attachments.AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent() => (Domain.Attachments.AttachmentEntityKind.StatementDraftEntry, EntryId);
 
+    /// <summary>
+    /// Assigns a newly uploaded symbol attachment to this entry. The implementation reloads the entry to pick up server-side changes.
+    /// Exceptions are swallowed to avoid interrupting UI flows.
+    /// </summary>
+    /// <param name="attachmentId">Attachment id to assign, or <c>null</c> to clear the symbol.</param>
+    /// <returns>A task that completes when the operation has finished.</returns>
     protected override async Task AssignNewSymbolAsync(Guid? attachmentId)
     {
         try
@@ -1104,6 +1173,10 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         }
     }
 
+    /// <summary>
+    /// Handles the ribbon's Back action by requesting a UI navigation payload containing the parent draft id.
+    /// </summary>
+    /// <returns>A completed task after the request has been issued.</returns>
     private Task OnBackRequestedAsync()
     {
         try
@@ -1118,6 +1191,10 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Handles navigation to the previous entry when available; otherwise requests navigation back to the parent draft.
+    /// </summary>
+    /// <returns>A task that completes when navigation has been processed.</returns>
     private async Task OnPrevRequestedAsync()
     {
         try
@@ -1144,6 +1221,10 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         }
     }
 
+    /// <summary>
+    /// Handles navigation to the next entry (preferring next-open) or wraps to previous if none available.
+    /// </summary>
+    /// <returns>A task that completes when navigation has been processed.</returns>
     private async Task OnNextRequestedAsync()
     {
         try
@@ -1176,6 +1257,10 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         }
     }
 
+    /// <summary>
+    /// Resets the duplicate/already-booked state for the entry via the API and refreshes the card.
+    /// </summary>
+    /// <returns>A task that completes when the reset operation has finished.</returns>
     private async Task ResetDuplicateAsync()
     {
         if (Entry == null || EntryId == Guid.Empty || DraftId == Guid.Empty) return;
@@ -1211,6 +1296,10 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         }
     }
 
+    /// <summary>
+    /// Unassigns an associated split draft from this entry.
+    /// </summary>
+    /// <returns>A task that completes when the unassign operation has finished.</returns>
     private async Task UnassignStatementAsync()
     {
         if (Entry == null || EntryId == Guid.Empty || DraftId == Guid.Empty) return;
@@ -1248,11 +1337,19 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         }
     }
 
+    /// <summary>
+    /// Deletes the current entry or, in case of a clone, navigates back to the draft.
+    /// </summary>
+    /// <returns>True on successful delete, otherwise false.</returns>
     public override async Task<bool> DeleteAsync()
     {
         return await DeleteEntryAsync();
     }
 
+    /// <summary>
+    /// Deletes the current entry asynchronously.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous delete operation. The task result is <c>true</c> when the deletion succeeded; otherwise <c>false</c>.</returns>
     private async Task<bool> DeleteEntryAsync()
     {
         if (Entry == null || EntryId == Guid.Empty || DraftId == Guid.Empty) return false;

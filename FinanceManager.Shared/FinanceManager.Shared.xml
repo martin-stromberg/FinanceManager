@@ -4,265 +4,1344 @@
         <name>FinanceManager.Shared</name>
     </assembly>
     <members>
+        <member name="T:FinanceManager.Shared.ApiClient">
+            <summary>
+            HTTP API client used by the UI to call server endpoints. Wraps an <see cref="T:System.Net.Http.HttpClient"/> and
+            provides convenience methods for the application's REST API surface.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Shared.ApiClient.GetAccountsAsync(System.Int32,System.Int32,System.Nullable{System.Guid},System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Lists accounts for the current user with optional pagination and bank contact filter.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.GetAccountAsync(System.Guid,System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Gets a single account by id or null when not found.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.CreateAccountAsync(FinanceManager.Shared.Dtos.Accounts.AccountCreateRequest,System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Creates a new account.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.UpdateAccountAsync(System.Guid,FinanceManager.Shared.Dtos.Accounts.AccountUpdateRequest,System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Updates an existing account. Returns null when not found.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.DeleteAccountAsync(System.Guid,System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Deletes an account. Returns false when not found.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.SetAccountSymbolAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Assigns a symbol attachment to an account.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.ClearAccountSymbolAsync(System.Guid,System.Threading.CancellationToken)">
-            <inheritdoc />
-        </member>
-        <member name="M:FinanceManager.Shared.ApiClient.Auth_LoginAsync(FinanceManager.Shared.Dtos.Users.LoginRequest,System.Threading.CancellationToken)">
-            <inheritdoc />
-        </member>
-        <member name="M:FinanceManager.Shared.ApiClient.Auth_RegisterAsync(FinanceManager.Shared.Dtos.Users.RegisterRequest,System.Threading.CancellationToken)">
-            <inheritdoc />
-        </member>
-        <member name="M:FinanceManager.Shared.ApiClient.Auth_LogoutAsync(System.Threading.CancellationToken)">
-            <inheritdoc />
-        </member>
-        <member name="M:FinanceManager.Shared.ApiClient.BackgroundTasks_EnqueueAsync(FinanceManager.Shared.Dtos.Admin.BackgroundTaskType,System.Boolean,System.Threading.CancellationToken)">
-            <inheritdoc />
-        </member>
-        <member name="M:FinanceManager.Shared.ApiClient.BackgroundTasks_GetActiveAsync(System.Threading.CancellationToken)">
-            <inheritdoc />
-        </member>
-        <member name="M:FinanceManager.Shared.ApiClient.BackgroundTasks_GetDetailAsync(System.Guid,System.Threading.CancellationToken)">
-            <inheritdoc />
-        </member>
-        <member name="M:FinanceManager.Shared.ApiClient.BackgroundTasks_CancelOrRemoveAsync(System.Guid,System.Threading.CancellationToken)">
-            <inheritdoc />
-        </member>
-        <member name="M:FinanceManager.Shared.ApiClient.Aggregates_RebuildAsync(System.Boolean,System.Threading.CancellationToken)">
-            <inheritdoc />
-        </member>
-        <member name="M:FinanceManager.Shared.ApiClient.Aggregates_GetRebuildStatusAsync(System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Clears the symbol attachment from an account.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Admin_ListUsersAsync(System.Threading.CancellationToken)">
-            <summary>Lists all users.</summary>
+            <summary>Lists users (admin only).</summary>
+            <param name="ct">Cancellation token.</param>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Admin_GetUserAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Gets a user by id.</summary>
+            <summary>Gets a user (admin only) or null if not found.</summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Admin_CreateUserAsync(FinanceManager.Shared.Dtos.Users.CreateUserRequest,System.Threading.CancellationToken)">
-            <summary>Creates a new user.</summary>
+            <summary>Creates a new user (admin only).</summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Admin_UpdateUserAsync(System.Guid,FinanceManager.Shared.Dtos.Users.UpdateUserRequest,System.Threading.CancellationToken)">
-            <summary>Updates a user.</summary>
+            <summary>Updates a user (admin only). Returns null when not found.</summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Admin_ResetPasswordAsync(System.Guid,FinanceManager.Shared.Dtos.Users.ResetPasswordRequest,System.Threading.CancellationToken)">
-            <summary>Resets a user's password.</summary>
+            <summary>Resets a user's password (admin only). Returns false when not found.</summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Admin_UnlockUserAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Unlocks a user.</summary>
+            <summary>Unlocks a user (admin only). Returns false when not found.</summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Admin_DeleteUserAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Deletes a user.</summary>
+            <summary>Deletes a user (admin only). Returns false when not found.</summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Admin_ListIpBlocksAsync(System.Nullable{System.Boolean},System.Threading.CancellationToken)">
-            <summary>Lists IP blocks with optional filter.</summary>
+            <summary>Lists IP block entries with optional filter.</summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Admin_CreateIpBlockAsync(FinanceManager.Shared.Dtos.Security.IpBlockCreateRequest,System.Threading.CancellationToken)">
             <summary>Creates a new IP block entry.</summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Admin_GetIpBlockAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Gets a single IP block entry.</summary>
+            <summary>Gets a single IP block entry or null if not found.</summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Admin_UpdateIpBlockAsync(System.Guid,FinanceManager.Shared.Dtos.Security.IpBlockUpdateRequest,System.Threading.CancellationToken)">
-            <summary>Updates an IP block entry.</summary>
+            <summary>Updates an IP block entry. Returns null when not found.</summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Admin_BlockIpAsync(System.Guid,System.String,System.Threading.CancellationToken)">
-            <summary>Blocks an IP now.</summary>
+            <summary>Blocks an IP. Returns false when not found.</summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Admin_UnblockIpAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Unblocks an IP.</summary>
+            <summary>Unblocks an IP. Returns false when not found.</summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Admin_ResetCountersAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Resets attempt counters for an IP block entry.</summary>
+            <summary>Resets counters for an IP block entry. Returns false when not found.</summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Admin_DeleteIpBlockAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Deletes an IP block entry.</summary>
+            <summary>Deletes an IP block entry. Returns false when not found.</summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Aggregates_RebuildAsync(System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Starts an aggregates rebuild background task. Returns the status object describing the started task.
+            </summary>
+            <param name="allowDuplicate">When true, allows enqueuing a duplicate task even if one is already running.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Status of the rebuild task.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Aggregates_GetRebuildStatusAsync(System.Threading.CancellationToken)">
+            <summary>
+            Gets the current status of the aggregates rebuild background task.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>Current rebuild status.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Attachments_ListAsync(System.Int16,System.Guid,System.Int32,System.Int32,System.Nullable{System.Guid},System.Nullable{System.Boolean},System.String,System.Threading.CancellationToken)">
-            <summary>Lists attachments for an entity.</summary>
+            <summary>
+            Lists attachments for an entity.
+            </summary>
+            <param name="entityKind">Numeric entity kind (matches server enum).</param>
+            <param name="entityId">Id of the entity to list attachments for.</param>
+            <param name="skip">Number of items to skip for paging.</param>
+            <param name="take">Number of items to take for paging.</param>
+            <param name="categoryId">Optional category filter.</param>
+            <param name="isUrl">Optional filter to only include URL attachments when true.</param>
+            <param name="q">Optional search query.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Page result containing attachment DTOs. Returns an empty page when none found.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">When the HTTP request fails.</exception>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Attachments_UploadFileAsync(System.Int16,System.Guid,System.IO.Stream,System.String,System.String,System.Nullable{System.Guid},System.Nullable{System.Int16},System.Threading.CancellationToken)">
-            <summary>Uploads a file as an attachment.</summary>
+            <summary>
+            Uploads a file as an attachment for the specified entity.
+            </summary>
+            <param name="entityKind">Numeric entity kind.</param>
+            <param name="entityId">Target entity id.</param>
+            <param name="fileStream">Stream containing file contents.</param>
+            <param name="fileName">File name to use on the server.</param>
+            <param name="contentType">MIME content type.</param>
+            <param name="categoryId">Optional attachment category id.</param>
+            <param name="role">Optional role identifier for the attachment.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Attachments.AttachmentDto"/> on success.</returns>
+            <exception cref="T:System.ArgumentNullException">If <paramref name="fileStream"/> or <paramref name="fileName"/> is null.</exception>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Attachments_CreateUrlAsync(System.Int16,System.Guid,System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)">
-            <summary>Creates a URL attachment.</summary>
+            <summary>
+            Creates a URL attachment for the specified entity.
+            </summary>
+            <param name="entityKind">Numeric entity kind.</param>
+            <param name="entityId">Target entity id.</param>
+            <param name="url">Remote URL to attach.</param>
+            <param name="categoryId">Optional category id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Attachments.AttachmentDto"/>.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Attachments_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Deletes an attachment.</summary>
+            <summary>
+            Deletes an attachment by id.
+            </summary>
+            <param name="id">Attachment id to delete.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>True if deleted; false when not found.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Attachments_UpdateCoreAsync(System.Guid,System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)">
-            <summary>Updates core properties of an attachment.</summary>
+            <summary>
+            Updates core properties of an attachment (e.g. file name, category).
+            </summary>
+            <param name="id">Attachment id.</param>
+            <param name="fileName">New file name or null to keep existing.</param>
+            <param name="categoryId">New category id or null to clear.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>True when update succeeded; false when not found.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Attachments_UpdateCategoryAsync(System.Guid,System.Nullable{System.Guid},System.Threading.CancellationToken)">
-            <summary>Updates the category of an attachment.</summary>
+            <summary>
+            Updates the category of an attachment.
+            </summary>
+            <param name="id">Attachment id.</param>
+            <param name="categoryId">New category id or null to clear.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>True when update succeeded; false when not found.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Attachments_ListCategoriesAsync(System.Threading.CancellationToken)">
-            <summary>Lists all attachment categories.</summary>
+            <summary>
+            Lists all attachment categories.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>List of <see cref="T:FinanceManager.Shared.Dtos.Attachments.AttachmentCategoryDto"/> objects.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Attachments_CreateCategoryAsync(System.String,System.Threading.CancellationToken)">
-            <summary>Creates a new attachment category.</summary>
+            <summary>
+            Creates a new attachment category.
+            </summary>
+            <param name="name">Category name.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Attachments.AttachmentCategoryDto"/>.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Attachments_UpdateCategoryNameAsync(System.Guid,System.String,System.Threading.CancellationToken)">
-            <summary>Updates the name of an attachment category.</summary>
+            <summary>
+            Updates the name of an attachment category.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="name">New name.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Updated category DTO or null when not found.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Attachments_DeleteCategoryAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Deletes an attachment category.</summary>
+            <summary>
+            Deletes an attachment category.
+            </summary>
+            <param name="id">Category id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>True when deleted; false when not found.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Attachments_CreateDownloadTokenAsync(System.Guid,System.Int32,System.Threading.CancellationToken)">
-            <summary>Creates a download token for an attachment.</summary>
+            <summary>
+            Creates a short-lived download token for an attachment.
+            </summary>
+            <param name="id">Attachment id.</param>
+            <param name="validSeconds">Token validity in seconds.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Download token DTO or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Auth_LoginAsync(FinanceManager.Shared.Dtos.Users.LoginRequest,System.Threading.CancellationToken)">
+            <summary>
+            Authenticates an existing user and returns authentication result (including tokens or session info).
+            </summary>
+            <param name="request">Login request containing credentials.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Authentication result.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Auth_RegisterAsync(FinanceManager.Shared.Dtos.Users.RegisterRequest,System.Threading.CancellationToken)">
+            <summary>
+            Registers a new user and returns authentication result (user created and signed in).
+            </summary>
+            <param name="request">Registration request with user details.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Authentication result for the new user.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Auth_LogoutAsync(System.Threading.CancellationToken)">
+            <summary>
+            Logs out the current user and clears server-side session or cookie state.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>True on successful logout.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.BackgroundTasks_EnqueueAsync(FinanceManager.Shared.Dtos.Admin.BackgroundTaskType,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Enqueues a background task of the specified type.
+            </summary>
+            <param name="type">Type of background task to enqueue.</param>
+            <param name="allowDuplicate">Allow enqueuing a duplicate task if one is already running.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Information about the enqueued background task.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.BackgroundTasks_GetActiveAsync(System.Threading.CancellationToken)">
+            <summary>
+            Gets the list of currently active background tasks.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>List of active background tasks.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.BackgroundTasks_GetDetailAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets details for a specific background task or null when not found.
+            </summary>
+            <param name="id">Background task id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Background task details or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.BackgroundTasks_CancelOrRemoveAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Cancels or removes a background task. Returns false when not found or request is invalid.
+            </summary>
+            <param name="id">Background task id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>True when the task was cancelled or removed successfully.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Backups_ListAsync(System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Lists backups owned by the current user.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Backups_CreateAsync(System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Creates a new backup entry for the current user.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Backups_UploadAsync(System.IO.Stream,System.String,System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Uploads a backup file and returns the created backup metadata.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Backups_DownloadAsync(System.Guid,System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Downloads the backup file stream or null when not found.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Backups_StartApplyAsync(System.Guid,System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Starts applying the backup immediately and returns the restore status.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Backups_GetStatusAsync(System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Gets status of the last or current backup restore operation.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Backups_ApplyAsync(System.Guid,System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Applies a backup immediately. Returns false when the backup id was not found.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Backups_CancelAsync(System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Cancels an ongoing backup restore operation.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Backups_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Deletes a backup entry. Returns false when not found.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.ContactCategories_ListAsync(System.Threading.CancellationToken)">
-            <summary>Lists all contact categories.</summary>
+            <summary>
+            Lists contact categories available to the current user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>List of contact categories.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.ContactCategories_GetAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Gets a contact category by id.</summary>
+            <summary>
+            Gets a single contact category by id or null when not found.
+            </summary>
+            <param name="id">Contact category id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Contact category or null when not found.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.ContactCategories_CreateAsync(FinanceManager.Shared.Dtos.Contacts.ContactCategoryCreateRequest,System.Threading.CancellationToken)">
-            <summary>Creates a new contact category.</summary>
+            <summary>
+            Creates a new contact category.
+            </summary>
+            <param name="request">Create request containing category details.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The created contact category.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.ContactCategories_UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Contacts.ContactCategoryUpdateRequest,System.Threading.CancellationToken)">
-            <summary>Updates a contact category.</summary>
+            <summary>
+            Updates an existing contact category. Returns false when not found.
+            </summary>
+            <param name="id">Contact category id.</param>
+            <param name="request">Update request with new values.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>True when update succeeded, false when not found.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.ContactCategories_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Deletes a contact category.</summary>
+            <summary>
+            Deletes a contact category. Returns false when not found.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.ContactCategories_SetSymbolAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
-            <summary>Sets the symbol (attachment) for a contact category.</summary>
+            <summary>
+            Assigns a symbol attachment to a contact category. Returns false when not found.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.ContactCategories_ClearSymbolAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Clears the symbol (attachment) from a contact category.</summary>
+            <summary>
+            Clears the symbol attachment from a contact category. Returns false when not found.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Contacts_ListAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Contacts.ContactType},System.Boolean,System.String,System.Threading.CancellationToken)">
-            <summary>Lists contacts with optional filters.</summary>
+            <summary>
+            Lists contacts with optional paging and filtering.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Contacts_GetAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Gets a contact by id.</summary>
+            <summary>
+            Gets a single contact by id or null when not found.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Contacts_CreateAsync(FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest,System.Threading.CancellationToken)">
-            <summary>Creates a new contact.</summary>
+            <summary>
+            Creates a new contact.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Contacts_UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Contacts.ContactUpdateRequest,System.Threading.CancellationToken)">
-            <summary>Updates a contact.</summary>
+            <summary>
+            Updates an existing contact. Returns null when not found.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Contacts_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Deletes a contact.</summary>
+            <summary>
+            Deletes a contact. Returns false when not found.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Contacts_GetAliasesAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Lists all aliases for a contact.</summary>
+            <summary>
+            Lists alias patterns for a contact.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Contacts_AddAliasAsync(System.Guid,FinanceManager.Shared.Dtos.Contacts.AliasCreateRequest,System.Threading.CancellationToken)">
-            <summary>Adds a new alias for a contact.</summary>
+            <summary>
+            Adds a new alias pattern to a contact.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Contacts_DeleteAliasAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
-            <summary>Deletes an alias from a contact.</summary>
+            <summary>
+            Deletes an alias from a contact.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Contacts_MergeAsync(System.Guid,FinanceManager.Shared.Dtos.Contacts.ContactMergeRequest,System.Threading.CancellationToken)">
-            <summary>Merges a contact with another contact.</summary>
+            <summary>
+            Merges a source contact into a target and returns the updated target contact.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Contacts_CountAsync(System.Threading.CancellationToken)">
-            <summary>Counts all contacts.</summary>
+            <summary>
+            Returns the total number of contacts for the current user.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Contacts_SetSymbolAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
-            <summary>Sets the symbol (attachment) for a contact.</summary>
+            <summary>
+            Assigns a symbol attachment to a contact. Returns false when not found.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Contacts_ClearSymbolAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Clears the symbol (attachment) from a contact.</summary>
+            <summary>
+            Clears the symbol attachment from a contact. Returns false when not found.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.ApiClient.LastError">
+            <summary>
+            Last error message extracted from the most recent failed HTTP response (if any).
+            This is intended for UI display and diagnostics.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.ApiClient.LastErrorCode">
+            <summary>
+            Optional machine-readable error code extracted from the most recent failed HTTP response.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.#ctor(System.Net.Http.HttpClient)">
+            <summary>
+            Creates a new instance of <see cref="T:FinanceManager.Shared.ApiClient"/> using the provided <see cref="T:System.Net.Http.HttpClient"/>.
+            </summary>
+            <param name="http">The configured HTTP client used to perform requests.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.EnsureSuccessOrSetErrorAsync(System.Net.Http.HttpResponseMessage)">
+            <summary>
+            Ensures the HTTP response indicates success. If not, attempts to extract structured error
+            information (including RFC ProblemDetails style validation errors) and populate
+            <see cref="P:FinanceManager.Shared.ApiClient.LastError"/> and <see cref="P:FinanceManager.Shared.ApiClient.LastErrorCode"/> before rethrowing via
+            <see cref="M:System.Net.Http.HttpResponseMessage.EnsureSuccessStatusCode"/>.
+            </summary>
+            <param name="resp">The HTTP response message to inspect.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SetRFCStyleError(System.Text.Json.JsonElement)">
+            <summary>
+            Extracts RFC ProblemDetails-style validation error messages from the provided "errors"
+            JSON object and aggregates them into <see cref="P:FinanceManager.Shared.ApiClient.LastError"/>.
+            This method is best-effort and must not throw.
+            </summary>
+            <param name="errors">JSON element representing the errors object.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Users_HasAnyAsync(System.Threading.CancellationToken)">
+            <summary>
+            Checks whether any user accounts exist in the system.
+            </summary>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns><c>true</c> when at least one user exists; otherwise <c>false</c>.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.HomeKpis_ListAsync(System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Lists home KPI definitions for the current user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>List of home KPI DTOs.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.HomeKpis_GetAsync(System.Guid,System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Gets a single home KPI by id or null when not found.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.HomeKpis_CreateAsync(FinanceManager.Shared.Dtos.HomeKpi.HomeKpiCreateRequest,System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Creates a new home KPI.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.HomeKpis_UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.HomeKpi.HomeKpiUpdateRequest,System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Updates an existing home KPI. Returns null when not found.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.HomeKpis_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Deletes a home KPI. Returns false when not found.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Meta_GetHolidayProvidersAsync(System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Returns available holiday provider identifiers.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>Array of provider names.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Meta_GetHolidayCountriesAsync(System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Returns supported holiday country ISO codes for the configured providers.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>Array of country ISO codes.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Meta_GetHolidaySubdivisionsAsync(System.String,System.String,System.Threading.CancellationToken)">
-            <inheritdoc />
-        </member>
-        <member name="M:FinanceManager.Shared.ApiClient.User_GetNotificationSettingsAsync(System.Threading.CancellationToken)">
             <summary>
-            Gets the notification settings for the current user.
+            Returns subdivision (state/region) codes for the given provider and country.
             </summary>
-        </member>
-        <member name="M:FinanceManager.Shared.ApiClient.User_UpdateNotificationSettingsAsync(System.Boolean,System.Nullable{System.Int32},System.Nullable{System.Int32},System.String,System.String,System.String,System.Threading.CancellationToken)">
-            <summary>
-            Updates the notification settings for the current user.
-            </summary>
+            <param name="provider">Holiday provider identifier.</param>
+            <param name="country">ISO country code.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Array of subdivision codes or empty when unsupported.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Notifications_ListAsync(System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Lists currently active notifications for the signed-in user (filtered server-side by current UTC time).
+            </summary>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>A read-only list of <see cref="T:FinanceManager.Shared.Dtos.Admin.NotificationDto"/> instances. Returns an empty list when no notifications exist.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Notifications_DismissAsync(System.Guid,System.Threading.CancellationToken)">
-            <inheritdoc />
+            <summary>
+            Dismisses a notification by its id for the current user.
+            </summary>
+            <param name="id">The unique identifier of the notification to dismiss.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>True if the notification existed and was dismissed; false when the notification was not found.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Postings_GetByIdAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single posting by id or null if not found or not accessible.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Postings_GetAccountAsync(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
+            <summary>
+            Lists postings for a specific account with optional paging and filters.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Postings_GetContactAsync(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
+            <summary>
+            Lists postings for a specific contact with optional paging and filters.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Postings_GetSavingsPlanAsync(System.Guid,System.Int32,System.Int32,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Lists postings for a savings plan with optional paging and filters.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Postings_GetSecurityAsync(System.Guid,System.Int32,System.Int32,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
+            <summary>
+            Lists postings for a security with optional paging and date range.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Postings_GetGroupLinksAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets the first entity links for a posting group or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Reports_QueryAggregatesAsync(FinanceManager.Shared.Dtos.Reports.ReportAggregatesQueryRequest,System.Threading.CancellationToken)">
+            <summary>
+            Executes an aggregates report query and returns the aggregated result.
+            </summary>
+            <param name="req">Query request describing aggregation parameters.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Aggregation result.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Reports_ListFavoritesAsync(System.Threading.CancellationToken)">
+            <summary>
+            Lists saved report favorites for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Reports_GetFavoriteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single report favorite by id or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Reports_CreateFavoriteAsync(FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateApiRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new report favorite. Throws InvalidOperationException on conflict.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Reports_UpdateFavoriteAsync(System.Guid,FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateApiRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing report favorite or returns null when not found. May throw on conflict or bad request.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Reports_DeleteFavoriteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a report favorite. Returns false when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlanCategories_ListAsync(System.Threading.CancellationToken)">
+            <summary>
+            Lists savings plan categories for the current user.
+            </summary>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>A read-only list of <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCategoryDto"/>. Returns an empty list when none exist.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlanCategories_GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single savings plan category by id.
+            </summary>
+            <param name="id">Identifier of the savings plan category.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>The <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCategoryDto"/> when found; otherwise <c>null</c> when not found.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlanCategories_CreateAsync(FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCategoryDto,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new savings plan category. On server-side validation failure, <see cref="P:FinanceManager.Shared.ApiClient.LastError"/> is set and <c>null</c> is returned.
+            </summary>
+            <param name="dto">DTO describing the savings plan category to create.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>The created <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCategoryDto"/> or <c>null</c> when the server rejected the request (validation error).</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than validation errors (which return a non-success status code and set <see cref="P:FinanceManager.Shared.ApiClient.LastError"/>).</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlanCategories_UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCategoryDto,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing savings plan category.
+            </summary>
+            <param name="id">Identifier of the category to update.</param>
+            <param name="dto">DTO containing updated values.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>The updated <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCategoryDto"/> when successful; <c>null</c> when the category was not found or validation failed (in which case <see cref="P:FinanceManager.Shared.ApiClient.LastError"/> is set).</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound or validation errors.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlanCategories_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a savings plan category.
+            </summary>
+            <param name="id">Identifier of the category to delete.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns><c>true</c> when deletion succeeded; <c>false</c> when the category was not found or the server rejected the request (in which case <see cref="P:FinanceManager.Shared.ApiClient.LastError"/> is set).</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound or BadRequest.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlanCategories_SetSymbolAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Assigns a symbol attachment to a savings plan category.
+            </summary>
+            <param name="id">Category identifier.</param>
+            <param name="attachmentId">Attachment identifier to set as symbol.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns><c>true</c> when the symbol was assigned; <c>false</c> when the category was not found or the server rejected the request (in which case <see cref="P:FinanceManager.Shared.ApiClient.LastError"/> is set).</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound or BadRequest.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlanCategories_ClearSymbolAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Clears the symbol attachment from a savings plan category.
+            </summary>
+            <param name="id">Category identifier.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns><c>true</c> when the symbol was cleared; <c>false</c> when the category was not found or the server rejected the request (in which case <see cref="P:FinanceManager.Shared.ApiClient.LastError"/> is set).</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound or BadRequest.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlans_ListAsync(System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Lists savings plans for the current user.
+            </summary>
+            <param name="onlyActive">When <c>true</c>, returns only active plans; when <c>false</c>, returns all plans.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>A read-only list of <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto"/> instances. Returns an empty list when none are available.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlans_CountAsync(System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Returns the total count of savings plans (optionally only active plans).
+            </summary>
+            <param name="onlyActive">When <c>true</c>, counts only active plans.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>Integer count of matching savings plans.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails or the response cannot be parsed.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlans_GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a savings plan by its identifier.
+            </summary>
+            <param name="id">The savings plan identifier.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>The <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto"/> when found; otherwise <c>null</c> when not found.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlans_CreateAsync(FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new savings plan.
+            </summary>
+            <param name="req">Creation request containing plan details.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>The created <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto"/>.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="req"/> is <c>null</c>.</exception>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlans_UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing savings plan.
+            </summary>
+            <param name="id">Identifier of the savings plan to update.</param>
+            <param name="req">Update request containing new values.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>The updated <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto"/> when the plan exists; otherwise <c>null</c> when not found.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="req"/> is <c>null</c>.</exception>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlans_AnalyzeAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns analysis data for a savings plan.
+            </summary>
+            <param name="id">Savings plan identifier.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>Analysis DTO for the savings plan.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlans_ArchiveAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Archives a savings plan.
+            </summary>
+            <param name="id">Identifier of the savings plan to archive.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns><c>true</c> when archived; <c>false</c> when the plan was not found.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlans_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a savings plan.
+            </summary>
+            <param name="id">Identifier of the savings plan to delete.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns><c>true</c> when deleted; <c>false</c> when not found.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlans_SetSymbolAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Assigns a symbol attachment to a savings plan.
+            </summary>
+            <param name="id">Savings plan identifier.</param>
+            <param name="attachmentId">Attachment identifier to use as symbol.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns><c>true</c> when the symbol was set; <c>false</c> when the plan was not found or the server rejected the request (see <see cref="P:FinanceManager.Shared.ApiClient.LastError"/>).</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound or BadRequest.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SavingsPlans_ClearSymbolAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Clears the symbol attachment from a savings plan.
+            </summary>
+            <param name="id">Savings plan identifier.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns><c>true</c> when cleared; <c>false</c> when the plan was not found or the server rejected the request (see <see cref="P:FinanceManager.Shared.ApiClient.LastError"/>).</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound or BadRequest.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_ListAsync(System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Lists securities for the current user.
+            </summary>
+            <param name="onlyActive">When true, only active securities are returned; when false, all securities are returned.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>A read-only list of <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityDto"/> instances. Returns an empty list when none exist.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_CountAsync(System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Returns the total count of securities or active securities.
+            </summary>
+            <param name="onlyActive">When true, counts only active securities.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>Integer count of securities.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single security by id.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>The <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityDto"/> when found; otherwise null when not found.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_CreateAsync(FinanceManager.Shared.Dtos.Securities.SecurityRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new security.
+            </summary>
+            <param name="req">Request object describing the security to create.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityDto"/>.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Securities.SecurityRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing security.
+            </summary>
+            <param name="id">Security identifier to update.</param>
+            <param name="req">Update request containing new values.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>The updated <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityDto"/> when the security exists; otherwise null when not found.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_ArchiveAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Archives a security.
+            </summary>
+            <param name="id">Security identifier to archive.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>True when the operation succeeded; false when the security was not found.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a security.
+            </summary>
+            <param name="id">Security identifier to delete.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>True when deleted; false when not found.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_SetSymbolAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Assigns a symbol attachment to a security.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="attachmentId">Attachment identifier to assign as symbol.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>True when assignment succeeded; false when the security was not found.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_ClearSymbolAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Clears the symbol attachment from a security.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>True when cleared; false when the security was not found.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_UploadSymbolAsync(System.Guid,System.IO.Stream,System.String,System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Uploads a symbol file for a security and returns the created attachment metadata.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="fileStream">Stream containing the file contents.</param>
+            <param name="fileName">Name of the file.</param>
+            <param name="contentType">Optional MIME type of the file.</param>
+            <param name="categoryId">Optional category id to associate with the attachment.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Attachments.AttachmentDto"/> representing the uploaded symbol.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_GetAggregatesAsync(System.Guid,System.String,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Gets aggregated historical data points for a security.
+            </summary>
+            <param name="securityId">Security identifier.</param>
+            <param name="period">Aggregation period (e.g. "Month").</param>
+            <param name="take">Maximum number of data points to return.</param>
+            <param name="maxYearsBack">Optional maximum years back to include in the aggregation.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>List of aggregate points or null when the security is not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_GetPricesAsync(System.Guid,System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Gets historical price data for a security.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="skip">Number of items to skip for paging.</param>
+            <param name="take">Number of items to take for paging.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>List of <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityPriceDto"/> or null when the security is not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_EnqueueBackfillAsync(System.Nullable{System.Guid},System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
+            <summary>
+            Enqueues a background task to backfill security data.
+            </summary>
+            <param name="securityId">Optional security id to backfill; when null, backfills all securities.</param>
+            <param name="fromDateUtc">Optional from-date (UTC) to limit backfill start.</param>
+            <param name="toDateUtc">Optional to-date (UTC) to limit backfill end.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>Information about the enqueued background task.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_GetDividendsAsync(System.String,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Lists upcoming or past dividend aggregate points for securities.
+            </summary>
+            <param name="period">Optional period string (e.g. "Year").</param>
+            <param name="take">Optional maximum number of items to return.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>List of aggregate points describing dividends.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SecurityCategories_ListAsync(System.Threading.CancellationToken)">
+            <summary>
+            Lists security categories for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SecurityCategories_GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a single security category by id or null if not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SecurityCategories_CreateAsync(FinanceManager.Shared.Dtos.Securities.SecurityCategoryRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new security category. Sets LastError on bad request and returns null in that case.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SecurityCategories_UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Securities.SecurityCategoryRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates a security category. Returns null when not found or when request is invalid.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SecurityCategories_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a security category. Returns false when not found. Throws on bad request with message.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SecurityCategories_SetSymbolAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Assigns a symbol attachment to a security category. Returns false when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.SecurityCategories_ClearSymbolAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Clears the symbol attachment from a security category. Returns false when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_ListOpenAsync(System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Lists open statement drafts for the current user with optional paging.
+            </summary>
+            <param name="skip">Number of items to skip for paging.</param>
+            <param name="take">Number of items to take for paging.</param>
+            <param name="ct">Cancellation token to cancel the HTTP request.</param>
+            <returns>A read-only list of <see cref="T:FinanceManager.Shared.Dtos.Statements.StatementDraftDto"/>. Returns an empty list when none are available.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">When the HTTP request fails or the server returns a non-success status code.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_GetOpenCountAsync(System.Threading.CancellationToken)">
+            <summary>
+            Gets the count of open statement drafts for the current user.
+            </summary>
+            <param name="ct">Cancellation token to cancel the HTTP request.</param>
+            <returns>Number of open statement drafts.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">When the HTTP request fails or the server returns a non-success status code.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_DeleteAllAsync(System.Threading.CancellationToken)">
+            <summary>
+            Deletes all statement drafts for the current user. Caution: irreversible.
+            </summary>
+            <param name="ct">Cancellation token to cancel the HTTP request.</param>
+            <returns>True when the operation was accepted by the server.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">When the HTTP request fails.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_UploadAsync(System.IO.Stream,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Uploads a statement file for processing and returns details about created drafts.
+            </summary>
+            <param name="stream">Stream containing the statement file.</param>
+            <param name="fileName">Filename to send to the server.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Upload result information or null on failure.</returns>
+            <exception cref="T:System.ArgumentNullException">When <paramref name="stream"/> or <paramref name="fileName"/> is null.</exception>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_CreateAsync(System.String,System.Threading.CancellationToken)">
             <summary>
             Creates an empty statement draft (no file) for the current user.
             </summary>
+            <param name="fileName">Optional name for the draft's original file.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Detail DTO of the created draft or null on failure.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">When the HTTP request fails.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_GetAsync(System.Guid,System.Boolean,System.String,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Gets the detailed information for a statement draft.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="headerOnly">When true, returns header-only information.</param>
+            <param name="src">Optional source identifier to influence returned view.</param>
+            <param name="fromEntryDraftId">Optional id to prefill data from another draft entry.</param>
+            <param name="fromEntryId">Optional id to prefill data from an existing entry.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Draft detail DTO or null when not found.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">When the HTTP request fails.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_GetEntryAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets details for a specific entry inside a statement draft.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="entryId">Entry identifier inside the draft.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Entry detail DTO or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_UpdateEntryCoreAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftUpdateEntryCoreRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates core fields of a draft entry (dates, amount, textual fields).
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="entryId">Entry identifier.</param>
+            <param name="req">Update request containing new core values.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Updated entry DTO or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_AddEntryAsync(System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftAddEntryRequest,System.Threading.CancellationToken)">
+            <summary>
+            Adds a new entry to an existing statement draft.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="req">Request describing the new entry.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Updated draft detail DTO or null when draft not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_ClassifyAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Triggers automatic classification for a draft (server-side).
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Updated draft detail DTO or null when request is invalid or draft not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_SetAccountAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Sets the account associated with a statement draft.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="accountId">Account id to assign.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Updated draft detail DTO or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_SetDescriptionAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Sets the description for a draft.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="description">New description or null to clear.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Updated draft detail DTO or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_CommitAsync(System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftCommitRequest,System.Threading.CancellationToken)">
+            <summary>
+            Commits (books) a statement draft. This finalizes the draft and creates postings.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="req">Commit options.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Result object from the server (format may vary) or null when draft not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_SetEntryContactAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSetContactRequest,System.Threading.CancellationToken)">
+            <summary>
+            Assigns a contact to a draft entry.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="entryId">Entry identifier.</param>
+            <param name="req">Contact assignment request.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Updated entry DTO or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_SetEntryCostNeutralAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSetCostNeutralRequest,System.Threading.CancellationToken)">
+            <summary>
+            Sets or clears the cost-neutral flag for an entry.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="entryId">Entry identifier.</param>
+            <param name="req">Request indicating cost-neutral flag state.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Updated entry DTO or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_SetEntrySavingsPlanAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSetSavingsPlanRequest,System.Threading.CancellationToken)">
+            <summary>
+            Sets the savings plan for an entry.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="entryId">Entry identifier.</param>
+            <param name="req">Savings plan assignment request.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Updated entry DTO or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_SetEntrySecurityAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSetEntrySecurityRequest,System.Threading.CancellationToken)">
+            <summary>
+            Sets the security properties for an entry (e.g. link to a security).
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="entryId">Entry identifier.</param>
+            <param name="req">Security assignment request.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Updated entry DTO or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_SetEntryArchiveOnBookingAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSetArchiveSavingsPlanOnBookingRequest,System.Threading.CancellationToken)">
+            <summary>
+            Sets the archive-on-booking flag for a savings-plan entry.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="entryId">Entry identifier.</param>
+            <param name="req">Archive-on-booking request.
+            </param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Updated entry DTO or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_ValidateAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Validates the statement draft and returns any validation messages.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Validation result DTO or null on error.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_ValidateEntryAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Validates a specific entry in a draft.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="entryId">Entry identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Validation result DTO or null on error.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_BookAsync(System.Guid,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Books (commits) a draft and returns booking result including warnings or errors.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="forceWarnings">When true, proceeds despite warnings.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Booking result DTO or null when server refused the operation.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_BookEntryAsync(System.Guid,System.Guid,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Books a single entry within a draft and returns the booking result.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="entryId">Entry identifier.</param>
+            <param name="forceWarnings">Whether to force booking despite warnings.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Booking result DTO or null when operation not applicable.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_SaveEntryAllAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSaveEntryAllRequest,System.Threading.CancellationToken)">
+            <summary>
+            Saves all details of an entry in a statement draft.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="entryId">Entry identifier.</param>
+            <param name="req">Request containing all fields to save.
+            </param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Server response object or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_DeleteEntryAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an entry from a statement draft.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="entryId">Entry identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>True when deleted; false when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_ResetDuplicateEntryAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Resets a duplicate marker on an entry and returns server response.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="entryId">Entry identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Server response object or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_ClassifyEntryAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Triggers classification of a single entry in a draft.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="entryId">Entry identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Updated draft detail DTO or null when not found or request invalid.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_DownloadOriginalAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Downloads the original file uploaded for the draft.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Stream containing the original file or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a statement draft by id.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>True when deleted; false when not found.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_SetEntrySplitDraftAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSetSplitDraftRequest,System.Threading.CancellationToken)">
             <summary>
-            Assigns or clears a split draft group for a draft entry and returns updated split difference.
+            Assigns or clears a split-draft group for a draft entry and returns updated split difference.
             </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="entryId">Entry identifier.</param>
+            <param name="req">Split assignment request.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Result DTO with updated split information or null when not found/invalid.</returns>
+        </member>
+        <member name="T:FinanceManager.Shared.ApiClient.StatementDraftsClassifyStatus">
+            <summary>
+            Status object returned by classification background endpoints for statement drafts.
+            Contains progress information for the ongoing classification job.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.ApiClient.StatementDraftsClassifyStatus.running">
+            <summary>
+            Indicates whether the classification job is currently running.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.ApiClient.StatementDraftsClassifyStatus.processed">
+            <summary>
+            Number of items that have already been processed by the job.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.ApiClient.StatementDraftsClassifyStatus.total">
+            <summary>
+            Total number of items to process (may be zero when unknown).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.ApiClient.StatementDraftsClassifyStatus.message">
+            <summary>
+            Optional human-readable status message (progress or error information).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_StartClassifyAsync(System.Threading.CancellationToken)">
+            <summary>
+            Starts the classification process for statement drafts.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>Classification status information or null when the server returns an error.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_GetClassifyStatusAsync(System.Threading.CancellationToken)">
+            <summary>
+            Gets the status of the ongoing classification process for statement drafts.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>Classification status DTO or null when the status cannot be retrieved.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_StartBookAllAsync(System.Boolean,System.Boolean,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Starts the mass booking process for all statement drafts.
+            </summary>
+            <param name="ignoreWarnings">When true, ignores warnings during booking.</param>
+            <param name="abortOnFirstIssue">When true, aborts the operation when an issue is detected.</param>
+            <param name="bookEntriesIndividually">When true, books entries individually instead of in bulk.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Status DTO for the mass book operation or null when the server rejects the request.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_GetBookAllStatusAsync(System.Threading.CancellationToken)">
+            <summary>
+            Gets the status of the ongoing mass booking process for statement drafts.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>Mass book status DTO or null when unavailable.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_CancelBookAllAsync(System.Threading.CancellationToken)">
+            <summary>
+            Cancels the ongoing mass booking process for all statement drafts.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>True if the cancel request was accepted by the server; otherwise false.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.UserSettings_GetProfileAsync(System.Threading.CancellationToken)">
+            <summary>
+            Gets the current user's profile settings.
+            </summary>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>
+            A <see cref="T:FinanceManager.Shared.Dtos.Users.UserProfileSettingsDto"/> containing the user's profile settings, or <c>null</c>
+            if the server response was not successful.
+            </returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the underlying HTTP request fails.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.UserSettings_UpdateProfileAsync(FinanceManager.Shared.Dtos.Users.UserProfileSettingsUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates the current user's profile settings.
+            </summary>
+            <param name="request">The update request containing new profile values.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns><c>true</c> when the update was accepted by the server; otherwise <c>false</c>.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="request"/> is <c>null</c>.</exception>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the underlying HTTP request fails.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.UserSettings_GetImportSplitAsync(System.Threading.CancellationToken)">
+            <summary>
+            Gets the import split settings for the current user.
+            </summary>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>
+            An <see cref="T:FinanceManager.Shared.Dtos.Statements.ImportSplitSettingsDto"/> with the user's import split settings, or <c>null</c>
+            when the server response was not successful.
+            </returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the underlying HTTP request fails.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.UserSettings_UpdateImportSplitAsync(FinanceManager.Shared.Dtos.Statements.ImportSplitSettingsUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates the user's import split settings.
+            </summary>
+            <param name="request">Update request containing new import split configuration.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns><c>true</c> when the update was accepted by the server; otherwise <c>false</c>.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="request"/> is <c>null</c>.</exception>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the underlying HTTP request fails.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.User_GetNotificationSettingsAsync(System.Threading.CancellationToken)">
+            <summary>
+            Gets the user's notification settings.
+            </summary>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>
+            A <see cref="T:FinanceManager.Shared.Dtos.Admin.NotificationSettingsDto"/> containing notification preferences, or <c>null</c>
+            when the server response was not successful.
+            </returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the underlying HTTP request fails.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.User_UpdateNotificationSettingsAsync(System.Boolean,System.Nullable{System.Int32},System.Nullable{System.Int32},System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Updates the user's notification settings (monthly reminders and holiday provider selection).
+            </summary>
+            <param name="monthlyEnabled">Whether monthly reminders are enabled.</param>
+            <param name="hour">Hour of day for monthly reminder (0-23) or <c>null</c> to leave unchanged/clear.</param>
+            <param name="minute">Minute of hour for monthly reminder (0-59) or <c>null</c> to leave unchanged/clear.</param>
+            <param name="provider">Holiday provider identifier, or <c>null</c> to unset.</param>
+            <param name="country">Holiday country ISO code, or <c>null</c> to unset.</param>
+            <param name="subdivision">Holiday subdivision code, or <c>null</c> to unset.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns><c>true</c> when the update was accepted by the server; otherwise <c>false</c>.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the underlying HTTP request fails.</exception>
+        </member>
+        <member name="T:FinanceManager.Shared.Attributes.EntityKindAttribute">
+            <summary>
+            Associates a domain/entity type with a specific <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingKind"/>.
+            Apply this attribute to domain classes or structs to declare the posting kind
+            that should be used when mapping or handling the entity in posting-related logic.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Attributes.EntityKindAttribute.Kind">
+            <summary>
+            The posting kind associated with the decorated type.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Attributes.EntityKindAttribute.#ctor(FinanceManager.Shared.Dtos.Postings.PostingKind)">
+            <summary>
+            Creates a new <see cref="T:FinanceManager.Shared.Attributes.EntityKindAttribute"/> that associates a domain/entity type with a specific <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingKind"/>.
+            </summary>
+            <param name="kind">The posting kind to associate with the decorated type.</param>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Accounts.AccountCreateRequest">
             <summary>
@@ -690,6 +1769,7 @@
             <param name="CategoryId">Optional category id the attachment is associated with.</param>
             <param name="UploadedUtc">Upload timestamp in UTC.</param>
             <param name="IsUrl">True when the attachment represents a URL instead of stored content.</param>
+            <param name="Role">Optional numeric role for the attachment (e.g. symbol role identifier).</param>
         </member>
         <member name="M:FinanceManager.Shared.Dtos.Attachments.AttachmentDto.#ctor(System.Guid,System.Int16,System.Guid,System.String,System.String,System.Int64,System.Nullable{System.Guid},System.DateTime,System.Boolean,System.Int16)">
             <summary>
@@ -704,6 +1784,7 @@
             <param name="CategoryId">Optional category id the attachment is associated with.</param>
             <param name="UploadedUtc">Upload timestamp in UTC.</param>
             <param name="IsUrl">True when the attachment represents a URL instead of stored content.</param>
+            <param name="Role">Optional numeric role for the attachment (e.g. symbol role identifier).</param>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Attachments.AttachmentDto.Id">
             <summary>Unique attachment identifier.</summary>
@@ -731,6 +1812,9 @@
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Attachments.AttachmentDto.IsUrl">
             <summary>True when the attachment represents a URL instead of stored content.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Attachments.AttachmentDto.Role">
+            <summary>Optional numeric role for the attachment (e.g. symbol role identifier).</summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Attachments.AttachmentUpdateCategoryNameRequest">
             <summary>
@@ -1037,19 +2121,64 @@
             Strategy for handling competing values when merging two contacts.
             </summary>
         </member>
+        <member name="F:FinanceManager.Shared.Dtos.Contacts.MergePreference.DestinationFirst">
+            <summary>
+            Prefer values from the destination (target) contact when conflicts occur.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Contacts.MergePreference.SourceFirst">
+            <summary>
+            Prefer values from the source (current) contact when conflicts occur.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Contacts.ContactMergeRequest">
             <summary>
             Request payload to merge the current contact into a target contact.
             </summary>
+            <param name="TargetContactId">The identifier of the target contact to merge into.</param>
+            <param name="Preference">Preference strategy for resolving conflicting values.</param>
         </member>
         <member name="M:FinanceManager.Shared.Dtos.Contacts.ContactMergeRequest.#ctor(System.Guid,FinanceManager.Shared.Dtos.Contacts.MergePreference)">
             <summary>
             Request payload to merge the current contact into a target contact.
             </summary>
+            <param name="TargetContactId">The identifier of the target contact to merge into.</param>
+            <param name="Preference">Preference strategy for resolving conflicting values.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Contacts.ContactMergeRequest.TargetContactId">
+            <summary>The identifier of the target contact to merge into.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Contacts.ContactMergeRequest.Preference">
+            <summary>Preference strategy for resolving conflicting values.</summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Contacts.ContactType">
             <summary>
             Defines the type/category of a contact.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Contacts.ContactType.Self">
+            <summary>
+            The contact refers to the current user/account itself.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Contacts.ContactType.Bank">
+            <summary>
+            The contact represents a bank or financial institution.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Contacts.ContactType.Person">
+            <summary>
+            The contact is a natural person.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Contacts.ContactType.Organization">
+            <summary>
+            The contact is an organization or company.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Contacts.ContactType.Other">
+            <summary>
+            Any other contact type not covered by the predefined values.
             </summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Contacts.ContactUpdateRequest">
@@ -1210,6 +2339,31 @@
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Postings.PostingExportRequest.Q">
             <summary>Optional search query string.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Postings.PostingKind">
+            <summary>
+            Specifies the kind of posting (source/target domain) for a transaction line.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Postings.PostingKind.Bank">
+            <summary>
+            Posting related to a bank account.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Postings.PostingKind.Contact">
+            <summary>
+            Posting related to a contact (person or organization).
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Postings.PostingKind.SavingsPlan">
+            <summary>
+            Posting related to a savings plan.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Postings.PostingKind.Security">
+            <summary>
+            Posting related to a security (investment instrument).
+            </summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto">
             <summary>
@@ -1489,12 +2643,90 @@
         <member name="T:FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateRequest">
             <summary>
             Request to create a report favorite.
+            Represents the client payload for creating a saved report configuration (favorite).
             </summary>
+            <param name="Name">Display name of the favorite.</param>
+            <param name="PostingKind">Primary posting kind to include in the report (bank, contact, savings plan, security).</param>
+            <param name="IncludeCategory">When true, include category grouping in the aggregation.</param>
+            <param name="Interval">Reporting interval (e.g. Month, Year).</param>
+            <param name="Take">Number of results / buckets to take for the report (paging/limit for aggregation).</param>
+            <param name="ComparePrevious">When true, include comparison to the previous period.</param>
+            <param name="CompareYear">When true, include year-over-year comparison.</param>
+            <param name="ShowChart">When true, the UI should show a chart for this favorite.</param>
+            <param name="Expandable">When true, report rows can be expanded in the UI.</param>
+            <param name="PostingKinds">Optional collection of posting kinds to include (overrides primary PostingKind when provided).</param>
+            <param name="Filters">Optional additional filters to apply to the report (categories, contacts, accounts, etc.).</param>
+            <param name="UseValutaDate">When true, use valuta/booking date instead of value date when aggregating.</param>
         </member>
         <member name="M:FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Boolean,FinanceManager.Shared.Dtos.Reports.ReportInterval,System.Int32,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Collections.Generic.IReadOnlyCollection{FinanceManager.Shared.Dtos.Postings.PostingKind},FinanceManager.Shared.Dtos.Reports.ReportFavoriteFiltersDto,System.Boolean)">
             <summary>
             Request to create a report favorite.
+            Represents the client payload for creating a saved report configuration (favorite).
             </summary>
+            <param name="Name">Display name of the favorite.</param>
+            <param name="PostingKind">Primary posting kind to include in the report (bank, contact, savings plan, security).</param>
+            <param name="IncludeCategory">When true, include category grouping in the aggregation.</param>
+            <param name="Interval">Reporting interval (e.g. Month, Year).</param>
+            <param name="Take">Number of results / buckets to take for the report (paging/limit for aggregation).</param>
+            <param name="ComparePrevious">When true, include comparison to the previous period.</param>
+            <param name="CompareYear">When true, include year-over-year comparison.</param>
+            <param name="ShowChart">When true, the UI should show a chart for this favorite.</param>
+            <param name="Expandable">When true, report rows can be expanded in the UI.</param>
+            <param name="PostingKinds">Optional collection of posting kinds to include (overrides primary PostingKind when provided).</param>
+            <param name="Filters">Optional additional filters to apply to the report (categories, contacts, accounts, etc.).</param>
+            <param name="UseValutaDate">When true, use valuta/booking date instead of value date when aggregating.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateRequest.Name">
+            <summary>Display name of the favorite.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateRequest.PostingKind">
+            <summary>Primary posting kind to include in the report (bank, contact, savings plan, security).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateRequest.IncludeCategory">
+            <summary>When true, include category grouping in the aggregation.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateRequest.Interval">
+            <summary>Reporting interval (e.g. Month, Year).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateRequest.Take">
+            <summary>Number of results / buckets to take for the report (paging/limit for aggregation).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateRequest.ComparePrevious">
+            <summary>When true, include comparison to the previous period.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateRequest.CompareYear">
+            <summary>When true, include year-over-year comparison.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateRequest.ShowChart">
+            <summary>When true, the UI should show a chart for this favorite.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateRequest.Expandable">
+            <summary>When true, report rows can be expanded in the UI.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateRequest.PostingKinds">
+            <summary>Optional collection of posting kinds to include (overrides primary PostingKind when provided).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateRequest.Filters">
+            <summary>Optional additional filters to apply to the report (categories, contacts, accounts, etc.).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateRequest.UseValutaDate">
+            <summary>When true, use valuta/booking date instead of value date when aggregating.</summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Reports.ReportFavoriteCreateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Boolean,FinanceManager.Shared.Dtos.Reports.ReportInterval,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Collections.Generic.IReadOnlyCollection{FinanceManager.Shared.Dtos.Postings.PostingKind},FinanceManager.Shared.Dtos.Reports.ReportFavoriteFiltersDto,System.Boolean)">
+            <summary>
+            Convenience overload that creates a report favorite using a default <c>Take</c> value of 24.
+            </summary>
+            <param name="name">Display name of the favorite.</param>
+            <param name="postingKind">Primary posting kind to include in the report.</param>
+            <param name="includeCategory">When true, include category grouping in the aggregation.</param>
+            <param name="interval">Reporting interval.</param>
+            <param name="comparePrevious">When true, include comparison to the previous period.</param>
+            <param name="compareYear">When true, include year-over-year comparison.</param>
+            <param name="showChart">When true, the UI should show a chart for this favorite.</param>
+            <param name="expandable">When true, report rows can be expanded in the UI.</param>
+            <param name="postingKinds">Optional collection of posting kinds to include.</param>
+            <param name="filters">Optional additional filters to apply to the report.</param>
+            <param name="UseValutaDate">When true, use valuta/booking date instead of value date when aggregating.</param>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Reports.ReportFavoriteDto">
             <summary>
@@ -1605,12 +2837,90 @@
         <member name="T:FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateRequest">
             <summary>
             Request to update a report favorite.
+            Represents the client payload for updating a saved report configuration.
             </summary>
+            <param name="Name">Display name of the favorite.</param>
+            <param name="PostingKind">Primary posting kind to include in the report (bank, contact, savings plan, security).</param>
+            <param name="IncludeCategory">When true, include category grouping in the aggregation.</param>
+            <param name="Interval">Reporting interval (e.g. Month, Year).</param>
+            <param name="Take">Number of results/buckets to take for the report.</param>
+            <param name="ComparePrevious">When true, include comparison to the previous period.</param>
+            <param name="CompareYear">When true, include year-over-year comparison.</param>
+            <param name="ShowChart">When true, the UI should show a chart for this favorite.</param>
+            <param name="Expandable">When true, report rows can be expanded in the UI.</param>
+            <param name="PostingKinds">Optional collection of posting kinds to include (overrides primary PostingKind when provided).</param>
+            <param name="Filters">Optional additional filters to apply to the report.</param>
+            <param name="UseValutaDate">When true, use valuta/booking date instead of value date when aggregating.</param>
         </member>
         <member name="M:FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Boolean,FinanceManager.Shared.Dtos.Reports.ReportInterval,System.Int32,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Collections.Generic.IReadOnlyCollection{FinanceManager.Shared.Dtos.Postings.PostingKind},FinanceManager.Shared.Dtos.Reports.ReportFavoriteFiltersDto,System.Boolean)">
             <summary>
             Request to update a report favorite.
+            Represents the client payload for updating a saved report configuration.
             </summary>
+            <param name="Name">Display name of the favorite.</param>
+            <param name="PostingKind">Primary posting kind to include in the report (bank, contact, savings plan, security).</param>
+            <param name="IncludeCategory">When true, include category grouping in the aggregation.</param>
+            <param name="Interval">Reporting interval (e.g. Month, Year).</param>
+            <param name="Take">Number of results/buckets to take for the report.</param>
+            <param name="ComparePrevious">When true, include comparison to the previous period.</param>
+            <param name="CompareYear">When true, include year-over-year comparison.</param>
+            <param name="ShowChart">When true, the UI should show a chart for this favorite.</param>
+            <param name="Expandable">When true, report rows can be expanded in the UI.</param>
+            <param name="PostingKinds">Optional collection of posting kinds to include (overrides primary PostingKind when provided).</param>
+            <param name="Filters">Optional additional filters to apply to the report.</param>
+            <param name="UseValutaDate">When true, use valuta/booking date instead of value date when aggregating.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateRequest.Name">
+            <summary>Display name of the favorite.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateRequest.PostingKind">
+            <summary>Primary posting kind to include in the report (bank, contact, savings plan, security).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateRequest.IncludeCategory">
+            <summary>When true, include category grouping in the aggregation.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateRequest.Interval">
+            <summary>Reporting interval (e.g. Month, Year).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateRequest.Take">
+            <summary>Number of results/buckets to take for the report.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateRequest.ComparePrevious">
+            <summary>When true, include comparison to the previous period.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateRequest.CompareYear">
+            <summary>When true, include year-over-year comparison.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateRequest.ShowChart">
+            <summary>When true, the UI should show a chart for this favorite.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateRequest.Expandable">
+            <summary>When true, report rows can be expanded in the UI.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateRequest.PostingKinds">
+            <summary>Optional collection of posting kinds to include (overrides primary PostingKind when provided).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateRequest.Filters">
+            <summary>Optional additional filters to apply to the report.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateRequest.UseValutaDate">
+            <summary>When true, use valuta/booking date instead of value date when aggregating.</summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Reports.ReportFavoriteUpdateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Boolean,FinanceManager.Shared.Dtos.Reports.ReportInterval,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Collections.Generic.IReadOnlyCollection{FinanceManager.Shared.Dtos.Postings.PostingKind},FinanceManager.Shared.Dtos.Reports.ReportFavoriteFiltersDto,System.Boolean)">
+            <summary>
+            Convenience overload that sets a default <c>Take</c> value of 24.
+            </summary>
+            <param name="name">Display name of the favorite.</param>
+            <param name="postingKind">Primary posting kind to include in the report.</param>
+            <param name="includeCategory">When true, include category grouping in the aggregation.</param>
+            <param name="interval">Reporting interval.</param>
+            <param name="comparePrevious">When true, include comparison to the previous period.</param>
+            <param name="compareYear">When true, include year-over-year comparison.</param>
+            <param name="showChart">When true, the UI should show a chart for this favorite.</param>
+            <param name="expandable">When true, report rows can be expanded in the UI.</param>
+            <param name="postingKinds">Optional collection of posting kinds to include.</param>
+            <param name="filters">Optional additional filters to apply to the report.</param>
+            <param name="UseValutaDate">When true, use valuta/booking date instead of value date when aggregating.</param>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Reports.ReportInterval">
             <summary>
@@ -1663,6 +2973,29 @@
             <summary>
             DTO describing a savings plan including target and interval configuration.
             </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto"/> class with default values.
+            Use this constructor when creating an empty DTO to populate later (e.g. model binding or tests).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto.#ctor(System.Guid,System.String,FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType,System.Nullable{System.Decimal},System.Nullable{System.DateTime},System.Nullable{FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanInterval},System.Boolean,System.DateTime,System.Nullable{System.DateTime},System.Nullable{System.Guid},System.String,System.Nullable{System.Guid})">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto"/> class with the specified values.
+            </summary>
+            <param name="id">Unique savings plan identifier.</param>
+            <param name="name">Display name of the plan.</param>
+            <param name="type">Type of the plan.</param>
+            <param name="targetAmount">Optional target amount.</param>
+            <param name="targetDate">Optional target date.</param>
+            <param name="interval">Optional recurrence interval.</param>
+            <param name="isActive">Indicates whether the plan is currently active.</param>
+            <param name="createdUtc">UTC timestamp when the plan was created.</param>
+            <param name="archivedUtc">UTC timestamp when the plan was archived, if any.</param>
+            <param name="categoryId">Optional category id the plan belongs to.</param>
+            <param name="contractNumber">Optional contract number associated with the plan.</param>
+            <param name="symbolAttachmentId">Optional symbol attachment id.</param>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto.Id">
             <summary>Unique savings plan identifier.</summary>
@@ -1725,6 +3058,58 @@
             Request payload to create or update a savings plan.
             Made mutable to allow UI viewmodels and tests to adjust fields.
             </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest.Name">
+            <summary>
+            Display name of the savings plan. Required and must have at least 2 characters.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest.Type">
+            <summary>
+            Type of the savings plan (e.g. Goal, Contract, etc.).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest.TargetAmount">
+            <summary>
+            Optional target amount for the savings plan. When null, no numeric target is used.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest.TargetDate">
+            <summary>
+            Optional target date for reaching the target amount.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest.Interval">
+            <summary>
+            Optional interval for contributions or aggregation (e.g. Monthly, Yearly).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest.CategoryId">
+            <summary>
+            Optional category id to group the savings plan.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest.ContractNumber">
+            <summary>
+            Optional contract number or reference associated with the savings plan.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest.#ctor">
+            <summary>
+            Default constructor. Initializes string properties with safe defaults to satisfy validation.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType,System.Nullable{System.Decimal},System.Nullable{System.DateTime},System.Nullable{FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanInterval},System.Nullable{System.Guid},System.String)">
+            <summary>
+            Constructs a new <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest"/> with the provided values.
+            </summary>
+            <param name="name">Display name of the savings plan.</param>
+            <param name="type">Type of the savings plan.</param>
+            <param name="targetAmount">Optional target amount.</param>
+            <param name="targetDate">Optional target date.</param>
+            <param name="interval">Optional savings plan interval.</param>
+            <param name="categoryId">Optional category id.</param>
+            <param name="contractNumber">Optional contract number or reference.</param>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType">
             <summary>
@@ -2811,59 +4196,134 @@
         <member name="T:FinanceManager.Shared.IApiClient">
             <summary>
             Abstraction for the typed FinanceManager API client used via DI by Blazor view models and services.
-            Provides strongly-typed methods for calling backend endpoints.
+            Provides strongly-typed asynchronous methods for calling backend endpoints.
+            Implementations wrap an <see cref="T:System.Net.Http.HttpClient"/> and translate HTTP responses to DTOs.
             </summary>
         </member>
         <member name="P:FinanceManager.Shared.IApiClient.LastError">
             <summary>
             Holds the last error message returned by the server when a method returns false/null due to a non-success HTTP status.
+            Implementations should set this when an operation fails but returns a non-exceptional result (e.g. validation/bad request).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.IApiClient.LastErrorCode">
+            <summary>
+            Optional machine-readable error code extracted from the most recent failed HTTP response.
             </summary>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.GetAccountsAsync(System.Int32,System.Int32,System.Nullable{System.Guid},System.Threading.CancellationToken)">
-            <summary>Lists accounts for the current user. Optional filter by bank contact id.</summary>
-            <param name="skip">Number of items to skip.</param>
-            <param name="take">Max items to return.</param>
-            <param name="bankContactId">Optional bank contact filter.</param>
-            <param name="ct">Cancellation token.</param>
+            <summary>
+            Lists accounts for the current user with optional bank contact filtering and paging.
+            </summary>
+            <param name="skip">Number of items to skip for paging (>= 0).</param>
+            <param name="take">Maximum number of items to return.</param>
+            <param name="bankContactId">Optional bank contact id to filter accounts.</param>
+            <param name="ct">Cancellation token to cancel the request.</param>
+            <returns>Read-only list of <see cref="T:FinanceManager.Shared.Dtos.Accounts.AccountDto"/>.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">When the HTTP request fails.</exception>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.GetAccountAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Gets a single account by id or null if not found.</summary>
+            <summary>
+            Gets a single account by id.
+            </summary>
+            <param name="id">Account identifier.</param>
+            <param name="ct">Cancellation token to cancel the request.</param>
+            <returns>The account DTO when found; otherwise <c>null</c> when not found.</returns>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.CreateAccountAsync(FinanceManager.Shared.Dtos.Accounts.AccountCreateRequest,System.Threading.CancellationToken)">
-            <summary>Creates a new account.</summary>
+            <summary>
+            Creates a new account.
+            </summary>
+            <param name="request">Account creation request.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Accounts.AccountDto"/>.</returns>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.UpdateAccountAsync(System.Guid,FinanceManager.Shared.Dtos.Accounts.AccountUpdateRequest,System.Threading.CancellationToken)">
-            <summary>Updates an existing account. Returns null when not found.</summary>
+            <summary>
+            Updates an existing account.
+            </summary>
+            <param name="id">Account id to update.</param>
+            <param name="request">Update request with new values.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The updated <see cref="T:FinanceManager.Shared.Dtos.Accounts.AccountDto"/> when found; otherwise <c>null</c> when not found.</returns>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.DeleteAccountAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Deletes an account. Returns false when not found.</summary>
+            <summary>
+            Deletes an account.
+            </summary>
+            <param name="id">Account id to delete.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>True when deletion succeeded; false when not found.</returns>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.SetAccountSymbolAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
-            <summary>Assigns a symbol attachment to an account.</summary>
+            <summary>
+            Assigns a symbol attachment to an account. Implementation may set <see cref="P:FinanceManager.Shared.IApiClient.LastError"/> on failure.
+            </summary>
+            <param name="id">Account identifier.</param>
+            <param name="attachmentId">Attachment id to assign as symbol.</param>
+            <param name="ct">Cancellation token.</param>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.ClearAccountSymbolAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Clears the symbol attachment from an account.</summary>
+            <summary>
+            Clears the symbol attachment from an account.
+            </summary>
+            <param name="id">Account identifier.</param>
+            <param name="ct">Cancellation token.</param>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.Auth_LoginAsync(FinanceManager.Shared.Dtos.Users.LoginRequest,System.Threading.CancellationToken)">
-            <summary>Authenticates an existing user and sets the auth cookie.</summary>
+            <summary>
+            Authenticates an existing user and sets the auth cookie.
+            </summary>
+            <param name="request">Login request containing credentials.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Authentication result containing user info and token details.</returns>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.Auth_RegisterAsync(FinanceManager.Shared.Dtos.Users.RegisterRequest,System.Threading.CancellationToken)">
-            <summary>Registers a new user and sets the auth cookie.</summary>
+            <summary>
+            Registers a new user and sets the auth cookie.
+            </summary>
+            <param name="request">Registration request.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Authentication result for the newly created user.</returns>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.Auth_LogoutAsync(System.Threading.CancellationToken)">
-            <summary>Logs out the current user and clears the auth cookie.</summary>
+            <summary>
+            Logs out the current user and clears the auth cookie.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>True when logout succeeded.</returns>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.BackgroundTasks_EnqueueAsync(FinanceManager.Shared.Dtos.Admin.BackgroundTaskType,System.Boolean,System.Threading.CancellationToken)">
-            <summary>Enqueues a background task.</summary>
+            <summary>
+            Enqueues a background task of the specified type.
+            </summary>
+            <param name="type">Background task type to enqueue.</param>
+            <param name="allowDuplicate">When true, allows enqueuing duplicate tasks.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Information about the enqueued background task.</returns>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.BackgroundTasks_GetActiveAsync(System.Threading.CancellationToken)">
-            <summary>Gets active background tasks.</summary>
+            <summary>
+            Gets currently active background tasks.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>List of active background tasks.</returns>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.BackgroundTasks_GetDetailAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Gets details for a background task or null if not found.</summary>
+            <summary>
+            Gets details for a background task.
+            </summary>
+            <param name="id">Background task id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Background task info or null when not found.</returns>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.BackgroundTasks_CancelOrRemoveAsync(System.Guid,System.Threading.CancellationToken)">
-            <summary>Cancels or removes a background task. Returns false when not found or invalid.</summary>
+            <summary>
+            Cancels or removes a background task.
+            </summary>
+            <param name="id">Background task id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>True when task was cancelled/removed; false when not found or invalid request.</returns>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.Aggregates_RebuildAsync(System.Boolean,System.Threading.CancellationToken)">
             <summary>Starts an aggregates rebuild background task.</summary>
@@ -3178,6 +4638,88 @@
         <member name="M:FinanceManager.Shared.IApiClient.SavingsPlanCategories_ClearSymbolAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>Clears the symbol attachment from a saving plan category. Returns false when not found.</summary>
         </member>
+        <member name="M:FinanceManager.Shared.IApiClient.SavingsPlans_ListAsync(System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Lists savings plans for the current user.
+            </summary>
+            <param name="onlyActive">When <c>true</c>, returns only active plans; when <c>false</c>, returns all plans.</param>
+            <param name="ct">Cancellation token to cancel the request.</param>
+            <returns>Read-only list of <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto"/>.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.SavingsPlans_CountAsync(System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Returns the total count of savings plans (optionally only active plans).
+            </summary>
+            <param name="onlyActive">When <c>true</c>, counts only active plans.</param>
+            <param name="ct">Cancellation token to cancel the request.</param>
+            <returns>Integer count of matching savings plans.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.SavingsPlans_GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a savings plan by its identifier.
+            </summary>
+            <param name="id">Savings plan identifier.</param>
+            <param name="ct">Cancellation token to cancel the request.</param>
+            <returns>The <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto"/> when found; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.SavingsPlans_CreateAsync(FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new savings plan.
+            </summary>
+            <param name="req">Creation request containing plan details.</param>
+            <param name="ct">Cancellation token to cancel the request.</param>
+            <returns>The created <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto"/>.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.SavingsPlans_UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing savings plan.
+            </summary>
+            <param name="id">Identifier of the savings plan to update.</param>
+            <param name="req">Update request containing new values.</param>
+            <param name="ct">Cancellation token to cancel the request.</param>
+            <returns>The updated <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto"/> when the plan exists; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.SavingsPlans_AnalyzeAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns analysis data for a savings plan.
+            </summary>
+            <param name="id">Savings plan identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Analysis DTO for the savings plan.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.SavingsPlans_ArchiveAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Archives a savings plan.
+            </summary>
+            <param name="id">Identifier of the savings plan to archive.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns><c>true</c> when archived; <c>false</c> when the plan was not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.SavingsPlans_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a savings plan.
+            </summary>
+            <param name="id">Identifier of the savings plan to delete.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns><c>true</c> when deleted; <c>false</c> when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.SavingsPlans_SetSymbolAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Assigns a symbol attachment to a savings plan.
+            </summary>
+            <param name="id">Savings plan identifier.</param>
+            <param name="attachmentId">Attachment identifier to set as symbol.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns><c>true</c> when the symbol was set; otherwise <c>false</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.SavingsPlans_ClearSymbolAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Clears the symbol attachment from a savings plan.
+            </summary>
+            <param name="id">Savings plan identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns><c>true</c> when cleared; otherwise <c>false</c>.</returns>
+        </member>
         <member name="M:FinanceManager.Shared.IApiClient.Securities_ListAsync(System.Boolean,System.Threading.CancellationToken)">
             <summary>Lists securities for the current user.</summary>
         </member>
@@ -3317,6 +4859,16 @@
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.StatementDrafts_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>Deletes a statement draft. Returns false when not found.</summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.StatementDrafts_SetEntrySplitDraftAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSetSplitDraftRequest,System.Threading.CancellationToken)">
+            <summary>
+            Assigns or clears a split draft group for a draft entry and returns updated split difference.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="entryId">Entry identifier within the draft.</param>
+            <param name="req">Split draft assignment request.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Result DTO with updated split information or <c>null</c> when not found or invalid.</returns>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.StatementDrafts_SetDescriptionAsync(System.Guid,System.String,System.Threading.CancellationToken)">
             <summary>Sets the description of a statement draft and returns updated detail or null when not found.</summary>

@@ -6,49 +6,115 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace FinanceManager.Web.ViewModels.Securities;
 
+/// <summary>
+/// View model for a single security card. Provides load/save/archive/delete operations,
+/// symbol attachment support and UI field mapping for the security detail view.
+/// </summary>
 [FinanceManager.Web.ViewModels.Common.CardRoute("securities")]
 public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, string Value)>
 {
-
+    /// <summary>
+    /// Initializes a new instance of <see cref="SecurityCardViewModel"/>.
+    /// </summary>
+    /// <param name="sp">Service provider used to resolve dependencies required by the view model.</param>
     public SecurityCardViewModel(IServiceProvider sp) : base(sp)
     {
     }
 
+    /// <summary>
+    /// Identifier of the currently loaded security. <see cref="Guid.Empty"/> when creating a new security.
+    /// </summary>
     public Guid Id { get; private set; }
+
+    /// <summary>
+    /// DTO representing the currently loaded security or <c>null</c> when none is loaded.
+    /// </summary>
     public SecurityDto? Security { get; private set; }
+
+    /// <summary>
+    /// Display title for the card, derived from the loaded security name when available.
+    /// </summary>
     public override string Title => Security?.Name ?? base.Title;
 
     // Compatibility with SecurityEdit page
+    /// <summary>
+    /// Edit model used to gather user inputs for creating or updating a security.
+    /// </summary>
     public sealed class EditModel
     {
+        /// <summary>Security name.</summary>
         public string Name { get; set; } = string.Empty;
+        /// <summary>Security identifier (ticker/ISIN as displayed).</summary>
         public string Identifier { get; set; } = string.Empty;
+        /// <summary>Optional description text.</summary>
         public string? Description { get; set; }
+        /// <summary>Optional AlphaVantage code used for external price lookups.</summary>
         public string? AlphaVantageCode { get; set; }
+        /// <summary>Currency ISO code used for this security (e.g. "EUR").</summary>
         public string CurrencyCode { get; set; } = "EUR";
+        /// <summary>Optional category id for the security.</summary>
         public Guid? CategoryId { get; set; }
+        /// <summary>Optional attachment id for the security symbol.</summary>
         public Guid? SymbolAttachmentId { get; set; }
     }
+
+    /// <summary>
+    /// Display model with computed values used for the card header/summary.
+    /// </summary>
     public sealed class DisplayModel
     {
+        /// <summary>Attachment id of the security used as symbol reference; may be <c>null</c>.</summary>
         public Guid? Id { get; set; }
+        /// <summary>Whether the security is active (not archived).</summary>
         public bool IsActive { get; set; }
+        /// <summary>Optional category display name.</summary>
         public string? CategoryName { get; set; }
     }
 
+    /// <summary>
+    /// Current edit model instance used to collect user input.
+    /// </summary>
     public EditModel Model { get; } = new();
+
+    /// <summary>
+    /// Display model used for header/status rendering.
+    /// </summary>
     public DisplayModel Display { get; private set; } = new();
+
+    /// <summary>
+    /// Category list used for the category lookup field.
+    /// </summary>
     public List<SecurityCategoryDto> Categories { get; private set; } = new();
+
+    /// <summary>
+    /// Last error message encountered by view model operations, or <c>null</c> when none.
+    /// </summary>
     public string? Error { get; private set; }
 
     // Navigation context
+    /// <summary>
+    /// Optional draft id to return to after save/navigation.
+    /// </summary>
     public Guid? ReturnDraftId { get; private set; }
+
+    /// <summary>
+    /// Optional entry id to return to after save/navigation.
+    /// </summary>
     public Guid? ReturnEntryId { get; private set; }
 
+    /// <summary>
+    /// True when this view model is showing an existing security (edit mode); false for create mode.
+    /// </summary>
     public bool IsEdit => Id != Guid.Empty;
 
+    /// <summary>
+    /// Endpoint used by the aggregate chart component to request time series for the current security.
+    /// </summary>
     public string ChartEndpoint => Id != Guid.Empty ? $"/api/securities/{Id}/aggregates" : string.Empty;
 
+    /// <summary>
+    /// Chart view model instance for the security aggregates or <c>null</c> when no security is loaded.
+    /// </summary>
     public override AggregateBarChartViewModel? ChartViewModel
     {
         get
@@ -59,6 +125,13 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         }
     }
 
+    /// <summary>
+    /// Loads security data for the specified id. When <see cref="Guid.Empty"/> a new security is prepared
+    /// and categories are loaded so the UI can create a new entry.
+    /// </summary>
+    /// <param name="id">Security id to load or <see cref="Guid.Empty"/> to initialize a new security.</param>
+    /// <returns>A task that completes once loading has finished.</returns>
+    /// <exception cref="Exception">Any unexpected errors are caught and exposed via <see cref="Error"/>; exceptions are not propagated to callers.</exception>
     public override async Task LoadAsync(Guid id)
     {
         Id = id;
@@ -94,17 +167,33 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         }
         finally { Loading = false; RaiseStateChanged(); }
     }
+
+    /// <summary>
+    /// Performs initialization tasks for the card and delegates to base initialization.
+    /// </summary>
+    /// <param name="id">Security id to initialize for.</param>
+    /// <returns>A task that completes when initialization is done.</returns>
     public override async Task InitializeAsync(Guid id)
     {
         await LoadCategoriesAsync();
         await base.InitializeAsync(id);
     }
 
+    /// <summary>
+    /// Loads available security categories used by the category lookup.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when categories are loaded; failures fall back to an empty list.</returns>
     public async Task LoadCategoriesAsync(CancellationToken ct = default)
     {
         try { Categories = (await ApiClient.SecurityCategories_ListAsync(ct)).ToList(); } catch { Categories = new(); }
     }
 
+    /// <summary>
+    /// Saves the current security by creating or updating it via the API.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The created or updated <see cref="SecurityDto"/>, or <c>null</c> when the operation failed.</returns>
     public async Task<SecurityDto?> SaveAsync(CancellationToken ct = default)
     {
         Error = null; SetError(null, null);
@@ -211,6 +300,11 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
     }
 
     // --- Ribbon provider ---
+    /// <summary>
+    /// Builds ribbon register definitions for the security card including navigation, manage and linked actions.
+    /// </summary>
+    /// <param name="localizer">Localizer used to resolve UI labels.</param>
+    /// <returns>Collection of ribbon register definitions used by the UI.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         // Only allow saving when there are pending changes and required fields (Name + Identifier) are present.
@@ -245,6 +339,10 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
     }
 
+    /// <summary>
+    /// Archives the currently loaded security via the API and reloads the card to reflect state changes.
+    /// </summary>
+    /// <returns><c>true</c> when archive succeeded; otherwise <c>false</c>.</returns>
     public async Task<bool> ArchiveAsync()
     {
         if (Id == Guid.Empty) return false;
@@ -262,6 +360,10 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         finally { Loading = false; RaiseStateChanged(); }
     }
 
+    /// <summary>
+    /// Deletes the currently loaded security via the API.
+    /// </summary>
+    /// <returns><c>true</c> when deletion succeeded; otherwise <c>false</c>.</returns>
     public override async Task<bool> DeleteAsync()
     {
         if (Id == Guid.Empty) return false;
@@ -277,6 +379,14 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         finally { Loading = false; RaiseStateChanged(); }
     }
 
+    /// <summary>
+    /// Provides lookup values for fields that support lookups (e.g. SecurityCategory).
+    /// </summary>
+    /// <param name="field">Card field requesting lookup values.</param>
+    /// <param name="q">Optional search query to filter results.</param>
+    /// <param name="skip">Number of items to skip for paging.</param>
+    /// <param name="take">Maximum number of items to return (server clamps to safe maximum).</param>
+    /// <returns>List of matching <see cref="LookupItem"/> values.</returns>
     public override async Task<IReadOnlyList<LookupItem>> QueryLookupAsync(CardField field, string? q, int skip, int take)
     {
         if (!string.IsNullOrWhiteSpace(field.LookupType) && string.Equals(field.LookupType, "SecurityCategory", StringComparison.OrdinalIgnoreCase))
@@ -301,9 +411,23 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         return await base.QueryLookupAsync(field, q, skip, take);
     }
 
+    /// <summary>
+    /// Returns the parent information used for symbol attachments.
+    /// </summary>
+    /// <returns>Attachment entity kind and the parent id used when uploading symbols.</returns>
     protected override (AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent() => (AttachmentEntityKind.Security, Id == Guid.Empty ? Guid.Empty : Id);
+
+    /// <summary>
+    /// Whether uploading a symbol is allowed in the current state.
+    /// </summary>
+    /// <returns><c>true</c> when a symbol upload is allowed for the current security.</returns>
     protected override bool IsSymbolUploadAllowed() => Id != Guid.Empty;
 
+    /// <summary>
+    /// Assigns a newly uploaded symbol (attachment) to the security. This method updates the server
+    /// and reloads the security record; failures are swallowed to avoid interrupting UI flow.
+    /// </summary>
+    /// <param name="attachmentId">Attachment id of the uploaded symbol, or <c>null</c> to clear the symbol.</param>
     protected override async Task AssignNewSymbolAsync(Guid? attachmentId)
     {
         try

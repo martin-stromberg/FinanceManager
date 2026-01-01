@@ -7,17 +7,44 @@ using Microsoft.Extensions.Localization;
 namespace FinanceManager.Web.ViewModels.Accounts
 {
     // Card VM: builds key/value pairs for a single bank account
+    
+    /// <summary>
+    /// View model for the account detail card displayed in the UI.
+    /// Responsible for loading a single account, building the card record and handling save / delete actions.
+    /// </summary>
     [FinanceManager.Web.ViewModels.Common.CardRoute("accounts")]
     public sealed class BankAccountCardViewModel : BaseCardViewModel<(string Key, string Value)>, FinanceManager.Web.ViewModels.Common.IDeletableViewModel
     {
+        /// <summary>
+        /// Initializes a new instance of <see cref="BankAccountCardViewModel"/>.
+        /// </summary>
+        /// <param name="sp">Service provider used to resolve required services such as the API client and localizer.</param>
         public BankAccountCardViewModel(IServiceProvider sp)
             : base(sp)
         {
         }
         
+        /// <summary>
+        /// Identifier of the currently loaded account.
+        /// </summary>
         public Guid Id { get; private set; }
+
+        /// <summary>
+        /// DTO representing the currently loaded account or <c>null</c> when none is loaded.
+        /// </summary>
         public AccountDto? Account { get; private set; }
+
+        /// <summary>
+        /// Card title shown in the UI. Falls back to the base title when no account is loaded.
+        /// </summary>
         public override string Title => Account?.Name ?? base.Title;
+
+        /// <summary>
+        /// Loads account data and builds the card record for the specified <paramref name="id"/>.
+        /// When <paramref name="id"/> equals <see cref="Guid.Empty"/> a new blank DTO is prepared for creation.
+        /// </summary>
+        /// <param name="id">Account identifier to load.</param>
+        /// <returns>A task that completes when loading has finished. The view model state (Loading/Error/CardRecord) is updated accordingly.</returns>
         public override async Task LoadAsync(Guid id)
         {
             Id = id;
@@ -48,6 +75,13 @@ namespace FinanceManager.Web.ViewModels.Accounts
             }
             finally { Loading = false; RaiseStateChanged(); }
         }
+
+        /// <summary>
+        /// Deletes the currently loaded account.
+        /// </summary>
+        /// <returns>
+        /// A task that resolves to <c>true</c> when the account was successfully deleted; otherwise <c>false</c>.
+        /// </returns>
         public override async Task<bool> DeleteAsync()
         {
             if (Account == null) return false;
@@ -62,6 +96,10 @@ namespace FinanceManager.Web.ViewModels.Accounts
             catch (Exception ex) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message); return false; }
             finally { Loading = false; RaiseStateChanged(); }
         }
+
+        /// <summary>
+        /// Provides an optional chart view model used by the UI to show account aggregates.
+        /// </summary>
         public override AggregateBarChartViewModel? ChartViewModel
         {
             get
@@ -158,6 +196,11 @@ namespace FinanceManager.Web.ViewModels.Accounts
             };
         }
 
+        /// <summary>
+        /// Returns the ribbon actions/tabs available for this card view and their labels (localized by the provided <paramref name="localizer"/>).
+        /// </summary>
+        /// <param name="localizer">Localizer used to resolve UI labels.</param>
+        /// <returns>A list of <see cref="UiRibbonRegister"/> instances describing available UI actions.</returns>
         protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
         {
             // Group: Navigieren (Back)
@@ -313,6 +356,9 @@ namespace FinanceManager.Web.ViewModels.Accounts
             }
         }
 
+        /// <summary>
+        /// Reloads the current card by re-initializing with the current Id.
+        /// </summary>
         public override async Task ReloadAsync()
         {
             await InitializeAsync(Id);
@@ -350,10 +396,22 @@ namespace FinanceManager.Web.ViewModels.Accounts
         }
 
         // --- Symbol support hooks required by BaseCardViewModel ---
+        /// <summary>
+        /// Returns the attachment parent information used to upload or list symbols for this card.
+        /// </summary>
         protected override (AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent() => (AttachmentEntityKind.Account, Id == Guid.Empty ? Guid.Empty : Id);
 
+        /// <summary>
+        /// Indicates whether symbol upload is allowed for the current account.
+        /// </summary>
+        /// <returns><c>true</c> when upload is permitted; otherwise <c>false</c>.</returns>
         protected override bool IsSymbolUploadAllowed() => Id != Guid.Empty;
 
+        /// <summary>
+        /// Assigns or clears the symbol attachment for this account and refreshes the card state.
+        /// </summary>
+        /// <param name="attachmentId">Attachment identifier to assign, or <c>null</c> to clear the symbol.</param>
+        /// <returns>A task that completes when the assignment operation has finished.</returns>
         protected override async Task AssignNewSymbolAsync(Guid? attachmentId)
         {
             try

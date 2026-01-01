@@ -35,6 +35,16 @@ public sealed class AttachmentsController : ControllerBase
 
     private const string ProtectorPurpose = "AttachmentDownloadToken";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AttachmentsController"/> class.
+    /// </summary>
+    /// <param name="service">The attachment service.</param>
+    /// <param name="cats">The attachment category service.</param>
+    /// <param name="current">The current user service.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The attachment upload options.</param>
+    /// <param name="localizer">The localizer.</param>
+    /// <param name="dp">The data protection provider.</param>
     public AttachmentsController(
         IAttachmentService service,
         IAttachmentCategoryService cats,
@@ -59,6 +69,8 @@ public sealed class AttachmentsController : ControllerBase
     /// <param name="isUrl">True to filter URL attachments only, false for files only.</param>
     /// <param name="q">Optional search term (file name / url substring).</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with a <see cref="PageResult{AttachmentDto}"/> containing the attachments page, or 400 Bad Request on invalid input.</returns>
+    /// <exception cref="System.ArgumentException">Thrown when provided enum values or parameters are invalid.</exception>
     [HttpGet("{entityKind}/{entityId:guid}")]
     [ProducesResponseType(typeof(PageResult<AttachmentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
@@ -85,6 +97,8 @@ public sealed class AttachmentsController : ControllerBase
     /// <param name="url">External URL (if not a file upload).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <param name="role">Attachment role to assign (optional).</param>
+    /// <returns>200 OK with the created <see cref="AttachmentDto"/> on success, 400 Bad Request for validation issues, 500 on unexpected server error.</returns>
+    /// <exception cref="ArgumentException">Thrown when the service reports invalid arguments (mapped to 400).</exception>
     [HttpPost("{entityKind}/{entityId:guid}")]
     [RequestSizeLimit(long.MaxValue)]
     [ProducesResponseType(typeof(AttachmentDto), StatusCodes.Status200OK)]
@@ -184,6 +198,8 @@ public sealed class AttachmentsController : ControllerBase
     /// </summary>
     /// <param name="id">Attachment id.</param>
     /// <param name="validSeconds">Validity in seconds (10..3600).</param>
+    /// <returns>200 OK with an <see cref="AttachmentDownloadTokenDto"/> containing the token, or 404 Not Found when the attachment is not available to the user.</returns>
+    /// <exception cref="Exception">May return 404 when token creation fails or attachment not found.</exception>
     [HttpPost("{id:guid}/download-token")]
     [ProducesResponseType(typeof(AttachmentDownloadTokenDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -211,6 +227,7 @@ public sealed class AttachmentsController : ControllerBase
     /// <param name="id">Attachment id.</param>
     /// <param name="token">Download token for anonymous access.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>File stream as FileResult when successful, or 404 Not Found when the attachment or token is invalid.</returns>
     [HttpGet("{id:guid}/download")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -254,6 +271,7 @@ public sealed class AttachmentsController : ControllerBase
     /// </summary>
     /// <param name="id">Attachment id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content when deletion succeeded; 404 Not Found when the attachment does not exist or is not accessible.</returns>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -269,6 +287,7 @@ public sealed class AttachmentsController : ControllerBase
     /// <param name="id">Attachment id.</param>
     /// <param name="req">Update payload.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content when update succeeded; 404 Not Found when the attachment is not accessible.</returns>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -284,6 +303,7 @@ public sealed class AttachmentsController : ControllerBase
     /// <param name="id">Attachment id.</param>
     /// <param name="req">Category update request.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content when update succeeded; 404 Not Found when the attachment is not accessible.</returns>
     [HttpPut("{id:guid}/category")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -297,6 +317,7 @@ public sealed class AttachmentsController : ControllerBase
     /// Lists all categories of the current user.
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with a list of <see cref="AttachmentCategoryDto"/>.</returns>
     [HttpGet("categories")]
     [ProducesResponseType(typeof(IReadOnlyList<AttachmentCategoryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListCategoriesAsync(CancellationToken ct)
@@ -307,6 +328,8 @@ public sealed class AttachmentsController : ControllerBase
     /// </summary>
     /// <param name="req">Category creation request.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>201 Created with the created <see cref="AttachmentCategoryDto"/>, or 400 Bad Request when invalid.</returns>
+    /// <exception cref="ArgumentException">Thrown when the provided name is invalid (mapped to 400).</exception>
     [HttpPost("categories")]
     [ProducesResponseType(typeof(AttachmentCategoryDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
@@ -331,6 +354,9 @@ public sealed class AttachmentsController : ControllerBase
     /// <param name="id">Category id.</param>
     /// <param name="req">Update payload containing new name.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the updated <see cref="AttachmentCategoryDto"/>, 400 Bad Request for invalid input, 409 Conflict when update is not allowed.</returns>
+    /// <exception cref="ArgumentException">Thrown when input is invalid (mapped to 400).</exception>
+    /// <exception cref="InvalidOperationException">Thrown when update conflicts with server rules (mapped to 409).</exception>
     [HttpPut("categories/{id:guid}")]
     [ProducesResponseType(typeof(AttachmentCategoryDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
@@ -359,6 +385,8 @@ public sealed class AttachmentsController : ControllerBase
     /// </summary>
     /// <param name="id">Category id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content when deletion succeeded; 404 Not Found when category does not exist; 409 Conflict when deletion is forbidden.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the category cannot be deleted due to business rules (mapped to 409).</exception>
     [HttpDelete("categories/{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status409Conflict)]

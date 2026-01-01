@@ -8,6 +8,12 @@ namespace FinanceManager.Infrastructure.Statements;
 
 public sealed partial class StatementDraftService
 {
+    /// <summary>
+    /// Normalizes German umlauts in the provided text to ASCII-friendly replacements.
+    /// Example: "ä" -> "ae", "ß" -> "ss".
+    /// </summary>
+    /// <param name="text">Input text to normalize. May be <c>null</c> or empty.</param>
+    /// <returns>A new string with umlauts replaced, or an empty string when <paramref name="text"/> is null or empty.</returns>
     private static string NormalizeUmlauts(string text)
     {
         if (string.IsNullOrEmpty(text)) { return string.Empty; }
@@ -18,8 +24,24 @@ public sealed partial class StatementDraftService
             .Replace("ß", "ss", StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Attempts to auto-assign a savings plan to the provided draft entry when the entry originates from the user's own account.
+    /// The method compares normalized subject text and contract numbers against available user plans.
+    /// </summary>
+    /// <param name="entry">The draft entry to attempt assignment for. Must not be <c>null</c>.</param>
+    /// <param name="userPlans">Collection of the user's active savings plans to match against. Must not be <c>null</c>.</param>
+    /// <param name="selfContact">The owner's self contact used to detect owner postings. Must not be <c>null</c>.</param>
+    /// <remarks>
+    /// When a single matching plan is found the entry will be assigned to that plan. If multiple matches are found
+    /// the entry will be flagged for manual review via <see cref="StatementDraftEntry.MarkNeedsCheck"/>.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="entry"/>, <paramref name="userPlans"/> or <paramref name="selfContact"/> is <c>null</c>.</exception>
     public void TryAutoAssignSavingsPlan(StatementDraftEntry entry, IEnumerable<SavingsPlan> userPlans, Contact selfContact)
     {
+        if (entry == null) throw new ArgumentNullException(nameof(entry));
+        if (userPlans == null) throw new ArgumentNullException(nameof(userPlans));
+        if (selfContact == null) throw new ArgumentNullException(nameof(selfContact));
+
         if (entry.ContactId is null) { return; }
         if (entry.ContactId != selfContact.Id) { return; }
 
@@ -52,6 +74,14 @@ public sealed partial class StatementDraftService
             entry.MarkNeedsCheck();
     }
 
+    /// <summary>
+    /// Re-evaluates the status of a parent draft entry that was previously split into a child draft.
+    /// Ensures the parent entry's accounted status matches the sum of the assigned split entries.
+    /// </summary>
+    /// <param name="ownerUserId">The owner user identifier used to scope drafts.</param>
+    /// <param name="splitDraftId">The draft id of the split/assigned draft whose parent should be re-evaluated.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the re-evaluation and any changes have been persisted.</returns>
     private async Task ReevaluateParentEntryStatusAsync(Guid ownerUserId, Guid splitDraftId, CancellationToken ct)
     {
         var parentEntry = await _db.StatementDraftEntries.FirstOrDefaultAsync(e => e.SplitDraftId == splitDraftId, ct);
@@ -76,6 +106,16 @@ public sealed partial class StatementDraftService
         }
         await _db.SaveChangesAsync(ct);
     }
+
+    /// <summary>
+    /// Classifies header information and entries for a draft. This includes auto-assignment of contacts, savings plans and securities
+    /// based on heuristics and existing data in the database.
+    /// </summary>
+    /// <param name="draft">The draft to classify. Must not be <c>null</c>.</param>
+    /// <param name="entryId">Optional specific entry id to limit classification to a single entry.</param>
+    /// <param name="ownerUserId">Owner user identifier used to scope lookups.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when classification has finished and changes are persisted.</returns>
     private async Task ClassifyInternalAsync(StatementDraft draft, Guid? entryId, Guid ownerUserId, CancellationToken ct)
     {
         await ClassifyHeader(draft, ownerUserId, ct);
@@ -216,8 +256,22 @@ public sealed partial class StatementDraftService
         }
     }
 
+    /// <summary>
+    /// Attempts to match and assign a contact to the provided draft entry based on name, aliases and heuristics.
+    /// If a match is found the entry is marked as accounted or assigned accordingly.
+    /// </summary>
+    /// <param name="contacts">List of contacts belonging to the owner to search in.</param>
+    /// <param name="aliasLookup">Precomputed dictionary of alias patterns per contact id.</param>
+    /// <param name="bankContactId">Optional bank contact id used for internal bank postings.</param>
+    /// <param name="selfContact">The owner's self contact used for special rules.</param>
+    /// <param name="entry">The draft entry that should be assigned. Must not be <c>null</c>.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="contacts"/>, <paramref name="aliasLookup"/>, or <paramref name="entry"/> is <c>null</c>.</exception>
     private static void TryAutoAssignContact(List<Contact> contacts, Dictionary<Guid, List<string>> aliasLookup, Guid? bankContactId, Contact selfContact, StatementDraftEntry entry)
     {
+        if (contacts == null) throw new ArgumentNullException(nameof(contacts));
+        if (aliasLookup == null) throw new ArgumentNullException(nameof(aliasLookup));
+        if (entry == null) throw new ArgumentNullException(nameof(entry));
+
         var normalizedRecipient = NormalizeUmlauts((entry.RecipientName ?? string.Empty).ToLowerInvariant().TrimEnd());
         Guid? matchedContactId = AssignContact(contacts, aliasLookup, bankContactId, entry, normalizedRecipient);
         var matchedContact = contacts.FirstOrDefault(c => c.Id == matchedContactId);
@@ -241,40 +295,16 @@ public sealed partial class StatementDraftService
         }
     }
 
-    private async Task ClassifyHeader(StatementDraft draft, Guid ownerUserId, CancellationToken ct)
-    {
-        if ((draft.DetectedAccountId == null) && (!string.IsNullOrWhiteSpace(draft.AccountName)))
-        {
-            var account = await _db.Accounts.AsNoTracking()
-                .Where(a => a.OwnerUserId == ownerUserId && (a.Iban == draft.AccountName))
-                .Select(a => new { a.Id })
-                .FirstOrDefaultAsync(ct);
-            if (account is null)
-            {
-                var simAccounts = await _db.Accounts.AsNoTracking()
-                    .Where(a => a.OwnerUserId == ownerUserId && (a.Iban.EndsWith(draft.AccountName)))
-                    .Select(a => new { a.Id })
-                    .ToListAsync(ct);
-                account = simAccounts.Count == 1 ? simAccounts.First() : null;
-            }
-            if (account != null)
-            {
-                draft.SetDetectedAccount(account.Id);
-            }
-        }
-        if (draft.DetectedAccountId == null && string.IsNullOrWhiteSpace(draft.AccountName))
-        {
-            var singleAccountId = await _db.Accounts.AsNoTracking()
-                .Where(a => a.OwnerUserId == ownerUserId)
-                .Select(a => a.Id)
-                .ToListAsync(ct);
-            if (singleAccountId.Count == 1)
-            {
-                draft.SetDetectedAccount(singleAccountId[0]);
-            }
-        }
-    }
-
+    /// <summary>
+    /// Attempts to find a matching contact id for the provided search text using exact/contains matches and alias patterns.
+    /// When a matching contact id is determined the entry may be marked/accounted by the caller.
+    /// </summary>
+    /// <param name="contacts">List of contacts to search in.</param>
+    /// <param name="aliasLookup">Dictionary mapping contact ids to alias patterns.</param>
+    /// <param name="bankContactId">Optional bank contact id used to automatically account bank-related postings when recipient is empty.</param>
+    /// <param name="entry">The draft entry used to decide default behaviors when matches are found.</param>
+    /// <param name="searchText">Normalized search text used for matching.</param>
+    /// <returns>The matched contact id when found; otherwise <c>null</c>.</returns>
     private static Guid? AssignContact(
         List<Contact> contacts,
         Dictionary<Guid, List<string>> aliasLookup,
@@ -337,5 +367,46 @@ public sealed partial class StatementDraftService
         }
 
         return matchedContactId;
+    }
+
+    /// <summary>
+    /// Classifies the draft header to detect the account id when possible (IBAN or single account scenarios).
+    /// </summary>
+    /// <param name="draft">The draft to classify.</param>
+    /// <param name="ownerUserId">Owner user identifier used to scope account lookups.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when header classification has finished.</returns>
+    private async Task ClassifyHeader(StatementDraft draft, Guid ownerUserId, CancellationToken ct)
+    {
+        if ((draft.DetectedAccountId == null) && (!string.IsNullOrWhiteSpace(draft.AccountName)))
+        {
+            var account = await _db.Accounts.AsNoTracking()
+                .Where(a => a.OwnerUserId == ownerUserId && (a.Iban == draft.AccountName))
+                .Select(a => new { a.Id })
+                .FirstOrDefaultAsync(ct);
+            if (account is null)
+            {
+                var simAccounts = await _db.Accounts.AsNoTracking()
+                    .Where(a => a.OwnerUserId == ownerUserId && (a.Iban.EndsWith(draft.AccountName)))
+                    .Select(a => new { a.Id })
+                    .ToListAsync(ct);
+                account = simAccounts.Count == 1 ? simAccounts.First() : null;
+            }
+            if (account != null)
+            {
+                draft.SetDetectedAccount(account.Id);
+            }
+        }
+        if (draft.DetectedAccountId == null && string.IsNullOrWhiteSpace(draft.AccountName))
+        {
+            var singleAccountId = await _db.Accounts.AsNoTracking()
+                .Where(a => a.OwnerUserId == ownerUserId)
+                .Select(a => a.Id)
+                .ToListAsync(ct);
+            if (singleAccountId.Count == 1)
+            {
+                draft.SetDetectedAccount(singleAccountId[0]);
+            }
+        }
     }
 }

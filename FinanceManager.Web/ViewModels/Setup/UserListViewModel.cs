@@ -6,18 +6,44 @@ using static FinanceManager.Web.ViewModels.Setup.UserListViewModel;
 
 namespace FinanceManager.Web.ViewModels.Setup;
 
+/// <summary>
+/// Represents a single user row in the user list and provides navigation to the user card.
+/// </summary>
+/// <param name="Id">Identifier of the user.</param>
+/// <param name="Username">Username displayed in the list.</param>
+/// <param name="IsAdmin">Whether the user has administrative rights.</param>
+/// <param name="Active">Whether the user account is active.</param>
+/// <param name="LockoutEnd">Optional lockout end date/time (UTC) when the account is blocked.</param>
+/// <param name="LastLoginUtc">Optional last login timestamp (UTC).</param>
 public record UserListItem(Guid Id, string Username, bool IsAdmin, bool Active, DateTime? LockoutEnd, DateTime? LastLoginUtc) : IListItemNavigation
 {
+    /// <summary>
+    /// Returns the navigation URL for the user's detail card.
+    /// </summary>
+    /// <returns>Relative URL to the user card.</returns>
     public string GetNavigateUrl() => $"/card/users/{Id}";
 }
+
+/// <summary>
+/// View model for the users list. Loads users from the admin API and exposes list records for rendering.
+/// </summary>
 public sealed class UserListViewModel : BaseListViewModel<UserListItem>
 {
-
+    /// <summary>
+    /// Initializes a new instance of <see cref="UserListViewModel"/>.
+    /// </summary>
+    /// <param name="sp">Service provider used to resolve dependencies (localizer, api client provided by base).</param>
     public UserListViewModel(IServiceProvider sp)
         : base(sp)
     {
     }
 
+    /// <summary>
+    /// Loads the full user list from the admin API and populates the view model's <see cref="Items"/> collection.
+    /// This method is safe to call from the UI and will clear the list on failure.
+    /// </summary>
+    /// <param name="ct">Cancellation token used to cancel the operation.</param>
+    /// <returns>A task that completes when loading has finished.</returns>
     public async Task LoadAsync(CancellationToken ct = default)
     {
         if (!IsAuthenticated) return;
@@ -38,6 +64,10 @@ public sealed class UserListViewModel : BaseListViewModel<UserListItem>
         RaiseStateChanged();
     }
 
+    /// <summary>
+    /// Loads a page of items. For the users list paging is disabled and the full list is loaded.
+    /// </summary>
+    /// <param name="resetPaging">When true the paging state should be reset; ignored in this implementation.</param>
     protected override async Task LoadPageAsync(bool resetPaging)
     {
         // The generic list provider expects paging support; for users we load full list and disable paging
@@ -45,6 +75,9 @@ public sealed class UserListViewModel : BaseListViewModel<UserListItem>
         CanLoadMore = false;
     }
 
+    /// <summary>
+    /// Builds the column definitions and list records used by the UI renderer based on <see cref="Items"/>.
+    /// </summary>
     protected override void BuildRecords()
     {
         var L = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
@@ -67,6 +100,11 @@ public sealed class UserListViewModel : BaseListViewModel<UserListItem>
         }, i)).ToList();
     }
 
+    /// <summary>
+    /// Provides ribbon register definitions for the users list including a New action.
+    /// </summary>
+    /// <param name="localizer">Localizer used to resolve UI labels.</param>
+    /// <returns>A collection of <see cref="UiRibbonRegister"/> instances or <c>null</c> when none are provided.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var actions = new List<UiRibbonAction>

@@ -7,6 +7,10 @@ using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Web.ViewModels.Securities.Prices;
 
+/// <summary>
+/// List view model that provides paging and rendering for historical prices of a single security.
+/// The view model pages prices from the API and supports an optional client-side range filter.
+/// </summary>
 public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPriceDto>
 {
     private readonly Shared.IApiClient _api;
@@ -16,10 +20,21 @@ public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPric
 
     private int _rawFetchedCount = 0; // number of items fetched from server (unfiltered)
 
+    /// <summary>
+    /// Identifier of the security whose prices are displayed.
+    /// </summary>
     public Guid SecurityId { get; }
 
+    /// <summary>
+    /// Disables the generic search UI for the prices list (search is not supported server-side for this list).
+    /// </summary>
     public override bool AllowSearchFiltering { get => false; protected set => base.AllowSearchFiltering = false; }
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="SecurityPricesListViewModel"/>.
+    /// </summary>
+    /// <param name="sp">Service provider used to resolve required services.</param>
+    /// <param name="securityId">Identifier of the security to load prices for.</param>
     public SecurityPricesListViewModel(IServiceProvider sp, Guid securityId) : base(sp)
     {
         _api = sp.GetRequiredService<Shared.IApiClient>();
@@ -30,6 +45,12 @@ public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPric
         _rawFetchedCount = 0;
     }
 
+    /// <summary>
+    /// Loads a page of prices from the API. This method implements paging by requesting chunks of <see cref="PageSize"/> items
+    /// and applying an optional client-side date range filter via <see cref="ApplyRangeFilter(IReadOnlyList{SecurityPriceDto})"/>.
+    /// </summary>
+    /// <param name="resetPaging">When true the paging state is reset and previously loaded items are cleared.</param>
+    /// <returns>A task that completes when the page has been loaded.</returns>
     protected override async Task LoadPageAsync(bool resetPaging)
     {
         if (!CheckAuthentication()) return;
@@ -62,6 +83,11 @@ public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPric
         }
     }
 
+    /// <summary>
+    /// Applies a client-side date range filter to a chunk of prices.
+    /// </summary>
+    /// <param name="chunk">Chunk of prices returned from the API (unfiltered).</param>
+    /// <returns>Filtered enumerable that respects <see cref="RangeFrom"/> and <see cref="RangeTo"/> if provided.</returns>
     private IEnumerable<SecurityPriceDto> ApplyRangeFilter(IReadOnlyList<SecurityPriceDto> chunk)
     {
         if (!RangeFrom.HasValue && !RangeTo.HasValue) return chunk;
@@ -77,6 +103,10 @@ public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPric
         }).ToList();
     }
 
+    /// <summary>
+    /// Builds the list columns and record rows for the UI renderer.
+    /// The date column uses <see cref="System.Globalization.CultureInfo.CurrentCulture"/> and the close price is formatted accordingly.
+    /// </summary>
     protected override void BuildRecords()
     {
         Columns = new List<ListColumn>
@@ -92,7 +122,9 @@ public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPric
         }, p)).ToList();
     }
 
-    // Expose a helper to open backfill via UI action if desired
+    /// <summary>
+    /// Requests opening of the backfill overlay for this security. The overlay parameters include the <see cref="SecurityId"/>.
+    /// </summary>
     public void RequestOpenBackfill()
     {
         var parameters = new Dictionary<string, object?> { ["SecurityId"] = SecurityId };
@@ -100,7 +132,11 @@ public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPric
         RaiseUiActionRequested("OpenOverlay", spec);
     }
 
-    // Provide ribbon actions for the list page: Navigation (Back) and Manage (Backfill prices)
+    /// <summary>
+    /// Builds ribbon register definitions for the list page including navigation (Back) and a Manage action to backfill prices.
+    /// </summary>
+    /// <param name="localizer">Localizer used to resolve UI labels.</param>
+    /// <returns>Collection of ribbon registers describing available tabs and actions for the UI.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var tabs = new List<UiRibbonTab>

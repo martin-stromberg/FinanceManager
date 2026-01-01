@@ -1,4 +1,5 @@
 using FinanceManager.Application.Users;
+using FinanceManager.Web.Infrastructure.Auth;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinanceManager.Web.Controllers;
@@ -14,14 +15,25 @@ public sealed class AuthController : ControllerBase
     private readonly IAuthTokenProvider _tokenProvider;
     private const string AuthCookieName = "FinanceManager.Auth";
 
+    /// <summary>
+    /// Creates a new instance of <see cref="AuthController"/>.
+    /// </summary>
+    /// <param name="auth">Service handling user authentication operations (login/register).</param>
+    /// <param name="tokenProvider">Token provider used to clear in-memory tokens on logout.</param>
     public AuthController(IUserAuthService auth, IAuthTokenProvider tokenProvider)
     { _auth = auth; _tokenProvider = tokenProvider; }
 
     /// <summary>
     /// Authenticates a user with username and password, returning a JWT (cookie) and user info.
     /// </summary>
-    /// <param name="request">Login request payload.</param>
-    /// <param name="ct">Cancellation token.</param>
+    /// <param name="request">Login request payload containing username, password and optional localization hints.</param>
+    /// <param name="ct">Cancellation token used to cancel the operation.</param>
+    /// <returns>
+    /// HTTP 200 with an <see cref="AuthOkResponse"/> when authentication succeeds.
+    /// HTTP 400 when the request model is invalid.
+    /// HTTP 401 when authentication fails (invalid credentials).
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown when the request contains invalid or malformed data.</exception>
     [HttpPost("login")]
     public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request, CancellationToken ct)
     {
@@ -53,8 +65,15 @@ public sealed class AuthController : ControllerBase
     /// <summary>
     /// Registers a new user account and returns a JWT (cookie) for immediate authentication.
     /// </summary>
-    /// <param name="request">Registration request payload.</param>
-    /// <param name="ct">Cancellation token.</param>
+    /// <param name="request">Registration request payload containing username, password and optional localization hints.</param>
+    /// <param name="ct">Cancellation token used to cancel the operation.</param>
+    /// <returns>
+    /// HTTP 200 with an <see cref="AuthOkResponse"/> when registration succeeds and a token is issued.
+    /// HTTP 400 when the request model is invalid.
+    /// HTTP 409 when a user with the same username already exists.
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown when the request contains invalid or malformed data.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when registration cannot proceed due to a conflicting existing user.</exception>
     [HttpPost("register")]
     public async Task<IActionResult> RegisterAsync([FromBody] RegisterRequest request, CancellationToken ct)
     {
@@ -82,8 +101,9 @@ public sealed class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Logs the current user out by clearing the auth cookie and in-memory token.
+    /// Logs the current user out by clearing the auth cookie and clearing the in-memory token cache where applicable.
     /// </summary>
+    /// <returns>HTTP 200 when logout completed.</returns>
     [HttpPost("logout")]
     public IActionResult Logout()
     {

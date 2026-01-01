@@ -9,24 +9,83 @@ using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Web.ViewModels.Common
 {
-    public enum BooleanSelection { True, False }
-    // Position where an embedded panel should be rendered on the Card page
-    public enum EmbeddedPanelPosition { AfterRibbon, AfterCard }
-     public abstract class BaseViewModel : IAsyncDisposable, IRibbonProvider
-     {
+    /// <summary>
+    /// Selection helper used in some UI bindings to represent boolean choices.
+    /// </summary>
+    public enum BooleanSelection
+    {
+        /// <summary>
+        /// Represents a true/positive selection.
+        /// </summary>
+        True,
+
+        /// <summary>
+        /// Represents a false/negative selection.
+        /// </summary>
+        False
+    }
+
+    /// <summary>
+    /// Position where an embedded panel should be rendered on the Card page.
+    /// </summary>
+    public enum EmbeddedPanelPosition
+    {
+        /// <summary>
+        /// Render the embedded panel after the ribbon (action bar) of the card page.
+        /// </summary>
+        AfterRibbon,
+
+        /// <summary>
+        /// Render the embedded panel after the main card content area.
+        /// </summary>
+        AfterCard
+    }
+
+    /// <summary>
+    /// Base class for view models used by the UI. Provides common services resolution, state events, lookup helpers,
+    /// ribbon aggregation and child view model lifecycle support.
+    /// </summary>
+    public abstract class BaseViewModel : IAsyncDisposable, IRibbonProvider
+    {
+        /// <summary>
+        /// Creates a new instance of <see cref="BaseViewModel"/> using the provided service provider.
+        /// </summary>
+        /// <param name="serviceProvider">Service provider used to resolve dependencies such as <see cref="IApiClient"/>, <see cref="NavigationManager"/>, localization services, etc.</param>
         protected BaseViewModel(IServiceProvider serviceProvider)
         {
             ServiceProvider = serviceProvider;
         }
+
         private readonly List<IAsyncDisposable> _children = new();
         private readonly List<BaseViewModel> _childViewModels = new();
         private IApiClient _ApiClient = null;
         private NavigationManager _Navigation = null;
+
+        /// <summary>
+        /// Human-readable title for a view. Derived classes may override.
+        /// </summary>
         public virtual string Title { get; } = string.Empty;
+
+        /// <summary>
+        /// Indicates whether the view model is currently performing a background operation and the UI should show a loading indicator.
+        /// </summary>
         public bool Loading { get; protected set; }
+
+        /// <summary>
+        /// Last human readable error message produced by operations in this view model.
+        /// </summary>
         public string? LastError { get; protected set; }
-        // Optional machine-readable error code coming from API (e.g. Err_Invalid_bankContactId)
+
+        /// <summary>
+        /// Optional machine-readable error code coming from the API (for example 'Err_Invalid_bankContactId').
+        /// </summary>
         public string? LastErrorCode { get; protected set; }
+
+        /// <summary>
+        /// Helper to set the current error state. Looks up localized message when LastErrorCode maps to a localization resource.
+        /// </summary>
+        /// <param name="errorCode">Machine readable error code or <c>null</c>.</param>
+        /// <param name="errorMessage">Fallback human readable message or <c>null</c>.</param>
         protected void SetError(string errorCode, string errorMessage)
         {
             LastErrorCode = errorCode;
@@ -38,11 +97,28 @@ namespace FinanceManager.Web.ViewModels.Common
                     LastError = entry.Value;
             }
         }
+
+        /// <summary>
+        /// Service provider used to obtain scoped or singleton services.
+        /// </summary>
         protected IServiceProvider ServiceProvider { get; }
+
+        /// <summary>
+        /// Lazily resolved API client instance taken from the service provider.
+        /// </summary>
         protected IApiClient ApiClient  => _ApiClient ??= ServiceProvider.GetRequiredService<IApiClient>();
+
+        /// <summary>
+        /// Lazily resolved navigation manager used for composing navigation URLs.
+        /// </summary>
         protected NavigationManager Navigation => _Navigation ??= ServiceProvider.GetRequiredService<NavigationManager>();
+
         // Lazy-resolved localizer. Resolve on first access and swallow resolution errors (e.g. provider disposed).
         private IStringLocalizer<Pages>? _localizerCache;
+
+        /// <summary>
+        /// Localizer used to resolve UI strings for pages/labels. May be <c>null</c> if localization services are not available.
+        /// </summary>
         protected IStringLocalizer? Localizer
         {
             get
@@ -60,55 +136,131 @@ namespace FinanceManager.Web.ViewModels.Common
             }
         }
 
+        /// <summary>
+        /// Event raised when the view model requests the UI to refresh its rendering of bound state.
+        /// </summary>
         public event EventHandler? StateChanged;
-        // Event raised when a viewmodel requires the UI to request authentication from the user.
-        // Payload may contain an optional reason or return URL.
+
+        /// <summary>
+        /// Event raised when the view model requires the UI to request authentication from the user.
+        /// Payload may contain an optional reason or return URL.
+        /// </summary>
         public event EventHandler<string?>? AuthenticationRequired;
 
-        // New: allow carrying rich payloads (e.g. overlay component spec) in addition to the existing string payload
+        /// <summary>
+        /// Event arguments used when a view model requests a UI action. Includes either a string payload or an arbitrary object payload.
+        /// </summary>
         public sealed class UiActionEventArgs : EventArgs
         {
+            /// <summary>
+            /// Action identifier requested by the view model (for example "Back", "OpenAttachments").
+            /// </summary>
             public string? Action { get; }
+
+            /// <summary>
+            /// Optional string payload associated with the action (legacy support).
+            /// </summary>
             public string? Payload { get; }
+
+            /// <summary>
+            /// Optional object payload allowing rich payloads such as <see cref="UiOverlaySpec"/>.
+            /// </summary>
             public object? PayloadObject { get; }
 
+            /// <summary>
+            /// Constructs a UiActionEventArgs with a string payload.
+            /// </summary>
+            /// <param name="action">Action identifier.</param>
+            /// <param name="payload">String payload.</param>
             public UiActionEventArgs(string? action, string? payload)
             {
                 Action = action; Payload = payload; PayloadObject = null;
             }
 
+            /// <summary>
+            /// Constructs a UiActionEventArgs with an object payload.
+            /// </summary>
+            /// <param name="action">Action identifier.</param>
+            /// <param name="payloadObject">Object payload.</param>
             public UiActionEventArgs(string? action, object? payloadObject)
             {
                 Action = action; Payload = null; PayloadObject = payloadObject;
             }
         }
 
-        // Generic overlay spec that pages can render using DynamicComponent
+        /// <summary>
+        /// Generic overlay specification that pages can render using a DynamicComponent. Contains component type, parameters and modality.
+        /// </summary>
+        /// <param name="ComponentType">Component type to render.</param>
+        /// <param name="Parameters">Optional parameter dictionary passed to the component.</param>
+        /// <param name="Modal">If true the overlay is modal.</param>
         public sealed record UiOverlaySpec(Type ComponentType, IReadOnlyDictionary<string, object?>? Parameters = null, bool Modal = true);
 
-        // Embedded panel spec: a viewmodel can request an inline panel to be shown on the card page
+        /// <summary>
+        /// Specification for embedding an inline panel on card pages. Pages can render this spec at the requested position.
+        /// </summary>
+        /// <param name="ComponentType">Component type that implements the embedded panel.</param>
+        /// <param name="Parameters">Optional parameters passed to the embedded panel component.</param>
+        /// <param name="Position">Position on the card page where the panel should be rendered.</param>
+        /// <param name="Visible">Whether the panel should be initially visible.</param>
         public sealed record EmbeddedPanelSpec(Type ComponentType, IReadOnlyDictionary<string, object?>? Parameters = null, EmbeddedPanelPosition Position = EmbeddedPanelPosition.AfterCard, bool Visible = true);
 
+        /// <summary>
+        /// Event raised when the view model requires the UI to perform an action (overlay, navigation, etc.).
+        /// Subscribers receive <see cref="UiActionEventArgs"/> describing the requested action.
+        /// </summary>
         public event EventHandler<UiActionEventArgs?>? UiActionRequested;
+
+        /// <summary>
+        /// Simple DTO representing a lookup item returned by lookup queries.
+        /// </summary>
+        /// <param name="Key">Identifier of the lookup item.</param>
+        /// <param name="Name">Display name of the lookup item.</param>
         public sealed record LookupItem(System.Guid Key, string Name);
+
+        /// <summary>
+        /// Raises <see cref="StateChanged"/> so consumers update the UI state.
+        /// </summary>
         protected void RaiseStateChanged() => StateChanged?.Invoke(this, EventArgs.Empty);
+
+        /// <summary>
+        /// Requests a UI action with no payload.
+        /// </summary>
+        /// <param name="action">Action identifier.</param>
         protected void RaiseUiActionRequested(string? action) => UiActionRequested?.Invoke(this, new UiActionEventArgs(action, null));
+
+        /// <summary>
+        /// Requests a UI action with a string payload.
+        /// </summary>
+        /// <param name="action">Action identifier.</param>
+        /// <param name="payload">String payload to pass to the UI.</param>
         protected void RaiseUiActionRequested(string? action, string? payload) => UiActionRequested?.Invoke(this, new UiActionEventArgs(action, payload));
-        // New overload to pass arbitrary object payloads (e.g. UiOverlaySpec)
+
+        /// <summary>
+        /// Requests a UI action with an arbitrary object payload.
+        /// </summary>
+        /// <param name="action">Action identifier.</param>
+        /// <param name="payloadObject">Object payload passed to the UI subscriber.</param>
         protected void RaiseUiActionRequested(string? action, object? payloadObject) => UiActionRequested?.Invoke(this, new UiActionEventArgs(action, payloadObject));
+
         /// <summary>
         /// Convenience helper to request an embedded inline panel on the Card page.
-        /// View pages will render the supplied EmbeddedPanelSpec at the requested position.
+        /// View pages will render the supplied <see cref="EmbeddedPanelSpec"/> at the requested position.
         /// </summary>
+        /// <param name="spec">Specification describing the embedded panel to show.</param>
         protected void RaiseUiEmbeddedPanelRequested(EmbeddedPanelSpec spec) => UiActionRequested?.Invoke(this, new UiActionEventArgs("EmbeddedPanel", spec));
 
-        // Background task types that a page should show for this ViewModel. Default: none.
+        /// <summary>
+        /// Background task types that a page should show for this ViewModel. Default: none.
+        /// </summary>
         public virtual BackgroundTaskType[]? VisibleBackgroundTaskTypes => Array.Empty<BackgroundTaskType>();
 
         /// <summary>
         /// Convenience helper for requesting the Attachments overlay from any ViewModel.
-        /// View pages can render the supplied UiOverlaySpec generically (DynamicComponent).
+        /// This raises a UI action containing a <see cref="UiOverlaySpec"/> the page can render.
         /// </summary>
+        /// <param name="parentKind">Kind of attachment parent entity.</param>
+        /// <param name="parentId">Parent entity id to list attachments for.</param>
         protected void RequestOpenAttachments(AttachmentEntityKind parentKind, Guid parentId)
         {
             var parameters = new Dictionary<string, object?>
@@ -122,6 +274,14 @@ namespace FinanceManager.Web.ViewModels.Common
 
         #region Child View Models
         private Dictionary<Type, BaseViewModel> _singletonChildViewModels = new();
+
+        /// <summary>
+        /// Creates a child view model of type <typeparamref name="T"/>. Optionally returns a singleton instance per type.
+        /// </summary>
+        /// <typeparam name="T">Type of the child view model to create.</typeparam>
+        /// <param name="singletonPerType">When true the same instance is returned for subsequent calls requesting the same type.</param>
+        /// <param name="configure">Optional configuration action invoked after creation (or when returning an existing singleton).</param>
+        /// <returns>The created or existing child view model instance.</returns>
         protected T CreateSubViewModel<T>(bool singletonPerType = false, Action<T>? configure = null) where T : BaseViewModel
         {
             if (singletonPerType)
@@ -145,6 +305,15 @@ namespace FinanceManager.Web.ViewModels.Common
         #endregion
 
         #region Lookup Values
+        /// <summary>
+        /// Queries lookup values for a CardField. Supports enums, contacts, savings plans, securities and bank accounts.
+        /// </summary>
+        /// <param name="field">Card field describing the lookup type and optional filter.</param>
+        /// <param name="q">Search string to filter lookup results.</param>
+        /// <param name="skip">Number of items to skip for paging.
+        /// </param>
+        /// <param name="take">Number of items to take for paging.</param>
+        /// <returns>A task that resolves to a list of <see cref="LookupItem"/> matching the query.</returns>
         public virtual async Task<IReadOnlyList<LookupItem>> QueryLookupAsync(CardField field, string? q, int skip, int take)
         {
             if (!string.IsNullOrWhiteSpace(field.LookupType) && field.LookupType.StartsWith("Enum:", StringComparison.OrdinalIgnoreCase))
@@ -269,12 +438,18 @@ namespace FinanceManager.Web.ViewModels.Common
         }
         #endregion Lookup Values
 
+        /// <summary>
+        /// Applies localized translations for enum-based lookup fields on the supplied record.
+        /// </summary>
+        /// <param name="record">Card record to translate.</param>
+        /// <returns>The translated record (same instance mutated).</returns>
         protected virtual CardRecord ApplyEnumTranslations(CardRecord record)
         {
             foreach (var field in record.Fields)
                 ApplyEnumTranslation(field);
             return record;
         }
+
         private void ApplyEnumTranslation(CardField field)
         {
             if (!string.IsNullOrWhiteSpace(field.LookupType) && field.LookupType.StartsWith("Enum:", StringComparison.OrdinalIgnoreCase))
@@ -322,11 +497,23 @@ namespace FinanceManager.Web.ViewModels.Common
             return null;
         }
         
+        /// <summary>
+        /// Determines whether the provided child view model should be considered active for purposes of aggregating its ribbon registers.
+        /// Derived classes may override to control which child view models contribute ribbon items.
+        /// </summary>
+        /// <param name="vm">Child view model to evaluate.</param>
+        /// <returns><c>true</c> when the child view model is active; otherwise <c>false</c>.</returns>
         protected virtual bool IsChildViewModelActive(BaseViewModel vm)
         {
             return true;
         }
+
         // IRibbonProvider implementation
+        /// <summary>
+        /// Aggregates ribbon registers from this view model and its active child view models.
+        /// </summary>
+        /// <param name="localizer">Localizer used to resolve UI labels.</param>
+        /// <returns>A combined list of <see cref="UiRibbonRegister"/> instances or <c>null</c> when none are available.</returns>
         public virtual IReadOnlyList<UiRibbonRegister>? GetRibbonRegisters(IStringLocalizer localizer)
         {
             var regs = GetRibbonRegisterDefinition(localizer);
@@ -344,18 +531,44 @@ namespace FinanceManager.Web.ViewModels.Common
 
             return registers.Count == 0 ? null : registers;
         }
+
+        /// <summary>
+        /// Allows derived classes to provide local ribbon register definitions. Default implementation returns <c>null</c>.
+        /// </summary>
+        /// <param name="localizer">Localizer used to resolve labels.</param>
+        /// <returns>Ribbon register definitions or <c>null</c>.</returns>
         protected virtual IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer) => null;
-        // Compatibility: legacy tests and callers expect a method named GetRibbon
+
+        /// <summary>
+        /// Compatibility shim: legacy callers expect <c>GetRibbon</c> which delegates to <see cref="GetRibbonRegisterDefinition(IStringLocalizer)"/>
+        /// </summary>
+        /// <param name="localizer">Localizer used to resolve labels.</param>
+        /// <returns>Ribbon registers or <c>null</c>.</returns>
         public IReadOnlyList<UiRibbonRegister>? GetRibbon(IStringLocalizer localizer) => GetRibbonRegisterDefinition(localizer);
+
+        /// <summary>
+        /// Sets the currently active ribbon tab. Default implementation is a no-op; override as needed.
+        /// </summary>
+        /// <typeparam name="TTabEnum">Enumeration type representing tabs.</typeparam>
+        /// <param name="id">Identifier of the tab to set active.</param>
         public void SetActiveTab<TTabEnum>(TTabEnum id)
         {
         }
+
+        /// <summary>
+        /// Retrieves the currently active ribbon tab identifier. Default implementation returns <c>null</c>.
+        /// </summary>
+        /// <typeparam name="TTabEnum">Enumeration type representing tabs.</typeparam>
+        /// <returns>The active tab identifier or <c>null</c> when none is set.</returns>
         public TTabEnum? GetActiveTab<TTabEnum>()
         {
             return default;
         }
 
 
+        /// <summary>
+        /// Disposes asynchronous resources held by the view model. Derived classes may override to dispose additional resources.
+        /// </summary>
         public virtual ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
         /// <summary>
@@ -379,10 +592,11 @@ namespace FinanceManager.Web.ViewModels.Common
         }
 
         /// <summary>
-        /// Checks the current authentication state using ICurrentUserService and raises
+        /// Checks the current authentication state using <see cref="ICurrentUserService"/> and raises
         /// the <see cref="AuthenticationRequired"/> event when the user is not authenticated.
         /// Returns true when the user is authenticated (or no current-user service is available).
         /// </summary>
+        /// <returns><c>true</c> when the user is authenticated; otherwise <c>false</c> and the <see cref="AuthenticationRequired"/> event is raised.</returns>
         public bool CheckAuthentication()
         {
             try

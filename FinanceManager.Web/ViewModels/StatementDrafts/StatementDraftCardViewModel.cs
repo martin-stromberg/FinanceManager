@@ -5,20 +5,49 @@ using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.ViewModels.StatementDrafts;
 
+/// <summary>
+/// View model for a single statement draft card. Exposes draft metadata, embedded entries list
+/// and provides operations to classify, validate, book and manage the draft.
+/// </summary>
 [FinanceManager.Web.ViewModels.Common.CardRoute("statement-drafts")]
 public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
 {
-
+    /// <summary>
+    /// Initializes a new instance of <see cref="StatementDraftCardViewModel"/>.
+    /// </summary>
+    /// <param name="sp">Service provider used to resolve dependencies (API client, navigation, localizer, etc.).</param>
     public StatementDraftCardViewModel(IServiceProvider sp) : base(sp)
     {
     }
 
+    /// <summary>
+    /// Identifier of the currently loaded draft. <see cref="Guid.Empty"/> indicates none.
+    /// </summary>
     public Guid DraftId { get; private set; }
+
+    /// <summary>
+    /// Detailed DTO of the loaded draft or <c>null</c> when no draft is loaded.
+    /// </summary>
     public StatementDraftDetailDto? Draft { get; private set; }
+
+    /// <summary>
+    /// Last validation result returned by a call to <see cref="ValidateAsync"/> or <see cref="BookAsync"/>
+    /// when booking was withheld due to warnings/errors.
+    /// </summary>
     public DraftValidationResultDto? LastValidationResult { get; private set; }
 
+    /// <summary>
+    /// Title displayed in the card header. Falls back to base title when no draft is loaded.
+    /// </summary>
     public override string Title => Draft?.OriginalFileName ?? base.Title;
 
+    /// <summary>
+    /// Loads the draft with the specified <paramref name="id"/> and builds the corresponding <see cref="CardRecord"/>.
+    /// When <paramref name="id"/> is <see cref="Guid.Empty"/> the view model will prepare a create-mode card.
+    /// </summary>
+    /// <param name="id">Identifier of the draft to load or <see cref="Guid.Empty"/> to prepare a new draft.</param>
+    /// <returns>A task that completes when the load operation has finished.</returns>
+    /// <exception cref="OperationCanceledException">May be thrown if underlying API calls observe a cancelled token.</exception>
     public override async Task LoadAsync(Guid id)
     {
         DraftId = id;
@@ -157,6 +186,10 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         }
     }
 
+    /// <summary>
+    /// Deletes the current draft via the API.
+    /// </summary>
+    /// <returns>True when deletion succeeded; otherwise false.</returns>
     public override async Task<bool> DeleteAsync()
     {
         if (DraftId == Guid.Empty) return false;
@@ -171,11 +204,29 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         }
     }
 
-    // Symbol handling not supported for statement drafts
+    /// <summary>
+    /// Statement drafts do not support symbol uploads in the current model.
+    /// </summary>
+    /// <returns><c>false</c> always.</returns>
     protected override bool IsSymbolUploadAllowed() => false;
+
+    /// <summary>
+    /// Returns the attachment parent information for symbol assignments. For statement drafts this returns <see cref="Domain.Attachments.AttachmentEntityKind.StatementDraft"/>.
+    /// </summary>
+    /// <returns>Tuple of attachment kind and parent id.</returns>
     protected override (Domain.Attachments.AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent() => (Domain.Attachments.AttachmentEntityKind.StatementDraft, DraftId);
+
+    /// <summary>
+    /// No-op for statement draft symbols; assignment not supported.
+    /// </summary>
+    /// <param name="attachmentId">Attachment id to assign or <c>null</c> to clear.</param>
     protected override Task AssignNewSymbolAsync(Guid? attachmentId) => Task.CompletedTask;
 
+    /// <summary>
+    /// Builds ribbon register definitions for the draft card including navigation, manage, statement and linked tabs.
+    /// </summary>
+    /// <param name="localizer">Localizer used to resolve UI labels.</param>
+    /// <returns>Collection of ribbon registers or <c>null</c> when none are provided.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var tabs = new List<UiRibbonTab>();
@@ -222,6 +273,9 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         return registers.Count == 0 ? null : registers;
     }
 
+    /// <summary>
+    /// Requests server-side classification of the draft and updates local card and embedded entries when finished.
+    /// </summary>
     public async Task ClassifyAsync()
     {
         if (DraftId == Guid.Empty) return;
@@ -261,6 +315,9 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         }
     }
 
+    /// <summary>
+    /// Validates the draft on the server and stores the validation result for UI rendering.
+    /// </summary>
     public async Task ValidateAsync()
     {
         if (DraftId == Guid.Empty) return;
@@ -303,6 +360,10 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         }
     }
 
+    /// <summary>
+    /// Attempts to book the draft. If booking succeeds attempts to navigate to next draft or overview.
+    /// If booking is withheld due to warnings the validation messages are stored in <see cref="LastValidationResult"/>.
+    /// </summary>
     public async Task BookAsync()
     {
         if (DraftId == Guid.Empty) return;
@@ -369,6 +430,11 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         }
     }
 
+    /// <summary>
+    /// Saves pending changes on the draft such as assigned account or description. When creating a new draft
+    /// this method will create the draft first and then apply pending values.
+    /// </summary>
+    /// <returns>True when save succeeded; otherwise false.</returns>
     public override async Task<bool> SaveAsync()
     {
         // Save pending account selection for this statement draft

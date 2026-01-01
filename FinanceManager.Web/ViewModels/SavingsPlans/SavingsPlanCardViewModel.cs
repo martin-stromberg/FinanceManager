@@ -5,35 +5,82 @@ using FinanceManager.Web.ViewModels.Common;
 
 namespace FinanceManager.Web.ViewModels.SavingsPlans;
 
+/// <summary>
+/// View model for the savings plan card. Responsible for loading, creating, updating and deleting
+/// savings plans and exposing card fields, analysis and ribbon actions to the UI.
+/// </summary>
 [FinanceManager.Web.ViewModels.Common.CardRoute("savings-plans")]
 public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, string Value)>
 {
-
+    /// <summary>
+    /// Initializes a new instance of <see cref="SavingsPlanCardViewModel"/>.
+    /// </summary>
+    /// <param name="sp">Service provider used to resolve required services such as the API client and localizer.</param>
     public SavingsPlanCardViewModel(IServiceProvider sp) : base(sp)
     {
     }
 
+    /// <summary>
+    /// Identifier of the currently loaded savings plan. Guid.Empty indicates a new (unsaved) entity.
+    /// </summary>
     public Guid Id { get; private set; }
+
+    /// <summary>
+    /// Returns true when the view model is configured to edit an existing savings plan (Id != Guid.Empty).
+    /// </summary>
     public bool IsEdit => Id != Guid.Empty;
 
+    /// <summary>
+    /// Last error code or message set by the view model when operations fail.
+    /// </summary>
     public string? Error { get; private set; }
+
+    /// <summary>
+    /// True when the view model has performed at least one load operation.
+    /// </summary>
     public bool Loaded { get; private set; }
 
+    /// <summary>
+    /// Analysis data for the savings plan, populated by <see cref="LoadAnalysisAsync"/>.
+    /// </summary>
     public SavingsPlanAnalysisDto? Analysis { get; private set; }
+
+    /// <summary>
+    /// Available categories for the savings plan used to populate lookup fields.
+    /// </summary>
     public List<SavingsPlanCategoryDto> Categories { get; private set; } = new();
+
+    /// <summary>
+    /// Title shown in the card header; falls back to the base title when no model name is available.
+    /// </summary>
     public override string Title => Model?.Name ?? base.Title;
 
+    /// <summary>
+    /// Editable model used to create or update a savings plan.
+    /// </summary>
     public SavingsPlanCreateRequest Model { get; private set; } = new(string.Empty, SavingsPlanType.OneTime, null, null, null, null, null);
 
-    // Navigation context
+    /// <summary>
+    /// Optional navigation context returning to a draft id after save.
+    /// </summary>
     public Guid? ReturnDraftId { get; private set; }
+
+    /// <summary>
+    /// Optional navigation context returning to an entry id after save.
+    /// </summary>
     public Guid? ReturnEntryId { get; private set; }
 
+    /// <summary>
+    /// Endpoint used by the embedded chart view model when editing an existing savings plan.
+    /// </summary>
     public string ChartEndpoint => IsEdit ? $"/api/savings-plans/{Id}/aggregates" : string.Empty;
 
     // remember last loaded dto to rebuild card with context
     private SavingsPlanDto? _loadedDto;
 
+    /// <summary>
+    /// Returns an <see cref="AggregateBarChartViewModel"/> when editing an existing savings plan; otherwise <c>null</c>.
+    /// </summary>
     public override AggregateBarChartViewModel? ChartViewModel
     {
         get
@@ -45,6 +92,13 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
         }
     }
 
+    /// <summary>
+    /// Loads the savings plan identified by <paramref name="id"/> and prepares the card record for rendering.
+    /// When <paramref name="id"/> is <see cref="Guid.Empty"/> a new model is prepared.
+    /// </summary>
+    /// <param name="id">Identifier of the savings plan to load or <see cref="Guid.Empty"/> for a new entity.</param>
+    /// <returns>A task that completes when loading has finished.</returns>
+    /// <exception cref="OperationCanceledException">May be thrown by underlying API calls if a cancellation token is used by callers.</exception>
     public override async Task LoadAsync(Guid id)
     {
         Id = id;
@@ -86,6 +140,10 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
         finally { Loading = false; Loaded = true; RaiseStateChanged(); }
     }
 
+    /// <summary>
+    /// Loads analysis data for the current savings plan when editing.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
     public async Task LoadAnalysisAsync(CancellationToken ct = default)
     {
         if (!IsEdit) { return; }
@@ -93,12 +151,22 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
         RaiseStateChanged();
     }
 
+    /// <summary>
+    /// Loads available savings plan categories used by lookup fields.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
     public async Task LoadCategoriesAsync(CancellationToken ct = default)
     {
         try { Categories = (await ApiClient.SavingsPlanCategories_ListAsync(ct)).ToList(); } catch { Categories = new(); }
         RaiseStateChanged();
     }
 
+    /// <summary>
+    /// Saves the current model by creating or updating the savings plan via the API.
+    /// On success the model and card record are updated and a "Saved" UI action is raised.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when the save succeeded; otherwise false.</returns>
     public async Task<bool> SaveAsync(CancellationToken ct = default)
     {
         SetError(null, null);
@@ -135,7 +203,10 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
         finally { RaiseStateChanged(); }
     }
 
-    // Build a SavingsPlanCreateRequest by merging current Model with any pending field overrides
+    /// <summary>
+    /// Builds a <see cref="SavingsPlanCreateRequest"/> by merging the current model with pending field overrides.
+    /// </summary>
+    /// <returns>The merged <see cref="SavingsPlanCreateRequest"/> instance.</returns>
     private SavingsPlanCreateRequest BuildCreateRequestFromPending()
     {
         var name = Model.Name;
@@ -240,6 +311,10 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
         return new SavingsPlanCreateRequest(name ?? string.Empty, type, targetAmount, targetDate, interval, categoryId, contractNumber);
     }
 
+    /// <summary>
+    /// Deletes the current savings plan via the API.
+    /// </summary>
+    /// <returns>True when deletion succeeded; otherwise false.</returns>
     public override async Task<bool> DeleteAsync()
     {
         if (Id == Guid.Empty) return false;
@@ -314,7 +389,11 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
         return ApplyPendingValues(ApplyEnumTranslations(record));
     }
 
-    // react to field changes so UI can update visibility/editability immediately
+    /// <summary>
+    /// Reacts to field value validation changes and triggers a rebuild of the card record when relevant enum-like fields change.
+    /// </summary>
+    /// <param name="field">Card field being validated.</param>
+    /// <param name="newValue">New value being applied.</param>
     public override void ValidateFieldValue(CardField field, object? newValue)
     {
         base.ValidateFieldValue(field, newValue);
@@ -325,6 +404,11 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
         }
     }
 
+    /// <summary>
+    /// Reacts to lookup field selection changes and rebuilds the card record for dependent fields.
+    /// </summary>
+    /// <param name="field">Card field containing the lookup.</param>
+    /// <param name="item">Selected lookup item.</param>
     public override void ValidateLookupField(CardField field, LookupItem? item)
     {
         base.ValidateLookupField(field, item);
@@ -346,6 +430,11 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
     }
 
     // --- Ribbon provider ---
+    /// <summary>
+    /// Provides ribbon register definitions for the savings plan card including navigation, manage and analysis actions.
+    /// </summary>
+    /// <param name="localizer">Localizer used to resolve UI labels.</param>
+    /// <returns>Ribbon register definitions or <c>null</c> when none are provided.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var canSave = !string.IsNullOrWhiteSpace(Model.Name) && Model.Name.Trim().Length >= 2 && HasPendingChanges;
@@ -446,10 +535,25 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
         catch (Exception ex) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message); return false; }
         finally { Loading = false; RaiseStateChanged(); }
     }
+
+    /// <summary>
+    /// Indicates whether symbol uploads are allowed for the current entity.
+    /// </summary>
+    /// <returns><c>true</c> when an existing savings plan is loaded.</returns>
     protected override bool IsSymbolUploadAllowed() => Id != Guid.Empty;
-    // Implement BaseCardViewModel symbol parent and assignment hooks
+
+    /// <summary>
+    /// Returns the parent attachment kind and id used for symbol uploads.
+    /// </summary>
+    /// <returns>Tuple with <see cref="AttachmentEntityKind.SavingsPlan"/> and the parent id (or Guid.Empty).</returns>
     protected override (AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent() => (AttachmentEntityKind.SavingsPlan, Id == Guid.Empty ? Guid.Empty : Id);
 
+    /// <summary>
+    /// Assigns a new symbol attachment to the savings plan by calling the API and reloading the entity.
+    /// The method swallows exceptions to keep UI behavior consistent; errors are surfaced elsewhere.
+    /// </summary>
+    /// <param name="attachmentId">Attachment id to assign, or <c>null</c> to clear the symbol.</param>
+    /// <returns>A task that completes when the assignment and reload have finished.</returns>
     protected override async Task AssignNewSymbolAsync(Guid? attachmentId)
     {
         // Ensure API call to set symbol on savings plan and reload

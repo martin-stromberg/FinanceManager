@@ -1350,4 +1350,10 @@
   <data name="Attachments_Title" xml:space="preserve">
     <value>Attachments</value>
   </data>
+  <data name="RB_Start" xml:space="preserve">
+    <value>Start processing</value>
+  </data>
+  <data name="RB_Progress" xml:space="preserve">
+    <value>Processing</value>
+  </data>
 </root>

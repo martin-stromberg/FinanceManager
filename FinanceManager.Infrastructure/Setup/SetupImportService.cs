@@ -1,5 +1,6 @@
 using FinanceManager.Application.Aggregates;
 using FinanceManager.Application.Attachments; // new
+using FinanceManager.Application.Setup;
 using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Attachments;
@@ -15,6 +16,10 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 
+/// <summary>
+/// Service that imports application setup and backup data into the database.
+/// Supports multiple backup versions and maps legacy identifiers to newly created entities.
+/// </summary>
 public sealed class SetupImportService : ISetupImportService
 {
     private readonly AppDbContext _db;
@@ -22,6 +27,13 @@ public sealed class SetupImportService : ISetupImportService
     private readonly IPostingAggregateService _aggregateService;
     private readonly IAttachmentService _attachments; // new
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SetupImportService"/> class.
+    /// </summary>
+    /// <param name="db">Application database context used to persist imported entities.</param>
+    /// <param name="statementDraftService">Statement draft service used when creating drafts from legacy ledger exports.</param>
+    /// <param name="aggregateService">Aggregate posting service used to rebuild posting aggregates after import.</param>
+    /// <param name="attachments">Optional attachment service used to persist embedded files; when null a no-op implementation is used.</param>
     public SetupImportService(AppDbContext db, IStatementDraftService statementDraftService, IPostingAggregateService aggregateService, IAttachmentService? attachments = null)
     {
         _db = db;
@@ -73,13 +85,34 @@ public sealed class SetupImportService : ISetupImportService
             => Task.FromResult(new AttachmentDto(Guid.Empty, (short)kind, entityId, "ref", "application/octet-stream", 0L, null, DateTime.UtcNow, false));
     }
 
+    /// <summary>
+    /// Progress information reported during import operations.
+    /// </summary>
     public struct ImportProgress
     {
+        /// <summary>
+        /// Current main step index (1-based semantic).
+        /// </summary>
         public int Step { get; set; }
+
+        /// <summary>
+        /// Total number of main steps.
+        /// </summary>
         public int Total { get; set; }
 
+        /// <summary>
+        /// Current sub-step index within the current main step.
+        /// </summary>
         public int SubStep { get; set; }
+
+        /// <summary>
+        /// Total number of sub-steps for the current main step.
+        /// </summary>
         public int SubTotal { get; set; }
+
+        /// <summary>
+        /// Human readable description of the current step.
+        /// </summary>
         public string StepDescription { get; internal set; }
 
         internal ImportProgress Inc()
@@ -108,8 +141,23 @@ public sealed class SetupImportService : ISetupImportService
             return this;
         }
     }
+
+    /// <summary>
+    /// Event raised when import progress changes. Subscribers receive an <see cref="ImportProgress"/> instance.
+    /// </summary>
     public event EventHandler<ImportProgress> ProgressChanged;
 
+    /// <summary>
+    /// Imports a backup stream for the specified user.
+    /// The backup format is newline-delimited NDJSON: first line contains metadata, remaining data contains JSON payload.
+    /// Supports multiple backup versions; higher versions are preferred when available.
+    /// </summary>
+    /// <param name="userId">The owner user id for which data should be imported.</param>
+    /// <param name="fileStream">Stream containing the backup data (will be read but not disposed by this method).</param>
+    /// <param name="replaceExisting">When true, existing user data is cleared before importing.</param>
+    /// <param name="ct">Cancellation token to cancel the import operation.</param>
+    /// <returns>A task that completes when the import has finished.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the provided stream does not contain valid backup metadata or unsupported version.</exception>
     public async Task ImportAsync(Guid userId, Stream fileStream, bool replaceExisting, CancellationToken ct)
     {
         using var reader = new StreamReader(fileStream, Encoding.UTF8);

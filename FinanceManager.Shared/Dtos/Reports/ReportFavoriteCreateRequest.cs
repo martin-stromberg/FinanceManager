@@ -2,7 +2,20 @@ namespace FinanceManager.Shared.Dtos.Reports;
 
 /// <summary>
 /// Request to create a report favorite.
+/// Represents the client payload for creating a saved report configuration (favorite).
 /// </summary>
+/// <param name="Name">Display name of the favorite.</param>
+/// <param name="PostingKind">Primary posting kind to include in the report (bank, contact, savings plan, security).</param>
+/// <param name="IncludeCategory">When true, include category grouping in the aggregation.</param>
+/// <param name="Interval">Reporting interval (e.g. Month, Year).</param>
+/// <param name="Take">Number of results / buckets to take for the report (paging/limit for aggregation).</param>
+/// <param name="ComparePrevious">When true, include comparison to the previous period.</param>
+/// <param name="CompareYear">When true, include year-over-year comparison.</param>
+/// <param name="ShowChart">When true, the UI should show a chart for this favorite.</param>
+/// <param name="Expandable">When true, report rows can be expanded in the UI.</param>
+/// <param name="PostingKinds">Optional collection of posting kinds to include (overrides primary PostingKind when provided).</param>
+/// <param name="Filters">Optional additional filters to apply to the report (categories, contacts, accounts, etc.).</param>
+/// <param name="UseValutaDate">When true, use valuta/booking date instead of value date when aggregating.</param>
 public sealed record ReportFavoriteCreateRequest(
     string Name,
     PostingKind PostingKind,
@@ -18,6 +31,20 @@ public sealed record ReportFavoriteCreateRequest(
     bool UseValutaDate = false
 )
 {
+    /// <summary>
+    /// Convenience overload that creates a report favorite using a default <c>Take</c> value of 24.
+    /// </summary>
+    /// <param name="name">Display name of the favorite.</param>
+    /// <param name="postingKind">Primary posting kind to include in the report.</param>
+    /// <param name="includeCategory">When true, include category grouping in the aggregation.</param>
+    /// <param name="interval">Reporting interval.</param>
+    /// <param name="comparePrevious">When true, include comparison to the previous period.</param>
+    /// <param name="compareYear">When true, include year-over-year comparison.</param>
+    /// <param name="showChart">When true, the UI should show a chart for this favorite.</param>
+    /// <param name="expandable">When true, report rows can be expanded in the UI.</param>
+    /// <param name="postingKinds">Optional collection of posting kinds to include.</param>
+    /// <param name="filters">Optional additional filters to apply to the report.</param>
+    /// <param name="UseValutaDate">When true, use valuta/booking date instead of value date when aggregating.</param>
     public ReportFavoriteCreateRequest(string name, PostingKind postingKind, bool includeCategory, ReportInterval interval,
         bool comparePrevious, bool compareYear, bool showChart, bool expandable,
         IReadOnlyCollection<PostingKind>? postingKinds = null, ReportFavoriteFiltersDto? filters = null, bool UseValutaDate = false)

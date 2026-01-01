@@ -6,19 +6,42 @@ using FinanceManager.Domain.Attachments;
 
 namespace FinanceManager.Web.ViewModels.Securities.Categories;
 
+/// <summary>
+/// View model for a security category card. Supports loading, creating, updating,
+/// deleting and symbol attachment operations for a single security category.
+/// </summary>
 [FinanceManager.Web.ViewModels.Common.CardRoute("securities", "categories")]
 public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
 {
+    /// <summary>
+    /// Initializes a new instance of <see cref="SecurityCategoryCardViewModel"/>.
+    /// </summary>
+    /// <param name="sp">Service provider to resolve required services like the API client.</param>
     public SecurityCategoryCardViewModel(IServiceProvider sp) : base(sp)
     {
     }
 
+    /// <summary>
+    /// Identifier of the currently loaded security category. <see cref="Guid.Empty"/> when creating a new category.
+    /// </summary>
     public Guid Id { get; private set; }
 
+    /// <summary>
+    /// Edit model holding the values bound to the UI when creating or editing a category.
+    /// </summary>
     public EditModel Model { get; } = new();
 
+    /// <summary>
+    /// Computed title for the card derived from the category name field or the edit model.
+    /// </summary>
     public override string Title => CardRecord?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_SecurityCategory_Name")?.Text ?? (Model?.Name ?? base.Title);
 
+    /// <summary>
+    /// Loads the security category identified by <paramref name="id"/>. When <see cref="Guid.Empty"/>
+    /// the view model is prepared for creating a new category and any initial prefill is applied.
+    /// </summary>
+    /// <param name="id">Category identifier to load or <see cref="Guid.Empty"/> to initialize a new category.</param>
+    /// <returns>A task that completes when the load operation has finished.</returns>
     public override async Task LoadAsync(Guid id)
     {
         Id = id;
@@ -55,6 +78,12 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
         finally { Loading = false; RaiseStateChanged(); }
     }
 
+    /// <summary>
+    /// Builds a <see cref="CardRecord"/> containing the editable fields for this category.
+    /// </summary>
+    /// <param name="name">Category display name.</param>
+    /// <param name="symbolId">Optional attachment id used as symbol.</param>
+    /// <returns>A <see cref="CardRecord"/> instance ready for rendering.</returns>
     private CardRecord BuildCardRecord(string name, Guid? symbolId)
     {
         var fields = new List<CardField>
@@ -65,6 +94,10 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
         return new CardRecord(fields, Model);
     }
 
+    /// <summary>
+    /// Saves the current category by creating or updating it via the API.
+    /// </summary>
+    /// <returns><c>true</c> when save succeeded; otherwise <c>false</c> and <see cref="CardViewModelBase.SetError(string?, string?)"/> provides details.</returns>
     public override async Task<bool> SaveAsync()
     {
         if (CardRecord != null)
@@ -110,6 +143,10 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
         }
     }
 
+    /// <summary>
+    /// Deletes the current category via the API.
+    /// </summary>
+    /// <returns><c>true</c> when deletion succeeded; otherwise <c>false</c> and error details are available via the view model.</returns>
     public override async Task<bool> DeleteAsync()
     {
         if (Id == Guid.Empty) return false;
@@ -131,8 +168,16 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
         }
     }
 
+    /// <summary>
+    /// Reloads the currently loaded category.
+    /// </summary>
     public override async Task ReloadAsync() => await LoadAsync(Id);
 
+    /// <summary>
+    /// Builds ribbon register definitions for the security category card including navigation and manage actions.
+    /// </summary>
+    /// <param name="localizer">Localizer used to resolve UI labels.</param>
+    /// <returns>Collection of ribbon registers describing available tabs and actions.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
         var nav = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
@@ -151,11 +196,22 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>{nav, manage}) };
     }
 
-    // Symbol hooks
+    /// <summary>
+    /// Returns the parent information used for symbol attachments.
+    /// </summary>
+    /// <returns>Attachment entity kind and the parent id used when uploading symbols.</returns>
     protected override (AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent() => (AttachmentEntityKind.SecurityCategory, Id == Guid.Empty ? Guid.Empty : Id);
 
+    /// <summary>
+    /// Indicates whether symbol upload is allowed in the current state. Categories always allow symbol uploads.
+    /// </summary>
+    /// <returns><c>true</c> when symbol upload is allowed.</returns>
     protected override bool IsSymbolUploadAllowed() => true;
 
+    /// <summary>
+    /// Assigns a newly uploaded symbol (attachment) to the category. Updates the server and reloads the category; exceptions are swallowed.
+    /// </summary>
+    /// <param name="attachmentId">Attachment id of the uploaded symbol, or <c>null</c> to clear the symbol.</param>
     protected override async Task AssignNewSymbolAsync(Guid? attachmentId)
     {
         try
@@ -176,9 +232,14 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
         }
     }
 
+    /// <summary>
+    /// Edit model used to gather user input for the security category.
+    /// </summary>
     public sealed class EditModel
     {
+        /// <summary>Category display name.</summary>
         public string Name { get; set; } = string.Empty;
+        /// <summary>Attachment id used as category symbol.</summary>
         public Guid? SymbolAttachmentId { get; set; }
     }
 }

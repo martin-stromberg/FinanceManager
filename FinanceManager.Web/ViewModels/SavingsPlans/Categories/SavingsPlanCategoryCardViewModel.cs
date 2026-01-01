@@ -6,19 +6,48 @@ using FinanceManager.Domain.Attachments;
 
 namespace FinanceManager.Web.ViewModels.SavingsPlans.Categories;
 
+/// <summary>
+/// View model for the savings plan category card. Manages loading, creating, updating and deleting
+/// a savings plan category and supports symbol attachment operations.
+/// </summary>
 [FinanceManager.Web.ViewModels.Common.CardRoute("savings-plans", "categories")]
 public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
 {
+    /// <summary>
+    /// Initializes a new instance of <see cref="SavingsPlanCategoryCardViewModel"/>.
+    /// </summary>
+    /// <param name="sp">Service provider used to resolve dependencies such as the API client and localizer.</param>
     public SavingsPlanCategoryCardViewModel(IServiceProvider sp) : base(sp)
     {
     }
 
+    /// <summary>
+    /// Identifier of the category. <see cref="Guid.Empty"/> indicates a new (unsaved) entry.
+    /// </summary>
     public Guid Id { get; private set; }
+
+    /// <summary>
+    /// Current name of the category.
+    /// </summary>
     public string Name { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Attachment id of the assigned symbol or <c>null</c> when none is assigned.
+    /// </summary>
     public Guid? SymbolId { get; private set; }
 
+    /// <summary>
+    /// Card title shown in the UI. Falls back to base title when <see cref="Name"/> is not set.
+    /// </summary>
     public override string Title => Name ?? base.Title;
 
+    /// <summary>
+    /// Loads the category by id and prepares the card's <see cref="CardRecord"/> for rendering.
+    /// When <paramref name="id"/> is <see cref="Guid.Empty"/>, prepares an empty model for creation.
+    /// </summary>
+    /// <param name="id">Identifier of the category to load, or <see cref="Guid.Empty"/> for create mode.</param>
+    /// <returns>A <see cref="Task"/> that completes when loading has finished.</returns>
+    /// <exception cref="OperationCanceledException">May be thrown if underlying API calls are cancelled.</exception>
     public override async Task LoadAsync(Guid id)
     {
         Id = id;
@@ -54,6 +83,12 @@ public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string
         finally { Loading = false; RaiseStateChanged(); }
     }
 
+    /// <summary>
+    /// Builds a <see cref="CardRecord"/> for the category from the supplied values and current pending edits.
+    /// </summary>
+    /// <param name="name">Name to show on the card.</param>
+    /// <param name="symbolId">Symbol attachment id to show on the card (may be <c>null</c>).</param>
+    /// <returns>A populated <see cref="CardRecord"/> instance used by the UI.</returns>
     private CardRecord BuildCardRecord(string name, Guid? symbolId)
     {
         var fields = new List<CardField>
@@ -64,6 +99,11 @@ public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string
         return new CardRecord(fields, new { Name = name, SymbolId = symbolId });
     }
 
+    /// <summary>
+    /// Persists the current card values by creating or updating the category via the API.
+    /// Pending edits are applied to the request before sending.
+    /// </summary>
+    /// <returns>Returns <c>true</c> when the save succeeded; otherwise <c>false</c>.</returns>
     public override async Task<bool> SaveAsync()
     {
         // apply pending values
@@ -101,6 +141,10 @@ public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string
         }
     }
 
+    /// <summary>
+    /// Deletes the current category via the API.
+    /// </summary>
+    /// <returns>True when deletion succeeded; otherwise false.</returns>
     public override async Task<bool> DeleteAsync()
     {
         if (Id == Guid.Empty) return false;
@@ -118,8 +162,16 @@ public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string
         }
     }
 
+    /// <summary>
+    /// Reloads the entity by re-invoking <see cref="LoadAsync(Guid)"/> for the current Id.
+    /// </summary>
     public override async Task ReloadAsync() => await LoadAsync(Id);
 
+    /// <summary>
+    /// Builds ribbon register definitions for the savings plan category card including navigation and manage actions.
+    /// </summary>
+    /// <param name="localizer">Localizer used to resolve labels for ribbon actions.</param>
+    /// <returns>A list of <see cref="UiRibbonRegister"/> instances representing available ribbon tabs and actions.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
         var nav = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
@@ -138,8 +190,24 @@ public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string
     }
 
     // Symbol support
+    /// <summary>
+    /// Returns the attachment parent kind and id used for symbol uploads. The returned <see cref="AttachmentEntityKind"/> is <see cref="AttachmentEntityKind.SavingsPlanCategory"/>.
+    /// </summary>
+    /// <returns>Tuple of attachment kind and parent id (or <see cref="Guid.Empty"/>).</returns>
     protected override (AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent() => (AttachmentEntityKind.SavingsPlanCategory, Id == Guid.Empty ? Guid.Empty : Id);
+
+    /// <summary>
+    /// Indicates whether symbol upload is allowed for this card. Always returns true; the actual API will validate the operation.
+    /// </summary>
+    /// <returns><c>true</c> when symbol uploads are permitted.</returns>
     protected override bool IsSymbolUploadAllowed() => true;
+
+    /// <summary>
+    /// Assigns or clears the symbol attachment for the current category by calling the API and reloading the entity.
+    /// Exceptions are swallowed to keep UI behavior consistent; callers can inspect <see cref="ApiClient.LastError"/> for details.
+    /// </summary>
+    /// <param name="attachmentId">Id of the attachment to assign, or <c>null</c> to clear the symbol.</param>
+    /// <returns>A task that completes when the operation has finished.</returns>
     protected override async Task AssignNewSymbolAsync(Guid? attachmentId)
     {
         try

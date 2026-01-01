@@ -4,11 +4,25 @@ using System.Globalization;
 
 namespace FinanceManager.Web.Services
 {
+    /// <summary>
+    /// Service that provides query methods for retrieving postings filtered by contact, account, savings plan or security.
+    /// The implementation projects EF entities into <see cref="PostingServiceDto"/> instances and applies paging, search and date filters.
+    /// </summary>
     public class PostingsQueryService : IPostingsQueryService
     {
         private readonly AppDbContext _db;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PostingsQueryService"/> class.
+        /// </summary>
+        /// <param name="db">The application database context used for queries.</param>
         public PostingsQueryService(AppDbContext db) { _db = db; }
 
+        /// <summary>
+        /// Tries to parse a user-supplied date string using common formats.
+        /// </summary>
+        /// <param name="input">Input string to parse.</param>
+        /// <returns>The parsed <see cref="DateTime"/> (date portion only) when parsing succeeded; otherwise <c>null</c>.</returns>
         private static DateTime? TryParseDate(string input)
         {
             string[] formats = { "dd.MM.yyyy", "d.M.yyyy", "yyyy-MM-dd" };
@@ -17,6 +31,12 @@ namespace FinanceManager.Web.Services
             return null;
         }
 
+        /// <summary>
+        /// Tries to parse a user-supplied amount string and normalizes it to an absolute decimal value.
+        /// Accepts values containing spaces and the euro sign.
+        /// </summary>
+        /// <param name="input">Input amount string.</param>
+        /// <returns>The parsed absolute decimal value when parsing succeeded; otherwise <c>null</c>.</returns>
         private static decimal? TryParseAmount(string input)
         {
             var norm = input.Replace(" ", string.Empty).Replace("€", string.Empty);
@@ -25,6 +45,19 @@ namespace FinanceManager.Web.Services
             return null;
         }
 
+        /// <summary>
+        /// Retrieves a paged list of postings for the specified contact applying optional search and date filters.
+        /// </summary>
+        /// <param name="contactId">Identifier of the contact.</param>
+        /// <param name="skip">Number of items to skip for paging.</param>
+        /// <param name="take">Number of items to take for paging (clamped internally).</param>
+        /// <param name="q">Optional search term which may match subject, recipient, description or be interpreted as a date or amount.</param>
+        /// <param name="from">Optional inclusive start date filter.</param>
+        /// <param name="to">Optional inclusive end date filter.</param>
+        /// <param name="currentUserId">Id of the current user used to validate ownership.</param>
+        /// <param name="ct">Cancellation token used to cancel the operation.</param>
+        /// <returns>A task that resolves to a read-only list of <see cref="PostingServiceDto"/> results. Returns an empty list when the context is not owned by the current user.</returns>
+        /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the provided <paramref name="ct"/>.</exception>
         public async Task<IReadOnlyList<PostingServiceDto>> GetContactPostingsAsync(Guid contactId, int skip, int take, string? q, DateTime? from, DateTime? to, Guid currentUserId, CancellationToken ct = default)
         {
             take = Math.Clamp(take, 1, 250);
@@ -158,6 +191,19 @@ namespace FinanceManager.Web.Services
             return result;
         }
 
+        /// <summary>
+        /// Retrieves a paged list of postings for the specified account applying optional search and date filters.
+        /// </summary>
+        /// <param name="accountId">Identifier of the account.</param>
+        /// <param name="skip">Number of items to skip for paging.</param>
+        /// <param name="take">Number of items to take for paging (clamped internally).</param>
+        /// <param name="q">Optional search term which may match subject, recipient, description or be interpreted as a date or amount.</param>
+        /// <param name="from">Optional inclusive start date filter.</param>
+        /// <param name="to">Optional inclusive end date filter.</param>
+        /// <param name="currentUserId">Id of the current user used to validate ownership.</param>
+        /// <param name="ct">Cancellation token used to cancel the operation.</param>
+        /// <returns>A task that resolves to a read-only list of <see cref="PostingServiceDto"/> results. Returns an empty list when the context is not owned by the current user.</returns>
+        /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the provided <paramref name="ct"/>.</exception>
         public async Task<IReadOnlyList<PostingServiceDto>> GetAccountPostingsAsync(Guid accountId, int skip, int take, string? q, DateTime? from, DateTime? to, Guid currentUserId, CancellationToken ct = default)
         {
             take = Math.Clamp(take, 1, 250);
@@ -246,6 +292,19 @@ namespace FinanceManager.Web.Services
             return result;
         }
 
+        /// <summary>
+        /// Retrieves a paged list of postings for the specified savings plan applying optional search and date filters.
+        /// </summary>
+        /// <param name="planId">Identifier of the savings plan.</param>
+        /// <param name="skip">Number of items to skip for paging.</param>
+        /// <param name="take">Number of items to take for paging (clamped internally).</param>
+        /// <param name="q">Optional search term which may match subject, recipient, description or be interpreted as a date or amount.</param>
+        /// <param name="from">Optional inclusive start date filter.</param>
+        /// <param name="to">Optional inclusive end date filter.</param>
+        /// <param name="currentUserId">Id of the current user used to validate ownership.</param>
+        /// <param name="ct">Cancellation token used to cancel the operation.</param>
+        /// <returns>A task that resolves to a read-only list of <see cref="PostingServiceDto"/> results. Returns an empty list when the context is not owned by the current user.</returns>
+        /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the provided <paramref name="ct"/>.</exception>
         public async Task<IReadOnlyList<PostingServiceDto>> GetSavingsPlanPostingsAsync(Guid planId, int skip, int take, string? q, DateTime? from, DateTime? to, Guid currentUserId, CancellationToken ct = default)
         {
             take = Math.Clamp(take, 1, 250);
@@ -323,6 +382,18 @@ namespace FinanceManager.Web.Services
             return result;
         }
 
+        /// <summary>
+        /// Retrieves a paged list of postings for the specified security applying optional date filters.
+        /// </summary>
+        /// <param name="securityId">Identifier of the security.</param>
+        /// <param name="skip">Number of items to skip for paging.</param>
+        /// <param name="take">Number of items to take for paging (clamped internally).</param>
+        /// <param name="from">Optional inclusive start date filter.</param>
+        /// <param name="to">Optional inclusive end date filter.</param>
+        /// <param name="currentUserId">Id of the current user used to validate ownership.</param>
+        /// <param name="ct">Cancellation token used to cancel the operation.</param>
+        /// <returns>A task that resolves to a read-only list of <see cref="PostingServiceDto"/> results. Returns an empty list when the context is not owned by the current user.</returns>
+        /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the provided <paramref name="ct"/>.</exception>
         public async Task<IReadOnlyList<PostingServiceDto>> GetSecurityPostingsAsync(Guid securityId, int skip, int take, DateTime? from, DateTime? to, Guid currentUserId, CancellationToken ct = default)
         {
             take = Math.Clamp(take, 1, 250);

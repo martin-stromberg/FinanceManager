@@ -7,15 +7,25 @@ using System.Globalization;
 
 namespace FinanceManager.Web.ViewModels.SavingsPlans;
 
+/// <summary>
+/// List view model for savings plans. Provides loading, paging and visual record building for the savings plans overview.
+/// </summary>
 public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanListItem>
 {
     private readonly Shared.IApiClient _api;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="SavingsPlansListViewModel"/>.
+    /// </summary>
+    /// <param name="sp">Service provider used to resolve required services like the API client and localization.</param>
     public SavingsPlansListViewModel(IServiceProvider sp) : base(sp)
     {
         _api = sp.GetRequiredService<Shared.IApiClient>();
     }
 
+    /// <summary>
+    /// When true only active savings plans are loaded; when false archived plans are included as well.
+    /// </summary>
     public bool OnlyActive { get; private set; } = true;
 
     private readonly Dictionary<Guid, Guid?> _displaySymbolByPlan = new();
@@ -23,11 +33,22 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
     private readonly Dictionary<Guid, SavingsPlanInterval?> _intervalByPlan = new();
     private readonly Dictionary<Guid, SavingsPlanType> _typeByPlan = new();
 
+    /// <summary>
+    /// Performs any initialization required by the base view model. The implementation delegates to the base class.
+    /// </summary>
+    /// <returns>A task that completes when initialization has finished.</returns>
     public override Task InitializeAsync() => base.InitializeAsync();
 
     private int _skip;
     private const int PageSize = 100;
 
+    /// <summary>
+    /// Loads a page of savings plans from the API and prepares internal caches used by the record builder.
+    /// This method is invoked by the list lifecycle; when <paramref name="resetPaging"/> is true the paging state is reset.
+    /// </summary>
+    /// <param name="resetPaging">When true reset the paging state and clear previously loaded items.</param>
+    /// <returns>A task that completes when the page has been loaded and records were built.</returns>
+    /// <exception cref="Exception">Propagates unexpected exceptions thrown by the API client.</exception>
     protected override async Task LoadPageAsync(bool resetPaging)
     {
         try
@@ -90,6 +111,11 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
         BuildRecords();
     }
 
+    /// <summary>
+    /// Maps a <see cref="SavingsPlanInterval"/> value to a number of months represented by that interval.
+    /// </summary>
+    /// <param name="iv">Interval enum value or <c>null</c> for no recurrence.</param>
+    /// <returns>Number of months for the provided interval; returns 0 when no recurring interval applies.</returns>
     private static int IntervalMonths(SavingsPlanInterval? iv)
     {
         return iv switch
@@ -103,6 +129,10 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
         };
     }
 
+    /// <summary>
+    /// Builds the list columns and records used by the UI renderer from the current <see cref="Items"/> collection.
+    /// This method prepares localized strings and visual SVG fragments for recurrence and status badges.
+    /// </summary>
     protected override void BuildRecords()
     {
         var L = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
@@ -245,6 +275,9 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
         }).ToList();
     }
 
+    /// <summary>
+    /// Toggles the active-only filter and refreshes the list.
+    /// </summary>
     public void ToggleActive()
     {
         OnlyActive = !OnlyActive;
@@ -252,6 +285,11 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
         RaiseStateChanged();
     }
 
+    /// <summary>
+    /// Builds ribbon register definitions for the savings plans list including actions and filters.
+    /// </summary>
+    /// <param name="localizer">Localizer used to resolve UI labels.</param>
+    /// <returns>Collection of ribbon registers describing available tabs and actions.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var actions = new List<UiRibbonAction>
@@ -275,7 +313,11 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
         };
     }
 
-    // Public helper for UI to get display symbol attachment id (plan symbol or category fallback)
+    /// <summary>
+    /// Returns the attachment id used as display symbol for the provided plan or category fallback.
+    /// </summary>
+    /// <param name="plan">List item representing the savings plan. May be <c>null</c>.</param>
+    /// <returns>Attachment id to use for the symbol or <c>null</c> when none is available.</returns>
     public Guid? GetDisplaySymbolAttachmentId(SavingsPlanListItem plan)
     {
         if (plan == null) return null;

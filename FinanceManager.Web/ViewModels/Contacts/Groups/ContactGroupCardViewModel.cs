@@ -6,21 +6,44 @@ using FinanceManager.Web.ViewModels.Common;
 
 namespace FinanceManager.Web.ViewModels.Contacts.Groups;
 
+
+/// <summary>
+/// View model for contact category (group) card. Supports loading, creating, updating and deleting a single contact category
+/// and provides symbol upload support.
+/// </summary>
 [FinanceManager.Web.ViewModels.Common.CardRoute("contacts", "categories")]
 public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, string Value)>, IDeletableViewModel
 {
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="ContactGroupCardViewModel"/>.
+    /// </summary>
+    /// <param name="sp">Service provider used to resolve required services such as the API client and localizer.</param>
     public ContactGroupCardViewModel(IServiceProvider sp) : base(sp)
     {
     }
 
+    /// <summary>
+    /// Identifier of the currently loaded contact category.
+    /// </summary>
     public Guid Id { get; private set; }
 
-    // Local edit model representing the contact category
+    /// <summary>
+    /// Local edit model representing the contact category being edited.
+    /// </summary>
     public EditModel Model { get; } = new();
 
+    /// <summary>
+    /// Title shown in the card header. Falls back to the model name or base title when not available.
+    /// </summary>
     public override string Title => CardRecord?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_ContactCategory_Name")?.Text ?? (Model?.Name ?? base.Title);
 
+    /// <summary>
+    /// Loads the contact category with the specified identifier. When <paramref name="id"/> is <see cref="Guid.Empty"/>
+    /// a new model is prepared for creation.
+    /// </summary>
+    /// <param name="id">Identifier of the category to load, or <see cref="Guid.Empty"/> to initialize a new category.</param>
+    /// <returns>A task that completes when loading has finished and the card record is prepared.</returns>
     public override async Task LoadAsync(Guid id)
     {
         Id = id;
@@ -58,6 +81,12 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
         finally { Loading = false; RaiseStateChanged(); }
     }
 
+    /// <summary>
+    /// Builds the card record for the contact category using the supplied name and symbol id.
+    /// </summary>
+    /// <param name="name">Display name of the category.</param>
+    /// <param name="symbolId">Optional symbol attachment id.</param>
+    /// <returns>A <see cref="CardRecord"/> representing the category for rendering in the card UI.</returns>
     private CardRecord BuildCardRecord(string name, Guid? symbolId)
     {
         var fields = new List<CardField>
@@ -68,6 +97,10 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
         return new CardRecord(fields, Model);
     }
 
+    /// <summary>
+    /// Persists pending changes to the contact category. Creates a new category when <see cref="Id"/> is empty, otherwise updates.
+    /// </summary>
+    /// <returns>A task that resolves to <c>true</c> when the save succeeded; otherwise <c>false</c> when an error occurred.</returns>
     public override async Task<bool> SaveAsync()
     {
         // apply pending values from CardRecord into Model
@@ -114,6 +147,10 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
         }
     }
 
+    /// <summary>
+    /// Deletes the contact category represented by this card.
+    /// </summary>
+    /// <returns>A task that resolves to <c>true</c> when the delete succeeded; otherwise <c>false</c>.</returns>
     public override async Task<bool> DeleteAsync()
     {
         if (Id == Guid.Empty) return false;
@@ -135,11 +172,19 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
         }
     }
 
+    /// <summary>
+    /// Reloads the current category by reloading the card with the current Id.
+    /// </summary>
     public override async Task ReloadAsync()
     {
         await LoadAsync(Id);
     }
 
+    /// <summary>
+    /// Returns ribbon register definitions used by the card UI including navigation and manage groups.
+    /// </summary>
+    /// <param name="localizer">Localizer used to resolve labels for the ribbon actions.</param>
+    /// <returns>A list of <see cref="UiRibbonRegister"/> instances describing available actions.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
         var nav = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
@@ -159,10 +204,21 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
     }
 
     // --- Symbol support hooks required by BaseCardViewModel ---
+    /// <summary>
+    /// Returns the attachment parent kind and id to be used for symbol uploads for this contact category.
+    /// </summary>
     protected override (AttachmentEntityKind Kind, Guid ParentId) GetSymbolParent() => (AttachmentEntityKind.ContactCategory, Id == Guid.Empty ? Guid.Empty : Id);
 
+    /// <summary>
+    /// Indicates whether symbol uploads are permitted for this contact category. Returns <c>true</c>.
+    /// </summary>
+    /// <returns><c>true</c> when uploads are allowed; otherwise <c>false</c>.</returns>
     protected override bool IsSymbolUploadAllowed() => true;
 
+    /// <summary>
+    /// Assigns a newly uploaded symbol attachment to the contact category and refreshes the card state.
+    /// </summary>
+    /// <param name="attachmentId">Attachment id to assign, or <c>null</c> to clear the symbol.</param>
     protected override async Task AssignNewSymbolAsync(Guid? attachmentId)
     {
         try
@@ -183,9 +239,19 @@ public sealed class ContactGroupCardViewModel : BaseCardViewModel<(string Key, s
         }
     }
 
+    /// <summary>
+    /// Local edit model used to represent the category state in the card UI.
+    /// </summary>
     public sealed class EditModel
     {
+        /// <summary>
+        /// Category display name.
+        /// </summary>
         public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Optional attachment id used as the category symbol.
+        /// </summary>
         public Guid? SymbolAttachmentId { get; set; }
     }
 }

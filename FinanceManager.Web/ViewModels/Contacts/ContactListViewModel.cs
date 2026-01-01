@@ -6,21 +6,36 @@ using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Web.ViewModels.Contacts;
 
+/// <summary>
+/// List view model that provides paging, searching and rendering logic for the contacts overview list.
+/// </summary>
 public sealed class ContactListViewModel : BaseListViewModel<ContactListItem>
 {
     private readonly IApiClient _api;
     private readonly Dictionary<Guid, string> _categoryNames = new();
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="ContactListViewModel"/>.
+    /// </summary>
+    /// <param name="services">Service provider used to resolve dependencies such as <see cref="IApiClient"/> and <see cref="IStringLocalizer{Pages}"/>.</param>
     public ContactListViewModel(IServiceProvider services) : base(services)
     {
         _api = services.GetRequiredService<IApiClient>();
     }
 
+    /// <summary>
+    /// Indicates whether the list supports range filtering. Contacts list does not support range filtering.
+    /// </summary>
     public override bool AllowRangeFiltering => false;
 
     private int _skip;
     private const int PageSize = 50;
 
+    /// <summary>
+    /// Loads a page of contacts from the API and appends them to the internal item collection.
+    /// </summary>
+    /// <param name="resetPaging">When <c>true</c> the paging offset will be reset and the first page will be loaded.</param>
+    /// <returns>A task that completes when the page load has finished. Errors are captured via <see cref="SetError(string,string)"/> and do not propagate.</returns>
     protected override async Task LoadPageAsync(bool resetPaging)
     {
         if (resetPaging) { _skip = 0; }
@@ -62,6 +77,9 @@ public sealed class ContactListViewModel : BaseListViewModel<ContactListItem>
         finally { RaiseStateChanged(); }
     }
 
+    /// <summary>
+    /// Builds column definitions and list records used by the UI to render the contacts table.
+    /// </summary>
     protected override void BuildRecords()
     {
         var L = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
@@ -82,6 +100,11 @@ public sealed class ContactListViewModel : BaseListViewModel<ContactListItem>
         }, i)).ToList();
     }
 
+    /// <summary>
+    /// Returns ribbon register definitions for the contacts list view. The provided <paramref name="localizer"/> is used to resolve UI labels.
+    /// </summary>
+    /// <param name="localizer">Localizer used to obtain localized labels for ribbon actions.</param>
+    /// <returns>A list of <see cref="UiRibbonRegister"/> describing the ribbon tabs and actions for this view.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var tab = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>

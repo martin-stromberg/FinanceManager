@@ -3,8 +3,20 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Infrastructure.Notifications;
 
+/// <summary>
+/// Provides EF Core model configuration for the <see cref="Notification"/> entity.
+/// Registers keys, indexes and column constraints used by the infrastructure data model.
+/// </summary>
 public static class NotificationModelConfig
 {
+    /// <summary>
+    /// Applies entity configuration for the <see cref="Notification"/> type to the provided <see cref="ModelBuilder"/>.
+    /// </summary>
+    /// <param name="modelBuilder">The <see cref="ModelBuilder"/> to configure. Must not be <c>null</c>.</param>
+    /// <remarks>
+    /// This method configures indexes and column constraints (lengths, conversions and required flags) for the
+    /// <see cref="Notification"/> entity. It is intended to be called from <c>OnModelCreating</c> of the application's DbContext.
+    /// </remarks>
     public static void Configure(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Notification>(b =>

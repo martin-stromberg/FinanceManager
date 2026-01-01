@@ -3,53 +3,141 @@ using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.ViewModels.Reports;
 
+/// <summary>
+/// View model for the reports dashboard. Manages dashboard state, filters, favorites and
+/// communicates with the API to load aggregates for chart/table display.
+/// </summary>
 public sealed class ReportDashboardViewModel : ViewModelBase
 {
     private readonly IApiClient _api;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="ReportDashboardViewModel"/>.
+    /// </summary>
+    /// <param name="sp">Service provider used to resolve required services such as the API client.</param>
     public ReportDashboardViewModel(IServiceProvider sp) : base(sp)
     {
         _api = sp.GetRequiredService<IApiClient>();
     }
 
     // UI state moved from component
+
+    /// <summary>
+    /// When true the dashboard is in edit mode allowing changes to filters and favorites.
+    /// </summary>
     public bool EditMode { get; set; }
 
     // Dashboard state
+
+    /// <summary>
+    /// Indicates whether a background load operation is in progress.
+    /// </summary>
     public bool IsBusy { get; private set; }
+
+    /// <summary>
+    /// Selected posting kinds to include in the report (e.g. Bank, Contact, Security).
+    /// </summary>
     public List<PostingKind> SelectedKinds { get; set; } = new() { PostingKind.Bank };
+
+    /// <summary>
+    /// Selected reporting interval stored as integer mapped to <see cref="ReportInterval"/>.
+    /// </summary>
     public int Interval { get; set; } = (int)ReportInterval.Month;
+
+    /// <summary>
+    /// When true include category grouping in the aggregates.
+    /// </summary>
     public bool IncludeCategory { get; set; }
+
+    /// <summary>
+    /// When true compare to previous period values.
+    /// </summary>
     public bool ComparePrevious { get; set; }
+
+    /// <summary>
+    /// When true compare to year-ago values.
+    /// </summary>
     public bool CompareYear { get; set; }
+
+    /// <summary>
+    /// Controls whether the chart view is shown.
+    /// </summary>
     public bool ShowChart { get; set; } = true;
+
+    /// <summary>
+    /// Number of periods to take when querying aggregates.
+    /// </summary>
     public int Take { get; set; } = 24;
 
-    public bool IncludeDividendRelated { get; set; } // new
-    public bool UseValutaDate { get; set; } // new: whether to use Valuta date when computing aggregates
+    /// <summary>
+    /// When true include dividend-related postings in the results.
+    /// </summary>
+    public bool IncludeDividendRelated { get; set; }
 
+    /// <summary>
+    /// When true use Valuta date instead of booking date when computing aggregates.
+    /// </summary>
+    public bool UseValutaDate { get; set; }
+
+    /// <summary>
+    /// Active favorite id currently selected or <c>null</c> when none.
+    /// </summary>
     public Guid? ActiveFavoriteId { get; set; }
+
+    /// <summary>
+    /// Name of the current favorite in the favorite dialog or UI.
+    /// </summary>
     public string FavoriteName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Indicates whether the favorite dialog is visible.
+    /// </summary>
     public bool ShowFavoriteDialog { get; private set; }
+
+    /// <summary>
+    /// Indicates whether the favorite dialog is currently in update mode (true) or create mode (false).
+    /// </summary>
     public bool FavoriteDialogIsUpdate { get; private set; }
+
+    /// <summary>
+    /// Last error key or message related to favorite operations, or <c>null</c> when none.
+    /// </summary>
     public string? FavoriteError { get; private set; }
 
     // Filters state (entity level)
+
+    /// <summary>Selected account ids.</summary>
     public HashSet<Guid> SelectedAccounts { get; private set; } = new();
+    /// <summary>Selected contact ids.</summary>
     public HashSet<Guid> SelectedContacts { get; private set; } = new();
+    /// <summary>Selected savings plan ids.</summary>
     public HashSet<Guid> SelectedSavingsPlans { get; private set; } = new();
+    /// <summary>Selected security ids.</summary>
     public HashSet<Guid> SelectedSecurities { get; private set; } = new();
     // Filters state (category level)
+    /// <summary>Selected contact category ids.</summary>
     public HashSet<Guid> SelectedContactCategories { get; private set; } = new();
+    /// <summary>Selected savings plan category ids.</summary>
     public HashSet<Guid> SelectedSavingsCategories { get; private set; } = new();
+    /// <summary>Selected security category ids.</summary>
     public HashSet<Guid> SelectedSecurityCategories { get; private set; } = new();
     // New: security posting subtype filter (by enum int values)
+    /// <summary>Selected security subtype values (enum int representation).</summary>
     public HashSet<int> SelectedSecuritySubTypes { get; private set; } = new();
 
+    /// <summary>
+    /// Aggregated result points returned from the API and used for rendering table and chart.
+    /// </summary>
     public List<ReportAggregatePointDto> Points { get; private set; } = new();
 
     // Expansion state for table rows
+    /// <summary>Expansion state dictionary for row grouping keys.</summary>
     public Dictionary<string, bool> Expanded { get; } = new();
+
+    /// <summary>
+    /// Toggles the expansion state for the specified grouping key and raises state changed.
+    /// </summary>
+    /// <param name="key">Grouping key to toggle.</param>
     public void ToggleExpanded(string key)
     {
         if (Expanded.ContainsKey(key))
@@ -62,13 +150,42 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         }
         RaiseStateChanged();
     }
+
+    /// <summary>
+    /// Returns whether the specified grouping key is expanded.
+    /// </summary>
+    /// <param name="key">Grouping key.</param>
+    /// <returns><c>true</c> when expanded; otherwise <c>false</c>.</returns>
     public bool IsExpanded(string key) => Expanded.TryGetValue(key, out var v) && v;
 
+    /// <summary>
+    /// Primary kind derived from currently selected kinds (first entry).
+    /// </summary>
     public PostingKind PrimaryKind => SelectedKinds.FirstOrDefault();
+
+    /// <summary>
+    /// Indicates that multiple posting kinds are selected.
+    /// </summary>
     public bool IsMulti => SelectedKinds.Count > 1;
+
+    /// <summary>
+    /// Returns whether the provided posting kind supports category grouping.
+    /// </summary>
+    /// <param name="kind">Posting kind.</param>
+    /// <returns><c>true</c> when category grouping is supported for the supplied kind.</returns>
+    /// <remarks>
+    /// Supported enum values: <see cref="PostingKind.Contact"/>, <see cref="PostingKind.SavingsPlan"/>, <see cref="PostingKind.Security"/>.
+    /// </remarks>
     public static bool IsCategorySupported(PostingKind kind) => kind == PostingKind.Contact || kind == PostingKind.SavingsPlan || kind == PostingKind.Security;
+
+    /// <summary>
+    /// True when category grouping is enabled and applicable for the primary kind.
+    /// </summary>
     public bool IsCategoryGroupingSingle => !IsMulti && IncludeCategory && IsCategorySupported(PrimaryKind);
 
+    /// <summary>
+    /// Latest aggregate point per non-hierarchical group used to display summary rows.
+    /// </summary>
     public IReadOnlyList<ReportAggregatePointDto> LatestPerGroup => Points
         .Where(p => !p.GroupKey.StartsWith("Type:") && !p.GroupKey.StartsWith("Category:") && p.ParentGroupKey == null)
         .GroupBy(p => p.GroupKey)
@@ -77,6 +194,11 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         .ThenByDescending(p => p.Amount)
         .ToList();
 
+    /// <summary>
+    /// Builds the filters payload to send to the report aggregates endpoint based on the current filter state.
+    /// Returns <c>null</c> when no meaningful filters are set and the request would be equivalent to an unfiltered query.
+    /// </summary>
+    /// <returns>A <see cref="ReportAggregatesFiltersRequest"/> or <c>null</c> when no filters should be applied.</returns>
     public ReportAggregatesFiltersRequest? BuildFiltersPayload()
     {
         var hasEntity = SelectedAccounts.Count > 0 || SelectedContacts.Count > 0 || SelectedSavingsPlans.Count > 0 || SelectedSecurities.Count > 0;
@@ -121,6 +243,9 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Clears all applied filters and resets filter-related flags.
+    /// </summary>
     public void ClearFilters()
     {
         SelectedAccounts.Clear();
@@ -134,6 +259,12 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         IncludeDividendRelated = false;
     }
 
+    /// <summary>
+    /// Reloads aggregates from the API using the current dashboard state.
+    /// </summary>
+    /// <param name="analysisDate">Optional date used as the analysis reference point.</param>
+    /// <param name="ct">Cancellation token used to cancel the load operation.</param>
+    /// <returns>A task that completes when reload has finished.</returns>
     public async Task ReloadAsync(DateTime? analysisDate, CancellationToken ct = default)
     {
         if (IsBusy) { return; }
@@ -152,6 +283,10 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Returns the top-level rows for the table view depending on current grouping and selection mode.
+    /// </summary>
+    /// <returns>Sequence of top-level <see cref="ReportAggregatePointDto"/> rows.</returns>
     public IEnumerable<ReportAggregatePointDto> GetTopLevelRows()
     {
         if (IsMulti)
@@ -176,6 +311,11 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             .ThenByDescending(p => p.Amount);
     }
 
+    /// <summary>
+    /// Returns child rows for the specified parent grouping key.
+    /// </summary>
+    /// <param name="parentKey">Parent grouping key.</param>
+    /// <returns>Sequence of child <see cref="ReportAggregatePointDto"/> rows.</returns>
     public IEnumerable<ReportAggregatePointDto> GetChildRows(string parentKey) => GetChildRowsImpl(parentKey);
 
     private IEnumerable<ReportAggregatePointDto> GetChildRowsImpl(string parentKey)
@@ -222,12 +362,27 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         return Array.Empty<ReportAggregatePointDto>();
     }
 
+    /// <summary>
+    /// Returns whether a grouping key has child rows.
+    /// </summary>
+    /// <param name="key">Grouping key.</param>
+    /// <returns><c>true</c> when children exist.</returns>
     public bool HasChildren(string key) => GetChildRowsImpl(key).Any();
 
     // Derived UI helpers
+    /// <summary>
+    /// Whether previous columns should be shown based on current settings.
+    /// </summary>
     public bool ShowPreviousColumns => ComparePrevious && ((ReportInterval)Interval is not ReportInterval.Year and not ReportInterval.Ytd);
+    /// <summary>
+    /// Whether the category column should be shown in the table.
+    /// </summary>
     public bool ShowCategoryColumn => IncludeCategory && !IsCategoryGroupingSingle;
 
+    /// <summary>
+    /// Computes totals for the currently visible top-level rows including optional previous/year comparisons.
+    /// </summary>
+    /// <returns>Tuple with current sum, previous sum (or <c>null</c>) and year-ago sum (or <c>null</c>).</returns>
     public (decimal Amount, decimal? Prev, decimal? Year) GetTotals()
     {
         var rows = GetTopLevelRows().ToList();
@@ -237,6 +392,10 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         return (amount, prev, year);
     }
 
+    /// <summary>
+    /// Returns an ordered sequence of period sums for charting.
+    /// </summary>
+    /// <returns>List of period start and sum tuples.</returns>
     public IReadOnlyList<(DateTime PeriodStart, decimal Sum)> GetChartByPeriod()
     {
         var byPeriod = Points
@@ -248,6 +407,11 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         return byPeriod;
     }
 
+    /// <summary>
+    /// Determines whether the provided aggregate point should be considered negative for ordering/visualization.
+    /// </summary>
+    /// <param name="p">Aggregate point to evaluate.</param>
+    /// <returns><c>true</c> when negative according to heuristic rules.</returns>
     public static bool IsNegative(ReportAggregatePointDto p)
     {
         if (p.Amount < 0m)
@@ -271,6 +435,21 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         return false;
     }
 
+    /// <summary>
+    /// Loads aggregates from the API for the provided parameters.
+    /// </summary>
+    /// <param name="primaryKind">Primary posting kind.</param>
+    /// <param name="interval">Interval integer mapped to <see cref="ReportInterval"/>.</param>
+    /// <param name="take">Number of periods to take.</param>
+    /// <param name="includeCategory">Whether to include category grouping.</param>
+    /// <param name="comparePrevious">Whether to compute previous period comparisons.</param>
+    /// <param name="compareYear">Whether to compute year-ago comparisons.</param>
+    /// <param name="postingKinds">Optional set of posting kinds when multi-kind selection is used.</param>
+    /// <param name="analysisDate">Optional analysis date used by the server.</param>
+    /// <param name="filters">Optional filters payload.</param>
+    /// <param name="useValutaDate">Whether to use Valuta date instead of booking date.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A <see cref="ReportAggregationResult"/> containing aggregated points and metadata.</returns>
     public async Task<ReportAggregationResult> LoadAsync(PostingKind primaryKind, int interval, int take, bool includeCategory, bool comparePrevious, bool compareYear, IReadOnlyCollection<PostingKind>? postingKinds, DateTime? analysisDate, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default)
     {
         var req = new ReportAggregatesQueryRequest(primaryKind, (ReportInterval)interval, take, includeCategory, comparePrevious, compareYear, useValutaDate, postingKinds, analysisDate, filters);
@@ -278,6 +457,23 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         return result ?? new ReportAggregationResult((ReportInterval)interval, Array.Empty<ReportAggregatePointDto>(), false, false);
     }
 
+    /// <summary>
+    /// Saves a report favorite via the API.
+    /// </summary>
+    /// <param name="name">Favorite name.</param>
+    /// <param name="primaryKind">Primary posting kind.</param>
+    /// <param name="includeCategory">Whether category grouping is included.</param>
+    /// <param name="interval">Interval value.</param>
+    /// <param name="take">Number of periods to take.</param>
+    /// <param name="comparePrevious">Whether previous comparison is enabled.</param>
+    /// <param name="compareYear">Whether year comparison is enabled.</param>
+    /// <param name="showChart">Whether chart is shown for this favorite.</param>
+    /// <param name="expandable">Whether table rows are expandable.</param>
+    /// <param name="postingKinds">Optional posting kinds when multi-kind selection is used.</param>
+    /// <param name="filters">Optional filters payload.</param>
+    /// <param name="useValutaDate">Whether to use Valuta date for this favorite.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The created <see cref="ReportFavoriteDto"/> or <c>null</c> when creation failed.</returns>
     public async Task<ReportFavoriteDto?> SaveFavoriteAsync(string name, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default)
     {
         var payload = new ReportFavoriteCreateApiRequest
@@ -308,6 +504,24 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         return await _api.Reports_CreateFavoriteAsync(payload, ct);
     }
 
+    /// <summary>
+    /// Updates an existing report favorite via the API.
+    /// </summary>
+    /// <param name="id">Favorite id to update.</param>
+    /// <param name="name">Favorite name.</param>
+    /// <param name="primaryKind">Primary posting kind.</param>
+    /// <param name="includeCategory">Whether category grouping is included.</param>
+    /// <param name="interval">Interval value.</param>
+    /// <param name="take">Number of periods to take.</param>
+    /// <param name="comparePrevious">Whether previous comparison is enabled.</param>
+    /// <param name="compareYear">Whether year comparison is enabled.</param>
+    /// <param name="showChart">Whether chart is shown for this favorite.</param>
+    /// <param name="expandable">Whether table rows are expandable.</param>
+    /// <param name="postingKinds">Optional posting kinds when multi-kind selection is used.</param>
+    /// <param name="filters">Optional filters payload.</param>
+    /// <param name="useValutaDate">Whether to use Valuta date for this favorite.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The updated <see cref="ReportFavoriteDto"/> or <c>null</c> when update failed.</returns>
     public async Task<ReportFavoriteDto?> UpdateFavoriteAsync(Guid id, string name, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default)
     {
         var payload = new ReportFavoriteUpdateApiRequest
@@ -338,21 +552,39 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         return await _api.Reports_UpdateFavoriteAsync(id, payload, ct);
     }
 
+    /// <summary>
+    /// Deletes a report favorite by id via the API.
+    /// </summary>
+    /// <param name="id">Favorite id to delete.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when deletion succeeded.</returns>
     public async Task<bool> DeleteFavoriteAsync(Guid id, CancellationToken ct = default)
     {
         return await _api.Reports_DeleteFavoriteAsync(id, ct);
     }
 
     // Filter options (for dialog)
+    /// <summary>
+    /// Simple option DTO used for filter dialog select lists.
+    /// </summary>
     public sealed class SimpleOption
     {
+        /// <summary>Option identifier.</summary>
         public Guid Id { get; set; }
+        /// <summary>Option display name.</summary>
         public string Name { get; set; } = string.Empty;
     }
+    /// <summary>Indicates whether filter options are loading.</summary>
     public bool FilterOptionsLoading { get; private set; }
+    /// <summary>Map of available filter options per posting kind.</summary>
     public Dictionary<PostingKind, List<SimpleOption>> FilterOptionsByKind { get; } = new();
+    /// <summary>Active filter tab kind in the filter dialog.</summary>
     public PostingKind? ActiveFilterTabKind { get; set; }
 
+    /// <summary>
+    /// Loads available filter options for the kinds selected in the dashboard (populates <see cref="FilterOptionsByKind"/>).
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
     public async Task LoadFilterOptionsAsync(CancellationToken ct = default)
     {
         FilterOptionsLoading = true;
@@ -430,16 +662,50 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     }
 
     // Filter dialog state and temp buffers
+    /// <summary>Indicates whether the filter dialog is shown.</summary>
     public bool ShowFilterDialog { get; set; }
+
+    /// <summary>
+    /// Temporary selected account ids used in the filter dialog before applying changes.
+    /// </summary>
     public HashSet<Guid> TempAccounts { get; private set; } = new();
+
+    /// <summary>
+    /// Temporary selected contact ids used in the filter dialog before applying changes.
+    /// </summary>
     public HashSet<Guid> TempContacts { get; private set; } = new();
+
+    /// <summary>Indicates the temporary selected savings plan ids used in the filter dialog.</summary>
     public HashSet<Guid> TempSavings { get; private set; } = new();
+
+    /// <summary>
+    /// Temporary selected security ids used in the filter dialog before applying changes.
+    /// </summary>
     public HashSet<Guid> TempSecurities { get; private set; } = new();
+
+    /// <summary>
+    /// Temporary selected contact category ids used in the filter dialog before applying changes.
+    /// </summary>
     public HashSet<Guid> TempContactCats { get; private set; } = new();
+
+    /// <summary>
+    /// Temporary selected savings plan category ids used in the filter dialog before applying changes.
+    /// </summary>
     public HashSet<Guid> TempSavingsCats { get; private set; } = new();
+
+    /// <summary>
+    /// Temporary selected security category ids used in the filter dialog before applying changes.
+    /// </summary>
     public HashSet<Guid> TempSecurityCats { get; private set; } = new();
+
+    /// <summary>
+    /// Temporary selected security subtype values (enum int representation) used in the filter dialog.
+    /// </summary>
     public HashSet<int> TempSecuritySubTypes { get; private set; } = new();
 
+    /// <summary>
+    /// Opens the filter dialog and prepares temporary buffers with current selections.
+    /// </summary>
     public void OpenFilterDialog()
     {
         TempAccounts = new HashSet<Guid>(SelectedAccounts);
@@ -456,12 +722,21 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         RaiseStateChanged();
     }
 
+    /// <summary>
+    /// Closes the filter dialog without applying temporary changes.
+    /// </summary>
     public void CloseFilterDialog()
     {
         ShowFilterDialog = false;
         RaiseStateChanged();
     }
 
+    /// <summary>
+    /// Returns whether a temporary option is selected for the specified posting kind and identifier.
+    /// </summary>
+    /// <param name="kind">Posting kind.</param>
+    /// <param name="id">Identifier of the option.</param>
+    /// <returns><c>true</c> when the option is selected in the temporary buffer; otherwise <c>false</c>.</returns>
     public bool IsOptionSelectedTemp(PostingKind kind, Guid id)
     {
         if (IncludeCategory && IsCategorySupported(kind))
@@ -484,6 +759,12 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         };
     }
 
+    /// <summary>
+    /// Toggles a temporary filter option for a kind and id.
+    /// </summary>
+    /// <param name="kind">Posting kind.</param>
+    /// <param name="id">Identifier of the option.</param>
+    /// <param name="isChecked">True to select, false to unselect.</param>
     public void ToggleTempForKind(PostingKind kind, Guid id, bool isChecked)
     {
         HashSet<Guid> set = IncludeCategory && IsCategorySupported(kind)
@@ -506,6 +787,10 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         RaiseStateChanged();
     }
 
+    /// <summary>
+    /// Returns the active filter tab kind; falls back to <see cref="PrimaryKind"/> when the active tab is not present in selection.
+    /// </summary>
+    /// <returns>Posting kind used for active filter tab.</returns>
     public PostingKind GetActiveFilterTabKind()
     {
         if (ActiveFilterTabKind.HasValue && SelectedKinds.Contains(ActiveFilterTabKind.Value))
@@ -514,9 +799,18 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         }
         return PrimaryKind;
     }
+
+    /// <summary>
+    /// Returns the available simple option list for a given posting kind.
+    /// </summary>
+    /// <param name="k">Posting kind to retrieve options for.</param>
+    /// <returns>List of <see cref="SimpleOption"/> items for the supplied kind; empty list when none are available.</returns>
     public List<SimpleOption> GetOptionsForKind(PostingKind k)
         => FilterOptionsByKind.TryGetValue(k, out var list) ? list : new List<SimpleOption>();
 
+    /// <summary>
+    /// Clears temporary filter selections.
+    /// </summary>
     public void ClearTempFilters()
     {
         TempAccounts.Clear();
@@ -530,6 +824,10 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         RaiseStateChanged();
     }
 
+    /// <summary>
+    /// Returns the number of temporary filters currently selected.
+    /// </summary>
+    /// <returns>Count of selected temporary filters.</returns>
     public int GetSelectedTempFiltersCount()
     {
         if (IsMulti)
@@ -569,6 +867,12 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Applies temporary filters to the active filter sets and reloads the dashboard.
+    /// </summary>
+    /// <param name="analysisDate">Optional analysis date.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the applied filters have been applied and reload finished.</returns>
     public async Task ApplyTempAndReloadAsync(DateTime? analysisDate, CancellationToken ct = default)
     {
         SelectedAccounts.Clear(); foreach (var id in TempAccounts) { SelectedAccounts.Add(id); }
@@ -584,9 +888,19 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     }
 
     // UI helpers for security subtypes in temp buffer
+    /// <summary>
+    /// Whether a temp security subtype is selected.
+    /// </summary>
+    /// <param name="subType">Security subtype value (enum int representation).</param>
+    /// <returns><c>true</c> when selected in temp buffer.</returns>
     public bool IsSecuritySubTypeSelectedTemp(int subType)
         => TempSecuritySubTypes.Contains(subType);
 
+    /// <summary>
+    /// Toggles a temp security subtype selection and raises state changed.
+    /// </summary>
+    /// <param name="subType">Security subtype value (enum int representation).</param>
+    /// <param name="isChecked">True to select; false to unselect.</param>
     public void ToggleTempSecuritySubType(int subType, bool isChecked)
     {
         if (isChecked) { TempSecuritySubTypes.Add(subType); }
@@ -594,6 +908,10 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         RaiseStateChanged();
     }
 
+    /// <summary>
+    /// Returns the total number of active filters currently selected.
+    /// </summary>
+    /// <returns>Count of active filters.</returns>
     public int GetSelectedFiltersCount()
     {
         if (IsMulti)
@@ -633,6 +951,11 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Aggregates ribbon registers for the report dashboard including navigation, actions and filters.
+    /// </summary>
+    /// <param name="localizer">Localizer used to resolve labels for ribbon actions.</param>
+    /// <returns>Ribbon register definitions or <c>null</c> when none are provided.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var tabs = new List<UiRibbonTab>();
@@ -663,6 +986,11 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
     }
 
+    /// <summary>
+    /// Opens the favorite dialog and prepares state for creating or updating a favorite.
+    /// </summary>
+    /// <param name="update">True when updating an existing favorite; false when creating a new one.</param>
+    /// <param name="resetNameIfNew">Optional default name used when creating a new favorite.</param>
     public void OpenFavoriteDialog(bool update, string? resetNameIfNew = null)
     {
         FavoriteDialogIsUpdate = update;
@@ -675,12 +1003,32 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         RaiseStateChanged();
     }
 
+    /// <summary>
+    /// Closes the favorite dialog without performing any save/update operations.
+    /// </summary>
     public void CloseFavoriteDialog()
     {
         ShowFavoriteDialog = false;
         RaiseStateChanged();
     }
 
+    /// <summary>
+    /// Submits the favorite dialog: creates or updates a favorite depending on dialog mode.
+    /// </summary>
+    /// <param name="defaultName">Default name to use if the user provided no name.</param>
+    /// <param name="primaryKind">Primary posting kind.</param>
+    /// <param name="includeCategory">Whether category grouping is included.</param>
+    /// <param name="interval">Interval value.</param>
+    /// <param name="take">Number of periods to take.</param>
+    /// <param name="comparePrevious">Whether previous comparison is enabled.</param>
+    /// <param name="compareYear">Whether year comparison is enabled.</param>
+    /// <param name="showChart">Whether chart is shown for this favorite.</param>
+    /// <param name="expandable">Whether table rows are expandable.</param>
+    /// <param name="postingKinds">Optional posting kinds when multi-kind selection is used.</param>
+    /// <param name="filters">Optional filters payload.</param>
+    /// <param name="useValutaDate">Whether to use Valuta date for this favorite.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The created or updated <see cref="ReportFavoriteDto"/>, or <c>null</c> when the operation failed.</returns>
     public async Task<ReportFavoriteDto?> SubmitFavoriteDialogAsync(string defaultName, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default)
     {
         FavoriteError = null;

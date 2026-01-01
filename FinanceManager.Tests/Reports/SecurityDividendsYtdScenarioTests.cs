@@ -9,6 +9,8 @@ using FinanceManager.Infrastructure.Statements;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Xunit.Abstractions;
+using FinanceManager.Application.Accounts;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
@@ -36,7 +38,8 @@ public sealed class SecurityDividendsYtdScenarioTests
     {
         using var db = CreateDb();
         var agg = new PostingAggregateService(db);
-        var drafts = new StatementDraftService(db, agg);
+        var accountService = new TestAccountService();
+        var drafts = new StatementDraftService(db, agg, accountService, null, NullLogger<StatementDraftService>.Instance, null);
         var reports = new ReportAggregationService(db);
         var ct = CancellationToken.None;
 
@@ -192,5 +195,29 @@ public sealed class SecurityDividendsYtdScenarioTests
         Assert.Equal(5.35m, row.Amount);
         // PreviousAmount for YTD (dividends only) should include only the 2024 dividend before November (1.91)
         Assert.Equal(1.91m, row.PreviousAmount);
+    }
+
+    private sealed class TestAccountService : IAccountService
+    {
+        public Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<bool> DeleteAsync(Guid id, Guid ownerUserId, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<IReadOnlyList<AccountDto>> ListAsync(Guid ownerUserId, int skip, int take, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<AccountDto?> GetAsync(Guid id, Guid ownerUserId, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public AccountDto? Get(Guid id, Guid ownerUserId)
+            => throw new NotImplementedException();
+
+        public Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct)
+            => throw new NotImplementedException();
     }
 }

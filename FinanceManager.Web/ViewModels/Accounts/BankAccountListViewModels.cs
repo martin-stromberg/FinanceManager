@@ -3,17 +3,32 @@ using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.ViewModels.Accounts
 {
+    /// <summary>
+    /// List view model providing paging and rendering logic for bank accounts.
+    /// </summary>
     public sealed class BankAccountListViewModel : BaseListViewModel<AccountListItem>
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BankAccountListViewModel"/> class.
+        /// </summary>
+        /// <param name="sp">Service provider used to resolve required services (API client, localizer, etc.).</param>
         public BankAccountListViewModel(IServiceProvider sp) : base(sp)
         {
         }
 
+        /// <summary>
+        /// Indicates whether range/date filtering is supported by this list. Accounts list does not allow range filtering.
+        /// </summary>
         public override bool AllowRangeFiltering => false;
 
         private int _skip;
         private const int PageSize = 50;
 
+        /// <summary>
+        /// Loads a page of account items from the API and appends them to the internal item collection.
+        /// </summary>
+        /// <param name="resetPaging">When <c>true</c> the paging offset is reset and the list will be rebuilt from the first page.</param>
+        /// <returns>A task that completes when the page load has finished. Errors from the API are captured via <see cref="SetError"/> and do not propagate.</returns>
         protected override async Task LoadPageAsync(bool resetPaging)
         {
             var api = ServiceProvider.GetRequiredService<IApiClient>();
@@ -38,6 +53,9 @@ namespace FinanceManager.Web.ViewModels.Accounts
             }
         }
 
+        /// <summary>
+        /// Builds the list column definitions and list records used by the UI to render the accounts table.
+        /// </summary>
         protected override void BuildRecords()
         {
             var L = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
@@ -61,6 +79,11 @@ namespace FinanceManager.Web.ViewModels.Accounts
             }, i)).ToList();
         }
 
+        /// <summary>
+        /// Returns the ribbon/action definitions shown for this list view. The provided <paramref name="localizer"/> is used to localize labels.
+        /// </summary>
+        /// <param name="localizer">Localizer used to resolve UI labels for the ribbon actions.</param>
+        /// <returns>A list of <see cref="UiRibbonRegister"/> describing available ribbon tabs and actions.</returns>
         protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
         {
             var actions = new List<UiRibbonAction>

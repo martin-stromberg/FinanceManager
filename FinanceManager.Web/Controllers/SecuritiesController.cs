@@ -32,28 +32,47 @@ public sealed class SecuritiesController : ControllerBase
     private readonly IPostingTimeSeriesService _series;
     private readonly ILogger<SecuritiesController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="SecuritiesController"/>.
+    /// </summary>
+    /// <param name="service">Service providing business operations for securities.</param>
+    /// <param name="current">Service that provides information about the current user.</param>
+    /// <param name="attachments">Service managing attachments (upload, storage).</param>
+    /// <param name="series">Service to compute posting time series and aggregates.</param>
+    /// <param name="db">Application database context used for lightweight queries within the controller.</param>
+    /// <param name="tasks">Background task manager used to enqueue asynchronous background jobs.</param>
+    /// <param name="logger">Logger used for diagnostic messages.</param>
     public SecuritiesController(ISecurityService service, ICurrentUserService current, IAttachmentService attachments, IPostingTimeSeriesService series, AppDbContext db, IBackgroundTaskManager tasks, ILogger<SecuritiesController> logger)
     { _service = service; _current = current; _attachments = attachments; _db = db; _tasks = tasks; _series = series; _logger = logger; }
 
     /// <summary>
-    /// Lists securities for the current user (optionally only active).
+    /// Lists securities for the current user.
     /// </summary>
+    /// <param name="onlyActive">When true only active securities are returned; otherwise archived ones are included.</param>
+    /// <param name="ct">Cancellation token to cancel the operation.</param>
+    /// <returns>200 OK with a list of <see cref="SecurityDto"/> objects.</returns>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<SecurityDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListAsync([FromQuery] bool onlyActive = true, CancellationToken ct = default)
         => Ok(await _service.ListAsync(_current.UserId, onlyActive, ct));
 
     /// <summary>
-    /// Returns count of securities (optionally only active).
+    /// Returns count of securities for the current user.
     /// </summary>
+    /// <param name="onlyActive">When true only count active securities; otherwise count all.</param>
+    /// <param name="ct">Cancellation token to cancel the operation.</param>
+    /// <returns>200 OK with an object containing the count.</returns>
     [HttpGet("count")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> CountAsync([FromQuery] bool onlyActive = true, CancellationToken ct = default)
         => Ok(new { count = await _service.CountAsync(_current.UserId, onlyActive, ct) });
 
     /// <summary>
-    /// Gets a single security by id.
+    /// Gets a single security by id for the current user.
     /// </summary>
+    /// <param name="id">Security identifier (GUID).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with <see cref="SecurityDto"/> when found; 404 NotFound when the security doesn't exist or is not owned by the current user.</returns>
     [HttpGet("{id:guid}", Name = "GetSecurityAsync")]
     [ProducesResponseType(typeof(SecurityDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -64,8 +83,12 @@ public sealed class SecuritiesController : ControllerBase
     }
 
     /// <summary>
-    /// Creates a new security.
+    /// Creates a new security owned by the current user.
     /// </summary>
+    /// <param name="req">Security create request payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>201 Created with the created <see cref="SecurityDto"/>, or 400 Bad Request when validation fails.</returns>
+    /// <exception cref="ArgumentException">May be thrown by the service for invalid input; will be mapped to 400 Bad Request.</exception>
     [HttpPost]
     [ProducesResponseType(typeof(SecurityDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -92,6 +115,10 @@ public sealed class SecuritiesController : ControllerBase
     /// <summary>
     /// Updates an existing security.
     /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="req">Update request payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with updated <see cref="SecurityDto"/>, 404 NotFound when not found, or 400 BadRequest for invalid input.</returns>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(SecurityDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -117,8 +144,11 @@ public sealed class SecuritiesController : ControllerBase
     }
 
     /// <summary>
-    /// Archives (soft-hides) a security.
+    /// Archives (soft-hides) a security so it is no longer shown in active lists.
     /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 NoContent on success; 404 NotFound when the security does not exist or is not owned by the user.</returns>
     [HttpPost("{id:guid}/archive")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -131,6 +161,9 @@ public sealed class SecuritiesController : ControllerBase
     /// <summary>
     /// Deletes a security permanently.
     /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 NoContent on success; 404 NotFound when the security does not exist or is not owned by the user.</returns>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -143,6 +176,10 @@ public sealed class SecuritiesController : ControllerBase
     /// <summary>
     /// Assigns a symbol attachment to a security.
     /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="attachmentId">Attachment identifier to set as symbol.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 NoContent on success; 404 NotFound when the security or attachment is invalid.</returns>
     [HttpPost("{id:guid}/symbol/{attachmentId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -155,6 +192,9 @@ public sealed class SecuritiesController : ControllerBase
     /// <summary>
     /// Clears a symbol attachment from the security.
     /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 NoContent on success; 404 NotFound when the security is invalid.</returns>
     [HttpDelete("{id:guid}/symbol")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -167,6 +207,11 @@ public sealed class SecuritiesController : ControllerBase
     /// <summary>
     /// Uploads and assigns a new symbol file to the security.
     /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="file">Form file containing the uploaded symbol image or asset.</param>
+    /// <param name="categoryId">Optional category id to classify the attachment.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the created <see cref="AttachmentDto"/>, or 400 Bad Request for invalid input, or 500 on unexpected errors.</returns>
     [HttpPost("{id:guid}/symbol")]
     [RequestSizeLimit(long.MaxValue)]
     [ProducesResponseType(typeof(AttachmentDto), StatusCodes.Status200OK)]
@@ -201,6 +246,12 @@ public sealed class SecuritiesController : ControllerBase
     /// <summary>
     /// Returns time series aggregates for a security.
     /// </summary>
+    /// <param name="securityId">Security identifier.</param>
+    /// <param name="period">Aggregate period name (e.g. "Month", "Quarter"). Case-insensitive.</param>
+    /// <param name="take">Number of periods to take. Will be normalized to a safe range.</param>
+    /// <param name="maxYearsBack">Optional maximum years back to include.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with a list of <see cref="AggregatePointDto"/>, or 404 NotFound when no data is available.</returns>
     [HttpGet("{securityId:guid}/aggregates")]
     [ProducesResponseType(typeof(IReadOnlyList<AggregatePointDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -210,6 +261,11 @@ public sealed class SecuritiesController : ControllerBase
     /// <summary>
     /// Returns historical prices (paged latest first) for a security.
     /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="skip">Number of records to skip (paging offset).</param>
+    /// <param name="take">Number of records to take (page size). Clamped to a maximum for safety.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with a list of <see cref="SecurityPriceDto"/>, or 404 NotFound when the security is not owned by the current user.</returns>
     [HttpGet("{id:guid}/prices")]
     [ProducesResponseType(typeof(IReadOnlyList<SecurityPriceDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -227,6 +283,8 @@ public sealed class SecuritiesController : ControllerBase
     /// <summary>
     /// Enqueues a background task for backfilling security prices.
     /// </summary>
+    /// <param name="req">Backfill request containing security id and optional date range.</param>
+    /// <returns>200 OK with <see cref="BackgroundTaskInfo"/> describing the enqueued task.</returns>
     [HttpPost("backfill")]
     [ProducesResponseType(typeof(BackgroundTaskInfo), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -240,6 +298,10 @@ public sealed class SecuritiesController : ControllerBase
     /// <summary>
     /// Returns quarterly dividend aggregates for the past year across all owned securities.
     /// </summary>
+    /// <param name="period">Optional period parameter (ignored; kept for compatibility).</param>
+    /// <param name="take">Optional take parameter (ignored; kept for compatibility).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with a list of quarterly <see cref="AggregatePointDto"/> objects.</returns>
     [HttpGet("dividends")]
     [ProducesResponseType(typeof(IReadOnlyList<AggregatePointDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<AggregatePointDto>>> GetDividendsAsync([FromQuery] string? period = null, [FromQuery] int? take = null, CancellationToken ct = default)

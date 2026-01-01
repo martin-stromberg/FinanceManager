@@ -6,23 +6,55 @@ using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Web.ViewModels.Securities.Categories;
 
+/// <summary>
+/// Lightweight list item representing a security category used in list views.
+/// </summary>
+/// <param name="Id">Identifier of the security category.</param>
+/// <param name="Name">Display name of the category.</param>
+/// <param name="SymbolId">Optional attachment id used as display symbol.</param>
 public sealed record SecurityCategoryItem(Guid Id, string Name, Guid? SymbolId) : IListItemNavigation
 {
+    /// <summary>
+    /// Gets the navigation URL to the security category card view.
+    /// </summary>
+    /// <returns>Relative URL to navigate to the security category card.</returns>
     public string GetNavigateUrl() => $"/card/securities/categories/{Id}";
 }
 
+/// <summary>
+/// List view model for security categories. Loads available security categories and builds list records for UI rendering.
+/// </summary>
 public sealed class SecurityCategoriesListViewModel : BaseListViewModel<SecurityCategoryItem>
 {
     private readonly Shared.IApiClient _api;
     private readonly NavigationManager _nav;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="SecurityCategoriesListViewModel"/>.
+    /// </summary>
+    /// <param name="sp">Service provider used to resolve required services, such as the API client and navigation manager.</param>
     public SecurityCategoriesListViewModel(IServiceProvider sp) : base(sp)
     {
         _api = sp.GetRequiredService<Shared.IApiClient>();
         _nav = sp.GetRequiredService<NavigationManager>();
     }
+
+    /// <summary>
+    /// Disables the search filter UI for security categories (not supported server-side).
+    /// </summary>
     public override bool AllowSearchFiltering { get => false; protected set => base.AllowSearchFiltering = value; }
+
+    /// <summary>
+    /// Disables the range filter UI for security categories (not applicable).
+    /// </summary>
     public override bool AllowRangeFiltering { get => false; protected set => base.AllowRangeFiltering = value; }
+
+    /// <summary>
+    /// Loads all security categories from the API and populates the <see cref="Items"/> collection.
+    /// </summary>
+    /// <param name="ct">Cancellation token used to cancel the operation.</param>
+    /// <returns>A task that completes when loading has finished.</returns>
+    /// <exception cref="OperationCanceledException">Thrown when the provided cancellation token requests cancellation.</exception>
     public async Task LoadAsync(CancellationToken ct = default)
     {
         if (!IsAuthenticated) return;
@@ -42,6 +74,11 @@ public sealed class SecurityCategoriesListViewModel : BaseListViewModel<Security
         RaiseStateChanged();
     }
 
+    /// <summary>
+    /// Loads a page of categories. Categories are small and therefore the implementation loads all categories.
+    /// </summary>
+    /// <param name="resetPaging">When true resets paging state. Ignored in this implementation.</param>
+    /// <returns>A task that completes when the page has been loaded.</returns>
     protected override async Task LoadPageAsync(bool resetPaging)
     {
         // categories are small - load all
@@ -49,6 +86,9 @@ public sealed class SecurityCategoriesListViewModel : BaseListViewModel<Security
         CanLoadMore = false;
     }
 
+    /// <summary>
+    /// Builds list columns and records used by the UI renderer from the current <see cref="Items"/> collection.
+    /// </summary>
     protected override void BuildRecords()
     {
         var L = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
@@ -65,6 +105,11 @@ public sealed class SecurityCategoriesListViewModel : BaseListViewModel<Security
         }, i)).ToList();
     }
 
+    /// <summary>
+    /// Builds ribbon register definitions for the categories list (navigation and management actions).
+    /// </summary>
+    /// <param name="localizer">Localizer used to resolve UI labels for ribbon actions.</param>
+    /// <returns>Collection of ribbon registers describing available tabs and actions.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var actions = new List<UiRibbonAction>
