@@ -180,7 +180,7 @@ public sealed class UserAuthService : IUserAuthService
             await _db.SaveChangesAsync(ct);
         }
 
-        await new DemoDataService(_db).CreateDemoDataForUserAsync(user.Id, ct);
+        //await new DemoDataService(_db).CreateDemoDataForUserAsync(user.Id, ct);
 
         var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
         var token = _jwt.CreateToken(user.Id, user.UserName, isAdmin, out var expires, user.PreferredLanguage, user.TimeZoneId);

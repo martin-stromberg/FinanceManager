@@ -1278,6 +1278,35 @@
         <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddLinkedPostings.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:FinanceManager.Infrastructure.Demo.DemoDataService">
+            <summary>
+            Demo data service implementation (skeleton).
+            Creates a small set of domain objects for demo purposes using application services.
+            The implementation is intentionally minimal and can be extended later to create richer demo datasets.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Demo.DemoDataService.#ctor(FinanceManager.Application.Accounts.IAccountService,FinanceManager.Application.Contacts.IContactCategoryService,FinanceManager.Application.Contacts.IContactService,FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.Savings.ISavingsPlanCategoryService,FinanceManager.Application.Savings.ISavingsPlanService,FinanceManager.Application.Securities.ISecurityCategoryService,FinanceManager.Application.Securities.ISecurityService,FinanceManager.Application.Statements.IStatementDraftService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Demo.DemoDataService})">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Demo.DemoDataService"/> class.
+            </summary>
+            <param name="accountService">Account service used to create accounts.</param>
+            <param name="contactCategoryService">Contact category service used to create categories.</param>
+            <param name="contactService">Contact service used to create contacts.</param>
+            <param name="attachmentService">Attachment service used to upload symbol images.</param>
+            <param name="savingsPlanCategoryService">Savings plan category service used to create savings plans.</param>
+            <param name="savingsPlanService">Savings plan service used to create and manage savings plans.</param>
+            <param name="securityCategoryService">Security category service used to create security categories.</param>
+            <param name="securityService">Security service used to create and manage securities.</param>
+            <param name="logger">Logger instance.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Demo.DemoDataService.CreateDemoDataAsync(System.Guid,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Creates demo data for the specified user. Currently creates one Giro account and two Savings accounts.
+            </summary>
+            <param name="userId">Identifier of the user to create demo data for.</param>
+            <param name="createPostings">Whether to create postings and statement imports for demo savings plans.</param>
+            <param name="ct">Cancellation token.</param>    
+        </member>
         <member name="T:FinanceManager.Infrastructure.Migrations.InitialCreate">
             <inheritdoc />
         </member>

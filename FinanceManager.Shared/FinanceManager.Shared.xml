@@ -1325,6 +1325,15 @@
             <returns><c>true</c> when the update was accepted by the server; otherwise <c>false</c>.</returns>
             <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the underlying HTTP request fails.</exception>
         </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Users_CreateDemoDataAsync(System.Guid,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Requests creation of demo data for the specified user. Intended for development/demo only.
+            </summary>
+            <param name="userId">User identifier to create demo data for.</param>
+            <param name="createPostings">When true, create statement imports and entries (postings) as part of the demo data.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A task representing the request; completes when server accepted the request.</returns>
+        </member>
         <member name="T:FinanceManager.Shared.Attributes.EntityKindAttribute">
             <summary>
             Associates a domain/entity type with a specific <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingKind"/>.
@@ -2980,7 +2989,7 @@
             Use this constructor when creating an empty DTO to populate later (e.g. model binding or tests).
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto.#ctor(System.Guid,System.String,FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType,System.Nullable{System.Decimal},System.Nullable{System.DateTime},System.Nullable{FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanInterval},System.Boolean,System.DateTime,System.Nullable{System.DateTime},System.Nullable{System.Guid},System.String,System.Nullable{System.Guid})">
+        <member name="M:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto.#ctor(System.Guid,System.String,FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType,System.Nullable{System.Decimal},System.Nullable{System.DateTime},System.Nullable{FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanInterval},System.Boolean,System.DateTime,System.Nullable{System.DateTime},System.Nullable{System.Guid},System.String,System.Nullable{System.Guid},System.Decimal,System.Decimal)">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto"/> class with the specified values.
             </summary>
@@ -2996,6 +3005,8 @@
             <param name="categoryId">Optional category id the plan belongs to.</param>
             <param name="contractNumber">Optional contract number associated with the plan.</param>
             <param name="symbolAttachmentId">Optional symbol attachment id.</param>
+            <param name="remainingAmount">Remaining amount to reach the target (derived).</param>
+            <param name="currentAmount">Currently accumulated amount for the plan.</param>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto.Id">
             <summary>Unique savings plan identifier.</summary>
@@ -3032,6 +3043,16 @@
         </member>
         <member name="P:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto.SymbolAttachmentId">
             <summary>Optional symbol attachment id.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto.RemainingAmount">
+            <summary>
+            Remaining amount to reach the target. When no target is defined this is 0.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanDto.CurrentAmount">
+            <summary>
+            Currently accumulated amount for the savings plan.
+            </summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanInterval">
             <summary>
@@ -3962,6 +3983,21 @@
             <summary>
             Request payload for administrators to create a new user.
             </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Users.DemoRequest">
+            <summary>
+            Represents a request to initiate a demo operation, specifying whether postings should be created.
+            </summary>
+            <param name="createPostings">true to create postings as part of the demo operation; otherwise, false.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Users.DemoRequest.#ctor(System.Boolean)">
+            <summary>
+            Represents a request to initiate a demo operation, specifying whether postings should be created.
+            </summary>
+            <param name="createPostings">true to create postings as part of the demo operation; otherwise, false.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Users.DemoRequest.createPostings">
+            <summary>true to create postings as part of the demo operation; otherwise, false.</summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Users.LoginRequest">
             <summary>

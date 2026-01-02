@@ -1,3 +1,4 @@
+using System.Linq;
 using FinanceManager.Application.Savings;
 using FinanceManager.Domain.Attachments;
 using FinanceManager.Domain.Savings;
@@ -44,7 +45,9 @@ public sealed class SavingsPlanService : ISavingsPlanService
                         p.ArchivedUtc,
                         p.CategoryId,
                         p.ContractNumber,
-                        p.SymbolAttachmentId ?? (cat != null ? cat.SymbolAttachmentId : null)
+                        p.SymbolAttachmentId ?? (cat != null ? cat.SymbolAttachmentId : null),
+                        0m,
+                        0m
                     );
 
         return await plans.ToListAsync(ct);
@@ -60,7 +63,21 @@ public sealed class SavingsPlanService : ISavingsPlanService
     public async Task<SavingsPlanDto?> GetAsync(Guid id, Guid ownerUserId, CancellationToken ct)
     {
         var plan = await _db.SavingsPlans.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id && p.OwnerUserId == ownerUserId, ct);
-        return plan == null ? null : new SavingsPlanDto(plan.Id, plan.Name, plan.Type, plan.TargetAmount, plan.TargetDate, plan.Interval, plan.IsActive, plan.CreatedUtc, plan.ArchivedUtc, plan.CategoryId, plan.ContractNumber, plan.SymbolAttachmentId);
+        if (plan == null) { return null; }
+
+        var today = DateTime.Today;
+        // sum of postings for this savings plan up to today
+        var accumulated = await _db.Postings.AsNoTracking()
+            .Where(p => p.SavingsPlanId == id && p.Kind == PostingKind.SavingsPlan && p.BookingDate <= today)
+            .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
+
+        decimal remaining = 0m;
+        if (plan.TargetAmount is not null)
+        {
+            remaining = Math.Max(0m, plan.TargetAmount.Value - accumulated);
+        }
+
+        return new SavingsPlanDto(plan.Id, plan.Name, plan.Type, plan.TargetAmount, plan.TargetDate, plan.Interval, plan.IsActive, plan.CreatedUtc, plan.ArchivedUtc, plan.CategoryId, plan.ContractNumber, plan.SymbolAttachmentId, remaining, accumulated);
     }
 
     /// <summary>

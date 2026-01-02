@@ -1881,11 +1881,12 @@
             User management (read-only placeholder). Forwards calls to services and catches unexpected exceptions.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.UsersController.#ctor(FinanceManager.Application.Users.IUserReadService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.UsersController})">
+        <member name="M:FinanceManager.Web.Controllers.UsersController.#ctor(FinanceManager.Application.Users.IUserReadService,FinanceManager.Application.Demo.IDemoDataService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.UsersController})">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Web.Controllers.UsersController"/> class.
             </summary>
             <param name="userReadService">Service used to read user information.</param>
+            <param name="demoDataService">Service responsible for creating demo data for a user.</param>
             <param name="logger">Logger instance for this controller.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.UsersController.HasAnyUsersAsync(System.Threading.CancellationToken)">
@@ -1903,6 +1904,20 @@
             </remarks>
             <exception cref="T:System.OperationCanceledException">When the provided cancellation token is triggered. This is handled and mapped to a 499 response.</exception>
             <exception cref="T:System.Exception">An unexpected exception that is logged and results in a 500 response.</exception>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.UsersController.CreateDemoDataAsync(System.Guid,FinanceManager.Shared.Dtos.Users.DemoRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates demo data for the specified user. This is intended for development and demo scenarios only.
+            The method will schedule or execute creation of various domain entities under the provided user account.
+            </summary>
+            <param name="userId">Identifier of the user for whom demo data should be created.</param>
+            <param name="createPostings">When true, statement imports and entries (postings) will also be created as part of the demo data.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>
+            202 Accepted when the request was accepted for processing.
+            400 Bad Request when the <paramref name="userId"/> is empty.
+            500 Internal Server Error for unexpected errors.
+            </returns>
         </member>
         <member name="T:FinanceManager.Web.Controllers.UserSettingsController">
             <summary>

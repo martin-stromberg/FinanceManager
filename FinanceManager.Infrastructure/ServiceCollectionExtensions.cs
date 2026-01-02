@@ -4,6 +4,7 @@ using FinanceManager.Application.Aggregates;
 using FinanceManager.Application.Attachments; // new
 using FinanceManager.Application.Backups;
 using FinanceManager.Application.Contacts;
+using FinanceManager.Application.Demo;
 using FinanceManager.Application.Notifications; // new
 using FinanceManager.Application.Reports;
 using FinanceManager.Application.Savings;
@@ -86,11 +87,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IReportFavoriteService, ReportFavoriteService>();
         services.AddScoped<IReportAggregationService, ReportAggregationService>();
         services.AddScoped<IHomeKpiService, HomeKpiService>();
-        services.AddScoped<IIpBlockService, IpBlockService>(); // new
-        services.AddScoped<INotificationService, NotificationService>(); // new
-        services.AddScoped<IAttachmentService, AttachmentService>(); // new
-        services.AddScoped<IAttachmentCategoryService, AttachmentCategoryService>(); // new
-        services.AddScoped<IPostingExportService, PostingExportService>(); // new
+        services.AddScoped<IIpBlockService, IpBlockService>(); 
+        services.AddScoped<INotificationService, NotificationService>(); 
+        services.AddScoped<IAttachmentService, AttachmentService>(); 
+        services.AddScoped<IAttachmentCategoryService, AttachmentCategoryService>(); 
+        services.AddScoped<IPostingExportService, PostingExportService>(); 
+        services.AddScoped<IDemoDataService, FinanceManager.Infrastructure.Demo.DemoDataService>();
 
         // Register Identity RoleStore for Guid-based roles (RoleManager is registered by AddIdentity in Program.cs)
         services.AddScoped<IRoleStore<IdentityRole<Guid>>, RoleStore<IdentityRole<Guid>, AppDbContext, Guid>>();
