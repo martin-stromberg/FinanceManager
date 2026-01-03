@@ -120,4 +120,36 @@ public sealed class Contact : Entity, IAggregateRoot
         SymbolAttachmentId = attachmentId == Guid.Empty ? null : attachmentId;
         Touch();
     }
+
+    /// <summary>
+    /// DTO used for backups representing the serializable state of the contact.
+    /// </summary>
+    public sealed record ContactBackupDto(Guid Id, Guid OwnerUserId, string Name, ContactType Type, Guid? CategoryId, string? Description, bool IsPaymentIntermediary, Guid? SymbolAttachmentId);
+
+    /// <summary>
+    /// Creates a backup DTO from the current entity state.
+    /// </summary>
+    /// <returns>A <see cref="ContactBackupDto"/> representing the serializable state of this contact.</returns>
+    public ContactBackupDto ToBackupDto()
+    {
+        return new ContactBackupDto(Id, OwnerUserId, Name, Type, CategoryId, Description, IsPaymentIntermediary, SymbolAttachmentId);
+    }
+
+    /// <summary>
+    /// Assigns values from a backup DTO to this entity. Uses entity setters to preserve invariants.
+    /// </summary>
+    /// <param name="dto">Backup DTO to read values from.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+    public void AssignBackupDto(ContactBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        // Id is intentionally not assigned here; identity handled by repository/ORM.
+        OwnerUserId = dto.OwnerUserId;
+        Rename(dto.Name);
+        ChangeType(dto.Type);
+        SetCategory(dto.CategoryId);
+        SetDescription(dto.Description);
+        SetPaymentIntermediary(dto.IsPaymentIntermediary);
+        SetSymbolAttachment(dto.SymbolAttachmentId);
+    }
 }

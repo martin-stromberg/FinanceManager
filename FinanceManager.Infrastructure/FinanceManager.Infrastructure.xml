@@ -1278,6 +1278,71 @@
         <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddLinkedPostings.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.BasEntityAsBaseClassOfSavingsPlans">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.BasEntityAsBaseClassOfSavingsPlans.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.BasEntityAsBaseClassOfSavingsPlans.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.BasEntityAsBaseClassOfSavingsPlans.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.BasEntityAsBaseClassOfSecurity">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.BasEntityAsBaseClassOfSecurity.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.BasEntityAsBaseClassOfSecurity.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.BasEntityAsBaseClassOfSecurity.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.BasEntityAsBaseClassOfAttachment">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.BasEntityAsBaseClassOfAttachment.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.BasEntityAsBaseClassOfAttachment.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.BasEntityAsBaseClassOfAttachment.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Demo.DemoDataService">
+            <summary>
+            Demo data service implementation (skeleton).
+            Creates a small set of domain objects for demo purposes using application services.
+            The implementation is intentionally minimal and can be extended later to create richer demo datasets.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Demo.DemoDataService.#ctor(FinanceManager.Application.Accounts.IAccountService,FinanceManager.Application.Contacts.IContactCategoryService,FinanceManager.Application.Contacts.IContactService,FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.Savings.ISavingsPlanCategoryService,FinanceManager.Application.Savings.ISavingsPlanService,FinanceManager.Application.Securities.ISecurityCategoryService,FinanceManager.Application.Securities.ISecurityService,FinanceManager.Application.Securities.ISecurityPriceService,FinanceManager.Application.Statements.IStatementDraftService,FinanceManager.Application.Attachments.IAttachmentCategoryService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Demo.DemoDataService})">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Demo.DemoDataService"/> class.
+            </summary>
+            <param name="accountService">Account service used to create accounts.</param>
+            <param name="contactCategoryService">Contact category service used to create categories.</param>
+            <param name="contactService">Contact service used to create contacts.</param>
+            <param name="attachmentService">Attachment service used to upload symbol images.</param>
+            <param name="savingsPlanCategoryService">Savings plan category service used to create savings plans.</param>
+            <param name="savingsPlanService">Savings plan service used to create and manage savings plans.</param>
+            <param name="securityCategoryService">Security category service used to create security categories.</param>
+            <param name="securityService">Security service used to create and manage securities.</param>
+            <param name="logger">Logger instance.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Demo.DemoDataService.CreateDemoDataAsync(System.Guid,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Creates demo data for the specified user. Currently creates one Giro account and two Savings accounts.
+            </summary>
+            <param name="userId">Identifier of the user to create demo data for.</param>
+            <param name="createPostings">Whether to create postings and statement imports for demo savings plans.</param>
+            <param name="ct">Cancellation token.</param>    
+        </member>
         <member name="T:FinanceManager.Infrastructure.Migrations.InitialCreate">
             <inheritdoc />
         </member>
@@ -2875,6 +2940,77 @@
             <param name="ct">Cancellation token.</param>
             <returns>A task that completes when the change has been persisted.</returns>
             <exception cref="T:System.ArgumentException">Thrown when the category or the referenced attachment is not found or not owned by the user.</exception>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Securities.SecurityPriceService">
+            <summary>
+            Implementation of <see cref="T:FinanceManager.Application.Securities.ISecurityPriceService"/> that persists and queries
+            security price records using the application's <c>AppDbContext</c>.
+            </summary>
+            <remarks>
+            This service validates ownership of a security before creating or listing prices.
+            All methods are asynchronous and honour the provided <see cref="T:System.Threading.CancellationToken"/>.
+            </remarks>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceService.#ctor(FinanceManager.Infrastructure.AppDbContext)">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Securities.SecurityPriceService"/> class.
+            </summary>
+            <param name="db">The application's database context used to persist and query security prices.</param>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="db"/> is <c>null</c>.</exception>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceService.CreateAsync(System.Guid,System.Guid,System.DateTime,System.Decimal,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new security price record for the specified security and date.
+            </summary>
+            <param name="ownerUserId">The identifier of the user who owns the security.</param>
+            <param name="securityId">The identifier of the security to which the price belongs.</param>
+            <param name="date">The date for which the closing price applies (date portion used).</param>
+            <param name="close">The closing price value for the given date.</param>
+            <param name="ct">CancellationToken to cancel the operation.</param>
+            <returns>A task that completes once the price record has been persisted.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when the specified security does not exist or is not owned by <paramref name="ownerUserId"/>.</exception>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when <paramref name="close"/> is negative or otherwise invalid.</exception>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceService.ListAsync(System.Guid,System.Guid,System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Lists historical security prices for the specified security ordered by date descending.
+            </summary>
+            <param name="ownerUserId">The identifier of the user who owns the security.</param>
+            <param name="securityId">The identifier of the security whose prices to list.</param>
+            <param name="skip">Number of records to skip for paging (may be zero).</param>
+            <param name="take">Maximum number of records to return.</param>
+            <param name="ct">CancellationToken to cancel the operation.</param>
+            <returns>
+            A task that returns a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityPriceDto"/> instances.
+            The list is ordered by date descending (most recent first). If the security is not owned by the
+            provided <paramref name="ownerUserId"/>, an empty list is returned.
+            </returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when <paramref name="skip"/> or <paramref name="take"/> is negative.</exception>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceService.GetLatestDateAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets the latest date for which there is a security price record for the specified security.
+            </summary>
+            <param name="ownerUserId">The identifier of the user who owns the security.</param>
+            <param name="securityId">The identifier of the security whose latest price date to retrieve.</param>
+            <param name="ct">CancellationToken to cancel the operation.</param>
+            <returns>
+            A task that returns the latest date as a nullable <see cref="T:System.DateTime"/>.
+            Returns <c>null</c> if the security is not owned by the user or if there are no price records.
+            </returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceService.SetPriceErrorAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Sets a short price error message on the given security. This marks the security as having
+            a price lookup error (for example invalid external symbol) so that automated backfills
+            can skip it until the error is cleared.
+            </summary>
+            <param name="ownerUserId">The owner of the security.</param>
+            <param name="securityId">The security identifier.</param>
+            <param name="message">A short error message to record. May be <c>null</c> or empty to clear the error.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A task that completes when the operation has been applied.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when the security does not exist or is not owned by <paramref name="ownerUserId"/>.</exception>
         </member>
         <member name="T:FinanceManager.Infrastructure.Securities.SecurityService">
             <summary>

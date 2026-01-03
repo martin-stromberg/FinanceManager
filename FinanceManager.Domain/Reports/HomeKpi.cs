@@ -149,4 +149,44 @@ public sealed class HomeKpi : Entity, IAggregateRoot
             throw new ArgumentException("ReportFavoriteId required for ReportFavorite KPIs", nameof(ReportFavoriteId));
         }
     }
+
+    // Backup DTO
+    /// <summary>
+    /// DTO carrying the serializable state of a <see cref="HomeKpi"/> used for backups.
+    /// </summary>
+    /// <param name="Id">Identifier of the KPI entity.</param>
+    /// <param name="OwnerUserId">Identifier of the user who owns this KPI.</param>
+    /// <param name="Kind">Kind of the KPI (predefined or report favorite).</param>
+    /// <param name="ReportFavoriteId">Optional referenced report favorite id when <paramref name="Kind"/> is <see cref="HomeKpiKind.ReportFavorite"/>.</param>
+    /// <param name="DisplayMode">Display mode used to render the KPI.</param>
+    /// <param name="SortOrder">Sort order for rendering on the dashboard.</param>
+    /// <param name="Title">Optional custom title for the KPI.</param>
+    /// <param name="PredefinedType">Optional predefined KPI type when <paramref name="Kind"/> denotes a predefined KPI.</param>
+    /// <param name="CreatedUtc">UTC timestamp when the KPI was created.</param>
+    /// <param name="ModifiedUtc">UTC timestamp when the KPI was last modified, if any.</param>
+    public sealed record HomeKpiBackupDto(Guid Id, Guid OwnerUserId, HomeKpiKind Kind, Guid? ReportFavoriteId, HomeKpiDisplayMode DisplayMode, int SortOrder, string? Title, HomeKpiPredefined? PredefinedType, DateTime CreatedUtc, DateTime? ModifiedUtc);
+
+    /// <summary>
+    /// Creates a backup DTO representing this <see cref="HomeKpi"/>.
+    /// </summary>
+    /// <returns>A <see cref="HomeKpiBackupDto"/> containing the serializable state of this KPI.</returns>
+    public HomeKpiBackupDto ToBackupDto() => new HomeKpiBackupDto(Id, OwnerUserId, Kind, ReportFavoriteId, DisplayMode, SortOrder, Title, PredefinedType, CreatedUtc, ModifiedUtc);
+
+    /// <summary>
+    /// Assigns values from the provided backup DTO to this <see cref="HomeKpi"/> instance.
+    /// Uses existing setters where appropriate to preserve domain invariants.
+    /// </summary>
+    /// <param name="dto">The <see cref="HomeKpiBackupDto"/> containing values to apply.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+    public void AssignBackupDto(HomeKpiBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        OwnerUserId = dto.OwnerUserId;
+        Kind = dto.Kind;
+        ReportFavoriteId = dto.ReportFavoriteId;
+        DisplayMode = dto.DisplayMode;
+        SortOrder = dto.SortOrder;
+        SetTitle(dto.Title);
+        PredefinedType = dto.PredefinedType;
+    }
 }

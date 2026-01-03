@@ -48,4 +48,33 @@ public sealed class AttachmentCategory
         if (string.IsNullOrWhiteSpace(name)) { throw new ArgumentException("Name required", nameof(name)); }
         Name = name.Trim();
     }
+
+    // Backup DTO
+    /// <summary>
+    /// DTO carrying the serializable state of an <see cref="AttachmentCategory"/> used for backups.
+    /// </summary>
+    /// <param name="Id">Identifier of the category entity.</param>
+    /// <param name="OwnerUserId">Identifier of the user who owns the category.</param>
+    /// <param name="Name">Display name of the category.</param>
+    /// <param name="IsSystem">Flag indicating whether the category is a system category.</param>
+    public sealed record AttachmentCategoryBackupDto(Guid Id, Guid OwnerUserId, string Name, bool IsSystem);
+
+    /// <summary>
+    /// Converts this AttachmentCategory to a backup DTO.
+    /// </summary>
+    /// <returns>A <see cref="AttachmentCategoryBackupDto"/> containing the data required to restore this category.</returns>
+    public AttachmentCategoryBackupDto ToBackupDto() => new AttachmentCategoryBackupDto(Id, OwnerUserId, Name, IsSystem);
+
+    /// <summary>
+    /// Assigns values from a backup DTO to this entity.
+    /// </summary>
+    /// <param name="dto">The <see cref="AttachmentCategoryBackupDto"/> containing values to apply to this entity.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+    public void AssignBackupDto(AttachmentCategoryBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        OwnerUserId = dto.OwnerUserId;
+        Rename(dto.Name);
+        IsSystem = dto.IsSystem;
+    }
 }

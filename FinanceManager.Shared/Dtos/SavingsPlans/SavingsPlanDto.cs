@@ -29,7 +29,9 @@ public sealed class SavingsPlanDto
     /// <param name="categoryId">Optional category id the plan belongs to.</param>
     /// <param name="contractNumber">Optional contract number associated with the plan.</param>
     /// <param name="symbolAttachmentId">Optional symbol attachment id.</param>
-    public SavingsPlanDto(Guid id, string name, SavingsPlanType type, decimal? targetAmount, DateTime? targetDate, SavingsPlanInterval? interval, bool isActive, DateTime createdUtc, DateTime? archivedUtc, Guid? categoryId, string? contractNumber = null, Guid? symbolAttachmentId = null)
+    /// <param name="remainingAmount">Remaining amount to reach the target (derived).</param>
+    /// <param name="currentAmount">Currently accumulated amount for the plan.</param>
+    public SavingsPlanDto(Guid id, string name, SavingsPlanType type, decimal? targetAmount, DateTime? targetDate, SavingsPlanInterval? interval, bool isActive, DateTime createdUtc, DateTime? archivedUtc, Guid? categoryId, string? contractNumber = null, Guid? symbolAttachmentId = null, decimal remainingAmount = 0m, decimal currentAmount = 0m)
         : this()
     {
         Id = id;
@@ -44,6 +46,8 @@ public sealed class SavingsPlanDto
         CategoryId = categoryId;
         ContractNumber = contractNumber;
         SymbolAttachmentId = symbolAttachmentId;
+        RemainingAmount = remainingAmount;
+        CurrentAmount = currentAmount;
     }
 
     /// <summary>Unique savings plan identifier.</summary>
@@ -71,4 +75,14 @@ public sealed class SavingsPlanDto
 
     /// <summary>Optional symbol attachment id.</summary>
     public Guid? SymbolAttachmentId { get; set; }
+
+    /// <summary>
+    /// Remaining amount to reach the target. When no target is defined this is 0.
+    /// </summary>
+    public decimal RemainingAmount { get; set; }
+
+    /// <summary>
+    /// Currently accumulated amount for the savings plan.
+    /// </summary>
+    public decimal CurrentAmount { get; set; }
 }

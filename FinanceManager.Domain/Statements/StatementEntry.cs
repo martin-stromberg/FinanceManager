@@ -117,4 +117,57 @@ public sealed class StatementEntry : Entity
     /// Processing status of this imported entry.
     /// </summary>
     public StatementEntryStatus Status { get; private set; } = StatementEntryStatus.Pending;
+
+    // Backup DTO
+    /// <summary>
+    /// DTO carrying the serializable state of a <see cref="StatementEntry"/> for backup purposes.
+    /// </summary>
+    /// <param name="Id">Identifier of the statement entry entity.</param>
+    /// <param name="StatementImportId">Identifier of the owning statement import.</param>
+    /// <param name="BookingDate">Booking date of the entry.</param>
+    /// <param name="ValutaDate">Optional valuta/date-of-value.</param>
+    /// <param name="Amount">Monetary amount of the entry.</param>
+    /// <param name="Subject">Short subject or description.</param>
+    /// <param name="RawHash">Raw content hash used for deduplication.</param>
+    /// <param name="RecipientName">Optional recipient name extracted from the statement.</param>
+    /// <param name="CurrencyCode">Currency code for the amount (ISO).</param>
+    /// <param name="BookingDescription">Optional longer booking description.</param>
+    /// <param name="IsAnnounced">Whether the entry was announced/pre-booked in the source.</param>
+    /// <param name="IsCostNeutral">Whether the entry is cost-neutral and should not affect totals.</param>
+    /// <param name="ContactId">Optional resolved contact id when matched.</param>
+    /// <param name="SavingsPlanId">Optional assigned savings plan id when matched.</param>
+    /// <param name="SecurityTransactionId">Optional security transaction id when matched.</param>
+    /// <param name="Status">Processing status of the imported entry.</param>
+    public sealed record StatementEntryBackupDto(Guid Id, Guid StatementImportId, DateTime BookingDate, DateTime? ValutaDate, decimal Amount, string Subject, string RawHash, string? RecipientName, string CurrencyCode, string? BookingDescription, bool IsAnnounced, bool IsCostNeutral, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityTransactionId, StatementEntryStatus Status);
+
+    /// <summary>
+    /// Creates a backup DTO representing the serializable state of this statement entry.
+    /// </summary>
+    /// <returns>A <see cref="StatementEntryBackupDto"/> containing the entry state suitable for backup/restore.</returns>
+    public StatementEntryBackupDto ToBackupDto() => new StatementEntryBackupDto(Id, StatementImportId, BookingDate, ValutaDate, Amount, Subject, RawHash, RecipientName, CurrencyCode, BookingDescription, IsAnnounced, IsCostNeutral, ContactId, SavingsPlanId, SecurityTransactionId, Status);
+
+    /// <summary>
+    /// Applies values from the provided backup DTO to this <see cref="StatementEntry"/> instance.
+    /// </summary>
+    /// <param name="dto">The <see cref="StatementEntryBackupDto"/> containing values to apply.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+    public void AssignBackupDto(StatementEntryBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        StatementImportId = dto.StatementImportId;
+        BookingDate = dto.BookingDate;
+        ValutaDate = dto.ValutaDate;
+        Amount = dto.Amount;
+        Subject = dto.Subject;
+        RawHash = dto.RawHash;
+        RecipientName = dto.RecipientName;
+        CurrencyCode = dto.CurrencyCode;
+        BookingDescription = dto.BookingDescription;
+        IsAnnounced = dto.IsAnnounced;
+        IsCostNeutral = dto.IsCostNeutral;
+        ContactId = dto.ContactId;
+        SavingsPlanId = dto.SavingsPlanId;
+        SecurityTransactionId = dto.SecurityTransactionId;
+        Status = dto.Status;
+    }
 }

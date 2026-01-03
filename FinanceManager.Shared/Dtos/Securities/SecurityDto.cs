@@ -33,4 +33,8 @@ public sealed class SecurityDto
     public DateTime? ArchivedUtc { get; set; }
     /// <summary>Optional symbol attachment id.</summary>
     public Guid? SymbolAttachmentId { get; set; }
+    /// <summary>
+    /// A value indicating whether a pricing error has occurred for the current instance.
+    /// </summary>
+    public bool HasPriceError { get; set; }
 }

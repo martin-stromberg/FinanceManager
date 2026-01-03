@@ -90,8 +90,8 @@ public sealed class Posting : Entity, IAggregateRoot
     /// <summary>
     /// Creates a posting including valuta date for precise financial tracking.
     /// </summary>
-    /// <param name="sourceId">Source id (external system id or import id).</param>
-    /// <param name="kind">Posting kind identifying the domain target.</param>
+    /// <param name="sourceId">Source identifier (external/import id).</param>
+    /// <param name="kind">Posting kind identifying the target domain.</param>
     /// <param name="accountId">Optional account id.</param>
     /// <param name="contactId">Optional contact id.</param>
     /// <param name="savingsPlanId">Optional savings plan id.</param>
@@ -315,5 +315,62 @@ public sealed class Posting : Entity, IAggregateRoot
         ValutaDate = valutaDate;
         Touch();
         return this;
+    }
+
+    // Backup DTO
+    /// <summary>
+    /// DTO carrying the serializable state of a <see cref="Posting"/> for backup purposes.
+    /// </summary>
+    /// <param name="Id">Identifier of the posting entity.</param>
+    /// <param name="SourceId">Source identifier (external/import id).</param>
+    /// <param name="Kind">Posting kind indicating the domain target.</param>
+    /// <param name="AccountId">Optional account id referenced by the posting.</param>
+    /// <param name="ContactId">Optional contact id referenced by the posting.</param>
+    /// <param name="SavingsPlanId">Optional savings plan id referenced by the posting.</param>
+    /// <param name="SecurityId">Optional security id referenced by the posting.</param>
+    /// <param name="BookingDate">Booking date of the posting.</param>
+    /// <param name="ValutaDate">Valuta/date-of-value for the posting.</param>
+    /// <param name="Amount">Monetary amount for the posting.</param>
+    /// <param name="Subject">Optional subject for the posting.</param>
+    /// <param name="RecipientName">Optional recipient name.</param>
+    /// <param name="Description">Optional description.</param>
+    /// <param name="SecuritySubType">Optional security posting subtype.</param>
+    /// <param name="Quantity">Optional quantity for securities postings.</param>
+    /// <param name="GroupId">Optional group identifier for related postings.</param>
+    /// <param name="ParentId">Optional parent posting reference.</param>
+    /// <param name="LinkedPostingId">Optional linked posting reference (counterpart).</param>
+    public sealed record PostingBackupDto(Guid Id, Guid SourceId, PostingKind Kind, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, DateTime BookingDate, DateTime ValutaDate, decimal Amount, string? Subject, string? RecipientName, string? Description, SecurityPostingSubType? SecuritySubType, decimal? Quantity, Guid? GroupId, Guid? ParentId, Guid? LinkedPostingId);
+
+    /// <summary>
+    /// Creates a backup DTO representing the serializable state of this posting.
+    /// </summary>
+    /// <returns>A <see cref="PostingBackupDto"/> containing values required to restore this posting.</returns>
+    public PostingBackupDto ToBackupDto() => new PostingBackupDto(Id, SourceId, Kind, AccountId, ContactId, SavingsPlanId, SecurityId, BookingDate, ValutaDate, Amount, Subject, RecipientName, Description, SecuritySubType, Quantity, GroupId, ParentId, LinkedPostingId);
+
+    /// <summary>
+    /// Applies values from the provided backup DTO to this posting instance.
+    /// </summary>
+    /// <param name="dto">The <see cref="PostingBackupDto"/> containing values to apply.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+    public void AssignBackupDto(PostingBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        SourceId = dto.SourceId;
+        Kind = dto.Kind;
+        AccountId = dto.AccountId;
+        ContactId = dto.ContactId;
+        SavingsPlanId = dto.SavingsPlanId;
+        SecurityId = dto.SecurityId;
+        BookingDate = dto.BookingDate;
+        ValutaDate = dto.ValutaDate;
+        Amount = dto.Amount;
+        Subject = dto.Subject;
+        RecipientName = dto.RecipientName;
+        Description = dto.Description;
+        SecuritySubType = dto.SecuritySubType;
+        Quantity = dto.Quantity;
+        GroupId = dto.GroupId ?? Guid.Empty;
+        ParentId = dto.ParentId;
+        LinkedPostingId = dto.LinkedPostingId;
     }
 }

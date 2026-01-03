@@ -56,4 +56,33 @@ public sealed class SavingsPlanCategory
     {
         SymbolAttachmentId = attachmentId == Guid.Empty ? null : attachmentId;
     }
+
+    // Backup DTO
+    /// <summary>
+    /// DTO carrying the serializable state of a <see cref="SavingsPlanCategory"/> for backup purposes.
+    /// </summary>
+    /// <param name="Id">Identifier of the category entity.</param>
+    /// <param name="OwnerUserId">Identifier of the user who owns the category.</param>
+    /// <param name="Name">Display name of the category.</param>
+    /// <param name="SymbolAttachmentId">Optional symbol attachment identifier associated with the category.</param>
+    public sealed record SavingsPlanCategoryBackupDto(Guid Id, Guid OwnerUserId, string Name, Guid? SymbolAttachmentId);
+
+    /// <summary>
+    /// Converts this SavingsPlanCategory to a backup DTO.
+    /// </summary>
+    /// <returns>A <see cref="SavingsPlanCategoryBackupDto"/> containing the data required to restore this category.</returns>
+    public SavingsPlanCategoryBackupDto ToBackupDto() => new SavingsPlanCategoryBackupDto(Id, OwnerUserId, Name, SymbolAttachmentId);
+
+    /// <summary>
+    /// Assigns values from a backup DTO to this entity.
+    /// </summary>
+    /// <param name="dto">The <see cref="SavingsPlanCategoryBackupDto"/> containing values to apply to this entity.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+    public void AssignBackupDto(SavingsPlanCategoryBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        OwnerUserId = dto.OwnerUserId;
+        Rename(dto.Name);
+        SetSymbolAttachment(dto.SymbolAttachmentId);
+    }
 }

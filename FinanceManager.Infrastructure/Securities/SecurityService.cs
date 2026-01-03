@@ -29,26 +29,10 @@ public sealed class SecurityService : ISecurityService
         var q = _db.Securities.AsNoTracking().Where(s => s.OwnerUserId == ownerUserId);
         if (onlyActive) { q = q.Where(s => s.IsActive); }
 
-        return await q
-            .OrderBy(s => s.Name)
-            .Select(s => new SecurityDto
-            {
-                Id = s.Id,
-                Name = s.Name,
-                Description = s.Description,
-                Identifier = s.Identifier,
-                AlphaVantageCode = s.AlphaVantageCode,
-                CurrencyCode = s.CurrencyCode,
-                CategoryId = s.CategoryId,
-                CategoryName = s.CategoryId == null
-                    ? null
-                    : _db.SecurityCategories.Where(c => c.Id == s.CategoryId).Select(c => c.Name).FirstOrDefault(),
-                IsActive = s.IsActive,
-                CreatedUtc = s.CreatedUtc,
-                ArchivedUtc = s.ArchivedUtc,
-                SymbolAttachmentId = s.SymbolAttachmentId // include in projection
-            })
-            .ToListAsync(ct);
+        var entities = await q.OrderBy(s => s.Name).ToListAsync(ct);
+        var tasks = entities.Select(e => MapToDtoAsync(e, ct));
+        var list = await Task.WhenAll(tasks);
+        return list;
     }
 
     /// <summary>
@@ -60,26 +44,9 @@ public sealed class SecurityService : ISecurityService
     /// <returns>The <see cref="SecurityDto"/> when found; otherwise <c>null</c>.</returns>
     public async Task<SecurityDto?> GetAsync(Guid id, Guid ownerUserId, CancellationToken ct)
     {
-        return await _db.Securities.AsNoTracking()
-            .Where(s => s.Id == id && s.OwnerUserId == ownerUserId)
-            .Select(s => new SecurityDto
-            {
-                Id = s.Id,
-                Name = s.Name,
-                Description = s.Description,
-                Identifier = s.Identifier,
-                AlphaVantageCode = s.AlphaVantageCode,
-                CurrencyCode = s.CurrencyCode,
-                CategoryId = s.CategoryId,
-                CategoryName = s.CategoryId == null
-                    ? null
-                    : _db.SecurityCategories.Where(c => c.Id == s.CategoryId).Select(c => c.Name).FirstOrDefault(),
-                IsActive = s.IsActive,
-                CreatedUtc = s.CreatedUtc,
-                ArchivedUtc = s.ArchivedUtc,
-                SymbolAttachmentId = s.SymbolAttachmentId // include in projection
-            })
-            .FirstOrDefaultAsync(ct);
+        var entity = await _db.Securities.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id && s.OwnerUserId == ownerUserId, ct);
+        if (entity == null) return null;
+        return await MapToDtoAsync(entity, ct);
     }
 
     /// <summary>
@@ -108,24 +75,7 @@ public sealed class SecurityService : ISecurityService
         var entity = new FinanceManager.Domain.Securities.Security(ownerUserId, name, identifier, description, alphaVantageCode, currencyCode, categoryId);
         _db.Securities.Add(entity);
         await _db.SaveChangesAsync(ct);
-        var catName = categoryId == null
-            ? null
-            : await _db.SecurityCategories.Where(c => c.Id == categoryId).Select(c => c.Name).FirstOrDefaultAsync(ct);
-
-        return new SecurityDto
-        {
-            Id = entity.Id,
-            Name = entity.Name,
-            Description = entity.Description,
-            Identifier = entity.Identifier,
-            AlphaVantageCode = entity.AlphaVantageCode,
-            CurrencyCode = entity.CurrencyCode,
-            CategoryId = entity.CategoryId,
-            CategoryName = catName,
-            IsActive = entity.IsActive,
-            CreatedUtc = entity.CreatedUtc,
-            ArchivedUtc = entity.ArchivedUtc
-        };
+        return await MapToDtoAsync(entity, ct);
     }
 
     /// <summary>
@@ -161,26 +111,7 @@ public sealed class SecurityService : ISecurityService
         entity.Update(name, identifier, description, alphaVantageCode, currencyCode, categoryId);
         await _db.SaveChangesAsync(ct);
 
-        string? catName = null;
-        if (entity.CategoryId != null)
-        {
-            catName = await _db.SecurityCategories.Where(c => c.Id == entity.CategoryId).Select(c => c.Name).FirstOrDefaultAsync(ct);
-        }
-
-        return new SecurityDto
-        {
-            Id = entity.Id,
-            Name = entity.Name,
-            Description = entity.Description,
-            Identifier = entity.Identifier,
-            AlphaVantageCode = entity.AlphaVantageCode,
-            CurrencyCode = entity.CurrencyCode,
-            CategoryId = entity.CategoryId,
-            CategoryName = catName,
-            IsActive = entity.IsActive,
-            CreatedUtc = entity.CreatedUtc,
-            ArchivedUtc = entity.ArchivedUtc
-        };
+        return await MapToDtoAsync(entity, ct);
     }
 
     /// <summary>
@@ -251,5 +182,32 @@ public sealed class SecurityService : ISecurityService
         if (sec == null) throw new ArgumentException("Security not found", nameof(id));
         sec.SetSymbolAttachment(attachmentId);
         await _db.SaveChangesAsync(ct);
+    }
+
+    // Map a domain Security entity to its DTO representation.
+    private async Task<SecurityDto> MapToDtoAsync(FinanceManager.Domain.Securities.Security s, CancellationToken ct)
+    {
+        string? categoryName = null;
+        if (s.CategoryId != null)
+        {
+            categoryName = await _db.SecurityCategories.Where(c => c.Id == s.CategoryId).Select(c => c.Name).FirstOrDefaultAsync(ct);
+        }
+
+        return new SecurityDto
+        {
+            Id = s.Id,
+            Name = s.Name,
+            Description = s.Description,
+            Identifier = s.Identifier,
+            AlphaVantageCode = s.AlphaVantageCode,
+            CurrencyCode = s.CurrencyCode,
+            CategoryId = s.CategoryId,
+            CategoryName = categoryName,
+            IsActive = s.IsActive,
+            CreatedUtc = s.CreatedUtc,
+            ArchivedUtc = s.ArchivedUtc,
+            SymbolAttachmentId = s.SymbolAttachmentId,
+            HasPriceError = s.HasPriceError
+        };
     }
 }

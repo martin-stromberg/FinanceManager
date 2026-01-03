@@ -318,4 +318,68 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
         => string.IsNullOrWhiteSpace(csv) ? null : csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(Guid.Parse).ToArray();
     private static IReadOnlyCollection<int>? FromCsvInt(string? csv)
         => string.IsNullOrWhiteSpace(csv) ? null : csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(int.Parse).ToArray();
+    
+    // Backup DTO
+    /// <summary>
+    /// Backup data transfer object for ReportFavorite.
+    /// </summary>
+    public sealed record ReportFavoriteBackupDto(
+        Guid Id,
+        Guid OwnerUserId,
+        string Name,
+        PostingKind PostingKind,
+        bool IncludeCategory,
+        ReportInterval Interval,
+        int Take,
+        bool ComparePrevious,
+        bool CompareYear,
+        bool ShowChart,
+        bool Expandable,
+        string? PostingKindsCsv,
+        string? AccountIdsCsv,
+        string? ContactIdsCsv,
+        string? SavingsPlanIdsCsv,
+        string? SecurityIdsCsv,
+        string? ContactCategoryIdsCsv,
+        string? SavingsPlanCategoryIdsCsv,
+        string? SecurityCategoryIdsCsv,
+        string? SecuritySubTypesCsv,
+        bool? IncludeDividendRelated,
+        bool UseValutaDate);
+
+    /// <summary>
+    /// Creates a backup DTO representing the serializable state of this ReportFavorite.
+    /// </summary>
+    /// <returns>A <see cref="ReportFavoriteBackupDto"/> containing the backup data.</returns>
+    public ReportFavoriteBackupDto ToBackupDto() => new ReportFavoriteBackupDto(Id, OwnerUserId, Name, PostingKind, IncludeCategory, Interval, Take, ComparePrevious, CompareYear, ShowChart, Expandable, PostingKindsCsv, AccountIdsCsv, ContactIdsCsv, SavingsPlanIdsCsv, SecurityIdsCsv, ContactCategoryIdsCsv, SavingsPlanCategoryIdsCsv, SecurityCategoryIdsCsv, SecuritySubTypesCsv, IncludeDividendRelated, UseValutaDate);
+
+    /// <summary>
+    /// Assigns values from a backup DTO to this entity. Uses existing setters to preserve invariants where applicable.
+    /// </summary>
+    /// <param name="dto">Backup DTO to apply.</param>
+    public void AssignBackupDto(ReportFavoriteBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        OwnerUserId = dto.OwnerUserId;
+        Rename(dto.Name);
+        PostingKind = dto.PostingKind;
+        IncludeCategory = dto.IncludeCategory;
+        Interval = dto.Interval;
+        Take = dto.Take;
+        ComparePrevious = dto.ComparePrevious;
+        CompareYear = dto.CompareYear;
+        ShowChart = dto.ShowChart;
+        Expandable = dto.Expandable;
+        PostingKindsCsv = dto.PostingKindsCsv;
+        AccountIdsCsv = dto.AccountIdsCsv;
+        ContactIdsCsv = dto.ContactIdsCsv;
+        SavingsPlanIdsCsv = dto.SavingsPlanIdsCsv;
+        SecurityIdsCsv = dto.SecurityIdsCsv;
+        ContactCategoryIdsCsv = dto.ContactCategoryIdsCsv;
+        SavingsPlanCategoryIdsCsv = dto.SavingsPlanCategoryIdsCsv;
+        SecurityCategoryIdsCsv = dto.SecurityCategoryIdsCsv;
+        SecuritySubTypesCsv = dto.SecuritySubTypesCsv;
+        IncludeDividendRelated = dto.IncludeDividendRelated;
+        UseValutaDate = dto.UseValutaDate;
+    }
 }
