@@ -389,7 +389,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     /// <returns>A task that completes when the clear operation has finished.</returns>
     internal async Task ClearUserDataAsync(Guid userId, Action<int, int> progressCallback, CancellationToken ct)
     {
-        var total = 23;
+        var total = 25;
         var count = 0;
 
         await HomeKpis
@@ -515,6 +515,18 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         // SecurityCategories
         await SecurityCategories
             .Where(c => c.OwnerUserId == userId)
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        // Attachments
+        await Attachments
+            .Where(a => a.OwnerUserId == userId)
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        // AttachmentCategories
+        await AttachmentCategories
+            .Where(a => a.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
     }

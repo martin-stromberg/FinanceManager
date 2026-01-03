@@ -294,11 +294,6 @@
             Stores metadata and optional content for small attachments.
             </summary>
         </member>
-        <member name="P:FinanceManager.Domain.Attachments.Attachment.Id">
-            <summary>
-            Unique attachment identifier.
-            </summary>
-        </member>
         <member name="P:FinanceManager.Domain.Attachments.Attachment.OwnerUserId">
             <summary>
             Owner user identifier.
@@ -428,7 +423,7 @@
             Backup DTO - include Content bytes only if present and small; keep it for restore completeness.
             </summary>
         </member>
-        <member name="M:FinanceManager.Domain.Attachments.Attachment.AttachmentBackupDto.#ctor(System.Guid,System.Guid,FinanceManager.Domain.Attachments.AttachmentEntityKind,System.Guid,System.String,System.String,System.Int64,System.String,System.Nullable{System.Guid},System.DateTime,System.Byte[],System.String,System.Nullable{System.Guid},System.String,FinanceManager.Domain.Attachments.AttachmentRole)">
+        <member name="M:FinanceManager.Domain.Attachments.Attachment.AttachmentBackupDto.#ctor(System.Guid,System.DateTime,System.Nullable{System.DateTime},System.Guid,FinanceManager.Domain.Attachments.AttachmentEntityKind,System.Guid,System.String,System.String,System.Int64,System.String,System.Nullable{System.Guid},System.DateTime,System.Byte[],System.String,System.Nullable{System.Guid},System.String,FinanceManager.Domain.Attachments.AttachmentRole)">
             <summary>
             Backup DTO - include Content bytes only if present and small; keep it for restore completeness.
             </summary>
@@ -910,6 +905,15 @@
             Updates the ModifiedUtc timestamp to the current UTC time.
             Intended for internal use by aggregate roots when changes are applied.
             </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Entity.SetDates(System.Nullable{System.DateTime},System.Nullable{System.DateTime})">
+            <summary>
+            Sets the creation and modification timestamps for the current instance, if provided.
+            </summary>
+            <param name="createdUtc">The UTC date and time to set as the creation timestamp. If <see langword="null"/>, the creation timestamp is not
+            changed.</param>
+            <param name="modifiedUtc">The UTC date and time to set as the modification timestamp. If <see langword="null"/>, the modification
+            timestamp is not changed.</param>
         </member>
         <member name="T:FinanceManager.Domain.IAggregateRoot">
             <summary>
@@ -2141,12 +2145,6 @@
             Represents a user's savings plan which may be recurring or one-off and can have a target amount/date, category and optional contract/attachment.
             </summary>
         </member>
-        <member name="P:FinanceManager.Domain.Savings.SavingsPlan.Id">
-            <summary>
-            Gets the identifier of the savings plan.
-            </summary>
-            <value>The savings plan GUID.</value>
-        </member>
         <member name="P:FinanceManager.Domain.Savings.SavingsPlan.OwnerUserId">
             <summary>
             Gets the owner user identifier for this savings plan.
@@ -2188,12 +2186,6 @@
             Gets a value indicating whether the plan is active.
             </summary>
             <value><c>true</c> if active; otherwise <c>false</c>.</value>
-        </member>
-        <member name="P:FinanceManager.Domain.Savings.SavingsPlan.CreatedUtc">
-            <summary>
-            Gets the creation timestamp (UTC) of the plan.
-            </summary>
-            <value>Creation time in UTC.</value>
         </member>
         <member name="P:FinanceManager.Domain.Savings.SavingsPlan.ArchivedUtc">
             <summary>
@@ -2278,6 +2270,7 @@
             </summary>
             <param name="attachmentId">Attachment GUID or <see cref="F:System.Guid.Empty"/> to clear.</param>
         </member>
+        <!-- Badly formed XML comment ignored for member "M:FinanceManager.Domain.Savings.SavingsPlan.SetDates(System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Nullable{System.DateTime})" -->
         <member name="M:FinanceManager.Domain.Savings.SavingsPlan.AdvanceTargetDateIfDue(System.DateTime)">
             <summary>
             Advances the <see cref="P:FinanceManager.Domain.Savings.SavingsPlan.TargetDate"/> for recurring plans while the due date is reached or passed relative to <paramref name="asOfUtc"/>.
@@ -2309,12 +2302,13 @@
             <param name="Interval">Optional recurrence interval for the plan.</param>
             <param name="IsActive">Indicates whether the plan is active.</param>
             <param name="CreatedUtc">Creation timestamp in UTC.</param>
+            <param name="ModifiedUtc">Last modification timestamp in UTC, if applicable.</param>
             <param name="ArchivedUtc">Archive timestamp in UTC, if the plan was archived.</param>
             <param name="CategoryId">Optional category identifier associated with the plan.</param>
             <param name="ContractNumber">Optional contract number for the plan.</param>
             <param name="SymbolAttachmentId">Optional symbol attachment id associated with the plan.</param>
         </member>
-        <member name="M:FinanceManager.Domain.Savings.SavingsPlan.SavingsPlanBackupDto.#ctor(System.Guid,System.Guid,System.String,FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType,System.Nullable{System.Decimal},System.Nullable{System.DateTime},System.Nullable{FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanInterval},System.Boolean,System.DateTime,System.Nullable{System.DateTime},System.Nullable{System.Guid},System.String,System.Nullable{System.Guid})">
+        <member name="M:FinanceManager.Domain.Savings.SavingsPlan.SavingsPlanBackupDto.#ctor(System.Guid,System.Guid,System.String,FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType,System.Nullable{System.Decimal},System.Nullable{System.DateTime},System.Nullable{FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanInterval},System.Boolean,System.DateTime,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Nullable{System.Guid},System.String,System.Nullable{System.Guid})">
             <summary>
             DTO carrying the serializable state of a <see cref="T:FinanceManager.Domain.Savings.SavingsPlan"/> for backup purposes.
             </summary>
@@ -2327,6 +2321,7 @@
             <param name="Interval">Optional recurrence interval for the plan.</param>
             <param name="IsActive">Indicates whether the plan is active.</param>
             <param name="CreatedUtc">Creation timestamp in UTC.</param>
+            <param name="ModifiedUtc">Last modification timestamp in UTC, if applicable.</param>
             <param name="ArchivedUtc">Archive timestamp in UTC, if the plan was archived.</param>
             <param name="CategoryId">Optional category identifier associated with the plan.</param>
             <param name="ContractNumber">Optional contract number for the plan.</param>
@@ -2358,6 +2353,9 @@
         </member>
         <member name="P:FinanceManager.Domain.Savings.SavingsPlan.SavingsPlanBackupDto.CreatedUtc">
             <summary>Creation timestamp in UTC.</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Savings.SavingsPlan.SavingsPlanBackupDto.ModifiedUtc">
+            <summary>Last modification timestamp in UTC, if applicable.</summary>
         </member>
         <member name="P:FinanceManager.Domain.Savings.SavingsPlan.SavingsPlanBackupDto.ArchivedUtc">
             <summary>Archive timestamp in UTC, if the plan was archived.</summary>
@@ -2500,12 +2498,6 @@
             <param name="categoryId">Optional category id.</param>
             <exception cref="T:System.ArgumentException">Thrown when <paramref name="name"/>, <paramref name="identifier"/> or <paramref name="currencyCode"/> are null or whitespace. See <see cref="M:FinanceManager.Domain.Securities.Security.Update(System.String,System.String,System.String,System.String,System.String,System.Nullable{System.Guid})"/>.</exception>
         </member>
-        <member name="P:FinanceManager.Domain.Securities.Security.Id">
-            <summary>
-            Gets the identifier of the security.
-            </summary>
-            <value>The security GUID.</value>
-        </member>
         <member name="P:FinanceManager.Domain.Securities.Security.OwnerUserId">
             <summary>
             Gets the owner user identifier of the security.
@@ -2547,12 +2539,6 @@
             Optional category identifier for this security.
             </summary>
             <value>Category GUID or <c>null</c>.</value>
-        </member>
-        <member name="P:FinanceManager.Domain.Securities.Security.CreatedUtc">
-            <summary>
-            UTC timestamp when the security entry was created.
-            </summary>
-            <value>Creation time in UTC.</value>
         </member>
         <member name="P:FinanceManager.Domain.Securities.Security.IsActive">
             <summary>
@@ -2624,6 +2610,16 @@
             </summary>
             <param name="attachmentId">Attachment GUID to set, or <see cref="F:System.Guid.Empty"/>/<c>null</c> to clear.</param>
         </member>
+        <member name="M:FinanceManager.Domain.Securities.Security.SetDates(System.DateTime,System.Nullable{System.DateTime},System.Nullable{System.DateTime})">
+            <summary>
+            Sets the creation, modification, and archival dates for the current instance.
+            </summary>
+            <param name="createdUtc">The date and time, in UTC, when the instance was created.</param>
+            <param name="modifiedUtc">The date and time, in UTC, when the instance was last modified, or <see langword="null"/> if the modification
+            date is not set.</param>
+            <param name="archivedUtc">The date and time, in UTC, when the instance was archived, or <see langword="null"/> if the archival date is not
+            set.</param>
+        </member>
         <member name="T:FinanceManager.Domain.Securities.Security.SecurityBackupDto">
             <summary>
             DTO carrying the serializable state of a <see cref="T:FinanceManager.Domain.Securities.Security"/> for backup purposes.
@@ -2638,10 +2634,11 @@
             <param name="CategoryId">Optional category identifier for the security.</param>
             <param name="IsActive">Whether the security is active.</param>
             <param name="CreatedUtc">Creation timestamp in UTC.</param>
+            <param name="ModifiedUtc">Last modification timestamp in UTC, if any.</param>
             <param name="ArchivedUtc">Archive timestamp in UTC if archived.</param>
             <param name="SymbolAttachmentId">Optional symbol attachment identifier.</param>
         </member>
-        <member name="M:FinanceManager.Domain.Securities.Security.SecurityBackupDto.#ctor(System.Guid,System.Guid,System.String,System.String,System.String,System.String,System.String,System.Nullable{System.Guid},System.Boolean,System.DateTime,System.Nullable{System.DateTime},System.Nullable{System.Guid})">
+        <member name="M:FinanceManager.Domain.Securities.Security.SecurityBackupDto.#ctor(System.Guid,System.Guid,System.String,System.String,System.String,System.String,System.String,System.Nullable{System.Guid},System.Boolean,System.DateTime,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Nullable{System.Guid})">
             <summary>
             DTO carrying the serializable state of a <see cref="T:FinanceManager.Domain.Securities.Security"/> for backup purposes.
             </summary>
@@ -2655,6 +2652,7 @@
             <param name="CategoryId">Optional category identifier for the security.</param>
             <param name="IsActive">Whether the security is active.</param>
             <param name="CreatedUtc">Creation timestamp in UTC.</param>
+            <param name="ModifiedUtc">Last modification timestamp in UTC, if any.</param>
             <param name="ArchivedUtc">Archive timestamp in UTC if archived.</param>
             <param name="SymbolAttachmentId">Optional symbol attachment identifier.</param>
         </member>
@@ -2687,6 +2685,9 @@
         </member>
         <member name="P:FinanceManager.Domain.Securities.Security.SecurityBackupDto.CreatedUtc">
             <summary>Creation timestamp in UTC.</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.SecurityBackupDto.ModifiedUtc">
+            <summary>Last modification timestamp in UTC, if any.</summary>
         </member>
         <member name="P:FinanceManager.Domain.Securities.Security.SecurityBackupDto.ArchivedUtc">
             <summary>Archive timestamp in UTC if archived.</summary>
@@ -3186,11 +3187,12 @@
             </summary>
             <returns>A <see cref="T:FinanceManager.Domain.Statements.StatementDraft.StatementDraftBackupDto"/> containing the draft metadata and entry DTOs.</returns>
         </member>
-        <member name="M:FinanceManager.Domain.Statements.StatementDraft.AssignBackupDto(FinanceManager.Domain.Statements.StatementDraft.StatementDraftBackupDto)">
+        <member name="M:FinanceManager.Domain.Statements.StatementDraft.AssignBackupDto(FinanceManager.Domain.Statements.StatementDraft.StatementDraftBackupDto,System.Boolean)">
             <summary>
             Assigns values from a backup DTO to this draft instance. Existing entries are cleared and replaced by DTO contents.
             </summary>
             <param name="dto">The <see cref="T:FinanceManager.Domain.Statements.StatementDraft.StatementDraftBackupDto"/> to apply.</param>
+            <param name="includeEntries">When true, entries from the DTO are also applied; when false, only draft metadata is updated.</param>
             <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
         </member>
         <member name="T:FinanceManager.Domain.Statements.StatementDraftEntry">
@@ -3416,6 +3418,8 @@
             </summary>
             <param name="Id">Entry identifier.</param>
             <param name="DraftId">Identifier of the owning draft.</param>
+            <param name="CreatedUtc">Creation timestamp in UTC.</param>
+            <param name="ModifiedUtc">Last modification timestamp in UTC, if any.</param>
             <param name="BookingDate">Booking date of the entry.</param>
             <param name="ValutaDate">Optional valuta/date-of-value.</param>
             <param name="Amount">Monetary amount.</param>
@@ -3436,12 +3440,14 @@
             <param name="SecurityFeeAmount">Optional fee amount for security transaction.</param>
             <param name="SecurityTaxAmount">Optional tax amount for security transaction.</param>
         </member>
-        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.StatementDraftEntryBackupDto.#ctor(System.Guid,System.Guid,System.DateTime,System.Nullable{System.DateTime},System.Decimal,System.String,System.String,System.String,System.String,System.Boolean,System.Boolean,FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Boolean,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityTransactionType},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal})">
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.StatementDraftEntryBackupDto.#ctor(System.Guid,System.Guid,System.DateTime,System.Nullable{System.DateTime},System.DateTime,System.Nullable{System.DateTime},System.Decimal,System.String,System.String,System.String,System.String,System.Boolean,System.Boolean,FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Boolean,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityTransactionType},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal})">
             <summary>
             DTO carrying the serializable state of a <see cref="T:FinanceManager.Domain.Statements.StatementDraftEntry"/> for backup purposes.
             </summary>
             <param name="Id">Entry identifier.</param>
             <param name="DraftId">Identifier of the owning draft.</param>
+            <param name="CreatedUtc">Creation timestamp in UTC.</param>
+            <param name="ModifiedUtc">Last modification timestamp in UTC, if any.</param>
             <param name="BookingDate">Booking date of the entry.</param>
             <param name="ValutaDate">Optional valuta/date-of-value.</param>
             <param name="Amount">Monetary amount.</param>
@@ -3467,6 +3473,12 @@
         </member>
         <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.StatementDraftEntryBackupDto.DraftId">
             <summary>Identifier of the owning draft.</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.StatementDraftEntryBackupDto.CreatedUtc">
+            <summary>Creation timestamp in UTC.</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.StatementDraftEntryBackupDto.ModifiedUtc">
+            <summary>Last modification timestamp in UTC, if any.</summary>
         </member>
         <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.StatementDraftEntryBackupDto.BookingDate">
             <summary>Booking date of the entry.</summary>

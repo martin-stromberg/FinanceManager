@@ -3,7 +3,7 @@ namespace FinanceManager.Domain.Securities;
 /// <summary>
 /// Represents a financial security (e.g. stock, bond) tracked by a user. Contains metadata, status and optional price error state.
 /// </summary>
-public sealed class Security
+public sealed class Security: Entity
 {
     /// <summary>
     /// Parameterless constructor for ORM/deserialization.
@@ -29,12 +29,6 @@ public sealed class Security
         CreatedUtc = DateTime.UtcNow;
         IsActive = true;
     }
-
-    /// <summary>
-    /// Gets the identifier of the security.
-    /// </summary>
-    /// <value>The security GUID.</value>
-    public Guid Id { get; private set; }
 
     /// <summary>
     /// Gets the owner user identifier of the security.
@@ -77,12 +71,6 @@ public sealed class Security
     /// </summary>
     /// <value>Category GUID or <c>null</c>.</value>
     public Guid? CategoryId { get; private set; }          // NEW
-
-    /// <summary>
-    /// UTC timestamp when the security entry was created.
-    /// </summary>
-    /// <value>Creation time in UTC.</value>
-    public DateTime CreatedUtc { get; private set; }
 
     /// <summary>
     /// Indicates whether the security is active.
@@ -183,6 +171,19 @@ public sealed class Security
     {
         SymbolAttachmentId = attachmentId == Guid.Empty ? null : attachmentId;
     }
+    /// <summary>
+    /// Sets the creation, modification, and archival dates for the current instance.
+    /// </summary>
+    /// <param name="createdUtc">The date and time, in UTC, when the instance was created.</param>
+    /// <param name="modifiedUtc">The date and time, in UTC, when the instance was last modified, or <see langword="null"/> if the modification
+    /// date is not set.</param>
+    /// <param name="archivedUtc">The date and time, in UTC, when the instance was archived, or <see langword="null"/> if the archival date is not
+    /// set.</param>
+    private void SetDates(DateTime createdUtc, DateTime? modifiedUtc, DateTime? archivedUtc)
+    {
+        SetDates(createdUtc, modifiedUtc);
+        ArchivedUtc = archivedUtc;
+    }
 
     // Backup DTO
     /// <summary>
@@ -198,15 +199,16 @@ public sealed class Security
     /// <param name="CategoryId">Optional category identifier for the security.</param>
     /// <param name="IsActive">Whether the security is active.</param>
     /// <param name="CreatedUtc">Creation timestamp in UTC.</param>
+    /// <param name="ModifiedUtc">Last modification timestamp in UTC, if any.</param>
     /// <param name="ArchivedUtc">Archive timestamp in UTC if archived.</param>
     /// <param name="SymbolAttachmentId">Optional symbol attachment identifier.</param>
-    public sealed record SecurityBackupDto(Guid Id, Guid OwnerUserId, string Name, string Identifier, string? Description, string? AlphaVantageCode, string CurrencyCode, Guid? CategoryId, bool IsActive, DateTime CreatedUtc, DateTime? ArchivedUtc, Guid? SymbolAttachmentId);
+    public sealed record SecurityBackupDto(Guid Id, Guid OwnerUserId, string Name, string Identifier, string? Description, string? AlphaVantageCode, string CurrencyCode, Guid? CategoryId, bool IsActive, DateTime CreatedUtc, DateTime? ModifiedUtc, DateTime? ArchivedUtc, Guid? SymbolAttachmentId);
 
     /// <summary>
     /// Creates a backup DTO representing this security.
     /// </summary>
     /// <returns>A <see cref="SecurityBackupDto"/> with serializable security data.</returns>
-    public SecurityBackupDto ToBackupDto() => new SecurityBackupDto(Id, OwnerUserId, Name, Identifier, Description, AlphaVantageCode, CurrencyCode, CategoryId, IsActive, CreatedUtc, ArchivedUtc, SymbolAttachmentId);
+    public SecurityBackupDto ToBackupDto() => new SecurityBackupDto(Id, OwnerUserId, Name, Identifier, Description, AlphaVantageCode, CurrencyCode, CategoryId, IsActive, CreatedUtc, ModifiedUtc, ArchivedUtc, SymbolAttachmentId);
 
     /// <summary>
     /// Assigns values from a backup DTO to this entity.
@@ -220,6 +222,6 @@ public sealed class Security
         Update(dto.Name, dto.Identifier, dto.Description, dto.AlphaVantageCode, dto.CurrencyCode, dto.CategoryId);
         if (!dto.IsActive && IsActive) Archive();
         SymbolAttachmentId = dto.SymbolAttachmentId;
-        // CreatedUtc/ArchivedUtc should be handled by ORM or left as-is
+        SetDates(dto.CreatedUtc, dto.ModifiedUtc, dto.ArchivedUtc);
     }
 }

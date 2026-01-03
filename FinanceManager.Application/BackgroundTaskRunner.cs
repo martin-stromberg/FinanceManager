@@ -1,3 +1,4 @@
+using FinanceManager.Shared.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -139,7 +140,7 @@ namespace FinanceManager.Application
                     catch (Exception ex)
                     {
                         var finished = DateTime.UtcNow;
-                        var failed = _manager.Get(info.Id) with { Status = BackgroundTaskStatus.Failed, ErrorDetail = ex.Message, FinishedUtc = finished };
+                        var failed = _manager.Get(info.Id) with { Status = BackgroundTaskStatus.Failed, ErrorDetail = ex.ToMessageWithInner(), FinishedUtc = finished };
                         _manager.UpdateTaskInfo(failed);
                         _logger.LogError(ex, "Task {TaskId} failed: {Message}", info.Id, ex.Message);
                     }

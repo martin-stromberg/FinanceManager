@@ -202,8 +202,9 @@ public sealed class StatementDraft : Entity, IAggregateRoot
     /// Assigns values from a backup DTO to this draft instance. Existing entries are cleared and replaced by DTO contents.
     /// </summary>
     /// <param name="dto">The <see cref="StatementDraftBackupDto"/> to apply.</param>
+    /// <param name="includeEntries">When true, entries from the DTO are also applied; when false, only draft metadata is updated.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
-    public void AssignBackupDto(StatementDraftBackupDto dto)
+    public void AssignBackupDto(StatementDraftBackupDto dto, bool includeEntries)
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
         OwnerUserId = dto.OwnerUserId;
@@ -213,12 +214,16 @@ public sealed class StatementDraft : Entity, IAggregateRoot
         DetectedAccountId = dto.DetectedAccountId;
         Status = dto.Status;
         UploadGroupId = dto.UploadGroupId;
-        _entries.Clear();
-        foreach (var e in dto.Entries)
+        SetDates(dto.CreatedUtc, dto.ModifiedUtc);
+        if (includeEntries) 
         {
-            var entry = new StatementDraftEntry();
-            entry.AssignBackupDto(e);
-            _entries.Add(entry);
+            _entries.Clear();
+            foreach (var e in dto.Entries)
+            {
+                var entry = new StatementDraftEntry();
+                entry.AssignBackupDto(e);
+                _entries.Add(entry);
+            }
         }
     }
 }
@@ -540,6 +545,8 @@ public sealed class StatementDraftEntry : Entity
     /// </summary>
     /// <param name="Id">Entry identifier.</param>
     /// <param name="DraftId">Identifier of the owning draft.</param>
+    /// <param name="CreatedUtc">Creation timestamp in UTC.</param>
+    /// <param name="ModifiedUtc">Last modification timestamp in UTC, if any.</param>
     /// <param name="BookingDate">Booking date of the entry.</param>
     /// <param name="ValutaDate">Optional valuta/date-of-value.</param>
     /// <param name="Amount">Monetary amount.</param>
@@ -559,13 +566,13 @@ public sealed class StatementDraftEntry : Entity
     /// <param name="SecurityQuantity">Optional quantity for security transactions.</param>
     /// <param name="SecurityFeeAmount">Optional fee amount for security transaction.</param>
     /// <param name="SecurityTaxAmount">Optional tax amount for security transaction.</param>
-    public sealed record StatementDraftEntryBackupDto(Guid Id, Guid DraftId, DateTime BookingDate, DateTime? ValutaDate, decimal Amount, string Subject, string? RecipientName, string CurrencyCode, string? BookingDescription, bool IsAnnounced, bool IsCostNeutral, StatementDraftEntryStatus Status, Guid? ContactId, Guid? SavingsPlanId, bool ArchiveSavingsPlanOnBooking, Guid? SplitDraftId, Guid? SecurityId, SecurityTransactionType? SecurityTransactionType, decimal? SecurityQuantity, decimal? SecurityFeeAmount, decimal? SecurityTaxAmount);
+    public sealed record StatementDraftEntryBackupDto(Guid Id, Guid DraftId, DateTime CreatedUtc, DateTime? ModifiedUtc, DateTime BookingDate, DateTime? ValutaDate, decimal Amount, string Subject, string? RecipientName, string CurrencyCode, string? BookingDescription, bool IsAnnounced, bool IsCostNeutral, StatementDraftEntryStatus Status, Guid? ContactId, Guid? SavingsPlanId, bool ArchiveSavingsPlanOnBooking, Guid? SplitDraftId, Guid? SecurityId, SecurityTransactionType? SecurityTransactionType, decimal? SecurityQuantity, decimal? SecurityFeeAmount, decimal? SecurityTaxAmount);
 
     /// <summary>
     /// Creates a backup DTO representing this draft entry.
     /// </summary>
     /// <returns>A <see cref="StatementDraftEntryBackupDto"/> with the serializable state.</returns>
-    public StatementDraftEntryBackupDto ToBackupDto() => new StatementDraftEntryBackupDto(Id, DraftId, BookingDate, ValutaDate, Amount, Subject, RecipientName, CurrencyCode, BookingDescription, IsAnnounced, IsCostNeutral, Status, ContactId, SavingsPlanId, ArchiveSavingsPlanOnBooking, SplitDraftId, SecurityId, SecurityTransactionType, SecurityQuantity, SecurityFeeAmount, SecurityTaxAmount);
+    public StatementDraftEntryBackupDto ToBackupDto() => new StatementDraftEntryBackupDto(Id, DraftId, CreatedUtc, ModifiedUtc, BookingDate, ValutaDate, Amount, Subject, RecipientName, CurrencyCode, BookingDescription, IsAnnounced, IsCostNeutral, Status, ContactId, SavingsPlanId, ArchiveSavingsPlanOnBooking, SplitDraftId, SecurityId, SecurityTransactionType, SecurityQuantity, SecurityFeeAmount, SecurityTaxAmount);
 
     /// <summary>
     /// Assigns values from the provided backup DTO to this draft entry instance.
@@ -595,6 +602,7 @@ public sealed class StatementDraftEntry : Entity
         SecurityQuantity = dto.SecurityQuantity;
         SecurityFeeAmount = dto.SecurityFeeAmount;
         SecurityTaxAmount = dto.SecurityTaxAmount;
+        SetDates(dto.CreatedUtc, dto.ModifiedUtc);
     }
 }
 

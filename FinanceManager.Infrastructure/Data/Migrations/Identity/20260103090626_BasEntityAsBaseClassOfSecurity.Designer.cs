@@ -3,16 +3,19 @@ using System;
 using FinanceManager.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace FinanceManager.Infrastructure.Migrations
+namespace FinanceManager.Infrastructure.Data.Migrations.Identity
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260103090626_BasEntityAsBaseClassOfSecurity")]
+    partial class BasEntityAsBaseClassOfSecurity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.11");
@@ -115,9 +118,6 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("CreatedUtc")
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid>("EntityId")
                         .HasColumnType("TEXT");
 
@@ -127,9 +127,6 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("ModifiedUtc")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Note")

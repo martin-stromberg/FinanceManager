@@ -15,6 +15,7 @@ using FinanceManager.Shared.Dtos.Contacts;
 using FinanceManager.Shared.Dtos.Statements;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Formats.Asn1;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -36,9 +37,11 @@ public sealed class DemoDataService : IDemoDataService
     private readonly ISavingsPlanCategoryService _savingsPlanCategoryService;
     private readonly ISavingsPlanService _savingsPlanService;
     private readonly ISecurityService _securityService;
+    private readonly ISecurityPriceService _securityPriceService;
     private readonly ISecurityCategoryService _securityCategoryService;
     private readonly ILogger<DemoDataService> _logger;
     private readonly IStatementDraftService _statementDraftService;
+    private readonly IAttachmentCategoryService _attachmentCategoryService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DemoDataService"/> class.
@@ -52,7 +55,7 @@ public sealed class DemoDataService : IDemoDataService
     /// <param name="securityCategoryService">Security category service used to create security categories.</param>
     /// <param name="securityService">Security service used to create and manage securities.</param>
     /// <param name="logger">Logger instance.</param>
-    public DemoDataService(IAccountService accountService, IContactCategoryService contactCategoryService, IContactService contactService, IAttachmentService attachmentService, ISavingsPlanCategoryService savingsPlanCategoryService, ISavingsPlanService savingsPlanService, ISecurityCategoryService securityCategoryService, ISecurityService securityService, IStatementDraftService statementDraftService, ILogger<DemoDataService> logger)
+    public DemoDataService(IAccountService accountService, IContactCategoryService contactCategoryService, IContactService contactService, IAttachmentService attachmentService, ISavingsPlanCategoryService savingsPlanCategoryService, ISavingsPlanService savingsPlanService, ISecurityCategoryService securityCategoryService, ISecurityService securityService, ISecurityPriceService securityPriceService, IStatementDraftService statementDraftService, IAttachmentCategoryService attachmentCategoryService, ILogger<DemoDataService> logger)
     {
         _accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
         _contactCategoryService = contactCategoryService ?? throw new ArgumentNullException(nameof(contactCategoryService));
@@ -62,7 +65,9 @@ public sealed class DemoDataService : IDemoDataService
         _savingsPlanService = savingsPlanService ?? throw new ArgumentNullException(nameof(savingsPlanService));
         _securityCategoryService = securityCategoryService ?? throw new ArgumentNullException(nameof(securityCategoryService));
         _securityService = securityService ?? throw new ArgumentNullException(nameof(securityService));
+        _securityPriceService = securityPriceService ?? throw new ArgumentNullException(nameof(securityPriceService));
         _statementDraftService = statementDraftService ?? throw new ArgumentNullException(nameof(statementDraftService));
+        _attachmentCategoryService = attachmentCategoryService ?? throw new ArgumentNullException(nameof(attachmentCategoryService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -80,19 +85,22 @@ public sealed class DemoDataService : IDemoDataService
 
         try
         {
+            // create attachment category for symbols and ensure attachments representing symbols are categorized
+            var symbolsAttachmentCategory = await _attachmentCategoryService.CreateAsync(userId, "Symbole", ct);
+
             // create contact categories
             var banksCat = await _contactCategoryService.CreateAsync(userId, "Banken", ct);
             var insurancesCat = await _contactCategoryService.CreateAsync(userId, "Versicherungen", ct);
             var providersCat = await _contactCategoryService.CreateAsync(userId, "Dienstleister", ct);
             var retailCat = await _contactCategoryService.CreateAsync(userId, "Supermärkte & Einzelhandel", ct);
 
-            // create SVG symbol for banks category
-            var attachmentId = await CreateSvgSymbolAsync(userId, AttachmentEntityKind.ContactCategory, banksCat.Id, "bank-symbol.svg", banksCat.Name, ct);
+            var attachmentId = await CreateSvgSymbolAsync(userId, AttachmentEntityKind.ContactCategory, banksCat.Id, "bank-symbol.svg", banksCat.Name, symbolsAttachmentCategory.Id, ct);
             await _contactCategoryService.SetSymbolAttachmentAsync(banksCat.Id, userId, attachmentId, ct);
 
             // create two bank contacts: one for Giro, one for Savings
-            var giroBank = await _contactService.CreateAsync(userId, "Demo Giro Bank", ContactType.Bank, banksCat.Id, "Demo bank for giro account", false, ct);
-            var savingsBank = await _contactService.CreateAsync(userId, "Demo Savings Bank", ContactType.Bank, banksCat.Id, "Demo bank for savings accounts", false, ct);
+            var giroBank = await CreateContactAsync(userId, "Demo Giro Bank", ContactType.Bank, banksCat.Id, "Demo bank for giro account", false, "", ct);
+            var savingsBank = await CreateContactAsync(userId, "Demo Savings Bank", ContactType.Bank, banksCat.Id, "Demo bank for savings accounts", false, "", ct);
+            var contAldi = await CreateContactAsync(userId, "Aldi", ContactType.Organization, retailCat.Id, "Demo contact for grocery store", false, "*Aldi Payments*", ct);
 
             // create savings plan categories
             var spInsurances = await _savingsPlanCategoryService.CreateAsync(userId, "Versicherungen", ct);
@@ -106,8 +114,11 @@ public sealed class DemoDataService : IDemoDataService
             // create a sample security: MSCI World assigned to Fonds
             var msci = await _securityService.CreateAsync(userId, "MSCI World", "MSCIW", "Global equity index fund", null, "USD", secFonds.Id, ct);
             // assign a symbol to the security
-            var msciSymbolId = await CreateSvgSymbolAsync(userId, AttachmentEntityKind.Security, msci.Id, "msci-symbol.svg", msci.Name, ct);
+            var msciSymbolId = await CreateSvgSymbolAsync(userId, AttachmentEntityKind.Security, msci.Id, "msci-symbol.svg", msci.Name, symbolsAttachmentCategory.Id, ct);
             await _securityService.SetSymbolAttachmentAsync(msci.Id, userId, msciSymbolId, ct);
+
+            // create monthly security prices for the past 24 months (demo data)
+            await CreateSecurityPrices(userId, msci, ct);
 
             // create three savings plans
             // 1) Urlaubskasse, type Open
@@ -168,6 +179,9 @@ public sealed class DemoDataService : IDemoDataService
                 await CreateDemoPostingsForSavingsPlan(userId, sp1, giroAccountId, savingsAccountId2, 100m, 15, ct);
                 // create car savings postings: 12 months of 150€ each
                 await CreateDemoPostingsForSavingsPlan(userId, sp3, giroAccountId, savingsAccountId2, 150m, 12, ct);
+
+                // create unbooked monthly account statements for the current month
+                await CreateMonthlyUnbookedStatementsAsync(userId, accGiro.Id, savingsAccountId, savingsAccountId2, sp1, kfz, sp3, contAldi, ct);
             }
 
             _logger.LogInformation("Demo data creation finished for user {UserId}", userId);
@@ -184,6 +198,29 @@ public sealed class DemoDataService : IDemoDataService
         }
     }
 
+    private async Task CreateSecurityPrices(Guid userId, SecurityDto msci, CancellationToken ct)
+    {
+        // deterministic random seed based on security id to keep demo reproducible
+        var rnd = new Random(msci.Id.GetHashCode());
+        decimal basePrice = 100m; // starting base price for demo
+        for (int monthsAgo = 24; monthsAgo >= 1; monthsAgo--)
+        {
+            var priceDate = DateTime.UtcNow.Date.AddMonths(-monthsAgo);
+            // simulate small monthly change within ±5%
+            var change = (decimal)(rnd.NextDouble() * 0.10 - 0.05);
+            basePrice = Math.Max(0.01m, Math.Round(basePrice * (1 + change), 2));
+            await _securityPriceService.CreateAsync(userId, msci.Id, priceDate, basePrice, ct);
+        }
+    }
+
+    private async Task<ContactDto> CreateContactAsync(Guid userId, string name, ContactType contactType, Guid categoryId, string description, bool isPaymentIntermediary, string secondaryAlias, CancellationToken ct)
+    {
+        var contact = await _contactService.CreateAsync(userId, name, contactType, categoryId, description, isPaymentIntermediary, ct);
+        await _contactService.AddAliasAsync(contact.Id, userId, $"*{name.ToLowerInvariant().Replace(" ", ".")}*", ct);
+        if (!string.IsNullOrWhiteSpace(secondaryAlias))
+            await _contactService.AddAliasAsync(contact.Id, userId, secondaryAlias, ct);
+        return contact;
+    }
     private async Task CreateDemoPostingsForInsurance(Guid userId, SavingsPlanDto? kfz, Guid accountId, bool positive, bool assignSavingsPlan, CancellationToken ct)
     {
         // ensure Self contact exists
@@ -268,7 +305,7 @@ public sealed class DemoDataService : IDemoDataService
         var self = selfList.Count > 0 ? selfList[0] : await _contactService.CreateAsync(userId, "Self", ContactType.Self, null, null, false, ct);
 
         // DEBIT draft on Giro (negative amounts) assigned to savings plan
-        var debitDraft = await _statementDraftService.CreateEmptyDraftAsync(userId, "demo_vacation_debit.csv", ct);
+        var debitDraft = await _statementDraftService.CreateEmptyDraftAsync(userId, $"demo_{plan?.Name}_{months}months_debit.csv", ct);
         if (debitDraft == null) throw new InvalidOperationException("Failed to create debit statement draft for vacation savings");
         debitDraft = await _statementDraftService.SetAccountAsync(debitDraft.DraftId, userId, accountIdDebit, ct);
 
@@ -308,7 +345,7 @@ public sealed class DemoDataService : IDemoDataService
         }
 
         // CREDIT draft on savings account (positive amounts), must NOT be assigned to savings plan
-        var creditDraft = await _statementDraftService.CreateEmptyDraftAsync(userId, "demo_vacation_credit.csv", ct);
+        var creditDraft = await _statementDraftService.CreateEmptyDraftAsync(userId, $"demo_{plan?.Name}_{months}months_credit.csv", ct);
         if (creditDraft == null) throw new InvalidOperationException("Failed to create credit statement draft for vacation savings");
         creditDraft = await _statementDraftService.SetAccountAsync(creditDraft.DraftId, userId, accountIdCredit, ct);
 
@@ -354,7 +391,7 @@ public sealed class DemoDataService : IDemoDataService
         }
     }
 
-    private async Task<Guid> CreateSvgSymbolAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, string fileName, string displayName, CancellationToken ct)
+    private async Task<Guid> CreateSvgSymbolAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, string fileName, string displayName, Guid? categoryId, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(fileName);
         displayName = (displayName ?? string.Empty).Trim();
@@ -372,7 +409,66 @@ public sealed class DemoDataService : IDemoDataService
 
         var svgBytes = Encoding.UTF8.GetBytes(svg);
         await using var ms = new MemoryStream(svgBytes);
-        var attachment = await _attachmentService.UploadAsync(ownerUserId, kind, entityId, ms, fileName, "image/svg+xml", null, ct);
+        var attachment = await _attachmentService.UploadAsync(ownerUserId, kind, entityId, ms, fileName, "image/svg+xml", categoryId, ct);
         return attachment.Id;
+    }
+
+    private async Task CreateMonthlyUnbookedStatementsAsync(Guid userId, Guid giroAccountId, Guid savingsAccountId, Guid savingsAccountId2, SavingsPlanDto sp1, SavingsPlanDto kfz, SavingsPlanDto sp3, ContactDto contAldi, CancellationToken ct)
+    {
+        // ensure Self contact exists
+        var selfList = await _contactService.ListAsync(userId, 0, 10, ContactType.Self, null, ct);
+        var self = selfList.Count > 0 ? selfList[0] : await _contactService.CreateAsync(userId, "Self", ContactType.Self, null, null, false, ct);
+
+        var firstOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+
+        // Giro account draft
+        var giroDraft = await _statementDraftService.CreateEmptyDraftAsync(userId, "demo_monthly_giro.csv", ct);
+        if (giroDraft == null) throw new InvalidOperationException("Failed to create giro statement draft");
+        await _statementDraftService.SetAccountAsync(giroDraft.DraftId, userId, giroAccountId, ct);
+
+        // Add entries on giro (negative amounts)
+        await _statementDraftService.AddEntryAsync(giroDraft.DraftId, userId, firstOfMonth, -100m, $"Rueckstellung {sp1.Name}", ct);
+        await _statementDraftService.AddEntryAsync(giroDraft.DraftId, userId, firstOfMonth, -150m, $"Rueckstellung {sp3.Name}", ct);
+        var kfzMonthly = (kfz.TargetAmount ?? 0m) / 12m;
+        await _statementDraftService.AddEntryAsync(giroDraft.DraftId, userId, firstOfMonth, -kfzMonthly, $"Rueckstellung {kfz.Name}", ct);
+        await _statementDraftService.AddEntryAsync(giroDraft.DraftId, userId, firstOfMonth, -32.95m, "VISA Aldi", ct);
+        await _statementDraftService.AddEntryAsync(giroDraft.DraftId, userId, firstOfMonth, -16.20m, "Lastschrift Lidl", ct);
+
+        // Update entries: set recipient and description
+        var giroEntries = (await _statementDraftService.GetDraftEntriesAsync(giroDraft.DraftId, ct)).ToList();
+        foreach (var e in giroEntries)
+        {
+            var desc = e.Subject;
+            var recipient = self.Name;
+            if (e.Subject?.Contains("Aldi", StringComparison.OrdinalIgnoreCase) == true) recipient = contAldi.Name;
+            await _statementDraftService.UpdateEntryCoreAsync(giroDraft.DraftId, e.Id, userId, e.BookingDate, e.BookingDate, e.Amount, e.Subject, recipient, "EUR", desc, ct);
+        }
+
+        // Savings account 2: credits for sp1 and sp3 (counter bookings)
+        var save2Draft = await _statementDraftService.CreateEmptyDraftAsync(userId, "demo_monthly_save2.csv", ct);
+        if (save2Draft == null) throw new InvalidOperationException("Failed to create savings account 2 draft");
+        await _statementDraftService.SetAccountAsync(save2Draft.DraftId, userId, savingsAccountId2, ct);
+        await _statementDraftService.AddEntryAsync(save2Draft.DraftId, userId, firstOfMonth, 100m, $"Gegenbuchung {sp1.Name}", ct);
+        await _statementDraftService.AddEntryAsync(save2Draft.DraftId, userId, firstOfMonth, 150m, $"Gegenbuchung {sp3.Name}", ct);
+        var save2Entries = (await _statementDraftService.GetDraftEntriesAsync(save2Draft.DraftId, ct)).ToList();
+        foreach (var e in save2Entries)
+        {
+            await _statementDraftService.UpdateEntryCoreAsync(save2Draft.DraftId, e.Id, userId, e.BookingDate, e.BookingDate, e.Amount, e.Subject, self.Name, "EUR", e.Subject, ct);
+        }
+
+        // Savings account 1: credit for kfz
+        var save1Draft = await _statementDraftService.CreateEmptyDraftAsync(userId, "demo_monthly_save1.csv", ct);
+        if (save1Draft == null) throw new InvalidOperationException("Failed to create savings account 1 draft");
+        await _statementDraftService.SetAccountAsync(save1Draft.DraftId, userId, savingsAccountId, ct);
+        await _statementDraftService.AddEntryAsync(save1Draft.DraftId, userId, firstOfMonth, kfzMonthly, $"Gegenbuchung {kfz.Name}", ct);
+        var save1Entries = (await _statementDraftService.GetDraftEntriesAsync(save1Draft.DraftId, ct)).ToList();
+        foreach (var e in save1Entries)
+        {
+            await _statementDraftService.UpdateEntryCoreAsync(save1Draft.DraftId, e.Id, userId, e.BookingDate, e.BookingDate, e.Amount, e.Subject, self.Name, "EUR", e.Subject, ct);
+        }
+
+        await _statementDraftService.ClassifyAsync(giroDraft.DraftId, null, userId, ct);
+        await _statementDraftService.ClassifyAsync(save1Draft.DraftId, null, userId, ct);
+        await _statementDraftService.ClassifyAsync(save2Draft.DraftId, null, userId, ct);
     }
 }

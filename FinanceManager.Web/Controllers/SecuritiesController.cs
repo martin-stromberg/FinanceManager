@@ -30,6 +30,7 @@ public sealed class SecuritiesController : ControllerBase
     private readonly AppDbContext _db;
     private readonly IBackgroundTaskManager _tasks;
     private readonly IPostingTimeSeriesService _series;
+    private readonly ISecurityPriceService _priceService;
     private readonly ILogger<SecuritiesController> _logger;
 
     /// <summary>
@@ -39,11 +40,12 @@ public sealed class SecuritiesController : ControllerBase
     /// <param name="current">Service that provides information about the current user.</param>
     /// <param name="attachments">Service managing attachments (upload, storage).</param>
     /// <param name="series">Service to compute posting time series and aggregates.</param>
+    /// <param name="priceService">Service to retrieve security price history.</param>
     /// <param name="db">Application database context used for lightweight queries within the controller.</param>
     /// <param name="tasks">Background task manager used to enqueue asynchronous background jobs.</param>
     /// <param name="logger">Logger used for diagnostic messages.</param>
-    public SecuritiesController(ISecurityService service, ICurrentUserService current, IAttachmentService attachments, IPostingTimeSeriesService series, AppDbContext db, IBackgroundTaskManager tasks, ILogger<SecuritiesController> logger)
-    { _service = service; _current = current; _attachments = attachments; _db = db; _tasks = tasks; _series = series; _logger = logger; }
+    public SecuritiesController(ISecurityService service, ICurrentUserService current, IAttachmentService attachments, IPostingTimeSeriesService series, ISecurityPriceService priceService, AppDbContext db, IBackgroundTaskManager tasks, ILogger<SecuritiesController> logger)
+    { _service = service; _current = current; _attachments = attachments; _db = db; _tasks = tasks; _series = series; _priceService = priceService; _logger = logger; }
 
     /// <summary>
     /// Lists securities for the current user.
@@ -273,10 +275,7 @@ public sealed class SecuritiesController : ControllerBase
     {
         const int MaxTake = 250;
         take = Math.Clamp(take, 1, MaxTake);
-        var owned = await _db.Securities.AsNoTracking().AnyAsync(s => s.Id == id && s.OwnerUserId == _current.UserId, ct);
-        if (!owned) { return NotFound(); }
-        var q = _db.SecurityPrices.AsNoTracking().Where(p => p.SecurityId == id).OrderByDescending(p => p.Date).Skip(skip).Take(take);
-        var list = await q.Select(p => new SecurityPriceDto(p.Date, p.Close)).ToListAsync(ct);
+        var list = await _priceService.ListAsync(_current.UserId, id, skip, take, ct);
         return Ok(list);
     }
 

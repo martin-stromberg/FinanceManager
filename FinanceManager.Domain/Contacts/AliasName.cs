@@ -79,6 +79,6 @@ public sealed class AliasName : Entity
         if (dto == null) throw new ArgumentNullException(nameof(dto));
         ContactId = dto.ContactId;
         SetPattern(dto.Pattern);
-        // CreatedUtc/ModifiedUtc handled by ORM or left as-is
+        SetDates(dto.CreatedUtc, dto.ModifiedUtc);
     }
 }

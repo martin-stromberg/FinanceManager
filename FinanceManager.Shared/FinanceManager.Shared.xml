@@ -3234,6 +3234,11 @@
         <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityDto.SymbolAttachmentId">
             <summary>Optional symbol attachment id.</summary>
         </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityDto.HasPriceError">
+            <summary>
+            A value indicating whether a pricing error has occurred for the current instance.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType">
             <summary>
             Posting sub-types used for detailed security posting categorization.

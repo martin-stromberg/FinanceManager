@@ -11,6 +11,7 @@ using FinanceManager.Domain.Savings;
 using FinanceManager.Domain.Securities;
 using FinanceManager.Domain.Statements; // for StatementDraft
 using FinanceManager.Infrastructure;
+using iText.StyledXmlParser.Jsoup.Nodes;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Text;
@@ -83,6 +84,7 @@ public sealed class SetupImportService : ISetupImportService
 
         public Task<AttachmentDto> CreateReferenceAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, Guid masterAttachmentId, CancellationToken ct)
             => Task.FromResult(new AttachmentDto(Guid.Empty, (short)kind, entityId, "ref", "application/octet-stream", 0L, null, DateTime.UtcNow, false));
+
     }
 
     /// <summary>
@@ -188,7 +190,7 @@ public sealed class SetupImportService : ISetupImportService
         {
             StepDescription = "",
             Step = 0,
-            Total = replaceExisting ? 16 : 15,
+            Total = 32-(replaceExisting ? 1 : 0),
             SubStep = 0,
             SubTotal = 0
         };
@@ -213,27 +215,36 @@ public sealed class SetupImportService : ISetupImportService
         var aliasMap = new Dictionary<Guid, Guid>();
         var securityCatMap = new Dictionary<Guid, Guid>();
         var securityMap = new Dictionary<Guid, Guid>();
+        var securityPricesMap = new Dictionary<Guid, Guid>();
         var savingsCatMap = new Dictionary<Guid, Guid>();
         var savingsMap = new Dictionary<Guid, Guid>();
         var accountMap = new Dictionary<Guid, Guid>();
         var draftMap = new Dictionary<Guid, Guid>();
+        var draftEntryMap = new Dictionary<Guid, Guid>();
+        var postingMap = new Dictionary<Guid, Guid>();
         var favoriteMap = new Dictionary<Guid, Guid>();
         var reportMap = new Dictionary<Guid, Guid>();
+        var attachmentCatMap = new Dictionary<Guid, Guid>();
+
+        var jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
 
         // ContactCategories
         ProgressChanged?.Invoke(this, progress.SetDescription("Contact Categories"));
         if (root.TryGetProperty("ContactCategories", out var contactCategories) && contactCategories.ValueKind == JsonValueKind.Array)
         {
-            ProgressChanged?.Invoke(this, progress.InitSub(contactCategories.GetArrayLength()));
-            foreach (var c in contactCategories.EnumerateArray())
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Contacts.ContactCategory.ContactCategoryBackupDto>>(contactCategories.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Contacts.ContactCategory.ContactCategoryBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
             {
-                var id = c.GetProperty("Id").GetGuid();
-                var name = c.GetProperty("Name").GetString() ?? string.Empty;
-                if (string.IsNullOrWhiteSpace(name)) { continue; }
-                var entity = new ContactCategory(userId, name);
+                if (string.IsNullOrWhiteSpace(dto.Name)) { progress.IncSub(); continue; }
+                var entity = new ContactCategory(userId, dto.Name);
+                entity.AssignBackupDto(dto);
                 _db.ContactCategories.Add(entity);
                 await _db.SaveChangesAsync(ct);
-                contactCatMap[id] = entity.Id;
+                contactCatMap[dto.Id] = entity.Id;
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
         }
@@ -243,21 +254,12 @@ public sealed class SetupImportService : ISetupImportService
         ProgressChanged?.Invoke(this, progress.SetDescription("Contacts"));
         if (root.TryGetProperty("Contacts", out var contacts) && contacts.ValueKind == JsonValueKind.Array)
         {
-            ProgressChanged?.Invoke(this, progress.InitSub(contacts.GetArrayLength()));
-            foreach (var c in contacts.EnumerateArray())
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Contacts.Contact.ContactBackupDto>>(contacts.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Contacts.Contact.ContactBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
             {
-                var id = c.GetProperty("Id").GetGuid();
-                var name = c.GetProperty("Name").GetString() ?? string.Empty;
-                var type = (ContactType)c.GetProperty("Type").GetInt32();
-                Guid? categoryId = null;
-                if (c.TryGetProperty("CategoryId", out var cat) && cat.ValueKind == JsonValueKind.String)
-                {
-                    var old = cat.GetGuid();
-                    if (contactCatMap.TryGetValue(old, out var mapped)) { categoryId = mapped; }
-                }
-                var description = c.TryGetProperty("Description", out var desc) && desc.ValueKind == JsonValueKind.String ? desc.GetString() : null;
-                var isIntermediary = c.TryGetProperty("IsPaymentIntermediary", out var inter) && inter.ValueKind == JsonValueKind.True;
-                var entity = new Contact(userId, name, type, categoryId, description, isIntermediary);
+                var categoryId = dto.CategoryId.HasValue && contactCatMap.TryGetValue(dto.CategoryId.Value, out var m) ? m : (Guid?)null;
+                var entity = new Contact(userId, dto.Name, dto.Type, categoryId, dto.Description, dto.IsPaymentIntermediary);
                 if (entity.Type == ContactType.Self)
                 {
                     var existing = await _db.Contacts.FirstOrDefaultAsync(ec => ec.Type == ContactType.Self && ec.OwnerUserId == userId);
@@ -275,7 +277,7 @@ public sealed class SetupImportService : ISetupImportService
                 else
                     _db.Contacts.Add(entity);
                 await _db.SaveChangesAsync(ct);
-                contactMap[id] = entity.Id;
+                contactMap[dto.Id] = entity.Id;
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
         }
@@ -285,17 +287,15 @@ public sealed class SetupImportService : ISetupImportService
         ProgressChanged?.Invoke(this, progress.SetDescription("Contact Alias Names"));
         if (root.TryGetProperty("AliasNames", out var aliases) && aliases.ValueKind == JsonValueKind.Array)
         {
-            ProgressChanged?.Invoke(this, progress.InitSub(aliases.GetArrayLength()));
-            foreach (var a in aliases.EnumerateArray())
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Contacts.AliasName.AliasNameBackupDto>>(aliases.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Contacts.AliasName.AliasNameBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
             {
-                var id = a.GetProperty("Id").GetGuid();
-                var pattern = a.GetProperty("Pattern").GetString() ?? string.Empty;
-                var contactId = a.TryGetProperty("ContactId", out var cid) && cid.ValueKind == JsonValueKind.String ? cid.GetGuid() : Guid.Empty;
-                if (!contactMap.TryGetValue(contactId, out var mappedContact)) { continue; }
-                var entity = new AliasName(mappedContact, pattern);
+                if (!contactMap.TryGetValue(dto.ContactId, out var mappedContact)) { ProgressChanged?.Invoke(this, progress.IncSub()); continue; }
+                var entity = new AliasName(mappedContact, dto.Pattern);
                 _db.AliasNames.Add(entity);
                 await _db.SaveChangesAsync(ct);
-                aliasMap[id] = entity.Id;
+                aliasMap[dto.Id] = entity.Id;
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
         }
@@ -305,17 +305,16 @@ public sealed class SetupImportService : ISetupImportService
         ProgressChanged?.Invoke(this, progress.SetDescription("Security Categories"));
         if (root.TryGetProperty("SecurityCategories", out var secCats) && secCats.ValueKind == JsonValueKind.Array)
         {
-            ProgressChanged?.Invoke(this, progress.InitSub(secCats.GetArrayLength()));
-            foreach (var sc in secCats.EnumerateArray())
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Securities.SecurityCategory.SecurityCategoryBackupDto>>(secCats.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Securities.SecurityCategory.SecurityCategoryBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
             {
-                var id = sc.GetProperty("Id").GetGuid();
-                var name = sc.GetProperty("Name").GetString() ?? string.Empty;
-                var entity = new SecurityCategory(userId, name);
+                var entity = new SecurityCategory(userId, dto.Name);
                 _db.SecurityCategories.Add(entity);
                 await _db.SaveChangesAsync(ct);
-                securityCatMap[id] = entity.Id;
+                securityCatMap[dto.Id] = entity.Id;
+                ProgressChanged?.Invoke(this, progress.IncSub());
             }
-            ProgressChanged?.Invoke(this, progress.IncSub());
         }
         ProgressChanged?.Invoke(this, progress.Inc());
 
@@ -323,25 +322,16 @@ public sealed class SetupImportService : ISetupImportService
         ProgressChanged?.Invoke(this, progress.SetDescription("Securities"));
         if (root.TryGetProperty("Securities", out var secs) && secs.ValueKind == JsonValueKind.Array)
         {
-            ProgressChanged?.Invoke(this, progress.InitSub(secs.GetArrayLength()));
-            foreach (var s in secs.EnumerateArray())
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Securities.Security.SecurityBackupDto>>(secs.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Securities.Security.SecurityBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
             {
-                var id = s.GetProperty("Id").GetGuid();
-                var name = s.GetProperty("Name").GetString() ?? string.Empty;
-                var identifier = s.GetProperty("Identifier").GetString() ?? string.Empty;
-                var description = s.TryGetProperty("Description", out var d) && d.ValueKind == JsonValueKind.String ? d.GetString() : null;
-                var av = s.TryGetProperty("AlphaVantageCode", out var avc) && avc.ValueKind == JsonValueKind.String ? avc.GetString() : null;
-                var cur = s.GetProperty("CurrencyCode").GetString() ?? "EUR";
                 Guid? categoryId = null;
-                if (s.TryGetProperty("CategoryId", out var scid) && scid.ValueKind == JsonValueKind.String)
-                {
-                    var old = scid.GetGuid();
-                    if (securityCatMap.TryGetValue(old, out var mapped)) { categoryId = mapped; }
-                }
-                var entity = new Security(userId, name, identifier, description, av, cur, categoryId);
+                if (dto.CategoryId.HasValue && securityCatMap.TryGetValue(dto.CategoryId.Value, out var mapped)) categoryId = mapped;
+                var entity = new Security(userId, dto.Name, dto.Identifier, dto.Description, dto.AlphaVantageCode, dto.CurrencyCode, categoryId);
                 _db.Securities.Add(entity);
                 await _db.SaveChangesAsync(ct);
-                securityMap[id] = entity.Id;
+                securityMap[dto.Id] = entity.Id;
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
         }
@@ -351,17 +341,15 @@ public sealed class SetupImportService : ISetupImportService
         ProgressChanged?.Invoke(this, progress.SetDescription("Security Prices"));
         if (root.TryGetProperty("SecurityPrices", out var prices) && prices.ValueKind == JsonValueKind.Array)
         {
-            ProgressChanged?.Invoke(this, progress.InitSub(prices.GetArrayLength()));
-            foreach (var p in prices.EnumerateArray())
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Securities.SecurityPrice.SecurityPriceBackupDto>>(prices.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Securities.SecurityPrice.SecurityPriceBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
             {
-                var sid = p.GetProperty("SecurityId").GetGuid();
-                if (!securityMap.TryGetValue(sid, out var mappedSid)) { continue; }
-                var date = p.GetProperty("Date").GetDateTime();
-                var close = p.GetProperty("Close").GetDecimal();
-                var entity = new SecurityPrice(mappedSid, date, close);
+                if (!securityMap.TryGetValue(dto.SecurityId, out var mappedSid)) { ProgressChanged?.Invoke(this, progress.IncSub()); continue; }
+                var entity = new SecurityPrice(mappedSid, dto.Date, dto.Close);
                 _db.SecurityPrices.Add(entity);
-                if (progress.SubStep % 100 == 0)
-                    await _db.SaveChangesAsync(ct);
+                await _db.SaveChangesAsync(ct);
+                securityPricesMap[dto.Id] = entity.Id;
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
             await _db.SaveChangesAsync(ct);
@@ -372,15 +360,14 @@ public sealed class SetupImportService : ISetupImportService
         ProgressChanged?.Invoke(this, progress.SetDescription("Savings Plan Categories"));
         if (root.TryGetProperty("SavingsPlanCategories", out var spCats) && spCats.ValueKind == JsonValueKind.Array)
         {
-            ProgressChanged?.Invoke(this, progress.InitSub(spCats.GetArrayLength()));
-            foreach (var sc in spCats.EnumerateArray())
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Savings.SavingsPlanCategory.SavingsPlanCategoryBackupDto>>(spCats.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Savings.SavingsPlanCategory.SavingsPlanCategoryBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
             {
-                var id = sc.GetProperty("Id").GetGuid();
-                var name = sc.GetProperty("Name").GetString() ?? string.Empty;
-                var entity = new SavingsPlanCategory(userId, name);
+                var entity = new SavingsPlanCategory(userId, dto.Name);
                 _db.SavingsPlanCategories.Add(entity);
                 await _db.SaveChangesAsync(ct);
-                savingsCatMap[id] = entity.Id;
+                savingsCatMap[dto.Id] = entity.Id;
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
         }
@@ -390,29 +377,17 @@ public sealed class SetupImportService : ISetupImportService
         ProgressChanged?.Invoke(this, progress.SetDescription("Savings Plans"));
         if (root.TryGetProperty("SavingsPlans", out var sps) && sps.ValueKind == JsonValueKind.Array)
         {
-            ProgressChanged?.Invoke(this, progress.InitSub(sps.GetArrayLength()));
-            foreach (var sp in sps.EnumerateArray())
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Savings.SavingsPlan.SavingsPlanBackupDto>>(sps.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Savings.SavingsPlan.SavingsPlanBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
             {
-                var id = sp.GetProperty("Id").GetGuid();
-                var name = sp.GetProperty("Name").GetString() ?? string.Empty;
-                var type = (SavingsPlanType)sp.GetProperty("Type").GetInt32();
-                var targetAmount = sp.TryGetProperty("TargetAmount", out var ta) && ta.ValueKind != JsonValueKind.Null ? ta.GetDecimal() : (decimal?)null;
-                var targetDate = sp.TryGetProperty("TargetDate", out var td) && td.ValueKind != JsonValueKind.Null ? td.GetDateTime() : (DateTime?)null;
-                var interval = sp.TryGetProperty("Interval", out var iv) && iv.ValueKind != JsonValueKind.Null ? (SavingsPlanInterval?)iv.GetInt32() : null;
                 Guid? categoryId = null;
-                if (sp.TryGetProperty("CategoryId", out var cid) && cid.ValueKind == JsonValueKind.String)
-                {
-                    var old = cid.GetGuid();
-                    if (savingsCatMap.TryGetValue(old, out var mapped)) { categoryId = mapped; }
-                }
-                var entity = new SavingsPlan(userId, name, type, targetAmount, targetDate, interval, categoryId);
-                if (sp.TryGetProperty("ContractNumber", out var cn) && cn.ValueKind == JsonValueKind.String)
-                {
-                    entity.SetContractNumber(cn.GetString());
-                }
+                if (dto.CategoryId.HasValue && savingsCatMap.TryGetValue(dto.CategoryId.Value, out var mapped)) categoryId = mapped;
+                var entity = new SavingsPlan(userId, dto.Name, dto.Type, dto.TargetAmount, dto.TargetDate, dto.Interval, categoryId);
+                if (!string.IsNullOrWhiteSpace(dto.ContractNumber)) entity.SetContractNumber(dto.ContractNumber);
                 _db.SavingsPlans.Add(entity);
                 await _db.SaveChangesAsync(ct);
-                savingsMap[id] = entity.Id;
+                savingsMap[dto.Id] = entity.Id;
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
         }
@@ -422,26 +397,24 @@ public sealed class SetupImportService : ISetupImportService
         ProgressChanged?.Invoke(this, progress.SetDescription("Bank Accounts"));
         if (root.TryGetProperty("Accounts", out var accounts) && accounts.ValueKind == JsonValueKind.Array)
         {
-            ProgressChanged?.Invoke(this, progress.InitSub(accounts.GetArrayLength()));
-            foreach (var a in accounts.EnumerateArray())
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Accounts.Account.AccountBackupDto>>(accounts.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Accounts.Account.AccountBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
             {
-                var id = a.GetProperty("Id").GetGuid();
-                var name = a.GetProperty("Name").GetString() ?? string.Empty;
-                var type = (AccountType)a.GetProperty("Type").GetInt32();
-                var iban = a.TryGetProperty("Iban", out var ib) && ib.ValueKind == JsonValueKind.String ? ib.GetString() : null;
-                var bankContactId = a.TryGetProperty("BankContactId", out var bc) && bc.ValueKind == JsonValueKind.String ? bc.GetGuid() : Guid.Empty;
-                if (!contactMap.TryGetValue(bankContactId, out var mappedBankContact))
+                var bankContactOld = dto.BankContactId;
+                Guid mappedBankContact;
+                if (!bankContactOld.Equals(Guid.Empty) && contactMap.TryGetValue(bankContactOld, out var mbc)) mappedBankContact = mbc;
+                else
                 {
-                    // Fallback: create bank contact
                     var bank = new Contact(userId, "Bank", ContactType.Bank, null);
                     _db.Contacts.Add(bank);
                     await _db.SaveChangesAsync(ct);
                     mappedBankContact = bank.Id;
                 }
-                var entity = new Account(userId, type, name, iban, mappedBankContact);
+                var entity = new Account(userId, dto.Type, dto.Name, dto.Iban, mappedBankContact);
                 _db.Accounts.Add(entity);
                 await _db.SaveChangesAsync(ct);
-                accountMap[id] = entity.Id;
+                accountMap[dto.Id] = entity.Id;
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
         }
@@ -452,65 +425,33 @@ public sealed class SetupImportService : ISetupImportService
         ProgressChanged?.Invoke(this, progress.SetDescription("Postings"));
         if (root.TryGetProperty("Postings", out var postArr) && postArr.ValueKind == JsonValueKind.Array)
         {
-            postingCount = postArr.GetArrayLength();
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Postings.Posting.PostingBackupDto>>(postArr.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Postings.Posting.PostingBackupDto>();
+            postingCount = list.Count;
             ProgressChanged?.Invoke(this, progress.InitSub(postingCount));
-            foreach (var p in postArr.EnumerateArray())
+            foreach (var dto in list)
             {
-                Guid? accountId = null, contactId = null, savingsPlanId = null, securityId = null;
-                if (p.TryGetProperty("AccountId", out var aid) && aid.ValueKind == JsonValueKind.String)
-                {
-                    var old = aid.GetGuid(); if (accountMap.TryGetValue(old, out var mapped)) accountId = mapped;
-                }
-                if (p.TryGetProperty("ContactId", out var cid) && cid.ValueKind == JsonValueKind.String)
-                {
-                    var old = cid.GetGuid(); if (contactMap.TryGetValue(old, out var mapped)) contactId = mapped;
-                }
-                if (p.TryGetProperty("SavingsPlanId", out var spid) && spid.ValueKind == JsonValueKind.String)
-                {
-                    var old = spid.GetGuid(); if (savingsMap.TryGetValue(old, out var mapped)) savingsPlanId = mapped;
-                }
-                if (p.TryGetProperty("SecurityId", out var sid) && sid.ValueKind == JsonValueKind.String)
-                {
-                    var old = sid.GetGuid(); if (securityMap.TryGetValue(old, out var mapped)) securityId = mapped;
-                }
-                var kind = (PostingKind)p.GetProperty("Kind").GetInt32();
-                var sourceId = p.TryGetProperty("SourceId", out var src) && src.ValueKind == JsonValueKind.String ? src.GetGuid() : Guid.NewGuid();
-                var bookingDate = p.GetProperty("BookingDate").GetDateTime();
-                var amount = p.GetProperty("Amount").GetDecimal();
-                var subject = p.TryGetProperty("Subject", out var sub) && sub.ValueKind == JsonValueKind.String ? sub.GetString() : null;
-                var recipient = p.TryGetProperty("RecipientName", out var rn) && rn.ValueKind == JsonValueKind.String ? rn.GetString() : null;
-                var description = p.TryGetProperty("Description", out var desc) && desc.ValueKind == JsonValueKind.String ? desc.GetString() : null;
-                SecurityPostingSubType? subType = null;
-                if (p.TryGetProperty("SecuritySubType", out var sst) && sst.ValueKind != JsonValueKind.Null)
-                {
-                    subType = (SecurityPostingSubType)sst.GetInt32();
-                }
-                decimal? quantity = null;
-                if (p.TryGetProperty("Quantity", out var q) && q.ValueKind != JsonValueKind.Null)
-                {
-                    quantity = q.GetDecimal();
-                }
+                Guid? accountId = dto.AccountId.HasValue && accountMap.TryGetValue(dto.AccountId.Value, out var a) ? a : null;
+                Guid? contactId = dto.ContactId.HasValue && contactMap.TryGetValue(dto.ContactId.Value, out var c) ? c : null;
+                Guid? savingsPlanId = dto.SavingsPlanId.HasValue && savingsMap.TryGetValue(dto.SavingsPlanId.Value, out var s) ? s : null;
+                Guid? securityId = dto.SecurityId.HasValue && securityMap.TryGetValue(dto.SecurityId.Value, out var sd) ? sd : null;
                 var entity = new FinanceManager.Domain.Postings.Posting(
-                    sourceId,
-                    kind,
+                    dto.SourceId,
+                    dto.Kind,
                     accountId,
                     contactId,
                     savingsPlanId,
                     securityId,
-                    bookingDate,
-                    amount,
-                    subject,
-                    recipient,
-                    description,
-                    subType,
-                    quantity);
-                if (p.TryGetProperty("GroupId", out var gid) && gid.ValueKind == JsonValueKind.String)
-                {
-                    var grp = gid.GetGuid(); if (grp != Guid.Empty) entity.SetGroup(grp);
-                }
+                    dto.BookingDate,
+                    dto.Amount,
+                    dto.Subject,
+                    dto.RecipientName,
+                    dto.Description,
+                    dto.SecuritySubType,
+                    dto.Quantity);
+                if (dto.GroupId.HasValue && dto.GroupId != Guid.Empty) entity.SetGroup(dto.GroupId.Value);
                 _db.Postings.Add(entity);
-                if (progress.SubStep % 100 == 0)
-                    await _db.SaveChangesAsync(ct);
+                await _db.SaveChangesAsync(ct);
+                postingMap[dto.Id] = entity.Id;
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
         }
@@ -520,43 +461,17 @@ public sealed class SetupImportService : ISetupImportService
         ProgressChanged?.Invoke(this, progress.SetDescription("Statement Drafts"));
         if (root.TryGetProperty("StatementDrafts", out var drafts) && drafts.ValueKind == JsonValueKind.Array)
         {
-            ProgressChanged?.Invoke(this, progress.InitSub(drafts.GetArrayLength()));
-            foreach (var d in drafts.EnumerateArray())
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Statements.StatementDraft.StatementDraftBackupDto>>(drafts.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Statements.StatementDraft.StatementDraftBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
             {
-                var id = d.GetProperty("Id").GetGuid();
-                var originalFileName = d.TryGetProperty("OriginalFileName", out var of) && of.ValueKind == JsonValueKind.String ? of.GetString() : "backup";
-                var accountName = d.TryGetProperty("AccountName", out var an) && an.ValueKind == JsonValueKind.String ? an.GetString() : null;
-                var description = d.TryGetProperty("Description", out var de) && de.ValueKind == JsonValueKind.String ? de.GetString() : null;
-                var statusValue = d.TryGetProperty("Status", out var st) && st.ValueKind == JsonValueKind.Number ? st.GetInt32() : -1;
-                var status = (StatementDraftStatus)statusValue;
-                var entity = new StatementDraft(userId, originalFileName!, accountName, description, statusValue == -1 ? StatementDraftStatus.Draft : status);
-                if (d.TryGetProperty("DetectedAccountId", out var da) && da.ValueKind == JsonValueKind.String)
-                {
-                    var old = da.GetGuid(); if (accountMap.TryGetValue(old, out var mapped)) entity.SetDetectedAccount(mapped);
-                }
-                // Legacy backup may contain embedded file bytes; upload them as attachment now
-                if (d.TryGetProperty("OriginalFileContent", out var ofc) && ofc.ValueKind == JsonValueKind.Array)
-                {
-                    try
-                    {
-                        var bytes = ofc.EnumerateArray().Select(x => (byte)x.GetInt32()).ToArray();
-                        var ctype = d.TryGetProperty("OriginalFileContentType", out var ctpe) && ctpe.ValueKind == JsonValueKind.String ? ctpe.GetString() : null;
-                        if (bytes.Length > 0)
-                        {
-                            using var ms = new MemoryStream(bytes, writable: false);
-                            await _db.StatementDrafts.AddAsync(entity, ct);
-                            await _db.SaveChangesAsync(ct); // ensure entity.Id
-                            await _attachments.UploadAsync(userId, AttachmentEntityKind.StatementDraft, entity.Id, ms, originalFileName!, ctype ?? "application/octet-stream", null, ct);
-                        }
-                    }
-                    catch { }
-                }
-                if (_db.Entry(entity).State == EntityState.Detached)
-                {
-                    _db.StatementDrafts.Add(entity);
-                }
+                var originalFileName = string.IsNullOrWhiteSpace(dto.OriginalFileName) ? "backup" : dto.OriginalFileName;
+                var entity = new StatementDraft(userId, originalFileName, dto.AccountName, dto.Description, dto.Status);
+                if (dto.DetectedAccountId.HasValue && accountMap.TryGetValue(dto.DetectedAccountId.Value, out var mapped)) entity.SetDetectedAccount(mapped);
+                // Note: legacy embedded file bytes handled in older format; skip unless explicitly present in JSON root as "OriginalFileContent" entries
+                _db.StatementDrafts.Add(entity);
                 await _db.SaveChangesAsync(ct);
-                draftMap[id] = entity.Id;
+                draftMap[dto.Id] = entity.Id;
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
         }
@@ -565,69 +480,38 @@ public sealed class SetupImportService : ISetupImportService
         ProgressChanged?.Invoke(this, progress.SetDescription("Statement Draft Entries"));
         if (root.TryGetProperty("StatementDraftEntries", out var draftEntries) && draftEntries.ValueKind == JsonValueKind.Array)
         {
-            ProgressChanged?.Invoke(this, progress.InitSub(draftEntries.GetArrayLength()));
-            foreach (var e in draftEntries.EnumerateArray())
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Statements.StatementDraftEntry.StatementDraftEntryBackupDto>>(draftEntries.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Statements.StatementDraftEntry.StatementDraftEntryBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
             {
-                var draftIdOld = e.GetProperty("DraftId").GetGuid();
-                if (!draftMap.TryGetValue(draftIdOld, out var draftId)) { continue; }
-                var bookingDate = e.GetProperty("BookingDate").GetDateTime();
-                var amount = e.GetProperty("Amount").GetDecimal();
-                var subject = e.GetProperty("Subject").GetString() ?? string.Empty;
-                var recipient = e.TryGetProperty("RecipientName", out var rn) && rn.ValueKind == JsonValueKind.String ? rn.GetString() : null;
-                var valuta = e.TryGetProperty("ValutaDate", out var vd) && vd.ValueKind != JsonValueKind.Null ? vd.GetDateTime() : (DateTime?)null;
-                var currency = e.TryGetProperty("CurrencyCode", out var cc) && cc.ValueKind == JsonValueKind.String ? cc.GetString() : null;
-                var bookingDesc = e.TryGetProperty("BookingDescription", out var bd) && bd.ValueKind == JsonValueKind.String ? bd.GetString() : null;
-                var isAnnounced = e.TryGetProperty("IsAnnounced", out var ia) && ia.ValueKind == JsonValueKind.True;
-                var isCostNeutral = e.TryGetProperty("IsCostNeutral", out var ic) && ic.ValueKind == JsonValueKind.True;
-                var status = e.TryGetProperty("Status", out var st) && st.ValueKind == JsonValueKind.Number ? (StatementDraftEntryStatus)st.GetInt32() : isAnnounced ? StatementDraftEntryStatus.Announced : StatementDraftEntryStatus.Open;
-
-
-                // Load draft entity
+                if (!draftMap.TryGetValue(dto.DraftId, out var draftId)) { ProgressChanged?.Invoke(this, progress.IncSub()); continue; }
                 var draft = await _db.StatementDrafts.FirstAsync(x => x.Id == draftId, ct);
 
                 var entry = new StatementDraftEntry(
                     draft.Id,
-                    bookingDate,
-                    amount,
-                    subject,
-                    recipient,
-                    valuta,
-                    currency,
-                    bookingDesc,
-                    isAnnounced,
-                    isCostNeutral,
-                    status);
+                    dto.BookingDate,
+                    dto.Amount,
+                    dto.Subject,
+                    dto.RecipientName,
+                    dto.ValutaDate,
+                    dto.CurrencyCode,
+                    dto.BookingDescription,
+                    dto.IsAnnounced,
+                    dto.IsCostNeutral,
+                    dto.Status);
+                if (dto.ContactId.HasValue && contactMap.TryGetValue(dto.ContactId.Value, out var mappedC)) entry.AssignContactWithoutAccounting(mappedC);
+                if (dto.SavingsPlanId.HasValue && savingsMap.TryGetValue(dto.SavingsPlanId.Value, out var mappedS)) entry.AssignSavingsPlan(mappedS);
+                if (dto.ArchiveSavingsPlanOnBooking) entry.SetArchiveSavingsPlanOnBooking(true);
+                if (dto.SplitDraftId.HasValue && draftMap.TryGetValue(dto.SplitDraftId.Value, out var mappedSplit)) entry.AssignSplitDraft(mappedSplit);
+                if (dto.SecurityId.HasValue)
+                {
+                    Guid? mapped = null; if (securityMap.TryGetValue(dto.SecurityId.Value, out var m)) mapped = m;
+                    entry.SetSecurity(mapped, dto.SecurityTransactionType, dto.SecurityQuantity, dto.SecurityFeeAmount, dto.SecurityTaxAmount);
+                }
                 _db.StatementDraftEntries.Add(entry);
-
-                if (e.TryGetProperty("ContactId", out var cid) && cid.ValueKind == JsonValueKind.String)
-                {
-                    var old = cid.GetGuid(); if (contactMap.TryGetValue(old, out var mapped)) { entry.AssignContactWithoutAccounting(mapped); }
-                }
-                if (e.TryGetProperty("SavingsPlanId", out var spid) && spid.ValueKind == JsonValueKind.String)
-                {
-                    var old = spid.GetGuid(); if (savingsMap.TryGetValue(old, out var mapped)) { entry.AssignSavingsPlan(mapped); }
-                }
-                if (e.TryGetProperty("ArchiveSavingsPlanOnBooking", out var arch) && arch.ValueKind != JsonValueKind.Null && arch.GetBoolean())
-                {
-                    entry.SetArchiveSavingsPlanOnBooking(true);
-                }
-                if (e.TryGetProperty("SplitDraftId", out var sdid) && sdid.ValueKind == JsonValueKind.String)
-                {
-                    var old = sdid.GetGuid(); if (draftMap.TryGetValue(old, out var mapped)) { entry.AssignSplitDraft(mapped); }
-                }
-                if (e.TryGetProperty("SecurityId", out var secid) && secid.ValueKind == JsonValueKind.String)
-                {
-                    var old = secid.GetGuid();
-                    Guid? mapped = null; if (securityMap.TryGetValue(old, out var m)) mapped = m;
-                    SecurityTransactionType? tx = null; decimal? qty = null; decimal? fee = null; decimal? tax = null;
-                    if (e.TryGetProperty("SecurityTransactionType", out var stt) && stt.ValueKind != JsonValueKind.Null) tx = (SecurityTransactionType)stt.GetInt32();
-                    if (e.TryGetProperty("SecurityQuantity", out var q) && q.ValueKind != JsonValueKind.Null) qty = q.GetDecimal();
-                    if (e.TryGetProperty("SecurityFeeAmount", out var f) && f.ValueKind != JsonValueKind.Null) fee = f.GetDecimal();
-                    if (e.TryGetProperty("SecurityTaxAmount", out var t) && t.ValueKind != JsonValueKind.Null) tax = t.GetDecimal();
-                    entry.SetSecurity(mapped, tx, qty, fee, tax);
-                }
-                if (progress.SubStep % 100 == 0)
-                    await _db.SaveChangesAsync(ct);
+                // persist immediately to obtain generated Id for mapping
+                await _db.SaveChangesAsync(ct);
+                draftEntryMap[dto.Id] = entry.Id;
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
         }
@@ -636,66 +520,36 @@ public sealed class SetupImportService : ISetupImportService
         ProgressChanged?.Invoke(this, progress.SetDescription("Report Favorites"));
         if (root.TryGetProperty("ReportFavorites", out var favsEl) && favsEl.ValueKind == JsonValueKind.Array)
         {
-            foreach (var f in favsEl.EnumerateArray())
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Reports.ReportFavorite.ReportFavoriteBackupDto>>(favsEl.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Reports.ReportFavorite.ReportFavoriteBackupDto>();
+            foreach (var dto in list)
             {
-                var id = f.GetProperty("Id").GetGuid();
-                var name = f.GetProperty("Name").GetString() ?? string.Empty;
-                var postingKind = (PostingKind)f.GetProperty("PostingKind").GetInt32();
-                var includeCategory = f.GetProperty("IncludeCategory").GetBoolean();
-                var interval = (ReportInterval)f.GetProperty("Interval").GetInt32();
-                var take = f.TryGetProperty("Take", out var takeEl) ? takeEl.GetInt32() : 24;
-                var comparePrev = f.GetProperty("ComparePrevious").GetBoolean();
-                var compareYear = f.GetProperty("CompareYear").GetBoolean();
-                var showChart = f.GetProperty("ShowChart").GetBoolean();
-                var expandable = f.GetProperty("Expandable").GetBoolean();
-
-                var entity = new ReportFavorite(userId, name, postingKind, includeCategory, interval, comparePrev, compareYear, showChart, expandable, take);
-
-                // Optional multi kinds
-                if (f.TryGetProperty("PostingKindsCsv", out var kindsEl))
+                var entity = new ReportFavorite(userId, dto.Name, dto.PostingKind, dto.IncludeCategory, dto.Interval, dto.ComparePrevious, dto.CompareYear, dto.ShowChart, dto.Expandable, dto.Take);
+                if (!string.IsNullOrWhiteSpace(dto.PostingKindsCsv))
                 {
-                    var kindsCsv = kindsEl.GetString();
-                    if (!string.IsNullOrWhiteSpace(kindsCsv))
-                    {
-                        var kinds = kindsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                            .Select(s => int.TryParse(s, out var v) ? v : (int?)null)
-                            .Where(v => v.HasValue).Select(v => (PostingKind)v!.Value).ToArray();
-                        if (kinds.Length > 0) { entity.SetPostingKinds(kinds); }
-                    }
+                    var kinds = dto.PostingKindsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .Select(s => int.TryParse(s, out var v) ? v : (int?)null)
+                        .Where(v => v.HasValue).Select(v => (PostingKind)v!.Value).ToArray();
+                    if (kinds.Length > 0) entity.SetPostingKinds(kinds);
                 }
-
-                // Optional filters (CSV -> GUID lists)
-                string? accCsv = f.TryGetProperty("AccountIdsCsv", out var accEl) ? accEl.GetString() : null;
-                string? conCsv = f.TryGetProperty("ContactIdsCsv", out var conEl) ? conEl.GetString() : null;
-                string? savCsv = f.TryGetProperty("SavingsPlanIdsCsv", out var savEl) ? savEl.GetString() : null;
-                string? secCsv = f.TryGetProperty("SecurityIdsCsv", out var secEl) ? secEl.GetString() : null;
-                string? ccatCsv = f.TryGetProperty("ContactCategoryIdsCsv", out var ccatEl) ? ccatEl.GetString() : null;
-                string? scatCsv = f.TryGetProperty("SavingsPlanCategoryIdsCsv", out var scatEl) ? scatEl.GetString() : null;
-                string? secatCsv = f.TryGetProperty("SecurityCategoryIdsCsv", out var secatEl) ? secatEl.GetString() : null;
 
                 static IReadOnlyCollection<Guid>? ToGuids(string? csv)
                     => string.IsNullOrWhiteSpace(csv) ? null : csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(Guid.Parse).ToArray();
 
-                entity.SetFilters(ToGuids(accCsv), ToGuids(conCsv), ToGuids(savCsv), ToGuids(secCsv), ToGuids(ccatCsv), ToGuids(scatCsv), ToGuids(secatCsv), null);
+                entity.SetFilters(ToGuids(dto.AccountIdsCsv), ToGuids(dto.ContactIdsCsv), ToGuids(dto.SavingsPlanIdsCsv), ToGuids(dto.SecurityIdsCsv), ToGuids(dto.ContactCategoryIdsCsv), ToGuids(dto.SavingsPlanCategoryIdsCsv), ToGuids(dto.SecurityCategoryIdsCsv), null);
 
-                // Optional: restore SecuritySubTypesCsv if present in backup v3
-                if (f.TryGetProperty("SecuritySubTypesCsv", out var stCsvEl))
+                if (!string.IsNullOrWhiteSpace(dto.SecuritySubTypesCsv))
                 {
-                    var stCsv = stCsvEl.GetString();
-                    if (!string.IsNullOrWhiteSpace(stCsv))
+                    var ints = dto.SecuritySubTypesCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .Select(s => int.TryParse(s, out var v) ? v : (int?)null)
+                        .Where(v => v.HasValue).Select(v => v!.Value).ToArray();
+                    if (ints.Length > 0)
                     {
-                        var ints = stCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                            .Select(s => int.TryParse(s, out var v) ? v : (int?)null)
-                            .Where(v => v.HasValue).Select(v => v!.Value).ToArray();
-                        if (ints.Length > 0)
-                        {
-                            _db.Entry(entity).Property("SecuritySubTypesCsv").CurrentValue = string.Join(',', ints);
-                        }
+                        _db.Entry(entity).Property("SecuritySubTypesCsv").CurrentValue = string.Join(',', ints);
                     }
                 }
 
                 _db.ReportFavorites.Add(entity);
-                reportMap[id] = entity.Id;
+                reportMap[dto.Id] = entity.Id;
             }
             await _db.SaveChangesAsync(ct);
         }
@@ -704,55 +558,461 @@ public sealed class SetupImportService : ISetupImportService
         ProgressChanged?.Invoke(this, progress.SetDescription("Home KPI"));
         if (root.TryGetProperty("HomeKpis", out var kpisEl) && kpisEl.ValueKind == JsonValueKind.Array)
         {
-            foreach (var k in kpisEl.EnumerateArray())
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Reports.HomeKpi.HomeKpiBackupDto>>(kpisEl.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Reports.HomeKpi.HomeKpiBackupDto>();
+            foreach (var dto in list)
             {
-                var kind = (HomeKpiKind)k.GetProperty("Kind").GetInt32();
-                var display = (HomeKpiDisplayMode)k.GetProperty("DisplayMode").GetInt32();
-                var sortOrder = k.GetProperty("SortOrder").GetInt32();
                 Guid? favId = null;
-                if (k.TryGetProperty("ReportFavoriteId", out var rfEl) && rfEl.ValueKind == JsonValueKind.String && Guid.TryParse(rfEl.GetString(), out var rf))
-                {
-                    favId = reportMap[rf];
-                }
-                var entity = new HomeKpi(userId, kind, display, sortOrder, favId);
-                if (k.TryGetProperty("Title", out var tEl))
-                {
-                    entity.SetTitle(tEl.GetString());
-                }
-                if (k.TryGetProperty("PredefinedType", out var pEl) && pEl.ValueKind != JsonValueKind.Null)
-                {
-                    var pt = (HomeKpiPredefined)pEl.GetInt32();
-                    entity.SetPredefined(pt);
-                }
-                if (k.TryGetProperty("Id", out var idEl) && idEl.ValueKind == JsonValueKind.String && Guid.TryParse(idEl.GetString(), out var id))
-                {
-                    _db.Entry(entity).Property("Id").CurrentValue = id;
-                }
-                if (k.TryGetProperty("CreatedUtc", out var cuEl) && cuEl.ValueKind == JsonValueKind.String && DateTime.TryParse(cuEl.GetString(), out var cu))
-                {
-                    _db.Entry(entity).Property("CreatedUtc").CurrentValue = DateTime.SpecifyKind(cu, DateTimeKind.Utc);
-                }
-                if (k.TryGetProperty("ModifiedUtc", out var muEl) && muEl.ValueKind == JsonValueKind.String && DateTime.TryParse(muEl.GetString(), out var mu))
-                {
-                    _db.Entry(entity).Property("ModifiedUtc").CurrentValue = DateTime.SpecifyKind(mu, DateTimeKind.Utc);
-                }
+                if (dto.ReportFavoriteId.HasValue && reportMap.TryGetValue(dto.ReportFavoriteId.Value, out var rf)) favId = rf;
+                var entity = new HomeKpi(userId, dto.Kind, dto.DisplayMode, dto.SortOrder, favId);
+                if (!string.IsNullOrWhiteSpace(dto.Title)) entity.SetTitle(dto.Title);
+                if (dto.PredefinedType.HasValue) entity.SetPredefined(dto.PredefinedType.Value);
+                if (dto.Id != Guid.Empty) _db.Entry(entity).Property("Id").CurrentValue = dto.Id;
+                if (dto.CreatedUtc != default) _db.Entry(entity).Property("CreatedUtc").CurrentValue = DateTime.SpecifyKind(dto.CreatedUtc, DateTimeKind.Utc);
+                if (dto.ModifiedUtc.HasValue) _db.Entry(entity).Property("ModifiedUtc").CurrentValue = DateTime.SpecifyKind(dto.ModifiedUtc.Value, DateTimeKind.Utc);
                 _db.HomeKpis.Add(entity);
             }
             await _db.SaveChangesAsync(ct);
         }
         ProgressChanged?.Invoke(this, progress.Inc());
 
-        ProgressChanged?.Invoke(this, progress.SetDescription("Build Aggregate Postings"));
-        ProgressChanged?.Invoke(this, progress.InitSub(postingCount));
-        await _aggregateService.RebuildForUserAsync(userId, (step, count) =>
+        // AttachmentCategories (create) - must be created before attachments to satisfy FK constraints
+        ProgressChanged?.Invoke(this, progress.SetDescription("Attachment Categories"));
+        if (root.TryGetProperty("AttachmentCategories", out var attCatsEl) && attCatsEl.ValueKind == JsonValueKind.Array)
         {
-            progress.SubStep = step;
-            progress.SubTotal = count;
-            ProgressChanged?.Invoke(this, progress);
-        }, ct);
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Attachments.AttachmentCategory.AttachmentCategoryBackupDto>>(attCatsEl.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Attachments.AttachmentCategory.AttachmentCategoryBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                if (string.IsNullOrWhiteSpace(dto.Name)) { progress.IncSub(); continue; }
+                var entity = new FinanceManager.Domain.Attachments.AttachmentCategory(userId, dto.Name);
+                // apply backup metadata early so Id/CreatedUtc/ModifiedUtc/SymbolAttachmentId are preserved
+                entity.AssignBackupDto(dto);
+                _db.AttachmentCategories.Add(entity);
+                await _db.SaveChangesAsync(ct);
+                attachmentCatMap[dto.Id] = entity.Id;
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
         ProgressChanged?.Invoke(this, progress.Inc());
 
-        await _db.SaveChangesAsync(ct);
+        // Attachments
+        ProgressChanged?.Invoke(this, progress.SetDescription("Attachments"));
+        var attachmentMap = new Dictionary<Guid, Guid>();
+        if (root.TryGetProperty("Attachments", out var attsEl) && attsEl.ValueKind == JsonValueKind.Array)
+        {
+            var attDtos = JsonSerializer.Deserialize<List<FinanceManager.Domain.Attachments.Attachment.AttachmentBackupDto>>(attsEl.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Attachments.Attachment.AttachmentBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(attDtos.Count));
+            foreach (var dto in attDtos)
+            {
+                try
+                {
+                    Guid targetEntityId = dto.EntityId;
+                    switch (dto.EntityKind)
+                    {
+                        case AttachmentEntityKind.ContactCategory:
+                            if (contactCatMap.TryGetValue(dto.EntityId, out var mcc)) targetEntityId = mcc;
+                            break;
+                        case AttachmentEntityKind.Contact:
+                            if (contactMap.TryGetValue(dto.EntityId, out var mc)) targetEntityId = mc;
+                            break;
+                        case AttachmentEntityKind.SecurityCategory:
+                            if (securityCatMap.TryGetValue(dto.EntityId, out var msc)) targetEntityId = msc;
+                            break;
+                        case AttachmentEntityKind.Security:
+                            if (securityMap.TryGetValue(dto.EntityId, out var ms)) targetEntityId = ms;
+                            break;
+                        case AttachmentEntityKind.SavingsPlanCategory:
+                            if (savingsCatMap.TryGetValue(dto.EntityId, out var mspc)) targetEntityId = mspc;
+                            break;
+                        case AttachmentEntityKind.SavingsPlan:
+                            if (savingsMap.TryGetValue(dto.EntityId, out var msp)) targetEntityId = msp;
+                            break;
+                        case AttachmentEntityKind.Account:
+                            if (accountMap.TryGetValue(dto.EntityId, out var ma)) targetEntityId = ma;
+                            break;
+                        case AttachmentEntityKind.StatementDraft:
+                            if (draftMap.TryGetValue(dto.EntityId, out var md)) targetEntityId = md;
+                            break;
+                        default:
+                            break;
+                    }
+
+                    // map category id to newly created attachment category if present to avoid FK violations
+                    Guid? mappedCategory = null;
+                    if (dto.CategoryId.HasValue && attachmentCatMap.TryGetValue(dto.CategoryId.Value, out var mcat)) mappedCategory = mcat;
+                    else mappedCategory = dto.CategoryId;
+
+                    var att = new FinanceManager.Domain.Attachments.Attachment(dto.OwnerUserId, dto.EntityKind, targetEntityId, dto.FileName, dto.ContentType, dto.SizeBytes, dto.Sha256, mappedCategory, dto.Content, dto.Url, dto.ReferenceAttachmentId, dto.Role);
+                    _db.Attachments.Add(att);
+                    await _db.SaveChangesAsync(ct);
+                    attachmentMap[dto.Id] = att.Id;
+                }
+                catch
+                {
+                    // ignore individual attachment failures
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+        // Remap symbol attachment ids in DTOs and apply AssignBackupDto on created entities
+        ProgressChanged?.Invoke(this, progress.SetDescription("Apply backup DTOs"));
+
+        // ContactCategories
+        if (root.TryGetProperty("ContactCategories", out var contactCategoriesApply) && contactCategoriesApply.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Contacts.ContactCategory.ContactCategoryBackupDto>>(contactCategoriesApply.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Contacts.ContactCategory.ContactCategoryBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                var adjusted = dto;
+                if (dto.SymbolAttachmentId.HasValue && attachmentMap.TryGetValue(dto.SymbolAttachmentId.Value, out var newAtt))
+                {
+                    adjusted = dto with { SymbolAttachmentId = newAtt };
+                }
+                if (contactCatMap.TryGetValue(dto.Id, out var mappedId))
+                {
+                    var entity = await _db.ContactCategories.FirstAsync(x => x.Id == mappedId, ct);
+                    entity.AssignBackupDto(adjusted);
+                    await _db.SaveChangesAsync(ct);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+
+        // AliasNames (apply)
+        if (root.TryGetProperty("AliasNames", out var aliasNamesApply) && aliasNamesApply.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Contacts.AliasName.AliasNameBackupDto>>(aliasNamesApply.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Contacts.AliasName.AliasNameBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                var adjusted = dto;
+                if (contactMap.TryGetValue(dto.ContactId, out var mappedContact)) adjusted = adjusted with { ContactId = mappedContact };
+                if (aliasMap.TryGetValue(dto.Id, out var mappedId))
+                {
+                    var entity = await _db.AliasNames.FirstAsync(x => x.Id == mappedId, ct);
+                    entity.AssignBackupDto(adjusted);
+                    await _db.SaveChangesAsync(ct);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+
+        // SecurityCategories
+        if (root.TryGetProperty("SecurityCategories", out var secCatsApply) && secCatsApply.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Securities.SecurityCategory.SecurityCategoryBackupDto>>(secCatsApply.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Securities.SecurityCategory.SecurityCategoryBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                var adjusted = dto;
+                if (dto.SymbolAttachmentId.HasValue && attachmentMap.TryGetValue(dto.SymbolAttachmentId.Value, out var newAtt)) adjusted = dto with { SymbolAttachmentId = newAtt };
+                if (securityCatMap.TryGetValue(dto.Id, out var mappedId))
+                {
+                    var entity = await _db.SecurityCategories.FirstAsync(x => x.Id == mappedId, ct);
+                    entity.AssignBackupDto(adjusted);
+                    await _db.SaveChangesAsync(ct);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+
+        // SavingsPlanCategories
+        if (root.TryGetProperty("SavingsPlanCategories", out var spCatsApply) && spCatsApply.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Savings.SavingsPlanCategory.SavingsPlanCategoryBackupDto>>(spCatsApply.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Savings.SavingsPlanCategory.SavingsPlanCategoryBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                var adjusted = dto;
+                if (dto.SymbolAttachmentId.HasValue && attachmentMap.TryGetValue(dto.SymbolAttachmentId.Value, out var newAtt)) adjusted = dto with { SymbolAttachmentId = newAtt };
+                if (savingsCatMap.TryGetValue(dto.Id, out var mappedId))
+                {
+                    var entity = await _db.SavingsPlanCategories.FirstAsync(x => x.Id == mappedId, ct);
+                    entity.AssignBackupDto(adjusted);
+                    await _db.SaveChangesAsync(ct);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+
+        // Securities
+        if (root.TryGetProperty("Securities", out var secsApply) && secsApply.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Securities.Security.SecurityBackupDto>>(secsApply.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Securities.Security.SecurityBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                var adjusted = dto;
+                if (dto.SymbolAttachmentId.HasValue && attachmentMap.TryGetValue(dto.SymbolAttachmentId.Value, out var newAtt)) adjusted = adjusted with { SymbolAttachmentId = newAtt };
+                if (dto.CategoryId.HasValue && securityCatMap.TryGetValue(dto.CategoryId.Value, out var mappedCat)) adjusted = adjusted with { CategoryId = mappedCat };
+
+                if (securityMap.TryGetValue(dto.Id, out var mappedId))
+                {
+                    var entity = await _db.Securities.FirstAsync(x => x.Id == mappedId, ct);
+                    entity.AssignBackupDto(adjusted);
+                    await _db.SaveChangesAsync(ct);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+
+        // SecurityPrices (apply) - remap SecurityId and apply backup DTOs to created entities
+        if (root.TryGetProperty("SecurityPrices", out var secPricesApply) && secPricesApply.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Securities.SecurityPrice.SecurityPriceBackupDto>>(secPricesApply.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Securities.SecurityPrice.SecurityPriceBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                try
+                {
+                    var adjusted = dto;
+                    if (dto.SecurityId != Guid.Empty && securityMap.TryGetValue(dto.SecurityId, out var mappedSec)) adjusted = adjusted with { SecurityId = mappedSec };
+
+                    if (securityPricesMap.TryGetValue(dto.Id, out var mappedPriceId))
+                    {
+                        var priceEntity = await _db.SecurityPrices.FirstAsync(x => x.Id == mappedPriceId, ct);
+                        priceEntity.AssignBackupDto(adjusted);
+                        await _db.SaveChangesAsync(ct);
+                    }
+                }
+                catch
+                {
+                    // ignore individual failures to keep apply resilient
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+        // SavingsPlans
+        if (root.TryGetProperty("SavingsPlans", out var spsApply) && spsApply.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Savings.SavingsPlan.SavingsPlanBackupDto>>(spsApply.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Savings.SavingsPlan.SavingsPlanBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                var adjusted = dto;
+                if (dto.SymbolAttachmentId.HasValue && attachmentMap.TryGetValue(dto.SymbolAttachmentId.Value, out var newAtt)) adjusted = dto with { SymbolAttachmentId = newAtt };
+                if (dto.CategoryId.HasValue && savingsCatMap.TryGetValue(dto.CategoryId.Value, out var mappedCat)) adjusted = adjusted with { CategoryId = mappedCat };
+
+                if (savingsMap.TryGetValue(dto.Id, out var mappedId))
+                {
+                    var entity = await _db.SavingsPlans.FirstAsync(x => x.Id == mappedId, ct);
+                    entity.AssignBackupDto(adjusted);
+                    await _db.SaveChangesAsync(ct);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+        // Accounts
+        if (root.TryGetProperty("Accounts", out var accApply) && accApply.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Accounts.Account.AccountBackupDto>>(accApply.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Accounts.Account.AccountBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                var adjusted = dto;
+                if (dto.SymbolAttachmentId.HasValue && attachmentMap.TryGetValue(dto.SymbolAttachmentId.Value, out var newAtt)) adjusted = dto with { SymbolAttachmentId = newAtt };
+                if (accountMap.TryGetValue(dto.Id, out var mappedId))
+                {
+                    var entity = await _db.Accounts.FirstAsync(x => x.Id == mappedId, ct);
+                    entity.AssignBackupDto(adjusted);
+                    await _db.SaveChangesAsync(ct);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+
+        // Contacts
+        if (root.TryGetProperty("Contacts", out var contactsApply) && contactsApply.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Contacts.Contact.ContactBackupDto>>(contactsApply.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Contacts.Contact.ContactBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                var adjusted = dto;
+                // remap symbol attachment id
+                if (dto.SymbolAttachmentId.HasValue && attachmentMap.TryGetValue(dto.SymbolAttachmentId.Value, out var newAtt)) adjusted = adjusted with { SymbolAttachmentId = newAtt };
+                // remap category id to newly created contact category id (avoid FK violation)
+                if (dto.CategoryId.HasValue && contactCatMap.TryGetValue(dto.CategoryId.Value, out var mappedCat)) adjusted = adjusted with { CategoryId = mappedCat };
+                if (contactMap.TryGetValue(dto.Id, out var mappedId))
+                {
+                    var entity = await _db.Contacts.FirstAsync(x => x.Id == mappedId, ct);
+                    entity.AssignBackupDto(adjusted);                    
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+        // Postings (apply)
+        if (root.TryGetProperty("Postings", out var postApply) && postApply.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Postings.Posting.PostingBackupDto>>(postApply.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Postings.Posting.PostingBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                var adjusted = dto;
+                Guid? accountId = dto.AccountId.HasValue && accountMap.TryGetValue(dto.AccountId.Value, out var a) ? a : null;
+                Guid? contactId = dto.ContactId.HasValue && contactMap.TryGetValue(dto.ContactId.Value, out var c) ? c : null;
+                Guid? savingsPlanId = dto.SavingsPlanId.HasValue && savingsMap.TryGetValue(dto.SavingsPlanId.Value, out var s) ? s : null;
+                Guid? securityId = dto.SecurityId.HasValue && securityMap.TryGetValue(dto.SecurityId.Value, out var sd) ? sd : null;
+                adjusted = adjusted with { AccountId = accountId, ContactId = contactId, SavingsPlanId = savingsPlanId, SecurityId = securityId };
+
+                if (postingMap.TryGetValue(dto.Id, out var mappedId))
+                {
+                    var entity = await _db.Postings.FirstAsync(x => x.Id == mappedId, ct);
+                    entity.AssignBackupDto(adjusted);
+                    await _db.SaveChangesAsync(ct);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+
+        // StatementDrafts (apply) - preserve entries that are stored separately in the backup
+        if (root.TryGetProperty("StatementDrafts", out var draftsApply) && draftsApply.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Statements.StatementDraft.StatementDraftBackupDto>>(draftsApply.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Statements.StatementDraft.StatementDraftBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                var adjusted = dto;
+                if (dto.DetectedAccountId.HasValue && accountMap.TryGetValue(dto.DetectedAccountId.Value, out var mappedAccount)) adjusted = adjusted with { DetectedAccountId = mappedAccount };
+
+                if (draftMap.TryGetValue(dto.Id, out var mappedId))
+                {
+                    var entity = await _db.StatementDrafts.FirstAsync(x => x.Id == mappedId, ct);
+                    entity.AssignBackupDto(adjusted, false);
+                    await _db.SaveChangesAsync(ct);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+
+        if (root.TryGetProperty("StatementDraftEntries", out var draftEntriesApply) && draftEntriesApply.ValueKind == JsonValueKind.Array)
+        {
+            var listEntries = JsonSerializer.Deserialize<List<FinanceManager.Domain.Statements.StatementDraftEntry.StatementDraftEntryBackupDto>>(draftEntriesApply.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Statements.StatementDraftEntry.StatementDraftEntryBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(listEntries.Count));
+            foreach (var dto in listEntries)
+            {
+                var adjusted = dto;
+                if (draftMap.TryGetValue(dto.DraftId, out var mappedDraft)) adjusted = adjusted with { DraftId = mappedDraft };
+                if (dto.ContactId.HasValue && contactMap.TryGetValue(dto.ContactId.Value, out var mappedC)) adjusted = adjusted with { ContactId = mappedC };
+                if (dto.SavingsPlanId.HasValue && savingsMap.TryGetValue(dto.SavingsPlanId.Value, out var mappedS)) adjusted = adjusted with { SavingsPlanId = mappedS };
+                if (dto.SplitDraftId.HasValue && draftMap.TryGetValue(dto.SplitDraftId.Value, out var mappedSplit)) adjusted = adjusted with { SplitDraftId = mappedSplit };
+                if (dto.SecurityId.HasValue && securityMap.TryGetValue(dto.SecurityId.Value, out var mappedSec)) adjusted = adjusted with { SecurityId = mappedSec };
+
+
+                if (draftEntryMap.TryGetValue(dto.Id, out var mappedId))
+                {
+                    var entity = await _db.StatementDraftEntries.FirstAsync(x => x.Id == mappedId);
+                    entity.AssignBackupDto(adjusted);
+                    await _db.SaveChangesAsync(ct);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+            ProgressChanged?.Invoke(this, progress.Inc());
+
+        }
+
+        // Attachments(apply): remap EntityId and ReferenceAttachmentId and apply DTOs to persisted Attachment entities
+        if (root.TryGetProperty("Attachments", out var attsApply) && attsApply.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Attachments.Attachment.AttachmentBackupDto>>(attsApply.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Attachments.Attachment.AttachmentBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                try
+                {
+                    var adjusted = dto;
+                    // remap entity id targets using maps built earlier
+                    switch (dto.EntityKind)
+                    {
+                        case AttachmentEntityKind.ContactCategory:
+                            if (contactCatMap.TryGetValue(dto.EntityId, out var mcc)) adjusted = adjusted with { EntityId = mcc };
+                            break;
+                        case AttachmentEntityKind.Contact:
+                            if (contactMap.TryGetValue(dto.EntityId, out var mc)) adjusted = adjusted with { EntityId = mc };
+                            break;
+                        case AttachmentEntityKind.SecurityCategory:
+                            if (securityCatMap.TryGetValue(dto.EntityId, out var msc)) adjusted = adjusted with { EntityId = msc };
+                            break;
+                        case AttachmentEntityKind.Security:
+                            if (securityMap.TryGetValue(dto.EntityId, out var ms)) adjusted = adjusted with { EntityId = ms };
+                            break;
+                        case AttachmentEntityKind.SavingsPlanCategory:
+                            if (savingsCatMap.TryGetValue(dto.EntityId, out var mspc)) adjusted = adjusted with { EntityId = mspc };
+                            break;
+                        case AttachmentEntityKind.SavingsPlan:
+                            if (savingsMap.TryGetValue(dto.EntityId, out var msp)) adjusted = adjusted with { EntityId = msp };
+                            break;
+                        case AttachmentEntityKind.Account:
+                            if (accountMap.TryGetValue(dto.EntityId, out var ma)) adjusted = adjusted with { EntityId = ma };
+                            break;
+                        case AttachmentEntityKind.StatementDraft:
+                            if (draftMap.TryGetValue(dto.EntityId, out var md)) adjusted = adjusted with { EntityId = md };
+                            break;
+                        default:
+                            break;
+                    }
+
+                    // remap reference attachment id
+                    if (dto.ReferenceAttachmentId.HasValue && attachmentMap.TryGetValue(dto.ReferenceAttachmentId.Value, out var newRef))
+                        adjusted = adjusted with { ReferenceAttachmentId = newRef };
+
+                    // remap category id on apply
+                    if (dto.CategoryId.HasValue && attachmentCatMap.TryGetValue(dto.CategoryId.Value, out var mappedCat)) adjusted = adjusted with { CategoryId = mappedCat };
+
+                 // locate created attachment entity and apply DTO
+                 if (attachmentMap.TryGetValue(dto.Id, out var mappedId))
+                 {
+                     var entity = await _db.Attachments.FirstAsync(x => x.Id == mappedId, ct);
+                     entity.AssignBackupDto(adjusted);
+                     await _db.SaveChangesAsync(ct);
+                 }
+             }
+             catch
+             {
+                 // ignore individual attachment apply failures to keep overall import resilient
+             }
+             ProgressChanged?.Invoke(this, progress.IncSub());
+         }
+     }
+
+     ProgressChanged?.Invoke(this, progress.Inc());
+
+     ProgressChanged?.Invoke(this, progress.SetDescription("Build Aggregate Postings"));
+     ProgressChanged?.Invoke(this, progress.InitSub(postingCount));
+     await _aggregateService.RebuildForUserAsync(userId, (step, count) =>
+     {
+         progress.SubStep = step;
+         progress.SubTotal = count;
+         ProgressChanged?.Invoke(this, progress);
+     }, ct);
+     ProgressChanged?.Invoke(this, progress.Inc());
+
+     ProgressChanged?.Invoke(this, progress.Inc());
     }
 
     private static DateTime GetPeriodStart(DateTime date, AggregatePeriod p)

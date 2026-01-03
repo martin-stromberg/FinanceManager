@@ -83,6 +83,6 @@ public sealed class SecurityPrice
         SecurityId = dto.SecurityId;
         Date = dto.Date;
         Close = dto.Close;
-        // CreatedUtc handled by ORM
+        CreatedUtc = dto.CreatedUtc;
     }
 }

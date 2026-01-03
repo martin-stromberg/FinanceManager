@@ -181,5 +181,6 @@ public sealed class Account : Entity, IAggregateRoot
         SetBankContact(dto.BankContactId);
         SetSymbolAttachment(dto.SymbolAttachmentId);
         SetSavingsPlanExpectation(dto.SavingsPlanExpectation);
+        SetDates(dto.CreatedUtc, dto.ModifiedUtc);
     }
 }

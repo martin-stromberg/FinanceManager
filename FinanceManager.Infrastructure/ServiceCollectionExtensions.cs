@@ -93,6 +93,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAttachmentCategoryService, AttachmentCategoryService>(); 
         services.AddScoped<IPostingExportService, PostingExportService>(); 
         services.AddScoped<IDemoDataService, FinanceManager.Infrastructure.Demo.DemoDataService>();
+        services.AddScoped<ISecurityPriceService, SecurityPriceService>();
 
         // Register Identity RoleStore for Guid-based roles (RoleManager is registered by AddIdentity in Program.cs)
         services.AddScoped<IRoleStore<IdentityRole<Guid>>, RoleStore<IdentityRole<Guid>, AppDbContext, Guid>>();
