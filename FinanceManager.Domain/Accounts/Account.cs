@@ -140,4 +140,47 @@ public sealed class Account : Entity, IAggregateRoot
             Touch();
         }
     }
+
+    // Backup DTO
+    /// <summary>
+    /// DTO carrying the serializable state of an <see cref="Account"/> for backup purposes.
+    /// </summary>
+    /// <param name="Id">Entity identifier.</param>
+    /// <param name="OwnerUserId">Owner user identifier.</param>
+    /// <param name="Type">Account type.</param>
+    /// <param name="Name">Account display name.</param>
+    /// <param name="Iban">Optional IBAN.</param>
+    /// <param name="CurrentBalance">Current balance value.</param>
+    /// <param name="BankContactId">Bank contact identifier.</param>
+    /// <param name="SymbolAttachmentId">Optional symbol attachment id.</param>
+    /// <param name="SavingsPlanExpectation">Configured savings plan expectation.</param>
+    /// <param name="CreatedUtc">Entity creation timestamp UTC.</param>
+    /// <param name="ModifiedUtc">Entity last modified timestamp UTC, if any.</param>
+    public sealed record AccountBackupDto(Guid Id, Guid OwnerUserId, AccountType Type, string Name, string? Iban, decimal CurrentBalance, Guid BankContactId, Guid? SymbolAttachmentId, SavingsPlanExpectation SavingsPlanExpectation, DateTime CreatedUtc, DateTime? ModifiedUtc);
+
+    /// <summary>
+    /// Creates a backup DTO representing the serializable state of this account.
+    /// </summary>
+    /// <returns>A <see cref="AccountBackupDto"/> containing values needed to restore the account.</returns>
+    public AccountBackupDto ToBackupDto() => new AccountBackupDto(Id, OwnerUserId, Type, Name, Iban, CurrentBalance, BankContactId, SymbolAttachmentId, SavingsPlanExpectation, CreatedUtc, ModifiedUtc);
+
+    /// <summary>
+    /// Applies values from a backup DTO to this account instance.
+    /// Uses the entity's setters to preserve domain invariants where applicable.
+    /// </summary>
+    /// <param name="dto">The backup DTO to apply to this entity.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+    public void AssignBackupDto(AccountBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        OwnerUserId = dto.OwnerUserId;
+        SetType(dto.Type);
+        Rename(dto.Name);
+        SetIban(dto.Iban);
+        CurrentBalance = dto.CurrentBalance;
+        SetBankContact(dto.BankContactId);
+        SetSymbolAttachment(dto.SymbolAttachmentId);
+        SetSavingsPlanExpectation(dto.SavingsPlanExpectation);
+        SetDates(dto.CreatedUtc, dto.ModifiedUtc);
+    }
 }

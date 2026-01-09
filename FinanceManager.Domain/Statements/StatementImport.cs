@@ -55,4 +55,39 @@ public sealed class StatementImport : Entity, IAggregateRoot
     /// </summary>
     /// <value>Total number of parsed entries.</value>
     public int TotalEntries { get; private set; }
+
+    // Backup DTO
+    /// <summary>
+    /// DTO carrying the serializable state of a <see cref="StatementImport"/> for backup purposes.
+    /// </summary>
+    /// <param name="Id">Identifier of the statement import entity.</param>
+    /// <param name="AccountId">Identifier of the account this import belongs to.</param>
+    /// <param name="Format">Detected import format.</param>
+    /// <param name="ImportedAtUtc">UTC timestamp when the file was imported.</param>
+    /// <param name="OriginalFileName">Original uploaded file name.</param>
+    /// <param name="TotalEntries">Number of entries parsed from the imported statement file.</param>
+    /// <param name="CreatedUtc">Entity creation timestamp UTC.</param>
+    /// <param name="ModifiedUtc">Entity last modified timestamp UTC, if any.</param>
+    public sealed record StatementImportBackupDto(Guid Id, Guid AccountId, ImportFormat Format, DateTime ImportedAtUtc, string OriginalFileName, int TotalEntries, DateTime CreatedUtc, DateTime? ModifiedUtc);
+
+    /// <summary>
+    /// Creates a backup DTO representing the serializable state of this statement import.
+    /// </summary>
+    /// <returns>A <see cref="StatementImportBackupDto"/> containing values required to restore this import.</returns>
+    public StatementImportBackupDto ToBackupDto() => new StatementImportBackupDto(Id, AccountId, Format, ImportedAtUtc, OriginalFileName, TotalEntries, CreatedUtc, ModifiedUtc);
+
+    /// <summary>
+    /// Assigns values from the provided backup DTO to this <see cref="StatementImport"/> instance.
+    /// </summary>
+    /// <param name="dto">The <see cref="StatementImportBackupDto"/> containing values to apply.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+    public void AssignBackupDto(StatementImportBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        AccountId = dto.AccountId;
+        Format = dto.Format;
+        ImportedAtUtc = dto.ImportedAtUtc;
+        OriginalFileName = dto.OriginalFileName;
+        TotalEntries = dto.TotalEntries;
+    }
 }
