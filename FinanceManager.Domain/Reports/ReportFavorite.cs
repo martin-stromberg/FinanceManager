@@ -360,7 +360,6 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
     public void AssignBackupDto(ReportFavoriteBackupDto dto)
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
-        OwnerUserId = dto.OwnerUserId;
         Rename(dto.Name);
         PostingKind = dto.PostingKind;
         IncludeCategory = dto.IncludeCategory;

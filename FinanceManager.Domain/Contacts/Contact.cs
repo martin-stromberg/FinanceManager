@@ -144,7 +144,6 @@ public sealed class Contact : Entity, IAggregateRoot
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
         // Id is intentionally not assigned here; identity handled by repository/ORM.
-        OwnerUserId = dto.OwnerUserId;
         Rename(dto.Name);
         ChangeType(dto.Type);
         SetCategory(dto.CategoryId);

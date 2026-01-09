@@ -158,7 +158,7 @@ namespace FinanceManager.Tests.Infrastructure
             db.StatementDrafts.Add(draft);
 
             var sdstatus = (StatementDraftEntryStatus)Enum.GetValues(typeof(StatementDraftEntryStatus)).Cast<object>().FirstOrDefault(v => Convert.ToInt64(v) != 0)!;
-            var draftEntry = new StatementDraftEntry(draft.Id, fixedDate.Date, 2.34m, "subjRT", "RecipientDraft", fixedDate.Date, "EUR", "draft description", false, false, sdstatus);
+            var draftEntry = new StatementDraftEntry(0, draft.Id, fixedDate.Date, 2.34m, "subjRT", "RecipientDraft", fixedDate.Date, "EUR", "draft description", false, false, sdstatus);
             SetGuid(draftEntry, "Id", Guid.Parse("20000000-0000-0000-0000-000000000016"));
             SetDateProps(draftEntry, fixedDate);
             db.StatementDraftEntries.Add(draftEntry);

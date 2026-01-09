@@ -13,9 +13,13 @@ using FinanceManager.Domain.Statements; // for StatementDraft
 using FinanceManager.Infrastructure;
 using iText.StyledXmlParser.Jsoup.Nodes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.Internal;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
+using static FinanceManager.Domain.Attachments.Attachment;
 
 /// <summary>
 /// Service that imports application setup and backup data into the database.
@@ -26,7 +30,8 @@ public sealed class SetupImportService : ISetupImportService
     private readonly AppDbContext _db;
     private readonly IStatementDraftService _statementDraftService;
     private readonly IPostingAggregateService _aggregateService;
-    private readonly IAttachmentService _attachments; // new
+    private readonly IAttachmentService _attachments;
+    private readonly ILogger<SetupImportService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SetupImportService"/> class.
@@ -35,12 +40,14 @@ public sealed class SetupImportService : ISetupImportService
     /// <param name="statementDraftService">Statement draft service used when creating drafts from legacy ledger exports.</param>
     /// <param name="aggregateService">Aggregate posting service used to rebuild posting aggregates after import.</param>
     /// <param name="attachments">Optional attachment service used to persist embedded files; when null a no-op implementation is used.</param>
-    public SetupImportService(AppDbContext db, IStatementDraftService statementDraftService, IPostingAggregateService aggregateService, IAttachmentService? attachments = null)
+    /// <param name="logger">Optional logger for progress and diagnostics.</param>
+    public SetupImportService(AppDbContext db, IStatementDraftService statementDraftService, IPostingAggregateService aggregateService, ILogger<SetupImportService> logger, IAttachmentService? attachments = null)
     {
         _db = db;
         _statementDraftService = statementDraftService;
         _aggregateService = aggregateService;
         _attachments = attachments ?? new NoopAttachmentService();
+        _logger = logger;
     }
 
     private sealed class NoopAttachmentService : IAttachmentService
@@ -190,7 +197,7 @@ public sealed class SetupImportService : ISetupImportService
         {
             StepDescription = "",
             Step = 0,
-            Total = 32-(replaceExisting ? 1 : 0),
+            Total = 31 - (replaceExisting ? 0 : 1),
             SubStep = 0,
             SubTotal = 0
         };
@@ -239,9 +246,9 @@ public sealed class SetupImportService : ISetupImportService
             ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
             foreach (var dto in list)
             {
+                _logger.LogDebug("ImportVersion3: ContactCategory create - BackupId={BackupId}, Name={Name}", dto.Id, dto.Name);
                 if (string.IsNullOrWhiteSpace(dto.Name)) { progress.IncSub(); continue; }
                 var entity = new ContactCategory(userId, dto.Name);
-                entity.AssignBackupDto(dto);
                 _db.ContactCategories.Add(entity);
                 await _db.SaveChangesAsync(ct);
                 contactCatMap[dto.Id] = entity.Id;
@@ -258,6 +265,7 @@ public sealed class SetupImportService : ISetupImportService
             ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
             foreach (var dto in list)
             {
+                _logger.LogDebug("ImportVersion3: Contact create - BackupId={BackupId}, Name={Name}", dto.Id, dto.Name);
                 var categoryId = dto.CategoryId.HasValue && contactCatMap.TryGetValue(dto.CategoryId.Value, out var m) ? m : (Guid?)null;
                 var entity = new Contact(userId, dto.Name, dto.Type, categoryId, dto.Description, dto.IsPaymentIntermediary);
                 if (entity.Type == ContactType.Self)
@@ -291,6 +299,7 @@ public sealed class SetupImportService : ISetupImportService
             ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
             foreach (var dto in list)
             {
+                _logger.LogDebug("ImportVersion3: AliasName create - BackupId={BackupId}, Pattern={Pattern}, ContactOldId={ContactId}", dto.Id, dto.Pattern, dto.ContactId);
                 if (!contactMap.TryGetValue(dto.ContactId, out var mappedContact)) { ProgressChanged?.Invoke(this, progress.IncSub()); continue; }
                 var entity = new AliasName(mappedContact, dto.Pattern);
                 _db.AliasNames.Add(entity);
@@ -309,6 +318,7 @@ public sealed class SetupImportService : ISetupImportService
             ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
             foreach (var dto in list)
             {
+                _logger.LogDebug("ImportVersion3: SecurityCategory create - BackupId={BackupId}, Name={Name}", dto.Id, dto.Name);
                 var entity = new SecurityCategory(userId, dto.Name);
                 _db.SecurityCategories.Add(entity);
                 await _db.SaveChangesAsync(ct);
@@ -326,6 +336,7 @@ public sealed class SetupImportService : ISetupImportService
             ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
             foreach (var dto in list)
             {
+                _logger.LogDebug("ImportVersion3: Security create - BackupId={BackupId}, Name={Name}", dto.Id, dto.Name);
                 Guid? categoryId = null;
                 if (dto.CategoryId.HasValue && securityCatMap.TryGetValue(dto.CategoryId.Value, out var mapped)) categoryId = mapped;
                 var entity = new Security(userId, dto.Name, dto.Identifier, dto.Description, dto.AlphaVantageCode, dto.CurrencyCode, categoryId);
@@ -345,6 +356,7 @@ public sealed class SetupImportService : ISetupImportService
             ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
             foreach (var dto in list)
             {
+                _logger.LogDebug("ImportVersion3: SecurityPrice create - BackupId={BackupId}, SecurityId={SecurityId}, Date={Date}", dto.Id, dto.SecurityId, dto.Date);
                 if (!securityMap.TryGetValue(dto.SecurityId, out var mappedSid)) { ProgressChanged?.Invoke(this, progress.IncSub()); continue; }
                 var entity = new SecurityPrice(mappedSid, dto.Date, dto.Close);
                 _db.SecurityPrices.Add(entity);
@@ -364,6 +376,7 @@ public sealed class SetupImportService : ISetupImportService
             ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
             foreach (var dto in list)
             {
+                _logger.LogDebug("ImportVersion3: SavingsPlanCategory create - BackupId={BackupId}, Name={Name}", dto.Id, dto.Name);
                 var entity = new SavingsPlanCategory(userId, dto.Name);
                 _db.SavingsPlanCategories.Add(entity);
                 await _db.SaveChangesAsync(ct);
@@ -381,6 +394,7 @@ public sealed class SetupImportService : ISetupImportService
             ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
             foreach (var dto in list)
             {
+                _logger.LogDebug("ImportVersion3: SavingsPlan create - BackupId={BackupId}, Name={Name}", dto.Id, dto.Name);
                 Guid? categoryId = null;
                 if (dto.CategoryId.HasValue && savingsCatMap.TryGetValue(dto.CategoryId.Value, out var mapped)) categoryId = mapped;
                 var entity = new SavingsPlan(userId, dto.Name, dto.Type, dto.TargetAmount, dto.TargetDate, dto.Interval, categoryId);
@@ -401,12 +415,13 @@ public sealed class SetupImportService : ISetupImportService
             ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
             foreach (var dto in list)
             {
+                _logger.LogDebug("ImportVersion3: Account create - BackupId={BackupId}, Name={Name}", dto.Id, dto.Name);
                 var bankContactOld = dto.BankContactId;
                 Guid mappedBankContact;
                 if (!bankContactOld.Equals(Guid.Empty) && contactMap.TryGetValue(bankContactOld, out var mbc)) mappedBankContact = mbc;
                 else
                 {
-                    var bank = new Contact(userId, "Bank", ContactType.Bank, null);
+                    var bank = new Contact(userId, dto.Name, ContactType.Bank, null);
                     _db.Contacts.Add(bank);
                     await _db.SaveChangesAsync(ct);
                     mappedBankContact = bank.Id;
@@ -423,6 +438,7 @@ public sealed class SetupImportService : ISetupImportService
         // Postings
         var postingCount = 0;
         ProgressChanged?.Invoke(this, progress.SetDescription("Postings"));
+        Dictionary<Guid, Posting> postingMapCollection = new Dictionary<Guid, Posting>();
         if (root.TryGetProperty("Postings", out var postArr) && postArr.ValueKind == JsonValueKind.Array)
         {
             var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Postings.Posting.PostingBackupDto>>(postArr.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Postings.Posting.PostingBackupDto>();
@@ -430,6 +446,7 @@ public sealed class SetupImportService : ISetupImportService
             ProgressChanged?.Invoke(this, progress.InitSub(postingCount));
             foreach (var dto in list)
             {
+                _logger.LogDebug("ImportVersion3: Posting create - BackupId={BackupId}, BookingDate={BookingDate}, Amount={Amount}", dto.Id, dto.BookingDate, dto.Amount);
                 Guid? accountId = dto.AccountId.HasValue && accountMap.TryGetValue(dto.AccountId.Value, out var a) ? a : null;
                 Guid? contactId = dto.ContactId.HasValue && contactMap.TryGetValue(dto.ContactId.Value, out var c) ? c : null;
                 Guid? savingsPlanId = dto.SavingsPlanId.HasValue && savingsMap.TryGetValue(dto.SavingsPlanId.Value, out var s) ? s : null;
@@ -450,10 +467,20 @@ public sealed class SetupImportService : ISetupImportService
                     dto.Quantity);
                 if (dto.GroupId.HasValue && dto.GroupId != Guid.Empty) entity.SetGroup(dto.GroupId.Value);
                 _db.Postings.Add(entity);
-                await _db.SaveChangesAsync(ct);
-                postingMap[dto.Id] = entity.Id;
+                postingMapCollection.Add(dto.Id, entity);
+                if (progress.SubStep % 100 == 0)
+                {
+                    await _db.SaveChangesAsync(ct);
+                    foreach (var kvp in postingMapCollection)
+                        postingMap[kvp.Key] = kvp.Value.Id;
+                    postingMapCollection.Clear();
+                }
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
+            await _db.SaveChangesAsync(ct);
+            foreach (var kvp in postingMapCollection)
+                postingMap[kvp.Key] = kvp.Value.Id;
+            postingMapCollection.Clear();
         }
         ProgressChanged?.Invoke(this, progress.Inc());
 
@@ -465,6 +492,7 @@ public sealed class SetupImportService : ISetupImportService
             ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
             foreach (var dto in list)
             {
+                _logger.LogDebug("ImportVersion3: StatementDraft create - BackupId={BackupId}, OriginalFile={OriginalFile}", dto.Id, dto.OriginalFileName);
                 var originalFileName = string.IsNullOrWhiteSpace(dto.OriginalFileName) ? "backup" : dto.OriginalFileName;
                 var entity = new StatementDraft(userId, originalFileName, dto.AccountName, dto.Description, dto.Status);
                 if (dto.DetectedAccountId.HasValue && accountMap.TryGetValue(dto.DetectedAccountId.Value, out var mapped)) entity.SetDetectedAccount(mapped);
@@ -478,16 +506,20 @@ public sealed class SetupImportService : ISetupImportService
         ProgressChanged?.Invoke(this, progress.Inc());
 
         ProgressChanged?.Invoke(this, progress.SetDescription("Statement Draft Entries"));
+        Dictionary<Guid, StatementDraftEntry> statementDraftEntryCollection = new Dictionary<Guid, StatementDraftEntry>();
         if (root.TryGetProperty("StatementDraftEntries", out var draftEntries) && draftEntries.ValueKind == JsonValueKind.Array)
         {
             var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Statements.StatementDraftEntry.StatementDraftEntryBackupDto>>(draftEntries.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Statements.StatementDraftEntry.StatementDraftEntryBackupDto>();
             ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            var entryNo = 0;
             foreach (var dto in list)
             {
+                _logger.LogDebug("ImportVersion3: StatementDraftEntry create - BackupId={BackupId}, BookingDate={BookingDate}, Amount={Amount}", dto.Id, dto.BookingDate, dto.Amount);
                 if (!draftMap.TryGetValue(dto.DraftId, out var draftId)) { ProgressChanged?.Invoke(this, progress.IncSub()); continue; }
                 var draft = await _db.StatementDrafts.FirstAsync(x => x.Id == draftId, ct);
 
                 var entry = new StatementDraftEntry(
+                    ++entryNo,
                     draft.Id,
                     dto.BookingDate,
                     dto.Amount,
@@ -509,11 +541,20 @@ public sealed class SetupImportService : ISetupImportService
                     entry.SetSecurity(mapped, dto.SecurityTransactionType, dto.SecurityQuantity, dto.SecurityFeeAmount, dto.SecurityTaxAmount);
                 }
                 _db.StatementDraftEntries.Add(entry);
-                // persist immediately to obtain generated Id for mapping
-                await _db.SaveChangesAsync(ct);
-                draftEntryMap[dto.Id] = entry.Id;
+                statementDraftEntryCollection.Add(dto.Id, entry);
+                if (progress.SubStep % 100 == 0)
+                {
+                    await _db.SaveChangesAsync(ct);
+                    foreach (var kvp in statementDraftEntryCollection)
+                        draftEntryMap[kvp.Key] = kvp.Value.Id;
+                    statementDraftEntryCollection.Clear();
+                }
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
+            await _db.SaveChangesAsync(ct);
+            foreach (var kvp in statementDraftEntryCollection)
+                draftEntryMap[kvp.Key] = kvp.Value.Id;
+            statementDraftEntryCollection.Clear();
         }
         ProgressChanged?.Invoke(this, progress.Inc());
 
@@ -523,6 +564,7 @@ public sealed class SetupImportService : ISetupImportService
             var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Reports.ReportFavorite.ReportFavoriteBackupDto>>(favsEl.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Reports.ReportFavorite.ReportFavoriteBackupDto>();
             foreach (var dto in list)
             {
+                _logger.LogDebug("ImportVersion3: ReportFavorite create - BackupId={BackupId}, Name={Name}", dto.Id, dto.Name);
                 var entity = new ReportFavorite(userId, dto.Name, dto.PostingKind, dto.IncludeCategory, dto.Interval, dto.ComparePrevious, dto.CompareYear, dto.ShowChart, dto.Expandable, dto.Take);
                 if (!string.IsNullOrWhiteSpace(dto.PostingKindsCsv))
                 {
@@ -598,11 +640,12 @@ public sealed class SetupImportService : ISetupImportService
         // Attachments
         ProgressChanged?.Invoke(this, progress.SetDescription("Attachments"));
         var attachmentMap = new Dictionary<Guid, Guid>();
+        Queue<AttachmentBackupDto> references = new Queue<AttachmentBackupDto>();
         if (root.TryGetProperty("Attachments", out var attsEl) && attsEl.ValueKind == JsonValueKind.Array)
         {
             var attDtos = JsonSerializer.Deserialize<List<FinanceManager.Domain.Attachments.Attachment.AttachmentBackupDto>>(attsEl.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Attachments.Attachment.AttachmentBackupDto>();
             ProgressChanged?.Invoke(this, progress.InitSub(attDtos.Count));
-            foreach (var dto in attDtos)
+            var processAttachmentDto = new Action<AttachmentBackupDto>((dto) =>
             {
                 try
                 {
@@ -642,17 +685,41 @@ public sealed class SetupImportService : ISetupImportService
                     if (dto.CategoryId.HasValue && attachmentCatMap.TryGetValue(dto.CategoryId.Value, out var mcat)) mappedCategory = mcat;
                     else mappedCategory = dto.CategoryId;
 
-                    var att = new FinanceManager.Domain.Attachments.Attachment(dto.OwnerUserId, dto.EntityKind, targetEntityId, dto.FileName, dto.ContentType, dto.SizeBytes, dto.Sha256, mappedCategory, dto.Content, dto.Url, dto.ReferenceAttachmentId, dto.Role);
+                    var att = new FinanceManager.Domain.Attachments.Attachment(userId, dto.EntityKind, targetEntityId, dto.FileName, dto.ContentType, dto.SizeBytes, dto.Sha256, mappedCategory, dto.Content, dto.Url, dto.ReferenceAttachmentId, dto.Role);
                     _db.Attachments.Add(att);
-                    await _db.SaveChangesAsync(ct);
+                    _db.SaveChanges();
                     attachmentMap[dto.Id] = att.Id;
                 }
-                catch
+                catch (Exception ex)
                 {
                     // ignore individual attachment failures
+                    _logger.LogWarning("Failed to import attachment {AttachmentId}: {Message}", dto.Id, ex.Message);
                 }
-                ProgressChanged?.Invoke(this, progress.IncSub());
+            });
+            foreach (var dto in attDtos)
+            {
+                if (dto.ReferenceAttachmentId is not null)
+                    references.Enqueue(dto);
+                else
+                {
+                    processAttachmentDto(dto);
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                }
             }
+            while (references.TryDequeue(out var dto))
+            {
+                if (!attachmentMap.TryGetValue(dto.ReferenceAttachmentId!.Value, out var refId))
+                    continue;
+                var exists = await _db.Attachments.AnyAsync(a => a.Id == refId, ct);
+                if (exists)
+                {
+                    dto = dto with { ReferenceAttachmentId = refId };
+                    processAttachmentDto(dto);
+                }
+                else
+                    _logger.LogWarning("Failed to import attachment {AttachmentId}: referenced attachment {ReferenceAttachmentId} does not exist", dto.Id, dto.ReferenceAttachmentId);
+            }
+            await _db.SaveChangesAsync(ct);
         }
         ProgressChanged?.Invoke(this, progress.Inc());
 
@@ -666,11 +733,13 @@ public sealed class SetupImportService : ISetupImportService
             ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
             foreach (var dto in list)
             {
+                _logger.LogDebug("ImportVersion3: ContactCategories create - BackupId={BackupId}, Name={Name}, SymbolAttachmentId={SymbolAttachmentId}", dto.Id, dto.Name, dto.SymbolAttachmentId);
                 var adjusted = dto;
-                if (dto.SymbolAttachmentId.HasValue && attachmentMap.TryGetValue(dto.SymbolAttachmentId.Value, out var newAtt))
-                {
-                    adjusted = dto with { SymbolAttachmentId = newAtt };
-                }
+                if (dto.SymbolAttachmentId.HasValue)
+                    if (attachmentMap.TryGetValue(dto.SymbolAttachmentId.Value, out var newAtt))
+                        adjusted = dto with { SymbolAttachmentId = newAtt };
+                    else
+                        adjusted = dto with { SymbolAttachmentId = null };
                 if (contactCatMap.TryGetValue(dto.Id, out var mappedId))
                 {
                     var entity = await _db.ContactCategories.FirstAsync(x => x.Id == mappedId, ct);
@@ -785,7 +854,8 @@ public sealed class SetupImportService : ISetupImportService
                     {
                         var priceEntity = await _db.SecurityPrices.FirstAsync(x => x.Id == mappedPriceId, ct);
                         priceEntity.AssignBackupDto(adjusted);
-                        await _db.SaveChangesAsync(ct);
+                        if (progress.SubStep % 100 == 0)
+                            await _db.SaveChangesAsync(ct);
                     }
                 }
                 catch
@@ -794,6 +864,7 @@ public sealed class SetupImportService : ISetupImportService
                 }
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
+            await _db.SaveChangesAsync(ct);
         }
         ProgressChanged?.Invoke(this, progress.Inc());
 
@@ -827,7 +898,13 @@ public sealed class SetupImportService : ISetupImportService
             foreach (var dto in list)
             {
                 var adjusted = dto;
-                if (dto.SymbolAttachmentId.HasValue && attachmentMap.TryGetValue(dto.SymbolAttachmentId.Value, out var newAtt)) adjusted = dto with { SymbolAttachmentId = newAtt };
+                if (dto.SymbolAttachmentId.HasValue && attachmentMap.TryGetValue(dto.SymbolAttachmentId.Value, out var newAtt)) adjusted = adjusted with { SymbolAttachmentId = newAtt };
+                if (!dto.BankContactId.Equals(Guid.Empty) && contactMap.TryGetValue(dto.BankContactId, out var mbc)) adjusted = adjusted with { BankContactId = mbc };
+                else
+                {
+                    var bank = _db.Contacts.FirstOrDefault(c => c.Type == ContactType.Bank && c.Name == dto.Name);
+                    adjusted = adjusted with { BankContactId = bank.Id };
+                }
                 if (accountMap.TryGetValue(dto.Id, out var mappedId))
                 {
                     var entity = await _db.Accounts.FirstAsync(x => x.Id == mappedId, ct);
@@ -855,7 +932,7 @@ public sealed class SetupImportService : ISetupImportService
                 if (contactMap.TryGetValue(dto.Id, out var mappedId))
                 {
                     var entity = await _db.Contacts.FirstAsync(x => x.Id == mappedId, ct);
-                    entity.AssignBackupDto(adjusted);                    
+                    entity.AssignBackupDto(adjusted);
                 }
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
@@ -880,10 +957,12 @@ public sealed class SetupImportService : ISetupImportService
                 {
                     var entity = await _db.Postings.FirstAsync(x => x.Id == mappedId, ct);
                     entity.AssignBackupDto(adjusted);
-                    await _db.SaveChangesAsync(ct);
+                    if (progress.SubStep % 100 == 0)
+                        await _db.SaveChangesAsync(ct);
                 }
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
+            await _db.SaveChangesAsync(ct);
         }
         ProgressChanged?.Invoke(this, progress.Inc());
 
@@ -928,13 +1007,14 @@ public sealed class SetupImportService : ISetupImportService
                 {
                     var entity = await _db.StatementDraftEntries.FirstAsync(x => x.Id == mappedId);
                     entity.AssignBackupDto(adjusted);
-                    await _db.SaveChangesAsync(ct);
+                    if (progress.SubStep % 100 == 0)
+                        await _db.SaveChangesAsync(ct);
                 }
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
-            ProgressChanged?.Invoke(this, progress.Inc());
-
+            await _db.SaveChangesAsync(ct);
         }
+        ProgressChanged?.Invoke(this, progress.Inc());
 
         // Attachments(apply): remap EntityId and ReferenceAttachmentId and apply DTOs to persisted Attachment entities
         if (root.TryGetProperty("Attachments", out var attsApply) && attsApply.ValueKind == JsonValueKind.Array)
@@ -984,35 +1064,35 @@ public sealed class SetupImportService : ISetupImportService
                     // remap category id on apply
                     if (dto.CategoryId.HasValue && attachmentCatMap.TryGetValue(dto.CategoryId.Value, out var mappedCat)) adjusted = adjusted with { CategoryId = mappedCat };
 
-                 // locate created attachment entity and apply DTO
-                 if (attachmentMap.TryGetValue(dto.Id, out var mappedId))
-                 {
-                     var entity = await _db.Attachments.FirstAsync(x => x.Id == mappedId, ct);
-                     entity.AssignBackupDto(adjusted);
-                     await _db.SaveChangesAsync(ct);
-                 }
-             }
-             catch
-             {
-                 // ignore individual attachment apply failures to keep overall import resilient
-             }
-             ProgressChanged?.Invoke(this, progress.IncSub());
-         }
-     }
+                    // locate created attachment entity and apply DTO
+                    if (attachmentMap.TryGetValue(dto.Id, out var mappedId))
+                    {
+                        var entity = await _db.Attachments.FirstAsync(x => x.Id == mappedId, ct);
+                        entity.AssignBackupDto(adjusted);
+                        if (progress.SubStep % 100 == 0)
+                            await _db.SaveChangesAsync(ct);
+                    }
+                }
+                catch
+                {
+                    // ignore individual attachment apply failures to keep overall import resilient
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+            await _db.SaveChangesAsync(ct);
+        }
 
-     ProgressChanged?.Invoke(this, progress.Inc());
+        ProgressChanged?.Invoke(this, progress.Inc());
 
-     ProgressChanged?.Invoke(this, progress.SetDescription("Build Aggregate Postings"));
-     ProgressChanged?.Invoke(this, progress.InitSub(postingCount));
-     await _aggregateService.RebuildForUserAsync(userId, (step, count) =>
-     {
-         progress.SubStep = step;
-         progress.SubTotal = count;
-         ProgressChanged?.Invoke(this, progress);
-     }, ct);
-     ProgressChanged?.Invoke(this, progress.Inc());
-
-     ProgressChanged?.Invoke(this, progress.Inc());
+        ProgressChanged?.Invoke(this, progress.SetDescription("Build Aggregate Postings"));
+        ProgressChanged?.Invoke(this, progress.InitSub(postingCount));
+        await _aggregateService.RebuildForUserAsync(userId, (step, count) =>
+        {
+            progress.SubStep = step;
+            progress.SubTotal = count;
+            ProgressChanged?.Invoke(this, progress);
+        }, ct);
+        ProgressChanged?.Invoke(this, progress.Inc());
     }
 
     private static DateTime GetPeriodStart(DateTime date, AggregatePeriod p)

@@ -103,7 +103,6 @@ public sealed class Notification
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
         Id = dto.Id;
-        OwnerUserId = dto.OwnerUserId;
         Title = dto.Title;
         Message = dto.Message;
         Type = dto.Type;

@@ -73,7 +73,6 @@ public sealed class AttachmentCategory
     public void AssignBackupDto(AttachmentCategoryBackupDto dto)
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
-        OwnerUserId = dto.OwnerUserId;
         Rename(dto.Name);
         IsSystem = dto.IsSystem;
     }

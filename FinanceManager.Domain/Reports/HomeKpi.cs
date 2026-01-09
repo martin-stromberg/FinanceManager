@@ -181,7 +181,6 @@ public sealed class HomeKpi : Entity, IAggregateRoot
     public void AssignBackupDto(HomeKpiBackupDto dto)
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
-        OwnerUserId = dto.OwnerUserId;
         Kind = dto.Kind;
         ReportFavoriteId = dto.ReportFavoriteId;
         DisplayMode = dto.DisplayMode;

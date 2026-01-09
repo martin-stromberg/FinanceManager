@@ -6,7 +6,8 @@ using FinanceManager.Domain.Accounts; // added for Account type
 using FinanceManager.Domain.Attachments; // added
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Statements;
-using FinanceManager.Infrastructure.Statements.Reader;
+using FinanceManager.Infrastructure.Statements.Files;
+using FinanceManager.Infrastructure.Statements.Parsers;
 using FinanceManager.Shared.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging; // added
@@ -22,9 +23,10 @@ namespace FinanceManager.Infrastructure.Statements;
 public sealed partial class StatementDraftService : IStatementDraftService
 {
     private readonly AppDbContext _db;
-    private readonly IReadOnlyList<IStatementFileReader> _statementFileReaders;
+    private readonly IReadOnlyList<IStatementFileParser> _statementFileParsers;
     private readonly IPostingAggregateService _aggregateService;
     private readonly IAccountService _accountService;
+    private readonly IStatementFileFactory statementFileFactory;
     private readonly ILogger<StatementDraftService> _logger; // added
     private readonly IAttachmentService? _attachments; // optional to keep compatibility with tests
     private List<StatementDraftDto>? allDrafts = null;
@@ -81,20 +83,28 @@ public sealed partial class StatementDraftService : IStatementDraftService
     /// <param name="readers">Optional collection of statement file readers to parse uploaded files; a default set is used when not provided.</param>
     /// <param name="logger">Optional logger instance; a null logger is used when omitted.</param>
     /// <param name="attachments">Optional attachment service for storing and moving attachments.</param>
-    public StatementDraftService(AppDbContext db, IPostingAggregateService aggregateService, IAccountService accountService, IEnumerable<IStatementFileReader>? readers = null, ILogger<StatementDraftService>? logger = null, IAttachmentService? attachments = null) // logger param added
+    public StatementDraftService(
+        AppDbContext db, 
+        IPostingAggregateService aggregateService, 
+        IAccountService accountService,
+        IStatementFileFactory statementFileFactory,
+        IEnumerable<IStatementFileParser>? readers = null, 
+        ILogger<StatementDraftService>? logger = null, 
+        IAttachmentService? attachments = null) // logger param added
     {
         _db = db;
         _aggregateService = aggregateService;
         _accountService = accountService;
+        this.statementFileFactory = statementFileFactory;
         _logger = logger ?? NullLogger<StatementDraftService>.Instance;
         _attachments = attachments;
-        _statementFileReaders = (readers is not null && readers.ToList().Any()) ? readers.ToList() : new List<IStatementFileReader>
+        _statementFileParsers = (readers is not null && readers.ToList().Any()) ? readers.ToList() : new List<IStatementFileParser>
         {
-            new ING_PDfReader(),
-            new ING_StatementFileReader(),
-            new Wuestenrot_StatementFileReader(),
-            new Barclays_StatementFileReader(),
-            new BackupStatementFileReader()
+            new ING_PDF_StatementFileParser(),
+            new ING_CSV_StatementFileParser(),
+            new Wuestenrot_StatementFileParser(),
+            new Barclays_PDF_StatementFileParser(),
+            new Backup_JSON_StatementFileParser()
         };
     }
 
@@ -244,6 +254,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
 
         return new StatementDraftEntryDto(
             entry.Id,
+            entry.EntryNumber,
             entry.BookingDate,
             entry.ValutaDate,
             entry.Amount,
@@ -274,8 +285,11 @@ public sealed partial class StatementDraftService : IStatementDraftService
     /// <param name="ct">Cancellation token.</param>
     public async Task AddStatementDetailsAsync(Guid ownerUserId, string originalFileName, byte[] fileBytes, CancellationToken ct)
     {
-        var parsedDraft = _statementFileReaders
-            .Select(reader => reader.ParseDetails(originalFileName, fileBytes))
+        var statementFile = statementFileFactory.Load(originalFileName, fileBytes);
+        if (statementFile is null)
+            return;
+        var parsedDraft = _statementFileParsers
+            .Select(reader => reader.ParseDetails(statementFile))
             .Where(result => result is not null && result.Movements.Any())
             .FirstOrDefault();
         if (parsedDraft is null)
@@ -369,8 +383,9 @@ public sealed partial class StatementDraftService : IStatementDraftService
     /// </remarks>
     public async IAsyncEnumerable<StatementDraftDto> CreateDraftAsync(Guid ownerUserId, string originalFileName, byte[] fileBytes, CancellationToken ct)
     {
-        var parsedDraft = _statementFileReaders
-            .Select(reader => reader.Parse(originalFileName, fileBytes))
+        var statementFile = statementFileFactory.Load(originalFileName, fileBytes);
+        var parsedDraft = (statementFile is null) ? null : _statementFileParsers
+            .Select(reader => reader.Parse(statementFile))
             .Where(result => result is not null && result.Movements.Any())
             .FirstOrDefault();
         if (parsedDraft is null)
@@ -499,7 +514,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
                         : $"{baseDescription} {group.Label}";
                 }
 
-                foreach (var movement in group.Movements)
+                foreach (var movement in group.Movements.OrderBy(m => m.EntryNumber).ThenBy(m => m.BookingDate))
                 {
                     var contact = _db.Contacts.AsNoTracking()
                         .FirstOrDefault(c => c.OwnerUserId == ownerUserId && c.Id == movement.ContactId);
@@ -1053,6 +1068,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 draft.UploadGroupId,
                 draft.Entries.Select(e => new StatementDraftEntryDto(
                     e.Id,
+                    e.EntryNumber,
                     e.BookingDate,
                     e.ValutaDate,
                     e.Amount,
@@ -1114,7 +1130,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
 
         return drafts.Select(d =>
         {
-            var account = _accountService.Get(d.DetectedAccountId.Value, d.OwnerUserId);
+            var account = d.DetectedAccountId.HasValue ? _accountService.Get(d.DetectedAccountId.Value, d.OwnerUserId) : null;
             return Map(d, bySplitId, account);
         }).ToList();
     }
@@ -1454,6 +1470,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
         }
         return new StatementDraftEntryDto(
             entry.Id,
+            entry.EntryNumber,
             entry.BookingDate,
             entry.ValutaDate,
             entry.Amount,
@@ -2424,6 +2441,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
         {
             return new StatementDraftEntryDto(
                 entry.Id,
+                entry.EntryNumber,
                 entry.BookingDate,
                 entry.ValutaDate,
                 entry.Amount,
@@ -2452,6 +2470,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
 
         return new StatementDraftEntryDto(
             entry.Id,
+            entry.EntryNumber,
             entry.BookingDate,
             entry.ValutaDate,
             entry.Amount,

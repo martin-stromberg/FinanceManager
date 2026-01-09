@@ -26,8 +26,9 @@ public sealed partial class StatementDraftService
 
     private static StatementDraftEntryDto Map(StatementDraftEntry e)
     {
-        return new StatementDraftEntryDto(
+        return new StatementDraftEntryDto(            
             e.Id,
+            e.EntryNumber,
             e.BookingDate,
             e.ValutaDate,
             e.Amount,
@@ -74,6 +75,7 @@ public sealed partial class StatementDraftService
             draft.UploadGroupId,
             draft.Entries.Select(e => new StatementDraftEntryDto(
                 e.Id,
+                e.EntryNumber,
                 e.BookingDate,
                 e.ValutaDate,
                 e.Amount,

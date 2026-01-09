@@ -1,36 +1,43 @@
 ﻿using FinanceManager.Application.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
+using FinanceManager.Shared.Extensions;
 using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
 
-namespace FinanceManager.Infrastructure.Statements.Reader
+namespace FinanceManager.Infrastructure.Statements.Parsers
 {
     /// <summary>
     /// Base class for template-driven statement file readers.
     /// Implementations provide a set of XML templates and a mechanism to read text content from a file bytes array.
     /// The template controls how lines are parsed into statement header data and individual movements.
     /// </summary>
-    public abstract class TemplateStatementFileReader
+    public abstract class TemplateStatementFileParser: BaseStatementFileParser
     {
         /// <summary>
-        /// Parses the provided file bytes using the configured templates and returns a <see cref="StatementParseResult"/>
-        /// when a matching template successfully parses the file. Returns <c>null</c> when no template matched.
+        /// Initializes a new instance of the TemplateStatementFileReader class with the specified templates.
         /// </summary>
-        /// <param name="fileName">The original filename (used for logging or template selection by derived types). May be <c>null</c> or empty.</param>
-        /// <param name="fileBytes">The file content as a byte array. Must not be <c>null</c>.</param>
-        /// <returns>
-        /// A <see cref="StatementParseResult"/> describing the parsed draft header and list of movements when parsing succeeds;
-        /// otherwise <c>null</c> when no template matched the file.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="fileBytes"/> is <c>null</c>.</exception>
-        /// <exception cref="System.Xml.XmlException">Thrown when a template XML cannot be parsed or is invalid.</exception>
-        /// <exception cref="FormatException">Thrown when numeric/date parsing fails for matched variables.</exception>
-        /// <exception cref="ApplicationException">Thrown for internal template configuration errors.</exception>
-        public virtual StatementParseResult? Parse(string fileName, byte[] fileBytes)
+        /// <param name="templates">An array of template strings to be used by the file reader. Cannot be null.</param>
+        protected TemplateStatementFileParser(string[] templates)
+        {
+            Templates = templates;
+        }
+
+        /// <summary>
+        /// Parses the specified statement file and attempts to extract structured statement data.
+        /// </summary>
+        /// <remarks>This method tries multiple parsing templates in sequence until one successfully
+        /// parses the file. If none of the templates match the file format, the method returns null. The returned
+        /// StatementParseResult includes all successfully parsed statement movements and header information.</remarks>
+        /// <param name="statementFile">The statement file to parse. Must provide access to the file's content in a supported format.</param>
+        /// <returns>A StatementParseResult containing the parsed statement header and movements if parsing succeeds; otherwise,
+        /// null if the file could not be parsed with any available template.</returns>
+        public override StatementParseResult? Parse(IStatementFile statementFile)
         {
             var DraftId = Guid.NewGuid();
             XmlDoc = new XmlDocument();
-            var fileContent = ReadContent(fileBytes);
+            var fileContent = statementFile.ReadContent().ToList();
             List<Exception> ErrorList = new List<Exception>();
             for (int idx = Templates.GetLowerBound(0); idx <= Templates.GetUpperBound(0); idx++)
             {
@@ -46,7 +53,11 @@ namespace FinanceManager.Infrastructure.Statements.Reader
                     foreach (var line in fileContent)
                     {
                         foreach (var record in ParseNextLine(line).Where(rec => rec is not null))
+                        {
+                            EntryNo++;
+                            record.EntryNumber = EntryNo;
                             resultList.Add(record);
+                        }
                     }
                     CurrentMode = ParseMode.None;
                     ErrorList.Clear();
@@ -62,35 +73,20 @@ namespace FinanceManager.Infrastructure.Statements.Reader
         }
 
         /// <summary>
-        /// Parses file details. By default this calls <see cref="Parse(string, byte[])"/> and can be overridden by derived classes
-        /// to provide a different behaviour for detail-only parsing.
+        /// Parses the specified statement file and returns detailed parsing results.
         /// </summary>
-        /// <param name="originalFileName">Original filename of the file being parsed. May be <c>null</c> or empty.</param>
-        /// <param name="fileBytes">The file content as a byte array. Must not be <c>null</c>.</param>
-        /// <returns>
-        /// A <see cref="StatementParseResult"/> when parsing succeeds; otherwise <c>null</c>.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="fileBytes"/> is <c>null</c>.</exception>
-        /// <exception cref="System.Xml.XmlException">Thrown when a template XML cannot be parsed or is invalid.</exception>
-        /// <exception cref="FormatException">Thrown when numeric/date parsing fails for matched variables.</exception>
-        public virtual StatementParseResult? ParseDetails(string originalFileName, byte[] fileBytes)
+        /// <param name="statementFile">The statement file to be parsed. Cannot be null.</param>
+        /// <returns>A <see cref="StatementParseResult"/> containing the details of the parsed statement, or <see
+        /// langword="null"/> if parsing fails or the file is not supported.</returns>
+        public override StatementParseResult? ParseDetails(IStatementFile statementFile)
         {
-            return Parse(originalFileName, fileBytes);
+            return Parse(statementFile);
         }
 
         /// <summary>
         /// Template XML documents used for parsing. Implementations must provide one or more templates.
         /// </summary>
-        protected abstract string[] Templates { get; }
-
-        /// <summary>
-        /// Reads the file bytes and yields normalized content lines that will be fed into the template parser.
-        /// Implementations are responsible for any decoding/normalization (line endings, page extraction, etc.).
-        /// </summary>
-        /// <param name="fileBytes">The raw file bytes to read. Must not be <c>null</c>.</param>
-        /// <returns>An enumerable of text lines representing the file content.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="fileBytes"/> is <c>null</c>.</exception>
-        protected abstract IEnumerable<string> ReadContent(byte[] fileBytes);
+        protected string[] Templates { get; init; }
 
         private enum ParseMode
         {
@@ -159,6 +155,7 @@ namespace FinanceManager.Infrastructure.Statements.Reader
         private XmlDocument XmlDoc;
         private int EntryNo = 0;
 
+
         private IEnumerable<StatementMovement> ParseNextLine(string line)
         {
             switch (CurrentMode)
@@ -198,6 +195,7 @@ namespace FinanceManager.Infrastructure.Statements.Reader
                         CurrentMode = ParseMode.None;
                     else if ((EndKeywords is not null) && EndKeywords.Where(ek => !string.IsNullOrWhiteSpace(ek)).Any(kw => line.Contains(kw)))
                     {
+                        yield return ReturnCurrentDelayedRecord();
                         yield return OnTableFinished();
                         CurrentMode = ParseMode.None;
                         foreach (var record in ParseNextLine(line))
@@ -393,6 +391,8 @@ namespace FinanceManager.Infrastructure.Statements.Reader
             catch (FormatException) { return null; }
         }
 
+        private StatementMovement _RecordDelay = null;
+        private int _additionalRecordInformationCount = 0;
         /// <summary>
         /// Parses a single table record line and maps template-defined fields onto a <see cref="StatementMovement"/> instance.
         /// The default implementation reads fields defined in the current XML section and supports regular-expression based fields.
@@ -403,6 +403,64 @@ namespace FinanceManager.Infrastructure.Statements.Reader
         /// <exception cref="FormatException">Thrown when numeric/date parsing fails for field values.</exception>
         protected virtual StatementMovement ParseTableRecord(string line)
         {
+            if (_RecordDelay is null)
+            {
+                var record = InternalParseTableRecord(line);
+                if (record is null || record.BookingDate == DateTime.MinValue)
+                    return record;
+                if (!HasAdditionalRowsDefined())
+                    return record;
+                _RecordDelay = record;
+                return null;
+            }
+            else
+                return ParseSecondRow(line);
+        }
+        private bool HasAdditionalRowsDefined()
+        {
+            foreach (XmlNode Field in CurrentSection.ChildNodes)
+            {
+                if (Field.Name == "regExp" && Field.Attributes.GetNamedItem("type")?.Value == "additional")
+                    return true;
+            }
+            return false;
+        }
+        /// <summary>
+        /// Attempts to parse the second row that contains additional information for a previously delayed record.
+        /// </summary>
+        /// <param name="line">The second-line input from the table section.</param>
+        /// <returns>The completed <see cref="StatementMovement"/> when parsing succeeded; otherwise <c>null</c>.</returns>
+        private StatementMovement ParseSecondRow(string line)
+        {
+            var isNextRecord = false;
+            foreach (XmlNode Field in CurrentSection.ChildNodes)
+            {
+                switch (Field.Name)
+                {
+                    case "regExp":
+                        isNextRecord = isNextRecord || SecondRowParseRegularExpression(line, Field);
+                        break;
+                }
+            }
+            if (!isNextRecord) return null;
+            var outputRecord = ReturnCurrentDelayedRecord();
+            _ = ParseTableRecord(line);
+            return outputRecord;
+
+        }
+        /// <summary>
+        /// Returns the currently delayed record and resets the internal delay state.
+        /// </summary>
+        /// <returns>The delayed <see cref="StatementMovement"/> instance.</returns>
+        private StatementMovement ReturnCurrentDelayedRecord()
+        {
+            var outputRecord = _RecordDelay;
+            _RecordDelay = null;
+            _additionalRecordInformationCount = 0;
+            return outputRecord;
+        }
+        private StatementMovement InternalParseTableRecord(string line)
+        { 
             if ((IgnoreRecordKeywords is not null) && IgnoreRecordKeywords.Any(kw => line.Contains(kw)))
                 return null;
             string[] Values = line.Split(TableFieldSeparator);
@@ -410,6 +468,7 @@ namespace FinanceManager.Infrastructure.Statements.Reader
             int FieldIdx = Values.GetLowerBound(0);
             try
             {
+                var regExpRecordCount = false;
                 foreach (XmlNode Field in CurrentSection.ChildNodes)
                 {
                     switch (Field.Name)
@@ -418,7 +477,7 @@ namespace FinanceManager.Infrastructure.Statements.Reader
                             FieldIdx = ParseField(Values, FieldIdx, Field);
                             break;
                         case "regExp":
-                            ParseRegularExpression(line, Field);
+                            regExpRecordCount = regExpRecordCount || ParseRegularExpression(line, Field);
                             break;
                     }
                 }
@@ -438,10 +497,49 @@ namespace FinanceManager.Infrastructure.Statements.Reader
         /// <param name="input">Input text to run the regular expression against.</param>
         /// <param name="field">XML node containing attributes <c>pattern</c> and optional <c>multiplier</c> and <c>type</c>.</param>
         /// <exception cref="ArgumentException">Thrown when the configured regular expression pattern is invalid.</exception>
-        protected virtual void ParseRegularExpression(string input, XmlNode field)
+        protected virtual bool ParseRegularExpression(string input, XmlNode field)
+        {
+            var type = field.Attributes.GetNamedItem("type")?.Value;
+            if (type == "additional")
+                return false;
+
+            var pattern = field.Attributes["pattern"].Value;
+            var regex = new Regex(pattern, RegexOptions.IgnorePatternWhitespace);
+            var match = regex.Match(input);
+            if (!int.TryParse(field.Attributes["multiplier"]?.Value, out int multiplier))
+                multiplier = 1;
+            if (!match.Success)
+                return false;
+            foreach (var groupName in regex.GetGroupNames())
+            {
+                if (int.TryParse(groupName, out _))
+                    continue;
+
+                var value = match.Groups[groupName].Value;
+                if (string.IsNullOrEmpty(value))
+                    continue;
+                ParseVariable(groupName, value, false, VariableMode.Always, multiplier);
+            }
+            return true;
+        }
+        /// <summary>
+        /// Custom parsing for "additional" regular expression fields. When an additional pattern matches it augments the delayed record's fields.
+        /// </summary>
+        /// <param name="input">The input text to match.</param>
+        /// <param name="field">XML node defining the regex pattern and multiplier.</param>
+        /// <returns><c>true</c> when the input completed parsing for the delayed record (no further additional lines required); otherwise <c>false</c>.</returns>
+        private bool SecondRowParseRegularExpression(string input, XmlNode field)
         {
             var pattern = field.Attributes["pattern"].Value;
             var type = field.Attributes.GetNamedItem("type")?.Value;
+            var maxoccur = (field.Attributes.GetNamedItem("maxoccur")?.Value ?? "-").ToInt32();
+            if (type != "additional")
+            {
+                var record = InternalParseTableRecord(input);
+                if (record is not null && record.Amount != 0)
+                    return true;
+                return false;
+            }
             var regex = new Regex(pattern, RegexOptions.IgnorePatternWhitespace);
             var match = regex.Match(input);
             if (!int.TryParse(field.Attributes["multiplier"]?.Value, out int multiplier))
@@ -456,11 +554,14 @@ namespace FinanceManager.Infrastructure.Statements.Reader
                     var value = match.Groups[groupName].Value;
                     if (string.IsNullOrEmpty(value))
                         continue;
-                    ParseVariable(groupName, value, false, VariableMode.Always, multiplier);
+                    ParseVariable(_RecordDelay, groupName, value, VariableMode.Always, multiplier);
                 }
+                _additionalRecordInformationCount++;
+                if (maxoccur > 0 && _additionalRecordInformationCount >= maxoccur)
+                    return true;
             }
+            return false;
         }
-
         private int ParseField(string[] Values, int FieldIdx, XmlNode Field)
         {
             string VariableName = Field.Attributes["variable"]?.Value;
@@ -490,6 +591,7 @@ namespace FinanceManager.Infrastructure.Statements.Reader
         /// <returns><c>true</c> when the current record contains data; otherwise <c>false</c>.</returns>
         protected bool IsRecordSet()
         {
+            if (RecordLineData is null) return false;
             if (RecordLineData.Amount == 0 && string.IsNullOrWhiteSpace(RecordLineData.Subject) && RecordLineData.BookingDate == DateTime.MinValue)
                 return false;
             return true;

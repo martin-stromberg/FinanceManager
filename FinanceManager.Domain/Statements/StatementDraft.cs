@@ -148,7 +148,9 @@ public sealed class StatementDraft : Entity, IAggregateRoot
         bool isCostNeutral = false)
     {
         var status = isAnnounced ? StatementDraftEntryStatus.Announced : StatementDraftEntryStatus.Open;
+        var entryNo = _entries.Any() ? _entries.Max(e => e.EntryNumber) : 0;
         var entry = new StatementDraftEntry(
+            entryNo + 1,
             Id,
             bookingDate,
             amount,
@@ -207,7 +209,6 @@ public sealed class StatementDraft : Entity, IAggregateRoot
     public void AssignBackupDto(StatementDraftBackupDto dto, bool includeEntries)
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
-        OwnerUserId = dto.OwnerUserId;
         OriginalFileName = dto.OriginalFileName;
         AccountName = dto.AccountName;
         Description = dto.Description;
@@ -254,6 +255,7 @@ public sealed class StatementDraftEntry : Entity
     /// <param name="status">Initial processing status for the entry.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="draftId"/> is empty (via guards).</exception>
     public StatementDraftEntry(
+        int entryNo,
         Guid draftId,
         DateTime bookingDate,
         decimal amount,
@@ -266,6 +268,7 @@ public sealed class StatementDraftEntry : Entity
         bool isCostNeutral,
         StatementDraftEntryStatus status)
     {
+        EntryNumber = entryNo;
         DraftId = Guards.NotEmpty(draftId, nameof(draftId));
         BookingDate = bookingDate;
         Amount = amount;
@@ -283,6 +286,11 @@ public sealed class StatementDraftEntry : Entity
     /// Draft identifier that owns this entry.
     /// </summary>
     public Guid DraftId { get; private set; }
+
+    /// <summary>
+    /// Gets the unique number assigned to this entry.
+    /// </summary>
+    public int EntryNumber { get; private set; }
 
     /// <summary>
     /// Booking date of the entry.
@@ -378,6 +386,7 @@ public sealed class StatementDraftEntry : Entity
     /// Optional tax amount related to a security transaction.
     /// </summary>
     public decimal? SecurityTaxAmount { get; private set; }
+    
 
     /// <summary>
     /// Updates core fields of the draft entry.

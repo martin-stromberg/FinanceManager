@@ -56,7 +56,7 @@ public sealed class StatementDraftBookingTests
         db.Contacts.Add(self);
         db.SaveChanges();
         var accountService = new TestAccountService();
-        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, NullLogger<StatementDraftService>.Instance, null);
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, conn, ownerUser.Id);
     }
 
@@ -106,7 +106,7 @@ public sealed class StatementDraftBookingTests
         // IMPORTANT: simulate production by using a fresh DbContext (new scope)
         var freshOptions = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(conn).Options;
         using var freshDb = new AppDbContext(freshOptions);
-        var freshSut = new StatementDraftService(freshDb, new PostingAggregateService(freshDb), new TestAccountService(), null, NullLogger<StatementDraftService>.Instance, null);
+        var freshSut = new StatementDraftService(freshDb, new PostingAggregateService(freshDb), new TestAccountService(), null, null, NullLogger<StatementDraftService>.Instance, null);
 
         // Act: book only first entry on fresh context
         var res = await freshSut.BookAsync(draft.Id, e1.Id, owner, false, CancellationToken.None);

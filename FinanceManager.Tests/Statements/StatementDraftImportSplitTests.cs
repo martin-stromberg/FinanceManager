@@ -33,7 +33,7 @@ public sealed class StatementDraftImportSplitTests
         db.Contacts.Add(new Contact(user.Id, "Me", ContactType.Self, null));
         db.SaveChanges();
         var accountService = new TestAccountService();
-        var svc = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, NullLogger<StatementDraftService>.Instance, null);
+        var svc = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
         return (svc, db, conn, user.Id);
     }
 

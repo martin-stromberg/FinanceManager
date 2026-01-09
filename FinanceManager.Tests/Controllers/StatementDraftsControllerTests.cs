@@ -46,7 +46,7 @@ public sealed class StatementDraftsControllerTests
         db = sp.GetRequiredService<AppDbContext>();
 
         var accountService = new TestAccountService();
-        var draftService = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, NullLogger<StatementDraftService>.Instance, null);
+        var draftService = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
         var logger = sp.GetRequiredService<ILogger<StatementDraftsController>>();
         var taskManager = new DummyBackgroundTaskManager();
         var attachment = sp.GetRequiredService<IAttachmentService>();

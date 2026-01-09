@@ -1356,4 +1356,13 @@
   <data name="RB_Progress" xml:space="preserve">
     <value>Processing</value>
   </data>
+  <data name="Msg_NoBackups" xml:space="preserve">
+    <value>There are no restore points available.</value>
+  </data>
+  <data name="Ribbon_ReadOnly" xml:space="preserve">
+    <value>View</value>
+  </data>
+  <data name="Setup_Title" xml:space="preserve">
+    <value>Setup</value>
+  </data>
 </root>

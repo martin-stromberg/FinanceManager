@@ -26,6 +26,7 @@ using FinanceManager.Infrastructure.Securities;
 using FinanceManager.Infrastructure.Security; // new
 using FinanceManager.Infrastructure.Setup;
 using FinanceManager.Infrastructure.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore; // required for RoleStore
 using Microsoft.EntityFrameworkCore;
@@ -94,6 +95,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPostingExportService, PostingExportService>(); 
         services.AddScoped<IDemoDataService, FinanceManager.Infrastructure.Demo.DemoDataService>();
         services.AddScoped<ISecurityPriceService, SecurityPriceService>();
+        services.AddScoped<IStatementFile, Barclays_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, ING_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, ING_Csv_StatementFile>();
+        services.AddScoped<IStatementFile, Wuestenrot_PDF_StatementFile>();
+        services.AddScoped<IStatementFileFactory>(sp => new StatementFileFactory(sp.GetServices<IStatementFile>().ToArray()));
 
         // Register Identity RoleStore for Guid-based roles (RoleManager is registered by AddIdentity in Program.cs)
         services.AddScoped<IRoleStore<IdentityRole<Guid>>, RoleStore<IdentityRole<Guid>, AppDbContext, Guid>>();

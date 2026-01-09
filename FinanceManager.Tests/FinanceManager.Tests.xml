@@ -4,6 +4,154 @@
         <name>FinanceManager.Tests</name>
     </assembly>
     <members>
+        <member name="T:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests">
+            <summary>
+            Tests the parsing of pdf statement documents
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests_ForOneMonth_Of_GiroAccount">
+            <summary>
+            Tests the parsing of pdf statement documents
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests_ForOneMonth_Of_GiroAccount.Test_ING_PDF_StatementFile_ForOneMonth_Of_GiroAccount">
+            <summary>
+            Tests the parsing of a pdf file of the ING bank for a giro account for one month
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests_ForOneYear_Of_SavingsAccount">
+            <summary>
+            Tests the parsing of pdf statement documents
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests_ForOneYear_Of_SavingsAccount.Test_ING_PDF_StatementFile_ForOneYear_Of_SavingsAccount">
+            <summary>
+            Tests the parsing of a pdf file of the ING bank for a savings account for one year
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests_ForOneYear_Of_SavingsAccount_WithTextndTableParsing">
+            <summary>
+            Tests the parsing of pdf statement documents
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests_ForOneYear_Of_SavingsAccount_WithTextndTableParsing.Test_ING_PDF_StatementFile_ForOneYear_Of_SavingsAccount_WithTextndTableParsing">
+            <summary>
+            Tests the parsing of a pdf file of the ING bank for a savings account for one year
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.Barclays_PdfAccountStatementFile">
+            <summary>
+            Represents a Barclays PDF account statement file containing the raw text content of a bank statement for parsing
+            or analysis.
+            </summary>
+            <remarks>This class provides access to the full textual content of a Barclays account statement in PDF
+            format, exposed as individual lines via the overridden ReadContent method. It is intended for scenarios where
+            the statement data needs to be processed, extracted, or analyzed programmatically. Inherits from
+            Barclays_PDF_StatementFile, and is specific to the Barclays Bank Ireland PLC statement format.</remarks>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.Barclays_PdfAccountStatementFile.ReadContent">
+            <summary>
+            Returns an enumerable collection of lines from the file content, split by line breaks.
+            </summary>
+            <remarks>Lines are separated using both Windows ("\r\n") and Unix ("\n") line endings. The
+            returned collection can be enumerated multiple times, and each enumeration yields the same sequence of
+            lines.</remarks>
+            <returns>An <see cref="!:IEnumerable&lt;string&gt;"/> containing each line of the file content in the order they appear. The
+            collection will be empty if the file content is empty.</returns>
+        </member>
+        <member name="T:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.Barclays_PDF_MultiPage_StatementFile">
+            <summary>
+            Represents a Barclays PDF statement file that contains multiple pages, providing functionality to read its
+            content as a sequence of lines.
+            </summary>
+            <remarks>This class extends <see cref="T:FinanceManager.Infrastructure.Statements.Files.Barclays_PDF_StatementFile"/> to support multi-page statement
+            files. Use <see cref="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.Barclays_PDF_MultiPage_StatementFile.ReadContent"/> to access the file's content line by line. This type is intended for
+            scenarios where statements span more than one page in the PDF file.</remarks>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.Barclays_PDF_MultiPage_StatementFile.ReadContent">
+            <summary>
+            Returns an enumerable collection of lines from the file content, split by line breaks.
+            </summary>
+            <remarks>Lines are separated using both Windows ("\r\n") and Unix ("\n") line endings. The
+            returned collection includes empty lines if present in the file content.</remarks>
+            <returns>An <see cref="!:IEnumerable&lt;string&gt;"/> containing each line of the file content in the order they appear. The
+            collection will be empty if the file content is empty.</returns>
+        </member>
+        <member name="T:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_CsvGiroAccountStatementFile">
+            <summary>
+            Represents a sample ING Giro account statement file in CSV format for testing or demonstration purposes.
+            </summary>
+            <remarks>This class provides a hardcoded example of an ING Girokonto CSV statement, including account
+            details and a range of transactions. It is intended for use in scenarios where a realistic ING CSV statement is
+            needed, such as unit tests or sample data generation. The content reflects the typical structure and fields
+            found in ING's exported account statements.</remarks>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_CsvGiroAccountStatementFile.ReadContent">
+            <summary>
+            Returns an enumerable collection of lines from the file content, split by line breaks.
+            </summary>
+            <remarks>Lines are separated using both Windows ("\r\n") and Unix ("\n") line endings. The
+            returned collection can be enumerated multiple times to retrieve the lines.</remarks>
+            <returns>An <see cref="!:IEnumerable&lt;string&gt;"/> containing each line of the file content in the order they appear. If
+            the content is empty, the collection will be empty.</returns>
+        </member>
+        <member name="T:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_MonthlyGiroAccountStatementFile">
+            <summary>
+            Represents a monthly giro account statement file from ING-DiBa.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_MonthlyGiroAccountStatementFile.#ctor">
+            <summary>
+            Initializes a new instance of the ING_MonthlyGiroAccountStatementFile class.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_MonthlyGiroAccountStatementFile.ReadContent">
+            <summary>
+            Returns the lines of text contained in the file content as an enumerable collection of strings.
+            </summary>
+            <returns>An enumerable collection of strings, each representing a line from the file content. The collection will be
+            empty if the file content contains no lines.</returns>
+        </member>
+        <member name="T:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_YearlySavingsAccountStatementFile">
+            <summary>
+            Represents a yearly savings account statement file from ING, providing access to the statement's content as a
+            collection of lines.
+            </summary>
+            <remarks>This class is a specialized implementation of <see cref="T:FinanceManager.Infrastructure.Statements.Files.ING_PDF_StatementFile"/> for ING
+            yearly savings account statements. It exposes the statement data in a line-by-line format, suitable for parsing
+            or display. The content includes account details, transaction history, and summary information for the specified
+            year.</remarks>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_YearlySavingsAccountStatementFile.#ctor">
+            <summary>
+            Initializes a new instance of the ING_YearlySavingsAccountStatementFile class.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_YearlySavingsAccountStatementFile.ReadContent">
+            <summary>
+            Returns the lines of text contained in the file content as an enumerable collection of strings.
+            </summary>
+            <returns>An enumerable collection of strings, each representing a line from the file content. The collection will be
+            empty if the file content contains no lines.</returns>
+        </member>
+        <member name="T:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.Wuestenrot_PdfAccountStatementFile">
+            <summary>
+            Represents a PDF account statement file for Wüstenrot Bausparkasse AG, providing access to its textual content
+            and statement lines.
+            </summary>
+            <remarks>This class specializes the <see cref="T:FinanceManager.Infrastructure.Statements.Files.Wuestenrot_PDF_StatementFile"/> type for Wüstenrot
+            account statements. It exposes the statement content as a sequence of lines and may be used to parse or analyze
+            account statement data for Wüstenrot customers.</remarks>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.Wuestenrot_PdfAccountStatementFile.ReadContent">
+            <summary>
+            Returns an enumerable collection of lines from the file content, split by line breaks.
+            </summary>
+            <remarks>Lines are separated using both Windows ("\r\n") and Unix ("\n") line endings. The
+            returned collection can be enumerated multiple times to retrieve the lines.</remarks>
+            <returns>An <see cref="!:IEnumerable&lt;string&gt;"/> containing each line of the file content in the order they appear. If
+            the content is empty, the collection will be empty.</returns>
+        </member>
         <member name="M:FinanceManager.Tests.Reports.ReportAggregationServiceTests.SeedAllKindsAsync(FinanceManager.Infrastructure.AppDbContext,System.Guid,System.DateTime,System.Int32)">
             <summary>
             Seeds two accounts, two contacts, two savings plans, two securities and creates monthly aggregates for the last N months.

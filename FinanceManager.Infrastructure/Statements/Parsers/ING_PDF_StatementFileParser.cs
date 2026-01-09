@@ -1,62 +1,51 @@
 ﻿using FinanceManager.Application.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
 using FinanceManager.Shared.Extensions;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Xml;
 
-namespace FinanceManager.Infrastructure.Statements.Reader
+namespace FinanceManager.Infrastructure.Statements.Parsers
 {
     /// <summary>
     /// Statement file reader implementation for ING PDF exports.
     /// Parses ING-specific PDF content to extract statement header information and movement details.
     /// This reader provides an enhanced Detail parser for securities transactions as well as a table parser for standard bank movements.
     /// </summary>
-    public class ING_PDfReader : PDFStatementFilereader, IStatementFileReader
+    public class ING_PDF_StatementFileParser : TemplateStatementFileParser
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ING_PDfReader"/> class.
+        /// Initializes a new instance of the <see cref="ING_PDF_StatementFileParser"/> class.
         /// </summary>
-        public ING_PDfReader()
+        public ING_PDF_StatementFileParser(): base(_Templates)
         {
         }
 
         /// <summary>
         /// XML templates used by the base PDF parsing engine to detect fields and table patterns.
         /// </summary>
-        private string[] _Templates = new string[]
+        private static readonly string[] _Templates = new string[]
         {
             @"
 <template>
-  <section name='AccountInfo' type='keyvalue' separator=' ' endKeyword='Buchung Buchung'>
+  <section name='AccountInfo' type='keyvalue' separator=' ' endKeyword='Buchung|Buchung'>
     <key name='Extra-Konto Nummer' variable='BankAccountNo' mode='always'/>
   </section>
-  <section name='table' type='table' containsheader='false' fieldSeparator='#None#' endKeyword='Abschluss für Konto'>
-    <regExp pattern='^(?&lt;PostingDate&gt;\d{2}\.\d{2}\.\d{4})\s+(?&lt;PostingDescription&gt;\S+)(?:\s+(?&lt;SourceName&gt;.*?))?(?:\s+(?&lt;Amount&gt;[+-]?\d{1,3}(?:\.\d{3})*,\d{2}))?$' multiplier='1'/>
-    <regExp type='additional' pattern='^(?&lt;ValutaDate&gt;\d{2}\.\d{2}\.\d{4})\s+(?&lt;Description&gt;.+)$' />
+  <section name='table' type='table' containsheader='false' fieldSeparator='#None#' endKeyword='Abschluss für Konto|Neuer Saldo'>
+    <regExp pattern='^(?&lt;PostingDate&gt;\d{2}\.\d{2}\.\d{4})\s+(?&lt;PostingDescription&gt;\S+)(?:\s+(?&lt;SourceName&gt;.*?))?(?:\s+(?&lt;Amount&gt;[+-]?\d{1,3}(?:\.\d{3})*,\d{2}))?$' multiplier='1'/>    
+    <regExp pattern='^(?&lt;PostingDate&gt;\d{2}\.\d{2}\.\d{4})\|(?&lt;SourceName&gt;[^|]+)\|(?&lt;Amount&gt;[+-]?\d{1,3}(?:\.\d{3})*,\d{2})$' multiplier='1'/>
+    <regExp pattern='^(?&lt;PostingDate&gt;\d{2}\.\d{2}\.\d{4})\s+(?&lt;SourceName&gt;[^|]+)\|(?&lt;Amount&gt;[+-]?\d{1,3}(?:\.\d{3})*,\d{2})$' multiplier='1'/>
+    <regExp pattern='^(?&lt;PostingDate&gt;\d{2}\.\d{2}\.\d{4})\|(?&lt;SourceName&gt;[^|]+)\|(?&lt;Amount&gt;[+-]?\d{1,3}(?:\.\d{3})*,\d{2})(?:\s*\d+)?$' multiplier='1'/>
+
+    <regExp type='additional' pattern='^(?&lt;ValutaDate&gt;\d{2}\.\d{2}\.\d{4})\|(?&lt;Description&gt;.+)$' />
   </section>
   <section name='BlockEnd' type='ignore'/>
   <replacements>
     <replace from='Ueberweisung' to='Überweisung'/>
     <replace from='Terminueberw.' to='Terminüberweisung'/>
-
   </replacements>
 </template>"
         };
-
-        /// <summary>
-        /// Placeholder for potential XML regular expression configuration.
-        /// </summary>
-        string xmlRegExp = "";
-
-        /// <summary>
-        /// Helper regex used for some inline parsing scenarios.
-        /// </summary>
-        Regex regex = new Regex(@"^(?<Datum>\d{2}\.\d{2}\.\d{4})\s+(?<Beschreibung>.*?)(?:\s+(?<Betrag>[+-]?\d{1,3}(?:\.\d{3})*,\d{2}))?$");
-
-        /// <summary>
-        /// Templates exposed to the base parser.
-        /// </summary>
-        protected override string[] Templates => _Templates;
 
         /// <summary>
         /// Attempts to parse supplemental statement details (security taxes, fees, quantities) from an ING PDF export.
@@ -68,12 +57,12 @@ namespace FinanceManager.Infrastructure.Statements.Reader
         /// A <see cref="StatementParseResult"/> containing a header and a single movement with parsed details when successful;
         /// otherwise <c>null</c> when parsing could not extract a valid amount or the format is not recognized.
         /// </returns>
-        public override StatementParseResult? ParseDetails(string originalFileName, byte[] fileBytes)
+        public override StatementParseResult? ParseDetails(IStatementFile statementFile)
         {
             try
             {
+                var lines = statementFile.ReadContent().ToList();
                 var culture = new CultureInfo("de-DE");
-                var lines = ReadContent(fileBytes).ToList();
 
                 // Felder
                 bool isDividend = false;
@@ -296,7 +285,7 @@ namespace FinanceManager.Infrastructure.Statements.Reader
                 {
                     IBAN = iban,
                     AccountNumber = iban,
-                    Description = $"ING PDF Import {originalFileName}"
+                    Description = $"ING PDF Import {statementFile.FileName}"
                 };
 
                 var movement = new StatementMovement()
@@ -329,120 +318,10 @@ namespace FinanceManager.Infrastructure.Statements.Reader
             }
         }
 
-        private StatementMovement _RecordDelay = null;
-        private int _additionalRecordInformationCount = 0;
+        
 
-        /// <summary>
-        /// Parses a single table record. The ING PDF table format sometimes emits records that span multiple rows;
-        /// this method defers the first row until the additional information row has been read and parsed.
-        /// </summary>
-        /// <param name="line">The input line to parse from the table section.</param>
-        /// <returns>
-        /// A <see cref="StatementMovement"/> when a complete record could be parsed; otherwise <c>null</c> if parsing is incomplete and the record is deferred.
-        /// </returns>
-        protected override StatementMovement ParseTableRecord(string line)
-        {
-            if (_RecordDelay is null)
-            {
-                var record = base.ParseTableRecord(line);
-                if (record is null || record.BookingDate == DateTime.MinValue)
-                    return record;
-                _RecordDelay = record;
-                return null;
-            }
-            else
-            {
-                return ParseSecondRow(line);
-            }
-        }
+      
 
-        /// <summary>
-        /// Attempts to parse the second row that contains additional information for a previously delayed record.
-        /// </summary>
-        /// <param name="line">The second-line input from the table section.</param>
-        /// <returns>The completed <see cref="StatementMovement"/> when parsing succeeded; otherwise <c>null</c>.</returns>
-        private StatementMovement ParseSecondRow(string line)
-        {
-            var isNextRecord = false;
-            foreach (XmlNode Field in CurrentSection.ChildNodes)
-            {
-                switch (Field.Name)
-                {
-                    case "regExp":
-                        isNextRecord = isNextRecord || OwnParseRegularExpression(line, Field);
-                        break;
-                }
-            }
-            if (!isNextRecord) return null;
-            var outputRecord = ReturnCurrentDelayedRecord();
-            _ = ParseTableRecord(line);
-            return outputRecord;
-
-        }
-
-        /// <summary>
-        /// Returns the currently delayed record and resets the internal delay state.
-        /// </summary>
-        /// <returns>The delayed <see cref="StatementMovement"/> instance.</returns>
-        private StatementMovement ReturnCurrentDelayedRecord()
-        {
-            var outputRecord = _RecordDelay;
-            _RecordDelay = null;
-            _additionalRecordInformationCount = 0;
-            return outputRecord;
-        }
-
-        /// <summary>
-        /// Overrides the base parser behaviour to skip additional/regExp entries (they are handled in <see cref="OwnParseRegularExpression"/>).
-        /// </summary>
-        /// <param name="input">Input text to apply the regular expression to.</param>
-        /// <param name="field">XML node describing the regular expression.</param>
-        protected override void ParseRegularExpression(string input, XmlNode field)
-        {
-            var type = field.Attributes.GetNamedItem("type")?.Value;
-            if (type != "additional")
-                base.ParseRegularExpression(input, field);
-        }
-
-        /// <summary>
-        /// Custom parsing for "additional" regular expression fields. When an additional pattern matches it augments the delayed record's fields.
-        /// </summary>
-        /// <param name="input">The input text to match.</param>
-        /// <param name="field">XML node defining the regex pattern and multiplier.</param>
-        /// <returns><c>true</c> when the input completed parsing for the delayed record (no further additional lines required); otherwise <c>false</c>.</returns>
-        private bool OwnParseRegularExpression(string input, XmlNode field)
-        {
-            var pattern = field.Attributes["pattern"].Value;
-            var type = field.Attributes.GetNamedItem("type")?.Value;
-            var maxoccur = (field.Attributes.GetNamedItem("maxoccur")?.Value ?? "-").ToInt32();
-            if (type != "additional")
-            {
-                var record = base.ParseTableRecord(input);
-                if (record is not null && record.Amount != 0)
-                    return true;
-                return false;
-            }
-            var regex = new Regex(pattern, RegexOptions.IgnorePatternWhitespace);
-            var match = regex.Match(input);
-            if (!int.TryParse(field.Attributes["multiplier"]?.Value, out int multiplier))
-                multiplier = 1;
-            if (match.Success)
-            {
-                foreach (var groupName in regex.GetGroupNames())
-                {
-                    if (int.TryParse(groupName, out _))
-                        continue;
-
-                    var value = match.Groups[groupName].Value;
-                    if (string.IsNullOrEmpty(value))
-                        continue;
-                    ParseVariable(_RecordDelay, groupName, value, VariableMode.Always, multiplier);
-                }
-                _additionalRecordInformationCount++;
-                if (maxoccur > 0 && _additionalRecordInformationCount >= maxoccur)
-                    return true;
-            }
-            return false;
-        }
+        
     }
 }

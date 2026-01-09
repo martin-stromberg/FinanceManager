@@ -1314,6 +1314,18 @@
         <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.BasEntityAsBaseClassOfAttachment.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.AddEntryNoToDraftEntries">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddEntryNoToDraftEntries.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddEntryNoToDraftEntries.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddEntryNoToDraftEntries.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Demo.DemoDataService">
             <summary>
             Demo data service implementation (skeleton).
@@ -3357,50 +3369,289 @@
             calling <c>db.Database.Migrate()</c>. It may enqueue background tasks to rebuild aggregates if needed.
             </summary>
         </member>
-        <member name="T:FinanceManager.Infrastructure.Statements.Reader.BackupStatementFileReader">
+        <member name="T:FinanceManager.Infrastructure.Statements.Files.Barclays_PDF_StatementFile">
+            <summary>
+            Represents a PDF statement file specific to Barclays bank, providing parsing logic tailored to Barclays
+            statement formats.
+            </summary>
+            <remarks>Use this class to process and extract data from Barclays PDF bank statements. Inherits
+            parsing behavior from PdfStatementFile, with configuration optimized for Barclays-specific layouts.</remarks>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.Barclays_PDF_StatementFile.#ctor">
+            <summary>
+            Initializes a new instance of the Barclays_PDF_StatementFile class with default parsing settings for
+            Barclays PDF statements.
+            </summary>
+            <remarks>This constructor configures the instance to use a minimum table column space size of
+            2 and sets the parsing mode to process both text and tables, which is suitable for typical Barclays PDF
+            statement formats.</remarks>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Files.BaseStatementFile">
+            <summary>
+            Provides a base implementation for reading the contents of a statement file from a byte array.
+            </summary>
+            <remarks>Derived classes should implement the logic for parsing specific statement file formats. This
+            class defines the contract for reading file content and returning it as a collection of strings.</remarks>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.Files.BaseStatementFile.FileBytes">
+            <summary>
+            Gets the underlying byte array representing the data content.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.Files.BaseStatementFile.FileName">
+            <summary>
+            Gets the name of the file associated with this instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.BaseStatementFile.Load(System.String,System.Byte[])">
+            <summary>
+            Loads the specified file data into the current instance.
+            </summary>
+            <param name="fileName">The original filename of the statement file (used for logging or metadata). May be null or empty.</param>
+            <param name="fileBytes">The byte array containing the file data to load. Cannot be null.</param>
+            <returns>true if the file data was loaded successfully; otherwise, false.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown if fileBytes is null.</exception>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.BaseStatementFile.ReadContent">
+            <summary>
+            Reads textual content from the specified file data.
+            </summary>
+            <returns>An enumerable collection of strings representing the lines or segments of text extracted from the file. The
+            collection will be empty if no content is found.</returns>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Files.ING_Csv_StatementFile">
+            <summary>
+            Represents a bank statement file in the ING CSV format.
+            </summary>
+            <remarks>Use this class to parse and process statement files exported from ING in CSV format. Inherits
+            functionality from the TextStatementFile base class to handle text-based statement files.</remarks>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Files.ING_PDF_StatementFile">
+            <summary>
+            Represents a PDF statement file specific to ING, providing parsing and handling functionality tailored to ING's
+            statement format.
+            </summary>
+            <remarks>Use this class to process ING PDF statement files with custom column spacing requirements.
+            Inherits all standard PDF statement file features from <see cref="T:FinanceManager.Infrastructure.Statements.Files.PdfStatementFile"/> and applies ING-specific
+            parsing rules. This class is intended for scenarios where ING's statement layout differs from generic PDF
+            statements.</remarks>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.ING_PDF_StatementFile.#ctor">
+            <summary>
+            Initializes a new instance of the ING_PDF_StatementFile class with default settings.
+            </summary>
+            <remarks>This constructor sets the minimum table column space size to 3. Use this constructor
+            when you want to create a new ING_PDF_StatementFile with standard configuration.</remarks>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Files.IStatementFile">
+            <summary>
+            Defines a contract for reading the textual content from a statement file represented as a byte array.
+            </summary>
+            <remarks>Implementations of this interface are responsible for interpreting the file format and
+            extracting lines of text. The interface does not specify the encoding or file type; callers should ensure that
+            the provided byte array matches the expected format for the implementation.</remarks>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.Files.IStatementFile.FileName">
+            <summary>
+            Gets the name of the file associated with this instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.IStatementFile.Load(System.String,System.Byte[])">
+            <summary>
+            Loads data from the specified byte array into the current instance.
+            </summary>
+            <param name="fileName">The original filename of the statement file (used for logging or metadata). May be null or empty.</param>
+            <param name="fileBytes">The byte array containing the file data to load. Cannot be null or empty.</param>
+            <returns>true if the data was loaded successfully; otherwise, false.</returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.IStatementFile.ReadContent">
+            <summary>
+            Reads textual content from the specified file data.
+            </summary>
+            <returns>An enumerable collection of strings representing the lines of text read from the file. The collection will
+            be empty if no content is found.</returns>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Files.IStatementFileFactory">
+            <summary>
+            Defines a factory for loading statement files from byte arrays using registered file type handlers.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.IStatementFileFactory.Load(System.String,System.Byte[])">
+            <summary>
+            Loads a statement file from the provided byte array using the registered file types.
+            </summary>
+            <param name="fileName">The original filename of the statement file (used for logging or metadata). May be null or empty.</param>
+            <param name="fileBytes">The byte array containing the file data to load. Cannot be null or empty.</param>
+            <returns>An instance of <see cref="T:FinanceManager.Infrastructure.Statements.Files.IStatementFile"/> if a supported file type was recognized and loaded; otherwise, null.</returns>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Files.PdfStatementFile">
+            <summary>
+            Provides functionality to read and extract structured text content from PDF statement files.
+            </summary>
+            <remarks>This class parses PDF files and returns their content as a sequence of text lines, with table
+            rows represented as pipe-separated values. It is intended for use with statement documents where tabular and
+            textual data need to be extracted for further processing. Inherits from BaseStatementFileReader and specializes
+            content extraction for PDF format.</remarks>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Files.PdfStatementFile.LineParsingMode">
+            <summary>
+            Specifies the available modes for parsing lines, determining whether text, tables, or both are processed.
+            </summary>
+            <remarks>Use this enumeration to control how line content is interpreted during parsing
+            operations. Selecting the appropriate mode allows callers to focus on text, tables, or a combination,
+            depending on the requirements of the parsing scenario.</remarks>
+        </member>
+        <member name="F:FinanceManager.Infrastructure.Statements.Files.PdfStatementFile.LineParsingMode.TextOnly">
+            <summary>
+            Specifies that only text content is allowed, excluding any formatting or markup.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Infrastructure.Statements.Files.PdfStatementFile.LineParsingMode.TablesOnly">
+            <summary>
+            Specifies that only table structured lines are included in the operation.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Infrastructure.Statements.Files.PdfStatementFile.LineParsingMode.TextAndTables">
+            <summary>
+            Represents a container for text content and associated tables.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.Files.PdfStatementFile.ParsingMode">
+            <summary>
+            Gets or sets the mode used to parse lines, determining how text and table data are interpreted.
+            </summary>
+            <remarks>Use this property to specify whether lines should be parsed as plain text, tables, or
+            both. The selected mode affects how input data is processed and which parsing rules are applied.</remarks>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.Files.PdfStatementFile.MinTableColumnSpaceSize">
+            <summary>
+            Gets or sets the minimum number of spaces to use when separating table columns.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.PdfStatementFile.Load(System.String,System.Byte[])">
+            <summary>
+            Attempts to load a PDF document from the specified byte array and verifies that the data represents a valid
+            PDF file.
+            </summary>
+            <remarks>This method performs basic validation to ensure the file is a PDF, including checking
+            for the PDF file signature and attempting to open the document. If the file is invalid or corrupted, the
+            method returns false.</remarks>
+            <param name="fileName">The original filename of the statement file (used for logging or metadata). May be null or empty.</param>
+            <param name="fileBytes">The byte array containing the contents of the file to load. Must not be null or empty.</param>
+            <returns>true if the byte array represents a valid PDF document; otherwise, false.</returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.PdfStatementFile.ReadContent">
+            <summary>
+            Extracts lines of text and table rows from the specified PDF file content, returning each non-empty line as
+            a string.
+            </summary>
+            <remarks>The extraction respects the current parsing mode, which determines whether text,
+            tables, or both are included. Lines are separated based on their position and orientation within the PDF.
+            Table rows are returned as pipe-delimited strings when applicable.</remarks>
+            <returns>An enumerable collection of strings, each representing a non-empty line or table row extracted from the PDF.
+            The collection will be empty if no content is found.</returns>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Files.StatementFileFactory">
+            <summary>
+            Provides functionality to load statement files using a set of supported file types.
+            </summary>
+            <remarks>This factory attempts to load a statement file by trying each registered file type in order
+            until one succeeds. It is typically used to support multiple statement file formats without requiring the caller
+            to know the specific type in advance.</remarks>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.StatementFileFactory.#ctor(FinanceManager.Infrastructure.Statements.Files.IStatementFile[])">
+            <summary>
+            Initializes a new instance of the StatementFileFactory class with the specified statement file
+            implementations.
+            </summary>        
+            <param name="files">An array of IStatementFile instances to be managed by the factory. Cannot be null and must not contain null
+            elements.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.StatementFileFactory.Load(System.String,System.Byte[])">
+            <summary>
+            Attempts to load a statement file from the specified byte array using the available statement file types.
+            </summary>
+            <remarks>This method iterates through the supported statement file types and returns the first
+            one that can successfully load the provided file bytes. If none of the types can load the file, the method
+            returns <see langword="null"/>.</remarks>
+            <param name="fileName">The original filename of the statement file (used for logging or metadata). May be null or empty.</param>
+            <param name="fileBytes">The byte array containing the contents of the statement file to load. Cannot be null.</param>
+            <returns>An instance of a type that implements <see cref="T:FinanceManager.Infrastructure.Statements.Files.IStatementFile"/> if the file is successfully loaded;
+            otherwise, <see langword="null"/>.</returns>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Files.TextStatementFile">
+            <summary>
+            Provides functionality to read the contents of a text-based statement file and return its lines as strings.
+            </summary>
+            <remarks>This class reads the file content using UTF-8 encoding and splits it into lines based on
+            standard newline characters. It is intended for use with CSV files where each line represents a record or
+            statement. Inherits from <see cref="T:FinanceManager.Infrastructure.Statements.Files.BaseStatementFile"/>.</remarks>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.TextStatementFile.Load(System.String,System.Byte[])">
+            <summary>
+            Attempts to load the specified file as a text-based file, validating that the provided bytes represent a
+            supported text encoding.
+            </summary>
+            <remarks>This method checks for common text file encodings, including UTF-8 and UTF-16 with or
+            without a byte order mark (BOM), and rejects files containing embedded NUL bytes or invalid UTF-8 sequences.
+            Files that do not meet these criteria are not loaded as text and the method returns false.</remarks>
+            <param name="fileName">The original filename of the statement file (used for logging or metadata). May be null or empty.</param>
+            <param name="fileBytes">The contents of the file to load, as a byte array. Must not be null or empty.</param>
+            <returns>true if the file is recognized as a supported text format and loaded successfully; otherwise, false.</returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.TextStatementFile.ReadContent">
+            <summary>
+            Reads the content of a UTF-8 encoded text file from a byte array and returns its lines as a sequence of
+            strings.
+            </summary>
+            <remarks>Line breaks are recognized as either '\r\n' or '\n'. The method does not trim
+            whitespace from lines or filter out empty lines.</remarks>
+            <returns>An enumerable collection of strings, each representing a line from the decoded file content. The collection
+            will be empty if the file contains no lines.</returns>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Files.Wuestenrot_PDF_StatementFile">
+            <summary>
+            Represents a PDF statement file with parsing logic tailored for Wüstenrot bank statements.
+            </summary>
+            <remarks>Use this class to process and extract data from Wüstenrot PDF statement files. Inherits from
+            PdfStatementFile and configures parsing settings specific to Wüstenrot's document format.</remarks>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.Wuestenrot_PDF_StatementFile.#ctor">
+            <summary>
+            Initializes a new instance of the Wuestenrot_PDF_StatementFile class with default settings.
+            </summary>
+            <remarks>This constructor sets the minimum table column space size to 3. Use this constructor
+            when you want to create a new Wuestenrot_PDF_StatementFile with standard configuration.</remarks>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Parsers.Backup_JSON_StatementFileParser">
             <summary>
             Statement file reader that reads a custom backup NDJSON-style file produced by the application.
             The reader expects the content to contain metadata followed by a JSON payload and extracts bank account
             ledger entries and journal lines to produce a <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/>.
             </summary>
         </member>
-        <member name="T:FinanceManager.Infrastructure.Statements.Reader.BackupStatementFileReader.BackupData">
+        <member name="T:FinanceManager.Infrastructure.Statements.Parsers.Backup_JSON_StatementFileParser.BackupData">
             <summary>
             Represents the deserialized minimal backup payload used by this reader.
             Only the fields required for parsing statements are present.
             </summary>
         </member>
-        <member name="P:FinanceManager.Infrastructure.Statements.Reader.BackupStatementFileReader.BackupData.BankAccounts">
+        <member name="P:FinanceManager.Infrastructure.Statements.Parsers.Backup_JSON_StatementFileParser.BackupData.BankAccounts">
             <summary>Array of bank account objects in the backup.</summary>
         </member>
-        <member name="P:FinanceManager.Infrastructure.Statements.Reader.BackupStatementFileReader.BackupData.BankAccountLedgerEntries">
+        <member name="P:FinanceManager.Infrastructure.Statements.Parsers.Backup_JSON_StatementFileParser.BackupData.BankAccountLedgerEntries">
             <summary>Array of ledger entry objects in the backup.</summary>
         </member>
-        <member name="P:FinanceManager.Infrastructure.Statements.Reader.BackupStatementFileReader.BackupData.BankAccountJournalLines">
+        <member name="P:FinanceManager.Infrastructure.Statements.Parsers.Backup_JSON_StatementFileParser.BackupData.BankAccountJournalLines">
             <summary>Array of journal line objects in the backup.</summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.BackupStatementFileReader.Load(System.Byte[])">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Backup_JSON_StatementFileParser.Load(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
             <summary>
-            Loads and deserializes the backup payload from the provided bytes.
-            The method expects the file content to contain a first line (metadata) followed by a JSON payload
-            which is deserialized into the <see cref="T:FinanceManager.Infrastructure.Statements.Reader.BackupStatementFileReader.BackupData"/> structure. It also constructs a global
-            statement header derived from the first bank account found in the payload.
+            
             </summary>
-            <param name="fileBytes">Raw bytes of the uploaded backup file (UTF-8 encoded).</param>
-            <remarks>
-            The method may throw <see cref="T:System.ArgumentException"/> or JSON parsing exceptions when the input
-            does not conform to the expected format. Callers should handle exceptions appropriately.
-            </remarks>
+            <param name="statementFile"></param>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.BackupStatementFileReader.ReadContent(System.Byte[])">
-            <summary>
-            Converts the raw file bytes into a normalized string representation used for JSON deserialization.
-            Normalizes CRLF and CR newlines to LF to ensure predictable slicing by line.
-            </summary>
-            <param name="fileBytes">Raw file bytes (expected UTF-8 encoded).</param>
-            <returns>A string with normalized line endings.</returns>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.BackupStatementFileReader.ReadData">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Backup_JSON_StatementFileParser.ReadData">
             <summary>
             Enumerates statement movements found in the deserialized backup payload.
             The method yields <see cref="T:FinanceManager.Application.Statements.StatementMovement"/> instances for ledger entries and journal lines
@@ -3408,76 +3659,158 @@
             </summary>
             <returns>An enumerable sequence of parsed <see cref="T:FinanceManager.Application.Statements.StatementMovement"/> objects.</returns>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.BackupStatementFileReader.Parse(System.String,System.Byte[])">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Backup_JSON_StatementFileParser.Parse(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
             <summary>
-            Parses the backup file and returns a <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the header and list of movements.
-            If parsing fails the method returns <c>null</c>.
+            Parses the specified statement file and returns the result if parsing is successful.
             </summary>
-            <param name="fileName">Original file name (not used by this reader but part of the contract).</param>
-            <param name="fileBytes">Raw bytes of the uploaded backup file.</param>
-            <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> on success, or <c>null</c> when parsing fails.</returns>
+            <param name="statementFile">The statement file to parse. Cannot be null.</param>
+            <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the parsed data if parsing succeeds; otherwise, <see
+            langword="null"/>.</returns>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.BackupStatementFileReader.ParseDetails(System.String,System.Byte[])">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Backup_JSON_StatementFileParser.ParseDetails(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
             <summary>
-            Parses supplemental details from the backup file. For this reader details and the regular parse share the same implementation.
-            Returns <c>null</c> when parsing fails.
+            Parses the specified statement file and returns the extracted details if parsing is successful.
             </summary>
-            <param name="originalFileName">Original file name of the uploaded document.</param>
-            <param name="fileBytes">Raw file bytes to parse.</param>
-            <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> on success, otherwise <c>null</c>.</returns>
+            <remarks>If an error occurs during parsing, the method returns <see langword="null"/> instead
+            of throwing an exception.</remarks>
+            <param name="statementFile">The statement file to parse. Cannot be null.</param>
+            <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the parsed header and data if parsing succeeds; otherwise,
+            <see langword="null"/>.</returns>
         </member>
-        <member name="T:FinanceManager.Infrastructure.Statements.Reader.Barclays_StatementFileReader">
+        <member name="T:FinanceManager.Infrastructure.Statements.Parsers.Barclays_PDF_StatementFileParser">
             <summary>
             PDF statement file reader implementation for Barclays statement exports.
-            Uses template-based parsing (regular expressions and table definitions) inherited from <see cref="T:FinanceManager.Infrastructure.Statements.Reader.PDFStatementFilereader"/>.
+            Uses template-based parsing (regular expressions and table definitions) inherited from <see cref="!:PDFStatementFilereader"/>.
             The templates contained in this class target various Barclays PDF layouts and provide section and field mappings
             to build <see cref="T:FinanceManager.Application.Statements.StatementMovement"/> instances.
             </summary>
         </member>
-        <member name="F:FinanceManager.Infrastructure.Statements.Reader.Barclays_StatementFileReader._Templates">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Barclays_PDF_StatementFileParser.#ctor">
+            <summary>
+            Initializes a new instance of the Barclays_StatementFileReader class using the predefined statement
+            templates for Barclays bank statements.
+            </summary>
+            <remarks>Use this constructor to create a file reader specifically configured to parse
+            Barclays bank statement files. The instance will be initialized with templates tailored for the Barclays
+            statement format.</remarks>
+        </member>
+        <member name="F:FinanceManager.Infrastructure.Statements.Parsers.Barclays_PDF_StatementFileParser._Templates">
             <summary>
             Array of XML templates (string literals) describing supported Barclays statement layouts.
             Each template is an XML document consumed by the base template parser.
             </summary>
         </member>
-        <member name="P:FinanceManager.Infrastructure.Statements.Reader.Barclays_StatementFileReader.Templates">
+        <member name="T:FinanceManager.Infrastructure.Statements.Parsers.BaseStatementFileParser">
             <summary>
-            Exposes the templates to the base <see cref="T:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader"/> parser.
+            Provides a base implementation for statement file parsers that process financial statement files and extract
+            structured data.
+            </summary>
+            <remarks>This abstract class defines the core contract for parsing statement files and extracting both
+            summary and detailed information. Derived classes should implement the parsing logic specific to the supported
+            file formats. This class is intended to be used as a base for custom statement file parsers within the
+            application.</remarks>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.BaseStatementFileParser.#ctor">
+            <summary>
+            Initializes a new instance of the StatementFileParser class with the specified collection of statement file
+            readers.
             </summary>
         </member>
-        <member name="T:FinanceManager.Infrastructure.Statements.Reader.ING_PDfReader">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.BaseStatementFileParser.Parse(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
+            <summary>
+            Parses the specified statement file and returns the result of the parsing operation.
+            </summary>
+            <param name="statementFile">The statement file to be parsed. Cannot be null.</param>
+            <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the results of the parse operation, or <see
+            langword="null"/> if the file could not be parsed.</returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.BaseStatementFileParser.ParseDetails(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
+            <summary>
+            Parses the specified statement file and extracts detailed statement information.
+            </summary>
+            <param name="statementFile">The statement file to be parsed. Cannot be null.</param>
+            <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the parsed statement details if parsing is successful;
+            otherwise, <see langword="null"/> if the file could not be parsed.</returns>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Parsers.DoubleToleranceComparer">
+            <summary>
+            Provides an equality comparer for double-precision floating-point values that considers two values equal if
+            they differ by no more than a specified tolerance.
+            </summary>
+            <remarks>Use this comparer to perform equality checks on double values where exact equality is
+            not appropriate due to the imprecision of floating-point arithmetic. The comparer is suitable for scenarios
+            such as unit testing or collections where approximate equality is required. All values are considered to
+            have the same hash code, which may affect the performance of hash-based collections such as dictionaries or
+            hash sets.</remarks>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.DoubleToleranceComparer.#ctor(System.Double)">
+            <summary>
+            Initializes a new instance of the DoubleToleranceComparer class with the specified comparison tolerance.
+            </summary>
+            <remarks>Use this constructor to define the precision used when comparing double
+            values for equality. A smaller tolerance results in stricter comparisons.</remarks>
+            <param name="tolerance">The maximum difference between two double values for them to be considered equal. Must be greater than
+            or equal to 0.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.DoubleToleranceComparer.Equals(System.Double,System.Double)">
+            <summary>
+            Determines whether two double-precision floating-point numbers are equal within a specified tolerance.
+            </summary>
+            <remarks>Use this method to compare double values for equality when exact matches are
+            unreliable due to floating-point precision errors. The tolerance value is defined by the instance and
+            affects the comparison result.</remarks>
+            <param name="x">The first double-precision floating-point number to compare.</param>
+            <param name="y">The second double-precision floating-point number to compare.</param>
+            <returns>true if the absolute difference between x and y is less than or equal to the configured tolerance;
+            otherwise, false.</returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.DoubleToleranceComparer.GetHashCode(System.Double)">
+            <summary>
+            Returns a hash code for the specified double-precision floating-point value.
+            </summary>
+            <remarks>This implementation always returns 0, which forces equality comparisons to
+            rely solely on the Equals method. As a result, using this comparer in hash-based collections may lead to
+            performance degradation due to hash collisions.</remarks>
+            <param name="obj">The double-precision floating-point value for which to get a hash code.</param>
+            <returns>A hash code for the specified value.</returns>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Parsers.ING_CSV_StatementFileParser">
+            <summary>
+            Statement file reader for ING statement exports using template-based parsing.
+            Provides templates used by the base <see cref="!:TemplateStatementFileReader"/> to detect account
+            information and table columns. The reader exposes a UTF-8 content reader suitable for PDF-to-text
+            conversions that produce UTF-8 encoded bytes.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Infrastructure.Statements.Parsers.ING_CSV_StatementFileParser._Templates">
+            <summary>
+            Templates used by the parsing engine to recognize ING statement layout variations.
+            Each template contains sections and field mappings consumed by the base template parser.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.ING_CSV_StatementFileParser.#ctor">
+            <summary>
+            Initializes a new instance of the ING_StatementFileReader class using the predefined templates.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser">
             <summary>
             Statement file reader implementation for ING PDF exports.
             Parses ING-specific PDF content to extract statement header information and movement details.
             This reader provides an enhanced Detail parser for securities transactions as well as a table parser for standard bank movements.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.ING_PDfReader.#ctor">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser.#ctor">
             <summary>
-            Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Statements.Reader.ING_PDfReader"/> class.
+            Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser"/> class.
             </summary>
         </member>
-        <member name="F:FinanceManager.Infrastructure.Statements.Reader.ING_PDfReader._Templates">
+        <member name="F:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser._Templates">
             <summary>
             XML templates used by the base PDF parsing engine to detect fields and table patterns.
             </summary>
         </member>
-        <member name="F:FinanceManager.Infrastructure.Statements.Reader.ING_PDfReader.xmlRegExp">
-            <summary>
-            Placeholder for potential XML regular expression configuration.
-            </summary>
-        </member>
-        <member name="F:FinanceManager.Infrastructure.Statements.Reader.ING_PDfReader.regex">
-            <summary>
-            Helper regex used for some inline parsing scenarios.
-            </summary>
-        </member>
-        <member name="P:FinanceManager.Infrastructure.Statements.Reader.ING_PDfReader.Templates">
-            <summary>
-            Templates exposed to the base parser.
-            </summary>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.ING_PDfReader.ParseDetails(System.String,System.Byte[])">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser.ParseDetails(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
             <summary>
             Attempts to parse supplemental statement details (security taxes, fees, quantities) from an ING PDF export.
             Returns <c>null</c> when parsing fails or no meaningful details were found.
@@ -3489,191 +3822,98 @@
             otherwise <c>null</c> when parsing could not extract a valid amount or the format is not recognized.
             </returns>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.ING_PDfReader.ParseTableRecord(System.String)">
+        <member name="T:FinanceManager.Infrastructure.Statements.Parsers.IStatementFileParser">
             <summary>
-            Parses a single table record. The ING PDF table format sometimes emits records that span multiple rows;
-            this method defers the first row until the additional information row has been read and parsed.
-            </summary>
-            <param name="line">The input line to parse from the table section.</param>
-            <returns>
-            A <see cref="T:FinanceManager.Application.Statements.StatementMovement"/> when a complete record could be parsed; otherwise <c>null</c> if parsing is incomplete and the record is deferred.
-            </returns>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.ING_PDfReader.ParseSecondRow(System.String)">
-            <summary>
-            Attempts to parse the second row that contains additional information for a previously delayed record.
-            </summary>
-            <param name="line">The second-line input from the table section.</param>
-            <returns>The completed <see cref="T:FinanceManager.Application.Statements.StatementMovement"/> when parsing succeeded; otherwise <c>null</c>.</returns>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.ING_PDfReader.ReturnCurrentDelayedRecord">
-            <summary>
-            Returns the currently delayed record and resets the internal delay state.
-            </summary>
-            <returns>The delayed <see cref="T:FinanceManager.Application.Statements.StatementMovement"/> instance.</returns>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.ING_PDfReader.ParseRegularExpression(System.String,System.Xml.XmlNode)">
-            <summary>
-            Overrides the base parser behaviour to skip additional/regExp entries (they are handled in <see cref="M:FinanceManager.Infrastructure.Statements.Reader.ING_PDfReader.OwnParseRegularExpression(System.String,System.Xml.XmlNode)"/>).
-            </summary>
-            <param name="input">Input text to apply the regular expression to.</param>
-            <param name="field">XML node describing the regular expression.</param>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.ING_PDfReader.OwnParseRegularExpression(System.String,System.Xml.XmlNode)">
-            <summary>
-            Custom parsing for "additional" regular expression fields. When an additional pattern matches it augments the delayed record's fields.
-            </summary>
-            <param name="input">The input text to match.</param>
-            <param name="field">XML node defining the regex pattern and multiplier.</param>
-            <returns><c>true</c> when the input completed parsing for the delayed record (no further additional lines required); otherwise <c>false</c>.</returns>
-        </member>
-        <member name="T:FinanceManager.Infrastructure.Statements.Reader.ING_StatementFileReader">
-            <summary>
-            Statement file reader for ING statement exports using template-based parsing.
-            Provides templates used by the base <see cref="T:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader"/> to detect account
-            information and table columns. The reader exposes a UTF-8 content reader suitable for PDF-to-text
-            conversions that produce UTF-8 encoded bytes.
+            Interface for parsing statement files and extracting header and movement details.
+            Implementations should attempt to recognize the file format and extract header information and a list of movements.
             </summary>
         </member>
-        <member name="F:FinanceManager.Infrastructure.Statements.Reader.ING_StatementFileReader.OldTemplates">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.IStatementFileParser.Parse(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
             <summary>
-            Legacy templates kept for backwards compatibility with older statement layouts.
+            Parses the specified statement file and returns the result of the parsing operation.
             </summary>
+            <param name="statementFile">The statement file to be parsed. Cannot be null.</param>
+            <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the results of the parsing operation, or <see
+            langword="null"/> if the file could not be parsed.</returns>
         </member>
-        <member name="F:FinanceManager.Infrastructure.Statements.Reader.ING_StatementFileReader._Templates">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.IStatementFileParser.ParseDetails(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
             <summary>
-            Templates used by the parsing engine to recognize ING statement layout variations.
-            Each template contains sections and field mappings consumed by the base template parser.
+            Parses the specified statement file and extracts detailed information about its contents.
             </summary>
+            <param name="statementFile">The statement file to parse. Cannot be null.</param>
+            <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the parsed details if parsing is successful; otherwise, <see
+            langword="null"/> if the file could not be parsed.</returns>
         </member>
-        <member name="P:FinanceManager.Infrastructure.Statements.Reader.ING_StatementFileReader.Templates">
-            <summary>
-            Returns the templates that the base parser should use to detect the ING layout.
-            </summary>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.ING_StatementFileReader.ReadContent(System.Byte[])">
-            <summary>
-            Reads the provided file bytes and returns an enumerable of text lines.
-            This implementation normalizes common newline variants (CRLF, CR) to LF and splits on LF.
-            </summary>
-            <param name="fileBytes">The raw file bytes to convert to textual content.</param>
-            <returns>An enumerable of lines extracted from the input bytes.</returns>
-            <remarks>
-            The method assumes the incoming bytes are UTF-8 encoded. If the bytes use a different
-            encoding, callers should convert them to UTF-8 before invoking the parser or override this method.
-            </remarks>
-        </member>
-        <member name="T:FinanceManager.Infrastructure.Statements.Reader.PDFStatementFilereader">
-            <summary>
-            Base PDF statement file reader that extracts text content from a PDF and delegates
-            parsing to the template-based parser implemented in <see cref="T:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader"/>.
-            </summary>
-            <remarks>
-            This reader uses the iText7 library to extract text from PDF pages. The extracted text is normalized
-            to LF newlines and yielded line-by-line. Implementations of <see cref="T:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader"/>
-            consume the lines and apply template-based parsing to produce statement movements.
-            </remarks>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.PDFStatementFilereader.ReadContent(System.Byte[])">
-            <summary>
-            Reads and extracts textual content from the provided PDF bytes and returns an enumerable of lines.
-            </summary>
-            <param name="fileBytes">Byte array containing the PDF file content. The method expects a valid PDF format.</param>
-            <returns>An enumerable of text lines extracted from the PDF. Lines are normalized to use LF ("\n") as newline separator.</returns>
-            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="fileBytes"/> is <c>null</c>.</exception>
-            <exception cref="T:System.IO.IOException">Thrown on I/O errors while reading the PDF stream.</exception>
-            <exception cref="!:iText.Kernel.Pdf.Exception">Thrown when the PDF cannot be parsed by the underlying iText library (malformed PDF).</exception>
-            <remarks>
-            The method opens the PDF data using iText and reads text page-by-page. It attempts to trim duplicated
-            content that occurs when pages duplicate a header region by comparing the start of the current page with
-            the last page's content. The iText reader is closed in a finally block to ensure resources are released.
-            Callers should handle exceptions appropriately; this method does not swallow parsing errors.
-            </remarks>
-        </member>
-        <member name="T:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader">
+        <member name="T:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser">
             <summary>
             Base class for template-driven statement file readers.
             Implementations provide a set of XML templates and a mechanism to read text content from a file bytes array.
             The template controls how lines are parsed into statement header data and individual movements.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.Parse(System.String,System.Byte[])">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.#ctor(System.String[])">
             <summary>
-            Parses the provided file bytes using the configured templates and returns a <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/>
-            when a matching template successfully parses the file. Returns <c>null</c> when no template matched.
+            Initializes a new instance of the TemplateStatementFileReader class with the specified templates.
             </summary>
-            <param name="fileName">The original filename (used for logging or template selection by derived types). May be <c>null</c> or empty.</param>
-            <param name="fileBytes">The file content as a byte array. Must not be <c>null</c>.</param>
-            <returns>
-            A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> describing the parsed draft header and list of movements when parsing succeeds;
-            otherwise <c>null</c> when no template matched the file.
-            </returns>
-            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="fileBytes"/> is <c>null</c>.</exception>
-            <exception cref="T:System.Xml.XmlException">Thrown when a template XML cannot be parsed or is invalid.</exception>
-            <exception cref="T:System.FormatException">Thrown when numeric/date parsing fails for matched variables.</exception>
-            <exception cref="T:System.ApplicationException">Thrown for internal template configuration errors.</exception>
+            <param name="templates">An array of template strings to be used by the file reader. Cannot be null.</param>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.ParseDetails(System.String,System.Byte[])">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.Parse(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
             <summary>
-            Parses file details. By default this calls <see cref="M:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.Parse(System.String,System.Byte[])"/> and can be overridden by derived classes
-            to provide a different behaviour for detail-only parsing.
+            Parses the specified statement file and attempts to extract structured statement data.
             </summary>
-            <param name="originalFileName">Original filename of the file being parsed. May be <c>null</c> or empty.</param>
-            <param name="fileBytes">The file content as a byte array. Must not be <c>null</c>.</param>
-            <returns>
-            A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> when parsing succeeds; otherwise <c>null</c>.
-            </returns>
-            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="fileBytes"/> is <c>null</c>.</exception>
-            <exception cref="T:System.Xml.XmlException">Thrown when a template XML cannot be parsed or is invalid.</exception>
-            <exception cref="T:System.FormatException">Thrown when numeric/date parsing fails for matched variables.</exception>
+            <remarks>This method tries multiple parsing templates in sequence until one successfully
+            parses the file. If none of the templates match the file format, the method returns null. The returned
+            StatementParseResult includes all successfully parsed statement movements and header information.</remarks>
+            <param name="statementFile">The statement file to parse. Must provide access to the file's content in a supported format.</param>
+            <returns>A StatementParseResult containing the parsed statement header and movements if parsing succeeds; otherwise,
+            null if the file could not be parsed with any available template.</returns>
         </member>
-        <member name="P:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.Templates">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ParseDetails(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
+            <summary>
+            Parses the specified statement file and returns detailed parsing results.
+            </summary>
+            <param name="statementFile">The statement file to be parsed. Cannot be null.</param>
+            <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the details of the parsed statement, or <see
+            langword="null"/> if parsing fails or the file is not supported.</returns>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.Templates">
             <summary>
             Template XML documents used for parsing. Implementations must provide one or more templates.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.ReadContent(System.Byte[])">
-            <summary>
-            Reads the file bytes and yields normalized content lines that will be fed into the template parser.
-            Implementations are responsible for any decoding/normalization (line endings, page extraction, etc.).
-            </summary>
-            <param name="fileBytes">The raw file bytes to read. Must not be <c>null</c>.</param>
-            <returns>An enumerable of text lines representing the file content.</returns>
-            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="fileBytes"/> is <c>null</c>.</exception>
-        </member>
-        <member name="T:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.VariableMode">
+        <member name="T:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.VariableMode">
             <summary>
             Controls how template variables are applied when multiple values are encountered.
             <list type="bullet">
-            <item><description><see cref="F:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.VariableMode.Always"/> - Always overwrite the target value.</description></item>
-            <item><description><see cref="F:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.VariableMode.OnlyWhenEmpty"/> - Only set the target when it is currently empty.</description></item>
+            <item><description><see cref="F:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.VariableMode.Always"/> - Always overwrite the target value.</description></item>
+            <item><description><see cref="F:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.VariableMode.OnlyWhenEmpty"/> - Only set the target when it is currently empty.</description></item>
             </list>
             </summary>
         </member>
-        <member name="F:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.VariableMode.Always">
+        <member name="F:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.VariableMode.Always">
             <summary>
             Always assign the parsed value, overwriting any existing value.
             </summary>
         </member>
-        <member name="F:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.VariableMode.OnlyWhenEmpty">
+        <member name="F:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.VariableMode.OnlyWhenEmpty">
             <summary>
             Assign the parsed value only when the existing value is empty or null.
             </summary>
         </member>
-        <member name="F:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.CurrentSection">
+        <member name="F:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.CurrentSection">
             <summary>
             The currently active XML section node from the loaded template used to control parsing behaviour.
             Implementations may inspect this node when extending parsing logic.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.OnTableFinished">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.OnTableFinished">
             <summary>
             Called when a table section has finished and allows derived classes to return a final aggregate record
             (for example a subtotal row). The default implementation returns <c>null</c>.
             </summary>
             <returns>An optional <see cref="T:FinanceManager.Application.Statements.StatementMovement"/> representing the table footer/aggregate, or <c>null</c>.</returns>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.ParseVariable(FinanceManager.Application.Statements.StatementMovement,System.String,System.String,FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.VariableMode,System.Int32)">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ParseVariable(FinanceManager.Application.Statements.StatementMovement,System.String,System.String,FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.VariableMode,System.Int32)">
             <summary>
             Parses a variable value and applies it to either the current record or the global draft header.
             </summary>
@@ -3684,10 +3924,10 @@
             <param name="multiplier">Multiplier applied to numeric amounts (useful for sign handling).</param>
             <exception cref="T:System.FormatException">Thrown when date or numeric parsing fails for the provided value.</exception>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.ParseVariable(System.String,System.String,System.Boolean,FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.VariableMode,System.Int32)">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ParseVariable(System.String,System.String,System.Boolean,FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.VariableMode,System.Int32)">
             <summary>
             Parses a variable defined by the template and applies it either to the global draft header (when <paramref name="global"/> is <c>true</c>)
-            or to the current record. This is a convenience overload that delegates to <see cref="M:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.ParseVariable(FinanceManager.Application.Statements.StatementMovement,System.String,System.String,FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.VariableMode,System.Int32)"/>
+            or to the current record. This is a convenience overload that delegates to <see cref="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ParseVariable(FinanceManager.Application.Statements.StatementMovement,System.String,System.String,FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.VariableMode,System.Int32)"/>
             </summary>
             <param name="Name">Variable name.</param>
             <param name="Value">String value to parse.</param>
@@ -3696,7 +3936,7 @@
             <param name="multiplier">Multiplier for numeric values.</param>
             <exception cref="T:System.FormatException">Thrown when date or numeric parsing fails for the provided value.</exception>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.ParseTableRecord(System.String)">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ParseTableRecord(System.String)">
             <summary>
             Parses a single table record line and maps template-defined fields onto a <see cref="T:FinanceManager.Application.Statements.StatementMovement"/> instance.
             The default implementation reads fields defined in the current XML section and supports regular-expression based fields.
@@ -3706,7 +3946,20 @@
             <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the template expects more fields than present and StopOnError is <c>false</c>.</exception>
             <exception cref="T:System.FormatException">Thrown when numeric/date parsing fails for field values.</exception>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.ParseRegularExpression(System.String,System.Xml.XmlNode)">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ParseSecondRow(System.String)">
+            <summary>
+            Attempts to parse the second row that contains additional information for a previously delayed record.
+            </summary>
+            <param name="line">The second-line input from the table section.</param>
+            <returns>The completed <see cref="T:FinanceManager.Application.Statements.StatementMovement"/> when parsing succeeded; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ReturnCurrentDelayedRecord">
+            <summary>
+            Returns the currently delayed record and resets the internal delay state.
+            </summary>
+            <returns>The delayed <see cref="T:FinanceManager.Application.Statements.StatementMovement"/> instance.</returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ParseRegularExpression(System.String,System.Xml.XmlNode)">
             <summary>
             Applies a regular expression defined in the template to the input string and maps named capture groups to variables.
             </summary>
@@ -3714,89 +3967,42 @@
             <param name="field">XML node containing attributes <c>pattern</c> and optional <c>multiplier</c> and <c>type</c>.</param>
             <exception cref="T:System.ArgumentException">Thrown when the configured regular expression pattern is invalid.</exception>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.IsRecordSet">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.SecondRowParseRegularExpression(System.String,System.Xml.XmlNode)">
+            <summary>
+            Custom parsing for "additional" regular expression fields. When an additional pattern matches it augments the delayed record's fields.
+            </summary>
+            <param name="input">The input text to match.</param>
+            <param name="field">XML node defining the regex pattern and multiplier.</param>
+            <returns><c>true</c> when the input completed parsing for the delayed record (no further additional lines required); otherwise <c>false</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.IsRecordSet">
             <summary>
             Returns whether the current record contains meaningful data (non-empty subject, non-zero amount or booking date set).
             </summary>
             <returns><c>true</c> when the current record contains data; otherwise <c>false</c>.</returns>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader.FinishRecord">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.FinishRecord">
             <summary>
             Finalizes the current record by returning it if set and resetting the internal state. If the record is empty, <c>null</c> is returned.
             </summary>
             <returns>The finalized <see cref="T:FinanceManager.Application.Statements.StatementMovement"/>, or <c>null</c> when nothing to return.</returns>
         </member>
-        <member name="T:FinanceManager.Infrastructure.Statements.Reader.Wuestenrot_StatementFileReader">
+        <member name="T:FinanceManager.Infrastructure.Statements.Parsers.Wuestenrot_StatementFileParser">
             <summary>
             Statement file reader for Wüstenrot PDF statements.
             Extends the PDF parser with custom handling for records that span multiple lines
             (main line + additional information lines).
             </summary>
         </member>
-        <member name="F:FinanceManager.Infrastructure.Statements.Reader.Wuestenrot_StatementFileReader._Templates">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Wuestenrot_StatementFileParser.#ctor">
+            <summary>
+            Initializes a new instance of the Wuestenrot_StatementFileReader class using the default templates.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Infrastructure.Statements.Parsers.Wuestenrot_StatementFileParser._Templates">
             <summary>
             XML templates used to control parsing of Wüstenrot statement text.
             </summary>
-        </member>
-        <member name="P:FinanceManager.Infrastructure.Statements.Reader.Wuestenrot_StatementFileReader.Templates">
-            <summary>
-            Exposes the templates to the base <see cref="T:FinanceManager.Infrastructure.Statements.Reader.TemplateStatementFileReader"/> parser.
-            </summary>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.Wuestenrot_StatementFileReader.ParseTableRecord(System.String)">
-            <summary>
-            Parses a table record line. Wüstenrot statements may spread one logical record across
-            multiple PDF lines: the first matching line is delayed until any additional information
-            lines are processed. This override implements that delay logic.
-            </summary>
-            <param name="line">The raw text line to parse.</param>
-            <returns>
-            A parsed <see cref="T:FinanceManager.Application.Statements.StatementMovement"/> when a complete logical record is available; otherwise <c>null</c>
-            to indicate the line was consumed as part of a multi-line record or ignored.
-            </returns>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.Wuestenrot_StatementFileReader.OnTableFinished">
-            <summary>
-            Called when a table section ends. Ensure any delayed record is returned as the table footer
-            or fallback to the base implementation.
-            </summary>
-            <returns>Optional footer/aggregate <see cref="T:FinanceManager.Application.Statements.StatementMovement"/> or <c>null</c>.</returns>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.Wuestenrot_StatementFileReader.ParseWuestenrotRecord(System.String)">
-            <summary>
-            Attempts to parse an additional information line for a previously delayed record.
-            If the provided line contains further data for the delayed record the delayed record
-            will be finalized and returned; otherwise <c>null</c> is returned and the parser
-            continues consuming lines.
-            </summary>
-            <param name="line">The input text line containing additional information or the next record.</param>
-            <returns>
-            The finalized <see cref="T:FinanceManager.Application.Statements.StatementMovement"/> when the delayed record is completed; otherwise <c>null</c>.
-            </returns>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.Wuestenrot_StatementFileReader.ReturnCurrentDelayedRecord">
-            <summary>
-            Returns the currently delayed record and resets internal counters used for multi-line aggregation.
-            </summary>
-            <returns>The currently delayed <see cref="T:FinanceManager.Application.Statements.StatementMovement"/>.</returns>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.Wuestenrot_StatementFileReader.ParseRegularExpression(System.String,System.Xml.XmlNode)">
-            <summary>
-            Overrides the base implementation to skip 'additional' type regular expressions.
-            The base parser will handle primary record patterns only.
-            </summary>
-            <param name="input">Input text to test against the regular expression.</param>
-            <param name="field">Template XML node describing the regular expression.</param>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Reader.Wuestenrot_StatementFileReader.OwnParseRegularExpression(System.String,System.Xml.XmlNode)">
-            <summary>
-            Custom regular-expression parsing used to process 'additional' lines that belong to the
-            previously delayed record. Returns <c>true</c> when the line indicates the next full record
-            or when the configured maximum occurrences have been reached.
-            </summary>
-            <param name="input">The input text line to evaluate.</param>
-            <param name="field">Template XML node describing the regular expression and optional attributes <c>multiplier</c> and <c>maxoccur</c>.</param>
-            <returns><c>true</c> when this line completes the delayed record; otherwise <c>false</c>.</returns>
         </member>
         <member name="T:FinanceManager.Infrastructure.Statements.StatementDraftService">
             <summary>
@@ -3930,7 +4136,7 @@
         <member name="P:FinanceManager.Infrastructure.Statements.StatementDraftService.ImportSplitInfo.MonthlyThreshold">
             <summary>Threshold used to decide monthly splitting.</summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Aggregates.IPostingAggregateService,FinanceManager.Application.Accounts.IAccountService,System.Collections.Generic.IEnumerable{FinanceManager.Application.Statements.IStatementFileReader},Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.StatementDraftService},FinanceManager.Application.Attachments.IAttachmentService)">
+        <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Aggregates.IPostingAggregateService,FinanceManager.Application.Accounts.IAccountService,FinanceManager.Infrastructure.Statements.Files.IStatementFileFactory,System.Collections.Generic.IEnumerable{FinanceManager.Infrastructure.Statements.Parsers.IStatementFileParser},Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.StatementDraftService},FinanceManager.Application.Attachments.IAttachmentService)">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Statements.StatementDraftService"/> class.
             </summary>
@@ -4225,7 +4431,7 @@
             Supports multiple backup versions and maps legacy identifiers to newly created entities.
             </summary>
         </member>
-        <member name="M:SetupImportService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Statements.IStatementDraftService,FinanceManager.Application.Aggregates.IPostingAggregateService,FinanceManager.Application.Attachments.IAttachmentService)">
+        <member name="M:SetupImportService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Statements.IStatementDraftService,FinanceManager.Application.Aggregates.IPostingAggregateService,Microsoft.Extensions.Logging.ILogger{SetupImportService},FinanceManager.Application.Attachments.IAttachmentService)">
             <summary>
             Initializes a new instance of the <see cref="T:SetupImportService"/> class.
             </summary>
@@ -4233,6 +4439,7 @@
             <param name="statementDraftService">Statement draft service used when creating drafts from legacy ledger exports.</param>
             <param name="aggregateService">Aggregate posting service used to rebuild posting aggregates after import.</param>
             <param name="attachments">Optional attachment service used to persist embedded files; when null a no-op implementation is used.</param>
+            <param name="logger">Optional logger for progress and diagnostics.</param>
         </member>
         <member name="T:SetupImportService.ImportProgress">
             <summary>

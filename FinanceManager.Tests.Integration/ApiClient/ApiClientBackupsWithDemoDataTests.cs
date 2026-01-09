@@ -299,8 +299,13 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         {
             Contacts = before.Contacts.Select(c => c with
             {
-                CategoryId = c.CategoryId.HasValue && contactCategoryIdMap.TryGetValue(c.CategoryId.Value, out var mappedCat) ? mappedCat : c.CategoryId
-            }).ToList()
+                CategoryId = c.CategoryId.HasValue && contactCategoryIdMap.TryGetValue(c.CategoryId.Value, out var mappedCat) ? mappedCat : null
+            }).ToList(),
+            Accounts = before.Accounts.Select(a => a with
+            {
+                BankContactId = contactIdMap.TryGetValue(a.BankContactId, out var mappedCont) ? mappedCont : Guid.Empty
+            })
+            .ToList()
         };
 
         // Build attachment key -> id map for 'after' using entity names

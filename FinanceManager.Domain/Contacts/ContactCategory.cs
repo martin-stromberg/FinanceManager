@@ -82,8 +82,6 @@ public sealed class ContactCategory : Entity, IAggregateRoot
     public void AssignBackupDto(ContactCategoryBackupDto dto)
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
-        // Id handled by ORM; assign others
-        OwnerUserId = dto.OwnerUserId;
         Rename(dto.Name);
         SetSymbolAttachment(dto.SymbolAttachmentId);
     }

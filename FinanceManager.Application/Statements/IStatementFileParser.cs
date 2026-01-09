@@ -3,37 +3,7 @@ namespace FinanceManager.Application.Statements;
 using System;
 using System.Collections.Generic;
 
-/// <summary>
-/// Interface for parsing statement files and extracting header and movement details.
-/// Implementations should attempt to recognize the file format and extract header information and a list of movements.
-/// </summary>
-public interface IStatementFileReader
-{
-    /// <summary>
-    /// Attempts to parse statement contents and produce a <see cref="StatementParseResult"/>.
-    /// This method is the primary parsing entry and may include format detection and mapping of movements.
-    /// Implementations return <c>null</c> when the provided bytes do not represent a supported format.
-    /// </summary>
-    /// <param name="fileName">The original file name (used for format hints and metadata extraction).</param>
-    /// <param name="fileBytes">The raw file content as a byte array.</param>
-    /// <returns>
-    /// A <see cref="StatementParseResult"/> containing parsed header and movements when parsing succeeded;
-    /// otherwise <c>null</c> when the format is not supported or parsing failed.
-    /// </returns>
-    StatementParseResult? Parse(string fileName, byte[] fileBytes);
 
-    /// <summary>
-    /// Attempts to parse only supplemental details from statement files (for example fees, taxes or security quantities)
-    /// that may be provided in separate files or detail exports. Returns <c>null</c> when parsing fails or no details found.
-    /// </summary>
-    /// <param name="originalFileName">The original file name (used for format hints and metadata extraction).</param>
-    /// <param name="fileBytes">The raw file content as a byte array.</param>
-    /// <returns>
-    /// A <see cref="StatementParseResult"/> with header and movements when details were successfully extracted;
-    /// otherwise <c>null</c> when no details could be parsed or the format is unsupported.
-    /// </returns>
-    StatementParseResult? ParseDetails(string originalFileName, byte[] fileBytes);
-}
 
 /// <summary>
 /// Statement file header information extracted by a reader.
@@ -88,6 +58,10 @@ public sealed class StatementHeader
 /// </summary>
 public sealed class StatementMovement
 {
+    /// <summary>
+    /// Gets or sets the unique number assigned to this entry.
+    /// </summary>
+    public int EntryNumber { get; set; }
     /// <summary>
     /// Booking date of the movement.
     /// </summary>

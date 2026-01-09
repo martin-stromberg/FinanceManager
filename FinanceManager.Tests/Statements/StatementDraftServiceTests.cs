@@ -68,7 +68,7 @@ public sealed class StatementDraftServiceTests
         };
 
         var accountService = new TestAccountService();
-        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, NullLogger<StatementDraftService>.Instance, null);
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, owner.Id);
     }
 
@@ -91,7 +91,7 @@ public sealed class StatementDraftServiceTests
         var agg = new PostingAggregateService(db);
         var attachments = new AttachmentService(db, NullLogger<AttachmentService>.Instance);
         var accountService = new TestAccountService();
-        var sut = new StatementDraftService(db, agg, accountService, null, NullLogger<StatementDraftService>.Instance, attachments);
+        var sut = new StatementDraftService(db, agg, accountService, null, null, NullLogger<StatementDraftService>.Instance, attachments);
         return (sut, db, owner.Id);
     }
 

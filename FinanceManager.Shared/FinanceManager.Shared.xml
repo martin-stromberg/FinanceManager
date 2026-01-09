@@ -3706,7 +3706,7 @@
             DTO representing an entry within a statement draft.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Statements.StatementDraftEntryDto.#ctor(System.Guid,System.DateTime,System.Nullable{System.DateTime},System.Decimal,System.String,System.String,System.String,System.String,System.Boolean,System.Boolean,FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Boolean,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityTransactionType},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal})">
+        <member name="M:FinanceManager.Shared.Dtos.Statements.StatementDraftEntryDto.#ctor(System.Guid,System.Int32,System.DateTime,System.Nullable{System.DateTime},System.Decimal,System.String,System.String,System.String,System.String,System.Boolean,System.Boolean,FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Boolean,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityTransactionType},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal})">
             <summary>
             DTO representing an entry within a statement draft.
             </summary>
