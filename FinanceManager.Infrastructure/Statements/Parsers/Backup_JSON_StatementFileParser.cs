@@ -28,14 +28,13 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
             /// <summary>Array of journal line objects in the backup.</summary>
             public JsonElement BankAccountJournalLines { get; set; }
         }
-
         /// <summary>
         /// 
         /// </summary>
         /// <param name="statementFile"></param>
         private void Load(IStatementFile statementFile)
         {
-            var fileContent = string.Join("", statementFile.ReadContent()).Replace("\r\n", "\n").Replace("\r", "\n");
+            var fileContent = string.Join("\r\n", statementFile.ReadContent()).Replace("\r\n", "\n").Replace("\r", "\n");
             var offset = fileContent.IndexOf('\n');
             fileContent = fileContent.Remove(0, offset);
             _BackupData = JsonSerializer.Deserialize<BackupData>(fileContent);

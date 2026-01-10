@@ -9,6 +9,11 @@
             Tests the parsing of pdf statement documents
             </summary>
         </member>
+        <member name="T:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests_NewTestTemplate">
+            <summary>
+            This is a template for new statement file test classes
+            </summary>
+        </member>
         <member name="T:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests_ForOneMonth_Of_GiroAccount">
             <summary>
             Tests the parsing of pdf statement documents

@@ -1,14 +1,20 @@
 using Bunit; // added for Self contact
+using FinanceManager.Application.Accounts;
+using FinanceManager.Application.Attachments;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Aggregates;
+using FinanceManager.Infrastructure.Attachments;
 using FinanceManager.Infrastructure.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
+using FinanceManager.Infrastructure.Statements.Parsers;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using System.Text;
-using FinanceManager.Application.Accounts;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Linq.Expressions;
+using System.Text;
 
 namespace FinanceManager.Tests.Statements;
 
@@ -32,8 +38,27 @@ public sealed class StatementDraftImportSplitTests
         // ensure required Self contact exists for classification
         db.Contacts.Add(new Contact(user.Id, "Me", ContactType.Self, null));
         db.SaveChanges();
+
+        var services = new ServiceCollection();
+        services.AddScoped<IAttachmentService, AttachmentService>();
+        services.AddSingleton(db);
+        services.AddLogging();
+        services.AddScoped<IStatementFileParser, ING_CSV_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, ING_PDF_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, Barclays_PDF_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, Wuestenrot_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, Backup_JSON_StatementFileParser>();
+        services.AddScoped<IStatementFile, Barclays_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, ING_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, ING_Csv_StatementFile>();
+        services.AddScoped<IStatementFile, Wuestenrot_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, Backup_JSON_StatementFile>();
+        services.AddScoped<IStatementFileFactory>(sp => new StatementFileFactory(sp));
+        var sp = services.BuildServiceProvider();
+
         var accountService = new TestAccountService();
-        var svc = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
+        var fileFactory = new StatementFileFactory(sp);
+        var svc = new StatementDraftService(db, new PostingAggregateService(db), accountService, fileFactory, sp.GetServices<IStatementFileParser>(), NullLogger<StatementDraftService>.Instance, null);
         return (svc, db, conn, user.Id);
     }
 

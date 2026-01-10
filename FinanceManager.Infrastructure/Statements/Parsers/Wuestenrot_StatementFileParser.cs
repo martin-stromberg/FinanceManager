@@ -53,7 +53,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// <returns>true if the statement file is of a supported type and can be parsed; otherwise, false.</returns>
         protected override bool CanParse(IStatementFile statementFile)
         {
-            return new Type[] { typeof(Wuestenrot_PDF_StatementFile) }.Contains(statementFile.GetType());
+            return new Type[] { typeof(Wuestenrot_PDF_StatementFile) }.Any(t => t.IsAssignableFrom(statementFile.GetType()));
         }
     }
 }

@@ -3468,6 +3468,25 @@
             <param name="fileBytes">The contents of the file as a byte array. Cannot be null.</param>
             <returns>true if the file is loaded successfully and its content starts with "ING-DiBa AG"; otherwise, false.</returns>
         </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Files.Backup_JSON_StatementFile">
+            <summary>
+            Represents a statement file that handles backup operations using JSON format.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.Backup_JSON_StatementFile.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.Files.Backup_JSON_StatementFile})">
+            <summary>
+            
+            </summary>
+            <param name="logger"></param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.Backup_JSON_StatementFile.Load(System.String,System.Byte[])">
+            <summary>
+            Loads the specified file and verifies that its content begins with the expected ING-DiBa AG header.
+            </summary>
+            <param name="fileName">The path or name of the file to load. Cannot be null or empty.</param>
+            <param name="fileBytes">The contents of the file as a byte array. Cannot be null.</param>
+            <returns>true if the file is loaded successfully and its content starts with "ING-DiBa AG"; otherwise, false.</returns>
+        </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Files.ING_PDF_StatementFile">
             <summary>
             Represents a PDF statement file specific to ING, providing parsing and handling functionality tailored to ING's

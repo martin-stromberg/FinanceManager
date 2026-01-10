@@ -43,7 +43,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// <returns>true if the statement file is of a supported type; otherwise, false.</returns>
         protected override bool CanParse(IStatementFile statementFile)
         {
-            return new Type[]{ typeof(Barclays_PDF_StatementFile) }.Contains(statementFile.GetType());
+            return new Type[]{ typeof(Barclays_PDF_StatementFile) }.Any(t => t.IsAssignableFrom(statementFile.GetType()));
         }
     }
 }

@@ -105,6 +105,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IStatementFile, ING_PDF_StatementFile>();
         services.AddScoped<IStatementFile, ING_Csv_StatementFile>();
         services.AddScoped<IStatementFile, Wuestenrot_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, Backup_JSON_StatementFile>();
         services.AddScoped<IStatementFileFactory>(sp => new StatementFileFactory(sp));
 
         // Register Identity RoleStore for Guid-based roles (RoleManager is registered by AddIdentity in Program.cs)

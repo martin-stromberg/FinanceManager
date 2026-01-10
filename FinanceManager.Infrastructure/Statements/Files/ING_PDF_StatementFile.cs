@@ -29,10 +29,21 @@ namespace FinanceManager.Infrastructure.Statements.Files
         /// <returns>true if the file is loaded successfully and its content starts with "ING-DiBa AG"; otherwise, false.</returns>
         public override bool Load(string fileName, byte[] fileBytes)
         {
+            var currentParsingMode = ParsingMode;
+            ParsingMode = LineParsingMode.TextAndTables;
             if (!base.Load(fileName, fileBytes))
                 return false;
             
-            return ReadContent().First().StartsWith("ING-DiBa AG");
+            var okay = ReadContent().First().StartsWith("ING-DiBa AG");
+            if (!okay)
+                return false;
+
+            if (ParsingMode != currentParsingMode)
+            {
+                ParsingMode = currentParsingMode;
+                return base.Load(fileName, fileBytes);
+            }
+            return true;
         }
         /// <summary>
         /// Initializes a new instance of the ING_PDF_StatementFile class with default settings.

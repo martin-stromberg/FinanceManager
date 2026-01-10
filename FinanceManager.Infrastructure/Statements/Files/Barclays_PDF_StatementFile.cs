@@ -43,7 +43,7 @@ namespace FinanceManager.Infrastructure.Statements.Files
             if (!base.Load(fileName, fileBytes))
                 return false;
 
-            return ReadContent().Take(10).Any(line => line.StartsWith("BAWAG AG"));
+            return ReadContent().Take(10).Any(line => line.StartsWith("BAWAG AG") || line.StartsWith("Barclays Bank Ireland PLC"));
         }
     }
 }
