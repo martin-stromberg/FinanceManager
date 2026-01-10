@@ -154,7 +154,7 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
                 new CardField("Card_Caption_StatementDrafts_File", CardFieldKind.Text, text: Draft.OriginalFileName ?? string.Empty),
                 new CardField("Card_Caption_StatementDrafts_Description", CardFieldKind.Text, text: Draft.Description ?? string.Empty),
                 new CardField("Card_Caption_StatementDrafts_Status", CardFieldKind.Text, text: Draft.Status.ToString()),
-                new CardField("Card_Caption_StatementDrafts_Entries", CardFieldKind.Text, text: $"{(Draft.Entries?.Count(e => e.Status != StatementDraftEntryStatus.Announced && e.Status != StatementDraftEntryStatus.AlreadyBooked) ?? 0)} ({(Draft.Entries?.Count ?? 0)})"),
+                new CardField("Card_Caption_StatementDrafts_Entries", CardFieldKind.Text, text: $"{(Draft.Entries?.Count(e => e.Status != StatementDraftEntryStatus.AlreadyBooked && e.Status != StatementDraftEntryStatus.Announced) ?? 0)} ({(Draft.Entries?.Count ?? 0)})"),
                 // Sum of all entry amounts
                 new CardField("Card_Caption_StatementDrafts_SumAmounts", CardFieldKind.Currency, text: sumAmounts.ToString("C", CultureInfo.CurrentCulture), amount: sumAmounts)
             };
@@ -321,6 +321,8 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
     public async Task ValidateAsync()
     {
         if (DraftId == Guid.Empty) return;
+        // Clear any existing embedded panels to avoid duplicates when user triggers multiple actions
+        RaiseUiActionRequested("ClearEmbeddedPanel");
         Loading = true; SetError(null, null); RaiseStateChanged();
         try
         {
@@ -342,7 +344,7 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
             // Request embedded validation panel after the ribbon
             try
             {
-                var parameters = new Dictionary<string, object?> { ["ValidationResult"] = result };
+                var parameters = new Dictionary<string, object?> { ["ValidationResult"] = result, ["AllowProceed"] = false };
                 var spec = new BaseViewModel.EmbeddedPanelSpec(typeof(FinanceManager.Web.Components.Shared.ValidationResultPanel), parameters, EmbeddedPanelPosition.AfterRibbon, true);
                 RaiseUiEmbeddedPanelRequested(spec);
             }
@@ -359,18 +361,62 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
             Loading = false; RaiseStateChanged();
         }
     }
+    /// <summary>
+    /// Handles the completion of the embedded panel and initiates booking if the user has confirmed.
+    /// </summary>
+    /// <remarks>The method checks for a confirmation flag in the provided payload. If confirmation is
+    /// detected, booking is performed while ignoring warnings. Any exceptions that occur during processing are
+    /// suppressed.</remarks>
+    /// <param name="payloadObject">An optional object containing additional data from the embedded panel. If the object contains a Boolean property
+    /// or dictionary entry named "Confirm" set to <see langword="true"/>, booking is triggered.</param>
+    public override void EmbeddedPanelFinished(object? payloadObject)
+    {
+        base.EmbeddedPanelFinished(payloadObject);
+        try
+        {
+            bool confirm = false;
+            if (payloadObject != null)
+            {
+                // support anonymous object with Confirm property or a dictionary
+                if (payloadObject is System.Collections.IDictionary dict)
+                {
+                    if (dict.Contains("Confirm") && dict["Confirm"] is bool b) confirm = b;
+                }
+                else
+                {
+                    var prop = payloadObject.GetType().GetProperty("Confirm");
+                    if (prop != null && prop.PropertyType == typeof(bool))
+                    {
+                        confirm = (bool)(prop.GetValue(payloadObject) ?? false);
+                    }
+                }
+            }
+
+            if (confirm)
+            {
+                // user confirmed -> trigger booking while ignoring warnings
+                _ = BookAsync(ignoreWarnings: true);
+            }
+        }
+        catch
+        {
+            // swallow - best effort only
+        }
+    }
 
     /// <summary>
     /// Attempts to book the draft. If booking succeeds attempts to navigate to next draft or overview.
     /// If booking is withheld due to warnings the validation messages are stored in <see cref="LastValidationResult"/>.
     /// </summary>
-    public async Task BookAsync()
+    public async Task BookAsync(bool ignoreWarnings = false)
     {
         if (DraftId == Guid.Empty) return;
+        // clear panels to avoid duplicate validation panels
+        RaiseUiActionRequested("ClearEmbeddedPanel");
         Loading = true; SetError(null, null); LastValidationResult = null; RaiseStateChanged();
         try
         {
-            var res = await ApiClient.StatementDrafts_BookAsync(DraftId, false, CancellationToken.None);
+            var res = await ApiClient.StatementDrafts_BookAsync(DraftId, ignoreWarnings, CancellationToken.None);
             if (res == null)
             {
                 SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Booking failed");
@@ -388,7 +434,7 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
                 // Show validation panel after ribbon
                 try
                 {
-                    var parameters = new Dictionary<string, object?> { ["ValidationResult"] = res.Validation };
+                    var parameters = new Dictionary<string, object?> { ["ValidationResult"] = res.Validation, ["AllowProceed"] = true };
                     var spec = new BaseViewModel.EmbeddedPanelSpec(typeof(FinanceManager.Web.Components.Shared.ValidationResultPanel), parameters, EmbeddedPanelPosition.AfterRibbon, true);
                     RaiseUiEmbeddedPanelRequested(spec);
                 }

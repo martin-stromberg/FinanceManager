@@ -868,4 +868,53 @@ public sealed class StatementDraftBookingTests
 
         conn.Dispose();
     }
+
+    [Fact]
+    public async Task Booking_Prevented_When_SavingsPlan_Target_WouldBeExceeded()
+    {
+        var (sut, db, conn, owner) = Create();
+        var (acc, bank) = await AddAccountAsync(db, owner);
+
+        // create savings plan target 100
+        var plan = new SavingsPlan(owner, "PlanTarget", SavingsPlanType.OneTime, 100m, null, null);
+        db.SavingsPlans.Add(plan);
+        await db.SaveChangesAsync();
+
+        // existing booked savings plan postings totaling 90 (create Posting with positive amount to produce remaining = 10)
+        var existing = new Domain.Postings.Posting(Guid.NewGuid(), PostingKind.SavingsPlan, null, null, plan.Id, null, DateTime.Today, DateTime.Today, 90m, "existing", null, null, null);
+        db.Postings.Add(existing);
+        await db.SaveChangesAsync();
+
+        // create draft with one entry of -20 assigned to savings plan (negative amount so planned becomes +20 in validation logic)
+        var draft = await CreateDraftAsync(db, owner, acc.Id);
+        var self = await db.Contacts.FirstAsync(c => c.OwnerUserId == owner && c.Type == ContactType.Self);
+        var entry = draft.AddEntry(DateTime.Today, -20m, "Save Over", self.Name, DateTime.Today, "EUR", null, false);
+        entry.AssignSavingsPlan(plan.Id);
+        entry.MarkAccounted(self.Id);
+        db.Entry(entry).State = EntityState.Added;
+        await db.SaveChangesAsync();
+
+        // Act
+        var res = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
+
+        // Assert: booking should be prevented and validation should contain SAVINGSPLAN_GOAL_EXCEEDS
+        Assert.False(res.Success);
+        Assert.True(res.HasWarnings);
+        Assert.True(res.Validation.Messages.Any(m => m.Code == "SAVINGSPLAN_GOAL_EXCEEDS"));
+
+        // Now retry booking while ignoring warnings -> should succeed
+        var beforeCount = db.Postings.Count();
+        var res2 = await sut.BookAsync(draft.Id, null, owner, true, CancellationToken.None);
+        Assert.True(res2.Success);
+        // postings created: bank + contact + savings plan -> delta of 3
+        Assert.Equal(beforeCount + 3, db.Postings.Count());
+        // Ensure the newly created postings reference the source entry and contain expected kinds
+        var newPosts = db.Postings.Where(p => p.SourceId == entry.Id).ToList();
+        Assert.Equal(3, newPosts.Count);
+        Assert.Equal(1, newPosts.Count(p => p.Kind == PostingKind.Bank));
+        Assert.Equal(1, newPosts.Count(p => p.Kind == PostingKind.Contact));
+        Assert.Equal(1, newPosts.Count(p => p.Kind == PostingKind.SavingsPlan));
+
+        conn.Dispose();
+    }
 }

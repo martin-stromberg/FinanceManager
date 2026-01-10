@@ -900,9 +900,6 @@
   <data name="Error_Reload" xml:space="preserve">
     <value>Reload</value>
   </data>
-  <data name="Validation_Valid" xml:space="preserve">
-    <value> </value>
-  </data>
   <data name="Ribbon_RebuildAggregates" xml:space="preserve">
     <value>Rebuild aggregates</value>
   </data>
@@ -1367,5 +1364,11 @@
   </data>
   <data name="BK_Start" xml:space="preserve">
     <value>Start Bookings</value>
+  </data>
+  <data name="Validation_Proceed" xml:space="preserve">
+    <value>Proceed</value>
+  </data>
+  <data name="Validation_Close" xml:space="preserve">
+    <value>Close</value>
   </data>
 </root>
