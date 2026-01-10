@@ -1,6 +1,7 @@
 using FinanceManager.Application.Reports;
 using FinanceManager.Domain.Postings;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace FinanceManager.Infrastructure.Reports;
 
@@ -11,12 +12,17 @@ namespace FinanceManager.Infrastructure.Reports;
 public sealed class ReportAggregationService : IReportAggregationService
 {
     private readonly AppDbContext _db;
+    private readonly ILogger<ReportAggregationService> logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ReportAggregationService"/> class.
     /// </summary>
     /// <param name="db">The application's <see cref="AppDbContext"/> used to query aggregates and postings.</param>
-    public ReportAggregationService(AppDbContext db) => _db = db;
+    public ReportAggregationService(AppDbContext db, ILogger<ReportAggregationService> logger)
+    {
+        _db = db;
+        this.logger = logger;
+    }
 
     /// <summary>
     /// Executes the report aggregation query and returns a structured result containing time-series points grouped by entity/category/type.
@@ -34,6 +40,7 @@ public sealed class ReportAggregationService : IReportAggregationService
     /// </remarks>
     public async Task<ReportAggregationResult> QueryAsync(ReportAggregationQuery query, CancellationToken ct)
     {
+        logger.LogDebug($"QueryAsync({System.Text.Json.JsonSerializer.Serialize(query)})");
         // Resolve requested kinds (multi or legacy single)
         var kinds = (query.PostingKinds is { Count: > 0 }
             ? query.PostingKinds.Select(k => (PostingKind)k).Distinct().ToArray()
@@ -579,16 +586,21 @@ public sealed class ReportAggregationService : IReportAggregationService
             DateTime AlignToQuarterStart(DateTime d)
             {
                 var qIndex = (d.Month - 1) / 3; // 0..3
+                logger.LogDebug($"AlignToHalfYearStart({d}) => {d.Year}-{qIndex * 3 + 1}-1");
                 return new DateTime(d.Year, qIndex * 3 + 1, 1);
             }
             DateTime AlignToHalfYearStart(DateTime d)
             {
                 var hIndex = (d.Month - 1) / 6; // 0..1
+                logger.LogDebug($"AlignToHalfYearStart({d}) => {d.Year}-{hIndex*6+1}-1");
                 return new DateTime(d.Year, hIndex * 6 + 1, 1);
             }
 
             DateTime PrevPeriod(DateTime d)
             {
+                logger.LogDebug($"PrevPeriod({d})");
+                if (d == DateTime.MinValue)
+                    return DateTime.MinValue;
                 return query.Interval switch
                 {
                     ReportInterval.Month => d.AddMonths(-1),

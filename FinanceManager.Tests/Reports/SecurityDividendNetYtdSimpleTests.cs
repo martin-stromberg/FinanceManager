@@ -2,6 +2,7 @@ using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Reports;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
@@ -101,7 +102,7 @@ public sealed class SecurityDividendNetYtdSimpleTests
         db.Postings.AddRange(pDiv, pTax, pFee, pDiv2);
         await db.SaveChangesAsync(ct);
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
 
         // Act: YTD report for Security with IncludeDividendRelated and Dividend subtype selected
         var analysis = new DateTime(year, 6, 1);

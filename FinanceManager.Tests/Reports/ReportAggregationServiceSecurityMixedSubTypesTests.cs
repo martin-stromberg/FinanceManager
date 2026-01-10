@@ -3,6 +3,7 @@ using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Reports;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
@@ -48,7 +49,7 @@ public sealed class ReportAggregationServiceSecurityMixedSubTypesTests
         Add(SecurityPostingSubType.Tax, -3.90m);
         await db.SaveChangesAsync();
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var query = new ReportAggregationQuery(
             OwnerUserId: user.Id,
             PostingKind: PostingKind.Security,

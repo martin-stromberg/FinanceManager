@@ -1,3 +1,4 @@
+using FinanceManager.Application;
 using FinanceManager.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -41,7 +42,10 @@ public sealed class AlphaVantageKeyResolver : IAlphaVantageKeyResolver
     /// Initializes a new instance of the <see cref="AlphaVantageKeyResolver"/> class.
     /// </summary>
     /// <param name="db">The application's <see cref="AppDbContext"/> used to query stored API keys.</param>
-    public AlphaVantageKeyResolver(AppDbContext db) { _db = db; }
+    public AlphaVantageKeyResolver(AppDbContext db)
+    {
+        _db = db;
+    }
 
     /// <summary>
     /// Retrieves the AlphaVantage key configured for a specific user. If the user has no personal key configured

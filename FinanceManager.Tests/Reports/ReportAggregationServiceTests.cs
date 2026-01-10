@@ -7,6 +7,7 @@ using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Reports;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
@@ -81,7 +82,7 @@ public sealed class ReportAggregationServiceTests
 
         await db.SaveChangesAsync();
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         // Take groﬂ genug, um alle 33 Monate abzudecken
         var query = new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Month, 40, IncludeCategory: true, ComparePrevious: true, CompareYear: true);
         var result = await sut.QueryAsync(query, CancellationToken.None);
@@ -168,7 +169,7 @@ public sealed class ReportAggregationServiceTests
         AddMonthlyAggregates(cC1, 10m); AddMonthlyAggregates(cC2, 20m); AddMonthlyAggregates(cC3, 30m); // cat C: 120/Monat
         await db.SaveChangesAsync();
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var query = new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Ytd, 40, IncludeCategory: true, ComparePrevious: true, CompareYear: true);
         var result = await sut.QueryAsync(query, CancellationToken.None);
 
@@ -266,7 +267,7 @@ public sealed class ReportAggregationServiceTests
         AddAgg(PostingKind.Contact, null, c3.Id, 999m); // noise (must be filtered out)
         await db.SaveChangesAsync();
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
 
         // Build filters: two accounts + two contacts
         var filters = new ReportAggregationFilters(
@@ -350,7 +351,7 @@ public sealed class ReportAggregationServiceTests
         db.PostingAggregates.Add(aggPrev);
         await db.SaveChangesAsync();
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
 
         // Build query: Security, monthly, category grouping, compare previous enabled, filter Dividend subtype
         var filters = new ReportAggregationFilters(
@@ -417,7 +418,7 @@ public sealed class ReportAggregationServiceTests
         db.PostingAggregates.Add(aggPrev);
         await db.SaveChangesAsync();
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
 
         var filters = new ReportAggregationFilters(
             AccountIds: null,
@@ -487,7 +488,7 @@ public sealed class ReportAggregationServiceTests
         db.PostingAggregates.Add(agg);
         await db.SaveChangesAsync();
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var filters = new ReportAggregationFilters(
             AccountIds: null,
             ContactIds: null,
@@ -686,7 +687,7 @@ public sealed class ReportAggregationServiceTests
 
         var analysis = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         var seed = await SeedAllKindsAsync(db, user.Id, analysis, monthsBack: 24);
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
 
         async Task AssertForKindAsync(PostingKind kind, Guid? id1, Guid? id2)
         {
@@ -736,7 +737,7 @@ public sealed class ReportAggregationServiceTests
 
         var analysis = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         _ = await SeedAllKindsAsync(db, user.Id, analysis, monthsBack: 12);
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
 
         var filters = new ReportAggregationFilters(
             AccountIds: new[] { Guid.NewGuid() },
@@ -770,7 +771,7 @@ public sealed class ReportAggregationServiceTests
         db.Users.Add(user); await db.SaveChangesAsync();
         var analysis = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         var seed = await SeedAllKindsAsync(db, user.Id, analysis, monthsBack: 24);
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
 
         DateTime periodStart(DateTime d)
              => interval switch

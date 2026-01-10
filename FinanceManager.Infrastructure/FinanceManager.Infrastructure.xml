@@ -2562,7 +2562,7 @@
             Provides complex grouping, category and type rollups as well as support for special security dividend net calculations.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Reports.ReportAggregationService.#ctor(FinanceManager.Infrastructure.AppDbContext)">
+        <member name="M:FinanceManager.Infrastructure.Reports.ReportAggregationService.#ctor(FinanceManager.Infrastructure.AppDbContext,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Reports.ReportAggregationService})">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Reports.ReportAggregationService"/> class.
             </summary>

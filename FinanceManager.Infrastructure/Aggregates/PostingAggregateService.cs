@@ -50,6 +50,8 @@ public sealed class PostingAggregateService : IPostingAggregateService
     public async Task UpsertForPostingAsync(Posting posting, CancellationToken ct)
     {
         if (posting.Amount == 0m) { return; }
+        if (posting.ValutaDate == DateTime.MinValue)
+            posting.SetValutaDate( posting.BookingDate);
         var periods = new[] { AggregatePeriod.Month, AggregatePeriod.Quarter, AggregatePeriod.HalfYear, AggregatePeriod.Year };
         foreach (var p in periods)
         {
@@ -161,7 +163,7 @@ public sealed class PostingAggregateService : IPostingAggregateService
                 // booking
                 var startBooking = GetPeriodStart(p.BookingDate, period);
                 // valuta
-                var startValuta = GetPeriodStart(p.ValutaDate, period);
+                var startValuta = GetPeriodStart((p.ValutaDate == DateTime.MinValue) ? p.BookingDate : p.ValutaDate, period);
 
                 (Guid? acc, Guid? con, Guid? sav, Guid? sec, SecurityPostingSubType? sub) dim = p.Kind switch
                 {
