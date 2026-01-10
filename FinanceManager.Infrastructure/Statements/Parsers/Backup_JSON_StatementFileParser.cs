@@ -1,15 +1,16 @@
 ﻿using FinanceManager.Application.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
 using System.Text;
 using System.Text.Json;
 
-namespace FinanceManager.Infrastructure.Statements.Reader
+namespace FinanceManager.Infrastructure.Statements.Parsers
 {
     /// <summary>
     /// Statement file reader that reads a custom backup NDJSON-style file produced by the application.
     /// The reader expects the content to contain metadata followed by a JSON payload and extracts bank account
     /// ledger entries and journal lines to produce a <see cref="StatementParseResult"/>.
     /// </summary>
-    public class BackupStatementFileReader : IStatementFileReader
+    public class Backup_JSON_StatementFileParser : IStatementFileParser
     {
         private BackupData _BackupData = null;
         private StatementHeader _GlobalHeader = null;
@@ -27,21 +28,13 @@ namespace FinanceManager.Infrastructure.Statements.Reader
             /// <summary>Array of journal line objects in the backup.</summary>
             public JsonElement BankAccountJournalLines { get; set; }
         }
-
         /// <summary>
-        /// Loads and deserializes the backup payload from the provided bytes.
-        /// The method expects the file content to contain a first line (metadata) followed by a JSON payload
-        /// which is deserialized into the <see cref="BackupData"/> structure. It also constructs a global
-        /// statement header derived from the first bank account found in the payload.
+        /// 
         /// </summary>
-        /// <param name="fileBytes">Raw bytes of the uploaded backup file (UTF-8 encoded).</param>
-        /// <remarks>
-        /// The method may throw <see cref="ArgumentException"/> or JSON parsing exceptions when the input
-        /// does not conform to the expected format. Callers should handle exceptions appropriately.
-        /// </remarks>
-        private void Load(byte[] fileBytes)
+        /// <param name="statementFile"></param>
+        private void Load(IStatementFile statementFile)
         {
-            var fileContent = ReadContent(fileBytes);
+            var fileContent = string.Join("\r\n", statementFile.ReadContent()).Replace("\r\n", "\n").Replace("\r", "\n");
             var offset = fileContent.IndexOf('\n');
             fileContent = fileContent.Remove(0, offset);
             _BackupData = JsonSerializer.Deserialize<BackupData>(fileContent);
@@ -50,19 +43,6 @@ namespace FinanceManager.Infrastructure.Statements.Reader
                 IBAN = _BackupData.BankAccounts[0].GetProperty("IBAN").GetString() ?? "",
                 Description = $"Backup eingelesen am {DateTime.Today.ToShortDateString()}"
             };
-        }
-
-        /// <summary>
-        /// Converts the raw file bytes into a normalized string representation used for JSON deserialization.
-        /// Normalizes CRLF and CR newlines to LF to ensure predictable slicing by line.
-        /// </summary>
-        /// <param name="fileBytes">Raw file bytes (expected UTF-8 encoded).</param>
-        /// <returns>A string with normalized line endings.</returns>
-        private string ReadContent(byte[] fileBytes)
-        {
-            return Encoding.UTF8.GetString(fileBytes)
-                .Replace("\r\n", "\n") // Windows zu Unix
-                .Replace("\r", "\n");   // Mac zu Unix;
         }
 
         /// <summary>
@@ -115,17 +95,16 @@ namespace FinanceManager.Infrastructure.Statements.Reader
         }
 
         /// <summary>
-        /// Parses the backup file and returns a <see cref="StatementParseResult"/> containing the header and list of movements.
-        /// If parsing fails the method returns <c>null</c>.
+        /// Parses the specified statement file and returns the result if parsing is successful.
         /// </summary>
-        /// <param name="fileName">Original file name (not used by this reader but part of the contract).</param>
-        /// <param name="fileBytes">Raw bytes of the uploaded backup file.</param>
-        /// <returns>A <see cref="StatementParseResult"/> on success, or <c>null</c> when parsing fails.</returns>
-        public StatementParseResult? Parse(string fileName, byte[] fileBytes)
+        /// <param name="statementFile">The statement file to parse. Cannot be null.</param>
+        /// <returns>A <see cref="StatementParseResult"/> containing the parsed data if parsing succeeds; otherwise, <see
+        /// langword="null"/>.</returns>
+        public StatementParseResult? Parse(IStatementFile statementFile)
         {
             try
             {
-                Load(fileBytes);
+                Load(statementFile);
                 return new StatementParseResult(_GlobalHeader, ReadData().ToList());
             }
             catch
@@ -133,19 +112,19 @@ namespace FinanceManager.Infrastructure.Statements.Reader
                 return null;
             }
         }
-
         /// <summary>
-        /// Parses supplemental details from the backup file. For this reader details and the regular parse share the same implementation.
-        /// Returns <c>null</c> when parsing fails.
+        /// Parses the specified statement file and returns the extracted details if parsing is successful.
         /// </summary>
-        /// <param name="originalFileName">Original file name of the uploaded document.</param>
-        /// <param name="fileBytes">Raw file bytes to parse.</param>
-        /// <returns>A <see cref="StatementParseResult"/> on success, otherwise <c>null</c>.</returns>
-        public StatementParseResult? ParseDetails(string originalFileName, byte[] fileBytes)
+        /// <remarks>If an error occurs during parsing, the method returns <see langword="null"/> instead
+        /// of throwing an exception.</remarks>
+        /// <param name="statementFile">The statement file to parse. Cannot be null.</param>
+        /// <returns>A <see cref="StatementParseResult"/> containing the parsed header and data if parsing succeeds; otherwise,
+        /// <see langword="null"/>.</returns>
+        public StatementParseResult? ParseDetails(IStatementFile statementFile)
         {
             try
             {
-                Load(fileBytes);
+                Load(statementFile);
                 return new StatementParseResult(_GlobalHeader, ReadData().ToList());
             }
             catch

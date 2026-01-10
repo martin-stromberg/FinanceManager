@@ -81,7 +81,6 @@ public sealed class SavingsPlanCategory
     public void AssignBackupDto(SavingsPlanCategoryBackupDto dto)
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
-        OwnerUserId = dto.OwnerUserId;
         Rename(dto.Name);
         SetSymbolAttachment(dto.SymbolAttachmentId);
     }

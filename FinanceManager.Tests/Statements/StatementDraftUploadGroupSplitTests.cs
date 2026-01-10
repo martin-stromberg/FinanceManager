@@ -40,7 +40,7 @@ public sealed class StatementDraftUploadGroupSplitTests
         db.SaveChanges();
 
         var accountService = new TestAccountService();
-        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, NullLogger<StatementDraftService>.Instance, null);
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, conn, owner.Id);
     }
 

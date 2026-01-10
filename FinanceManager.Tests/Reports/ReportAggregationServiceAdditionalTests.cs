@@ -4,6 +4,7 @@ using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Reports;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
@@ -43,7 +44,7 @@ public sealed class ReportAggregationServiceAdditionalTests
         db.PostingAggregates.AddRange(jan, feb);
         await db.SaveChangesAsync();
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Month, 12, IncludeCategory: false, ComparePrevious: true, CompareYear: false, AnalysisDate: new DateTime(2025, 2, 1)), CancellationToken.None);
 
         Assert.All(result.Points, p => Assert.StartsWith("Contact:", p.GroupKey));
@@ -70,7 +71,7 @@ public sealed class ReportAggregationServiceAdditionalTests
         db.PostingAggregates.AddRange(c1Jan, c1Feb, c2Jan);
         await db.SaveChangesAsync();
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var latest = new DateTime(2025, 2, 1);
         var result = await sut.QueryAsync(new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Month, 12, IncludeCategory: true, ComparePrevious: true, CompareYear: false, AnalysisDate: latest), CancellationToken.None);
 
@@ -96,7 +97,7 @@ public sealed class ReportAggregationServiceAdditionalTests
         db.PostingAggregates.AddRange(c1Jan, c2Feb);
         await db.SaveChangesAsync();
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Month, 12, IncludeCategory: false, ComparePrevious: true, CompareYear: true, AnalysisDate: new DateTime(2025, 2, 1)), CancellationToken.None);
 
         // Group for c1 should be removed (only zero data + zero row + no previous/year non-zero)
@@ -123,7 +124,7 @@ public sealed class ReportAggregationServiceAdditionalTests
         }
         await db.SaveChangesAsync();
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var take = 5;
         var result = await sut.QueryAsync(new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Month, take, IncludeCategory: false, ComparePrevious: false, CompareYear: false, AnalysisDate: new DateTime(2025, 3, 1)), CancellationToken.None);
 
@@ -151,7 +152,7 @@ public sealed class ReportAggregationServiceAdditionalTests
         db.PostingAggregates.AddRange(q1, q2, h1, h2, y2024, y2025);
         await db.SaveChangesAsync();
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
 
         var quarters = await sut.QueryAsync(new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Quarter, 10, IncludeCategory: false, ComparePrevious: true, CompareYear: true, AnalysisDate: new DateTime(2024, 4, 1)), CancellationToken.None);
         Assert.Equal(2, quarters.Points.Count(p => p.GroupKey.StartsWith("Contact:")));
@@ -181,7 +182,7 @@ public sealed class ReportAggregationServiceAdditionalTests
         var agg = new PostingAggregate(PostingKind.Contact, null, c1.Id, null, null, new DateTime(2025, 3, 1), AggregatePeriod.Month); agg.Add(42);
         db.PostingAggregates.Add(agg);
         await db.SaveChangesAsync();
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Month, 5, IncludeCategory: true, ComparePrevious: false, CompareYear: false, AnalysisDate: new DateTime(2025, 3, 1)), CancellationToken.None);
         Assert.Contains(result.Points, p => p.GroupKey == $"Category:{PostingKind.Contact}:_none" && p.Amount == 42m);
         var child = result.Points.Single(p => p.GroupKey == $"Contact:{c1.Id}");

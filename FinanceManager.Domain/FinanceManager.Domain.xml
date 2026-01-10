@@ -3205,7 +3205,7 @@
             Parameterless constructor for ORM/deserialization.
             </summary>
         </member>
-        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.#ctor(System.Guid,System.DateTime,System.Decimal,System.String,System.String,System.Nullable{System.DateTime},System.String,System.String,System.Boolean,System.Boolean,FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus)">
+        <member name="M:FinanceManager.Domain.Statements.StatementDraftEntry.#ctor(System.Int32,System.Guid,System.DateTime,System.Decimal,System.String,System.String,System.Nullable{System.DateTime},System.String,System.String,System.Boolean,System.Boolean,FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus)">
             <summary>
             Creates a new <see cref="T:FinanceManager.Domain.Statements.StatementDraftEntry"/> associated with a draft.
             </summary>
@@ -3225,6 +3225,11 @@
         <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.DraftId">
             <summary>
             Draft identifier that owns this entry.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.EntryNumber">
+            <summary>
+            Gets the unique number assigned to this entry.
             </summary>
         </member>
         <member name="P:FinanceManager.Domain.Statements.StatementDraftEntry.BookingDate">

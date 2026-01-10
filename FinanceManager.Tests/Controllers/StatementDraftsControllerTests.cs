@@ -1,4 +1,5 @@
 using FinanceManager.Application;
+using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Attachments;
 using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
@@ -6,6 +7,8 @@ using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Aggregates;
 using FinanceManager.Infrastructure.Attachments;
 using FinanceManager.Infrastructure.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
+using FinanceManager.Infrastructure.Statements.Parsers;
 using FinanceManager.Web.Controllers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,9 +16,8 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Text;
-using FinanceManager.Application.Accounts;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Text;
 
 namespace FinanceManager.Tests.Controllers;
 
@@ -42,11 +44,22 @@ public sealed class StatementDraftsControllerTests
         services.AddScoped<IAttachmentService, AttachmentService>();
         services.AddSingleton(db);
         services.AddLogging();
+        services.AddScoped<IStatementFileParser, ING_CSV_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, ING_PDF_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, Barclays_PDF_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, Wuestenrot_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, Backup_JSON_StatementFileParser>();
+        services.AddScoped<IStatementFile, Barclays_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, ING_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, ING_Csv_StatementFile>();
+        services.AddScoped<IStatementFile, Wuestenrot_PDF_StatementFile>();
+        services.AddScoped<IStatementFileFactory>(sp => new StatementFileFactory(sp));
+
         var sp = services.BuildServiceProvider();
         db = sp.GetRequiredService<AppDbContext>();
 
         var accountService = new TestAccountService();
-        var draftService = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, NullLogger<StatementDraftService>.Instance, null);
+        var draftService = new StatementDraftService(db, new PostingAggregateService(db), accountService, sp.GetService<IStatementFileFactory>(),sp.GetServices<IStatementFileParser>(), NullLogger<StatementDraftService>.Instance, null);
         var logger = sp.GetRequiredService<ILogger<StatementDraftsController>>();
         var taskManager = new DummyBackgroundTaskManager();
         var attachment = sp.GetRequiredService<IAttachmentService>();

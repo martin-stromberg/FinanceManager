@@ -1,4 +1,6 @@
-﻿using FinanceManager.Domain.Accounts;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Vml;
+using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Attachments; // new
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Notifications; // new
@@ -389,57 +391,88 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     /// <returns>A task that completes when the clear operation has finished.</returns>
     internal async Task ClearUserDataAsync(Guid userId, Action<int, int> progressCallback, CancellationToken ct)
     {
-        var total = 25;
+        var total = 26;
         var count = 0;
 
-        await HomeKpis
-            .Where(h => h.OwnerUserId == userId)
+        // Notifications
+        await Notifications
+            .Where(n => n.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
 
+        // AliasNames (vor Contacts zur Sicherheit – alternativ würde FK-Cascade greifen)
+        await AliasNames
+            .Where(a => Contacts.Any(c => c.OwnerUserId == userId && c.Id == a.ContactId))
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        // AccountShares (User direkt oder Accounts des Users)
+        await AccountShares
+            .Where(s => s.UserId == userId || Accounts.Any(a => a.OwnerUserId == userId && a.Id == s.AccountId))
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        // Report favorites
         await ReportFavorites
             .Where(r => r.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
 
+        // Home Kpi
+        await HomeKpis
+            .Where(h => h.OwnerUserId == userId)
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        // Posting aggregates (per dimension)
         await PostingAggregates
             .Where(p => p.AccountId != null && Accounts.Any(a => a.OwnerUserId == userId && a.Id == p.AccountId))
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
-
         await PostingAggregates
             .Where(p => p.ContactId != null && Contacts.Any(c => c.OwnerUserId == userId && c.Id == p.ContactId))
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
-
         await PostingAggregates
             .Where(p => p.SecurityId != null && Securities.Any(s => s.OwnerUserId == userId && s.Id == p.SecurityId))
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
-
         await PostingAggregates
             .Where(p => p.SavingsPlanId != null && SavingsPlans.Any(s => s.OwnerUserId == userId && s.Id == p.SavingsPlanId))
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
 
-        // Postings (pro Dimension)
+        // Postings (per dimension)
         await Postings
             .Where(p => p.AccountId != null && Accounts.Any(a => a.OwnerUserId == userId && a.Id == p.AccountId))
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
-
         await Postings
             .Where(p => p.ContactId != null && Contacts.Any(c => c.OwnerUserId == userId && c.Id == p.ContactId))
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
-
         await Postings
             .Where(p => p.SavingsPlanId != null && SavingsPlans.Any(s => s.OwnerUserId == userId && s.Id == p.SavingsPlanId))
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
-
         await Postings
             .Where(p => p.SecurityId != null && Securities.Any(s => s.OwnerUserId == userId && s.Id == p.SecurityId))
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        // Security prices
+        await SecurityPrices
+            .Where(p => p.SecurityId != null && Securities.Any(s => s.OwnerUserId == userId && s.Id == p.SecurityId))
+            .ExecuteDeleteAsync(ct);
+
+        // Statement drafts
+        await StatementDraftEntries
+            .Where(e => StatementDrafts.Any(d => d.Id == e.DraftId && d.OwnerUserId == userId))
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        await StatementDrafts
+            .Where(d => d.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
 
@@ -454,29 +487,9 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
 
-        await StatementDraftEntries
-            .Where(e => StatementDrafts.Any(d => d.Id == e.DraftId && d.OwnerUserId == userId))
-            .ExecuteDeleteAsync(ct);
-        progressCallback(++count, total);
-
-        await StatementDrafts
-            .Where(d => d.OwnerUserId == userId)
-            .ExecuteDeleteAsync(ct);
-        progressCallback(++count, total);
-
-        await SavingsPlans
-            .Where(s => s.OwnerUserId == userId)
-            .ExecuteDeleteAsync(ct);
-        progressCallback(++count, total);
-
-        await SavingsPlanCategories
-            .Where(c => c.OwnerUserId == userId)
-            .ExecuteDeleteAsync(ct);
-        progressCallback(++count, total);
-
-        // AliasNames (vor Contacts zur Sicherheit – alternativ würde FK-Cascade greifen)
-        await AliasNames
-            .Where(a => Contacts.Any(c => c.OwnerUserId == userId && c.Id == a.ContactId))
+        // Accounts
+        await Accounts
+            .Where(a => a.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
 
@@ -488,21 +501,9 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         await SaveChangesAsync(ct);
         progressCallback(++count, total);
 
-        // ContactCategories
-        await ContactCategories
-            .Where(c => c.OwnerUserId == userId)
-            .ExecuteDeleteAsync(ct);
-        progressCallback(++count, total);
-
-        // AccountShares (User direkt oder Accounts des Users)
-        await AccountShares
-            .Where(s => s.UserId == userId || Accounts.Any(a => a.OwnerUserId == userId && a.Id == s.AccountId))
-            .ExecuteDeleteAsync(ct);
-        progressCallback(++count, total);
-
-        // Accounts
-        await Accounts
-            .Where(a => a.OwnerUserId == userId)
+        // Savings plans
+        await SavingsPlans
+            .Where(s => s.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
 
@@ -512,15 +513,15 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
 
-        // SecurityCategories
-        await SecurityCategories
-            .Where(c => c.OwnerUserId == userId)
-            .ExecuteDeleteAsync(ct);
-        progressCallback(++count, total);
-
         // Attachments
         await Attachments
             .Where(a => a.OwnerUserId == userId)
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        // ContactCategories
+        await ContactCategories
+            .Where(c => c.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
 
@@ -529,6 +530,18 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             .Where(a => a.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
+
+        // Savings plans categories
+        await SavingsPlanCategories
+            .Where(c => c.OwnerUserId == userId)
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        // SecurityCategories
+        await SecurityCategories
+            .Where(c => c.OwnerUserId == userId)
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);        
     }
 
     /// <summary>

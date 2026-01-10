@@ -218,7 +218,6 @@ public sealed class Security: Entity
     public void AssignBackupDto(SecurityBackupDto dto)
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
-        OwnerUserId = dto.OwnerUserId;
         Update(dto.Name, dto.Identifier, dto.Description, dto.AlphaVantageCode, dto.CurrencyCode, dto.CategoryId);
         if (!dto.IsActive && IsActive) Archive();
         SymbolAttachmentId = dto.SymbolAttachmentId;

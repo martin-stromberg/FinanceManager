@@ -5,6 +5,7 @@ using FinanceManager.Infrastructure.Aggregates;
 using FinanceManager.Infrastructure.Reports;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
@@ -85,7 +86,7 @@ public sealed class ContactPostingsValutaDateTests
 
         await db.SaveChangesAsync(ct);
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
 
         // Act: monthly report using ValutaDate
         var analysis = new DateTime(year, 2, 1);
@@ -182,7 +183,7 @@ public sealed class ContactPostingsValutaDateTests
         db.PostingAggregates.Add(aggJan);
         await db.SaveChangesAsync(ct);
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
 
         // Act: monthly report using BookingDate (UseValutaDate = false)
         var analysis = new DateTime(year, 2, 1);

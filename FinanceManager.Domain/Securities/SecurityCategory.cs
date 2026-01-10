@@ -94,7 +94,6 @@ public sealed class SecurityCategory
     public void AssignBackupDto(SecurityCategoryBackupDto dto)
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
-        OwnerUserId = dto.OwnerUserId;
         Rename(dto.Name);
         SetSymbolAttachment(dto.SymbolAttachmentId);
     }

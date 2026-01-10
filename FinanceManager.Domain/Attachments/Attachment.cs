@@ -204,7 +204,6 @@ public sealed class Attachment: Entity
     public void AssignBackupDto(AttachmentBackupDto dto)
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
-        OwnerUserId = dto.OwnerUserId;
         EntityKind = dto.EntityKind;
         EntityId = dto.EntityId;
         FileName = dto.FileName;

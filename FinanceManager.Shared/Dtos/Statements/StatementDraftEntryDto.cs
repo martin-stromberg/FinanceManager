@@ -5,6 +5,7 @@ namespace FinanceManager.Shared.Dtos.Statements;
 /// </summary>
 public sealed record StatementDraftEntryDto(
     Guid Id,
+    int EntryNumber,
     DateTime BookingDate,
     DateTime? ValutaDate,
     decimal Amount,

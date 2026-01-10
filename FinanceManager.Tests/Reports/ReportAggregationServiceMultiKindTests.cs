@@ -5,6 +5,7 @@ using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Reports;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
@@ -58,7 +59,7 @@ public sealed class ReportAggregationServiceMultiKindTests
         );
         await db.SaveChangesAsync();
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var query = new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Month, 12, IncludeCategory: true, ComparePrevious: false, CompareYear: false, PostingKinds: new[] { PostingKind.Contact, PostingKind.SavingsPlan });
         var result = await sut.QueryAsync(query, CancellationToken.None);
 
@@ -102,7 +103,7 @@ public sealed class ReportAggregationServiceMultiKindTests
         );
         await db.SaveChangesAsync();
 
-        var sut = new ReportAggregationService(db);
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var query = new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Month, 6, IncludeCategory: false, ComparePrevious: false, CompareYear: false, PostingKinds: new[] { PostingKind.Contact, PostingKind.SavingsPlan });
         var result = await sut.QueryAsync(query, CancellationToken.None);
 

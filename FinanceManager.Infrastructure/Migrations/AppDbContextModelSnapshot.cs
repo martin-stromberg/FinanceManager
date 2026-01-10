@@ -938,6 +938,9 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<Guid>("DraftId")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("EntryNumber")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("IsAnnounced")
                         .HasColumnType("INTEGER");
 

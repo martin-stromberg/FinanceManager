@@ -1,14 +1,18 @@
+using FinanceManager.Application.Accounts;
+using FinanceManager.Application.Attachments;
 using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Aggregates;
 using FinanceManager.Infrastructure.Attachments;
 using FinanceManager.Infrastructure.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
+using FinanceManager.Infrastructure.Statements.Parsers;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Text;
-using FinanceManager.Application.Accounts;
 
 namespace FinanceManager.Tests.Statements;
 
@@ -67,8 +71,25 @@ public sealed class StatementDraftServiceTests
             UserId = owner.Id
         };
 
+        var services = new ServiceCollection();
+        services.AddScoped<IAttachmentService, AttachmentService>();
+        services.AddSingleton(db);
+        services.AddLogging();
+        services.AddScoped<IStatementFileParser, ING_CSV_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, ING_PDF_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, Barclays_PDF_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, Wuestenrot_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, Backup_JSON_StatementFileParser>();
+        services.AddScoped<IStatementFile, Barclays_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, ING_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, ING_Csv_StatementFile>();
+        services.AddScoped<IStatementFile, Wuestenrot_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, Backup_JSON_StatementFile>();
+        services.AddScoped<IStatementFileFactory>(sp => new StatementFileFactory(sp));
+        var sp = services.BuildServiceProvider();
+
         var accountService = new TestAccountService();
-        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, NullLogger<StatementDraftService>.Instance, null);
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, sp.GetService<IStatementFileFactory>(), sp.GetServices<IStatementFileParser>(), NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, owner.Id);
     }
 
@@ -88,10 +109,27 @@ public sealed class StatementDraftServiceTests
         db.Contacts.Add(ownerContact);
         db.SaveChanges();
 
+        var services = new ServiceCollection();
+        services.AddScoped<IAttachmentService, AttachmentService>();
+        services.AddSingleton(db);
+        services.AddLogging();
+        services.AddScoped<IStatementFileParser, ING_CSV_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, ING_PDF_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, Barclays_PDF_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, Wuestenrot_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, Backup_JSON_StatementFileParser>();
+        services.AddScoped<IStatementFile, Barclays_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, ING_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, ING_Csv_StatementFile>();
+        services.AddScoped<IStatementFile, Wuestenrot_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, Backup_JSON_StatementFile>();
+        services.AddScoped<IStatementFileFactory>(sp => new StatementFileFactory(sp));
+        var sp = services.BuildServiceProvider();
+
         var agg = new PostingAggregateService(db);
         var attachments = new AttachmentService(db, NullLogger<AttachmentService>.Instance);
         var accountService = new TestAccountService();
-        var sut = new StatementDraftService(db, agg, accountService, null, NullLogger<StatementDraftService>.Instance, attachments);
+        var sut = new StatementDraftService(db, agg, accountService, sp.GetService<IStatementFileFactory>(), sp.GetServices<IStatementFileParser>(), NullLogger<StatementDraftService>.Instance, attachments);
         return (sut, db, owner.Id);
     }
 

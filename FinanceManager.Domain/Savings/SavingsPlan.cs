@@ -260,7 +260,6 @@ public sealed class SavingsPlan: Entity
     public void AssignBackupDto(SavingsPlanBackupDto dto)
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
-        OwnerUserId = dto.OwnerUserId;
         Name = dto.Name;
         Type = dto.Type;
         TargetAmount = dto.TargetAmount;

@@ -173,7 +173,6 @@ public sealed class Account : Entity, IAggregateRoot
     public void AssignBackupDto(AccountBackupDto dto)
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
-        OwnerUserId = dto.OwnerUserId;
         SetType(dto.Type);
         Rename(dto.Name);
         SetIban(dto.Iban);

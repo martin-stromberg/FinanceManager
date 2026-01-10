@@ -42,6 +42,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
                 {
                     _allEntries = draft.Entries
                         .OrderBy(e => e.Status == StatementDraftEntryStatus.AlreadyBooked ? 2 : e.Status == StatementDraftEntryStatus.Announced ? 1 : 0)
+                        .ThenBy(e => e.EntryNumber)
                         .ThenBy(e => e.BookingDate)
                         .ThenBy(e => e.BookingDescription)
                         .ThenBy(e => e.RecipientName)

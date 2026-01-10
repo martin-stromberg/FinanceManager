@@ -26,6 +26,8 @@ using FinanceManager.Infrastructure.Securities;
 using FinanceManager.Infrastructure.Security; // new
 using FinanceManager.Infrastructure.Setup;
 using FinanceManager.Infrastructure.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
+using FinanceManager.Infrastructure.Statements.Parsers;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore; // required for RoleStore
 using Microsoft.EntityFrameworkCore;
@@ -75,6 +77,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IContactCategoryService, ContactCategoryService>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IStatementDraftService, StatementDraftService>();
+        services.AddScoped<IStatementFileParser, ING_CSV_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, ING_PDF_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, Barclays_PDF_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, Wuestenrot_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, Backup_JSON_StatementFileParser>();
         services.AddScoped<ISavingsPlanService, SavingsPlanService>();
         services.AddScoped<ISavingsPlanCategoryService, SavingsPlanCategoryService>();
         services.AddScoped<ISetupImportService, SetupImportService>();
@@ -94,6 +101,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPostingExportService, PostingExportService>(); 
         services.AddScoped<IDemoDataService, FinanceManager.Infrastructure.Demo.DemoDataService>();
         services.AddScoped<ISecurityPriceService, SecurityPriceService>();
+        services.AddScoped<IStatementFile, Barclays_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, ING_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, ING_Csv_StatementFile>();
+        services.AddScoped<IStatementFile, Wuestenrot_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, Backup_JSON_StatementFile>();
+        services.AddScoped<IStatementFileFactory>(sp => new StatementFileFactory(sp));
 
         // Register Identity RoleStore for Guid-based roles (RoleManager is registered by AddIdentity in Program.cs)
         services.AddScoped<IRoleStore<IdentityRole<Guid>>, RoleStore<IdentityRole<Guid>, AppDbContext, Guid>>();

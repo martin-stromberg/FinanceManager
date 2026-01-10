@@ -5,6 +5,7 @@ using FinanceManager.Infrastructure.Aggregates;
 using FinanceManager.Infrastructure.Reports;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
@@ -72,7 +73,7 @@ public sealed class ReportAggregation_ValutaBookingTests
     public async Task QueryAsync_Monthly_ByValutaDate_ShouldAggregateSep2025()
     {
         using var db = CreateDb();
-        var svc = new ReportAggregationService(db);
+        var svc = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var aggSvc = new PostingAggregateService(db);
         var ct = CancellationToken.None;
 
@@ -142,7 +143,7 @@ public sealed class ReportAggregation_ValutaBookingTests
     public async Task QueryAsync_Monthly_ByBookingDate_ShouldAggregateSep2025()
     {
         using var db = CreateDb();
-        var svc = new ReportAggregationService(db);
+        var svc = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var aggSvc = new PostingAggregateService(db);
         var ct = CancellationToken.None;
 

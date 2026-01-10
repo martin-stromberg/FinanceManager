@@ -1788,37 +1788,6 @@
             <param name="ct">Cancellation token.</param>
             <returns>The updated <see cref="T:FinanceManager.Shared.Dtos.Statements.StatementDraftEntryDto"/> when successful; otherwise <c>null</c>.</returns>
         </member>
-        <member name="T:FinanceManager.Application.Statements.IStatementFileReader">
-            <summary>
-            Interface for parsing statement files and extracting header and movement details.
-            Implementations should attempt to recognize the file format and extract header information and a list of movements.
-            </summary>
-        </member>
-        <member name="M:FinanceManager.Application.Statements.IStatementFileReader.Parse(System.String,System.Byte[])">
-            <summary>
-            Attempts to parse statement contents and produce a <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/>.
-            This method is the primary parsing entry and may include format detection and mapping of movements.
-            Implementations return <c>null</c> when the provided bytes do not represent a supported format.
-            </summary>
-            <param name="fileName">The original file name (used for format hints and metadata extraction).</param>
-            <param name="fileBytes">The raw file content as a byte array.</param>
-            <returns>
-            A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing parsed header and movements when parsing succeeded;
-            otherwise <c>null</c> when the format is not supported or parsing failed.
-            </returns>
-        </member>
-        <member name="M:FinanceManager.Application.Statements.IStatementFileReader.ParseDetails(System.String,System.Byte[])">
-            <summary>
-            Attempts to parse only supplemental details from statement files (for example fees, taxes or security quantities)
-            that may be provided in separate files or detail exports. Returns <c>null</c> when parsing fails or no details found.
-            </summary>
-            <param name="originalFileName">The original file name (used for format hints and metadata extraction).</param>
-            <param name="fileBytes">The raw file content as a byte array.</param>
-            <returns>
-            A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> with header and movements when details were successfully extracted;
-            otherwise <c>null</c> when no details could be parsed or the format is unsupported.
-            </returns>
-        </member>
         <member name="T:FinanceManager.Application.Statements.StatementHeader">
             <summary>
             Statement file header information extracted by a reader.
@@ -1869,6 +1838,11 @@
         <member name="T:FinanceManager.Application.Statements.StatementMovement">
             <summary>
             Represents a single movement/transaction parsed from a statement file.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.StatementMovement.EntryNumber">
+            <summary>
+            Gets or sets the unique number assigned to this entry.
             </summary>
         </member>
         <member name="P:FinanceManager.Application.Statements.StatementMovement.BookingDate">

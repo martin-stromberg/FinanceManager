@@ -370,3 +370,14 @@ FodyWeavers.xsd
 /init
 /FinanceManager.Web/init
 /FinanceManager.Web/.config/dotnet-tools.json
+
+# Tests mit sensiblen Daten
+/FinanceManager.Tests/Infrastructure/Statements/Files/Barclays_*StatementFileTests*.cs
+/FinanceManager.Tests/Infrastructure/Statements/Files/Wuestenrot_*StatementFileTests*.cs
+/FinanceManager.Tests/Infrastructure/Statements/Files/ING_*StatementFileTests*.cs
+/FinanceManager.Tests/Infrastructure/Statements/Reader/Helper/ING_*StatementFile.cs
+/FinanceManager.Tests/Infrastructure/Statements/Reader/Helper/Barclays_*StatementFile.cs
+/FinanceManager.Tests/Infrastructure/Statements/Reader/Helper/Wuestenrot_*StatementFile.cs
+/FinanceManager.Tests/Infrastructure/Statements/Reader/ING_StatementFileReaderTests.cs
+/FinanceManager.Tests/Infrastructure/Statements/Reader/Barclays_StatementFileReaderTests.cs
+/FinanceManager.Tests/Infrastructure/Statements/Reader/Wuestenrot_StatementFileReaderTests.cs

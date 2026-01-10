@@ -39,8 +39,8 @@ public sealed class SecurityDividendsYtdScenarioTests
         using var db = CreateDb();
         var agg = new PostingAggregateService(db);
         var accountService = new TestAccountService();
-        var drafts = new StatementDraftService(db, agg, accountService, null, NullLogger<StatementDraftService>.Instance, null);
-        var reports = new ReportAggregationService(db);
+        var drafts = new StatementDraftService(db, agg, accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
+        var reports = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var ct = CancellationToken.None;
 
         // Owner and base entities

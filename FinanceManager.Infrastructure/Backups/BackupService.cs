@@ -221,7 +221,8 @@ public sealed class BackupService : IBackupService
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var draftSvc = scope.ServiceProvider.GetRequiredService<IStatementDraftService>();
         var aggSvc = scope.ServiceProvider.GetRequiredService<FinanceManager.Application.Aggregates.IPostingAggregateService>();
-        var importerLegacy = new SetupImportService(db, draftSvc, aggSvc);
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<SetupImportService>>();
+        var importerLegacy = new SetupImportService(db, draftSvc, aggSvc, logger);
 
         // propagate nested progress: main step 1 = reading, step 2 = importing (with subprogress)
         importerLegacy.ProgressChanged += (sender, e) =>
