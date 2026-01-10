@@ -611,5 +611,17 @@ namespace FinanceManager.Web.ViewModels.Common
             catch { }
             return true;
         }
+
+        /// <summary>
+        /// Allows external UI components (e.g. EmbeddedPanelHost) to notify the view model that an embedded panel finished
+        /// and pass an optional payload. This method forwards the notification as a UiActionRequested with action
+        /// "EmbeddedFinished" so view models can react to the embedded panel result.
+        /// </summary>
+        /// <param name="payloadObject">Optional payload provided by the embedded panel.</param>
+        public virtual void EmbeddedPanelFinished(object? payloadObject)
+        {
+            // Reuse existing RaiseUiActionRequested helper to notify subscribers
+            RaiseUiActionRequested("EmbeddedFinished", payloadObject);
+        }
     }
 }

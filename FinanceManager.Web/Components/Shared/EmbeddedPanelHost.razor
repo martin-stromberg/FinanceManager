@@ -25,8 +25,21 @@
                    Action embeddedClose = () => CloseEmbeddedPanel(idx);
                    Action<object> embeddedOnFinished = obj =>
                    {
+                       // Close the embedded panel first
                        CloseEmbeddedPanel(idx);
-                       _ = NavigationManager.NavigateToModelCard(obj);
+
+                       try
+                       {
+                           // Forward the finished payload to provider via helper on ViewModel so pages/viewmodels can handle it
+                           if (Provider != null)
+                           {
+                               Provider.EmbeddedPanelFinished(obj);
+                           }
+                       }
+                       catch
+                       {
+                           // ignore errors from callback
+                       }
                    };
                 }
                 <CascadingValue Name="EmbeddedClose" Value="@(embeddedClose)">

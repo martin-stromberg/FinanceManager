@@ -4332,6 +4332,14 @@
             </summary>
             <returns><c>true</c> when the user is authenticated; otherwise <c>false</c> and the <see cref="E:FinanceManager.Web.ViewModels.Common.BaseViewModel.AuthenticationRequired"/> event is raised.</returns>
         </member>
+        <member name="M:FinanceManager.Web.ViewModels.Common.BaseViewModel.EmbeddedPanelFinished(System.Object)">
+            <summary>
+            Allows external UI components (e.g. EmbeddedPanelHost) to notify the view model that an embedded panel finished
+            and pass an optional payload. This method forwards the notification as a UiActionRequested with action
+            "EmbeddedFinished" so view models can react to the embedded panel result.
+            </summary>
+            <param name="payloadObject">Optional payload provided by the embedded panel.</param>
+        </member>
         <member name="T:FinanceManager.Web.ViewModels.Common.CardRouteAttribute">
             <summary>
             Declares routing metadata for a card view model type. The attribute indicates the "kind" (URL segment)
@@ -8539,7 +8547,7 @@
         </member>
         <member name="P:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel.LastValidationResult">
             <summary>
-            Last validation result returned by a call to <see cref="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel.ValidateAsync"/> or <see cref="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel.BookAsync"/>
+            Last validation result returned by a call to <see cref="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel.ValidateAsync"/> or <see cref="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel.BookAsync(System.Boolean)"/>
             when booking was withheld due to warnings/errors.
             </summary>
         </member>
@@ -8598,7 +8606,17 @@
             Validates the draft on the server and stores the validation result for UI rendering.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel.BookAsync">
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel.EmbeddedPanelFinished(System.Object)">
+            <summary>
+            Handles the completion of the embedded panel and initiates booking if the user has confirmed.
+            </summary>
+            <remarks>The method checks for a confirmation flag in the provided payload. If confirmation is
+            detected, booking is performed while ignoring warnings. Any exceptions that occur during processing are
+            suppressed.</remarks>
+            <param name="payloadObject">An optional object containing additional data from the embedded panel. If the object contains a Boolean property
+            or dictionary entry named "Confirm" set to <see langword="true"/>, booking is triggered.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel.BookAsync(System.Boolean)">
             <summary>
             Attempts to book the draft. If booking succeeds attempts to navigate to next draft or overview.
             If booking is withheld due to warnings the validation messages are stored in <see cref="P:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel.LastValidationResult"/>.

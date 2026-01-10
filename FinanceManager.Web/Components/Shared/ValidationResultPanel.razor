@@ -24,11 +24,21 @@ else
                 <li style="margin:.25rem 0;">@($"[{m.Severity}] {m.Message}") @if (m.EntryId != null) { <span style="opacity:.7;">(@m.EntryId)</span> }</li>
             }
         </ul>
+
+        @* If there are any messages (warnings/errors) offer action buttons: proceed (ignore warnings) and close *@
+        @if (ValidationResult.Messages != null && ValidationResult.Messages.Any() && AllowProceed)
+        {
+            <div style="display:flex;gap:.5rem;margin-top:.6rem;justify-content:flex-end;">
+            <button class="btn btn-secondary" @onclick="Close">@Localizer?["Validation_Close"]</button>
+                <button class="btn btn-primary" @onclick="ProceedIgnoreWarnings">@Localizer?["Validation_Proceed"]</button>
+            </div>
+        }
     </div>
 }
 
 @code {
     [Parameter] public DraftValidationResultDto? ValidationResult { get; set; }
+    [Parameter] public bool AllowProceed { get; set; } = false;
 
     [CascadingParameter(Name = "EmbeddedClose")] public Action? EmbeddedClose { get; set; }
     [CascadingParameter(Name = "EmbeddedOnFinished")] public Action<object>? EmbeddedOnFinished { get; set; }
@@ -36,5 +46,18 @@ else
     private void Close()
     {
         EmbeddedClose?.Invoke();
+    }
+
+    private void ProceedIgnoreWarnings()
+    {
+        // Signal host that user confirmed proceeding despite warnings
+        try
+        {
+            EmbeddedOnFinished?.Invoke(new { Confirm = true });
+        }
+        finally
+        {
+            EmbeddedClose?.Invoke();
+        }
     }
 }
