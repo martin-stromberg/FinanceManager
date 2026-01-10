@@ -181,3 +181,9 @@ input {
         box-shadow: 2px 0 12px #0006; 
     }
 }
+
+
+div.components-reconnect-overlay {
+    background: rgba(0, 0, 0, 0.75);
+    color: var(--text);
+}

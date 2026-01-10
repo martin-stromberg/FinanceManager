@@ -3377,11 +3377,12 @@
             <remarks>Use this class to process and extract data from Barclays PDF bank statements. Inherits
             parsing behavior from PdfStatementFile, with configuration optimized for Barclays-specific layouts.</remarks>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Files.Barclays_PDF_StatementFile.#ctor">
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.Barclays_PDF_StatementFile.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.Files.Barclays_PDF_StatementFile})">
             <summary>
             Initializes a new instance of the Barclays_PDF_StatementFile class with default parsing settings for
             Barclays PDF statements.
             </summary>
+            <param name="logger">The logger instance for logging operations within the statement file processing.</param>
             <remarks>This constructor configures the instance to use a minimum table column space size of
             2 and sets the parsing mode to process both text and tables, which is suitable for typical Barclays PDF
             statement formats.</remarks>
@@ -3393,6 +3394,12 @@
             <remarks>Derived classes should implement the logic for parsing specific statement file formats. This
             class defines the contract for reading file content and returning it as a collection of strings.</remarks>
         </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.BaseStatementFile.#ctor(Microsoft.Extensions.Logging.ILogger)">
+            <summary>
+            Initializes a new instance of the BaseStatementFile class with the specified logger.
+            </summary>
+            <param name="logger">The logger to use for recording diagnostic and operational messages. Cannot be null.</param>
+        </member>
         <member name="P:FinanceManager.Infrastructure.Statements.Files.BaseStatementFile.FileBytes">
             <summary>
             Gets the underlying byte array representing the data content.
@@ -3401,6 +3408,11 @@
         <member name="P:FinanceManager.Infrastructure.Statements.Files.BaseStatementFile.FileName">
             <summary>
             Gets the name of the file associated with this instance.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.Files.BaseStatementFile.Logger">
+            <summary>
+            Gets the logger instance used for recording diagnostic and operational messages.
             </summary>
         </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Files.BaseStatementFile.Load(System.String,System.Byte[])">
@@ -3426,6 +3438,12 @@
             <remarks>Use this class to parse and process statement files exported from ING in CSV format. Inherits
             functionality from the TextStatementFile base class to handle text-based statement files.</remarks>
         </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.ING_Csv_StatementFile.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.Files.ING_Csv_StatementFile})">
+            <summary>
+            Initializes a new instance of the ING_Csv_StatementFile class with the specified logger.
+            </summary>
+            <param name="logger">The logger to use for logging diagnostic and operational information.</param>
+        </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Files.ING_PDF_StatementFile">
             <summary>
             Represents a PDF statement file specific to ING, providing parsing and handling functionality tailored to ING's
@@ -3436,10 +3454,11 @@
             parsing rules. This class is intended for scenarios where ING's statement layout differs from generic PDF
             statements.</remarks>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Files.ING_PDF_StatementFile.#ctor">
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.ING_PDF_StatementFile.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.Files.ING_PDF_StatementFile})">
             <summary>
             Initializes a new instance of the ING_PDF_StatementFile class with default settings.
             </summary>
+            <param name="logger">The logger instance for logging operations within the statement file processing.</param>
             <remarks>This constructor sets the minimum table column space size to 3. Use this constructor
             when you want to create a new ING_PDF_StatementFile with standard configuration.</remarks>
         </member>
@@ -3492,6 +3511,12 @@
             rows represented as pipe-separated values. It is intended for use with statement documents where tabular and
             textual data need to be extracted for further processing. Inherits from BaseStatementFileReader and specializes
             content extraction for PDF format.</remarks>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.PdfStatementFile.#ctor(Microsoft.Extensions.Logging.ILogger)">
+            <summary>
+            Initializes a new instance of the PdfStatementFile class with the specified logger.
+            </summary>
+            <param name="logger">The logger instance used to record diagnostic and operational messages for this file.</param>
         </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Files.PdfStatementFile.LineParsingMode">
             <summary>
@@ -3559,13 +3584,12 @@
             until one succeeds. It is typically used to support multiple statement file formats without requiring the caller
             to know the specific type in advance.</remarks>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Files.StatementFileFactory.#ctor(FinanceManager.Infrastructure.Statements.Files.IStatementFile[])">
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.StatementFileFactory.#ctor(System.IServiceProvider)">
             <summary>
             Initializes a new instance of the StatementFileFactory class with the specified statement file
             implementations.
-            </summary>        
-            <param name="files">An array of IStatementFile instances to be managed by the factory. Cannot be null and must not contain null
-            elements.</param>
+            </summary>
+            <param name="serviceProvider">The service provider for dependency injection. Cannot be null.</param>
         </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Files.StatementFileFactory.Load(System.String,System.Byte[])">
             <summary>
@@ -3587,6 +3611,17 @@
             standard newline characters. It is intended for use with CSV files where each line represents a record or
             statement. Inherits from <see cref="T:FinanceManager.Infrastructure.Statements.Files.BaseStatementFile"/>.</remarks>
         </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.TextStatementFile.#ctor(Microsoft.Extensions.Logging.ILogger)">
+            <summary>
+            Initializes a new instance of the TextStatementFile class with the specified logger.
+            </summary>
+            <param name="logger">The logger to use for recording diagnostic and operational messages. Cannot be null.</param>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.Files.TextStatementFile.DetectedEncoding">
+            <summary>
+            Detected encoding used to decode the loaded file. Defaults to UTF8 if detection wasn't performed yet.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Files.TextStatementFile.Load(System.String,System.Byte[])">
             <summary>
             Attempts to load the specified file as a text-based file, validating that the provided bytes represent a
@@ -3594,14 +3629,16 @@
             </summary>
             <remarks>This method checks for common text file encodings, including UTF-8 and UTF-16 with or
             without a byte order mark (BOM), and rejects files containing embedded NUL bytes or invalid UTF-8 sequences.
-            Files that do not meet these criteria are not loaded as text and the method returns false.</remarks>
+            Files that do not meet these criteria are not loaded as text and the method returns false. The method will
+            additionally attempt several legacy code pages (e.g. Windows-1252) and choose the first encoding that
+            round-trips the bytes without loss.</remarks>
             <param name="fileName">The original filename of the statement file (used for logging or metadata). May be null or empty.</param>
             <param name="fileBytes">The contents of the file to load, as a byte array. Must not be null or empty.</param>
             <returns>true if the file is recognized as a supported text format and loaded successfully; otherwise, false.</returns>
         </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Files.TextStatementFile.ReadContent">
             <summary>
-            Reads the content of a UTF-8 encoded text file from a byte array and returns its lines as a sequence of
+            Reads the content of a text file using the previously detected encoding and returns its lines as a sequence of
             strings.
             </summary>
             <remarks>Line breaks are recognized as either '\r\n' or '\n'. The method does not trim
@@ -3616,10 +3653,11 @@
             <remarks>Use this class to process and extract data from Wüstenrot PDF statement files. Inherits from
             PdfStatementFile and configures parsing settings specific to Wüstenrot's document format.</remarks>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Files.Wuestenrot_PDF_StatementFile.#ctor">
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.Wuestenrot_PDF_StatementFile.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.Files.Wuestenrot_PDF_StatementFile})">
             <summary>
             Initializes a new instance of the Wuestenrot_PDF_StatementFile class with default settings.
             </summary>
+            <param name="logger">The logger instance for logging operations within the statement file processing.</param>
             <remarks>This constructor sets the minimum table column space size to 3. Use this constructor
             when you want to create a new Wuestenrot_PDF_StatementFile with standard configuration.</remarks>
         </member>
@@ -3685,11 +3723,12 @@
             to build <see cref="T:FinanceManager.Application.Statements.StatementMovement"/> instances.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Barclays_PDF_StatementFileParser.#ctor">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Barclays_PDF_StatementFileParser.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.Parsers.Barclays_PDF_StatementFileParser})">
             <summary>
             Initializes a new instance of the Barclays_StatementFileReader class using the predefined statement
             templates for Barclays bank statements.
             </summary>
+            <param name="logger">Logger instance for logging parser operations and errors.</param>
             <remarks>Use this constructor to create a file reader specifically configured to parse
             Barclays bank statement files. The instance will be initialized with templates tailored for the Barclays
             statement format.</remarks>
@@ -3710,11 +3749,12 @@
             file formats. This class is intended to be used as a base for custom statement file parsers within the
             application.</remarks>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.BaseStatementFileParser.#ctor">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.BaseStatementFileParser.#ctor(Microsoft.Extensions.Logging.ILogger)">
             <summary>
             Initializes a new instance of the StatementFileParser class with the specified collection of statement file
             readers.
             </summary>
+            <param name="logger">The logger instance used for logging warnings and errors during parsing operations.</param>
         </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Parsers.BaseStatementFileParser.Parse(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
             <summary>
@@ -3731,6 +3771,39 @@
             <param name="statementFile">The statement file to be parsed. Cannot be null.</param>
             <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the parsed statement details if parsing is successful;
             otherwise, <see langword="null"/> if the file could not be parsed.</returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.BaseStatementFileParser.LogWarning(System.Exception,System.String)">
+            <summary>
+            Logs a warning message and associated exception using the configured logger.
+            </summary>
+            <param name="ex">The exception to include with the warning log entry. Cannot be null.</param>
+            <param name="message">The warning message to log. Cannot be null or empty.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.BaseStatementFileParser.LogWarning(System.String)">
+            <summary>
+            Writes a warning message to the configured logger, if available.
+            </summary>
+            <param name="message">The warning message to log. Cannot be null.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.BaseStatementFileParser.LogError(System.Exception,System.String)">
+            <summary>
+            Logs an error with the specified exception and message to the underlying logging system.
+            </summary>
+            <param name="ex">The exception that describes the error to log. Cannot be null.</param>
+            <param name="message">The message that provides additional context for the error.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.BaseStatementFileParser.LogInformation(System.String)">
+            <summary>
+            Writes an informational message to the configured logger, if available.
+            </summary>
+            <param name="message">The informational message to log. Cannot be null.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.BaseStatementFileParser.LogDebug(System.String)">
+            <summary>
+            Writes a debug-level message to the application's logging system.
+            </summary>
+            <param name="message">The message to log at the debug level. This should contain information useful for diagnosing or tracing
+            application behavior during development.</param>
         </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Parsers.DoubleToleranceComparer">
             <summary>
@@ -3788,10 +3861,11 @@
             Each template contains sections and field mappings consumed by the base template parser.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.ING_CSV_StatementFileParser.#ctor">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.ING_CSV_StatementFileParser.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.Parsers.ING_CSV_StatementFileParser})">
             <summary>
             Initializes a new instance of the ING_StatementFileReader class using the predefined templates.
             </summary>
+            <param name="logger">Logger instance for logging parser operations and errors.</param>
         </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser">
             <summary>
@@ -3800,10 +3874,11 @@
             This reader provides an enhanced Detail parser for securities transactions as well as a table parser for standard bank movements.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser.#ctor">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser})">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser"/> class.
             </summary>
+            <param name="logger">Logger instance for logging parser operations and errors.</param>
         </member>
         <member name="F:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser._Templates">
             <summary>
@@ -3851,11 +3926,12 @@
             The template controls how lines are parsed into statement header data and individual movements.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.#ctor(System.String[])">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.#ctor(System.String[],Microsoft.Extensions.Logging.ILogger)">
             <summary>
             Initializes a new instance of the TemplateStatementFileReader class with the specified templates.
             </summary>
             <param name="templates">An array of template strings to be used by the file reader. Cannot be null.</param>
+            <param name="logger">Logger instance for logging parsing activities and errors.</param>
         </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.Parse(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
             <summary>
@@ -3994,10 +4070,11 @@
             (main line + additional information lines).
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Wuestenrot_StatementFileParser.#ctor">
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Wuestenrot_StatementFileParser.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.Parsers.Wuestenrot_StatementFileParser})">
             <summary>
             Initializes a new instance of the Wuestenrot_StatementFileReader class using the default templates.
             </summary>
+            <param name="logger">Logger instance for logging parser operations and errors.</param>
         </member>
         <member name="F:FinanceManager.Infrastructure.Statements.Parsers.Wuestenrot_StatementFileParser._Templates">
             <summary>

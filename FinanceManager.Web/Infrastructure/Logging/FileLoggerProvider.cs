@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
@@ -12,6 +13,7 @@ namespace FinanceManager.Web.Infrastructure.Logging;
 public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
 {
     private readonly IOptionsMonitor<FileLoggerOptions> _optionsMonitor;
+    private readonly IOptionsMonitor<LoggerFilterOptions> _filterOptionsMonitor;
     private readonly IDisposable _onChange;
     private readonly object _writerLock = new();
     private FileLoggerOptions _options;
@@ -25,9 +27,10 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
     /// Initializes a new instance of the <see cref="FileLoggerProvider"/> class.
     /// </summary>
     /// <param name="optionsMonitor">Options monitor used to observe changes to <see cref="FileLoggerOptions"/>.</param>
-    public FileLoggerProvider(IOptionsMonitor<FileLoggerOptions> optionsMonitor)
+    public FileLoggerProvider(IOptionsMonitor<FileLoggerOptions> optionsMonitor, IOptionsMonitor<LoggerFilterOptions> filterOptionsMonitor)
     {
         _optionsMonitor = optionsMonitor;
+        _filterOptionsMonitor = filterOptionsMonitor;
         _options = _optionsMonitor.CurrentValue;
         _onChange = _optionsMonitor.OnChange(o => { lock (_writerLock) { _options = o; RotateIfNeeded(force: true); } });
         RotateIfNeeded(force: true);
@@ -62,6 +65,52 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
     public void SetScopeProvider(IExternalScopeProvider scopeProvider) => _scopeProvider = scopeProvider;
 
     /// <summary>
+    /// Determines whether logging is enabled for the given category and level according to configured LoggerFilterOptions.
+    /// </summary>
+    /// <param name="category">Logging category name.</param>
+    /// <param name="level">Log level to test.</param>
+    /// <returns>True when logging should be enabled for this category and level.</returns>
+    internal bool IsEnabled(string category, LogLevel level)
+    {
+        if (level == LogLevel.None)
+            return false;
+
+        var filterOptions = _filterOptionsMonitor?.CurrentValue;
+        if (filterOptions == null)
+            return true; // no filter options available, allow
+
+        // Start with global MinLevel (nullable)
+        LogLevel? allowed = filterOptions.MinLevel;
+
+        // Apply rules in order; later rules override earlier ones (mimic built-in behavior)
+        foreach (var rule in filterOptions.Rules)
+        {
+            // If a provider name is specified and does not match this provider, skip
+            if (!string.IsNullOrEmpty(rule.ProviderName) && !string.Equals(rule.ProviderName, nameof(FileLoggerProvider), StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            // If no category specified, this rule applies to all categories
+            if (string.IsNullOrEmpty(rule.CategoryName))
+            {
+                allowed = rule.LogLevel;
+                continue;
+            }
+
+            // If the category matches (starts with the rule's category name), apply it
+            if (category != null && category.StartsWith(rule.CategoryName, StringComparison.OrdinalIgnoreCase))
+            {
+                allowed = rule.LogLevel;
+            }
+        }
+
+        // If no rule or min level specified, allow
+        if (!allowed.HasValue)
+            return true;
+
+        return level >= allowed.Value;
+    }
+
+    /// <summary>
     /// Writes a log entry to the current log file, rotating files if necessary.
     /// This method is called by <see cref="FileLogger"/> instances and is thread-safe.
     /// </summary>
@@ -73,6 +122,10 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
     /// <param name="includeScopes">When true, the current logging scopes are appended to the message when available.</param>
     internal void Log(string category, LogLevel level, EventId eventId, string message, Exception? exception, bool includeScopes)
     {
+        // Respect filter settings: skip if not enabled
+        if (!IsEnabled(category, level))
+            return;
+
         var now = _options.UseUtcTimestamp ? DateTimeOffset.UtcNow : DateTimeOffset.Now;
         var timestamp = now.ToString("yyyy-MM-dd HH:mm:ss.fff zzz", CultureInfo.InvariantCulture);
 
@@ -253,7 +306,7 @@ internal sealed class FileLogger : ILogger
     /// </summary>
     /// <param name="logLevel">Log level to test.</param>
     /// <returns><c>true</c> when the provider accepts the level; otherwise <c>false</c>.</returns>
-    public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None;
+    public bool IsEnabled(LogLevel logLevel) => _provider.IsEnabled(_category, logLevel);
 
     /// <summary>
     /// Formats and emits a log entry via the owning provider.

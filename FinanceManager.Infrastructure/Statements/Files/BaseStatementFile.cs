@@ -1,4 +1,6 @@
-﻿namespace FinanceManager.Infrastructure.Statements.Files
+﻿using Microsoft.Extensions.Logging;
+
+namespace FinanceManager.Infrastructure.Statements.Files
 {
     /// <summary>
     /// Provides a base implementation for reading the contents of a statement file from a byte array.
@@ -8,6 +10,15 @@
     public abstract class BaseStatementFile : IStatementFile
     {
         /// <summary>
+        /// Initializes a new instance of the BaseStatementFile class with the specified logger.
+        /// </summary>
+        /// <param name="logger">The logger to use for recording diagnostic and operational messages. Cannot be null.</param>
+        protected BaseStatementFile(ILogger logger)
+        {
+            Logger = logger;
+        }
+
+        /// <summary>
         /// Gets the underlying byte array representing the data content.
         /// </summary>
         protected byte[] FileBytes { get; private set; }
@@ -15,6 +26,10 @@
         /// Gets the name of the file associated with this instance.
         /// </summary>
         public string FileName { get; private set; }
+        /// <summary>
+        /// Gets the logger instance used for recording diagnostic and operational messages.
+        /// </summary>
+        public ILogger Logger { get; }
 
         /// <summary>
         /// Loads the specified file data into the current instance.

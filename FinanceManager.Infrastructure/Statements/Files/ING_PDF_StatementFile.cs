@@ -1,4 +1,6 @@
-﻿namespace FinanceManager.Infrastructure.Statements.Files
+﻿using Microsoft.Extensions.Logging;
+
+namespace FinanceManager.Infrastructure.Statements.Files
 {
     /// <summary>
     /// Represents a PDF statement file specific to ING, providing parsing and handling functionality tailored to ING's
@@ -13,9 +15,10 @@
         /// <summary>
         /// Initializes a new instance of the ING_PDF_StatementFile class with default settings.
         /// </summary>
+        /// <param name="logger">The logger instance for logging operations within the statement file processing.</param>
         /// <remarks>This constructor sets the minimum table column space size to 3. Use this constructor
         /// when you want to create a new ING_PDF_StatementFile with standard configuration.</remarks>
-        public ING_PDF_StatementFile() : base()
+        public ING_PDF_StatementFile(ILogger<ING_PDF_StatementFile> logger) : base(logger)
         {
             MinTableColumnSpaceSize = 3;
             ParsingMode = LineParsingMode.TextAndTables;

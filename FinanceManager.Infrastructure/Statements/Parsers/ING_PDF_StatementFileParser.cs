@@ -1,6 +1,7 @@
 ﻿using FinanceManager.Application.Statements;
 using FinanceManager.Infrastructure.Statements.Files;
 using FinanceManager.Shared.Extensions;
+using Microsoft.Extensions.Logging;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Xml;
@@ -17,7 +18,8 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// <summary>
         /// Initializes a new instance of the <see cref="ING_PDF_StatementFileParser"/> class.
         /// </summary>
-        public ING_PDF_StatementFileParser(): base(_Templates)
+        /// <param name="logger">Logger instance for logging parser operations and errors.</param>
+        public ING_PDF_StatementFileParser(ILogger<ING_PDF_StatementFileParser> logger) : base(_Templates, logger)
         {
         }
 

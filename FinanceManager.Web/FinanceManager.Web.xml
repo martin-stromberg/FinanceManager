@@ -2236,7 +2236,7 @@
             Supports daily file naming, optional rolling by file size and retention of old log files.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Infrastructure.Logging.FileLoggerProvider.#ctor(Microsoft.Extensions.Options.IOptionsMonitor{FinanceManager.Web.Infrastructure.Logging.FileLoggerOptions})">
+        <member name="M:FinanceManager.Web.Infrastructure.Logging.FileLoggerProvider.#ctor(Microsoft.Extensions.Options.IOptionsMonitor{FinanceManager.Web.Infrastructure.Logging.FileLoggerOptions},Microsoft.Extensions.Options.IOptionsMonitor{Microsoft.Extensions.Logging.LoggerFilterOptions})">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Web.Infrastructure.Logging.FileLoggerProvider"/> class.
             </summary>
@@ -2259,6 +2259,14 @@
             Sets the external scope provider used to capture logging scopes in output.
             </summary>
             <param name="scopeProvider">Scope provider instance.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Infrastructure.Logging.FileLoggerProvider.IsEnabled(System.String,Microsoft.Extensions.Logging.LogLevel)">
+            <summary>
+            Determines whether logging is enabled for the given category and level according to configured LoggerFilterOptions.
+            </summary>
+            <param name="category">Logging category name.</param>
+            <param name="level">Log level to test.</param>
+            <returns>True when logging should be enabled for this category and level.</returns>
         </member>
         <member name="M:FinanceManager.Web.Infrastructure.Logging.FileLoggerProvider.Log(System.String,Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,System.String,System.Exception,System.Boolean)">
             <summary>

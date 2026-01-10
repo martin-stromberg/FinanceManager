@@ -34,7 +34,10 @@ public sealed partial class StatementDraftService : IStatementDraftService
     private List<Domain.Accounts.Account>? allAccounts = null;
 
     // helper: move entry attachments to bank posting and create references for other postings
-    private async Task PropagateEntryAttachmentsAsync(Guid ownerUserId, StatementDraftEntry entry, Guid bankPostingId, IEnumerable<Guid> otherPostingIds, CancellationToken ct)
+    private async Task PropagateEntryAttachmentsAsync(
+        Guid ownerUserId, 
+        StatementDraftEntry entry, 
+        Guid bankPostingId, IEnumerable<Guid> otherPostingIds, CancellationToken ct)
     {
         if (_attachments == null) { return; }
         var list = await _attachments.ListAsync(ownerUserId, AttachmentEntityKind.StatementDraftEntry, entry.Id, 0, 200, categoryId: null, isUrl: null, q: null, ct);
@@ -100,10 +103,10 @@ public sealed partial class StatementDraftService : IStatementDraftService
         _attachments = attachments;
         _statementFileParsers = (readers is not null && readers.ToList().Any()) ? readers.ToList() : new List<IStatementFileParser>
         {
-            new ING_PDF_StatementFileParser(),
-            new ING_CSV_StatementFileParser(),
-            new Wuestenrot_StatementFileParser(),
-            new Barclays_PDF_StatementFileParser(),
+            new ING_PDF_StatementFileParser(null),
+            new ING_CSV_StatementFileParser(null),
+            new Wuestenrot_StatementFileParser(null),
+            new Barclays_PDF_StatementFileParser(null),
             new Backup_JSON_StatementFileParser()
         };
     }
@@ -383,6 +386,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
     /// </remarks>
     public async IAsyncEnumerable<StatementDraftDto> CreateDraftAsync(Guid ownerUserId, string originalFileName, byte[] fileBytes, CancellationToken ct)
     {
+        _logger.LogInformation("Starting CreateDraftAsync for user {User} and file {File}", ownerUserId, originalFileName);
         var statementFile = statementFileFactory.Load(originalFileName, fileBytes);
         var parsedDraft = (statementFile is null) ? null : _statementFileParsers
             .Select(reader => reader.Parse(statementFile))
@@ -390,6 +394,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
             .FirstOrDefault();
         if (parsedDraft is null)
         {
+            _logger.LogWarning("No valid statement file reader found or no movements detected for user {User} and file {File}", ownerUserId, originalFileName);
             await AddStatementDetailsAsync(ownerUserId, originalFileName, fileBytes, ct);
         }
 
@@ -418,6 +423,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 .OrderBy(m => m.BookingDate)
                 .ThenBy(m => m.Subject)
                 .ToList();
+            _logger.LogInformation("Parsed {MovementCount} movements from file {File} for user {User}", allMovements.Count, originalFileName, ownerUserId);
 
             bool useMonthly = mode switch
             {
@@ -533,6 +539,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
 
                 yield return await FinishDraftAsync(draft, ownerUserId, ct);
             }
+            _logger.LogInformation("Completed CreateDraftAsync for user {User} and file {File}", ownerUserId, originalFileName);
         }
     }
 

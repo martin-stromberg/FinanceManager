@@ -1,6 +1,7 @@
 ﻿using FinanceManager.Application.Statements;
 using FinanceManager.Infrastructure.Statements.Files;
 using FinanceManager.Shared.Extensions;
+using Microsoft.Extensions.Logging;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -19,7 +20,9 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// Initializes a new instance of the TemplateStatementFileReader class with the specified templates.
         /// </summary>
         /// <param name="templates">An array of template strings to be used by the file reader. Cannot be null.</param>
-        protected TemplateStatementFileParser(string[] templates)
+        /// <param name="logger">Logger instance for logging parsing activities and errors.</param>
+        protected TemplateStatementFileParser(string[] templates, ILogger logger)
+            :base(logger)
         {
             Templates = templates;
         }
@@ -35,12 +38,19 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// null if the file could not be parsed with any available template.</returns>
         public override StatementParseResult? Parse(IStatementFile statementFile)
         {
+            LogInformation($"Starting parse of statement file: {statementFile.FileName} ({GetType().Name})");
             var DraftId = Guid.NewGuid();
             XmlDoc = new XmlDocument();
             var fileContent = statementFile.ReadContent().ToList();
+            if (!fileContent.Any() ) 
+            {
+                LogWarning("Statement file content is empty.");
+                return null;
+            }
             List<Exception> ErrorList = new List<Exception>();
             for (int idx = Templates.GetLowerBound(0); idx <= Templates.GetUpperBound(0); idx++)
             {
+                LogInformation($"Trying template #{idx + 1} of {Templates.Length}...");
                 XmlDoc.LoadXml(Templates[idx]);
                 try
                 {
@@ -52,6 +62,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                     EntryNo = 0;
                     foreach (var line in fileContent)
                     {
+                        LogDebug($"Parsing line: {line}");
                         foreach (var record in ParseNextLine(line).Where(rec => rec is not null))
                         {
                             EntryNo++;
@@ -63,9 +74,11 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                     ErrorList.Clear();
                     if (resultList.Any())
                         return new StatementParseResult(GlobalDraftData, resultList);
+                    LogInformation($"Template #{idx + 1} did not yield any records.");
                 }
                 catch (Exception ex)
                 {
+                    LogWarning(ex, $"Template #{idx + 1} parsing failed: {ex.Message}");
                     ErrorList.Add(ex);
                 }
             }

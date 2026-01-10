@@ -1,4 +1,6 @@
-﻿namespace FinanceManager.Infrastructure.Statements.Files
+﻿using Microsoft.Extensions.DependencyInjection;
+
+namespace FinanceManager.Infrastructure.Statements.Files
 {
     /// <summary>
     /// Provides functionality to load statement files using a set of supported file types.
@@ -8,16 +10,15 @@
     /// to know the specific type in advance.</remarks>
     public class StatementFileFactory: IStatementFileFactory
     {
-        private Type[] types;
+        private readonly IServiceProvider serviceProvider;
         /// <summary>
         /// Initializes a new instance of the StatementFileFactory class with the specified statement file
         /// implementations.
-        /// </summary>        
-        /// <param name="files">An array of IStatementFile instances to be managed by the factory. Cannot be null and must not contain null
-        /// elements.</param>
-        public StatementFileFactory(IStatementFile[] files)
+        /// </summary>
+        /// <param name="serviceProvider">The service provider for dependency injection. Cannot be null.</param>
+        public StatementFileFactory(IServiceProvider serviceProvider)
         {
-            types = files.Select(f => f.GetType()).ToArray();
+            this.serviceProvider = serviceProvider;
         }
         /// <summary>
         /// Attempts to load a statement file from the specified byte array using the available statement file types.
@@ -31,11 +32,8 @@
         /// otherwise, <see langword="null"/>.</returns>
         public IStatementFile? Load(string fileName, byte[] fileBytes)
         {
-            foreach (var type in types)
-            {
-                var instance = (IStatementFile?)Activator.CreateInstance(type);
-                if (instance == null)
-                    continue;
+            foreach (var instance in serviceProvider.GetServices<IStatementFile>())
+            {                
                 if (instance.Load(fileName, fileBytes))
                     return instance;
             }

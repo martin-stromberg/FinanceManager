@@ -1,4 +1,5 @@
 ﻿using FinanceManager.Infrastructure.Statements.Parsers;
+using Microsoft.Extensions.Logging;
 using System.Text;
 using System.Text.RegularExpressions;
 using UglyToad.PdfPig.Content;
@@ -14,6 +15,14 @@ namespace FinanceManager.Infrastructure.Statements.Files
     /// content extraction for PDF format.</remarks>
     public class PdfStatementFile : BaseStatementFile
     {
+        /// <summary>
+        /// Initializes a new instance of the PdfStatementFile class with the specified logger.
+        /// </summary>
+        /// <param name="logger">The logger instance used to record diagnostic and operational messages for this file.</param>
+        public PdfStatementFile(ILogger logger) : base(logger)
+        {
+        }
+
         /// <summary>
         /// Specifies the available modes for parsing lines, determining whether text, tables, or both are processed.
         /// </summary>
@@ -65,6 +74,8 @@ namespace FinanceManager.Infrastructure.Statements.Files
             if (fileBytes == null || fileBytes.Length == 0)
                 return false;
 
+            Logger?.LogInformation("Loading PDF file {FileName} ({Size} bytes)", fileName ?? "<null>", fileBytes.Length);
+
             // Quick check: PDF files start with ASCII "%PDF-" - but some PDFs may contain
             // leading garbage or BOM-like bytes before the signature. Search the first
             // part of the file for the signature instead of requiring it at index 0.
@@ -94,7 +105,10 @@ namespace FinanceManager.Infrastructure.Statements.Files
             }
 
             if (!foundSignature)
+            {
+                Logger?.LogDebug("PDF signature '%PDF-' not found in first {SearchLen} bytes", searchLen);
                 return false;
+            }
 
             // Check for EOF marker near the end (some PDFs may be appended with incremental updates)
             try
@@ -105,10 +119,12 @@ namespace FinanceManager.Infrastructure.Statements.Files
                 {
                     // not strictly required but helpful to filter corrupted/non-pdf blobs
                     // still try to open below
+                    Logger?.LogDebug("PDF EOF marker '%%EOF' not found near file end");
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger?.LogDebug(ex, "Error while scanning PDF tail for EOF marker");
                 // ignore decoding errors and continue to attempt opening
             }
 
@@ -118,11 +134,13 @@ namespace FinanceManager.Infrastructure.Statements.Files
                 using (var doc = UglyToad.PdfPig.PdfDocument.Open(fileBytes))
                 {
                     // if open succeeds, treat as PDF
+                    Logger?.LogInformation("PDF validated successfully by PdfPig");
                     return true;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger?.LogWarning(ex, "PdfPig failed to open PDF file {FileName}", fileName ?? "<null>");
                 return false;
             }
         }
@@ -140,10 +158,16 @@ namespace FinanceManager.Infrastructure.Statements.Files
             var sb = new StringBuilder();
             using (var doc = UglyToad.PdfPig.PdfDocument.Open(FileBytes))
             {
-                foreach (var page in doc.GetPages())
+                var pages = doc.GetPages().ToList();
+                Logger?.LogInformation("Opened PDF document with {PageCount} pages", pages.Count);
+
+                int pageIndex = 0;
+                foreach (var page in pages)
                 {
-                    var words = page.GetWords();
+                    pageIndex++;
+                    var words = page.GetWords().ToList();
                     // determine maximum right edge on page to allow right-aligning last column
+                    Logger?.LogDebug("Processing page {PageIndex}: {WordCount} words", pageIndex, words.Count);
                     var pageMaxRight = words.Any() ? words.Max(w => w.BoundingBox.Right) : 0.0;
                     // determine page-wide left margin and a stable estimated char width (median over all words)
                     var pageMinLeft = words.Any() ? words.Min(w => w.BoundingBox.Left) : 0.0;
@@ -213,6 +237,7 @@ namespace FinanceManager.Infrastructure.Statements.Files
                     // Merge isolated punctuation-only lines (e.g. hyphen placed on its own line due to coordinate differences)
                     // into an adjacent line if vertically close. This fixes cases like "Sparplan Allgemein - Monatsueberschuss"
                     // where the dash gets grouped on a separate line.
+                    int mergedPunctuation = 0;
                     for (int idx = pageLineInfos.Count - 1; idx >= 0; idx--)
                     {
                         var (lineWords, raw) = pageLineInfos[idx];
@@ -242,11 +267,15 @@ namespace FinanceManager.Infrastructure.Statements.Files
                                         pageLineInfos[neighborIdx] = (neighborWords, newRaw);
 
                                         pageLineInfos.RemoveAt(idx);
+                                        mergedPunctuation++;
                                     }
                                 }
                             }
                         }
                     }
+
+                    if (mergedPunctuation > 0)
+                        Logger?.LogDebug("Merged {MergedCount} isolated punctuation tokens on page {PageIndex}", mergedPunctuation, pageIndex);
 
                     // Now process lines using simple per-line space-based detection:
                     // - treat the generated raw line (position-aware with spaces) independently
@@ -283,7 +312,7 @@ namespace FinanceManager.Infrastructure.Statements.Files
 
             // 3. Leere Zeilen entfernen
             string fullText = sb.ToString();
-            var pageLines = fullText.Split("\r\n");
+            var pageLines = fullText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
 
             foreach (var line in pageLines.Where(line => !string.IsNullOrWhiteSpace(line)))
                 yield return line;

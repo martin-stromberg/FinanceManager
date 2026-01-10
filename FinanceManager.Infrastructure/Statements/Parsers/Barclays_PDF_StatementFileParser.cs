@@ -1,4 +1,5 @@
 ﻿using FinanceManager.Application.Statements;
+using Microsoft.Extensions.Logging;
 
 namespace FinanceManager.Infrastructure.Statements.Parsers
 {
@@ -14,10 +15,11 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// Initializes a new instance of the Barclays_StatementFileReader class using the predefined statement
         /// templates for Barclays bank statements.
         /// </summary>
+        /// <param name="logger">Logger instance for logging parser operations and errors.</param>
         /// <remarks>Use this constructor to create a file reader specifically configured to parse
         /// Barclays bank statement files. The instance will be initialized with templates tailored for the Barclays
         /// statement format.</remarks>
-        public Barclays_PDF_StatementFileParser() : base(_Templates)
+        public Barclays_PDF_StatementFileParser(ILogger<Barclays_PDF_StatementFileParser> logger) : base(_Templates, logger)
         {
         }
         /// <summary>

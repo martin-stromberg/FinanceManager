@@ -1,4 +1,5 @@
 ﻿using FinanceManager.Application.Statements;
+using Microsoft.Extensions.Logging;
 using System.Text;
 
 namespace FinanceManager.Infrastructure.Statements.Parsers
@@ -45,7 +46,8 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// <summary>
         /// Initializes a new instance of the ING_StatementFileReader class using the predefined templates.
         /// </summary>
-        public ING_CSV_StatementFileParser() : base(_Templates)
+        /// <param name="logger">Logger instance for logging parser operations and errors.</param>
+        public ING_CSV_StatementFileParser(ILogger<ING_CSV_StatementFileParser> logger) : base(_Templates, logger)
         {
         }
     }
