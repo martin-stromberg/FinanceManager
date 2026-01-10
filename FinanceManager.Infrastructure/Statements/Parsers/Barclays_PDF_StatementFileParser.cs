@@ -1,4 +1,5 @@
 ﻿using FinanceManager.Application.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
 using Microsoft.Extensions.Logging;
 
 namespace FinanceManager.Infrastructure.Statements.Parsers
@@ -35,6 +36,14 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
   </section>  
 </template>"
 };
-
+        /// <summary>
+        /// Determines whether the specified statement file is of a supported type for parsing.
+        /// </summary>
+        /// <param name="statementFile">The statement file to evaluate for compatibility with the parser. Cannot be null.</param>
+        /// <returns>true if the statement file is of a supported type; otherwise, false.</returns>
+        protected override bool CanParse(IStatementFile statementFile)
+        {
+            return new Type[]{ typeof(Barclays_PDF_StatementFile) }.Contains(statementFile.GetType());
+        }
     }
 }

@@ -3377,6 +3377,11 @@
             <remarks>Use this class to process and extract data from Barclays PDF bank statements. Inherits
             parsing behavior from PdfStatementFile, with configuration optimized for Barclays-specific layouts.</remarks>
         </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.Barclays_PDF_StatementFile.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Statements.Files.Barclays_PDF_StatementFile"/> class with default settings.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Files.Barclays_PDF_StatementFile.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.Files.Barclays_PDF_StatementFile})">
             <summary>
             Initializes a new instance of the Barclays_PDF_StatementFile class with default parsing settings for
@@ -3386,6 +3391,17 @@
             <remarks>This constructor configures the instance to use a minimum table column space size of
             2 and sets the parsing mode to process both text and tables, which is suitable for typical Barclays PDF
             statement formats.</remarks>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.Barclays_PDF_StatementFile.Load(System.String,System.Byte[])">
+            <summary>
+            Loads the specified file and determines whether it contains content associated with BAWAG AG.
+            </summary>
+            <remarks>This method checks the first ten lines of the file content to determine if any line
+            starts with "BAWAG AG". The base class's Load method is called first; if it fails, this method returns
+            false.</remarks>
+            <param name="fileName">The name of the file to load. Cannot be null or empty.</param>
+            <param name="fileBytes">The contents of the file as a byte array. Cannot be null.</param>
+            <returns>true if the file is loaded successfully and its content matches the expected criteria; otherwise, false.</returns>
         </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Files.BaseStatementFile">
             <summary>
@@ -3444,6 +3460,14 @@
             </summary>
             <param name="logger">The logger to use for logging diagnostic and operational information.</param>
         </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.ING_Csv_StatementFile.Load(System.String,System.Byte[])">
+            <summary>
+            Loads the specified file and verifies that its content begins with the expected ING-DiBa AG header.
+            </summary>
+            <param name="fileName">The path or name of the file to load. Cannot be null or empty.</param>
+            <param name="fileBytes">The contents of the file as a byte array. Cannot be null.</param>
+            <returns>true if the file is loaded successfully and its content starts with "ING-DiBa AG"; otherwise, false.</returns>
+        </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Files.ING_PDF_StatementFile">
             <summary>
             Represents a PDF statement file specific to ING, providing parsing and handling functionality tailored to ING's
@@ -3453,6 +3477,22 @@
             Inherits all standard PDF statement file features from <see cref="T:FinanceManager.Infrastructure.Statements.Files.PdfStatementFile"/> and applies ING-specific
             parsing rules. This class is intended for scenarios where ING's statement layout differs from generic PDF
             statements.</remarks>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.ING_PDF_StatementFile.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Statements.Files.ING_PDF_StatementFile"/> class with default settings.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.ING_PDF_StatementFile.Load(System.String,System.Byte[])">
+            <summary>
+            Loads the specified file and verifies that its content begins with the expected ING-DiBa AG header.
+            </summary>
+            <remarks>This method first attempts to load the file using the base implementation. If
+            successful, it then checks that the file's content begins with the required header. Use this method to
+            ensure that only files with the correct ING-DiBa AG format are accepted.</remarks>
+            <param name="fileName">The name of the file to load. Cannot be null or empty.</param>
+            <param name="fileBytes">The contents of the file as a byte array. Cannot be null.</param>
+            <returns>true if the file is loaded successfully and its content starts with "ING-DiBa AG"; otherwise, false.</returns>
         </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Files.ING_PDF_StatementFile.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.Files.ING_PDF_StatementFile})">
             <summary>
@@ -3653,6 +3693,11 @@
             <remarks>Use this class to process and extract data from Wüstenrot PDF statement files. Inherits from
             PdfStatementFile and configures parsing settings specific to Wüstenrot's document format.</remarks>
         </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.Wuestenrot_PDF_StatementFile.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Statements.Files.Wuestenrot_PDF_StatementFile"/> class with default settings.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Files.Wuestenrot_PDF_StatementFile.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.Files.Wuestenrot_PDF_StatementFile})">
             <summary>
             Initializes a new instance of the Wuestenrot_PDF_StatementFile class with default settings.
@@ -3660,6 +3705,19 @@
             <param name="logger">The logger instance for logging operations within the statement file processing.</param>
             <remarks>This constructor sets the minimum table column space size to 3. Use this constructor
             when you want to create a new Wuestenrot_PDF_StatementFile with standard configuration.</remarks>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.Wuestenrot_PDF_StatementFile.Load(System.String,System.Byte[])">
+            <summary>
+            Attempts to load the specified file and verifies whether it contains content associated with Wüstenrot
+            Bausparkasse AG.
+            </summary>
+            <remarks>The method first delegates to the base implementation to perform the initial loading.
+            It then inspects the file content to determine if it matches the expected format for Wüstenrot Bausparkasse
+            AG files. Only the first 10 lines are checked for identification.</remarks>
+            <param name="fileName">The name of the file to load. Cannot be null or empty.</param>
+            <param name="fileBytes">The contents of the file as a byte array. Cannot be null.</param>
+            <returns>true if the file is successfully loaded and identified as related to Wüstenrot Bausparkasse AG; otherwise,
+            false.</returns>
         </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Parsers.Backup_JSON_StatementFileParser">
             <summary>
@@ -3738,6 +3796,13 @@
             Array of XML templates (string literals) describing supported Barclays statement layouts.
             Each template is an XML document consumed by the base template parser.
             </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Barclays_PDF_StatementFileParser.CanParse(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
+            <summary>
+            Determines whether the specified statement file is of a supported type for parsing.
+            </summary>
+            <param name="statementFile">The statement file to evaluate for compatibility with the parser. Cannot be null.</param>
+            <returns>true if the statement file is of a supported type; otherwise, false.</returns>
         </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Parsers.BaseStatementFileParser">
             <summary>
@@ -3867,6 +3932,13 @@
             </summary>
             <param name="logger">Logger instance for logging parser operations and errors.</param>
         </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.ING_CSV_StatementFileParser.CanParse(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
+            <summary>
+            Determines whether the specified statement file is of a supported type and can be parsed by this parser.
+            </summary>
+            <param name="statementFile">The statement file to evaluate for compatibility with this parser. Cannot be null.</param>
+            <returns>true if the statement file is of a supported type and can be parsed; otherwise, false.</returns>
+        </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser">
             <summary>
             Statement file reader implementation for ING PDF exports.
@@ -3896,6 +3968,23 @@
             A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing a header and a single movement with parsed details when successful;
             otherwise <c>null</c> when parsing could not extract a valid amount or the format is not recognized.
             </returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser.CanParse(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
+            <summary>
+            Determines whether the specified statement file is of a supported type and can be parsed by this parser.
+            </summary>
+            <param name="statementFile">The statement file to evaluate for compatibility. Must not be null.</param>
+            <returns>true if the statement file is of a supported type and can be parsed; otherwise, false.</returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser.ProcessFoundRecord(FinanceManager.Application.Statements.StatementMovement)">
+            <summary>
+            Processes a found statement record by sanitizing its key fields before yielding the result.
+            </summary>
+            <remarks>This method clears or normalizes the values of the Subject, PostingDescription, and
+            Counterparty fields in the provided record before passing it to the base implementation. The returned
+            enumerable contains the updated record.</remarks>
+            <param name="rec">The statement record to process. Must not be null.</param>
+            <returns>An enumerable containing the processed statement record with sanitized field values.</returns>
         </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Parsers.IStatementFileParser">
             <summary>
@@ -3933,6 +4022,13 @@
             <param name="templates">An array of template strings to be used by the file reader. Cannot be null.</param>
             <param name="logger">Logger instance for logging parsing activities and errors.</param>
         </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.CanParse(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
+            <summary>
+            Determines whether the specified statement file can be parsed by this parser.
+            </summary>
+            <param name="statementFile">The statement file to evaluate for compatibility with this parser. Cannot be null.</param>
+            <returns>true if the statement file can be parsed; otherwise, false.</returns>
+        </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.Parse(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
             <summary>
             Parses the specified statement file and attempts to extract structured statement data.
@@ -3943,6 +4039,16 @@
             <param name="statementFile">The statement file to parse. Must provide access to the file's content in a supported format.</param>
             <returns>A StatementParseResult containing the parsed statement header and movements if parsing succeeds; otherwise,
             null if the file could not be parsed with any available template.</returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ProcessFoundRecord(FinanceManager.Application.Statements.StatementMovement)">
+            <summary>
+            Processes a found statement movement record and returns one or more resulting records for further handling.
+            </summary>
+            <remarks>Derived classes can override this method to implement custom processing logic, such
+            as filtering, transforming, or splitting the input record into multiple results.</remarks>
+            <param name="rec">The statement movement record to process. Cannot be null.</param>
+            <returns>An enumerable collection of <see cref="T:FinanceManager.Application.Statements.StatementMovement"/> objects resulting from processing the input
+            record. The collection contains at least the input record.</returns>
         </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ParseDetails(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
             <summary>
@@ -4080,6 +4186,15 @@
             <summary>
             XML templates used to control parsing of Wüstenrot statement text.
             </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Wuestenrot_StatementFileParser.CanParse(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
+            <summary>
+            Determines whether the specified statement file can be parsed by this parser.
+            </summary>
+            <remarks>This method checks whether the provided statement file is of a type recognized by
+            this parser. Only files of type Wuestenrot_PDF_StatementFile are supported.</remarks>
+            <param name="statementFile">The statement file to evaluate for compatibility. Cannot be null.</param>
+            <returns>true if the statement file is of a supported type and can be parsed; otherwise, false.</returns>
         </member>
         <member name="T:FinanceManager.Infrastructure.Statements.StatementDraftService">
             <summary>

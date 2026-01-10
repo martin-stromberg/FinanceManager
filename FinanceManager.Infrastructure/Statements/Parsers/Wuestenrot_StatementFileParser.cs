@@ -1,4 +1,5 @@
 ﻿using FinanceManager.Application.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
 using FinanceManager.Shared.Extensions;
 using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
@@ -42,7 +43,17 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
   </section>
   <section name='BlockEnd' type='ignore'/>
 </template>"
-        };        
-
+        };
+        /// <summary>
+        /// Determines whether the specified statement file can be parsed by this parser.
+        /// </summary>
+        /// <remarks>This method checks whether the provided statement file is of a type recognized by
+        /// this parser. Only files of type Wuestenrot_PDF_StatementFile are supported.</remarks>
+        /// <param name="statementFile">The statement file to evaluate for compatibility. Cannot be null.</param>
+        /// <returns>true if the statement file is of a supported type and can be parsed; otherwise, false.</returns>
+        protected override bool CanParse(IStatementFile statementFile)
+        {
+            return new Type[] { typeof(Wuestenrot_PDF_StatementFile) }.Contains(statementFile.GetType());
+        }
     }
 }

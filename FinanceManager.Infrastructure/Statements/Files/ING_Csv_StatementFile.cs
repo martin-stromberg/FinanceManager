@@ -16,6 +16,20 @@ namespace FinanceManager.Infrastructure.Statements.Files
         public ING_Csv_StatementFile(ILogger<ING_Csv_StatementFile> logger) : base(logger)
         {
         }
+
+        /// <summary>
+        /// Loads the specified file and verifies that its content begins with the expected ING-DiBa AG header.
+        /// </summary>
+        /// <param name="fileName">The path or name of the file to load. Cannot be null or empty.</param>
+        /// <param name="fileBytes">The contents of the file as a byte array. Cannot be null.</param>
+        /// <returns>true if the file is loaded successfully and its content starts with "ING-DiBa AG"; otherwise, false.</returns>
+        public override bool Load(string fileName, byte[] fileBytes)
+        {
+            if (!base.Load(fileName, fileBytes))
+                return false;
+
+            return ReadContent().First().StartsWith("ING-DiBa AG");
+        }
     }
 
 }

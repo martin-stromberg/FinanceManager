@@ -28,6 +28,13 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         }
 
         /// <summary>
+        /// Determines whether the specified statement file can be parsed by this parser.
+        /// </summary>
+        /// <param name="statementFile">The statement file to evaluate for compatibility with this parser. Cannot be null.</param>
+        /// <returns>true if the statement file can be parsed; otherwise, false.</returns>
+        protected abstract bool CanParse(IStatementFile statementFile);
+
+        /// <summary>
         /// Parses the specified statement file and attempts to extract structured statement data.
         /// </summary>
         /// <remarks>This method tries multiple parsing templates in sequence until one successfully
@@ -38,6 +45,8 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// null if the file could not be parsed with any available template.</returns>
         public override StatementParseResult? Parse(IStatementFile statementFile)
         {
+            if (!CanParse(statementFile))
+                return null;
             LogInformation($"Starting parse of statement file: {statementFile.FileName} ({GetType().Name})");
             var DraftId = Guid.NewGuid();
             XmlDoc = new XmlDocument();
@@ -63,7 +72,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                     foreach (var line in fileContent)
                     {
                         LogDebug($"Parsing line: {line}");
-                        foreach (var record in ParseNextLine(line).Where(rec => rec is not null))
+                        foreach (var record in ParseNextLine(line).Where(rec => rec is not null).SelectMany(rec => ProcessFoundRecord(rec)))
                         {
                             EntryNo++;
                             record.EntryNumber = EntryNo;
@@ -83,6 +92,18 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                 }
             }
             return null;
+        }
+        /// <summary>
+        /// Processes a found statement movement record and returns one or more resulting records for further handling.
+        /// </summary>
+        /// <remarks>Derived classes can override this method to implement custom processing logic, such
+        /// as filtering, transforming, or splitting the input record into multiple results.</remarks>
+        /// <param name="rec">The statement movement record to process. Cannot be null.</param>
+        /// <returns>An enumerable collection of <see cref="StatementMovement"/> objects resulting from processing the input
+        /// record. The collection contains at least the input record.</returns>
+        protected virtual IEnumerable<StatementMovement> ProcessFoundRecord(StatementMovement rec)
+        {
+            yield return rec;
         }
 
         /// <summary>

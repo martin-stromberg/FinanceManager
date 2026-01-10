@@ -1,4 +1,5 @@
 ﻿using FinanceManager.Application.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
 using Microsoft.Extensions.Logging;
 using System.Text;
 
@@ -49,6 +50,15 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// <param name="logger">Logger instance for logging parser operations and errors.</param>
         public ING_CSV_StatementFileParser(ILogger<ING_CSV_StatementFileParser> logger) : base(_Templates, logger)
         {
+        }
+        /// <summary>
+        /// Determines whether the specified statement file is of a supported type and can be parsed by this parser.
+        /// </summary>
+        /// <param name="statementFile">The statement file to evaluate for compatibility with this parser. Cannot be null.</param>
+        /// <returns>true if the statement file is of a supported type and can be parsed; otherwise, false.</returns>
+        protected override bool CanParse(IStatementFile statementFile)
+        {
+            return new Type[] { typeof(ING_Csv_StatementFile) }.Contains(statementFile.GetType());
         }
     }
 }

@@ -30,7 +30,8 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         {
             @"
 <template>
-  <section name='AccountInfo' type='keyvalue' separator=' ' endKeyword='Buchung|Buchung'>
+  <section name='AccountInfo' type='keyvalue' separator='|' endKeyword='Buchung|Buchung'>
+    <key name='IBAN' variable='BankAccountNo' mode='always'/>
     <key name='Extra-Konto Nummer' variable='BankAccountNo' mode='always'/>
   </section>
   <section name='table' type='table' containsheader='false' fieldSeparator='#None#' endKeyword='Abschluss für Konto|Neuer Saldo'>
@@ -320,10 +321,69 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
             }
         }
 
-        
+        /// <summary>
+        /// Determines whether the specified statement file is of a supported type and can be parsed by this parser.
+        /// </summary>
+        /// <param name="statementFile">The statement file to evaluate for compatibility. Must not be null.</param>
+        /// <returns>true if the statement file is of a supported type and can be parsed; otherwise, false.</returns>
+        protected override bool CanParse(IStatementFile statementFile)
+        {
+            return new Type[] { typeof(ING_PDF_StatementFile) }.Any(t => t.IsAssignableFrom(statementFile.GetType()));
+        }
+        /// <summary>
+        /// Processes a found statement record by sanitizing its key fields before yielding the result.
+        /// </summary>
+        /// <remarks>This method clears or normalizes the values of the Subject, PostingDescription, and
+        /// Counterparty fields in the provided record before passing it to the base implementation. The returned
+        /// enumerable contains the updated record.</remarks>
+        /// <param name="rec">The statement record to process. Must not be null.</param>
+        /// <returns>An enumerable containing the processed statement record with sanitized field values.</returns>
+        protected override IEnumerable<StatementMovement> ProcessFoundRecord(StatementMovement rec)
+        {
+            rec.Subject = ClearPDFTableValue(rec.Subject);
+            rec.PostingDescription = ClearPDFTableValue(rec.PostingDescription);
+            rec.Counterparty = ClearPDFTableValue(rec.Counterparty);
+            ExtractPostingdescriptionFromCounterparty(rec);
+            return base.ProcessFoundRecord(rec);
+        }
 
-      
+        private static readonly string[] PostingDescriptions = {
+            "Lastschrift-Einzug",
+            "Lastschrift",             
+            "Dauerauftrag/Terminüberweisung",
+            "Gutschrift/Dauerauftrag",
+            "Überweisung",
+            "Gutschrift", 
+            "Zins/Dividende WP", 
+            "Echtzeitüberweisung", 
+            "Gehalt/Rente", 
+            "Wertpapierkauf", 
+            "Kapitalertragsteuer", 
+            "Solidaritätszuschlag", 
+            "Zinsertrag" };
+        private void ExtractPostingdescriptionFromCounterparty(StatementMovement rec)
+        {
+            if (!string.IsNullOrWhiteSpace(rec.PostingDescription))
+                return;
+            foreach (var description in PostingDescriptions)
+            {
+                if (rec.Subject.StartsWith(description))
+                {
+                    rec.PostingDescription = description;
+                    rec.Subject = rec.Subject.Remove(0, description.Length).TrimStart();
+                }
+                if (rec.Counterparty.StartsWith(description))
+                {
+                    rec.PostingDescription = description;
+                    rec.Counterparty = rec.Counterparty.Remove(0, description.Length).TrimStart();
+                }
+            }
+        }
 
-        
+        private string ClearPDFTableValue(string value)
+        {
+            return value?.Replace("|", " ") ?? string.Empty;
+        }
+
     }
 }

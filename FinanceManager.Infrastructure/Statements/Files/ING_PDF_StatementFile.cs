@@ -13,6 +13,28 @@ namespace FinanceManager.Infrastructure.Statements.Files
     public class ING_PDF_StatementFile : PdfStatementFile
     {
         /// <summary>
+        /// Initializes a new instance of the <see cref="ING_PDF_StatementFile"/> class with default settings.
+        /// </summary>
+        public ING_PDF_StatementFile() : base(null)
+        {
+        }
+        /// <summary>
+        /// Loads the specified file and verifies that its content begins with the expected ING-DiBa AG header.
+        /// </summary>
+        /// <remarks>This method first attempts to load the file using the base implementation. If
+        /// successful, it then checks that the file's content begins with the required header. Use this method to
+        /// ensure that only files with the correct ING-DiBa AG format are accepted.</remarks>
+        /// <param name="fileName">The name of the file to load. Cannot be null or empty.</param>
+        /// <param name="fileBytes">The contents of the file as a byte array. Cannot be null.</param>
+        /// <returns>true if the file is loaded successfully and its content starts with "ING-DiBa AG"; otherwise, false.</returns>
+        public override bool Load(string fileName, byte[] fileBytes)
+        {
+            if (!base.Load(fileName, fileBytes))
+                return false;
+            
+            return ReadContent().First().StartsWith("ING-DiBa AG");
+        }
+        /// <summary>
         /// Initializes a new instance of the ING_PDF_StatementFile class with default settings.
         /// </summary>
         /// <param name="logger">The logger instance for logging operations within the statement file processing.</param>

@@ -19,6 +19,23 @@
             Tests the parsing of a pdf file of the ING bank for a giro account for one month
             </summary>
         </member>
+        <member name="T:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests_ForOneYear_Of_SavingAccounts2">
+            <summary>
+            Contains unit tests for verifying the parsing of ING PDF statement files for one year of saving accounts.
+            </summary>
+            <remarks>These tests ensure that the ING_PDF_StatementFile class correctly loads and reads the content
+            of PDF statement files specific to saving accounts over a one-year period. The tests are intended to validate
+            expected behavior when processing sample statement files.</remarks>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests_ForOneYear_Of_SavingAccounts2.Test_ING_PDF_StatementFile_ForOneYear_Of_SavingAccounts2">
+            <summary>
+            Verifies that the ING_PDF_StatementFile parser correctly loads and reads the content of a one-year savings
+            account statement PDF file.
+            </summary>
+            <remarks>This test ensures that the parser can process a PDF statement file for a savings
+            account and that the extracted content matches the expected result. The test uses a sample file name and an
+            empty byte array as input.</remarks>
+        </member>
         <member name="T:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests_ForOneYear_Of_SavingsAccount">
             <summary>
             Tests the parsing of pdf statement documents
@@ -28,6 +45,25 @@
             <summary>
             Tests the parsing of a pdf file of the ING bank for a savings account for one year
             </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests_ForOneYear_Of_SavingsAccount3">
+            <summary>
+            Contains unit tests for verifying the behavior of the ING_PDF_StatementFile class when processing a one-year
+            statement file for the third savings account.
+            </summary>
+            <remarks>These tests ensure that the ING_PDF_StatementFile class correctly loads and parses PDF
+            statement files specific to the 'Extra Konto' account for a full year. The tests validate that the file content
+            is read and interpreted as expected.</remarks>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests_ForOneYear_Of_SavingsAccount3.Test_ING_PDF_StatementFile_">
+            <summary>
+            Verifies that the ING_PDF_StatementFile parser correctly loads and reads the content of a sample ING PDF
+            statement file.
+            </summary>
+            <remarks>This is a unit test method intended to validate the behavior of the
+            ING_PDF_StatementFile class when provided with a specific file name and byte array. The test asserts that
+            the file loads successfully and that the parsed content matches the expected result. This method is marked
+            with the [Fact] attribute and is intended to be run by the xUnit test framework.</remarks>
         </member>
         <member name="T:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests_ForOneYear_Of_SavingsAccount_WithTextndTableParsing">
             <summary>
@@ -48,6 +84,11 @@
             format, exposed as individual lines via the overridden ReadContent method. It is intended for scenarios where
             the statement data needs to be processed, extracted, or analyzed programmatically. Inherits from
             Barclays_PDF_StatementFile, and is specific to the Barclays Bank Ireland PLC statement format.</remarks>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.Barclays_PdfAccountStatementFile.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.Barclays_PdfAccountStatementFile"/> class with default settings.
+            </summary>
         </member>
         <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.Barclays_PdfAccountStatementFile.ReadContent">
             <summary>
@@ -86,6 +127,11 @@
             needed, such as unit tests or sample data generation. The content reflects the typical structure and fields
             found in ING's exported account statements.</remarks>
         </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_CsvGiroAccountStatementFile.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_CsvGiroAccountStatementFile"/> class with default settings.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_CsvGiroAccountStatementFile.ReadContent">
             <summary>
             Returns an enumerable collection of lines from the file content, split by line breaks.
@@ -106,6 +152,50 @@
             </summary>
         </member>
         <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_MonthlyGiroAccountStatementFile.ReadContent">
+            <summary>
+            Returns the lines of text contained in the file content as an enumerable collection of strings.
+            </summary>
+            <returns>An enumerable collection of strings, each representing a line from the file content. The collection will be
+            empty if the file content contains no lines.</returns>
+        </member>
+        <member name="T:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_YearlySavingsAccount2_StatementFile">
+            <summary>
+            Represents a yearly savings account statement file from ING, providing access to the statement's content as a
+            collection of lines.
+            </summary>
+            <remarks>This class is a specialized implementation of <see cref="T:FinanceManager.Infrastructure.Statements.Files.ING_PDF_StatementFile"/> for ING
+            yearly savings account statements. It exposes the statement data in a line-by-line format, suitable for parsing
+            or display. The content includes account details, transaction history, and summary information for the specified
+            year.</remarks>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_YearlySavingsAccount2_StatementFile.#ctor">
+            <summary>
+            Initializes a new instance of the ING_YearlySavingsAccountStatementFile class.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_YearlySavingsAccount2_StatementFile.ReadContent">
+            <summary>
+            Returns the lines of text contained in the file content as an enumerable collection of strings.
+            </summary>
+            <returns>An enumerable collection of strings, each representing a line from the file content. The collection will be
+            empty if the file content contains no lines.</returns>
+        </member>
+        <member name="T:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_YearlySavingsAccount3_StatementFile">
+            <summary>
+            Represents a yearly savings account statement file from ING, providing access to the statement's content as a
+            collection of lines.
+            </summary>
+            <remarks>This class is a specialized implementation of <see cref="T:FinanceManager.Infrastructure.Statements.Files.ING_PDF_StatementFile"/> for ING
+            yearly savings account statements. It exposes the statement data in a line-by-line format, suitable for parsing
+            or display. The content includes account details, transaction history, and summary information for the specified
+            year.</remarks>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_YearlySavingsAccount3_StatementFile.#ctor">
+            <summary>
+            Initializes a new instance of the ING_YearlySavingsAccountStatementFile class.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.ING_YearlySavingsAccount3_StatementFile.ReadContent">
             <summary>
             Returns the lines of text contained in the file content as an enumerable collection of strings.
             </summary>
@@ -142,6 +232,11 @@
             <remarks>This class specializes the <see cref="T:FinanceManager.Infrastructure.Statements.Files.Wuestenrot_PDF_StatementFile"/> type for Wüstenrot
             account statements. It exposes the statement content as a sequence of lines and may be used to parse or analyze
             account statement data for Wüstenrot customers.</remarks>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.Wuestenrot_PdfAccountStatementFile.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.Wuestenrot_PdfAccountStatementFile"/> class with default settings.
+            </summary>
         </member>
         <member name="M:FinanceManager.Tests.Infrastructure.Statements.Reader.Helper.Wuestenrot_PdfAccountStatementFile.ReadContent">
             <summary>

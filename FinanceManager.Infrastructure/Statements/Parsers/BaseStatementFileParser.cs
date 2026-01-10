@@ -24,7 +24,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         public BaseStatementFileParser(ILogger logger)
         {
             this.logger = logger;
-        }
+        }        
         /// <summary>
         /// Parses the specified statement file and returns the result of the parsing operation.
         /// </summary>
