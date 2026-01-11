@@ -234,7 +234,6 @@ public sealed class SetupBackupsViewModel : BaseViewModel
                 UiRibbonItemSize.Large,
                 false,
                 localizer["Hint_CreateBackup"].Value ?? string.Empty,
-                "CreateBackup",
                 new Func<Task>(async () =>
                 {
                     try { await CreateAsync(); } catch { }
@@ -247,7 +246,6 @@ public sealed class SetupBackupsViewModel : BaseViewModel
                 UiRibbonItemSize.Large,
                 false,
                 localizer["Hint_UploadBackup"].Value ?? string.Empty,
-                "UploadBackup",
                 new Func<Task>(() =>
                 {
                     try { TriggerUploadRequest(); } catch { }

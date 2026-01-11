@@ -48,7 +48,7 @@ public static class RibbonExtensions
                 foreach (var a in actions)
                 {
                     if (a == null) { continue; }
-                    var actionName = a.Action ?? a.Id;
+                    var actionName = a.Id;
                     items.Add(new UiRibbonItem(
                         a.Label,
                         a.IconSvg,

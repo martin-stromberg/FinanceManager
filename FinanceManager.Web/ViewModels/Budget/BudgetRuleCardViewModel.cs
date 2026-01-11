@@ -278,19 +278,29 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
                 UiRibbonItemSize.Large,
                 false,
                 null,
-                "Back",
                 () =>
                 {
-                    if (!NavigateBackExtended())
+                    if (!string.IsNullOrWhiteSpace(InitBack))
+                    {
+                        RaiseUiActionRequested("Back", InitBack);
+                    }
+                    else if (BudgetPurposeId != Guid.Empty)
+                    {
+                        RaiseUiActionRequested("Back", $"/card/budget/purposes/{BudgetPurposeId}");
+                    }
+                    else
+                    {
                         RaiseUiActionRequested("Back");
+                    }
+
                     return Task.CompletedTask;
                 })
         });
 
         var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, "Save", async () => { await SaveAsync(); }),
-            new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Id == Guid.Empty, null, "Delete", () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, async () => { await SaveAsync(); }),
+            new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Id == Guid.Empty, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
         });
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, manage }) };

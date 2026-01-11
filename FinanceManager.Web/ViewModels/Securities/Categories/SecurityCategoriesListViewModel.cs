@@ -114,11 +114,11 @@ public sealed class SecurityCategoriesListViewModel : BaseListViewModel<Security
     {
         var actions = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Small, false, null, "Back", () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })
         };
         var manage = new List<UiRibbonAction>
         {
-            new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Small, false, null, "New", () => { RaiseUiActionRequested("New"); return Task.CompletedTask; })
+            new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("New"); return Task.CompletedTask; })
         };
         var tabs = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, actions), new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, manage) };
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

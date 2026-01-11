@@ -163,7 +163,6 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
                 UiRibbonItemSize.Large,
                 false,
                 null,
-                "New",
                 new Func<Task>(() => { RaiseUiActionRequested("New"); return Task.CompletedTask; })
             ),
             new UiRibbonAction(
@@ -173,12 +172,10 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
                 UiRibbonItemSize.Small,
                 false,
                 null,
-                "Categories",
                 () => { RaiseUiActionRequested("OpenCategories"); return Task.CompletedTask; }
             )
         };
 
-        // Filter tab - ToggleActive can be handled directly by VM via Callback
         var filter = new List<UiRibbonAction>
         {
             new UiRibbonAction(
@@ -187,7 +184,6 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
                 "<svg><use href='/icons/sprite.svg#check'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
-                null,
                 null,
                 new Func<Task>(() => { ToggleActive(); return Task.CompletedTask; })
             )

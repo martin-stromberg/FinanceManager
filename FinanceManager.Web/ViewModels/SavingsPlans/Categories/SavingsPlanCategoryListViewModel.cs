@@ -84,7 +84,7 @@ public sealed class SavingsPlanCategoryListViewModel : BaseListViewModel<Savings
     {
         var nav = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, "Back", () => {
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => {
                 var nav = ServiceProvider.GetRequiredService<NavigationManager>();
                 nav.NavigateTo("/list/savings-plans");
                 return Task.CompletedTask;
@@ -93,7 +93,7 @@ public sealed class SavingsPlanCategoryListViewModel : BaseListViewModel<Savings
 
         var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, "New", () => {
+            new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, () => {
                 RaiseUiActionRequested("New");
                 return Task.CompletedTask;
             })

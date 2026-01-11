@@ -184,7 +184,6 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                     UiRibbonItemSize.Large,
                     false,
                     localizer["Hint_RebuildAggregates"].Value,
-                    "RebuildAggregates",
                     new Func<Task>(async () =>
                     {
                         try

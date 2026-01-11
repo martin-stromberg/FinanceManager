@@ -365,28 +365,88 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
         }
 
         var intervalEditable = effectiveType == SavingsPlanType.Recurring;
-        var showTargetDate = effectiveType != SavingsPlanType.Open; // Zieldatum only when not Unbefristet
+        var showTargetDate = effectiveType != SavingsPlanType.Open; // target date only when not open-ended
+
+        var effectiveCategoryId = dto?.CategoryId ?? Model.CategoryId;
+        if (_pendingFieldValues.TryGetValue("Card_Caption_SavingsPlan_Category", out var pendingCategory))
+        {
+            switch (pendingCategory)
+            {
+                case LookupItem li:
+                    effectiveCategoryId = li.Key;
+                    break;
+                case Guid g:
+                    effectiveCategoryId = g;
+                    break;
+                case string s when Guid.TryParse(s, out var parsed):
+                    effectiveCategoryId = parsed;
+                    break;
+            }
+        }
+
+        var categoryName = string.Empty;
+        if (effectiveCategoryId.HasValue)
+        {
+            categoryName = Categories.FirstOrDefault(c => c.Id == effectiveCategoryId.Value)?.Name ?? string.Empty;
+        }
 
         var fields = new List<CardField>
         {
             new CardField("Card_Caption_SavingsPlan_Name", CardFieldKind.Text, text: dto?.Name ?? Model.Name ?? string.Empty, editable: true),
-            new CardField("Card_Caption_SavingsPlan_Category", CardFieldKind.Text, text: dto == null ? string.Empty : Categories.FirstOrDefault(c => c.Id == dto.CategoryId)?.Name ?? string.Empty, editable: true, lookupType: "Category", valueId: dto?.CategoryId),
+            new CardField(
+                "Card_Caption_SavingsPlan_Category",
+                CardFieldKind.Text,
+                text: categoryName,
+                editable: true,
+                lookupType: "SavingsPlanCategory",
+                lookupField: "Name",
+                valueId: effectiveCategoryId,
+                allowAdd: true,
+                recordCreationNameSuggestion: dto?.Name ?? Model.Name),
             new CardField("Card_Caption_SavingsPlan_Type", CardFieldKind.Text, text: dto?.Type.ToString() ?? Model.Type.ToString(), editable: true, lookupType: "Enum:SavingsPlanType"),
         };
+
         if (intervalEditable)
         {
             fields.Add(new CardField("Card_Caption_SavingsPlan_Interval", CardFieldKind.Text, text: dto?.Interval?.ToString() ?? string.Empty, editable: true, lookupType: "Enum:SavingsPlanInterval"));
         }
+
         fields.Add(new CardField("Card_Caption_SavingsPlan_TargetAmount", CardFieldKind.Currency, amount: dto?.TargetAmount, editable: true));
+
         if (showTargetDate)
         {
-            fields.Add(new CardField("Card_Caption_SavingsPlan_TargetDate", CardFieldKind.Text, text: dto?.TargetDate?.ToShortDateString(), editable: true));
+            fields.Add(new CardField("Card_Caption_SavingsPlan_TargetDate", CardFieldKind.Date, text: dto?.TargetDate?.ToString("d", System.Globalization.CultureInfo.CurrentCulture), editable: true));
         }
+
         fields.Add(new CardField("Card_Caption_SavingsPlan_ContractNumber", CardFieldKind.Text, text: dto?.ContractNumber ?? string.Empty, editable: true));
         fields.Add(new CardField("Card_Caption_SavingsPlan_Symbol", CardFieldKind.Symbol, symbolId: dto?.SymbolAttachmentId, editable: dto?.Id != Guid.Empty));
 
         var record = new CardRecord(fields, dto);
         return ApplyPendingValues(ApplyEnumTranslations(record));
+    }
+
+    /// <summary>
+    /// Provides lookup values for fields that support lookups (e.g. SavingsPlanCategory).
+    /// </summary>
+    public override async Task<IReadOnlyList<LookupItem>> QueryLookupAsync(CardField field, string? q, int skip, int take)
+    {
+        if (string.Equals(field.LookupType, "SavingsPlanCategory", StringComparison.OrdinalIgnoreCase))
+        {
+            if (Categories.Count == 0)
+            {
+                await LoadCategoriesAsync();
+            }
+
+            return Categories
+                .Where(c => string.IsNullOrWhiteSpace(q) || (c.Name?.Contains(q, StringComparison.OrdinalIgnoreCase) == true))
+                .OrderBy(c => c.Name)
+                .Skip(Math.Max(0, skip))
+                .Take(Math.Max(0, Math.Min(200, take)))
+                .Select(c => new LookupItem(c.Id, c.Name ?? string.Empty))
+                .ToList();
+        }
+
+        return await base.QueryLookupAsync(field, q, skip, take);
     }
 
     /// <summary>
@@ -397,36 +457,77 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
     public override void ValidateFieldValue(CardField field, object? newValue)
     {
         base.ValidateFieldValue(field, newValue);
-        if (field == null) return;
-        if (string.Equals(field.LabelKey, "Card_Caption_SavingsPlan_Type", StringComparison.OrdinalIgnoreCase) || string.Equals(field.LabelKey, "Card_Caption_SavingsPlan_Interval", StringComparison.OrdinalIgnoreCase))
+        if (field == null)
+        {
+            return;
+        }
+
+        if (string.Equals(field.LabelKey, "Card_Caption_SavingsPlan_Name", StringComparison.OrdinalIgnoreCase))
+        {
+            var name = newValue?.ToString() ?? string.Empty;
+            Model = new SavingsPlanCreateRequest(name, Model.Type, Model.TargetAmount, Model.TargetDate, Model.Interval, Model.CategoryId, Model.ContractNumber);
+            RaiseStateChanged();
+            return;
+        }
+
+        if (string.Equals(field.LabelKey, "Card_Caption_SavingsPlan_TargetDate", StringComparison.OrdinalIgnoreCase))
+        {
+            var s = newValue?.ToString();
+            if (!string.IsNullOrWhiteSpace(s) && DateTime.TryParse(s, System.Globalization.CultureInfo.CurrentCulture, System.Globalization.DateTimeStyles.None, out var dt))
+            {
+                Model = new SavingsPlanCreateRequest(Model.Name, Model.Type, Model.TargetAmount, dt, Model.Interval, Model.CategoryId, Model.ContractNumber);
+            }
+            RaiseStateChanged();
+        }
+
+        if (string.Equals(field.LabelKey, "Card_Caption_SavingsPlan_Type", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(field.LabelKey, "Card_Caption_SavingsPlan_Interval", StringComparison.OrdinalIgnoreCase))
         {
             _ = RebuildCardRecordAsync();
         }
     }
 
     /// <summary>
-    /// Reacts to lookup field selection changes and rebuilds the card record for dependent fields.
+    /// Rebuilds the current <see cref="CardRecord"/> using the last loaded DTO and pending field values.
+    /// Used to refresh dependent fields when certain selections change.
     /// </summary>
-    /// <param name="field">Card field containing the lookup.</param>
-    /// <param name="item">Selected lookup item.</param>
-    public override void ValidateLookupField(CardField field, LookupItem? item)
-    {
-        base.ValidateLookupField(field, item);
-        if (field == null) return;
-        if (string.Equals(field.LabelKey, "Card_Caption_SavingsPlan_Type", StringComparison.OrdinalIgnoreCase) || string.Equals(field.LabelKey, "Card_Caption_SavingsPlan_Interval", StringComparison.OrdinalIgnoreCase))
-        {
-            _ = RebuildCardRecordAsync();
-        }
-    }
-
     private async Task RebuildCardRecordAsync()
     {
         try
         {
             CardRecord = await BuildCardRecordAsync(_loadedDto);
         }
-        catch { }
+        catch
+        {
+        }
         RaiseStateChanged();
+    }
+
+    /// <summary>
+    /// Stores pending lookup field values and updates the in-memory model for fields that impact save enablement.
+    /// </summary>
+    /// <param name="field">Card field containing the lookup.</param>
+    /// <param name="item">Selected lookup item.</param>
+    public override void ValidateLookupField(CardField field, LookupItem? item)
+    {
+        base.ValidateLookupField(field, item);
+        if (field == null)
+        {
+            return;
+        }
+
+        if (string.Equals(field.LabelKey, "Card_Caption_SavingsPlan_Category", StringComparison.OrdinalIgnoreCase))
+        {
+            Model = new SavingsPlanCreateRequest(Model.Name, Model.Type, Model.TargetAmount, Model.TargetDate, Model.Interval, item?.Key, Model.ContractNumber);
+            RaiseStateChanged();
+            return;
+        }
+
+        if (string.Equals(field.LabelKey, "Card_Caption_SavingsPlan_Type", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(field.LabelKey, "Card_Caption_SavingsPlan_Interval", StringComparison.OrdinalIgnoreCase))
+        {
+            _ = RebuildCardRecordAsync();
+        }
     }
 
     // --- Ribbon provider ---
@@ -437,7 +538,13 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
     /// <returns>Ribbon register definitions or <c>null</c> when none are provided.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
-        var canSave = !string.IsNullOrWhiteSpace(Model.Name) && Model.Name.Trim().Length >= 2 && HasPendingChanges;
+        var effectiveName = Model.Name;
+        if (_pendingFieldValues.TryGetValue("Card_Caption_SavingsPlan_Name", out var pendingName) && pendingName is string s && !string.IsNullOrWhiteSpace(s))
+        {
+            effectiveName = s;
+        }
+
+        var canSave = !string.IsNullOrWhiteSpace(effectiveName) && effectiveName.Trim().Length >= 2 && HasPendingChanges;
 
         // Navigation group
         var nav = new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, new List<UiRibbonAction>
@@ -449,7 +556,6 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
                 Size: UiRibbonItemSize.Large,
                 Disabled: false,
                 Tooltip: null,
-                Action: "Back",
                 Callback: new Func<Task>(() => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })
             )
         });
@@ -464,7 +570,6 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
                 Size: UiRibbonItemSize.Large,
                 Disabled: !canSave,
                 Tooltip: null,
-                Action: "Save",
                 Callback: new Func<Task>(async () => { await SaveAsync(); })
             ),
             new UiRibbonAction(
@@ -474,7 +579,6 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
                 Size: UiRibbonItemSize.Small,
                 Disabled: !IsEdit,
                 Tooltip: null,
-                Action: "Archive",
                 Callback: new Func<Task>(async () => { await ArchiveAsync(); })
             ),
             new UiRibbonAction(
@@ -484,7 +588,6 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
                 Size: UiRibbonItemSize.Small,
                 Disabled: !IsEdit,
                 Tooltip: null,
-                Action: "Delete",
                 Callback: new Func<Task>(async () => { await DeleteAsync(); })
             )
         });
@@ -492,9 +595,9 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
         // Linked information group
         var linked = new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, new List<UiRibbonAction>
         {
-            new UiRibbonAction("Category", localizer["Ribbon_Category"].Value, "<svg><use href='/icons/sprite.svg#groups'/></svg>", UiRibbonItemSize.Small, Model.CategoryId is null, null, "OpenCategory", new Func<Task>(() => { var url = $"/card/savings-plans/categories/{Model.CategoryId}"; RaiseUiActionRequested("OpenCategory", url); return Task.CompletedTask; })),
-            new UiRibbonAction("OpenPostings", localizer["Ribbon_Postings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, !IsEdit, null, "OpenPostings", new Func<Task>(() => { var url = $"/list/postings/savings-plan/{Id}"; RaiseUiActionRequested("OpenPostings", url); return Task.CompletedTask; })),
-            new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, !IsEdit, null, "OpenAttachments", new Func<Task>(() => { RequestOpenAttachments(AttachmentEntityKind.SavingsPlan, Id); return Task.CompletedTask; }))
+            new UiRibbonAction("Category", localizer["Ribbon_Category"].Value, "<svg><use href='/icons/sprite.svg#groups'/></svg>", UiRibbonItemSize.Small, Model.CategoryId is null, null, new Func<Task>(() => { var url = $"/card/savings-plans/categories/{Model.CategoryId}"; RaiseUiActionRequested("OpenCategory", url); return Task.CompletedTask; })),
+            new UiRibbonAction("OpenPostings", localizer["Ribbon_Postings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, !IsEdit, null, new Func<Task>(() => { var url = $"/list/postings/savings-plan/{Id}"; RaiseUiActionRequested("OpenPostings", url); return Task.CompletedTask; })),
+            new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, !IsEdit, null, new Func<Task>(() => { RequestOpenAttachments(AttachmentEntityKind.SavingsPlan, Id); return Task.CompletedTask; }))
         });
 
         // Analysis group
@@ -507,7 +610,6 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
                 Size: UiRibbonItemSize.Small,
                 Disabled: !IsEdit,
                 Tooltip: null,
-                Action: "Recalculate",
                 Callback: new Func<Task>(async () => { await LoadAnalysisAsync(); })
             )
         });

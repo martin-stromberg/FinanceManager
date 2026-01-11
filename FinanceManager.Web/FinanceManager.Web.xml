@@ -5346,10 +5346,9 @@
             <param name="Size">Visual size of the action item (<see cref="T:FinanceManager.Web.ViewModels.Common.UiRibbonItemSize"/>).</param>
             <param name="Disabled">Whether the action should be rendered disabled.</param>
             <param name="Tooltip">Optional tooltip text.</param>
-            <param name="Action">Optional action name used by callers to identify the action.</param>
-            <param name="Callback">Optional callback executed when the action is invoked in-memory (used by tests or immediate UI wiring).</param>
+            <param name="Callback">Callback executed when the action is invoked.</param>
         </member>
-        <member name="M:FinanceManager.Web.ViewModels.Common.UiRibbonAction.#ctor(System.String,System.String,System.String,FinanceManager.Web.ViewModels.Common.UiRibbonItemSize,System.Boolean,System.String,System.String,System.Func{System.Threading.Tasks.Task})">
+        <member name="M:FinanceManager.Web.ViewModels.Common.UiRibbonAction.#ctor(System.String,System.String,System.String,FinanceManager.Web.ViewModels.Common.UiRibbonItemSize,System.Boolean,System.String,System.Func{System.Threading.Tasks.Task})">
             <summary>
             Represents a single action that can be shown in a ribbon tab.
             </summary>
@@ -5359,8 +5358,7 @@
             <param name="Size">Visual size of the action item (<see cref="T:FinanceManager.Web.ViewModels.Common.UiRibbonItemSize"/>).</param>
             <param name="Disabled">Whether the action should be rendered disabled.</param>
             <param name="Tooltip">Optional tooltip text.</param>
-            <param name="Action">Optional action name used by callers to identify the action.</param>
-            <param name="Callback">Optional callback executed when the action is invoked in-memory (used by tests or immediate UI wiring).</param>
+            <param name="Callback">Callback executed when the action is invoked.</param>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Common.UiRibbonAction.Id">
             <summary>Unique identifier for the action.</summary>
@@ -5380,11 +5378,13 @@
         <member name="P:FinanceManager.Web.ViewModels.Common.UiRibbonAction.Tooltip">
             <summary>Optional tooltip text.</summary>
         </member>
-        <member name="P:FinanceManager.Web.ViewModels.Common.UiRibbonAction.Action">
-            <summary>Optional action name used by callers to identify the action.</summary>
-        </member>
         <member name="P:FinanceManager.Web.ViewModels.Common.UiRibbonAction.Callback">
-            <summary>Optional callback executed when the action is invoked in-memory (used by tests or immediate UI wiring).</summary>
+            <summary>Callback executed when the action is invoked.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Common.UiRibbonAction.Action">
+            <summary>
+            Compatibility alias for older code/tests that referenced <c>Action</c> instead of <c>Id</c>.
+            </summary>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Common.UiRibbonAction.FileCallback">
             <summary>
@@ -5711,7 +5711,7 @@
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Contacts.ContactListViewModel.AllowRangeFiltering">
             <summary>
-            Indicates whether the list supports range filtering. Contacts list does not support range filtering.
+            Indicates whether the list supports range filtering. Contact list does not support range filtering.
             </summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Contacts.ContactListViewModel.LoadPageAsync(System.Boolean)">
@@ -7196,6 +7196,11 @@
             </summary>
             <returns>True when deletion succeeded; otherwise false.</returns>
         </member>
+        <member name="M:FinanceManager.Web.ViewModels.SavingsPlans.SavingsPlanCardViewModel.QueryLookupAsync(FinanceManager.Web.ViewModels.Common.CardField,System.String,System.Int32,System.Int32)">
+            <summary>
+            Provides lookup values for fields that support lookups (e.g. SavingsPlanCategory).
+            </summary>
+        </member>
         <member name="M:FinanceManager.Web.ViewModels.SavingsPlans.SavingsPlanCardViewModel.ValidateFieldValue(FinanceManager.Web.ViewModels.Common.CardField,System.Object)">
             <summary>
             Reacts to field value validation changes and triggers a rebuild of the card record when relevant enum-like fields change.
@@ -7203,9 +7208,15 @@
             <param name="field">Card field being validated.</param>
             <param name="newValue">New value being applied.</param>
         </member>
+        <member name="M:FinanceManager.Web.ViewModels.SavingsPlans.SavingsPlanCardViewModel.RebuildCardRecordAsync">
+            <summary>
+            Rebuilds the current <see cref="T:FinanceManager.Web.ViewModels.Common.CardRecord"/> using the last loaded DTO and pending field values.
+            Used to refresh dependent fields when certain selections change.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Web.ViewModels.SavingsPlans.SavingsPlanCardViewModel.ValidateLookupField(FinanceManager.Web.ViewModels.Common.CardField,FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem)">
             <summary>
-            Reacts to lookup field selection changes and rebuilds the card record for dependent fields.
+            Stores pending lookup field values and updates the in-memory model for fields that impact save enablement.
             </summary>
             <param name="field">Card field containing the lookup.</param>
             <param name="item">Selected lookup item.</param>
@@ -8914,7 +8925,7 @@
         <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel.DeleteAsync">
             <summary>
             Deletes the current draft via the API.
-            </summary>
+            /// </summary>
             <returns>True when deletion succeeded; otherwise false.</returns>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel.IsSymbolUploadAllowed">

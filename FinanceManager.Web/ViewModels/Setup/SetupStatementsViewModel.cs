@@ -232,7 +232,6 @@ public sealed class SetupStatementsViewModel : BaseViewModel
             UiRibbonItemSize.Large,
             false,
             localizer["Hint_Save"].Value ?? string.Empty,
-            "SaveImportSplit",
             new Func<Task>(async () =>
             {
                 try { await SaveAsync(); } catch { }
@@ -246,7 +245,6 @@ public sealed class SetupStatementsViewModel : BaseViewModel
             UiRibbonItemSize.Large,
             false,
             localizer["Hint_Reset"].Value ?? string.Empty,
-            "ResetImportSplit",
             new Func<Task>(() => { Reset(); return Task.CompletedTask; })));
 
         var tabs = new List<UiRibbonTab>

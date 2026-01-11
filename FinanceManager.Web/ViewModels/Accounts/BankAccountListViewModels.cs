@@ -88,9 +88,9 @@ namespace FinanceManager.Web.ViewModels.Accounts
         {
             var actions = new List<UiRibbonAction>
             {
-                new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Small, false, null, "Back", () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }),
-                new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Small, false, null, "New", () => { RaiseUiActionRequested("New"); return Task.CompletedTask; }),
-                new UiRibbonAction("ClearSearch", localizer["Ribbon_ClearSearch"].Value, "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, false, null, "ClearSearch", () => { RaiseUiActionRequested("ClearSearch"); return Task.CompletedTask; })
+                new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }),
+                new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("New"); return Task.CompletedTask; }),
+                new UiRibbonAction("ClearSearch", localizer["Ribbon_ClearSearch"].Value, "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("ClearSearch"); return Task.CompletedTask; })
             };
             var tabs = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, actions) };
             return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

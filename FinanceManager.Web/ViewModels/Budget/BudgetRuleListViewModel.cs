@@ -114,7 +114,6 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
                 UiRibbonItemSize.Large,
                 false,
                 null,
-                "NewRule",
                 () =>
                 {
                     RaiseUiActionRequested("NewRule", BudgetPurposeId.ToString());
