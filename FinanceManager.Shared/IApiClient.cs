@@ -613,4 +613,81 @@ public interface IApiClient
     Task<ImportSplitSettingsDto?> UserSettings_GetImportSplitAsync(CancellationToken ct = default);
     /// <summary>Updates the import split settings for the current user.</summary>
     Task<bool> UserSettings_UpdateImportSplitAsync(ImportSplitSettingsUpdateRequest request, CancellationToken ct = default);
+
+    // Budgets
+
+    /// <summary>
+    /// Lists budget purposes for the current user.
+    /// </summary>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto>> Budgets_ListPurposesAsync(int skip = 0, int take = 200, FinanceManager.Shared.Dtos.Budget.BudgetSourceType? sourceType = null, string? q = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets a budget purpose by id or null when not found.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto?> Budgets_GetPurposeAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Creates a budget purpose.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto> Budgets_CreatePurposeAsync(FinanceManager.Shared.Dtos.Budget.BudgetPurposeCreateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Updates a budget purpose. Returns null when not found.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto?> Budgets_UpdatePurposeAsync(Guid id, FinanceManager.Shared.Dtos.Budget.BudgetPurposeUpdateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Deletes a budget purpose. Returns false when not found.
+    /// </summary>
+    Task<bool> Budgets_DeletePurposeAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Lists rules for a budget purpose.
+    /// </summary>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto>> Budgets_ListRulesByPurposeAsync(Guid budgetPurposeId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets a budget rule by id or null when not found.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto?> Budgets_GetRuleAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Creates a budget rule.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto> Budgets_CreateRuleAsync(FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Updates a budget rule. Returns null when not found.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto?> Budgets_UpdateRuleAsync(Guid id, FinanceManager.Shared.Dtos.Budget.BudgetRuleUpdateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Deletes a budget rule. Returns false when not found.
+    /// </summary>
+    Task<bool> Budgets_DeleteRuleAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Lists overrides for a budget purpose.
+    /// </summary>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetOverrideDto>> Budgets_ListOverridesByPurposeAsync(Guid budgetPurposeId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets a budget override by id or null when not found.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetOverrideDto?> Budgets_GetOverrideAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Creates a budget override.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetOverrideDto> Budgets_CreateOverrideAsync(FinanceManager.Shared.Dtos.Budget.BudgetOverrideCreateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Updates a budget override. Returns null when not found.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetOverrideDto?> Budgets_UpdateOverrideAsync(Guid id, FinanceManager.Shared.Dtos.Budget.BudgetOverrideUpdateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Deletes a budget override. Returns false when not found.
+    /// </summary>
+    Task<bool> Budgets_DeleteOverrideAsync(Guid id, CancellationToken ct = default);
 }

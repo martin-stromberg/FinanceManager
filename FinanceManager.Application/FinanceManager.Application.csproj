@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FinanceManager.Domain\FinanceManager.Domain.csproj" />
+    <ProjectReference Include="..\FinanceManager.Shared\FinanceManager.Shared.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

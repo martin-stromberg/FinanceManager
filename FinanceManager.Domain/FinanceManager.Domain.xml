@@ -591,6 +591,200 @@
             Attachment belongs to a security category.
             </summary>
         </member>
+        <member name="T:FinanceManager.Domain.Budget.BudgetOverride">
+            <summary>
+            Overrides allow replacing the calculated planned amount for a specific period.
+            Overrides are applied with higher priority than rules.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetOverride.#ctor(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Decimal)">
+            <summary>
+            Creates a new budget override.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="budgetPurposeId">Budget purpose identifier.</param>
+            <param name="period">Target period to override (monthly).</param>
+            <param name="amount">Replacement amount.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetOverride.OwnerUserId">
+            <summary>
+            Owner user identifier.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetOverride.BudgetPurposeId">
+            <summary>
+            Budget purpose identifier.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetOverride.PeriodYear">
+            <summary>
+            Override period year.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetOverride.PeriodMonth">
+            <summary>
+            Override period month (1..12).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetOverride.Period">
+            <summary>
+            Target period to override.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetOverride.Amount">
+            <summary>
+            Replacement planned amount for the period.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetOverride.SetAmount(System.Decimal)">
+            <summary>
+            Updates the override amount.
+            </summary>
+            <param name="amount">New amount.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetOverride.SetPeriod(FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey)">
+            <summary>
+            Updates the override period.
+            </summary>
+            <param name="period">New period.</param>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when period month is invalid.</exception>
+        </member>
+        <member name="T:FinanceManager.Domain.Budget.BudgetPurpose">
+            <summary>
+            A budget purpose defines what expected (planned) amounts should be tracked against.
+            A purpose aggregates planned and actual values for a specific source (contact, contact group, savings plan).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetPurpose.#ctor(System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String)">
+            <summary>
+            Creates a new budget purpose owned by a user.
+            </summary>
+            <param name="ownerUserId">Owner user id. Must not be empty.</param>
+            <param name="name">Name of the purpose. Must not be null or whitespace.</param>
+            <param name="sourceType">Source type used to map actual values.</param>
+            <param name="sourceId">Identifier of the source entity (depends on <paramref name="sourceType"/>).</param>
+            <param name="description">Optional description.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetPurpose.OwnerUserId">
+            <summary>
+            Owner user identifier.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetPurpose.Name">
+            <summary>
+            Display name of the purpose.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetPurpose.Description">
+            <summary>
+            Optional description for the purpose.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetPurpose.SourceType">
+            <summary>
+            The type of source used to resolve actual postings.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetPurpose.SourceId">
+            <summary>
+            The identifier of the source entity.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetPurpose.Rename(System.String)">
+            <summary>
+            Renames the purpose.
+            </summary>
+            <param name="name">New name.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetPurpose.SetDescription(System.String)">
+            <summary>
+            Sets a description for the purpose.
+            </summary>
+            <param name="description">Description to set, or null/whitespace to clear.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetPurpose.SetSource(FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid)">
+            <summary>
+            Updates the source mapping.
+            </summary>
+            <param name="sourceType">New source type.</param>
+            <param name="sourceId">New source id. Must not be empty.</param>
+        </member>
+        <member name="T:FinanceManager.Domain.Budget.BudgetRule">
+            <summary>
+            A budget rule defines when and how much should be expected for a purpose.
+            Rules are deterministic and do not create persisted planned postings.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetRule.#ctor(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.DateOnly,System.Nullable{System.DateOnly},System.Nullable{System.Int32})">
+            <summary>
+            Creates a new budget rule.
+            </summary>
+            <param name="ownerUserId">Owner user id. Must not be empty.</param>
+            <param name="budgetPurposeId">Budget purpose id. Must not be empty.</param>
+            <param name="amount">Expected amount (positive or negative).</param>
+            <param name="interval">Interval definition.</param>
+            <param name="startDate">Start date (inclusive).</param>
+            <param name="endDate">Optional end date (inclusive).</param>
+            <param name="customIntervalMonths">Custom interval in months when <paramref name="interval"/> is <see cref="F:FinanceManager.Shared.Dtos.Budget.BudgetIntervalType.CustomMonths"/>.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetRule.OwnerUserId">
+            <summary>
+            Owner user identifier.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetRule.BudgetPurposeId">
+            <summary>
+            Budget purpose identifier.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetRule.Amount">
+            <summary>
+            Expected amount.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetRule.Interval">
+            <summary>
+            Interval definition.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetRule.CustomIntervalMonths">
+            <summary>
+            Custom interval in months when <see cref="P:FinanceManager.Domain.Budget.BudgetRule.Interval"/> is <see cref="F:FinanceManager.Shared.Dtos.Budget.BudgetIntervalType.CustomMonths"/>.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetRule.StartDate">
+            <summary>
+            Start date (inclusive).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetRule.EndDate">
+            <summary>
+            Optional end date (inclusive).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetRule.SetAmount(System.Decimal)">
+            <summary>
+            Sets the amount.
+            </summary>
+            <param name="amount">Expected amount.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetRule.SetSchedule(FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.DateOnly,System.Nullable{System.DateOnly},System.Nullable{System.Int32})">
+            <summary>
+            Sets schedule values.
+            </summary>
+            <param name="interval">Interval definition.</param>
+            <param name="startDate">Start date.</param>
+            <param name="endDate">End date.</param>
+            <param name="customIntervalMonths">Custom interval months if applicable.</param>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when custom interval months are invalid.</exception>
+            <exception cref="T:System.ArgumentException">Thrown when end date is before start date.</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetRule.GetIntervalStepMonths">
+            <summary>
+            Returns the step size (months) for the interval.
+            </summary>
+            <returns>Step size in months.</returns>
+        </member>
         <member name="T:FinanceManager.Domain.Contacts.AliasName">
             <summary>
             Represents an alias pattern for a contact used to match imported postings.

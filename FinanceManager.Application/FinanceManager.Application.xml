@@ -402,6 +402,193 @@
             Uploads a backup file and returns created metadata DTO.
             </summary>
         </member>
+        <member name="T:FinanceManager.Application.Budget.BudgetPeriodRange">
+            <summary>
+            Helper for iterating monthly period keys.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.BudgetPlannedValuesResult">
+            <summary>
+            Planned value calculation result.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.BudgetPlannedValuesResult.#ctor(FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Budget.BudgetPlannedValue})">
+            <summary>
+            Planned value calculation result.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.BudgetPlannedValuesResult.GetPlanned(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey)">
+            <summary>
+            Returns planned value for a specific purpose and period.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.BudgetPlannedValue">
+            <summary>
+            A planned amount for a budget purpose and period.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.BudgetPlannedValue.#ctor(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Decimal)">
+            <summary>
+            A planned amount for a budget purpose and period.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.BudgetPlanningService">
+            <summary>
+            Calculates planned values based on persisted rules and overrides.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.BudgetPlanningService.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Application.Budget.BudgetPlanningService},FinanceManager.Application.Budget.IBudgetPlanningRepository)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="logger">Logger.</param>
+            <param name="repo">Repository used to load rules and overrides.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.BudgetPlanningService.CalculatePlannedValuesAsync(System.Guid,System.Collections.Generic.IReadOnlyCollection{System.Guid},FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Application.Budget.BudgetRuleScheduler">
+            <summary>
+            Deterministic rule schedule generator.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.IBudgetOverrideService">
+            <summary>
+            Service for managing budget overrides.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetOverrideService.CreateAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Decimal,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new override for a given purpose and period.
+            If an override for the same period already exists, the operation should fail.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetOverrideService.UpdateAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Decimal,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing override.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetOverrideService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an existing override.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetOverrideService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets an override by id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetOverrideService.ListByPurposeAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists overrides for a purpose.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.IBudgetPlanningRepository">
+            <summary>
+            Repository abstraction for loading budget planning data (purposes, rules and overrides).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPlanningRepository.GetPurposeIdsAsync(System.Guid,System.Collections.Generic.IReadOnlyCollection{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Loads purpose ids for the provided owner and optional filter set.
+            </summary>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="purposeIds">Optional filter set.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>List of purpose ids that exist for the owner.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPlanningRepository.GetRulesAndOverridesAsync(System.Guid,System.Collections.Generic.IReadOnlyList{System.Guid},FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Threading.CancellationToken)">
+            <summary>
+            Loads rules and overrides relevant for the provided purpose ids and period range.
+            </summary>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="purposeIds">Purpose ids.</param>
+            <param name="from">Start period (inclusive).</param>
+            <param name="to">End period (inclusive).</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Tuple of rules and overrides.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.IBudgetPlanningService">
+            <summary>
+            Calculates planned budget values deterministically from rules and overrides.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPlanningService.CalculatePlannedValuesAsync(System.Guid,System.Collections.Generic.IReadOnlyCollection{System.Guid},FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Threading.CancellationToken)">
+            <summary>
+            Calculates planned values for the specified purposes and period range.
+            </summary>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="purposeIds">Optional filter to a subset of purposes.</param>
+            <param name="from">Start period (inclusive).</param>
+            <param name="to">End period (inclusive).</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Planned values for each purpose and month in the requested range.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.IBudgetPurposeService">
+            <summary>
+            Service for managing budget purposes.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.UpdateAsync(System.Guid,System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an existing budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a budget purpose by id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.ListAsync(System.Guid,System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Lists budget purposes.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.CountAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the total number of purposes for the owner.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.IBudgetRuleService">
+            <summary>
+            Service for managing budget rules.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.CreateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <summary>
+            Creates a new rule for a purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.UpdateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing rule.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an existing rule.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a rule by id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.ListByPurposeAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists rules for a purpose.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Application.Contacts.IContactCategoryService">
             <summary>
             Service to manage contact categories for a user.

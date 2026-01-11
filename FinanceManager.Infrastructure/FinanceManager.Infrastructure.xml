@@ -229,6 +229,15 @@
         <member name="P:FinanceManager.Infrastructure.AppDbContext.AttachmentCategories">
             <summary>Attachment categories.</summary>
         </member>
+        <member name="P:FinanceManager.Infrastructure.AppDbContext.BudgetPurposes">
+            <summary>Budget purposes.</summary>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.AppDbContext.BudgetRules">
+            <summary>Budget rules.</summary>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.AppDbContext.BudgetOverrides">
+            <summary>Budget overrides.</summary>
+        </member>
         <member name="M:FinanceManager.Infrastructure.AppDbContext.OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <summary>
             Configure the EF Core model: indexes, constraints and relationships.
@@ -940,6 +949,104 @@
             <param name="r">The backup record to map.</param>
             <returns>A <see cref="T:FinanceManager.Shared.Dtos.Backups.BackupDto"/> instance.</returns>
         </member>
+        <member name="T:FinanceManager.Infrastructure.Budget.BudgetOverrideService">
+            <summary>
+            EF Core based implementation of <see cref="T:FinanceManager.Application.Budget.IBudgetOverrideService"/>.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetOverrideService.#ctor(FinanceManager.Infrastructure.AppDbContext)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="db">App database context.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetOverrideService.CreateAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Decimal,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetOverrideService.UpdateAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Decimal,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetOverrideService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetOverrideService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetOverrideService.ListByPurposeAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Budget.BudgetPlanningRepository">
+            <summary>
+            EF Core implementation of <see cref="T:FinanceManager.Application.Budget.IBudgetPlanningRepository"/>.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPlanningRepository.#ctor(FinanceManager.Infrastructure.AppDbContext)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="db">DbContext instance.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPlanningRepository.GetPurposeIdsAsync(System.Guid,System.Collections.Generic.IReadOnlyCollection{System.Guid},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPlanningRepository.GetRulesAndOverridesAsync(System.Guid,System.Collections.Generic.IReadOnlyList{System.Guid},FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Budget.BudgetPurposeService">
+            <summary>
+            EF Core based implementation of <see cref="T:FinanceManager.Application.Budget.IBudgetPurposeService"/>.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.#ctor(FinanceManager.Infrastructure.AppDbContext)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="db">App database context.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.UpdateAsync(System.Guid,System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.ListAsync(System.Guid,System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.CountAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Budget.BudgetRuleService">
+            <summary>
+            EF Core based implementation of <see cref="T:FinanceManager.Application.Budget.IBudgetRuleService"/>.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.#ctor(FinanceManager.Infrastructure.AppDbContext)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="db">App database context.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.CreateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.UpdateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.ListByPurposeAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Contacts.ContactCategoryService">
             <summary>
             Service for managing contact categories (CRUD operations).
@@ -1324,6 +1431,18 @@
             <inheritdoc />
         </member>
         <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddEntryNoToDraftEntries.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity._20260110_AddBudgets">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity._20260110_AddBudgets.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity._20260110_AddBudgets.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity._20260110_AddBudgets.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
         <member name="T:FinanceManager.Infrastructure.Demo.DemoDataService">

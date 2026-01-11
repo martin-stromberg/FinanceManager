@@ -315,6 +315,81 @@
             Deletes a backup entry. Returns false when not found.
             </summary>
         </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_ListPurposesAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Lists budget purposes for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_GetPurposeAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a budget purpose by id or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_CreatePurposeAsync(FinanceManager.Shared.Dtos.Budget.BudgetPurposeCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_UpdatePurposeAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetPurposeUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates a budget purpose. Returns null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_DeletePurposeAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a budget purpose. Returns false when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_ListRulesByPurposeAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists rules for a budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_CreateRuleAsync(FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a budget rule.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_UpdateRuleAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetRuleUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates a budget rule. Returns null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_GetRuleAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a budget rule by id or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_DeleteRuleAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a budget rule. Returns false when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_ListOverridesByPurposeAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists overrides for a budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_CreateOverrideAsync(FinanceManager.Shared.Dtos.Budget.BudgetOverrideCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a budget override.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_GetOverrideAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a budget override by id or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_UpdateOverrideAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetOverrideUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates a budget override. Returns null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_DeleteOverrideAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a budget override. Returns false when not found.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Shared.ApiClient.ContactCategories_ListAsync(System.Threading.CancellationToken)">
             <summary>
             Lists contact categories available to the current user.
@@ -1875,6 +1950,286 @@
         <member name="P:FinanceManager.Shared.Dtos.Backups.BackupDto.Source">
             <summary>Source indicating how the backup was created (System | Upload).</summary>
         </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetIntervalType">
+            <summary>
+            Defines how often a budget rule produces an expected amount.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetIntervalType.Monthly">
+            <summary>
+            Once per month.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetIntervalType.Quarterly">
+            <summary>
+            Once per quarter.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetIntervalType.Yearly">
+            <summary>
+            Once per year.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetIntervalType.CustomMonths">
+            <summary>
+            A custom interval in months.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetOverrideCreateRequest">
+            <summary>
+            Request payload for creating a budget override.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetOverrideCreateRequest.#ctor(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Decimal)">
+            <summary>
+            Request payload for creating a budget override.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetOverrideDto">
+            <summary>
+            Data transfer object for budget overrides.
+            </summary>
+            <param name="Id">Override id.</param>
+            <param name="OwnerUserId">Owner user id.</param>
+            <param name="BudgetPurposeId">Purpose id.</param>
+            <param name="PeriodYear">Override year.</param>
+            <param name="PeriodMonth">Override month (1..12).</param>
+            <param name="Amount">Replacement amount.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetOverrideDto.#ctor(System.Guid,System.Guid,System.Guid,System.Int32,System.Int32,System.Decimal)">
+            <summary>
+            Data transfer object for budget overrides.
+            </summary>
+            <param name="Id">Override id.</param>
+            <param name="OwnerUserId">Owner user id.</param>
+            <param name="BudgetPurposeId">Purpose id.</param>
+            <param name="PeriodYear">Override year.</param>
+            <param name="PeriodMonth">Override month (1..12).</param>
+            <param name="Amount">Replacement amount.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetOverrideDto.Id">
+            <summary>Override id.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetOverrideDto.OwnerUserId">
+            <summary>Owner user id.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetOverrideDto.BudgetPurposeId">
+            <summary>Purpose id.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetOverrideDto.PeriodYear">
+            <summary>Override year.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetOverrideDto.PeriodMonth">
+            <summary>Override month (1..12).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetOverrideDto.Amount">
+            <summary>Replacement amount.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetOverrideUpdateRequest">
+            <summary>
+            Request payload for updating a budget override.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetOverrideUpdateRequest.#ctor(FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Decimal)">
+            <summary>
+            Request payload for updating a budget override.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey">
+            <summary>
+            Represents a deterministic monthly period key.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Represents a deterministic monthly period key.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey.FromDate(System.DateOnly)">
+            <summary>
+            Creates a <see cref="T:FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey"/> from a date.
+            </summary>
+            <param name="date">Date to convert.</param>
+            <returns>Period key for the month.</returns>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey.StartDate">
+            <summary>
+            Returns the first day of the represented month.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey.EndDate">
+            <summary>
+            Returns the last day of the represented month.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey.AddMonths(System.Int32)">
+            <summary>
+            Adds months to this period key.
+            </summary>
+            <param name="months">Months to add.</param>
+            <returns>New period key.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey.Validate">
+            <summary>
+            Validates the period key.
+            </summary>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when month is outside 1..12.</exception>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey.ToString">
+            <summary>
+            Returns YYYY-MM representation.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetPurposeCreateRequest">
+            <summary>
+            Request payload for creating a budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPurposeCreateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String)">
+            <summary>
+            Request payload for creating a budget purpose.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto">
+            <summary>
+            Data transfer object for budget purposes.
+            </summary>
+            <param name="Id">Purpose id.</param>
+            <param name="OwnerUserId">Owner user id.</param>
+            <param name="Name">Purpose name.</param>
+            <param name="Description">Optional description.</param>
+            <param name="SourceType">Source type used to resolve actual values.</param>
+            <param name="SourceId">Identifier of the source entity.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto.#ctor(System.Guid,System.Guid,System.String,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid)">
+            <summary>
+            Data transfer object for budget purposes.
+            </summary>
+            <param name="Id">Purpose id.</param>
+            <param name="OwnerUserId">Owner user id.</param>
+            <param name="Name">Purpose name.</param>
+            <param name="Description">Optional description.</param>
+            <param name="SourceType">Source type used to resolve actual values.</param>
+            <param name="SourceId">Identifier of the source entity.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto.Id">
+            <summary>Purpose id.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto.OwnerUserId">
+            <summary>Owner user id.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto.Name">
+            <summary>Purpose name.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto.Description">
+            <summary>Optional description.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto.SourceType">
+            <summary>Source type used to resolve actual values.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto.SourceId">
+            <summary>Identifier of the source entity.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetPurposeUpdateRequest">
+            <summary>
+            Request payload for updating a budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPurposeUpdateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String)">
+            <summary>
+            Request payload for updating a budget purpose.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest">
+            <summary>
+            Request payload for creating a budget rule.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest.#ctor(System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly})">
+            <summary>
+            Request payload for creating a budget rule.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto">
+            <summary>
+            Data transfer object for budget rules.
+            </summary>
+            <param name="Id">Rule id.</param>
+            <param name="OwnerUserId">Owner user id.</param>
+            <param name="BudgetPurposeId">Purpose id.</param>
+            <param name="Amount">Expected amount.</param>
+            <param name="Interval">Interval type.</param>
+            <param name="CustomIntervalMonths">Custom interval months when interval is CustomMonths.</param>
+            <param name="StartDate">Start date (inclusive).</param>
+            <param name="EndDate">Optional end date (inclusive).</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.#ctor(System.Guid,System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly})">
+            <summary>
+            Data transfer object for budget rules.
+            </summary>
+            <param name="Id">Rule id.</param>
+            <param name="OwnerUserId">Owner user id.</param>
+            <param name="BudgetPurposeId">Purpose id.</param>
+            <param name="Amount">Expected amount.</param>
+            <param name="Interval">Interval type.</param>
+            <param name="CustomIntervalMonths">Custom interval months when interval is CustomMonths.</param>
+            <param name="StartDate">Start date (inclusive).</param>
+            <param name="EndDate">Optional end date (inclusive).</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.Id">
+            <summary>Rule id.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.OwnerUserId">
+            <summary>Owner user id.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.BudgetPurposeId">
+            <summary>Purpose id.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.Amount">
+            <summary>Expected amount.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.Interval">
+            <summary>Interval type.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.CustomIntervalMonths">
+            <summary>Custom interval months when interval is CustomMonths.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.StartDate">
+            <summary>Start date (inclusive).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.EndDate">
+            <summary>Optional end date (inclusive).</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetRuleUpdateRequest">
+            <summary>
+            Request payload for updating a budget rule.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetRuleUpdateRequest.#ctor(System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly})">
+            <summary>
+            Request payload for updating a budget rule.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetSourceType">
+            <summary>
+            Identifies the type of source used to resolve actual values for a budget purpose.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetSourceType.Contact">
+            <summary>
+            Actuals are derived from postings assigned to a single contact.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetSourceType.ContactGroup">
+            <summary>
+            Actuals are derived from postings assigned to contacts of a contact group/category.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetSourceType.SavingsPlan">
+            <summary>
+            Actuals are derived from savings plan postings of a savings plan.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Common.AggregatePointDto">
             <summary>
             DTO representing a single aggregate data point for charts and summaries.
@@ -1927,18 +2282,35 @@
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Common.ApiErrorDto">
             <summary>
-            DTO wrapping an API error message for standardized responses.
+            DTO wrapping an API error response for standardized client consumption.
             </summary>
-            <param name="error">Short error message intended for display.</param>
+            <param name="error">Machine-readable error code (e.g. Err_Invalid_name).</param>
+            <param name="message">Human-readable error message intended for display.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Common.ApiErrorDto.#ctor(System.String,System.String)">
+            <summary>
+            DTO wrapping an API error response for standardized client consumption.
+            </summary>
+            <param name="error">Machine-readable error code (e.g. Err_Invalid_name).</param>
+            <param name="message">Human-readable error message intended for display.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Common.ApiErrorDto.error">
+            <summary>Machine-readable error code (e.g. Err_Invalid_name).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Common.ApiErrorDto.message">
+            <summary>Human-readable error message intended for display.</summary>
         </member>
         <member name="M:FinanceManager.Shared.Dtos.Common.ApiErrorDto.#ctor(System.String)">
             <summary>
-            DTO wrapping an API error message for standardized responses.
+            Creates an error response with only a human-readable message.
             </summary>
-            <param name="error">Short error message intended for display.</param>
+            <param name="message">Human-readable error message intended for display.</param>
         </member>
-        <member name="P:FinanceManager.Shared.Dtos.Common.ApiErrorDto.error">
-            <summary>Short error message intended for display.</summary>
+        <member name="M:FinanceManager.Shared.Dtos.Common.ApiErrorDto.FromMessage(System.String)">
+            <summary>
+            Creates an error response with only a human-readable message.
+            </summary>
+            <param name="message">Human-readable error message intended for display.</param>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Common.PageResult`1">
             <summary>
@@ -4928,6 +5300,81 @@
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.UserSettings_UpdateImportSplitAsync(FinanceManager.Shared.Dtos.Statements.ImportSplitSettingsUpdateRequest,System.Threading.CancellationToken)">
             <summary>Updates the import split settings for the current user.</summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_ListPurposesAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Lists budget purposes for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_GetPurposeAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a budget purpose by id or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_CreatePurposeAsync(FinanceManager.Shared.Dtos.Budget.BudgetPurposeCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_UpdatePurposeAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetPurposeUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates a budget purpose. Returns null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_DeletePurposeAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a budget purpose. Returns false when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_ListRulesByPurposeAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists rules for a budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_GetRuleAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a budget rule by id or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_CreateRuleAsync(FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a budget rule.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_UpdateRuleAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetRuleUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates a budget rule. Returns null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_DeleteRuleAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a budget rule. Returns false when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_ListOverridesByPurposeAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists overrides for a budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_GetOverrideAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a budget override by id or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_CreateOverrideAsync(FinanceManager.Shared.Dtos.Budget.BudgetOverrideCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a budget override.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_UpdateOverrideAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetOverrideUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates a budget override. Returns null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_DeleteOverrideAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a budget override. Returns false when not found.
+            </summary>
         </member>
     </members>
 </doc>

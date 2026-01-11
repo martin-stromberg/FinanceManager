@@ -559,6 +559,111 @@
             <param name="ct">Cancellation token.</param>
             <returns>204 No Content when deletion succeeded; 404 Not Found when the backup does not exist.</returns>
         </member>
+        <member name="T:FinanceManager.Web.Controllers.BudgetOverridesController">
+            <summary>
+            Manages budget overrides for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetOverridesController.#ctor(FinanceManager.Application.Budget.IBudgetOverrideService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetOverridesController})">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetOverridesController.ListByPurposeAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists overrides for a specific purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetOverridesController.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets an override by id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetOverridesController.CreateAsync(FinanceManager.Shared.Dtos.Budget.BudgetOverrideCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates an override.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetOverridesController.UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetOverrideUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing override.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetOverridesController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an override.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.BudgetPurposesController">
+            <summary>
+            Manages budget purposes for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.#ctor(FinanceManager.Application.Budget.IBudgetPurposeService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetPurposesController})">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.ListAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Lists purposes for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a budget purpose by id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.CreateAsync(FinanceManager.Shared.Dtos.Budget.BudgetPurposeCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetPurposeUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates a budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a budget purpose.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.BudgetRulesController">
+            <summary>
+            Manages budget rules for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetRulesController.#ctor(FinanceManager.Application.Budget.IBudgetRuleService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetRulesController})">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetRulesController.ListByPurposeAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists rules for a specific purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetRulesController.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a rule by id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetRulesController.CreateAsync(FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a budget rule.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetRulesController.UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetRuleUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing budget rule.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetRulesController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a budget rule.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.Controllers.ContactCategoriesController">
             <summary>
             Manages contact categories for the current user: CRUD operations and symbol assignment.
@@ -3553,6 +3658,247 @@
             </summary>
             <param name="localizer">Localizer used to resolve UI labels for the ribbon actions.</param>
             <returns>A list of <see cref="T:FinanceManager.Web.ViewModels.Common.UiRibbonRegister"/> describing available ribbon tabs and actions.</returns>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel">
+            <summary>
+            View model for the budget purpose detail card.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="sp">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.Id">
+            <summary>
+            Current purpose id.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.Purpose">
+            <summary>
+            Loaded purpose DTO.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.Title">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.LoadAsync(System.Guid)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.ReloadAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.QueryLookupAsync(FinanceManager.Web.ViewModels.Common.CardField,System.String,System.Int32,System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.ValidateLookupField(FinanceManager.Web.ViewModels.Common.CardField,FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.IsSymbolUploadAllowed">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.GetSymbolParent">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.AssignNewSymbolAsync(System.Nullable{System.Guid})">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.ValidateFieldValue(FinanceManager.Web.ViewModels.Common.CardField,System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.SaveAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.DeleteAsync">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem">
+            <summary>
+            Lightweight list item representing a budget purpose.
+            </summary>
+            <param name="Id">Purpose id.</param>
+            <param name="Name">Display name.</param>
+            <param name="SourceType">Source type text.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.#ctor(System.Guid,System.String,System.String)">
+            <summary>
+            Lightweight list item representing a budget purpose.
+            </summary>
+            <param name="Id">Purpose id.</param>
+            <param name="Name">Display name.</param>
+            <param name="SourceType">Source type text.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.Id">
+            <summary>Purpose id.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.Name">
+            <summary>Display name.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.SourceType">
+            <summary>Source type text.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.GetNavigateUrl">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListViewModel">
+            <summary>
+            List view model for the budget purposes overview.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="services">Service provider used to resolve dependencies.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListViewModel.AllowRangeFiltering">
+            <summary>
+            Budget purposes list does not support range filtering.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListViewModel.LoadPageAsync(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListViewModel.BuildRecords">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel">
+            <summary>
+            View model for the budget rule detail card.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="sp">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.Id">
+            <summary>
+            Current rule id.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.BudgetPurposeId">
+            <summary>
+            Budget purpose id (required for creating new rules).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.Rule">
+            <summary>
+            Loaded rule DTO.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.Title">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.LoadAsync(System.Guid)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.ReloadAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.SaveAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.DeleteAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.IsSymbolUploadAllowed">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.GetSymbolParent">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.AssignNewSymbolAsync(System.Nullable{System.Guid})">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.ValidateLookupField(FinanceManager.Web.ViewModels.Common.CardField,FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.ValidateFieldValue(FinanceManager.Web.ViewModels.Common.CardField,System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem">
+            <summary>
+            Lightweight list item for budget rule rows.
+            </summary>
+            <param name="Id">Rule id.</param>
+            <param name="Interval">Interval label.</param>
+            <param name="Amount">Amount formatted for display.</param>
+            <param name="Start">Start date formatted for display.</param>
+            <param name="End">End date formatted for display.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.#ctor(System.Guid,System.String,System.String,System.String,System.String)">
+            <summary>
+            Lightweight list item for budget rule rows.
+            </summary>
+            <param name="Id">Rule id.</param>
+            <param name="Interval">Interval label.</param>
+            <param name="Amount">Amount formatted for display.</param>
+            <param name="Start">Start date formatted for display.</param>
+            <param name="End">End date formatted for display.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.Id">
+            <summary>Rule id.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.Interval">
+            <summary>Interval label.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.Amount">
+            <summary>Amount formatted for display.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.Start">
+            <summary>Start date formatted for display.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.End">
+            <summary>End date formatted for display.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.GetNavigateUrl">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel">
+            <summary>
+            Embedded list view model for budget rules belonging to a specific budget purpose.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.BudgetPurposeId">
+            <summary>
+            Budget purpose id for which rules are listed.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.InitializeAsync(System.Guid)">
+            <summary>
+            Sets the budget purpose id and triggers loading.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.LoadPageAsync(System.Boolean)">
+            <summary>
+            Loads the list content.
+            </summary>
+            <param name="resetPaging">Ignored for this embedded list (no paging).</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.BuildRecords">
+            <summary>
+            Builds column definitions and list records.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
+            <inheritdoc />
         </member>
         <member name="T:FinanceManager.Web.ViewModels.Common.AggregateBarChartViewModel">
             <summary>

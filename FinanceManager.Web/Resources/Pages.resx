@@ -1371,4 +1371,79 @@
   <data name="Validation_Close" xml:space="preserve">
     <value>Close</value>
   </data>
+  <data name="Nav_BudgetPurposes" xml:space="preserve">
+    <value>Budget planning</value>
+  </data>
+  <data name="List_Th_Source" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="Card_Caption_BudgetPurpose_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Card_Caption_BudgetPurpose_SourceType" xml:space="preserve">
+    <value>Source type</value>
+  </data>
+  <data name="Card_Caption_BudgetPurpose_SourceId" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="Card_Caption_BudgetPurpose_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="EnumType_BudgetSourceType_ContactGroup" xml:space="preserve">
+    <value>Contact group</value>
+  </data>
+  <data name="EnumType_BudgetSourceType_Contact" xml:space="preserve">
+    <value>Contact</value>
+  </data>
+  <data name="EnumType_BudgetSourceType_SavingsPlan" xml:space="preserve">
+    <value>Savings plan</value>
+  </data>
+  <data name="EnumType_BudgetSourceType_Security" xml:space="preserve">
+    <value>Security</value>
+  </data>
+  <data name="List_Th_Interval" xml:space="preserve">
+    <value>Interval</value>
+  </data>
+  <data name="List_Th_Start" xml:space="preserve">
+    <value>Start date</value>
+  </data>
+  <data name="List_Th_End" xml:space="preserve">
+    <value>End date</value>
+  </data>
+  <data name="Ribbon_Group_Rules" xml:space="preserve">
+    <value>Rules</value>
+  </data>
+  <data name="General_Title_BudgetRule" xml:space="preserve">
+    <value>Budget rule</value>
+  </data>
+  <data name="Card_Caption_BudgetRule_Amount" xml:space="preserve">
+    <value>Amount</value>
+  </data>
+  <data name="Card_Caption_BudgetRule_Interval" xml:space="preserve">
+    <value>Interval</value>
+  </data>
+  <data name="Card_Caption_BudgetRule_CustomIntervalMonths" xml:space="preserve">
+    <value>Months</value>
+  </data>
+  <data name="Card_Caption_BudgetRule_Start" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="Card_Caption_BudgetRule_End" xml:space="preserve">
+    <value>End</value>
+  </data>
+  <data name="Err_Invalid_budgetPurposeId" xml:space="preserve">
+    <value>The specified budget id is invalid.</value>
+  </data>
+  <data name="EnumType_BudgetIntervalType_Monthly" xml:space="preserve">
+    <value>Monthly</value>
+  </data>
+  <data name="EnumType_BudgetIntervalType_Quarterly" xml:space="preserve">
+    <value>Quarterly</value>
+  </data>
+  <data name="EnumType_BudgetIntervalType_Yearly" xml:space="preserve">
+    <value>Yearly</value>
+  </data>
+  <data name="EnumType_BudgetIntervalType_CustomMonths" xml:space="preserve">
+    <value>Custom months</value>
+  </data>
 </root>

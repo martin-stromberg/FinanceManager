@@ -41,8 +41,12 @@ public partial class ApiClient : IApiClient
     /// <param name="resp">The HTTP response message to inspect.</param>
     private async Task EnsureSuccessOrSetErrorAsync(HttpResponseMessage resp)
     {
-        LastError = null; LastErrorCode = null;
-        if (resp.IsSuccessStatusCode) return;
+        LastError = null;
+        LastErrorCode = null;
+        if (resp.IsSuccessStatusCode)
+        {
+            return;
+        }
 
         try
         {
@@ -54,10 +58,23 @@ public partial class ApiClient : IApiClient
                     using var doc = JsonDocument.Parse(content);
                     if (doc.RootElement.ValueKind == JsonValueKind.Object)
                     {
+                        if (doc.RootElement.TryGetProperty("title", out var title) && title.ValueKind == JsonValueKind.String)
+                        {
+                            LastError = title.GetString();
+                        }
+                        if (doc.RootElement.TryGetProperty("detail", out var detail) && detail.ValueKind == JsonValueKind.String)
+                        {
+                            LastError = string.IsNullOrWhiteSpace(LastError) ? detail.GetString() : $"{LastError}: {detail.GetString()}";
+                        }
+
                         if (doc.RootElement.TryGetProperty("message", out var m) && m.ValueKind == JsonValueKind.String)
+                        {
                             LastError = m.GetString();
+                        }
                         if (doc.RootElement.TryGetProperty("error", out var e) && e.ValueKind == JsonValueKind.String)
+                        {
                             LastErrorCode = e.GetString();
+                        }
 
                         if (doc.RootElement.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Object)
                         {
@@ -67,7 +84,6 @@ public partial class ApiClient : IApiClient
                 }
                 catch
                 {
-                    // not JSON, use raw content
                     LastError = content;
                 }
             }
@@ -77,7 +93,10 @@ public partial class ApiClient : IApiClient
             // ignore
         }
 
-        if (string.IsNullOrWhiteSpace(LastError)) LastError = resp.ReasonPhrase ?? $"HTTP {(int)resp.StatusCode}";
+        if (string.IsNullOrWhiteSpace(LastError))
+        {
+            LastError = resp.ReasonPhrase ?? $"HTTP {(int)resp.StatusCode}";
+        }
         resp.EnsureSuccessStatusCode();
     }
 

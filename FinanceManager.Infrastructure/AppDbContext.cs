@@ -2,6 +2,7 @@
 using DocumentFormat.OpenXml.Vml;
 using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Attachments; // new
+using FinanceManager.Domain.Budget;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Notifications; // new
 using FinanceManager.Domain.Postings;
@@ -17,6 +18,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using FinanceManager.Shared.Dtos.Budget;
 
 namespace FinanceManager.Infrastructure;
 
@@ -81,6 +83,14 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<Attachment> Attachments => Set<Attachment>(); // new
     /// <summary>Attachment categories.</summary>
     public DbSet<AttachmentCategory> AttachmentCategories => Set<AttachmentCategory>(); // new
+    /// <summary>Budget purposes.</summary>
+    public DbSet<BudgetPurpose> BudgetPurposes => Set<BudgetPurpose>();
+
+    /// <summary>Budget rules.</summary>
+    public DbSet<BudgetRule> BudgetRules => Set<BudgetRule>();
+
+    /// <summary>Budget overrides.</summary>
+    public DbSet<BudgetOverride> BudgetOverrides => Set<BudgetOverride>();
 
     /// <summary>
     /// Configure the EF Core model: indexes, constraints and relationships.
@@ -369,6 +379,37 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.OwnerUserId).IsRequired();
             b.Property(x => x.IsSystem).IsRequired();
             b.HasIndex(x => new { x.OwnerUserId, x.Name }).IsUnique();
+        });
+
+        modelBuilder.Entity<BudgetPurpose>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Name).HasMaxLength(150).IsRequired();
+            b.Property(x => x.Description).HasMaxLength(500);
+            b.Property(x => x.SourceType).HasConversion<short>().IsRequired();
+            b.Property(x => x.SourceId).IsRequired();
+            b.HasIndex(x => new { x.OwnerUserId, x.Name });
+            b.HasIndex(x => new { x.OwnerUserId, x.SourceType, x.SourceId });
+        });
+
+        modelBuilder.Entity<BudgetRule>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Amount).HasPrecision(18, 2);
+            b.Property(x => x.Interval).HasConversion<short>().IsRequired();
+            b.Property(x => x.StartDate).IsRequired();
+            b.Property(x => x.EndDate);
+            b.HasIndex(x => new { x.OwnerUserId, x.BudgetPurposeId });
+            b.HasIndex(x => new { x.BudgetPurposeId, x.StartDate });
+        });
+
+        modelBuilder.Entity<BudgetOverride>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Amount).HasPrecision(18, 2);
+            b.Property(x => x.PeriodYear).IsRequired();
+            b.Property(x => x.PeriodMonth).IsRequired();
+            b.HasIndex(x => new { x.OwnerUserId, x.BudgetPurposeId, x.PeriodYear, x.PeriodMonth }).IsUnique();
         });
     }
     /// <summary>

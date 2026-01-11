@@ -4,6 +4,7 @@ using FinanceManager.Web.ViewModels.Securities.Categories;
 using FinanceManager.Web.ViewModels.Securities.Prices;
 using Microsoft.Extensions.Localization;
 using FinanceManager.Web.ViewModels.StatementDrafts;
+using FinanceManager.Web.ViewModels.Budget;
 
 namespace FinanceManager.Web.ViewModels
 {
@@ -126,6 +127,14 @@ namespace FinanceManager.Web.ViewModels
                 case "users":
                     var uvm = ActivatorUtilities.CreateInstance<Setup.UserListViewModel>(_sp);
                     return new ListFactoryResult(uvm);
+                case "budget":
+                case "budgets":
+                    if ((subKind ?? string.Empty).Trim().ToLowerInvariant() == "purposes" || string.IsNullOrWhiteSpace(subKind))
+                    {
+                        var bvm = ActivatorUtilities.CreateInstance<BudgetPurposeListViewModel>(_sp);
+                        return new ListFactoryResult(bvm);
+                    }
+                    return null;
                 default:
                     return null;
             }

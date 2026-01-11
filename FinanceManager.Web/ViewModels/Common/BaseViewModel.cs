@@ -327,6 +327,8 @@ namespace FinanceManager.Web.ViewModels.Common
 
             if (string.Equals(field.LookupType, "Contact", StringComparison.OrdinalIgnoreCase))
                 return await QueryContactLookupAsync(field, q, skip, take);
+            if (string.Equals(field.LookupType, "ContactCategory", StringComparison.OrdinalIgnoreCase))
+                return await QueryContactCategoryLookupAsync(field, q, skip, take);
 
             if (string.Equals(field.LookupType, "SavingsPlan", StringComparison.OrdinalIgnoreCase))
                 return await QuerySavingsPlanLookupAsync(field, q, skip, take);
@@ -355,6 +357,29 @@ namespace FinanceManager.Web.ViewModels.Common
             }
             var results = await api.Contacts_ListAsync(skip, take, typeFilter, false, q);
             return results.Select(c => new LookupItem(c.Id, c.Name)).ToList();
+        }
+        private async Task<IReadOnlyList<LookupItem>> QueryContactCategoryLookupAsync(CardField field, string? q, int skip, int take)
+        {
+            var api = ServiceProvider.GetRequiredService<IApiClient>();
+
+            // Currently the API does not provide server-side filtering/paging for contact categories.
+            // Load all and apply filtering/paging client-side.
+            var list = await api.ContactCategories_ListAsync(CancellationToken.None);
+
+            IEnumerable<ContactCategoryDto> filtered = list ?? Array.Empty<ContactCategoryDto>();
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                filtered = filtered.Where(c => !string.IsNullOrWhiteSpace(c.Name) && c.Name.Contains(term, StringComparison.OrdinalIgnoreCase));
+            }
+
+            filtered = filtered
+                .Skip(Math.Max(0, skip))
+                .Take(take <= 0 ? 50 : take);
+
+            return filtered
+                .Select(c => new LookupItem(c.Id, c.Name ?? string.Empty))
+                .ToList();
         }
 
         private bool ParseOnlyActiveFilter(string? filter, bool defaultValue = true)

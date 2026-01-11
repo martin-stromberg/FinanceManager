@@ -32,6 +32,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore; // required for RoleStore
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using FinanceManager.Application.Budget;
+using FinanceManager.Infrastructure.Budget;
 
 namespace FinanceManager.Infrastructure;
 
@@ -107,6 +109,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IStatementFile, Wuestenrot_PDF_StatementFile>();
         services.AddScoped<IStatementFile, Backup_JSON_StatementFile>();
         services.AddScoped<IStatementFileFactory>(sp => new StatementFileFactory(sp));
+        services.AddScoped<IBudgetPlanningService, BudgetPlanningService>();
+        services.AddScoped<IBudgetPurposeService, BudgetPurposeService>();
+        services.AddScoped<IBudgetRuleService, BudgetRuleService>();
+        services.AddScoped<IBudgetOverrideService, BudgetOverrideService>();
+        services.AddScoped<IBudgetPlanningRepository, BudgetPlanningRepository>();
 
         // Register Identity RoleStore for Guid-based roles (RoleManager is registered by AddIdentity in Program.cs)
         services.AddScoped<IRoleStore<IdentityRole<Guid>>, RoleStore<IdentityRole<Guid>, AppDbContext, Guid>>();
