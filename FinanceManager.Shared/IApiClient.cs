@@ -618,8 +618,17 @@ public interface IApiClient
 
     /// <summary>
     /// Lists budget purposes for the current user.
+    /// When <paramref name="from"/> and <paramref name="to"/> are provided, the server returns an overview that includes
+    /// rule count and computed budget sum for the given period.
     /// </summary>
-    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto>> Budgets_ListPurposesAsync(int skip = 0, int take = 200, FinanceManager.Shared.Dtos.Budget.BudgetSourceType? sourceType = null, string? q = null, CancellationToken ct = default);
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto>> Budgets_ListPurposesAsync(
+        int skip = 0,
+        int take = 200,
+        FinanceManager.Shared.Dtos.Budget.BudgetSourceType? sourceType = null,
+        string? q = null,
+        DateOnly? from = null,
+        DateOnly? to = null,
+        CancellationToken ct = default);
 
     /// <summary>
     /// Gets a budget purpose by id or null when not found.

@@ -10,8 +10,17 @@ public partial class ApiClient
 
     /// <summary>
     /// Lists budget purposes for the current user.
+    /// When <paramref name="from"/> and <paramref name="to"/> are provided, the server returns an overview that
+    /// includes rule count and computed budget sum for the given period.
     /// </summary>
-    public async Task<IReadOnlyList<BudgetPurposeDto>> Budgets_ListPurposesAsync(int skip = 0, int take = 200, BudgetSourceType? sourceType = null, string? q = null, CancellationToken ct = default)
+    public async Task<IReadOnlyList<BudgetPurposeOverviewDto>> Budgets_ListPurposesAsync(
+        int skip = 0,
+        int take = 200,
+        BudgetSourceType? sourceType = null,
+        string? q = null,
+        DateOnly? from = null,
+        DateOnly? to = null,
+        CancellationToken ct = default)
     {
         var parts = new List<string> { $"skip={skip}", $"take={take}" };
         if (sourceType.HasValue)
@@ -22,11 +31,19 @@ public partial class ApiClient
         {
             parts.Add($"q={Uri.EscapeDataString(q)}");
         }
+        if (from.HasValue)
+        {
+            parts.Add($"from={Uri.EscapeDataString(from.Value.ToString("yyyy-MM-dd"))}");
+        }
+        if (to.HasValue)
+        {
+            parts.Add($"to={Uri.EscapeDataString(to.Value.ToString("yyyy-MM-dd"))}");
+        }
 
         var qs = parts.Count > 0 ? ("?" + string.Join('&', parts)) : string.Empty;
         var resp = await _http.GetAsync($"/api/budget/purposes{qs}", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
-        return await resp.Content.ReadFromJsonAsync<IReadOnlyList<BudgetPurposeDto>>(cancellationToken: ct) ?? Array.Empty<BudgetPurposeDto>();
+        return await resp.Content.ReadFromJsonAsync<IReadOnlyList<BudgetPurposeOverviewDto>>(cancellationToken: ct) ?? Array.Empty<BudgetPurposeOverviewDto>();
     }
 
     /// <summary>

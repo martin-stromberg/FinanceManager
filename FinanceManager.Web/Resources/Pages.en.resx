@@ -1446,4 +1446,10 @@
   <data name="EnumType_BudgetIntervalType_CustomMonths" xml:space="preserve">
     <value>Custom months</value>
   </data>
+  <data name="Budget_List_Th_Rules" xml:space="preserve">
+    <value>Rules</value>
+  </data>
+  <data name="Budget_List_Th_Budget" xml:space="preserve">
+    <value>Budget</value>
+  </data>
 </root>

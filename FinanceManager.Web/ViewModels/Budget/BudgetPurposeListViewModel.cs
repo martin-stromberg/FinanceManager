@@ -27,9 +27,17 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
     }
 
     /// <summary>
-    /// Budget purposes list does not support range filtering.
+    /// Initializes the view model and sets the default range filter to the current month.
     /// </summary>
-    public override bool AllowRangeFiltering => false;
+    public override async Task InitializeAsync()
+    {
+        var now = DateTime.Today;
+        var from = new DateTime(now.Year, now.Month, 1);
+        var to = from.AddMonths(1).AddDays(-1);
+        SetRange(from, to);
+
+        await base.InitializeAsync();
+    }
 
     /// <inheritdoc />
     protected override async Task LoadPageAsync(bool resetPaging)
@@ -41,9 +49,23 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
 
         try
         {
-            var list = await _api.Budgets_ListPurposesAsync(skip: _skip, take: PageSize, sourceType: null, q: string.IsNullOrWhiteSpace(Search) ? null : Search);
-            var items = (list ?? Array.Empty<BudgetPurposeDto>()).Select(p =>
-                new BudgetPurposeListItem(p.Id, p.Name ?? string.Empty, p.SourceType.ToString()));
+            var range = GetEffectiveMonthlyRange();
+            var list = await _api.Budgets_ListPurposesAsync(
+                _skip,
+                PageSize,
+                null,
+                string.IsNullOrWhiteSpace(Search) ? null : Search,
+                range.From,
+                range.To);
+
+            var items = (list ?? Array.Empty<BudgetPurposeOverviewDto>()).Select(p =>
+                new BudgetPurposeListItem(
+                    p.Id,
+                    p.Name ?? string.Empty,
+                    p.SourceName ?? string.Empty,
+                    p.SourceSymbolAttachmentId,
+                    p.RuleCount,
+                    p.BudgetSum));
 
             if (resetPaging)
             {
@@ -65,20 +87,38 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
         }
     }
 
+    private (DateOnly From, DateOnly To) GetEffectiveMonthlyRange()
+    {
+        var fromDt = RangeFrom?.Date ?? DateTime.Today;
+        var toDt = RangeTo?.Date ?? fromDt;
+
+        // normalize: ensure from <= to
+        if (toDt < fromDt)
+        {
+            (fromDt, toDt) = (toDt, fromDt);
+        }
+
+        return (DateOnly.FromDateTime(fromDt), DateOnly.FromDateTime(toDt));
+    }
+
     /// <inheritdoc />
     protected override void BuildRecords()
     {
         var L = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
         Columns = new List<ListColumn>
         {
-            new ListColumn("name", L["List_Th_Name"], "60%", ListColumnAlign.Left),
-            new ListColumn("source", L["List_Th_Source"], "40%", ListColumnAlign.Left)
+            new ListColumn("name", L["List_Th_Name"], "40%", ListColumnAlign.Left),
+            new ListColumn("rules", L["Budget_List_Th_Rules"], "90px", ListColumnAlign.Right),
+            new ListColumn("budget", L["Budget_List_Th_Budget"], "140px", ListColumnAlign.Right),
+            new ListColumn("source", L["List_Th_Source"], "", ListColumnAlign.Left)
         };
 
         Records = Items.Select(i => new ListRecord(new List<ListCell>
         {
             new ListCell(ListCellKind.Text, Text: i.Name),
-            new ListCell(ListCellKind.Text, Text: i.SourceType)
+            new ListCell(ListCellKind.Text, Text: i.RuleCount.ToString(System.Globalization.CultureInfo.CurrentCulture)),
+            new ListCell(ListCellKind.Currency, Amount: i.BudgetSum),
+            new ListCell(ListCellKind.Symbol, SymbolId: i.SourceSymbolAttachmentId, Text: i.SourceName)
         }, i)).ToList();
     }
 

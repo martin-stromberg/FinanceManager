@@ -34,14 +34,22 @@ public sealed class BudgetPurposesController : ControllerBase
 
     /// <summary>
     /// Lists purposes for the current user.
+    /// When <paramref name="from"/> and <paramref name="to"/> are provided, returns an overview including rule count and budget sum.
     /// </summary>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<BudgetPurposeDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ListAsync([FromQuery] int skip = 0, [FromQuery] int take = 200, [FromQuery] BudgetSourceType? sourceType = null, [FromQuery] string? q = null, CancellationToken ct = default)
+    [ProducesResponseType(typeof(IReadOnlyList<BudgetPurposeOverviewDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListAsync(
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 200,
+        [FromQuery] BudgetSourceType? sourceType = null,
+        [FromQuery] string? q = null,
+        [FromQuery] DateOnly? from = null,
+        [FromQuery] DateOnly? to = null,
+        CancellationToken ct = default)
     {
         try
         {
-            var list = await _svc.ListAsync(_current.UserId, skip, take, sourceType, q, ct);
+            var list = await _svc.ListOverviewAsync(_current.UserId, skip, take, sourceType, q, from, to, ct);
             return Ok(list);
         }
         catch (Exception ex)

@@ -1021,6 +1021,9 @@
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.CountAsync(System.Guid,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.ListOverviewAsync(System.Guid,System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Budget.BudgetRuleService">
             <summary>
             EF Core based implementation of <see cref="T:FinanceManager.Application.Budget.IBudgetRuleService"/>.

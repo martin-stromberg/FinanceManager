@@ -559,6 +559,12 @@
             Returns the total number of purposes for the owner.
             </summary>
         </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.ListOverviewAsync(System.Guid,System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <summary>
+            Lists budget purposes including rule count and computed budget sum for the provided period.
+            When <paramref name="from"/> or <paramref name="to"/> are <c>null</c>, the service may apply a default period.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Application.Budget.IBudgetRuleService">
             <summary>
             Service for managing budget rules.

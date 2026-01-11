@@ -315,9 +315,11 @@
             Deletes a backup entry. Returns false when not found.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.ApiClient.Budgets_ListPurposesAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_ListPurposesAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <summary>
             Lists budget purposes for the current user.
+            When <paramref name="from"/> and <paramref name="to"/> are provided, the server returns an overview that
+            includes rule count and computed budget sum for the given period.
             </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Budgets_GetPurposeAsync(System.Guid,System.Threading.CancellationToken)">
@@ -2129,6 +2131,66 @@
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto.SourceId">
             <summary>Identifier of the source entity.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto">
+            <summary>
+            Data transfer object for the budget purposes overview including rule count and computed budget for a period.
+            </summary>
+            <param name="Id">Purpose id.</param>
+            <param name="OwnerUserId">Owner user id.</param>
+            <param name="Name">Purpose name.</param>
+            <param name="Description">Optional description.</param>
+            <param name="SourceType">Source type used to resolve actual values.</param>
+            <param name="SourceId">Identifier of the source entity.</param>
+            <param name="RuleCount">Number of configured rules for this purpose.</param>
+            <param name="BudgetSum">Computed budget sum for the provided period.</param>
+            <param name="SourceName">Resolved display name of the source entity.</param>
+            <param name="SourceSymbolAttachmentId">Optional symbol attachment id of the source entity.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.#ctor(System.Guid,System.Guid,System.String,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.Int32,System.Decimal,System.String,System.Nullable{System.Guid})">
+            <summary>
+            Data transfer object for the budget purposes overview including rule count and computed budget for a period.
+            </summary>
+            <param name="Id">Purpose id.</param>
+            <param name="OwnerUserId">Owner user id.</param>
+            <param name="Name">Purpose name.</param>
+            <param name="Description">Optional description.</param>
+            <param name="SourceType">Source type used to resolve actual values.</param>
+            <param name="SourceId">Identifier of the source entity.</param>
+            <param name="RuleCount">Number of configured rules for this purpose.</param>
+            <param name="BudgetSum">Computed budget sum for the provided period.</param>
+            <param name="SourceName">Resolved display name of the source entity.</param>
+            <param name="SourceSymbolAttachmentId">Optional symbol attachment id of the source entity.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.Id">
+            <summary>Purpose id.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.OwnerUserId">
+            <summary>Owner user id.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.Name">
+            <summary>Purpose name.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.Description">
+            <summary>Optional description.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.SourceType">
+            <summary>Source type used to resolve actual values.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.SourceId">
+            <summary>Identifier of the source entity.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.RuleCount">
+            <summary>Number of configured rules for this purpose.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.BudgetSum">
+            <summary>Computed budget sum for the provided period.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.SourceName">
+            <summary>Resolved display name of the source entity.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.SourceSymbolAttachmentId">
+            <summary>Optional symbol attachment id of the source entity.</summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetPurposeUpdateRequest">
             <summary>
@@ -5301,9 +5363,11 @@
         <member name="M:FinanceManager.Shared.IApiClient.UserSettings_UpdateImportSplitAsync(FinanceManager.Shared.Dtos.Statements.ImportSplitSettingsUpdateRequest,System.Threading.CancellationToken)">
             <summary>Updates the import split settings for the current user.</summary>
         </member>
-        <member name="M:FinanceManager.Shared.IApiClient.Budgets_ListPurposesAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_ListPurposesAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <summary>
             Lists budget purposes for the current user.
+            When <paramref name="from"/> and <paramref name="to"/> are provided, the server returns an overview that includes
+            rule count and computed budget sum for the given period.
             </summary>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.Budgets_GetPurposeAsync(System.Guid,System.Threading.CancellationToken)">

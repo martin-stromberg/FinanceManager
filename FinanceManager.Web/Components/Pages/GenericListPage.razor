@@ -85,12 +85,24 @@ else
                                     case ListCellKind.Symbol:
                                         if (cell.SymbolId.HasValue)
                                         {
-                                            <img src="@($"/api/attachments/{cell.SymbolId}/download")" alt="symbol" style="width:36px;height:36px;object-fit:contain;border-radius:6px;border:1px solid var(--border);" />
+                                            <div style="display:flex;align-items:center;gap:.5rem;">
+                                                <img src="@($"/api/attachments/{cell.SymbolId}/download")" alt="symbol" style="width:28px;height:28px;object-fit:contain;border-radius:6px;border:1px solid var(--border);" />
+                                                @if (!string.IsNullOrWhiteSpace(cell.Text))
+                                                {
+                                                    <span>@cell.Text</span>
+                                                }
+                                            </div>
                                         }
                                         else
                                         {
-                                            <div style="width:36px;height:36px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);">
-                                                <svg style="width:18px;height:18px;opacity:.6;"><use href="/icons/sprite.svg#image" /></svg>
+                                            <div style="display:flex;align-items:center;gap:.5rem;">
+                                                <div style="width:28px;height:28px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);">
+                                                    <svg style="width:16px;height:16px;opacity:.6;"><use href="/icons/sprite.svg#image" /></svg>
+                                                </div>
+                                                @if (!string.IsNullOrWhiteSpace(cell.Text))
+                                                {
+                                                    <span>@cell.Text</span>
+                                                }
                                             </div>
                                         }
                                         break;
@@ -151,6 +163,7 @@ else
     private DotNetObjectReference<GenericListPage<TItem>>? _selfRef;
     private bool _observerAttached;
     private DateTime? _from; private DateTime? _to;
+    private IListProvider? _lastProvider;
 
     protected override void OnParametersSet()
     {
@@ -158,6 +171,13 @@ else
         {
             Provider.StateChanged -= OnProviderStateChanged;
             Provider.StateChanged += OnProviderStateChanged;
+
+            if (!ReferenceEquals(_lastProvider, Provider))
+            {
+                _from = Provider.RangeFrom;
+                _to = Provider.RangeTo;
+                _lastProvider = Provider;
+            }
         }
     }
 

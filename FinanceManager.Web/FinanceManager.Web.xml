@@ -604,9 +604,10 @@
             Creates a new instance.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.ListAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.ListAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <summary>
             Lists purposes for the current user.
+            When <paramref name="from"/> and <paramref name="to"/> are provided, returns an overview including rule count and budget sum.
             </summary>
         </member>
         <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.GetAsync(System.Guid,System.Threading.CancellationToken)">
@@ -3722,15 +3723,21 @@
             </summary>
             <param name="Id">Purpose id.</param>
             <param name="Name">Display name.</param>
-            <param name="SourceType">Source type text.</param>
+            <param name="SourceName">Resolved source display name.</param>
+            <param name="SourceSymbolAttachmentId">Optional symbol attachment id for the source entity.</param>
+            <param name="RuleCount">Number of budget rules configured for the purpose.</param>
+            <param name="BudgetSum">Computed budget sum for the selected range (or current month by default).</param>
         </member>
-        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.#ctor(System.Guid,System.String,System.String)">
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.#ctor(System.Guid,System.String,System.String,System.Nullable{System.Guid},System.Int32,System.Decimal)">
             <summary>
             Lightweight list item representing a budget purpose.
             </summary>
             <param name="Id">Purpose id.</param>
             <param name="Name">Display name.</param>
-            <param name="SourceType">Source type text.</param>
+            <param name="SourceName">Resolved source display name.</param>
+            <param name="SourceSymbolAttachmentId">Optional symbol attachment id for the source entity.</param>
+            <param name="RuleCount">Number of budget rules configured for the purpose.</param>
+            <param name="BudgetSum">Computed budget sum for the selected range (or current month by default).</param>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.Id">
             <summary>Purpose id.</summary>
@@ -3738,8 +3745,17 @@
         <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.Name">
             <summary>Display name.</summary>
         </member>
-        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.SourceType">
-            <summary>Source type text.</summary>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.SourceName">
+            <summary>Resolved source display name.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.SourceSymbolAttachmentId">
+            <summary>Optional symbol attachment id for the source entity.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.RuleCount">
+            <summary>Number of budget rules configured for the purpose.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.BudgetSum">
+            <summary>Computed budget sum for the selected range (or current month by default).</summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.GetNavigateUrl">
             <inheritdoc />
@@ -3755,9 +3771,9 @@
             </summary>
             <param name="services">Service provider used to resolve dependencies.</param>
         </member>
-        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListViewModel.AllowRangeFiltering">
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListViewModel.InitializeAsync">
             <summary>
-            Budget purposes list does not support range filtering.
+            Initializes the view model and sets the default range filter to the current month.
             </summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListViewModel.LoadPageAsync(System.Boolean)">
