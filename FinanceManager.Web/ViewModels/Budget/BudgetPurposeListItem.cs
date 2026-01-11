@@ -10,14 +10,18 @@ namespace FinanceManager.Web.ViewModels.Budget;
 /// <param name="SourceName">Resolved source display name.</param>
 /// <param name="SourceSymbolAttachmentId">Optional symbol attachment id for the source entity.</param>
 /// <param name="RuleCount">Number of budget rules configured for the purpose.</param>
-/// <param name="BudgetSum">Computed budget sum for the selected range (or current month by default).</param>
+/// <param name="BudgetSum">Computed budget sum for the selected range.</param>
+/// <param name="ActualSum">Computed actual sum for the selected range.</param>
+/// <param name="Variance">Difference between actual and budget (ActualSum - BudgetSum).</param>
 public sealed record BudgetPurposeListItem(
     Guid Id,
     string Name,
     string SourceName,
     Guid? SourceSymbolAttachmentId,
     int RuleCount,
-    decimal BudgetSum) : IListItemNavigation
+    decimal BudgetSum,
+    decimal ActualSum,
+    decimal Variance) : IListItemNavigation
 {
     /// <inheritdoc />
     public string GetNavigateUrl() => $"/card/budget/purposes/{Id}";

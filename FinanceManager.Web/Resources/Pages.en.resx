@@ -1452,4 +1452,22 @@
   <data name="Budget_List_Th_Budget" xml:space="preserve">
     <value>Budget</value>
   </data>
+  <data name="Budget_List_Th_Actual" xml:space="preserve">
+    <value>Actual</value>
+  </data>
+  <data name="Budget_List_Th_Variance" xml:space="preserve">
+    <value>Variance</value>
+  </data>
+  <data name="Ribbon_PrevMonth" xml:space="preserve">
+    <value>Previous month</value>
+  </data>
+  <data name="Ribbon_ThisMonth" xml:space="preserve">
+    <value>This month</value>
+  </data>
+  <data name="Ribbon_PrevYear" xml:space="preserve">
+    <value>Previous year</value>
+  </data>
+  <data name="Ribbon_ThisYear" xml:space="preserve">
+    <value>This year</value>
+  </data>
 </root>

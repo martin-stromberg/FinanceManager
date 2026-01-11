@@ -11,6 +11,8 @@ namespace FinanceManager.Shared.Dtos.Budget;
 /// <param name="SourceId">Identifier of the source entity.</param>
 /// <param name="RuleCount">Number of configured rules for this purpose.</param>
 /// <param name="BudgetSum">Computed budget sum for the provided period.</param>
+/// <param name="ActualSum">Computed actual sum for the provided period.</param>
+/// <param name="Variance">Difference between actual and budget (ActualSum - BudgetSum).</param>
 /// <param name="SourceName">Resolved display name of the source entity.</param>
 /// <param name="SourceSymbolAttachmentId">Optional symbol attachment id of the source entity.</param>
 public sealed record BudgetPurposeOverviewDto(
@@ -22,5 +24,7 @@ public sealed record BudgetPurposeOverviewDto(
     Guid SourceId,
     int RuleCount,
     decimal BudgetSum,
+    decimal ActualSum,
+    decimal Variance,
     string? SourceName,
     Guid? SourceSymbolAttachmentId);

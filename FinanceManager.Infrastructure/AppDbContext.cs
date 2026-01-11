@@ -583,6 +583,22 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             .Where(c => c.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);        
+
+        // Budgets
+        var budgetPurposes = await BudgetPurposes.Where(x => x.OwnerUserId == userId).ToListAsync(ct);
+        var budgetPurposeIds = budgetPurposes.Select(x => x.Id).ToList();
+
+        var budgetRules = await BudgetRules.Where(x => x.OwnerUserId == userId && budgetPurposeIds.Contains(x.BudgetPurposeId)).ToListAsync(ct);
+        var budgetOverrides = await BudgetOverrides.Where(x => x.OwnerUserId == userId && budgetPurposeIds.Contains(x.BudgetPurposeId)).ToListAsync(ct);
+
+        BudgetOverrides.RemoveRange(budgetOverrides);
+        await SaveChangesAsync(ct);
+
+        BudgetRules.RemoveRange(budgetRules);
+        await SaveChangesAsync(ct);
+
+        BudgetPurposes.RemoveRange(budgetPurposes);
+        await SaveChangesAsync(ct);
     }
 
     /// <summary>
@@ -591,5 +607,22 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     /// <param name="userId">The user identifier whose data should be removed.</param>
     /// <param name="progressCallback">Callback invoked after each sub-step with (step, total).</param>
     internal void ClearUserData(Guid userId, Action<int, int> progressCallback)
-        => ClearUserDataAsync(userId, progressCallback, CancellationToken.None).GetAwaiter().GetResult();
+    {
+        ClearUserDataAsync(userId, progressCallback, CancellationToken.None).GetAwaiter().GetResult();
+
+        var budgetPurposes = BudgetPurposes.Where(x => x.OwnerUserId == userId).ToList();
+        var budgetPurposeIds = budgetPurposes.Select(x => x.Id).ToList();
+
+        var budgetRules = BudgetRules.Where(x => x.OwnerUserId == userId && budgetPurposeIds.Contains(x.BudgetPurposeId)).ToList();
+        var budgetOverrides = BudgetOverrides.Where(x => x.OwnerUserId == userId && budgetPurposeIds.Contains(x.BudgetPurposeId)).ToList();
+
+        BudgetOverrides.RemoveRange(budgetOverrides);
+        SaveChanges();
+
+        BudgetRules.RemoveRange(budgetRules);
+        SaveChanges();
+
+        BudgetPurposes.RemoveRange(budgetPurposes);
+        SaveChanges();
+    }
 }

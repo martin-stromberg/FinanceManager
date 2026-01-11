@@ -82,4 +82,34 @@ public sealed class BudgetPurpose : Entity, IAggregateRoot
         SourceId = Guards.NotEmpty(sourceId, nameof(sourceId));
         Touch();
     }
+
+    /// <summary>
+    /// DTO carrying the serializable state of a <see cref="BudgetPurpose"/> for backup purposes.
+    /// </summary>
+    /// <param name="Id">Budget purpose id.</param>
+    /// <param name="OwnerUserId">Owner user id.</param>
+    /// <param name="Name">Purpose name.</param>
+    /// <param name="Description">Optional description.</param>
+    /// <param name="SourceType">Source type.</param>
+    /// <param name="SourceId">Source id.</param>
+    public sealed record BudgetPurposeBackupDto(Guid Id, Guid OwnerUserId, string Name, string? Description, BudgetSourceType SourceType, Guid SourceId);
+
+    /// <summary>
+    /// Creates a backup DTO representing the serializable state of this budget purpose.
+    /// </summary>
+    public BudgetPurposeBackupDto ToBackupDto()
+        => new BudgetPurposeBackupDto(Id, OwnerUserId, Name, Description, SourceType, SourceId);
+
+    /// <summary>
+    /// Applies values from the provided backup DTO to this entity.
+    /// </summary>
+    public void AssignBackupDto(BudgetPurposeBackupDto dto)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+        OwnerUserId = dto.OwnerUserId;
+        Name = dto.Name;
+        Description = dto.Description;
+        SourceType = dto.SourceType;
+        SourceId = dto.SourceId;
+    }
 }

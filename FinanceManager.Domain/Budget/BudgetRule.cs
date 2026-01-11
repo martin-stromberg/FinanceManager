@@ -134,4 +134,46 @@ public sealed class BudgetRule : Entity, IAggregateRoot
             _ => 1
         };
     }
+
+    /// <summary>
+    /// DTO carrying the serializable state of a <see cref="BudgetRule"/> for backup purposes.
+    /// </summary>
+    /// <param name="Id">Rule id.</param>
+    /// <param name="OwnerUserId">Owner user id.</param>
+    /// <param name="BudgetPurposeId">Budget purpose id.</param>
+    /// <param name="Amount">Expected amount.</param>
+    /// <param name="Interval">Interval.</param>
+    /// <param name="CustomIntervalMonths">Custom interval months.</param>
+    /// <param name="StartDate">Start date.</param>
+    /// <param name="EndDate">Optional end date.</param>
+    public sealed record BudgetRuleBackupDto(
+        Guid Id,
+        Guid OwnerUserId,
+        Guid BudgetPurposeId,
+        decimal Amount,
+        BudgetIntervalType Interval,
+        int? CustomIntervalMonths,
+        DateOnly StartDate,
+        DateOnly? EndDate);
+
+    /// <summary>
+    /// Creates a backup DTO representing the serializable state of this budget rule.
+    /// </summary>
+    public BudgetRuleBackupDto ToBackupDto()
+        => new BudgetRuleBackupDto(Id, OwnerUserId, BudgetPurposeId, Amount, Interval, CustomIntervalMonths, StartDate, EndDate);
+
+    /// <summary>
+    /// Applies values from the provided backup DTO to this entity.
+    /// </summary>
+    public void AssignBackupDto(BudgetRuleBackupDto dto)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+        OwnerUserId = dto.OwnerUserId;
+        BudgetPurposeId = dto.BudgetPurposeId;
+        Amount = dto.Amount;
+        Interval = dto.Interval;
+        CustomIntervalMonths = dto.CustomIntervalMonths;
+        StartDate = dto.StartDate;
+        EndDate = dto.EndDate;
+    }
 }

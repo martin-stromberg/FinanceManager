@@ -183,6 +183,12 @@ else
 
     private void OnProviderStateChanged(object? sender, EventArgs e)
     {
+        if (Provider != null)
+        {
+            _from = Provider.RangeFrom;
+            _to = Provider.RangeTo;
+        }
+
         _ = InvokeAsync(StateHasChanged);
     }
 

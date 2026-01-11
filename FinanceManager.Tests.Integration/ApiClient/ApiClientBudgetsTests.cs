@@ -122,6 +122,8 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         febPurposes[0].Id.Should().Be(createdPurpose.Id);
         febPurposes[0].RuleCount.Should().Be(3);
         febPurposes[0].BudgetSum.Should().Be(15m);
+        febPurposes[0].ActualSum.Should().Be(0m);
+        febPurposes[0].Variance.Should().Be(-15m);
         febPurposes[0].SourceName.Should().NotBeNull();
 
         // Purposes overview with range filter: January 2026 should include yearly + monthly + ending rule (90 + 10 + 5)
@@ -137,6 +139,8 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         janPurposes[0].Id.Should().Be(createdPurpose.Id);
         janPurposes[0].RuleCount.Should().Be(3);
         janPurposes[0].BudgetSum.Should().Be(105m);
+        janPurposes[0].ActualSum.Should().Be(0m);
+        janPurposes[0].Variance.Should().Be(-105m);
         janPurposes[0].SourceName.Should().NotBeNull();
 
         // Purposes overview with range filter: March 2026 should include only the non-ending monthly rule (10)
@@ -152,6 +156,8 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         marPurposes[0].Id.Should().Be(createdPurpose.Id);
         marPurposes[0].RuleCount.Should().Be(3);
         marPurposes[0].BudgetSum.Should().Be(10m);
+        marPurposes[0].ActualSum.Should().Be(0m);
+        marPurposes[0].Variance.Should().Be(-10m);
         marPurposes[0].SourceName.Should().NotBeNull();
 
         // Update rule (monthly amount)

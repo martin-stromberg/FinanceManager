@@ -65,7 +65,9 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
                     p.SourceName ?? string.Empty,
                     p.SourceSymbolAttachmentId,
                     p.RuleCount,
-                    p.BudgetSum));
+                    p.BudgetSum,
+                    p.ActualSum,
+                    p.Variance));
 
             if (resetPaging)
             {
@@ -107,9 +109,11 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
         var L = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
         Columns = new List<ListColumn>
         {
-            new ListColumn("name", L["List_Th_Name"], "40%", ListColumnAlign.Left),
-            new ListColumn("rules", L["Budget_List_Th_Rules"], "90px", ListColumnAlign.Right),
-            new ListColumn("budget", L["Budget_List_Th_Budget"], "140px", ListColumnAlign.Right),
+            new ListColumn("name", L["List_Th_Name"], "30%", ListColumnAlign.Left),
+            new ListColumn("rules", L["Budget_List_Th_Rules"], "80px", ListColumnAlign.Right),
+            new ListColumn("budget", L["Budget_List_Th_Budget"], "120px", ListColumnAlign.Right),
+            new ListColumn("actual", L["Budget_List_Th_Actual"], "120px", ListColumnAlign.Right),
+            new ListColumn("variance", L["Budget_List_Th_Variance"], "120px", ListColumnAlign.Right),
             new ListColumn("source", L["List_Th_Source"], "", ListColumnAlign.Left)
         };
 
@@ -118,6 +122,8 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
             new ListCell(ListCellKind.Text, Text: i.Name),
             new ListCell(ListCellKind.Text, Text: i.RuleCount.ToString(System.Globalization.CultureInfo.CurrentCulture)),
             new ListCell(ListCellKind.Currency, Amount: i.BudgetSum),
+            new ListCell(ListCellKind.Currency, Amount: i.ActualSum),
+            new ListCell(ListCellKind.Currency, Amount: i.Variance),
             new ListCell(ListCellKind.Symbol, SymbolId: i.SourceSymbolAttachmentId, Text: i.SourceName)
         }, i)).ToList();
     }
@@ -132,6 +138,49 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
             new UiRibbonAction("ClearFilter", localizer["Ribbon_ClearSearch"], "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, string.IsNullOrWhiteSpace(Search), null, () => { RaiseUiActionRequested("ClearSearch"); return Task.CompletedTask; })
         });
 
-        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { tab }) };
+        var analysis = new UiRibbonTab(localizer["Ribbon_Group_Analysis"], new List<UiRibbonAction>
+        {
+            new UiRibbonAction("PrevMonth", localizer["Ribbon_PrevMonth"], "<svg><use href='/icons/sprite.svg#prev'/></svg>", UiRibbonItemSize.Small, false, null, () =>
+            {
+                var today = DateTime.Today;
+                var start = new DateTime(today.Year, today.Month, 1).AddMonths(-1);
+                var end = start.AddMonths(1).AddDays(-1);
+                SetRange(start, end);
+                RaiseUiActionRequested("Reload");
+                return Task.CompletedTask;
+            }),
+            new UiRibbonAction("ThisMonth", localizer["Ribbon_ThisMonth"], "<svg><use href='/icons/sprite.svg#calendar'/></svg>", UiRibbonItemSize.Small, false, null, () =>
+            {
+                var today = DateTime.Today;
+                var start = new DateTime(today.Year, today.Month, 1);
+                var end = start.AddMonths(1).AddDays(-1);
+                SetRange(start, end);
+                RaiseUiActionRequested("Reload");
+                return Task.CompletedTask;
+            }),
+            new UiRibbonAction("PrevYear", localizer["Ribbon_PrevYear"], "<svg><use href='/icons/sprite.svg#prev'/></svg>", UiRibbonItemSize.Small, false, null, () =>
+            {
+                var year = DateTime.Today.Year - 1;
+                var start = new DateTime(year, 1, 1);
+                var end = new DateTime(year, 12, 31);
+                SetRange(start, end);
+                RaiseUiActionRequested("Reload");
+                return Task.CompletedTask;
+            }),
+            new UiRibbonAction("ThisYear", localizer["Ribbon_ThisYear"], "<svg><use href='/icons/sprite.svg#calendar'/></svg>", UiRibbonItemSize.Small, false, null, () =>
+            {
+                var year = DateTime.Today.Year;
+                var start = new DateTime(year, 1, 1);
+                var end = new DateTime(year, 12, 31);
+                SetRange(start, end);
+                RaiseUiActionRequested("Reload");
+                return Task.CompletedTask;
+            })
+        });
+
+        return new List<UiRibbonRegister>
+        {
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { tab, analysis })
+        };
     }
 }

@@ -77,4 +77,34 @@ public sealed class BudgetOverride : Entity, IAggregateRoot
         PeriodMonth = period.Month;
         Touch();
     }
+
+    /// <summary>
+    /// DTO carrying the serializable state of a <see cref="BudgetOverride"/> for backup purposes.
+    /// </summary>
+    /// <param name="Id">Override id.</param>
+    /// <param name="OwnerUserId">Owner user id.</param>
+    /// <param name="BudgetPurposeId">Budget purpose id.</param>
+    /// <param name="PeriodYear">Period year.</param>
+    /// <param name="PeriodMonth">Period month.</param>
+    /// <param name="Amount">Override amount.</param>
+    public sealed record BudgetOverrideBackupDto(Guid Id, Guid OwnerUserId, Guid BudgetPurposeId, int PeriodYear, int PeriodMonth, decimal Amount);
+
+    /// <summary>
+    /// Creates a backup DTO representing the serializable state of this budget override.
+    /// </summary>
+    public BudgetOverrideBackupDto ToBackupDto()
+        => new BudgetOverrideBackupDto(Id, OwnerUserId, BudgetPurposeId, PeriodYear, PeriodMonth, Amount);
+
+    /// <summary>
+    /// Applies values from the provided backup DTO to this entity.
+    /// </summary>
+    public void AssignBackupDto(BudgetOverrideBackupDto dto)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+        OwnerUserId = dto.OwnerUserId;
+        BudgetPurposeId = dto.BudgetPurposeId;
+        PeriodYear = dto.PeriodYear;
+        PeriodMonth = dto.PeriodMonth;
+        Amount = dto.Amount;
+    }
 }

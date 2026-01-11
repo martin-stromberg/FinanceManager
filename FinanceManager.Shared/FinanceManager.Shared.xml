@@ -2144,10 +2144,12 @@
             <param name="SourceId">Identifier of the source entity.</param>
             <param name="RuleCount">Number of configured rules for this purpose.</param>
             <param name="BudgetSum">Computed budget sum for the provided period.</param>
+            <param name="ActualSum">Computed actual sum for the provided period.</param>
+            <param name="Variance">Difference between actual and budget (ActualSum - BudgetSum).</param>
             <param name="SourceName">Resolved display name of the source entity.</param>
             <param name="SourceSymbolAttachmentId">Optional symbol attachment id of the source entity.</param>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.#ctor(System.Guid,System.Guid,System.String,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.Int32,System.Decimal,System.String,System.Nullable{System.Guid})">
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.#ctor(System.Guid,System.Guid,System.String,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.Int32,System.Decimal,System.Decimal,System.Decimal,System.String,System.Nullable{System.Guid})">
             <summary>
             Data transfer object for the budget purposes overview including rule count and computed budget for a period.
             </summary>
@@ -2159,6 +2161,8 @@
             <param name="SourceId">Identifier of the source entity.</param>
             <param name="RuleCount">Number of configured rules for this purpose.</param>
             <param name="BudgetSum">Computed budget sum for the provided period.</param>
+            <param name="ActualSum">Computed actual sum for the provided period.</param>
+            <param name="Variance">Difference between actual and budget (ActualSum - BudgetSum).</param>
             <param name="SourceName">Resolved display name of the source entity.</param>
             <param name="SourceSymbolAttachmentId">Optional symbol attachment id of the source entity.</param>
         </member>
@@ -2185,6 +2189,12 @@
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.BudgetSum">
             <summary>Computed budget sum for the provided period.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.ActualSum">
+            <summary>Computed actual sum for the provided period.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.Variance">
+            <summary>Difference between actual and budget (ActualSum - BudgetSum).</summary>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.SourceName">
             <summary>Resolved display name of the source entity.</summary>

@@ -231,12 +231,85 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
             };
         }
 
+        // Compute actuals for selected range
+        var actuals = new Dictionary<Guid, decimal>();
+        if (effectiveFrom.HasValue && effectiveTo.HasValue)
+        {
+            var fromDt = effectiveFrom.Value.ToDateTime(TimeOnly.MinValue);
+            var toDt = effectiveTo.Value.ToDateTime(TimeOnly.MaxValue);
+
+            // Contact
+            if (contactIds.Count > 0)
+            {
+                var contactActuals = await _db.Postings.AsNoTracking()
+                    .Where(p => p.ContactId != null && contactIds.Contains(p.ContactId.Value))
+                    .Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt)
+                    .GroupBy(p => p.ContactId!.Value)
+                    .Select(g => new { Id = g.Key, Sum = g.Sum(x => x.Amount) })
+                    .ToListAsync(ct);
+
+                foreach (var a in contactActuals)
+                {
+                    actuals[a.Id] = a.Sum;
+                }
+            }
+
+            // SavingsPlan
+            if (savingsPlanIds.Count > 0)
+            {
+                var planActuals = await _db.Postings.AsNoTracking()
+                    .Where(p => p.SavingsPlanId != null && savingsPlanIds.Contains(p.SavingsPlanId.Value))
+                    .Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt)
+                    .GroupBy(p => p.SavingsPlanId!.Value)
+                    .Select(g => new { Id = g.Key, Sum = g.Sum(x => x.Amount) })
+                    .ToListAsync(ct);
+
+                foreach (var a in planActuals)
+                {
+                    actuals[a.Id] = a.Sum;
+                }
+            }
+
+            // ContactGroup -> aggregate postings for contacts in that category
+            if (groupIds.Count > 0)
+            {
+                var groupContactIds = await _db.Contacts.AsNoTracking()
+                    .Where(c => c.OwnerUserId == ownerUserId && c.CategoryId != null && groupIds.Contains(c.CategoryId.Value))
+                    .Select(c => new { GroupId = c.CategoryId!.Value, ContactId = c.Id })
+                    .ToListAsync(ct);
+
+                var grouped = groupContactIds
+                    .GroupBy(x => x.GroupId)
+                    .ToDictionary(g => g.Key, g => g.Select(x => x.ContactId).ToList());
+
+                foreach (var group in grouped)
+                {
+                    var ids = group.Value;
+                    if (ids.Count == 0)
+                    {
+                        actuals[group.Key] = 0m;
+                        continue;
+                    }
+
+                    var sum = await _db.Postings.AsNoTracking()
+                        .Where(p => p.ContactId != null && ids.Contains(p.ContactId.Value))
+                        .Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt)
+                        .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
+
+                    actuals[group.Key] = sum;
+                }
+            }
+        }
+
         return purposes
             .Select(p =>
             {
                 ruleCounts.TryGetValue(p.Id, out var rc);
                 budgetSums.TryGetValue(p.Id, out var bs);
                 var src = ResolveSource(p.SourceType, p.SourceId);
+                actuals.TryGetValue(p.SourceId, out var actual);
+
+                var variance = actual - bs;
 
                 return new BudgetPurposeOverviewDto(
                     p.Id,
@@ -247,6 +320,8 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
                     p.SourceId,
                     rc,
                     bs,
+                    actual,
+                    variance,
                     src.Name,
                     src.SymbolId);
             })

@@ -3726,9 +3726,11 @@
             <param name="SourceName">Resolved source display name.</param>
             <param name="SourceSymbolAttachmentId">Optional symbol attachment id for the source entity.</param>
             <param name="RuleCount">Number of budget rules configured for the purpose.</param>
-            <param name="BudgetSum">Computed budget sum for the selected range (or current month by default).</param>
+            <param name="BudgetSum">Computed budget sum for the selected range.</param>
+            <param name="ActualSum">Computed actual sum for the selected range.</param>
+            <param name="Variance">Difference between actual and budget (ActualSum - BudgetSum).</param>
         </member>
-        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.#ctor(System.Guid,System.String,System.String,System.Nullable{System.Guid},System.Int32,System.Decimal)">
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.#ctor(System.Guid,System.String,System.String,System.Nullable{System.Guid},System.Int32,System.Decimal,System.Decimal,System.Decimal)">
             <summary>
             Lightweight list item representing a budget purpose.
             </summary>
@@ -3737,7 +3739,9 @@
             <param name="SourceName">Resolved source display name.</param>
             <param name="SourceSymbolAttachmentId">Optional symbol attachment id for the source entity.</param>
             <param name="RuleCount">Number of budget rules configured for the purpose.</param>
-            <param name="BudgetSum">Computed budget sum for the selected range (or current month by default).</param>
+            <param name="BudgetSum">Computed budget sum for the selected range.</param>
+            <param name="ActualSum">Computed actual sum for the selected range.</param>
+            <param name="Variance">Difference between actual and budget (ActualSum - BudgetSum).</param>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.Id">
             <summary>Purpose id.</summary>
@@ -3755,7 +3759,13 @@
             <summary>Number of budget rules configured for the purpose.</summary>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.BudgetSum">
-            <summary>Computed budget sum for the selected range (or current month by default).</summary>
+            <summary>Computed budget sum for the selected range.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.ActualSum">
+            <summary>Computed actual sum for the selected range.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.Variance">
+            <summary>Difference between actual and budget (ActualSum - BudgetSum).</summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.GetNavigateUrl">
             <inheritdoc />
