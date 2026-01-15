@@ -1,9 +1,11 @@
 using FinanceManager.Application;
 using FinanceManager.Web.Controllers;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace FinanceManager.Tests.Controllers;
 
@@ -14,7 +16,13 @@ public sealed class BackgroundTasksControllerTests
         var manager = new BackgroundTaskManager();
         var userA = Guid.NewGuid();
         var userB = Guid.NewGuid();
-        var controller = new BackgroundTasksController(manager, NullLogger<BackgroundTasksController>.Instance);
+
+        var services = new ServiceCollection();
+        services.AddLocalization();
+        var sp = services.BuildServiceProvider();
+        var localizer = sp.GetRequiredService<IStringLocalizer<FinanceManager.Web.Controllers.Controller>>();
+
+        var controller = new BackgroundTasksController(manager, NullLogger<BackgroundTasksController>.Instance, localizer);
         var http = new DefaultHttpContext();
         http.User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, userA.ToString()) }, "test"));
         controller.ControllerContext = new ControllerContext { HttpContext = http };

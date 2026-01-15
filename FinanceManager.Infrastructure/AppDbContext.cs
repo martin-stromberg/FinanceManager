@@ -83,6 +83,8 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<Attachment> Attachments => Set<Attachment>(); // new
     /// <summary>Attachment categories.</summary>
     public DbSet<AttachmentCategory> AttachmentCategories => Set<AttachmentCategory>(); // new
+    /// <summary>Budget categories.</summary>
+    public DbSet<BudgetCategory> BudgetCategories => Set<BudgetCategory>();
     /// <summary>Budget purposes.</summary>
     public DbSet<BudgetPurpose> BudgetPurposes => Set<BudgetPurpose>();
 
@@ -381,6 +383,13 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.HasIndex(x => new { x.OwnerUserId, x.Name }).IsUnique();
         });
 
+        modelBuilder.Entity<BudgetCategory>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Name).HasMaxLength(150).IsRequired();
+            b.HasIndex(x => new { x.OwnerUserId, x.Name }).IsUnique();
+        });
+
         modelBuilder.Entity<BudgetPurpose>(b =>
         {
             b.HasKey(x => x.Id);
@@ -388,8 +397,14 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.Description).HasMaxLength(500);
             b.Property(x => x.SourceType).HasConversion<short>().IsRequired();
             b.Property(x => x.SourceId).IsRequired();
+            b.Property(x => x.BudgetCategoryId);
             b.HasIndex(x => new { x.OwnerUserId, x.Name });
             b.HasIndex(x => new { x.OwnerUserId, x.SourceType, x.SourceId });
+
+            b.HasOne<BudgetCategory>()
+                .WithMany()
+                .HasForeignKey(x => x.BudgetCategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<BudgetRule>(b =>
@@ -399,8 +414,13 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.Interval).HasConversion<short>().IsRequired();
             b.Property(x => x.StartDate).IsRequired();
             b.Property(x => x.EndDate);
+            b.Property(x => x.BudgetPurposeId);
+            b.Property(x => x.BudgetCategoryId);
+
             b.HasIndex(x => new { x.OwnerUserId, x.BudgetPurposeId });
+            b.HasIndex(x => new { x.OwnerUserId, x.BudgetCategoryId });
             b.HasIndex(x => new { x.BudgetPurposeId, x.StartDate });
+            b.HasIndex(x => new { x.BudgetCategoryId, x.StartDate });
         });
 
         modelBuilder.Entity<BudgetOverride>(b =>
@@ -588,7 +608,10 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         var budgetPurposes = await BudgetPurposes.Where(x => x.OwnerUserId == userId).ToListAsync(ct);
         var budgetPurposeIds = budgetPurposes.Select(x => x.Id).ToList();
 
-        var budgetRules = await BudgetRules.Where(x => x.OwnerUserId == userId && budgetPurposeIds.Contains(x.BudgetPurposeId)).ToListAsync(ct);
+        var budgetRules = await BudgetRules
+            .Where(x => x.OwnerUserId == userId)
+            .Where(x => x.BudgetPurposeId != null && budgetPurposeIds.Contains(x.BudgetPurposeId.Value))
+            .ToListAsync(ct);
         var budgetOverrides = await BudgetOverrides.Where(x => x.OwnerUserId == userId && budgetPurposeIds.Contains(x.BudgetPurposeId)).ToListAsync(ct);
 
         BudgetOverrides.RemoveRange(budgetOverrides);
@@ -599,6 +622,12 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 
         BudgetPurposes.RemoveRange(budgetPurposes);
         await SaveChangesAsync(ct);
+
+        // Budget categories (delete last because purposes reference them)
+        await BudgetCategories
+            .Where(c => c.OwnerUserId == userId)
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
     }
 
     /// <summary>
@@ -613,7 +642,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         var budgetPurposes = BudgetPurposes.Where(x => x.OwnerUserId == userId).ToList();
         var budgetPurposeIds = budgetPurposes.Select(x => x.Id).ToList();
 
-        var budgetRules = BudgetRules.Where(x => x.OwnerUserId == userId && budgetPurposeIds.Contains(x.BudgetPurposeId)).ToList();
+        var budgetRules = BudgetRules.Where(x => x.OwnerUserId == userId).Where(x => x.BudgetPurposeId != null && budgetPurposeIds.Contains(x.BudgetPurposeId.Value)).ToList();
         var budgetOverrides = BudgetOverrides.Where(x => x.OwnerUserId == userId && budgetPurposeIds.Contains(x.BudgetPurposeId)).ToList();
 
         BudgetOverrides.RemoveRange(budgetOverrides);

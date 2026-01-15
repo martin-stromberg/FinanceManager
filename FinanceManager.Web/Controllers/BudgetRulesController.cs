@@ -1,10 +1,14 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Budget;
+using FinanceManager.Application.Common;
+using FinanceManager.Application.Exceptions;
 using FinanceManager.Shared.Dtos.Budget;
 using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using System.Net.Mime;
 
 namespace FinanceManager.Web.Controllers;
@@ -18,18 +22,26 @@ namespace FinanceManager.Web.Controllers;
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public sealed class BudgetRulesController : ControllerBase
 {
+    private const string Origin = "API_BudgetRule";
+
     private readonly IBudgetRuleService _svc;
     private readonly ICurrentUserService _current;
     private readonly ILogger<BudgetRulesController> _logger;
+    private readonly IStringLocalizer<Controller> _localizer;
 
     /// <summary>
     /// Creates a new instance.
     /// </summary>
-    public BudgetRulesController(IBudgetRuleService svc, ICurrentUserService current, ILogger<BudgetRulesController> logger)
+    public BudgetRulesController(
+        IBudgetRuleService svc,
+        ICurrentUserService current,
+        ILogger<BudgetRulesController> logger,
+        IStringLocalizer<Controller> localizer)
     {
         _svc = svc;
         _current = current;
         _logger = logger;
+        _localizer = localizer;
     }
 
     /// <summary>
@@ -47,7 +59,7 @@ public sealed class BudgetRulesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "List budget rules failed {BudgetPurposeId}", budgetPurposeId);
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -67,7 +79,7 @@ public sealed class BudgetRulesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Get budget rule failed {RuleId}", id);
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -86,7 +98,26 @@ public sealed class BudgetRulesController : ControllerBase
 
         try
         {
-            var created = await _svc.CreateAsync(_current.UserId, req.BudgetPurposeId, req.Amount, req.Interval, req.CustomIntervalMonths, req.StartDate, req.EndDate, ct);
+            BudgetRuleDto created;
+
+            var hasPurpose = req.BudgetPurposeId.HasValue && req.BudgetPurposeId.Value != Guid.Empty;
+            var hasCategory = req.BudgetCategoryId.HasValue && req.BudgetCategoryId.Value != Guid.Empty;
+
+            if (hasPurpose == hasCategory)
+            {
+                var ex = new ArgumentException("Exactly one of BudgetPurposeId or BudgetCategoryId must be provided", nameof(BudgetRuleCreateRequest.BudgetPurposeId));
+                return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+            }
+
+            if (hasPurpose)
+            {
+                created = await _svc.CreateAsync(_current.UserId, req.BudgetPurposeId!.Value, req.Amount, req.Interval, req.CustomIntervalMonths, req.StartDate, req.EndDate, ct);
+            }
+            else
+            {
+                created = await _svc.CreateForCategoryAsync(_current.UserId, req.BudgetCategoryId!.Value, req.Amount, req.Interval, req.CustomIntervalMonths, req.StartDate, req.EndDate, ct);
+            }
+
             return Created($"/api/budget/rules/{created.Id}", created);
         }
         catch (AggregateException ex)
@@ -97,14 +128,22 @@ public sealed class BudgetRulesController : ControllerBase
             }
             return ValidationProblem(ModelState);
         }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
         catch (ArgumentException ex)
         {
-            return BadRequest(new ApiErrorDto(nameof(ArgumentException), ex.Message));
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (DomainValidationException ex)
+        {
+            return Conflict(ApiErrorFactory.FromDomainValidationException(Origin, ex, _localizer));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Create budget rule failed");
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -135,14 +174,22 @@ public sealed class BudgetRulesController : ControllerBase
             }
             return ValidationProblem(ModelState);
         }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
         catch (ArgumentException ex)
         {
-            return BadRequest(new ApiErrorDto(nameof(ArgumentException), ex.Message));
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (DomainValidationException ex)
+        {
+            return Conflict(ApiErrorFactory.FromDomainValidationException(Origin, ex, _localizer));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Update budget rule failed {RuleId}", id);
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -162,7 +209,26 @@ public sealed class BudgetRulesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Delete budget rule failed {RuleId}", id);
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
+    }
+
+    /// <summary>
+    /// Lists rules for a budget category.
+    /// </summary>
+    [HttpGet("by-category/{budgetCategoryId:guid}")]
+    [ProducesResponseType(typeof(IReadOnlyList<BudgetRuleDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListByCategoryAsync(Guid budgetCategoryId, CancellationToken ct)
+    {
+        try
+        {
+            var list = await _svc.ListByCategoryAsync(_current.UserId, budgetCategoryId, ct);
+            return Ok(list);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "List budget rules by category failed {CategoryId}", budgetCategoryId);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 }

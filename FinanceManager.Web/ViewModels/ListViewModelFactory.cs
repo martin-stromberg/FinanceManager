@@ -134,6 +134,11 @@ namespace FinanceManager.Web.ViewModels
                         var bvm = ActivatorUtilities.CreateInstance<BudgetPurposeListViewModel>(_sp);
                         return new ListFactoryResult(bvm);
                     }
+                    if ((subKind ?? string.Empty).Trim().ToLowerInvariant() == "categories")
+                    {
+                        var catVm = ActivatorUtilities.CreateInstance<BudgetCategoryListViewModel>(_sp);
+                        return new ListFactoryResult(catVm);
+                    }
                     return null;
                 default:
                     return null;

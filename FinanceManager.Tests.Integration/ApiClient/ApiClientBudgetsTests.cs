@@ -5,6 +5,7 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+[Collection("IntegrationTests")] 
 public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
@@ -45,11 +46,15 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         try
         {
             // Create purpose
+            // Use an actual existing contact category so SourceName can be resolved.
+            var groupId = (await api.ContactCategories_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCategoryCreateRequest("GroceriesGroup"))).Id;
+
             createdPurpose = await api.Budgets_CreatePurposeAsync(new BudgetPurposeCreateRequest(
                 Name: "Groceries",
                 SourceType: BudgetSourceType.ContactGroup,
-                SourceId: Guid.NewGuid(),
-                Description: null));
+                SourceId: groupId,
+                Description: null,
+                BudgetCategoryId: null));
         }
         catch (HttpRequestException)
         {
@@ -69,7 +74,8 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
             Name: "Groceries2",
             SourceType: BudgetSourceType.ContactGroup,
             SourceId: createdPurpose.SourceId,
-            Description: "desc"));
+            Description: "desc",
+            BudgetCategoryId: null));
 
         updatedPurpose.Should().NotBeNull();
         updatedPurpose!.Name.Should().Be("Groceries2");
@@ -78,6 +84,7 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         // Create rules (one yearly in January, one monthly)
         var ruleYearlyJan = await api.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: createdPurpose.Id,
+            BudgetCategoryId: null,
             Amount: 90m,
             Interval: BudgetIntervalType.Yearly,
             CustomIntervalMonths: null,
@@ -86,6 +93,7 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
 
         var ruleMonthly = await api.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: createdPurpose.Id,
+            BudgetCategoryId: null,
             Amount: 10m,
             Interval: BudgetIntervalType.Monthly,
             CustomIntervalMonths: null,
@@ -95,6 +103,7 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         // Create a monthly rule that ends after February 2026
         var ruleMonthlyEndsFeb = await api.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: createdPurpose.Id,
+            BudgetCategoryId: null,
             Amount: 5m,
             Interval: BudgetIntervalType.Monthly,
             CustomIntervalMonths: null,
@@ -223,14 +232,27 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         var api = CreateClient();
         await EnsureAuthenticatedAsync(api);
 
-        var purpose = await api.Budgets_CreatePurposeAsync(new BudgetPurposeCreateRequest(
-            Name: "TestPurpose",
-            SourceType: BudgetSourceType.ContactGroup,
-            SourceId: Guid.NewGuid(),
-            Description: null));
+        // Use an actual existing contact category so SourceName can be resolved.
+        var groupId = (await api.ContactCategories_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCategoryCreateRequest("TestGroup"))).Id;
+
+        BudgetPurposeDto purpose;
+        try
+        {
+            purpose = await api.Budgets_CreatePurposeAsync(new BudgetPurposeCreateRequest(
+                Name: "TestPurpose",
+                SourceType: BudgetSourceType.ContactGroup,
+                SourceId: groupId,
+                Description: null,
+                BudgetCategoryId: null));
+        }
+        catch (HttpRequestException)
+        {
+            throw new Xunit.Sdk.XunitException($"Budget purpose create failed. LastError: '{api.LastError}', LastErrorCode: '{api.LastErrorCode}'");
+        }
 
         var rule1 = await api.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: purpose.Id,
+            BudgetCategoryId: null,
             Amount: 10m,
             Interval: BudgetIntervalType.Monthly,
             CustomIntervalMonths: null,
@@ -239,6 +261,7 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
 
         var rule2 = await api.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: purpose.Id,
+            BudgetCategoryId: null,
             Amount: 20m,
             Interval: BudgetIntervalType.Yearly,
             CustomIntervalMonths: null,

@@ -656,6 +656,11 @@ public interface IApiClient
     Task<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto>> Budgets_ListRulesByPurposeAsync(Guid budgetPurposeId, CancellationToken ct = default);
 
     /// <summary>
+    /// Lists budget rules that apply to a budget category.
+    /// </summary>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto>> Budgets_ListRulesByCategoryAsync(Guid budgetCategoryId, CancellationToken ct = default);
+
+    /// <summary>
     /// Gets a budget rule by id or null when not found.
     /// </summary>
     Task<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto?> Budgets_GetRuleAsync(Guid id, CancellationToken ct = default);
@@ -699,4 +704,29 @@ public interface IApiClient
     /// Deletes a budget override. Returns false when not found.
     /// </summary>
     Task<bool> Budgets_DeleteOverrideAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Lists budget categories for the current user.
+    /// </summary>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetCategoryOverviewDto>> Budgets_ListCategoriesAsync(DateOnly? from = null, DateOnly? to = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets a budget category by id or null when not found.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetCategoryDto?> Budgets_GetCategoryAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Creates a budget category.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetCategoryDto> Budgets_CreateCategoryAsync(FinanceManager.Shared.Dtos.Budget.BudgetCategoryCreateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Updates a budget category. Returns null when not found.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetCategoryDto?> Budgets_UpdateCategoryAsync(Guid id, FinanceManager.Shared.Dtos.Budget.BudgetCategoryUpdateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Deletes a budget category. Returns false when not found.
+    /// </summary>
+    Task<bool> Budgets_DeleteCategoryAsync(Guid id, CancellationToken ct = default);
 }

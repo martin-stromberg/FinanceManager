@@ -17,7 +17,12 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
     /// <summary>
     /// Budget purpose id for which rules are listed.
     /// </summary>
-    public Guid BudgetPurposeId { get; private set; }
+    public Guid? BudgetPurposeId { get; private set; }
+
+    /// <summary>
+    /// Budget category id for which rules are listed.
+    /// </summary>
+    public Guid? BudgetCategoryId { get; private set; }
 
     /// <summary>
     /// Creates a new instance.
@@ -32,9 +37,20 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
     /// <summary>
     /// Sets the budget purpose id and triggers loading.
     /// </summary>
-    public async Task InitializeAsync(Guid budgetPurposeId)
+    public async Task InitializeForPurposeAsync(Guid budgetPurposeId)
     {
         BudgetPurposeId = budgetPurposeId;
+        BudgetCategoryId = null;
+        await base.InitializeAsync();
+    }
+
+    /// <summary>
+    /// Sets the budget category id and triggers loading.
+    /// </summary>
+    public async Task InitializeForCategoryAsync(Guid budgetCategoryId)
+    {
+        BudgetCategoryId = budgetCategoryId;
+        BudgetPurposeId = null;
         await base.InitializeAsync();
     }
 
@@ -47,7 +63,7 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
         // No paging for embedded list right now.
         CanLoadMore = false;
 
-        if (BudgetPurposeId == Guid.Empty)
+        if ((BudgetPurposeId ?? Guid.Empty) == Guid.Empty && (BudgetCategoryId ?? Guid.Empty) == Guid.Empty)
         {
             Items.Clear();
             return;
@@ -55,7 +71,17 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
 
         try
         {
-            var list = await _api.Budgets_ListRulesByPurposeAsync(BudgetPurposeId);
+            IReadOnlyList<BudgetRuleDto>? list;
+
+            if (BudgetPurposeId.HasValue && BudgetPurposeId.Value != Guid.Empty)
+            {
+                list = await _api.Budgets_ListRulesByPurposeAsync(BudgetPurposeId.Value);
+            }
+            else
+            {
+                list = await _api.Budgets_ListRulesByCategoryAsync(BudgetCategoryId!.Value);
+            }
+
             Items.Clear();
 
             foreach (var r in list ?? Array.Empty<BudgetRuleDto>())
@@ -116,7 +142,11 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
                 null,
                 () =>
                 {
-                    RaiseUiActionRequested("NewRule", BudgetPurposeId.ToString());
+                    var payload = (BudgetPurposeId.HasValue && BudgetPurposeId.Value != Guid.Empty)
+                        ? $"purpose,{BudgetPurposeId.Value}"
+                        : $"category,{BudgetCategoryId!.Value}";
+
+                    RaiseUiActionRequested("NewRule", payload);
                     return Task.CompletedTask;
                 })
         });

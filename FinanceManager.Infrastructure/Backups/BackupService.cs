@@ -399,6 +399,12 @@ public sealed class BackupService : IBackupService
             .ToListAsync(ct);
         var accountShares = accountShareEntities.Select(s => s.ToBackupDto()).ToList();
 
+        // Budget categories
+        var budgetCategoryEntities = await _db.BudgetCategories.AsNoTracking()
+            .Where(c => c.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var budgetCategories = budgetCategoryEntities.Select(c => c.ToBackupDto()).ToList();
+
         // Budget purposes, rules, overrides
         var budgetPurposeEntities = await _db.BudgetPurposes.AsNoTracking()
             .Where(b => b.OwnerUserId == userId)
@@ -408,7 +414,7 @@ public sealed class BackupService : IBackupService
         var budgetPurposeIds = budgetPurposeEntities.Select(b => b.Id).ToList();
 
         var budgetRuleEntities = await _db.BudgetRules.AsNoTracking()
-            .Where(r => r.OwnerUserId == userId && budgetPurposeIds.Contains(r.BudgetPurposeId))
+            .Where(r => r.OwnerUserId == userId && r.BudgetPurposeId != null && budgetPurposeIds.Contains(r.BudgetPurposeId.Value))
             .ToListAsync(ct);
         var budgetRules = budgetRuleEntities.Select(r => r.ToBackupDto()).ToList();
 
@@ -439,6 +445,7 @@ public sealed class BackupService : IBackupService
             Attachments = attachments,
             Notifications = notifications,
             AccountShares = accountShares,
+            BudgetCategories = budgetCategories,
             BudgetPurposes = budgetPurposes,
             BudgetRules = budgetRules,
             BudgetOverrides = budgetOverrides

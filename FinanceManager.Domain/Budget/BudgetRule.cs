@@ -3,7 +3,7 @@ using FinanceManager.Shared.Dtos.Budget;
 namespace FinanceManager.Domain.Budget;
 
 /// <summary>
-/// A budget rule defines when and how much should be expected for a purpose.
+/// A budget rule defines when and how much should be expected for a purpose or category.
 /// Rules are deterministic and do not create persisted planned postings.
 /// </summary>
 public sealed class BudgetRule : Entity, IAggregateRoot
@@ -12,9 +12,11 @@ public sealed class BudgetRule : Entity, IAggregateRoot
 
     /// <summary>
     /// Creates a new budget rule.
+    /// Exactly one of <paramref name="budgetPurposeId"/> or <paramref name="budgetCategoryId"/> must be provided.
     /// </summary>
     /// <param name="ownerUserId">Owner user id. Must not be empty.</param>
-    /// <param name="budgetPurposeId">Budget purpose id. Must not be empty.</param>
+    /// <param name="budgetPurposeId">Optional budget purpose id.</param>
+    /// <param name="budgetCategoryId">Optional budget category id.</param>
     /// <param name="amount">Expected amount (positive or negative).</param>
     /// <param name="interval">Interval definition.</param>
     /// <param name="startDate">Start date (inclusive).</param>
@@ -22,7 +24,8 @@ public sealed class BudgetRule : Entity, IAggregateRoot
     /// <param name="customIntervalMonths">Custom interval in months when <paramref name="interval"/> is <see cref="BudgetIntervalType.CustomMonths"/>.</param>
     public BudgetRule(
         Guid ownerUserId,
-        Guid budgetPurposeId,
+        Guid? budgetPurposeId,
+        Guid? budgetCategoryId,
         decimal amount,
         BudgetIntervalType interval,
         DateOnly startDate,
@@ -30,7 +33,15 @@ public sealed class BudgetRule : Entity, IAggregateRoot
         int? customIntervalMonths = null)
     {
         OwnerUserId = Guards.NotEmpty(ownerUserId, nameof(ownerUserId));
-        BudgetPurposeId = Guards.NotEmpty(budgetPurposeId, nameof(budgetPurposeId));
+
+        if ((budgetPurposeId.HasValue && budgetPurposeId.Value != Guid.Empty) == (budgetCategoryId.HasValue && budgetCategoryId.Value != Guid.Empty))
+        {
+            throw new ArgumentException("Exactly one of BudgetPurposeId or BudgetCategoryId must be provided");
+        }
+
+        BudgetPurposeId = budgetPurposeId.HasValue && budgetPurposeId.Value != Guid.Empty ? budgetPurposeId : null;
+        BudgetCategoryId = budgetCategoryId.HasValue && budgetCategoryId.Value != Guid.Empty ? budgetCategoryId : null;
+
         SetAmount(amount);
         SetSchedule(interval, startDate, endDate, customIntervalMonths);
     }
@@ -41,9 +52,14 @@ public sealed class BudgetRule : Entity, IAggregateRoot
     public Guid OwnerUserId { get; private set; }
 
     /// <summary>
-    /// Budget purpose identifier.
+    /// Optional budget purpose identifier.
     /// </summary>
-    public Guid BudgetPurposeId { get; private set; }
+    public Guid? BudgetPurposeId { get; private set; }
+
+    /// <summary>
+    /// Optional budget category identifier.
+    /// </summary>
+    public Guid? BudgetCategoryId { get; private set; }
 
     /// <summary>
     /// Expected amount.
@@ -141,6 +157,7 @@ public sealed class BudgetRule : Entity, IAggregateRoot
     /// <param name="Id">Rule id.</param>
     /// <param name="OwnerUserId">Owner user id.</param>
     /// <param name="BudgetPurposeId">Budget purpose id.</param>
+    /// <param name="BudgetCategoryId">Budget category id.</param>
     /// <param name="Amount">Expected amount.</param>
     /// <param name="Interval">Interval.</param>
     /// <param name="CustomIntervalMonths">Custom interval months.</param>
@@ -149,7 +166,8 @@ public sealed class BudgetRule : Entity, IAggregateRoot
     public sealed record BudgetRuleBackupDto(
         Guid Id,
         Guid OwnerUserId,
-        Guid BudgetPurposeId,
+        Guid? BudgetPurposeId,
+        Guid? BudgetCategoryId,
         decimal Amount,
         BudgetIntervalType Interval,
         int? CustomIntervalMonths,
@@ -160,7 +178,7 @@ public sealed class BudgetRule : Entity, IAggregateRoot
     /// Creates a backup DTO representing the serializable state of this budget rule.
     /// </summary>
     public BudgetRuleBackupDto ToBackupDto()
-        => new BudgetRuleBackupDto(Id, OwnerUserId, BudgetPurposeId, Amount, Interval, CustomIntervalMonths, StartDate, EndDate);
+        => new BudgetRuleBackupDto(Id, OwnerUserId, BudgetPurposeId, BudgetCategoryId, Amount, Interval, CustomIntervalMonths, StartDate, EndDate);
 
     /// <summary>
     /// Applies values from the provided backup DTO to this entity.
@@ -170,6 +188,7 @@ public sealed class BudgetRule : Entity, IAggregateRoot
         ArgumentNullException.ThrowIfNull(dto);
         OwnerUserId = dto.OwnerUserId;
         BudgetPurposeId = dto.BudgetPurposeId;
+        BudgetCategoryId = dto.BudgetCategoryId;
         Amount = dto.Amount;
         Interval = dto.Interval;
         CustomIntervalMonths = dto.CustomIntervalMonths;

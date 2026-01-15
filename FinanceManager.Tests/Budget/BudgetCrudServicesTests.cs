@@ -35,14 +35,14 @@ public sealed class BudgetCrudServicesTests
 
         var svc = new BudgetPurposeService(db);
 
-        var created = await svc.CreateAsync(ownerId, "Groceries", BudgetSourceType.ContactGroup, Guid.NewGuid(), "desc", CancellationToken.None);
+        var created = await svc.CreateAsync(ownerId, "Groceries", BudgetSourceType.ContactGroup, Guid.NewGuid(), "desc", null, CancellationToken.None);
         Assert.NotEqual(Guid.Empty, created.Id);
 
         var got = await svc.GetAsync(created.Id, ownerId, CancellationToken.None);
         Assert.NotNull(got);
         Assert.Equal("Groceries", got!.Name);
 
-        var updated = await svc.UpdateAsync(created.Id, ownerId, "Groceries2", BudgetSourceType.ContactGroup, created.SourceId, null, CancellationToken.None);
+        var updated = await svc.UpdateAsync(created.Id, ownerId, "Groceries2", BudgetSourceType.ContactGroup, created.SourceId, null, null, CancellationToken.None);
         Assert.NotNull(updated);
         Assert.Equal("Groceries2", updated!.Name);
 
@@ -62,7 +62,7 @@ public sealed class BudgetCrudServicesTests
         await using var db = await CreateDbAsync(ownerId);
 
         var purposeSvc = new BudgetPurposeService(db);
-        var purpose = await purposeSvc.CreateAsync(ownerId, "Groceries", BudgetSourceType.ContactGroup, Guid.NewGuid(), null, CancellationToken.None);
+        var purpose = await purposeSvc.CreateAsync(ownerId, "Groceries", BudgetSourceType.ContactGroup, Guid.NewGuid(), null, null, CancellationToken.None);
 
         var svc = new BudgetRuleService(db);
 
@@ -93,7 +93,7 @@ public sealed class BudgetCrudServicesTests
         await using var db = await CreateDbAsync(ownerId);
 
         var purposeSvc = new BudgetPurposeService(db);
-        var purpose = await purposeSvc.CreateAsync(ownerId, "Groceries", BudgetSourceType.ContactGroup, Guid.NewGuid(), null, CancellationToken.None);
+        var purpose = await purposeSvc.CreateAsync(ownerId, "Groceries", BudgetSourceType.ContactGroup, Guid.NewGuid(), null, null, CancellationToken.None);
 
         var svc = new BudgetOverrideService(db);
 

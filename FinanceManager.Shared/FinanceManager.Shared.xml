@@ -315,6 +315,31 @@
             Deletes a backup entry. Returns false when not found.
             </summary>
         </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_ListCategoriesAsync(System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <summary>
+            Lists budget categories for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_GetCategoryAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a budget category by id or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_CreateCategoryAsync(FinanceManager.Shared.Dtos.Budget.BudgetCategoryCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a budget category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_UpdateCategoryAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetCategoryUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates a budget category. Returns null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_DeleteCategoryAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a budget category. Returns false when not found.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Shared.ApiClient.Budgets_ListPurposesAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <summary>
             Lists budget purposes for the current user.
@@ -539,6 +564,11 @@
             </summary>
             <param name="ct">Cancellation token used to cancel the HTTP request.</param>
             <returns><c>true</c> when at least one user exists; otherwise <c>false</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_ListRulesByCategoryAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists budget rules that apply to a budget category.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.HomeKpis_ListAsync(System.Threading.CancellationToken)">
             <summary>
@@ -1952,6 +1982,46 @@
         <member name="P:FinanceManager.Shared.Dtos.Backups.BackupDto.Source">
             <summary>Source indicating how the backup was created (System | Upload).</summary>
         </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetCategoryDto">
+            <summary>
+            Data transfer object for budget categories.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetCategoryDto.#ctor(System.Guid,System.Guid,System.String)">
+            <summary>
+            Data transfer object for budget categories.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetCategoryOverviewDto">
+            <summary>
+            Overview DTO for budget category list pages.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetCategoryOverviewDto.#ctor(System.Guid,System.String,System.Decimal,System.Decimal,System.Decimal,System.Int32)">
+            <summary>
+            Overview DTO for budget category list pages.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetCategoryCreateRequest">
+            <summary>
+            Request for creating a budget category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetCategoryCreateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Common.ParentLinkRequest)">
+            <summary>
+            Request for creating a budget category.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetCategoryUpdateRequest">
+            <summary>
+            Request for updating a budget category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetCategoryUpdateRequest.#ctor(System.String)">
+            <summary>
+            Request for updating a budget category.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetIntervalType">
             <summary>
             Defines how often a budget rule produces an expected amount.
@@ -2084,12 +2154,12 @@
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetPurposeCreateRequest">
             <summary>
-            Request payload for creating a budget purpose.
+            Request for creating a budget purpose.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPurposeCreateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String)">
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPurposeCreateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Nullable{System.Guid})">
             <summary>
-            Request payload for creating a budget purpose.
+            Request for creating a budget purpose.
             </summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto">
@@ -2102,8 +2172,9 @@
             <param name="Description">Optional description.</param>
             <param name="SourceType">Source type used to resolve actual values.</param>
             <param name="SourceId">Identifier of the source entity.</param>
+            <param name="BudgetCategoryId">Optional category id assigned to this purpose.</param>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto.#ctor(System.Guid,System.Guid,System.String,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid)">
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto.#ctor(System.Guid,System.Guid,System.String,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.Nullable{System.Guid})">
             <summary>
             Data transfer object for budget purposes.
             </summary>
@@ -2113,6 +2184,7 @@
             <param name="Description">Optional description.</param>
             <param name="SourceType">Source type used to resolve actual values.</param>
             <param name="SourceId">Identifier of the source entity.</param>
+            <param name="BudgetCategoryId">Optional category id assigned to this purpose.</param>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto.Id">
             <summary>Purpose id.</summary>
@@ -2132,6 +2204,9 @@
         <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto.SourceId">
             <summary>Identifier of the source entity.</summary>
         </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto.BudgetCategoryId">
+            <summary>Optional category id assigned to this purpose.</summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto">
             <summary>
             Data transfer object for the budget purposes overview including rule count and computed budget for a period.
@@ -2148,8 +2223,10 @@
             <param name="Variance">Difference between actual and budget (ActualSum - BudgetSum).</param>
             <param name="SourceName">Resolved display name of the source entity.</param>
             <param name="SourceSymbolAttachmentId">Optional symbol attachment id of the source entity.</param>
+            <param name="BudgetCategoryId">Optional category id assigned to this purpose.</param>
+            <param name="BudgetCategoryName">Resolved display name of the assigned category.</param>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.#ctor(System.Guid,System.Guid,System.String,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.Int32,System.Decimal,System.Decimal,System.Decimal,System.String,System.Nullable{System.Guid})">
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.#ctor(System.Guid,System.Guid,System.String,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.Int32,System.Decimal,System.Decimal,System.Decimal,System.String,System.Nullable{System.Guid},System.Nullable{System.Guid},System.String)">
             <summary>
             Data transfer object for the budget purposes overview including rule count and computed budget for a period.
             </summary>
@@ -2165,6 +2242,8 @@
             <param name="Variance">Difference between actual and budget (ActualSum - BudgetSum).</param>
             <param name="SourceName">Resolved display name of the source entity.</param>
             <param name="SourceSymbolAttachmentId">Optional symbol attachment id of the source entity.</param>
+            <param name="BudgetCategoryId">Optional category id assigned to this purpose.</param>
+            <param name="BudgetCategoryName">Resolved display name of the assigned category.</param>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.Id">
             <summary>Purpose id.</summary>
@@ -2202,84 +2281,54 @@
         <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.SourceSymbolAttachmentId">
             <summary>Optional symbol attachment id of the source entity.</summary>
         </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.BudgetCategoryId">
+            <summary>Optional category id assigned to this purpose.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto.BudgetCategoryName">
+            <summary>Resolved display name of the assigned category.</summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetPurposeUpdateRequest">
             <summary>
-            Request payload for updating a budget purpose.
+            Request for updating a budget purpose.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPurposeUpdateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String)">
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPurposeUpdateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Nullable{System.Guid})">
             <summary>
-            Request payload for updating a budget purpose.
+            Request for updating a budget purpose.
             </summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest">
             <summary>
             Request payload for creating a budget rule.
+            Exactly one of <see cref="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest.BudgetPurposeId"/> or <see cref="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest.BudgetCategoryId"/> must be provided.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest.#ctor(System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly})">
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest.#ctor(System.Nullable{System.Guid},System.Nullable{System.Guid},System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly})">
             <summary>
             Request payload for creating a budget rule.
+            Exactly one of <see cref="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest.BudgetPurposeId"/> or <see cref="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest.BudgetCategoryId"/> must be provided.
             </summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto">
             <summary>
-            Data transfer object for budget rules.
+            Represents a budget rule which can apply either to a specific budget purpose or to a whole budget category.
             </summary>
-            <param name="Id">Rule id.</param>
-            <param name="OwnerUserId">Owner user id.</param>
-            <param name="BudgetPurposeId">Purpose id.</param>
-            <param name="Amount">Expected amount.</param>
-            <param name="Interval">Interval type.</param>
-            <param name="CustomIntervalMonths">Custom interval months when interval is CustomMonths.</param>
-            <param name="StartDate">Start date (inclusive).</param>
-            <param name="EndDate">Optional end date (inclusive).</param>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.#ctor(System.Guid,System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly})">
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.#ctor(System.Guid,System.Guid,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly})">
             <summary>
-            Data transfer object for budget rules.
+            Represents a budget rule which can apply either to a specific budget purpose or to a whole budget category.
             </summary>
-            <param name="Id">Rule id.</param>
-            <param name="OwnerUserId">Owner user id.</param>
-            <param name="BudgetPurposeId">Purpose id.</param>
-            <param name="Amount">Expected amount.</param>
-            <param name="Interval">Interval type.</param>
-            <param name="CustomIntervalMonths">Custom interval months when interval is CustomMonths.</param>
-            <param name="StartDate">Start date (inclusive).</param>
-            <param name="EndDate">Optional end date (inclusive).</param>
-        </member>
-        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.Id">
-            <summary>Rule id.</summary>
-        </member>
-        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.OwnerUserId">
-            <summary>Owner user id.</summary>
-        </member>
-        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.BudgetPurposeId">
-            <summary>Purpose id.</summary>
-        </member>
-        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.Amount">
-            <summary>Expected amount.</summary>
-        </member>
-        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.Interval">
-            <summary>Interval type.</summary>
-        </member>
-        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.CustomIntervalMonths">
-            <summary>Custom interval months when interval is CustomMonths.</summary>
-        </member>
-        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.StartDate">
-            <summary>Start date (inclusive).</summary>
-        </member>
-        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.EndDate">
-            <summary>Optional end date (inclusive).</summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetRuleUpdateRequest">
             <summary>
             Request payload for updating a budget rule.
+            Target association (purpose/category) is not updatable.
             </summary>
         </member>
         <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetRuleUpdateRequest.#ctor(System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly})">
             <summary>
             Request payload for updating a budget rule.
+            Target association (purpose/category) is not updatable.
             </summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetSourceType">
@@ -2356,33 +2405,61 @@
             <summary>
             DTO wrapping an API error response for standardized client consumption.
             </summary>
-            <param name="error">Machine-readable error code (e.g. Err_Invalid_name).</param>
-            <param name="message">Human-readable error message intended for display.</param>
+            <param name="origin">Origin identifier (e.g. API_BudgetRule) used to scope error codes for localization.</param>
+            <param name="code">Machine-readable error code (e.g. Err_Invalid_BudgetPurposeId).</param>
+            <param name="message">Human-readable error message intended for display (preferably localized server-side).</param>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Common.ApiErrorDto.#ctor(System.String,System.String)">
+        <member name="M:FinanceManager.Shared.Dtos.Common.ApiErrorDto.#ctor(System.String,System.String,System.String)">
             <summary>
             DTO wrapping an API error response for standardized client consumption.
             </summary>
-            <param name="error">Machine-readable error code (e.g. Err_Invalid_name).</param>
-            <param name="message">Human-readable error message intended for display.</param>
+            <param name="origin">Origin identifier (e.g. API_BudgetRule) used to scope error codes for localization.</param>
+            <param name="code">Machine-readable error code (e.g. Err_Invalid_BudgetPurposeId).</param>
+            <param name="message">Human-readable error message intended for display (preferably localized server-side).</param>
         </member>
-        <member name="P:FinanceManager.Shared.Dtos.Common.ApiErrorDto.error">
-            <summary>Machine-readable error code (e.g. Err_Invalid_name).</summary>
+        <member name="P:FinanceManager.Shared.Dtos.Common.ApiErrorDto.origin">
+            <summary>Origin identifier (e.g. API_BudgetRule) used to scope error codes for localization.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Common.ApiErrorDto.code">
+            <summary>Machine-readable error code (e.g. Err_Invalid_BudgetPurposeId).</summary>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Common.ApiErrorDto.message">
-            <summary>Human-readable error message intended for display.</summary>
+            <summary>Human-readable error message intended for display (preferably localized server-side).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Common.ApiErrorDto.Error">
+            <summary>
+            Legacy compatibility property. Older clients expect an <c>error</c> JSON property.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.Dtos.Common.ApiErrorDto.#ctor(System.String)">
             <summary>
-            Creates an error response with only a human-readable message.
+            Legacy constructor: creates an error response with only a human-readable message.
             </summary>
-            <param name="message">Human-readable error message intended for display.</param>
         </member>
         <member name="M:FinanceManager.Shared.Dtos.Common.ApiErrorDto.FromMessage(System.String)">
             <summary>
-            Creates an error response with only a human-readable message.
+            Legacy factory: creates an error response with only a human-readable message.
             </summary>
-            <param name="message">Human-readable error message intended for display.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Common.ApiErrorDto.Create(System.String,System.String,System.String)">
+            <summary>
+            Creates a standardized API error response.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Common.CreateRequestWithParent">
+            <summary>
+            Base record for create requests that support an optional parent context.
+            </summary>
+            <param name="Parent">Optional parent context used for server-side assignment.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Common.CreateRequestWithParent.#ctor(FinanceManager.Shared.Dtos.Common.ParentLinkRequest)">
+            <summary>
+            Base record for create requests that support an optional parent context.
+            </summary>
+            <param name="Parent">Optional parent context used for server-side assignment.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Common.CreateRequestWithParent.Parent">
+            <summary>Optional parent context used for server-side assignment.</summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Common.PageResult`1">
             <summary>
@@ -2398,6 +2475,33 @@
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Common.PageResult`1.Total">
             <summary>Total number of items matching the query.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Common.ParentLinkRequest">
+            <summary>
+            Describes an optional parent context for "create and assign" flows.
+            The server may use this information to immediately assign the created entity to the parent.
+            </summary>
+            <param name="ParentKind">String identifier of the parent kind (for example "budget/purposes").</param>
+            <param name="ParentId">Identifier of the parent entity that should receive the assignment.</param>
+            <param name="Field">Optional field hint on the parent (for example "BudgetCategoryId").</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Common.ParentLinkRequest.#ctor(System.String,System.Guid,System.String)">
+            <summary>
+            Describes an optional parent context for "create and assign" flows.
+            The server may use this information to immediately assign the created entity to the parent.
+            </summary>
+            <param name="ParentKind">String identifier of the parent kind (for example "budget/purposes").</param>
+            <param name="ParentId">Identifier of the parent entity that should receive the assignment.</param>
+            <param name="Field">Optional field hint on the parent (for example "BudgetCategoryId").</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Common.ParentLinkRequest.ParentKind">
+            <summary>String identifier of the parent kind (for example "budget/purposes").</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Common.ParentLinkRequest.ParentId">
+            <summary>Identifier of the parent entity that should receive the assignment.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Common.ParentLinkRequest.Field">
+            <summary>Optional field hint on the parent (for example "BudgetCategoryId").</summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Contacts.AliasCreateRequest">
             <summary>
@@ -2498,8 +2602,9 @@
             <param name="CategoryId">Optional contact category identifier.</param>
             <param name="Description">Optional description for the contact.</param>
             <param name="IsPaymentIntermediary">True when the contact is a payment intermediary.</param>
+            <param name="Parent">Optional parent context used for server-side assignment.</param>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Contacts.ContactType,System.Nullable{System.Guid},System.String,System.Nullable{System.Boolean})">
+        <member name="M:FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Contacts.ContactType,System.Nullable{System.Guid},System.String,System.Nullable{System.Boolean},FinanceManager.Shared.Dtos.Common.ParentLinkRequest)">
             <summary>
             Request payload to create a new contact.
             </summary>
@@ -2508,6 +2613,7 @@
             <param name="CategoryId">Optional contact category identifier.</param>
             <param name="Description">Optional description for the contact.</param>
             <param name="IsPaymentIntermediary">True when the contact is a payment intermediary.</param>
+            <param name="Parent">Optional parent context used for server-side assignment.</param>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest.Name">
             <summary>Display name of the contact.</summary>
@@ -3559,6 +3665,11 @@
             Optional contract number or reference associated with the savings plan.
             </summary>
         </member>
+        <member name="P:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest.Parent">
+            <summary>
+            Optional parent context used for server-side assignment.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest.#ctor">
             <summary>
             Default constructor. Initializes string properties with safe defaults to satisfy validation.
@@ -3745,6 +3856,11 @@
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityRequest.CategoryId">
             <summary>Optional category id.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityRequest.Parent">
+            <summary>
+            Optional parent context used for server-side assignment.
+            </summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Securities.SecurityTransactionType">
             <summary>
@@ -5405,6 +5521,11 @@
             Lists rules for a budget purpose.
             </summary>
         </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_ListRulesByCategoryAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists budget rules that apply to a budget category.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Shared.IApiClient.Budgets_GetRuleAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>
             Gets a budget rule by id or null when not found.
@@ -5448,6 +5569,31 @@
         <member name="M:FinanceManager.Shared.IApiClient.Budgets_DeleteOverrideAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>
             Deletes a budget override. Returns false when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_ListCategoriesAsync(System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <summary>
+            Lists budget categories for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_GetCategoryAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a budget category by id or null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_CreateCategoryAsync(FinanceManager.Shared.Dtos.Budget.BudgetCategoryCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a budget category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_UpdateCategoryAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetCategoryUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates a budget category. Returns null when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_DeleteCategoryAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a budget category. Returns false when not found.
             </summary>
         </member>
     </members>

@@ -196,7 +196,8 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
     /// <returns>The created or updated <see cref="SecurityDto"/>, or <c>null</c> when the operation failed.</returns>
     public async Task<SecurityDto?> SaveAsync(CancellationToken ct = default)
     {
-        Error = null; SetError(null, null);
+        Error = null;
+        SetError(null, null);
         try
         {
             // Ensure any pending UI field values are applied to the in-memory Model so request uses latest inputs
@@ -204,19 +205,52 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
             var req = BuildRequestFromModel();
             if (Id == Guid.Empty)
             {
+                req.Parent = TryGetParentLinkFromQuery();
+
                 var dto = await ApiClient.Securities_CreateAsync(req, ct);
-                if (dto == null) { Error = ApiClient.LastError; SetError(ApiClient.LastErrorCode, ApiClient.LastError); RaiseStateChanged(); return null; }
-                Id = dto.Id; Security = dto; Display = new DisplayModel { Id = dto.Id, IsActive = dto.IsActive, CategoryName = dto.CategoryName }; Model.SymbolAttachmentId = dto.SymbolAttachmentId; CardRecord = await BuildCardRecordAsync(dto); RaiseUiActionRequested("Saved", Id.ToString()); return dto;
+                if (dto == null)
+                {
+                    Error = ApiClient.LastError;
+                    SetError(ApiClient.LastErrorCode, ApiClient.LastError);
+                    RaiseStateChanged();
+                    return null;
+                }
+                Id = dto.Id;
+                Security = dto;
+                Display = new DisplayModel { Id = dto.Id, IsActive = dto.IsActive, CategoryName = dto.CategoryName };
+                Model.SymbolAttachmentId = dto.SymbolAttachmentId;
+                CardRecord = await BuildCardRecordAsync(dto);
+                RaiseUiActionRequested("Saved", Id.ToString());
+                return dto;
             }
             else
             {
                 var dto = await ApiClient.Securities_UpdateAsync(Id, req, ct);
-                if (dto == null) { Error = ApiClient.LastError; SetError(ApiClient.LastErrorCode, ApiClient.LastError); RaiseStateChanged(); return null; }
-                Security = dto; Display = new DisplayModel { Id = dto.Id, IsActive = dto.IsActive, CategoryName = dto.CategoryName }; Model.SymbolAttachmentId = dto.SymbolAttachmentId; CardRecord = await BuildCardRecordAsync(dto); RaiseUiActionRequested("Saved", Id.ToString()); return dto;
+                if (dto == null)
+                {
+                    Error = ApiClient.LastError;
+                    SetError(ApiClient.LastErrorCode, ApiClient.LastError);
+                    RaiseStateChanged();
+                    return null;
+                }
+                Security = dto;
+                Display = new DisplayModel { Id = dto.Id, IsActive = dto.IsActive, CategoryName = dto.CategoryName };
+                Model.SymbolAttachmentId = dto.SymbolAttachmentId;
+                CardRecord = await BuildCardRecordAsync(dto);
+                RaiseUiActionRequested("Saved", Id.ToString());
+                return dto;
             }
         }
-        catch (Exception ex) { Error = ApiClient.LastError ?? ex.Message; SetError(ApiClient.LastErrorCode, ApiClient.LastError ?? ex.Message); return null; }
-        finally { RaiseStateChanged(); }
+        catch (Exception ex)
+        {
+            Error = ApiClient.LastError ?? ex.Message;
+            SetError(ApiClient.LastErrorCode, ApiClient.LastError ?? ex.Message);
+            return null;
+        }
+        finally
+        {
+            RaiseStateChanged();
+        }
     }
 
     private SecurityRequest BuildRequestFromModel()

@@ -508,15 +508,15 @@ public sealed class DemoDataService : IDemoDataService
         monthStart = new DateOnly(monthStart.Year, monthStart.Month, 1);
 
         // SavingsPlan: Urlaubskasse -> -100 monthly
-        var vacationPurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Urlaubskasse", BudgetSourceType.SavingsPlan, vacationPlan.Id, null, ct);
+        var vacationPurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Urlaubskasse", BudgetSourceType.SavingsPlan, vacationPlan.Id, null, null, ct);
         await _budgetRuleService.CreateAsync(ownerUserId, vacationPurpose.Id, -100m, BudgetIntervalType.Monthly, null, monthStart, null, ct);
 
         // SavingsPlan: Auto -> -150 monthly
-        var carPurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Auto", BudgetSourceType.SavingsPlan, carPlan.Id, null, ct);
+        var carPurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Auto", BudgetSourceType.SavingsPlan, carPlan.Id, null, null, ct);
         await _budgetRuleService.CreateAsync(ownerUserId, carPurpose.Id, -150m, BudgetIntervalType.Monthly, null, monthStart, null, ct);
 
         // SavingsPlan: Versicherung-Rückstellung: +432 yearly in three months and -1/12 monthly
-        var reservePurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Rückstellung Versicherung", BudgetSourceType.SavingsPlan, insurancePlan.Id, null, ct);
+        var reservePurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Rückstellung Versicherung", BudgetSourceType.SavingsPlan, insurancePlan.Id, null, null, ct);
 
         var payoutDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddMonths(3));
         payoutDate = new DateOnly(payoutDate.Year, payoutDate.Month, 1);
@@ -525,7 +525,7 @@ public sealed class DemoDataService : IDemoDataService
         await _budgetRuleService.CreateAsync(ownerUserId, reservePurpose.Id, -(432m / 12m), BudgetIntervalType.Monthly, null, monthStart, null, ct);
 
         // Contact: Versicherung-Zahlung: -432 yearly in three months
-        var paymentPurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Versicherungszahlung", BudgetSourceType.Contact, insuranceContact.Id, null, ct);
+        var paymentPurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Versicherungszahlung", BudgetSourceType.Contact, insuranceContact.Id, null, null, ct);
         await _budgetRuleService.CreateAsync(ownerUserId, paymentPurpose.Id, -432m, BudgetIntervalType.Yearly, null, payoutDate, null, ct);
     }
 }

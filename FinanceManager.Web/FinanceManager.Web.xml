@@ -375,12 +375,12 @@
             Handles user authentication: login, registration and logout using JWT cookie tokens.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.AuthController.#ctor(FinanceManager.Application.Users.IUserAuthService,IAuthTokenProvider)">
+        <member name="M:FinanceManager.Web.Controllers.AuthController.#ctor(FinanceManager.Application.Users.IUserAuthService,Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Creates a new instance of <see cref="T:FinanceManager.Web.Controllers.AuthController"/>.
             </summary>
             <param name="auth">Service handling user authentication operations (login/register).</param>
-            <param name="tokenProvider">Token provider used to clear in-memory tokens on logout.</param>
+            <param name="localizer">Localizer for providing localized error messages.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.AuthController.LoginAsync(FinanceManager.Shared.Dtos.Users.LoginRequest,System.Threading.CancellationToken)">
             <summary>
@@ -422,12 +422,13 @@
             specialized aggregate rebuild operations.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.BackgroundTasksController.#ctor(FinanceManager.Application.IBackgroundTaskManager,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BackgroundTasksController})">
+        <member name="M:FinanceManager.Web.Controllers.BackgroundTasksController.#ctor(FinanceManager.Application.IBackgroundTaskManager,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BackgroundTasksController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.BackgroundTasksController"/>.
             </summary>
             <param name="taskManager">Background task manager used to enqueue and query tasks.</param>
             <param name="logger">Logger instance for controller diagnostics.</param>
+            <param name="localizer">Localizer for accessing localized strings.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.BackgroundTasksController.Enqueue(FinanceManager.Shared.Dtos.Admin.BackgroundTaskType,System.Boolean)">
             <summary>
@@ -484,13 +485,14 @@
             apply (immediate or queued background restore), cancel and delete.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.BackupsController.#ctor(FinanceManager.Application.Backups.IBackupService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.IBackgroundTaskManager)">
+        <member name="M:FinanceManager.Web.Controllers.BackupsController.#ctor(FinanceManager.Application.Backups.IBackupService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.IBackgroundTaskManager,Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Creates a new instance of the <see cref="T:FinanceManager.Web.Controllers.BackupsController"/>.
             </summary>
             <param name="svc">Backup service used to list, create, upload, download and manage backups.</param>
             <param name="current">Service to access current user context.</param>
             <param name="taskManager">Background task manager used to enqueue restore tasks.</param>
+            <param name="localizer">Localizer for generating localized error messages.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.BackupsController.ListAsync(System.Threading.CancellationToken)">
             <summary>
@@ -559,12 +561,47 @@
             <param name="ct">Cancellation token.</param>
             <returns>204 No Content when deletion succeeded; 404 Not Found when the backup does not exist.</returns>
         </member>
+        <member name="T:FinanceManager.Web.Controllers.BudgetCategoriesController">
+            <summary>
+            Manages budget categories for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetCategoriesController.#ctor(FinanceManager.Application.Budget.IBudgetCategoryService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetCategoriesController},FinanceManager.Application.Common.IParentAssignmentService,Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetCategoriesController.ListAsync(System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <summary>
+            Lists categories for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetCategoriesController.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a category by id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetCategoriesController.CreateAsync(FinanceManager.Shared.Dtos.Budget.BudgetCategoryCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetCategoriesController.UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetCategoryUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates a category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetCategoriesController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a category.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.Controllers.BudgetOverridesController">
             <summary>
             Manages budget overrides for the current user.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.BudgetOverridesController.#ctor(FinanceManager.Application.Budget.IBudgetOverrideService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetOverridesController})">
+        <member name="M:FinanceManager.Web.Controllers.BudgetOverridesController.#ctor(FinanceManager.Application.Budget.IBudgetOverrideService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetOverridesController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Creates a new instance.
             </summary>
@@ -599,7 +636,7 @@
             Manages budget purposes for the current user.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.#ctor(FinanceManager.Application.Budget.IBudgetPurposeService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetPurposesController})">
+        <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.#ctor(FinanceManager.Application.Budget.IBudgetPurposeService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetPurposesController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Creates a new instance.
             </summary>
@@ -635,7 +672,7 @@
             Manages budget rules for the current user.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.BudgetRulesController.#ctor(FinanceManager.Application.Budget.IBudgetRuleService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetRulesController})">
+        <member name="M:FinanceManager.Web.Controllers.BudgetRulesController.#ctor(FinanceManager.Application.Budget.IBudgetRuleService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetRulesController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Creates a new instance.
             </summary>
@@ -665,18 +702,24 @@
             Deletes a budget rule.
             </summary>
         </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetRulesController.ListByCategoryAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists rules for a budget category.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.Controllers.ContactCategoriesController">
             <summary>
             Manages contact categories for the current user: CRUD operations and symbol assignment.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.ContactCategoriesController.#ctor(FinanceManager.Application.Contacts.IContactCategoryService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.ContactCategoriesController})">
+        <member name="M:FinanceManager.Web.Controllers.ContactCategoriesController.#ctor(FinanceManager.Application.Contacts.IContactCategoryService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.ContactCategoriesController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Creates a new instance of <see cref="T:FinanceManager.Web.Controllers.ContactCategoriesController"/>.
             </summary>
             <param name="svc">Service for managing contact categories.</param>
             <param name="current">Service providing information about the current user context.</param>
             <param name="logger">Logger instance.</param>
+            <param name="localizer">Localizer for string resources.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.ContactCategoriesController.ListAsync(System.Threading.CancellationToken)">
             <summary>
@@ -752,14 +795,14 @@
             merging and symbol assignment.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.ContactsController.#ctor(FinanceManager.Application.Contacts.IContactService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.ContactsController})">
+        <member name="M:FinanceManager.Web.Controllers.ContactsController.#ctor(FinanceManager.Application.Contacts.IContactService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.ContactsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
-            Initializes a new instance of the <see cref="T:FinanceManager.Web.Controllers.ContactsController"/>.
+            Creates a new instance of <see cref="T:FinanceManager.Web.Controllers.ContactsController"/>.
             </summary>
-            <param name="contacts">Service that implements contact management use-cases.</param>
-            <param name="current">Service that provides information about the current user.</param>
-            <param name="logger">Logger used to record unexpected errors and diagnostics.</param>
-            <exception cref="T:System.ArgumentNullException">Thrown when any required dependency is null.</exception>
+            <param name="contacts">Contact service.</param>
+            <param name="current">Current user context.</param>
+            <param name="logger">Logger.</param>
+            <param name="localizer">Shared controller string localizer.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.ContactsController.ListAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Contacts.ContactType},System.Boolean,System.String,System.Threading.CancellationToken)">
             <summary>
@@ -885,19 +928,26 @@
             <param name="ct">Cancellation token.</param>
             <returns>204 No Content when the clear succeeded; 404 Not Found when the contact was not found.</returns>
         </member>
+        <member name="T:FinanceManager.Web.Controllers.Controller">
+            <summary>
+            Marker class for controller resource localization.
+            Resource base name: Controller (see `Resources/Controller.*.resx`).
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.Controllers.HomeKpisController">
             <summary>
             Manages Home KPI widgets for the signed-in user: list, create, update, delete and retrieve single entries.
             Supports predefined KPIs and custom report favorite based KPIs.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.HomeKpisController.#ctor(FinanceManager.Application.Reports.IHomeKpiService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.HomeKpisController})">
+        <member name="M:FinanceManager.Web.Controllers.HomeKpisController.#ctor(FinanceManager.Application.Reports.IHomeKpiService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.HomeKpisController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.HomeKpisController"/>.
             </summary>
             <param name="service">Service implementing KPI management usecases.</param>
             <param name="current">Service providing current user context.</param>
             <param name="logger">Logger used to record unexpected errors and diagnostics.</param>
+            <param name="localizer">Localizer for API error messages.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.HomeKpisController.ListAsync(System.Threading.CancellationToken)">
             <summary>
@@ -1053,13 +1103,14 @@
             Provides endpoints for listing active notifications and dismissing a notification for the current user.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.NotificationsController.#ctor(FinanceManager.Application.Notifications.INotificationService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.NotificationsController})">
+        <member name="M:FinanceManager.Web.Controllers.NotificationsController.#ctor(FinanceManager.Application.Notifications.INotificationService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.NotificationsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Creates a new instance of <see cref="T:FinanceManager.Web.Controllers.NotificationsController"/>.
             </summary>
             <param name="notifications">The notification service used to list and dismiss notifications.</param>
             <param name="current">Service that provides information about the currently authenticated user.</param>
             <param name="logger">Logger instance for this controller.</param>
+            <param name="localizer">Localizer for error messages.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.NotificationsController.ListAsync(System.Threading.CancellationToken)">
             <summary>
@@ -1239,7 +1290,7 @@
             Provides reporting endpoints: aggregation queries and management of report favorites.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.ReportsController.#ctor(FinanceManager.Application.Reports.IReportAggregationService,FinanceManager.Application.Reports.IReportFavoriteService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.ReportsController})">
+        <member name="M:FinanceManager.Web.Controllers.ReportsController.#ctor(FinanceManager.Application.Reports.IReportAggregationService,FinanceManager.Application.Reports.IReportFavoriteService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.ReportsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Web.Controllers.ReportsController"/> class.
             </summary>
@@ -1247,6 +1298,7 @@
             <param name="favorites">Service that manages report favorites.</param>
             <param name="current">Service providing the current user context.</param>
             <param name="logger">Logger instance for this controller.</param>
+            <param name="localizer">Localizer for error messages.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.ReportsController.QueryAsync(FinanceManager.Shared.Dtos.Reports.ReportAggregatesQueryRequest,System.Threading.CancellationToken)">
             <summary>
@@ -1316,14 +1368,16 @@
             Provides CRUD, analysis, archiving and symbol management endpoints for savings plans owned by the current user.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.#ctor(FinanceManager.Application.Savings.ISavingsPlanService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.Attachments.IAttachmentService,Microsoft.Extensions.Localization.IStringLocalizerFactory)">
+        <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.#ctor(FinanceManager.Application.Savings.ISavingsPlanService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.Attachments.IAttachmentService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.SavingsPlansController},FinanceManager.Application.Common.IParentAssignmentService,Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Web.Controllers.SavingsPlansController"/> class.
             </summary>
             <param name="service">The savings plan service used for business operations.</param>
             <param name="current">Service that provides information about the currently authenticated user.</param>
-            <param name="attachments">Attachment service used to upload and manage attachments.</param>
-            <param name="locFactory">Localizer factory (currently unused in the controller but reserved for future localization).</param>
+            <param name="attachments">The attachment service used for file uploads and management.</param>
+            <param name="logger">Logger for the controller.</param>
+            <param name="parentAssign">Service that manages parent assignments for entities.</param>
+            <param name="localizer">Service for localized string retrieval.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.ListAsync(System.Boolean,System.Threading.CancellationToken)">
             <summary>
@@ -1449,7 +1503,7 @@
             dividends aggregation and background price backfill tasks.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.#ctor(FinanceManager.Application.Securities.ISecurityService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.Reports.IPostingTimeSeriesService,FinanceManager.Application.Securities.ISecurityPriceService,FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.IBackgroundTaskManager,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.SecuritiesController})">
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.#ctor(FinanceManager.Application.Securities.ISecurityService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.IBackgroundTaskManager,FinanceManager.Application.Reports.IPostingTimeSeriesService,FinanceManager.Application.Securities.ISecurityPriceService,FinanceManager.Application.Securities.ISecurityReportService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.SecuritiesController},FinanceManager.Application.Common.IParentAssignmentService,Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.SecuritiesController"/>.
             </summary>
@@ -1458,9 +1512,11 @@
             <param name="attachments">Service managing attachments (upload, storage).</param>
             <param name="series">Service to compute posting time series and aggregates.</param>
             <param name="priceService">Service to retrieve security price history.</param>
-            <param name="db">Application database context used for lightweight queries within the controller.</param>
+            <param name="reports">Service providing security reports and aggregations.</param>
             <param name="tasks">Background task manager used to enqueue asynchronous background jobs.</param>
             <param name="logger">Logger used for diagnostic messages.</param>
+            <param name="parentAssign">Service that manages server-side create-and-assign operations.</param>
+            <param name="localizer">Localizer for generating user-friendly error messages.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.SecuritiesController.ListAsync(System.Boolean,System.Threading.CancellationToken)">
             <summary>
@@ -1678,13 +1734,14 @@
             Provides background task endpoints for mass classification and mass booking operations.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.#ctor(FinanceManager.Application.Statements.IStatementDraftService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.StatementDraftsController},FinanceManager.Application.IBackgroundTaskManager,FinanceManager.Application.Attachments.IAttachmentService)">
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.#ctor(FinanceManager.Application.Statements.IStatementDraftService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.StatementDraftsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller},FinanceManager.Application.IBackgroundTaskManager,FinanceManager.Application.Attachments.IAttachmentService)">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.StatementDraftsController"/>.
             </summary>
             <param name="drafts">Service for managing statement drafts.</param>
             <param name="current">Service providing the current authenticated user context.</param>
             <param name="logger">Logger instance for the controller.</param>
+            <param name="localizer">Localizer for i18n support.</param>
             <param name="taskManager">Background task manager used to enqueue/inspect background jobs.</param>
             <param name="attachments">Attachment service used to list and download attachments.</param>
         </member>
@@ -1988,13 +2045,14 @@
             User management (read-only placeholder). Forwards calls to services and catches unexpected exceptions.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.UsersController.#ctor(FinanceManager.Application.Users.IUserReadService,FinanceManager.Application.Demo.IDemoDataService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.UsersController})">
+        <member name="M:FinanceManager.Web.Controllers.UsersController.#ctor(FinanceManager.Application.Users.IUserReadService,DemoDataService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.UsersController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Web.Controllers.UsersController"/> class.
             </summary>
             <param name="userReadService">Service used to read user information.</param>
             <param name="demoDataService">Service responsible for creating demo data for a user.</param>
             <param name="logger">Logger instance for this controller.</param>
+            <param name="localizer">Localizer for error messages.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.UsersController.HasAnyUsersAsync(System.Threading.CancellationToken)">
             <summary>
@@ -2032,13 +2090,14 @@
             All endpoints operate on the currently authenticated user resolved via <see cref="T:FinanceManager.Application.ICurrentUserService"/>.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.UserSettingsController.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.UserSettingsController})">
+        <member name="M:FinanceManager.Web.Controllers.UserSettingsController.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.UserSettingsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.UserSettingsController"/>
             </summary>
             <param name="db">Database context used to access user settings.</param>
             <param name="current">Service that exposes current user information.</param>
             <param name="logger">Logger instance for diagnostics and error reporting.</param>
+            <param name="localizer">Localizer for accessing localized strings.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.UserSettingsController.GetProfileAsync(System.Threading.CancellationToken)">
             <summary>
@@ -2152,6 +2211,47 @@
             </summary>
             <param name="kind">Posting kind to map.</param>
             <returns>Path segment string or <c>null</c> when unsupported.</returns>
+        </member>
+        <member name="T:FinanceManager.Web.Infrastructure.ApiErrors.ApiErrorFactory">
+            <summary>
+            Factory for producing standardized <see cref="T:FinanceManager.Shared.Dtos.Common.ApiErrorDto"/> instances following the
+            project-wide Origin/Code/Message error contract.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Infrastructure.ApiErrors.ApiErrorFactory.FromArgumentException(System.String,System.ArgumentException,Microsoft.Extensions.Localization.IStringLocalizer)">
+            <summary>
+            Creates an <see cref="T:FinanceManager.Shared.Dtos.Common.ApiErrorDto"/> for an <see cref="T:System.ArgumentException"/>.
+            </summary>
+            <param name="origin">The logical origin for the error (e.g. API_BudgetRule).</param>
+            <param name="ex">The thrown exception.</param>
+            <param name="localizer">Localizer used to resolve <c>{origin}_{code}</c> message keys.</param>
+            <returns>Standardized API error DTO.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Infrastructure.ApiErrors.ApiErrorFactory.FromArgumentOutOfRangeException(System.String,System.ArgumentOutOfRangeException,Microsoft.Extensions.Localization.IStringLocalizer)">
+            <summary>
+            Creates an <see cref="T:FinanceManager.Shared.Dtos.Common.ApiErrorDto"/> for an <see cref="T:System.ArgumentOutOfRangeException"/>.
+            </summary>
+            <param name="origin">The logical origin for the error (e.g. API_BudgetRule).</param>
+            <param name="ex">The thrown exception.</param>
+            <param name="localizer">Localizer used to resolve <c>{origin}_{code}</c> message keys.</param>
+            <returns>Standardized API error DTO.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Infrastructure.ApiErrors.ApiErrorFactory.FromDomainValidationException(System.String,FinanceManager.Application.Exceptions.DomainValidationException,Microsoft.Extensions.Localization.IStringLocalizer)">
+            <summary>
+            Creates an <see cref="T:FinanceManager.Shared.Dtos.Common.ApiErrorDto"/> for a <see cref="T:FinanceManager.Application.Exceptions.DomainValidationException"/>.
+            </summary>
+            <param name="origin">The logical origin for the error (e.g. API_BudgetRule).</param>
+            <param name="ex">The thrown exception.</param>
+            <param name="localizer">Localizer used to resolve <c>{origin}_{code}</c> message keys.</param>
+            <returns>Standardized API error DTO.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Infrastructure.ApiErrors.ApiErrorFactory.Unexpected(System.String,Microsoft.Extensions.Localization.IStringLocalizer)">
+            <summary>
+            Creates an <see cref="T:FinanceManager.Shared.Dtos.Common.ApiErrorDto"/> for an unexpected error.
+            </summary>
+            <param name="origin">The logical origin for the error (e.g. API_BudgetRule).</param>
+            <param name="localizer">Localizer used to resolve <c>{origin}_{code}</c> message keys.</param>
+            <returns>Standardized API error DTO.</returns>
         </member>
         <member name="T:FinanceManager.Web.Infrastructure.Attachments.AttachmentUploadOptions">
             <summary>
@@ -3660,6 +3760,93 @@
             <param name="localizer">Localizer used to resolve UI labels for the ribbon actions.</param>
             <returns>A list of <see cref="T:FinanceManager.Web.ViewModels.Common.UiRibbonRegister"/> describing available ribbon tabs and actions.</returns>
         </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel">
+            <summary>
+            View model for the budget category detail card.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.Id">
+            <summary>
+            Current category id.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.Category">
+            <summary>
+            Loaded category DTO.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.Title">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.LoadAsync(System.Guid)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.ReloadAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.IsSymbolUploadAllowed">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.GetSymbolParent">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.AssignNewSymbolAsync(System.Nullable{System.Guid})">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.SaveAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.DeleteAsync">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel">
+            <summary>
+            List view model for budget categories.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.AllowRangeFiltering">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.InitializeAsync">
+            <summary>
+            Initializes the view model, setting the default date range to the current month.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.LoadPageAsync(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.BuildRecords">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.BudgetCategoryListItem">
+            <summary>
+            Item used in the budget category list.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.BudgetCategoryListItem.#ctor(System.Guid,System.String,System.Decimal,System.Decimal,System.Decimal,System.Int32)">
+            <summary>
+            Item used in the budget category list.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.BudgetCategoryListItem.GetNavigateUrl">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel">
             <summary>
             View model for the budget purpose detail card.
@@ -3725,12 +3912,13 @@
             <param name="Name">Display name.</param>
             <param name="SourceName">Resolved source display name.</param>
             <param name="SourceSymbolAttachmentId">Optional symbol attachment id for the source entity.</param>
+            <param name="CategoryName">Category display name.</param>
             <param name="RuleCount">Number of budget rules configured for the purpose.</param>
             <param name="BudgetSum">Computed budget sum for the selected range.</param>
             <param name="ActualSum">Computed actual sum for the selected range.</param>
             <param name="Variance">Difference between actual and budget (ActualSum - BudgetSum).</param>
         </member>
-        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.#ctor(System.Guid,System.String,System.String,System.Nullable{System.Guid},System.Int32,System.Decimal,System.Decimal,System.Decimal)">
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.#ctor(System.Guid,System.String,System.String,System.Nullable{System.Guid},System.String,System.Int32,System.Decimal,System.Decimal,System.Decimal)">
             <summary>
             Lightweight list item representing a budget purpose.
             </summary>
@@ -3738,6 +3926,7 @@
             <param name="Name">Display name.</param>
             <param name="SourceName">Resolved source display name.</param>
             <param name="SourceSymbolAttachmentId">Optional symbol attachment id for the source entity.</param>
+            <param name="CategoryName">Category display name.</param>
             <param name="RuleCount">Number of budget rules configured for the purpose.</param>
             <param name="BudgetSum">Computed budget sum for the selected range.</param>
             <param name="ActualSum">Computed actual sum for the selected range.</param>
@@ -3754,6 +3943,9 @@
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.SourceSymbolAttachmentId">
             <summary>Optional symbol attachment id for the source entity.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.CategoryName">
+            <summary>Category display name.</summary>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.RuleCount">
             <summary>Number of budget rules configured for the purpose.</summary>
@@ -3813,7 +4005,12 @@
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.BudgetPurposeId">
             <summary>
-            Budget purpose id (required for creating new rules).
+            Budget purpose id (used when creating new rules).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.BudgetCategoryId">
+            <summary>
+            Budget category id (used when creating new rules via category).
             </summary>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.Rule">
@@ -3902,14 +4099,24 @@
             Budget purpose id for which rules are listed.
             </summary>
         </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.BudgetCategoryId">
+            <summary>
+            Budget category id for which rules are listed.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.#ctor(System.IServiceProvider)">
             <summary>
             Creates a new instance.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.InitializeAsync(System.Guid)">
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.InitializeForPurposeAsync(System.Guid)">
             <summary>
             Sets the budget purpose id and triggers loading.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.InitializeForCategoryAsync(System.Guid)">
+            <summary>
+            Sets the budget category id and triggers loading.
             </summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.LoadPageAsync(System.Boolean)">
@@ -4208,6 +4415,13 @@
             Reload the card data after external changes. Default implementation is a no-op; derived classes may override to re-initialize.
             </summary>
             <returns>A task that completes when reload has finished.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Common.BaseCardViewModel`1.TryGetParentLinkFromQuery">
+            <summary>
+            Tries to read a <see cref="T:FinanceManager.Shared.Dtos.Common.ParentLinkRequest"/> from the current navigation URL query string.
+            Expected query parameters are: "parentKind", "parentId" and optional "parentField".
+            </summary>
+            <returns>The parsed <see cref="T:FinanceManager.Shared.Dtos.Common.ParentLinkRequest"/> or <c>null</c> when no valid parent context is present.</returns>
         </member>
         <member name="T:FinanceManager.Web.ViewModels.Common.BaseListViewModel">
             <summary>

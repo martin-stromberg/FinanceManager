@@ -32,7 +32,7 @@ public sealed class BudgetPlanningServiceTests
         var purpose = new BudgetPurpose(ownerId, "Car provision", BudgetSourceType.SavingsPlan, Guid.NewGuid());
         db.BudgetPurposes.Add(purpose);
 
-        db.BudgetRules.Add(new BudgetRule(ownerId, purpose.Id, 50m, BudgetIntervalType.Monthly, new DateOnly(2026, 1, 1)));
+        db.BudgetRules.Add(new BudgetRule(ownerId, budgetPurposeId: purpose.Id, budgetCategoryId: null, 50m, BudgetIntervalType.Monthly, new DateOnly(2026, 1, 1)));
         await db.SaveChangesAsync();
 
         var repo = new BudgetPlanningRepository(db);
@@ -66,7 +66,7 @@ public sealed class BudgetPlanningServiceTests
         var purpose = new BudgetPurpose(ownerId, "Insurance", BudgetSourceType.Contact, Guid.NewGuid());
         db.BudgetPurposes.Add(purpose);
 
-        db.BudgetRules.Add(new BudgetRule(ownerId, purpose.Id, 600m, BudgetIntervalType.Yearly, new DateOnly(2026, 5, 1)));
+        db.BudgetRules.Add(new BudgetRule(ownerId, budgetPurposeId: purpose.Id, budgetCategoryId: null, 600m, BudgetIntervalType.Yearly, new DateOnly(2026, 5, 1)));
         await db.SaveChangesAsync();
 
         var repo = new BudgetPlanningRepository(db);
@@ -102,7 +102,7 @@ public sealed class BudgetPlanningServiceTests
         var purpose = new BudgetPurpose(ownerId, "Groceries", BudgetSourceType.ContactGroup, Guid.NewGuid());
         db.BudgetPurposes.Add(purpose);
 
-        db.BudgetRules.Add(new BudgetRule(ownerId, purpose.Id, 350m, BudgetIntervalType.Monthly, new DateOnly(2026, 1, 1)));
+        db.BudgetRules.Add(new BudgetRule(ownerId, budgetPurposeId: purpose.Id, budgetCategoryId: null, 350m, BudgetIntervalType.Monthly, new DateOnly(2026, 1, 1)));
         db.BudgetOverrides.Add(new BudgetOverride(ownerId, purpose.Id, new BudgetPeriodKey(2026, 3), 500m));
         await db.SaveChangesAsync();
 

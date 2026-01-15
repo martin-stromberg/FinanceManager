@@ -1,4 +1,5 @@
 using FinanceManager.Application.Budget;
+using FinanceManager.Application.Exceptions;
 using FinanceManager.Domain.Budget;
 using FinanceManager.Shared.Dtos.Budget;
 using Microsoft.EntityFrameworkCore;
@@ -22,14 +23,25 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
     }
 
     /// <inheritdoc />
-    public async Task<BudgetPurposeDto> CreateAsync(Guid ownerUserId, string name, FinanceManager.Shared.Dtos.Budget.BudgetSourceType sourceType, Guid sourceId, string? description, CancellationToken ct)
+    public async Task<BudgetPurposeDto> CreateAsync(Guid ownerUserId, string name, FinanceManager.Shared.Dtos.Budget.BudgetSourceType sourceType, Guid sourceId, string? description, Guid? budgetCategoryId, CancellationToken ct)
     {
         if (ownerUserId == Guid.Empty)
         {
             throw new ArgumentException("OwnerUserId must not be empty", nameof(ownerUserId));
         }
 
+        if (budgetCategoryId.HasValue && budgetCategoryId.Value != Guid.Empty)
+        {
+            var exists = await _db.BudgetCategories.AsNoTracking().AnyAsync(c => c.OwnerUserId == ownerUserId && c.Id == budgetCategoryId.Value, ct);
+            if (!exists)
+            {
+                throw new ArgumentException("Budget category not found", nameof(budgetCategoryId));
+            }
+        }
+
         var entity = new BudgetPurpose(ownerUserId, name, (FinanceManager.Shared.Dtos.Budget.BudgetSourceType)sourceType, sourceId, description);
+        entity.SetCategory(budgetCategoryId);
+
         _db.BudgetPurposes.Add(entity);
         await _db.SaveChangesAsync(ct);
 
@@ -37,7 +49,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
     }
 
     /// <inheritdoc />
-    public async Task<BudgetPurposeDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, FinanceManager.Shared.Dtos.Budget.BudgetSourceType sourceType, Guid sourceId, string? description, CancellationToken ct)
+    public async Task<BudgetPurposeDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, FinanceManager.Shared.Dtos.Budget.BudgetSourceType sourceType, Guid sourceId, string? description, Guid? budgetCategoryId, CancellationToken ct)
     {
         var entity = await _db.BudgetPurposes.FirstOrDefaultAsync(p => p.Id == id && p.OwnerUserId == ownerUserId, ct);
         if (entity == null)
@@ -45,9 +57,33 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
             return null;
         }
 
+        if (budgetCategoryId.HasValue && budgetCategoryId.Value != Guid.Empty)
+        {
+            var exists = await _db.BudgetCategories.AsNoTracking().AnyAsync(c => c.OwnerUserId == ownerUserId && c.Id == budgetCategoryId.Value, ct);
+            if (!exists)
+            {
+                throw new ArgumentException("Budget category not found", nameof(budgetCategoryId));
+            }
+
+            // Invariant: category-scoped rules and purpose-scoped rules must not overlap for the same effective set.
+            var hasPurposeRules = await _db.BudgetRules.AsNoTracking()
+                .AnyAsync(r => r.OwnerUserId == ownerUserId && r.BudgetPurposeId == id, ct);
+
+            var hasCategoryRules = await _db.BudgetRules.AsNoTracking()
+                .AnyAsync(r => r.OwnerUserId == ownerUserId && r.BudgetCategoryId == budgetCategoryId.Value, ct);
+
+            if (hasPurposeRules && hasCategoryRules)
+            {
+                throw new DomainValidationException(
+                    "Err_Conflict_CategoryAndPurposeRules",
+                    "Cannot assign category because both purpose-scoped and category-scoped rules would apply.");
+            }
+        }
+
         entity.Rename(name);
         entity.SetSource((FinanceManager.Shared.Dtos.Budget.BudgetSourceType)sourceType, sourceId);
         entity.SetDescription(description);
+        entity.SetCategory(budgetCategoryId);
 
         await _db.SaveChangesAsync(ct);
         return Map(entity);
@@ -87,7 +123,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
     {
         return await _db.BudgetPurposes.AsNoTracking()
             .Where(p => p.Id == id && p.OwnerUserId == ownerUserId)
-            .Select(p => new BudgetPurposeDto(p.Id, p.OwnerUserId, p.Name, p.Description, p.SourceType, p.SourceId))
+            .Select(p => new BudgetPurposeDto(p.Id, p.OwnerUserId, p.Name, p.Description, p.SourceType, p.SourceId, p.BudgetCategoryId))
             .FirstOrDefaultAsync(ct);
     }
 
@@ -111,7 +147,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
             .OrderBy(p => p.Name)
             .Skip(skip)
             .Take(take)
-            .Select(p => new BudgetPurposeDto(p.Id, p.OwnerUserId, p.Name, p.Description, (FinanceManager.Shared.Dtos.Budget.BudgetSourceType)p.SourceType, p.SourceId))
+            .Select(p => new BudgetPurposeDto(p.Id, p.OwnerUserId, p.Name, p.Description, (FinanceManager.Shared.Dtos.Budget.BudgetSourceType)p.SourceType, p.SourceId, p.BudgetCategoryId))
             .ToListAsync(ct);
     }
 
@@ -130,9 +166,22 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
         string? nameFilter,
         DateOnly? from,
         DateOnly? to,
+        Guid? budgetCategoryId,
         CancellationToken ct)
     {
         var query = _db.BudgetPurposes.AsNoTracking().Where(p => p.OwnerUserId == ownerUserId);
+
+        if (budgetCategoryId.HasValue)
+        {
+            if (budgetCategoryId.Value == Guid.Empty)
+            {
+                query = query.Where(p => p.BudgetCategoryId == null);
+            }
+            else
+            {
+                query = query.Where(p => p.BudgetCategoryId == budgetCategoryId.Value);
+            }
+        }
 
         if (sourceType.HasValue)
         {
@@ -145,19 +194,30 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
             query = query.Where(p => EF.Functions.Like(p.Name, pattern));
         }
 
-        var purposes = await query
-            .OrderBy(p => p.Name)
-            .Skip(skip)
-            .Take(take)
-            .Select(p => new
+        // Apply ordering for infinite list: first items with a category, then without; then by category name; then by purpose name.
+        var orderedQuery =
+            from p in query
+            join c in _db.BudgetCategories.AsNoTracking().Where(x => x.OwnerUserId == ownerUserId)
+                on p.BudgetCategoryId equals c.Id into catJoin
+            from c in catJoin.DefaultIfEmpty()
+            orderby (p.BudgetCategoryId != null) descending,
+                    c.Name,
+                    p.Name
+            select new
             {
                 p.Id,
                 p.OwnerUserId,
                 p.Name,
                 p.Description,
                 p.SourceType,
-                p.SourceId
-            })
+                p.SourceId,
+                p.BudgetCategoryId,
+                BudgetCategoryName = c != null ? c.Name : null
+            };
+
+        var purposes = await orderedQuery
+            .Skip(skip)
+            .Take(take)
             .ToListAsync(ct);
 
         if (purposes.Count == 0)
@@ -177,7 +237,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
 
         // Load rules for purposes in the current page (single query)
         var rules = await _db.BudgetRules.AsNoTracking()
-            .Where(r => r.OwnerUserId == ownerUserId && purposeIds.Contains(r.BudgetPurposeId))
+            .Where(r => r.OwnerUserId == ownerUserId && r.BudgetPurposeId != null && purposeIds.Contains(r.BudgetPurposeId.Value))
             .Select(r => new { r.BudgetPurposeId, r.Amount, r.Interval, r.CustomIntervalMonths, r.StartDate, r.EndDate })
             .ToListAsync(ct);
 
@@ -190,12 +250,17 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
         {
             foreach (var g in rules.GroupBy(r => r.BudgetPurposeId))
             {
+                if (g.Key == null || g.Key == Guid.Empty)
+                {
+                    continue;
+                }
+
                 var sum = 0m;
                 foreach (var rule in g)
                 {
                     sum += rule.Amount * CountOccurrencesInRange(rule.Interval, rule.CustomIntervalMonths, rule.StartDate, rule.EndDate, effectiveFrom.Value, effectiveTo.Value);
                 }
-                budgetSums[g.Key] = sum;
+                budgetSums[g.Key.Value] = sum;
             }
         }
 
@@ -323,7 +388,9 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
                     actual,
                     variance,
                     src.Name,
-                    src.SymbolId);
+                    src.SymbolId,
+                    p.BudgetCategoryId,
+                    p.BudgetCategoryName);
             })
             .ToList();
     }
@@ -413,5 +480,5 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
     }
 
     private static BudgetPurposeDto Map(BudgetPurpose p)
-        => new(p.Id, p.OwnerUserId, p.Name, p.Description, (FinanceManager.Shared.Dtos.Budget.BudgetSourceType)p.SourceType, p.SourceId);
+        => new(p.Id, p.OwnerUserId, p.Name, p.Description, (FinanceManager.Shared.Dtos.Budget.BudgetSourceType)p.SourceType, p.SourceId, p.BudgetCategoryId);
 }

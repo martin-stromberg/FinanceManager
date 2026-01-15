@@ -452,6 +452,42 @@
             Deterministic rule schedule generator.
             </summary>
         </member>
+        <member name="T:FinanceManager.Application.Budget.IBudgetCategoryService">
+            <summary>
+            Service for managing budget categories.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetCategoryService.ListAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists budget categories for the owner.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetCategoryService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a budget category by id for the owner.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetCategoryService.CreateAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new budget category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetCategoryService.UpdateAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing budget category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetCategoryService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a budget category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetCategoryService.ListOverviewAsync(System.Guid,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <summary>
+            Lists budget categories for the owner including calculated overview fields.
+            When <paramref name="from"/> and <paramref name="to"/> are provided, budget and actual values are calculated for that range.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Application.Budget.IBudgetOverrideService">
             <summary>
             Service for managing budget overrides.
@@ -529,12 +565,12 @@
             Service for managing budget purposes.
             </summary>
         </member>
-        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)">
             <summary>
             Creates a new budget purpose.
             </summary>
         </member>
-        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.UpdateAsync(System.Guid,System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.UpdateAsync(System.Guid,System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)">
             <summary>
             Updates an existing budget purpose.
             </summary>
@@ -559,7 +595,7 @@
             Returns the total number of purposes for the owner.
             </summary>
         </member>
-        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.ListOverviewAsync(System.Guid,System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.ListOverviewAsync(System.Guid,System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Nullable{System.Guid},System.Threading.CancellationToken)">
             <summary>
             Lists budget purposes including rule count and computed budget sum for the provided period.
             When <paramref name="from"/> or <paramref name="to"/> are <c>null</c>, the service may apply a default period.
@@ -573,6 +609,11 @@
         <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.CreateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <summary>
             Creates a new rule for a purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.CreateForCategoryAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <summary>
+            Creates a new rule for a category.
             </summary>
         </member>
         <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.UpdateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
@@ -593,6 +634,23 @@
         <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.ListByPurposeAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
             <summary>
             Lists rules for a purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.ListByCategoryAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists rules for a category.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Common.IParentAssignmentService">
+            <summary>
+            Applies an optional parent assignment for a newly created entity.
+            Implementations must validate ownership/permissions.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Common.IParentAssignmentService.TryAssignAsync(System.Guid,FinanceManager.Shared.Dtos.Common.ParentLinkRequest,System.String,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Assigns the created entity to the specified parent context.
+            Returns <c>true</c> when the assignment was performed.
             </summary>
         </member>
         <member name="T:FinanceManager.Application.Contacts.IContactCategoryService">
@@ -1430,6 +1488,19 @@
             <param name="message">A short error message to record.</param>
             <param name="ct">Cancellation token.</param>
             <returns>A task that completes when the operation has been applied.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ISecurityReportService">
+            <summary>
+            Read-only reporting operations for securities.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityReportService.GetDividendAggregatesAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns quarterly dividend aggregates for the past year across all owned securities.
+            </summary>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>List of quarterly aggregate points ordered by period start.</returns>
         </member>
         <member name="T:FinanceManager.Application.Securities.ISecurityService">
             <summary>

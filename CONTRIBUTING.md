@@ -2,6 +2,86 @@
 
 Kurz und knapp: Bitte halte dich an die Projekt-Richtlinien, damit Änderungen konsistent und wartbar bleiben.
 
+## API Fehlerbehandlung & Lokalisierung (Standard)
+
+Dieses Projekt verwendet zwei eindeutig getrennte Patterns für Fehler, die vom Web API an `ApiClient` und anschließend an die UI propagiert werden.
+
+### Pattern 1: Framework-Validation (ModelState / DataAnnotations)
+
+- In Controllern gilt:
+  - `if (!ModelState.IsValid) { return ValidationProblem(ModelState); }`
+- Die Response ist i.d.R. `ValidationProblemDetails` (RFC-Style) mit einem `errors` Objekt.
+- Der Client (siehe `ApiClient`) aggregiert diese `errors` best-effort (aktuell über `SetRFCStyleError(...)`) zu einer anzeigbaren Fehlermeldung.
+
+### Pattern 2: Eigene Fehler (Origin + Code + Message)
+
+Für alle nicht-Framework-Fehler, die dem Anwender angezeigt werden sollen, liefert die API eine standardisierte Fehlerantwort mit:
+
+- `origin`: API-Bereich/Endpoint (z.B. `API_BudgetRule`)
+- `code`: stabiler, maschinenlesbarer Fehlercode
+- `message`: lokalisierte Meldung in der Sprache des Anwenders
+
+#### Accept-Language
+
+Der Client muss die akzeptierten Sprachen an die API mitsenden (HTTP Header `Accept-Language`).
+Die API nutzt Request Localization, damit `IStringLocalizer` die richtige Sprache liefert.
+
+#### Code-Schema
+
+Die Codes müssen konsistent, stabil und resx-tauglich sein.
+
+**Formale Eingabefehler (HTTP 400)**
+
+- `ArgumentException` ? `Err_Invalid_{ParamName}`
+- `ArgumentOutOfRangeException` ? `Err_OutOfRange_{ParamName}`
+
+`ParamName` muss das Property/Argument benennen, das unzulässig ist.
+
+**Domain-Validierung / unzulässiger Zielzustand (typisch HTTP 409)**
+
+- `DomainValidationException` ? z.B.
+  - `Err_Conflict_{DomainRule}` oder
+  - `Err_InvalidState_{DomainRule}`
+
+`DomainRule` ist PascalCase und beschreibt stabil die verletzte Regel.
+
+**Not Found (HTTP 404)**
+
+- `Err_NotFound_{Entity}`
+
+**Not Allowed (HTTP 403)**
+
+- `Err_NotAllowed_{Action}`
+
+**Unexpected (HTTP 500)**
+
+- `Err_Unexpected`
+
+#### Lokalisierungsschlüssel
+
+Die `message` wird serverseitig über `IStringLocalizer` aufgelöst.
+
+Lookup-Key:
+
+- `{origin}_{code}`
+
+Beispiele:
+
+- `API_BudgetRule_Err_Invalid_BudgetCategoryId`
+- `API_BudgetRule_Err_Conflict_CategoryAndPurposeRules`
+
+Fallback:
+
+- Wenn kein Ressourceneintrag gefunden wird, wird als `message` die Original-Message der Exception zurückgegeben.
+
+#### HTTP Status Codes
+
+- `400 BadRequest`: formale Eingabefehler
+- `404 NotFound`: Entity nicht gefunden
+- `409 Conflict`: Domain-Regel verletzt / unzulässiger Zielzustand
+- `403 Forbidden`: Aktion nicht erlaubt
+- `500 InternalServerError`: unerwarteter Fehler
+
 ## Ressourcen / Lokalisation (resx)
 - Platzierung: Alle `.resx`-Dateien gehören unter das `Resources`-Verzeichnis des betroffenen Projekts und zwar in Unterordnern, die dem Namespace der konsumierenden Klasse/Komponente entsprechen.
   - Beispiel: Die Komponente `Components.Pages.StatementDraftDetail` im Projekt `FinanceManager.Web` bekommt ihre Ressourcen unter

@@ -15,6 +15,8 @@ namespace FinanceManager.Shared.Dtos.Budget;
 /// <param name="Variance">Difference between actual and budget (ActualSum - BudgetSum).</param>
 /// <param name="SourceName">Resolved display name of the source entity.</param>
 /// <param name="SourceSymbolAttachmentId">Optional symbol attachment id of the source entity.</param>
+/// <param name="BudgetCategoryId">Optional category id assigned to this purpose.</param>
+/// <param name="BudgetCategoryName">Resolved display name of the assigned category.</param>
 public sealed record BudgetPurposeOverviewDto(
     Guid Id,
     Guid OwnerUserId,
@@ -27,4 +29,6 @@ public sealed record BudgetPurposeOverviewDto(
     decimal ActualSum,
     decimal Variance,
     string? SourceName,
-    Guid? SourceSymbolAttachmentId);
+    Guid? SourceSymbolAttachmentId,
+    Guid? BudgetCategoryId,
+    string? BudgetCategoryName);

@@ -15,7 +15,6 @@ using Microsoft.Extensions.Logging;
 using FinanceManager.Shared.Dtos.Securities;
 using FinanceManager.Shared.Dtos.Accounts;
 using FinanceManager.Shared.Dtos.Contacts;
-using Microsoft.EntityFrameworkCore.Update;
 
 namespace FinanceManager.Web.ViewModels.StatementDrafts;
 
@@ -42,9 +41,6 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
     private bool _contactIsSelf = false;
     private bool _contactIsPaymentIntermediary = false;
     private bool _accountAllowsSavings = true;
-
-    // Temporary marker carrying created entity info when returning from create flow (createdKind, createdId)
-    private (string? createdKind, Guid? createdId) _pendingCreated = (null, null);
 
     /// <summary>
     /// Initializes a new instance of <see cref="StatementDraftEntryCardViewModel"/>.
@@ -217,14 +213,6 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                 var uri = nav.ToAbsoluteUri(nav.Uri);
                 var q = QueryHelpers.ParseQuery(uri.Query);
                 if (q.TryGetValue("draftId", out var v) && Guid.TryParse(v, out var d)) DraftId = d;
-                // Support created entity return from create flow: createdKind (e.g. "contacts","savings-plans","securities") and createdId
-                string? createdKind = null;
-                Guid? createdId = null;
-                if (q.TryGetValue("createdKind", out var ck)) createdKind = ck.ToString();
-                if (q.TryGetValue("createdId", out var cid) && Guid.TryParse(cid, out var parsedCid)) createdId = parsedCid;
-                // store as temp values in locals via closure; will be used after loading the entry
-                // attach to local variables via tuple for later use
-                _pendingCreated = (createdKind, createdId);
             }
             catch { /* ignore */ }
 
@@ -269,34 +257,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             Entry = dto.Entry;
             DraftId = dto.DraftId;
 
-            // If user returned from create flow with a new entity, try to assign it to this entry
-            try
-            {
-                if (_pendingCreated.createdKind != null && _pendingCreated.createdId.HasValue)
-                {
-                    var ck = _pendingCreated.createdKind.Trim().ToLowerInvariant();
-                    var nid = _pendingCreated.createdId.Value;
-                    if (ck == "contacts" || ck == "contact")
-                    {
-                        var updated = await ApiClient.StatementDrafts_SetEntryContactAsync(DraftId, EntryId, new Shared.Dtos.Statements.StatementDraftSetContactRequest(nid), CancellationToken.None);
-                        if (updated != null) Entry = updated;
-                    }
-                    else if (ck == "savings-plans" || ck == "savingsplan")
-                    {
-                        var updated = await ApiClient.StatementDrafts_SetEntrySavingsPlanAsync(DraftId, EntryId, new Shared.Dtos.Statements.StatementDraftSetSavingsPlanRequest(nid), CancellationToken.None);
-                        if (updated != null) Entry = updated;
-                    }
-                    else if (ck == "securities" || ck == "security")
-                    {
-                        var updated = await ApiClient.StatementDrafts_SetEntrySecurityAsync(DraftId, EntryId, new Shared.Dtos.Statements.StatementDraftSetEntrySecurityRequest(nid, (FinanceManager.Shared.Dtos.Securities.SecurityTransactionType?)null, null, null, null), CancellationToken.None);
-                        if (updated != null) Entry = updated;
-                    }
-                }                
-            }
-            catch { /* ignore assignment failures */ }
-
-            // clear pending created marker
-            _pendingCreated = (null, null);
+            // No client-side assignment required: new linked entities are assigned server-side during their creation.
 
             // Resolve lookup display names (Contact, SavingsPlan, Security)
             if (Entry.ContactId.HasValue)

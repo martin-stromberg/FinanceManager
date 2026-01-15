@@ -1,4 +1,7 @@
 using FinanceManager.Domain.Attachments;
+using FinanceManager.Shared.Dtos.Common;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Web.ViewModels.Common
 {
@@ -262,6 +265,40 @@ namespace FinanceManager.Web.ViewModels.Common
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Tries to read a <see cref="ParentLinkRequest"/> from the current navigation URL query string.
+        /// Expected query parameters are: "parentKind", "parentId" and optional "parentField".
+        /// </summary>
+        /// <returns>The parsed <see cref="ParentLinkRequest"/> or <c>null</c> when no valid parent context is present.</returns>
+        protected ParentLinkRequest? TryGetParentLinkFromQuery()
+        {
+            try
+            {
+                var nav = ServiceProvider.GetRequiredService<NavigationManager>();
+                var uri = nav.ToAbsoluteUri(nav.Uri);
+                var q = QueryHelpers.ParseQuery(uri.Query);
+
+                var pk = q.TryGetValue("parentKind", out var v1) ? v1.ToString() : null;
+                var pf = q.TryGetValue("parentField", out var v2) ? v2.ToString() : null;
+
+                Guid pid = Guid.Empty;
+                if (q.TryGetValue("parentId", out var v3))
+                {
+                    _ = Guid.TryParse(v3.ToString(), out pid);
+                }
+
+                if (string.IsNullOrWhiteSpace(pk) || pid == Guid.Empty)
+                {
+                    return null;
+                }
+
+                return new ParentLinkRequest(pk!, pid, string.IsNullOrWhiteSpace(pf) ? null : pf);
+            }
+            catch
+            {
+                return null;
+            }
+        }
 
     }
 }

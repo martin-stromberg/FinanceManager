@@ -58,16 +58,18 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
                 range.From,
                 range.To);
 
-            var items = (list ?? Array.Empty<BudgetPurposeOverviewDto>()).Select(p =>
-                new BudgetPurposeListItem(
-                    p.Id,
-                    p.Name ?? string.Empty,
-                    p.SourceName ?? string.Empty,
-                    p.SourceSymbolAttachmentId,
-                    p.RuleCount,
-                    p.BudgetSum,
-                    p.ActualSum,
-                    p.Variance));
+            var items = (list ?? Array.Empty<BudgetPurposeOverviewDto>())
+                .Select(p =>
+                    new BudgetPurposeListItem(
+                        p.Id,
+                        p.Name ?? string.Empty,
+                        p.SourceName ?? string.Empty,
+                        p.SourceSymbolAttachmentId,
+                        p.BudgetCategoryName ?? string.Empty,
+                        p.RuleCount,
+                        p.BudgetSum,
+                        p.ActualSum,
+                        p.Variance));
 
             if (resetPaging)
             {
@@ -109,7 +111,8 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
         var L = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
         Columns = new List<ListColumn>
         {
-            new ListColumn("name", L["List_Th_Name"], "30%", ListColumnAlign.Left),
+            new ListColumn("category", L["Budget_List_Th_Category"], "15%", ListColumnAlign.Left),
+            new ListColumn("name", L["List_Th_Name"], "25%", ListColumnAlign.Left),            
             new ListColumn("rules", L["Budget_List_Th_Rules"], "80px", ListColumnAlign.Right),
             new ListColumn("budget", L["Budget_List_Th_Budget"], "120px", ListColumnAlign.Right),
             new ListColumn("actual", L["Budget_List_Th_Actual"], "120px", ListColumnAlign.Right),
@@ -119,7 +122,8 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
 
         Records = Items.Select(i => new ListRecord(new List<ListCell>
         {
-            new ListCell(ListCellKind.Text, Text: i.Name),
+            new ListCell(ListCellKind.Text, Text: i.CategoryName),
+            new ListCell(ListCellKind.Text, Text: i.Name),            
             new ListCell(ListCellKind.Text, Text: i.RuleCount.ToString(System.Globalization.CultureInfo.CurrentCulture)),
             new ListCell(ListCellKind.Currency, Amount: i.BudgetSum),
             new ListCell(ListCellKind.Currency, Amount: i.ActualSum),
@@ -135,6 +139,7 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
         {
             new UiRibbonAction("New", localizer["Ribbon_New"], "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("New"); return Task.CompletedTask; }),
             new UiRibbonAction("Reload", localizer["Ribbon_Reload"], "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("Reload"); return Task.CompletedTask; }),
+            new UiRibbonAction("Categories", localizer["Budget_Ribbon_Categories"], "<svg><use href='/icons/sprite.svg#list'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("OpenBudgetCategories"); return Task.CompletedTask; }),
             new UiRibbonAction("ClearFilter", localizer["Ribbon_ClearSearch"], "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, string.IsNullOrWhiteSpace(Search), null, () => { RaiseUiActionRequested("ClearSearch"); return Task.CompletedTask; })
         });
 

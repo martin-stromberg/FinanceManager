@@ -213,6 +213,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         List<FinanceManager.Domain.Attachments.Attachment.AttachmentBackupDto> Attachments,
         List<FinanceManager.Domain.Notifications.Notification.NotificationBackupDto> Notifications,
         List<FinanceManager.Domain.Accounts.AccountShare.AccountShareBackupDto> AccountShares,
+        List<FinanceManager.Domain.Budget.BudgetCategory.BudgetCategoryBackupDto> BudgetCategories,
         List<FinanceManager.Domain.Budget.BudgetPurpose.BudgetPurposeBackupDto> BudgetPurposes,
         List<FinanceManager.Domain.Budget.BudgetRule.BudgetRuleBackupDto> BudgetRules,
         List<FinanceManager.Domain.Budget.BudgetOverride.BudgetOverrideBackupDto> BudgetOverrides,
@@ -263,9 +264,17 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
 
         var accountShares = db.AccountShares.AsNoTracking().Where(s => accountIds.Contains(s.AccountId) || s.UserId == userId).Select(s => s.ToBackupDto()).ToList();
 
+        var budgetCategories = db.BudgetCategories.AsNoTracking()
+            .Where(c => c.OwnerUserId == userId)
+            .Select(c => c.ToBackupDto())
+            .ToList();
+
         var budgetPurposes = db.BudgetPurposes.AsNoTracking().Where(b => b.OwnerUserId == userId).Select(b => b.ToBackupDto()).ToList();
         var budgetPurposeIds = budgetPurposes.Select(b => b.Id).ToList();
-        var budgetRules = db.BudgetRules.AsNoTracking().Where(r => budgetPurposeIds.Contains(r.BudgetPurposeId)).Select(r => r.ToBackupDto()).ToList();
+        var budgetRules = db.BudgetRules.AsNoTracking()
+            .Where(r => r.BudgetPurposeId != null && budgetPurposeIds.Contains(r.BudgetPurposeId.Value))
+            .Select(r => r.ToBackupDto())
+            .ToList();
         var budgetOverrides = db.BudgetOverrides.AsNoTracking().Where(o => budgetPurposeIds.Contains(o.BudgetPurposeId)).Select(o => o.ToBackupDto()).ToList();
 
         var aggregates = await CalculateAggregatesAsync(sp, userId, default);
@@ -291,6 +300,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             attachments,
             notifications,
             accountShares,
+            budgetCategories,
             budgetPurposes,
             budgetRules,
             budgetOverrides,
@@ -305,6 +315,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         var contactCategoryNameToId = after.ContactCategories.ToDictionary(c => c.Name, c => c.Id);
         var savingsPlanCategoryNameToId = after.SavingsPlanCategories.ToDictionary(s => s.Name, s => s.Id);
         var securityCategoryNameToId = after.SecurityCategories.ToDictionary(s => s.Name, s => s.Id);
+        var budgetCategoryNameToId = after.BudgetCategories.ToDictionary(c => c.Name, c => c.Id);
 
         // Map contact ids from before->after by name
         var contactIdMap = new Dictionary<Guid, Guid>();
@@ -702,6 +713,17 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         var accountShares = before.AccountShares.ToList();
 
         // --- Budgets: align Purpose Ids and SourceIds ---
+        var budgetCategoryNameToId = after.BudgetCategories.ToDictionary(c => c.Name, c => c.Id);
+
+        var budgetCategories = before.BudgetCategories.Select(c =>
+        {
+            if (budgetCategoryNameToId.TryGetValue(c.Name, out var nid))
+            {
+                return c with { Id = nid };
+            }
+            return c;
+        }).ToList();
+
         Guid MapBudgetSourceId(FinanceManager.Shared.Dtos.Budget.BudgetSourceType sourceType, Guid sourceId)
         {
             return sourceType switch
@@ -742,6 +764,19 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             var mappedSourceId = MapBudgetSourceId(p.SourceType, p.SourceId);
             var adjusted = p with { SourceId = mappedSourceId };
 
+            if (p.BudgetCategoryId.HasValue)
+            {
+                var beforeCatName = before.BudgetCategories.FirstOrDefault(c => c.Id == p.BudgetCategoryId.Value)?.Name;
+                if (!string.IsNullOrWhiteSpace(beforeCatName) && budgetCategoryNameToId.TryGetValue(beforeCatName, out var mappedCatId))
+                {
+                    adjusted = adjusted with { BudgetCategoryId = mappedCatId };
+                }
+                else
+                {
+                    adjusted = adjusted with { BudgetCategoryId = null };
+                }
+            }
+
             if (budgetPurposeIdMap.TryGetValue(p.Id, out var mappedId))
             {
                 adjusted = adjusted with { Id = mappedId };
@@ -761,7 +796,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
 
         var budgetRules = before.BudgetRules.Select(r =>
         {
-            var newPurposeId = budgetPurposeIdMap.TryGetValue(r.BudgetPurposeId, out var mp) ? mp : r.BudgetPurposeId;
+            var newPurposeId = (r.BudgetPurposeId != null && budgetPurposeIdMap.TryGetValue(r.BudgetPurposeId.Value, out var mp)) ? mp : r.BudgetPurposeId;
             var adjusted = r with { BudgetPurposeId = newPurposeId };
             var key = RuleKey(adjusted);
             if (afterRuleKeyToId.TryGetValue(key, out var rid))
@@ -813,6 +848,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             attachments,
             notifications,
             accountShares,
+            budgetCategories,
             budgetPurposes,
             budgetRules,
             budgetOverrides,
@@ -863,6 +899,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             s.Attachments.OrderBy(a => a.Id).ToList(),
             s.Notifications.OrderBy(n => n.Title).ToList(),
             s.AccountShares.OrderBy(sh => sh.AccountId).ToList(),
+            s.BudgetCategories.OrderBy(c => c.Name).ToList(),
             s.BudgetPurposes.OrderBy(b => b.Name).ThenBy(b => b.SourceType).ToList(),
             s.BudgetRules.OrderBy(r => r.BudgetPurposeId).ThenBy(r => r.StartDate).ThenBy(r => r.Interval).ThenBy(r => r.Amount).ToList(),
             s.BudgetOverrides.OrderBy(o => o.BudgetPurposeId).ThenBy(o => o.PeriodYear).ThenBy(o => o.PeriodMonth).ToList(),

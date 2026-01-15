@@ -1,6 +1,8 @@
 using FinanceManager.Application.Users;
-using FinanceManager.Web.Infrastructure.Auth;
+using FinanceManager.Shared.Dtos.Common;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using System.Net.Mime;
 
 namespace FinanceManager.Web.Controllers;
 
@@ -11,17 +13,22 @@ namespace FinanceManager.Web.Controllers;
 [Route("api/[controller]")]
 public sealed class AuthController : ControllerBase
 {
+    private const string Origin = "API_Auth";
+
     private readonly IUserAuthService _auth;
-    private readonly IAuthTokenProvider _tokenProvider;
+    private readonly IStringLocalizer<Controller> _localizer;
     private const string AuthCookieName = "FinanceManager.Auth";
 
     /// <summary>
     /// Creates a new instance of <see cref="AuthController"/>.
     /// </summary>
     /// <param name="auth">Service handling user authentication operations (login/register).</param>
-    /// <param name="tokenProvider">Token provider used to clear in-memory tokens on logout.</param>
-    public AuthController(IUserAuthService auth, IAuthTokenProvider tokenProvider)
-    { _auth = auth; _tokenProvider = tokenProvider; }
+    /// <param name="localizer">Localizer for providing localized error messages.</param>
+    public AuthController(IUserAuthService auth, IStringLocalizer<Controller> localizer)
+    {
+        _auth = auth;
+        _localizer = localizer;
+    }
 
     /// <summary>
     /// Authenticates a user with username and password, returning a JWT (cookie) and user info.
@@ -41,11 +48,16 @@ public sealed class AuthController : ControllerBase
         {
             return ValidationProblem(ModelState);
         }
+
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
         var result = await _auth.LoginAsync(new LoginCommand(request.Username, request.Password, ip, request.PreferredLanguage, request.TimeZoneId), ct);
         if (!result.Success)
         {
-            return Unauthorized(new ApiErrorDto(result.Error!));
+            // Service currently returns a human readable error string. Convert to stable code.
+            const string code = "Err_InvalidCredentials";
+            var entry = _localizer[$"{Origin}_{code}"];
+            var message = entry.ResourceNotFound ? result.Error! : entry.Value;
+            return Unauthorized(ApiErrorDto.Create(Origin, code, message));
         }
 
         // Set cookie with explicit expiry that matches token expiry
@@ -81,10 +93,14 @@ public sealed class AuthController : ControllerBase
         {
             return ValidationProblem(ModelState);
         }
+
         var result = await _auth.RegisterAsync(new RegisterUserCommand(request.Username, request.Password, request.PreferredLanguage, request.TimeZoneId), ct);
         if (!result.Success)
         {
-            return Conflict(new ApiErrorDto(result.Error!));
+            const string code = "Err_Conflict_UserAlreadyExists";
+            var entry = _localizer[$"{Origin}_{code}"];
+            var message = entry.ResourceNotFound ? result.Error! : entry.Value;
+            return Conflict(ApiErrorDto.Create(Origin, code, message));
         }
 
         Response.Cookies.Append(AuthCookieName, result.Value!.Token, new CookieOptions
@@ -117,10 +133,7 @@ public sealed class AuthController : ControllerBase
                 SameSite = SameSiteMode.Lax
             });
         }
-        if (_tokenProvider is JwtCookieAuthTokenProvider concrete)
-        {
-            concrete.Clear();
-        }
+
         return Ok();
     }
 }

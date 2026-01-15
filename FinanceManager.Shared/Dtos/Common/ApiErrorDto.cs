@@ -3,21 +3,33 @@ namespace FinanceManager.Shared.Dtos.Common;
 /// <summary>
 /// DTO wrapping an API error response for standardized client consumption.
 /// </summary>
-/// <param name="error">Machine-readable error code (e.g. Err_Invalid_name).</param>
-/// <param name="message">Human-readable error message intended for display.</param>
-public sealed record ApiErrorDto(string? error, string? message)
+/// <param name="origin">Origin identifier (e.g. API_BudgetRule) used to scope error codes for localization.</param>
+/// <param name="code">Machine-readable error code (e.g. Err_Invalid_BudgetPurposeId).</param>
+/// <param name="message">Human-readable error message intended for display (preferably localized server-side).</param>
+public sealed record ApiErrorDto(string? origin, string? code, string? message)
 {
     /// <summary>
-    /// Creates an error response with only a human-readable message.
+    /// Legacy compatibility property. Older clients expect an <c>error</c> JSON property.
     /// </summary>
-    /// <param name="message">Human-readable error message intended for display.</param>
-    public ApiErrorDto(string message) : this(null, message)
+    public string? Error => code;
+
+    /// <summary>
+    /// Legacy constructor: creates an error response with only a human-readable message.
+    /// </summary>
+    [Obsolete("Use constructor with origin, code, message.")]
+    public ApiErrorDto(string message) : this(null, null, message)
     {
     }
 
     /// <summary>
-    /// Creates an error response with only a human-readable message.
+    /// Legacy factory: creates an error response with only a human-readable message.
     /// </summary>
-    /// <param name="message">Human-readable error message intended for display.</param>
-    public static ApiErrorDto FromMessage(string message) => new(null, message);
+    [Obsolete("Use Create method with origin, code, message.")]
+    public static ApiErrorDto FromMessage(string message) => new(null, null, message);
+
+    /// <summary>
+    /// Creates a standardized API error response.
+    /// </summary>
+    public static ApiErrorDto Create(string origin, string code, string? message)
+        => new(origin, code, message);
 }

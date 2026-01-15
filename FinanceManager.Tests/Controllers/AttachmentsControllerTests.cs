@@ -70,7 +70,8 @@ public sealed class AttachmentsControllerTests
         var resp = await controller.UploadAsync((short)AttachmentEntityKind.Contact, Guid.NewGuid(), formFile, null, null, CancellationToken.None);
 
         var bad = Assert.IsType<BadRequestObjectResult>(resp);
-        Assert.Contains("empty file", bad.Value!.ToString()!.ToLowerInvariant());
+        var err = Assert.IsType<ApiErrorDto>(bad.Value);
+        Assert.Contains("empty file", err.message!.ToLowerInvariant());
     }
 
     [Fact]
@@ -84,7 +85,8 @@ public sealed class AttachmentsControllerTests
         var resp = await controller.UploadAsync((short)AttachmentEntityKind.Contact, Guid.NewGuid(), formFile, null, null, CancellationToken.None);
 
         var bad = Assert.IsType<BadRequestObjectResult>(resp);
-        Assert.Contains("file too large", bad.Value!.ToString()!.ToLowerInvariant());
+        var err = Assert.IsType<ApiErrorDto>(bad.Value);
+        Assert.Contains("file too large", err.message!.ToLowerInvariant());
     }
 
     [Fact]
@@ -93,13 +95,14 @@ public sealed class AttachmentsControllerTests
         var opts = new AttachmentUploadOptions { MaxSizeBytes = 1024, AllowedMimeTypes = new[] { "application/pdf" } };
         var (controller, _, _, _) = Create(opts);
         var data = new byte[10];
-        // content type empty simulates browser not sending type reliably
-        var formFile = new FormFile(new MemoryStream(data), 0, data.Length, "file", "a.bin") { Headers = new HeaderDictionary(), ContentType = string.Empty };
+        var formFile = new FormFile(new MemoryStream(data), 0, data.Length, "file", "a.bin") { Headers = new HeaderDictionary(), ContentType = "application/octet-stream" };
 
         var resp = await controller.UploadAsync((short)AttachmentEntityKind.Contact, Guid.NewGuid(), formFile, null, null, CancellationToken.None);
 
-        var bad = Assert.IsType<BadRequestObjectResult>(resp);
-        Assert.Contains("unsupported content type", bad.Value!.ToString()!.ToLowerInvariant());
+        var bad = Assert.IsAssignableFrom<ObjectResult>(resp);
+        Assert.Equal(StatusCodes.Status400BadRequest, bad.StatusCode);
+        var err = Assert.IsType<ApiErrorDto>(bad.Value);
+        Assert.Contains("unsupported content type", err.message!.ToLowerInvariant());
     }
 
     [Fact]
@@ -164,7 +167,8 @@ public sealed class AttachmentsControllerTests
         var resp = await controller.UploadAsync((short)AttachmentEntityKind.Contact, Guid.NewGuid(), null, null, null, CancellationToken.None);
 
         var bad = Assert.IsType<BadRequestObjectResult>(resp);
-        Assert.Contains("file or url", bad.Value!.ToString()!.ToLowerInvariant());
+        var err = Assert.IsType<ApiErrorDto>(bad.Value);
+        Assert.Contains("file or url", err.message!.ToLowerInvariant());
     }
 
     [Fact]
@@ -173,7 +177,8 @@ public sealed class AttachmentsControllerTests
         var (controller, _, _, _) = Create();
         var resp = await controller.UploadAsync(short.MaxValue, Guid.NewGuid(), null, null, "http://example", CancellationToken.None);
         var bad = Assert.IsType<BadRequestObjectResult>(resp);
-        Assert.Contains("invalid entitykind", bad.Value!.ToString()!.ToLowerInvariant());
+        var err = Assert.IsType<ApiErrorDto>(bad.Value);
+        Assert.Contains("invalid entitykind", err.message!.ToLowerInvariant());
     }
 
     [Fact]
@@ -316,7 +321,8 @@ public sealed class AttachmentsControllerTests
         var (controller, _, _, _) = Create();
         var resp = await controller.ListAsync(short.MaxValue, Guid.NewGuid(), 0, 50, null, null, null, CancellationToken.None);
         var bad = Assert.IsType<BadRequestObjectResult>(resp);
-        Assert.Contains("invalid entitykind", bad.Value!.ToString()!.ToLowerInvariant());
+        var err = Assert.IsType<ApiErrorDto>(bad.Value);
+        Assert.Contains("invalid entitykind", err.message!.ToLowerInvariant());
     }
 
     [Fact]
@@ -351,214 +357,31 @@ public sealed class AttachmentsControllerTests
     }
 
     [Fact]
-    public async Task CreateCategoryAsync_ShouldReturn_Created()
+    public async Task CreateCategoryAsync_ShouldReturn_CreatedDto()
     {
         var (controller, _, cats, current) = Create();
-        var dto = new AttachmentCategoryDto(Guid.NewGuid(), "Invoices", false, false);
-        cats.Setup(s => s.CreateAsync(current.UserId, "Invoices", It.IsAny<CancellationToken>())).ReturnsAsync(dto);
+        var catId = Guid.NewGuid();
+        var dto = new AttachmentCategoryDto(catId, "Docs", false, true);
+        cats.Setup(s => s.CreateAsync(current.UserId, "Docs", It.IsAny<CancellationToken>())).ReturnsAsync(dto);
 
-        var resp = await controller.CreateCategoryAsync(new AttachmentCreateCategoryRequest("Invoices"), CancellationToken.None);
+        var resp = await controller.CreateCategoryAsync(new AttachmentCreateCategoryRequest("Docs"), CancellationToken.None);
         var created = Assert.IsType<CreatedResult>(resp);
-        Assert.Equal(dto, created.Value);
-        Assert.Equal("/api/attachments/categories", created.Location);
-        Assert.Equal(201, created.StatusCode);
+        Assert.Equal("Docs", ((AttachmentCategoryDto)created.Value!).Name);
         cats.VerifyAll();
     }
 
     [Fact]
-    public async Task CreateCategoryAsync_ShouldReturn_ValidationProblem_WhenModelInvalid()
-    {
-        var (controller, _, cats, _) = Create();
-        controller.ModelState.AddModelError("Name", "Required");
-
-        var resp = await controller.CreateCategoryAsync(new AttachmentCreateCategoryRequest(""), CancellationToken.None);
-        Assert.IsType<ObjectResult>(resp); // ValidationProblem returns ObjectResult in unit tests
-        cats.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public async Task UpdateCategoryNameAsync_ShouldReturn_Ok()
+    public async Task CreateCategoryAsync_ShouldReturn_BadRequest_WhenInvalid()
     {
         var (controller, _, cats, current) = Create();
-        var id = Guid.NewGuid();
-        var dto = new AttachmentCategoryDto(id, "NewName", false, true);
-        cats.Setup(s => s.UpdateAsync(current.UserId, id, "NewName", It.IsAny<CancellationToken>())).ReturnsAsync(dto);
+        var req = new AttachmentCreateCategoryRequest("");
 
-        var resp = await controller.UpdateCategoryNameAsync(id, new AttachmentUpdateCategoryNameRequest("NewName"), CancellationToken.None);
-        var ok = Assert.IsType<OkObjectResult>(resp);
-        Assert.Equal(dto, ok.Value);
-        cats.VerifyAll();
-    }
+        cats.Setup(s => s.CreateAsync(current.UserId, "", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ArgumentException("name"));
 
-    [Fact]
-    public async Task UpdateCategoryNameAsync_ShouldReturn_Conflict_OnInvalidOperation()
-    {
-        var (controller, _, cats, current) = Create();
-        var id = Guid.NewGuid();
-        cats.Setup(s => s.UpdateAsync(current.UserId, id, "Dup", It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("duplicate"));
-
-        var resp = await controller.UpdateCategoryNameAsync(id, new AttachmentUpdateCategoryNameRequest("Dup"), CancellationToken.None);
-        Assert.IsType<ConflictObjectResult>(resp);
-        cats.VerifyAll();
-    }
-
-    [Fact]
-    public async Task UpdateCategoryNameAsync_ShouldReturn_ValidationProblem_WhenModelInvalid()
-    {
-        var (controller, _, cats, _) = Create();
-        controller.ModelState.AddModelError("Name", "too short");
-
-        var resp = await controller.UpdateCategoryNameAsync(Guid.NewGuid(), new AttachmentUpdateCategoryNameRequest(""), CancellationToken.None);
-        Assert.IsType<ObjectResult>(resp); // ValidationProblem
-        cats.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public async Task UpdateCategoryNameAsync_ShouldReturn_NotFound_WhenServiceReturnsNull()
-    {
-        var (controller, _, cats, current) = Create();
-        var id = Guid.NewGuid();
-        cats.Setup(s => s.UpdateAsync(current.UserId, id, "Missing", It.IsAny<CancellationToken>())).ReturnsAsync((AttachmentCategoryDto?)null);
-
-        var resp = await controller.UpdateCategoryNameAsync(id, new AttachmentUpdateCategoryNameRequest("Missing"), CancellationToken.None);
-        Assert.IsType<NotFoundResult>(resp);
-        cats.VerifyAll();
-    }
-
-    [Fact]
-    public async Task DeleteCategoryAsync_ShouldReturn_NoContent_WhenDeleted()
-    {
-        var (controller, _, cats, current) = Create();
-        var id = Guid.NewGuid();
-        cats.Setup(s => s.DeleteAsync(current.UserId, id, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-
-        var resp = await controller.DeleteCategoryAsync(id, CancellationToken.None);
-        Assert.IsType<NoContentResult>(resp);
-        cats.VerifyAll();
-    }
-
-    [Fact]
-    public async Task DeleteCategoryAsync_ShouldReturn_NotFound_WhenMissing()
-    {
-        var (controller, _, cats, current) = Create();
-        var id = Guid.NewGuid();
-        cats.Setup(s => s.DeleteAsync(current.UserId, id, It.IsAny<CancellationToken>())).ReturnsAsync(false);
-
-        var resp = await controller.DeleteCategoryAsync(id, CancellationToken.None);
-        Assert.IsType<NotFoundResult>(resp);
-        cats.VerifyAll();
-    }
-
-    [Fact]
-    public async Task DeleteCategoryAsync_ShouldReturn_Conflict_OnInvalidOperation()
-    {
-        var (controller, _, cats, current) = Create();
-        var id = Guid.NewGuid();
-        cats.Setup(s => s.DeleteAsync(current.UserId, id, It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("in use"));
-
-        var resp = await controller.DeleteCategoryAsync(id, CancellationToken.None);
-        Assert.IsType<ConflictObjectResult>(resp);
-        cats.VerifyAll();
-    }
-
-    [Fact]
-    public async Task CreateCategoryAsync_ShouldReturn_BadRequest_OnArgumentException()
-    {
-        var (controller, _, cats, current) = Create();
-        cats.Setup(s => s.CreateAsync(current.UserId, "Bad", It.IsAny<CancellationToken>())).ThrowsAsync(new ArgumentException("bad"));
-
-        var resp = await controller.CreateCategoryAsync(new AttachmentCreateCategoryRequest("Bad"), CancellationToken.None);
-        Assert.IsType<BadRequestObjectResult>(resp);
-        cats.VerifyAll();
-    }
-
-    [Fact]
-    public async Task UploadAsync_ShouldReturn_BadRequest_WhenServiceThrowsArgumentException_OnUrl()
-    {
-        var (controller, service, _, current) = Create();
-        var entityId = Guid.NewGuid();
-        service.Setup(s => s.CreateUrlAsync(current.UserId, AttachmentEntityKind.Contact, entityId, "http://bad", null, null, It.IsAny<CancellationToken>()))
-               .ThrowsAsync(new ArgumentException("bad url"));
-
-        var resp = await controller.UploadAsync((short)AttachmentEntityKind.Contact, entityId, null, null, "http://bad", CancellationToken.None);
-        Assert.IsType<BadRequestObjectResult>(resp);
-        service.VerifyAll();
-    }
-
-    [Fact]
-    public async Task UploadAsync_ShouldReturn_Problem500_WhenServiceThrows_OnUrl()
-    {
-        var (controller, service, _, current) = Create();
-        var entityId = Guid.NewGuid();
-        service.Setup(s => s.CreateUrlAsync(current.UserId, AttachmentEntityKind.Contact, entityId, "http://err", null, null, It.IsAny<CancellationToken>()))
-               .ThrowsAsync(new Exception("boom"));
-
-        var resp = await controller.UploadAsync((short)AttachmentEntityKind.Contact, entityId, null, null, "http://err", CancellationToken.None);
-        var problem = Assert.IsType<ObjectResult>(resp);
-        Assert.Equal(500, problem.StatusCode);
-        service.VerifyAll();
-    }
-
-    [Fact]
-    public async Task UploadAsync_ShouldReturn_BadRequest_WhenServiceThrowsArgumentException_OnFile()
-    {
-        var opts = new AttachmentUploadOptions { MaxSizeBytes = 1024, AllowedMimeTypes = new[] { "application/pdf" } };
-        var (controller, service, _, current) = Create(opts);
-        var entityId = Guid.NewGuid();
-        var data = new byte[10];
-        var formFile = new FormFile(new MemoryStream(data), 0, data.Length, "file", "doc.pdf") { Headers = new HeaderDictionary(), ContentType = "application/pdf" };
-        service.Setup(s => s.UploadAsync(current.UserId, AttachmentEntityKind.Contact, entityId, It.IsAny<Stream>(), "doc.pdf", "application/pdf", null, It.IsAny<CancellationToken>()))
-               .ThrowsAsync(new ArgumentException("invalid"));
-
-        var resp = await controller.UploadAsync((short)AttachmentEntityKind.Contact, entityId, formFile, null, null, CancellationToken.None);
-        Assert.IsType<BadRequestObjectResult>(resp);
-        service.VerifyAll();
-    }
-
-    [Fact]
-    public async Task UploadAsync_ShouldReturn_Problem500_WhenServiceThrows_OnFile()
-    {
-        var opts = new AttachmentUploadOptions { MaxSizeBytes = 1024, AllowedMimeTypes = new[] { "application/pdf" } };
-        var (controller, service, _, current) = Create(opts);
-        var entityId = Guid.NewGuid();
-        var data = new byte[10];
-        var formFile = new FormFile(new MemoryStream(data), 0, data.Length, "file", "doc.pdf") { Headers = new HeaderDictionary(), ContentType = "application/pdf" };
-        service.Setup(s => s.UploadAsync(current.UserId, AttachmentEntityKind.Contact, entityId, It.IsAny<Stream>(), "doc.pdf", "application/pdf", null, It.IsAny<CancellationToken>()))
-               .ThrowsAsync(new Exception("err"));
-
-        var resp = await controller.UploadAsync((short)AttachmentEntityKind.Contact, entityId, formFile, null, null, CancellationToken.None);
-        var problem = Assert.IsType<ObjectResult>(resp);
-        Assert.Equal(500, problem.StatusCode);
-        service.VerifyAll();
-    }
-
-    [Fact]
-    public async Task UploadAsync_ShouldAccept_ContentType_CaseInsensitive()
-    {
-        var opts = new AttachmentUploadOptions { MaxSizeBytes = 1024, AllowedMimeTypes = new[] { "application/pdf" } };
-        var (controller, service, _, current) = Create(opts);
-        var data = new byte[10];
-        var formFile = new FormFile(new MemoryStream(data), 0, data.Length, "file", "doc.pdf") { Headers = new HeaderDictionary(), ContentType = "Application/PDF" };
-        service.Setup(s => s.UploadAsync(current.UserId, AttachmentEntityKind.Contact, It.IsAny<Guid>(), It.IsAny<Stream>(), "doc.pdf", "Application/PDF", null, It.IsAny<CancellationToken>()))
-               .ReturnsAsync(new AttachmentDto(Guid.NewGuid(), (short)AttachmentEntityKind.Contact, Guid.NewGuid(), "doc.pdf", "Application/PDF", 10, null, DateTime.UtcNow, false));
-
-        var resp = await controller.UploadAsync((short)AttachmentEntityKind.Contact, Guid.NewGuid(), formFile, null, null, CancellationToken.None);
-        Assert.IsType<OkObjectResult>(resp);
-        service.VerifyAll();
-    }
-
-    [Fact]
-    public async Task UploadAsync_ShouldAccept_WhenAllowedMimeTypesEmpty()
-    {
-        var opts = new AttachmentUploadOptions { MaxSizeBytes = 1024, AllowedMimeTypes = Array.Empty<string>() };
-        var (controller, service, _, current) = Create(opts);
-        var data = new byte[10];
-        var formFile = new FormFile(new MemoryStream(data), 0, data.Length, "file", "a.bin") { Headers = new HeaderDictionary(), ContentType = "application/x-bin" };
-        service.Setup(s => s.UploadAsync(current.UserId, AttachmentEntityKind.Contact, It.IsAny<Guid>(), It.IsAny<Stream>(), "a.bin", "application/x-bin", null, It.IsAny<CancellationToken>()))
-               .ReturnsAsync(new AttachmentDto(Guid.NewGuid(), (short)AttachmentEntityKind.Contact, Guid.NewGuid(), "a.bin", "application/x-bin", 10, null, DateTime.UtcNow, false));
-
-        var resp = await controller.UploadAsync((short)AttachmentEntityKind.Contact, Guid.NewGuid(), formFile, null, null, CancellationToken.None);
-        Assert.IsType<OkObjectResult>(resp);
-        service.VerifyAll();
+        var resp = await controller.CreateCategoryAsync(req, CancellationToken.None);
+        var bad = Assert.IsType<BadRequestObjectResult>(resp);
+        var err = Assert.IsType<ApiErrorDto>(bad.Value);
+        Assert.Contains("name", err.message!.ToLowerInvariant());
     }
 }

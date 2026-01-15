@@ -25,9 +25,14 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
     public Guid Id { get; private set; }
 
     /// <summary>
-    /// Budget purpose id (required for creating new rules).
+    /// Budget purpose id (used when creating new rules).
     /// </summary>
     public Guid BudgetPurposeId { get; private set; }
+
+    /// <summary>
+    /// Budget category id (used when creating new rules via category).
+    /// </summary>
+    public Guid BudgetCategoryId { get; private set; }
 
     /// <summary>
     /// Loaded rule DTO.
@@ -49,10 +54,27 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
         {
             if (id == Guid.Empty)
             {
-                // Expect InitPrefill to contain budget purpose id for create navigation.
-                BudgetPurposeId = Guid.TryParse(InitPrefill, out var purposeId) ? purposeId : Guid.Empty;
+                // Expect InitPrefill to contain either "purpose:{guid}" or "category:{guid}" (or legacy: just purpose guid).
+                BudgetPurposeId = Guid.Empty;
+                BudgetCategoryId = Guid.Empty;
 
-                var dto = new BudgetRuleDto(Guid.Empty, Guid.Empty, BudgetPurposeId, 0m, BudgetIntervalType.Monthly, null, DateOnly.FromDateTime(DateTime.Today), null);
+                var prefill = InitPrefill ?? string.Empty;
+                if (prefill.StartsWith("category:", StringComparison.OrdinalIgnoreCase))
+                {
+                    _ = Guid.TryParse(prefill["category:".Length..], out var cid);
+                    BudgetCategoryId = cid;
+                }
+                else if (prefill.StartsWith("purpose:", StringComparison.OrdinalIgnoreCase))
+                {
+                    _ = Guid.TryParse(prefill["purpose:".Length..], out var pid);
+                    BudgetPurposeId = pid;
+                }
+                else
+                {
+                    BudgetPurposeId = Guid.TryParse(prefill, out var legacyPid) ? legacyPid : Guid.Empty;
+                }
+
+                var dto = new BudgetRuleDto(Guid.Empty, Guid.Empty, BudgetPurposeId == Guid.Empty ? null : BudgetPurposeId, BudgetCategoryId == Guid.Empty ? null : BudgetCategoryId, 0m, BudgetIntervalType.Monthly, null, DateOnly.FromDateTime(DateTime.Today), null);
                 Rule = dto;
                 CardRecord = BuildCardRecord(dto);
                 return;
@@ -66,13 +88,21 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
                 return;
             }
 
-            BudgetPurposeId = Rule.BudgetPurposeId;
+            BudgetPurposeId = Rule.BudgetPurposeId ?? Guid.Empty;
+            BudgetCategoryId = Rule.BudgetCategoryId ?? Guid.Empty;
 
             // When opening an existing rule from the embedded list we may not have a back parameter.
             // Default to navigating back to the parent budget purpose card.
-            if (string.IsNullOrWhiteSpace(InitBack) && BudgetPurposeId != Guid.Empty)
+            if (string.IsNullOrWhiteSpace(InitBack))
             {
-                SetBackNavigation($"/card/budget/purposes/{BudgetPurposeId}");
+                if (BudgetPurposeId != Guid.Empty)
+                {
+                    SetBackNavigation($"/card/budget/purposes/{BudgetPurposeId}");
+                }
+                else if (BudgetCategoryId != Guid.Empty)
+                {
+                    SetBackNavigation($"/card/budget/categories/{BudgetCategoryId}");
+                }
             }
 
             CardRecord = BuildCardRecord(Rule);
@@ -144,9 +174,27 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
             end = parsedEnd;
         }
 
-        var purposeId = BudgetPurposeId != Guid.Empty ? BudgetPurposeId : (Rule?.BudgetPurposeId ?? Guid.Empty);
+        Guid? purposeId = null;
+        if (BudgetPurposeId != Guid.Empty)
+        {
+            purposeId = BudgetPurposeId;
+        }
+        else if (Rule?.BudgetPurposeId.HasValue == true && Rule.BudgetPurposeId.Value != Guid.Empty)
+        {
+            purposeId = Rule.BudgetPurposeId.Value;
+        }
 
-        return new BudgetRuleDto(Id, Guid.Empty, purposeId, amount, interval, customMonths, start, end);
+        Guid? categoryId = null;
+        if (BudgetCategoryId != Guid.Empty)
+        {
+            categoryId = BudgetCategoryId;
+        }
+        else if (Rule?.BudgetCategoryId.HasValue == true && Rule.BudgetCategoryId.Value != Guid.Empty)
+        {
+            categoryId = Rule.BudgetCategoryId.Value;
+        }
+
+        return new BudgetRuleDto(Id, Guid.Empty, purposeId, categoryId, amount, interval, customMonths, start, end);
     }
 
     /// <inheritdoc />
@@ -160,23 +208,44 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
         {
             var dto = BuildDto(CardRecord);
 
-            if (dto.BudgetPurposeId == Guid.Empty)
+            if (dto.BudgetPurposeId.HasValue && dto.BudgetPurposeId.Value == Guid.Empty && dto.BudgetCategoryId.HasValue && dto.BudgetCategoryId.Value == Guid.Empty)
             {
-                SetError(null, Localizer?["Err_Invalid_budgetPurposeId"].Value ?? "Budget purpose is missing");
+                SetError(null, Localizer?["Err_Invalid_budgetPurposeId"].Value ?? "Budget purpose/category is missing");
                 return false;
             }
 
             if (Id == Guid.Empty)
             {
-                var created = await ApiClient.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(dto.BudgetPurposeId, dto.Amount, dto.Interval, dto.CustomIntervalMonths, dto.StartDate, dto.EndDate));
-                Id = created.Id;
-                Rule = created;
-                BudgetPurposeId = created.BudgetPurposeId;
-                CardRecord = BuildCardRecord(created);
-                ClearPendingChanges();
-                RaiseStateChanged();
-                RaiseUiActionRequested("Saved", Id.ToString());
-                return true;
+                if (dto.BudgetPurposeId.HasValue && dto.BudgetPurposeId.Value != Guid.Empty)
+                {
+                    var created = await ApiClient.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(dto.BudgetPurposeId, null, dto.Amount, dto.Interval, dto.CustomIntervalMonths, dto.StartDate, dto.EndDate));
+                    Id = created.Id;
+                    Rule = created;
+                    BudgetPurposeId = created.BudgetPurposeId ?? Guid.Empty;
+                    BudgetCategoryId = created.BudgetCategoryId ?? Guid.Empty;
+                    CardRecord = BuildCardRecord(created);
+                    ClearPendingChanges();
+                    RaiseStateChanged();
+                    RaiseUiActionRequested("Saved", Id.ToString());
+                    return true;
+                }
+
+                if (dto.BudgetCategoryId.HasValue && dto.BudgetCategoryId.Value != Guid.Empty)
+                {
+                    var created = await ApiClient.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(null, dto.BudgetCategoryId, dto.Amount, dto.Interval, dto.CustomIntervalMonths, dto.StartDate, dto.EndDate));
+                    Id = created.Id;
+                    Rule = created;
+                    BudgetPurposeId = created.BudgetPurposeId ?? Guid.Empty;
+                    BudgetCategoryId = created.BudgetCategoryId ?? Guid.Empty;
+                    CardRecord = BuildCardRecord(created);
+                    ClearPendingChanges();
+                    RaiseStateChanged();
+                    RaiseUiActionRequested("Saved", Id.ToString());
+                    return true;
+                }
+
+                SetError(null, Localizer?["Err_Invalid_budgetPurposeId"].Value ?? "Budget purpose/category is missing");
+                return false;
             }
 
             var updated = await ApiClient.Budgets_UpdateRuleAsync(Id, new BudgetRuleUpdateRequest(dto.Amount, dto.Interval, dto.CustomIntervalMonths, dto.StartDate, dto.EndDate));
@@ -187,7 +256,8 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
             }
 
             Rule = updated;
-            BudgetPurposeId = updated.BudgetPurposeId;
+            BudgetPurposeId = updated.BudgetPurposeId ?? Guid.Empty;
+            BudgetCategoryId = updated.BudgetCategoryId ?? Guid.Empty;
             CardRecord = BuildCardRecord(updated);
             ClearPendingChanges();
             RaiseStateChanged();

@@ -10,12 +10,12 @@ public interface IBudgetPurposeService
     /// <summary>
     /// Creates a new budget purpose.
     /// </summary>
-    Task<BudgetPurposeDto> CreateAsync(Guid ownerUserId, string name, BudgetSourceType sourceType, Guid sourceId, string? description, CancellationToken ct);
+    Task<BudgetPurposeDto> CreateAsync(Guid ownerUserId, string name, BudgetSourceType sourceType, Guid sourceId, string? description, Guid? budgetCategoryId, CancellationToken ct);
 
     /// <summary>
     /// Updates an existing budget purpose.
     /// </summary>
-    Task<BudgetPurposeDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, BudgetSourceType sourceType, Guid sourceId, string? description, CancellationToken ct);
+    Task<BudgetPurposeDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, BudgetSourceType sourceType, Guid sourceId, string? description, Guid? budgetCategoryId, CancellationToken ct);
 
     /// <summary>
     /// Deletes an existing budget purpose.
@@ -49,5 +49,6 @@ public interface IBudgetPurposeService
         string? nameFilter,
         DateOnly? from,
         DateOnly? to,
+        Guid? budgetCategoryId,
         CancellationToken ct);
 }

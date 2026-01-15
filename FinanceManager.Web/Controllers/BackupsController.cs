@@ -1,8 +1,14 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Backups;
+using FinanceManager.Application.Common;
+using FinanceManager.Application.Reports;
+using FinanceManager.Shared.Dtos.Admin;
+using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using System.Net.Mime;
 
 namespace FinanceManager.Web.Controllers;
@@ -16,9 +22,12 @@ namespace FinanceManager.Web.Controllers;
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public sealed class BackupsController : ControllerBase
 {
+    private const string Origin = "API_Backup";
+
     private readonly IBackupService _svc;
     private readonly ICurrentUserService _current;
     private readonly IBackgroundTaskManager _taskManager;
+    private readonly IStringLocalizer<Controller> _localizer;
 
     /// <summary>
     /// Creates a new instance of the <see cref="BackupsController"/>.
@@ -26,8 +35,18 @@ public sealed class BackupsController : ControllerBase
     /// <param name="svc">Backup service used to list, create, upload, download and manage backups.</param>
     /// <param name="current">Service to access current user context.</param>
     /// <param name="taskManager">Background task manager used to enqueue restore tasks.</param>
-    public BackupsController(IBackupService svc, ICurrentUserService current, IBackgroundTaskManager taskManager)
-    { _svc = svc; _current = current; _taskManager = taskManager; }
+    /// <param name="localizer">Localizer for generating localized error messages.</param>
+    public BackupsController(
+        IBackupService svc,
+        ICurrentUserService current,
+        IBackgroundTaskManager taskManager,
+        IStringLocalizer<Controller> localizer)
+    {
+        _svc = svc;
+        _current = current;
+        _taskManager = taskManager;
+        _localizer = localizer;
+    }
 
     /// <summary>
     /// Lists all backups created or uploaded by the current user (most recent first client-side).
@@ -65,14 +84,24 @@ public sealed class BackupsController : ControllerBase
     {
         try
         {
-            if (file == null || file.Length == 0) { return BadRequest(new ApiErrorDto("No file selected.")); }
+            if (file == null || file.Length == 0)
+            {
+                const string code = "Err_Invalid_File";
+                var entry = _localizer[$"{Origin}_{code}"];
+                var message = entry.ResourceNotFound ? "No file selected." : entry.Value;
+                return BadRequest(ApiErrorDto.Create(Origin, code, message));
+            }
+
             await using var s = file.OpenReadStream();
             var dto = await _svc.UploadAsync(_current.UserId, s, file.FileName, ct);
             return Ok(dto);
         }
-        catch (FileLoadException)
+        catch (FileLoadException ex)
         {
-            return BadRequest(new ApiErrorDto("A backup with that filename already exists."));
+            const string code = "Err_Conflict_DuplicateFileName";
+            var entry = _localizer[$"{Origin}_{code}"];
+            var message = entry.ResourceNotFound ? "A backup with that filename already exists." : entry.Value;
+            return BadRequest(ApiErrorDto.Create(Origin, code, message));
         }
     }
 

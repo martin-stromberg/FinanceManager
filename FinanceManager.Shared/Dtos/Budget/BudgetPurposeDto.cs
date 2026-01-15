@@ -9,4 +9,5 @@ namespace FinanceManager.Shared.Dtos.Budget;
 /// <param name="Description">Optional description.</param>
 /// <param name="SourceType">Source type used to resolve actual values.</param>
 /// <param name="SourceId">Identifier of the source entity.</param>
-public sealed record BudgetPurposeDto(Guid Id, Guid OwnerUserId, string Name, string? Description, BudgetSourceType SourceType, Guid SourceId);
+/// <param name="BudgetCategoryId">Optional category id assigned to this purpose.</param>
+public sealed record BudgetPurposeDto(Guid Id, Guid OwnerUserId, string Name, string? Description, BudgetSourceType SourceType, Guid SourceId, Guid? BudgetCategoryId);

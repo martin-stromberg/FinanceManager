@@ -9,6 +9,7 @@ namespace FinanceManager.Web.ViewModels.Budget;
 /// <param name="Name">Display name.</param>
 /// <param name="SourceName">Resolved source display name.</param>
 /// <param name="SourceSymbolAttachmentId">Optional symbol attachment id for the source entity.</param>
+/// <param name="CategoryName">Category display name.</param>
 /// <param name="RuleCount">Number of budget rules configured for the purpose.</param>
 /// <param name="BudgetSum">Computed budget sum for the selected range.</param>
 /// <param name="ActualSum">Computed actual sum for the selected range.</param>
@@ -18,6 +19,7 @@ public sealed record BudgetPurposeListItem(
     string Name,
     string SourceName,
     Guid? SourceSymbolAttachmentId,
+    string CategoryName,
     int RuleCount,
     decimal BudgetSum,
     decimal ActualSum,

@@ -229,6 +229,9 @@
         <member name="P:FinanceManager.Infrastructure.AppDbContext.AttachmentCategories">
             <summary>Attachment categories.</summary>
         </member>
+        <member name="P:FinanceManager.Infrastructure.AppDbContext.BudgetCategories">
+            <summary>Budget categories.</summary>
+        </member>
         <member name="P:FinanceManager.Infrastructure.AppDbContext.BudgetPurposes">
             <summary>Budget purposes.</summary>
         </member>
@@ -949,6 +952,34 @@
             <param name="r">The backup record to map.</param>
             <returns>A <see cref="T:FinanceManager.Shared.Dtos.Backups.BackupDto"/> instance.</returns>
         </member>
+        <member name="T:FinanceManager.Infrastructure.Budget.BudgetCategoryService">
+            <summary>
+            EF Core based implementation of <see cref="T:FinanceManager.Application.Budget.IBudgetCategoryService"/>.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetCategoryService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Budget.IBudgetPurposeService)">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetCategoryService.ListOverviewAsync(System.Guid,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetCategoryService.ListAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetCategoryService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetCategoryService.CreateAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetCategoryService.UpdateAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetCategoryService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Budget.BudgetOverrideService">
             <summary>
             EF Core based implementation of <see cref="T:FinanceManager.Application.Budget.IBudgetOverrideService"/>.
@@ -1003,10 +1034,10 @@
             </summary>
             <param name="db">App database context.</param>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.UpdateAsync(System.Guid,System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.UpdateAsync(System.Guid,System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
@@ -1021,7 +1052,7 @@
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.CountAsync(System.Guid,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.ListOverviewAsync(System.Guid,System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.ListOverviewAsync(System.Guid,System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Nullable{System.Guid},System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:FinanceManager.Infrastructure.Budget.BudgetRuleService">
@@ -1038,7 +1069,7 @@
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.CreateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.UpdateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.CreateForCategoryAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
@@ -1048,6 +1079,25 @@
             <inheritdoc />
         </member>
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.ListByPurposeAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.ListByCategoryAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.UpdateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Common.ParentAssignmentService">
+            <summary>
+            Central registry-based implementation for server-side "create and assign" flows.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Common.ParentAssignmentService.#ctor(FinanceManager.Infrastructure.AppDbContext,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Common.ParentAssignmentService})">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Common.ParentAssignmentService.TryAssignAsync(System.Guid,FinanceManager.Shared.Dtos.Common.ParentLinkRequest,System.String,System.Guid,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:FinanceManager.Infrastructure.Contacts.ContactCategoryService">
@@ -1446,6 +1496,30 @@
             <inheritdoc />
         </member>
         <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity._20260110_AddBudgets.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.AddBudgetCategories">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddBudgetCategories.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddBudgetCategories.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.AddBudgetCategories.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity._20260114_budget_rule_category_scope">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity._20260114_budget_rule_category_scope.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity._20260114_budget_rule_category_scope.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity._20260114_budget_rule_category_scope.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
         <member name="T:FinanceManager.Infrastructure.Demo.DemoDataService">
@@ -3145,6 +3219,20 @@
             <param name="ct">Cancellation token.</param>
             <returns>A task that completes when the operation has been applied.</returns>
             <exception cref="T:System.ArgumentException">Thrown when the security does not exist or is not owned by <paramref name="ownerUserId"/>.</exception>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Securities.SecurityReportService">
+            <summary>
+            Provides read-only reporting queries for securities.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.SecurityReportService.#ctor(FinanceManager.Infrastructure.AppDbContext)">
+            <summary>
+            Creates a new instance of <see cref="T:FinanceManager.Infrastructure.Securities.SecurityReportService"/>.
+            </summary>
+            <param name="db">Application database context.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.SecurityReportService.GetDividendAggregatesAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
         </member>
         <member name="T:FinanceManager.Infrastructure.Securities.SecurityService">
             <summary>

@@ -234,6 +234,7 @@ public sealed class SetupImportService : ISetupImportService
         var favoriteMap = new Dictionary<Guid, Guid>();
         var reportMap = new Dictionary<Guid, Guid>();
         var attachmentCatMap = new Dictionary<Guid, Guid>();
+        var budgetCategoryMap = new Dictionary<Guid, Guid>();
         var budgetPurposeMap = new Dictionary<Guid, Guid>();
 
         var jsonOptions = new JsonSerializerOptions
@@ -438,6 +439,31 @@ public sealed class SetupImportService : ISetupImportService
         }
         ProgressChanged?.Invoke(this, progress.Inc());
 
+        // BudgetCategories
+        ProgressChanged?.Invoke(this, progress.SetDescription("Budget Categories"));
+        if (root.TryGetProperty("BudgetCategories", out var budgetCategoriesEl) && budgetCategoriesEl.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Budget.BudgetCategory.BudgetCategoryBackupDto>>(budgetCategoriesEl.GetRawText(), jsonOptions)
+                ?? new List<FinanceManager.Domain.Budget.BudgetCategory.BudgetCategoryBackupDto>();
+
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                if (string.IsNullOrWhiteSpace(dto.Name))
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+
+                var entity = new BudgetCategory(userId, dto.Name);
+                _db.BudgetCategories.Add(entity);
+                await _db.SaveChangesAsync(ct);
+                budgetCategoryMap[dto.Id] = entity.Id;
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
         // BudgetPurposes
         ProgressChanged?.Invoke(this, progress.SetDescription("Budget Purposes"));
         if (root.TryGetProperty("BudgetPurposes", out var budgetPurposesEl) && budgetPurposesEl.ValueKind == JsonValueKind.Array)
@@ -457,7 +483,15 @@ public sealed class SetupImportService : ISetupImportService
                     _ => mappedSourceId
                 };
 
+                Guid? mappedCategoryId = null;
+                if (dto.BudgetCategoryId.HasValue && budgetCategoryMap.TryGetValue(dto.BudgetCategoryId.Value, out var mappedCat))
+                {
+                    mappedCategoryId = mappedCat;
+                }
+
                 var entity = new BudgetPurpose(userId, dto.Name, dto.SourceType, mappedSourceId, dto.Description);
+                entity.SetCategory(mappedCategoryId);
+
                 _db.BudgetPurposes.Add(entity);
                 await _db.SaveChangesAsync(ct);
                 budgetPurposeMap[dto.Id] = entity.Id;
@@ -476,13 +510,19 @@ public sealed class SetupImportService : ISetupImportService
             ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
             foreach (var dto in list)
             {
-                if (!budgetPurposeMap.TryGetValue(dto.BudgetPurposeId, out var mappedPurposeId))
+                if (dto.BudgetPurposeId == null || dto.BudgetPurposeId == Guid.Empty)
                 {
                     ProgressChanged?.Invoke(this, progress.IncSub());
                     continue;
                 }
 
-                var entity = new BudgetRule(userId, mappedPurposeId, dto.Amount, dto.Interval, dto.StartDate, dto.EndDate, dto.CustomIntervalMonths);
+                if (!budgetPurposeMap.TryGetValue(dto.BudgetPurposeId.Value, out var mappedPurposeId))
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+
+                var entity = new BudgetRule(userId, budgetPurposeId: mappedPurposeId, budgetCategoryId: null, dto.Amount, dto.Interval, dto.StartDate, dto.EndDate, dto.CustomIntervalMonths);
                 _db.BudgetRules.Add(entity);
                 await _db.SaveChangesAsync(ct);
                 ProgressChanged?.Invoke(this, progress.IncSub());

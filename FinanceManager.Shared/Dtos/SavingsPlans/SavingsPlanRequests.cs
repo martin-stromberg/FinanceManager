@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using FinanceManager.Shared.Dtos.Common;
 
 namespace FinanceManager.Shared.Dtos.SavingsPlans;
 
@@ -43,6 +44,11 @@ public sealed class SavingsPlanCreateRequest
     /// Optional contract number or reference associated with the savings plan.
     /// </summary>
     public string? ContractNumber { get; set; }
+
+    /// <summary>
+    /// Optional parent context used for server-side assignment.
+    /// </summary>
+    public ParentLinkRequest? Parent { get; set; }
 
     /// <summary>
     /// Default constructor. Initializes string properties with safe defaults to satisfy validation.

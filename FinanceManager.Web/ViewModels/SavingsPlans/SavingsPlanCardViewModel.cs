@@ -177,8 +177,14 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
 
             if (Id == Guid.Empty)
             {
+                req.Parent = TryGetParentLinkFromQuery();
+
                 var dto = await ApiClient.SavingsPlans_CreateAsync(req, ct);
-                if (dto == null) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Error_Create"); return false; }
+                if (dto == null)
+                {
+                    SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Error_Create");
+                    return false;
+                }
                 Id = dto.Id;
                 Model = req; // reflect saved data into Model
                 _loadedDto = dto;

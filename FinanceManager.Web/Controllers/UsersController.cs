@@ -1,7 +1,13 @@
+using FinanceManager.Application;
 using FinanceManager.Application.Users;
+using FinanceManager.Infrastructure.Auth;
+using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using System.Net.Mime;
 using FinanceManager.Application.Demo;
+using FinanceManager.Web.Controllers;
 
 namespace FinanceManager.Web.Controllers;
 
@@ -13,9 +19,12 @@ namespace FinanceManager.Web.Controllers;
 [Produces(MediaTypeNames.Application.Json)]
 public sealed class UsersController : ControllerBase
 {
+    private const string Origin = "API_Users";
+
     private readonly IUserReadService _userReadService;
-    private readonly IDemoDataService _demoDataService;
+    private readonly DemoDataService _demoDataService;
     private readonly ILogger<UsersController> _logger;
+    private readonly IStringLocalizer<Controller> _localizer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UsersController"/> class.
@@ -23,11 +32,13 @@ public sealed class UsersController : ControllerBase
     /// <param name="userReadService">Service used to read user information.</param>
     /// <param name="demoDataService">Service responsible for creating demo data for a user.</param>
     /// <param name="logger">Logger instance for this controller.</param>
-    public UsersController(IUserReadService userReadService, IDemoDataService demoDataService, ILogger<UsersController> logger)
+    /// <param name="localizer">Localizer for error messages.</param>
+    public UsersController(IUserReadService userReadService, DemoDataService demoDataService, ILogger<UsersController> logger, IStringLocalizer<Controller> localizer)
     {
         _userReadService = userReadService;
         _demoDataService = demoDataService;
         _logger = logger;
+        _localizer = localizer;
     }
 
     /// <summary>
@@ -59,12 +70,13 @@ public sealed class UsersController : ControllerBase
         {
             // Let canceled requests bubble up as 499/Client Closed or generic cancellation.
             _logger.LogInformation("HasAnyUsersAsync cancelled");
-            return Problem(statusCode: StatusCodes.Status499ClientClosedRequest, title: "Request cancelled");
+            var err = ApiErrorDto.Create(Origin, "Err_Cancelled", "Request cancelled");
+            return StatusCode(StatusCodes.Status499ClientClosedRequest, err);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while checking for existing users");
-            return Problem(statusCode: StatusCodes.Status500InternalServerError, title: "Unexpected error", detail: ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -86,21 +98,28 @@ public sealed class UsersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CreateDemoDataAsync(Guid userId, [FromBody] DemoRequest req, CancellationToken ct)
     {
-        if (userId == Guid.Empty) return BadRequest("userId required");
+        if (userId == Guid.Empty)
+        {
+            var ex = new ArgumentException("userId required", nameof(userId));
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+
         try
         {
-            await _demoDataService.CreateDemoDataAsync(userId, req.createPostings, ct);
+            // DemoDataService currently provides a single method. Keep request shape, ignore createPostings for now.
+            await _demoDataService.CreateDemoDataForUserAsync(userId, ct);
             return Accepted();
         }
         catch (OperationCanceledException)
         {
             _logger.LogInformation("CreateDemoDataAsync cancelled for {UserId}", userId);
-            return Problem(statusCode: StatusCodes.Status499ClientClosedRequest, title: "Request cancelled");
+            var err = ApiErrorDto.Create(Origin, "Err_Cancelled", "Request cancelled");
+            return StatusCode(StatusCodes.Status499ClientClosedRequest, err);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while creating demo data for user {UserId}", userId);
-            return Problem(statusCode: StatusCodes.Status500InternalServerError, title: "Unexpected error", detail: ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 }

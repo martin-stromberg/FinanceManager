@@ -48,9 +48,16 @@ public sealed class BudgetPlanningService : IBudgetPlanningService
 
         foreach (var rule in rules)
         {
+            // Category-scoped rules are expanded to purposes in the repository layer.
+            // If a rule still has no purpose id, skip it to avoid invalid planned key.
+            if (rule.BudgetPurposeId == null || rule.BudgetPurposeId == Guid.Empty)
+            {
+                continue;
+            }
+
             foreach (var period in BudgetRuleScheduler.GetDuePeriods(rule, from, to))
             {
-                var key = (PurposeId: rule.BudgetPurposeId, Period: period);
+                var key = (PurposeId: rule.BudgetPurposeId.Value, Period: period);
                 planned.TryGetValue(key, out var cur);
                 planned[key] = cur + rule.Amount;
             }

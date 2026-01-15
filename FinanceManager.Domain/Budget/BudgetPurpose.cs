@@ -52,6 +52,11 @@ public sealed class BudgetPurpose : Entity, IAggregateRoot
     public Guid SourceId { get; private set; }
 
     /// <summary>
+    /// Optional category id this purpose is assigned to.
+    /// </summary>
+    public Guid? BudgetCategoryId { get; private set; }
+
+    /// <summary>
     /// Renames the purpose.
     /// </summary>
     /// <param name="name">New name.</param>
@@ -84,6 +89,16 @@ public sealed class BudgetPurpose : Entity, IAggregateRoot
     }
 
     /// <summary>
+    /// Assigns the purpose to a category or clears the assignment.
+    /// </summary>
+    /// <param name="categoryId">Category id to assign or <c>null</c> to clear.</param>
+    public void SetCategory(Guid? categoryId)
+    {
+        BudgetCategoryId = categoryId == Guid.Empty ? null : categoryId;
+        Touch();
+    }
+
+    /// <summary>
     /// DTO carrying the serializable state of a <see cref="BudgetPurpose"/> for backup purposes.
     /// </summary>
     /// <param name="Id">Budget purpose id.</param>
@@ -92,13 +107,14 @@ public sealed class BudgetPurpose : Entity, IAggregateRoot
     /// <param name="Description">Optional description.</param>
     /// <param name="SourceType">Source type.</param>
     /// <param name="SourceId">Source id.</param>
-    public sealed record BudgetPurposeBackupDto(Guid Id, Guid OwnerUserId, string Name, string? Description, BudgetSourceType SourceType, Guid SourceId);
+    /// <param name="BudgetCategoryId">Optional category id.</param>
+    public sealed record BudgetPurposeBackupDto(Guid Id, Guid OwnerUserId, string Name, string? Description, BudgetSourceType SourceType, Guid SourceId, Guid? BudgetCategoryId);
 
     /// <summary>
     /// Creates a backup DTO representing the serializable state of this budget purpose.
     /// </summary>
     public BudgetPurposeBackupDto ToBackupDto()
-        => new BudgetPurposeBackupDto(Id, OwnerUserId, Name, Description, SourceType, SourceId);
+        => new BudgetPurposeBackupDto(Id, OwnerUserId, Name, Description, SourceType, SourceId, BudgetCategoryId);
 
     /// <summary>
     /// Applies values from the provided backup DTO to this entity.
@@ -111,5 +127,6 @@ public sealed class BudgetPurpose : Entity, IAggregateRoot
         Description = dto.Description;
         SourceType = dto.SourceType;
         SourceId = dto.SourceId;
+        BudgetCategoryId = dto.BudgetCategoryId;
     }
 }

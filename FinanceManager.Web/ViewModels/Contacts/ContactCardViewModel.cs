@@ -246,8 +246,23 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
                 var dto = BuildDto(CardRecord);
                 if (Id == Guid.Empty)
                 {
-                    var created = await ApiClient.Contacts_CreateAsync(new ContactCreateRequest(dto.Name, dto.Type, dto.CategoryId, dto.Description, dto.IsPaymentIntermediary));
-                    if (created != null) { Id = created.Id; Contact = created; CardRecord = await BuildCardRecordAsync(Contact); ClearPendingChanges(); RaiseStateChanged(); RaiseUiActionRequested("Saved", Id.ToString()); }
+                    var parent = TryGetParentLinkFromQuery();
+                    var created = await ApiClient.Contacts_CreateAsync(new ContactCreateRequest(
+                        dto.Name,
+                        dto.Type,
+                        dto.CategoryId,
+                        dto.Description,
+                        dto.IsPaymentIntermediary,
+                        parent));
+                    if (created != null)
+                    {
+                        Id = created.Id;
+                        Contact = created;
+                        CardRecord = await BuildCardRecordAsync(Contact);
+                        ClearPendingChanges();
+                        RaiseStateChanged();
+                        RaiseUiActionRequested("Saved", Id.ToString());
+                    }
                 }
                 else
                 {

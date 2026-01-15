@@ -255,19 +255,14 @@ else
                     {
                         try
                         {
-                            // navigate back to Back URL and include created info so the parent page can pick it up
+                            // navigate back to Back URL
                             var backUri = new Uri(Back);
-                            var qb = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(backUri.Query)
-                                        .ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString());
-                            qb["createdKind"] = kindLower;
-                            qb["createdId"] = savedId;
                             var basePath = backUri.GetLeftPart(UriPartial.Path);
-                            var newQuery = string.Join("&", qb.Select(kvp => Uri.EscapeDataString(kvp.Key) + "=" + Uri.EscapeDataString(kvp.Value)));
-                            NavigationManager.NavigateTo(basePath + (string.IsNullOrWhiteSpace(newQuery) ? string.Empty : "?" + newQuery));
+                            var newQuery = backUri.Query;
+                            NavigationManager.NavigateTo(basePath + newQuery);
                         }
                         catch
                         {
-                            // fallback
                             var url = BuildCardPath(kindLower, SubKind, savedId ?? Id.ToString(), Back);
                             NavigationManager.NavigateTo(url);
                         }
@@ -281,10 +276,26 @@ else
 
                 case "NewRule":
                     {
-                        // payload carries the budgetPurposeId (string). Create a new rule card and come back to this card.
-                        var purposeId = payload ?? string.Empty;
+                        // payload carries either "purpose,{id}", "category,{id}" or legacy: just purposeId.
+                        var payloadText = payload ?? string.Empty;
+                        var ruleParts = payloadText.Split(',', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                        string? prefill = null;
+                        if (ruleParts.Length == 2)
+                        {
+                            var scope = ruleParts[0].Trim().ToLowerInvariant();
+                            var idPart = ruleParts[1].Trim();
+                            if (scope == "purpose") prefill = "purpose:" + idPart;
+                            else if (scope == "category") prefill = "category:" + idPart;
+                        }
+                        else if (!string.IsNullOrWhiteSpace(payloadText))
+                        {
+                            // legacy: payload is purposeId
+                            prefill = payloadText;
+                        }
+
                         var currentUrl = BuildCardPath(Kind, SubKind, Id.ToString(), Back);
-                        var target = $"/card/budget/rules/new?prefill={Uri.EscapeDataString(purposeId)}&back={Uri.EscapeDataString(currentUrl)}";
+                        var target = $"/card/budget/rules/new?prefill={Uri.EscapeDataString(prefill ?? string.Empty)}&back={Uri.EscapeDataString(currentUrl)}";
                         NavigationManager.NavigateTo(target);
                         break;
                     }

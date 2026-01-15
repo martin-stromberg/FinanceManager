@@ -1470,4 +1470,31 @@
   <data name="Ribbon_ThisYear" xml:space="preserve">
     <value>This year</value>
   </data>
+  <data name="General_Title_Budget_Categories" xml:space="preserve">
+    <value>Budget categories</value>
+  </data>
+  <data name="Card_Caption_BudgetCategory_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Card_Caption_BudgetPurpose_BudgetCategoryId" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="Budget_List_Th_Category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="Budget_Ribbon_Categories" xml:space="preserve">
+    <value>Categories</value>
+  </data>
+  <data name="List_Th_Budget" xml:space="preserve">
+    <value>Budget</value>
+  </data>
+  <data name="List_Th_Actual" xml:space="preserve">
+    <value>Actual</value>
+  </data>
+  <data name="List_Th_Delta" xml:space="preserve">
+    <value>Delta</value>
+  </data>
+  <data name="List_Th_PurposeCount" xml:space="preserve">
+    <value>Entries</value>
+  </data>
 </root>

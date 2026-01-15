@@ -1,8 +1,11 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Notifications;
+using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using System.Net.Mime;
 
 namespace FinanceManager.Web.Controllers;
@@ -16,9 +19,12 @@ namespace FinanceManager.Web.Controllers;
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public sealed class NotificationsController : ControllerBase
 {
+    private const string Origin = "API_Notifications";
+
     private readonly INotificationService _notifications;
     private readonly ICurrentUserService _current;
     private readonly ILogger<NotificationsController> _logger;
+    private readonly IStringLocalizer<Controller> _localizer;
 
     /// <summary>
     /// Creates a new instance of <see cref="NotificationsController"/>.
@@ -26,8 +32,18 @@ public sealed class NotificationsController : ControllerBase
     /// <param name="notifications">The notification service used to list and dismiss notifications.</param>
     /// <param name="current">Service that provides information about the currently authenticated user.</param>
     /// <param name="logger">Logger instance for this controller.</param>
-    public NotificationsController(INotificationService notifications, ICurrentUserService current, ILogger<NotificationsController> logger)
-    { _notifications = notifications; _current = current; _logger = logger; }
+    /// <param name="localizer">Localizer for error messages.</param>
+    public NotificationsController(
+        INotificationService notifications,
+        ICurrentUserService current,
+        ILogger<NotificationsController> logger,
+        IStringLocalizer<Controller> localizer)
+    {
+        _notifications = notifications;
+        _current = current;
+        _logger = logger;
+        _localizer = localizer;
+    }
 
     /// <summary>
     /// Lists currently active notifications for the signed-in user (filtered by current UTC time).
@@ -42,8 +58,16 @@ public sealed class NotificationsController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<NotificationDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListAsync(CancellationToken ct)
     {
-        try { var data = await _notifications.ListActiveAsync(_current.UserId, DateTime.UtcNow, ct); return Ok(data); }
-        catch (Exception ex) { _logger.LogError(ex, "List notifications failed"); return Problem("Unexpected error", statusCode: 500); }
+        try
+        {
+            var data = await _notifications.ListActiveAsync(_current.UserId, DateTime.UtcNow, ct);
+            return Ok(data);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "List notifications failed");
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -62,7 +86,15 @@ public sealed class NotificationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DismissAsync(Guid id, CancellationToken ct)
     {
-        try { var ok = await _notifications.DismissAsync(id, _current.UserId, ct); return ok ? NoContent() : NotFound(); }
-        catch (Exception ex) { _logger.LogError(ex, "Dismiss notification {NotificationId} failed", id); return Problem("Unexpected error", statusCode: 500); }
+        try
+        {
+            var ok = await _notifications.DismissAsync(id, _current.UserId, ct);
+            return ok ? NoContent() : NotFound();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Dismiss notification {NotificationId} failed", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 }

@@ -197,6 +197,34 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.ToTable("AttachmentCategories");
                 });
 
+            modelBuilder.Entity("FinanceManager.Domain.Budget.BudgetCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("BudgetCategories");
+                });
+
             modelBuilder.Entity("FinanceManager.Domain.Budget.BudgetOverride", b =>
                 {
                     b.Property<Guid>("Id")
@@ -239,6 +267,9 @@ namespace FinanceManager.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("BudgetCategoryId")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("TEXT");
 
@@ -265,6 +296,8 @@ namespace FinanceManager.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BudgetCategoryId");
+
                     b.HasIndex("OwnerUserId", "Name");
 
                     b.HasIndex("OwnerUserId", "SourceType", "SourceId");
@@ -282,7 +315,10 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("BudgetPurposeId")
+                    b.Property<Guid?>("BudgetCategoryId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("BudgetPurposeId")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedUtc")
@@ -308,7 +344,11 @@ namespace FinanceManager.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BudgetCategoryId", "StartDate");
+
                     b.HasIndex("BudgetPurposeId", "StartDate");
+
+                    b.HasIndex("OwnerUserId", "BudgetCategoryId");
 
                     b.HasIndex("OwnerUserId", "BudgetPurposeId");
 
@@ -1528,6 +1568,14 @@ namespace FinanceManager.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("ReferenceAttachmentId")
                         .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Budget.BudgetPurpose", b =>
+                {
+                    b.HasOne("FinanceManager.Domain.Budget.BudgetCategory", null)
+                        .WithMany()
+                        .HasForeignKey("BudgetCategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Contacts.Contact", b =>

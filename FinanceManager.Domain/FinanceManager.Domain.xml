@@ -591,6 +591,53 @@
             Attachment belongs to a security category.
             </summary>
         </member>
+        <member name="T:FinanceManager.Domain.Budget.BudgetCategory">
+            <summary>
+            A budget category groups multiple budget purposes.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetCategory.#ctor(System.Guid,System.String)">
+            <summary>
+            Creates a new budget category owned by a user.
+            </summary>
+            <param name="ownerUserId">Owner user id. Must not be empty.</param>
+            <param name="name">Name of the category. Must not be null or whitespace.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetCategory.OwnerUserId">
+            <summary>
+            Owner user identifier.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetCategory.Name">
+            <summary>
+            Display name of the category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetCategory.Rename(System.String)">
+            <summary>
+            Renames the category.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Budget.BudgetCategory.BudgetCategoryBackupDto">
+            <summary>
+            DTO carrying the serializable state of a <see cref="T:FinanceManager.Domain.Budget.BudgetCategory"/> for backup purposes.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetCategory.BudgetCategoryBackupDto.#ctor(System.Guid,System.Guid,System.String)">
+            <summary>
+            DTO carrying the serializable state of a <see cref="T:FinanceManager.Domain.Budget.BudgetCategory"/> for backup purposes.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetCategory.ToBackupDto">
+            <summary>
+            Creates a backup DTO representing the serializable state of this budget category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetCategory.AssignBackupDto(FinanceManager.Domain.Budget.BudgetCategory.BudgetCategoryBackupDto)">
+            <summary>
+            Applies values from the provided backup DTO to this entity.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Domain.Budget.BudgetOverride">
             <summary>
             Overrides allow replacing the calculated planned amount for a specific period.
@@ -740,6 +787,11 @@
             The identifier of the source entity.
             </summary>
         </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetPurpose.BudgetCategoryId">
+            <summary>
+            Optional category id this purpose is assigned to.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Domain.Budget.BudgetPurpose.Rename(System.String)">
             <summary>
             Renames the purpose.
@@ -759,6 +811,12 @@
             <param name="sourceType">New source type.</param>
             <param name="sourceId">New source id. Must not be empty.</param>
         </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetPurpose.SetCategory(System.Nullable{System.Guid})">
+            <summary>
+            Assigns the purpose to a category or clears the assignment.
+            </summary>
+            <param name="categoryId">Category id to assign or <c>null</c> to clear.</param>
+        </member>
         <member name="T:FinanceManager.Domain.Budget.BudgetPurpose.BudgetPurposeBackupDto">
             <summary>
             DTO carrying the serializable state of a <see cref="T:FinanceManager.Domain.Budget.BudgetPurpose"/> for backup purposes.
@@ -769,8 +827,9 @@
             <param name="Description">Optional description.</param>
             <param name="SourceType">Source type.</param>
             <param name="SourceId">Source id.</param>
+            <param name="BudgetCategoryId">Optional category id.</param>
         </member>
-        <member name="M:FinanceManager.Domain.Budget.BudgetPurpose.BudgetPurposeBackupDto.#ctor(System.Guid,System.Guid,System.String,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid)">
+        <member name="M:FinanceManager.Domain.Budget.BudgetPurpose.BudgetPurposeBackupDto.#ctor(System.Guid,System.Guid,System.String,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.Nullable{System.Guid})">
             <summary>
             DTO carrying the serializable state of a <see cref="T:FinanceManager.Domain.Budget.BudgetPurpose"/> for backup purposes.
             </summary>
@@ -780,6 +839,7 @@
             <param name="Description">Optional description.</param>
             <param name="SourceType">Source type.</param>
             <param name="SourceId">Source id.</param>
+            <param name="BudgetCategoryId">Optional category id.</param>
         </member>
         <member name="P:FinanceManager.Domain.Budget.BudgetPurpose.BudgetPurposeBackupDto.Id">
             <summary>Budget purpose id.</summary>
@@ -799,6 +859,9 @@
         <member name="P:FinanceManager.Domain.Budget.BudgetPurpose.BudgetPurposeBackupDto.SourceId">
             <summary>Source id.</summary>
         </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetPurpose.BudgetPurposeBackupDto.BudgetCategoryId">
+            <summary>Optional category id.</summary>
+        </member>
         <member name="M:FinanceManager.Domain.Budget.BudgetPurpose.ToBackupDto">
             <summary>
             Creates a backup DTO representing the serializable state of this budget purpose.
@@ -811,16 +874,18 @@
         </member>
         <member name="T:FinanceManager.Domain.Budget.BudgetRule">
             <summary>
-            A budget rule defines when and how much should be expected for a purpose.
+            A budget rule defines when and how much should be expected for a purpose or category.
             Rules are deterministic and do not create persisted planned postings.
             </summary>
         </member>
-        <member name="M:FinanceManager.Domain.Budget.BudgetRule.#ctor(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.DateOnly,System.Nullable{System.DateOnly},System.Nullable{System.Int32})">
+        <member name="M:FinanceManager.Domain.Budget.BudgetRule.#ctor(System.Guid,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.DateOnly,System.Nullable{System.DateOnly},System.Nullable{System.Int32})">
             <summary>
             Creates a new budget rule.
+            Exactly one of <paramref name="budgetPurposeId"/> or <paramref name="budgetCategoryId"/> must be provided.
             </summary>
             <param name="ownerUserId">Owner user id. Must not be empty.</param>
-            <param name="budgetPurposeId">Budget purpose id. Must not be empty.</param>
+            <param name="budgetPurposeId">Optional budget purpose id.</param>
+            <param name="budgetCategoryId">Optional budget category id.</param>
             <param name="amount">Expected amount (positive or negative).</param>
             <param name="interval">Interval definition.</param>
             <param name="startDate">Start date (inclusive).</param>
@@ -834,7 +899,12 @@
         </member>
         <member name="P:FinanceManager.Domain.Budget.BudgetRule.BudgetPurposeId">
             <summary>
-            Budget purpose identifier.
+            Optional budget purpose identifier.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetRule.BudgetCategoryId">
+            <summary>
+            Optional budget category identifier.
             </summary>
         </member>
         <member name="P:FinanceManager.Domain.Budget.BudgetRule.Amount">
@@ -892,19 +962,21 @@
             <param name="Id">Rule id.</param>
             <param name="OwnerUserId">Owner user id.</param>
             <param name="BudgetPurposeId">Budget purpose id.</param>
+            <param name="BudgetCategoryId">Budget category id.</param>
             <param name="Amount">Expected amount.</param>
             <param name="Interval">Interval.</param>
             <param name="CustomIntervalMonths">Custom interval months.</param>
             <param name="StartDate">Start date.</param>
             <param name="EndDate">Optional end date.</param>
         </member>
-        <member name="M:FinanceManager.Domain.Budget.BudgetRule.BudgetRuleBackupDto.#ctor(System.Guid,System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly})">
+        <member name="M:FinanceManager.Domain.Budget.BudgetRule.BudgetRuleBackupDto.#ctor(System.Guid,System.Guid,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly})">
             <summary>
             DTO carrying the serializable state of a <see cref="T:FinanceManager.Domain.Budget.BudgetRule"/> for backup purposes.
             </summary>
             <param name="Id">Rule id.</param>
             <param name="OwnerUserId">Owner user id.</param>
             <param name="BudgetPurposeId">Budget purpose id.</param>
+            <param name="BudgetCategoryId">Budget category id.</param>
             <param name="Amount">Expected amount.</param>
             <param name="Interval">Interval.</param>
             <param name="CustomIntervalMonths">Custom interval months.</param>
@@ -919,6 +991,9 @@
         </member>
         <member name="P:FinanceManager.Domain.Budget.BudgetRule.BudgetRuleBackupDto.BudgetPurposeId">
             <summary>Budget purpose id.</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetRule.BudgetRuleBackupDto.BudgetCategoryId">
+            <summary>Budget category id.</summary>
         </member>
         <member name="P:FinanceManager.Domain.Budget.BudgetRule.BudgetRuleBackupDto.Amount">
             <summary>Expected amount.</summary>

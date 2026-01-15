@@ -1,10 +1,14 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Budget;
+using FinanceManager.Application.Common;
+using FinanceManager.Application.Exceptions;
 using FinanceManager.Shared.Dtos.Budget;
 using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using System.Net.Mime;
 
 namespace FinanceManager.Web.Controllers;
@@ -18,18 +22,26 @@ namespace FinanceManager.Web.Controllers;
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public sealed class BudgetPurposesController : ControllerBase
 {
+    private const string Origin = "API_BudgetPurpose";
+
     private readonly IBudgetPurposeService _svc;
     private readonly ICurrentUserService _current;
     private readonly ILogger<BudgetPurposesController> _logger;
+    private readonly IStringLocalizer<Controller> _localizer;
 
     /// <summary>
     /// Creates a new instance.
     /// </summary>
-    public BudgetPurposesController(IBudgetPurposeService svc, ICurrentUserService current, ILogger<BudgetPurposesController> logger)
+    public BudgetPurposesController(
+        IBudgetPurposeService svc,
+        ICurrentUserService current,
+        ILogger<BudgetPurposesController> logger,
+        IStringLocalizer<Controller> localizer)
     {
         _svc = svc;
         _current = current;
         _logger = logger;
+        _localizer = localizer;
     }
 
     /// <summary>
@@ -49,13 +61,13 @@ public sealed class BudgetPurposesController : ControllerBase
     {
         try
         {
-            var list = await _svc.ListOverviewAsync(_current.UserId, skip, take, sourceType, q, from, to, ct);
+            var list = await _svc.ListOverviewAsync(_current.UserId, skip, take, sourceType, q, from, to, budgetCategoryId: null, ct);
             return Ok(list);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "List budget purposes failed");
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -75,7 +87,7 @@ public sealed class BudgetPurposesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Get budget purpose failed {PurposeId}", id);
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -94,7 +106,7 @@ public sealed class BudgetPurposesController : ControllerBase
 
         try
         {
-            var created = await _svc.CreateAsync(_current.UserId, req.Name, req.SourceType, req.SourceId, req.Description, ct);
+            var created = await _svc.CreateAsync(_current.UserId, req.Name, req.SourceType, req.SourceId, req.Description, req.BudgetCategoryId, ct);
             return Created($"/api/budget/purposes/{created.Id}", created);
         }
         catch (AggregateException ex)
@@ -105,14 +117,22 @@ public sealed class BudgetPurposesController : ControllerBase
             }
             return ValidationProblem(ModelState);
         }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
         catch (ArgumentException ex)
         {
-            return BadRequest(new ApiErrorDto(nameof(ArgumentException), ex.Message));
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (DomainValidationException ex)
+        {
+            return Conflict(ApiErrorFactory.FromDomainValidationException(Origin, ex, _localizer));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Create budget purpose failed");
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -132,7 +152,7 @@ public sealed class BudgetPurposesController : ControllerBase
 
         try
         {
-            var updated = await _svc.UpdateAsync(id, _current.UserId, req.Name, req.SourceType, req.SourceId, req.Description, ct);
+            var updated = await _svc.UpdateAsync(id, _current.UserId, req.Name, req.SourceType, req.SourceId, req.Description, req.BudgetCategoryId, ct);
             return updated == null ? NotFound() : NoContent();
         }
         catch (AggregateException ex)
@@ -143,14 +163,22 @@ public sealed class BudgetPurposesController : ControllerBase
             }
             return ValidationProblem(ModelState);
         }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
         catch (ArgumentException ex)
         {
-            return BadRequest(new ApiErrorDto(nameof(ArgumentException), ex.Message));
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (DomainValidationException ex)
+        {
+            return Conflict(ApiErrorFactory.FromDomainValidationException(Origin, ex, _localizer));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Update budget purpose failed {PurposeId}", id);
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -170,7 +198,7 @@ public sealed class BudgetPurposesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Delete budget purpose failed {PurposeId}", id);
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 }

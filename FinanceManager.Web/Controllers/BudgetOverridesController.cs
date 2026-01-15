@@ -1,10 +1,13 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Budget;
+using FinanceManager.Application.Common;
 using FinanceManager.Shared.Dtos.Budget;
 using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using System.Net.Mime;
 
 namespace FinanceManager.Web.Controllers;
@@ -18,18 +21,26 @@ namespace FinanceManager.Web.Controllers;
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public sealed class BudgetOverridesController : ControllerBase
 {
+    private const string Origin = "API_BudgetOverride";
+
     private readonly IBudgetOverrideService _svc;
     private readonly ICurrentUserService _current;
     private readonly ILogger<BudgetOverridesController> _logger;
+    private readonly IStringLocalizer<Controller> _localizer;
 
     /// <summary>
     /// Creates a new instance.
     /// </summary>
-    public BudgetOverridesController(IBudgetOverrideService svc, ICurrentUserService current, ILogger<BudgetOverridesController> logger)
+    public BudgetOverridesController(
+        IBudgetOverrideService svc,
+        ICurrentUserService current,
+        ILogger<BudgetOverridesController> logger,
+        IStringLocalizer<Controller> localizer)
     {
         _svc = svc;
         _current = current;
         _logger = logger;
+        _localizer = localizer;
     }
 
     /// <summary>
@@ -47,7 +58,7 @@ public sealed class BudgetOverridesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "List budget overrides failed {BudgetPurposeId}", budgetPurposeId);
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -67,7 +78,7 @@ public sealed class BudgetOverridesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Get budget override failed {OverrideId}", id);
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -97,14 +108,18 @@ public sealed class BudgetOverridesController : ControllerBase
             }
             return ValidationProblem(ModelState);
         }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
         catch (ArgumentException ex)
         {
-            return BadRequest(new ApiErrorDto(nameof(ArgumentException), ex.Message));
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Create budget override failed");
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -135,14 +150,18 @@ public sealed class BudgetOverridesController : ControllerBase
             }
             return ValidationProblem(ModelState);
         }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
         catch (ArgumentException ex)
         {
-            return BadRequest(new ApiErrorDto(nameof(ArgumentException), ex.Message));
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Update budget override failed {OverrideId}", id);
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -162,7 +181,7 @@ public sealed class BudgetOverridesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Delete budget override failed {OverrideId}", id);
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 }

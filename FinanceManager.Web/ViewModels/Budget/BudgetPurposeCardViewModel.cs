@@ -52,13 +52,13 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
             if (id == Guid.Empty)
             {
                 var name = !string.IsNullOrWhiteSpace(InitPrefill) ? InitPrefill : string.Empty;
-                Purpose = new BudgetPurposeDto(Guid.Empty, Guid.Empty, name, null, BudgetSourceType.ContactGroup, Guid.Empty);
+                Purpose = new BudgetPurposeDto(Guid.Empty, Guid.Empty, name, null, BudgetSourceType.ContactGroup, Guid.Empty, null);
                 CardRecord = BuildCardRecord(Purpose);
 
                 // No rules for a new (unsaved) purpose.
                 if (EmbeddedList is BudgetRuleListViewModel rulesNew)
                 {
-                    await rulesNew.InitializeAsync(Guid.Empty);
+                    await rulesNew.InitializeForPurposeAsync(Guid.Empty);
                 }
 
                 return;
@@ -76,7 +76,7 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
 
             if (EmbeddedList is BudgetRuleListViewModel rules)
             {
-                await rules.InitializeAsync(id);
+                await rules.InitializeForPurposeAsync(id);
             }
         }
         catch (Exception ex)
@@ -97,7 +97,7 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
         await InitializeAsync(Id);
         if (EmbeddedList is BudgetRuleListViewModel rules)
         {
-            await rules.InitializeAsync(Id);
+            await rules.InitializeForPurposeAsync(Id);
         }
     }
 
@@ -208,11 +208,24 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
             new CardField("Card_Caption_BudgetPurpose_Name", CardFieldKind.Text, text: dto.Name ?? string.Empty, editable: true),
             new CardField("Card_Caption_BudgetPurpose_SourceType", CardFieldKind.Text, text: dto.SourceType.ToString(), editable: true, lookupType: "Enum:BudgetSourceType"),
             new CardField("Card_Caption_BudgetPurpose_SourceId", CardFieldKind.Text, text: string.Empty, editable: true),
+            new CardField(
+                "Card_Caption_BudgetPurpose_BudgetCategoryId",
+                CardFieldKind.Text,
+                text: string.Empty,
+                editable: true,
+                lookupType: "BudgetCategory",
+                lookupField: "Name",
+                valueId: dto.BudgetCategoryId,
+                allowAdd: true,
+                recordCreationNameSuggestion: dto.Name),
             new CardField("Card_Caption_BudgetPurpose_Description", CardFieldKind.Text, text: dto.Description ?? string.Empty, editable: true)
         };
 
         var srcField = fields.First(f => f.LabelKey == "Card_Caption_BudgetPurpose_SourceId");
         srcField.ValueId = dto.SourceId == Guid.Empty ? null : dto.SourceId;
+
+        var catField = fields.First(f => f.LabelKey == "Card_Caption_BudgetPurpose_BudgetCategoryId");
+        catField.ValueId = dto.BudgetCategoryId;
 
         var record = new CardRecord(fields, dto);
         record = ApplyPendingValues(ApplyEnumTranslations(record));
@@ -221,8 +234,43 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
 
         // Populate display name for existing selection when no pending override exists.
         _ = TryResolveAndSetSourceNameAsync(record, dto);
+        _ = TryResolveAndSetCategoryNameAsync(record, dto);
 
         return record;
+    }
+
+    private async Task TryResolveAndSetCategoryNameAsync(CardRecord record, BudgetPurposeDto dto)
+    {
+        try
+        {
+            if (!dto.BudgetCategoryId.HasValue || dto.BudgetCategoryId.Value == Guid.Empty)
+            {
+                return;
+            }
+
+            var catField = record.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_BudgetPurpose_BudgetCategoryId");
+            if (catField == null)
+            {
+                return;
+            }
+
+            if (_pendingFieldValues.ContainsKey(catField.LabelKey))
+            {
+                return;
+            }
+
+            var categories = await ApiClient.Budgets_ListCategoriesAsync(ct: CancellationToken.None);
+            var name = categories?.FirstOrDefault(c => c.Id == dto.BudgetCategoryId.Value)?.Name;
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                catField.Text = name;
+                RaiseStateChanged();
+            }
+        }
+        catch
+        {
+            // Best-effort only.
+        }
     }
 
     private async Task TryResolveAndSetSourceNameAsync(CardRecord record, BudgetPurposeDto dto)
@@ -347,9 +395,12 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
             ?? Purpose?.SourceId
             ?? Guid.Empty;
 
+        var categoryId = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_BudgetPurpose_BudgetCategoryId")?.ValueId
+            ?? Purpose?.BudgetCategoryId;
+
         var desc = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_BudgetPurpose_Description")?.Text;
 
-        return new BudgetPurposeDto(Id, Guid.Empty, name, desc, sourceType, sourceId);
+        return new BudgetPurposeDto(Id, Guid.Empty, name, desc, sourceType, sourceId, categoryId);
     }
 
     /// <inheritdoc />
@@ -453,7 +504,7 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
 
             if (Id == Guid.Empty)
             {
-                var created = await ApiClient.Budgets_CreatePurposeAsync(new BudgetPurposeCreateRequest(dto.Name, dto.SourceType, dto.SourceId, dto.Description));
+                var created = await ApiClient.Budgets_CreatePurposeAsync(new BudgetPurposeCreateRequest(dto.Name, dto.SourceType, dto.SourceId, dto.Description, dto.BudgetCategoryId));
                 Id = created.Id;
                 Purpose = created;
                 CardRecord = BuildCardRecord(created);
@@ -463,14 +514,14 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
                 EmbeddedList ??= new BudgetRuleListViewModel(ServiceProvider);
                 if (EmbeddedList is BudgetRuleListViewModel rulesCreated)
                 {
-                    await rulesCreated.InitializeAsync(Id);
+                    await rulesCreated.InitializeForPurposeAsync(Id);
                 }
 
                 RaiseUiActionRequested("Saved", Id.ToString());
                 return true;
             }
 
-            var updated = await ApiClient.Budgets_UpdatePurposeAsync(Id, new BudgetPurposeUpdateRequest(dto.Name, dto.SourceType, dto.SourceId, dto.Description));
+            var updated = await ApiClient.Budgets_UpdatePurposeAsync(Id, new BudgetPurposeUpdateRequest(dto.Name, dto.SourceType, dto.SourceId, dto.Description, dto.BudgetCategoryId));
             if (updated == null)
             {
                 SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Update failed");
@@ -485,7 +536,7 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
             EmbeddedList ??= new BudgetRuleListViewModel(ServiceProvider);
             if (EmbeddedList is BudgetRuleListViewModel rulesUpdated)
             {
-                await rulesUpdated.InitializeAsync(Id);
+                await rulesUpdated.InitializeForPurposeAsync(Id);
             }
 
             RaiseUiActionRequested("Saved", Id.ToString());

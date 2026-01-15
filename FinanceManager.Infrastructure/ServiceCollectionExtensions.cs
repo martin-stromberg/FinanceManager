@@ -111,12 +111,16 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IStatementFileFactory>(sp => new StatementFileFactory(sp));
         services.AddScoped<IBudgetPlanningService, BudgetPlanningService>();
         services.AddScoped<IBudgetPurposeService, BudgetPurposeService>();
+        services.AddScoped<IBudgetCategoryService, BudgetCategoryService>();
         services.AddScoped<IBudgetRuleService, BudgetRuleService>();
         services.AddScoped<IBudgetOverrideService, BudgetOverrideService>();
         services.AddScoped<IBudgetPlanningRepository, BudgetPlanningRepository>();
 
+        services.AddScoped<FinanceManager.Application.Common.IParentAssignmentService, FinanceManager.Infrastructure.Common.ParentAssignmentService>();
+
         // Register Identity RoleStore for Guid-based roles (RoleManager is registered by AddIdentity in Program.cs)
         services.AddScoped<IRoleStore<IdentityRole<Guid>>, RoleStore<IdentityRole<Guid>, AppDbContext, Guid>>();
+        services.AddScoped<ISecurityReportService, SecurityReportService>();
 
         return services;
     }
