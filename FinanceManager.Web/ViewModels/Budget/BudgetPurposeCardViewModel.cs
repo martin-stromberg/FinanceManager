@@ -426,7 +426,32 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
             new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Id == Guid.Empty, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
         });
 
-        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, manage }) };
+        var linked = new UiRibbonTab(localizer["Ribbon_Group_Linked"], new List<UiRibbonAction>
+        {
+            new UiRibbonAction(
+                "Category",
+                localizer["Ribbon_BudgetCategory"].Value,
+                "<svg><use href='/icons/sprite.svg#tag'/></svg>",
+                UiRibbonItemSize.Small,
+                Purpose?.BudgetCategoryId == null || Purpose?.BudgetCategoryId == Guid.Empty,
+                null,
+                () =>
+                {
+                    var id = Purpose?.BudgetCategoryId;
+                    if (id == null || id == Guid.Empty)
+                    {
+                        return Task.CompletedTask;
+                    }
+
+                    RaiseUiActionRequested("Back", $"/card/budget/categories/{id.Value}");
+                    return Task.CompletedTask;
+                })
+        });
+
+        return new List<UiRibbonRegister>
+        {
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, manage, linked })
+        };
     }
 
     /// <inheritdoc />

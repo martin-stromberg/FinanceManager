@@ -203,6 +203,9 @@ else
             case "OpenBudgetCategories":
                 Nav.NavigateTo("/list/budget/categories");
                 break;
+            case "OpenBudgetReport":
+                Nav.NavigateTo("/reports/budget");
+                break;
             case "Back":
                 // For postings lists, navigate back to card of calling dataset
                 if ((Kind ?? string.Empty).Trim().ToLowerInvariant() == "postings")

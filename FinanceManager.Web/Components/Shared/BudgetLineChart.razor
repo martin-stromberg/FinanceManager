@@ -1,0 +1,196 @@
+@using Microsoft.AspNetCore.Components
+@using System.Globalization
+
+<div class="budget-linechart" role="img" aria-label="@AriaLabel">
+    <svg viewBox="0 0 1000 325" preserveAspectRatio="none" class="budget-linechart-svg">
+        <g class="grid">
+            @for (var i = 0; i <= 4; i++)
+            {
+                var y = 20 + i * 70;
+                <line x1="60" y1="@y" x2="980" y2="@y" />
+            }
+        </g>
+
+        <g class="axes">
+            <line x1="60" y1="@_xAxisY" x2="980" y2="@_xAxisY" />
+            <line x1="60" y1="20" x2="60" y2="300" />
+        </g>
+
+        <g class="ylabels">
+            @for (var i = 0; i <= 4; i++)
+            {
+                var y = 20 + i * 70;
+                @((MarkupString)$"<text x='52' y='{(y + 6).ToString(CultureInfo.InvariantCulture)}' text-anchor='end'>{System.Net.WebUtility.HtmlEncode(_yAxisLabels[i])}</text>")
+            }
+        </g>
+
+        @if (_budgetPoints.Count > 0)
+        {
+            <path class="line budget" d="@_budgetPath" />
+            <path class="line actual" d="@_actualPath" />
+
+            @foreach (var p in _budgetPoints)
+            {
+                var cx = p.X.ToString("F2", CultureInfo.InvariantCulture);
+                var cy = p.Y.ToString("F2", CultureInfo.InvariantCulture);
+                @((MarkupString)$"<circle class='dot budget' cx='{cx}' cy='{cy}' r='5'><title>{System.Net.WebUtility.HtmlEncode(p.Tooltip)}</title></circle>")
+            }
+
+            @foreach (var p in _actualPoints)
+            {
+                var cx = p.X.ToString("F2", CultureInfo.InvariantCulture);
+                var cy = p.Y.ToString("F2", CultureInfo.InvariantCulture);
+                @((MarkupString)$"<circle class='dot actual' cx='{cx}' cy='{cy}' r='5'><title>{System.Net.WebUtility.HtmlEncode(p.Tooltip)}</title></circle>")
+            }
+        }
+
+        <g class="labels">
+            @for (var i = 0; i < _labels.Count; i++)
+            {
+                var xInv = _labels[i].X.ToString("F2", CultureInfo.InvariantCulture);
+                @((MarkupString)$"<text x='{xInv}' y='320' text-anchor='middle'>{System.Net.WebUtility.HtmlEncode(_labels[i].Text)}</text>")
+            }
+        </g>
+    </svg>
+
+    <div class="legend">
+        <span class="legend-item"><span class="swatch budget"></span>@BudgetLabel</span>
+        <span class="legend-item"><span class="swatch actual"></span>@ActualLabel</span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<(DateOnly PeriodStart, decimal Budget, decimal Actual)> Data { get; set; } = Array.Empty<(DateOnly, decimal, decimal)>();
+
+    [Parameter] public string BudgetLabel { get; set; } = "Budget";
+    [Parameter] public string ActualLabel { get; set; } = "Actual";
+    [Parameter] public string AriaLabel { get; set; } = "Budget vs. actual";
+
+    private sealed record LabelPoint(double X, string Text);
+    private sealed record Point(double X, double Y, string Tooltip);
+
+    private readonly List<LabelPoint> _labels = new();
+    private readonly List<Point> _budgetPoints = new();
+    private readonly List<Point> _actualPoints = new();
+    private readonly string[] _yAxisLabels = new string[5];
+    private string _budgetPath = string.Empty;
+    private string _actualPath = string.Empty;
+    private double _xAxisY = 300;
+
+    protected override void OnParametersSet()
+    {
+        Build();
+    }
+
+    private void Build()
+    {
+        _labels.Clear();
+        _budgetPoints.Clear();
+        _actualPoints.Clear();
+        _budgetPath = string.Empty;
+        _actualPath = string.Empty;
+        _xAxisY = 300;
+
+        if (Data == null || Data.Count == 0)
+        {
+            for (var i = 0; i < _yAxisLabels.Length; i++)
+            {
+                _yAxisLabels[i] = string.Empty;
+            }
+            return;
+        }
+
+        var ordered = Data.OrderBy(d => d.PeriodStart).ToList();
+
+        var min = ordered.Min(x => Math.Min(x.Budget, x.Actual));
+        var max = ordered.Max(x => Math.Max(x.Budget, x.Actual));
+        if (min == max)
+        {
+            // Avoid division by zero; create a small range around the value.
+            min -= 1m;
+            max += 1m;
+        }
+
+        var culture = CultureInfo.CurrentUICulture;
+
+        // Prepare Y-axis labels (top -> bottom)
+        for (var i = 0; i <= 4; i++)
+        {
+            var t = 1m - (i / 4m);
+            var val = min + (max - min) * t;
+            _yAxisLabels[i] = val.ToString("N0", culture);
+        }
+
+        const double left = 60;
+        const double right = 980;
+        const double top = 20;
+        const double bottom = 300;
+
+        var width = right - left;
+        var height = bottom - top;
+
+        // Determine X-axis position: if 0 is within range, place axis at 0; otherwise at min.
+        var axisValue = (min <= 0m && max >= 0m) ? 0m : min;
+        _xAxisY = ValueToY(axisValue, min, max, top, bottom);
+
+        const int maxLabels = 12;
+        var labelStep = ordered.Count <= maxLabels ? 1 : (int)Math.Ceiling(ordered.Count / (double)maxLabels);
+
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            var x = left + (ordered.Count == 1 ? (right - left) / 2 : ((right - left) * i / (ordered.Count - 1)));
+
+            var bY = ValueToY(ordered[i].Budget, min, max, top, bottom);
+            var aY = ValueToY(ordered[i].Actual, min, max, top, bottom);
+
+            var label = ordered[i].PeriodStart.ToDateTime(TimeOnly.MinValue).ToString("MMM yy", culture);
+            var ttBudget = string.Format(culture, "{0}: {1:N2}", label, ordered[i].Budget);
+            var ttActual = string.Format(culture, "{0}: {1:N2}", label, ordered[i].Actual);
+
+            if (i % labelStep == 0 || i == ordered.Count - 1)
+            {
+                _labels.Add(new LabelPoint(x, label));
+            }
+
+            _budgetPoints.Add(new Point(x, bY, ttBudget));
+            _actualPoints.Add(new Point(x, aY, ttActual));
+        }
+
+        _budgetPath = BuildPath(_budgetPoints);
+        _actualPath = BuildPath(_actualPoints);
+    }
+
+    private static double ValueToY(decimal value, decimal min, decimal max, double top, double bottom)
+    {
+        var range = max - min;
+        if (range == 0m)
+        {
+            return bottom;
+        }
+
+        var t = (double)((value - min) / range);
+        return bottom - t * (bottom - top);
+    }
+
+    private static string BuildPath(IReadOnlyList<Point> pts)
+    {
+        if (pts.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        static string Inv(double v) => v.ToString("F2", CultureInfo.InvariantCulture);
+
+        var parts = new List<string>(pts.Count + 1)
+        {
+            $"M {Inv(pts[0].X)},{Inv(pts[0].Y)}"
+        };
+
+        for (var i = 1; i < pts.Count; i++)
+        {
+            parts.Add($"L {Inv(pts[i].X)},{Inv(pts[i].Y)}");
+        }
+
+        return string.Join(' ', parts);
+    }
+}

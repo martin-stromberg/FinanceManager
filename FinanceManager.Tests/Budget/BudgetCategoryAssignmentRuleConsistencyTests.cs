@@ -34,8 +34,8 @@ public sealed class BudgetCategoryAssignmentRuleConsistencyTests
         var ownerId = Guid.NewGuid();
         await using var db = await CreateDbAsync(ownerId);
 
-        var catSvc = new BudgetCategoryService(db);
         var purposeSvc = new BudgetPurposeService(db);
+        var catSvc = new BudgetCategoryService(db, purposeSvc);
         var ruleSvc = new BudgetRuleService(db);
 
         var category = await catSvc.CreateAsync(ownerId, "Cat", CancellationToken.None);
@@ -56,8 +56,8 @@ public sealed class BudgetCategoryAssignmentRuleConsistencyTests
         var ownerId = Guid.NewGuid();
         await using var db = await CreateDbAsync(ownerId);
 
-        var catSvc = new BudgetCategoryService(db);
         var purposeSvc = new BudgetPurposeService(db);
+        var catSvc = new BudgetCategoryService(db, purposeSvc);
         var ruleSvc = new BudgetRuleService(db);
 
         var category = await catSvc.CreateAsync(ownerId, "Cat", CancellationToken.None);
@@ -76,8 +76,8 @@ public sealed class BudgetCategoryAssignmentRuleConsistencyTests
         var ownerId = Guid.NewGuid();
         await using var db = await CreateDbAsync(ownerId);
 
-        var catSvc = new BudgetCategoryService(db);
         var purposeSvc = new BudgetPurposeService(db);
+        var catSvc = new BudgetCategoryService(db, purposeSvc);
         var ruleSvc = new BudgetRuleService(db);
 
         var category = await catSvc.CreateAsync(ownerId, "Cat", CancellationToken.None);
@@ -113,8 +113,8 @@ public sealed class BudgetCategoryAssignmentRuleConsistencyTests
         var ownerId = Guid.NewGuid();
         await using var db = await CreateDbAsync(ownerId);
 
-        var catSvc = new BudgetCategoryService(db);
         var purposeSvc = new BudgetPurposeService(db);
+        var catSvc = new BudgetCategoryService(db, purposeSvc);
         var ruleSvc = new BudgetRuleService(db);
 
         var category = await catSvc.CreateAsync(ownerId, "Cat", CancellationToken.None);

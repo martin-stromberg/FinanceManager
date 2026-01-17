@@ -667,6 +667,21 @@
             Deletes a budget purpose.
             </summary>
         </member>
+        <member name="T:FinanceManager.Web.Controllers.BudgetReportsController">
+            <summary>
+            Provides budget reporting endpoints.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.#ctor(FinanceManager.Application.Budget.IBudgetReportService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetReportsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.GetAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportRequest,System.Threading.CancellationToken)">
+            <summary>
+            Generates a budget report for the current user.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.Controllers.BudgetRulesController">
             <summary>
             Manages budget rules for the current user.
@@ -3986,6 +4001,161 @@
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
             <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportInterval">
+            <summary>
+            Interval of the aggregated budget report.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportInterval.Month">
+            <summary>
+            Monthly periods.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportInterval.Quarter">
+            <summary>
+            Quarterly periods.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportInterval.Year">
+            <summary>
+            Yearly periods.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis">
+            <summary>
+            Determines which date field is used for postings aggregation.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.BookingDate">
+            <summary>
+            Use the booking date.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate">
+            <summary>
+            Use the valuta/value date.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportSettings">
+            <summary>
+            Settings controlling the budget report rendering.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportSettings.#ctor(System.DateOnly,System.Int32,FinanceManager.Web.ViewModels.Budget.BudgetReportInterval,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean,FinanceManager.Web.ViewModels.Budget.BudgetReportValueScope,FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis)">
+            <summary>
+            Settings controlling the budget report rendering.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportSettings.Default">
+            <summary>
+            Default settings: 12 months ending at end of current month.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportValueScope">
+            <summary>
+            Determines which time scope is used for the category table values.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportValueScope.TotalRange">
+            <summary>
+            Use values for the whole selected report range.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportValueScope.LastInterval">
+            <summary>
+            Use values for the last calculated interval bucket.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel">
+            <summary>
+            View model for the budget report page.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="services">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.Settings">
+            <summary>
+            Current report settings.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.SettingsVisible">
+            <summary>
+            Whether the settings overlay is visible.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.Periods">
+            <summary>
+            Period rows for the chart and monthly table.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.Categories">
+            <summary>
+            Category rows for the detail table.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.InitializeAsync">
+            <summary>
+            Initializes the report and loads data.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.LoadAsync">
+            <summary>
+            Loads report data based on the current <see cref="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.Settings"/>.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.ShowSettings">
+            <summary>
+            Shows the settings overlay.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.HideSettings">
+            <summary>
+            Hides the settings overlay.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.ApplySettingsAsync(FinanceManager.Web.ViewModels.Budget.BudgetReportSettings)">
+            <summary>
+            Applies new settings and reloads the report.
+            </summary>
+            <param name="settings">New settings.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportPeriodRow">
+            <summary>
+            Period row for the report.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportPeriodRow.#ctor(System.DateOnly,System.Decimal,System.Decimal,System.Decimal,System.Decimal)">
+            <summary>
+            Period row for the report.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportPurposeRow">
+            <summary>
+            Purpose row inside a category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportPurposeRow.#ctor(System.Guid,System.String,System.Decimal,System.Decimal,System.Decimal,System.Decimal)">
+            <summary>
+            Purpose row inside a category.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportCategoryRow">
+            <summary>
+            Category row including nested purposes.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportCategoryRow.#ctor(System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRowKind,System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.Collections.Generic.IReadOnlyList{FinanceManager.Web.ViewModels.Budget.BudgetReportPurposeRow})">
+            <summary>
+            Category row including nested purposes.
+            </summary>
         </member>
         <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel">
             <summary>

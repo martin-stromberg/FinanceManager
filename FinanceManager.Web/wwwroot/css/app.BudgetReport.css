@@ -1,0 +1,37 @@
+/* =====================================================
+   app.BudgetReport.css - Styles for BudgetReport page
+   ===================================================== */
+
+.budget-report {
+    padding: 0 0.75rem;
+}
+
+.budget-report-sheet {
+    background: #ffffff;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .05);
+    padding: 1.5rem;
+    border-radius: var(--radius);
+}
+
+.budget-report-title {
+    margin: 0 0 1rem 0;
+}
+
+.budget-report-section-title {
+    margin: 1.25rem 0 0.5rem 0;
+}
+
+.budget-report-chart {
+    height: 220px;
+    border: 1px dashed #bbb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 1rem 0;
+    border-radius: var(--radius);
+}
+
+.budget-report-table {
+    width: 100%;
+}

@@ -32,7 +32,8 @@ public sealed class BudgetCategoryServiceTests
         var ownerId = Guid.NewGuid();
         await using var db = await CreateDbAsync(ownerId);
 
-        var svc = new BudgetCategoryService(db);
+        var purposeSvc = new BudgetPurposeService(db);
+        var svc = new BudgetCategoryService(db, purposeSvc);
 
         var created = await svc.CreateAsync(ownerId, "Food", CancellationToken.None);
         Assert.NotEqual(Guid.Empty, created.Id);
@@ -65,8 +66,8 @@ public sealed class BudgetCategoryServiceTests
         var ownerId = Guid.NewGuid();
         await using var db = await CreateDbAsync(ownerId);
 
-        var catSvc = new BudgetCategoryService(db);
         var purposeSvc = new BudgetPurposeService(db);
+        var catSvc = new BudgetCategoryService(db, purposeSvc);
 
         var cat = await catSvc.CreateAsync(ownerId, "C", CancellationToken.None);
         var purpose = await purposeSvc.CreateAsync(ownerId, "P", Shared.Dtos.Budget.BudgetSourceType.ContactGroup, Guid.NewGuid(), null, cat.Id, CancellationToken.None);

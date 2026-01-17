@@ -183,9 +183,18 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
             })
         });
 
+        var reports = new UiRibbonTab(localizer["Ribbon_Group_Reports"], new List<UiRibbonAction>
+        {
+            new UiRibbonAction("BudgetReport", localizer["Budget_Ribbon_Report"], "<svg><use href='/icons/sprite.svg#chart'/></svg>", UiRibbonItemSize.Small, false, null, () =>
+            {
+                RaiseUiActionRequested("OpenBudgetReport");
+                return Task.CompletedTask;
+            })
+        });
+
         return new List<UiRibbonRegister>
         {
-            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { tab, analysis })
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { tab, analysis, reports })
         };
     }
 }

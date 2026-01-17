@@ -340,6 +340,11 @@
             Deletes a budget category. Returns false when not found.
             </summary>
         </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_GetReportAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportRequest,System.Threading.CancellationToken)">
+            <summary>
+            Generates a budget report for the current user.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Shared.ApiClient.Budgets_ListPurposesAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <summary>
             Lists budget purposes for the current user.
@@ -2295,6 +2300,131 @@
         <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetPurposeUpdateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Nullable{System.Guid})">
             <summary>
             Request for updating a budget purpose.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis">
+            <summary>
+            Determines which date field is used for postings aggregation.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.BookingDate">
+            <summary>
+            Use the booking date.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.ValutaDate">
+            <summary>
+            Use the valuta/value date.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetReportRequest">
+            <summary>
+            Request for generating a budget report.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetReportRequest.#ctor(System.DateOnly,System.Int32,FinanceManager.Shared.Dtos.Budget.BudgetReportInterval,System.Boolean,System.Boolean,System.Boolean,System.Boolean,FinanceManager.Shared.Dtos.Budget.BudgetReportValueScope,System.Boolean,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis)">
+            <summary>
+            Request for generating a budget report.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetReportValueScope">
+            <summary>
+            Determines which time scope is used for the category table values.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetReportValueScope.TotalRange">
+            <summary>
+            Use values for the whole selected report range.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetReportValueScope.LastInterval">
+            <summary>
+            Use values for the last calculated interval bucket.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetReportInterval">
+            <summary>
+            Interval of the aggregated budget report.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetReportInterval.Month">
+            <summary>
+            Monthly periods.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetReportInterval.Quarter">
+            <summary>
+            Quarterly periods.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetReportInterval.Year">
+            <summary>
+            Yearly periods.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetReportDto">
+            <summary>
+            Budget report response payload.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetReportDto.#ctor(System.DateOnly,System.DateOnly,FinanceManager.Shared.Dtos.Budget.BudgetReportInterval,System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Budget.BudgetReportPeriodDto},System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryDto})">
+            <summary>
+            Budget report response payload.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetReportPeriodDto">
+            <summary>
+            One period row of the budget report.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetReportPeriodDto.#ctor(System.DateOnly,System.DateOnly,System.Decimal,System.Decimal,System.Decimal,System.Decimal)">
+            <summary>
+            One period row of the budget report.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRowKind">
+            <summary>
+            Identifies the semantic kind of a category row in the budget report.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRowKind.Data">
+            <summary>
+            Normal category row.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRowKind.Sum">
+            <summary>
+            Aggregated sum of all budget categories.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRowKind.Unbudgeted">
+            <summary>
+            Postings that are not covered by any budget purpose.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRowKind.Result">
+            <summary>
+            Final result (sum + unbudgeted).
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryDto">
+            <summary>
+            Category section of the report.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryDto.#ctor(System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRowKind,System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Budget.BudgetReportPurposeDto})">
+            <summary>
+            Category section of the report.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetReportPurposeDto">
+            <summary>
+            Purpose row inside a category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetReportPurposeDto.#ctor(System.Guid,System.String,System.Decimal,System.Decimal,System.Decimal,System.Decimal)">
+            <summary>
+            Purpose row inside a category.
             </summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest">
@@ -5294,7 +5424,7 @@
             </summary>
             <param name="id">Identifier of the savings plan to archive.</param>
             <param name="ct">Cancellation token.</param>
-            <returns><c>true</c> when archived; <c>false</c> when the plan was not found.</returns>
+            <returns><c>true</c> when archived, <c>false</c> when the plan was not found.</returns>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.SavingsPlans_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>
@@ -5594,6 +5724,11 @@
         <member name="M:FinanceManager.Shared.IApiClient.Budgets_DeleteCategoryAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>
             Deletes a budget category. Returns false when not found.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_GetReportAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportRequest,System.Threading.CancellationToken)">
+            <summary>
+            Gets the budget report for a given period.
             </summary>
         </member>
     </members>

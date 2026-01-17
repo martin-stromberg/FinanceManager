@@ -7,6 +7,13 @@
   <symbol id="chevron-right" viewBox="0 0 24 24"><path d="M10 6l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="chevron-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="level-up" viewBox="0 0 24 24"><path d="M7 17V9a1 1 0 011-1h8m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="prev" viewBox="0 0 24 24"><path d="M11 6l-6 6 6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6l-6 6 6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="next" viewBox="0 0 24 24"><path d="M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 6l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+
+  <!-- Common UI -->
+  <symbol id="list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 6h.01M4 12h.01M4 18h.01" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></symbol>
+  <symbol id="calendar" viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M4 7h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M5 6h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="chart" viewBox="0 0 24 24"><path d="M4 19h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6 16l4-5 4 3 4-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 16v3M10 11v8M14 14v5M18 7v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
 
   <!-- Actions -->
   <symbol id="save" viewBox="0 0 24 24"><path d="M5 5h11l3 3v11a1 1 0 01-1 1H6a1 1 0 01-1-1V5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 5v6h6V5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>

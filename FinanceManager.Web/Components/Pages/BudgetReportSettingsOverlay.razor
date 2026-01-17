@@ -1,0 +1,167 @@
+@using System.Globalization
+@using FinanceManager.Web.ViewModels.Budget
+@inject Microsoft.Extensions.Localization.IStringLocalizer<Pages>? Localizer
+
+<div>
+    <div style="display:grid;grid-template-columns: 1fr 1fr;gap:.75rem;">
+        <div>
+            <label>@(Localizer?["Budget_Report_Settings_AsOf"].Value ?? "As of")</label>
+            <input type="month" class="form-control" value="@_asOfMonth" @onchange="OnAsOfMonthChanged" />
+        </div>
+        <div>
+            <label>@(Localizer?["Budget_Report_Settings_Months"].Value ?? "Months")</label>
+            <input type="number" min="1" max="60" class="form-control" @bind="_months" />
+        </div>
+        <div>
+            <label>@(Localizer?["Budget_Report_Settings_Interval"].Value ?? "Interval")</label>
+            <select class="form-control" @bind="_interval">
+                <option value="@BudgetReportInterval.Month">@(Localizer?["Budget_Report_Interval_Month"].Value ?? "Month")</option>
+                <option value="@BudgetReportInterval.Quarter">@(Localizer?["Budget_Report_Interval_Quarter"].Value ?? "Quarter")</option>
+                <option value="@BudgetReportInterval.Year">@(Localizer?["Budget_Report_Interval_Year"].Value ?? "Year")</option>
+            </select>
+        </div>
+        <div>
+            <label>@(Localizer?["Budget_Report_Settings_DateBasis"].Value ?? "Date")</label>
+            <select class="form-control" @bind="_dateBasis">
+                <option value="@BudgetReportDateBasis.BookingDate">@(Localizer?["Budget_Report_DateBasis_Booking"].Value ?? "Booking date")</option>
+                <option value="@BudgetReportDateBasis.ValutaDate">@(Localizer?["Budget_Report_DateBasis_Valuta"].Value ?? "Valuta date")</option>
+            </select>
+        </div>
+    </div>
+
+    <hr />
+
+    <div>
+        <label><input type="checkbox" @bind="_showTitle" /> @(Localizer?["Budget_Report_Settings_ShowTitle"].Value ?? "Title")</label><br />
+        <label><input type="checkbox" @bind="_showLineChart" /> @(Localizer?["Budget_Report_Settings_ShowLineChart"].Value ?? "Line chart")</label><br />
+        <label><input type="checkbox" @bind="_showMonthlyTable" /> @(Localizer?["Budget_Report_Settings_ShowMonthlyTable"].Value ?? "Monthly table")</label><br />
+        <label><input type="checkbox" @bind="_showDetailsTable" /> @(Localizer?["Budget_Report_Settings_ShowDetailsTable"].Value ?? "Categories & purposes")</label>
+    </div>
+
+    <hr />
+
+    <div>
+        <strong>@(Localizer?["Budget_Report_Settings_Tables"].Value ?? "Tables")</strong><br />
+        <label><input type="checkbox" @bind="_showPurposeRows" /> @(Localizer?["Budget_Report_Settings_ShowPurposes"].Value ?? "Show purposes")</label><br />
+        <label><input type="checkbox" @bind="_showPeriodSumRow" /> @(Localizer?["Budget_Report_Settings_ShowPeriodSum"].Value ?? "Period table sum row")</label><br />
+        <label><input type="checkbox" @bind="_showCategorySumRow" /> @(Localizer?["Budget_Report_Settings_ShowCategorySum"].Value ?? "Category table sum row")</label><br />
+
+        <div style="margin-top:.5rem;">
+            <label>@(Localizer?["Budget_Report_Settings_CategoryValues"].Value ?? "Category values")</label>
+            <select class="form-control" @bind="_categoryValueScope">
+                <option value="@BudgetReportValueScope.LastInterval">@(Localizer?["Budget_Report_ValueScope_LastInterval"].Value ?? "Last interval")</option>
+                <option value="@BudgetReportValueScope.TotalRange">@(Localizer?["Budget_Report_ValueScope_TotalRange"].Value ?? "Total range")</option>
+            </select>
+        </div>
+    </div>
+
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
+        <button class="btn btn-primary" @onclick="ApplyAsync">@(Localizer?["Btn_Apply"].Value ?? "Apply")</button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public BudgetReportSettings Settings { get; set; } = BudgetReportSettings.Default;
+    [Parameter] public Func<BudgetReportSettings, Task>? OnApply { get; set; }
+
+    private string _asOfMonth = string.Empty;
+    private int _months;
+    private BudgetReportInterval _interval;
+    private bool _showTitle;
+    private bool _showLineChart;
+    private bool _showMonthlyTable;
+    private bool _showDetailsTable;
+
+    private bool _showPurposeRows;
+    private bool _showPeriodSumRow;
+    private bool _showCategorySumRow;
+    private BudgetReportValueScope _categoryValueScope;
+    private BudgetReportDateBasis _dateBasis;
+
+    protected override void OnParametersSet()
+    {
+        var asOf = Settings.AsOfDate;
+        _asOfMonth = $"{asOf.Year:D4}-{asOf.Month:D2}";
+
+        _months = Settings.Months;
+        _interval = Settings.Interval;
+        _showTitle = Settings.ShowTitle;
+        _showLineChart = Settings.ShowLineChart;
+        _showMonthlyTable = Settings.ShowMonthlyTable;
+        _showDetailsTable = Settings.ShowDetailsTable;
+
+        _showPurposeRows = Settings.ShowPurposeRows;
+        _showPeriodSumRow = Settings.ShowPeriodSumRow;
+        _showCategorySumRow = Settings.ShowCategorySumRow;
+        _categoryValueScope = Settings.CategoryValueScope;
+        _dateBasis = Settings.DateBasis;
+    }
+
+    private void OnAsOfMonthChanged(ChangeEventArgs e)
+    {
+        _asOfMonth = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private async Task ApplyAsync()
+    {
+        if (OnApply == null)
+        {
+            return;
+        }
+
+        if (!TryParseMonth(_asOfMonth, out var asOfMonthEnd))
+        {
+            return;
+        }
+
+        var next = new BudgetReportSettings(
+            AsOfDate: asOfMonthEnd,
+            Months: Math.Clamp(_months, 1, 60),
+            Interval: _interval,
+            ShowTitle: _showTitle,
+            ShowLineChart: _showLineChart,
+            ShowMonthlyTable: _showMonthlyTable,
+            ShowDetailsTable: _showDetailsTable,
+            ShowPurposeRows: _showPurposeRows,
+            ShowPeriodSumRow: _showPeriodSumRow,
+            ShowCategorySumRow: _showCategorySumRow,
+            CategoryValueScope: _categoryValueScope,
+            DateBasis: _dateBasis);
+
+        await OnApply(next);
+    }
+
+    private static bool TryParseMonth(string value, out DateOnly monthEnd)
+    {
+        monthEnd = default;
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var parts = value.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length != 2)
+        {
+            return false;
+        }
+
+        if (!int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out var year))
+        {
+            return false;
+        }
+
+        if (!int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out var month))
+        {
+            return false;
+        }
+
+        if (month is < 1 or > 12)
+        {
+            return false;
+        }
+
+        monthEnd = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
+        return true;
+    }
+}

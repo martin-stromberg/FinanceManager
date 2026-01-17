@@ -1052,7 +1052,20 @@
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.CountAsync(System.Guid,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.ListOverviewAsync(System.Guid,System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Nullable{System.Guid},System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.ListOverviewAsync(System.Guid,System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Nullable{System.Guid},System.Threading.CancellationToken,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Budget.BudgetReportService">
+            <summary>
+            Implementation of <see cref="T:FinanceManager.Application.Budget.IBudgetReportService"/> backed by existing budget overview services.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportService.#ctor(FinanceManager.Application.Budget.IBudgetPurposeService,FinanceManager.Application.Budget.IBudgetCategoryService,FinanceManager.Infrastructure.AppDbContext)">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportService.GetAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetReportRequest,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:FinanceManager.Infrastructure.Budget.BudgetRuleService">

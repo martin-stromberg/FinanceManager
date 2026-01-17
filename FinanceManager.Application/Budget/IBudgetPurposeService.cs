@@ -50,5 +50,6 @@ public interface IBudgetPurposeService
         DateOnly? from,
         DateOnly? to,
         Guid? budgetCategoryId,
-        CancellationToken ct);
+        CancellationToken ct,
+        BudgetReportDateBasis dateBasis = BudgetReportDateBasis.BookingDate);
 }

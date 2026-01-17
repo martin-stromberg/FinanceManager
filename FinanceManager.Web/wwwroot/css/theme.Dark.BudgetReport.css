@@ -1,0 +1,33 @@
+/* =====================================================
+   theme.Dark.BudgetReport.css - Dark theme styles for BudgetReport
+   ===================================================== */
+
+.budget-report-sheet {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 28px #000a, 0 0 0 1px #000 inset;
+}
+
+.budget-report-title,
+.budget-report-section-title {
+    color: var(--text);
+}
+
+.budget-report-chart {
+    border: 1px dashed var(--border);
+    background: #141519;
+    color: var(--text);
+}
+
+/* Make the report tables blend into dark theme */
+.budget-report-table {
+    border-color: var(--border);
+}
+
+.budget-report-table thead th {
+    border-bottom: 1px solid var(--border);
+}
+
+.budget-report-table tbody td {
+    border-top: 1px solid var(--border);
+}

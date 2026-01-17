@@ -461,7 +461,7 @@ public interface IApiClient
     /// </summary>
     /// <param name="id">Identifier of the savings plan to archive.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns><c>true</c> when archived; <c>false</c> when the plan was not found.</returns>
+    /// <returns><c>true</c> when archived, <c>false</c> when the plan was not found.</returns>
     Task<bool> SavingsPlans_ArchiveAsync(Guid id, CancellationToken ct = default);
 
     /// <summary>
@@ -729,4 +729,9 @@ public interface IApiClient
     /// Deletes a budget category. Returns false when not found.
     /// </summary>
     Task<bool> Budgets_DeleteCategoryAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets the budget report for a given period.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetReportDto> Budgets_GetReportAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportRequest request, CancellationToken ct = default);
 }

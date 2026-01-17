@@ -1497,4 +1497,121 @@
   <data name="List_Th_PurposeCount" xml:space="preserve">
     <value>Entries</value>
   </data>
+  <data name="Ribbon_BudgetCategory" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="Budget_Ribbon_Report" xml:space="preserve">
+    <value>Report</value>
+  </data>
+  <data name="Budget_Report_Title" xml:space="preserve">
+    <value>Budget report</value>
+  </data>
+  <data name="Budget_Report_Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Budget_Report_Chart_Placeholder" xml:space="preserve">
+    <value>Line chart (Budget vs. Actual)</value>
+  </data>
+  <data name="Budget_Report_MonthlyTable" xml:space="preserve">
+    <value>Monthly totals</value>
+  </data>
+  <data name="Budget_Report_DetailsTable" xml:space="preserve">
+    <value>Categories &amp; purposes</value>
+  </data>
+  <data name="Budget_Report_Th_Period" xml:space="preserve">
+    <value>Period</value>
+  </data>
+  <data name="Budget_Report_Th_DeltaPct" xml:space="preserve">
+    <value>Delta %</value>
+  </data>
+  <data name="List_Sum" xml:space="preserve">
+    <value>Sum</value>
+  </data>
+  <data name="Budget_Report_Surplus" xml:space="preserve">
+    <value>Surplus</value>
+  </data>
+  <data name="Budget_Report_Deficit" xml:space="preserve">
+    <value>Deficit</value>
+  </data>
+  <data name="Budget_Report_Settings_ShowTitle" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="Budget_Report_Settings_ShowLineChart" xml:space="preserve">
+    <value>Line chart</value>
+  </data>
+  <data name="Budget_Report_Settings_ShowMonthlyTable" xml:space="preserve">
+    <value>Monthly table</value>
+  </data>
+  <data name="Budget_Report_Settings_ShowDetailsTable" xml:space="preserve">
+    <value>Category table</value>
+  </data>
+  <data name="Budget_Report_Settings_Tables" xml:space="preserve">
+    <value>Tables</value>
+  </data>
+  <data name="Budget_Report_Settings_ShowPurposes" xml:space="preserve">
+    <value>Purposes</value>
+  </data>
+  <data name="Budget_Report_Settings_ShowPeriodSum" xml:space="preserve">
+    <value>Monthly sum</value>
+  </data>
+  <data name="Budget_Report_Settings_ShowCategorySum" xml:space="preserve">
+    <value>Category sum</value>
+  </data>
+  <data name="Btn_Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="Budget_Report_Interval_Month" xml:space="preserve">
+    <value>Monthly</value>
+  </data>
+  <data name="Budget_Report_Interval_Quarter" xml:space="preserve">
+    <value>Quarter</value>
+  </data>
+  <data name="Budget_Report_Interval_Year" xml:space="preserve">
+    <value>Yearly</value>
+  </data>
+  <data name="Budget_Report_Settings_Interval" xml:space="preserve">
+    <value>Interval</value>
+  </data>
+  <data name="Budget_Report_Settings_AsOf" xml:space="preserve">
+    <value>as of</value>
+  </data>
+  <data name="Budget_Report_Settings_Months" xml:space="preserve">
+    <value>Months</value>
+  </data>
+  <data name="Btn_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Budget_Report_Settings_CategoryValues" xml:space="preserve">
+    <value>Category values</value>
+  </data>
+  <data name="Budget_Report_ValueScope_LastInterval" xml:space="preserve">
+    <value>Last interval</value>
+  </data>
+  <data name="Budget_Report_ValueScope_TotalRange" xml:space="preserve">
+    <value>Total range</value>
+  </data>
+  <data name="Budget_Report_Unbudgeted" xml:space="preserve">
+    <value>Unbudgeted</value>
+  </data>
+  <data name="Budget_Report_Result" xml:space="preserve">
+    <value>Result</value>
+  </data>
+  <data name="Ribbon_NextMonth" xml:space="preserve">
+    <value>Next month</value>
+  </data>
+  <data name="Ribbon_NextYear" xml:space="preserve">
+    <value>Next year</value>
+  </data>
+  <data name="Ribbon_Group_Reports" xml:space="preserve">
+    <value>Reports</value>
+  </data>
+  <data name="Budget_Report_Settings_DateBasis" xml:space="preserve">
+    <value>Date basis</value>
+  </data>
+  <data name="Budget_Report_DateBasis_Booking" xml:space="preserve">
+    <value>Booking date</value>
+  </data>
+  <data name="Budget_Report_DateBasis_Valuta" xml:space="preserve">
+    <value>Valuta date</value>
+  </data>
 </root>
