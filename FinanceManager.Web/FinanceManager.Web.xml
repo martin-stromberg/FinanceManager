@@ -2060,7 +2060,7 @@
             User management (read-only placeholder). Forwards calls to services and catches unexpected exceptions.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.UsersController.#ctor(FinanceManager.Application.Users.IUserReadService,DemoDataService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.UsersController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
+        <member name="M:FinanceManager.Web.Controllers.UsersController.#ctor(FinanceManager.Application.Users.IUserReadService,FinanceManager.Application.Demo.IDemoDataService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.UsersController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Web.Controllers.UsersController"/> class.
             </summary>

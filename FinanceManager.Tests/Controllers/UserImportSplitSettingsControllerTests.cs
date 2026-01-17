@@ -36,6 +36,7 @@ public sealed class UserImportSplitSettingsControllerTests
         var current = new TestCurrentUser { UserId = db.Users.Single().Id };
 
         var services = new ServiceCollection();
+        services.AddLogging();
         services.AddLocalization();
         var sp = services.BuildServiceProvider();
         var localizer = sp.GetRequiredService<IStringLocalizer<FinanceManager.Web.Controllers.Controller>>();

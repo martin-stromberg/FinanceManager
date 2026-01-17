@@ -3,6 +3,7 @@ using FinanceManager.Web.Controllers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +19,7 @@ public sealed class BackgroundTasksControllerTests
         var userB = Guid.NewGuid();
 
         var services = new ServiceCollection();
+        services.AddLogging();
         services.AddLocalization();
         var sp = services.BuildServiceProvider();
         var localizer = sp.GetRequiredService<IStringLocalizer<FinanceManager.Web.Controllers.Controller>>();

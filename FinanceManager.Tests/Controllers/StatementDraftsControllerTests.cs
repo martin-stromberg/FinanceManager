@@ -45,6 +45,7 @@ public sealed class StatementDraftsControllerTests
         services.AddScoped<IAttachmentService, AttachmentService>();
         services.AddSingleton(db);
         services.AddLogging();
+        services.AddLocalization();
         services.AddScoped<IStatementFileParser, ING_CSV_StatementFileParser>();
         services.AddScoped<IStatementFileParser, ING_PDF_StatementFileParser>();
         services.AddScoped<IStatementFileParser, Barclays_PDF_StatementFileParser>();

@@ -22,7 +22,7 @@ public sealed class UsersController : ControllerBase
     private const string Origin = "API_Users";
 
     private readonly IUserReadService _userReadService;
-    private readonly DemoDataService _demoDataService;
+    private readonly IDemoDataService _demoDataService;
     private readonly ILogger<UsersController> _logger;
     private readonly IStringLocalizer<Controller> _localizer;
 
@@ -33,7 +33,7 @@ public sealed class UsersController : ControllerBase
     /// <param name="demoDataService">Service responsible for creating demo data for a user.</param>
     /// <param name="logger">Logger instance for this controller.</param>
     /// <param name="localizer">Localizer for error messages.</param>
-    public UsersController(IUserReadService userReadService, DemoDataService demoDataService, ILogger<UsersController> logger, IStringLocalizer<Controller> localizer)
+    public UsersController(IUserReadService userReadService, IDemoDataService demoDataService, ILogger<UsersController> logger, IStringLocalizer<Controller> localizer)
     {
         _userReadService = userReadService;
         _demoDataService = demoDataService;
@@ -106,8 +106,7 @@ public sealed class UsersController : ControllerBase
 
         try
         {
-            // DemoDataService currently provides a single method. Keep request shape, ignore createPostings for now.
-            await _demoDataService.CreateDemoDataForUserAsync(userId, ct);
+            await _demoDataService.CreateDemoDataAsync(userId, req.createPostings, ct);
             return Accepted();
         }
         catch (OperationCanceledException)

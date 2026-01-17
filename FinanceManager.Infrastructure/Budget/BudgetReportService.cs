@@ -104,10 +104,44 @@ public sealed class BudgetReportService : IBudgetReportService
         CancellationToken ct)
     {
         var purposeLookup = purposes
+            .Where(p => p.BudgetCategoryId.HasValue)
             .GroupBy(p => p.BudgetCategoryId)
             .ToDictionary(g => g.Key, g => g.ToList());
 
         var result = new List<BudgetReportCategoryDto>(categories.Count + 1);
+
+        // Add a synthetic row for purposes that are not assigned to any category.
+        // (This keeps the details table useful even when users don't use categories.)
+        var unassignedPurposes = purposes.Where(p => p.BudgetCategoryId == null).ToList();
+        if (unassignedPurposes.Count > 0)
+        {
+            var purposeRows = includePurposeRows
+                ? unassignedPurposes
+                    .OrderBy(p => p.Name)
+                    .Select(p =>
+                    {
+                        var delta = p.BudgetSum - p.ActualSum;
+                        var pct = p.BudgetSum == 0m ? 0m : (delta / p.BudgetSum) * 100m;
+                        return new BudgetReportPurposeDto(p.Id, p.Name, p.BudgetSum, p.ActualSum, delta, pct);
+                    })
+                    .ToList()
+                : new List<BudgetReportPurposeDto>();
+
+            var budget = unassignedPurposes.Sum(p => p.BudgetSum);
+            var actual = unassignedPurposes.Sum(p => p.ActualSum);
+            var deltaCat = budget - actual;
+            var pctCat = budget == 0m ? 0m : (deltaCat / budget) * 100m;
+
+            result.Add(new BudgetReportCategoryDto(
+                Id: Guid.Empty,
+                Name: "(Unassigned)",
+                Kind: BudgetReportCategoryRowKind.Data,
+                Budget: budget,
+                Actual: actual,
+                Delta: deltaCat,
+                DeltaPct: pctCat,
+                Purposes: purposeRows));
+        }
 
         foreach (var cat in categories.OrderBy(c => c.Name))
         {
@@ -180,7 +214,9 @@ public sealed class BudgetReportService : IBudgetReportService
                 .Where(p => p.SourceType == BudgetSourceType.Contact && groupContactIds.Contains(p.SourceId))
                 .Sum(p => p.ActualSum);
 
-            purposeActualTotal += coveredContactActuals;
+            // Group purposes already include the member contact actuals.
+            // If there are also contact purposes for covered contacts, they would double-count actuals.
+            purposeActualTotal -= coveredContactActuals;
         }
 
         // Self-contact overlap with savings plans: if a self-contact purpose exists, savings plan purpose actuals must be ignored
@@ -208,6 +244,12 @@ public sealed class BudgetReportService : IBudgetReportService
         // Prevent duplicates if this method is called with already augmented data.
         // (Shouldn't happen, but keeps output stable.)
         if (result.Any(r => r.Id == Guid.Empty && (r.Name == "Sum" || r.Name == "Unbudgeted" || r.Name == "Result")))
+        {
+            return result;
+        }
+
+        // If there are no data rows (no categories and no unassigned purposes), keep the output empty.
+        if (result.Count == 0)
         {
             return result;
         }

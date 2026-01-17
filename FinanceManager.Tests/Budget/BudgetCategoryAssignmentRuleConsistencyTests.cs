@@ -2,6 +2,7 @@ using FinanceManager.Domain.Budget;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Budget;
+using FinanceManager.Application.Exceptions;
 using FinanceManager.Shared.Dtos.Budget;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -44,10 +45,12 @@ public sealed class BudgetCategoryAssignmentRuleConsistencyTests
         await ruleSvc.CreateAsync(ownerId, purpose.Id, 10m, BudgetIntervalType.Monthly, null, new DateOnly(2026, 1, 1), null, CancellationToken.None);
         await ruleSvc.CreateForCategoryAsync(ownerId, category.Id, 5m, BudgetIntervalType.Monthly, null, new DateOnly(2026, 1, 1), null, CancellationToken.None);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        var ex = await Assert.ThrowsAsync<DomainValidationException>(async () =>
         {
             await purposeSvc.UpdateAsync(purpose.Id, ownerId, "Purpose", BudgetSourceType.ContactGroup, purpose.SourceId, null, category.Id, CancellationToken.None);
         });
+
+        Assert.Equal("Err_Conflict_CategoryAndPurposeRules", ex.Code);
     }
 
     [Fact]
