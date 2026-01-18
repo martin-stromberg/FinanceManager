@@ -740,5 +740,10 @@ public interface IApiClient
     /// <summary>
     /// Lists postings that are not covered by any budget purpose for the given range.
     /// </summary>
-    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Postings.PostingServiceDto>> Budgets_GetUnbudgetedPostingsAsync(DateTime? from, DateTime? to, FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis dateBasis, CancellationToken ct = default);
+    /// <param name="from">Start of the range (inclusive).</param>
+    /// <param name="to">End of the range (inclusive).</param>
+    /// <param name="dateBasis">Whether booking date or valuta date is used for filtering/sorting.</param>
+    /// <param name="kind">Optional discriminator to split unbudgeted postings (e.g. "selfCostNeutral" or "remaining").</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Postings.PostingServiceDto>> Budgets_GetUnbudgetedPostingsAsync(DateTime? from, DateTime? to, FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis dateBasis, string? kind = null, CancellationToken ct = default);
 }

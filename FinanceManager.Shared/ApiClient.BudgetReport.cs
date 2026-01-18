@@ -20,11 +20,12 @@ public partial class ApiClient
     /// <summary>
     /// Lists postings that are not covered by any budget purpose for the given range.
     /// </summary>
-    public async Task<IReadOnlyList<PostingServiceDto>> Budgets_GetUnbudgetedPostingsAsync(DateTime? from, DateTime? to, BudgetReportDateBasis dateBasis, CancellationToken ct = default)
+    public async Task<IReadOnlyList<PostingServiceDto>> Budgets_GetUnbudgetedPostingsAsync(DateTime? from, DateTime? to, BudgetReportDateBasis dateBasis, string? kind = null, CancellationToken ct = default)
     {
         var url = $"/api/budget/report/unbudgeted?dateBasis={(int)dateBasis}";
         if (from.HasValue) url += $"&from={from.Value:O}";
         if (to.HasValue) url += $"&to={to.Value:O}";
+        if (!string.IsNullOrWhiteSpace(kind)) url += $"&kind={Uri.EscapeDataString(kind)}";
         var resp = await _http.GetAsync(url, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<PostingServiceDto>>(cancellationToken: ct) ?? Array.Empty<PostingServiceDto>();

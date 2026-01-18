@@ -687,7 +687,7 @@
             Generates a budget report for the current user.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.GetUnbudgetedAsync(System.Nullable{System.DateTime},System.Nullable{System.DateTime},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.GetUnbudgetedAsync(System.Nullable{System.DateTime},System.Nullable{System.DateTime},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.String,System.Threading.CancellationToken)">
             <summary>
             Lists postings that are not covered by any budget purpose for the given date range.
             </summary>
@@ -4087,6 +4087,11 @@
             Creates a new instance.
             </summary>
             <param name="services">Service provider.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.ShowUnbudgetedSelfCostNeutralPostingsAsync">
+            <summary>
+            Opens the postings overlay for cost-neutral self-contact postings that are not covered by any purpose.
+            </summary>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.Settings">
             <summary>

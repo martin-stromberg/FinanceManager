@@ -30,6 +30,48 @@ public sealed class BudgetReportViewModel : BaseViewModel
     }
 
     /// <summary>
+    /// Opens the postings overlay for cost-neutral self-contact postings that are not covered by any purpose.
+    /// </summary>
+    public async Task ShowUnbudgetedSelfCostNeutralPostingsAsync()
+    {
+        if (!CheckAuthentication())
+        {
+            return;
+        }
+
+        PurposePostingsVisible = true;
+        PurposePostingsKind = PostingsOverlayKind.Unbudgeted;
+        PurposePostingsPurpose = null;
+        PurposePostings = Array.Empty<PostingServiceDto>();
+        PurposePostingsLoading = true;
+        RaiseStateChanged();
+
+        try
+        {
+            var (fromDt, toDt) = GetOverlayDateRange();
+
+            var basis = Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
+                ? FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.ValutaDate
+                : FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.BookingDate;
+
+            var rows = await _api.Budgets_GetUnbudgetedPostingsAsync(fromDt, toDt, basis, kind: "selfCostNeutral", ct: CancellationToken.None);
+            PurposePostings = Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
+                ? rows.OrderByDescending(p => p.ValutaDate).ToList()
+                : rows.OrderByDescending(p => p.BookingDate).ToList();
+        }
+        catch (Exception ex)
+        {
+            SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
+            PurposePostings = Array.Empty<PostingServiceDto>();
+        }
+        finally
+        {
+            PurposePostingsLoading = false;
+            RaiseStateChanged();
+        }
+    }
+
+    /// <summary>
     /// Current report settings.
     /// </summary>
     public BudgetReportSettings Settings { get; private set; } = BudgetReportSettings.Default;
@@ -101,9 +143,28 @@ public sealed class BudgetReportViewModel : BaseViewModel
                         {
                             BudgetReportCategoryRowKind.Sum => _localizer?["List_Sum"].Value ?? c.Name,
                             BudgetReportCategoryRowKind.Unbudgeted => _localizer?["Budget_Report_Unbudgeted"].Value ?? c.Name,
+                            BudgetReportCategoryRowKind.UnbudgetedSelfCostNeutral => _localizer?["Budget_Report_Unbudgeted_SelfCostNeutral"].Value ?? c.Name,
                             BudgetReportCategoryRowKind.Result => _localizer?["Budget_Report_Result"].Value ?? c.Name,
                             _ => c.Name
                         };
+
+                        var purposes = c.Purposes.Select(pp =>
+                        {
+                            var purposeName = pp.Name;
+                            if (c.Kind == BudgetReportCategoryRowKind.Unbudgeted)
+                            {
+                                if (pp.Name == "Unbudgeted (Self, cost-neutral)")
+                                {
+                                    purposeName = _localizer?["Budget_Report_Unbudgeted_SelfCostNeutral"].Value ?? pp.Name;
+                                }
+                                else if (pp.Name == "Unbudgeted")
+                                {
+                                    purposeName = _localizer?["Budget_Report_Unbudgeted_General"].Value ?? pp.Name;
+                                }
+                            }
+
+                            return new BudgetReportPurposeRow(pp.Id, purposeName, pp.Budget, pp.Actual, pp.Delta, pp.DeltaPct, pp.SourceType, pp.SourceId);
+                        }).ToList();
 
                         return new BudgetReportCategoryRow(
                             c.Id,
@@ -113,7 +174,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
                             c.Actual,
                             c.Delta,
                             c.DeltaPct,
-                            c.Purposes.Select(pp => new BudgetReportPurposeRow(pp.Id, pp.Name, pp.Budget, pp.Actual, pp.Delta, pp.DeltaPct, pp.SourceType, pp.SourceId)).ToList());
+                            purposes);
                     })
                     .ToList()
                 : Array.Empty<BudgetReportCategoryRow>();
@@ -508,10 +569,10 @@ public sealed class BudgetReportViewModel : BaseViewModel
                 ? FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.ValutaDate
                 : FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.BookingDate;
 
-            var rows = await _api.Budgets_GetUnbudgetedPostingsAsync(fromDt, toDt, basis, CancellationToken.None);
-            PurposePostings = Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
-                ? rows.OrderByDescending(p => p.ValutaDate).ToList()
-                : rows.OrderByDescending(p => p.BookingDate).ToList();
+            var rows = await _api.Budgets_GetUnbudgetedPostingsAsync(fromDt, toDt, basis, kind: "remaining", ct: CancellationToken.None);
+            PurposePostings = (Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
+                ? rows.OrderByDescending(p => p.ValutaDate).ThenBy(p => p.RecipientName).ThenBy(p => p.Description)
+                : rows.OrderByDescending(p => p.BookingDate).ThenBy(p => p.RecipientName).ThenBy(p => p.Description)).ToList();
         }
         catch (Exception ex)
         {

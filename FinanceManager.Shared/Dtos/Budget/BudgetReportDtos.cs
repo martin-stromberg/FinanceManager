@@ -110,9 +110,14 @@ public enum BudgetReportCategoryRowKind
     Unbudgeted = 2,
 
     /// <summary>
+    /// Cost-neutral unbudgeted postings of the self contact (typically mirrored group postings).
+    /// </summary>
+    UnbudgetedSelfCostNeutral = 3,
+
+    /// <summary>
     /// Final result (sum + unbudgeted).
     /// </summary>
-    Result = 3
+    Result = 4
 }
 
 /// <summary>

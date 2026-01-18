@@ -57,7 +57,7 @@ public sealed class BudgetReportService : IBudgetReportService
 
             var budget = purposes.Sum(p => p.BudgetSum);
             var actual = purposes.Sum(p => p.ActualSum);
-            var delta = budget - actual;
+            var delta = actual - budget;
             var pct = budget == 0m ? 0m : (delta / budget) * 100m;
 
             periodDtos.Add(new BudgetReportPeriodDto(from, to, budget, actual, delta, pct));
@@ -142,7 +142,7 @@ public sealed class BudgetReportService : IBudgetReportService
                     .OrderBy(p => p.Name)
                     .Select(p =>
                     {
-                        var delta = p.BudgetSum - p.ActualSum;
+                        var delta = p.ActualSum - p.BudgetSum;
                         var pct = p.BudgetSum == 0m ? 0m : (delta / p.BudgetSum) * 100m;
                         return new BudgetReportPurposeDto(p.Id, p.Name, p.BudgetSum, p.ActualSum, delta, pct, p.SourceType, p.SourceId);
                     })
@@ -151,7 +151,7 @@ public sealed class BudgetReportService : IBudgetReportService
 
             var budget = unassignedPurposes.Sum(p => p.BudgetSum);
             var actual = unassignedPurposes.Sum(p => p.ActualSum);
-            var deltaCat = budget - actual;
+            var deltaCat = actual - budget;
             var pctCat = budget == 0m ? 0m : (deltaCat / budget) * 100m;
 
             result.Add(new BudgetReportCategoryDto(
@@ -175,14 +175,14 @@ public sealed class BudgetReportService : IBudgetReportService
                     .OrderBy(p => p.Name)
                     .Select(p =>
                     {
-                        var delta = p.BudgetSum - p.ActualSum;
+                        var delta = p.ActualSum - p.BudgetSum;
                         var pct = p.BudgetSum == 0m ? 0m : (delta / p.BudgetSum) * 100m;
                         return new BudgetReportPurposeDto(p.Id, p.Name, p.BudgetSum, p.ActualSum, delta, pct, p.SourceType, p.SourceId);
                     })
                     .ToList()
                 : new List<BudgetReportPurposeDto>();
 
-            var deltaCat = cat.Budget - cat.Actual;
+            var deltaCat = cat.Actual - cat.Budget;
             var pctCat = cat.Budget == 0m ? 0m : (deltaCat / cat.Budget) * 100m;
 
             result.Add(new BudgetReportCategoryDto(
@@ -215,6 +215,12 @@ public sealed class BudgetReportService : IBudgetReportService
 
         var actualTotal = await actualTotalQuery
             .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
+
+        // Split unbudgeted into (a) cost-neutral self-contact postings and (b) remaining unbudgeted.
+        // Cost-neutral is approximated as self-contact postings that are part of a posting group (mirrored entries)
+        // which should not affect net totals.
+        decimal unbudgetedSelfCostNeutral = 0m;
+        decimal unbudgetedRemaining = 0m;
 
         // Start with all purpose actuals (this is the "computed sum" mentioned in the UI).
         var purposeActualTotal = purposes.Sum(p => p.ActualSum);
@@ -262,8 +268,120 @@ public sealed class BudgetReportService : IBudgetReportService
             purposeActualTotal -= savingsPlanActuals;
         }
 
-        // Unbudgeted = all contact postings - computed (purpose) sum.
         var unbudgetedActual = actualTotal - purposeActualTotal;
+
+        if (unbudgetedActual != 0m)
+        {
+            var selfContact = await _db.Contacts.AsNoTracking()
+                .Where(c => c.OwnerUserId == ownerUserId && c.Type == FinanceManager.Shared.Dtos.Contacts.ContactType.Self)
+                .Select(c => (Guid?)c.Id)
+                .FirstOrDefaultAsync(ct);
+
+            if (selfContact.HasValue)
+            {
+                // Determine unbudgeted self-contact postings that are part of a group (mirrored).
+                // We recompute the covered-id logic for the date window in order to isolate the unbudgeted subset.
+                var coveredPostingIds = new HashSet<Guid>();
+
+                var coveredContacts = purposes
+                    .Where(p => p.SourceType == BudgetSourceType.Contact)
+                    .Select(p => p.SourceId)
+                    .Distinct()
+                    .ToList();
+
+                var coveredSavingsPlans = purposes
+                    .Where(p => p.SourceType == BudgetSourceType.SavingsPlan)
+                    .Select(p => p.SourceId)
+                    .Distinct()
+                    .ToList();
+
+                var coveredGroupIds = purposes
+                    .Where(p => p.SourceType == BudgetSourceType.ContactGroup)
+                    .Select(p => p.SourceId)
+                    .Distinct()
+                    .ToList();
+
+                if (coveredGroupIds.Count > 0)
+                {
+                    var groupContactIds = await _db.Contacts.AsNoTracking()
+                        .Where(c => c.OwnerUserId == ownerUserId && c.CategoryId != null && coveredGroupIds.Contains(c.CategoryId.Value))
+                        .Select(c => c.Id)
+                        .Distinct()
+                        .ToListAsync(ct);
+
+                    coveredContacts.AddRange(groupContactIds);
+                    coveredContacts = coveredContacts.Distinct().ToList();
+                }
+
+                // Overlap rule: if self-contact is budget-covered, savings plans are considered covered via self contact.
+                if (coveredContacts.Contains(selfContact.Value))
+                {
+                    coveredSavingsPlans.Clear();
+                }
+
+                var coveredQuery = _db.Postings.AsNoTracking().Where(p => true);
+                coveredQuery = dateBasis == BudgetReportDateBasis.ValutaDate
+                    ? coveredQuery.Where(p => p.ValutaDate != null && p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
+                    : coveredQuery.Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt);
+
+                if (coveredContacts.Count > 0)
+                {
+                    var ids = await coveredQuery
+                        .Where(p => p.ContactId != null && coveredContacts.Contains(p.ContactId.Value))
+                        .Select(p => p.Id)
+                        .ToListAsync(ct);
+
+                    foreach (var id in ids)
+                    {
+                        coveredPostingIds.Add(id);
+                    }
+                }
+
+                if (coveredSavingsPlans.Count > 0)
+                {
+                    var ids = await coveredQuery
+                        .Where(p => p.SavingsPlanId != null && coveredSavingsPlans.Contains(p.SavingsPlanId.Value))
+                        .Select(p => p.Id)
+                        .ToListAsync(ct);
+
+                    foreach (var id in ids)
+                    {
+                        coveredPostingIds.Add(id);
+                    }
+
+                    var coveredSavingsGroupIds = await coveredQuery
+                        .Where(p => p.SavingsPlanId != null && coveredSavingsPlans.Contains(p.SavingsPlanId.Value) && p.GroupId != Guid.Empty)
+                        .Select(p => p.GroupId)
+                        .Distinct()
+                        .ToListAsync(ct);
+
+                    if (coveredSavingsGroupIds.Count > 0)
+                    {
+                        var mirroredContactPostingIds = await coveredQuery
+                            .Where(p => p.ContactId != null && p.SavingsPlanId == null && coveredSavingsGroupIds.Contains(p.GroupId))
+                            .Select(p => p.Id)
+                            .ToListAsync(ct);
+
+                        foreach (var id in mirroredContactPostingIds)
+                        {
+                            coveredPostingIds.Add(id);
+                        }
+                    }
+                }
+
+                var unbudgetedSelfCostNeutralQuery = _db.Postings.AsNoTracking()
+                    .Where(p => p.Kind == PostingKind.Contact && p.ContactId == selfContact.Value && p.SavingsPlanId == null && p.GroupId != Guid.Empty)
+                    .Where(p => !coveredPostingIds.Contains(p.Id));
+
+                unbudgetedSelfCostNeutralQuery = dateBasis == BudgetReportDateBasis.ValutaDate
+                    ? unbudgetedSelfCostNeutralQuery.Where(p => p.ValutaDate != null && p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
+                    : unbudgetedSelfCostNeutralQuery.Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt);
+
+                unbudgetedSelfCostNeutral = await unbudgetedSelfCostNeutralQuery.SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
+            }
+
+            unbudgetedRemaining = unbudgetedActual - unbudgetedSelfCostNeutral;
+        }
 
         // Prevent duplicates if this method is called with already augmented data.
         // (Shouldn't happen, but keeps output stable.)
@@ -295,23 +413,53 @@ public sealed class BudgetReportService : IBudgetReportService
             DeltaPct: sumPct,
             Purposes: new List<BudgetReportPurposeDto>()));
 
-        // 2) Unbudgeted bookings row.
-        // This row has no budget, so Delta equals Actual.
-        if (unbudgetedActual != 0m)
+        // 2) Unbudgeted section (grouped like categories/purposes):
+        // Parent row shows the total unbudgeted amount; child rows split into remaining vs cost-neutral self.
+        // These rows have no budget, so Delta equals Actual.
+        if (unbudgetedRemaining != 0m || unbudgetedSelfCostNeutral != 0m)
         {
+            var unbudgetedPurposes = new List<BudgetReportPurposeDto>(capacity: 2);
+            if (unbudgetedRemaining != 0m)
+            {
+                unbudgetedPurposes.Add(new BudgetReportPurposeDto(
+                    Id: Guid.Empty,
+                    Name: "Unbudgeted",
+                    Budget: 0m,
+                    Actual: unbudgetedRemaining,
+                    Delta: 0m,
+                    DeltaPct: 0m,
+                    SourceType: BudgetSourceType.Contact,
+                    SourceId: Guid.Empty));
+            }
+
+            if (unbudgetedSelfCostNeutral != 0m)
+            {
+                unbudgetedPurposes.Add(new BudgetReportPurposeDto(
+                    Id: Guid.Empty,
+                    Name: "Unbudgeted (Self, cost-neutral)",
+                    Budget: 0m,
+                    Actual: unbudgetedSelfCostNeutral,
+                    Delta: 0m,
+                    DeltaPct: 0m,
+                    SourceType: BudgetSourceType.Contact,
+                    SourceId: Guid.Empty));
+            }
+
+            var unbudgetedTotal = unbudgetedRemaining + unbudgetedSelfCostNeutral;
+
             result.Add(new BudgetReportCategoryDto(
                 Id: Guid.Empty,
                 Name: "Unbudgeted",
                 Kind: BudgetReportCategoryRowKind.Unbudgeted,
                 Budget: 0m,
-                Actual: unbudgetedActual,
+                Actual: unbudgetedTotal,
                 Delta: 0m,
                 DeltaPct: 0m,
-                Purposes: new List<BudgetReportPurposeDto>()));
+                Purposes: unbudgetedPurposes));
         }
 
         // 3) Result row: sum + unbudgeted.
-        var totalActual = sumActual + unbudgetedActual;
+        var totalActual = sumActual + unbudgetedRemaining + unbudgetedSelfCostNeutral;
         var totalDelta = totalActual - sumBudget;
         var totalPct = sumBudget == 0m ? 0m : (totalDelta / sumBudget) * 100m;
 

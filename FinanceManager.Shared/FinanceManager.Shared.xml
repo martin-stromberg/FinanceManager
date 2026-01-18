@@ -353,7 +353,7 @@
             Generates a budget report for the current user.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.ApiClient.Budgets_GetUnbudgetedPostingsAsync(System.Nullable{System.DateTime},System.Nullable{System.DateTime},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_GetUnbudgetedPostingsAsync(System.Nullable{System.DateTime},System.Nullable{System.DateTime},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.String,System.Threading.CancellationToken)">
             <summary>
             Lists postings that are not covered by any budget purpose for the given range.
             </summary>
@@ -2421,6 +2421,11 @@
         <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRowKind.Unbudgeted">
             <summary>
             Postings that are not covered by any budget purpose.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRowKind.UnbudgetedSelfCostNeutral">
+            <summary>
+            Cost-neutral unbudgeted postings of the self contact (typically mirrored group postings).
             </summary>
         </member>
         <member name="F:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRowKind.Result">
@@ -5762,10 +5767,15 @@
             Gets the budget report for a given period.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.IApiClient.Budgets_GetUnbudgetedPostingsAsync(System.Nullable{System.DateTime},System.Nullable{System.DateTime},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_GetUnbudgetedPostingsAsync(System.Nullable{System.DateTime},System.Nullable{System.DateTime},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.String,System.Threading.CancellationToken)">
             <summary>
             Lists postings that are not covered by any budget purpose for the given range.
             </summary>
+            <param name="from">Start of the range (inclusive).</param>
+            <param name="to">End of the range (inclusive).</param>
+            <param name="dateBasis">Whether booking date or valuta date is used for filtering/sorting.</param>
+            <param name="kind">Optional discriminator to split unbudgeted postings (e.g. "selfCostNeutral" or "remaining").</param>
+            <param name="ct">Cancellation token.</param>
         </member>
     </members>
 </doc>

@@ -128,6 +128,7 @@ public sealed class BudgetReportsController : ControllerBase
         [FromQuery] DateTime? from = null,
         [FromQuery] DateTime? to = null,
         [FromQuery] BudgetReportDateBasis dateBasis = BudgetReportDateBasis.BookingDate,
+        [FromQuery] string? kind = null,
         CancellationToken ct = default)
     {
         try
@@ -253,6 +254,36 @@ public sealed class BudgetReportsController : ControllerBase
             allContactQuery = dateBasis == BudgetReportDateBasis.ValutaDate
                 ? allContactQuery.Where(p => p.ValutaDate != null && p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
                 : allContactQuery.Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt);
+
+            // Optional split for UI: cost-neutral self-contact mirror postings vs remaining.
+            // "selfCostNeutral": self-contact, grouped postings (GroupId != empty)
+            // "remaining": everything else
+            if (!string.IsNullOrWhiteSpace(kind))
+            {
+                var selfId = await _db.Contacts.AsNoTracking()
+                    .Where(c => c.OwnerUserId == ownerUserId && c.Type == FinanceManager.Shared.Dtos.Contacts.ContactType.Self)
+                    .Select(c => (Guid?)c.Id)
+                    .FirstOrDefaultAsync(ct);
+
+                if (kind.Equals("selfCostNeutral", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (selfId.HasValue)
+                    {
+                        allContactQuery = allContactQuery.Where(p => p.ContactId == selfId.Value && p.GroupId != Guid.Empty);
+                    }
+                    else
+                    {
+                        allContactQuery = allContactQuery.Where(_ => false);
+                    }
+                }
+                else if (kind.Equals("remaining", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (selfId.HasValue)
+                    {
+                        allContactQuery = allContactQuery.Where(p => p.ContactId != selfId.Value || p.GroupId == Guid.Empty);
+                    }
+                }
+            }
 
             var unbudgetedPostings = await allContactQuery
                 .Where(p => !coveredPostingIds.Contains(p.Id))
