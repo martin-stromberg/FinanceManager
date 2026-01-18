@@ -340,10 +340,31 @@
             Deletes a budget category. Returns false when not found.
             </summary>
         </member>
+        <member name="M:FinanceManager.Shared.ApiClient.BudgetPurposes_CreateAsync(FinanceManager.Shared.Dtos.Budget.BudgetPurposeCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a budget purpose for the current user.
+            </summary>
+            <param name="request">Create request.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The created budget purpose.</returns>
+        </member>
         <member name="M:FinanceManager.Shared.ApiClient.Budgets_GetReportAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportRequest,System.Threading.CancellationToken)">
             <summary>
             Generates a budget report for the current user.
             </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_GetUnbudgetedPostingsAsync(System.Nullable{System.DateTime},System.Nullable{System.DateTime},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
+            <summary>
+            Lists postings that are not covered by any budget purpose for the given range.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.BudgetRules_CreateAsync(FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a budget rule for the current user.
+            </summary>
+            <param name="request">Create request.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The created budget rule.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Budgets_ListPurposesAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <summary>
@@ -2422,9 +2443,19 @@
             Purpose row inside a category.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetReportPurposeDto.#ctor(System.Guid,System.String,System.Decimal,System.Decimal,System.Decimal,System.Decimal)">
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetReportPurposeDto.#ctor(System.Guid,System.String,System.Decimal,System.Decimal,System.Decimal,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid)">
             <summary>
             Purpose row inside a category.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetReportExportRequest">
+            <summary>
+            Request for exporting all postings of a budget report across the full report range.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetReportExportRequest.#ctor(System.DateOnly,System.Int32,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis)">
+            <summary>
+            Request for exporting all postings of a budget report across the full report range.
             </summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest">
@@ -5729,6 +5760,11 @@
         <member name="M:FinanceManager.Shared.IApiClient.Budgets_GetReportAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportRequest,System.Threading.CancellationToken)">
             <summary>
             Gets the budget report for a given period.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_GetUnbudgetedPostingsAsync(System.Nullable{System.DateTime},System.Nullable{System.DateTime},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
+            <summary>
+            Lists postings that are not covered by any budget purpose for the given range.
             </summary>
         </member>
     </members>

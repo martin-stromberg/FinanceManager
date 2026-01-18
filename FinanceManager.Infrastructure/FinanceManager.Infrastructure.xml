@@ -1055,6 +1055,20 @@
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.ListOverviewAsync(System.Guid,System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Nullable{System.Guid},System.Threading.CancellationToken,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis)">
             <inheritdoc />
         </member>
+        <member name="T:FinanceManager.Infrastructure.Budget.BudgetReportExportService">
+            <summary>
+            Generates an XLSX export containing all postings in a budget report range, grouped into worksheets by posting kind,
+            and enriched with the budget purpose assignment.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportExportService.#ctor(FinanceManager.Infrastructure.AppDbContext,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Budget.BudgetReportExportService})">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportExportService.GenerateXlsxAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetReportExportRequest,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Budget.BudgetReportService">
             <summary>
             Implementation of <see cref="T:FinanceManager.Application.Budget.IBudgetReportService"/> backed by existing budget overview services.

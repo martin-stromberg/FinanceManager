@@ -601,6 +601,20 @@
             When <paramref name="from"/> or <paramref name="to"/> are <c>null</c>, the service may apply a default period.
             </summary>
         </member>
+        <member name="T:FinanceManager.Application.Budget.IBudgetReportExportService">
+            <summary>
+            Service to export all postings for a budget report over its full report range.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetReportExportService.GenerateXlsxAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetReportExportRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates an XLSX export for the given request.
+            </summary>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="request">Export request.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Content type, file name and readable stream (caller owns stream).</returns>
+        </member>
         <member name="T:FinanceManager.Application.Budget.IBudgetReportService">
             <summary>
             Service for generating budget reports.

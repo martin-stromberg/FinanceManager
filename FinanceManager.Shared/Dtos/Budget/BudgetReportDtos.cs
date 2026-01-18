@@ -137,4 +137,6 @@ public sealed record BudgetReportPurposeDto(
     decimal Budget,
     decimal Actual,
     decimal Delta,
-    decimal DeltaPct);
+    decimal DeltaPct,
+    BudgetSourceType SourceType,
+    Guid SourceId);

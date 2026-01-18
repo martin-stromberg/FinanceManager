@@ -1,5 +1,7 @@
 using FinanceManager.Shared;
 using FinanceManager.Shared.Dtos.Budget;
+using FinanceManager.Shared.Dtos.Contacts;
+using FinanceManager.Shared.Dtos.SavingsPlans;
 using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
@@ -13,6 +15,9 @@ public sealed class BudgetReportViewModel : BaseViewModel
 {
     private readonly IApiClient _api;
     private readonly IStringLocalizer<FinanceManager.Web.Pages>? _localizer;
+
+    private readonly Dictionary<Guid, ContactDto?> _contactCache = new();
+    private readonly Dictionary<Guid, SavingsPlanDto?> _savingsPlanCache = new();
 
     /// <summary>
     /// Creates a new instance.
@@ -108,7 +113,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
                             c.Actual,
                             c.Delta,
                             c.DeltaPct,
-                            c.Purposes.Select(pp => new BudgetReportPurposeRow(pp.Id, pp.Name, pp.Budget, pp.Actual, pp.Delta, pp.DeltaPct)).ToList());
+                            c.Purposes.Select(pp => new BudgetReportPurposeRow(pp.Id, pp.Name, pp.Budget, pp.Actual, pp.Delta, pp.DeltaPct, pp.SourceType, pp.SourceId)).ToList());
                     })
                     .ToList()
                 : Array.Empty<BudgetReportCategoryRow>();
@@ -258,9 +263,25 @@ public sealed class BudgetReportViewModel : BaseViewModel
                 () => ShiftAsOfYearAsync(1))
          });
 
+        var export = new UiRibbonTab(localizer["Ribbon_Group_Export"], new List<UiRibbonAction>
+        {
+            new UiRibbonAction(
+                "ExportExcel",
+                localizer["Ribbon_ExportExcel"],
+                "<svg><use href='/icons/sprite.svg#download'/></svg>",
+                UiRibbonItemSize.Small,
+                false,
+                null,
+                () =>
+                {
+                    RaiseUiActionRequested("ExportExcel");
+                    return Task.CompletedTask;
+                })
+        });
+
         return new List<UiRibbonRegister>
         {
-            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { manage, quickRange })
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { manage, quickRange, export })
         };
     }
 
@@ -314,7 +335,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
                 {
                     var delta = p.BudgetSum - p.ActualSum;
                     var pct = p.BudgetSum == 0m ? 0m : (delta / p.BudgetSum) * 100m;
-                    return new BudgetReportPurposeRow(p.Id, p.Name, p.BudgetSum, p.ActualSum, delta, pct);
+                    return new BudgetReportPurposeRow(p.Id, p.Name, p.BudgetSum, p.ActualSum, delta, pct, p.SourceType, p.SourceId);
                 })
                 .ToList();
 
@@ -361,6 +382,241 @@ public sealed class BudgetReportViewModel : BaseViewModel
         Settings = Settings with { AsOfDate = monthEnd };
         await LoadAsync();
     }
+
+    /// <summary>
+    /// Identifies which kind of postings is shown in the postings overlay.
+    /// </summary>
+    public enum PostingsOverlayKind
+    {
+        /// <summary>
+        /// Postings for a specific budget purpose.
+        /// </summary>
+        Purpose = 0,
+
+        /// <summary>
+        /// Postings that are not covered by any purpose.
+        /// </summary>
+        Unbudgeted = 1
+    }
+
+    /// <summary>
+    /// Current postings overlay kind.
+    /// </summary>
+    public PostingsOverlayKind PurposePostingsKind { get; private set; } = PostingsOverlayKind.Purpose;
+
+    /// <summary>
+    /// Whether the purpose postings overlay is currently visible.
+    /// </summary>
+    public bool PurposePostingsVisible { get; private set; }
+
+    /// <summary>
+    /// The purpose currently selected for showing postings.
+    /// </summary>
+    public BudgetReportPurposeRow? PurposePostingsPurpose { get; private set; }
+
+    /// <summary>
+    /// Loaded postings for <see cref="PurposePostingsPurpose"/> within the current report range.
+    /// </summary>
+    public IReadOnlyList<PostingServiceDto> PurposePostings { get; private set; } = Array.Empty<PostingServiceDto>();
+
+    /// <summary>
+    /// Whether postings for <see cref="PurposePostingsPurpose"/> are currently loading.
+    /// </summary>
+    public bool PurposePostingsLoading { get; private set; }
+
+    /// <summary>
+    /// Returns origin display info (name + optional symbol attachment id) for the given posting.
+    /// </summary>
+    public async Task<(string Name, Guid? SymbolAttachmentId)> GetPostingOriginAsync(PostingServiceDto posting)
+    {
+        ArgumentNullException.ThrowIfNull(posting);
+
+        if (posting.ContactId.HasValue)
+        {
+            var dto = await GetContactCachedAsync(posting.ContactId.Value);
+            return (dto?.Name ?? string.Empty, dto?.SymbolAttachmentId);
+        }
+
+        if (posting.SavingsPlanId.HasValue)
+        {
+            var dto = await GetSavingsPlanCachedAsync(posting.SavingsPlanId.Value);
+            return (dto?.Name ?? string.Empty, dto?.SymbolAttachmentId);
+        }
+
+        return (string.Empty, null);
+    }
+
+    private async Task<ContactDto?> GetContactCachedAsync(Guid id)
+    {
+        if (_contactCache.TryGetValue(id, out var cached))
+        {
+            return cached;
+        }
+
+        var dto = await _api.Contacts_GetAsync(id, CancellationToken.None);
+        _contactCache[id] = dto;
+        return dto;
+    }
+
+    private async Task<SavingsPlanDto?> GetSavingsPlanCachedAsync(Guid id)
+    {
+        if (_savingsPlanCache.TryGetValue(id, out var cached))
+        {
+            return cached;
+        }
+
+        var dto = await _api.SavingsPlans_GetAsync(id, CancellationToken.None);
+        _savingsPlanCache[id] = dto;
+        return dto;
+    }
+
+    /// <summary>
+    /// Closes the purpose postings overlay.
+    /// </summary>
+    public void HidePurposePostings()
+    {
+        PurposePostingsVisible = false;
+        PurposePostingsKind = PostingsOverlayKind.Purpose;
+        PurposePostingsPurpose = null;
+        PurposePostings = Array.Empty<PostingServiceDto>();
+        PurposePostingsLoading = false;
+        RaiseStateChanged();
+    }
+
+    /// <summary>
+    /// Opens the postings overlay for unbudgeted postings in the current interval.
+    /// </summary>
+    public async Task ShowUnbudgetedPostingsAsync()
+    {
+        if (!CheckAuthentication())
+        {
+            return;
+        }
+
+        PurposePostingsVisible = true;
+        PurposePostingsKind = PostingsOverlayKind.Unbudgeted;
+        PurposePostingsPurpose = null;
+        PurposePostings = Array.Empty<PostingServiceDto>();
+        PurposePostingsLoading = true;
+        RaiseStateChanged();
+
+        try
+        {
+            var (fromDt, toDt) = GetOverlayDateRange();
+
+            var basis = Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
+                ? FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.ValutaDate
+                : FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.BookingDate;
+
+            var rows = await _api.Budgets_GetUnbudgetedPostingsAsync(fromDt, toDt, basis, CancellationToken.None);
+            PurposePostings = Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
+                ? rows.OrderByDescending(p => p.ValutaDate).ToList()
+                : rows.OrderByDescending(p => p.BookingDate).ToList();
+        }
+        catch (Exception ex)
+        {
+            SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
+            PurposePostings = Array.Empty<PostingServiceDto>();
+        }
+        finally
+        {
+            PurposePostingsLoading = false;
+            RaiseStateChanged();
+        }
+    }
+
+    /// <summary>
+    /// Opens the purpose postings overlay and loads postings for the given purpose.
+    /// </summary>
+    /// <param name="purpose">The selected purpose.</param>
+    public async Task ShowPurposePostingsAsync(BudgetReportPurposeRow purpose)
+    {
+        ArgumentNullException.ThrowIfNull(purpose);
+        if (!CheckAuthentication())
+        {
+            return;
+        }
+
+        PurposePostingsVisible = true;
+        PurposePostingsKind = PostingsOverlayKind.Purpose;
+        PurposePostingsPurpose = purpose;
+        PurposePostings = Array.Empty<PostingServiceDto>();
+        PurposePostingsLoading = true;
+        RaiseStateChanged();
+
+        try
+        {
+            var (fromDt, toDt) = GetOverlayDateRange();
+
+            IReadOnlyList<PostingServiceDto> rows;
+            switch (purpose.SourceType)
+            {
+                case BudgetSourceType.Contact:
+                    rows = await _api.Postings_GetContactAsync(purpose.SourceId, skip: 0, take: 250, q: null, from: fromDt, to: toDt, ct: CancellationToken.None);
+                    break;
+                case BudgetSourceType.SavingsPlan:
+                    rows = await _api.Postings_GetSavingsPlanAsync(purpose.SourceId, skip: 0, take: 250, from: fromDt, to: toDt, q: null, ct: CancellationToken.None);
+                    break;
+                case BudgetSourceType.ContactGroup:
+                    // Load postings for all contacts assigned to this contact group.
+                    var contacts = await _api.Contacts_ListAsync(skip: 0, take: 5000, type: null, all: true, nameFilter: null, ct: CancellationToken.None);
+                    var contactIds = contacts
+                        .Where(c => c.CategoryId == purpose.SourceId)
+                        .Select(c => c.Id)
+                        .ToList();
+
+                    var list = new List<PostingServiceDto>();
+                    foreach (var contactId in contactIds)
+                    {
+                        var part = await _api.Postings_GetContactAsync(contactId, skip: 0, take: 250, q: null, from: fromDt, to: toDt, ct: CancellationToken.None);
+                        if (part.Count > 0)
+                        {
+                            list.AddRange(part);
+                        }
+                    }
+
+                    rows = list
+                        .GroupBy(p => p.Id)
+                        .Select(g => g.First())
+                        .ToList();
+                    break;
+                default:
+                    rows = Array.Empty<PostingServiceDto>();
+                    break;
+            }
+
+            PurposePostings = Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
+                ? rows.OrderByDescending(p => p.ValutaDate).ToList()
+                : rows.OrderByDescending(p => p.BookingDate).ToList();
+        }
+        catch (Exception ex)
+        {
+            SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
+            PurposePostings = Array.Empty<PostingServiceDto>();
+        }
+        finally
+        {
+            PurposePostingsLoading = false;
+            RaiseStateChanged();
+        }
+    }
+
+    private (DateTime? From, DateTime? To) GetOverlayDateRange()
+    {
+        var asOf = Settings.AsOfDate;
+        var rangeTo = new DateOnly(asOf.Year, asOf.Month, DateTime.DaysInMonth(asOf.Year, asOf.Month));
+        var rangeFrom = new DateOnly(asOf.Year, asOf.Month, 1).AddMonths(-(Math.Max(1, Settings.Months) - 1));
+
+        var intervalFrom = rangeFrom;
+        var intervalTo = rangeTo;
+        if (Settings.CategoryValueScope == BudgetReportValueScope.LastInterval)
+        {
+            intervalFrom = new DateOnly(rangeTo.Year, rangeTo.Month, 1);
+            intervalTo = rangeTo;
+        }
+
+        return (intervalFrom.ToDateTime(TimeOnly.MinValue), intervalTo.ToDateTime(TimeOnly.MaxValue));
+    }
 }
 
 /// <summary>
@@ -371,7 +627,7 @@ public sealed record BudgetReportPeriodRow(DateOnly PeriodStart, decimal Budget,
 /// <summary>
 /// Purpose row inside a category.
 /// </summary>
-public sealed record BudgetReportPurposeRow(Guid Id, string Name, decimal Budget, decimal Actual, decimal Delta, decimal DeltaPct);
+public sealed record BudgetReportPurposeRow(Guid Id, string Name, decimal Budget, decimal Actual, decimal Delta, decimal DeltaPct, BudgetSourceType SourceType, Guid SourceId);
 
 /// <summary>
 /// Category row including nested purposes.

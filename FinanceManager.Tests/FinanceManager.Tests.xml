@@ -4,6 +4,14 @@
         <name>FinanceManager.Tests</name>
     </assembly>
     <members>
+        <member name="T:FinanceManager.Tests.Budget.BudgetReportServiceTests">
+            <summary>
+            Unit tests for <see cref="T:FinanceManager.Infrastructure.Budget.BudgetReportService"/>.
+            These tests validate budget aggregation behavior (period totals, category/purpose rollups)
+            and the correctness of the derived synthetic rows (Sum/Unbudgeted/Result) across different
+            source types and date bases.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests">
             <summary>
             Tests the parsing of pdf statement documents

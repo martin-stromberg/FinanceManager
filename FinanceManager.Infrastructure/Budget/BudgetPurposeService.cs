@@ -337,7 +337,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
 
                 var planActuals = await planQuery
                      .GroupBy(p => p.SavingsPlanId!.Value)
-                     .Select(g => new { Id = g.Key, Sum = g.Sum(x => x.Amount) })
+                     .Select(g => new { Id = g.Key, Sum = g.Sum(x => -x.Amount) })
                      .ToListAsync(ct);
 
                 foreach (var a in planActuals)

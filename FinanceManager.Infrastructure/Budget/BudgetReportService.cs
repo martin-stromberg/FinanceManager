@@ -103,6 +103,28 @@ public sealed class BudgetReportService : IBudgetReportService
         BudgetReportDateBasis dateBasis,
         CancellationToken ct)
     {
+        // The details table can be scoped either to the total range or to the last interval.
+        // The incoming (from/to) currently represent the total report range, so we derive the
+        // date window used for "Unbudgeted" calculations from the selected value scope.
+        // (For LastInterval this is the last month ending at <to>.)
+        var detailFrom = from;
+        var detailTo = to;
+
+        // When the report is configured to show only the last interval in the details table,
+        // unbudgeted values must be calculated on that same last-interval window.
+        // Since this method currently receives the total range, we use the month of <to>.
+        // Note: BudgetReportInterval currently affects the chart/periods; details "LastInterval"
+        // is defined as the last calculated interval bucket; for Month it's the last month.
+        // If other intervals are later supported here, this logic should be adjusted accordingly.
+        if (to > from)
+        {
+            // Heuristic: when caller passed a multi-month total range (from..to) and purpose/category
+            // inputs are already scoped to last interval, we align the unbudgeted window to the month of <to>.
+            // This matches the UI behavior for CategoryValueScope=LastInterval.
+            detailFrom = new DateOnly(to.Year, to.Month, 1);
+            detailTo = to;
+        }
+
         var purposeLookup = purposes
             .Where(p => p.BudgetCategoryId.HasValue)
             .GroupBy(p => p.BudgetCategoryId)
@@ -122,7 +144,7 @@ public sealed class BudgetReportService : IBudgetReportService
                     {
                         var delta = p.BudgetSum - p.ActualSum;
                         var pct = p.BudgetSum == 0m ? 0m : (delta / p.BudgetSum) * 100m;
-                        return new BudgetReportPurposeDto(p.Id, p.Name, p.BudgetSum, p.ActualSum, delta, pct);
+                        return new BudgetReportPurposeDto(p.Id, p.Name, p.BudgetSum, p.ActualSum, delta, pct, p.SourceType, p.SourceId);
                     })
                     .ToList()
                 : new List<BudgetReportPurposeDto>();
@@ -155,7 +177,7 @@ public sealed class BudgetReportService : IBudgetReportService
                     {
                         var delta = p.BudgetSum - p.ActualSum;
                         var pct = p.BudgetSum == 0m ? 0m : (delta / p.BudgetSum) * 100m;
-                        return new BudgetReportPurposeDto(p.Id, p.Name, p.BudgetSum, p.ActualSum, delta, pct);
+                        return new BudgetReportPurposeDto(p.Id, p.Name, p.BudgetSum, p.ActualSum, delta, pct, p.SourceType, p.SourceId);
                     })
                     .ToList()
                 : new List<BudgetReportPurposeDto>();
@@ -180,12 +202,12 @@ public sealed class BudgetReportService : IBudgetReportService
         // - if ContactGroup purposes exist, their actuals already include member contacts, so add back Contact purposes that are covered
         // - if Self-contact purpose exists, it includes savings plan postings; subtract SavingsPlan purpose actuals
 
-        var fromDt = from.ToDateTime(TimeOnly.MinValue);
-        var toDt = to.ToDateTime(TimeOnly.MaxValue);
+        var fromDt = detailFrom.ToDateTime(TimeOnly.MinValue);
+        var toDt = detailTo.ToDateTime(TimeOnly.MaxValue);
 
         // Contact postings total for the report range.
         var actualTotalQuery = _db.Postings.AsNoTracking()
-            .Where(p => p.ContactId != null);
+            .Where(p => p.Kind == PostingKind.Contact && p.ContactId != null && p.SavingsPlanId == null);
 
         actualTotalQuery = dateBasis == BudgetReportDateBasis.ValutaDate
             ? actualTotalQuery.Where(p => p.ValutaDate != null && p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
@@ -194,7 +216,7 @@ public sealed class BudgetReportService : IBudgetReportService
         var actualTotal = await actualTotalQuery
             .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
 
-        // Start with all purpose actuals.
+        // Start with all purpose actuals (this is the "computed sum" mentioned in the UI).
         var purposeActualTotal = purposes.Sum(p => p.ActualSum);
 
         // ContactGroup overlap: group actuals include contacts
@@ -226,19 +248,21 @@ public sealed class BudgetReportService : IBudgetReportService
             .Select(c => (Guid?)c.Id)
             .FirstOrDefaultAsync(ct);
 
-        if (selfContactId.HasValue)
-        {
-            var hasSelfContactPurpose = purposes.Any(p => p.SourceType == BudgetSourceType.Contact && p.SourceId == selfContactId.Value);
-            if (hasSelfContactPurpose)
-            {
-                var savingsPlanActuals = purposes
-                    .Where(p => p.SourceType == BudgetSourceType.SavingsPlan)
-                    .Sum(p => p.ActualSum);
+        var hasSelfContactPurpose = selfContactId.HasValue
+            && purposes.Any(p => p.SourceType == BudgetSourceType.Contact && p.SourceId == selfContactId.Value);
 
-                purposeActualTotal -= savingsPlanActuals;
-            }
+        if (hasSelfContactPurpose)
+        {
+            // If self-contact is budgeted, savings plan purpose actuals contribute via the self-contact as well.
+            // Therefore, remove the savings plan purpose totals from the purpose sum once.
+            var savingsPlanActuals = purposes
+                .Where(p => p.SourceType == BudgetSourceType.SavingsPlan)
+                .Sum(p => p.ActualSum);
+
+            purposeActualTotal -= savingsPlanActuals;
         }
 
+        // Unbudgeted = all contact postings - computed (purpose) sum.
         var unbudgetedActual = actualTotal - purposeActualTotal;
 
         // Prevent duplicates if this method is called with already augmented data.

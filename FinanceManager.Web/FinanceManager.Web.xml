@@ -672,14 +672,24 @@
             Provides budget reporting endpoints.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.#ctor(FinanceManager.Application.Budget.IBudgetReportService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetReportsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
+        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.#ctor(FinanceManager.Application.Budget.IBudgetReportService,FinanceManager.Application.Budget.IBudgetPurposeService,FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetReportsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller},FinanceManager.Application.Budget.IBudgetReportExportService)">
             <summary>
             Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.ExportAsync(System.DateOnly,System.Int32,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
+            <summary>
+            Exports all postings of the budget report for the total report range as an Excel file.
             </summary>
         </member>
         <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.GetAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportRequest,System.Threading.CancellationToken)">
             <summary>
             Generates a budget report for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.GetUnbudgetedAsync(System.Nullable{System.DateTime},System.Nullable{System.DateTime},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
+            <summary>
+            Lists postings that are not covered by any budget purpose for the given date range.
             </summary>
         </member>
         <member name="T:FinanceManager.Web.Controllers.BudgetRulesController">
@@ -4127,6 +4137,67 @@
         <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
             <inheritdoc />
         </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PostingsOverlayKind">
+            <summary>
+            Identifies which kind of postings is shown in the postings overlay.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PostingsOverlayKind.Purpose">
+            <summary>
+            Postings for a specific budget purpose.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PostingsOverlayKind.Unbudgeted">
+            <summary>
+            Postings that are not covered by any purpose.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PurposePostingsKind">
+            <summary>
+            Current postings overlay kind.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PurposePostingsVisible">
+            <summary>
+            Whether the purpose postings overlay is currently visible.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PurposePostingsPurpose">
+            <summary>
+            The purpose currently selected for showing postings.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PurposePostings">
+            <summary>
+            Loaded postings for <see cref="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PurposePostingsPurpose"/> within the current report range.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PurposePostingsLoading">
+            <summary>
+            Whether postings for <see cref="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PurposePostingsPurpose"/> are currently loading.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.GetPostingOriginAsync(FinanceManager.Shared.Dtos.Postings.PostingServiceDto)">
+            <summary>
+            Returns origin display info (name + optional symbol attachment id) for the given posting.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.HidePurposePostings">
+            <summary>
+            Closes the purpose postings overlay.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.ShowUnbudgetedPostingsAsync">
+            <summary>
+            Opens the postings overlay for unbudgeted postings in the current interval.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.ShowPurposePostingsAsync(FinanceManager.Web.ViewModels.Budget.BudgetReportPurposeRow)">
+            <summary>
+            Opens the purpose postings overlay and loads postings for the given purpose.
+            </summary>
+            <param name="purpose">The selected purpose.</param>
+        </member>
         <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportPeriodRow">
             <summary>
             Period row for the report.
@@ -4142,7 +4213,7 @@
             Purpose row inside a category.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportPurposeRow.#ctor(System.Guid,System.String,System.Decimal,System.Decimal,System.Decimal,System.Decimal)">
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportPurposeRow.#ctor(System.Guid,System.String,System.Decimal,System.Decimal,System.Decimal,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid)">
             <summary>
             Purpose row inside a category.
             </summary>

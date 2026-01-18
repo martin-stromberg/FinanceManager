@@ -1,0 +1,28 @@
+@using FinanceManager.Shared.Dtos.Postings
+@using FinanceManager.Web.ViewModels.Budget
+
+@if (_loaded)
+{
+    @if (_symbolAttachmentId.HasValue)
+    {
+        <img src="/api/attachments/@_symbolAttachmentId/download" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:.35rem;" />
+    }
+    @_name
+}
+
+@code {
+    [Parameter, EditorRequired] public BudgetReportViewModel Vm { get; set; } = default!;
+    [Parameter, EditorRequired] public PostingServiceDto Posting { get; set; } = default!;
+
+    private bool _loaded;
+    private string _name = string.Empty;
+    private Guid? _symbolAttachmentId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var (name, symbolAttachmentId) = await Vm.GetPostingOriginAsync(Posting);
+        _name = name;
+        _symbolAttachmentId = symbolAttachmentId;
+        _loaded = true;
+    }
+}

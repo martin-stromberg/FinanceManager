@@ -1,4 +1,5 @@
 using static FinanceManager.Shared.ApiClient;
+using FinanceManager.Shared.Dtos.Postings;
 
 namespace FinanceManager.Shared;
 
@@ -734,4 +735,10 @@ public interface IApiClient
     /// Gets the budget report for a given period.
     /// </summary>
     Task<FinanceManager.Shared.Dtos.Budget.BudgetReportDto> Budgets_GetReportAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportRequest request, CancellationToken ct = default);
+
+
+    /// <summary>
+    /// Lists postings that are not covered by any budget purpose for the given range.
+    /// </summary>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Postings.PostingServiceDto>> Budgets_GetUnbudgetedPostingsAsync(DateTime? from, DateTime? to, FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis dateBasis, CancellationToken ct = default);
 }

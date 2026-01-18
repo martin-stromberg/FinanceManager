@@ -113,6 +113,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IBudgetPurposeService, BudgetPurposeService>();
         services.AddScoped<IBudgetCategoryService, BudgetCategoryService>();
         services.AddScoped<IBudgetReportService, BudgetReportService>();
+        services.AddScoped<IBudgetReportExportService, BudgetReportExportService>();
         services.AddScoped<IBudgetRuleService, BudgetRuleService>();
         services.AddScoped<IBudgetOverrideService, BudgetOverrideService>();
         services.AddScoped<IBudgetPlanningRepository, BudgetPlanningRepository>();

@@ -148,7 +148,7 @@
     <value>The specified bank contact is invalid.</value>
   </data>
   <data name="General_Loading" xml:space="preserve">
-    <value>Loadingâ€¦</value>
+    <value>Loading…</value>
   </data>
   <data name="General_Yes" xml:space="preserve">
     <value>Yes</value>
@@ -397,7 +397,7 @@
     <value>Merge contact</value>
   </data>
   <data name="Merge_FilterPlaceholder" xml:space="preserve">
-    <value>Filter contacts by nameâ€¦</value>
+    <value>Filter contacts by name…</value>
   </data>
   <data name="Merge_Confirm" xml:space="preserve">
     <value>Merge</value>
@@ -619,7 +619,7 @@
     <value>To</value>
   </data>
   <data name="Dlg_Starting" xml:space="preserve">
-    <value>Startingâ€¦</value>
+    <value>Starting…</value>
   </data>
   <data name="Dlg_Start" xml:space="preserve">
     <value>Start</value>
@@ -736,7 +736,7 @@
     <value>General messages</value>
   </data>
   <data name="MassBooking_Title" xml:space="preserve">
-    <value>Mass booking â€” options</value>
+    <value>Mass booking — options</value>
   </data>
   <data name="MassBooking_IgnoreWarnings" xml:space="preserve">
     <value>Ignore warnings</value>
@@ -1602,9 +1602,6 @@
   <data name="Ribbon_NextYear" xml:space="preserve">
     <value>Next year</value>
   </data>
-  <data name="Ribbon_Settings" xml:space="preserve">
-    <value>Settings</value>
-  </data>
   <data name="Ribbon_Group_Reports" xml:space="preserve">
     <value>Reports</value>
   </data>
@@ -1616,5 +1613,20 @@
   </data>
   <data name="Budget_Report_DateBasis_Valuta" xml:space="preserve">
     <value>Valuta date</value>
+  </data>
+  <data name="List_Th_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Ribbon_Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="General_NoData" xml:space="preserve">
+    <value>No data was found.</value>
+  </data>
+  <data name="Budget_Report_Postings" xml:space="preserve">
+    <value>Postings</value>
+  </data>
+  <data name="List_Th_Origin" xml:space="preserve">
+    <value>Origin</value>
   </data>
 </root>

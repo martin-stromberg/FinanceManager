@@ -2,8 +2,10 @@
 @rendermode InteractiveServer
 @inject IServiceProvider Services
 @inject Microsoft.Extensions.Localization.IStringLocalizer<Pages>? Localizer
+@inject Microsoft.AspNetCore.Components.NavigationManager Nav
 
 @using FinanceManager.Shared.Dtos.Budget
+@using FinanceManager.Shared.Dtos.Postings
 @using FinanceManager.Web.Components.Shared
 @using FinanceManager.Web.ViewModels.Budget
 @using FinanceManager.Web.ViewModels.Common
@@ -41,6 +43,22 @@
         if (e?.Action == "ShowSettings")
         {
             _vm?.ShowSettings();
+            return;
+        }
+
+        if (e?.Action == "ExportExcel")
+        {
+            if (_vm == null)
+            {
+                return;
+            }
+
+            var basis = _vm.Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
+                ? FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.ValutaDate
+                : FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.BookingDate;
+
+            var url = $"/api/budget/report/export?asOf={_vm.Settings.AsOfDate:yyyy-MM-dd}&months={_vm.Settings.Months}&dateBasis={(int)basis}";
+            Nav.NavigateTo(url, forceLoad: true);
             return;
         }
     }
@@ -136,6 +154,7 @@ else
                             <th style="text-align:right;">@(Localizer?["List_Th_Actual"].Value ?? "Actual")</th>
                             <th style="text-align:right;">@(Localizer?["List_Th_Delta"].Value ?? "Delta")</th>
                             <th style="text-align:right;">@(Localizer?["Budget_Report_Th_DeltaPct"].Value ?? "Delta %")</th>
+                            <th style="width:1%;"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -157,6 +176,7 @@ else
                                     <td style="text-align:right;">@sumActualPurposes.ToString("N2")</td>
                                     <td style="text-align:right;">@delta.ToString("N2")</td>
                                     <td style="text-align:right;">@pct.ToString("N2")</td>
+                                    <td></td>
                                 </tr>
 
                                 @if (_vm.Settings.ShowPurposeRows)
@@ -169,6 +189,11 @@ else
                                             <td style="text-align:right;">@p.Actual.ToString("N2")</td>
                                             <td style="text-align:right;">@p.Delta.ToString("N2")</td>
                                             <td style="text-align:right;">@p.DeltaPct.ToString("N2")</td>
+                                            <td style="text-align:right;white-space:nowrap;">
+                                                <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="(async () => await _vm.ShowPurposePostingsAsync(p))">
+                                                    <svg><use href="/icons/sprite.svg#search" /></svg>
+                                                </button>
+                                            </td>
                                         </tr>
                                     }
                                 }
@@ -181,6 +206,14 @@ else
                                     <td style="text-align:right;">@(showZeroAsEmpty && cat.Actual == 0m ? string.Empty : cat.Actual.ToString("N2"))</td>
                                     <td style="text-align:right;">@(showZeroAsEmpty && cat.Delta == 0m ? string.Empty : cat.Delta.ToString("N2"))</td>
                                     <td style="text-align:right;">@(showZeroAsEmpty && cat.DeltaPct == 0m ? string.Empty : cat.DeltaPct.ToString("N2"))</td>
+                                    <td style="text-align:right;white-space:nowrap;">
+                                        @if (cat.Kind is BudgetReportCategoryRowKind.Unbudgeted)
+                                        {
+                                            <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="(async () => await _vm.ShowUnbudgetedPostingsAsync())">
+                                                <svg><use href="/icons/sprite.svg#search" /></svg>
+                                            </button>
+                                        }
+                                    </td>
                                 </tr>
 
                                 @if (_vm.Settings.ShowPurposeRows && !isSpecialRow)
@@ -193,6 +226,11 @@ else
                                             <td style="text-align:right;">@p.Actual.ToString("N2")</td>
                                             <td style="text-align:right;">@p.Delta.ToString("N2")</td>
                                             <td style="text-align:right;">@p.DeltaPct.ToString("N2")</td>
+                                            <td style="text-align:right;white-space:nowrap;">
+                                                <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="(async () => await _vm.ShowPurposePostingsAsync(p))">
+                                                    <svg><use href="/icons/sprite.svg#search" /></svg>
+                                                </button>
+                                            </td>
                                         </tr>
                                     }
                                 }
@@ -203,6 +241,56 @@ else
             }
         </div>
     </div>
+
+    @if (_vm.PurposePostingsVisible)
+    {
+        <div class="split-center" @onclick="(()=> _vm.HidePurposePostings())">
+            <div class="split-dialog" style="max-width:900px;" @onclick:stopPropagation="true">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+                    <h3 style="margin:0;font-size:1rem;">@(_vm.PurposePostingsPurpose?.Name ?? (Localizer?["Budget_Report_Postings"].Value ?? "Postings"))</h3>
+                    <button class="icon-btn" title='@(Localizer?["Btn_Close"].Value ?? "Close")' @onclick="(()=> _vm.HidePurposePostings())"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
+                </div>
+
+                @if (_vm.PurposePostingsLoading)
+                {
+                    <p>@(Localizer?["General_Loading"].Value ?? "Loading")</p>
+                }
+                else if (_vm.PurposePostings.Count == 0)
+                {
+                    <p>@(Localizer?["General_NoData"].Value ?? "No data")</p>
+                }
+                else
+                {
+                    <div style="max-height:60vh;overflow:auto;border:1px solid var(--border-color,#ddd);border-radius:.25rem;">
+                        <table class="table" style="width:100%;margin:0;">
+                            <thead style="position:sticky;top:0;background:var(--surface,#fff);z-index:1;">
+                                <tr>
+                                    <th style="text-align:left;">@(Localizer?["List_Th_Date"].Value ?? "Date")</th>
+                                    <th style="text-align:left;">@(Localizer?["List_Th_Origin"].Value ?? "Origin")</th>
+                                    <th style="text-align:left;">@(Localizer?["List_Th_Description"].Value ?? "Description")</th>
+                                    <th style="text-align:right;">@(Localizer?["List_Th_Amount"].Value ?? "Amount")</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in _vm.PurposePostings)
+                                {
+                                    var date = _vm.Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate ? row.ValutaDate : row.BookingDate;
+                                    <tr>
+                                        <td>@date.ToString("d", CultureInfo.CurrentCulture)</td>
+                                        <td style="white-space:nowrap;">
+                                            <BudgetReportPostingOriginCell Vm="_vm" Posting="row" />
+                                        </td>
+                                        <td>@(row.Subject ?? row.Description ?? row.RecipientName ?? string.Empty)</td>
+                                        <td style="text-align:right;">@row.Amount.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    }
 
     @if (_vm.SettingsVisible)
     {
