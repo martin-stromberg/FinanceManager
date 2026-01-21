@@ -14,4 +14,9 @@ public interface IBudgetReportService
     /// <param name="request">Report request.</param>
     /// <param name="ct">Cancellation token.</param>
     Task<BudgetReportDto> GetAsync(Guid ownerUserId, BudgetReportRequest request, CancellationToken ct);
+
+    /// <summary>
+    /// Returns planned/actual income and expenses for the Home Monthly Budget KPI.
+    /// </summary>
+    Task<MonthlyBudgetKpiDto> GetMonthlyKpiAsync(Guid userId, CancellationToken ct);
 }

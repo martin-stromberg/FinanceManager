@@ -628,6 +628,11 @@
             <param name="request">Report request.</param>
             <param name="ct">Cancellation token.</param>
         </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetReportService.GetMonthlyKpiAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns planned/actual income and expenses for the Home Monthly Budget KPI.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Application.Budget.IBudgetRuleService">
             <summary>
             Service for managing budget rules.

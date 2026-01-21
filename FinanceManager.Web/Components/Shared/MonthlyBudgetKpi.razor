@@ -1,0 +1,96 @@
+@using Microsoft.Extensions.Localization
+
+@inject FinanceManager.Shared.IApiClient Api
+@inject IStringLocalizer<FinanceManager.Web.Pages> Localizer
+
+@using FinanceManager.Web.ViewModels.Budget
+
+@code {
+    [Parameter] public bool EditMode { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public MonthlyBudgetKpiViewModel? ViewModel { get; set; }
+
+    private bool DataLoaded => ViewModel?.DataLoaded ?? false;
+
+    private decimal PlannedIncome => ViewModel?.PlannedIncome ?? 0m;
+    private decimal PlannedExpenseAbs => ViewModel?.PlannedExpenseAbs ?? 0m;
+    private decimal ActualIncome => ViewModel?.ActualIncome ?? 0m;
+    private decimal ActualExpenseAbs => ViewModel?.ActualExpenseAbs ?? 0m;
+    private decimal SollErgebnis => ViewModel?.SollErgebnis ?? 0m;
+
+    private decimal TotalPlan => Math.Abs(PlannedIncome) + Math.Abs(PlannedExpenseAbs);
+    private decimal IncomePct => TotalPlan > 0 ? Math.Abs(PlannedIncome) / TotalPlan : 0.5m;
+    private decimal ExpensePct => TotalPlan > 0 ? Math.Abs(PlannedExpenseAbs) / TotalPlan : 0.5m;
+    private decimal IncomeProgress => PlannedIncome > 0 ? Math.Clamp(ActualIncome / PlannedIncome, 0m, 1m) : 0m;
+    private decimal ExpenseProgress => PlannedExpenseAbs > 0 ? Math.Clamp(ActualExpenseAbs / PlannedExpenseAbs, 0m, 1m) : 0m;
+    private decimal Result => ActualIncome - ActualExpenseAbs;
+    private string ResultText => Result.ToString("0.##");
+    private string SollErgebnisText => SollErgebnis.ToString("0.##");
+    private string ResultTextClass => Result >= 0 ? "budget-text-pos" : "budget-text-neg";
+    private string SaldoMarkerClass => Result >= 0 ? "budget-saldo-marker budget-saldo-pos" : "budget-saldo-marker budget-saldo-neg";
+    private string SollMarkerClass => SollErgebnis >= 0 ? "budget-soll-marker budget-soll-pos" : "budget-soll-marker budget-soll-neg";
+    private string SollMarkerLabelClass => SollErgebnis >= 0 ? "budget-soll-marker-label budget-label-soll-pos" : "budget-soll-marker-label budget-label-soll-neg";
+    private decimal MarkerPos => TotalPlan == 0 ? 0.5m : (PlannedIncome - Result) / (TotalPlan);
+    private decimal MarkerLabelPos => Math.Clamp(MarkerPos - 0.1m, 0m, 1m);
+    private decimal ResultLabelLeft => Math.Min(MarkerLabelPos, 0.50m);
+    private decimal SollMarkerPos => TotalPlan == 0 ? 0.5m : (PlannedIncome - SollErgebnis) / (TotalPlan);
+    private decimal SollMarkerLabelPos => Math.Clamp(SollMarkerPos - 0.1m, 0m, 1m);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ViewModel != null)
+        {            
+            await ViewModel.LoadAsync(Api);            
+            StateHasChanged();
+        }
+    }
+}
+
+<div class="budget-kpi">
+    <div class="budget-mid">
+        <div class="budget-mid-inner">
+            <div class="budget-head">
+                <div class="budget-head-left">@Localizer["Kpi_MonthlyBudget_ExpectedIncome"]</div>
+                <div class="budget-head-right">@Localizer["Kpi_MonthlyBudget_ExpectedExpense"]</div>
+            </div>
+            <div class="budget-bar">
+                <div class="budget-side income" style="width:@(IncomePct * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;">
+@if (DataLoaded)
+                    {
+                        <div class="budget-fill" style="width:@(IncomeProgress * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;"></div>
+                    }
+                </div>
+                <div class="budget-side expense" style="width:@(ExpensePct * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;">
+@if (DataLoaded)
+                    {
+                        <div class="budget-fill" style="width:@(ExpenseProgress * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;"></div>
+                    }
+                </div>
+                <div class="budget-side income" style="width:@((IncomePct * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;">
+@if (DataLoaded)
+                    {
+                        <div class="budget-fill" style="width:@((IncomeProgress * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+                    }
+                </div>
+                <div class="budget-side expense" style="width:@((ExpensePct * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;">
+                    @if (DataLoaded)
+                    {
+                        <div class="budget-fill" style="width:@((ExpenseProgress * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+                    }
+                </div>
+                @if (DataLoaded)
+                {
+                <div class="@SaldoMarkerClass" style="left:@((MarkerPos * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+                <div class="@SollMarkerClass" style="left:@((SollMarkerPos * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+                <label class="@SollMarkerLabelClass" style="left:@((SollMarkerLabelPos * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;">@SollErgebnisText€ (@Localizer["Kpi_MonthlyBudget_LabelExpected"])</label>
+                }
+            </div>
+        </div>
+    </div>
+    @if (DataLoaded)
+    {
+        <div class="kpi-amount budget-result @ResultTextClass" style="left:@((ResultLabelLeft * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;">
+            @ResultText€
+        </div>
+    }
+</div>

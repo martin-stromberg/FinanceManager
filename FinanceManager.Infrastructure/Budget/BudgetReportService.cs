@@ -93,6 +93,56 @@ public sealed class BudgetReportService : IBudgetReportService
         return new BudgetReportDto(rangeFrom, rangeTo, request.Interval, periodDtos, categoryDtos);
     }
 
+    /// <summary>
+    /// Returns planned and actual income and expenses for the Home Monthly Budget KPI for the current user and month.
+    /// </summary>
+    /// <param name="userId">The user ID for which to calculate the KPI.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A <see cref="MonthlyBudgetKpiDto"/> with planned/actual values and target result.</returns>
+    public async Task<MonthlyBudgetKpiDto> GetMonthlyKpiAsync(Guid userId, CancellationToken ct)
+    {
+        // Determine current month range
+        var today = DateTime.UtcNow.Date;
+        var from = new DateOnly(today.Year, today.Month, 1);
+        var to = new DateOnly(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month));
+
+        // Get all budget purposes for the user and current month (for planned values)
+        var purposes = await _purposes.ListOverviewAsync(
+            userId,
+            skip: 0,
+            take: 5000,
+            sourceType: null,
+            nameFilter: null,
+            from: from,
+            to: to,
+            budgetCategoryId: null,
+            ct: ct,
+            dateBasis: BudgetReportDateBasis.BookingDate);
+
+        // Planned values
+        var plannedIncome = purposes.Where(p => p.BudgetSum > 0).Sum(p => p.BudgetSum);
+        var plannedExpenseAbs = purposes.Where(p => p.BudgetSum < 0).Sum(p => Math.Abs(p.BudgetSum));
+
+        // Get actual values (including unbudgeted) from postings
+        var fromDt = from.ToDateTime(TimeOnly.MinValue);
+        var toDt = to.ToDateTime(TimeOnly.MaxValue);
+        var actualPostingsQuery = _db.Postings.AsNoTracking()
+            .Where(p => p.Kind == PostingKind.Contact && p.ContactId != null && p.SavingsPlanId == null)
+            .Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt);
+
+        var actualIncome = await actualPostingsQuery.Where(p => p.Amount > 0).SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
+        var actualExpenseAbs = Math.Abs(await actualPostingsQuery.Where(p => p.Amount < 0).SumAsync(p => (decimal?)p.Amount, ct) ?? 0m);
+
+        return new MonthlyBudgetKpiDto
+        {
+            PlannedIncome = plannedIncome,
+            PlannedExpenseAbs = Math.Abs(plannedExpenseAbs),
+            ActualIncome = actualIncome,
+            ActualExpenseAbs = Math.Abs(actualExpenseAbs),
+            TargetResult = plannedIncome - Math.Abs(plannedExpenseAbs)
+        };
+    }
+
     private async Task<IReadOnlyList<BudgetReportCategoryDto>> BuildCategoriesAsync(
         Guid ownerUserId,
         IReadOnlyList<BudgetCategoryOverviewDto> categories,

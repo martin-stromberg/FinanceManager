@@ -5,6 +5,7 @@
 @using FinanceManager.Shared.Dtos.Reports
 @using FinanceManager.Shared.Dtos.HomeKpi
 @using FinanceManager.Web.Components.Shared
+@using FinanceManager.Web.ViewModels.Budget
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.Extensions.Localization
 
@@ -63,6 +64,7 @@
                             HomeKpiPredefined.AccountsAggregates => Localizer["Chart_Title_AllAccounts"],
                             HomeKpiPredefined.SavingsPlanAggregates => Localizer["Chart_Title_MonthlySaving"],
                             HomeKpiPredefined.SecuritiesDividends => Localizer["Chart_Title_DividendsQuarterly"],
+                            HomeKpiPredefined.MonthlyBudget => Localizer["Kpi_MonthlyBudget"],
                             HomeKpiPredefined.ActiveSavingsPlansCount => Localizer["Kpi_ActiveSavingsPlansCount"],
                             HomeKpiPredefined.ContactsCount => Localizer["Kpi_ContactsCount"],
                             HomeKpiPredefined.SecuritiesCount => Localizer["Kpi_SecuritiesCount"],
@@ -124,7 +126,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadKpisAsync();
+        await Task.WhenAll(
+            LoadKpisAsync()
+        );
     }
 
     private async Task LoadKpisAsync()
@@ -268,6 +272,7 @@
                 HomeKpiPredefined.AccountsAggregates => Localizer["Chart_Title_AllAccounts"],
                 HomeKpiPredefined.SavingsPlanAggregates => Localizer["Chart_Title_MonthlySaving"],
                 HomeKpiPredefined.SecuritiesDividends => Localizer["Chart_Title_DividendsQuarterly"],
+                HomeKpiPredefined.MonthlyBudget => Localizer["Kpi_MonthlyBudget_Title"],
                 HomeKpiPredefined.ActiveSavingsPlansCount => Localizer["Kpi_ActiveSavingsPlansCount"],
                 HomeKpiPredefined.ContactsCount => Localizer["Kpi_ContactsCount"],
                 HomeKpiPredefined.SecuritiesCount => Localizer["Kpi_SecuritiesCount"],
@@ -295,6 +300,13 @@
 
             switch (predefined)
             {
+                case HomeKpiPredefined.MonthlyBudget:
+                    builder.OpenComponent(i++, typeof(MonthlyBudgetKpi));
+                    builder.AddAttribute(i++, "EditMode", EditMode);
+                    builder.AddAttribute(i++, "Title", title);
+                    builder.AddAttribute(i++, "ViewModel", new MonthlyBudgetKpiViewModel());
+                    builder.CloseComponent();
+                    break;
                 case HomeKpiPredefined.AccountsAggregates:
                     {
                         var vm = new AggregateBarChartViewModel(Services, "/api/accounts/aggregates", null, 7, null);

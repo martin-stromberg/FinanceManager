@@ -1629,4 +1629,28 @@
   <data name="List_Th_Origin" xml:space="preserve">
     <value>Origin</value>
   </data>
+  <data name="Kpi_MonthlyBudget" xml:space="preserve">
+    <value>Budget (current month)</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Title" xml:space="preserve">
+    <value>Budget (current month)</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_ExpectedIncome" xml:space="preserve">
+    <value>Expected income</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_ExpectedExpense" xml:space="preserve">
+    <value>Expected expense</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_ExpectedResult" xml:space="preserve">
+    <value>Expected result</value>
+  </data>
+  <data name="Budget_Report_Unbudgeted_SelfCostNeutral" xml:space="preserve">
+    <value>Cost-neutral</value>
+  </data>
+  <data name="Budget_Report_Unbudgeted_General" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_LabelExpected" xml:space="preserve">
+    <value>Expected</value>
+  </data>
 </root>

@@ -682,10 +682,21 @@
             Exports all postings of the budget report for the total report range as an Excel file.
             </summary>
         </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.GetMonthlyKpiAsync(System.Threading.CancellationToken)">
+            <summary>
+            Generates a budget report for the current user.
+            </summary>
+            <summary>
+            Returns planned/actual income and expenses for the Home Monthly Budget KPI.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.GetAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportRequest,System.Threading.CancellationToken)">
             <summary>
             Generates a budget report for the current user.
             </summary>
+            <param name="req">The report request parameters.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An <see cref="T:Microsoft.AspNetCore.Mvc.IActionResult"/> containing the generated <see cref="T:FinanceManager.Shared.Dtos.Budget.BudgetReportDto"/> or a validation/error result.</returns>
         </member>
         <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.GetUnbudgetedAsync(System.Nullable{System.DateTime},System.Nullable{System.DateTime},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.String,System.Threading.CancellationToken)">
             <summary>
@@ -4378,6 +4389,54 @@
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
             <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel">
+            <summary>
+            ViewModel for the Monthly Budget KPI tile.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.DataLoaded">
+            <summary>
+            Gets or sets a value indicating whether the data has been loaded.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.PlannedIncome">
+            <summary>
+            Planned income for the current month.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.PlannedExpenseAbs">
+            <summary>
+            Planned expenses (absolute, positive value) for the current month.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.ActualIncome">
+            <summary>
+            Actual income for the current month.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.ActualExpenseAbs">
+            <summary>
+            Actual expenses (absolute, positive value) for the current month.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.SollErgebnis">
+            <summary>
+            Target result (planned income minus planned expenses) for the current month.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.Month">
+            <summary>
+            The month for which the KPI is calculated.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.LoadAsync(FinanceManager.Shared.IApiClient,System.Threading.CancellationToken)">
+            <summary>
+            Loads the monthly budget KPI data from the API and maps it to this ViewModel.
+            </summary>
+            <param name="api">The API client to use for data retrieval.</param>
+            <param name="ct">Optional cancellation token.</param>
+            <returns>A task representing the asynchronous operation.</returns>
         </member>
         <member name="T:FinanceManager.Web.ViewModels.Common.AggregateBarChartViewModel">
             <summary>

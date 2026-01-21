@@ -1,5 +1,6 @@
 using static FinanceManager.Shared.ApiClient;
 using FinanceManager.Shared.Dtos.Postings;
+using FinanceManager.Shared.Dtos.Budget;
 
 namespace FinanceManager.Shared;
 
@@ -303,6 +304,10 @@ public interface IApiClient
     Task<HomeKpiDto?> HomeKpis_UpdateAsync(Guid id, HomeKpiUpdateRequest request, CancellationToken ct = default);
     /// <summary>Deletes a home KPI. Returns false when not found.</summary>
     Task<bool> HomeKpis_DeleteAsync(Guid id, CancellationToken ct = default);
+    /// <summary>
+    /// Gets the Home Monthly Budget KPI values (planned/actual income and expenses).
+    /// </summary>
+    Task<MonthlyBudgetKpiDto> Budgets_GetMonthlyKpiAsync(CancellationToken ct = default);
 
     // Meta Holidays
 

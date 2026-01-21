@@ -1082,6 +1082,14 @@
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportService.GetAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetReportRequest,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportService.GetMonthlyKpiAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns planned and actual income and expenses for the Home Monthly Budget KPI for the current user and month.
+            </summary>
+            <param name="userId">The user ID for which to calculate the KPI.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A <see cref="T:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto"/> with planned/actual values and target result.</returns>
+        </member>
         <member name="T:FinanceManager.Infrastructure.Budget.BudgetRuleService">
             <summary>
             EF Core based implementation of <see cref="T:FinanceManager.Application.Budget.IBudgetRuleService"/>.

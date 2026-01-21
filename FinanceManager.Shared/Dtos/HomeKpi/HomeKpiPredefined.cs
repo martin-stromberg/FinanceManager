@@ -11,6 +11,8 @@ public enum HomeKpiPredefined
     SavingsPlanAggregates = 1,
     /// <summary>Dividend totals for securities.</summary>
     SecuritiesDividends = 2,
+    /// <summary>Budget for the current month.</summary>
+    MonthlyBudget = 3,
     // Count KPIs
     /// <summary>Number of active savings plans.</summary>
     ActiveSavingsPlansCount = 10,

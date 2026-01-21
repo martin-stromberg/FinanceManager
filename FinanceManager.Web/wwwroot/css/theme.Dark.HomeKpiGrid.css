@@ -98,3 +98,65 @@
 .kpi-bg-ico.kpi-drafts {
     color: #6aa84f;
 }
+
+/* Monthly budget KPI */
+.budget-bar {
+    background: #0f141a;
+    border: 1px solid #2a323a;
+    width: 100%;
+}
+
+.budget-side.income {
+    background: rgba(45, 157, 79, .22);
+}
+
+.budget-side.income .budget-fill {
+    background: #2d9d4f;
+}
+
+.budget-side.expense {
+    background: rgba(187, 85, 85, .22);
+}
+
+.budget-side.expense .budget-fill {
+    background: #b55;
+}
+
+.budget-result.pos {
+    color: #2d9d4f;
+}
+
+.budget-result.neg {
+    color: #b55;
+}
+
+.budget-soll-marker {
+    background-color: #2196f3;
+}
+.budget-saldo-marker {
+    background-color: white;
+}
+.budget-text-pos {
+    color: #43e97b;
+}
+.budget-text-neg {
+    color: #ff5c5c;
+}
+.budget-saldo-pos {
+    background-color: #43e97b;
+}
+.budget-saldo-neg {
+    background-color: #ff5c5c;
+}
+.budget-soll-pos {
+    background-color: #2e8c5a;
+}
+.budget-soll-neg {
+    background-color: #b23b3b;
+}
+.budget-label-soll-pos {
+    color: #2e8c5a;
+}
+.budget-label-soll-neg {
+    color: #b23b3b;
+}

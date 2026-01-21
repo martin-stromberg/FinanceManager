@@ -88,6 +88,31 @@ public sealed class BudgetReportsController : ControllerBase
     /// <summary>
     /// Generates a budget report for the current user.
     /// </summary>
+    /// <summary>
+    /// Returns planned/actual income and expenses for the Home Monthly Budget KPI.
+    /// </summary>
+    [HttpGet("kpi-monthly")]
+    [ProducesResponseType(typeof(MonthlyBudgetKpiDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMonthlyKpiAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            // TODO: Replace with real aggregation logic from service
+            var dto = await _reports.GetMonthlyKpiAsync(_current.UserId, ct);
+            return Ok(dto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Get monthly budget KPI failed");
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
+    }
+    /// <summary>
+    /// Generates a budget report for the current user.
+    /// </summary>
+    /// <param name="req">The report request parameters.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>An <see cref="IActionResult"/> containing the generated <see cref="BudgetReportDto"/> or a validation/error result.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(BudgetReportDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

@@ -352,11 +352,27 @@
             <summary>
             Generates a budget report for the current user.
             </summary>
+            <param name="request">The report request.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The generated <see cref="T:FinanceManager.Shared.Dtos.Budget.BudgetReportDto"/>.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.Budgets_GetUnbudgetedPostingsAsync(System.Nullable{System.DateTime},System.Nullable{System.DateTime},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.String,System.Threading.CancellationToken)">
             <summary>
             Lists postings that are not covered by any budget purpose for the given range.
             </summary>
+            <param name="from">Start date (optional).</param>
+            <param name="to">End date (optional).</param>
+            <param name="dateBasis">Date basis for filtering.</param>
+            <param name="kind">Optional kind filter.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>List of unbudgeted postings.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_GetMonthlyKpiAsync(System.Threading.CancellationToken)">
+            <summary>
+            Gets the Home Monthly Budget KPI values (planned/actual income and expenses).
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>The <see cref="T:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto"/> for the current user/month.</returns>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.BudgetRules_CreateAsync(FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest,System.Threading.CancellationToken)">
             <summary>
@@ -2517,6 +2533,36 @@
             Actuals are derived from savings plan postings of a savings plan.
             </summary>
         </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto">
+            <summary>
+            DTO for Home Monthly Budget KPI.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.PlannedIncome">
+            <summary>
+            Planned income for the current month.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.PlannedExpenseAbs">
+            <summary>
+            Planned expenses (absolute, positive value) for the current month.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.ActualIncome">
+            <summary>
+            Actual income for the current month.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.ActualExpenseAbs">
+            <summary>
+            Actual expenses (absolute, positive value) for the current month.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.TargetResult">
+            <summary>
+            Target result (planned income minus planned expenses) for the current month.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Common.AggregatePointDto">
             <summary>
             DTO representing a single aggregate data point for charts and summaries.
@@ -2983,6 +3029,9 @@
         </member>
         <member name="F:FinanceManager.Shared.Dtos.HomeKpi.HomeKpiPredefined.SecuritiesDividends">
             <summary>Dividend totals for securities.</summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.HomeKpi.HomeKpiPredefined.MonthlyBudget">
+            <summary>Budget for the current month.</summary>
         </member>
         <member name="F:FinanceManager.Shared.Dtos.HomeKpi.HomeKpiPredefined.ActiveSavingsPlansCount">
             <summary>Number of active savings plans.</summary>
@@ -5295,6 +5344,11 @@
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.HomeKpis_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>Deletes a home KPI. Returns false when not found.</summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_GetMonthlyKpiAsync(System.Threading.CancellationToken)">
+            <summary>
+            Gets the Home Monthly Budget KPI values (planned/actual income and expenses).
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.Meta_GetHolidayProvidersAsync(System.Threading.CancellationToken)">
             <summary>

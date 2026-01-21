@@ -223,3 +223,126 @@
     border-radius: 4px;
     width: 100%;
 }
+
+/* Monthly budget KPI */
+.budget-kpi {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: .25rem;
+    flex: 1;
+    min-height: 0;
+}
+
+.budget-mid {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.budget-mid-inner {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+}
+
+.budget-head {
+    display: flex;
+    justify-content: space-between;
+    gap: .5rem;
+    gap: .5rem;
+    font-size: .65rem;
+    opacity: .8;
+}
+
+.budget-head-left {
+    text-align: left;
+}
+
+.budget-head-right {
+    text-align: right;
+}
+
+.budget-bar {
+    height: 18px;
+    border-radius: 999px;
+    overflow: hidden;
+    display: flex;    
+}
+.budget-saldo-marker {
+    position: absolute;
+    width: 3px;
+    height: 80px;
+    border-radius: 3px;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.budget-soll-marker {
+    position: absolute;
+    width: 3px;
+    height: 30px;
+    border-radius: 3px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.budget-soll-marker-label {
+    position: absolute;
+    top: 105px;
+    width: 3px;
+    height: 30px;
+    z-index: 2;
+    pointer-events: none;
+    text-transform: none;
+}
+
+.budget-side {
+    height: 100%;
+    position: relative;
+}
+
+.budget-side .budget-fill {
+    height: 100%;
+}
+
+.budget-side.income {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.budget-side.expense {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.budget-result {
+    margin-top: auto;
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-top: auto;
+    margin-bottom: .4rem;
+    position: relative;
+    z-index: 1;
+}
+
+.budget-text-pos {
+    color: #43e97b;
+}
+.budget-text-neg {
+    color: #ff5c5c;
+}
+.budget-saldo-pos {
+    background-color: #43e97b;
+}
+.budget-saldo-neg {
+    background-color: #ff5c5c;
+}
+.budget-soll-pos {
+    background-color: #2e8c5a;
+}
+.budget-soll-neg {
+    background-color: #b23b3b;
+}
