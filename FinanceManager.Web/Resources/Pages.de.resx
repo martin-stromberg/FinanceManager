@@ -198,6 +198,54 @@
   <data name="List_Th_Postings_Valuta" xml:space="preserve">
     <value>Valuta</value>
   </data>
+  <data name="Kpi_MonthlyBudget_ExpectedIncome" xml:space="preserve">
+    <value>Erwartete Einnahmen</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_ExpectedExpense" xml:space="preserve">
+    <value>Erwartete Ausgaben</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Income" xml:space="preserve">
+    <value>Einnahmen</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Expenses" xml:space="preserve">
+    <value>Ausgaben</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_PlannedIncome" xml:space="preserve">
+    <value>Geplante Einnahmen</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_ActualIncome" xml:space="preserve">
+    <value>Ist-Einnahmen</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_PlannedExpense" xml:space="preserve">
+    <value>Geplante Ausgaben</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_ActualExpense" xml:space="preserve">
+    <value>Ist-Ausgaben</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_LabelExpected" xml:space="preserve">
+    <value>Erwartet</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Explainer_Title" xml:space="preserve">
+    <value>Budget-Details</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_UnbudgetedIncome" xml:space="preserve">
+    <value>Unbudgetierte Einnahmen</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_UnbudgetedExpense" xml:space="preserve">
+    <value>Unbudgetierte Ausgaben</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Label_Planned" xml:space="preserve">
+    <value>Geplant</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Label_Actual" xml:space="preserve">
+    <value>Ist</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Label_Unbudgeted_Short" xml:space="preserve">
+    <value>davon ungeplant</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Label_Expected" xml:space="preserve">
+    <value>Erwartet</value>
+  </data>
   <data name="List_Th_Postings_Amount" xml:space="preserve">
     <value>Betrag</value>
   </data>

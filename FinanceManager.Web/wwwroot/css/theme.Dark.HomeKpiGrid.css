@@ -5,6 +5,7 @@
 .kpi-tile {
     background: #141a20;
     border: 1px solid #2a323a;
+    overflow: visible; /* allow tooltips to overflow */
 }
 
 /* add tile */
@@ -107,11 +108,13 @@
 }
 
 .budget-side.income {
-    background: rgba(45, 157, 79, .22);
+    background: rgba(45, 157, 79, .28);
+    display: flex;
+    justify-content: flex-end; /* right-align income fill */
 }
 
 .budget-side.income .budget-fill {
-    background: #2d9d4f;
+    background: linear-gradient(90deg,#57d17a,#2d9d4f);
 }
 
 .budget-side.expense {
@@ -119,8 +122,27 @@
 }
 
 .budget-side.expense .budget-fill {
-    background: #b55;
+    background: linear-gradient(90deg,#ff8080,#b55);
 }
+
+.kpi-tooltip {
+    pointer-events: none;
+    position: absolute;
+    z-index: 60;
+    background: #0c1116;
+    color: #e6eef6;
+    padding: .4rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.04);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    min-width: 180px;
+    font-size: .85rem;
+}
+.kpi-tooltip-title { font-weight:600; margin-bottom:.25rem; }
+.kpi-tooltip-row { display:flex; justify-content:space-between; margin-top:.15rem; }
+.kpi-tooltip-row-strong { font-weight:600; margin-top:.25rem; }
+.kpi-tooltip-income { left:6px; top:-8px; }
+.kpi-tooltip-expense { right:6px; top:-8px; }
 
 .budget-result.pos {
     color: #2d9d4f;

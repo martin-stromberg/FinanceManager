@@ -17,7 +17,7 @@
     flex-direction: column;
     justify-content: flex-start;
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* allow tooltips to overflow */
 }
 
 .kpi-tile h4 {
@@ -307,14 +307,45 @@
     height: 100%;
 }
 
+.kpi-tooltip {
+    pointer-events: none;
+    position: absolute;
+    z-index: 60;
+    background: #ffffff;
+    color: #1b2430;
+    padding: .4rem;
+    border-radius: 6px;
+    border: 1px solid rgba(27,36,48,0.08);
+    box-shadow: 0 8px 24px rgba(27,36,48,0.08);
+    min-width: 180px;
+    font-size: .85rem;
+}
+.kpi-tooltip-title { font-weight:600; margin-bottom:.25rem; }
+.kpi-tooltip-row { display:flex; justify-content:space-between; margin-top:.15rem; }
+.kpi-tooltip-row-strong { font-weight:600; margin-top:.25rem; }
+.kpi-tooltip-income { left:6px; top:-8px; }
+.kpi-tooltip-expense { right:6px; top:-8px; }
+}
+
 .budget-side.income {
     display: flex;
+    /* right-align the actual income fill within the income area */
     justify-content: flex-end;
+    background: rgba(45, 157, 79, 0.18);
+}
+
+.budget-side.income .budget-fill {
+    background: linear-gradient(90deg,#2d9d4f,#1f7a3b);
 }
 
 .budget-side.expense {
     display: flex;
     justify-content: flex-start;
+    background: rgba(185, 65, 65, 0.12);
+}
+
+.budget-side.expense .budget-fill {
+    background: linear-gradient(90deg,#b55,#8b3b3b);
 }
 
 .budget-result {

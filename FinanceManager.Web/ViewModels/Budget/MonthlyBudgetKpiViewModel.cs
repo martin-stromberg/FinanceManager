@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 
 namespace FinanceManager.Web.ViewModels.Budget
 {
@@ -20,6 +21,25 @@ namespace FinanceManager.Web.ViewModels.Budget
         /// Planned expenses (absolute, positive value) for the current month.
         /// </summary>
         public decimal PlannedExpenseAbs { get; set; }
+
+        /// <summary>
+        /// Expected income for the current month (planned + unbudgeted actuals).
+        /// </summary>
+        public decimal ExpectedIncome { get; set; }
+
+        /// <summary>
+        /// Expected expenses (absolute, positive value) for the current month (planned + unbudgeted actuals).
+        /// </summary>
+        public decimal ExpectedExpenseAbs { get; set; }
+        /// <summary>
+        /// Unbudgeted actual income in the period.
+        /// </summary>
+        public decimal UnbudgetedIncome { get; set; }
+
+        /// <summary>
+        /// Unbudgeted actual expenses (absolute) in the period.
+        /// </summary>
+        public decimal UnbudgetedExpenseAbs { get; set; }
 
         /// <summary>
         /// Actual income for the current month.
@@ -55,6 +75,10 @@ namespace FinanceManager.Web.ViewModels.Budget
             ActualIncome = kpiDto.ActualIncome;
             ActualExpenseAbs = kpiDto.ActualExpenseAbs;
             SollErgebnis = kpiDto.TargetResult;
+            ExpectedIncome = kpiDto.ExpectedIncome;
+            ExpectedExpenseAbs = kpiDto.ExpectedExpenseAbs;
+            UnbudgetedIncome = kpiDto.UnbudgetedIncome;
+            UnbudgetedExpenseAbs = kpiDto.UnbudgetedExpenseAbs;
             DataLoaded = true;
         }
     }

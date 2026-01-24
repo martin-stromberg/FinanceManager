@@ -4410,6 +4410,26 @@
             Planned expenses (absolute, positive value) for the current month.
             </summary>
         </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.ExpectedIncome">
+            <summary>
+            Expected income for the current month (planned + unbudgeted actuals).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.ExpectedExpenseAbs">
+            <summary>
+            Expected expenses (absolute, positive value) for the current month (planned + unbudgeted actuals).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.UnbudgetedIncome">
+            <summary>
+            Unbudgeted actual income in the period.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.UnbudgetedExpenseAbs">
+            <summary>
+            Unbudgeted actual expenses (absolute) in the period.
+            </summary>
+        </member>
         <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.ActualIncome">
             <summary>
             Actual income for the current month.

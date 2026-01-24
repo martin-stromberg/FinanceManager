@@ -133,12 +133,40 @@ public sealed class BudgetReportService : IBudgetReportService
         var actualIncome = await actualPostingsQuery.Where(p => p.Amount > 0).SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
         var actualExpenseAbs = Math.Abs(await actualPostingsQuery.Where(p => p.Amount < 0).SumAsync(p => (decimal?)p.Amount, ct) ?? 0m);
 
+        // ExpectedIncome und ExpectedExpenseAbs berechnen
+        // 1. Budgetierte Einnahmen/Ausgaben, die noch nicht durch Ist-Buchungen abgedeckt sind
+        // 2. Unbudgetierte Ist-Buchungen
+
+        // Für jede budgetierte Einnahme/Ausgabe: Wenn Ist < Budget, dann Differenz als "offen" addieren
+        var openBudgetedIncome = purposes.Where(p => p.BudgetSum > 0 && p.ActualSum < p.BudgetSum).Sum(p => p.BudgetSum - p.ActualSum);
+        var openBudgetedExpense = purposes.Where(p => p.BudgetSum < 0 && p.ActualSum > p.BudgetSum).Sum(p => Math.Abs(p.BudgetSum - p.ActualSum));
+
+        // Unbudgetierte Ist-Buchungen (Buchungen ohne zugeordneten Purpose)
+        var budgetedIncomeContactIds = purposes.Where(p => p.BudgetSum > 0).Select(p => p.SourceId).ToHashSet();
+        var budgetedExpenseContactIds = purposes.Where(p => p.BudgetSum < 0).Select(p => p.SourceId).ToHashSet();
+
+        var unbudgetedIncome = await actualPostingsQuery
+            .Where(p => p.Amount > 0 && !budgetedIncomeContactIds.Contains(p.ContactId!.Value))
+            .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
+
+        var unbudgetedExpense = Math.Abs(await actualPostingsQuery
+            .Where(p => p.Amount < 0 && !budgetedExpenseContactIds.Contains(p.ContactId!.Value))
+            .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m);
+
+        // Expected = planned + unbudgeted actuals (do not add uncovered planned amounts)
+        var expectedIncome = plannedIncome + unbudgetedIncome;
+        var expectedExpenseAbs = plannedExpenseAbs + unbudgetedExpense;
+
         return new MonthlyBudgetKpiDto
         {
             PlannedIncome = plannedIncome,
             PlannedExpenseAbs = Math.Abs(plannedExpenseAbs),
             ActualIncome = actualIncome,
             ActualExpenseAbs = Math.Abs(actualExpenseAbs),
+            ExpectedIncome = expectedIncome,
+            ExpectedExpenseAbs = expectedExpenseAbs,
+            UnbudgetedIncome = unbudgetedIncome,
+            UnbudgetedExpenseAbs = unbudgetedExpense,
             TargetResult = plannedIncome - Math.Abs(plannedExpenseAbs)
         };
     }

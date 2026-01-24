@@ -1,7 +1,9 @@
 @using Microsoft.Extensions.Localization
+@using System.Globalization
 
 @inject FinanceManager.Shared.IApiClient Api
 @inject IStringLocalizer<FinanceManager.Web.Pages> Localizer
+@inject NavigationManager Nav
 
 @using FinanceManager.Web.ViewModels.Budget
 
@@ -18,9 +20,12 @@
     private decimal ActualExpenseAbs => ViewModel?.ActualExpenseAbs ?? 0m;
     private decimal SollErgebnis => ViewModel?.SollErgebnis ?? 0m;
 
-    private decimal TotalPlan => Math.Abs(PlannedIncome) + Math.Abs(PlannedExpenseAbs);
-    private decimal IncomePct => TotalPlan > 0 ? Math.Abs(PlannedIncome) / TotalPlan : 0.5m;
-    private decimal ExpensePct => TotalPlan > 0 ? Math.Abs(PlannedExpenseAbs) / TotalPlan : 0.5m;
+    // Use expected values for sizing the bar; fall back to planned values when expected is not available
+    private decimal SizeIncome => ViewModel != null ? (ViewModel.ExpectedIncome != 0m ? ViewModel.ExpectedIncome : ViewModel.PlannedIncome) : 0m;
+    private decimal SizeExpenseAbs => ViewModel != null ? (ViewModel.ExpectedExpenseAbs != 0m ? ViewModel.ExpectedExpenseAbs : ViewModel.PlannedExpenseAbs) : 0m;
+    private decimal TotalPlan => Math.Abs(SizeIncome) + Math.Abs(SizeExpenseAbs);
+    private decimal IncomePct => TotalPlan > 0 ? Math.Abs(SizeIncome) / TotalPlan : 0.5m;
+    private decimal ExpensePct => TotalPlan > 0 ? Math.Abs(SizeExpenseAbs) / TotalPlan : 0.5m;
     private decimal IncomeProgress => PlannedIncome > 0 ? Math.Clamp(ActualIncome / PlannedIncome, 0m, 1m) : 0m;
     private decimal ExpenseProgress => PlannedExpenseAbs > 0 ? Math.Clamp(ActualExpenseAbs / PlannedExpenseAbs, 0m, 1m) : 0m;
     private decimal Result => ActualIncome - ActualExpenseAbs;
@@ -30,11 +35,37 @@
     private string SaldoMarkerClass => Result >= 0 ? "budget-saldo-marker budget-saldo-pos" : "budget-saldo-marker budget-saldo-neg";
     private string SollMarkerClass => SollErgebnis >= 0 ? "budget-soll-marker budget-soll-pos" : "budget-soll-marker budget-soll-neg";
     private string SollMarkerLabelClass => SollErgebnis >= 0 ? "budget-soll-marker-label budget-label-soll-pos" : "budget-soll-marker-label budget-label-soll-neg";
-    private decimal MarkerPos => TotalPlan == 0 ? 0.5m : (PlannedIncome - Result) / (TotalPlan);
+    // Marker positions are calculated on the same sizing scale (expected/planned fallback)
+    private decimal MarkerPos => TotalPlan == 0 ? 0.5m : (SizeIncome - Result) / (TotalPlan);
     private decimal MarkerLabelPos => Math.Clamp(MarkerPos - 0.1m, 0m, 1m);
     private decimal ResultLabelLeft => Math.Min(MarkerLabelPos, 0.50m);
-    private decimal SollMarkerPos => TotalPlan == 0 ? 0.5m : (PlannedIncome - SollErgebnis) / (TotalPlan);
+    private decimal SollMarkerPos => TotalPlan == 0 ? 0.5m : (SizeIncome - SollErgebnis) / (TotalPlan);
     private decimal SollMarkerLabelPos => Math.Clamp(SollMarkerPos - 0.1m, 0m, 1m);
+
+    private bool _showIncomeTooltip = false;
+    private bool _showExpenseTooltip = false;
+
+    private void OnIncomeEnter()
+    {
+        if (EditMode) return;
+        _showIncomeTooltip = true;
+    }
+
+    private void OnIncomeLeave()
+    {
+        _showIncomeTooltip = false;
+    }
+
+    private void OnExpenseEnter()
+    {
+        if (EditMode) return;
+        _showExpenseTooltip = true;
+    }
+
+    private void OnExpenseLeave()
+    {
+        _showExpenseTooltip = false;
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -46,38 +77,73 @@
     }
 }
 
-<div class="budget-kpi">
+<div class="budget-kpi" @onclick="OnClick" @onkeydown="OnKeyDown" tabindex="0" role="link" style="@(EditMode ? string.Empty : "cursor:pointer;")">
     <div class="budget-mid">
         <div class="budget-mid-inner">
             <div class="budget-head">
                 <div class="budget-head-left">@Localizer["Kpi_MonthlyBudget_ExpectedIncome"]</div>
                 <div class="budget-head-right">@Localizer["Kpi_MonthlyBudget_ExpectedExpense"]</div>
             </div>
+
+@code {
+    private void OnClick()
+    {
+        if (EditMode) { return; }
+        Nav.NavigateTo("/reports/budget");
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (EditMode) { return; }
+        if (e.Key == "Enter" || e.Key == " ")
+        {
+            Nav.NavigateTo("/reports/budget");
+        }
+    }
+}
             <div class="budget-bar">
-                <div class="budget-side income" style="width:@(IncomePct * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;">
-@if (DataLoaded)
-                    {
-                        <div class="budget-fill" style="width:@(IncomeProgress * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;"></div>
-                    }
-                </div>
-                <div class="budget-side expense" style="width:@(ExpensePct * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;">
-@if (DataLoaded)
-                    {
-                        <div class="budget-fill" style="width:@(ExpenseProgress * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;"></div>
-                    }
-                </div>
-                <div class="budget-side income" style="width:@((IncomePct * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;">
-@if (DataLoaded)
-                    {
-                        <div class="budget-fill" style="width:@((IncomeProgress * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
-                    }
-                </div>
-                <div class="budget-side expense" style="width:@((ExpensePct * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;">
+                <div class="budget-side income" style=@($"width:{(IncomePct * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}%") @onmouseenter="OnIncomeEnter" @onmouseleave="OnIncomeLeave">
                     @if (DataLoaded)
                     {
-                        <div class="budget-fill" style="width:@((ExpenseProgress * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+                        <div class="budget-fill" style=@($"width:{(IncomeProgress * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}%")></div>
                     }
+                    
                 </div>
+                @* Tooltips rendered outside the bar to avoid clipping *@
+                @if (_showIncomeTooltip)
+                {
+                    <div class="kpi-tooltip kpi-tooltip-income">
+                        <div class="kpi-tooltip-title">@Localizer["Kpi_MonthlyBudget_Income"]</div>
+                        <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Planned"]</div><div>@(PlannedIncome.ToString("N2", CultureInfo.CurrentCulture))€</div></div>
+                        <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Actual"]</div><div>@(ActualIncome.ToString("N2", CultureInfo.CurrentCulture))€</div></div>
+                        @if (ViewModel != null && ViewModel.UnbudgetedIncome > 0)
+                        {
+                            <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Unbudgeted_Short"]</div><div>@(ViewModel.UnbudgetedIncome.ToString("N2", CultureInfo.CurrentCulture))€</div></div>
+                        }
+                        <div class="kpi-tooltip-row kpi-tooltip-row-strong"><div>@Localizer["Kpi_MonthlyBudget_Label_Expected"]</div><div>@(ViewModel?.ExpectedIncome.ToString("N2", CultureInfo.CurrentCulture) ?? "0.00")€</div></div>
+                    </div>
+                }
+                @if (_showExpenseTooltip)
+                {
+                    <div class="kpi-tooltip kpi-tooltip-expense">
+                        <div class="kpi-tooltip-title">@Localizer["Kpi_MonthlyBudget_Expenses"]</div>
+                        <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Planned"]</div><div>@(PlannedExpenseAbs.ToString("N2", CultureInfo.CurrentCulture))€</div></div>
+                        <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Actual"]</div><div>@(ActualExpenseAbs.ToString("N2", CultureInfo.CurrentCulture))€</div></div>
+                        @if (ViewModel != null && ViewModel.UnbudgetedExpenseAbs > 0)
+                        {
+                            <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Unbudgeted_Short"]</div><div>@(ViewModel.UnbudgetedExpenseAbs.ToString("N2", CultureInfo.CurrentCulture))€</div></div>
+                        }
+                        <div class="kpi-tooltip-row kpi-tooltip-row-strong"><div>@Localizer["Kpi_MonthlyBudget_Label_Expected"]</div><div>@(ViewModel?.ExpectedExpenseAbs.ToString("N2", CultureInfo.CurrentCulture) ?? "0.00")€</div></div>
+                    </div>
+                }
+                <div class="budget-side expense" style=@($"width:{(ExpensePct * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}%") @onmouseenter="OnExpenseEnter" @onmouseleave="OnExpenseLeave">
+                    @if (DataLoaded)
+                    {
+                        <div class="budget-fill" style=@($"width:{(ExpenseProgress * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}%")></div>
+                    }
+                    
+                </div>
+                
                 @if (DataLoaded)
                 {
                 <div class="@SaldoMarkerClass" style="left:@((MarkerPos * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;"></div>

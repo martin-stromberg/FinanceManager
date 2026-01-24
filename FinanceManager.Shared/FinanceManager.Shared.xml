@@ -2563,6 +2563,26 @@
             Target result (planned income minus planned expenses) for the current month.
             </summary>
         </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.ExpectedIncome">
+            <summary>
+            Expected income for the current month (planned + unbudgeted actuals).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.ExpectedExpenseAbs">
+            <summary>
+            Expected expenses (absolute, positive value) for the current month (planned + unbudgeted actuals).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.UnbudgetedIncome">
+            <summary>
+            Sum of unbudgeted actual income present in the period (income without assigned purpose).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.UnbudgetedExpenseAbs">
+            <summary>
+            Sum of unbudgeted actual expenses (absolute, positive) present in the period (expenses without assigned purpose).
+            </summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Common.AggregatePointDto">
             <summary>
             DTO representing a single aggregate data point for charts and summaries.

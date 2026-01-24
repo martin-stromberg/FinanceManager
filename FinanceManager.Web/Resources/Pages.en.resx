@@ -198,6 +198,54 @@
   <data name="List_Th_Postings_Valuta" xml:space="preserve">
     <value>Valuta</value>
   </data>
+  <data name="Kpi_MonthlyBudget_ExpectedIncome" xml:space="preserve">
+    <value>Expected income</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_ExpectedExpense" xml:space="preserve">
+    <value>Expected expense</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Income" xml:space="preserve">
+    <value>Income</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Expenses" xml:space="preserve">
+    <value>Expenses</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_PlannedIncome" xml:space="preserve">
+    <value>Planned income</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_ActualIncome" xml:space="preserve">
+    <value>Actual income</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_PlannedExpense" xml:space="preserve">
+    <value>Planned expense</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_ActualExpense" xml:space="preserve">
+    <value>Actual expense</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_LabelExpected" xml:space="preserve">
+    <value>Expected</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Explainer_Title" xml:space="preserve">
+    <value>Budget details</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_UnbudgetedIncome" xml:space="preserve">
+    <value>Unbudgeted income</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_UnbudgetedExpense" xml:space="preserve">
+    <value>Unbudgeted expense</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Label_Planned" xml:space="preserve">
+    <value>Planned</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Label_Actual" xml:space="preserve">
+    <value>Actual</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Label_Unbudgeted_Short" xml:space="preserve">
+    <value>of which unbudgeted</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Label_Expected" xml:space="preserve">
+    <value>Expected</value>
+  </data>
   <data name="List_Th_Postings_Amount" xml:space="preserve">
     <value>Amount</value>
   </data>
