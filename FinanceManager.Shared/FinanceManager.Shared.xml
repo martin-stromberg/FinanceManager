@@ -367,12 +367,17 @@
             <param name="ct">Cancellation token.</param>
             <returns>List of unbudgeted postings.</returns>
         </member>
-        <member name="M:FinanceManager.Shared.ApiClient.Budgets_GetMonthlyKpiAsync(System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_GetMonthlyKpiAsync(System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <summary>
             Gets the Home Monthly Budget KPI values (planned/actual income and expenses).
             </summary>
             <param name="ct">Cancellation token.</param>
             <returns>The <see cref="T:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto"/> for the current user/month.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_ExportAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportExportRequest,System.Threading.CancellationToken)">
+            <summary>
+            Downloads an XLSX export for the given budget report range.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.BudgetRules_CreateAsync(FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest,System.Threading.CancellationToken)">
             <summary>
@@ -2024,6 +2029,16 @@
         <member name="P:FinanceManager.Shared.Dtos.Backups.BackupDto.Source">
             <summary>Source indicating how the backup was created (System | Upload).</summary>
         </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.ActualPostingDto">
+            <summary>
+            Represents an actual contact posting with optional link to the originating budget rule/purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.ActualPostingDto.#ctor(System.Guid,System.Guid,System.DateTime,System.DateTime,System.Decimal,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.String,System.String,System.String,System.Nullable{System.Guid},System.Nullable{System.Guid})">
+            <summary>
+            Represents an actual contact posting with optional link to the originating budget rule/purpose.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetCategoryDto">
             <summary>
             Data transfer object for budget categories.
@@ -2479,6 +2494,226 @@
             Request for exporting all postings of a budget report across the full report range.
             </summary>
         </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetReportRawDataDto">
+            <summary>
+            Raw data structure for a budget report.
+            Designed for exports and advanced UI scenarios where aggregated and underlying data must be displayed together.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportRawDataDto.PeriodStart">
+            <summary>
+            Gets the inclusive start of the report period.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportRawDataDto.PeriodEnd">
+            <summary>
+            Gets the inclusive end of the report period.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportRawDataDto.Categories">
+            <summary>
+            Gets the categorized purposes.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportRawDataDto.UncategorizedPurposes">
+            <summary>
+            Gets purposes that are not assigned to any budget category.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportRawDataDto.UnbudgetedPostings">
+            <summary>
+            Gets or sets the collection of postings that are not associated with any budget category.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRawDataDto">
+            <summary>
+            Raw category data within a budget report.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRawDataDto.CategoryId">
+            <summary>
+            Gets the category id.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRawDataDto.CategoryName">
+            <summary>
+            Gets the category name.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRawDataDto.BudgetedIncome">
+            <summary>
+            Gets the budgeted income amount for the category in the requested period.
+            This value is derived from rules that are directly assigned to the category and contains only positive amounts.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRawDataDto.BudgetedExpense">
+            <summary>
+            Gets the budgeted expense amount for the category in the requested period.
+            This value is derived from rules that are directly assigned to the category and contains only negative amounts (negative value).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRawDataDto.BudgetedTarget">
+            <summary>
+            Gets the net budget target for the category (income + expense).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRawDataDto.BudgetedAmount">
+            <summary>
+            Backwards compatible: net budget amount (same as <see cref="P:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRawDataDto.BudgetedTarget"/>).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRawDataDto.Purposes">
+            <summary>
+            Gets the purposes assigned to the category.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetReportPurposeRawDataDto">
+            <summary>
+            Raw purpose data within a budget report.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPurposeRawDataDto.PurposeId">
+            <summary>
+            Gets the purpose id.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPurposeRawDataDto.PurposeName">
+            <summary>
+            Gets the purpose name.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPurposeRawDataDto.BudgetedIncome">
+            <summary>
+            Gets the budgeted income amount for the purpose in the requested period.
+            This value contains only positive amounts derived from the purpose's rules.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPurposeRawDataDto.BudgetedExpense">
+            <summary>
+            Gets the budgeted expense amount for the purpose in the requested period.
+            This value contains only negative amounts derived from the purpose's rules (negative value).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPurposeRawDataDto.BudgetedTarget">
+            <summary>
+            Gets the net budget target for the purpose (income + expense).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPurposeRawDataDto.BudgetSourceType">
+            <summary>
+            Gets the purpose source type.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPurposeRawDataDto.SourceId">
+            <summary>
+            Gets the source id referenced by the purpose.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPurposeRawDataDto.SourceName">
+            <summary>
+            Gets the source name for the referenced entity.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPurposeRawDataDto.Postings">
+            <summary>
+            Gets the contributing postings for the purpose in the requested period.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto">
+            <summary>
+            Raw posting row within a purpose.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.PostingId">
+            <summary>
+            Gets the posting id.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.BookingDate">
+            <summary>
+            Gets the booking date.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.ValutaDate">
+            <summary>
+            Gets the valuta date (optional).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.Amount">
+            <summary>
+            Gets the posting amount.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.PostingKind">
+            <summary>
+            Gets the posting kind.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.Description">
+            <summary>
+            Gets the posting description.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.AccountId">
+            <summary>
+            Gets the related account id.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.AccountName">
+            <summary>
+            Gets the related account name.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.ContactId">
+            <summary>
+            Gets the related contact id.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.ContactName">
+            <summary>
+            Gets the related contact name.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.SavingsPlanId">
+            <summary>
+            Gets the related savings plan id.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.SavingsPlanName">
+            <summary>
+            Gets the related savings plan name.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.SecurityId">
+            <summary>
+            Gets the related security id.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.SecurityName">
+            <summary>
+            Gets the related security name.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.BudgetCategoryId">
+            <summary>
+            Gets the budget category id this posting belongs to (if any).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.BudgetCategoryName">
+            <summary>
+            Gets the budget category name this posting belongs to (if any).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.BudgetPurposeId">
+            <summary>
+            Gets the budget purpose id this posting belongs to (if any).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.BudgetPurposeName">
+            <summary>
+            Gets the budget purpose name this posting belongs to (if any).
+            </summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest">
             <summary>
             Request payload for creating a budget rule.
@@ -2533,6 +2768,18 @@
             Actuals are derived from savings plan postings of a savings plan.
             </summary>
         </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.ExpectedBudgetOccurrenceDto">
+            <summary>
+            Represents a single expected budget occurrence derived from a budget rule.
+            Contains the originating rule id, optional purpose/category, amount and occurrence date.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.ExpectedBudgetOccurrenceDto.#ctor(System.Guid,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.DateOnly,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.Nullable{System.Guid},System.String,System.String,System.String)">
+            <summary>
+            Represents a single expected budget occurrence derived from a budget rule.
+            Contains the originating rule id, optional purpose/category, amount and occurrence date.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto">
             <summary>
             DTO for Home Monthly Budget KPI.
@@ -2558,7 +2805,12 @@
             Actual expenses (absolute, positive value) for the current month.
             </summary>
         </member>
-        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.TargetResult">
+        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.ActualResult">
+            <summary>
+            Actual result (actual income minus actual expenses) for the current month.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.PlannedResult">
             <summary>
             Target result (planned income minus planned expenses) for the current month.
             </summary>
@@ -2573,6 +2825,21 @@
             Expected expenses (absolute, positive value) for the current month (planned + unbudgeted actuals).
             </summary>
         </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.RemainingPlannedExpenseAbs">
+            <summary>
+            Remaining planned (budgeted) expenses that are not yet covered by actuals (absolute, positive value).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.RemainingPlannedIncome">
+            <summary>
+            Remaining planned (budgeted) income that is not yet covered by actuals.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.ExpectedTargetResult">
+            <summary>
+            Expected target result for the current month (ExpectedIncome - ExpectedExpenseAbs).
+            </summary>
+        </member>
         <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.UnbudgetedIncome">
             <summary>
             Sum of unbudgeted actual income present in the period (income without assigned purpose).
@@ -2581,6 +2848,17 @@
         <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.UnbudgetedExpenseAbs">
             <summary>
             Sum of unbudgeted actual expenses (absolute, positive) present in the period (expenses without assigned purpose).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.BudgetedRealizedIncome">
+            <summary>
+            Budgeted realized income: sum of positive budget rules for which there are postings.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto.BudgetedRealizedExpenseAbs">
+            <summary>
+            Budgeted realized expenses (absolute, positive): sum of negative budget rules for which there are postings.
+            Includes both purpose- and category-level negative rules that have associated postings.
             </summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Common.AggregatePointDto">
@@ -5365,7 +5643,7 @@
         <member name="M:FinanceManager.Shared.IApiClient.HomeKpis_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>Deletes a home KPI. Returns false when not found.</summary>
         </member>
-        <member name="M:FinanceManager.Shared.IApiClient.Budgets_GetMonthlyKpiAsync(System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_GetMonthlyKpiAsync(System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <summary>
             Gets the Home Monthly Budget KPI values (planned/actual income and expenses).
             </summary>

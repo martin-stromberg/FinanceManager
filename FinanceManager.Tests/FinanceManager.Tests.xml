@@ -6,12 +6,15 @@
     <members>
         <member name="T:FinanceManager.Tests.Budget.BudgetReportServiceTests">
             <summary>
-            Unit tests for <see cref="T:FinanceManager.Infrastructure.Budget.BudgetReportService"/>.
-            These tests validate budget aggregation behavior (period totals, category/purpose rollups)
-            and the correctness of the derived synthetic rows (Sum/Unbudgeted/Result) across different
-            source types and date bases.
+            Contains unit tests for the BudgetReportService, verifying the generation of raw report data for a full month.
             </summary>
+            <remarks>These tests cover a wide range of budget and posting scenarios, including grouped budget purposes,
+            budgets with both positive and negative expectations, fulfilled and unfulfilled budgets, overruns, and postings
+            without budgeted expectations. The tests ensure that the BudgetReportService correctly aggregates, categorizes, and
+            reports financial data based on the defined budgets and actual postings, including the handling of unbudgeted and
+            uncategorized transactions.</remarks>
         </member>
+        <!-- Badly formed XML comment ignored for member "M:FinanceManager.Tests.Budget.BudgetReportServiceTests.Test_GetRawData_ForEntireMonthAsync" -->
         <member name="T:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests">
             <summary>
             Tests the parsing of pdf statement documents

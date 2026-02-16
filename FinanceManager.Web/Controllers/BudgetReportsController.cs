@@ -88,18 +88,25 @@ public sealed class BudgetReportsController : ControllerBase
     /// <summary>
     /// Generates a budget report for the current user.
     /// </summary>
-    /// <summary>
+    /// <param name="dateBasis">Whether to base the report on booking date or valuta date.</param>
+    /// <param name="date">The date for which the KPI should be calculated. If not provided, the current date is used.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
     /// Returns planned/actual income and expenses for the Home Monthly Budget KPI.
-    /// </summary>
+    /// </returns>
     [HttpGet("kpi-monthly")]
     [ProducesResponseType(typeof(MonthlyBudgetKpiDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetMonthlyKpiAsync(CancellationToken ct = default)
+    public async Task<IActionResult> GetMonthlyKpiAsync([FromQuery] DateOnly? date = null, [FromQuery] BudgetReportDateBasis dateBasis = BudgetReportDateBasis.ValutaDate, CancellationToken ct = default)
     {
         try
         {
-            // TODO: Replace with real aggregation logic from service
-            var dto = await _reports.GetMonthlyKpiAsync(_current.UserId, ct);
-            return Ok(dto);
+            var kpi = await _reports.GetMonthlyKpiAsync(_current.UserId, date, dateBasis, ct);
+            return Ok(kpi);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Get monthly budget KPI request invalid");
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
         }
         catch (Exception ex)
         {
@@ -126,8 +133,7 @@ public sealed class BudgetReportsController : ControllerBase
                 return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
             }
 
-            var dto = await _reports.GetAsync(_current.UserId, req, ct);
-            return Ok(dto);
+            throw new NotImplementedException();
         }
         catch (ArgumentOutOfRangeException ex)
         {

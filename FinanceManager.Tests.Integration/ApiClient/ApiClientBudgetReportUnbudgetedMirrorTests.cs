@@ -31,7 +31,11 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         var username = $"user_{Guid.NewGuid():N}";
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
-
+    /// <summary>
+    /// Integrationstest: Wenn Sparplan-Buchungen auf das Self-Konto gespiegelt werden,
+    /// müssen die Unbudgeted-Endpunkte die gespiegelten Self-Buchungen herausfiltern
+    /// und nur tatsächlich ungeplante Self-Postings zurückgeben (hier: +12,34 €).
+    /// </summary>
     [Fact]
     public async Task BudgetReport_UnbudgetedPostings_ShouldOnlyContainNonMirroredSelfContactPostings_WhenSavingsPlanPostingsMirrorSelfContact()
     {

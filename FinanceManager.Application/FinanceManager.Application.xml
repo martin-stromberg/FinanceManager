@@ -620,18 +620,27 @@
             Service for generating budget reports.
             </summary>
         </member>
-        <member name="M:FinanceManager.Application.Budget.IBudgetReportService.GetAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetReportRequest,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Application.Budget.IBudgetReportService.GetRawDataAsync(System.Guid,System.DateOnly,System.DateOnly,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
             <summary>
-            Generates a budget report for the current user.
+            Returns raw budget report data for the given date range.
             </summary>
-            <param name="ownerUserId">Owner user id.</param>
-            <param name="request">Report request.</param>
+            <param name="ownerUserId">The owner user id.</param>
+            <param name="from">Inclusive range start.</param>
+            <param name="to">Inclusive range end.</param>
+            <param name="dateBasis">Date basis used when calculating actual values.</param>
             <param name="ct">Cancellation token.</param>
+            <returns>A raw data DTO containing categories, purposes and contributing postings.</returns>
         </member>
-        <member name="M:FinanceManager.Application.Budget.IBudgetReportService.GetMonthlyKpiAsync(System.Guid,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Application.Budget.IBudgetReportService.GetMonthlyKpiAsync(System.Guid,System.Nullable{System.DateOnly},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
             <summary>
-            Returns planned/actual income and expenses for the Home Monthly Budget KPI.
+            Asynchronously retrieves the monthly budget KPI data for the specified user and month.
             </summary>
+            <param name="userId">The unique identifier of the user for whom to retrieve KPI data.</param>
+            <param name="date">The month and year for which to retrieve KPI data. If null, the current month is used.</param>
+            <param name="dateBasis">The date basis to use when calculating the KPI values.</param>
+            <param name="ct">A cancellation token that can be used to cancel the asynchronous operation.</param>
+            <returns>A task that represents the asynchronous operation. The task result contains a <see cref="T:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto"/>
+            with the KPI data for the specified user and month.</returns>
         </member>
         <member name="T:FinanceManager.Application.Budget.IBudgetRuleService">
             <summary>
@@ -934,6 +943,71 @@
             <summary>
             Creates a global notification visible to all users.
             </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Postings.IPostingsQueryService">
+            <summary>
+            Provides query methods to retrieve postings filtered by various entities (contact, account, savings plan, security).
+            Implementations encapsulate paging, filtering and any authorization/context handling required by the application.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Postings.IPostingsQueryService.GetContactPostingsAsync(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Retrieves a paged list of postings for the specified contact.
+            </summary>
+            <param name="contactId">Identifier of the contact whose postings should be returned.</param>
+            <param name="skip">Number of items to skip for paging.</param>
+            <param name="take">Number of items to take for paging.</param>
+            <param name="q">Optional search term used to filter postings.</param>
+            <param name="from">Optional inclusive start date for date range filtering.</param>
+            <param name="to">Optional inclusive end date for date range filtering.</param>
+            <param name="currentUserId">Identifier of the current user used for authorization/context.</param>
+            <param name="ct">Cancellation token used to cancel the operation.</param>
+            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results.</returns>
+            <exception cref="T:System.OperationCanceledException">When the operation is cancelled via the provided <paramref name="ct"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Postings.IPostingsQueryService.GetAccountPostingsAsync(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Retrieves a paged list of postings for the specified account.
+            </summary>
+            <param name="accountId">Identifier of the account whose postings should be returned.</param>
+            <param name="skip">Number of items to skip for paging.</param>
+            <param name="take">Number of items to take for paging.</param>
+            <param name="q">Optional search term used to filter postings.</param>
+            <param name="from">Optional inclusive start date for date range filtering.</param>
+            <param name="to">Optional inclusive end date for date range filtering.</param>
+            <param name="currentUserId">Identifier of the current user used for authorization/context.</param>
+            <param name="ct">Cancellation token used to cancel the operation.</param>
+            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results.</returns>
+            <exception cref="T:System.OperationCanceledException">When the operation is cancelled via the provided <paramref name="ct"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Postings.IPostingsQueryService.GetSavingsPlanPostingsAsync(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Retrieves a paged list of postings for the specified savings plan.
+            </summary>
+            <param name="planId">Identifier of the savings plan whose postings should be returned.</param>
+            <param name="skip">Number of items to skip for paging.</param>
+            <param name="take">Number of items to take for paging.</param>
+            <param name="q">Optional search term used to filter postings.</param>
+            <param name="from">Optional inclusive start date for date range filtering.</param>
+            <param name="to">Optional inclusive end date for date range filtering.</param>
+            <param name="currentUserId">Identifier of the current user used for authorization/context.</param>
+            <param name="ct">Cancellation token used to cancel the operation.</param>
+            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results.</returns>
+            <exception cref="T:System.OperationCanceledException">When the operation is cancelled via the provided <paramref name="ct"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Postings.IPostingsQueryService.GetSecurityPostingsAsync(System.Guid,System.Int32,System.Int32,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Retrieves a paged list of postings for the specified security.
+            </summary>
+            <param name="securityId">Identifier of the security whose postings should be returned.</param>
+            <param name="skip">Number of items to skip for paging.</param>
+            <param name="take">Number of items to take for paging.</param>
+            <param name="from">Optional inclusive start date for date range filtering.</param>
+            <param name="to">Optional inclusive end date for date range filtering.</param>
+            <param name="currentUserId">Identifier of the current user used for authorization/context.</param>
+            <param name="ct">Cancellation token used to cancel the operation.</param>
+            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results.</returns>
+            <exception cref="T:System.OperationCanceledException">When the operation is cancelled via the provided <paramref name="ct"/>.</exception>
         </member>
         <member name="T:FinanceManager.Application.Reports.IHomeKpiService">
             <summary>

@@ -1,114 +1,639 @@
 using FinanceManager.Application.Budget;
+using FinanceManager.Application.Contacts;
+using FinanceManager.Application.Postings;
+using FinanceManager.Application.Savings;
 using FinanceManager.Shared.Dtos.Budget;
-using Microsoft.EntityFrameworkCore;
+using FinanceManager.Shared.Dtos.Postings;
+using FinanceManager.Shared.Dtos.Contacts;
+using FinanceManager.Application.Securities;
 
 namespace FinanceManager.Infrastructure.Budget;
 
 /// <summary>
 /// Implementation of <see cref="IBudgetReportService"/> backed by existing budget overview services.
 /// </summary>
+/// <summary>
+/// Service that produces budget reports and KPIs.
+/// Implements <see cref="IBudgetReportService"/> using underlying purpose and category services
+/// and the application's <see cref="AppDbContext"/> for postings/contacts data.
+/// </summary>
+/// <summary>
+/// Service that builds budget report data.
+/// </summary>
 public sealed class BudgetReportService : IBudgetReportService
 {
     private readonly IBudgetPurposeService _purposes;
     private readonly IBudgetCategoryService _categories;
-    private readonly AppDbContext _db;
+    private readonly IBudgetRuleService _rules;
+    private readonly IPostingsQueryService _postings;
+    private readonly IContactService _contacts;
+    private readonly ISavingsPlanService _savingsPlans;
+    private readonly ISecurityService _securities;
 
     /// <summary>
-    /// Creates a new instance.
+    /// Creates a new <see cref="BudgetReportService"/>.
     /// </summary>
-    public BudgetReportService(IBudgetPurposeService purposes, IBudgetCategoryService categories, AppDbContext db)
+    /// <param name="purposes">Service providing budget purpose overviews.</param>
+    /// <param name="categories">Service providing budget category overviews.</param>
+    /// <param name="rules">Service providing budget rule overviews.</param>
+    /// <param name="postings">Service for retrieving individual postings.</param>
+    /// <param name="contacts">Service providing contacts for the owner.</param>
+    /// <param name="savingsPlans">Service providing savings plans for the owner.</param>
+    public BudgetReportService(
+        IBudgetPurposeService purposes,
+        IBudgetCategoryService categories,
+        IBudgetRuleService rules,
+        IPostingsQueryService postings,
+        IContactService contacts,
+        ISavingsPlanService savingsPlans,
+        FinanceManager.Application.Securities.ISecurityService securities)
     {
         _purposes = purposes;
         _categories = categories;
-        _db = db;
+        _rules = rules;
+        _postings = postings;
+        _contacts = contacts;
+        _savingsPlans = savingsPlans;
+        _securities = securities;
     }
 
-    /// <inheritdoc />
-    public async Task<BudgetReportDto> GetAsync(Guid ownerUserId, BudgetReportRequest request, CancellationToken ct)
+    private async Task<List<BudgetReportPostingRawDataDto>> BuildPostingDtosAsync(
+        Guid ownerUserId,
+        IReadOnlyList<BudgetPurposeOverviewDto> purposes,
+        IReadOnlyList<BudgetCategoryOverviewDto> categories,
+        IReadOnlyList<ContactDto> contacts,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken ct)
     {
-        var months = Math.Clamp(request.Months, 1, 60);
-
-        var asOf = request.AsOfDate;
-        var rangeTo = EndOfMonth(asOf);
-        var rangeFrom = StartOfMonth(asOf.AddMonths(-(months - 1)));
-
-        var periods = BuildPeriodBoundaries(rangeFrom, rangeTo, request.Interval);
-
-        var periodDtos = new List<BudgetReportPeriodDto>(periods.Count);
-
-        IReadOnlyList<BudgetPurposeOverviewDto> purposesForDetails = Array.Empty<BudgetPurposeOverviewDto>();
-        IReadOnlyList<BudgetCategoryOverviewDto> categoriesForDetails = Array.Empty<BudgetCategoryOverviewDto>();
-
-        for (var i = 0; i < periods.Count; i++)
+        var contactPostings = new List<PostingServiceDto>();
+        foreach (var contact in contacts)
         {
-            var (from, to) = periods[i];
+            var postings = await _postings.GetContactPostingsAsync(contact.Id, 0, 5000, null, from.ToDateTime(TimeOnly.MinValue), to.ToDateTime(TimeOnly.MaxValue), ownerUserId, ct);
+            contactPostings.AddRange(postings);
+        }
 
-            var purposes = await _purposes.ListOverviewAsync(
-                ownerUserId,
-                skip: 0,
-                take: 5000,
-                sourceType: null,
-                nameFilter: null,
-                from: from,
-                to: to,
-                budgetCategoryId: null,
-                ct: ct,
-                dateBasis: request.DateBasis);
+        var savingsPlans = await _savingsPlans.ListAsync(ownerUserId, onlyActive: true, ct);
+        var savingsPlanPostings = new List<PostingServiceDto>();
+        foreach (var plan in savingsPlans)
+        {
+            var sp = await _postings.GetSavingsPlanPostingsAsync(plan.Id, 0, 5000, null, from.ToDateTime(TimeOnly.MinValue), to.ToDateTime(TimeOnly.MaxValue), ownerUserId, ct);
+            savingsPlanPostings.AddRange(sp);
+        }
 
-            var budget = purposes.Sum(p => p.BudgetSum);
-            var actual = purposes.Sum(p => p.ActualSum);
-            var delta = actual - budget;
-            var pct = budget == 0m ? 0m : (delta / budget) * 100m;
+        var securities = await _securities.ListAsync(ownerUserId, false, ct);
+        var securityPostings = new List<PostingServiceDto>();
+        foreach (var security in securities)
+        {     
+            var sp = await _postings.GetSecurityPostingsAsync(security.Id, 0, 5000, from.ToDateTime(TimeOnly.MinValue), to.ToDateTime(TimeOnly.MaxValue), ownerUserId, ct);
+            securityPostings.AddRange(sp);
+        }
 
-            periodDtos.Add(new BudgetReportPeriodDto(from, to, budget, actual, delta, pct));
+        // Deduplicate contact postings by id
+        contactPostings = contactPostings.GroupBy(p => p.Id).Select(g => g.First()).ToList();
 
-            if (i == periods.Count - 1 && request.CategoryValueScope == BudgetReportValueScope.LastInterval)
+        // Build lookup for savings-plan postings by GroupId to supplement contact postings
+        var spByGroup = savingsPlanPostings
+            .Where(p => p.GroupId != Guid.Empty)
+            .GroupBy(p => p.GroupId)
+            .ToDictionary(g => g.Key, g => g.First());
+        var secNyGroup = securityPostings
+            .Where(p => p.GroupId != Guid.Empty)
+            .GroupBy(p => p.GroupId)
+            .ToDictionary(g => g.Key, g => g.First());
+
+        var postingDtos = contactPostings.Select(p =>
+        {
+            Guid? spId = p.SavingsPlanId;
+            if (spId == null && p.GroupId != Guid.Empty && spByGroup.TryGetValue(p.GroupId, out var spPosting))
             {
-                purposesForDetails = purposes;
-                categoriesForDetails = await _categories.ListOverviewAsync(ownerUserId, from, to, ct);
+                spId = spPosting.SavingsPlanId;
+            }
+
+            // determine security name using security service when security id present or group points to security
+            Guid? secId = p.SecurityId;
+            if (secId == null && p.GroupId != Guid.Empty && secNyGroup.TryGetValue(p.GroupId, out var grpPosting) && grpPosting.SecurityId != null)
+            {
+                secId = grpPosting.SecurityId;
+            }
+
+            return new BudgetReportPostingRawDataDto
+            {
+                PostingId = p.Id,
+                BookingDate = p.BookingDate,
+                ValutaDate = p.ValutaDate,
+                Amount = p.Amount,
+                PostingKind = p.Kind,
+                Description = p.Description ?? p.Subject ?? string.Empty,
+                AccountId = p.AccountId,
+                AccountName = p.LinkedPostingAccountName ?? p.BankPostingAccountName,
+                ContactId = p.ContactId,
+                ContactName = contacts.FirstOrDefault(c => c.Id == p.ContactId)?.Name ?? p.RecipientName,
+                SavingsPlanId = spId,
+                SavingsPlanName = spId.HasValue ? savingsPlans.FirstOrDefault(sp => sp.Id == spId.Value)?.Name : null,
+                SecurityId = secId,
+                SecurityName = secId.HasValue ? securities.FirstOrDefault(sec => sec.Id == secId.Value)?.Name : null,
+
+                BudgetCategoryId = null,
+                BudgetCategoryName = null,
+                BudgetPurposeId = null,
+                BudgetPurposeName = null
+            };
+        }).ToList();
+
+        // annotate postings with budget purpose/category information using provided overviews
+        for (int i = 0; i < postingDtos.Count; i++)
+        {
+            var dto = postingDtos[i];
+            var contact = contacts.FirstOrDefault(c => c.Id == dto.ContactId);
+
+            var matched = purposes.FirstOrDefault(p =>
+                (p.SourceType == BudgetSourceType.Contact && dto.ContactId == p.SourceId)
+                || (p.SourceType == BudgetSourceType.SavingsPlan && dto.SavingsPlanId == p.SourceId)
+                || (p.SourceType == BudgetSourceType.ContactGroup && contact != null && contact.CategoryId == p.SourceId)
+            );
+
+            if (matched != null)
+            {
+                string? catName = null;
+                if (matched.BudgetCategoryId.HasValue)
+                {
+                    catName = categories.FirstOrDefault(c => c.Id == matched.BudgetCategoryId.Value)?.Name;
+                }
+
+                postingDtos[i] = dto with
+                {
+                    BudgetPurposeId = matched.Id,
+                    BudgetPurposeName = matched.Name,
+                    BudgetCategoryId = matched.BudgetCategoryId,
+                    BudgetCategoryName = catName
+                };
             }
         }
 
-        if (request.ShowDetailsTable && request.CategoryValueScope == BudgetReportValueScope.TotalRange)
-        {
-            purposesForDetails = await _purposes.ListOverviewAsync(
-                ownerUserId,
-                skip: 0,
-                take: 5000,
-                sourceType: null,
-                nameFilter: null,
-                from: rangeFrom,
-                to: rangeTo,
-                budgetCategoryId: null,
-                ct: ct,
-                dateBasis: request.DateBasis);
+        return postingDtos;
+    }
 
-            categoriesForDetails = await _categories.ListOverviewAsync(ownerUserId, rangeFrom, rangeTo, ct);
+    private async Task<List<BudgetReportPurposeRawDataDto>> BuildUncategorizedPurposeDtosAsync(
+        Guid ownerUserId,
+        IEnumerable<BudgetPurposeOverviewDto> uncategorizedPurposes,
+        List<BudgetReportPostingRawDataDto> postingDtos,
+        List<BudgetReportPostingRawDataDto> unbudgetedList,
+        IReadOnlyList<ContactDto> contacts,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken ct)
+    {
+        var result = new List<BudgetReportPurposeRawDataDto>();
+
+        foreach (var pur in uncategorizedPurposes)
+        {
+            // collect postings that belong to this uncategorized purpose and sort by booking, valuta, amount
+            var postingsForPurpose = postingDtos.Where(d =>
+                (pur.SourceType == BudgetSourceType.Contact && d.ContactId == pur.SourceId)
+                || (pur.SourceType == BudgetSourceType.SavingsPlan && d.SavingsPlanId == pur.SourceId)
+                || (pur.SourceType == BudgetSourceType.ContactGroup && contacts.FirstOrDefault(c => c.Id == d.ContactId)?.CategoryId == pur.SourceId)
+            )
+            .OrderBy(p => p.BookingDate)
+            .ThenBy(p => p.ValutaDate ?? DateTime.MinValue)
+            .ThenBy(p => p.Amount)
+            .ToList();
+
+            // collect current rules for this purpose
+            var rules = (await _rules.ListByPurposeAsync(ownerUserId, pur.Id, ct)).ToList();
+
+            var matchedPostings = new List<BudgetReportPostingRawDataDto>();
+
+            // First: exact matches - ensure we remove them from global list
+            foreach (var rule in rules.ToList())
+            {
+                var expected = rule.Amount;
+                var candidate = postingsForPurpose.FirstOrDefault(p => Math.Sign(p.Amount) == Math.Sign(expected) && p.Amount == expected);
+                if (candidate != null)
+                {
+                    matchedPostings.Add(candidate);
+                    rules.Remove(rule);
+                    postingsForPurpose.RemoveAll(x => x.PostingId == candidate.PostingId);
+                    postingDtos.RemoveAll(x => x.PostingId == candidate.PostingId);
+                }
+            }
+
+            // Now process remaining rules: positives (desc) and negatives (asc)
+            var positiveRules = rules.Where(r => r.Amount > 0).OrderByDescending(r => r.Amount).ToList();
+            var negativeRules = rules.Where(r => r.Amount < 0).OrderBy(r => r.Amount).ToList();
+
+            // helper to allocate postings for a rule
+            void AllocateForRule(BudgetRuleDto rule)
+            {
+                if (rule == null) return;
+                var expected = rule.Amount;
+                if (expected > 0)
+                {
+                    var remaining = expected;
+                    for (int idx = 0; idx < postingsForPurpose.Count && remaining > 0; )
+                    {
+                        var p = postingsForPurpose[idx];
+                        if (p.Amount <= 0) { idx++; continue; }
+                        if (p.Amount <= remaining)
+                        {
+                            // fully consume posting
+                            matchedPostings.Add(p);
+                            remaining -= p.Amount;
+                            // remove from working lists
+                            postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
+                            postingsForPurpose.RemoveAt(idx);
+                        }
+                        else
+                        {
+                            // split posting: allocate part and reduce original
+                            var allocated = p with { Amount = remaining };
+                            matchedPostings.Add(allocated);
+                            var remainingAmount = p.Amount - remaining;
+                            // update in postingDtos and postingsForPurpose
+                            for (int j = 0; j < postingDtos.Count; j++)
+                            {
+                                if (postingDtos[j].PostingId == p.PostingId)
+                                {
+                                    postingDtos[j] = postingDtos[j] with { Amount = remainingAmount };
+                                    break;
+                                }
+                            }
+                            postingsForPurpose[idx] = p with { Amount = remainingAmount };
+                            remaining = 0;
+                        }
+                    }
+                }
+                else if (expected < 0)
+                {
+                    var remainingAbs = Math.Abs(expected);
+                    for (int idx = 0; idx < postingsForPurpose.Count && remainingAbs > 0; )
+                    {
+                        var p = postingsForPurpose[idx];
+                        if (p.Amount >= 0) { idx++; continue; }
+                        var pAbs = Math.Abs(p.Amount);
+                        if (pAbs <= remainingAbs)
+                        {
+                            // fully consume posting
+                            matchedPostings.Add(p);
+                            remainingAbs -= pAbs;
+                            postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
+                            postingsForPurpose.RemoveAt(idx);
+                        }
+                        else
+                        {
+                            // split posting
+                            var allocated = p with { Amount = -remainingAbs };
+                            matchedPostings.Add(allocated);
+                            var remainingAmount = p.Amount + remainingAbs; // p.Amount is negative
+                            for (int j = 0; j < postingDtos.Count; j++)
+                            {
+                                if (postingDtos[j].PostingId == p.PostingId)
+                                {
+                                    postingDtos[j] = postingDtos[j] with { Amount = remainingAmount };
+                                    break;
+                                }
+                            }
+                            postingsForPurpose[idx] = p with { Amount = remainingAmount };
+                            remainingAbs = 0;
+                        }
+                    }
+                }
+            }
+
+            foreach (var r in positiveRules) AllocateForRule(r);
+            foreach (var r in negativeRules) AllocateForRule(r);
+
+            // any postings left in postingsForPurpose are unbudgeted for this purpose
+            foreach (var left in postingsForPurpose)
+            {
+                unbudgetedList.Add(left);
+                postingDtos.RemoveAll(x => x.PostingId == left.PostingId);
+            }
+
+            result.Add(new BudgetReportPurposeRawDataDto
+            {
+                PurposeId = pur.Id,
+                PurposeName = pur.Name ?? string.Empty,
+                BudgetedIncome = await GetBudgetedIncomeForPurposeAsync(ownerUserId, pur.Id, from, to, ct),
+                BudgetedExpense = await GetBudgetedExpenseForPurposeAsync(ownerUserId, pur.Id, from, to, ct),
+                BudgetedTarget = await GetBudgetedAmountForPurposeAsync(ownerUserId, pur.Id, from, to, ct),
+                BudgetSourceType = pur.SourceType,
+                SourceId = pur.SourceId,
+                SourceName = pur.SourceName ?? string.Empty,
+                Postings = matchedPostings.ToArray()
+            });
         }
 
-        var categoryDtos = request.ShowDetailsTable
-            ? await BuildCategoriesAsync(ownerUserId, categoriesForDetails, purposesForDetails, request.IncludePurposeRows, rangeFrom, rangeTo, request.DateBasis, ct)
-            : Array.Empty<BudgetReportCategoryDto>();
-
-        return new BudgetReportDto(rangeFrom, rangeTo, request.Interval, periodDtos, categoryDtos);
+        return result;
     }
 
     /// <summary>
-    /// Returns planned and actual income and expenses for the Home Monthly Budget KPI for the current user and month.
+    /// Returns the raw data for a budget report for the given date range.
     /// </summary>
-    /// <param name="userId">The user ID for which to calculate the KPI.</param>
+    /// <param name="ownerUserId">The owner user id.</param>
+    /// <param name="from">Inclusive range start (month boundaries are not enforced).</param>
+    /// <param name="to">Inclusive range end.</param>
+    /// <param name="dateBasis">Date basis used by the underlying budget services.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>A <see cref="MonthlyBudgetKpiDto"/> with planned/actual values and target result.</returns>
-    public async Task<MonthlyBudgetKpiDto> GetMonthlyKpiAsync(Guid userId, CancellationToken ct)
+    /// <returns>A raw data DTO containing categories, purposes and contributing postings.</returns>
+    /// <inheritdoc />
+    public async Task<BudgetReportRawDataDto> GetRawDataAsync(
+        Guid ownerUserId,
+        DateOnly from,
+        DateOnly to,
+        BudgetReportDateBasis dateBasis,
+        CancellationToken ct)
     {
-        // Determine current month range
-        var today = DateTime.UtcNow.Date;
-        var from = new DateOnly(today.Year, today.Month, 1);
-        var to = new DateOnly(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month));
+        // Step 1: load overviews and related reference data
+        var categoryOverviews = await _categories.ListOverviewAsync(ownerUserId, from, to, ct);
+        var purposeOverviews = await _purposes.ListOverviewAsync(ownerUserId, 0, 5000, null, null, from, to, null, ct, dateBasis);
+        var contacts = await _contacts.ListAsync(ownerUserId, 0, 5000, null, null, ct);
 
-        // Get all budget purposes for the user and current month (for planned values)
+        // build posting DTOs for all contact postings and supplement savings plan info
+        var postingDtos = await BuildPostingDtosAsync(ownerUserId, purposeOverviews, categoryOverviews, contacts, from, to, ct);
+
+        // Filter postings according to the requested date basis: when using ValutaDate only
+        // postings with a valuta date inside the requested range should be considered. When
+        // using BookingDate, filter by booking date. This ensures reports generated using the
+        // valuta basis exclude postings whose valuta lies outside the requested month (e.g.
+        // dividends with booking in Jan but valuta in previous year).
+        if (dateBasis == BudgetReportDateBasis.ValutaDate)
+        {
+            postingDtos = postingDtos
+                .Where(p => p.ValutaDate.HasValue && DateOnly.FromDateTime(p.ValutaDate.Value) >= from && DateOnly.FromDateTime(p.ValutaDate.Value) <= to)
+                .ToList();
+        }
+        else // BookingDate
+        {
+            postingDtos = postingDtos
+                .Where(p => DateOnly.FromDateTime(p.BookingDate) >= from && DateOnly.FromDateTime(p.BookingDate) <= to)
+                .ToList();
+        }
+
+        // Step 5: build result DTO
+        // Collect postings that are not assigned to any budget purpose
+        var unbudgetedList = postingDtos.Where(p => p.BudgetPurposeId == null || p.BudgetPurposeId == Guid.Empty).ToList();
+
+        // Remove unbudgeted postings from the working posting list so they are
+        // not considered further when constructing category/purpose postings.
+        postingDtos = postingDtos.Where(p => p.BudgetPurposeId != null && p.BudgetPurposeId != Guid.Empty).ToList();
+
+        // Categories and UncategorizedPurposes placeholders: purposes empty for now
+        var categoryDtos = new List<BudgetReportCategoryRawDataDto>();
+        foreach (var cat in categoryOverviews.OrderBy(c => c.Name))
+        {
+            var purposesInCat = purposeOverviews
+                .Where(p => p.BudgetCategoryId == cat.Id)
+                .OrderBy(p => p.Name)
+                .ToList();
+
+            // determine whether this category has its own rules; if not, the
+            // rules are attached to the purposes -> allocate postings to purposes
+            var categoryRules = await _rules.ListByCategoryAsync(ownerUserId, cat.Id, ct);
+
+            BudgetReportPurposeRawDataDto[] rawPurposes;
+            if (categoryRules == null || categoryRules.Count == 0)
+            {
+                // rules are on purposes: use the same allocation logic as for uncategorized purposes
+                var list = await BuildUncategorizedPurposeDtosAsync(
+                    ownerUserId,
+                    purposesInCat,
+                    postingDtos,
+                    unbudgetedList,
+                    contacts,
+                    from,
+                    to,
+                    ct);
+
+                rawPurposes = list.ToArray();
+            }
+            else
+            {
+                // rules are on the category: allocate category-level rules across postings
+                var rulesForCategory = categoryRules.ToList();
+
+                // collect postings that belong to this category (these postings already carry purpose metadata)
+                var postingsForCategory = postingDtos.Where(d => d.BudgetCategoryId == cat.Id)
+                    .OrderBy(p => p.BookingDate)
+                    .ThenBy(p => p.ValutaDate ?? DateTime.MinValue)
+                    .ThenBy(p => p.Amount)
+                    .ToList();
+
+                // map of purposeId -> allocated postings
+                var allocated = new Dictionary<Guid, List<BudgetReportPostingRawDataDto>>();
+
+                // exact matches first
+                foreach (var rule in rulesForCategory.ToList())
+                {
+                    var expected = rule.Amount;
+                    var candidate = postingsForCategory.FirstOrDefault(p => Math.Sign(p.Amount) == Math.Sign(expected) && p.Amount == expected);
+                    if (candidate != null)
+                    {
+                        if (candidate.BudgetPurposeId.HasValue)
+                        {
+                            var key = candidate.BudgetPurposeId.Value;
+                            if (!allocated.TryGetValue(key, out var postingsList))
+                            {
+                                postingsList = new List<BudgetReportPostingRawDataDto>();
+                                allocated[key] = postingsList;
+                            }
+                            postingsList.Add(candidate);
+                        }
+
+                        rulesForCategory.Remove(rule);
+                        postingsForCategory.RemoveAll(x => x.PostingId == candidate.PostingId);
+                        postingDtos.RemoveAll(x => x.PostingId == candidate.PostingId);
+                    }
+                }
+
+                var positiveRulesCat = rulesForCategory.Where(r => r.Amount > 0).OrderByDescending(r => r.Amount).ToList();
+                var negativeRulesCat = rulesForCategory.Where(r => r.Amount < 0).OrderBy(r => r.Amount).ToList();
+
+                void AllocateCategoryRule(BudgetRuleDto rule)
+                {
+                    if (rule == null) return;
+                    var expected = rule.Amount;
+                    if (expected > 0)
+                    {
+                        var remaining = expected;
+                        for (int idx = 0; idx < postingsForCategory.Count && remaining > 0; )
+                        {
+                            var p = postingsForCategory[idx];
+                            if (p.Amount <= 0) { idx++; continue; }
+                            var targetPurposeId = p.BudgetPurposeId ?? Guid.Empty;
+                            if (p.Amount <= remaining)
+                            {
+                                if (targetPurposeId != Guid.Empty)
+                                {
+                                if (!allocated.TryGetValue(targetPurposeId, out var postsForPurpose))
+                                {
+                                    postsForPurpose = new List<BudgetReportPostingRawDataDto>();
+                                    allocated[targetPurposeId] = postsForPurpose;
+                                }
+                                postsForPurpose.Add(p);
+                                }
+
+                                remaining -= p.Amount;
+                                postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
+                                postingsForCategory.RemoveAt(idx);
+                            }
+                            else
+                            {
+                                var allocatedPart = p with { Amount = remaining };
+                                if (targetPurposeId != Guid.Empty)
+                                {
+                                if (!allocated.TryGetValue(targetPurposeId, out var postsForPurpose2))
+                                {
+                                    postsForPurpose2 = new List<BudgetReportPostingRawDataDto>();
+                                    allocated[targetPurposeId] = postsForPurpose2;
+                                }
+                                postsForPurpose2.Add(allocatedPart);
+                                }
+
+                                var remainingAmount = p.Amount - remaining;
+                                for (int j = 0; j < postingDtos.Count; j++)
+                                {
+                                    if (postingDtos[j].PostingId == p.PostingId)
+                                    {
+                                        postingDtos[j] = postingDtos[j] with { Amount = remainingAmount };
+                                        break;
+                                    }
+                                }
+                                postingsForCategory[idx] = p with { Amount = remainingAmount };
+                                remaining = 0;
+                            }
+                        }
+                    }
+                    else if (expected < 0)
+                    {
+                        var remainingAbs = Math.Abs(expected);
+                        for (int idx = 0; idx < postingsForCategory.Count && remainingAbs > 0; )
+                        {
+                            var p = postingsForCategory[idx];
+                            if (p.Amount >= 0) { idx++; continue; }
+                            var pAbs = Math.Abs(p.Amount);
+                            var targetPurposeId = p.BudgetPurposeId ?? Guid.Empty;
+                            if (pAbs <= remainingAbs)
+                            {
+                                if (targetPurposeId != Guid.Empty)
+                                {
+                                    if (!allocated.TryGetValue(targetPurposeId, out var list))
+                                    {
+                                        list = new List<BudgetReportPostingRawDataDto>();
+                                        allocated[targetPurposeId] = list;
+                                    }
+                                    list.Add(p);
+                                }
+
+                                remainingAbs -= pAbs;
+                                postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
+                                postingsForCategory.RemoveAt(idx);
+                            }
+                            else
+                            {
+                                var allocatedPart = p with { Amount = -remainingAbs };
+                                if (targetPurposeId != Guid.Empty)
+                                {
+                                    if (!allocated.TryGetValue(targetPurposeId, out var list))
+                                    {
+                                        list = new List<BudgetReportPostingRawDataDto>();
+                                        allocated[targetPurposeId] = list;
+                                    }
+                                    list.Add(allocatedPart);
+                                }
+
+                                var remainingAmount = p.Amount + remainingAbs; // negative
+                                for (int j = 0; j < postingDtos.Count; j++)
+                                {
+                                    if (postingDtos[j].PostingId == p.PostingId)
+                                    {
+                                        postingDtos[j] = postingDtos[j] with { Amount = remainingAmount };
+                                        break;
+                                    }
+                                }
+                                postingsForCategory[idx] = p with { Amount = remainingAmount };
+                                remainingAbs = 0;
+                            }
+                        }
+                    }
+                }
+
+                foreach (var r in positiveRulesCat) AllocateCategoryRule(r);
+                foreach (var r in negativeRulesCat) AllocateCategoryRule(r);
+
+                // remaining postings become unbudgeted within this category
+                foreach (var left in postingsForCategory)
+                {
+                    unbudgetedList.Add(left);
+                    postingDtos.RemoveAll(x => x.PostingId == left.PostingId);
+                }
+
+                // build purpose dtos populated with allocated postings (if any)
+                var purposeDtos = new List<BudgetReportPurposeRawDataDto>(purposesInCat.Count);
+                foreach (var pur in purposesInCat)
+                {
+                    allocated.TryGetValue(pur.Id, out var posts);
+                    purposeDtos.Add(new BudgetReportPurposeRawDataDto
+                    {
+                        PurposeId = pur.Id,
+                        PurposeName = pur.Name ?? string.Empty,
+                        // no per-purpose budget when rules live on the category
+                        BudgetedIncome = 0m,
+                        BudgetedExpense = 0m,
+                        BudgetedTarget = 0m,
+                        BudgetSourceType = pur.SourceType,
+                        SourceId = pur.SourceId,
+                        SourceName = pur.SourceName ?? string.Empty,
+                        Postings = posts?.ToArray() ?? Array.Empty<BudgetReportPostingRawDataDto>()
+                    });
+                }
+
+                rawPurposes = purposeDtos.ToArray();
+            }
+
+            categoryDtos.Add(new BudgetReportCategoryRawDataDto
+            {
+                CategoryId = cat.Id,
+                CategoryName = cat.Name ?? string.Empty,
+                BudgetedIncome = await GetBudgetedIncomeForCategoryAsync(ownerUserId, cat.Id, from, to, ct),
+                BudgetedExpense = await GetBudgetedExpenseForCategoryAsync(ownerUserId, cat.Id, from, to, ct),
+                BudgetedTarget = await GetBudgetedAmountForCategoryAsync(ownerUserId, cat.Id, from, to, ct),
+                Purposes = rawPurposes
+            });
+        }
+
+        var uncategorizedDtos = await BuildUncategorizedPurposeDtosAsync(
+            ownerUserId,
+            purposeOverviews.Where(p => !p.BudgetCategoryId.HasValue).OrderBy(p => p.Name),
+            postingDtos,
+            unbudgetedList,
+            contacts,
+            from,
+            to,
+            ct);
+
+        return new BudgetReportRawDataDto
+        {
+            PeriodStart = from.ToDateTime(TimeOnly.MinValue),
+            PeriodEnd = to.ToDateTime(TimeOnly.MaxValue),
+            Categories = categoryDtos.ToArray(),
+            UncategorizedPurposes = uncategorizedDtos.ToArray(),
+            UnbudgetedPostings = unbudgetedList.ToArray()
+        };
+    }
+
+    private async Task<BudgetReportPostingRawDataDto[]> BuildUnbudgetedPostingsAsync(
+        Guid ownerUserId,
+        DateOnly from,
+        DateOnly to,
+        BudgetReportDateBasis dateBasis,
+        CancellationToken ct)
+    {
+        var fromDt = from.ToDateTime(TimeOnly.MinValue);
+        var toDt = to.ToDateTime(TimeOnly.MaxValue);
+
         var purposes = await _purposes.ListOverviewAsync(
-            userId,
+            ownerUserId,
             skip: 0,
             take: 5000,
             sourceType: null,
@@ -117,480 +642,377 @@ public sealed class BudgetReportService : IBudgetReportService
             to: to,
             budgetCategoryId: null,
             ct: ct,
-            dateBasis: BudgetReportDateBasis.BookingDate);
+            dateBasis: dateBasis);
 
-        // Planned values
-        var plannedIncome = purposes.Where(p => p.BudgetSum > 0).Sum(p => p.BudgetSum);
-        var plannedExpenseAbs = purposes.Where(p => p.BudgetSum < 0).Sum(p => Math.Abs(p.BudgetSum));
+        var budgetedContactIds = purposes
+            .Where(p => p.SourceType == BudgetSourceType.Contact)
+            .Select(p => p.SourceId)
+            .Distinct()
+            .ToList();
 
-        // Get actual values (including unbudgeted) from postings
-        var fromDt = from.ToDateTime(TimeOnly.MinValue);
-        var toDt = to.ToDateTime(TimeOnly.MaxValue);
-        var actualPostingsQuery = _db.Postings.AsNoTracking()
-            .Where(p => p.Kind == PostingKind.Contact && p.ContactId != null && p.SavingsPlanId == null)
-            .Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt);
+        var budgetedSavingsPlanIds = purposes
+            .Where(p => p.SourceType == BudgetSourceType.SavingsPlan)
+            .Select(p => p.SourceId)
+            .Distinct()
+            .ToList();
 
-        var actualIncome = await actualPostingsQuery.Where(p => p.Amount > 0).SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
-        var actualExpenseAbs = Math.Abs(await actualPostingsQuery.Where(p => p.Amount < 0).SumAsync(p => (decimal?)p.Amount, ct) ?? 0m);
+        var contacts = await _contacts.ListAsync(ownerUserId, 0, 5000, null, null, ct);
+        var savingsPlans = await _savingsPlans.ListAsync(ownerUserId, onlyActive: true, ct);
 
-        // ExpectedIncome und ExpectedExpenseAbs berechnen
-        // 1. Budgetierte Einnahmen/Ausgaben, die noch nicht durch Ist-Buchungen abgedeckt sind
-        // 2. Unbudgetierte Ist-Buchungen
-
-        // Für jede budgetierte Einnahme/Ausgabe: Wenn Ist < Budget, dann Differenz als "offen" addieren
-        var openBudgetedIncome = purposes.Where(p => p.BudgetSum > 0 && p.ActualSum < p.BudgetSum).Sum(p => p.BudgetSum - p.ActualSum);
-        var openBudgetedExpense = purposes.Where(p => p.BudgetSum < 0 && p.ActualSum > p.BudgetSum).Sum(p => Math.Abs(p.BudgetSum - p.ActualSum));
-
-        // Unbudgetierte Ist-Buchungen (Buchungen ohne zugeordneten Purpose)
-        var budgetedIncomeContactIds = purposes.Where(p => p.BudgetSum > 0).Select(p => p.SourceId).ToHashSet();
-        var budgetedExpenseContactIds = purposes.Where(p => p.BudgetSum < 0).Select(p => p.SourceId).ToHashSet();
-
-        var unbudgetedIncome = await actualPostingsQuery
-            .Where(p => p.Amount > 0 && !budgetedIncomeContactIds.Contains(p.ContactId!.Value))
-            .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
-
-        var unbudgetedExpense = Math.Abs(await actualPostingsQuery
-            .Where(p => p.Amount < 0 && !budgetedExpenseContactIds.Contains(p.ContactId!.Value))
-            .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m);
-
-        // Expected = planned + unbudgeted actuals (do not add uncovered planned amounts)
-        var expectedIncome = plannedIncome + unbudgetedIncome;
-        var expectedExpenseAbs = plannedExpenseAbs + unbudgetedExpense;
-
-        return new MonthlyBudgetKpiDto
+        var allPostings = new List<PostingServiceDto>();
+        foreach (var contact in contacts)
         {
-            PlannedIncome = plannedIncome,
-            PlannedExpenseAbs = Math.Abs(plannedExpenseAbs),
-            ActualIncome = actualIncome,
-            ActualExpenseAbs = Math.Abs(actualExpenseAbs),
-            ExpectedIncome = expectedIncome,
-            ExpectedExpenseAbs = expectedExpenseAbs,
-            UnbudgetedIncome = unbudgetedIncome,
-            UnbudgetedExpenseAbs = unbudgetedExpense,
-            TargetResult = plannedIncome - Math.Abs(plannedExpenseAbs)
-        };
+            var postings = await _postings.GetContactPostingsAsync(contact.Id, 0, 5000, null, fromDt, toDt, ownerUserId, ct);
+            allPostings.AddRange(postings);
+        }
+
+        foreach (var plan in savingsPlans)
+        {
+            var postings = await _postings.GetSavingsPlanPostingsAsync(plan.Id, 0, 5000, null, fromDt, toDt, ownerUserId, ct);
+            allPostings.AddRange(postings);
+        }
+
+        var budgetedPostingIds = new HashSet<Guid>();
+        foreach (var contactId in budgetedContactIds)
+        {
+            var postings = await _postings.GetContactPostingsAsync(contactId, 0, 5000, null, fromDt, toDt, ownerUserId, ct);
+            foreach (var posting in postings)
+            {
+                budgetedPostingIds.Add(posting.Id);
+            }
+        }
+
+        foreach (var planId in budgetedSavingsPlanIds)
+        {
+            var postings = await _postings.GetSavingsPlanPostingsAsync(planId, 0, 5000, null, fromDt, toDt, ownerUserId, ct);
+            foreach (var posting in postings)
+            {
+                budgetedPostingIds.Add(posting.Id);
+            }
+        }
+
+        var unbudgetedPostings = allPostings
+            .Where(p => !budgetedPostingIds.Contains(p.Id))
+            .Where(p => p.Kind == PostingKind.Contact)
+            .OrderBy(p => dateBasis == BudgetReportDateBasis.ValutaDate ? p.ValutaDate : p.BookingDate)
+            .ThenBy(p => p.Id)
+            .ToList();
+
+        if (unbudgetedPostings.Count == 0)
+        {
+            return Array.Empty<BudgetReportPostingRawDataDto>();
+        }
+
+        return unbudgetedPostings.Select(p => new BudgetReportPostingRawDataDto
+        {
+            PostingId = p.Id,
+            BookingDate = p.BookingDate,
+            ValutaDate = p.ValutaDate,
+            Amount = p.Amount,
+            PostingKind = p.Kind,
+            Description = p.Description ?? p.Subject ?? string.Empty,
+            AccountId = p.AccountId,
+            AccountName = p.LinkedPostingAccountName ?? p.BankPostingAccountName,
+            ContactId = p.ContactId,
+            ContactName = contacts.FirstOrDefault(c => c.Id == p.ContactId)?.Name ?? p.RecipientName,
+            SavingsPlanId = p.SavingsPlanId,
+            SavingsPlanName = null,
+            SecurityId = p.SecurityId,
+            SecurityName = null
+        }).ToArray();
     }
 
-    private async Task<IReadOnlyList<BudgetReportCategoryDto>> BuildCategoriesAsync(
+    private async Task<BudgetReportCategoryRawDataDto[]> BuildCategoriesAsync(Guid ownerUserId, DateOnly from, DateOnly to, BudgetReportDateBasis dateBasis, CancellationToken ct)
+    {
+        var categoryOverviews = await _categories.ListOverviewAsync(ownerUserId, from, to, ct);
+        var purposeOverviews = await _purposes.ListOverviewAsync(ownerUserId, 0, 5000, null, null, from, to, null, ct, dateBasis);
+
+        var categories = new List<BudgetReportCategoryRawDataDto>(categoryOverviews.Count);
+
+        foreach (var cat in categoryOverviews.OrderBy(c => c.Name))
+        {
+            var purposes = purposeOverviews.Where(p => p.BudgetCategoryId == cat.Id).ToList();
+            var rawPurposes = await BuildPurposesAsync(ownerUserId, purposes, from, to, dateBasis, ct);
+
+            categories.Add(new BudgetReportCategoryRawDataDto
+            {
+                CategoryId = cat.Id,
+                CategoryName = cat.Name ?? string.Empty,
+                BudgetedAmount = await GetBudgetedAmountForCategoryAsync(ownerUserId, cat.Id, from, to, ct),
+                Purposes = rawPurposes
+            });
+        }
+
+        return categories.ToArray();
+    }
+
+    private async Task<BudgetReportPurposeRawDataDto[]> BuildUncategorizedPurposesAsync(Guid ownerUserId, DateOnly from, DateOnly to, BudgetReportDateBasis dateBasis, CancellationToken ct)
+    {
+        var purposeOverviews = await _purposes.ListOverviewAsync(ownerUserId, 0, 5000, null, null, from, to, null, ct, dateBasis);
+        var uncategorized = purposeOverviews.Where(p => !p.BudgetCategoryId.HasValue).ToList();
+        return await BuildPurposesAsync(ownerUserId, uncategorized, from, to, dateBasis, ct);
+    }
+
+    private async Task<BudgetReportPurposeRawDataDto[]> BuildPurposesAsync(Guid ownerUserId, IReadOnlyList<BudgetPurposeOverviewDto> purposes, DateOnly from, DateOnly to, BudgetReportDateBasis dateBasis, CancellationToken ct)
+    {
+        var result = new List<BudgetReportPurposeRawDataDto>(purposes.Count);
+
+        foreach (var pur in purposes.OrderBy(p => p.Name))
+        {
+            var postings = await GetActualPostingsAsync(ownerUserId, pur.SourceType, pur.SourceId, from, to, dateBasis, ct);
+
+            // compute positive and negative budget components separately so mixed purposes
+            // (having both income and expense rules) are represented correctly
+            var budgetedIncome = await GetBudgetedIncomeForPurposeAsync(ownerUserId, pur.Id, from, to, ct);
+            var budgetedExpense = await GetBudgetedExpenseForPurposeAsync(ownerUserId, pur.Id, from, to, ct);
+            var budgetedAmount = budgetedIncome + budgetedExpense;
+
+            result.Add(new BudgetReportPurposeRawDataDto
+            {
+                PurposeId = pur.Id,
+                PurposeName = pur.Name ?? string.Empty,
+                BudgetedIncome = budgetedIncome,
+                BudgetedExpense = budgetedExpense,
+                BudgetedTarget = budgetedAmount,
+                BudgetSourceType = pur.SourceType,
+                SourceId = pur.SourceId,
+                SourceName = pur.SourceName ?? string.Empty,
+                Postings = postings
+            });
+        }
+
+        return result.ToArray();
+    }
+
+    private async Task<decimal> GetBudgetedAmountForPurposeAsync(Guid ownerUserId, Guid purposeId, DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        var rules = await _rules.ListByPurposeAsync(ownerUserId, purposeId, ct);
+        return ComputeBudgetedOccurrences(rules, from, to).Sum();
+    }
+
+    private async Task<decimal> GetBudgetedAmountForCategoryAsync(Guid ownerUserId, Guid categoryId, DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        var rules = await _rules.ListByCategoryAsync(ownerUserId, categoryId, ct);
+        return ComputeBudgetedOccurrences(rules, from, to).Sum();
+    }
+
+    private static decimal ComputeBudgetedAmountForPeriod(IReadOnlyList<BudgetRuleDto> rules, DateOnly from, DateOnly to)
+    {
+        // compute all occurrences for the rules in the period and sum them
+        return ComputeBudgetedOccurrences(rules, from, to).Sum();
+    }
+
+    private static List<decimal> ComputeBudgetedOccurrences(IReadOnlyList<BudgetRuleDto> rules, DateOnly from, DateOnly to)
+    {
+        var occurrences = new List<decimal>();
+        if (rules == null || rules.Count == 0) return occurrences;
+
+        foreach (var rule in rules)
+        {
+            var step = rule.Interval switch
+            {
+                BudgetIntervalType.Monthly => 1,
+                BudgetIntervalType.Quarterly => 3,
+                BudgetIntervalType.Yearly => 12,
+                BudgetIntervalType.CustomMonths => rule.CustomIntervalMonths ?? 1,
+                _ => 1
+            };
+
+            var occ = rule.StartDate;
+            var ruleEnd = rule.EndDate ?? to;
+
+            while (occ < from)
+            {
+                occ = occ.AddMonths(step);
+                if (occ > ruleEnd)
+                {
+                    break;
+                }
+            }
+
+            while (occ <= to && occ <= ruleEnd)
+            {
+                occurrences.Add(rule.Amount);
+                occ = occ.AddMonths(step);
+            }
+        }
+
+        return occurrences;
+    }
+
+    private async Task<decimal> GetBudgetedIncomeForPurposeAsync(Guid ownerUserId, Guid purposeId, DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        var rules = await _rules.ListByPurposeAsync(ownerUserId, purposeId, ct);
+        return ComputeBudgetedOccurrences(rules, from, to).Where(x => x > 0).Sum();
+    }
+
+    private async Task<decimal> GetBudgetedExpenseForPurposeAsync(Guid ownerUserId, Guid purposeId, DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        var rules = await _rules.ListByPurposeAsync(ownerUserId, purposeId, ct);
+        return ComputeBudgetedOccurrences(rules, from, to).Where(x => x < 0).Sum();
+    }
+
+    private async Task<decimal> GetBudgetedIncomeForCategoryAsync(Guid ownerUserId, Guid categoryId, DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        var rules = await _rules.ListByCategoryAsync(ownerUserId, categoryId, ct);
+        return ComputeBudgetedOccurrences(rules, from, to).Where(x => x > 0).Sum();
+    }
+
+    private async Task<decimal> GetBudgetedExpenseForCategoryAsync(Guid ownerUserId, Guid categoryId, DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        var rules = await _rules.ListByCategoryAsync(ownerUserId, categoryId, ct);
+        return ComputeBudgetedOccurrences(rules, from, to).Where(x => x < 0).Sum();
+    }
+
+    private async Task<BudgetReportPostingRawDataDto[]> GetActualPostingsAsync(
         Guid ownerUserId,
-        IReadOnlyList<BudgetCategoryOverviewDto> categories,
-        IReadOnlyList<BudgetPurposeOverviewDto> purposes,
-        bool includePurposeRows,
+        BudgetSourceType sourceType,
+        Guid sourceId,
         DateOnly from,
         DateOnly to,
         BudgetReportDateBasis dateBasis,
         CancellationToken ct)
     {
-        // The details table can be scoped either to the total range or to the last interval.
-        // The incoming (from/to) currently represent the total report range, so we derive the
-        // date window used for "Unbudgeted" calculations from the selected value scope.
-        // (For LastInterval this is the last month ending at <to>.)
-        var detailFrom = from;
-        var detailTo = to;
+        var fromDt = from.ToDateTime(TimeOnly.MinValue);
+        var toDt = to.ToDateTime(TimeOnly.MaxValue);
 
-        // When the report is configured to show only the last interval in the details table,
-        // unbudgeted values must be calculated on that same last-interval window.
-        // Since this method currently receives the total range, we use the month of <to>.
-        // Note: BudgetReportInterval currently affects the chart/periods; details "LastInterval"
-        // is defined as the last calculated interval bucket; for Month it's the last month.
-        // If other intervals are later supported here, this logic should be adjusted accordingly.
-        if (to > from)
+        IReadOnlyList<PostingServiceDto> postings;
+        if (sourceType == BudgetSourceType.Contact)
         {
-            // Heuristic: when caller passed a multi-month total range (from..to) and purpose/category
-            // inputs are already scoped to last interval, we align the unbudgeted window to the month of <to>.
-            // This matches the UI behavior for CategoryValueScope=LastInterval.
-            detailFrom = new DateOnly(to.Year, to.Month, 1);
-            detailTo = to;
+            postings = await _postings.GetContactPostingsAsync(sourceId, 0, 250, null, fromDt, toDt, ownerUserId, ct);
         }
-
-        var purposeLookup = purposes
-            .Where(p => p.BudgetCategoryId.HasValue)
-            .GroupBy(p => p.BudgetCategoryId)
-            .ToDictionary(g => g.Key, g => g.ToList());
-
-        var result = new List<BudgetReportCategoryDto>(categories.Count + 1);
-
-        // Add a synthetic row for purposes that are not assigned to any category.
-        // (This keeps the details table useful even when users don't use categories.)
-        var unassignedPurposes = purposes.Where(p => p.BudgetCategoryId == null).ToList();
-        if (unassignedPurposes.Count > 0)
+        else if (sourceType == BudgetSourceType.SavingsPlan)
         {
-            var purposeRows = includePurposeRows
-                ? unassignedPurposes
-                    .OrderBy(p => p.Name)
-                    .Select(p =>
-                    {
-                        var delta = p.ActualSum - p.BudgetSum;
-                        var pct = p.BudgetSum == 0m ? 0m : (delta / p.BudgetSum) * 100m;
-                        return new BudgetReportPurposeDto(p.Id, p.Name, p.BudgetSum, p.ActualSum, delta, pct, p.SourceType, p.SourceId);
-                    })
-                    .ToList()
-                : new List<BudgetReportPurposeDto>();
-
-            var budget = unassignedPurposes.Sum(p => p.BudgetSum);
-            var actual = unassignedPurposes.Sum(p => p.ActualSum);
-            var deltaCat = actual - budget;
-            var pctCat = budget == 0m ? 0m : (deltaCat / budget) * 100m;
-
-            result.Add(new BudgetReportCategoryDto(
-                Id: Guid.Empty,
-                Name: "(Unassigned)",
-                Kind: BudgetReportCategoryRowKind.Data,
-                Budget: budget,
-                Actual: actual,
-                Delta: deltaCat,
-                DeltaPct: pctCat,
-                Purposes: purposeRows));
-        }
-
-        foreach (var cat in categories.OrderBy(c => c.Name))
-        {
-            purposeLookup.TryGetValue(cat.Id, out var list);
-            list ??= new List<BudgetPurposeOverviewDto>();
-
-            var purposeRows = includePurposeRows
-                ? list
-                    .OrderBy(p => p.Name)
-                    .Select(p =>
-                    {
-                        var delta = p.ActualSum - p.BudgetSum;
-                        var pct = p.BudgetSum == 0m ? 0m : (delta / p.BudgetSum) * 100m;
-                        return new BudgetReportPurposeDto(p.Id, p.Name, p.BudgetSum, p.ActualSum, delta, pct, p.SourceType, p.SourceId);
-                    })
-                    .ToList()
-                : new List<BudgetReportPurposeDto>();
-
-            var deltaCat = cat.Actual - cat.Budget;
-            var pctCat = cat.Budget == 0m ? 0m : (deltaCat / cat.Budget) * 100m;
-
-            result.Add(new BudgetReportCategoryDto(
-                cat.Id,
-                cat.Name,
-                BudgetReportCategoryRowKind.Data,
-                cat.Budget,
-                cat.Actual,
-                deltaCat,
-                pctCat,
-                purposeRows));
-        }
-
-        // Unbudgeted postings logic:
-        // actualTotal: sum of all contact postings in range (includes self-contact postings)
-        // purposeActualTotal: sum of purpose actuals, but correct overlaps:
-        // - if ContactGroup purposes exist, their actuals already include member contacts, so add back Contact purposes that are covered
-        // - if Self-contact purpose exists, it includes savings plan postings; subtract SavingsPlan purpose actuals
-
-        var fromDt = detailFrom.ToDateTime(TimeOnly.MinValue);
-        var toDt = detailTo.ToDateTime(TimeOnly.MaxValue);
-
-        // Contact postings total for the report range.
-        var actualTotalQuery = _db.Postings.AsNoTracking()
-            .Where(p => p.Kind == PostingKind.Contact && p.ContactId != null && p.SavingsPlanId == null);
-
-        actualTotalQuery = dateBasis == BudgetReportDateBasis.ValutaDate
-            ? actualTotalQuery.Where(p => p.ValutaDate != null && p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
-            : actualTotalQuery.Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt);
-
-        var actualTotal = await actualTotalQuery
-            .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
-
-        // Split unbudgeted into (a) cost-neutral self-contact postings and (b) remaining unbudgeted.
-        // Cost-neutral is approximated as self-contact postings that are part of a posting group (mirrored entries)
-        // which should not affect net totals.
-        decimal unbudgetedSelfCostNeutral = 0m;
-        decimal unbudgetedRemaining = 0m;
-
-        // Start with all purpose actuals (this is the "computed sum" mentioned in the UI).
-        var purposeActualTotal = purposes.Sum(p => p.ActualSum);
-
-        // ContactGroup overlap: group actuals include contacts
-        var groupPurposes = purposes.Where(p => p.SourceType == BudgetSourceType.ContactGroup).ToList();
-        if (groupPurposes.Count > 0)
-        {
-            var groupIds = groupPurposes.Select(p => p.SourceId).Distinct().ToList();
-
-            var groupContactPairs = await _db.Contacts.AsNoTracking()
-                .Where(c => c.OwnerUserId == ownerUserId && c.CategoryId != null && groupIds.Contains(c.CategoryId.Value))
-                .Select(c => new { GroupId = c.CategoryId!.Value, ContactId = c.Id })
-                .ToListAsync(ct);
-
-            var groupContactIds = groupContactPairs.Select(x => x.ContactId).Distinct().ToHashSet();
-
-            var coveredContactActuals = purposes
-                .Where(p => p.SourceType == BudgetSourceType.Contact && groupContactIds.Contains(p.SourceId))
-                .Sum(p => p.ActualSum);
-
-            // Group purposes already include the member contact actuals.
-            // If there are also contact purposes for covered contacts, they would double-count actuals.
-            purposeActualTotal -= coveredContactActuals;
-        }
-
-        // Self-contact overlap with savings plans: if a self-contact purpose exists, savings plan purpose actuals must be ignored
-        // because savings plan postings are also booked on the self-contact.
-        var selfContactId = await _db.Contacts.AsNoTracking()
-            .Where(c => c.OwnerUserId == ownerUserId && c.Type == FinanceManager.Shared.Dtos.Contacts.ContactType.Self)
-            .Select(c => (Guid?)c.Id)
-            .FirstOrDefaultAsync(ct);
-
-        var hasSelfContactPurpose = selfContactId.HasValue
-            && purposes.Any(p => p.SourceType == BudgetSourceType.Contact && p.SourceId == selfContactId.Value);
-
-        if (hasSelfContactPurpose)
-        {
-            // If self-contact is budgeted, savings plan purpose actuals contribute via the self-contact as well.
-            // Therefore, remove the savings plan purpose totals from the purpose sum once.
-            var savingsPlanActuals = purposes
-                .Where(p => p.SourceType == BudgetSourceType.SavingsPlan)
-                .Sum(p => p.ActualSum);
-
-            purposeActualTotal -= savingsPlanActuals;
-        }
-
-        var unbudgetedActual = actualTotal - purposeActualTotal;
-
-        if (unbudgetedActual != 0m)
-        {
-            var selfContact = await _db.Contacts.AsNoTracking()
-                .Where(c => c.OwnerUserId == ownerUserId && c.Type == FinanceManager.Shared.Dtos.Contacts.ContactType.Self)
-                .Select(c => (Guid?)c.Id)
-                .FirstOrDefaultAsync(ct);
-
-            if (selfContact.HasValue)
+            // Prefer postings returned by the savings-plan query. If the posting service
+            // returns plan-specific postings, use them and map to contact-posting DTOs.
+            var spPostings = await _postings.GetSavingsPlanPostingsAsync(sourceId, 0, 5000, null, fromDt, toDt, ownerUserId, ct);
+            if (spPostings != null && spPostings.Count > 0)
             {
-                // Determine unbudgeted self-contact postings that are part of a group (mirrored).
-                // We recompute the covered-id logic for the date window in order to isolate the unbudgeted subset.
-                var coveredPostingIds = new HashSet<Guid>();
-
-                var coveredContacts = purposes
-                    .Where(p => p.SourceType == BudgetSourceType.Contact)
-                    .Select(p => p.SourceId)
-                    .Distinct()
+                postings = spPostings
+                    .Select(p => p with { Kind = PostingKind.Contact })
                     .ToList();
-
-                var coveredSavingsPlans = purposes
-                    .Where(p => p.SourceType == BudgetSourceType.SavingsPlan)
-                    .Select(p => p.SourceId)
-                    .Distinct()
-                    .ToList();
-
-                var coveredGroupIds = purposes
-                    .Where(p => p.SourceType == BudgetSourceType.ContactGroup)
-                    .Select(p => p.SourceId)
-                    .Distinct()
-                    .ToList();
-
-                if (coveredGroupIds.Count > 0)
-                {
-                    var groupContactIds = await _db.Contacts.AsNoTracking()
-                        .Where(c => c.OwnerUserId == ownerUserId && c.CategoryId != null && coveredGroupIds.Contains(c.CategoryId.Value))
-                        .Select(c => c.Id)
-                        .Distinct()
-                        .ToListAsync(ct);
-
-                    coveredContacts.AddRange(groupContactIds);
-                    coveredContacts = coveredContacts.Distinct().ToList();
-                }
-
-                // Overlap rule: if self-contact is budget-covered, savings plans are considered covered via self contact.
-                if (coveredContacts.Contains(selfContact.Value))
-                {
-                    coveredSavingsPlans.Clear();
-                }
-
-                var coveredQuery = _db.Postings.AsNoTracking().Where(p => true);
-                coveredQuery = dateBasis == BudgetReportDateBasis.ValutaDate
-                    ? coveredQuery.Where(p => p.ValutaDate != null && p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
-                    : coveredQuery.Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt);
-
-                if (coveredContacts.Count > 0)
-                {
-                    var ids = await coveredQuery
-                        .Where(p => p.ContactId != null && coveredContacts.Contains(p.ContactId.Value))
-                        .Select(p => p.Id)
-                        .ToListAsync(ct);
-
-                    foreach (var id in ids)
-                    {
-                        coveredPostingIds.Add(id);
-                    }
-                }
-
-                if (coveredSavingsPlans.Count > 0)
-                {
-                    var ids = await coveredQuery
-                        .Where(p => p.SavingsPlanId != null && coveredSavingsPlans.Contains(p.SavingsPlanId.Value))
-                        .Select(p => p.Id)
-                        .ToListAsync(ct);
-
-                    foreach (var id in ids)
-                    {
-                        coveredPostingIds.Add(id);
-                    }
-
-                    var coveredSavingsGroupIds = await coveredQuery
-                        .Where(p => p.SavingsPlanId != null && coveredSavingsPlans.Contains(p.SavingsPlanId.Value) && p.GroupId != Guid.Empty)
-                        .Select(p => p.GroupId)
-                        .Distinct()
-                        .ToListAsync(ct);
-
-                    if (coveredSavingsGroupIds.Count > 0)
-                    {
-                        var mirroredContactPostingIds = await coveredQuery
-                            .Where(p => p.ContactId != null && p.SavingsPlanId == null && coveredSavingsGroupIds.Contains(p.GroupId))
-                            .Select(p => p.Id)
-                            .ToListAsync(ct);
-
-                        foreach (var id in mirroredContactPostingIds)
-                        {
-                            coveredPostingIds.Add(id);
-                        }
-                    }
-                }
-
-                var unbudgetedSelfCostNeutralQuery = _db.Postings.AsNoTracking()
-                    .Where(p => p.Kind == PostingKind.Contact && p.ContactId == selfContact.Value && p.SavingsPlanId == null && p.GroupId != Guid.Empty)
-                    .Where(p => !coveredPostingIds.Contains(p.Id));
-
-                unbudgetedSelfCostNeutralQuery = dateBasis == BudgetReportDateBasis.ValutaDate
-                    ? unbudgetedSelfCostNeutralQuery.Where(p => p.ValutaDate != null && p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
-                    : unbudgetedSelfCostNeutralQuery.Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt);
-
-                unbudgetedSelfCostNeutral = await unbudgetedSelfCostNeutralQuery.SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
             }
-
-            unbudgetedRemaining = unbudgetedActual - unbudgetedSelfCostNeutral;
-        }
-
-        // Prevent duplicates if this method is called with already augmented data.
-        // (Shouldn't happen, but keeps output stable.)
-        if (result.Any(r => r.Id == Guid.Empty && (r.Name == "Sum" || r.Name == "Unbudgeted" || r.Name == "Result")))
-        {
-            return result;
-        }
-
-        // If there are no data rows (no categories and no unassigned purposes), keep the output empty.
-        if (result.Count == 0)
-        {
-            return result;
-        }
-
-        // 1) Sum row: sum of budgeted categories.
-        // Keep delta convention consistent with other rows: Delta = Actual - Budget.
-        var sumBudget = result.Sum(r => r.Budget);
-        var sumActual = result.Sum(r => r.Actual);
-        var sumDelta = sumActual - sumBudget;
-        var sumPct = sumBudget == 0m ? 0m : (sumDelta / sumBudget) * 100m;
-
-        result.Add(new BudgetReportCategoryDto(
-            Id: Guid.Empty,
-            Name: "Sum",
-            Kind: BudgetReportCategoryRowKind.Sum,
-            Budget: sumBudget,
-            Actual: sumActual,
-            Delta: sumDelta,
-            DeltaPct: sumPct,
-            Purposes: new List<BudgetReportPurposeDto>()));
-
-        // 2) Unbudgeted section (grouped like categories/purposes):
-        // Parent row shows the total unbudgeted amount; child rows split into remaining vs cost-neutral self.
-        // These rows have no budget, so Delta equals Actual.
-        if (unbudgetedRemaining != 0m || unbudgetedSelfCostNeutral != 0m)
-        {
-            var unbudgetedPurposes = new List<BudgetReportPurposeDto>(capacity: 2);
-            if (unbudgetedRemaining != 0m)
+            else
             {
-                unbudgetedPurposes.Add(new BudgetReportPurposeDto(
-                    Id: Guid.Empty,
-                    Name: "Unbudgeted",
-                    Budget: 0m,
-                    Actual: unbudgetedRemaining,
-                    Delta: 0m,
-                    DeltaPct: 0m,
-                    SourceType: BudgetSourceType.Contact,
-                    SourceId: Guid.Empty));
+                // fallback: scan contact postings and pick those that reference the savings plan
+                var contacts = await _contacts.ListAsync(ownerUserId, 0, 5000, null, null, ct);
+                var list = new List<PostingServiceDto>();
+                foreach (var c in contacts)
+                {
+                    var cp = await _postings.GetContactPostingsAsync(c.Id, 0, 250, null, fromDt, toDt, ownerUserId, ct);
+                    list.AddRange(cp.Where(p => p.SavingsPlanId == sourceId));
+                }
+                postings = list;
             }
-
-            if (unbudgetedSelfCostNeutral != 0m)
-            {
-                unbudgetedPurposes.Add(new BudgetReportPurposeDto(
-                    Id: Guid.Empty,
-                    Name: "Unbudgeted (Self, cost-neutral)",
-                    Budget: 0m,
-                    Actual: unbudgetedSelfCostNeutral,
-                    Delta: 0m,
-                    DeltaPct: 0m,
-                    SourceType: BudgetSourceType.Contact,
-                    SourceId: Guid.Empty));
-            }
-
-            var unbudgetedTotal = unbudgetedRemaining + unbudgetedSelfCostNeutral;
-
-            result.Add(new BudgetReportCategoryDto(
-                Id: Guid.Empty,
-                Name: "Unbudgeted",
-                Kind: BudgetReportCategoryRowKind.Unbudgeted,
-                Budget: 0m,
-                Actual: unbudgetedTotal,
-                Delta: 0m,
-                DeltaPct: 0m,
-                Purposes: unbudgetedPurposes));
+        }
+        else
+        {
+            postings = Array.Empty<PostingServiceDto>();
         }
 
-        // 3) Result row: sum + unbudgeted.
-        var totalActual = sumActual + unbudgetedRemaining + unbudgetedSelfCostNeutral;
-        var totalDelta = totalActual - sumBudget;
-        var totalPct = sumBudget == 0m ? 0m : (totalDelta / sumBudget) * 100m;
-
-        result.Add(new BudgetReportCategoryDto(
-            Id: Guid.Empty,
-            Name: "Result",
-            Kind: BudgetReportCategoryRowKind.Result,
-            Budget: sumBudget,
-            Actual: totalActual,
-            Delta: totalDelta,
-            DeltaPct: totalPct,
-            Purposes: new List<BudgetReportPurposeDto>()));
-
-        return result;
+        return postings
+            .Select(p => new BudgetReportPostingRawDataDto
+            {
+                PostingId = p.Id,
+                BookingDate = p.BookingDate,
+                ValutaDate = p.ValutaDate,
+                Amount = p.Amount,
+                PostingKind = p.Kind,
+                Description = p.Description ?? string.Empty,
+                AccountId = p.AccountId,
+                AccountName = p.LinkedPostingAccountName ?? p.BankPostingAccountName,
+                ContactId = p.ContactId,
+                ContactName = p.RecipientName,
+                SavingsPlanId = p.SavingsPlanId,
+                SavingsPlanName = null,
+                SecurityId = p.SecurityId,
+                SecurityName = null
+            })
+            .OrderBy(p => dateBasis == BudgetReportDateBasis.ValutaDate ? p.ValutaDate : p.BookingDate)
+            .ThenBy(p => p.PostingId)
+            .ToArray();
     }
 
-    private static IReadOnlyList<(DateOnly From, DateOnly To)> BuildPeriodBoundaries(DateOnly from, DateOnly to, BudgetReportInterval interval)
+    /// <summary>
+    /// Asynchronously retrieves the monthly budget KPI data for the specified user and month.
+    /// </summary>
+    /// <param name="userId">The unique identifier of the user for whom to retrieve KPI data.</param>
+    /// <param name="date">The month and year for which to retrieve KPI data. If null, the current month is used.</param>
+    /// <param name="dateBasis">The date basis to use when determining which postings fall into the month for KPI calculations.</param>
+    /// <param name="ct">A cancellation token that can be used to cancel the asynchronous operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a <see cref="MonthlyBudgetKpiDto"/>
+    /// with the KPI data for the specified user and month.</returns>
+    public async Task<MonthlyBudgetKpiDto> GetMonthlyKpiAsync(Guid userId, DateOnly? date, BudgetReportDateBasis dateBasis, CancellationToken ct)
     {
-        if (from > to)
-        {
-            (from, to) = (to, from);
-        }
+        var from = new DateOnly(date?.Year ?? DateTime.Now.Year, date?.Month ?? DateTime.Now.Month, 1);
+        var to = from.AddMonths(1).AddDays(-1);
+        var rawData = await GetRawDataAsync(userId, from, to, dateBasis, ct);
+        // Include uncategorized purposes in KPI calculations as well.
+        var uncategorized = rawData.UncategorizedPurposes ?? Array.Empty<BudgetReportPurposeRawDataDto>();
 
-        var list = new List<(DateOnly From, DateOnly To)>();
-        var cur = StartOfMonth(from);
-        var end = EndOfMonth(to);
+        // Planned income: sum all positive budget components (purpose-level and category-level).
+        var plannedIncome = (rawData.Categories?.Sum(c => c.BudgetedIncome) ?? 0m)
+            + (rawData.Categories?.SelectMany(c => c.Purposes).Sum(p => p.BudgetedIncome) ?? 0m)
+            + (uncategorized?.Sum(p => p.BudgetedIncome) ?? 0m);
+        // Planned expenses: sum absolute values of all negative budget components (purpose-level and category-level).
+        var plannedExpenseAbs = (rawData.Categories?.Sum(c => Math.Abs(c.BudgetedExpense)) ?? 0m)
+            + (rawData.Categories?.SelectMany(c => c.Purposes).Sum(p => Math.Abs(p.BudgetedExpense)) ?? 0m)
+            + (uncategorized?.Sum(p => Math.Abs(p.BudgetedExpense)) ?? 0m);
 
-        var stepMonths = interval switch
+        var unbudgetedIncome = rawData.UnbudgetedPostings
+            .Where(p => p.Amount > 0)
+            .Sum(p => p.Amount);
+        var unbudgetedExpenseAbs = Math.Abs(rawData.UnbudgetedPostings
+            .Where(p => p.Amount < 0)
+            .Sum(p => p.Amount));
+
+        var budgetedRealizedIncome= rawData.Categories
+                .SelectMany(c => c.Purposes)
+                .SelectMany(p => p.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                .Where(p => p.Amount > 0)
+                .Sum(p => p.Amount)
+            + rawData.UncategorizedPurposes?
+                .SelectMany(p => p.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                .Where(p => p.Amount > 0)
+                .Sum(p => p.Amount) ?? 0m;
+        var budgetedRealizedExpenseAbs = Math.Abs(rawData.Categories
+                .SelectMany(c => c.Purposes)
+                .SelectMany(p => p.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                .Where(p => p.Amount < 0)
+                .Sum(p => p.Amount))
+            + Math.Abs(rawData.UncategorizedPurposes?
+                .SelectMany(p => p.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                .Where(p => p.Amount < 0)
+                .Sum(p => p.Amount) ?? 0m);
+
+        var actualIncome = budgetedRealizedIncome + unbudgetedIncome;
+        var actualExpenseAbs = budgetedRealizedExpenseAbs + unbudgetedExpenseAbs;
+
+        return new MonthlyBudgetKpiDto
         {
-            BudgetReportInterval.Month => 1,
-            BudgetReportInterval.Quarter => 3,
-            BudgetReportInterval.Year => 12,
-            _ => 1
+            PlannedIncome = plannedIncome,
+            PlannedExpenseAbs = plannedExpenseAbs,
+            PlannedResult = plannedIncome - plannedExpenseAbs,
+
+            UnbudgetedIncome = unbudgetedIncome,
+            UnbudgetedExpenseAbs = unbudgetedExpenseAbs,
+            BudgetedRealizedIncome = budgetedRealizedIncome,
+            BudgetedRealizedExpenseAbs = budgetedRealizedExpenseAbs,
+
+            ActualIncome = actualIncome,
+            ActualExpenseAbs = actualExpenseAbs,
+            ActualResult = actualIncome - actualExpenseAbs,
+            // ExpectedIncome = aktuelle Einnahmen + noch nicht erfüllte, budgetierte Einnahmen
+            ExpectedIncome = actualIncome + Math.Max(0, plannedIncome - budgetedRealizedIncome),
+            // ExpectedExpenseAbs = aktuelle Ausgaben + noch nicht erfüllte, budgetierte Ausgaben
+            ExpectedExpenseAbs = actualExpenseAbs + Math.Max(0, plannedExpenseAbs - budgetedRealizedExpenseAbs),
+            // Remaining planned expenses = planned expenses minus budgeted realized expenses
+            RemainingPlannedExpenseAbs = Math.Max(0, plannedExpenseAbs - budgetedRealizedExpenseAbs),
+            // Remaining planned income = planned income minus budgeted realized income
+            RemainingPlannedIncome = Math.Max(0, plannedIncome - budgetedRealizedIncome),
+            // ExpectedTargetResult = ExpectedIncome - ExpectedExpenseAbs
+            ExpectedTargetResult = (actualIncome + Math.Max(0, plannedIncome - budgetedRealizedIncome))
+                - (actualExpenseAbs + Math.Max(0, plannedExpenseAbs - budgetedRealizedExpenseAbs))
         };
-
-        while (cur <= end)
-        {
-            var pFrom = cur;
-            var pTo = EndOfMonth(cur.AddMonths(stepMonths - 1));
-            if (pTo > end)
-            {
-                pTo = end;
-            }
-
-            list.Add((pFrom, pTo));
-            cur = cur.AddMonths(stepMonths);
-        }
-
-        return list;
     }
-
-    private static DateOnly StartOfMonth(DateOnly d) => new(d.Year, d.Month, 1);
-
-    private static DateOnly EndOfMonth(DateOnly d)
-        => new(d.Year, d.Month, DateTime.DaysInMonth(d.Year, d.Month));
 }

@@ -1055,40 +1055,52 @@
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetPurposeService.ListOverviewAsync(System.Guid,System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Nullable{System.Guid},System.Threading.CancellationToken,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis)">
             <inheritdoc />
         </member>
-        <member name="T:FinanceManager.Infrastructure.Budget.BudgetReportExportService">
-            <summary>
-            Generates an XLSX export containing all postings in a budget report range, grouped into worksheets by posting kind,
-            and enriched with the budget purpose assignment.
-            </summary>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportExportService.#ctor(FinanceManager.Infrastructure.AppDbContext,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Budget.BudgetReportExportService})">
-            <summary>
-            Creates a new instance.
-            </summary>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportExportService.GenerateXlsxAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetReportExportRequest,System.Threading.CancellationToken)">
-            <inheritdoc />
-        </member>
         <member name="T:FinanceManager.Infrastructure.Budget.BudgetReportService">
             <summary>
             Implementation of <see cref="T:FinanceManager.Application.Budget.IBudgetReportService"/> backed by existing budget overview services.
             </summary>
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportService.#ctor(FinanceManager.Application.Budget.IBudgetPurposeService,FinanceManager.Application.Budget.IBudgetCategoryService,FinanceManager.Infrastructure.AppDbContext)">
             <summary>
-            Creates a new instance.
+            Service that produces budget reports and KPIs.
+            Implements <see cref="T:FinanceManager.Application.Budget.IBudgetReportService"/> using underlying purpose and category services
+            and the application's <see cref="T:FinanceManager.Infrastructure.AppDbContext"/> for postings/contacts data.
+            </summary>
+            <summary>
+            Service that builds budget report data.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportService.GetAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetReportRequest,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportService.#ctor(FinanceManager.Application.Budget.IBudgetPurposeService,FinanceManager.Application.Budget.IBudgetCategoryService,FinanceManager.Application.Budget.IBudgetRuleService,FinanceManager.Application.Postings.IPostingsQueryService,FinanceManager.Application.Contacts.IContactService,FinanceManager.Application.Savings.ISavingsPlanService,FinanceManager.Application.Securities.ISecurityService)">
+            <summary>
+            Creates a new <see cref="T:FinanceManager.Infrastructure.Budget.BudgetReportService"/>.
+            </summary>
+            <param name="purposes">Service providing budget purpose overviews.</param>
+            <param name="categories">Service providing budget category overviews.</param>
+            <param name="rules">Service providing budget rule overviews.</param>
+            <param name="postings">Service for retrieving individual postings.</param>
+            <param name="contacts">Service providing contacts for the owner.</param>
+            <param name="savingsPlans">Service providing savings plans for the owner.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportService.GetRawDataAsync(System.Guid,System.DateOnly,System.DateOnly,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
+            <summary>
+            Returns the raw data for a budget report for the given date range.
+            </summary>
+            <param name="ownerUserId">The owner user id.</param>
+            <param name="from">Inclusive range start (month boundaries are not enforced).</param>
+            <param name="to">Inclusive range end.</param>
+            <param name="dateBasis">Date basis used by the underlying budget services.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A raw data DTO containing categories, purposes and contributing postings.</returns>
             <inheritdoc />
         </member>
-        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportService.GetMonthlyKpiAsync(System.Guid,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportService.GetMonthlyKpiAsync(System.Guid,System.Nullable{System.DateOnly},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
             <summary>
-            Returns planned and actual income and expenses for the Home Monthly Budget KPI for the current user and month.
+            Asynchronously retrieves the monthly budget KPI data for the specified user and month.
             </summary>
-            <param name="userId">The user ID for which to calculate the KPI.</param>
-            <param name="ct">Cancellation token.</param>
-            <returns>A <see cref="T:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto"/> with planned/actual values and target result.</returns>
+            <param name="userId">The unique identifier of the user for whom to retrieve KPI data.</param>
+            <param name="date">The month and year for which to retrieve KPI data. If null, the current month is used.</param>
+            <param name="dateBasis">The date basis to use when determining which postings fall into the month for KPI calculations.</param>
+            <param name="ct">A cancellation token that can be used to cancel the asynchronous operation.</param>
+            <returns>A task that represents the asynchronous operation. The task result contains a <see cref="T:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto"/>
+            with the KPI data for the specified user and month.</returns>
         </member>
         <member name="T:FinanceManager.Infrastructure.Budget.BudgetRuleService">
             <summary>

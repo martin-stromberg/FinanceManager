@@ -1,5 +1,7 @@
 using FinanceManager.Shared.Dtos.Budget;
 using System.Net.Http.Json;
+using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace FinanceManager.Shared;
 
@@ -45,11 +47,57 @@ public partial class ApiClient
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The <see cref="MonthlyBudgetKpiDto"/> for the current user/month.</returns>
-    public async Task<MonthlyBudgetKpiDto> Budgets_GetMonthlyKpiAsync(CancellationToken ct = default)
+    public async Task<MonthlyBudgetKpiDto> Budgets_GetMonthlyKpiAsync(DateOnly? date = null, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/budget/report/kpi-monthly", ct);
+        var url = "/api/budget/report/kpi-monthly";
+        if (date.HasValue)
+        {
+            url += $"?date={date.Value:yyyy-MM-dd}";
+        }
+
+        var resp = await _http.GetAsync(url, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<MonthlyBudgetKpiDto>(cancellationToken: ct))!;
+    }
+
+    /// <summary>
+    /// Downloads an XLSX export for the given budget report range.
+    /// </summary>
+    public async Task<(string ContentType, string FileName, byte[] Content)> Budgets_ExportAsync(BudgetReportExportRequest request, CancellationToken ct = default)
+    {
+        var url = $"/api/budget/report/export?asOf={request.AsOfDate:yyyy-MM-dd}&months={request.Months}&dateBasis={(int)request.DateBasis}";
+        var resp = await _http.GetAsync(url, ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+
+        var content = await resp.Content.ReadAsByteArrayAsync(ct);
+        var contentType = resp.Content.Headers.ContentType?.ToString() ?? "application/octet-stream";
+
+        string fileName = string.Empty;
+        // Try standard Content-Disposition parsing
+        if (resp.Content.Headers.ContentDisposition?.FileNameStar != null)
+        {
+            fileName = resp.Content.Headers.ContentDisposition.FileNameStar;
+        }
+        else if (resp.Content.Headers.ContentDisposition?.FileName != null)
+        {
+            fileName = resp.Content.Headers.ContentDisposition.FileName;
+        }
+        else if (resp.Headers.TryGetValues("Content-Disposition", out var vals))
+        {
+            var cd = vals.FirstOrDefault();
+            if (!string.IsNullOrEmpty(cd))
+            {
+                var m = Regex.Match(cd, "filename\\*=UTF-8''(?<fn>.+)$");
+                if (m.Success) fileName = Uri.UnescapeDataString(m.Groups["fn"].Value);
+                else
+                {
+                    m = Regex.Match(cd, "filename=\"(?<fn>.+?)\"");
+                    if (m.Success) fileName = m.Groups["fn"].Value;
+                }
+            }
+        }
+
+        return (contentType, fileName ?? string.Empty, content);
     }
 
     #endregion Budget Report

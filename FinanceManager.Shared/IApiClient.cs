@@ -307,7 +307,7 @@ public interface IApiClient
     /// <summary>
     /// Gets the Home Monthly Budget KPI values (planned/actual income and expenses).
     /// </summary>
-    Task<MonthlyBudgetKpiDto> Budgets_GetMonthlyKpiAsync(CancellationToken ct = default);
+    Task<MonthlyBudgetKpiDto> Budgets_GetMonthlyKpiAsync(DateOnly? date = null, CancellationToken ct = default);
 
     // Meta Holidays
 

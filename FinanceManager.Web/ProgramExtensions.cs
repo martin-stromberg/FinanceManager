@@ -98,13 +98,15 @@ namespace FinanceManager.Web
             builder.Services.AddSingleton<InMemoryHolidayProvider>();
             builder.Services.AddSingleton<NagerDateHolidayProvider>();
             builder.Services.AddSingleton<IHolidaySubdivisionService, NagerDateSubdivisionService>();
-            builder.Services.AddSingleton<IHolidayProviderResolver, HolidayProviderResolver>();
+            builder.Services.AddSingleton<IHolidayProviderResolver, HolidayProviderResolver>();            
 
             // Notifications
             builder.Services.AddScoped<INotificationService, NotificationService>();
             builder.Services.AddScoped<INotificationWriter, NotificationWriter>();
 
             builder.Services.AddScoped<IPostingsQueryService, PostingsQueryService>();
+            builder.Services.AddScoped<Application.Postings.IPostingsQueryService>(sp => sp.GetRequiredService<IPostingsQueryService>());
+            builder.Services.AddScoped<Application.Budget.IBudgetReportExportService, BudgetReportExportService>();
 
             // Monthly reminder scheduler
             builder.Services.AddScoped<MonthlyReminderJob>();

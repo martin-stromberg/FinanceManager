@@ -4,5 +4,24 @@
         <name>FinanceManager.Tests.Integration</name>
     </assembly>
     <members>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientBudgetKpiContactsSetupTests.ValidateBudgetReportExport(System.Byte[])">
+            <summary>
+            Validates the budget report XLSX export and builds a map of sheet data.
+            Exposed as a separate helper to keep tests concise.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientBudgetReportUnbudgetedMirrorTests.BudgetReport_UnbudgetedPostings_ShouldOnlyContainNonMirroredSelfContactPostings_WhenSavingsPlanPostingsMirrorSelfContact">
+            <summary>
+            Integrationstest: Wenn Sparplan-Buchungen auf das Self-Konto gespiegelt werden,
+            müssen die Unbudgeted-Endpunkte die gespiegelten Self-Buchungen herausfiltern
+            und nur tatsächlich ungeplante Self-Postings zurückgeben (hier: +12,34 €).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Tests.Integration.TestWebApplicationFactory.FixedUtcNow">
+            <summary>
+            When set, the factory will register an IDateTimeProvider that returns this fixed UTC time.
+            Set this property in tests before calling CreateClient() to force server-side "now".
+            </summary>
+        </member>
     </members>
 </doc>

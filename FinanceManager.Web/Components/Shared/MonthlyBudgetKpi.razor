@@ -31,10 +31,11 @@
     private decimal Result => ActualIncome - ActualExpenseAbs;
     private string ResultText => Result.ToString("0.##");
     private string SollErgebnisText => SollErgebnis.ToString("0.##");
-    private string ResultTextClass => Result >= 0 ? "budget-text-pos" : "budget-text-neg";
-    private string SaldoMarkerClass => Result >= 0 ? "budget-saldo-marker budget-saldo-pos" : "budget-saldo-marker budget-saldo-neg";
-    private string SollMarkerClass => SollErgebnis >= 0 ? "budget-soll-marker budget-soll-pos" : "budget-soll-marker budget-soll-neg";
-    private string SollMarkerLabelClass => SollErgebnis >= 0 ? "budget-soll-marker-label budget-label-soll-pos" : "budget-soll-marker-label budget-label-soll-neg";
+    private bool IsForCurrentMonth => ViewModel != null && ViewModel.Month.Year == DateTime.Now.Year && ViewModel.Month.Month == DateTime.Now.Month;
+    private string ResultTextClass => IsForCurrentMonth ? "budget-text-current" : (Result >= 0 ? "budget-text-pos" : "budget-text-neg");
+    private string SaldoMarkerClass => IsForCurrentMonth ? "budget-saldo-marker budget-saldo-current" : (Result >= 0 ? "budget-saldo-marker budget-saldo-pos" : "budget-saldo-marker budget-saldo-neg");
+    private string SollMarkerClass => IsForCurrentMonth ? "budget-soll-marker budget-soll-current" : (SollErgebnis >= 0 ? "budget-soll-marker budget-soll-pos" : "budget-soll-marker budget-soll-neg");
+    private string SollMarkerLabelClass => IsForCurrentMonth ? "budget-soll-marker-label budget-soll-label-current" : (SollErgebnis >= 0 ? "budget-soll-marker-label budget-label-soll-pos" : "budget-soll-marker-label budget-label-soll-neg");
     // Marker positions are calculated on the same sizing scale (expected/planned fallback)
     private decimal MarkerPos => TotalPlan == 0 ? 0.5m : (SizeIncome - Result) / (TotalPlan);
     private decimal MarkerLabelPos => Math.Clamp(MarkerPos - 0.1m, 0m, 1m);

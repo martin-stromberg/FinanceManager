@@ -682,13 +682,16 @@
             Exports all postings of the budget report for the total report range as an Excel file.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.GetMonthlyKpiAsync(System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.GetMonthlyKpiAsync(System.Nullable{System.DateOnly},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
             <summary>
             Generates a budget report for the current user.
             </summary>
-            <summary>
+            <param name="dateBasis">Whether to base the report on booking date or valuta date.</param>
+            <param name="date">The date for which the KPI should be calculated. If not provided, the current date is used.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>
             Returns planned/actual income and expenses for the Home Monthly Budget KPI.
-            </summary>
+            </returns>
         </member>
         <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.GetAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportRequest,System.Threading.CancellationToken)">
             <summary>
@@ -3109,6 +3112,13 @@
             <param name="payload">Task payload provided when the background job was enqueued. May be <c>null</c> or a JSON string.</param>
             <returns>An <see cref="T:FinanceManager.Web.Services.BookingTaskExecutor.Options"/> instance with the parsed settings or defaults when parsing fails.</returns>
         </member>
+        <member name="T:FinanceManager.Web.Services.BudgetReportExportService">
+            <summary>
+            Minimal fallback implementation of <see cref="T:FinanceManager.Application.Budget.IBudgetReportExportService"/> used
+            when no dedicated exporter is registered. Returns a small CSV stream.
+            Production should replace this with a proper XLSX generator.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.Services.BusinessDayCalculator">
             <summary>
             Utility helpers for computing business days. Currently considers weekends (Saturday/Sunday) non-business days
@@ -3273,65 +3283,6 @@
             Provides query methods to retrieve postings filtered by various entities (contact, account, savings plan, security).
             Implementations encapsulate paging, filtering and any authorization/context handling required by the application.
             </summary>
-        </member>
-        <member name="M:FinanceManager.Web.Services.IPostingsQueryService.GetContactPostingsAsync(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Guid,System.Threading.CancellationToken)">
-            <summary>
-            Retrieves a paged list of postings for the specified contact.
-            </summary>
-            <param name="contactId">Identifier of the contact whose postings should be returned.</param>
-            <param name="skip">Number of items to skip for paging.</param>
-            <param name="take">Number of items to take for paging.</param>
-            <param name="q">Optional search term used to filter postings.</param>
-            <param name="from">Optional inclusive start date for date range filtering.</param>
-            <param name="to">Optional inclusive end date for date range filtering.</param>
-            <param name="currentUserId">Identifier of the current user used for authorization/context.</param>
-            <param name="ct">Cancellation token used to cancel the operation.</param>
-            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results.</returns>
-            <exception cref="T:System.OperationCanceledException">When the operation is cancelled via the provided <paramref name="ct"/>.</exception>
-        </member>
-        <member name="M:FinanceManager.Web.Services.IPostingsQueryService.GetAccountPostingsAsync(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Guid,System.Threading.CancellationToken)">
-            <summary>
-            Retrieves a paged list of postings for the specified account.
-            </summary>
-            <param name="accountId">Identifier of the account whose postings should be returned.</param>
-            <param name="skip">Number of items to skip for paging.</param>
-            <param name="take">Number of items to take for paging.</param>
-            <param name="q">Optional search term used to filter postings.</param>
-            <param name="from">Optional inclusive start date for date range filtering.</param>
-            <param name="to">Optional inclusive end date for date range filtering.</param>
-            <param name="currentUserId">Identifier of the current user used for authorization/context.</param>
-            <param name="ct">Cancellation token used to cancel the operation.</param>
-            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results.</returns>
-            <exception cref="T:System.OperationCanceledException">When the operation is cancelled via the provided <paramref name="ct"/>.</exception>
-        </member>
-        <member name="M:FinanceManager.Web.Services.IPostingsQueryService.GetSavingsPlanPostingsAsync(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Guid,System.Threading.CancellationToken)">
-            <summary>
-            Retrieves a paged list of postings for the specified savings plan.
-            </summary>
-            <param name="planId">Identifier of the savings plan whose postings should be returned.</param>
-            <param name="skip">Number of items to skip for paging.</param>
-            <param name="take">Number of items to take for paging.</param>
-            <param name="q">Optional search term used to filter postings.</param>
-            <param name="from">Optional inclusive start date for date range filtering.</param>
-            <param name="to">Optional inclusive end date for date range filtering.</param>
-            <param name="currentUserId">Identifier of the current user used for authorization/context.</param>
-            <param name="ct">Cancellation token used to cancel the operation.</param>
-            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results.</returns>
-            <exception cref="T:System.OperationCanceledException">When the operation is cancelled via the provided <paramref name="ct"/>.</exception>
-        </member>
-        <member name="M:FinanceManager.Web.Services.IPostingsQueryService.GetSecurityPostingsAsync(System.Guid,System.Int32,System.Int32,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Guid,System.Threading.CancellationToken)">
-            <summary>
-            Retrieves a paged list of postings for the specified security.
-            </summary>
-            <param name="securityId">Identifier of the security whose postings should be returned.</param>
-            <param name="skip">Number of items to skip for paging.</param>
-            <param name="take">Number of items to take for paging.</param>
-            <param name="from">Optional inclusive start date for date range filtering.</param>
-            <param name="to">Optional inclusive end date for date range filtering.</param>
-            <param name="currentUserId">Identifier of the current user used for authorization/context.</param>
-            <param name="ct">Cancellation token used to cancel the operation.</param>
-            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results.</returns>
-            <exception cref="T:System.OperationCanceledException">When the operation is cancelled via the provided <paramref name="ct"/>.</exception>
         </member>
         <member name="T:FinanceManager.Web.Services.IPriceProvider">
             <summary>
