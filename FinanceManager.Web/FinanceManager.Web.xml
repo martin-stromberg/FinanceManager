@@ -3119,6 +3119,13 @@
             Production should replace this with a proper XLSX generator.
             </summary>
         </member>
+        <member name="M:FinanceManager.Web.Services.BudgetReportExportService.GenerateXlsxAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetReportExportRequest,System.Threading.CancellationToken)">
+            <summary>
+            Generates a real XLSX workbook containing multiple sheets derived from the budget report raw data.
+            Uses the OpenXML SDK to construct a minimal valid workbook that can be parsed by the test helper.
+            Sheets produced: "Bank", "Contact", "SavingsPlan", "CategoriesAndPurposes".
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.Services.BusinessDayCalculator">
             <summary>
             Utility helpers for computing business days. Currently considers weekends (Saturday/Sunday) non-business days
@@ -4063,6 +4070,16 @@
         <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.SettingsVisible">
             <summary>
             Whether the settings overlay is visible.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.LoadingFrom">
+            <summary>
+            Start date of the currently loading report range.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.LoadingTo">
+            <summary>
+            End date of the currently loading report range.
             </summary>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.Periods">

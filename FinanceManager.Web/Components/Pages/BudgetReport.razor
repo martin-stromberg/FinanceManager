@@ -74,6 +74,24 @@ else
 
     <div class="budget-report" style="margin:1rem auto;max-width:900px;">
         <div class="budget-report-sheet">
+            @if (_vm.Loading)
+            {
+                <div class="budget-report-loading">
+                    <div class="budget-report-spinner"></div>
+                    <div class="budget-report-loading-text">
+                        <span>@(Localizer?["General_Loading"].Value ?? "Loading")</span>
+                        @if (_vm.LoadingFrom.HasValue && _vm.LoadingTo.HasValue)
+                        {
+                            <span class="budget-report-loading-range">
+                                @(Localizer?["Budget_Report_Th_Period"].Value ?? "Period"):
+                                @(_vm.LoadingFrom.Value.ToDateTime(TimeOnly.MinValue).ToString("d", CultureInfo.CurrentCulture))
+                                –
+                                @(_vm.LoadingTo.Value.ToDateTime(TimeOnly.MinValue).ToString("d", CultureInfo.CurrentCulture))
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
             @if (_vm.Settings.ShowTitle)
             {
                 <h2 class="budget-report-title" style="margin-top:0;">@(Localizer?["Budget_Report_Title"].Value ?? "Budget report")</h2>
@@ -119,7 +137,7 @@ else
                                 <td style="text-align:right;">@row.Budget.ToString("N2")</td>
                                 <td style="text-align:right;">@row.Actual.ToString("N2")</td>
                                 <td style="text-align:right;">@(row.Delta == 0 ? string.Empty : row.Delta.ToString("N2"))</td>
-                                <td style="text-align:right;">@(row.DeltaPct == 0 ? string.Empty : row.DeltaPct.ToString("N2"))</td>
+                                <td style="text-align:right;">@(row.DeltaPct == 0 ? string.Empty : row.DeltaPct.ToString("P0"))</td>
                             </tr>
                         }
 
@@ -128,14 +146,14 @@ else
                             var sumBudget = _vm.Periods.Sum(p => p.Budget);
                             var sumActual = _vm.Periods.Sum(p => p.Actual);
                             var sumDelta = sumActual - sumBudget;
-                            var sumPct = sumBudget == 0m ? 0m : (sumDelta / sumBudget) * 100m;
+                            var sumPct = sumBudget == 0m ? 0m : sumDelta / sumBudget;
 
                             <tr style="font-weight:600;">
                                 <td>@(Localizer?["List_Sum"].Value ?? "Sum")</td>
                                 <td style="text-align:right;">@sumBudget.ToString("N2")</td>
                                 <td style="text-align:right;">@sumActual.ToString("N2")</td>
                                 <td style="text-align:right;">@(sumDelta == 0 ? string.Empty : sumDelta.ToString("N2"))</td>
-                                <td style="text-align:right;">@(sumPct == 0 ? string.Empty : sumPct.ToString("N2"))</td>
+                                <td style="text-align:right;">@(sumPct == 0 ? string.Empty : sumPct.ToString("P0"))</td>
                             </tr>
                         }
                     </tbody>
@@ -171,14 +189,14 @@ else
                             if ((hasCategoryBudget && !isSpecialRow) || isUnbudgetedGroup)
                             {
                                 var delta = isUnbudgetedGroup ? 0 : sumActualPurposes - cat.Budget;
-                                var pct = cat.Budget == 0m ? 0m : (delta / cat.Budget) * 100m;
+                                var pct = cat.Budget == 0m ? 0m : delta / cat.Budget;
 
                                 <tr style="font-weight:600;">
                                     <td>@cat.Name</td>
                                     <td style="text-align:right;">@(showZeroAsEmpty && cat.Budget == 0m ? string.Empty : cat.Budget.ToString("N2"))</td>
                                     <td style="text-align:right;">@(showZeroAsEmpty && sumActualPurposes == 0m ? string.Empty : sumActualPurposes.ToString("N2"))</td>
                                     <td style="text-align:right;">@(delta == 0m ? string.Empty : delta.ToString("N2"))</td>
-                                    <td style="text-align:right;">@(pct == 0m ? string.Empty : pct.ToString("N2"))</td>
+                                    <td style="text-align:right;">@(pct == 0m ? string.Empty : pct.ToString("P0"))</td>
                                     <td></td>
                                 </tr>
 
@@ -191,7 +209,7 @@ else
                                             <td style="text-align:right;">@(showZeroAsEmpty && p.Budget == 0m ? string.Empty : p.Budget.ToString("N2"))</td>
                                             <td style="text-align:right;">@(showZeroAsEmpty && p.Actual == 0m ? string.Empty : p.Actual.ToString("N2"))</td>
                                             <td style="text-align:right;">@(p.Delta == 0m ? string.Empty : p.Delta.ToString("N2"))</td>
-                                            <td style="text-align:right;">@(p.DeltaPct == 0m ? string.Empty : p.DeltaPct.ToString("N2"))</td>
+                                            <td style="text-align:right;">@(p.DeltaPct == 0m ? string.Empty : p.DeltaPct.ToString("P0"))</td>
                                             <td style="text-align:right;white-space:nowrap;">
                                                 @if (isUnbudgetedGroup)
                                                 {
@@ -226,7 +244,7 @@ else
                                     <td style="text-align:right;">@(showZeroAsEmpty && cat.Budget == 0m ? string.Empty : cat.Budget.ToString("N2"))</td>
                                     <td style="text-align:right;">@(showZeroAsEmpty && cat.Actual == 0m ? string.Empty : cat.Actual.ToString("N2"))</td>
                                     <td style="text-align:right;">@(showZeroAsEmpty && cat.Delta == 0m ? string.Empty : cat.Delta.ToString("N2"))</td>
-                                    <td style="text-align:right;">@(showZeroAsEmpty && cat.DeltaPct == 0m ? string.Empty : cat.DeltaPct.ToString("N2"))</td>
+                                    <td style="text-align:right;">@(showZeroAsEmpty && cat.DeltaPct == 0m ? string.Empty : cat.DeltaPct.ToString("P0"))</td>
                                     <td style="text-align:right;white-space:nowrap;">
                                         @if (cat.Kind is BudgetReportCategoryRowKind.Unbudgeted)
                                         {
@@ -252,7 +270,7 @@ else
                                             <td style="text-align:right;">@p.Budget.ToString("N2")</td>
                                             <td style="text-align:right;">@p.Actual.ToString("N2")</td>
                                             <td style="text-align:right;">@p.Delta.ToString("N2")</td>
-                                            <td style="text-align:right;">@p.DeltaPct.ToString("N2")</td>
+                                            <td style="text-align:right;">@p.DeltaPct.ToString("P0")</td>
                                             <td style="text-align:right;white-space:nowrap;">
                                                 <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="(async () => await _vm.ShowPurposePostingsAsync(p))">
                                                     <svg><use href="/icons/sprite.svg#search" /></svg>

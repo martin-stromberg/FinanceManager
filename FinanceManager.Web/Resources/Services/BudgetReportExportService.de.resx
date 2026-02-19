@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Budget_Report_Export_Sheet_MonthlyOverview" xml:space="preserve"><value>Monatsübersicht</value></data>
+  <data name="Budget_Report_Export_Sheet_CurrentMonth" xml:space="preserve"><value>Aktueller Monat</value></data>
+  <data name="Budget_Report_Export_Sheet_ContactPostings" xml:space="preserve"><value>Kontaktbuchungen</value></data>
+  <data name="Budget_Report_Export_Header_BookingDate" xml:space="preserve"><value>Buchungsdatum</value></data>
+  <data name="Budget_Report_Export_Header_ValutaDate" xml:space="preserve"><value>Valutadatum</value></data>
+  <data name="Budget_Report_Export_Header_Amount" xml:space="preserve"><value>Betrag</value></data>
+  <data name="Budget_Report_Export_Header_Subject" xml:space="preserve"><value>Verwendungszweck</value></data>
+  <data name="Budget_Report_Export_Header_Contact" xml:space="preserve"><value>Kontakt</value></data>
+  <data name="Budget_Report_Export_Header_SavingsPlan" xml:space="preserve"><value>Sparplan</value></data>
+  <data name="Budget_Report_Export_Header_Account" xml:space="preserve"><value>Konto</value></data>
+  <data name="Budget_Report_Export_Header_Category" xml:space="preserve"><value>Kategorie</value></data>
+  <data name="Budget_Report_Export_Header_Purpose" xml:space="preserve"><value>Zweck</value></data>
+  <data name="Budget_Report_Export_Header_Period" xml:space="preserve"><value>Zeitraum</value></data>
+  <data name="Budget_Report_Export_Header_Budget" xml:space="preserve"><value>Budget</value></data>
+  <data name="Budget_Report_Export_Header_Actual" xml:space="preserve"><value>Ist</value></data>
+  <data name="Budget_Report_Export_Header_Delta" xml:space="preserve"><value>Abweichung</value></data>
+  <data name="Budget_Report_Export_Header_DeltaPct" xml:space="preserve"><value>Abweichung %</value></data>
+  <data name="Budget_Report_Export_Axis_Period" xml:space="preserve"><value>Zeitraum</value></data>
+  <data name="Budget_Report_Export_Axis_Amount" xml:space="preserve"><value>Betrag</value></data>
+</root>

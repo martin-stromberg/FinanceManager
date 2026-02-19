@@ -5,6 +5,7 @@ using FinanceManager.Shared.Dtos.SavingsPlans;
 using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using System.Threading;
 
 namespace FinanceManager.Web.ViewModels.Budget;
 
@@ -13,6 +14,8 @@ namespace FinanceManager.Web.ViewModels.Budget;
 /// </summary>
 public sealed class BudgetReportViewModel : BaseViewModel
 {
+    private int _loadVersion;
+    private CancellationTokenSource? _loadCts;
     private readonly IApiClient _api;
     private readonly IStringLocalizer<FinanceManager.Web.Pages>? _localizer;
 
@@ -55,9 +58,16 @@ public sealed class BudgetReportViewModel : BaseViewModel
                 : FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.BookingDate;
 
             var rows = await _api.Budgets_GetUnbudgetedPostingsAsync(fromDt, toDt, basis, kind: "selfCostNeutral", ct: CancellationToken.None);
+            var fromDate = DateOnly.FromDateTime(fromDt ?? DateTime.MinValue);
+            var toDate = DateOnly.FromDateTime(toDt ?? DateTime.MaxValue);
+
+            IEnumerable<PostingServiceDto> filteredRows = Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
+                ? rows.Where(p => DateOnly.FromDateTime(p.ValutaDate) >= fromDate && DateOnly.FromDateTime(p.ValutaDate) <= toDate)
+                : rows.Where(p => DateOnly.FromDateTime(p.BookingDate) >= fromDate && DateOnly.FromDateTime(p.BookingDate) <= toDate);
+
             PurposePostings = Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
-                ? rows.OrderByDescending(p => p.ValutaDate).ToList()
-                : rows.OrderByDescending(p => p.BookingDate).ToList();
+                ? filteredRows.OrderByDescending(p => p.ValutaDate).ToList()
+                : filteredRows.OrderByDescending(p => p.BookingDate).ToList();
         }
         catch (Exception ex)
         {
@@ -80,6 +90,16 @@ public sealed class BudgetReportViewModel : BaseViewModel
     /// Whether the settings overlay is visible.
     /// </summary>
     public bool SettingsVisible { get; private set; }
+
+    /// <summary>
+    /// Start date of the currently loading report range.
+    /// </summary>
+    public DateOnly? LoadingFrom { get; private set; }
+
+    /// <summary>
+    /// End date of the currently loading report range.
+    /// </summary>
+    public DateOnly? LoadingTo { get; private set; }
 
     /// <summary>
     /// Period rows for the chart and monthly table.
@@ -109,6 +129,16 @@ public sealed class BudgetReportViewModel : BaseViewModel
     /// </summary>
     public async Task LoadAsync()
     {
+        var loadVersion = Interlocked.Increment(ref _loadVersion);
+        var newCts = new CancellationTokenSource();
+        var previousCts = Interlocked.Exchange(ref _loadCts, newCts);
+        previousCts?.Cancel();
+        previousCts?.Dispose();
+
+        var to = Settings.AsOfDate;
+        var from = new DateOnly(to.Year, to.Month, 1).AddMonths(-(Math.Max(1, Settings.Months) - 1));
+        LoadingFrom = from;
+        LoadingTo = to;
         Loading = true;
         SetError(null, null);
         RaiseStateChanged();
@@ -129,7 +159,12 @@ public sealed class BudgetReportViewModel : BaseViewModel
                     DateBasis: Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
                         ? FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.ValutaDate
                         : FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.BookingDate),
-                CancellationToken.None);
+                newCts.Token);
+
+            if (loadVersion != _loadVersion)
+            {
+                return;
+            }
 
             Periods = dto.Periods
                 .OrderBy(p => p.From)
@@ -179,16 +214,30 @@ public sealed class BudgetReportViewModel : BaseViewModel
                     .ToList()
                 : Array.Empty<BudgetReportCategoryRow>();
         }
+        catch (OperationCanceledException) when (newCts.Token.IsCancellationRequested)
+        {
+            return;
+        }
         catch (Exception ex)
         {
+            if (loadVersion != _loadVersion)
+            {
+                return;
+            }
+
             SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
             Periods = Array.Empty<BudgetReportPeriodRow>();
             Categories = Array.Empty<BudgetReportCategoryRow>();
         }
         finally
         {
-            Loading = false;
-            RaiseStateChanged();
+            if (loadVersion == _loadVersion)
+            {
+                Loading = false;
+                LoadingFrom = null;
+                LoadingTo = null;
+                RaiseStateChanged();
+            }
         }
     }
 
