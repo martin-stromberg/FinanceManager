@@ -143,7 +143,7 @@ public sealed partial class StatementDraftService
             .ToListAsync(ct);
 
         // Duplicate detection: consider existing Bank postings and historical StatementEntries
-        List<(DateTime BookingDate, decimal Amount, string Subject)> existing = new();
+        List<(DateTime BookingDate, decimal Amount, decimal? OriginalAmount, string Subject)> existing = new();
         DateTime? oldest = await _db.StatementDraftEntries.AsNoTracking()
                 .Where(e => e.DraftId == draft.Id)
                 .MinAsync(e => (DateTime?)e.BookingDate, ct);
@@ -156,9 +156,9 @@ public sealed partial class StatementDraftService
                     .Where(p => p.Kind == PostingKind.Bank)
                     .Where(p => p.AccountId == draft.DetectedAccountId)
                     .Where(p => p.BookingDate >= since)
-                    .Select(p => new { p.BookingDate, p.Amount, p.Subject })
+                    .Select(p => new { p.BookingDate, p.Amount, p.OriginalAmount, p.Subject })
                     .ToListAsync(ct);
-                existing.AddRange(bankPosts.Select(x => (x.BookingDate.Date, x.Amount, x.Subject)));
+                existing.AddRange(bankPosts.Select(x => (x.BookingDate.Date, x.Amount, x.OriginalAmount, x.Subject)));
             }
 
             // Also check StatementEntries (regardless of account), as they represent already imported statements
@@ -166,7 +166,7 @@ public sealed partial class StatementDraftService
                 .Where(se => se.BookingDate >= since)
                 .Select(se => new { se.BookingDate, se.Amount, se.Subject })
                 .ToListAsync(ct);
-            existing.AddRange(histEntries.Select(x => (x.BookingDate.Date, x.Amount, x.Subject)));
+            existing.AddRange(histEntries.Select(x => (x.BookingDate.Date, x.Amount, (decimal?)null, x.Subject)));
         }
 
 
@@ -186,7 +186,10 @@ public sealed partial class StatementDraftService
                 entry.ResetOpen();
             }
 
-            if (existing.Any(x => x.BookingDate == entry.BookingDate.Date && x.Amount == entry.Amount && string.Equals(x.Subject, entry.Subject, StringComparison.OrdinalIgnoreCase)))
+            if (existing.Any(x =>
+                    x.BookingDate == entry.BookingDate.Date
+                    && string.Equals(x.Subject, entry.Subject, StringComparison.OrdinalIgnoreCase)
+                    && (x.Amount == entry.Amount || (x.Amount == 0m && x.OriginalAmount == entry.Amount))))
             {
                 entry.MarkAlreadyBooked();
                 continue;

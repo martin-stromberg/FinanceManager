@@ -179,6 +179,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         {
             b.HasIndex(x => new { x.AccountId, x.BookingDate });
             b.Property(p => p.ParentId);
+            b.Property(p => p.OriginalAmount).HasPrecision(18, 2);
         });
 
         modelBuilder.Entity<StatementDraft>(b =>

@@ -320,6 +320,21 @@
             NOTE: MinEntriesPerDraft (new feature) is NOT yet applied by the implementation – tests document current behaviour (TDD baseline).
             </summary>
         </member>
+        <member name="M:FinanceManager.Tests.Statements.StatementDraftSplitLinkTests.BookAsync_ShouldUseParentBookingDateAndChildBookingAsValuta_WhenSplitDraftsLinked">
+            <summary>
+            Ensures split-draft postings use the parent booking date and child booking dates as valuta dates.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Statements.StatementDraftSplitLinkTests.ClassifyAsync_ShouldKeepOpen_WhenSplitDraftEntryAmountDiffers">
+            <summary>
+            Ensures split-draft entries are not marked as already booked when the amount differs.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Statements.StatementDraftSplitLinkTests.ClassifyAsync_ShouldMarkAlreadyBooked_WhenSplitDraftEntryReimported">
+            <summary>
+            Ensures split-draft duplicates are detected when re-importing the parent statement entry.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Tests.Statements.StatementDraftUploadGroupSplitTests">
             <summary>
             Tests for booking split drafts that are grouped only by a shared UploadGroupId (multi-part upload) instead of a single explicit SplitDraftId link.

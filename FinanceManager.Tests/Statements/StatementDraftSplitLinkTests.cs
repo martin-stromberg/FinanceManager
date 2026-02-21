@@ -1,5 +1,7 @@
 using FinanceManager.Application.Accounts;
+using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
+using FinanceManager.Domain.Postings;
 using FinanceManager.Domain.Statements;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
@@ -56,6 +58,231 @@ public sealed class StatementDraftSplitLinkTests
 
         public Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct)
             => throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Ensures split-draft postings use the parent booking date and child booking dates as valuta dates.
+    /// </summary>
+    [Fact]
+    public async Task BookAsync_ShouldUseParentBookingDateAndChildBookingAsValuta_WhenSplitDraftsLinked()
+    {
+        var (sut, db, conn, owner) = Create();
+
+        var bank = new Contact(owner, "Bank", ContactType.Bank, null, null);
+        var intermediary = new Contact(owner, "CardProvider", ContactType.Organization, null, null, isPaymentIntermediary: true);
+        var contactA = new Contact(owner, "Shop A", ContactType.Organization, null, null);
+        var contactB = new Contact(owner, "Shop B", ContactType.Organization, null, null);
+        var contactC = new Contact(owner, "Shop C", ContactType.Organization, null, null);
+        db.Contacts.AddRange(bank, intermediary, contactA, contactB, contactC);
+        await db.SaveChangesAsync();
+
+        var account = new Account(owner, AccountType.Giro, "Giro", "DE12500105170648489890", bank.Id);
+        db.Accounts.Add(account);
+        await db.SaveChangesAsync();
+
+        var childDraft = new StatementDraft(owner, "child.pdf", null, null);
+        childDraft.SetUploadGroup(Guid.NewGuid());
+        var parentDraft = new StatementDraft(owner, "parent.pdf", null, null);
+        parentDraft.SetUploadGroup(Guid.NewGuid());
+        parentDraft.SetDetectedAccount(account.Id);
+        db.StatementDrafts.AddRange(childDraft, parentDraft);
+        await db.SaveChangesAsync();
+
+        var childEntry1 = childDraft.AddEntry(new DateTime(2026, 1, 10), -30m, "Child A", contactA.Name, new DateTime(2026, 1, 11), "EUR", null, false);
+        childEntry1.MarkAccounted(contactA.Id);
+        db.Entry(childEntry1).State = EntityState.Added;
+
+        var childEntry2 = childDraft.AddEntry(new DateTime(2026, 1, 12), -40m, "Child B", contactB.Name, null, "EUR", null, false);
+        childEntry2.MarkAccounted(contactB.Id);
+        db.Entry(childEntry2).State = EntityState.Added;
+
+        var childEntry3 = childDraft.AddEntry(new DateTime(2026, 1, 20), -50m, "Child C", contactC.Name, new DateTime(2026, 1, 21), "EUR", null, false);
+        childEntry3.MarkAccounted(contactC.Id);
+        db.Entry(childEntry3).State = EntityState.Added;
+
+        var parentBookingDate = new DateTime(2026, 2, 5);
+        var parentEntry = parentDraft.AddEntry(parentBookingDate, -120m, "Card Statement", intermediary.Name, parentBookingDate, "EUR", null, false);
+        parentEntry.MarkAccounted(intermediary.Id);
+        db.Entry(parentEntry).State = EntityState.Added;
+
+        await db.SaveChangesAsync();
+
+        await sut.SetEntrySplitDraftAsync(parentDraft.Id, parentEntry.Id, childDraft.Id, owner, CancellationToken.None);
+
+        var result = await sut.BookAsync(parentDraft.Id, null, owner, forceWarnings: true, CancellationToken.None);
+        Assert.True(result.Success);
+
+        var childEntries = await db.StatementDraftEntries.AsNoTracking()
+            .Where(e => e.DraftId == childDraft.Id)
+            .ToListAsync();
+        var childBookings = childEntries.ToDictionary(e => e.Id, e => e.BookingDate);
+
+        var childPostings = await db.Postings.AsNoTracking()
+            .Where(p => p.SourceId != Guid.Empty && childBookings.Keys.Contains(p.SourceId))
+            .ToListAsync();
+
+        var parentZeroPostings = await db.Postings.AsNoTracking()
+            .Where(p => p.SourceId == parentEntry.Id && p.Amount == 0m)
+            .ToListAsync();
+
+        Assert.NotEmpty(childPostings);
+        Assert.NotEmpty(parentZeroPostings);
+        foreach (var posting in childPostings)
+        {
+            Assert.Equal(parentBookingDate.Date, posting.BookingDate.Date);
+            Assert.Equal(childBookings[posting.SourceId].Date, posting.ValutaDate.Date);
+        }
+
+        foreach (var posting in parentZeroPostings)
+        {
+            Assert.Equal(parentEntry.Amount, posting.OriginalAmount);
+        }
+
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// Ensures split-draft entries are not marked as already booked when the amount differs.
+    /// </summary>
+    [Fact]
+    public async Task ClassifyAsync_ShouldKeepOpen_WhenSplitDraftEntryAmountDiffers()
+    {
+        var (sut, db, conn, owner) = Create();
+
+        var bank = new Contact(owner, "Bank", ContactType.Bank, null, null);
+        var intermediary = new Contact(owner, "CardProvider", ContactType.Organization, null, null, isPaymentIntermediary: true);
+        var contactA = new Contact(owner, "Shop A", ContactType.Organization, null, null);
+        var contactB = new Contact(owner, "Shop B", ContactType.Organization, null, null);
+        var contactC = new Contact(owner, "Shop C", ContactType.Organization, null, null);
+        db.Contacts.AddRange(bank, intermediary, contactA, contactB, contactC);
+        await db.SaveChangesAsync();
+
+        var account = new Account(owner, AccountType.Giro, "Giro", "DE12500105170648489890", bank.Id);
+        db.Accounts.Add(account);
+        await db.SaveChangesAsync();
+
+        var childDraft = new StatementDraft(owner, "child.pdf", null, null);
+        childDraft.SetUploadGroup(Guid.NewGuid());
+        var parentDraft = new StatementDraft(owner, "parent.pdf", null, null);
+        parentDraft.SetUploadGroup(Guid.NewGuid());
+        parentDraft.SetDetectedAccount(account.Id);
+        db.StatementDrafts.AddRange(childDraft, parentDraft);
+        await db.SaveChangesAsync();
+
+        var childEntry1 = childDraft.AddEntry(new DateTime(2026, 1, 10), -30m, "Child A", contactA.Name, new DateTime(2026, 1, 11), "EUR", null, false);
+        childEntry1.MarkAccounted(contactA.Id);
+        db.Entry(childEntry1).State = EntityState.Added;
+
+        var childEntry2 = childDraft.AddEntry(new DateTime(2026, 1, 12), -40m, "Child B", contactB.Name, null, "EUR", null, false);
+        childEntry2.MarkAccounted(contactB.Id);
+        db.Entry(childEntry2).State = EntityState.Added;
+
+        var childEntry3 = childDraft.AddEntry(new DateTime(2026, 1, 20), -50m, "Child C", contactC.Name, new DateTime(2026, 1, 21), "EUR", null, false);
+        childEntry3.MarkAccounted(contactC.Id);
+        db.Entry(childEntry3).State = EntityState.Added;
+
+        var parentBookingDate = new DateTime(2026, 2, 5);
+        var parentEntry = parentDraft.AddEntry(parentBookingDate, -120m, "Card Statement", intermediary.Name, parentBookingDate, "EUR", null, false);
+        parentEntry.MarkAccounted(intermediary.Id);
+        db.Entry(parentEntry).State = EntityState.Added;
+        await db.SaveChangesAsync();
+
+        await sut.SetEntrySplitDraftAsync(parentDraft.Id, parentEntry.Id, childDraft.Id, owner, CancellationToken.None);
+
+        var booked = await sut.BookAsync(parentDraft.Id, null, owner, forceWarnings: true, CancellationToken.None);
+        Assert.True(booked.Success);
+
+        var secondParent = new StatementDraft(owner, "parent-2.pdf", null, null);
+        secondParent.SetUploadGroup(Guid.NewGuid());
+        secondParent.SetDetectedAccount(account.Id);
+        db.StatementDrafts.Add(secondParent);
+        await db.SaveChangesAsync();
+
+        var secondEntry = secondParent.AddEntry(parentBookingDate, parentEntry.Amount - 1m, parentEntry.Subject, intermediary.Name, parentBookingDate, "EUR", null, false);
+        secondEntry.MarkAccounted(intermediary.Id);
+        db.Entry(secondEntry).State = EntityState.Added;
+        await db.SaveChangesAsync();
+
+        var classified = await sut.ClassifyAsync(secondParent.Id, null, owner, CancellationToken.None);
+        Assert.NotNull(classified);
+
+        var updatedEntry = await db.StatementDraftEntries.AsNoTracking()
+            .FirstAsync(e => e.Id == secondEntry.Id);
+        Assert.NotEqual(StatementDraftEntryStatus.AlreadyBooked, updatedEntry.Status);
+
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// Ensures split-draft duplicates are detected when re-importing the parent statement entry.
+    /// </summary>
+    [Fact]
+    public async Task ClassifyAsync_ShouldMarkAlreadyBooked_WhenSplitDraftEntryReimported()
+    {
+        var (sut, db, conn, owner) = Create();
+
+        var bank = new Contact(owner, "Bank", ContactType.Bank, null, null);
+        var intermediary = new Contact(owner, "CardProvider", ContactType.Organization, null, null, isPaymentIntermediary: true);
+        var contactA = new Contact(owner, "Shop A", ContactType.Organization, null, null);
+        var contactB = new Contact(owner, "Shop B", ContactType.Organization, null, null);
+        var contactC = new Contact(owner, "Shop C", ContactType.Organization, null, null);
+        db.Contacts.AddRange(bank, intermediary, contactA, contactB, contactC);
+        await db.SaveChangesAsync();
+
+        var account = new Account(owner, AccountType.Giro, "Giro", "DE12500105170648489890", bank.Id);
+        db.Accounts.Add(account);
+        await db.SaveChangesAsync();
+
+        var childDraft = new StatementDraft(owner, "child.pdf", null, null);
+        childDraft.SetUploadGroup(Guid.NewGuid());
+        var parentDraft = new StatementDraft(owner, "parent.pdf", null, null);
+        parentDraft.SetUploadGroup(Guid.NewGuid());
+        parentDraft.SetDetectedAccount(account.Id);
+        db.StatementDrafts.AddRange(childDraft, parentDraft);
+        await db.SaveChangesAsync();
+
+        var childEntry1 = childDraft.AddEntry(new DateTime(2026, 1, 10), -30m, "Child A", contactA.Name, new DateTime(2026, 1, 11), "EUR", null, false);
+        childEntry1.MarkAccounted(contactA.Id);
+        db.Entry(childEntry1).State = EntityState.Added;
+
+        var childEntry2 = childDraft.AddEntry(new DateTime(2026, 1, 12), -40m, "Child B", contactB.Name, null, "EUR", null, false);
+        childEntry2.MarkAccounted(contactB.Id);
+        db.Entry(childEntry2).State = EntityState.Added;
+
+        var childEntry3 = childDraft.AddEntry(new DateTime(2026, 1, 20), -50m, "Child C", contactC.Name, new DateTime(2026, 1, 21), "EUR", null, false);
+        childEntry3.MarkAccounted(contactC.Id);
+        db.Entry(childEntry3).State = EntityState.Added;
+
+        var parentBookingDate = new DateTime(2026, 2, 5);
+        var parentEntry = parentDraft.AddEntry(parentBookingDate, -120m, "Card Statement", intermediary.Name, parentBookingDate, "EUR", null, false);
+        parentEntry.MarkAccounted(intermediary.Id);
+        db.Entry(parentEntry).State = EntityState.Added;
+        await db.SaveChangesAsync();
+
+        await sut.SetEntrySplitDraftAsync(parentDraft.Id, parentEntry.Id, childDraft.Id, owner, CancellationToken.None);
+
+        var booked = await sut.BookAsync(parentDraft.Id, null, owner, forceWarnings: true, CancellationToken.None);
+        Assert.True(booked.Success);
+
+        var secondParent = new StatementDraft(owner, "parent-2.pdf", null, null);
+        secondParent.SetUploadGroup(Guid.NewGuid());
+        secondParent.SetDetectedAccount(account.Id);
+        db.StatementDrafts.Add(secondParent);
+        await db.SaveChangesAsync();
+
+        var secondEntry = secondParent.AddEntry(parentBookingDate, parentEntry.Amount, parentEntry.Subject, intermediary.Name, parentBookingDate, "EUR", null, false);
+        secondEntry.MarkAccounted(intermediary.Id);
+        db.Entry(secondEntry).State = EntityState.Added;
+        await db.SaveChangesAsync();
+
+        var classified = await sut.ClassifyAsync(secondParent.Id, null, owner, CancellationToken.None);
+        Assert.NotNull(classified);
+
+        var updatedEntry = await db.StatementDraftEntries.AsNoTracking()
+            .FirstAsync(e => e.Id == secondEntry.Id);
+        Assert.Equal(StatementDraftEntryStatus.AlreadyBooked, updatedEntry.Status);
+
+        conn.Dispose();
     }
 
     [Fact]

@@ -1752,6 +1752,11 @@
             </summary>
             <value>The monetary amount.</value>
         </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.OriginalAmount">
+            <summary>
+            Optional original amount for postings that have been zeroed out during booking.
+            </summary>
+        </member>
         <member name="P:FinanceManager.Domain.Postings.Posting.Subject">
             <summary>
             Optional subject for the posting.
@@ -1825,6 +1830,13 @@
             <param name="valutaDate">The valuta date.</param>
             <returns>The updated <see cref="T:FinanceManager.Domain.Postings.Posting"/> instance (fluent API).</returns>
         </member>
+        <member name="M:FinanceManager.Domain.Postings.Posting.SetOriginalAmount(System.Nullable{System.Decimal})">
+            <summary>
+            Sets the original amount for informational purposes.
+            </summary>
+            <param name="amount">Original amount or null to clear.</param>
+            <returns>The updated <see cref="T:FinanceManager.Domain.Postings.Posting"/> instance (fluent API).</returns>
+        </member>
         <member name="T:FinanceManager.Domain.Postings.Posting.PostingBackupDto">
             <summary>
             DTO carrying the serializable state of a <see cref="T:FinanceManager.Domain.Postings.Posting"/> for backup purposes.
@@ -1839,6 +1851,7 @@
             <param name="BookingDate">Booking date of the posting.</param>
             <param name="ValutaDate">Valuta/date-of-value for the posting.</param>
             <param name="Amount">Monetary amount for the posting.</param>
+            <param name="OriginalAmount">Optional original amount before zeroing.</param>
             <param name="Subject">Optional subject for the posting.</param>
             <param name="RecipientName">Optional recipient name.</param>
             <param name="Description">Optional description.</param>
@@ -1848,7 +1861,7 @@
             <param name="ParentId">Optional parent posting reference.</param>
             <param name="LinkedPostingId">Optional linked posting reference (counterpart).</param>
         </member>
-        <member name="M:FinanceManager.Domain.Postings.Posting.PostingBackupDto.#ctor(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.DateTime,System.DateTime,System.Decimal,System.String,System.String,System.String,System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType},System.Nullable{System.Decimal},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid})">
+        <member name="M:FinanceManager.Domain.Postings.Posting.PostingBackupDto.#ctor(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.DateTime,System.DateTime,System.Decimal,System.Nullable{System.Decimal},System.String,System.String,System.String,System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType},System.Nullable{System.Decimal},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid})">
             <summary>
             DTO carrying the serializable state of a <see cref="T:FinanceManager.Domain.Postings.Posting"/> for backup purposes.
             </summary>
@@ -1862,6 +1875,7 @@
             <param name="BookingDate">Booking date of the posting.</param>
             <param name="ValutaDate">Valuta/date-of-value for the posting.</param>
             <param name="Amount">Monetary amount for the posting.</param>
+            <param name="OriginalAmount">Optional original amount before zeroing.</param>
             <param name="Subject">Optional subject for the posting.</param>
             <param name="RecipientName">Optional recipient name.</param>
             <param name="Description">Optional description.</param>
@@ -1900,6 +1914,9 @@
         </member>
         <member name="P:FinanceManager.Domain.Postings.Posting.PostingBackupDto.Amount">
             <summary>Monetary amount for the posting.</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.PostingBackupDto.OriginalAmount">
+            <summary>Optional original amount before zeroing.</summary>
         </member>
         <member name="P:FinanceManager.Domain.Postings.Posting.PostingBackupDto.Subject">
             <summary>Optional subject for the posting.</summary>
