@@ -1,6 +1,7 @@
 ﻿using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Aggregates;
 using FinanceManager.Application.Attachments; // added
+using FinanceManager.Application.Budget;
 using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Accounts; // added for Account type
 using FinanceManager.Domain.Attachments; // added
@@ -29,6 +30,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
     private readonly IStatementFileFactory statementFileFactory;
     private readonly ILogger<StatementDraftService> _logger; // added
     private readonly IAttachmentService? _attachments; // optional to keep compatibility with tests
+    private readonly IReportCacheService? _reportCacheService;
     private List<StatementDraftDto>? allDrafts = null;
     private List<FinanceManager.Domain.Securities.Security>? allSecurities = null;
     private List<Domain.Accounts.Account>? allAccounts = null;
@@ -93,7 +95,8 @@ public sealed partial class StatementDraftService : IStatementDraftService
         IStatementFileFactory statementFileFactory,
         IEnumerable<IStatementFileParser>? readers = null, 
         ILogger<StatementDraftService>? logger = null, 
-        IAttachmentService? attachments = null) // logger param added
+        IAttachmentService? attachments = null,
+        IReportCacheService? reportCacheService = null) // logger param added
     {
         _db = db;
         _aggregateService = aggregateService;
@@ -101,6 +104,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
         this.statementFileFactory = statementFileFactory;
         _logger = logger ?? NullLogger<StatementDraftService>.Instance;
         _attachments = attachments;
+        _reportCacheService = reportCacheService;
         _statementFileParsers = (readers is not null && readers.ToList().Any()) ? readers.ToList() : new List<IStatementFileParser>
         {
             new ING_PDF_StatementFileParser(null),
@@ -109,6 +113,21 @@ public sealed partial class StatementDraftService : IStatementDraftService
             new Barclays_PDF_StatementFileParser(null),
             new Backup_JSON_StatementFileParser()
         };
+    }
+
+    private async Task MarkReportCacheForEntryAsync(StatementDraftEntry entry, CancellationToken ct)
+    {
+        if (_reportCacheService == null)
+        {
+            return;
+        }
+
+        var bookingDate = DateOnly.FromDateTime(entry.BookingDate);
+        var valutaDate = DateOnly.FromDateTime(entry.ValutaDate ?? entry.BookingDate);
+        var periodFrom = bookingDate <= valutaDate ? bookingDate : valutaDate;
+        var periodTo = bookingDate >= valutaDate ? bookingDate : valutaDate;
+
+        await _reportCacheService.MarkBudgetReportCacheEntriesForUpdateAsync(periodFrom, periodTo, ct);
     }
 
     /// <summary>
@@ -1950,6 +1969,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
             {
                 account.AdjustBalance(amount);
             }
+            await MarkReportCacheForEntryAsync(e, ct);
 
             // After saving, bankPosting.Id and contactPosting.Id will be set; return both ids
             return (gid, bankPosting.Id, contactPosting.Id);
@@ -1991,6 +2011,8 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 // create postings with amount 0 for parent
                 var (parentGid, parentBankId, parentContactId) = await CreateBankAndContactPostingAsync(e, 0m, e.ContactId, ct);
                 await CreateSecurityPostingsAsync(e, parentGid, ct);
+
+                await MarkReportCacheForEntryAsync(e, ct);
 
                 // propagate attachments from entry to postings
                 if (_attachments != null)
@@ -2104,6 +2126,8 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 }
             }
 
+            _reportCacheService?.EnqueueBudgetReportCacheRefresh(ownerUserId);
+
             return new BookingResult(true, false, validation, null, toBook.Count, await GetNextStatementDraftAsync(draft));
         }
 
@@ -2114,6 +2138,8 @@ public sealed partial class StatementDraftService : IStatementDraftService
         {
             await _attachments.ReassignAsync(AttachmentEntityKind.StatementDraft, draft.Id, AttachmentEntityKind.Account, account.Id, ownerUserId, ct);
         }
+
+        _reportCacheService?.EnqueueBudgetReportCacheRefresh(ownerUserId);
 
         // Archive savings plans if flagged and fully funded
         var flaggedPlans = toBook.Where(e => e.SavingsPlanId != null && e.ArchiveSavingsPlanOnBooking).Select(e => e.SavingsPlanId!.Value).Distinct().ToList();
@@ -2266,6 +2292,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
                     }
 
                     await BookSplitDraftGroupAsync(ce.SplitDraftId.Value, ownerUserId, childDraft.Id, self, account, ct, visited, overrideValuta, bankId, contactId);
+                    await MarkReportCacheForEntryAsync(ce, ct);
                 }
                 else
                 {

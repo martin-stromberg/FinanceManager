@@ -33,7 +33,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore; // required for RoleSto
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using FinanceManager.Application.Budget;
-using FinanceManager.Infrastructure.Budget;
+using FinanceManager.Infrastructure.Budget; // new
 
 namespace FinanceManager.Infrastructure;
 
@@ -112,6 +112,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IBudgetPlanningService, BudgetPlanningService>();
         services.AddScoped<IBudgetPurposeService, BudgetPurposeService>();
         services.AddScoped<IBudgetCategoryService, BudgetCategoryService>();
+        services.AddScoped<IReportCacheService, ReportCacheService>();
         services.AddScoped<IBudgetReportService, BudgetReportService>();
         services.AddScoped<IBudgetRuleService, BudgetRuleService>();
         services.AddScoped<IBudgetOverrideService, BudgetOverrideService>();

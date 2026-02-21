@@ -45,15 +45,20 @@ public partial class ApiClient
     /// <summary>
     /// Gets the Home Monthly Budget KPI values (planned/actual income and expenses).
     /// </summary>
+    /// <param name="date">Optional date for the KPI values.</param>
+    /// <param name="dateBasis">Date basis for filtering.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The <see cref="MonthlyBudgetKpiDto"/> for the current user/month.</returns>
-    public async Task<MonthlyBudgetKpiDto> Budgets_GetMonthlyKpiAsync(DateOnly? date = null, CancellationToken ct = default)
+    public async Task<MonthlyBudgetKpiDto> Budgets_GetMonthlyKpiAsync(DateOnly? date = null, BudgetReportDateBasis dateBasis = BudgetReportDateBasis.BookingDate, CancellationToken ct = default)
     {
         var url = "/api/budget/report/kpi-monthly";
+        var query = new List<string> { $"dateBasis={(int)dateBasis}" };
         if (date.HasValue)
         {
-            url += $"?date={date.Value:yyyy-MM-dd}";
+            query.Add($"date={date.Value:yyyy-MM-dd}");
         }
+
+        url += "?" + string.Join("&", query);
 
         var resp = await _http.GetAsync(url, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
@@ -98,6 +103,16 @@ public partial class ApiClient
         }
 
         return (contentType, fileName ?? string.Empty, content);
+    }
+
+    /// <summary>
+    /// Clears cached report data for the current user.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task Budgets_ResetReportCacheAsync(CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsync("/api/budget/report/cache/reset", content: null, ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
     }
 
     #endregion Budget Report

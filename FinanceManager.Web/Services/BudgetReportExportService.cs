@@ -123,7 +123,8 @@ namespace FinanceManager.Web.Services
 
                 var periods = BuildPeriods(from, request.Months, raw, rules, request.DateBasis);
                 var currentPeriod = periods.Last();
-                var currentMonthRows = BuildCurrentMonthRows(raw, rules, request.DateBasis, currentPeriod.From, currentPeriod.To);
+                var unbudgetedLabel = L("Budget_Report_Export_Row_Unbudgeted", "Unbudgeted");
+                var currentMonthRows = BuildCurrentMonthRows(raw, rules, request.DateBasis, currentPeriod.From, currentPeriod.To, unbudgetedLabel);
 
                 void CreatePostingSheet(string name, List<BudgetReportPostingRawDataDto> rows)
                 {
@@ -356,9 +357,11 @@ namespace FinanceManager.Web.Services
             IReadOnlyList<BudgetRule> rules,
             BudgetReportDateBasis dateBasis,
             DateOnly from,
-            DateOnly to)
+            DateOnly to,
+            string unbudgetedLabel)
         {
             var result = new List<CurrentMonthRow>();
+            var unbudgetedPostings = raw.UnbudgetedPostings ?? Array.Empty<BudgetReportPostingRawDataDto>();
             foreach (var cat in raw.Categories ?? Array.Empty<BudgetReportCategoryRawDataDto>())
             {
                 var catRules = rules.Where(r => r.BudgetCategoryId == cat.CategoryId).ToList();
@@ -373,6 +376,15 @@ namespace FinanceManager.Web.Services
                         {
                             catActual += p.Amount;
                         }
+                    }
+                }
+
+                foreach (var p in unbudgetedPostings.Where(p => p.BudgetCategoryId == cat.CategoryId))
+                {
+                    var dd = DateOnly.FromDateTime(GetPostingDate(p, dateBasis));
+                    if (dd >= from && dd <= to)
+                    {
+                        catActual += p.Amount;
                     }
                 }
 
@@ -392,8 +404,31 @@ namespace FinanceManager.Web.Services
                         }
                     }
 
+                    foreach (var p in unbudgetedPostings.Where(p => p.BudgetPurposeId == pur.PurposeId))
+                    {
+                        var dd = DateOnly.FromDateTime(GetPostingDate(p, dateBasis));
+                        if (dd >= from && dd <= to)
+                        {
+                            purActual += p.Amount;
+                        }
+                    }
+
                     result.Add(CurrentMonthRow.CreatePurpose(cat.CategoryName, pur.PurposeName, purBudget, purActual));
                 }
+            }
+
+            var unbudgetedActual = unbudgetedPostings
+                .Where(p => !p.BudgetPurposeId.HasValue && !p.BudgetCategoryId.HasValue)
+                .Where(p =>
+                {
+                    var dd = DateOnly.FromDateTime(GetPostingDate(p, dateBasis));
+                    return dd >= from && dd <= to;
+                })
+                .Sum(p => p.Amount);
+
+            if (unbudgetedActual != 0m)
+            {
+                result.Add(CurrentMonthRow.CreateCategory(unbudgetedLabel, 0m, unbudgetedActual));
             }
 
             return result;

@@ -21,7 +21,8 @@ public interface IBudgetReportService
         DateOnly from,
         DateOnly to,
         BudgetReportDateBasis dateBasis,
-        CancellationToken ct);
+        CancellationToken ct,
+        bool ignoreCache = false);
 
     /// <summary>
     /// Asynchronously retrieves the monthly budget KPI data for the specified user and month.

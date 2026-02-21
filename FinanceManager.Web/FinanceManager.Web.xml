@@ -672,7 +672,7 @@
             Provides budget reporting endpoints.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.#ctor(FinanceManager.Application.Budget.IBudgetReportService,FinanceManager.Application.Budget.IBudgetPurposeService,FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetReportsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller},FinanceManager.Application.Budget.IBudgetReportExportService)">
+        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.#ctor(FinanceManager.Application.Budget.IBudgetReportService,FinanceManager.Application.Budget.IBudgetPurposeService,FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetReportsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller},FinanceManager.Application.Budget.IBudgetReportExportService,FinanceManager.Application.Budget.IReportCacheService)">
             <summary>
             Creates a new instance.
             </summary>
@@ -681,6 +681,13 @@
             <summary>
             Exports all postings of the budget report for the total report range as an Excel file.
             </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.ResetCacheAsync(System.Threading.CancellationToken)">
+            <summary>
+            Clears cached report data for the current user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>An <see cref="T:Microsoft.AspNetCore.Mvc.IActionResult"/> indicating success.</returns>
         </member>
         <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.GetMonthlyKpiAsync(System.Nullable{System.DateOnly},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
             <summary>
@@ -3521,6 +3528,31 @@
             <returns>A task that completes when the rebuild operation has finished or is cancelled.</returns>
             <exception cref="T:System.OperationCanceledException">Thrown when the provided <paramref name="ct"/> is cancelled.</exception>
             <exception cref="T:System.Exception">Propagates unexpected exceptions that occur during the rebuild; the exception is logged and rethrown by the caller.</exception>
+        </member>
+        <member name="T:FinanceManager.Web.Services.ReportCacheRefreshTaskExecutor">
+            <summary>
+            Background task executor that refreshes marked budget report cache entries.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.Services.ReportCacheRefreshTaskExecutor.Type">
+            <summary>
+            Gets the background task type handled by this executor.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Services.ReportCacheRefreshTaskExecutor.#ctor(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Services.ReportCacheRefreshTaskExecutor},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Pages})">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Web.Services.ReportCacheRefreshTaskExecutor"/> class.
+            </summary>
+            <param name="scopeFactory">Factory used to create a scoped service provider for the execution run.</param>
+            <param name="logger">Logger used to record errors and diagnostics.</param>
+            <param name="localizer">Localizer used to provide localized progress messages.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Services.ReportCacheRefreshTaskExecutor.ExecuteAsync(FinanceManager.Application.BackgroundTaskContext,System.Threading.CancellationToken)">
+            <summary>
+            Executes the cache refresh task for the user defined in the <paramref name="context"/>.
+            </summary>
+            <param name="context">Context describing the background task, including TaskId and UserId. Must not be <c>null</c>.</param>
+            <param name="ct">Cancellation token used to cancel the operation.</param>
         </member>
         <member name="T:FinanceManager.Web.Services.SecurityPricesBackfillExecutor">
             <summary>

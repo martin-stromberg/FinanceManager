@@ -217,6 +217,9 @@
         <member name="P:FinanceManager.Infrastructure.AppDbContext.HomeKpis">
             <summary>Home KPI configuration records.</summary>
         </member>
+        <member name="P:FinanceManager.Infrastructure.AppDbContext.ReportCacheEntries">
+            <summary>Cached report data entries.</summary>
+        </member>
         <member name="P:FinanceManager.Infrastructure.AppDbContext.IpBlocks">
             <summary>IP blocks for rate limiting / security.</summary>
         </member>
@@ -1068,7 +1071,7 @@
             Service that builds budget report data.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportService.#ctor(FinanceManager.Application.Budget.IBudgetPurposeService,FinanceManager.Application.Budget.IBudgetCategoryService,FinanceManager.Application.Budget.IBudgetRuleService,FinanceManager.Application.Postings.IPostingsQueryService,FinanceManager.Application.Contacts.IContactService,FinanceManager.Application.Savings.ISavingsPlanService,FinanceManager.Application.Securities.ISecurityService)">
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportService.#ctor(FinanceManager.Application.Budget.IBudgetPurposeService,FinanceManager.Application.Budget.IBudgetCategoryService,FinanceManager.Application.Budget.IBudgetRuleService,FinanceManager.Application.Postings.IPostingsQueryService,FinanceManager.Application.Contacts.IContactService,FinanceManager.Application.Savings.ISavingsPlanService,FinanceManager.Application.Securities.ISecurityService,FinanceManager.Application.Budget.IReportCacheService)">
             <summary>
             Creates a new <see cref="T:FinanceManager.Infrastructure.Budget.BudgetReportService"/>.
             </summary>
@@ -1079,7 +1082,7 @@
             <param name="contacts">Service providing contacts for the owner.</param>
             <param name="savingsPlans">Service providing savings plans for the owner.</param>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportService.GetRawDataAsync(System.Guid,System.DateOnly,System.DateOnly,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetReportService.GetRawDataAsync(System.Guid,System.DateOnly,System.DateOnly,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Returns the raw data for a budget report for the given date range.
             </summary>
@@ -1132,6 +1135,38 @@
             <inheritdoc />
         </member>
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.UpdateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Budget.ReportCacheService">
+            <summary>
+            Service providing database-backed caching for report data.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.ReportCacheService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.IBackgroundTaskManager)">
+            <summary>
+            Creates a new instance of the <see cref="T:FinanceManager.Infrastructure.Budget.ReportCacheService"/>.
+            </summary>
+            <param name="db">Database context.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.ReportCacheService.GetBudgetReportRawDataAsync(System.Guid,System.DateOnly,System.DateOnly,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.ReportCacheService.SetBudgetReportRawDataAsync(System.Guid,System.DateOnly,System.DateOnly,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,FinanceManager.Shared.Dtos.Budget.BudgetReportRawDataDto,System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.ReportCacheService.MarkAllReportCacheEntriesForUpdateAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.ReportCacheService.ClearReportCacheAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.ReportCacheService.EnqueueBudgetReportCacheRefresh(System.Guid)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.ReportCacheService.GetNextBudgetReportCacheToUpdateAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.ReportCacheService.MarkBudgetReportCacheEntriesForUpdateAsync(System.DateOnly,System.DateOnly,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:FinanceManager.Infrastructure.Common.ParentAssignmentService">
@@ -1567,6 +1602,18 @@
             <inheritdoc />
         </member>
         <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity._20260114_budget_rule_category_scope.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.ReportCache">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.ReportCache.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.ReportCache.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.ReportCache.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
         <member name="T:FinanceManager.Infrastructure.Demo.DemoDataService">
@@ -4604,7 +4651,7 @@
         <member name="P:FinanceManager.Infrastructure.Statements.StatementDraftService.ImportSplitInfo.MonthlyThreshold">
             <summary>Threshold used to decide monthly splitting.</summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Aggregates.IPostingAggregateService,FinanceManager.Application.Accounts.IAccountService,FinanceManager.Infrastructure.Statements.Files.IStatementFileFactory,System.Collections.Generic.IEnumerable{FinanceManager.Infrastructure.Statements.Parsers.IStatementFileParser},Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.StatementDraftService},FinanceManager.Application.Attachments.IAttachmentService)">
+        <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Aggregates.IPostingAggregateService,FinanceManager.Application.Accounts.IAccountService,FinanceManager.Infrastructure.Statements.Files.IStatementFileFactory,System.Collections.Generic.IEnumerable{FinanceManager.Infrastructure.Statements.Parsers.IStatementFileParser},Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.StatementDraftService},FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.Budget.IReportCacheService)">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Statements.StatementDraftService"/> class.
             </summary>

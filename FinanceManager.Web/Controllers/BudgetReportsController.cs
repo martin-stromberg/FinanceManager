@@ -35,6 +35,7 @@ public sealed class BudgetReportsController : ControllerBase
     private readonly AppDbContext _db;
     private readonly IBudgetPurposeService _purposes;
     private readonly IBudgetReportExportService _export;
+    private readonly IReportCacheService _cacheService;
 
     /// <summary>
     /// Creates a new instance.
@@ -46,7 +47,8 @@ public sealed class BudgetReportsController : ControllerBase
         ICurrentUserService current,
         ILogger<BudgetReportsController> logger,
         IStringLocalizer<Controller> localizer,
-        IBudgetReportExportService export)
+        IBudgetReportExportService export,
+        IReportCacheService cacheService)
     {
         _reports = reports;
         _purposes = purposes;
@@ -55,6 +57,7 @@ public sealed class BudgetReportsController : ControllerBase
         _logger = logger;
         _localizer = localizer;
         _export = export;
+        _cacheService = cacheService;
     }
 
     /// <summary>
@@ -84,6 +87,19 @@ public sealed class BudgetReportsController : ControllerBase
             _logger.LogError(ex, "Budget report export failed");
             return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
+    }
+
+    /// <summary>
+    /// Clears cached report data for the current user.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>An <see cref="IActionResult"/> indicating success.</returns>
+    [HttpPost("cache/reset")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ResetCacheAsync(CancellationToken ct = default)
+    {
+        await _cacheService.ClearReportCacheAsync(_current.UserId, ct);
+        return NoContent();
     }
 
     private static decimal ComputeBudgetedAmountForPeriod(IReadOnlyList<BudgetRule> rules, DateOnly from, DateOnly to)
@@ -315,9 +331,27 @@ public sealed class BudgetReportsController : ControllerBase
                     purposeDtos));
             }
 
+            var unbudgetedActual = unbudgetedPostings
+                .Where(p => p.BudgetPurposeId == null || p.BudgetPurposeId == Guid.Empty)
+                .Where(IsInCategoryRange)
+                .Sum(p => p.Amount);
+
+            if (unbudgetedActual != 0m)
+            {
+                categories.Add(new BudgetReportCategoryDto(
+                    Guid.Empty,
+                    "Unbudgeted",
+                    BudgetReportCategoryRowKind.Unbudgeted,
+                    0m,
+                    unbudgetedActual,
+                    -unbudgetedActual,
+                    0m,
+                    Array.Empty<BudgetReportPurposeDto>()));
+            }
+
             if (categories.Count > 0)
             {
-                var sumBudget = categories.Sum(c => c.Budget);
+                var sumBudget = categories.Sum(c => c.Budget + c.Purposes.Sum(p => p.Budget));
                 var sumActual = categories.Sum(c => c.Actual);
                 var sumDelta = sumBudget - sumActual;
                 var sumDeltaPct = sumBudget == 0m ? 0m : sumDelta / Math.Abs(sumBudget);

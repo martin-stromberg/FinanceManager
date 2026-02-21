@@ -38,17 +38,21 @@
 }
 
 .budget-report-loading {
-    position: absolute;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.7);
+    position: sticky;
+    top: 0.75rem;
+    margin: 0 auto 0.75rem;
+    background: rgba(255, 255, 255, 0.9);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
     color: var(--text-muted, #666);
-    z-index: 5;
+    z-index: 3;
     border-radius: var(--radius);
+    padding: 0.5rem 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     backdrop-filter: blur(2px);
+    width: max-content;
 }
 
 .budget-report-spinner {

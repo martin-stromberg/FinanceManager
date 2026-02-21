@@ -191,6 +191,23 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                             await ApiClient.Aggregates_RebuildAsync(allowDuplicate: false);
                         }
                         catch { }
+                    })),
+                new UiRibbonAction(
+                    "ResetReportCache",
+                    localizer["Ribbon_ResetReportCache"].Value,
+                    "<svg><use href='/icons/sprite.svg#delete'/></svg>",
+                    UiRibbonItemSize.Small,
+                    false,
+                    localizer["Hint_ResetReportCache"].Value,
+                    new Func<Task>(async () =>
+                    {
+                        try
+                        {
+                            await ApiClient.Budgets_ResetReportCacheAsync();
+                            SetError(null, localizer["Info_ResetReportCache"].Value ?? "Report cache reset.");
+                            RaiseStateChanged();
+                        }
+                        catch { }
                     }))
             }, int.MaxValue)
         };

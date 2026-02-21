@@ -367,10 +367,12 @@
             <param name="ct">Cancellation token.</param>
             <returns>List of unbudgeted postings.</returns>
         </member>
-        <member name="M:FinanceManager.Shared.ApiClient.Budgets_GetMonthlyKpiAsync(System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_GetMonthlyKpiAsync(System.Nullable{System.DateOnly},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
             <summary>
             Gets the Home Monthly Budget KPI values (planned/actual income and expenses).
             </summary>
+            <param name="date">Optional date for the KPI values.</param>
+            <param name="dateBasis">Date basis for filtering.</param>
             <param name="ct">Cancellation token.</param>
             <returns>The <see cref="T:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto"/> for the current user/month.</returns>
         </member>
@@ -378,6 +380,12 @@
             <summary>
             Downloads an XLSX export for the given budget report range.
             </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Budgets_ResetReportCacheAsync(System.Threading.CancellationToken)">
+            <summary>
+            Clears cached report data for the current user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
         </member>
         <member name="M:FinanceManager.Shared.ApiClient.BudgetRules_CreateAsync(FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest,System.Threading.CancellationToken)">
             <summary>
@@ -1695,6 +1703,9 @@
         </member>
         <member name="F:FinanceManager.Shared.Dtos.Admin.BackgroundTaskType.RebuildAggregates">
             <summary>Rebuild posting aggregates for the current user.</summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Admin.BackgroundTaskType.RefreshBudgetReportCache">
+            <summary>Refresh cached budget report data.</summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Admin.BackupRestoreStatusDto">
             <summary>
@@ -5643,10 +5654,16 @@
         <member name="M:FinanceManager.Shared.IApiClient.HomeKpis_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>Deletes a home KPI. Returns false when not found.</summary>
         </member>
-        <member name="M:FinanceManager.Shared.IApiClient.Budgets_GetMonthlyKpiAsync(System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_GetMonthlyKpiAsync(System.Nullable{System.DateOnly},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
             <summary>
             Gets the Home Monthly Budget KPI values (planned/actual income and expenses).
             </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Budgets_ResetReportCacheAsync(System.Threading.CancellationToken)">
+            <summary>
+            Clears cached report data for the current user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.Meta_GetHolidayProvidersAsync(System.Threading.CancellationToken)">
             <summary>

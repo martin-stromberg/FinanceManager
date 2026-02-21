@@ -2232,6 +2232,64 @@
             <param name="dto">The <see cref="T:FinanceManager.Domain.Reports.HomeKpi.HomeKpiBackupDto"/> containing values to apply.</param>
             <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
         </member>
+        <member name="T:FinanceManager.Domain.Reports.ReportCacheEntry">
+            <summary>
+            Stores cached report data for a specific user and time range.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.ReportCacheEntry.#ctor">
+            <summary>
+            Parameterless constructor required for persistence.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.ReportCacheEntry.#ctor(System.Guid,System.String,System.String,System.String,System.Boolean)">
+            <summary>
+            Creates a new cache entry.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="cacheKey">Cache key for the report.</param>
+            <param name="cacheValue">Serialized JSON cache value.</param>
+            <param name="parameter">Additional parameter stored with the cache.</param>
+            <param name="needsRefresh">Whether the cache entry needs to be recalculated.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportCacheEntry.OwnerUserId">
+            <summary>
+            Identifier of the user who owns the cached report.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportCacheEntry.CacheKey">
+            <summary>
+            Cache key identifying the report range and parameters.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportCacheEntry.CacheValue">
+            <summary>
+            Serialized JSON cache value.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportCacheEntry.NeedsRefresh">
+            <summary>
+            Indicates whether the cache entry needs recalculation.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Reports.ReportCacheEntry.Parameter">
+            <summary>
+            Additional parameter stored alongside the cache entry.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.ReportCacheEntry.Update(System.String,System.String,System.Boolean)">
+            <summary>
+            Updates the cached value and metadata.
+            </summary>
+            <param name="cacheValue">Serialized JSON cache value.</param>
+            <param name="parameter">Additional parameter stored with the cache.</param>
+            <param name="needsRefresh">Whether the cache entry needs recalculation.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Reports.ReportCacheEntry.MarkForRefresh">
+            <summary>
+            Marks the cache entry for recalculation.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Domain.Reports.ReportEntityGroup">
             <summary>
             Primary grouping axis for configurable reports.

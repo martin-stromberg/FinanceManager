@@ -198,6 +198,30 @@
   <data name="List_Th_Postings_Valuta" xml:space="preserve">
     <value>Valuta</value>
   </data>
+  <data name="Ribbon_ResetReportCache" xml:space="preserve">
+    <value>Reset cache</value>
+  </data>
+  <data name="Hint_ResetReportCache" xml:space="preserve">
+    <value>Clears cached reports.</value>
+  </data>
+  <data name="Info_ResetReportCache" xml:space="preserve">
+    <value>Cache was reset.</value>
+  </data>
+  <data name="RC_Start" xml:space="preserve">
+    <value>Cache refresh started.</value>
+  </data>
+  <data name="RC_Progress" xml:space="preserve">
+    <value>Cache entry refreshed ({0}).</value>
+  </data>
+  <data name="RC_Completed" xml:space="preserve">
+    <value>Cache refresh completed.</value>
+  </data>
+  <data name="RC_Canceled" xml:space="preserve">
+    <value>Cache refresh canceled.</value>
+  </data>
+  <data name="Budget_Report_Export_Row_Unbudgeted" xml:space="preserve">
+    <value>Unbudgeted</value>
+  </data>
   <data name="Kpi_MonthlyBudget_ExpectedIncome" xml:space="preserve">
     <value>Expected income</value>
   </data>

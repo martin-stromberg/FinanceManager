@@ -69,7 +69,7 @@ namespace FinanceManager.Web.ViewModels.Budget
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task LoadAsync(FinanceManager.Shared.IApiClient api, CancellationToken ct = default)
         {
-            var kpiDto = await api.Budgets_GetMonthlyKpiAsync(date: null, ct);            
+            var kpiDto = await api.Budgets_GetMonthlyKpiAsync(date: null, dateBasis: Shared.Dtos.Budget.BudgetReportDateBasis.BookingDate, ct);            
             PlannedIncome = kpiDto.PlannedIncome;
             PlannedExpenseAbs = kpiDto.PlannedExpenseAbs;
             ActualIncome = kpiDto.ActualIncome;

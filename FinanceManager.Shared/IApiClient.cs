@@ -307,7 +307,13 @@ public interface IApiClient
     /// <summary>
     /// Gets the Home Monthly Budget KPI values (planned/actual income and expenses).
     /// </summary>
-    Task<MonthlyBudgetKpiDto> Budgets_GetMonthlyKpiAsync(DateOnly? date = null, CancellationToken ct = default);
+    Task<MonthlyBudgetKpiDto> Budgets_GetMonthlyKpiAsync(DateOnly? date = null, BudgetReportDateBasis dateBasis = BudgetReportDateBasis.BookingDate, CancellationToken ct = default);
+
+    /// <summary>
+    /// Clears cached report data for the current user.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    Task Budgets_ResetReportCacheAsync(CancellationToken ct = default);
 
     // Meta Holidays
 

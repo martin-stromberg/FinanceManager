@@ -447,6 +447,16 @@
         <member name="M:FinanceManager.Application.Budget.BudgetPlanningService.CalculatePlannedValuesAsync(System.Guid,System.Collections.Generic.IReadOnlyCollection{System.Guid},FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:FinanceManager.Application.Budget.BudgetReportCacheParameter">
+            <summary>
+            Parameter describing a cached budget report raw data range.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.BudgetReportCacheParameter.#ctor(System.DateOnly,System.DateOnly,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis)">
+            <summary>
+            Parameter describing a cached budget report raw data range.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Application.Budget.BudgetRuleScheduler">
             <summary>
             Deterministic rule schedule generator.
@@ -620,7 +630,7 @@
             Service for generating budget reports.
             </summary>
         </member>
-        <member name="M:FinanceManager.Application.Budget.IBudgetReportService.GetRawDataAsync(System.Guid,System.DateOnly,System.DateOnly,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Application.Budget.IBudgetReportService.GetRawDataAsync(System.Guid,System.DateOnly,System.DateOnly,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken,System.Boolean)">
             <summary>
             Returns raw budget report data for the given date range.
             </summary>
@@ -681,6 +691,72 @@
             <summary>
             Lists rules for a category.
             </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.IReportCacheService">
+            <summary>
+            Provides access to cached report data.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IReportCacheService.GetBudgetReportRawDataAsync(System.Guid,System.DateOnly,System.DateOnly,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
+            <summary>
+            Reads a cached budget report raw data entry.
+            Returns <c>null</c> when no cache entry exists or it requires refresh.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="from">Inclusive range start.</param>
+            <param name="to">Inclusive range end.</param>
+            <param name="dateBasis">Date basis used to build the cache key.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The cached raw data or <c>null</c> when not available.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IReportCacheService.SetBudgetReportRawDataAsync(System.Guid,System.DateOnly,System.DateOnly,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,FinanceManager.Shared.Dtos.Budget.BudgetReportRawDataDto,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Updates or creates a cached budget report raw data entry.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="from">Inclusive range start.</param>
+            <param name="to">Inclusive range end.</param>
+            <param name="dateBasis">Date basis used to build the cache key.</param>
+            <param name="data">Raw data to cache.</param>
+            <param name="parameter">Additional parameter stored with the cache entry.</param>
+            <param name="needsRefresh">Whether the cache entry should be marked for refresh.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IReportCacheService.GetNextBudgetReportCacheToUpdateAsync(System.Threading.CancellationToken)">
+            <summary>
+            Returns the parameter of the first cache entry that requires an update.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>The parameter for the next cache update or <c>null</c> when none exist.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IReportCacheService.MarkBudgetReportCacheEntriesForUpdateAsync(System.DateOnly,System.DateOnly,System.Threading.CancellationToken)">
+            <summary>
+            Marks cache entries for update when their period falls within the specified range.
+            </summary>
+            <param name="periodFrom">Inclusive start of the period.</param>
+            <param name="periodTo">Inclusive end of the period.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IReportCacheService.MarkAllReportCacheEntriesForUpdateAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Marks all cache entries for the specified user for refresh.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IReportCacheService.ClearReportCacheAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes all cached report entries for the specified user.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IReportCacheService.EnqueueBudgetReportCacheRefresh(System.Guid)">
+            <summary>
+            Enqueues a background task to refresh marked budget report cache entries.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <returns>Information about the enqueued task.</returns>
         </member>
         <member name="T:FinanceManager.Application.Common.IParentAssignmentService">
             <summary>

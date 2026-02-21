@@ -222,6 +222,7 @@ public sealed class BackupService : IBackupService
         var draftSvc = scope.ServiceProvider.GetRequiredService<IStatementDraftService>();
         var aggSvc = scope.ServiceProvider.GetRequiredService<FinanceManager.Application.Aggregates.IPostingAggregateService>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<SetupImportService>>();
+        var reportCache = scope.ServiceProvider.GetService<FinanceManager.Application.Budget.IReportCacheService>();
         var importerLegacy = new SetupImportService(db, draftSvc, aggSvc, logger);
 
         // propagate nested progress: main step 1 = reading, step 2 = importing (with subprogress)
@@ -230,6 +231,12 @@ public sealed class BackupService : IBackupService
             progressCallback(e.StepDescription, e.Step, e.Total, e.SubStep, e.SubTotal);
         };
         await importerLegacy.ImportAsync(userId, ndjson, replaceExisting: true, ct);
+
+        if (reportCache != null)
+        {
+            await reportCache.MarkAllReportCacheEntriesForUpdateAsync(userId, ct);
+            reportCache.EnqueueBudgetReportCacheRefresh(userId);
+        }
         return true;
     }
 

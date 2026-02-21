@@ -75,6 +75,8 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<ReportFavorite> ReportFavorites => Set<ReportFavorite>(); // new
     /// <summary>Home KPI configuration records.</summary>
     public DbSet<HomeKpi> HomeKpis => Set<HomeKpi>(); // new
+    /// <summary>Cached report data entries.</summary>
+    public DbSet<ReportCacheEntry> ReportCacheEntries => Set<ReportCacheEntry>();
     /// <summary>IP blocks for rate limiting / security.</summary>
     public DbSet<IpBlock> IpBlocks => Set<IpBlock>(); // new
     /// <summary>Notification entities for user notifications.</summary>
@@ -318,6 +320,17 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.PostingKind).IsRequired();
             b.Property(x => x.Interval).HasConversion<int>().IsRequired();
             b.Property(x => x.Take).IsRequired();
+        });
+
+        modelBuilder.Entity<ReportCacheEntry>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => new { x.OwnerUserId, x.CacheKey }).IsUnique();
+            b.Property(x => x.OwnerUserId).IsRequired();
+            b.Property(x => x.CacheKey).HasMaxLength(120).IsRequired();
+            b.Property(x => x.CacheValue).IsRequired();
+            b.Property(x => x.NeedsRefresh).IsRequired();
+            b.Property(x => x.Parameter).HasMaxLength(200).IsRequired();
         });
 
         // HomeKpi configuration

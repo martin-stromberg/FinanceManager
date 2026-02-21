@@ -15,6 +15,26 @@
             uncategorized transactions.</remarks>
         </member>
         <!-- Badly formed XML comment ignored for member "M:FinanceManager.Tests.Budget.BudgetReportServiceTests.Test_GetRawData_ForEntireMonthAsync" -->
+        <member name="T:FinanceManager.Tests.Infrastructure.Budget.ReportCacheServiceTests">
+            <summary>
+            Tests for <see cref="T:FinanceManager.Infrastructure.Budget.ReportCacheService"/> cache invalidation behaviors.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Budget.ReportCacheServiceTests.MarkBudgetReportCacheEntriesForUpdateAsync_ShouldMarkEntry_WhenBookingRangeInsideCacheRange">
+            <summary>
+            Marks cache entries for update when the booking range is inside the cached range.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Budget.ReportCacheServiceTests.MarkBudgetReportCacheEntriesForUpdateAsync_ShouldNotMarkEntry_WhenBookingRangeOutsideCacheRange">
+            <summary>
+            Does not mark cache entries when the booking range is outside the cached range or cache key prefix differs.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Budget.ReportCacheServiceTests.MarkBudgetReportCacheEntriesForUpdateAsync_ShouldMarkOverlappingMonths_WhenBookingRangeCrossesMonths">
+            <summary>
+            Marks overlapping monthly cache entries when a booking range spans multiple months.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests">
             <summary>
             Tests the parsing of pdf statement documents

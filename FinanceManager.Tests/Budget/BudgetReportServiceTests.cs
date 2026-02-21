@@ -25,6 +25,7 @@ using System.Threading.Tasks;
 using Xunit;
 using System.Text.Json;
 using FinanceManager.Infrastructure.Securities;
+using FinanceManager.Application;
 
 namespace FinanceManager.Tests.Budget;
 
@@ -1119,7 +1120,8 @@ public class BudgetReportServiceTests
         #endregion
         
         #region Test
-        var brs = new BudgetReportService(purposeService, categoryService, ruleService, postingsService, contactService, savingsPlanService, securityService);
+        var cacheService = new ReportCacheService(db, new BackgroundTaskManager());
+        var brs = new BudgetReportService(purposeService, categoryService, ruleService, postingsService, contactService, savingsPlanService, securityService, cacheService);
 
         // First: run report using booking date as basis (existing expected assertions target this)
         var actual = await brs.GetRawDataAsync(ownerUserId, from, to, BudgetReportDateBasis.BookingDate, ct);

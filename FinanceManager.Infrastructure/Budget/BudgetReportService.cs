@@ -29,6 +29,7 @@ public sealed class BudgetReportService : IBudgetReportService
     private readonly IContactService _contacts;
     private readonly ISavingsPlanService _savingsPlans;
     private readonly ISecurityService _securities;
+    private readonly IReportCacheService _cacheService;
 
     /// <summary>
     /// Creates a new <see cref="BudgetReportService"/>.
@@ -46,7 +47,8 @@ public sealed class BudgetReportService : IBudgetReportService
         IPostingsQueryService postings,
         IContactService contacts,
         ISavingsPlanService savingsPlans,
-        FinanceManager.Application.Securities.ISecurityService securities)
+        FinanceManager.Application.Securities.ISecurityService securities,
+        IReportCacheService cacheService)
     {
         _purposes = purposes;
         _categories = categories;
@@ -55,6 +57,7 @@ public sealed class BudgetReportService : IBudgetReportService
         _contacts = contacts;
         _savingsPlans = savingsPlans;
         _securities = securities;
+        _cacheService = cacheService;
     }
 
     private async Task<List<BudgetReportPostingRawDataDto>> BuildPostingDtosAsync(
@@ -342,8 +345,18 @@ public sealed class BudgetReportService : IBudgetReportService
         DateOnly from,
         DateOnly to,
         BudgetReportDateBasis dateBasis,
-        CancellationToken ct)
+        CancellationToken ct,
+        bool ignoreCache = false)
     {
+        if (!ignoreCache)
+        {
+            var cached = await _cacheService.GetBudgetReportRawDataAsync(ownerUserId, from, to, dateBasis, ct);
+            if (cached != null)
+            {
+                return cached;
+            }
+        }
+
         // Step 1: load overviews and related reference data
         var categoryOverviews = await _categories.ListOverviewAsync(ownerUserId, from, to, ct);
         var purposeOverviews = await _purposes.ListOverviewAsync(ownerUserId, 0, 5000, null, null, from, to, null, ct, dateBasis);
@@ -612,7 +625,7 @@ public sealed class BudgetReportService : IBudgetReportService
             to,
             ct);
 
-        return new BudgetReportRawDataDto
+        var result = new BudgetReportRawDataDto
         {
             PeriodStart = from.ToDateTime(TimeOnly.MinValue),
             PeriodEnd = to.ToDateTime(TimeOnly.MaxValue),
@@ -620,6 +633,17 @@ public sealed class BudgetReportService : IBudgetReportService
             UncategorizedPurposes = uncategorizedDtos.ToArray(),
             UnbudgetedPostings = unbudgetedList.ToArray()
         };
+
+        await _cacheService.SetBudgetReportRawDataAsync(
+            ownerUserId,
+            from,
+            to,
+            dateBasis,
+            result,
+            needsRefresh: false,
+            ct);
+
+        return result;
     }
 
     private async Task<BudgetReportPostingRawDataDto[]> BuildUnbudgetedPostingsAsync(
