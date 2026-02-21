@@ -927,18 +927,18 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         File.WriteAllBytes("D:\\BudgetReport_Jan2026.xlsx", contentBytes);
 
         // Additionally fetch the Home Monthly Budget KPI and perform basic consistency checks
-        var kpi = await api.Budgets_GetMonthlyKpiAsync();
+        var kpi = await api.Budgets_GetMonthlyKpiAsync(new DateOnly(2026, 1, 1), BudgetReportDateBasis.BookingDate);
         kpi.Should().NotBeNull();
         // Exact expected KPI values (precomputed from the test data in this file)
-        kpi.ActualExpenseAbs.Should().Be(2228.25m);
-        kpi.ActualIncome.Should().Be(5859.99m);
-        kpi.ExpectedExpenseAbs.Should().Be(2817.56m);
+        kpi.ActualExpenseAbs.Should().Be(2817.56m);
+        kpi.ActualIncome.Should().Be(7007.68m);
+        kpi.ExpectedExpenseAbs.Should().Be(4385.00m);
         kpi.ExpectedIncome.Should().Be(7007.68m);
-        kpi.PlannedExpenseAbs.Should().Be(1252.42m);
-        kpi.PlannedIncome.Should().Be(3376.28m);
-        kpi.PlannedResult.Should().Be(2123.86m);
-        kpi.UnbudgetedExpenseAbs.Should().Be(1565.14m);
-        kpi.UnbudgetedIncome.Should().Be(3631.40m);
+        kpi.PlannedExpenseAbs.Should().Be(3218.99m);
+        kpi.PlannedIncome.Should().Be(3475.93m);
+        kpi.PlannedResult.Should().Be(256.94m);
+        kpi.UnbudgetedExpenseAbs.Should().Be(1166.01m);
+        kpi.UnbudgetedIncome.Should().Be(3531.75m);
     }
 
     private static async Task<List<SavingsPlanDto>> CreateSavingsPlansAsync(FinanceManager.Shared.ApiClient api)
