@@ -1,13 +1,13 @@
 # 🛠 INSTALLATION.md
 
-## ASP.NET Core (.NET 9) Webanwendung – Installation als Dienst (Linux) & IIS (Windows)
+## ASP.NET Core (.NET 10) Webanwendung – Installation als Dienst (Linux) & IIS (Windows)
 
 ---
 
 ## 📦 Voraussetzungen
 
 ### Allgemein
-- .NET 9 SDK & Runtime installiert (nur für Windows-Installation oder Linux ohne Self-Contained Build)
+- .NET 10 SDK & Runtime installiert (nur für Windows-Installation oder Linux ohne Self-Contained Build)
 - Zugriff auf die veröffentlichten Dateien der Webanwendung
 - Konfigurierte appsettings.json oder Umgebungsvariablen
 
@@ -33,7 +33,7 @@ Auf dem Entwicklungsrechner oder CI-Server:
 dotnet publish -c Release -r linux-x64 --self-contained -o ./publish
 ```
 
-💡 Mit `--self-contained` wird die .NET Runtime mitgeliefert. Ohne diesen Parameter muss .NET 9 auf dem Zielsystem installiert sein.
+💡 Mit `--self-contained` wird die .NET Runtime mitgeliefert. Ohne diesen Parameter muss .NET 10 auf dem Zielsystem installiert sein.
 
 ### 2. Dateien auf Linux übertragen
 
@@ -47,7 +47,7 @@ Datei `/etc/systemd/system/financemanager.service`:
 
 ```
 [Unit]
-Description=FinanceManager (.NET 9, Blazor Server)
+Description=FinanceManager (.NET 10, Blazor Server)
 After=network.target
 
 [Service]
@@ -154,7 +154,7 @@ dotnet publish -c Release -o "C:\inetpub\financemanager"
 
 - Rolle „Webserver (IIS)“ installieren
 - Feature „ASP.NET Core Module" aktivieren
-- .NET Hosting Bundle für .NET 9 installieren
+- .NET Hosting Bundle für .NET 10 installieren
 - WebSocket‑Protokoll aktivieren (Blazor Server erfordert WebSockets)
 
 ### 3. Neue Website in IIS erstellen

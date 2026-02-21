@@ -31,7 +31,7 @@
         </member>
         <member name="P:FinanceManager.Tests.Integration.TestWebApplicationFactory.FixedUtcNow">
             <summary>
-            When set, the factory will register an IDateTimeProvider that returns this fixed UTC time.
+            When set, the factory will register a <see cref="T:System.TimeProvider"/> that returns this fixed UTC time.
             Set this property in tests before calling CreateClient() to force server-side "now".
             </summary>
         </member>

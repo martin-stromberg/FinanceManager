@@ -64,8 +64,7 @@ public class ApiClientContactsTests : IClassFixture<TestWebApplicationFactory>
 
         // count should be at least initialCount
         var count = await api.Contacts_CountAsync();
-        count.Should().BeGreaterOrEqualTo(initialCount);
-
+        count.Should().BeGreaterThanOrEqualTo(initialCount);
         // delete
         var delOk = await api.Contacts_DeleteAsync(created.Id);
         delOk.Should().BeTrue();

@@ -1,7 +1,7 @@
 # Finance Manager
 
 > Persönliche Finanzverwaltung mit Kontoauszug-Import, Sparplänen, Wertpapiertracking und Auswertungenzu diesen Themen.
-> Es handelt sich hierbei um eine Webanwendung, die auf Linux und Windowssystemem eingerichtet werden kann.
+> Es handelt sich hierbei um eine Webanwendung, die auf Linux und Windowssystemen eingerichtet werden kann.
 >
 > Dieses Projekt wurde zum größten Teil anhand von Anweisungen an GitHub Copilot erstellt.
 
@@ -18,7 +18,7 @@
 9. Lizenz / Status
 
 ## 1. Überblick
-FinanceManager ist eine Blazor Server Anwendung (.NET 9) zur Verwaltung persönlicher Finanzen. Importierte Kontoauszüge (CSV/PDF) werden verarbeitet, Buchungen kategorisiert und in Bank-/Kontakt-/Sparplan- und Wertpapierposten überführt. Ergänzend existieren Auswertungen (Monat, Quartal, Jahr, YTD) und ein KPI-Dashboard. Mehrere Benutzer werden unterstützt. 
+FinanceManager ist eine Blazor Server Anwendung (.NET 10) zur Verwaltung persönlicher Finanzen. Importierte Kontoauszüge (CSV/PDF) werden verarbeitet, Buchungen kategorisiert und in Bank-/Kontakt-/Sparplan- und Wertpapierposten überführt. Ergänzend existieren Auswertungen (Monat, Quartal, Jahr, YTD) und ein KPI-Dashboard. Mehrere Benutzer werden unterstützt. 
 
 ## 2. Kernfunktionen
 - Benutzeranmeldung
@@ -87,7 +87,7 @@ Shared Library (Domain + Contracts) für Wiederverwendung in Blazor + MAUI.
 Querschnittsthemen: Logging, Auth (JWT), Internationalisierung, Validation, Rate Limiting.
 
 ## 4. Technologie-Stack
-- .NET 9, C# 13
+- .NET 10, C# 14
 - Blazor Server (Razor Components)
 - EF Core (Sqlite/SQL Server)
 - AlphaVantage API (Wertpapierkurse; API-Key nutzer-/adminbasiert in DB)
@@ -110,10 +110,14 @@ Gruppiert; bei gemeinsamen Namespaces mit `*`.
   - Microsoft.Extensions.Hosting.Abstractions — https://www.nuget.org/packages/Microsoft.Extensions.Hosting.Abstractions/
   - Microsoft.Extensions.Http — https://www.nuget.org/packages/Microsoft.Extensions.Http/
   - Microsoft.Extensions.Caching.Memory — https://www.nuget.org/packages/Microsoft.Extensions.Caching.Memory/
+  - Microsoft.Extensions.Identity.Core — https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/
 - Microsoft.AspNetCore*
   - Microsoft.AspNetCore.Authentication.JwtBearer — https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.JwtBearer/
   - Microsoft.AspNetCore.Cryptography.KeyDerivation — https://www.nuget.org/packages/Microsoft.AspNetCore.Cryptography.KeyDerivation/
+  - Microsoft.AspNetCore.Identity — https://www.nuget.org/packages/Microsoft.AspNetCore.Identity/
+  - Microsoft.AspNetCore.Identity.EntityFrameworkCore — https://www.nuget.org/packages/Microsoft.AspNetCore.Identity.EntityFrameworkCore/
   - Microsoft.AspNetCore.Mvc.Core (Tests) — https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.Core/
+  - Microsoft.AspNetCore.Mvc.Testing (Tests) — https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.Testing/
 - IdentityModel / JWT
   - Microsoft.IdentityModel.Tokens — https://www.nuget.org/packages/Microsoft.IdentityModel.Tokens/
   - System.IdentityModel.Tokens.Jwt — https://www.nuget.org/packages/System.IdentityModel.Tokens.Jwt/
@@ -128,12 +132,14 @@ Gruppiert; bei gemeinsamen Namespaces mit `*`.
   - DocumentFormat.OpenXml — https://www.nuget.org/packages/DocumentFormat.OpenXml/
   - itext — https://www.nuget.org/packages/itext/
   - itext.bouncy-castle-adapter — https://www.nuget.org/packages/itext.bouncy-castle-adapter/
+  - PdfPig — https://www.nuget.org/packages/PdfPig/
   - Portable.BouncyCastle — https://www.nuget.org/packages/Portable.BouncyCastle/
 - Test-Tooling
   - coverlet.collector — https://www.nuget.org/packages/coverlet.collector/
   - Microsoft.NET.Test.Sdk — https://www.nuget.org/packages/Microsoft.NET.Test.Sdk/
-  - xunit — https://www.nuget.org/packages/xunit/
+  - xunit.v3 — https://www.nuget.org/packages/xunit.v3/
   - xunit.runner.visualstudio — https://www.nuget.org/packages/xunit.runner.visualstudio/
+  - FluentAssertions — https://www.nuget.org/packages/FluentAssertions/
   - Moq — https://www.nuget.org/packages/Moq/
   - bunit — https://www.nuget.org/packages/bunit/
 
@@ -153,7 +159,7 @@ Gruppiert; bei gemeinsamen Namespaces mit `*`.
 
 ## 8. Entwicklung & Build
 ### Voraussetzungen
-- .NET 9 SDK
+- .NET 10 SDK
 
 ### Lokaler Start
 ```

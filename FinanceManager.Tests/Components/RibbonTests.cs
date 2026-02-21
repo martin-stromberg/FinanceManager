@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Tests.Components;
 
-public class RibbonTests : TestContext
+public class RibbonTests : Bunit.BunitContext
 {
     private enum TabId { One, Two }
 

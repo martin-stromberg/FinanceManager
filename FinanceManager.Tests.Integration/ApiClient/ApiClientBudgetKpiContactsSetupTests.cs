@@ -860,7 +860,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
 
         // create savings plans (assign categories by base name) and verify counts
         var createdSavings = await CreateSavingsPlansAsync(api);
-        createdSavings.Should().HaveCountGreaterOrEqualTo(1);
+        createdSavings.Should().HaveCountGreaterThanOrEqualTo(1);
         var finalSavingsCount = await api.SavingsPlans_CountAsync(false);
         finalSavingsCount.Should().Be(initialSavingsCount + createdSavings.Count);
 

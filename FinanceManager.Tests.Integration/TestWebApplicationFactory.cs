@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting; // for IHostedService
 using System.Data.Common;
+using System.Diagnostics;
 using FinanceManager.Application;
 
 namespace FinanceManager.Tests.Integration;
@@ -19,7 +20,7 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     private DbConnection? _connection;
     /// <summary>
-    /// When set, the factory will register an IDateTimeProvider that returns this fixed UTC time.
+    /// When set, the factory will register a <see cref="TimeProvider"/> that returns this fixed UTC time.
     /// Set this property in tests before calling CreateClient() to force server-side "now".
     /// </summary>
     public DateTime? FixedUtcNow { get; set; }
@@ -75,17 +76,17 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
                 options.UseSqlite(_connection);
             });
 
-            // If a fixed time was requested by the test, replace the application's IDateTimeProvider
+            // If a fixed time was requested by the test, replace the application's TimeProvider
             // registration so server-side code observes the deterministic time.
             if (FixedUtcNow.HasValue)
             {
-                var dtDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IDateTimeProvider));
+                var dtDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(TimeProvider));
                 if (dtDescriptor != null)
                 {
                     services.Remove(dtDescriptor);
                 }
 
-                services.AddScoped<IDateTimeProvider>(_ => new FixedDateTimeProvider(FixedUtcNow.Value));
+                services.AddSingleton<TimeProvider>(new FixedTimeProvider(FixedUtcNow.Value));
             }
 
             // Ensure schema is created for the fresh database using migrations
@@ -97,11 +98,20 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
         });
     }
 
-    private sealed class FixedDateTimeProvider : IDateTimeProvider
+    private sealed class FixedTimeProvider : TimeProvider
     {
-        private readonly DateTime _utcNow;
-        public FixedDateTimeProvider(DateTime utcNow) => _utcNow = utcNow;
-        public DateTime UtcNow => _utcNow;
+        private readonly DateTimeOffset _utcNow;
+        private readonly long _timestamp;
+
+        public FixedTimeProvider(DateTime utcNow)
+        {
+            _utcNow = new DateTimeOffset(DateTime.SpecifyKind(utcNow, DateTimeKind.Utc));
+            _timestamp = Stopwatch.GetTimestamp();
+        }
+
+        public override DateTimeOffset GetUtcNow() => _utcNow;
+
+        public override long GetTimestamp() => _timestamp;
     }
 
     protected override void Dispose(bool disposing)

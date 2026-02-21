@@ -21,7 +21,7 @@ public sealed class UserAuthService : IUserAuthService
     private readonly SignInManager<User> _signInManager;
     private readonly IJwtTokenService _jwt;
     private readonly IPasswordHashingService _passwordHasher;
-    private readonly IDateTimeProvider _clock;
+    private readonly TimeProvider _timeProvider;
     private readonly ILogger<UserAuthService> _logger;
     private readonly IIpBlockService _ipBlocks;
     private readonly RoleManager<IdentityRole<Guid>>? _roleManager;
@@ -34,10 +34,10 @@ public sealed class UserAuthService : IUserAuthService
     /// <param name="signInManager">ASP.NET Identity <see cref="SignInManager{TUser}"/> instance.</param>
     /// <param name="jwt">JWT token creation service.</param>
     /// <param name="passwordHasher">Password hashing service.</param>
-    /// <param name="clock">Clock provider for date/time.</param>
+    /// <param name="timeProvider">Clock provider for date/time.</param>
     /// <param name="logger">Logger instance.</param>
-    public UserAuthService(AppDbContext db, UserManager<User> userManager, SignInManager<User> signInManager, IJwtTokenService jwt, IPasswordHashingService passwordHasher, IDateTimeProvider clock, ILogger<UserAuthService> logger)
-        : this(db, userManager, signInManager, jwt, passwordHasher, clock, logger, new NoopIpBlockService(), null)
+    public UserAuthService(AppDbContext db, UserManager<User> userManager, SignInManager<User> signInManager, IJwtTokenService jwt, IPasswordHashingService passwordHasher, TimeProvider timeProvider, ILogger<UserAuthService> logger)
+        : this(db, userManager, signInManager, jwt, passwordHasher, timeProvider, logger, new NoopIpBlockService(), null)
     { }
 
     /// <summary>
@@ -48,7 +48,7 @@ public sealed class UserAuthService : IUserAuthService
     /// <param name="signInManager">ASP.NET Identity <see cref="SignInManager{TUser}"/> instance.</param>
     /// <param name="jwt">JWT token creation service.</param>
     /// <param name="passwordHasher">Password hashing service.</param>
-    /// <param name="clock">Clock provider for date/time.</param>
+    /// <param name="timeProvider">Clock provider for date/time.</param>
     /// <param name="logger">Logger instance.</param>
     /// <param name="ipBlocks">IP block service used for rate-limiting / blocking decisions.</param>
     /// <param name="roleManager">Optional RoleManager used to create initial roles.</param>
@@ -58,7 +58,7 @@ public sealed class UserAuthService : IUserAuthService
         SignInManager<User> signInManager,
         IJwtTokenService jwt,
         IPasswordHashingService passwordHasher,
-        IDateTimeProvider clock,
+        TimeProvider timeProvider,
         ILogger<UserAuthService> logger,
         IIpBlockService ipBlocks,
         RoleManager<IdentityRole<Guid>>? roleManager = null)
@@ -68,7 +68,7 @@ public sealed class UserAuthService : IUserAuthService
         _signInManager = signInManager;
         _jwt = jwt;
         _passwordHasher = passwordHasher;
-        _clock = clock;
+        _timeProvider = timeProvider;
         _logger = logger;
         _ipBlocks = ipBlocks;
         _roleManager = roleManager;

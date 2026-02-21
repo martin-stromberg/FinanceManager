@@ -704,7 +704,7 @@
             Provides user registration, login, and auxiliary helpers used by the web layer.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Auth.UserAuthService.#ctor(FinanceManager.Infrastructure.AppDbContext,Microsoft.AspNetCore.Identity.UserManager{FinanceManager.Domain.Users.User},Microsoft.AspNetCore.Identity.SignInManager{FinanceManager.Domain.Users.User},FinanceManager.Infrastructure.Auth.IJwtTokenService,FinanceManager.Infrastructure.Auth.IPasswordHashingService,FinanceManager.Application.IDateTimeProvider,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Auth.UserAuthService})">
+        <member name="M:FinanceManager.Infrastructure.Auth.UserAuthService.#ctor(FinanceManager.Infrastructure.AppDbContext,Microsoft.AspNetCore.Identity.UserManager{FinanceManager.Domain.Users.User},Microsoft.AspNetCore.Identity.SignInManager{FinanceManager.Domain.Users.User},FinanceManager.Infrastructure.Auth.IJwtTokenService,FinanceManager.Infrastructure.Auth.IPasswordHashingService,System.TimeProvider,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Auth.UserAuthService})">
             <summary>
             Backwards-compatible constructor overload for tests and legacy callers.
             </summary>
@@ -713,10 +713,10 @@
             <param name="signInManager">ASP.NET Identity <see cref="T:Microsoft.AspNetCore.Identity.SignInManager`1"/> instance.</param>
             <param name="jwt">JWT token creation service.</param>
             <param name="passwordHasher">Password hashing service.</param>
-            <param name="clock">Clock provider for date/time.</param>
+            <param name="timeProvider">Clock provider for date/time.</param>
             <param name="logger">Logger instance.</param>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Auth.UserAuthService.#ctor(FinanceManager.Infrastructure.AppDbContext,Microsoft.AspNetCore.Identity.UserManager{FinanceManager.Domain.Users.User},Microsoft.AspNetCore.Identity.SignInManager{FinanceManager.Domain.Users.User},FinanceManager.Infrastructure.Auth.IJwtTokenService,FinanceManager.Infrastructure.Auth.IPasswordHashingService,FinanceManager.Application.IDateTimeProvider,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Auth.UserAuthService},FinanceManager.Application.Security.IIpBlockService,Microsoft.AspNetCore.Identity.RoleManager{Microsoft.AspNetCore.Identity.IdentityRole{System.Guid}})">
+        <member name="M:FinanceManager.Infrastructure.Auth.UserAuthService.#ctor(FinanceManager.Infrastructure.AppDbContext,Microsoft.AspNetCore.Identity.UserManager{FinanceManager.Domain.Users.User},Microsoft.AspNetCore.Identity.SignInManager{FinanceManager.Domain.Users.User},FinanceManager.Infrastructure.Auth.IJwtTokenService,FinanceManager.Infrastructure.Auth.IPasswordHashingService,System.TimeProvider,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Auth.UserAuthService},FinanceManager.Application.Security.IIpBlockService,Microsoft.AspNetCore.Identity.RoleManager{Microsoft.AspNetCore.Identity.IdentityRole{System.Guid}})">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Infrastructure.Auth.UserAuthService"/>.
             </summary>
@@ -725,7 +725,7 @@
             <param name="signInManager">ASP.NET Identity <see cref="T:Microsoft.AspNetCore.Identity.SignInManager`1"/> instance.</param>
             <param name="jwt">JWT token creation service.</param>
             <param name="passwordHasher">Password hashing service.</param>
-            <param name="clock">Clock provider for date/time.</param>
+            <param name="timeProvider">Clock provider for date/time.</param>
             <param name="logger">Logger instance.</param>
             <param name="ipBlocks">IP block service used for rate-limiting / blocking decisions.</param>
             <param name="roleManager">Optional RoleManager used to create initial roles.</param>
