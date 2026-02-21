@@ -6,7 +6,7 @@ Diese Richtlinien definieren konsistente, wartbare und sichere Standards für di
 - Sprache für Code, Kommentare und Commits: Englisch (UI-Texte lokalisiert via Ressourcen).
 - Single Responsibility: Jede Klasse, Methode, Datei hat klaren Zweck.
 - KISS / DRY / YAGNI konsequent anwenden.
-- Defensive & intention‑revealing code (aussagekräftige Namen > Kommentare).Kommentare nur für Warum / Kontext / Randbedingungen.
+- Defensive & intention‑revealing code (aussagekräftige Namen > Kommentare). Kommentare nur für Warum / Kontext / Randbedingungen.
 - TODO und Ziel Kommentare verwenden um Absichten zu verdeutlichen.
 
 ## 2. C# Konventionen
@@ -26,7 +26,7 @@ Diese Richtlinien definieren konsistente, wartbare und sichere Standards für di
 - Eine Typdefinition pro Datei.
 - Vermeide regions außer für umfangreiche partielle Klassen oder logisch gruppierte öffentliche API; kein Feingranular-Spam.
 - Nullable Reference Types aktivieren (<Nullable>enable</Nullable> in allen csproj). Null-Handhabung explizit (ArgumentNullException / Optionals).
-- immer `async`/`await` nutzen, wenn Datenbank‑ oder API‑Zugriffe stattfinden
+- immer `async`/`await` nutzen, wenn Datenbank‑ oder API‑Zugriffe stattfinden.
 - Jeder Für jeden Befehlsblock (if, for, while, etc.) sind geschweifte Klammern zu verwenden, auch wenn der Block nur eine Anweisung enthält.
 
 ### 2.3 Dokumentation
@@ -52,7 +52,7 @@ Diese Richtlinien definieren konsistente, wartbare und sichere Standards für di
   - Transient: Kurzlebige Hilfsobjekte.
 - Singletons injizieren keine Scoped/Transient direkt (Factory oder IServiceScopeFactory verwenden).
 - Registriere Services als Singleton wenn mehrere Thread nur eine Verbindung zu einer Ressource herstellen sollen.
-- Vermeide Benutzerkontexte in Singletons
+- Vermeide Benutzerkontexte in Singletons.
 - Singletons dürfen keine Transient oder Scoped Services direkt injizieren. Nutze stattdessen ein Factory-Pattern oder Lazy-loading.
 
 ### 2.7 Ressourcen & IDisposable
@@ -68,11 +68,11 @@ Diese Richtlinien definieren konsistente, wartbare und sichere Standards für di
   - Error: Fehler, Operation abgebrochen.
   - Critical: System nicht funktionsfähig.
 - Keine sensiblen Werte (Passwörter, vollständige Tokens, personenbezogene Volltexte) im Log.
-- Nutze das ILogger<>-Interface für die Protokollierung
+- Nutze das ILogger<>-Interface für die Protokollierung.
 - Jede öffentliche Methode eines Service sollte mit einem Informations-Log starten, der den Aufruf mit seinen Parametern protokolliert.
 - Benutzerbezogene Daten sind in den Protokollen auf ein Minimum zu reduzieren und nur auszugeben, wenn sie dem Verständnis über den Programmablauf dienen.
 - Try-Catch-Blöcke, die dem Abfangen unerwarteter Fehlerzustände dienen, sollen den Ausnahmefehler als Error protokollieren.
-- Ausnahmefehler, die dem Ablauf der Geschäftslogik dienen brauchen nicht protokolliert sein und wenn, dann als Information oder Debug-Log
+- Ausnahmefehler, die dem Ablauf der Geschäftslogik dienen brauchen nicht protokolliert sein und wenn, dann als Information oder Debug-Log.
 
 ### 2.9 Security & Secrets
 - Keine Secrets im Code/Repo. Nutzung von User Secrets / Environment Variablen / Secret Store.
@@ -116,10 +116,12 @@ Diese Richtlinien definieren konsistente, wartbare und sichere Standards für di
 - Minimale, sinnvolle Assertions (meist 1 fachliche Kernaussage). Mehrfach Assertions nur wenn thematisch untrennbar.
 - Vermeide die Verwendung von `Thread.Sleep` in Tests.
 - Vermeide die Verwendung von `async void` in Testmethoden.
-- Vermeide die Verwendung von `try-catch` in Testmethoden
-- Vermeide die Verwendung von `Console.WriteLine` in Testmethoden
+- Vermeide die Verwendung von `try-catch` in Testmethoden.
+- Vermeide die Verwendung von `Console.WriteLine` in Testmethoden.
 - Bei der Verwendung eines DbContext mit einer InMemory-Datenbank in Tests, stelle sicher, dass die Datenbank für jeden Test neu initialisiert wird, um Seiteneffekte zu vermeiden.
 - Bei der Verwendung von DbContext mit einer InMemory-Datenbank in Tests, registriere den DbContext als Scoped in der Test-Setup-Methode, um sicherzustellen, dass jeder Test eine neue Instanz erhält.
+- Füge XML-Kommentare zu Testmethoden hinzu, um deren Zweck und Verhalten zu dokumentieren. Halte die Kommentare minimal und fokussiert auf die jeweilige Methode.
+- Bevorzuge explizite, fest codierte Mock-Daten (IReadOnlyList/arrays) in Tests statt programmgenerierter Mocks; deterministische GUIDs/Collections für weniger fehleranfällige Tests.
 
 ### 3.2 Coverage & Fokus
 - Kritische Domain/Service Logik abdecken (Happy + Edge + Fehlerpfade).
@@ -235,7 +237,6 @@ public sealed class AccountImportService : IAccountImportService
 - Caching Layer Konkretisierung (Redis optional).
 - Domain Events → Integration Events Architektur.
 - Feature Flags (z.B. für neue Importformate).
-
 
 ## 15. Projektspezifisches
 - Die Funktionalität der verschiedenen Bereiche muss einheitlich sein.
