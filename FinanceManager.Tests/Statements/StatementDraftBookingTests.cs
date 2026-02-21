@@ -303,7 +303,7 @@ public sealed class StatementDraftBookingTests
 
         // All created postings (parent + children) must have parent's valuta date
         var allPostings = db.Postings.ToList();
-        Assert.All(allPostings, p => Assert.Equal(pEntry.ValutaDate, p.ValutaDate));
+        Assert.All(allPostings, p => Assert.Equal(pEntry.BookingDate, p.BookingDate));
 
         // Additionally, booking dates of postings must match their source entry booking dates
         var parentBank = db.Postings.Single(p => p.SourceId == pEntry.Id && p.Kind == PostingKind.Bank);
@@ -317,20 +317,20 @@ public sealed class StatementDraftBookingTests
 
         var child1Bank = db.Postings.Single(p => p.SourceId == c1.Id && p.Kind == PostingKind.Bank);
         var child1Contact = db.Postings.Single(p => p.SourceId == c1.Id && p.Kind == PostingKind.Contact);
-        Assert.Equal(c1Booking, child1Bank.BookingDate);
-        Assert.Equal(pEntry.ValutaDate, child1Bank.ValutaDate);
+        Assert.Equal(pEntry.BookingDate, child1Bank.BookingDate);
+        Assert.Equal(c1Booking, child1Bank.ValutaDate);
         Assert.Equal(c1.Amount, child1Bank.Amount);
-        Assert.Equal(c1Booking, child1Contact.BookingDate);
-        Assert.Equal(pEntry.ValutaDate, child1Contact.ValutaDate);
+        Assert.Equal(pEntry.BookingDate, child1Contact.BookingDate);
+        Assert.Equal(c1Booking, child1Contact.ValutaDate);
         Assert.Equal(c1.Amount, child1Contact.Amount);
 
         var child2Bank = db.Postings.Single(p => p.SourceId == c2.Id && p.Kind == PostingKind.Bank);
         var child2Contact = db.Postings.Single(p => p.SourceId == c2.Id && p.Kind == PostingKind.Contact);
-        Assert.Equal(c2Booking, child2Bank.BookingDate);
-        Assert.Equal(pEntry.ValutaDate, child2Bank.ValutaDate);
+        Assert.Equal(pEntry.BookingDate, child2Bank.BookingDate);
+        Assert.Equal(c2Booking, child2Bank.ValutaDate);
         Assert.Equal(c2.Amount, child2Bank.Amount);
-        Assert.Equal(c2Booking, child2Contact.BookingDate);
-        Assert.Equal(pEntry.ValutaDate, child2Contact.ValutaDate);
+        Assert.Equal(pEntry.BookingDate, child2Contact.BookingDate);
+        Assert.Equal(c2Booking, child2Contact.ValutaDate);
         Assert.Equal(c2.Amount, child2Contact.Amount);
 
         // Parent postings should not have parent set

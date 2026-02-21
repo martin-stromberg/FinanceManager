@@ -1609,6 +1609,18 @@
         <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.ReportCache.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity.Postings_OriginalAmount">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.Postings_OriginalAmount.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.Postings_OriginalAmount.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Data.Migrations.Identity.Postings_OriginalAmount.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Demo.DemoDataService">
             <summary>
             Demo data service implementation (skeleton).

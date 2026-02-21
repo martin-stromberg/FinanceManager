@@ -1964,6 +1964,12 @@ public sealed partial class StatementDraftService : IStatementDraftService
             var contactPosting = new Domain.Postings.Posting(e.Id, PostingKind.Contact, null, e.ContactId, null, null, e.BookingDate, e.ValutaDate ?? e.BookingDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid);
             _db.Postings.Add(contactPosting); await UpsertAggregatesAsync(contactPosting, token);
 
+            if (amount == 0m)
+            {
+                bankPosting.SetOriginalAmount(e.Amount);
+                contactPosting.SetOriginalAmount(e.Amount);
+            }
+
             // Kontosaldo anpassen (nur Bank-Buchung relevant)
             if (amount != 0m)
             {
@@ -2027,8 +2033,8 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 }
 
                 // pass valuta date of parent entry as override so child postings get parent's valuta
-                var overrideValuta = e.ValutaDate ?? e.BookingDate;
-                await BookSplitDraftGroupAsync(e.SplitDraftId.Value, ownerUserId, draft.Id, self, account, ct, new HashSet<Guid>(), overrideValuta, parentBankId, parentContactId);
+                var overrideBookingDate = e.BookingDate;
+                await BookSplitDraftGroupAsync(e.SplitDraftId.Value, ownerUserId, draft.Id, self, account, ct, new HashSet<Guid>(), overrideBookingDate, parentBankId, parentContactId);
             }
             else
             {
@@ -2201,7 +2207,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
         return removed;
     }
 
-    private async Task BookSplitDraftGroupAsync(Guid representativeSplitDraftId, Guid ownerUserId, Guid parentDraftId, Contact self, Account account, CancellationToken ct, HashSet<Guid> visited, DateTime? overrideValuta = null, Guid? parentBankPostingId = null, Guid? parentContactPostingId = null)
+    private async Task BookSplitDraftGroupAsync(Guid representativeSplitDraftId, Guid ownerUserId, Guid parentDraftId, Contact self, Account account, CancellationToken ct, HashSet<Guid> visited, DateTime? overrideBookingDate = null, Guid? parentBankPostingId = null, Guid? parentContactPostingId = null)
     {
         if (!visited.Add(representativeSplitDraftId)) { return; }
         var rep = await _db.StatementDrafts.Include(d => d.Entries)
@@ -2222,13 +2228,19 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 var contact = await _db.Contacts.FirstOrDefaultAsync(x => x.Id == ce.ContactId && x.OwnerUserId == ownerUserId, ct);
                 if (contact == null) { continue; }
 
-                async Task<(Guid groupId, Guid bankId, Guid contactId)> CreateBankAndContactAsync(StatementDraftEntry e, decimal amount)
+                async Task<(Guid groupId, Guid bankId, Guid contactId)> CreateBankAndContactAsync(StatementDraftEntry e, decimal amount, DateTime bookingDate, DateTime valutaDate)
                 {
                     var gid = Guid.NewGuid();
-                    var bank = new Domain.Postings.Posting(e.Id, PostingKind.Bank, account.Id, null, null, null, e.BookingDate, e.ValutaDate ?? e.BookingDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid);
+                    var bank = new Domain.Postings.Posting(e.Id, PostingKind.Bank, account.Id, null, null, null, bookingDate, valutaDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid);
                     _db.Postings.Add(bank); await UpsertAggregatesAsync(bank, ct);
-                    var contactPosting = new Domain.Postings.Posting(e.Id, PostingKind.Contact, null, e.ContactId, null, null, e.BookingDate, e.ValutaDate ?? e.BookingDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid);
+                    var contactPosting = new Domain.Postings.Posting(e.Id, PostingKind.Contact, null, e.ContactId, null, null, bookingDate, valutaDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid);
                     _db.Postings.Add(contactPosting); await UpsertAggregatesAsync(contactPosting, ct);
+
+                    if (amount == 0m)
+                    {
+                        bank.SetOriginalAmount(e.Amount);
+                        contactPosting.SetOriginalAmount(e.Amount);
+                    }
 
                     // Kontosaldo anpassen (nur Bank-Buchung relevant)
                     if (amount != 0m)
@@ -2248,7 +2260,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
 
                     return (gid, bank.Id, contactPosting.Id);
                 }
-                async Task CreateSecurityAsync(StatementDraftEntry e, Guid gid)
+                async Task CreateSecurityAsync(StatementDraftEntry e, Guid gid, DateTime bookingDate, DateTime valutaDate)
                 {
                     if (e.SecurityId == null) { return; }
                     var fee = Math.Abs(e.SecurityFeeAmount ?? 0m); var tax = Math.Abs(e.SecurityTaxAmount ?? 0m);
@@ -2257,27 +2269,26 @@ public sealed partial class StatementDraftService : IStatementDraftService
                     var tradeAmt = e.SecurityTransactionType switch { SecurityTransactionType.Buy => e.Amount - fee - tax, SecurityTransactionType.Sell => e.Amount + fee + tax, SecurityTransactionType.Dividend => e.Amount + fee + tax, _ => e.Amount + fee + tax };
                     var sub = e.SecurityTransactionType switch { SecurityTransactionType.Buy => SecurityPostingSubType.Buy, SecurityTransactionType.Sell => SecurityPostingSubType.Sell, SecurityTransactionType.Dividend => SecurityPostingSubType.Dividend, _ => SecurityPostingSubType.Buy };
                     decimal? qty = e.SecurityTransactionType switch { SecurityTransactionType.Buy => e.SecurityQuantity, SecurityTransactionType.Sell => e.SecurityQuantity.HasValue ? -Math.Abs(e.SecurityQuantity.Value) : null, SecurityTransactionType.Dividend => null, _ => e.SecurityQuantity };
-                    var main = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, e.BookingDate, e.ValutaDate ?? e.BookingDate, tradeAmt, e.Subject, e.RecipientName, e.BookingDescription, sub, qty).SetGroup(gid);
+                    var main = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, bookingDate, valutaDate, tradeAmt, e.Subject, e.RecipientName, e.BookingDescription, sub, qty).SetGroup(gid);
                     _db.Postings.Add(main); await UpsertAggregatesAsync(main, ct);
                     if (fee != 0m)
                     {
-                        var feeP = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, e.BookingDate, e.ValutaDate ?? e.BookingDate, factor * fee, e.Subject, e.RecipientName, e.BookingDescription, SecurityPostingSubType.Fee, null).SetGroup(gid);
+                        var feeP = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, bookingDate, valutaDate, factor * fee, e.Subject, e.RecipientName, e.BookingDescription, SecurityPostingSubType.Fee, null).SetGroup(gid);
                         _db.Postings.Add(feeP); await UpsertAggregatesAsync(feeP, ct);
                     }
                     if (tax != 0m)
                     {
-                        var taxP = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, e.BookingDate, e.ValutaDate ?? e.BookingDate, factor * tax, e.Subject, e.RecipientName, e.BookingDescription, SecurityPostingSubType.Tax, null).SetGroup(gid);
+                        var taxP = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, bookingDate, valutaDate, factor * tax, e.Subject, e.RecipientName, e.BookingDescription, SecurityPostingSubType.Tax, null).SetGroup(gid);
                         _db.Postings.Add(taxP); await UpsertAggregatesAsync(taxP, ct);
                     }
                 }
-
-                if (overrideValuta.HasValue)
-                    ce.OverrideValutaDate(overrideValuta.Value);
+                var effectiveBookingDate = overrideBookingDate ?? ce.BookingDate;
+                var effectiveValutaDate = overrideBookingDate.HasValue ? ce.BookingDate : (ce.ValutaDate ?? ce.BookingDate);
 
                 if (contact.IsPaymentIntermediary && ce.SplitDraftId != null)
                 {
-                    var (gidZero, bankId, contactId) = await CreateBankAndContactAsync(ce, 0m);
-                    await CreateSecurityAsync(ce, gidZero);
+                    var (gidZero, bankId, contactId) = await CreateBankAndContactAsync(ce, 0m, effectiveBookingDate, effectiveValutaDate);
+                    await CreateSecurityAsync(ce, gidZero, effectiveBookingDate, effectiveValutaDate);
 
                     // propagate attachments from entry to postings
                     if (_attachments != null)
@@ -2291,22 +2302,22 @@ public sealed partial class StatementDraftService : IStatementDraftService
                         }
                     }
 
-                    await BookSplitDraftGroupAsync(ce.SplitDraftId.Value, ownerUserId, childDraft.Id, self, account, ct, visited, overrideValuta, bankId, contactId);
+                    await BookSplitDraftGroupAsync(ce.SplitDraftId.Value, ownerUserId, childDraft.Id, self, account, ct, visited, overrideBookingDate, bankId, contactId);
                     await MarkReportCacheForEntryAsync(ce, ct);
                 }
                 else
                 {
-                    var (gid, bankId, contactId) = await CreateBankAndContactAsync(ce, ce.Amount);
+                    var (gid, bankId, contactId) = await CreateBankAndContactAsync(ce, ce.Amount, effectiveBookingDate, effectiveValutaDate);
                     Guid? spId = null;
                     if (ce.SavingsPlanId != null && ce.ContactId == self.Id)
                     {
-                        var sp = new Domain.Postings.Posting(ce.Id, PostingKind.SavingsPlan, null, null, ce.SavingsPlanId, null, ce.BookingDate, ce.ValutaDate ?? ce.BookingDate, -ce.Amount, ce.Subject, ce.RecipientName, ce.BookingDescription, null).SetGroup(gid);
+                        var sp = new Domain.Postings.Posting(ce.Id, PostingKind.SavingsPlan, null, null, ce.SavingsPlanId, null, effectiveBookingDate, effectiveValutaDate, -ce.Amount, ce.Subject, ce.RecipientName, ce.BookingDescription, null).SetGroup(gid);
                         _db.Postings.Add(sp); await UpsertAggregatesAsync(sp, ct);
                         if (parentBankPostingId.HasValue) sp.SetParent(parentBankPostingId.Value);
                         if (parentContactPostingId.HasValue) sp.SetParent(parentContactPostingId.Value);
                         spId = sp.Id;
                     }
-                    await CreateSecurityAsync(ce, gid);
+                    await CreateSecurityAsync(ce, gid, effectiveBookingDate, effectiveValutaDate);
 
                     if (_attachments != null)
                     {

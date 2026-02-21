@@ -10,6 +10,18 @@
             Exposed as a separate helper to keep tests concise.
             </summary>
         </member>
+        <member name="T:FinanceManager.Tests.Integration.ApiClient.ApiClientBudgetReportUnbudgetedMirrorTests">
+            <summary>
+            Integration tests for the Budget Report Unbudgeted Mirror functionality.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientBudgetReportUnbudgetedMirrorTests.#ctor(FinanceManager.Tests.Integration.TestWebApplicationFactory)">
+            <summary>
+            Initializes a new instance of the ApiClientBudgetReportUnbudgetedMirrorTests class using the specified test web
+            application factory. This constructor sets up the integration test environment for budget report functionality.
+            </summary>
+            <param name="factory">The TestWebApplicationFactory used to create a test server for the API client. Must not be null.</param>
+        </member>
         <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientBudgetReportUnbudgetedMirrorTests.BudgetReport_UnbudgetedPostings_ShouldOnlyContainNonMirroredSelfContactPostings_WhenSavingsPlanPostingsMirrorSelfContact">
             <summary>
             Integrationstest: Wenn Sparplan-Buchungen auf das Self-Konto gespiegelt werden,

@@ -137,6 +137,7 @@ public sealed class Posting : Entity, IAggregateRoot
         GroupId = Guid.Empty; // will be set via SetGroup
         Quantity = quantity;
         ParentId = null; // default
+        OriginalAmount = null;
     }
 
      /// <summary>
@@ -215,6 +216,10 @@ public sealed class Posting : Entity, IAggregateRoot
     /// </summary>
     /// <value>The monetary amount.</value>
     public decimal Amount { get; private set; }
+    /// <summary>
+    /// Optional original amount for postings that have been zeroed out during booking.
+    /// </summary>
+    public decimal? OriginalAmount { get; private set; }
     /// <summary>
     /// Optional subject for the posting.
     /// </summary>
@@ -317,6 +322,18 @@ public sealed class Posting : Entity, IAggregateRoot
         return this;
     }
 
+    /// <summary>
+    /// Sets the original amount for informational purposes.
+    /// </summary>
+    /// <param name="amount">Original amount or null to clear.</param>
+    /// <returns>The updated <see cref="Posting"/> instance (fluent API).</returns>
+    public Posting SetOriginalAmount(decimal? amount)
+    {
+        OriginalAmount = amount;
+        Touch();
+        return this;
+    }
+
     // Backup DTO
     /// <summary>
     /// DTO carrying the serializable state of a <see cref="Posting"/> for backup purposes.
@@ -331,6 +348,7 @@ public sealed class Posting : Entity, IAggregateRoot
     /// <param name="BookingDate">Booking date of the posting.</param>
     /// <param name="ValutaDate">Valuta/date-of-value for the posting.</param>
     /// <param name="Amount">Monetary amount for the posting.</param>
+    /// <param name="OriginalAmount">Optional original amount before zeroing.</param>
     /// <param name="Subject">Optional subject for the posting.</param>
     /// <param name="RecipientName">Optional recipient name.</param>
     /// <param name="Description">Optional description.</param>
@@ -339,13 +357,13 @@ public sealed class Posting : Entity, IAggregateRoot
     /// <param name="GroupId">Optional group identifier for related postings.</param>
     /// <param name="ParentId">Optional parent posting reference.</param>
     /// <param name="LinkedPostingId">Optional linked posting reference (counterpart).</param>
-    public sealed record PostingBackupDto(Guid Id, Guid SourceId, PostingKind Kind, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, DateTime BookingDate, DateTime ValutaDate, decimal Amount, string? Subject, string? RecipientName, string? Description, SecurityPostingSubType? SecuritySubType, decimal? Quantity, Guid? GroupId, Guid? ParentId, Guid? LinkedPostingId);
+    public sealed record PostingBackupDto(Guid Id, Guid SourceId, PostingKind Kind, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, DateTime BookingDate, DateTime ValutaDate, decimal Amount, decimal? OriginalAmount, string? Subject, string? RecipientName, string? Description, SecurityPostingSubType? SecuritySubType, decimal? Quantity, Guid? GroupId, Guid? ParentId, Guid? LinkedPostingId);
 
     /// <summary>
     /// Creates a backup DTO representing the serializable state of this posting.
     /// </summary>
     /// <returns>A <see cref="PostingBackupDto"/> containing values required to restore this posting.</returns>
-    public PostingBackupDto ToBackupDto() => new PostingBackupDto(Id, SourceId, Kind, AccountId, ContactId, SavingsPlanId, SecurityId, BookingDate, ValutaDate, Amount, Subject, RecipientName, Description, SecuritySubType, Quantity, GroupId, ParentId, LinkedPostingId);
+    public PostingBackupDto ToBackupDto() => new PostingBackupDto(Id, SourceId, Kind, AccountId, ContactId, SavingsPlanId, SecurityId, BookingDate, ValutaDate, Amount, OriginalAmount, Subject, RecipientName, Description, SecuritySubType, Quantity, GroupId, ParentId, LinkedPostingId);
 
     /// <summary>
     /// Applies values from the provided backup DTO to this posting instance.
@@ -364,6 +382,7 @@ public sealed class Posting : Entity, IAggregateRoot
         BookingDate = dto.BookingDate;
         ValutaDate = dto.ValutaDate;
         Amount = dto.Amount;
+        OriginalAmount = dto.OriginalAmount;
         Subject = dto.Subject;
         RecipientName = dto.RecipientName;
         Description = dto.Description;
