@@ -14,20 +14,6 @@ public sealed record ApiErrorDto(string? origin, string? code, string? message)
     public string? Error => code;
 
     /// <summary>
-    /// Legacy constructor: creates an error response with only a human-readable message.
-    /// </summary>
-    [Obsolete("Use constructor with origin, code, message.")]
-    public ApiErrorDto(string message) : this(null, null, message)
-    {
-    }
-
-    /// <summary>
-    /// Legacy factory: creates an error response with only a human-readable message.
-    /// </summary>
-    [Obsolete("Use Create method with origin, code, message.")]
-    public static ApiErrorDto FromMessage(string message) => new(null, null, message);
-
-    /// <summary>
     /// Creates a standardized API error response.
     /// </summary>
     public static ApiErrorDto Create(string origin, string code, string? message)

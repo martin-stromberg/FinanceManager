@@ -443,6 +443,10 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
                 occurrences = CountByMonthStep(start, effectiveStart, effectiveEnd, stepMonths: 1);
                 break;
 
+            case BudgetIntervalType.Quarterly:
+                occurrences = CountByMonthStep(start, effectiveStart, effectiveEnd, stepMonths: 3);
+                break;
+
             case BudgetIntervalType.Yearly:
                 occurrences = CountByMonthStep(start, effectiveStart, effectiveEnd, stepMonths: 12);
                 break;

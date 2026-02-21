@@ -643,28 +643,4 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         progressCallback(++count, total);
     }
 
-    /// <summary>
-    /// Legacy synchronous wrapper for <see cref="ClearUserDataAsync(Guid, Action{int,int}, CancellationToken)"/>.
-    /// </summary>
-    /// <param name="userId">The user identifier whose data should be removed.</param>
-    /// <param name="progressCallback">Callback invoked after each sub-step with (step, total).</param>
-    internal void ClearUserData(Guid userId, Action<int, int> progressCallback)
-    {
-        ClearUserDataAsync(userId, progressCallback, CancellationToken.None).GetAwaiter().GetResult();
-
-        var budgetPurposes = BudgetPurposes.Where(x => x.OwnerUserId == userId).ToList();
-        var budgetPurposeIds = budgetPurposes.Select(x => x.Id).ToList();
-
-        var budgetRules = BudgetRules.Where(x => x.OwnerUserId == userId).Where(x => x.BudgetPurposeId != null && budgetPurposeIds.Contains(x.BudgetPurposeId.Value)).ToList();
-        var budgetOverrides = BudgetOverrides.Where(x => x.OwnerUserId == userId && budgetPurposeIds.Contains(x.BudgetPurposeId)).ToList();
-
-        BudgetOverrides.RemoveRange(budgetOverrides);
-        SaveChanges();
-
-        BudgetRules.RemoveRange(budgetRules);
-        SaveChanges();
-
-        BudgetPurposes.RemoveRange(budgetPurposes);
-        SaveChanges();
-    }
 }

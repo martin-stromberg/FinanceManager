@@ -268,13 +268,6 @@
             <param name="ct">Cancellation token.</param>
             <returns>A task that completes when the clear operation has finished.</returns>
         </member>
-        <member name="M:FinanceManager.Infrastructure.AppDbContext.ClearUserData(System.Guid,System.Action{System.Int32,System.Int32})">
-            <summary>
-            Legacy synchronous wrapper for <see cref="M:FinanceManager.Infrastructure.AppDbContext.ClearUserDataAsync(System.Guid,System.Action{System.Int32,System.Int32},System.Threading.CancellationToken)"/>.
-            </summary>
-            <param name="userId">The user identifier whose data should be removed.</param>
-            <param name="progressCallback">Callback invoked after each sub-step with (step, total).</param>
-        </member>
         <member name="T:FinanceManager.Infrastructure.Attachments.AttachmentCategoryService">
             <summary>
             Service for managing attachment categories for a user.

@@ -51,6 +51,42 @@ public sealed class BudgetCategoryService : IBudgetCategoryService
             .Select(g => new { CategoryId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.CategoryId, x => x.Count, ct);
 
+        Dictionary<Guid, (decimal BudgetSum, decimal ActualSum)> purposeSumsByCategory = new();
+        Dictionary<Guid, List<(decimal Amount, BudgetIntervalType Interval, int? CustomIntervalMonths, DateOnly StartDate, DateOnly? EndDate)>> rulesByCategory = new();
+
+        if (effectiveFrom.HasValue && effectiveTo.HasValue)
+        {
+            var purposeOverviews = await _purposes.ListOverviewAsync(
+                ownerUserId,
+                0,
+                int.MaxValue,
+                sourceType: null,
+                nameFilter: null,
+                effectiveFrom,
+                effectiveTo,
+                budgetCategoryId: null,
+                ct);
+
+            purposeSumsByCategory = purposeOverviews
+                .Where(p => p.BudgetCategoryId.HasValue)
+                .GroupBy(p => p.BudgetCategoryId!.Value)
+                .ToDictionary(
+                    g => g.Key,
+                    g => (BudgetSum: g.Sum(x => x.BudgetSum), ActualSum: g.Sum(x => x.ActualSum)));
+
+            var categoryIds = categories.Select(c => c.Id).ToList();
+            var categoryRules = await _db.BudgetRules.AsNoTracking()
+                .Where(r => r.OwnerUserId == ownerUserId && r.BudgetCategoryId != null && categoryIds.Contains(r.BudgetCategoryId.Value))
+                .Select(r => new { r.BudgetCategoryId, r.Amount, r.Interval, r.CustomIntervalMonths, r.StartDate, r.EndDate })
+                .ToListAsync(ct);
+
+            rulesByCategory = categoryRules
+                .GroupBy(r => r.BudgetCategoryId!.Value)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(r => (r.Amount, r.Interval, r.CustomIntervalMonths, r.StartDate, r.EndDate)).ToList());
+        }
+
         var result = new List<BudgetCategoryOverviewDto>(categories.Count);
         foreach (var c in categories)
         {
@@ -66,31 +102,32 @@ public sealed class BudgetCategoryService : IBudgetCategoryService
                 if (hasCategoryRules)
                 {
                     // Compute budget directly from category-scoped rules.
-                    var rules = await _db.BudgetRules.AsNoTracking()
-                        .Where(r => r.OwnerUserId == ownerUserId && r.BudgetCategoryId == c.Id)
-                        .Select(r => new { r.Amount, r.Interval, r.CustomIntervalMonths, r.StartDate, r.EndDate })
-                        .ToListAsync(ct);
-
-                    foreach (var rule in rules)
+                    if (rulesByCategory.TryGetValue(c.Id, out var rules))
                     {
-                        budget += rule.Amount * BudgetPurposeService_CountOccurrencesInRange(rule.Interval, rule.CustomIntervalMonths, rule.StartDate, rule.EndDate, effectiveFrom.Value, effectiveTo.Value);
+                        foreach (var rule in rules)
+                        {
+                            budget += rule.Amount * BudgetPurposeService_CountOccurrencesInRange(rule.Interval, rule.CustomIntervalMonths, rule.StartDate, rule.EndDate, effectiveFrom.Value, effectiveTo.Value);
+                        }
                     }
 
-                    // Actual for category-scoped rules: sum postings of purposes in that category (same as purpose aggregation).
-                    var purposes = await _purposes.ListOverviewAsync(ownerUserId, 0, int.MaxValue, sourceType: null, nameFilter: null, effectiveFrom, effectiveTo, budgetCategoryId: c.Id, ct);
-                    actual = purposes.Sum(p => p.ActualSum);
+                    if (purposeSumsByCategory.TryGetValue(c.Id, out var sums))
+                    {
+                        actual = sums.ActualSum;
+                    }
                 }
                 else
                 {
                     // Fallback: sum budgets + actuals from purposes in this category.
-                    var purposes = await _purposes.ListOverviewAsync(ownerUserId, 0, int.MaxValue, sourceType: null, nameFilter: null, effectiveFrom, effectiveTo, budgetCategoryId: c.Id, ct);
-                    budget = purposes.Sum(p => p.BudgetSum);
-                    actual = purposes.Sum(p => p.ActualSum);
+                    if (purposeSumsByCategory.TryGetValue(c.Id, out var sums))
+                    {
+                        budget = sums.BudgetSum;
+                        actual = sums.ActualSum;
+                    }
                 }
             }
 
             purposeCountByCategory.TryGetValue(c.Id, out var purposeCount);
-            result.Add(new BudgetCategoryOverviewDto(c.Id, c.Name, budget, actual, budget - actual, purposeCount));
+            result.Add(new BudgetCategoryOverviewDto(c.Id, c.Name, budget, actual, actual-budget, purposeCount));
         }
 
         return result;

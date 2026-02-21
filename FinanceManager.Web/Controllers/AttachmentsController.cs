@@ -373,7 +373,7 @@ public sealed class AttachmentsController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new ApiErrorDto(ex.Message));
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid_Category", ex.Message));
         }
     }
 

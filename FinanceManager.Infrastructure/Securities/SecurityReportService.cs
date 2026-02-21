@@ -30,7 +30,8 @@ public sealed class SecurityReportService : ISecurityReportService
             throw new ArgumentException("Owner user id is required", nameof(ownerUserId));
         }
 
-        const int SecurityPostingSubType_Dividend = 2;
+        const int SecurityPostingSubType_Dividend = (int)SecurityPostingSubType.Dividend;
+        
 
         var today = DateTime.UtcNow.Date;
         var start = new DateTime(today.Year - 1, 1, 1);

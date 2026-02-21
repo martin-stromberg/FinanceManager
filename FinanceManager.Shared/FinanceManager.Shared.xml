@@ -2952,16 +2952,6 @@
             Legacy compatibility property. Older clients expect an <c>error</c> JSON property.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Common.ApiErrorDto.#ctor(System.String)">
-            <summary>
-            Legacy constructor: creates an error response with only a human-readable message.
-            </summary>
-        </member>
-        <member name="M:FinanceManager.Shared.Dtos.Common.ApiErrorDto.FromMessage(System.String)">
-            <summary>
-            Legacy factory: creates an error response with only a human-readable message.
-            </summary>
-        </member>
         <member name="M:FinanceManager.Shared.Dtos.Common.ApiErrorDto.Create(System.String,System.String,System.String)">
             <summary>
             Creates a standardized API error response.

@@ -33,7 +33,6 @@ public interface IReportCacheService
     /// <param name="to">Inclusive range end.</param>
     /// <param name="dateBasis">Date basis used to build the cache key.</param>
     /// <param name="data">Raw data to cache.</param>
-    /// <param name="parameter">Additional parameter stored with the cache entry.</param>
     /// <param name="needsRefresh">Whether the cache entry should be marked for refresh.</param>
     /// <param name="ct">Cancellation token.</param>
     Task SetBudgetReportRawDataAsync(

@@ -8,10 +8,18 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// Integration tests for the Budget Report Unbudgeted Mirror functionality.
+/// </summary>
 public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the ApiClientBudgetReportUnbudgetedMirrorTests class using the specified test web
+    /// application factory. This constructor sets up the integration test environment for budget report functionality.
+    /// </summary>
+    /// <param name="factory">The TestWebApplicationFactory used to create a test server for the API client. Must not be null.</param>
     public ApiClientBudgetReportUnbudgetedMirrorTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
