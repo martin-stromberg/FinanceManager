@@ -1,15 +1,21 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Accounts;
-using FinanceManager.Application.Attachments; // new
-using FinanceManager.Application.Contacts; // added
-using FinanceManager.Application.Savings; // added
+using FinanceManager.Application.Attachments;
+using FinanceManager.Application.Common;
+using FinanceManager.Application.Contacts;
+using FinanceManager.Application.Exceptions;
+using FinanceManager.Application.Savings;
 using FinanceManager.Application.Securities;
 using FinanceManager.Application.Statements;
-using FinanceManager.Domain.Attachments; // new
-using FinanceManager.Infrastructure.Statements; // for ImportSplitInfo
+using FinanceManager.Domain.Attachments;
+using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Shared.Dtos.Statements;
+using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using System.Net.Mime;
 
 namespace FinanceManager.Web.Controllers;
@@ -25,9 +31,12 @@ namespace FinanceManager.Web.Controllers;
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public sealed class StatementDraftsController : ControllerBase
 {
+    private const string Origin = "API_StatementDraft";
+
     private readonly IStatementDraftService _drafts;
     private readonly ICurrentUserService _current;
     private readonly ILogger<StatementDraftsController> _logger;
+    private readonly IStringLocalizer<Controller> _localizer;
     private readonly IBackgroundTaskManager _taskManager; // unified background task system
     private readonly IAttachmentService _attachments; // new
 
@@ -37,10 +46,24 @@ public sealed class StatementDraftsController : ControllerBase
     /// <param name="drafts">Service for managing statement drafts.</param>
     /// <param name="current">Service providing the current authenticated user context.</param>
     /// <param name="logger">Logger instance for the controller.</param>
+    /// <param name="localizer">Localizer for i18n support.</param>
     /// <param name="taskManager">Background task manager used to enqueue/inspect background jobs.</param>
     /// <param name="attachments">Attachment service used to list and download attachments.</param>
-    public StatementDraftsController(IStatementDraftService drafts, ICurrentUserService current, ILogger<StatementDraftsController> logger, IBackgroundTaskManager taskManager, IAttachmentService attachments)
-    { _drafts = drafts; _current = current; _logger = logger; _taskManager = taskManager; _attachments = attachments; }
+    public StatementDraftsController(
+        IStatementDraftService drafts,
+        ICurrentUserService current,
+        ILogger<StatementDraftsController> logger,
+        IStringLocalizer<Controller> localizer,
+        IBackgroundTaskManager taskManager,
+        IAttachmentService attachments)
+    {
+        _drafts = drafts;
+        _current = current;
+        _logger = logger;
+        _localizer = localizer;
+        _taskManager = taskManager;
+        _attachments = attachments;
+    }
 
     /// <summary>
     /// Lists open (not booked / cancelled) statement drafts with paging (max 3 per page).
@@ -96,19 +119,28 @@ public sealed class StatementDraftsController : ControllerBase
     [RequestSizeLimit(10_000_000)]
     [ProducesResponseType(typeof(StatementDraftUploadResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UploadAsync([FromForm] IFormFile file, CancellationToken ct)
+    public async Task<IActionResult> UploadAsync(IFormFile? file, CancellationToken ct)
     {
-        if (file == null || file.Length == 0) { return BadRequest(new { error = "File required" }); }
+        if (file == null || file.Length == 0)
+        {
+            var key = $"{Origin}_Err_Invalid_File";
+            var entry = _localizer[key];
+            var message = entry.ResourceNotFound ? "File required" : entry.Value;
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid_File", message));
+        }
+
         await using var ms = new MemoryStream();
         await file.CopyToAsync(ms, ct);
         StatementDraftDto? firstDraft = null;
         await foreach (var draft in _drafts.CreateDraftAsync(_current.UserId, file.FileName, ms.ToArray(), ct)) { firstDraft ??= draft; }
         ImportSplitInfoDto? splitInfo = null;
-        if (_drafts is StatementDraftService impl && impl.LastImportSplitInfo != null)
-        {
-            var info = impl.LastImportSplitInfo;
-            splitInfo = new ImportSplitInfoDto(info.ConfiguredMode.ToString(), info.EffectiveMonthly, info.DraftCount, info.TotalMovements, info.MaxEntriesPerDraft, info.LargestDraftSize, info.MonthlyThreshold);
-        }
+        // NOTE: LastImportSplitInfo is an implementation detail; controller should not depend on Infrastructure types.
+        // If this metadata is needed in the response, consider exposing it via IStatementDraftService.
+        // if (_drafts is StatementDraftService impl && impl.LastImportSplitInfo != null)
+        // {
+        //     var info = impl.LastImportSplitInfo;
+        //     splitInfo = new ImportSplitInfoDto(info.ConfiguredMode.ToString(), info.EffectiveMonthly, info.DraftCount, info.TotalMovements, info.MaxEntriesPerDraft, info.LargestDraftSize, info.MonthlyThreshold);
+        // }
         return Ok(new StatementDraftUploadResult(firstDraft, splitInfo));
     }
 
@@ -375,8 +407,27 @@ public sealed class StatementDraftsController : ControllerBase
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> CommitAsync(Guid draftId, [FromBody] StatementDraftCommitRequest req, CancellationToken ct)
     {
-        var result = await _drafts.CommitAsync(draftId, _current.UserId, req.AccountId, req.Format, ct);
-        return result is null ? NotFound() : Ok(result);
+        try
+        {
+            var result = await _drafts.CommitAsync(draftId, _current.UserId, req.AccountId, req.Format, ct);
+            return result is null ? NotFound() : Ok(result);
+        }
+        catch (DomainValidationException dex)
+        {
+            return Conflict(ApiErrorFactory.FromDomainValidationException(Origin, dex, _localizer));
+        }
+        catch (InvalidOperationException ioex)
+        {
+            const string code = "Err_InvalidState";
+            var msgEntry = _localizer[$"{Origin}_{code}"];
+            var message = msgEntry.ResourceNotFound ? ioex.Message : msgEntry.Value;
+            return Conflict(ApiErrorDto.Create(Origin, code, message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Commit statement draft failed {DraftId}", draftId);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -449,18 +500,33 @@ public sealed class StatementDraftsController : ControllerBase
         try
         {
             var draft = await _drafts.SetEntrySplitDraftAsync(draftId, entryId, body.SplitDraftId, _current.UserId, ct);
-            if (draft == null) { return NotFound(); }
+            if (draft == null)
+            {
+                return NotFound();
+            }
+
             var entry = draft.Entries.First(e => e.Id == entryId);
-            decimal? splitSum = null; decimal? diff = null;
+            decimal? splitSum = null;
+            decimal? diff = null;
             if (entry.SplitDraftId != null)
             {
                 splitSum = await _drafts.GetSplitGroupSumAsync(entry.SplitDraftId.Value, _current.UserId, ct);
-                if (splitSum.HasValue) { diff = entry.Amount - splitSum.Value; }
+                if (splitSum.HasValue)
+                {
+                    diff = entry.Amount - splitSum.Value;
+                }
             }
+
             var result = new FinanceManager.Shared.Dtos.Statements.StatementDraftSetEntrySplitDraftResultDto(entry, splitSum, diff);
             return Ok(result);
         }
-        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (InvalidOperationException ex)
+        {
+            const string code = "Err_InvalidState";
+            var msgEntry = _localizer[$"{Origin}_{code}"];
+            var message = msgEntry.ResourceNotFound ? ex.Message : msgEntry.Value;
+            return Conflict(ApiErrorDto.Create(Origin, code, message));
+        }
     }
 
     /// <summary>
@@ -641,39 +707,62 @@ public sealed class StatementDraftsController : ControllerBase
         {
             var newSplitId = body.ClearSplit == true ? (Guid?)null : body.SplitDraftId;
             var draft = await _drafts.SetEntrySplitDraftAsync(draftId, entryId, newSplitId, _current.UserId, ct);
-            if (draft == null) return NotFound();
+            if (draft == null)
+            {
+                return NotFound();
+            }
+
             var entry = draft.Entries.First(e => e.Id == entryId);
-            decimal? splitSum = null; decimal? diff = null;
+            decimal? splitSum = null;
+            decimal? diff = null;
             if (entry.SplitDraftId != null)
             {
                 splitSum = await _drafts.GetSplitGroupSumAsync(entry.SplitDraftId.Value, _current.UserId, ct);
-                if (splitSum.HasValue) { diff = entry.Amount - splitSum.Value; }
+                if (splitSum.HasValue)
+                {
+                    diff = entry.Amount - splitSum.Value;
+                }
             }
-            return Ok(new { Entry = entry, SplitSum = splitSum, Difference = diff });
+
+            return Ok(new FinanceManager.Shared.Dtos.Statements.StatementDraftSetEntrySplitDraftResultDto(entry, splitSum, diff));
         }
+
         try
         {
-            var dto = await _drafts.SaveEntryAllAsync(draftId, entryId, _current.UserId, body.ContactId, body.IsCostNeutral, body.SavingsPlanId, body.ArchiveOnBooking, body.SecurityId, body.TransactionType, body.Quantity, body.FeeAmount, body.TaxAmount, ct);
+            var dto = await _drafts.SaveEntryAllAsync(
+                draftId,
+                entryId,
+                _current.UserId,
+                body.ContactId,
+                body.IsCostNeutral,
+                body.SavingsPlanId,
+                body.ArchiveOnBooking,
+                body.SecurityId,
+                body.TransactionType,
+                body.Quantity,
+                body.FeeAmount,
+                body.TaxAmount,
+                ct);
+
             return dto == null ? NotFound() : Ok(dto);
         }
-        catch (FinanceManager.Application.Exceptions.DomainValidationException dex)
+        catch (DomainValidationException dex)
         {
-            // Map domain validation to a consistent shape (error + message) that the ApiClient expects
-            var code = string.IsNullOrWhiteSpace(dex.Code) ? "DOMAIN_VALIDATION" : dex.Code;
-            _logger.LogInformation("Domain validation when saving entry {EntryId} in draft {DraftId}: {Code} - {Message}", entryId, draftId, code, dex.Message);
-            return BadRequest(new { error = code, message = dex.Message });
+            _logger.LogInformation("Domain validation when saving entry {EntryId} in draft {DraftId}: {Code} - {Message}", entryId, draftId, dex.Code, dex.Message);
+            return Conflict(ApiErrorFactory.FromDomainValidationException(Origin, dex, _localizer));
         }
         catch (InvalidOperationException ioex)
         {
-            // existing usage of InvalidOperationException mapped to BadRequest in other endpoints — keep compatible
             _logger.LogInformation(ioex, "Invalid operation when saving entry {EntryId} in draft {DraftId}", entryId, draftId);
-            return BadRequest(new { error = "InvalidOperation", message = ioex.Message });
+            const string code = "Err_InvalidState";
+            var msgEntry = _localizer[$"{Origin}_{code}"];
+            var message = msgEntry.ResourceNotFound ? ioex.Message : msgEntry.Value;
+            return Conflict(ApiErrorDto.Create(Origin, code, message));
         }
         catch (Exception ex)
         {
-            // Unexpected errors -> 500 but provide message in same shape so client can surface details
             _logger.LogError(ex, "Unexpected error in SaveEntryAllAsync for draft {DraftId} entry {EntryId}", draftId, entryId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "ERR_INTERNAL", message = ex.Message });
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -728,7 +817,10 @@ public sealed class StatementDraftsController : ControllerBase
             var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId);
             return Ok(dto);
         }
-        catch (Exception ex) { return BadRequest(new { error = ex.Message }); }
+        catch (Exception ex)
+        {
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid", ex.Message));
+        }
     }
 
     /// <summary>

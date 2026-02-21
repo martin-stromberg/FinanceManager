@@ -1,10 +1,16 @@
 using FinanceManager.Application;
+using FinanceManager.Application.Common;
 using FinanceManager.Domain.Notifications;
+using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
+using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Shared.Dtos.Users;
+using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using System.Net.Mime;
 
 namespace FinanceManager.Web.Controllers;
@@ -19,9 +25,12 @@ namespace FinanceManager.Web.Controllers;
 [Produces(MediaTypeNames.Application.Json)]
 public sealed class UserSettingsController : ControllerBase
 {
+    private const string Origin = "API_UserSettings";
+
     private readonly AppDbContext _db;
     private readonly ICurrentUserService _current;
     private readonly ILogger<UserSettingsController> _logger;
+    private readonly IStringLocalizer<Controller> _localizer;
 
     /// <summary>
     /// Initializes a new instance of <see cref="UserSettingsController"/>
@@ -29,8 +38,14 @@ public sealed class UserSettingsController : ControllerBase
     /// <param name="db">Database context used to access user settings.</param>
     /// <param name="current">Service that exposes current user information.</param>
     /// <param name="logger">Logger instance for diagnostics and error reporting.</param>
-    public UserSettingsController(AppDbContext db, ICurrentUserService current, ILogger<UserSettingsController> logger)
-    { _db = db; _current = current; _logger = logger; }
+    /// <param name="localizer">Localizer for accessing localized strings.</param>
+    public UserSettingsController(AppDbContext db, ICurrentUserService current, ILogger<UserSettingsController> logger, IStringLocalizer<Controller> localizer)
+    {
+        _db = db;
+        _current = current;
+        _logger = logger;
+        _localizer = localizer;
+    }
 
     /// <summary>
     /// Returns profile settings of the current user (language, timezone, API key flags).
@@ -112,7 +127,7 @@ public sealed class UserSettingsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Update profile settings failed for {UserId}", _current.UserId);
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 

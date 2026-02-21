@@ -1,7 +1,21 @@
 namespace FinanceManager.Shared.Dtos.Common;
 
 /// <summary>
-/// DTO wrapping an API error message for standardized responses.
+/// DTO wrapping an API error response for standardized client consumption.
 /// </summary>
-/// <param name="error">Short error message intended for display.</param>
-public sealed record ApiErrorDto(string error);
+/// <param name="origin">Origin identifier (e.g. API_BudgetRule) used to scope error codes for localization.</param>
+/// <param name="code">Machine-readable error code (e.g. Err_Invalid_BudgetPurposeId).</param>
+/// <param name="message">Human-readable error message intended for display (preferably localized server-side).</param>
+public sealed record ApiErrorDto(string? origin, string? code, string? message)
+{
+    /// <summary>
+    /// Legacy compatibility property. Older clients expect an <c>error</c> JSON property.
+    /// </summary>
+    public string? Error => code;
+
+    /// <summary>
+    /// Creates a standardized API error response.
+    /// </summary>
+    public static ApiErrorDto Create(string origin, string code, string? message)
+        => new(origin, code, message);
+}

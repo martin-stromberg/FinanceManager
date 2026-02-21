@@ -231,7 +231,6 @@ public sealed class SetupProfileViewModel : BaseViewModel
             UiRibbonItemSize.Small,
             !Dirty || Saving,
             null,
-            "Save",
             new Func<Task>(async () => await SaveAsync())
         );
 
@@ -242,8 +241,7 @@ public sealed class SetupProfileViewModel : BaseViewModel
             UiRibbonItemSize.Small,
             !Dirty || Saving,
             null,
-            "Reset",
-            new Func<Task>(async () => { Reset(); await Task.CompletedTask; })
+            new Func<Task>(() => { Reset(); return Task.CompletedTask; })
         );
 
         var detectAction = new UiRibbonAction(
@@ -253,8 +251,7 @@ public sealed class SetupProfileViewModel : BaseViewModel
             UiRibbonItemSize.Small,
             false,
             null,
-            "DetectTimezone",
-            new Func<Task>(async () => { RaiseUiActionRequested("DetectTimezone"); await Task.CompletedTask; })
+            new Func<Task>(() => { RaiseUiActionRequested("DetectTimezone"); return Task.CompletedTask; })
         );
 
         var tabs = new List<UiRibbonTab>

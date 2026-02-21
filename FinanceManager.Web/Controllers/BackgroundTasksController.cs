@@ -1,7 +1,12 @@
 using FinanceManager.Application;
+using FinanceManager.Application.Common;
+using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using System.Net.Mime;
 using System.Security.Claims;
 
 namespace FinanceManager.Web.Controllers
@@ -16,18 +21,26 @@ namespace FinanceManager.Web.Controllers
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class BackgroundTasksController : ControllerBase
     {
+        private const string Origin = "API_BackgroundTask";
+
         private readonly IBackgroundTaskManager _taskManager;
         private readonly ILogger<BackgroundTasksController> _logger;
+        private readonly IStringLocalizer<Controller> _localizer;
 
         /// <summary>
         /// Initializes a new instance of <see cref="BackgroundTasksController"/>.
         /// </summary>
         /// <param name="taskManager">Background task manager used to enqueue and query tasks.</param>
         /// <param name="logger">Logger instance for controller diagnostics.</param>
-        public BackgroundTasksController(IBackgroundTaskManager taskManager, ILogger<BackgroundTasksController> logger)
+        /// <param name="localizer">Localizer for accessing localized strings.</param>
+        public BackgroundTasksController(
+            IBackgroundTaskManager taskManager,
+            ILogger<BackgroundTasksController> logger,
+            IStringLocalizer<Controller> localizer)
         {
             _taskManager = taskManager;
             _logger = logger;
+            _localizer = localizer;
         }
 
         private Guid GetUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -98,18 +111,45 @@ namespace FinanceManager.Web.Controllers
         {
             var userId = GetUserId();
             var info = _taskManager.Get(id);
-            if (info == null || info.UserId != userId) return NotFound();
+            if (info == null || info.UserId != userId)
+            {
+                return NotFound();
+            }
+
             if (info.Status == BackgroundTaskStatus.Running)
             {
                 var cancelled = _taskManager.TryCancel(id);
-                return cancelled ? NoContent() : BadRequest(new ApiErrorDto("Could not cancel running task."));
+                if (cancelled)
+                {
+                    return NoContent();
+                }
+
+                const string code = "Err_CancelFailed";
+                var entry = _localizer[$"{Origin}_{code}"];
+                var message = entry.ResourceNotFound ? "Could not cancel running task." : entry.Value;
+                return BadRequest(ApiErrorDto.Create(Origin, code, message));
             }
+
             if (info.Status == BackgroundTaskStatus.Queued)
             {
                 var removed = _taskManager.TryRemoveQueued(id);
-                return removed ? NoContent() : BadRequest(new ApiErrorDto("Could not remove queued task."));
+                if (removed)
+                {
+                    return NoContent();
+                }
+
+                const string code = "Err_RemoveFailed";
+                var entry = _localizer[$"{Origin}_{code}"];
+                var message = entry.ResourceNotFound ? "Could not remove queued task." : entry.Value;
+                return BadRequest(ApiErrorDto.Create(Origin, code, message));
             }
-            return BadRequest(new ApiErrorDto("Only queued or running tasks can be cancelled or removed."));
+
+            {
+                const string code = "Err_InvalidState";
+                var entry = _localizer[$"{Origin}_{code}"];
+                var message = entry.ResourceNotFound ? "Only queued or running tasks can be cancelled or removed." : entry.Value;
+                return BadRequest(ApiErrorDto.Create(Origin, code, message));
+            }
         }
 
         /// <summary>

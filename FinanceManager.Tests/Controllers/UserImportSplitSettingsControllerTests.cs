@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
@@ -24,24 +25,25 @@ public sealed class UserImportSplitSettingsControllerTests
 
     private static (UserSettingsController controller, AppDbContext db, TestCurrentUser currentUser) Create()
     {
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddDbContext<AppDbContext>(o => o.UseSqlite("DataSource=:memory:"));
-        services.AddScoped<ICurrentUserService, TestCurrentUser>();
-        var sp = services.BuildServiceProvider();
-        var db = sp.GetRequiredService<AppDbContext>();
-        db.Database.OpenConnection();
-        db.Database.EnsureCreated();
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
 
-        var current = (TestCurrentUser)sp.GetRequiredService<ICurrentUserService>();
-        current.UserId = Guid.NewGuid();
-        var user = new User("test", "hash", false);
-        TestEntityHelper.SetEntityId(user, current.UserId);
-        db.Users.Add(user);
+        var db = new AppDbContext(options);
+        db.Users.Add(new User("u", "h", isAdmin: false));
         db.SaveChanges();
 
-        var logger = sp.GetRequiredService<ILogger<UserSettingsController>>();
-        var controller = new UserSettingsController(db, current, logger);
+        var current = new TestCurrentUser { UserId = db.Users.Single().Id };
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddLocalization();
+        var sp = services.BuildServiceProvider();
+        var localizer = sp.GetRequiredService<IStringLocalizer<FinanceManager.Web.Controllers.Controller>>();
+
+        var logger = LoggerFactory.Create(b => { }).CreateLogger<UserSettingsController>();
+
+        var controller = new UserSettingsController(db, current, logger, localizer);
         var http = new DefaultHttpContext();
         http.User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, current.UserId.ToString()) }, "test"));
         controller.ControllerContext = new ControllerContext { HttpContext = http };

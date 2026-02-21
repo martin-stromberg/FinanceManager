@@ -1,8 +1,12 @@
 using FinanceManager.Application;
+using FinanceManager.Application.Common;
 using FinanceManager.Application.Contacts;
+using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using System.Net.Mime;
 
 namespace FinanceManager.Web.Controllers;
@@ -16,9 +20,12 @@ namespace FinanceManager.Web.Controllers;
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public sealed class ContactCategoriesController : ControllerBase
 {
+    private const string Origin = "API_ContactCategory";
+
     private readonly IContactCategoryService _svc;
     private readonly ICurrentUserService _current;
     private readonly ILogger<ContactCategoriesController> _logger;
+    private readonly IStringLocalizer<Controller> _localizer;
 
     /// <summary>
     /// Creates a new instance of <see cref="ContactCategoriesController"/>.
@@ -26,8 +33,18 @@ public sealed class ContactCategoriesController : ControllerBase
     /// <param name="svc">Service for managing contact categories.</param>
     /// <param name="current">Service providing information about the current user context.</param>
     /// <param name="logger">Logger instance.</param>
-    public ContactCategoriesController(IContactCategoryService svc, ICurrentUserService current, ILogger<ContactCategoriesController> logger)
-    { _svc = svc; _current = current; _logger = logger; }
+    /// <param name="localizer">Localizer for string resources.</param>
+    public ContactCategoriesController(
+        IContactCategoryService svc,
+        ICurrentUserService current,
+        ILogger<ContactCategoriesController> logger,
+        IStringLocalizer<Controller> localizer)
+    {
+        _svc = svc;
+        _current = current;
+        _logger = logger;
+        _localizer = localizer;
+    }
 
     /// <summary>
     /// Lists all contact categories owned by the current user.
@@ -39,8 +56,16 @@ public sealed class ContactCategoriesController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<ContactCategoryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListAsync(CancellationToken ct)
     {
-        try { var list = await _svc.ListAsync(_current.UserId, ct); return Ok(list); }
-        catch (Exception ex) { _logger.LogError(ex, "List categories failed"); return Problem("Unexpected error", statusCode: 500); }
+        try
+        {
+            var list = await _svc.ListAsync(_current.UserId, ct);
+            return Ok(list);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "List categories failed");
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -59,10 +84,29 @@ public sealed class ContactCategoriesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateAsync([FromBody] ContactCategoryCreateRequest req, CancellationToken ct)
     {
-        if (!ModelState.IsValid) return ValidationProblem(ModelState);
-        try { var created = await _svc.CreateAsync(_current.UserId, req.Name, ct); return Created($"/api/contact-categories/{created.Id}", created); }
-        catch (ArgumentException ex) { return BadRequest(new ApiErrorDto(ex.Message)); }
-        catch (Exception ex) { _logger.LogError(ex, "Create category failed"); return Problem("Unexpected error", statusCode: 500); }
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        try
+        {
+            var created = await _svc.CreateAsync(_current.UserId, req.Name, ct);
+            return Created($"/api/contact-categories/{created.Id}", created);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Create category failed");
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -82,7 +126,11 @@ public sealed class ContactCategoriesController : ControllerBase
             var dto = await _svc.GetAsync(id, _current.UserId, ct);
             return dto == null ? NotFound() : Ok(dto);
         }
-        catch (Exception ex) { _logger.LogError(ex, "Get category failed {CategoryId}", id); return Problem("Unexpected error", statusCode: 500); }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Get category failed {CategoryId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -98,10 +146,30 @@ public sealed class ContactCategoriesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateAsync(Guid id, [FromBody] ContactCategoryUpdateRequest req, CancellationToken ct)
     {
-        if (!ModelState.IsValid) return ValidationProblem(ModelState);
-        try { await _svc.UpdateAsync(id, _current.UserId, req.Name, ct); return NoContent(); }
-        catch (ArgumentException ex) { _logger.LogWarning(ex, "Update failed for contact category {CategoryId}", id); return NotFound(); }
-        catch (Exception ex) { _logger.LogError(ex, "Update failed for contact category {CategoryId}", id); return Problem("Unexpected error", statusCode: 500); }
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        try
+        {
+            await _svc.UpdateAsync(id, _current.UserId, req.Name, ct);
+            return NoContent();
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Update failed for contact category {CategoryId}", id);
+            return NotFound(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Update failed for contact category {CategoryId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -116,9 +184,21 @@ public sealed class ContactCategoriesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteAsync(Guid id, CancellationToken ct)
     {
-        try { await _svc.DeleteAsync(id, _current.UserId, ct); return NoContent(); }
-        catch (ArgumentException ex) { _logger.LogWarning(ex, "Delete failed for contact category {CategoryId}", id); return NotFound(); }
-        catch (Exception ex) { _logger.LogError(ex, "Delete failed for contact category {CategoryId}", id); return Problem("Unexpected error", statusCode: 500); }
+        try
+        {
+            await _svc.DeleteAsync(id, _current.UserId, ct);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Delete failed for contact category {CategoryId}", id);
+            return NotFound(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Delete failed for contact category {CategoryId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -134,9 +214,21 @@ public sealed class ContactCategoriesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetSymbolAsync(Guid id, Guid attachmentId, CancellationToken ct)
     {
-        try { await _svc.SetSymbolAttachmentAsync(id, _current.UserId, attachmentId, ct); return NoContent(); }
-        catch (ArgumentException ex) { _logger.LogWarning(ex, "SetSymbol failed for contact category {CategoryId}", id); return NotFound(); }
-        catch (Exception ex) { _logger.LogError(ex, "SetSymbol failed for contact category {CategoryId}", id); return Problem("Unexpected error", statusCode: 500); }
+        try
+        {
+            await _svc.SetSymbolAttachmentAsync(id, _current.UserId, attachmentId, ct);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "SetSymbol failed for contact category {CategoryId}", id);
+            return NotFound(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SetSymbol failed for contact category {CategoryId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -151,8 +243,20 @@ public sealed class ContactCategoriesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ClearSymbolAsync(Guid id, CancellationToken ct)
     {
-        try { await _svc.SetSymbolAttachmentAsync(id, _current.UserId, null, ct); return NoContent(); }
-        catch (ArgumentException ex) { _logger.LogWarning(ex, "ClearSymbol failed for contact category {CategoryId}", id); return NotFound(); }
-        catch (Exception ex) { _logger.LogError(ex, "ClearSymbol failed for contact category {CategoryId}", id); return Problem("Unexpected error", statusCode: 500); }
+        try
+        {
+            await _svc.SetSymbolAttachmentAsync(id, _current.UserId, null, ct);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "ClearSymbol failed for contact category {CategoryId}", id);
+            return NotFound(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "ClearSymbol failed for contact category {CategoryId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 }

@@ -1,6 +1,7 @@
 using DocumentFormat.OpenXml.Bibliography;
 using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Attachments;
+using FinanceManager.Application.Budget;
 using FinanceManager.Application.Contacts;
 using FinanceManager.Application.Demo;
 using FinanceManager.Application.Savings;
@@ -8,9 +9,8 @@ using FinanceManager.Application.Securities;
 using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Attachments;
 using FinanceManager.Domain.Statements;
-using FinanceManager.Infrastructure;
-using FinanceManager.Infrastructure.Statements;
 using FinanceManager.Shared.Dtos.Accounts;
+using FinanceManager.Shared.Dtos.Budget;
 using FinanceManager.Shared.Dtos.Contacts;
 using FinanceManager.Shared.Dtos.Statements;
 using Microsoft.Extensions.Logging;
@@ -42,6 +42,8 @@ public sealed class DemoDataService : IDemoDataService
     private readonly ILogger<DemoDataService> _logger;
     private readonly IStatementDraftService _statementDraftService;
     private readonly IAttachmentCategoryService _attachmentCategoryService;
+    private readonly IBudgetPurposeService _budgetPurposeService;
+    private readonly IBudgetRuleService _budgetRuleService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DemoDataService"/> class.
@@ -55,7 +57,21 @@ public sealed class DemoDataService : IDemoDataService
     /// <param name="securityCategoryService">Security category service used to create security categories.</param>
     /// <param name="securityService">Security service used to create and manage securities.</param>
     /// <param name="logger">Logger instance.</param>
-    public DemoDataService(IAccountService accountService, IContactCategoryService contactCategoryService, IContactService contactService, IAttachmentService attachmentService, ISavingsPlanCategoryService savingsPlanCategoryService, ISavingsPlanService savingsPlanService, ISecurityCategoryService securityCategoryService, ISecurityService securityService, ISecurityPriceService securityPriceService, IStatementDraftService statementDraftService, IAttachmentCategoryService attachmentCategoryService, ILogger<DemoDataService> logger)
+    public DemoDataService(
+        IAccountService accountService,
+        IContactCategoryService contactCategoryService,
+        IContactService contactService,
+        IAttachmentService attachmentService,
+        ISavingsPlanCategoryService savingsPlanCategoryService,
+        ISavingsPlanService savingsPlanService,
+        ISecurityCategoryService securityCategoryService,
+        ISecurityService securityService,
+        ISecurityPriceService securityPriceService,
+        IStatementDraftService statementDraftService,
+        IAttachmentCategoryService attachmentCategoryService,
+        IBudgetPurposeService budgetPurposeService,
+        IBudgetRuleService budgetRuleService,
+        ILogger<DemoDataService> logger)
     {
         _accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
         _contactCategoryService = contactCategoryService ?? throw new ArgumentNullException(nameof(contactCategoryService));
@@ -68,6 +84,8 @@ public sealed class DemoDataService : IDemoDataService
         _securityPriceService = securityPriceService ?? throw new ArgumentNullException(nameof(securityPriceService));
         _statementDraftService = statementDraftService ?? throw new ArgumentNullException(nameof(statementDraftService));
         _attachmentCategoryService = attachmentCategoryService ?? throw new ArgumentNullException(nameof(attachmentCategoryService));
+        _budgetPurposeService = budgetPurposeService ?? throw new ArgumentNullException(nameof(budgetPurposeService));
+        _budgetRuleService = budgetRuleService ?? throw new ArgumentNullException(nameof(budgetRuleService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -131,6 +149,12 @@ public sealed class DemoDataService : IDemoDataService
             // 3) Auto, target in 10 years, amount 12500
             var tenYears = DateTime.UtcNow.Date.AddYears(10);
             var sp3 = await _savingsPlanService.CreateAsync(userId, "Auto", SavingsPlanType.OneTime, 12500m, tenYears, null, spRuckstellungen.Id, null, ct);
+
+            // create insurance contact (counterparty for yearly payment)
+            var contInsurance = await CreateContactAsync(userId, "KFZ Versicherung", ContactType.Organization, insurancesCat.Id, "Insurance provider (demo)", false, "*kfz versicherung*", ct);
+
+            // create budgets
+            await CreateDemoBudgetsAsync(userId, sp1, sp3, kfz, contInsurance, ct);
 
             // Create one Giro (checking) account
             var accGiro = await _accountService.CreateAsync(
@@ -470,5 +494,38 @@ public sealed class DemoDataService : IDemoDataService
         await _statementDraftService.ClassifyAsync(giroDraft.DraftId, null, userId, ct);
         await _statementDraftService.ClassifyAsync(save1Draft.DraftId, null, userId, ct);
         await _statementDraftService.ClassifyAsync(save2Draft.DraftId, null, userId, ct);
+    }
+
+    private async Task CreateDemoBudgetsAsync(
+        Guid ownerUserId,
+        SavingsPlanDto vacationPlan,
+        SavingsPlanDto carPlan,
+        SavingsPlanDto insurancePlan,
+        ContactDto insuranceContact,
+        CancellationToken ct)
+    {
+        var monthStart = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+        monthStart = new DateOnly(monthStart.Year, monthStart.Month, 1);
+
+        // SavingsPlan: Urlaubskasse -> -100 monthly
+        var vacationPurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Urlaubskasse", BudgetSourceType.SavingsPlan, vacationPlan.Id, null, null, ct);
+        await _budgetRuleService.CreateAsync(ownerUserId, vacationPurpose.Id, -100m, BudgetIntervalType.Monthly, null, monthStart, null, ct);
+
+        // SavingsPlan: Auto -> -150 monthly
+        var carPurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Auto", BudgetSourceType.SavingsPlan, carPlan.Id, null, null, ct);
+        await _budgetRuleService.CreateAsync(ownerUserId, carPurpose.Id, -150m, BudgetIntervalType.Monthly, null, monthStart, null, ct);
+
+        // SavingsPlan: Versicherung-Rückstellung: +432 yearly in three months and -1/12 monthly
+        var reservePurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Rückstellung Versicherung", BudgetSourceType.SavingsPlan, insurancePlan.Id, null, null, ct);
+
+        var payoutDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddMonths(3));
+        payoutDate = new DateOnly(payoutDate.Year, payoutDate.Month, 1);
+
+        await _budgetRuleService.CreateAsync(ownerUserId, reservePurpose.Id, 432m, BudgetIntervalType.Yearly, null, payoutDate, null, ct);
+        await _budgetRuleService.CreateAsync(ownerUserId, reservePurpose.Id, -(432m / 12m), BudgetIntervalType.Monthly, null, monthStart, null, ct);
+
+        // Contact: Versicherung-Zahlung: -432 yearly in three months
+        var paymentPurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Versicherungszahlung", BudgetSourceType.Contact, insuranceContact.Id, null, null, ct);
+        await _budgetRuleService.CreateAsync(ownerUserId, paymentPurpose.Id, -432m, BudgetIntervalType.Yearly, null, payoutDate, null, ct);
     }
 }

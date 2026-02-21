@@ -4,12 +4,14 @@ using FinanceManager.Application.Setup;
 using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Attachments;
+using FinanceManager.Domain.Budget;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Postings; // AggregatePeriod, PostingAggregate
 using FinanceManager.Domain.Reports;
 using FinanceManager.Domain.Savings;
 using FinanceManager.Domain.Securities;
 using FinanceManager.Domain.Statements; // for StatementDraft
+using FinanceManager.Shared.Dtos.Budget;
 using FinanceManager.Infrastructure;
 using iText.StyledXmlParser.Jsoup.Nodes;
 using Microsoft.EntityFrameworkCore;
@@ -197,7 +199,7 @@ public sealed class SetupImportService : ISetupImportService
         {
             StepDescription = "",
             Step = 0,
-            Total = 31 - (replaceExisting ? 0 : 1),
+            Total = 34 - (replaceExisting ? 0 : 1),
             SubStep = 0,
             SubTotal = 0
         };
@@ -232,6 +234,8 @@ public sealed class SetupImportService : ISetupImportService
         var favoriteMap = new Dictionary<Guid, Guid>();
         var reportMap = new Dictionary<Guid, Guid>();
         var attachmentCatMap = new Dictionary<Guid, Guid>();
+        var budgetCategoryMap = new Dictionary<Guid, Guid>();
+        var budgetPurposeMap = new Dictionary<Guid, Guid>();
 
         var jsonOptions = new JsonSerializerOptions
         {
@@ -430,6 +434,122 @@ public sealed class SetupImportService : ISetupImportService
                 _db.Accounts.Add(entity);
                 await _db.SaveChangesAsync(ct);
                 accountMap[dto.Id] = entity.Id;
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+        // BudgetCategories
+        ProgressChanged?.Invoke(this, progress.SetDescription("Budget Categories"));
+        if (root.TryGetProperty("BudgetCategories", out var budgetCategoriesEl) && budgetCategoriesEl.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Budget.BudgetCategory.BudgetCategoryBackupDto>>(budgetCategoriesEl.GetRawText(), jsonOptions)
+                ?? new List<FinanceManager.Domain.Budget.BudgetCategory.BudgetCategoryBackupDto>();
+
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                if (string.IsNullOrWhiteSpace(dto.Name))
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+
+                var entity = new BudgetCategory(userId, dto.Name);
+                _db.BudgetCategories.Add(entity);
+                await _db.SaveChangesAsync(ct);
+                budgetCategoryMap[dto.Id] = entity.Id;
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+        // BudgetPurposes
+        ProgressChanged?.Invoke(this, progress.SetDescription("Budget Purposes"));
+        if (root.TryGetProperty("BudgetPurposes", out var budgetPurposesEl) && budgetPurposesEl.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Budget.BudgetPurpose.BudgetPurposeBackupDto>>(budgetPurposesEl.GetRawText(), jsonOptions)
+                ?? new List<FinanceManager.Domain.Budget.BudgetPurpose.BudgetPurposeBackupDto>();
+
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                var mappedSourceId = dto.SourceId;
+                mappedSourceId = dto.SourceType switch
+                {
+                    BudgetSourceType.Contact when contactMap.TryGetValue(dto.SourceId, out var mc) => mc,
+                    BudgetSourceType.ContactGroup when contactCatMap.TryGetValue(dto.SourceId, out var mg) => mg,
+                    BudgetSourceType.SavingsPlan when savingsMap.TryGetValue(dto.SourceId, out var ms) => ms,
+                    _ => mappedSourceId
+                };
+
+                Guid? mappedCategoryId = null;
+                if (dto.BudgetCategoryId.HasValue && budgetCategoryMap.TryGetValue(dto.BudgetCategoryId.Value, out var mappedCat))
+                {
+                    mappedCategoryId = mappedCat;
+                }
+
+                var entity = new BudgetPurpose(userId, dto.Name, dto.SourceType, mappedSourceId, dto.Description);
+                entity.SetCategory(mappedCategoryId);
+
+                _db.BudgetPurposes.Add(entity);
+                await _db.SaveChangesAsync(ct);
+                budgetPurposeMap[dto.Id] = entity.Id;
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+        // BudgetRules
+        ProgressChanged?.Invoke(this, progress.SetDescription("Budget Rules"));
+        if (root.TryGetProperty("BudgetRules", out var budgetRulesEl) && budgetRulesEl.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Budget.BudgetRule.BudgetRuleBackupDto>>(budgetRulesEl.GetRawText(), jsonOptions)
+                ?? new List<FinanceManager.Domain.Budget.BudgetRule.BudgetRuleBackupDto>();
+
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                if (dto.BudgetPurposeId == null || dto.BudgetPurposeId == Guid.Empty)
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+
+                if (!budgetPurposeMap.TryGetValue(dto.BudgetPurposeId.Value, out var mappedPurposeId))
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+
+                var entity = new BudgetRule(userId, budgetPurposeId: mappedPurposeId, budgetCategoryId: null, dto.Amount, dto.Interval, dto.StartDate, dto.EndDate, dto.CustomIntervalMonths);
+                _db.BudgetRules.Add(entity);
+                await _db.SaveChangesAsync(ct);
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+        // BudgetOverrides
+        ProgressChanged?.Invoke(this, progress.SetDescription("Budget Overrides"));
+        if (root.TryGetProperty("BudgetOverrides", out var budgetOverridesEl) && budgetOverridesEl.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Budget.BudgetOverride.BudgetOverrideBackupDto>>(budgetOverridesEl.GetRawText(), jsonOptions)
+                ?? new List<FinanceManager.Domain.Budget.BudgetOverride.BudgetOverrideBackupDto>();
+
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                if (!budgetPurposeMap.TryGetValue(dto.BudgetPurposeId, out var mappedPurposeId))
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+
+                var period = new BudgetPeriodKey(dto.PeriodYear, dto.PeriodMonth);
+                var entity = new BudgetOverride(userId, mappedPurposeId, period, dto.Amount);
+                _db.BudgetOverrides.Add(entity);
+                await _db.SaveChangesAsync(ct);
                 ProgressChanged?.Invoke(this, progress.IncSub());
             }
         }

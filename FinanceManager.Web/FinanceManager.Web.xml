@@ -375,12 +375,12 @@
             Handles user authentication: login, registration and logout using JWT cookie tokens.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.AuthController.#ctor(FinanceManager.Application.Users.IUserAuthService,IAuthTokenProvider)">
+        <member name="M:FinanceManager.Web.Controllers.AuthController.#ctor(FinanceManager.Application.Users.IUserAuthService,Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Creates a new instance of <see cref="T:FinanceManager.Web.Controllers.AuthController"/>.
             </summary>
             <param name="auth">Service handling user authentication operations (login/register).</param>
-            <param name="tokenProvider">Token provider used to clear in-memory tokens on logout.</param>
+            <param name="localizer">Localizer for providing localized error messages.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.AuthController.LoginAsync(FinanceManager.Shared.Dtos.Users.LoginRequest,System.Threading.CancellationToken)">
             <summary>
@@ -422,12 +422,13 @@
             specialized aggregate rebuild operations.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.BackgroundTasksController.#ctor(FinanceManager.Application.IBackgroundTaskManager,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BackgroundTasksController})">
+        <member name="M:FinanceManager.Web.Controllers.BackgroundTasksController.#ctor(FinanceManager.Application.IBackgroundTaskManager,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BackgroundTasksController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.BackgroundTasksController"/>.
             </summary>
             <param name="taskManager">Background task manager used to enqueue and query tasks.</param>
             <param name="logger">Logger instance for controller diagnostics.</param>
+            <param name="localizer">Localizer for accessing localized strings.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.BackgroundTasksController.Enqueue(FinanceManager.Shared.Dtos.Admin.BackgroundTaskType,System.Boolean)">
             <summary>
@@ -484,13 +485,14 @@
             apply (immediate or queued background restore), cancel and delete.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.BackupsController.#ctor(FinanceManager.Application.Backups.IBackupService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.IBackgroundTaskManager)">
+        <member name="M:FinanceManager.Web.Controllers.BackupsController.#ctor(FinanceManager.Application.Backups.IBackupService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.IBackgroundTaskManager,Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Creates a new instance of the <see cref="T:FinanceManager.Web.Controllers.BackupsController"/>.
             </summary>
             <param name="svc">Backup service used to list, create, upload, download and manage backups.</param>
             <param name="current">Service to access current user context.</param>
             <param name="taskManager">Background task manager used to enqueue restore tasks.</param>
+            <param name="localizer">Localizer for generating localized error messages.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.BackupsController.ListAsync(System.Threading.CancellationToken)">
             <summary>
@@ -559,18 +561,211 @@
             <param name="ct">Cancellation token.</param>
             <returns>204 No Content when deletion succeeded; 404 Not Found when the backup does not exist.</returns>
         </member>
+        <member name="T:FinanceManager.Web.Controllers.BudgetCategoriesController">
+            <summary>
+            Manages budget categories for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetCategoriesController.#ctor(FinanceManager.Application.Budget.IBudgetCategoryService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetCategoriesController},FinanceManager.Application.Common.IParentAssignmentService,Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetCategoriesController.ListAsync(System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <summary>
+            Lists categories for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetCategoriesController.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a category by id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetCategoriesController.CreateAsync(FinanceManager.Shared.Dtos.Budget.BudgetCategoryCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetCategoriesController.UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetCategoryUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates a category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetCategoriesController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a category.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.BudgetOverridesController">
+            <summary>
+            Manages budget overrides for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetOverridesController.#ctor(FinanceManager.Application.Budget.IBudgetOverrideService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetOverridesController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetOverridesController.ListByPurposeAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists overrides for a specific purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetOverridesController.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets an override by id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetOverridesController.CreateAsync(FinanceManager.Shared.Dtos.Budget.BudgetOverrideCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates an override.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetOverridesController.UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetOverrideUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing override.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetOverridesController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an override.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.BudgetPurposesController">
+            <summary>
+            Manages budget purposes for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.#ctor(FinanceManager.Application.Budget.IBudgetPurposeService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetPurposesController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.ListAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <summary>
+            Lists purposes for the current user.
+            When <paramref name="from"/> and <paramref name="to"/> are provided, returns an overview including rule count and budget sum.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a budget purpose by id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.CreateAsync(FinanceManager.Shared.Dtos.Budget.BudgetPurposeCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetPurposeUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates a budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetPurposesController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a budget purpose.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.BudgetReportsController">
+            <summary>
+            Provides budget reporting endpoints.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.#ctor(FinanceManager.Application.Budget.IBudgetReportService,FinanceManager.Application.Budget.IBudgetPurposeService,FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetReportsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller},FinanceManager.Application.Budget.IBudgetReportExportService,FinanceManager.Application.Budget.IReportCacheService)">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.ExportAsync(System.DateOnly,System.Int32,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
+            <summary>
+            Exports all postings of the budget report for the total report range as an Excel file.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.ResetCacheAsync(System.Threading.CancellationToken)">
+            <summary>
+            Clears cached report data for the current user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>An <see cref="T:Microsoft.AspNetCore.Mvc.IActionResult"/> indicating success.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.GetMonthlyKpiAsync(System.Nullable{System.DateOnly},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
+            <summary>
+            Generates a budget report for the current user.
+            </summary>
+            <param name="dateBasis">Whether to base the report on booking date or valuta date.</param>
+            <param name="date">The date for which the KPI should be calculated. If not provided, the current date is used.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>
+            Returns planned/actual income and expenses for the Home Monthly Budget KPI.
+            </returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.GetAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportRequest,System.Threading.CancellationToken)">
+            <summary>
+            Generates a budget report for the current user.
+            </summary>
+            <param name="req">The report request parameters.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An <see cref="T:Microsoft.AspNetCore.Mvc.IActionResult"/> containing the generated <see cref="T:FinanceManager.Shared.Dtos.Budget.BudgetReportDto"/> or a validation/error result.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetReportsController.GetUnbudgetedAsync(System.Nullable{System.DateTime},System.Nullable{System.DateTime},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Lists postings that are not covered by any budget purpose for the given date range.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.BudgetRulesController">
+            <summary>
+            Manages budget rules for the current user.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetRulesController.#ctor(FinanceManager.Application.Budget.IBudgetRuleService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.BudgetRulesController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetRulesController.ListByPurposeAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists rules for a specific purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetRulesController.GetAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a rule by id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetRulesController.CreateAsync(FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a budget rule.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetRulesController.UpdateAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetRuleUpdateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing budget rule.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetRulesController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a budget rule.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.BudgetRulesController.ListByCategoryAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists rules for a budget category.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.Controllers.ContactCategoriesController">
             <summary>
             Manages contact categories for the current user: CRUD operations and symbol assignment.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.ContactCategoriesController.#ctor(FinanceManager.Application.Contacts.IContactCategoryService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.ContactCategoriesController})">
+        <member name="M:FinanceManager.Web.Controllers.ContactCategoriesController.#ctor(FinanceManager.Application.Contacts.IContactCategoryService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.ContactCategoriesController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Creates a new instance of <see cref="T:FinanceManager.Web.Controllers.ContactCategoriesController"/>.
             </summary>
             <param name="svc">Service for managing contact categories.</param>
             <param name="current">Service providing information about the current user context.</param>
             <param name="logger">Logger instance.</param>
+            <param name="localizer">Localizer for string resources.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.ContactCategoriesController.ListAsync(System.Threading.CancellationToken)">
             <summary>
@@ -646,14 +841,14 @@
             merging and symbol assignment.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.ContactsController.#ctor(FinanceManager.Application.Contacts.IContactService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.ContactsController})">
+        <member name="M:FinanceManager.Web.Controllers.ContactsController.#ctor(FinanceManager.Application.Contacts.IContactService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.ContactsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
-            Initializes a new instance of the <see cref="T:FinanceManager.Web.Controllers.ContactsController"/>.
+            Creates a new instance of <see cref="T:FinanceManager.Web.Controllers.ContactsController"/>.
             </summary>
-            <param name="contacts">Service that implements contact management use-cases.</param>
-            <param name="current">Service that provides information about the current user.</param>
-            <param name="logger">Logger used to record unexpected errors and diagnostics.</param>
-            <exception cref="T:System.ArgumentNullException">Thrown when any required dependency is null.</exception>
+            <param name="contacts">Contact service.</param>
+            <param name="current">Current user context.</param>
+            <param name="logger">Logger.</param>
+            <param name="localizer">Shared controller string localizer.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.ContactsController.ListAsync(System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Contacts.ContactType},System.Boolean,System.String,System.Threading.CancellationToken)">
             <summary>
@@ -779,19 +974,26 @@
             <param name="ct">Cancellation token.</param>
             <returns>204 No Content when the clear succeeded; 404 Not Found when the contact was not found.</returns>
         </member>
+        <member name="T:FinanceManager.Web.Controllers.Controller">
+            <summary>
+            Marker class for controller resource localization.
+            Resource base name: Controller (see `Resources/Controller.*.resx`).
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.Controllers.HomeKpisController">
             <summary>
             Manages Home KPI widgets for the signed-in user: list, create, update, delete and retrieve single entries.
             Supports predefined KPIs and custom report favorite based KPIs.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.HomeKpisController.#ctor(FinanceManager.Application.Reports.IHomeKpiService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.HomeKpisController})">
+        <member name="M:FinanceManager.Web.Controllers.HomeKpisController.#ctor(FinanceManager.Application.Reports.IHomeKpiService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.HomeKpisController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.HomeKpisController"/>.
             </summary>
             <param name="service">Service implementing KPI management usecases.</param>
             <param name="current">Service providing current user context.</param>
             <param name="logger">Logger used to record unexpected errors and diagnostics.</param>
+            <param name="localizer">Localizer for API error messages.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.HomeKpisController.ListAsync(System.Threading.CancellationToken)">
             <summary>
@@ -947,13 +1149,14 @@
             Provides endpoints for listing active notifications and dismissing a notification for the current user.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.NotificationsController.#ctor(FinanceManager.Application.Notifications.INotificationService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.NotificationsController})">
+        <member name="M:FinanceManager.Web.Controllers.NotificationsController.#ctor(FinanceManager.Application.Notifications.INotificationService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.NotificationsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Creates a new instance of <see cref="T:FinanceManager.Web.Controllers.NotificationsController"/>.
             </summary>
             <param name="notifications">The notification service used to list and dismiss notifications.</param>
             <param name="current">Service that provides information about the currently authenticated user.</param>
             <param name="logger">Logger instance for this controller.</param>
+            <param name="localizer">Localizer for error messages.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.NotificationsController.ListAsync(System.Threading.CancellationToken)">
             <summary>
@@ -1133,7 +1336,7 @@
             Provides reporting endpoints: aggregation queries and management of report favorites.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.ReportsController.#ctor(FinanceManager.Application.Reports.IReportAggregationService,FinanceManager.Application.Reports.IReportFavoriteService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.ReportsController})">
+        <member name="M:FinanceManager.Web.Controllers.ReportsController.#ctor(FinanceManager.Application.Reports.IReportAggregationService,FinanceManager.Application.Reports.IReportFavoriteService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.ReportsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Web.Controllers.ReportsController"/> class.
             </summary>
@@ -1141,6 +1344,7 @@
             <param name="favorites">Service that manages report favorites.</param>
             <param name="current">Service providing the current user context.</param>
             <param name="logger">Logger instance for this controller.</param>
+            <param name="localizer">Localizer for error messages.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.ReportsController.QueryAsync(FinanceManager.Shared.Dtos.Reports.ReportAggregatesQueryRequest,System.Threading.CancellationToken)">
             <summary>
@@ -1210,14 +1414,16 @@
             Provides CRUD, analysis, archiving and symbol management endpoints for savings plans owned by the current user.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.#ctor(FinanceManager.Application.Savings.ISavingsPlanService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.Attachments.IAttachmentService,Microsoft.Extensions.Localization.IStringLocalizerFactory)">
+        <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.#ctor(FinanceManager.Application.Savings.ISavingsPlanService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.Attachments.IAttachmentService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.SavingsPlansController},FinanceManager.Application.Common.IParentAssignmentService,Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Web.Controllers.SavingsPlansController"/> class.
             </summary>
             <param name="service">The savings plan service used for business operations.</param>
             <param name="current">Service that provides information about the currently authenticated user.</param>
-            <param name="attachments">Attachment service used to upload and manage attachments.</param>
-            <param name="locFactory">Localizer factory (currently unused in the controller but reserved for future localization).</param>
+            <param name="attachments">The attachment service used for file uploads and management.</param>
+            <param name="logger">Logger for the controller.</param>
+            <param name="parentAssign">Service that manages parent assignments for entities.</param>
+            <param name="localizer">Service for localized string retrieval.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.SavingsPlansController.ListAsync(System.Boolean,System.Threading.CancellationToken)">
             <summary>
@@ -1343,7 +1549,7 @@
             dividends aggregation and background price backfill tasks.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.#ctor(FinanceManager.Application.Securities.ISecurityService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.Reports.IPostingTimeSeriesService,FinanceManager.Application.Securities.ISecurityPriceService,FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.IBackgroundTaskManager,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.SecuritiesController})">
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.#ctor(FinanceManager.Application.Securities.ISecurityService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.IBackgroundTaskManager,FinanceManager.Application.Reports.IPostingTimeSeriesService,FinanceManager.Application.Securities.ISecurityPriceService,FinanceManager.Application.Securities.ISecurityReportService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.SecuritiesController},FinanceManager.Application.Common.IParentAssignmentService,Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.SecuritiesController"/>.
             </summary>
@@ -1352,9 +1558,11 @@
             <param name="attachments">Service managing attachments (upload, storage).</param>
             <param name="series">Service to compute posting time series and aggregates.</param>
             <param name="priceService">Service to retrieve security price history.</param>
-            <param name="db">Application database context used for lightweight queries within the controller.</param>
+            <param name="reports">Service providing security reports and aggregations.</param>
             <param name="tasks">Background task manager used to enqueue asynchronous background jobs.</param>
             <param name="logger">Logger used for diagnostic messages.</param>
+            <param name="parentAssign">Service that manages server-side create-and-assign operations.</param>
+            <param name="localizer">Localizer for generating user-friendly error messages.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.SecuritiesController.ListAsync(System.Boolean,System.Threading.CancellationToken)">
             <summary>
@@ -1572,13 +1780,14 @@
             Provides background task endpoints for mass classification and mass booking operations.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.#ctor(FinanceManager.Application.Statements.IStatementDraftService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.StatementDraftsController},FinanceManager.Application.IBackgroundTaskManager,FinanceManager.Application.Attachments.IAttachmentService)">
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.#ctor(FinanceManager.Application.Statements.IStatementDraftService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.StatementDraftsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller},FinanceManager.Application.IBackgroundTaskManager,FinanceManager.Application.Attachments.IAttachmentService)">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.StatementDraftsController"/>.
             </summary>
             <param name="drafts">Service for managing statement drafts.</param>
             <param name="current">Service providing the current authenticated user context.</param>
             <param name="logger">Logger instance for the controller.</param>
+            <param name="localizer">Localizer for i18n support.</param>
             <param name="taskManager">Background task manager used to enqueue/inspect background jobs.</param>
             <param name="attachments">Attachment service used to list and download attachments.</param>
         </member>
@@ -1882,13 +2091,14 @@
             User management (read-only placeholder). Forwards calls to services and catches unexpected exceptions.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.UsersController.#ctor(FinanceManager.Application.Users.IUserReadService,FinanceManager.Application.Demo.IDemoDataService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.UsersController})">
+        <member name="M:FinanceManager.Web.Controllers.UsersController.#ctor(FinanceManager.Application.Users.IUserReadService,FinanceManager.Application.Demo.IDemoDataService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.UsersController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Web.Controllers.UsersController"/> class.
             </summary>
             <param name="userReadService">Service used to read user information.</param>
             <param name="demoDataService">Service responsible for creating demo data for a user.</param>
             <param name="logger">Logger instance for this controller.</param>
+            <param name="localizer">Localizer for error messages.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.UsersController.HasAnyUsersAsync(System.Threading.CancellationToken)">
             <summary>
@@ -1926,13 +2136,14 @@
             All endpoints operate on the currently authenticated user resolved via <see cref="T:FinanceManager.Application.ICurrentUserService"/>.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.UserSettingsController.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.UserSettingsController})">
+        <member name="M:FinanceManager.Web.Controllers.UserSettingsController.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.UserSettingsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.UserSettingsController"/>
             </summary>
             <param name="db">Database context used to access user settings.</param>
             <param name="current">Service that exposes current user information.</param>
             <param name="logger">Logger instance for diagnostics and error reporting.</param>
+            <param name="localizer">Localizer for accessing localized strings.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.UserSettingsController.GetProfileAsync(System.Threading.CancellationToken)">
             <summary>
@@ -2046,6 +2257,47 @@
             </summary>
             <param name="kind">Posting kind to map.</param>
             <returns>Path segment string or <c>null</c> when unsupported.</returns>
+        </member>
+        <member name="T:FinanceManager.Web.Infrastructure.ApiErrors.ApiErrorFactory">
+            <summary>
+            Factory for producing standardized <see cref="T:FinanceManager.Shared.Dtos.Common.ApiErrorDto"/> instances following the
+            project-wide Origin/Code/Message error contract.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Infrastructure.ApiErrors.ApiErrorFactory.FromArgumentException(System.String,System.ArgumentException,Microsoft.Extensions.Localization.IStringLocalizer)">
+            <summary>
+            Creates an <see cref="T:FinanceManager.Shared.Dtos.Common.ApiErrorDto"/> for an <see cref="T:System.ArgumentException"/>.
+            </summary>
+            <param name="origin">The logical origin for the error (e.g. API_BudgetRule).</param>
+            <param name="ex">The thrown exception.</param>
+            <param name="localizer">Localizer used to resolve <c>{origin}_{code}</c> message keys.</param>
+            <returns>Standardized API error DTO.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Infrastructure.ApiErrors.ApiErrorFactory.FromArgumentOutOfRangeException(System.String,System.ArgumentOutOfRangeException,Microsoft.Extensions.Localization.IStringLocalizer)">
+            <summary>
+            Creates an <see cref="T:FinanceManager.Shared.Dtos.Common.ApiErrorDto"/> for an <see cref="T:System.ArgumentOutOfRangeException"/>.
+            </summary>
+            <param name="origin">The logical origin for the error (e.g. API_BudgetRule).</param>
+            <param name="ex">The thrown exception.</param>
+            <param name="localizer">Localizer used to resolve <c>{origin}_{code}</c> message keys.</param>
+            <returns>Standardized API error DTO.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Infrastructure.ApiErrors.ApiErrorFactory.FromDomainValidationException(System.String,FinanceManager.Application.Exceptions.DomainValidationException,Microsoft.Extensions.Localization.IStringLocalizer)">
+            <summary>
+            Creates an <see cref="T:FinanceManager.Shared.Dtos.Common.ApiErrorDto"/> for a <see cref="T:FinanceManager.Application.Exceptions.DomainValidationException"/>.
+            </summary>
+            <param name="origin">The logical origin for the error (e.g. API_BudgetRule).</param>
+            <param name="ex">The thrown exception.</param>
+            <param name="localizer">Localizer used to resolve <c>{origin}_{code}</c> message keys.</param>
+            <returns>Standardized API error DTO.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Infrastructure.ApiErrors.ApiErrorFactory.Unexpected(System.String,Microsoft.Extensions.Localization.IStringLocalizer)">
+            <summary>
+            Creates an <see cref="T:FinanceManager.Shared.Dtos.Common.ApiErrorDto"/> for an unexpected error.
+            </summary>
+            <param name="origin">The logical origin for the error (e.g. API_BudgetRule).</param>
+            <param name="localizer">Localizer used to resolve <c>{origin}_{code}</c> message keys.</param>
+            <returns>Standardized API error DTO.</returns>
         </member>
         <member name="T:FinanceManager.Web.Infrastructure.Attachments.AttachmentUploadOptions">
             <summary>
@@ -2867,6 +3119,20 @@
             <param name="payload">Task payload provided when the background job was enqueued. May be <c>null</c> or a JSON string.</param>
             <returns>An <see cref="T:FinanceManager.Web.Services.BookingTaskExecutor.Options"/> instance with the parsed settings or defaults when parsing fails.</returns>
         </member>
+        <member name="T:FinanceManager.Web.Services.BudgetReportExportService">
+            <summary>
+            Minimal fallback implementation of <see cref="T:FinanceManager.Application.Budget.IBudgetReportExportService"/> used
+            when no dedicated exporter is registered. Returns a small CSV stream.
+            Production should replace this with a proper XLSX generator.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Services.BudgetReportExportService.GenerateXlsxAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetReportExportRequest,System.Threading.CancellationToken)">
+            <summary>
+            Generates a real XLSX workbook containing multiple sheets derived from the budget report raw data.
+            Uses the OpenXML SDK to construct a minimal valid workbook that can be parsed by the test helper.
+            Sheets produced: "Bank", "Contact", "SavingsPlan", "CategoriesAndPurposes".
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.Services.BusinessDayCalculator">
             <summary>
             Utility helpers for computing business days. Currently considers weekends (Saturday/Sunday) non-business days
@@ -3031,65 +3297,6 @@
             Provides query methods to retrieve postings filtered by various entities (contact, account, savings plan, security).
             Implementations encapsulate paging, filtering and any authorization/context handling required by the application.
             </summary>
-        </member>
-        <member name="M:FinanceManager.Web.Services.IPostingsQueryService.GetContactPostingsAsync(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Guid,System.Threading.CancellationToken)">
-            <summary>
-            Retrieves a paged list of postings for the specified contact.
-            </summary>
-            <param name="contactId">Identifier of the contact whose postings should be returned.</param>
-            <param name="skip">Number of items to skip for paging.</param>
-            <param name="take">Number of items to take for paging.</param>
-            <param name="q">Optional search term used to filter postings.</param>
-            <param name="from">Optional inclusive start date for date range filtering.</param>
-            <param name="to">Optional inclusive end date for date range filtering.</param>
-            <param name="currentUserId">Identifier of the current user used for authorization/context.</param>
-            <param name="ct">Cancellation token used to cancel the operation.</param>
-            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results.</returns>
-            <exception cref="T:System.OperationCanceledException">When the operation is cancelled via the provided <paramref name="ct"/>.</exception>
-        </member>
-        <member name="M:FinanceManager.Web.Services.IPostingsQueryService.GetAccountPostingsAsync(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Guid,System.Threading.CancellationToken)">
-            <summary>
-            Retrieves a paged list of postings for the specified account.
-            </summary>
-            <param name="accountId">Identifier of the account whose postings should be returned.</param>
-            <param name="skip">Number of items to skip for paging.</param>
-            <param name="take">Number of items to take for paging.</param>
-            <param name="q">Optional search term used to filter postings.</param>
-            <param name="from">Optional inclusive start date for date range filtering.</param>
-            <param name="to">Optional inclusive end date for date range filtering.</param>
-            <param name="currentUserId">Identifier of the current user used for authorization/context.</param>
-            <param name="ct">Cancellation token used to cancel the operation.</param>
-            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results.</returns>
-            <exception cref="T:System.OperationCanceledException">When the operation is cancelled via the provided <paramref name="ct"/>.</exception>
-        </member>
-        <member name="M:FinanceManager.Web.Services.IPostingsQueryService.GetSavingsPlanPostingsAsync(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Guid,System.Threading.CancellationToken)">
-            <summary>
-            Retrieves a paged list of postings for the specified savings plan.
-            </summary>
-            <param name="planId">Identifier of the savings plan whose postings should be returned.</param>
-            <param name="skip">Number of items to skip for paging.</param>
-            <param name="take">Number of items to take for paging.</param>
-            <param name="q">Optional search term used to filter postings.</param>
-            <param name="from">Optional inclusive start date for date range filtering.</param>
-            <param name="to">Optional inclusive end date for date range filtering.</param>
-            <param name="currentUserId">Identifier of the current user used for authorization/context.</param>
-            <param name="ct">Cancellation token used to cancel the operation.</param>
-            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results.</returns>
-            <exception cref="T:System.OperationCanceledException">When the operation is cancelled via the provided <paramref name="ct"/>.</exception>
-        </member>
-        <member name="M:FinanceManager.Web.Services.IPostingsQueryService.GetSecurityPostingsAsync(System.Guid,System.Int32,System.Int32,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Guid,System.Threading.CancellationToken)">
-            <summary>
-            Retrieves a paged list of postings for the specified security.
-            </summary>
-            <param name="securityId">Identifier of the security whose postings should be returned.</param>
-            <param name="skip">Number of items to skip for paging.</param>
-            <param name="take">Number of items to take for paging.</param>
-            <param name="from">Optional inclusive start date for date range filtering.</param>
-            <param name="to">Optional inclusive end date for date range filtering.</param>
-            <param name="currentUserId">Identifier of the current user used for authorization/context.</param>
-            <param name="ct">Cancellation token used to cancel the operation.</param>
-            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results.</returns>
-            <exception cref="T:System.OperationCanceledException">When the operation is cancelled via the provided <paramref name="ct"/>.</exception>
         </member>
         <member name="T:FinanceManager.Web.Services.IPriceProvider">
             <summary>
@@ -3322,6 +3529,31 @@
             <exception cref="T:System.OperationCanceledException">Thrown when the provided <paramref name="ct"/> is cancelled.</exception>
             <exception cref="T:System.Exception">Propagates unexpected exceptions that occur during the rebuild; the exception is logged and rethrown by the caller.</exception>
         </member>
+        <member name="T:FinanceManager.Web.Services.ReportCacheRefreshTaskExecutor">
+            <summary>
+            Background task executor that refreshes marked budget report cache entries.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.Services.ReportCacheRefreshTaskExecutor.Type">
+            <summary>
+            Gets the background task type handled by this executor.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Services.ReportCacheRefreshTaskExecutor.#ctor(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Services.ReportCacheRefreshTaskExecutor},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Pages})">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Web.Services.ReportCacheRefreshTaskExecutor"/> class.
+            </summary>
+            <param name="scopeFactory">Factory used to create a scoped service provider for the execution run.</param>
+            <param name="logger">Logger used to record errors and diagnostics.</param>
+            <param name="localizer">Localizer used to provide localized progress messages.</param>
+        </member>
+        <member name="M:FinanceManager.Web.Services.ReportCacheRefreshTaskExecutor.ExecuteAsync(FinanceManager.Application.BackgroundTaskContext,System.Threading.CancellationToken)">
+            <summary>
+            Executes the cache refresh task for the user defined in the <paramref name="context"/>.
+            </summary>
+            <param name="context">Context describing the background task, including TaskId and UserId. Must not be <c>null</c>.</param>
+            <param name="ct">Cancellation token used to cancel the operation.</param>
+        </member>
         <member name="T:FinanceManager.Web.Services.SecurityPricesBackfillExecutor">
             <summary>
             Background task executor that backfills historical security prices using the configured price provider.
@@ -3553,6 +3785,678 @@
             </summary>
             <param name="localizer">Localizer used to resolve UI labels for the ribbon actions.</param>
             <returns>A list of <see cref="T:FinanceManager.Web.ViewModels.Common.UiRibbonRegister"/> describing available ribbon tabs and actions.</returns>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel">
+            <summary>
+            View model for the budget category detail card.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.Id">
+            <summary>
+            Current category id.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.Category">
+            <summary>
+            Loaded category DTO.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.Title">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.LoadAsync(System.Guid)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.ReloadAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.IsSymbolUploadAllowed">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.GetSymbolParent">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.AssignNewSymbolAsync(System.Nullable{System.Guid})">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.SaveAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryCardViewModel.DeleteAsync">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel">
+            <summary>
+            List view model for budget categories.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.AllowRangeFiltering">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.InitializeAsync">
+            <summary>
+            Initializes the view model, setting the default date range to the current month.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.LoadPageAsync(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.BuildRecords">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.BudgetCategoryListItem">
+            <summary>
+            Item used in the budget category list.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.BudgetCategoryListItem.#ctor(System.Guid,System.String,System.Decimal,System.Decimal,System.Decimal,System.Int32)">
+            <summary>
+            Item used in the budget category list.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetCategoryListViewModel.BudgetCategoryListItem.GetNavigateUrl">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel">
+            <summary>
+            View model for the budget purpose detail card.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="sp">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.Id">
+            <summary>
+            Current purpose id.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.Purpose">
+            <summary>
+            Loaded purpose DTO.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.Title">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.LoadAsync(System.Guid)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.ReloadAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.QueryLookupAsync(FinanceManager.Web.ViewModels.Common.CardField,System.String,System.Int32,System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.ValidateLookupField(FinanceManager.Web.ViewModels.Common.CardField,FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.IsSymbolUploadAllowed">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.GetSymbolParent">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.AssignNewSymbolAsync(System.Nullable{System.Guid})">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.ValidateFieldValue(FinanceManager.Web.ViewModels.Common.CardField,System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.SaveAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeCardViewModel.DeleteAsync">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem">
+            <summary>
+            Lightweight list item representing a budget purpose.
+            </summary>
+            <param name="Id">Purpose id.</param>
+            <param name="Name">Display name.</param>
+            <param name="SourceName">Resolved source display name.</param>
+            <param name="SourceSymbolAttachmentId">Optional symbol attachment id for the source entity.</param>
+            <param name="CategoryName">Category display name.</param>
+            <param name="RuleCount">Number of budget rules configured for the purpose.</param>
+            <param name="BudgetSum">Computed budget sum for the selected range.</param>
+            <param name="ActualSum">Computed actual sum for the selected range.</param>
+            <param name="Variance">Difference between actual and budget (ActualSum - BudgetSum).</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.#ctor(System.Guid,System.String,System.String,System.Nullable{System.Guid},System.String,System.Int32,System.Decimal,System.Decimal,System.Decimal)">
+            <summary>
+            Lightweight list item representing a budget purpose.
+            </summary>
+            <param name="Id">Purpose id.</param>
+            <param name="Name">Display name.</param>
+            <param name="SourceName">Resolved source display name.</param>
+            <param name="SourceSymbolAttachmentId">Optional symbol attachment id for the source entity.</param>
+            <param name="CategoryName">Category display name.</param>
+            <param name="RuleCount">Number of budget rules configured for the purpose.</param>
+            <param name="BudgetSum">Computed budget sum for the selected range.</param>
+            <param name="ActualSum">Computed actual sum for the selected range.</param>
+            <param name="Variance">Difference between actual and budget (ActualSum - BudgetSum).</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.Id">
+            <summary>Purpose id.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.Name">
+            <summary>Display name.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.SourceName">
+            <summary>Resolved source display name.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.SourceSymbolAttachmentId">
+            <summary>Optional symbol attachment id for the source entity.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.CategoryName">
+            <summary>Category display name.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.RuleCount">
+            <summary>Number of budget rules configured for the purpose.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.BudgetSum">
+            <summary>Computed budget sum for the selected range.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.ActualSum">
+            <summary>Computed actual sum for the selected range.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.Variance">
+            <summary>Difference between actual and budget (ActualSum - BudgetSum).</summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListItem.GetNavigateUrl">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListViewModel">
+            <summary>
+            List view model for the budget purposes overview.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="services">Service provider used to resolve dependencies.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListViewModel.InitializeAsync">
+            <summary>
+            Initializes the view model and sets the default range filter to the current month.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListViewModel.LoadPageAsync(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListViewModel.BuildRecords">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetPurposeListViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportInterval">
+            <summary>
+            Interval of the aggregated budget report.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportInterval.Month">
+            <summary>
+            Monthly periods.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportInterval.Quarter">
+            <summary>
+            Quarterly periods.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportInterval.Year">
+            <summary>
+            Yearly periods.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis">
+            <summary>
+            Determines which date field is used for postings aggregation.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.BookingDate">
+            <summary>
+            Use the booking date.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate">
+            <summary>
+            Use the valuta/value date.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportSettings">
+            <summary>
+            Settings controlling the budget report rendering.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportSettings.#ctor(System.DateOnly,System.Int32,FinanceManager.Web.ViewModels.Budget.BudgetReportInterval,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean,FinanceManager.Web.ViewModels.Budget.BudgetReportValueScope,FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis)">
+            <summary>
+            Settings controlling the budget report rendering.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportSettings.Default">
+            <summary>
+            Default settings: 12 months ending at end of current month.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportValueScope">
+            <summary>
+            Determines which time scope is used for the category table values.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportValueScope.TotalRange">
+            <summary>
+            Use values for the whole selected report range.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportValueScope.LastInterval">
+            <summary>
+            Use values for the last calculated interval bucket.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel">
+            <summary>
+            View model for the budget report page.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="services">Service provider.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.ShowUnbudgetedSelfCostNeutralPostingsAsync">
+            <summary>
+            Opens the postings overlay for cost-neutral self-contact postings that are not covered by any purpose.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.Settings">
+            <summary>
+            Current report settings.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.SettingsVisible">
+            <summary>
+            Whether the settings overlay is visible.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.LoadingFrom">
+            <summary>
+            Start date of the currently loading report range.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.LoadingTo">
+            <summary>
+            End date of the currently loading report range.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.Periods">
+            <summary>
+            Period rows for the chart and monthly table.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.Categories">
+            <summary>
+            Category rows for the detail table.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.InitializeAsync">
+            <summary>
+            Initializes the report and loads data.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.LoadAsync">
+            <summary>
+            Loads report data based on the current <see cref="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.Settings"/>.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.ShowSettings">
+            <summary>
+            Shows the settings overlay.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.HideSettings">
+            <summary>
+            Hides the settings overlay.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.ApplySettingsAsync(FinanceManager.Web.ViewModels.Budget.BudgetReportSettings)">
+            <summary>
+            Applies new settings and reloads the report.
+            </summary>
+            <param name="settings">New settings.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PostingsOverlayKind">
+            <summary>
+            Identifies which kind of postings is shown in the postings overlay.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PostingsOverlayKind.Purpose">
+            <summary>
+            Postings for a specific budget purpose.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PostingsOverlayKind.Unbudgeted">
+            <summary>
+            Postings that are not covered by any purpose.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PurposePostingsKind">
+            <summary>
+            Current postings overlay kind.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PurposePostingsVisible">
+            <summary>
+            Whether the purpose postings overlay is currently visible.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PurposePostingsPurpose">
+            <summary>
+            The purpose currently selected for showing postings.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PurposePostings">
+            <summary>
+            Loaded postings for <see cref="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PurposePostingsPurpose"/> within the current report range.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PurposePostingsLoading">
+            <summary>
+            Whether postings for <see cref="P:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.PurposePostingsPurpose"/> are currently loading.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.GetPostingOriginAsync(FinanceManager.Shared.Dtos.Postings.PostingServiceDto)">
+            <summary>
+            Returns origin display info (name + optional symbol attachment id) for the given posting.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.HidePurposePostings">
+            <summary>
+            Closes the purpose postings overlay.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.ShowUnbudgetedPostingsAsync">
+            <summary>
+            Opens the postings overlay for unbudgeted postings in the current interval.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportViewModel.ShowPurposePostingsAsync(FinanceManager.Web.ViewModels.Budget.BudgetReportPurposeRow)">
+            <summary>
+            Opens the purpose postings overlay and loads postings for the given purpose.
+            </summary>
+            <param name="purpose">The selected purpose.</param>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportPeriodRow">
+            <summary>
+            Period row for the report.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportPeriodRow.#ctor(System.DateOnly,System.Decimal,System.Decimal,System.Decimal,System.Decimal)">
+            <summary>
+            Period row for the report.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportPurposeRow">
+            <summary>
+            Purpose row inside a category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportPurposeRow.#ctor(System.Guid,System.String,System.Decimal,System.Decimal,System.Decimal,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid)">
+            <summary>
+            Purpose row inside a category.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetReportCategoryRow">
+            <summary>
+            Category row including nested purposes.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetReportCategoryRow.#ctor(System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetReportCategoryRowKind,System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.Collections.Generic.IReadOnlyList{FinanceManager.Web.ViewModels.Budget.BudgetReportPurposeRow})">
+            <summary>
+            Category row including nested purposes.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel">
+            <summary>
+            View model for the budget rule detail card.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="sp">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.Id">
+            <summary>
+            Current rule id.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.BudgetPurposeId">
+            <summary>
+            Budget purpose id (used when creating new rules).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.BudgetCategoryId">
+            <summary>
+            Budget category id (used when creating new rules via category).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.Rule">
+            <summary>
+            Loaded rule DTO.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.Title">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.LoadAsync(System.Guid)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.ReloadAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.SaveAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.DeleteAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.IsSymbolUploadAllowed">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.GetSymbolParent">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.AssignNewSymbolAsync(System.Nullable{System.Guid})">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.ValidateLookupField(FinanceManager.Web.ViewModels.Common.CardField,FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.ValidateFieldValue(FinanceManager.Web.ViewModels.Common.CardField,System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem">
+            <summary>
+            Lightweight list item for budget rule rows.
+            </summary>
+            <param name="Id">Rule id.</param>
+            <param name="Interval">Interval label.</param>
+            <param name="Amount">Amount formatted for display.</param>
+            <param name="Start">Start date formatted for display.</param>
+            <param name="End">End date formatted for display.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.#ctor(System.Guid,System.String,System.String,System.String,System.String)">
+            <summary>
+            Lightweight list item for budget rule rows.
+            </summary>
+            <param name="Id">Rule id.</param>
+            <param name="Interval">Interval label.</param>
+            <param name="Amount">Amount formatted for display.</param>
+            <param name="Start">Start date formatted for display.</param>
+            <param name="End">End date formatted for display.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.Id">
+            <summary>Rule id.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.Interval">
+            <summary>Interval label.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.Amount">
+            <summary>Amount formatted for display.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.Start">
+            <summary>Start date formatted for display.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.End">
+            <summary>End date formatted for display.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.GetNavigateUrl">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel">
+            <summary>
+            Embedded list view model for budget rules belonging to a specific budget purpose.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.BudgetPurposeId">
+            <summary>
+            Budget purpose id for which rules are listed.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.BudgetCategoryId">
+            <summary>
+            Budget category id for which rules are listed.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.InitializeForPurposeAsync(System.Guid)">
+            <summary>
+            Sets the budget purpose id and triggers loading.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.InitializeForCategoryAsync(System.Guid)">
+            <summary>
+            Sets the budget category id and triggers loading.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.LoadPageAsync(System.Boolean)">
+            <summary>
+            Loads the list content.
+            </summary>
+            <param name="resetPaging">Ignored for this embedded list (no paging).</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.BuildRecords">
+            <summary>
+            Builds column definitions and list records.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel">
+            <summary>
+            ViewModel for the Monthly Budget KPI tile.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.DataLoaded">
+            <summary>
+            Gets or sets a value indicating whether the data has been loaded.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.PlannedIncome">
+            <summary>
+            Planned income for the current month.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.PlannedExpenseAbs">
+            <summary>
+            Planned expenses (absolute, positive value) for the current month.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.ExpectedIncome">
+            <summary>
+            Expected income for the current month (planned + unbudgeted actuals).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.ExpectedExpenseAbs">
+            <summary>
+            Expected expenses (absolute, positive value) for the current month (planned + unbudgeted actuals).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.UnbudgetedIncome">
+            <summary>
+            Unbudgeted actual income in the period.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.UnbudgetedExpenseAbs">
+            <summary>
+            Unbudgeted actual expenses (absolute) in the period.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.ActualIncome">
+            <summary>
+            Actual income for the current month.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.ActualExpenseAbs">
+            <summary>
+            Actual expenses (absolute, positive value) for the current month.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.SollErgebnis">
+            <summary>
+            Target result (planned income minus planned expenses) for the current month.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.Month">
+            <summary>
+            The month for which the KPI is calculated.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.LoadAsync(FinanceManager.Shared.IApiClient,System.Threading.CancellationToken)">
+            <summary>
+            Loads the monthly budget KPI data from the API and maps it to this ViewModel.
+            </summary>
+            <param name="api">The API client to use for data retrieval.</param>
+            <param name="ct">Optional cancellation token.</param>
+            <returns>A task representing the asynchronous operation.</returns>
         </member>
         <member name="T:FinanceManager.Web.ViewModels.Common.AggregateBarChartViewModel">
             <summary>
@@ -3836,6 +4740,13 @@
             Reload the card data after external changes. Default implementation is a no-op; derived classes may override to re-initialize.
             </summary>
             <returns>A task that completes when reload has finished.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Common.BaseCardViewModel`1.TryGetParentLinkFromQuery">
+            <summary>
+            Tries to read a <see cref="T:FinanceManager.Shared.Dtos.Common.ParentLinkRequest"/> from the current navigation URL query string.
+            Expected query parameters are: "parentKind", "parentId" and optional "parentField".
+            </summary>
+            <returns>The parsed <see cref="T:FinanceManager.Shared.Dtos.Common.ParentLinkRequest"/> or <c>null</c> when no valid parent context is present.</returns>
         </member>
         <member name="T:FinanceManager.Web.ViewModels.Common.BaseListViewModel">
             <summary>
@@ -5000,10 +5911,9 @@
             <param name="Size">Visual size of the action item (<see cref="T:FinanceManager.Web.ViewModels.Common.UiRibbonItemSize"/>).</param>
             <param name="Disabled">Whether the action should be rendered disabled.</param>
             <param name="Tooltip">Optional tooltip text.</param>
-            <param name="Action">Optional action name used by callers to identify the action.</param>
-            <param name="Callback">Optional callback executed when the action is invoked in-memory (used by tests or immediate UI wiring).</param>
+            <param name="Callback">Callback executed when the action is invoked.</param>
         </member>
-        <member name="M:FinanceManager.Web.ViewModels.Common.UiRibbonAction.#ctor(System.String,System.String,System.String,FinanceManager.Web.ViewModels.Common.UiRibbonItemSize,System.Boolean,System.String,System.String,System.Func{System.Threading.Tasks.Task})">
+        <member name="M:FinanceManager.Web.ViewModels.Common.UiRibbonAction.#ctor(System.String,System.String,System.String,FinanceManager.Web.ViewModels.Common.UiRibbonItemSize,System.Boolean,System.String,System.Func{System.Threading.Tasks.Task})">
             <summary>
             Represents a single action that can be shown in a ribbon tab.
             </summary>
@@ -5013,8 +5923,7 @@
             <param name="Size">Visual size of the action item (<see cref="T:FinanceManager.Web.ViewModels.Common.UiRibbonItemSize"/>).</param>
             <param name="Disabled">Whether the action should be rendered disabled.</param>
             <param name="Tooltip">Optional tooltip text.</param>
-            <param name="Action">Optional action name used by callers to identify the action.</param>
-            <param name="Callback">Optional callback executed when the action is invoked in-memory (used by tests or immediate UI wiring).</param>
+            <param name="Callback">Callback executed when the action is invoked.</param>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Common.UiRibbonAction.Id">
             <summary>Unique identifier for the action.</summary>
@@ -5034,11 +5943,13 @@
         <member name="P:FinanceManager.Web.ViewModels.Common.UiRibbonAction.Tooltip">
             <summary>Optional tooltip text.</summary>
         </member>
-        <member name="P:FinanceManager.Web.ViewModels.Common.UiRibbonAction.Action">
-            <summary>Optional action name used by callers to identify the action.</summary>
-        </member>
         <member name="P:FinanceManager.Web.ViewModels.Common.UiRibbonAction.Callback">
-            <summary>Optional callback executed when the action is invoked in-memory (used by tests or immediate UI wiring).</summary>
+            <summary>Callback executed when the action is invoked.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Common.UiRibbonAction.Action">
+            <summary>
+            Compatibility alias for older code/tests that referenced <c>Action</c> instead of <c>Id</c>.
+            </summary>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Common.UiRibbonAction.FileCallback">
             <summary>
@@ -5365,7 +6276,7 @@
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Contacts.ContactListViewModel.AllowRangeFiltering">
             <summary>
-            Indicates whether the list supports range filtering. Contacts list does not support range filtering.
+            Indicates whether the list supports range filtering. Contact list does not support range filtering.
             </summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Contacts.ContactListViewModel.LoadPageAsync(System.Boolean)">
@@ -6850,6 +7761,11 @@
             </summary>
             <returns>True when deletion succeeded; otherwise false.</returns>
         </member>
+        <member name="M:FinanceManager.Web.ViewModels.SavingsPlans.SavingsPlanCardViewModel.QueryLookupAsync(FinanceManager.Web.ViewModels.Common.CardField,System.String,System.Int32,System.Int32)">
+            <summary>
+            Provides lookup values for fields that support lookups (e.g. SavingsPlanCategory).
+            </summary>
+        </member>
         <member name="M:FinanceManager.Web.ViewModels.SavingsPlans.SavingsPlanCardViewModel.ValidateFieldValue(FinanceManager.Web.ViewModels.Common.CardField,System.Object)">
             <summary>
             Reacts to field value validation changes and triggers a rebuild of the card record when relevant enum-like fields change.
@@ -6857,9 +7773,15 @@
             <param name="field">Card field being validated.</param>
             <param name="newValue">New value being applied.</param>
         </member>
+        <member name="M:FinanceManager.Web.ViewModels.SavingsPlans.SavingsPlanCardViewModel.RebuildCardRecordAsync">
+            <summary>
+            Rebuilds the current <see cref="T:FinanceManager.Web.ViewModels.Common.CardRecord"/> using the last loaded DTO and pending field values.
+            Used to refresh dependent fields when certain selections change.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Web.ViewModels.SavingsPlans.SavingsPlanCardViewModel.ValidateLookupField(FinanceManager.Web.ViewModels.Common.CardField,FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem)">
             <summary>
-            Reacts to lookup field selection changes and rebuilds the card record for dependent fields.
+            Stores pending lookup field values and updates the in-memory model for fields that impact save enablement.
             </summary>
             <param name="field">Card field containing the lookup.</param>
             <param name="item">Selected lookup item.</param>
@@ -8568,7 +9490,7 @@
         <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel.DeleteAsync">
             <summary>
             Deletes the current draft via the API.
-            </summary>
+            /// </summary>
             <returns>True when deletion succeeded; otherwise false.</returns>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel.IsSymbolUploadAllowed">

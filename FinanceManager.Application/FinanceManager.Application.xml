@@ -402,6 +402,373 @@
             Uploads a backup file and returns created metadata DTO.
             </summary>
         </member>
+        <member name="T:FinanceManager.Application.Budget.BudgetPeriodRange">
+            <summary>
+            Helper for iterating monthly period keys.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.BudgetPlannedValuesResult">
+            <summary>
+            Planned value calculation result.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.BudgetPlannedValuesResult.#ctor(FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Budget.BudgetPlannedValue})">
+            <summary>
+            Planned value calculation result.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.BudgetPlannedValuesResult.GetPlanned(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey)">
+            <summary>
+            Returns planned value for a specific purpose and period.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.BudgetPlannedValue">
+            <summary>
+            A planned amount for a budget purpose and period.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.BudgetPlannedValue.#ctor(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Decimal)">
+            <summary>
+            A planned amount for a budget purpose and period.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.BudgetPlanningService">
+            <summary>
+            Calculates planned values based on persisted rules and overrides.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.BudgetPlanningService.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Application.Budget.BudgetPlanningService},FinanceManager.Application.Budget.IBudgetPlanningRepository)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="logger">Logger.</param>
+            <param name="repo">Repository used to load rules and overrides.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.BudgetPlanningService.CalculatePlannedValuesAsync(System.Guid,System.Collections.Generic.IReadOnlyCollection{System.Guid},FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Application.Budget.BudgetReportCacheParameter">
+            <summary>
+            Parameter describing a cached budget report raw data range.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.BudgetReportCacheParameter.#ctor(System.DateOnly,System.DateOnly,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis)">
+            <summary>
+            Parameter describing a cached budget report raw data range.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.BudgetRuleScheduler">
+            <summary>
+            Deterministic rule schedule generator.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.IBudgetCategoryService">
+            <summary>
+            Service for managing budget categories.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetCategoryService.ListAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists budget categories for the owner.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetCategoryService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a budget category by id for the owner.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetCategoryService.CreateAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new budget category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetCategoryService.UpdateAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing budget category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetCategoryService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a budget category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetCategoryService.ListOverviewAsync(System.Guid,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <summary>
+            Lists budget categories for the owner including calculated overview fields.
+            When <paramref name="from"/> and <paramref name="to"/> are provided, budget and actual values are calculated for that range.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.IBudgetOverrideService">
+            <summary>
+            Service for managing budget overrides.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetOverrideService.CreateAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Decimal,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new override for a given purpose and period.
+            If an override for the same period already exists, the operation should fail.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetOverrideService.UpdateAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Decimal,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing override.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetOverrideService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an existing override.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetOverrideService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets an override by id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetOverrideService.ListByPurposeAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists overrides for a purpose.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.IBudgetPlanningRepository">
+            <summary>
+            Repository abstraction for loading budget planning data (purposes, rules and overrides).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPlanningRepository.GetPurposeIdsAsync(System.Guid,System.Collections.Generic.IReadOnlyCollection{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Loads purpose ids for the provided owner and optional filter set.
+            </summary>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="purposeIds">Optional filter set.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>List of purpose ids that exist for the owner.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPlanningRepository.GetRulesAndOverridesAsync(System.Guid,System.Collections.Generic.IReadOnlyList{System.Guid},FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Threading.CancellationToken)">
+            <summary>
+            Loads rules and overrides relevant for the provided purpose ids and period range.
+            </summary>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="purposeIds">Purpose ids.</param>
+            <param name="from">Start period (inclusive).</param>
+            <param name="to">End period (inclusive).</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Tuple of rules and overrides.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.IBudgetPlanningService">
+            <summary>
+            Calculates planned budget values deterministically from rules and overrides.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPlanningService.CalculatePlannedValuesAsync(System.Guid,System.Collections.Generic.IReadOnlyCollection{System.Guid},FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,FinanceManager.Shared.Dtos.Budget.BudgetPeriodKey,System.Threading.CancellationToken)">
+            <summary>
+            Calculates planned values for the specified purposes and period range.
+            </summary>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="purposeIds">Optional filter to a subset of purposes.</param>
+            <param name="from">Start period (inclusive).</param>
+            <param name="to">End period (inclusive).</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Planned values for each purpose and month in the requested range.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.IBudgetPurposeService">
+            <summary>
+            Service for managing budget purposes.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Creates a new budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.UpdateAsync(System.Guid,System.Guid,System.String,FinanceManager.Shared.Dtos.Budget.BudgetSourceType,System.Guid,System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an existing budget purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a budget purpose by id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.ListAsync(System.Guid,System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Lists budget purposes.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.CountAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the total number of purposes for the owner.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetPurposeService.ListOverviewAsync(System.Guid,System.Int32,System.Int32,System.Nullable{FinanceManager.Shared.Dtos.Budget.BudgetSourceType},System.String,System.Nullable{System.DateOnly},System.Nullable{System.DateOnly},System.Nullable{System.Guid},System.Threading.CancellationToken,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis)">
+            <summary>
+            Lists budget purposes including rule count and computed budget sum for the provided period.
+            When <paramref name="from"/> or <paramref name="to"/> are <c>null</c>, the service may apply a default period.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.IBudgetReportExportService">
+            <summary>
+            Service to export all postings for a budget report over its full report range.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetReportExportService.GenerateXlsxAsync(System.Guid,FinanceManager.Shared.Dtos.Budget.BudgetReportExportRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates an XLSX export for the given request.
+            </summary>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="request">Export request.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Content type, file name and readable stream (caller owns stream).</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.IBudgetReportService">
+            <summary>
+            Service for generating budget reports.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetReportService.GetRawDataAsync(System.Guid,System.DateOnly,System.DateOnly,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken,System.Boolean)">
+            <summary>
+            Returns raw budget report data for the given date range.
+            </summary>
+            <param name="ownerUserId">The owner user id.</param>
+            <param name="from">Inclusive range start.</param>
+            <param name="to">Inclusive range end.</param>
+            <param name="dateBasis">Date basis used when calculating actual values.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A raw data DTO containing categories, purposes and contributing postings.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetReportService.GetMonthlyKpiAsync(System.Guid,System.Nullable{System.DateOnly},FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously retrieves the monthly budget KPI data for the specified user and month.
+            </summary>
+            <param name="userId">The unique identifier of the user for whom to retrieve KPI data.</param>
+            <param name="date">The month and year for which to retrieve KPI data. If null, the current month is used.</param>
+            <param name="dateBasis">The date basis to use when calculating the KPI values.</param>
+            <param name="ct">A cancellation token that can be used to cancel the asynchronous operation.</param>
+            <returns>A task that represents the asynchronous operation. The task result contains a <see cref="T:FinanceManager.Shared.Dtos.Budget.MonthlyBudgetKpiDto"/>
+            with the KPI data for the specified user and month.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.IBudgetRuleService">
+            <summary>
+            Service for managing budget rules.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.CreateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <summary>
+            Creates a new rule for a purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.CreateForCategoryAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <summary>
+            Creates a new rule for a category.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.UpdateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing rule.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an existing rule.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.GetAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a rule by id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.ListByPurposeAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists rules for a purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.ListByCategoryAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Lists rules for a category.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Budget.IReportCacheService">
+            <summary>
+            Provides access to cached report data.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IReportCacheService.GetBudgetReportRawDataAsync(System.Guid,System.DateOnly,System.DateOnly,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,System.Threading.CancellationToken)">
+            <summary>
+            Reads a cached budget report raw data entry.
+            Returns <c>null</c> when no cache entry exists or it requires refresh.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="from">Inclusive range start.</param>
+            <param name="to">Inclusive range end.</param>
+            <param name="dateBasis">Date basis used to build the cache key.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The cached raw data or <c>null</c> when not available.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IReportCacheService.SetBudgetReportRawDataAsync(System.Guid,System.DateOnly,System.DateOnly,FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis,FinanceManager.Shared.Dtos.Budget.BudgetReportRawDataDto,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Updates or creates a cached budget report raw data entry.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="from">Inclusive range start.</param>
+            <param name="to">Inclusive range end.</param>
+            <param name="dateBasis">Date basis used to build the cache key.</param>
+            <param name="data">Raw data to cache.</param>
+            <param name="needsRefresh">Whether the cache entry should be marked for refresh.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IReportCacheService.GetNextBudgetReportCacheToUpdateAsync(System.Threading.CancellationToken)">
+            <summary>
+            Returns the parameter of the first cache entry that requires an update.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>The parameter for the next cache update or <c>null</c> when none exist.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IReportCacheService.MarkBudgetReportCacheEntriesForUpdateAsync(System.DateOnly,System.DateOnly,System.Threading.CancellationToken)">
+            <summary>
+            Marks cache entries for update when their period falls within the specified range.
+            </summary>
+            <param name="periodFrom">Inclusive start of the period.</param>
+            <param name="periodTo">Inclusive end of the period.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IReportCacheService.MarkAllReportCacheEntriesForUpdateAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Marks all cache entries for the specified user for refresh.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IReportCacheService.ClearReportCacheAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes all cached report entries for the specified user.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IReportCacheService.EnqueueBudgetReportCacheRefresh(System.Guid)">
+            <summary>
+            Enqueues a background task to refresh marked budget report cache entries.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <returns>Information about the enqueued task.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Common.IParentAssignmentService">
+            <summary>
+            Applies an optional parent assignment for a newly created entity.
+            Implementations must validate ownership/permissions.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Common.IParentAssignmentService.TryAssignAsync(System.Guid,FinanceManager.Shared.Dtos.Common.ParentLinkRequest,System.String,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Assigns the created entity to the specified parent context.
+            Returns <c>true</c> when the assignment was performed.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Application.Contacts.IContactCategoryService">
             <summary>
             Service to manage contact categories for a user.
@@ -651,6 +1018,71 @@
             <summary>
             Creates a global notification visible to all users.
             </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Postings.IPostingsQueryService">
+            <summary>
+            Provides query methods to retrieve postings filtered by various entities (contact, account, savings plan, security).
+            Implementations encapsulate paging, filtering and any authorization/context handling required by the application.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Postings.IPostingsQueryService.GetContactPostingsAsync(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Retrieves a paged list of postings for the specified contact.
+            </summary>
+            <param name="contactId">Identifier of the contact whose postings should be returned.</param>
+            <param name="skip">Number of items to skip for paging.</param>
+            <param name="take">Number of items to take for paging.</param>
+            <param name="q">Optional search term used to filter postings.</param>
+            <param name="from">Optional inclusive start date for date range filtering.</param>
+            <param name="to">Optional inclusive end date for date range filtering.</param>
+            <param name="currentUserId">Identifier of the current user used for authorization/context.</param>
+            <param name="ct">Cancellation token used to cancel the operation.</param>
+            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results.</returns>
+            <exception cref="T:System.OperationCanceledException">When the operation is cancelled via the provided <paramref name="ct"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Postings.IPostingsQueryService.GetAccountPostingsAsync(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Retrieves a paged list of postings for the specified account.
+            </summary>
+            <param name="accountId">Identifier of the account whose postings should be returned.</param>
+            <param name="skip">Number of items to skip for paging.</param>
+            <param name="take">Number of items to take for paging.</param>
+            <param name="q">Optional search term used to filter postings.</param>
+            <param name="from">Optional inclusive start date for date range filtering.</param>
+            <param name="to">Optional inclusive end date for date range filtering.</param>
+            <param name="currentUserId">Identifier of the current user used for authorization/context.</param>
+            <param name="ct">Cancellation token used to cancel the operation.</param>
+            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results.</returns>
+            <exception cref="T:System.OperationCanceledException">When the operation is cancelled via the provided <paramref name="ct"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Postings.IPostingsQueryService.GetSavingsPlanPostingsAsync(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Retrieves a paged list of postings for the specified savings plan.
+            </summary>
+            <param name="planId">Identifier of the savings plan whose postings should be returned.</param>
+            <param name="skip">Number of items to skip for paging.</param>
+            <param name="take">Number of items to take for paging.</param>
+            <param name="q">Optional search term used to filter postings.</param>
+            <param name="from">Optional inclusive start date for date range filtering.</param>
+            <param name="to">Optional inclusive end date for date range filtering.</param>
+            <param name="currentUserId">Identifier of the current user used for authorization/context.</param>
+            <param name="ct">Cancellation token used to cancel the operation.</param>
+            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results.</returns>
+            <exception cref="T:System.OperationCanceledException">When the operation is cancelled via the provided <paramref name="ct"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Postings.IPostingsQueryService.GetSecurityPostingsAsync(System.Guid,System.Int32,System.Int32,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Retrieves a paged list of postings for the specified security.
+            </summary>
+            <param name="securityId">Identifier of the security whose postings should be returned.</param>
+            <param name="skip">Number of items to skip for paging.</param>
+            <param name="take">Number of items to take for paging.</param>
+            <param name="from">Optional inclusive start date for date range filtering.</param>
+            <param name="to">Optional inclusive end date for date range filtering.</param>
+            <param name="currentUserId">Identifier of the current user used for authorization/context.</param>
+            <param name="ct">Cancellation token used to cancel the operation.</param>
+            <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results.</returns>
+            <exception cref="T:System.OperationCanceledException">When the operation is cancelled via the provided <paramref name="ct"/>.</exception>
         </member>
         <member name="T:FinanceManager.Application.Reports.IHomeKpiService">
             <summary>
@@ -1237,6 +1669,19 @@
             <param name="message">A short error message to record.</param>
             <param name="ct">Cancellation token.</param>
             <returns>A task that completes when the operation has been applied.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ISecurityReportService">
+            <summary>
+            Read-only reporting operations for securities.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityReportService.GetDividendAggregatesAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns quarterly dividend aggregates for the past year across all owned securities.
+            </summary>
+            <param name="ownerUserId">Owner user id.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>List of quarterly aggregate points ordered by period start.</returns>
         </member>
         <member name="T:FinanceManager.Application.Securities.ISecurityService">
             <summary>

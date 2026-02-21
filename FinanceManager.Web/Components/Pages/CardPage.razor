@@ -105,6 +105,13 @@ else
             switch (action)
             {
                 case "Back":
+                    // If payload is a direct URL (absolute or app-relative), navigate to it.
+                    if (!string.IsNullOrWhiteSpace(payload) && (payload.StartsWith("/", StringComparison.Ordinal) || payload.StartsWith("http", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        NavigationManager.NavigateTo(payload);
+                        break;
+                    }
+
                     // prefer explicit Back query param if present
                     if (!string.IsNullOrWhiteSpace(Back))
                     {
@@ -166,29 +173,29 @@ else
                     if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
                     break;
                 case "OpenBankContact":
-                {
-                    var bankParts = (payload ?? string.Empty).Split(',', 2);
-                    if (bankParts.Length == 2 && Guid.TryParse(bankParts[1], out var cid))
                     {
-                        var kind = bankParts[0];
-                        var back = BuildCardPath(Kind, SubKind, Id.ToString(), Back);
-                        NavigationManager.NavigateTo($"/card/{kind}/{cid}?back={Uri.EscapeDataString(back)}");
+                        var bankParts = (payload ?? string.Empty).Split(',', 2);
+                        if (bankParts.Length == 2 && Guid.TryParse(bankParts[1], out var cid))
+                        {
+                            var kind = bankParts[0];
+                            var back = BuildCardPath(Kind, SubKind, Id.ToString(), Back);
+                            NavigationManager.NavigateTo($"/card/{kind}/{cid}?back={Uri.EscapeDataString(back)}");
+                        }
+                        break;
                     }
-                    break;
-                }
                 case "OpenAccountDetails":
-                {
-                    // payload may contain account id; fallback to Draft.DetectedAccountId from viewmodel
-                    Guid? accountId = null;
-                    if (!string.IsNullOrWhiteSpace(payload) && Guid.TryParse(payload, out var pid)) accountId = pid;
-                    else if (_vm is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel sd && sd.Draft?.DetectedAccountId != null) accountId = sd.Draft.DetectedAccountId;
-                    if (accountId.HasValue)
                     {
-                        var back = BuildCardPath(Kind, SubKind, Id.ToString(), Back);
-                        NavigationManager.NavigateTo($"/card/accounts/{accountId.Value}?back={Uri.EscapeDataString(back)}");
+                        // payload may contain account id; fallback to Draft.DetectedAccountId from viewmodel
+                        Guid? accountId = null;
+                        if (!string.IsNullOrWhiteSpace(payload) && Guid.TryParse(payload, out var pid)) accountId = pid;
+                        else if (_vm is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel sd && sd.Draft?.DetectedAccountId != null) accountId = sd.Draft.DetectedAccountId;
+                        if (accountId.HasValue)
+                        {
+                            var back = BuildCardPath(Kind, SubKind, Id.ToString(), Back);
+                            NavigationManager.NavigateTo($"/card/accounts/{accountId.Value}?back={Uri.EscapeDataString(back)}");
+                        }
+                        break;
                     }
-                    break;
-                }
                 case "OpenCategory":
                     if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
                     break;
@@ -196,40 +203,40 @@ else
                     // Attachments are handled via UiOverlaySpec payloads emitted by viewmodels. No fallback.
                     break;
                 case "DownloadOriginal":
-                {
-                    // Attempt client-side download of original statement file for statement-draft card
-                    if (_vm is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel sd && sd.DraftId != Guid.Empty)
                     {
-                        var downloadUrl = $"/api/statement-drafts/{sd.DraftId}/file";
-                        var js = $"(function(){{var a=document.createElement('a'); a.href={System.Text.Json.JsonSerializer.Serialize(downloadUrl)}; a.download=''; a.style.display='none'; document.body.appendChild(a); a.click(); setTimeout(()=>document.body.removeChild(a),200);}})()";
-                        try
+                        // Attempt client-side download of original statement file for statement-draft card
+                        if (_vm is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel sd && sd.DraftId != Guid.Empty)
                         {
-                            await JS.InvokeVoidAsync("eval", js);
+                            var downloadUrl = $"/api/statement-drafts/{sd.DraftId}/file";
+                            var js = $"(function(){{var a=document.createElement('a'); a.href={System.Text.Json.JsonSerializer.Serialize(downloadUrl)}; a.download=''; a.style.display='none'; document.body.appendChild(a); a.click(); setTimeout(()=>document.body.removeChild(a),200);}})()";
+                            try
+                            {
+                                await JS.InvokeVoidAsync("eval", js);
+                            }
+                            catch
+                            {
+                                NavigationManager.NavigateTo(downloadUrl, forceLoad: true);
+                            }
                         }
-                        catch
-                        {
-                            NavigationManager.NavigateTo(downloadUrl, forceLoad: true);
-                        }
+                        break;
                     }
-                    break;
-                }
                 case "ViewOriginal":
-                {
-                    // Open original in a new tab/window so browser can display inline when supported
-                    if (_vm is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel sd2 && sd2.DraftId != Guid.Empty)
                     {
-                        var viewUrl = $"/api/statement-drafts/{sd2.DraftId}/file";
-                        try
+                        // Open original in a new tab/window so browser can display inline when supported
+                        if (_vm is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel sd2 && sd2.DraftId != Guid.Empty)
                         {
-                            await JS.InvokeVoidAsync("open", viewUrl, "_blank");
+                            var viewUrl = $"/api/statement-drafts/{sd2.DraftId}/file";
+                            try
+                            {
+                                await JS.InvokeVoidAsync("open", viewUrl, "_blank");
+                            }
+                            catch
+                            {
+                                NavigationManager.NavigateTo(viewUrl, forceLoad: true);
+                            }
                         }
-                        catch
-                        {
-                            NavigationManager.NavigateTo(viewUrl, forceLoad: true);
-                        }
+                        break;
                     }
-                    break;
-                }
                 case "OpenMerge":
                     // OpenMerge is handled by viewmodels emitting a UiOverlaySpec payload (handled above). No fallback here.
                     break;
@@ -248,19 +255,14 @@ else
                     {
                         try
                         {
-                            // navigate back to Back URL and include created info so the parent page can pick it up
+                            // navigate back to Back URL
                             var backUri = new Uri(Back);
-                            var qb = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(backUri.Query)
-                                        .ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString());
-                            qb["createdKind"] = kindLower;
-                            qb["createdId"] = savedId;
                             var basePath = backUri.GetLeftPart(UriPartial.Path);
-                            var newQuery = string.Join("&", qb.Select(kvp => Uri.EscapeDataString(kvp.Key) + "=" + Uri.EscapeDataString(kvp.Value)));
-                            NavigationManager.NavigateTo(basePath + (string.IsNullOrWhiteSpace(newQuery) ? string.Empty : "?" + newQuery));
+                            var newQuery = backUri.Query;
+                            NavigationManager.NavigateTo(basePath + newQuery);
                         }
                         catch
                         {
-                            // fallback
                             var url = BuildCardPath(kindLower, SubKind, savedId ?? Id.ToString(), Back);
                             NavigationManager.NavigateTo(url);
                         }
@@ -270,7 +272,33 @@ else
                         var url = BuildCardPath(kindLower, SubKind, savedId ?? Id.ToString(), Back);
                         NavigationManager.NavigateTo(url);
                     }
-                     break;
+                    break;
+
+                case "NewRule":
+                    {
+                        // payload carries either "purpose,{id}", "category,{id}" or legacy: just purposeId.
+                        var payloadText = payload ?? string.Empty;
+                        var ruleParts = payloadText.Split(',', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                        string? prefill = null;
+                        if (ruleParts.Length == 2)
+                        {
+                            var scope = ruleParts[0].Trim().ToLowerInvariant();
+                            var idPart = ruleParts[1].Trim();
+                            if (scope == "purpose") prefill = "purpose:" + idPart;
+                            else if (scope == "category") prefill = "category:" + idPart;
+                        }
+                        else if (!string.IsNullOrWhiteSpace(payloadText))
+                        {
+                            // legacy: payload is purposeId
+                            prefill = payloadText;
+                        }
+
+                        var currentUrl = BuildCardPath(Kind, SubKind, Id.ToString(), Back);
+                        var target = $"/card/budget/rules/new?prefill={Uri.EscapeDataString(prefill ?? string.Empty)}&back={Uri.EscapeDataString(currentUrl)}";
+                        NavigationManager.NavigateTo(target);
+                        break;
+                    }
             }
         });
     }
@@ -331,14 +359,9 @@ else
             {
                 var ok = await deletable.DeleteAsync();
                 if (ok)
-                {
-                    if (!string.IsNullOrWhiteSpace(Back)) NavigationManager.NavigateTo(Back); else NavigationManager.NavigateTo(BuildListPath());
-                }
-                else
-                {
-                    var msg = deletable.LastError ?? "Delete failed";
-                    await JS.InvokeVoidAsync("alert", msg);
-                }
+                    return;
+                var msg = deletable.LastError ?? "Delete failed";
+                await JS.InvokeVoidAsync("alert", msg);
             }
             else
             {

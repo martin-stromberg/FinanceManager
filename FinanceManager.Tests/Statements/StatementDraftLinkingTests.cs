@@ -290,6 +290,134 @@ public sealed class StatementDraftLinkingTests
     }
 
     [Fact]
+    public async Task Book_DecemberGiro_ThenJanuaryGiro_ThenSavings_ForDecember_ShouldLink_DecemberPostings()
+    {
+        var (sut, db, owner) = Create();
+
+        // accounts
+        var giro = new Account(owner, AccountType.Giro, "Giro", null, Guid.NewGuid());
+        var savings = new Account(owner, AccountType.Savings, "Spark", null, Guid.NewGuid());
+        db.Accounts.AddRange(giro, savings);
+        await db.SaveChangesAsync();
+
+        var selfContactId = db.Contacts.First(c => c.OwnerUserId == owner && c.Type == ContactType.Self).Id;
+
+        // Draft 1: Giro December 15, 2025 -10 (Sparplan Auto)
+        var draftDecGiro = new StatementDraft(owner, "dec_giro.csv", "", null);
+        var entryDecGiro = draftDecGiro.AddEntry(new DateTime(2025, 12, 15), -10m, "Sparplan Auto");
+        draftDecGiro.SetDetectedAccount(giro.Id);
+        entryDecGiro.MarkAccounted(selfContactId);
+        db.StatementDrafts.Add(draftDecGiro);
+
+        // Draft 2: Giro January 15, 2026 -10 (same booking)
+        var draftJanGiro = new StatementDraft(owner, "jan_giro.csv", "", null);
+        var entryJanGiro = draftJanGiro.AddEntry(new DateTime(2026, 1, 15), -10m, "Sparplan Auto");
+        draftJanGiro.SetDetectedAccount(giro.Id);
+        entryJanGiro.MarkAccounted(selfContactId);
+        db.StatementDrafts.Add(draftJanGiro);
+
+        // Draft 3: Savings account contains counter posting for December (+10) on 15.12.2025
+        var draftDecSavings = new StatementDraft(owner, "dec_sav.csv", "", null);
+        var entryDecSavings = draftDecSavings.AddEntry(new DateTime(2025, 12, 15), 10m, "Sparplan Auto");
+        draftDecSavings.SetDetectedAccount(savings.Id);
+        entryDecSavings.MarkAccounted(selfContactId);
+        db.StatementDrafts.Add(draftDecSavings);
+
+        await db.SaveChangesAsync();
+
+        // Book Giro December
+        var res1 = await sut.BookAsync(draftDecGiro.Id, null, owner, forceWarnings: true, CancellationToken.None);
+        Assert.True(res1.Success);
+
+        // Book Giro January
+        var res2 = await sut.BookAsync(draftJanGiro.Id, null, owner, forceWarnings: true, CancellationToken.None);
+        Assert.True(res2.Success);
+
+        // Book Savings December (should link to December Giro posting)
+        var res3 = await sut.BookAsync(draftDecSavings.Id, null, owner, forceWarnings: true, CancellationToken.None);
+        Assert.True(res3.Success);
+
+        // Verify linking: December giro contact posting linked to savings posting
+        var contactDecGiro = db.Postings.FirstOrDefault(p => p.SourceId == entryDecGiro.Id && p.Kind == PostingKind.Contact);
+        var contactDecSavings = db.Postings.FirstOrDefault(p => p.SourceId == entryDecSavings.Id && p.Kind == PostingKind.Contact);
+
+        Assert.NotNull(contactDecGiro);
+        Assert.NotNull(contactDecSavings);
+        Assert.NotNull(contactDecGiro.LinkedPostingId);
+        Assert.NotNull(contactDecSavings.LinkedPostingId);
+        Assert.Equal(contactDecGiro.LinkedPostingId, contactDecSavings.Id);
+        Assert.Equal(contactDecSavings.LinkedPostingId, contactDecGiro.Id);
+        // Ensure the January booking remains unlinked
+        var contactJan = db.Postings.FirstOrDefault(p => p.SourceId == entryJanGiro.Id && p.Kind == PostingKind.Contact);
+        Assert.NotNull(contactJan);
+        Assert.Null(contactJan!.LinkedPostingId);
+    }
+
+    [Fact]
+    public async Task Book_DecemberGiro_ThenSavings_ThenJanuaryGiro_ShouldLink_DecemberPostings()
+    {
+        var (sut, db, owner) = Create();
+
+        // accounts
+        var giro = new Account(owner, AccountType.Giro, "Giro", null, Guid.NewGuid());
+        var savings = new Account(owner, AccountType.Savings, "Spark", null, Guid.NewGuid());
+        db.Accounts.AddRange(giro, savings);
+        await db.SaveChangesAsync();
+
+        var selfContactId = db.Contacts.First(c => c.OwnerUserId == owner && c.Type == ContactType.Self).Id;
+
+        // Draft 1: Giro December 15, 2025 -10 (Sparplan Auto)
+        var draftDecGiro = new StatementDraft(owner, "dec_giro.csv", "", null);
+        var entryDecGiro = draftDecGiro.AddEntry(new DateTime(2025, 12, 15), -10m, "Sparplan Auto");
+        draftDecGiro.SetDetectedAccount(giro.Id);
+        entryDecGiro.MarkAccounted(selfContactId);
+        db.StatementDrafts.Add(draftDecGiro);
+
+        // Draft 2: Giro January 15, 2026 -10 (same booking)
+        var draftJanGiro = new StatementDraft(owner, "jan_giro.csv", "", null);
+        var entryJanGiro = draftJanGiro.AddEntry(new DateTime(2026, 1, 15), -10m, "Sparplan Auto");
+        draftJanGiro.SetDetectedAccount(giro.Id);
+        entryJanGiro.MarkAccounted(selfContactId);
+        db.StatementDrafts.Add(draftJanGiro);
+
+        // Draft 3: Savings account contains counter posting for December (+10) on 15.12.2025
+        var draftDecSavings = new StatementDraft(owner, "dec_sav.csv", "", null);
+        var entryDecSavings = draftDecSavings.AddEntry(new DateTime(2025, 12, 15), 10m, "Sparplan Auto");
+        draftDecSavings.SetDetectedAccount(savings.Id);
+        entryDecSavings.MarkAccounted(selfContactId);
+        db.StatementDrafts.Add(draftDecSavings);
+
+        await db.SaveChangesAsync();
+
+        // Book Giro December
+        var res1 = await sut.BookAsync(draftDecGiro.Id, null, owner, forceWarnings: true, CancellationToken.None);
+        Assert.True(res1.Success);
+
+        // Book Savings December BEFORE January Giro
+        var res2 = await sut.BookAsync(draftDecSavings.Id, null, owner, forceWarnings: true, CancellationToken.None);
+        Assert.True(res2.Success);
+
+        // Now book Giro January
+        var res3 = await sut.BookAsync(draftJanGiro.Id, null, owner, forceWarnings: true, CancellationToken.None);
+        Assert.True(res3.Success);
+
+        // Verify linking: December giro contact posting linked to savings posting
+        var contactDecGiro = db.Postings.FirstOrDefault(p => p.SourceId == entryDecGiro.Id && p.Kind == PostingKind.Contact);
+        var contactDecSavings = db.Postings.FirstOrDefault(p => p.SourceId == entryDecSavings.Id && p.Kind == PostingKind.Contact);
+
+        Assert.NotNull(contactDecGiro);
+        Assert.NotNull(contactDecSavings);
+        Assert.NotNull(contactDecGiro.LinkedPostingId);
+        Assert.NotNull(contactDecSavings.LinkedPostingId);
+        Assert.Equal(contactDecGiro.LinkedPostingId, contactDecSavings.Id);
+        Assert.Equal(contactDecSavings.LinkedPostingId, contactDecGiro.Id);
+        // Ensure the January booking remains unlinked
+        var contactJan = db.Postings.FirstOrDefault(p => p.SourceId == entryJanGiro.Id && p.Kind == PostingKind.Contact);
+        Assert.NotNull(contactJan);
+        Assert.Null(contactJan!.LinkedPostingId);
+    }
+
+    [Fact]
     public async Task Book_TwelveGiroThenOneSavingsWithAllTransfers_ShouldLinkAll()
     {
         var (sut, db, owner) = Create();

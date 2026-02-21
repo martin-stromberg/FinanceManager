@@ -15,7 +15,6 @@ using Microsoft.Extensions.Logging;
 using FinanceManager.Shared.Dtos.Securities;
 using FinanceManager.Shared.Dtos.Accounts;
 using FinanceManager.Shared.Dtos.Contacts;
-using Microsoft.EntityFrameworkCore.Update;
 
 namespace FinanceManager.Web.ViewModels.StatementDrafts;
 
@@ -42,9 +41,6 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
     private bool _contactIsSelf = false;
     private bool _contactIsPaymentIntermediary = false;
     private bool _accountAllowsSavings = true;
-
-    // Temporary marker carrying created entity info when returning from create flow (createdKind, createdId)
-    private (string? createdKind, Guid? createdId) _pendingCreated = (null, null);
 
     /// <summary>
     /// Initializes a new instance of <see cref="StatementDraftEntryCardViewModel"/>.
@@ -217,14 +213,6 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                 var uri = nav.ToAbsoluteUri(nav.Uri);
                 var q = QueryHelpers.ParseQuery(uri.Query);
                 if (q.TryGetValue("draftId", out var v) && Guid.TryParse(v, out var d)) DraftId = d;
-                // Support created entity return from create flow: createdKind (e.g. "contacts","savings-plans","securities") and createdId
-                string? createdKind = null;
-                Guid? createdId = null;
-                if (q.TryGetValue("createdKind", out var ck)) createdKind = ck.ToString();
-                if (q.TryGetValue("createdId", out var cid) && Guid.TryParse(cid, out var parsedCid)) createdId = parsedCid;
-                // store as temp values in locals via closure; will be used after loading the entry
-                // attach to local variables via tuple for later use
-                _pendingCreated = (createdKind, createdId);
             }
             catch { /* ignore */ }
 
@@ -269,34 +257,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             Entry = dto.Entry;
             DraftId = dto.DraftId;
 
-            // If user returned from create flow with a new entity, try to assign it to this entry
-            try
-            {
-                if (_pendingCreated.createdKind != null && _pendingCreated.createdId.HasValue)
-                {
-                    var ck = _pendingCreated.createdKind.Trim().ToLowerInvariant();
-                    var nid = _pendingCreated.createdId.Value;
-                    if (ck == "contacts" || ck == "contact")
-                    {
-                        var updated = await ApiClient.StatementDrafts_SetEntryContactAsync(DraftId, EntryId, new Shared.Dtos.Statements.StatementDraftSetContactRequest(nid), CancellationToken.None);
-                        if (updated != null) Entry = updated;
-                    }
-                    else if (ck == "savings-plans" || ck == "savingsplan")
-                    {
-                        var updated = await ApiClient.StatementDrafts_SetEntrySavingsPlanAsync(DraftId, EntryId, new Shared.Dtos.Statements.StatementDraftSetSavingsPlanRequest(nid), CancellationToken.None);
-                        if (updated != null) Entry = updated;
-                    }
-                    else if (ck == "securities" || ck == "security")
-                    {
-                        var updated = await ApiClient.StatementDrafts_SetEntrySecurityAsync(DraftId, EntryId, new Shared.Dtos.Statements.StatementDraftSetEntrySecurityRequest(nid, (FinanceManager.Shared.Dtos.Securities.SecurityTransactionType?)null, null, null, null), CancellationToken.None);
-                        if (updated != null) Entry = updated;
-                    }
-                }                
-            }
-            catch { /* ignore assignment failures */ }
-
-            // clear pending created marker
-            _pendingCreated = (null, null);
+            // No client-side assignment required: new linked entities are assigned server-side during their creation.
 
             // Resolve lookup display names (Contact, SavingsPlan, Security)
             if (Entry.ContactId.HasValue)
@@ -967,24 +928,24 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         var navItems = new List<UiRibbonAction>
         {
             // include DraftId as payload so pages can navigate back to this card with context
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, Entry == null, null, "Back", new Func<Task>(() => OnBackRequestedAsync())),
-            new UiRibbonAction("Prev", localizer["Ribbon_Prev"].Value, "<svg><use href='/icons/sprite.svg#chevron-left'/></svg>", UiRibbonItemSize.Small, Entry == null, null, "Prev", new Func<Task>(OnPrevRequestedAsync)),
-            new UiRibbonAction("Next", localizer["Ribbon_Next"].Value, "<svg><use href='/icons/sprite.svg#chevron-right'/></svg>", UiRibbonItemSize.Small, Entry == null, null, "Next", new Func<Task>(OnNextRequestedAsync))
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, Entry == null, null, new Func<Task>(() => OnBackRequestedAsync())),
+            new UiRibbonAction("Prev", localizer["Ribbon_Prev"].Value, "<svg><use href='/icons/sprite.svg#chevron-left'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(OnPrevRequestedAsync)),
+            new UiRibbonAction("Next", localizer["Ribbon_Next"].Value, "<svg><use href='/icons/sprite.svg#chevron-right'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(OnNextRequestedAsync))
         };
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, navItems));
 
         var actions = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Small, (Entry == null && EntryId != Guid.Empty), null, "Save", new Func<Task>(async () => { await SaveAsync(); })),
-            new UiRibbonAction("Validate", localizer["Ribbon_Validate"].Value, "<svg><use href='/icons/sprite.svg#check'/></svg>", UiRibbonItemSize.Small, Entry == null, null, "Validate", new Func<Task>(async () => { await ValidateAsync(); })),
-            new UiRibbonAction("BookEntry", localizer["Ribbon_Book"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Entry == null, null, "Book", new Func<Task>(async () => { await BookEntryAsync(false); }))
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Small, (Entry == null && EntryId != Guid.Empty), null, new Func<Task>(async () => { await SaveAsync(); })),
+            new UiRibbonAction("Validate", localizer["Ribbon_Validate"].Value, "<svg><use href='/icons/sprite.svg#check'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(async () => { await ValidateAsync(); })),
+            new UiRibbonAction("BookEntry", localizer["Ribbon_Book"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(async () => { await BookEntryAsync(false); }))
         };
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Actions"].Value, actions));
 
         // Linked information group: open assigned Contact, SavingsPlan, Security (disabled when not assigned)
         var linkedActions = new List<UiRibbonAction>
         {
-            new UiRibbonAction("OpenContact", localizer["Ribbon_OpenContact"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Entry == null || Entry.ContactId == null, null, "OpenPostings", new Func<Task>(() => {
+            new UiRibbonAction("OpenContact", localizer["Ribbon_OpenContact"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Entry == null || Entry.ContactId == null, null, new Func<Task>(() => {
                 if (Entry?.ContactId != null)
                 {
                     try
@@ -1003,7 +964,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                 }
                 return Task.CompletedTask;
             })),
-            new UiRibbonAction("OpenSavingsPlan", localizer["Ribbon_OpenSavingsPlan"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Entry == null || Entry.SavingsPlanId == null, null, "OpenPostings", new Func<Task>(() => {
+            new UiRibbonAction("OpenSavingsPlan", localizer["Ribbon_OpenSavingsPlan"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Entry == null || Entry.SavingsPlanId == null, null, new Func<Task>(() => {
                 if (Entry?.SavingsPlanId != null)
                 {
                     try
@@ -1022,7 +983,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                 }
                 return Task.CompletedTask;
             })),
-            new UiRibbonAction("OpenSecurity", localizer["Ribbon_OpenSecurity"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Entry == null || Entry.SecurityId == null, null, "OpenPostings", new Func<Task>(() => {
+            new UiRibbonAction("OpenSecurity", localizer["Ribbon_OpenSecurity"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Entry == null || Entry.SecurityId == null, null, new Func<Task>(() => {
                  if (Entry?.SecurityId != null)
                  {
                      try
@@ -1054,19 +1015,19 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                  if (Entry?.SplitDraftId != null && Entry.SplitDraftId != Guid.Empty)
                  {
                     var openLabel = localizer["Ribbon_OpenAssignedStatement"].Value;
-                    linkedActions.Add(new UiRibbonAction("OpenAssignedStatement", openLabel, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, false, null, "OpenAssignedStatement", () => {
+                    linkedActions.Add(new UiRibbonAction("OpenAssignedStatement", openLabel, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, false, null, () => {
                         var url = $"/card/statement-drafts/{Entry.SplitDraftId}";
                         RaiseUiActionRequested("OpenPostings", url);
                         return Task.CompletedTask;
                     }));
                     // Allow unassigning the association
                     var unassignLabel = localizer["Ribbon_UnassignStatement"].Value;
-                    actions.Add(new UiRibbonAction("UnassignStatement", unassignLabel, "<svg><use href='/icons/sprite.svg#unlink'/></svg>", UiRibbonItemSize.Small, false, null, "UnassignStatement", async () => { await UnassignStatementAsync(); }));
+                    actions.Add(new UiRibbonAction("UnassignStatement", unassignLabel, "<svg><use href='/icons/sprite.svg#unlink'/></svg>", UiRibbonItemSize.Small, false, null, async () => { await UnassignStatementAsync(); }));
                  }
                  else
                  {
                     var assignLabel = localizer["Ribbon_AssignStatement"].Value;
-                    actions.Add(new UiRibbonAction("AssignStatement", assignLabel, "<svg><use href='/icons/sprite.svg#link'/></svg>", UiRibbonItemSize.Small, false, null, "AssignStatement", async () => {
+                    actions.Add(new UiRibbonAction("AssignStatement", assignLabel, "<svg><use href='/icons/sprite.svg#link'/></svg>", UiRibbonItemSize.Small, false, null, async () => {
                         try
                         {
                             // Load open drafts and filter to those without detected account assignment and not the current draft
@@ -1112,23 +1073,23 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         if (Entry != null && Entry.Status == StatementDraftEntryStatus.AlreadyBooked)
         {
             var resetLabel = localizer["Ribbon_ResetDuplicate"].Value;
-            var resetAction = new UiRibbonAction("ResetDuplicate", resetLabel, "<svg><use href='/icons/sprite.svg#reset'/></svg>", UiRibbonItemSize.Small, false, null, "ResetDuplicate", new Func<Task>(async () => { await ResetDuplicateAsync(); }));
+            var resetAction = new UiRibbonAction("ResetDuplicate", resetLabel, "<svg><use href='/icons/sprite.svg#reset'/></svg>", UiRibbonItemSize.Small, false, null, new Func<Task>(async () => { await ResetDuplicateAsync(); }));
             actions.Insert(0, resetAction);
             // disable Save while entry is locked
             actions.RemoveAll(a => a.Id == "Save");
-            actions.Insert(0, new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Small, true, null, "Save", new Func<Task>(async () => { await SaveAsync(); }))); // disabled
+            actions.Insert(0, new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Small, true, null, new Func<Task>(async () => { await SaveAsync(); }))); // disabled
             // Delete action (available even when locked)
             var delLabelLocked = localizer["Ribbon_Delete"].Value;
-            var delActionLocked = new UiRibbonAction("Delete", delLabelLocked, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, false, null, "Delete", new Func<Task>(async () => { await DeleteEntryAsync(); }));
+            var delActionLocked = new UiRibbonAction("Delete", delLabelLocked, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, false, null, new Func<Task>(async () => { await DeleteEntryAsync(); }));
             actions.Insert(0, delActionLocked);
          }
          else
          {
-             var editAction = new UiRibbonAction("Edit", localizer[_isEditMode ? "Ribbon_ReadOnly" : "Ribbon_Edit"].Value, "<svg><use href='/icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Small, Entry == null, null, "Edit", new Func<Task>(async () => { await ToggleEditModeAsync(); }));
+             var editAction = new UiRibbonAction("Edit", localizer[_isEditMode ? "Ribbon_ReadOnly" : "Ribbon_Edit"].Value, "<svg><use href='/icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(() => ToggleEditModeAsync()));
             actions.Insert(0, editAction);
             // Delete action
             var delLabel = localizer["Ribbon_Delete"].Value;
-            var delAction = new UiRibbonAction("Delete", delLabel, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Entry == null, null, "Delete", new Func<Task>(async () => { await DeleteEntryAsync(); }));
+            var delAction = new UiRibbonAction("Delete", delLabel, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(async () => { await DeleteEntryAsync(); }));
             actions.Insert(0, delAction);
          }
 

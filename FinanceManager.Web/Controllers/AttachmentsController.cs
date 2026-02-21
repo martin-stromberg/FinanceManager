@@ -1,13 +1,19 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Attachments;
 using FinanceManager.Domain.Attachments;
+using FinanceManager.Infrastructure;
+using FinanceManager.Shared.Dtos.Attachments;
+using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure.ApiErrors;
 using FinanceManager.Web.Infrastructure.Attachments;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
+using System.Globalization;
 using System.Net.Mime;
 
 namespace FinanceManager.Web.Controllers;
@@ -22,6 +28,8 @@ namespace FinanceManager.Web.Controllers;
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public sealed class AttachmentsController : ControllerBase
 {
+    private const string Origin = "API_Attachment";
+
     private readonly IAttachmentService _service;
     private readonly IAttachmentCategoryService _cats;
     private readonly ICurrentUserService _current;
@@ -54,7 +62,12 @@ public sealed class AttachmentsController : ControllerBase
         IStringLocalizer<AttachmentsController> localizer,
         IDataProtectionProvider dp)
     {
-        _service = service; _cats = cats; _current = current; _logger = logger; _options = options.Value; _localizer = localizer;
+        _service = service;
+        _cats = cats;
+        _current = current;
+        _logger = logger;
+        _options = options.Value;
+        _localizer = localizer;
         _protector = dp.CreateProtector(ProtectorPurpose);
     }
 
@@ -76,7 +89,10 @@ public sealed class AttachmentsController : ControllerBase
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ListAsync(short entityKind, Guid entityId, [FromQuery] int skip = 0, [FromQuery] int take = 50, [FromQuery] Guid? categoryId = null, [FromQuery] bool? isUrl = null, [FromQuery] string? q = null, CancellationToken ct = default)
     {
-        if (!Enum.IsDefined(typeof(AttachmentEntityKind), entityKind)) { return BadRequest(new ApiErrorDto(_localizer["Error_InvalidEntityKind"])); }
+        if (!Enum.IsDefined(typeof(AttachmentEntityKind), entityKind))
+        {
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid_EntityKind", _localizer["Error_InvalidEntityKind"]));
+        }
         if (skip < 0) { skip = 0; }
         if (take <= 0) { take = 50; }
         if (take > MaxTake) { take = MaxTake; }
@@ -106,29 +122,38 @@ public sealed class AttachmentsController : ControllerBase
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UploadAsync(short entityKind, Guid entityId, [FromForm] IFormFile? file, [FromForm] Guid? categoryId, [FromForm] string? url, CancellationToken ct = default, [FromQuery] AttachmentRole? role = null)
     {
-        if (!Enum.IsDefined(typeof(AttachmentEntityKind), entityKind)) { return BadRequest(new ApiErrorDto(_localizer["Error_InvalidEntityKind"])); }
-        if (file == null && string.IsNullOrWhiteSpace(url)) { return BadRequest(new ApiErrorDto(_localizer["Error_FileOrUrlRequired"])); }
+        if (!Enum.IsDefined(typeof(AttachmentEntityKind), entityKind))
+        {
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid_EntityKind", _localizer["Error_InvalidEntityKind"]));
+        }
+
+        if (file == null && string.IsNullOrWhiteSpace(url))
+        {
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid_FileOrUrl", _localizer["Error_FileOrUrlRequired"]));
+        }
 
         // Validation: either URL or file; if file then enforce size and mime
         if (file != null)
         {
-            if (file.Length <= 0) { return BadRequest(new ApiErrorDto(_localizer["Error_EmptyFile"])); }
+            if (file.Length <= 0)
+            {
+                return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid_EmptyFile", _localizer["Error_EmptyFile"]));
+            }
+
             if (file.Length > _options.MaxSizeBytes)
             {
-                // show limit in MB if cleanly divisible by MB, else bytes
-                const long OneMb = 1024L * 1024L;
-                string limitStr = (_options.MaxSizeBytes % OneMb == 0)
-                    ? string.Format(System.Globalization.CultureInfo.CurrentUICulture, "{0} MB", _options.MaxSizeBytes / OneMb)
-                    : string.Format(System.Globalization.CultureInfo.CurrentUICulture, "{0:N0} bytes", _options.MaxSizeBytes);
-                return BadRequest(new ApiErrorDto(string.Format(System.Globalization.CultureInfo.CurrentUICulture, _localizer["Error_FileTooLarge"], limitStr)));
+                var limitStr = FileSizeToString(_options.MaxSizeBytes);
+                var msg = string.Format(CultureInfo.CurrentUICulture, _localizer["Error_FileTooLarge"], limitStr);
+                return BadRequest(ApiErrorDto.Create(Origin, "Err_OutOfRange_FileSize", msg));
             }
-            if (_options.AllowedMimeTypes?.Length > 0)
+
+            if (!string.IsNullOrWhiteSpace(file.ContentType))
             {
-                var ctIn = (file.ContentType ?? string.Empty).Trim();
-                var ok = _options.AllowedMimeTypes.Any(m => string.Equals(m, ctIn, StringComparison.OrdinalIgnoreCase));
-                if (!ok)
+                var ctIn = file.ContentType;
+                if (!_options.AllowedMimeTypes.Contains(ctIn, StringComparer.OrdinalIgnoreCase))
                 {
-                    return BadRequest(new ApiErrorDto(string.Format(System.Globalization.CultureInfo.CurrentUICulture, _localizer["Error_UnsupportedContentType"], ctIn)));
+                    var msg = string.Format(CultureInfo.CurrentUICulture, _localizer["Error_UnsupportedContentType"], ctIn);
+                    return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid_ContentType", msg));
                 }
             }
         }
@@ -182,14 +207,18 @@ public sealed class AttachmentsController : ControllerBase
                 }
             }
         }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
         catch (ArgumentException ex)
         {
-            return BadRequest(new ApiErrorDto(ex.Message));
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Upload attachment failed for kind={Kind} entity={Entity}", entityKind, entityId);
-            return Problem(_localizer["Error_UnexpectedError"], statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -344,7 +373,7 @@ public sealed class AttachmentsController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new ApiErrorDto(ex.Message));
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid_Category", ex.Message));
         }
     }
 
@@ -372,11 +401,18 @@ public sealed class AttachmentsController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new ApiErrorDto(ex.Message));
+            const string code = "Err_Conflict";
+            var entry = _localizer[$"{Origin}_{code}"];
+            var message = entry.ResourceNotFound ? ex.Message : entry.Value;
+            return Conflict(ApiErrorDto.Create(Origin, code, message));
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new ApiErrorDto(ex.Message));
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
         }
     }
 
@@ -399,7 +435,21 @@ public sealed class AttachmentsController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new { error = $"Err_{ex.Message.Replace(" ", "_")}", message = ex.Message });
+            const string code = "Err_Conflict";
+            var entry = _localizer[$"{Origin}_{code}"];
+            var message = entry.ResourceNotFound ? ex.Message : entry.Value;
+            return Conflict(ApiErrorDto.Create(Origin, code, message));
         }
+    }
+
+    private static string FileSizeToString(long bytes)
+    {
+        const long oneMb = 1024 * 1024;
+        if (bytes % oneMb == 0)
+        {
+            return string.Format(CultureInfo.CurrentUICulture, "{0} MB", bytes / oneMb);
+        }
+
+        return string.Format(CultureInfo.CurrentUICulture, "{0:N0} bytes", bytes);
     }
 }

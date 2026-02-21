@@ -157,7 +157,6 @@ public sealed class HomeViewModel : ViewModelBase
             Size: UiRibbonItemSize.Large,
             Disabled: false,
             Tooltip: null,
-            Action: "Import",
             Callback: null
         )
         {
@@ -181,7 +180,6 @@ public sealed class HomeViewModel : ViewModelBase
             Size: UiRibbonItemSize.Large,
             Disabled: false,
             Tooltip: null,
-            Action: "ToggleKpi",
             Callback: new Func<Task>(() => { ToggleKpiEditMode(); return Task.CompletedTask; })
         );
 

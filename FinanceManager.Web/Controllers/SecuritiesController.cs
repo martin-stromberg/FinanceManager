@@ -11,6 +11,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Net.Mime;
+using FinanceManager.Application.Common;
+using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure.ApiErrors;
+using Microsoft.Extensions.Localization;
+using FinanceManager.Web.Controllers;
 
 namespace FinanceManager.Web.Controllers;
 
@@ -24,14 +29,18 @@ namespace FinanceManager.Web.Controllers;
 [Produces(MediaTypeNames.Application.Json)]
 public sealed class SecuritiesController : ControllerBase
 {
+    private const string Origin = "API_Securities";
+
     private readonly ISecurityService _service;
     private readonly ICurrentUserService _current;
     private readonly IAttachmentService _attachments;
-    private readonly AppDbContext _db;
     private readonly IBackgroundTaskManager _tasks;
     private readonly IPostingTimeSeriesService _series;
     private readonly ISecurityPriceService _priceService;
+    private readonly ISecurityReportService _reports;
     private readonly ILogger<SecuritiesController> _logger;
+    private readonly IParentAssignmentService _parentAssign;
+    private readonly IStringLocalizer<Controller> _localizer;
 
     /// <summary>
     /// Initializes a new instance of <see cref="SecuritiesController"/>.
@@ -41,11 +50,34 @@ public sealed class SecuritiesController : ControllerBase
     /// <param name="attachments">Service managing attachments (upload, storage).</param>
     /// <param name="series">Service to compute posting time series and aggregates.</param>
     /// <param name="priceService">Service to retrieve security price history.</param>
-    /// <param name="db">Application database context used for lightweight queries within the controller.</param>
+    /// <param name="reports">Service providing security reports and aggregations.</param>
     /// <param name="tasks">Background task manager used to enqueue asynchronous background jobs.</param>
     /// <param name="logger">Logger used for diagnostic messages.</param>
-    public SecuritiesController(ISecurityService service, ICurrentUserService current, IAttachmentService attachments, IPostingTimeSeriesService series, ISecurityPriceService priceService, AppDbContext db, IBackgroundTaskManager tasks, ILogger<SecuritiesController> logger)
-    { _service = service; _current = current; _attachments = attachments; _db = db; _tasks = tasks; _series = series; _priceService = priceService; _logger = logger; }
+    /// <param name="parentAssign">Service that manages server-side create-and-assign operations.</param>
+    /// <param name="localizer">Localizer for generating user-friendly error messages.</param>
+    public SecuritiesController(
+        ISecurityService service,
+        ICurrentUserService current,
+        IAttachmentService attachments,
+        IBackgroundTaskManager tasks,
+        IPostingTimeSeriesService series,
+        ISecurityPriceService priceService,
+        ISecurityReportService reports,
+        ILogger<SecuritiesController> logger,
+        IParentAssignmentService parentAssign,
+        IStringLocalizer<Controller> localizer)
+    {
+        _service = service;
+        _current = current;
+        _attachments = attachments;
+        _tasks = tasks;
+        _series = series;
+        _priceService = priceService;
+        _reports = reports;
+        _logger = logger;
+        _parentAssign = parentAssign;
+        _localizer = localizer;
+    }
 
     /// <summary>
     /// Lists securities for the current user.
@@ -100,17 +132,28 @@ public sealed class SecuritiesController : ControllerBase
         try
         {
             var dto = await _service.CreateAsync(_current.UserId, req.Name, req.Identifier, req.Description, req.AlphaVantageCode, req.CurrencyCode, req.CategoryId, ct);
+
+            await _parentAssign.TryAssignAsync(
+                _current.UserId,
+                req.Parent,
+                createdKind: "securities",
+                createdId: dto.Id,
+                ct);
+
             return CreatedAtRoute("GetSecurityAsync", new { id = dto.Id }, dto);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
         }
         catch (ArgumentException ex)
         {
-            var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_{ex.ParamName}" : "Err_InvalidArgument";
-            return BadRequest(new { error = code, message = ex.Message });
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Create security failed");
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -133,15 +176,18 @@ public sealed class SecuritiesController : ControllerBase
             var dto = await _service.UpdateAsync(id, _current.UserId, req.Name, req.Identifier, req.Description, req.AlphaVantageCode, req.CurrencyCode, req.CategoryId, ct);
             return dto == null ? NotFound() : Ok(dto);
         }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
         catch (ArgumentException ex)
         {
-            var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_{ex.ParamName}" : "Err_InvalidArgument";
-            return BadRequest(new { error = code, message = ex.Message });
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Update security {SecurityId} failed", id);
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -187,8 +233,19 @@ public sealed class SecuritiesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetSymbolAsync(Guid id, Guid attachmentId, CancellationToken ct)
     {
-        try { await _service.SetSymbolAttachmentAsync(id, _current.UserId, attachmentId, ct); return NoContent(); }
-        catch (ArgumentException ex) { var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_{ex.ParamName}" : "Err_NotFound"; return NotFound(new { error = code, message = ex.Message }); }
+        try
+        {
+            await _service.SetSymbolAttachmentAsync(id, _current.UserId, attachmentId, ct);
+            return NoContent();
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return NotFound(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
     }
 
     /// <summary>
@@ -202,8 +259,19 @@ public sealed class SecuritiesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ClearSymbolAsync(Guid id, CancellationToken ct)
     {
-        try { await _service.SetSymbolAttachmentAsync(id, _current.UserId, null, ct); return NoContent(); }
-        catch (ArgumentException ex) { var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_{ex.ParamName}" : "Err_NotFound"; return NotFound(new { error = code, message = ex.Message }); }
+        try
+        {
+            await _service.SetSymbolAttachmentAsync(id, _current.UserId, null, ct);
+            return NoContent();
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return NotFound(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
     }
 
     /// <summary>
@@ -221,7 +289,15 @@ public sealed class SecuritiesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UploadSymbolAsync(Guid id, [FromForm] IFormFile? file, [FromForm] Guid? categoryId, CancellationToken ct)
     {
-        if (file == null) { return BadRequest(new { error = "File required" }); }
+        if (file == null)
+        {
+            var err = ApiErrorDto.Create(Origin, "Err_Invalid_File", _localizer[$"{Origin}_Err_Invalid_File"].ResourceNotFound
+                ? "File required"
+                : _localizer[$"{Origin}_Err_Invalid_File"].Value);
+
+            return BadRequest(err);
+        }
+
         try
         {
             using var stream = file.OpenReadStream();
@@ -229,8 +305,18 @@ public sealed class SecuritiesController : ControllerBase
             await _service.SetSymbolAttachmentAsync(id, _current.UserId, dto.Id, ct);
             return Ok(dto);
         }
-        catch (ArgumentException ex) { var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_{ex.ParamName}" : "Err_InvalidArgument"; return BadRequest(new { error = code, message = ex.Message }); }
-        catch (Exception) { return Problem("Unexpected error", statusCode: 500); }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     private static int? NormalizeYears(int? maxYearsBack) { if (!maxYearsBack.HasValue) return null; return Math.Clamp(maxYearsBack.Value, 1, 10); }
@@ -305,15 +391,7 @@ public sealed class SecuritiesController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<AggregatePointDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<AggregatePointDto>>> GetDividendsAsync([FromQuery] string? period = null, [FromQuery] int? take = null, CancellationToken ct = default)
     {
-        const int SecurityPostingSubType_Dividend = 2;
-        var userId = _current.UserId;
-        var today = DateTime.UtcNow.Date;
-        var start = new DateTime(today.Year - 1, 1, 1);
-        var securityIds = await _db.Securities.AsNoTracking().Where(s => s.OwnerUserId == userId).Select(s => s.Id).ToListAsync(ct);
-        if (securityIds.Count == 0) { return Ok(Array.Empty<AggregatePointDto>()); }
-        var raw = await _db.Postings.AsNoTracking().Where(p => p.Kind == PostingKind.Security).Where(p => p.SecuritySubType.HasValue && (int)p.SecuritySubType.Value == SecurityPostingSubType_Dividend).Where(p => p.SecurityId != null && securityIds.Contains(p.SecurityId.Value)).Where(p => p.BookingDate >= start).Select(p => new { p.BookingDate, p.Amount }).ToListAsync(ct);
-        static DateTime QuarterStart(DateTime d) { int qMonth = ((d.Month - 1) / 3) * 3 + 1; return new DateTime(d.Year, qMonth, 1); }
-        var groups = raw.GroupBy(x => QuarterStart(x.BookingDate)).Select(g => new AggregatePointDto(g.Key, g.Sum(x => x.Amount))).OrderBy(x => x.PeriodStart).ToList();
-        return Ok(groups);
+        var data = await _reports.GetDividendAggregatesAsync(_current.UserId, ct);
+        return Ok(data);
     }
 }

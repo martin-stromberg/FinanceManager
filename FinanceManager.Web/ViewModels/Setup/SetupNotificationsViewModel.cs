@@ -261,7 +261,6 @@ public sealed class SetupNotificationsViewModel : BaseViewModel
             UiRibbonItemSize.Large,
             false,
             localizer["Hint_Save"].Value ?? string.Empty,
-            "SaveNotifications",
             new Func<Task>(async () =>
             {
                 try { await SaveAsync(); } catch { }
@@ -273,7 +272,6 @@ public sealed class SetupNotificationsViewModel : BaseViewModel
             UiRibbonItemSize.Large,
             false,
             localizer["Hint_Reset"].Value ?? string.Empty,
-            "ResetNotifications",
             new Func<Task>(() => { Reset(); return Task.CompletedTask; })));
         var tabs = new List<UiRibbonTab>
         {

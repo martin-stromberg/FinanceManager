@@ -676,13 +676,64 @@ else
                 "contact" => "contacts",
                 "savingsplan" => "savings-plans",
                 "security" => "securities",
+                "budgetcategory" => "budget/categories",
                 _ => kind
             };
 
             var back = Nav.Uri;
             var prefill = Uri.EscapeDataString(f.RecordCreationNameSuggestion ?? f.Text ?? string.Empty);
             var createUrl = $"/card/{routeKind}/new?back={Uri.EscapeDataString(back)}";
-            if (!string.IsNullOrWhiteSpace(prefill)) createUrl += "&prefill=" + prefill;
+            if (!string.IsNullOrWhiteSpace(prefill))
+            {
+                createUrl += "&prefill=" + prefill;
+            }
+
+            // Provide parent context so the server can assign the created record immediately.
+            // Currently supported: BudgetPurpose -> BudgetCategory
+            if (string.Equals(f.LookupType, "BudgetCategory", StringComparison.OrdinalIgnoreCase))
+            {
+                var uri = Nav.ToAbsoluteUri(Nav.Uri);
+                var segments = uri.AbsolutePath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+                // Expected origin: /card/budget/purposes/{id}
+                if (segments.Length >= 4 &&
+                    string.Equals(segments[0], "card", StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(segments[1], "budget", StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(segments[2], "purposes", StringComparison.OrdinalIgnoreCase) &&
+                    Guid.TryParse(segments[3], out var purposeId) &&
+                    purposeId != Guid.Empty)
+                {
+                    createUrl += "&parentKind=" + Uri.EscapeDataString("budget/purposes");
+                    createUrl += "&parentId=" + Uri.EscapeDataString(purposeId.ToString());
+                    createUrl += "&parentField=" + Uri.EscapeDataString("BudgetCategoryId");
+                }
+            }
+
+            // StatementDraftEntry -> Contact/SavingsPlan/Security
+            if (string.Equals(f.LookupType, "Contact", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(f.LookupType, "SavingsPlan", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(f.LookupType, "Security", StringComparison.OrdinalIgnoreCase))
+            {
+                var uri = Nav.ToAbsoluteUri(Nav.Uri);
+                var segments = uri.AbsolutePath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+                // Expected origin: /card/statement-drafts/entries/{entryId}?draftId=...
+                if (segments.Length >= 4 &&
+                    string.Equals(segments[0], "card", StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(segments[1], "statement-drafts", StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(segments[2], "entries", StringComparison.OrdinalIgnoreCase) &&
+                    Guid.TryParse(segments[3], out var entryId) &&
+                    entryId != Guid.Empty)
+                {
+                    createUrl += "&parentKind=" + Uri.EscapeDataString("statement-drafts/entries");
+                    createUrl += "&parentId=" + Uri.EscapeDataString(entryId.ToString());
+                    var field = string.Equals(f.LookupType, "Contact", StringComparison.OrdinalIgnoreCase)
+                        ? "ContactId"
+                        : string.Equals(f.LookupType, "SavingsPlan", StringComparison.OrdinalIgnoreCase)
+                            ? "SavingsPlanId"
+                            : "SecurityId";
+                    createUrl += "&parentField=" + Uri.EscapeDataString(field);
+                }
+            }
+
             Nav.NavigateTo(createUrl);
         }
         catch (Exception ex)

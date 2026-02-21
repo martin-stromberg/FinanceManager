@@ -149,8 +149,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
                     UiRibbonItemSize.Large,
                     false,
                     null,
-                    "New",
-                    new Func<Task>(async () => { _nav.NavigateTo($"/card/statement-drafts/new"); await Task.CompletedTask; })),
+                    new Func<Task>(() => { _nav.NavigateTo($"/card/statement-drafts/new"); return Task.CompletedTask; })),
                 new UiRibbonAction(
                     "DeleteAll",
                     localizer["Ribbon_DeleteAll"].Value,
@@ -158,7 +157,6 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
                     UiRibbonItemSize.Large,
                     false,
                     null,
-                    "DeleteAll",
                     new Func<Task>(async () => { await DeleteAllAsync(); })),
                 new UiRibbonAction(
                     "Reclassify",
@@ -167,7 +165,6 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
                     UiRibbonItemSize.Large,
                     false,
                     null,
-                    "Reclassify",
                     new Func<Task>(async () => { await StartClassifyAsync(); })),
                 new UiRibbonAction(
                     "MassBooking",
@@ -176,9 +173,8 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
                     UiRibbonItemSize.Large,
                     false,
                     null,
-                    "MassBooking",
                     // Show options dialog before starting mass booking
-                    new Func<Task>(async () => {
+                    new Func<Task>(() => {
                         // Build overlay spec with callback to start booking
                         var overlayType = typeof(FinanceManager.Web.Components.Shared.MassBookingOptionsPanel);
                         var parameters = new Dictionary<string, object?>
@@ -192,6 +188,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
 
                         var spec = new FinanceManager.Web.ViewModels.Common.BaseViewModel.UiOverlaySpec(overlayType, parameters);
                         RaiseUiActionRequested(null, payloadObject: spec);
+                        return Task.CompletedTask;
                     })),
                 new UiRibbonAction(
                     "Import",
@@ -200,7 +197,6 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
                     UiRibbonItemSize.Large,
                     false,
                     null,
-                    "Import",
                     null)
                 {
                     FileCallback = async (InputFileChangeEventArgs e) =>

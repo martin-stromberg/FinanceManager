@@ -237,17 +237,32 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
     {
         var nav = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, "Back", () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })
         });
 
         var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, "Save", async () => {
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, async () => {
                 var dto = BuildDto(CardRecord);
                 if (Id == Guid.Empty)
                 {
-                    var created = await ApiClient.Contacts_CreateAsync(new ContactCreateRequest(dto.Name, dto.Type, dto.CategoryId, dto.Description, dto.IsPaymentIntermediary));
-                    if (created != null) { Id = created.Id; Contact = created; CardRecord = await BuildCardRecordAsync(Contact); ClearPendingChanges(); RaiseStateChanged(); RaiseUiActionRequested("Saved", Id.ToString()); }
+                    var parent = TryGetParentLinkFromQuery();
+                    var created = await ApiClient.Contacts_CreateAsync(new ContactCreateRequest(
+                        dto.Name,
+                        dto.Type,
+                        dto.CategoryId,
+                        dto.Description,
+                        dto.IsPaymentIntermediary,
+                        parent));
+                    if (created != null)
+                    {
+                        Id = created.Id;
+                        Contact = created;
+                        CardRecord = await BuildCardRecordAsync(Contact);
+                        ClearPendingChanges();
+                        RaiseStateChanged();
+                        RaiseUiActionRequested("Saved", Id.ToString());
+                    }
                 }
                 else
                 {
@@ -255,17 +270,17 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
                     if (updated != null) { Contact = updated; CardRecord = await BuildCardRecordAsync(Contact); ClearPendingChanges(); RaiseStateChanged(); RaiseUiActionRequested("Saved", Id.ToString()); }
                 }
             }),
-            new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Contact==null, null, "Delete", () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
+            new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Contact==null, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
         });
 
         var linked = new UiRibbonTab(localizer["Ribbon_Group_Linked"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("OpenPostings", localizer["Ribbon_Postings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Contact==null, null, "OpenPostings", () => { var url = $"/list/postings/contact/{Id}"; RaiseUiActionRequested("OpenPostings", url); return Task.CompletedTask; }),
-            new UiRibbonAction("OpenMerge", localizer["Ribbon_Merge"].Value, "<svg><use href='/icons/sprite.svg#merge'/></svg>", UiRibbonItemSize.Small, Contact==null, null, "OpenMerge", () => {
+            new UiRibbonAction("OpenPostings", localizer["Ribbon_Postings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Contact==null, null, () => { var url = $"/list/postings/contact/{Id}"; RaiseUiActionRequested("OpenPostings", url); return Task.CompletedTask; }),
+            new UiRibbonAction("OpenMerge", localizer["Ribbon_Merge"].Value, "<svg><use href='/icons/sprite.svg#merge'/></svg>", UiRibbonItemSize.Small, Contact==null, null, () => {
                 RequestOpenMerge(Id, Contact?.Type.ToString() ?? string.Empty);
                 return Task.CompletedTask;
             }),
-            new UiRibbonAction("Attachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Contact==null, null, "OpenAttachments", () => {
+            new UiRibbonAction("Attachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Contact==null, null, () => {
                 RequestOpenAttachments(FinanceManager.Domain.Attachments.AttachmentEntityKind.Contact, Id);
                 return Task.CompletedTask;
             })

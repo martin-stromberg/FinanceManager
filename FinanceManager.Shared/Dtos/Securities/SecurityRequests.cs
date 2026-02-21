@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using FinanceManager.Shared.Dtos.Common;
 
 namespace FinanceManager.Shared.Dtos.Securities;
 
@@ -19,4 +20,8 @@ public sealed class SecurityRequest
     public string? AlphaVantageCode { get; set; }
     /// <summary>Optional category id.</summary>
     public Guid? CategoryId { get; set; }
+    /// <summary>
+    /// Optional parent context used for server-side assignment.
+    /// </summary>
+    public ParentLinkRequest? Parent { get; set; }
 }

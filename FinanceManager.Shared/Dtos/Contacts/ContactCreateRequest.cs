@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using FinanceManager.Shared.Dtos.Common;
 
 namespace FinanceManager.Shared.Dtos.Contacts;
 
@@ -10,10 +11,11 @@ namespace FinanceManager.Shared.Dtos.Contacts;
 /// <param name="CategoryId">Optional contact category identifier.</param>
 /// <param name="Description">Optional description for the contact.</param>
 /// <param name="IsPaymentIntermediary">True when the contact is a payment intermediary.</param>
+/// <param name="Parent">Optional parent context used for server-side assignment.</param>
 public sealed record ContactCreateRequest(
     [Required, MinLength(2)] string Name,
     ContactType Type,
     Guid? CategoryId,
     string? Description,
-    bool? IsPaymentIntermediary
-);
+    bool? IsPaymentIntermediary,
+    ParentLinkRequest? Parent = null) : CreateRequestWithParent(Parent);

@@ -1,8 +1,12 @@
 using FinanceManager.Application;
+using FinanceManager.Application.Common;
 using FinanceManager.Application.Reports;
+using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using System.Net.Mime;
 
 namespace FinanceManager.Web.Controllers;
@@ -16,10 +20,13 @@ namespace FinanceManager.Web.Controllers;
 [Produces(MediaTypeNames.Application.Json)]
 public sealed class ReportsController : ControllerBase
 {
+    private const string Origin = "API_Reports";
+
     private readonly IReportAggregationService _agg;
     private readonly IReportFavoriteService _favorites;
     private readonly ICurrentUserService _current;
     private readonly ILogger<ReportsController> _logger;
+    private readonly IStringLocalizer<Controller> _localizer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ReportsController"/> class.
@@ -28,8 +35,20 @@ public sealed class ReportsController : ControllerBase
     /// <param name="favorites">Service that manages report favorites.</param>
     /// <param name="current">Service providing the current user context.</param>
     /// <param name="logger">Logger instance for this controller.</param>
-    public ReportsController(IReportAggregationService agg, IReportFavoriteService favorites, ICurrentUserService current, ILogger<ReportsController> logger)
-    { _agg = agg; _favorites = favorites; _current = current; _logger = logger; }
+    /// <param name="localizer">Localizer for error messages.</param>
+    public ReportsController(
+        IReportAggregationService agg,
+        IReportFavoriteService favorites,
+        ICurrentUserService current,
+        ILogger<ReportsController> logger,
+        IStringLocalizer<Controller> localizer)
+    {
+        _agg = agg;
+        _favorites = favorites;
+        _current = current;
+        _logger = logger;
+        _localizer = localizer;
+    }
 
     /// <summary>
     /// Executes a report aggregation query returning interval-based totals and optional comparisons.
@@ -49,7 +68,11 @@ public sealed class ReportsController : ControllerBase
     {
         try
         {
-            if (req.Take < 1 || req.Take > 200) { return BadRequest(new { error = "Take must be 1..200" }); }
+            if (req.Take < 1 || req.Take > 200)
+            {
+                var ex = new ArgumentOutOfRangeException(nameof(req.Take), "Take must be 1..200");
+                return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+            }
             IReadOnlyCollection<PostingKind>? multi = req.PostingKinds;
             if (multi == null || multi.Count == 0)
             {
@@ -82,10 +105,18 @@ public sealed class ReportsController : ControllerBase
             var result = await _agg.QueryAsync(query, ct);
             return Ok(result);
         }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Report aggregation failed");
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -132,16 +163,37 @@ public sealed class ReportsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateFavoriteAsync([FromBody] ReportFavoriteCreateApiRequest req, CancellationToken ct)
     {
-        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
         try
         {
             var filters = req.Filters == null ? null : new ReportFavoriteFiltersDto(req.Filters.AccountIds, req.Filters.ContactIds, req.Filters.SavingsPlanIds, req.Filters.SecurityIds, req.Filters.ContactCategoryIds, req.Filters.SavingsPlanCategoryIds, req.Filters.SecurityCategoryIds, req.Filters.SecuritySubTypes, req.Filters.IncludeDividendRelated);
             var dto = await _favorites.CreateAsync(_current.UserId, new ReportFavoriteCreateRequest(req.Name.Trim(), req.PostingKind, req.IncludeCategory, (ReportInterval)req.Interval, req.Take, req.ComparePrevious, req.CompareYear, req.ShowChart, req.Expandable, req.PostingKinds, filters, req.UseValutaDate), ct);
             return CreatedAtRoute("GetReportFavorite", new { id = dto.Id }, dto);
         }
-        catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
-        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
-        catch (Exception ex) { _logger.LogError(ex, "Create report favorite failed"); return Problem("Unexpected error", statusCode: 500); }
+        catch (InvalidOperationException ex)
+        {
+            const string code = "Err_Conflict_ReportsFavorite";
+            var msgEntry = _localizer[$"{Origin}_{code}"];
+            var message = msgEntry.ResourceNotFound ? ex.Message : msgEntry.Value;
+            return Conflict(ApiErrorDto.Create(Origin, code, message));
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Create report favorite failed");
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -161,16 +213,37 @@ public sealed class ReportsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateFavoriteAsync(Guid id, [FromBody] ReportFavoriteUpdateApiRequest req, CancellationToken ct)
     {
-        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
         try
         {
             var filters = req.Filters == null ? null : new ReportFavoriteFiltersDto(req.Filters.AccountIds, req.Filters.ContactIds, req.Filters.SavingsPlanIds, req.Filters.SecurityIds, req.Filters.ContactCategoryIds, req.Filters.SavingsPlanCategoryIds, req.Filters.SecurityCategoryIds, req.Filters.SecuritySubTypes, req.Filters.IncludeDividendRelated);
             var dto = await _favorites.UpdateAsync(id, _current.UserId, new ReportFavoriteUpdateRequest(req.Name.Trim(), req.PostingKind, req.IncludeCategory, (ReportInterval)req.Interval, req.Take, req.ComparePrevious, req.CompareYear, req.ShowChart, req.Expandable, req.PostingKinds, filters, req.UseValutaDate), ct);
             return dto == null ? NotFound() : Ok(dto);
         }
-        catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
-        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
-        catch (Exception ex) { _logger.LogError(ex, "Update report favorite {FavoriteId} failed", id); return Problem("Unexpected error", statusCode: 500); }
+        catch (InvalidOperationException ex)
+        {
+            const string code = "Err_Conflict_ReportsFavorite";
+            var msgEntry = _localizer[$"{Origin}_{code}"];
+            var message = msgEntry.ResourceNotFound ? ex.Message : msgEntry.Value;
+            return Conflict(ApiErrorDto.Create(Origin, code, message));
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Update report favorite {FavoriteId} failed", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -185,7 +258,15 @@ public sealed class ReportsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteFavoriteAsync(Guid id, CancellationToken ct)
     {
-        try { var ok = await _favorites.DeleteAsync(id, _current.UserId, ct); return ok ? NoContent() : NotFound(); }
-        catch (Exception ex) { _logger.LogError(ex, "Delete report favorite {FavoriteId} failed", id); return Problem("Unexpected error", statusCode: 500); }
+        try
+        {
+            var ok = await _favorites.DeleteAsync(id, _current.UserId, ct);
+            return ok ? NoContent() : NotFound();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Delete report favorite {FavoriteId} failed", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 }

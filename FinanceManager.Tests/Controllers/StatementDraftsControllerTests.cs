@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Text;
@@ -44,6 +45,7 @@ public sealed class StatementDraftsControllerTests
         services.AddScoped<IAttachmentService, AttachmentService>();
         services.AddSingleton(db);
         services.AddLogging();
+        services.AddLocalization();
         services.AddScoped<IStatementFileParser, ING_CSV_StatementFileParser>();
         services.AddScoped<IStatementFileParser, ING_PDF_StatementFileParser>();
         services.AddScoped<IStatementFileParser, Barclays_PDF_StatementFileParser>();
@@ -63,7 +65,9 @@ public sealed class StatementDraftsControllerTests
         var logger = sp.GetRequiredService<ILogger<StatementDraftsController>>();
         var taskManager = new DummyBackgroundTaskManager();
         var attachment = sp.GetRequiredService<IAttachmentService>();
-        var controller = new StatementDraftsController(draftService, current, logger, taskManager, attachment);
+        var localizer = sp.GetRequiredService<IStringLocalizer<FinanceManager.Web.Controllers.Controller>>();
+
+        var controller = new StatementDraftsController(draftService, current, logger, localizer, taskManager, attachment);
         return (controller, db, current.UserId);
     }
 

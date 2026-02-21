@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting; // for IHostedService
 using System.Data.Common;
+using FinanceManager.Application;
 
 namespace FinanceManager.Tests.Integration;
 
@@ -17,9 +18,20 @@ namespace FinanceManager.Tests.Integration;
 public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     private DbConnection? _connection;
+    /// <summary>
+    /// When set, the factory will register an IDateTimeProvider that returns this fixed UTC time.
+    /// Set this property in tests before calling CreateClient() to force server-side "now".
+    /// </summary>
+    public DateTime? FixedUtcNow { get; set; }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseDefaultServiceProvider(options =>
+        {
+            options.ValidateOnBuild = true;
+            options.ValidateScopes = true;
+        });
+
         builder.UseEnvironment("Development");
         // Disable background hosted services for integration tests via configuration flags
         builder.ConfigureAppConfiguration((ctx, cfg) =>
@@ -63,6 +75,19 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
                 options.UseSqlite(_connection);
             });
 
+            // If a fixed time was requested by the test, replace the application's IDateTimeProvider
+            // registration so server-side code observes the deterministic time.
+            if (FixedUtcNow.HasValue)
+            {
+                var dtDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IDateTimeProvider));
+                if (dtDescriptor != null)
+                {
+                    services.Remove(dtDescriptor);
+                }
+
+                services.AddScoped<IDateTimeProvider>(_ => new FixedDateTimeProvider(FixedUtcNow.Value));
+            }
+
             // Ensure schema is created for the fresh database using migrations
             using var sp = services.BuildServiceProvider();
             using var scope = sp.CreateScope();
@@ -70,6 +95,13 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
             db.Database.EnsureDeleted();
             db.Database.Migrate();
         });
+    }
+
+    private sealed class FixedDateTimeProvider : IDateTimeProvider
+    {
+        private readonly DateTime _utcNow;
+        public FixedDateTimeProvider(DateTime utcNow) => _utcNow = utcNow;
+        public DateTime UtcNow => _utcNow;
     }
 
     protected override void Dispose(bool disposing)

@@ -197,6 +197,164 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.ToTable("AttachmentCategories");
                 });
 
+            modelBuilder.Entity("FinanceManager.Domain.Budget.BudgetCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("BudgetCategories");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Budget.BudgetOverride", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("BudgetPurposeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PeriodMonth")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PeriodYear")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId", "BudgetPurposeId", "PeriodYear", "PeriodMonth")
+                        .IsUnique();
+
+                    b.ToTable("BudgetOverrides");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Budget.BudgetPurpose", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("BudgetCategoryId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<short>("SourceType")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BudgetCategoryId");
+
+                    b.HasIndex("OwnerUserId", "Name");
+
+                    b.HasIndex("OwnerUserId", "SourceType", "SourceId");
+
+                    b.ToTable("BudgetPurposes");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Budget.BudgetRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("BudgetCategoryId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("BudgetPurposeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("CustomIntervalMonths")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<short>("Interval")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BudgetCategoryId", "StartDate");
+
+                    b.HasIndex("BudgetPurposeId", "StartDate");
+
+                    b.HasIndex("OwnerUserId", "BudgetCategoryId");
+
+                    b.HasIndex("OwnerUserId", "BudgetPurposeId");
+
+                    b.ToTable("BudgetRules");
+                });
+
             modelBuilder.Entity("FinanceManager.Domain.Contacts.AliasName", b =>
                 {
                     b.Property<Guid>("Id")
@@ -533,6 +691,46 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.HasIndex("OwnerUserId", "SortOrder");
 
                     b.ToTable("HomeKpis");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Reports.ReportCacheEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CacheKey")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CacheValue")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("NeedsRefresh")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Parameter")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId", "CacheKey")
+                        .IsUnique();
+
+                    b.ToTable("ReportCacheEntries");
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Reports.ReportFavorite", b =>
@@ -1410,6 +1608,14 @@ namespace FinanceManager.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("ReferenceAttachmentId")
                         .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Budget.BudgetPurpose", b =>
+                {
+                    b.HasOne("FinanceManager.Domain.Budget.BudgetCategory", null)
+                        .WithMany()
+                        .HasForeignKey("BudgetCategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Contacts.Contact", b =>

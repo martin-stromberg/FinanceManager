@@ -185,7 +185,9 @@ namespace FinanceManager.Web.Services
                     r.LinkedPostingAccountName,
                     r.BankPostingAccountId,
                     bankSymbol,
-                    r.BankPostingAccountName);
+                    r.BankPostingAccountName)
+                {                    
+                };
             }).ToList();
 
             return result;

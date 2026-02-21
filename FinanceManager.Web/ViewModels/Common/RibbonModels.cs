@@ -37,8 +37,7 @@ public enum UiRibbonRegisterKind
 /// <param name="Size">Visual size of the action item (<see cref="UiRibbonItemSize"/>).</param>
 /// <param name="Disabled">Whether the action should be rendered disabled.</param>
 /// <param name="Tooltip">Optional tooltip text.</param>
-/// <param name="Action">Optional action name used by callers to identify the action.</param>
-/// <param name="Callback">Optional callback executed when the action is invoked in-memory (used by tests or immediate UI wiring).</param>
+/// <param name="Callback">Callback executed when the action is invoked.</param>
 public sealed record UiRibbonAction(
     string Id,
     string Label,
@@ -46,10 +45,14 @@ public sealed record UiRibbonAction(
     UiRibbonItemSize Size,
     bool Disabled,
     string? Tooltip,
-    string? Action,
     Func<Task>? Callback
 )
 {
+    /// <summary>
+    /// Compatibility alias for older code/tests that referenced <c>Action</c> instead of <c>Id</c>.
+    /// </summary>
+    public string Action => Id;
+
     /// <summary>
     /// Optional file-change callback used for import-type actions. When set this callback is invoked
     /// with the <see cref="Microsoft.AspNetCore.Components.Forms.InputFileChangeEventArgs"/> when a file is selected.

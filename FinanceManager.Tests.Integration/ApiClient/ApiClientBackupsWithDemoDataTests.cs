@@ -6,6 +6,7 @@ using FinanceManager.Application.Contacts;
 using FinanceManager.Application.Reports;
 using FinanceManager.Application.Savings;
 using FinanceManager.Application.Securities;
+using FinanceManager.Domain.Budget;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Contacts;
@@ -212,6 +213,10 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         List<FinanceManager.Domain.Attachments.Attachment.AttachmentBackupDto> Attachments,
         List<FinanceManager.Domain.Notifications.Notification.NotificationBackupDto> Notifications,
         List<FinanceManager.Domain.Accounts.AccountShare.AccountShareBackupDto> AccountShares,
+        List<FinanceManager.Domain.Budget.BudgetCategory.BudgetCategoryBackupDto> BudgetCategories,
+        List<FinanceManager.Domain.Budget.BudgetPurpose.BudgetPurposeBackupDto> BudgetPurposes,
+        List<FinanceManager.Domain.Budget.BudgetRule.BudgetRuleBackupDto> BudgetRules,
+        List<FinanceManager.Domain.Budget.BudgetOverride.BudgetOverrideBackupDto> BudgetOverrides,
         List<AggregateDto> Aggregates
     );
 
@@ -259,9 +264,47 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
 
         var accountShares = db.AccountShares.AsNoTracking().Where(s => accountIds.Contains(s.AccountId) || s.UserId == userId).Select(s => s.ToBackupDto()).ToList();
 
+        var budgetCategories = db.BudgetCategories.AsNoTracking()
+            .Where(c => c.OwnerUserId == userId)
+            .Select(c => c.ToBackupDto())
+            .ToList();
+
+        var budgetPurposes = db.BudgetPurposes.AsNoTracking().Where(b => b.OwnerUserId == userId).Select(b => b.ToBackupDto()).ToList();
+        var budgetPurposeIds = budgetPurposes.Select(b => b.Id).ToList();
+        var budgetRules = db.BudgetRules.AsNoTracking()
+            .Where(r => r.BudgetPurposeId != null && budgetPurposeIds.Contains(r.BudgetPurposeId.Value))
+            .Select(r => r.ToBackupDto())
+            .ToList();
+        var budgetOverrides = db.BudgetOverrides.AsNoTracking().Where(o => budgetPurposeIds.Contains(o.BudgetPurposeId)).Select(o => o.ToBackupDto()).ToList();
+
         var aggregates = await CalculateAggregatesAsync(sp, userId, default);
 
-        return new Snapshot(contacts, contactCategories, aliasNames, accounts, savingsPlanCategories, savingsPlans, securityCategories, securities, securityPrices, postings, statementImports, statementEntries, drafts, draftEntries, reportFavorites, homeKpis, attachmentCategories, attachments, notifications, accountShares, aggregates);
+        return new Snapshot(
+            contacts,
+            contactCategories,
+            aliasNames,
+            accounts,
+            savingsPlanCategories,
+            savingsPlans,
+            securityCategories,
+            securities,
+            securityPrices,
+            postings,
+            statementImports,
+            statementEntries,
+            drafts,
+            draftEntries,
+            reportFavorites,
+            homeKpis,
+            attachmentCategories,
+            attachments,
+            notifications,
+            accountShares,
+            budgetCategories,
+            budgetPurposes,
+            budgetRules,
+            budgetOverrides,
+            aggregates);
     }
 
     private static void CompareSnapshots(Snapshot before, Snapshot after)
@@ -272,6 +315,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         var contactCategoryNameToId = after.ContactCategories.ToDictionary(c => c.Name, c => c.Id);
         var savingsPlanCategoryNameToId = after.SavingsPlanCategories.ToDictionary(s => s.Name, s => s.Id);
         var securityCategoryNameToId = after.SecurityCategories.ToDictionary(s => s.Name, s => s.Id);
+        var budgetCategoryNameToId = after.BudgetCategories.ToDictionary(c => c.Name, c => c.Id);
 
         // Map contact ids from before->after by name
         var contactIdMap = new Dictionary<Guid, Guid>();
@@ -404,6 +448,9 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         var securityCategoryNameToId = after.SecurityCategories.ToDictionary(s => s.Name, s => s.Id);
         var securityNameToId = after.Securities.ToDictionary(s => s.Name, s => s.Id);
         var attachmentCategoryNameToId = after.AttachmentCategories.ToDictionary(ac => ac.Name, ac => ac.Id);
+        var budgetPurposeNameKeyToId = after.BudgetPurposes
+            .GroupBy(p => $"{p.Name}|{p.SourceType}|{ResolveBudgetSourceName(p.SourceType, p.SourceId, after, contactIdMap, accountIdMap, savingsPlanNameToId)}")
+            .ToDictionary(g => g.Key, g => g.First().Id);
 
         // Remap contacts by name
         var contacts = before.Contacts.Select(c =>
@@ -665,7 +712,147 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         var notifications = before.Notifications.ToList();
         var accountShares = before.AccountShares.ToList();
 
-        return new Snapshot(contacts, contactCategories, aliases, accounts, savingsPlanCategories, savingsPlans, securityCategories, securities, securityPrices, postings, statementImports, statementEntries, drafts, draftEntries, reportFavorites, homeKpis, attachmentCategories, attachments, notifications, accountShares, before.Aggregates);
+        // --- Budgets: align Purpose Ids and SourceIds ---
+        var budgetCategoryNameToId = after.BudgetCategories.ToDictionary(c => c.Name, c => c.Id);
+
+        var budgetCategories = before.BudgetCategories.Select(c =>
+        {
+            if (budgetCategoryNameToId.TryGetValue(c.Name, out var nid))
+            {
+                return c with { Id = nid };
+            }
+            return c;
+        }).ToList();
+
+        Guid MapBudgetSourceId(FinanceManager.Shared.Dtos.Budget.BudgetSourceType sourceType, Guid sourceId)
+        {
+            return sourceType switch
+            {
+                FinanceManager.Shared.Dtos.Budget.BudgetSourceType.Contact => contactIdMap.TryGetValue(sourceId, out var mc) ? mc : sourceId,
+                FinanceManager.Shared.Dtos.Budget.BudgetSourceType.SavingsPlan => savingsPlanNameToId.TryGetValue(before.SavingsPlans.FirstOrDefault(s => s.Id == sourceId)?.Name ?? string.Empty, out var ms) ? ms : sourceId,
+                FinanceManager.Shared.Dtos.Budget.BudgetSourceType.ContactGroup => contactCategoryNameToId.TryGetValue(before.ContactCategories.FirstOrDefault(c => c.Id == sourceId)?.Name ?? string.Empty, out var mcc) ? mcc : sourceId,
+                _ => sourceId
+            };
+        }
+
+        static string BudgetPurposeKey(FinanceManager.Domain.Budget.BudgetPurpose.BudgetPurposeBackupDto p, Guid mappedSourceId, Snapshot snap)
+        {
+            var sourceName = ResolveBudgetSourceName(p.SourceType, mappedSourceId, snap);
+            return $"{p.Name}|{p.SourceType}|{sourceName}";
+        }
+
+        var afterBudgetPurposeKeyToId = after.BudgetPurposes
+            .Select(p => new { p.Id, Key = BudgetPurposeKey(p, p.SourceId, after) })
+            .GroupBy(x => x.Key)
+            .ToDictionary(g => g.Key, g => g.First().Id);
+
+        // Map before purpose ids -> after purpose ids
+        var budgetPurposeIdMap = new Dictionary<Guid, Guid>();
+        foreach (var bp in before.BudgetPurposes)
+        {
+            var mappedSourceId = MapBudgetSourceId(bp.SourceType, bp.SourceId);
+            var key = BudgetPurposeKey(bp, mappedSourceId, after);
+            if (afterBudgetPurposeKeyToId.TryGetValue(key, out var mappedId))
+            {
+                budgetPurposeIdMap[bp.Id] = mappedId;
+            }
+        }
+
+        // Align purposes (Id + SourceId)
+        var budgetPurposes = before.BudgetPurposes.Select(p =>
+        {
+            var mappedSourceId = MapBudgetSourceId(p.SourceType, p.SourceId);
+            var adjusted = p with { SourceId = mappedSourceId };
+
+            if (p.BudgetCategoryId.HasValue)
+            {
+                var beforeCatName = before.BudgetCategories.FirstOrDefault(c => c.Id == p.BudgetCategoryId.Value)?.Name;
+                if (!string.IsNullOrWhiteSpace(beforeCatName) && budgetCategoryNameToId.TryGetValue(beforeCatName, out var mappedCatId))
+                {
+                    adjusted = adjusted with { BudgetCategoryId = mappedCatId };
+                }
+                else
+                {
+                    adjusted = adjusted with { BudgetCategoryId = null };
+                }
+            }
+
+            if (budgetPurposeIdMap.TryGetValue(p.Id, out var mappedId))
+            {
+                adjusted = adjusted with { Id = mappedId };
+            }
+
+            return adjusted;
+        }).ToList();
+
+        // Rules: remap BudgetPurposeId and align rule id by composite key
+        static string RuleKey(FinanceManager.Domain.Budget.BudgetRule.BudgetRuleBackupDto r)
+            => $"{r.BudgetPurposeId}|{r.Amount}|{r.Interval}|{r.CustomIntervalMonths}|{r.StartDate:O}|{(r.EndDate.HasValue ? r.EndDate.Value.ToString("O") : string.Empty)}";
+
+        var afterRuleKeyToId = after.BudgetRules
+            .Select(r => new { r.Id, Key = RuleKey(r) })
+            .GroupBy(x => x.Key)
+            .ToDictionary(g => g.Key, g => g.First().Id);
+
+        var budgetRules = before.BudgetRules.Select(r =>
+        {
+            var newPurposeId = (r.BudgetPurposeId != null && budgetPurposeIdMap.TryGetValue(r.BudgetPurposeId.Value, out var mp)) ? mp : r.BudgetPurposeId;
+            var adjusted = r with { BudgetPurposeId = newPurposeId };
+            var key = RuleKey(adjusted);
+            if (afterRuleKeyToId.TryGetValue(key, out var rid))
+            {
+                adjusted = adjusted with { Id = rid };
+            }
+            return adjusted;
+        }).ToList();
+
+        // Overrides: remap BudgetPurposeId and align override id by composite key
+        static string OverrideKey(FinanceManager.Domain.Budget.BudgetOverride.BudgetOverrideBackupDto o)
+            => $"{o.BudgetPurposeId}|{o.PeriodYear}|{o.PeriodMonth}|{o.Amount}";
+
+        var afterOverrideKeyToId = after.BudgetOverrides
+            .Select(o => new { o.Id, Key = OverrideKey(o) })
+            .GroupBy(x => x.Key)
+            .ToDictionary(g => g.Key, g => g.First().Id);
+
+        var budgetOverrides = before.BudgetOverrides.Select(o =>
+        {
+            var newPurposeId = budgetPurposeIdMap.TryGetValue(o.BudgetPurposeId, out var mp) ? mp : o.BudgetPurposeId;
+            var adjusted = o with { BudgetPurposeId = newPurposeId };
+            var key = OverrideKey(adjusted);
+            if (afterOverrideKeyToId.TryGetValue(key, out var oid))
+            {
+                adjusted = adjusted with { Id = oid };
+            }
+            return adjusted;
+        }).ToList();
+
+        return new Snapshot(
+            contacts,
+            contactCategories,
+            aliases,
+            accounts,
+            savingsPlanCategories,
+            savingsPlans,
+            securityCategories,
+            securities,
+            securityPrices,
+            postings,
+            statementImports,
+            statementEntries,
+            drafts,
+            draftEntries,
+            reportFavorites,
+            homeKpis,
+            attachmentCategories,
+            attachments,
+            notifications,
+            accountShares,
+            budgetCategories,
+            budgetPurposes,
+            budgetRules,
+            budgetOverrides,
+            before.Aggregates);
     }
 
     // Helper used to resolve an entity's human-readable name inside a Snapshot (supports optional id maps)
@@ -712,7 +899,44 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             s.Attachments.OrderBy(a => a.Id).ToList(),
             s.Notifications.OrderBy(n => n.Title).ToList(),
             s.AccountShares.OrderBy(sh => sh.AccountId).ToList(),
+            s.BudgetCategories.OrderBy(c => c.Name).ToList(),
+            s.BudgetPurposes.OrderBy(b => b.Name).ThenBy(b => b.SourceType).ToList(),
+            s.BudgetRules.OrderBy(r => r.BudgetPurposeId).ThenBy(r => r.StartDate).ThenBy(r => r.Interval).ThenBy(r => r.Amount).ToList(),
+            s.BudgetOverrides.OrderBy(o => o.BudgetPurposeId).ThenBy(o => o.PeriodYear).ThenBy(o => o.PeriodMonth).ToList(),
             s.Aggregates.OrderBy(a => a.EntityType).ThenBy(a => a.EntityName).ToList()
         );
+    }
+
+    private static string ResolveBudgetSourceName(
+        FinanceManager.Shared.Dtos.Budget.BudgetSourceType sourceType,
+        Guid sourceId,
+        Snapshot snap)
+    {
+        return sourceType switch
+        {
+            FinanceManager.Shared.Dtos.Budget.BudgetSourceType.Contact => snap.Contacts.FirstOrDefault(c => c.Id == sourceId)?.Name ?? string.Empty,
+            FinanceManager.Shared.Dtos.Budget.BudgetSourceType.SavingsPlan => snap.SavingsPlans.FirstOrDefault(s => s.Id == sourceId)?.Name ?? string.Empty,
+            FinanceManager.Shared.Dtos.Budget.BudgetSourceType.ContactGroup => snap.ContactCategories.FirstOrDefault(c => c.Id == sourceId)?.Name ?? string.Empty,
+            _ => string.Empty
+        };
+    }
+
+    private static string ResolveBudgetSourceName(
+        FinanceManager.Shared.Dtos.Budget.BudgetSourceType sourceType,
+        Guid sourceId,
+        Snapshot snap,
+        Dictionary<Guid, Guid> contactIdMap,
+        Dictionary<Guid, Guid> accountIdMap,
+        Dictionary<string, Guid> savingsPlanNameToId)
+    {
+        _ = accountIdMap; // not used (kept for symmetry with other resolvers)
+        _ = savingsPlanNameToId;
+
+        var mappedSourceId = sourceType == FinanceManager.Shared.Dtos.Budget.BudgetSourceType.Contact
+            && contactIdMap.TryGetValue(sourceId, out var mc)
+            ? mc
+            : sourceId;
+
+        return ResolveBudgetSourceName(sourceType, mappedSourceId, snap);
     }
 }

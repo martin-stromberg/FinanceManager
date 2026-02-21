@@ -1,4 +1,6 @@
 using static FinanceManager.Shared.ApiClient;
+using FinanceManager.Shared.Dtos.Postings;
+using FinanceManager.Shared.Dtos.Budget;
 
 namespace FinanceManager.Shared;
 
@@ -302,6 +304,16 @@ public interface IApiClient
     Task<HomeKpiDto?> HomeKpis_UpdateAsync(Guid id, HomeKpiUpdateRequest request, CancellationToken ct = default);
     /// <summary>Deletes a home KPI. Returns false when not found.</summary>
     Task<bool> HomeKpis_DeleteAsync(Guid id, CancellationToken ct = default);
+    /// <summary>
+    /// Gets the Home Monthly Budget KPI values (planned/actual income and expenses).
+    /// </summary>
+    Task<MonthlyBudgetKpiDto> Budgets_GetMonthlyKpiAsync(DateOnly? date = null, BudgetReportDateBasis dateBasis = BudgetReportDateBasis.BookingDate, CancellationToken ct = default);
+
+    /// <summary>
+    /// Clears cached report data for the current user.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    Task Budgets_ResetReportCacheAsync(CancellationToken ct = default);
 
     // Meta Holidays
 
@@ -461,7 +473,7 @@ public interface IApiClient
     /// </summary>
     /// <param name="id">Identifier of the savings plan to archive.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns><c>true</c> when archived; <c>false</c> when the plan was not found.</returns>
+    /// <returns><c>true</c> when archived, <c>false</c> when the plan was not found.</returns>
     Task<bool> SavingsPlans_ArchiveAsync(Guid id, CancellationToken ct = default);
 
     /// <summary>
@@ -613,4 +625,136 @@ public interface IApiClient
     Task<ImportSplitSettingsDto?> UserSettings_GetImportSplitAsync(CancellationToken ct = default);
     /// <summary>Updates the import split settings for the current user.</summary>
     Task<bool> UserSettings_UpdateImportSplitAsync(ImportSplitSettingsUpdateRequest request, CancellationToken ct = default);
+
+    // Budgets
+
+    /// <summary>
+    /// Lists budget purposes for the current user.
+    /// When <paramref name="from"/> and <paramref name="to"/> are provided, the server returns an overview that includes
+    /// rule count and computed budget sum for the given period.
+    /// </summary>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetPurposeOverviewDto>> Budgets_ListPurposesAsync(
+        int skip = 0,
+        int take = 200,
+        FinanceManager.Shared.Dtos.Budget.BudgetSourceType? sourceType = null,
+        string? q = null,
+        DateOnly? from = null,
+        DateOnly? to = null,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets a budget purpose by id or null when not found.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto?> Budgets_GetPurposeAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Creates a budget purpose.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto> Budgets_CreatePurposeAsync(FinanceManager.Shared.Dtos.Budget.BudgetPurposeCreateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Updates a budget purpose. Returns null when not found.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetPurposeDto?> Budgets_UpdatePurposeAsync(Guid id, FinanceManager.Shared.Dtos.Budget.BudgetPurposeUpdateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Deletes a budget purpose. Returns false when not found.
+    /// </summary>
+    Task<bool> Budgets_DeletePurposeAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Lists rules for a budget purpose.
+    /// </summary>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto>> Budgets_ListRulesByPurposeAsync(Guid budgetPurposeId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Lists budget rules that apply to a budget category.
+    /// </summary>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto>> Budgets_ListRulesByCategoryAsync(Guid budgetCategoryId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets a budget rule by id or null when not found.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto?> Budgets_GetRuleAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Creates a budget rule.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto> Budgets_CreateRuleAsync(FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Updates a budget rule. Returns null when not found.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto?> Budgets_UpdateRuleAsync(Guid id, FinanceManager.Shared.Dtos.Budget.BudgetRuleUpdateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Deletes a budget rule. Returns false when not found.
+    /// </summary>
+    Task<bool> Budgets_DeleteRuleAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Lists overrides for a budget purpose.
+    /// </summary>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetOverrideDto>> Budgets_ListOverridesByPurposeAsync(Guid budgetPurposeId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets a budget override by id or null when not found.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetOverrideDto?> Budgets_GetOverrideAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Creates a budget override.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetOverrideDto> Budgets_CreateOverrideAsync(FinanceManager.Shared.Dtos.Budget.BudgetOverrideCreateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Updates a budget override. Returns null when not found.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetOverrideDto?> Budgets_UpdateOverrideAsync(Guid id, FinanceManager.Shared.Dtos.Budget.BudgetOverrideUpdateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Deletes a budget override. Returns false when not found.
+    /// </summary>
+    Task<bool> Budgets_DeleteOverrideAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Lists budget categories for the current user.
+    /// </summary>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetCategoryOverviewDto>> Budgets_ListCategoriesAsync(DateOnly? from = null, DateOnly? to = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets a budget category by id or null when not found.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetCategoryDto?> Budgets_GetCategoryAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Creates a budget category.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetCategoryDto> Budgets_CreateCategoryAsync(FinanceManager.Shared.Dtos.Budget.BudgetCategoryCreateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Updates a budget category. Returns null when not found.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetCategoryDto?> Budgets_UpdateCategoryAsync(Guid id, FinanceManager.Shared.Dtos.Budget.BudgetCategoryUpdateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Deletes a budget category. Returns false when not found.
+    /// </summary>
+    Task<bool> Budgets_DeleteCategoryAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets the budget report for a given period.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetReportDto> Budgets_GetReportAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportRequest request, CancellationToken ct = default);
+
+
+    /// <summary>
+    /// Lists postings that are not covered by any budget purpose for the given range.
+    /// </summary>
+    /// <param name="from">Start of the range (inclusive).</param>
+    /// <param name="to">End of the range (inclusive).</param>
+    /// <param name="dateBasis">Whether booking date or valuta date is used for filtering/sorting.</param>
+    /// <param name="kind">Optional discriminator to split unbudgeted postings (e.g. "selfCostNeutral" or "remaining").</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Postings.PostingServiceDto>> Budgets_GetUnbudgetedPostingsAsync(DateTime? from, DateTime? to, FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis dateBasis, string? kind = null, CancellationToken ct = default);
 }

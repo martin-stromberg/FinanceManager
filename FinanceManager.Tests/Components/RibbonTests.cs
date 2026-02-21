@@ -22,8 +22,8 @@ public class RibbonTests : TestContext
             {
                 new UiRibbonTab("Tab One", new List<UiRibbonAction>
                 {
-                    new UiRibbonAction("save","Save","<svg></svg>", UiRibbonItemSize.Small, false, null, null, null),
-                    new UiRibbonAction("delete","Delete","<svg></svg>", UiRibbonItemSize.Small, true, null, null, null)
+                    new UiRibbonAction("save","Save","<svg></svg>", UiRibbonItemSize.Small, false, null, null),
+                    new UiRibbonAction("delete","Delete","<svg></svg>", UiRibbonItemSize.Small, true, null, null)
                 })
             })
         };
@@ -57,7 +57,7 @@ public class RibbonTests : TestContext
     {
         // Arrange
         var clicked = false;
-        var action = new UiRibbonAction("run","Run","<svg></svg>", UiRibbonItemSize.Small, false, null, "run", new Func<Task>(() => { clicked = true; return Task.CompletedTask; }));
+        var action = new UiRibbonAction("run","Run","<svg></svg>", UiRibbonItemSize.Small, false, null, new Func<Task>(() => { clicked = true; return Task.CompletedTask; }));
         var registers = new List<UiRibbonRegister>
         {
             new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>

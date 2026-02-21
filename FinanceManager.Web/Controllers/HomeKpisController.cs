@@ -1,9 +1,14 @@
 using FinanceManager.Application;
+using FinanceManager.Application.Common;
 using FinanceManager.Application.Reports;
+using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
+using System.Net.Mime;
 
 namespace FinanceManager.Web.Controllers;
 
@@ -16,9 +21,12 @@ namespace FinanceManager.Web.Controllers;
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public sealed class HomeKpisController : ControllerBase
 {
+    private const string Origin = "API_HomeKpi";
+
     private readonly IHomeKpiService _service;
     private readonly ICurrentUserService _current;
     private readonly ILogger<HomeKpisController> _logger;
+    private readonly IStringLocalizer<Controller> _localizer;
 
     /// <summary>
     /// Initializes a new instance of <see cref="HomeKpisController"/>.
@@ -26,8 +34,18 @@ public sealed class HomeKpisController : ControllerBase
     /// <param name="service">Service implementing KPI management usecases.</param>
     /// <param name="current">Service providing current user context.</param>
     /// <param name="logger">Logger used to record unexpected errors and diagnostics.</param>
-    public HomeKpisController(IHomeKpiService service, ICurrentUserService current, ILogger<HomeKpisController> logger)
-    { _service = service; _current = current; _logger = logger; }
+    /// <param name="localizer">Localizer for API error messages.</param>
+    public HomeKpisController(
+        IHomeKpiService service,
+        ICurrentUserService current,
+        ILogger<HomeKpisController> logger,
+        IStringLocalizer<Controller> localizer)
+    {
+        _service = service;
+        _current = current;
+        _logger = logger;
+        _localizer = localizer;
+    }
 
     /// <summary>
     /// Lists all KPI widgets configured by the current user (order determined by <c>SortOrder</c> client-side).
@@ -82,15 +100,36 @@ public sealed class HomeKpisController : ControllerBase
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateAsync([FromBody] CreateRequest req, CancellationToken ct)
     {
-        if (!ModelState.IsValid) { return ValidationProblem(ModelState); }
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
         try
         {
             var dto = await _service.CreateAsync(_current.UserId, new HomeKpiCreateRequest(req.Kind, req.ReportFavoriteId, req.PredefinedType, req.Title, req.DisplayMode, req.SortOrder), ct);
             return CreatedAtRoute("GetHomeKpi", new { id = dto.Id }, dto);
         }
-        catch (InvalidOperationException ex) { return Conflict(new ApiErrorDto(ex.Message)); }
-        catch (ArgumentException ex) { return BadRequest(new ApiErrorDto(ex.Message)); }
-        catch (Exception ex) { _logger.LogError(ex, "Create home kpi failed"); return Problem("Unexpected error", statusCode: 500); }
+        catch (InvalidOperationException ex)
+        {
+            const string code = "Err_Conflict_HomeKpi";
+            var entry = _localizer[$"{Origin}_{code}"];
+            var message = entry.ResourceNotFound ? ex.Message : entry.Value;
+            return Conflict(ApiErrorDto.Create(Origin, code, message));
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Create home kpi failed");
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -157,9 +196,26 @@ public sealed class HomeKpisController : ControllerBase
             var dto = await _service.UpdateAsync(id, _current.UserId, new HomeKpiUpdateRequest(req.Kind, req.ReportFavoriteId, req.PredefinedType, req.Title, req.DisplayMode, req.SortOrder), ct);
             return dto == null ? NotFound() : Ok(dto);
         }
-        catch (InvalidOperationException ex) { return Conflict(new ApiErrorDto(ex.Message)); }
-        catch (ArgumentException ex) { return BadRequest(new ApiErrorDto(ex.Message)); }
-        catch (Exception ex) { _logger.LogError(ex, "Update home kpi {HomeKpiId} failed", id); return Problem("Unexpected error", statusCode: 500); }
+        catch (InvalidOperationException ex)
+        {
+            const string code = "Err_Conflict_HomeKpi";
+            var entry = _localizer[$"{Origin}_{code}"];
+            var message = entry.ResourceNotFound ? ex.Message : entry.Value;
+            return Conflict(ApiErrorDto.Create(Origin, code, message));
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Update home kpi {HomeKpiId} failed", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -181,6 +237,10 @@ public sealed class HomeKpisController : ControllerBase
             var ok = await _service.DeleteAsync(id, _current.UserId, ct);
             return ok ? NoContent() : NotFound();
         }
-        catch (Exception ex) { _logger.LogError(ex, "Delete home kpi {HomeKpiId} failed", id); return Problem("Unexpected error", statusCode: 500); }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Delete home kpi {HomeKpiId} failed", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 }

@@ -1,11 +1,15 @@
+using FinanceManager.Application;
 using FinanceManager.Application.Attachments;
+using FinanceManager.Application.Common;
 using FinanceManager.Application.Savings;
 using FinanceManager.Domain.Attachments;
+using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
-using System.Reflection;
+using System.Net.Mime;
 
 namespace FinanceManager.Web.Controllers;
 
@@ -17,21 +21,38 @@ namespace FinanceManager.Web.Controllers;
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public sealed class SavingsPlansController : ControllerBase
 {
+    private const string Origin = "API_SavingsPlan";
+
     private readonly ISavingsPlanService _service;
-    private readonly FinanceManager.Application.ICurrentUserService _current;
+    private readonly ICurrentUserService _current;
     private readonly IAttachmentService _attachments;
-    private readonly IStringLocalizer _localizer;
+    private readonly ILogger<SavingsPlansController> _logger;
+    private readonly IParentAssignmentService _parentAssign;
+    private readonly IStringLocalizer<Controller> _localizer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SavingsPlansController"/> class.
     /// </summary>
     /// <param name="service">The savings plan service used for business operations.</param>
     /// <param name="current">Service that provides information about the currently authenticated user.</param>
-    /// <param name="attachments">Attachment service used to upload and manage attachments.</param>
-    /// <param name="locFactory">Localizer factory (currently unused in the controller but reserved for future localization).</param>
-    public SavingsPlansController(ISavingsPlanService service, FinanceManager.Application.ICurrentUserService current, IAttachmentService attachments, IStringLocalizerFactory locFactory)
+    /// <param name="attachments">The attachment service used for file uploads and management.</param>
+    /// <param name="logger">Logger for the controller.</param>
+    /// <param name="parentAssign">Service that manages parent assignments for entities.</param>
+    /// <param name="localizer">Service for localized string retrieval.</param>
+    public SavingsPlansController(
+        ISavingsPlanService service,
+        ICurrentUserService current,
+        IAttachmentService attachments,
+        ILogger<SavingsPlansController> logger,
+        IParentAssignmentService parentAssign,
+        IStringLocalizer<Controller> localizer)
     {
-        _service = service; _current = current; _attachments = attachments;
+        _service = service;
+        _current = current;
+        _attachments = attachments;
+        _logger = logger;
+        _parentAssign = parentAssign;
+        _localizer = localizer;
     }
 
     /// <summary>
@@ -107,6 +128,14 @@ public sealed class SavingsPlansController : ControllerBase
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
         var dto = await _service.CreateAsync(_current.UserId, req.Name, req.Type, req.TargetAmount, req.TargetDate, req.Interval, req.CategoryId, req.ContractNumber, ct);
+
+        await _parentAssign.TryAssignAsync(
+            _current.UserId,
+            req.Parent,
+            createdKind: "savings-plans",
+            createdId: dto.Id,
+            ct);
+
         return CreatedAtRoute("GetSavingsPlans", new { id = dto.Id }, dto);
     }
 
@@ -150,11 +179,13 @@ public sealed class SavingsPlansController : ControllerBase
             var ok = await _service.ArchiveAsync(id, _current.UserId, ct);
             return ok ? NoContent() : NotFound();
         }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
         catch (ArgumentException ex)
         {
-            var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_SavingsPlan_{ex.ParamName}" : "Err_InvalidArgument";
-            var message = ex.Message;
-            return BadRequest(new { error = code, message });
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
         }
     }
 
@@ -177,15 +208,18 @@ public sealed class SavingsPlansController : ControllerBase
             var ok = await _service.DeleteAsync(id, _current.UserId, ct);
             return ok ? NoContent() : NotFound();
         }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
         catch (ArgumentException ex)
         {
-            var code = !string.IsNullOrWhiteSpace(ex.ParamName) ? $"Err_Invalid_SavingsPlan_{ex.ParamName}" : "Err_InvalidArgument";
-            var message = ex.Message;
-            return BadRequest(new { error = code, message });
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return Problem("Unexpected error", statusCode: 500);
+            _logger.LogError(ex, "Delete savings plan {SavingsPlanId} failed", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -205,8 +239,19 @@ public sealed class SavingsPlansController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetSymbolAsync(Guid id, Guid attachmentId, CancellationToken ct)
     {
-        try { await _service.SetSymbolAttachmentAsync(id, _current.UserId, attachmentId, ct); return NoContent(); }
-        catch (ArgumentException) { return NotFound(); }
+        try
+        {
+            await _service.SetSymbolAttachmentAsync(id, _current.UserId, attachmentId, ct);
+            return NoContent();
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return NotFound(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
     }
 
     /// <summary>
@@ -224,8 +269,19 @@ public sealed class SavingsPlansController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ClearSymbolAsync(Guid id, CancellationToken ct)
     {
-        try { await _service.SetSymbolAttachmentAsync(id, _current.UserId, null, ct); return NoContent(); }
-        catch (ArgumentException) { return NotFound(); }
+        try
+        {
+            await _service.SetSymbolAttachmentAsync(id, _current.UserId, null, ct);
+            return NoContent();
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return NotFound(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
     }
 
     /// <summary>
@@ -248,7 +304,14 @@ public sealed class SavingsPlansController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UploadSymbolAsync(Guid id, [FromForm] IFormFile? file, [FromForm] Guid? categoryId, CancellationToken ct)
     {
-        if (file == null) { return BadRequest(new { error = "File required" }); }
+        if (file == null)
+        {
+            var key = $"{Origin}_Err_Invalid_File";
+            var entry = _localizer[key];
+            var message = entry.ResourceNotFound ? "File required" : entry.Value;
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid_File", message));
+        }
+
         try
         {
             using var stream = file.OpenReadStream();
@@ -256,7 +319,18 @@ public sealed class SavingsPlansController : ControllerBase
             await _service.SetSymbolAttachmentAsync(id, _current.UserId, dto.Id, ct);
             return Ok(dto);
         }
-        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
-        catch (Exception) { return Problem("Unexpected error", statusCode: 500); }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Upload symbol for savings plan {SavingsPlanId} failed", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 }

@@ -1,0 +1,19 @@
+/* =====================================================
+   theme.Dark.BudgetLineChart.css - Dark theme styles for BudgetLineChart
+   ===================================================== */
+
+.budget-linechart .grid line {
+    stroke: rgba(255,255,255,.08);
+}
+
+.budget-linechart .axes line {
+    stroke: rgba(255,255,255,.16);
+}
+
+.budget-linechart .labels text {
+    fill: rgba(255,255,255,.75);
+}
+
+.budget-linechart .ylabels text {
+    fill: rgba(255,255,255,.65);
+}

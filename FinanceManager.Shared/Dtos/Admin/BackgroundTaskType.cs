@@ -14,6 +14,8 @@ namespace FinanceManager.Shared.Dtos.Admin
         /// <summary>Backfill historical security prices.</summary>
         SecurityPricesBackfill,
         /// <summary>Rebuild posting aggregates for the current user.</summary>
-        RebuildAggregates
+        RebuildAggregates,
+        /// <summary>Refresh cached budget report data.</summary>
+        RefreshBudgetReportCache
     }
 }

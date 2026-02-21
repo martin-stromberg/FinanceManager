@@ -73,8 +73,8 @@ public sealed class ReportsHomeViewModel : ViewModelBase
     {
         var actions = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Reload", localizer["Ribbon_Reload"].Value, "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, Loading, null, "Reload", null),
-            new UiRibbonAction("NewReport", localizer["Ribbon_NewReport"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, "NewReport", null)
+            new UiRibbonAction("Reload", localizer["Ribbon_Reload"].Value, "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, Loading, null, new Func<Task>(() => { _ = ReloadAsync(); return Task.CompletedTask; })),
+            new UiRibbonAction("NewReport", localizer["Ribbon_NewReport"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, new Func<Task>(() => { RaiseUiActionRequested("New"); return Task.CompletedTask; }))
         };
         var tabs = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Actions"].Value, actions) };
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

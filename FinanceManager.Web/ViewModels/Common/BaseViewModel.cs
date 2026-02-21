@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using FinanceManager.Application;
 using FinanceManager.Shared.Dtos.Admin;
 using Microsoft.AspNetCore.Components;
+using FinanceManager.Shared.Dtos.Budget;
 
 namespace FinanceManager.Web.ViewModels.Common
 {
@@ -327,6 +328,8 @@ namespace FinanceManager.Web.ViewModels.Common
 
             if (string.Equals(field.LookupType, "Contact", StringComparison.OrdinalIgnoreCase))
                 return await QueryContactLookupAsync(field, q, skip, take);
+            if (string.Equals(field.LookupType, "ContactCategory", StringComparison.OrdinalIgnoreCase))
+                return await QueryContactCategoryLookupAsync(field, q, skip, take);
 
             if (string.Equals(field.LookupType, "SavingsPlan", StringComparison.OrdinalIgnoreCase))
                 return await QuerySavingsPlanLookupAsync(field, q, skip, take);
@@ -337,6 +340,9 @@ namespace FinanceManager.Web.ViewModels.Common
             // Bank account lookup support
             if (string.Equals(field.LookupType, "bankaccount", StringComparison.OrdinalIgnoreCase) || string.Equals(field.LookupType, "Account", StringComparison.OrdinalIgnoreCase))
                 return await QueryAccountLookupAsync(field, q, skip, take);
+
+            if (string.Equals(field.LookupType, "BudgetCategory", StringComparison.OrdinalIgnoreCase))
+                return await QueryBudgetCategoryLookupAsync(field, q, skip, take);
 
             return Array.Empty<LookupItem>();
         }
@@ -355,6 +361,29 @@ namespace FinanceManager.Web.ViewModels.Common
             }
             var results = await api.Contacts_ListAsync(skip, take, typeFilter, false, q);
             return results.Select(c => new LookupItem(c.Id, c.Name)).ToList();
+        }
+        private async Task<IReadOnlyList<LookupItem>> QueryContactCategoryLookupAsync(CardField field, string? q, int skip, int take)
+        {
+            var api = ServiceProvider.GetRequiredService<IApiClient>();
+
+            // Currently the API does not provide server-side filtering/paging for contact categories.
+            // Load all and apply filtering/paging client-side.
+            var list = await api.ContactCategories_ListAsync(CancellationToken.None);
+
+            IEnumerable<ContactCategoryDto> filtered = list ?? Array.Empty<ContactCategoryDto>();
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                filtered = filtered.Where(c => !string.IsNullOrWhiteSpace(c.Name) && c.Name.Contains(term, StringComparison.OrdinalIgnoreCase));
+            }
+
+            filtered = filtered
+                .Skip(Math.Max(0, skip))
+                .Take(take <= 0 ? 50 : take);
+
+            return filtered
+                .Select(c => new LookupItem(c.Id, c.Name ?? string.Empty))
+                .ToList();
         }
 
         private bool ParseOnlyActiveFilter(string? filter, bool defaultValue = true)
@@ -413,6 +442,28 @@ namespace FinanceManager.Web.ViewModels.Common
                 .Select(a => new LookupItem(a.Id, string.IsNullOrWhiteSpace(a.Iban) ? a.Name : $"{a.Name} ({a.Iban})"))
                 .ToList();
             return filtered;
+        }
+
+        private async Task<IReadOnlyList<LookupItem>> QueryBudgetCategoryLookupAsync(CardField field, string? q, int skip, int take)
+        {
+            var api = ServiceProvider.GetRequiredService<IApiClient>();
+
+            var list = await api.Budgets_ListCategoriesAsync(ct: CancellationToken.None);
+
+            IEnumerable<BudgetCategoryOverviewDto> filtered = list;
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                filtered = filtered.Where(c => !string.IsNullOrWhiteSpace(c.Name) && c.Name.Contains(term, StringComparison.OrdinalIgnoreCase));
+            }
+
+            filtered = filtered
+                .Skip(Math.Max(0, skip))
+                .Take(take <= 0 ? 50 : take);
+
+            return filtered
+                .Select(c => new LookupItem(c.Id, c.Name ?? string.Empty))
+                .ToList();
         }
 
         private IReadOnlyList<LookupItem> QueryEnumLookup(string? q, Type enumType)

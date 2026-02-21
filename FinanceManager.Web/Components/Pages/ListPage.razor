@@ -119,6 +119,10 @@ else
         {
             return Localizer["General_Title_Securities_Categories"];
         }
+        if (kind == "budget" && sub == "categories")
+        {
+            return Localizer["General_Title_Budget_Categories"];
+        }
         return kind switch
         {
             "accounts" => Localizer["General_Title_Account"],
@@ -195,6 +199,12 @@ else
                 break;
             case "OpenCategories":
                 Nav.NavigateToModelCategories(Kind);
+                break;
+            case "OpenBudgetCategories":
+                Nav.NavigateTo("/list/budget/categories");
+                break;
+            case "OpenBudgetReport":
+                Nav.NavigateTo("/reports/budget");
                 break;
             case "Back":
                 // For postings lists, navigate back to card of calling dataset

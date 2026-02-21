@@ -1,8 +1,12 @@
 using FinanceManager.Application;
+using FinanceManager.Application.Common;
 using FinanceManager.Application.Contacts;
+using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using System.Net.Mime;
 
 namespace FinanceManager.Web.Controllers;
@@ -17,19 +21,31 @@ namespace FinanceManager.Web.Controllers;
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public sealed class ContactsController : ControllerBase
 {
+    private const string Origin = "API_Contacts";
+
     private readonly IContactService _contacts;
     private readonly ICurrentUserService _current;
     private readonly ILogger<ContactsController> _logger;
+    private readonly IStringLocalizer<Controller> _localizer;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ContactsController"/>.
+    /// Creates a new instance of <see cref="ContactsController"/>.
     /// </summary>
-    /// <param name="contacts">Service that implements contact management use-cases.</param>
-    /// <param name="current">Service that provides information about the current user.</param>
-    /// <param name="logger">Logger used to record unexpected errors and diagnostics.</param>
-    /// <exception cref="ArgumentNullException">Thrown when any required dependency is null.</exception>
-    public ContactsController(IContactService contacts, ICurrentUserService current, ILogger<ContactsController> logger)
-    { _contacts = contacts; _current = current; _logger = logger; }
+    /// <param name="contacts">Contact service.</param>
+    /// <param name="current">Current user context.</param>
+    /// <param name="logger">Logger.</param>
+    /// <param name="localizer">Shared controller string localizer.</param>
+    public ContactsController(
+        IContactService contacts,
+        ICurrentUserService current,
+        ILogger<ContactsController> logger,
+        IStringLocalizer<Controller> localizer)
+    {
+        _contacts = contacts;
+        _current = current;
+        _logger = logger;
+        _localizer = localizer;
+    }
 
     /// <summary>
     /// Lists contacts with optional paging, filtering by type and name, or returning all if <c>all=true</c>.
@@ -62,7 +78,7 @@ public sealed class ContactsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "List contacts failed (skip={Skip}, take={Take}, type={Type}, all={All}, q={Q})", skip, take, type, all, nameFilter);
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -85,7 +101,7 @@ public sealed class ContactsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Get contact {ContactId} failed", id);
-            return Problem("Unexpected error", statusCode: 500);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }
 
@@ -104,14 +120,30 @@ public sealed class ContactsController : ControllerBase
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateAsync([FromBody] ContactCreateRequest req, CancellationToken ct)
     {
-        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
         try
         {
             var created = await _contacts.CreateAsync(_current.UserId, req.Name, req.Type, req.CategoryId, req.Description, req.IsPaymentIntermediary, ct);
+
             return CreatedAtRoute("GetContact", new { id = created.Id }, created);
         }
-        catch (ArgumentException ex) { return BadRequest(new ApiErrorDto(ex.Message)); }
-        catch (Exception ex) { _logger.LogError(ex, "Create contact failed"); return Problem("Unexpected error", statusCode: 500); }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Create contact failed");
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -126,14 +158,29 @@ public sealed class ContactsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateAsync(Guid id, [FromBody] ContactUpdateRequest req, CancellationToken ct)
     {
-        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
         try
         {
             var updated = await _contacts.UpdateAsync(id, _current.UserId, req.Name, req.Type, req.CategoryId, req.Description, req.IsPaymentIntermediary, ct);
             return updated is null ? NotFound() : Ok(updated);
         }
-        catch (ArgumentException ex) { return BadRequest(new ApiErrorDto(ex.Message)); }
-        catch (Exception ex) { _logger.LogError(ex, "Update contact {ContactId} failed", id); return Problem("Unexpected error", statusCode: 500); }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Update contact {ContactId} failed", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -152,7 +199,11 @@ public sealed class ContactsController : ControllerBase
             var ok = await _contacts.DeleteAsync(id, _current.UserId, ct);
             return ok ? NoContent() : NotFound();
         }
-        catch (Exception ex) { _logger.LogError(ex, "Delete contact {ContactId} failed", id); return Problem("Unexpected error", statusCode: 500); }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Delete contact {ContactId} failed", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -224,14 +275,29 @@ public sealed class ContactsController : ControllerBase
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> MergeAsync(Guid id, [FromBody] FinanceManager.Shared.Dtos.Contacts.ContactMergeRequest req, CancellationToken ct)
     {
-        if (!ModelState.IsValid) { return ValidationProblem(ModelState); }
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
         try
         {
             var dto = await _contacts.MergeAsync(_current.UserId, id, req.TargetContactId, ct, req.Preference);
             return Ok(dto);
         }
-        catch (ArgumentException ex) { return BadRequest(new ApiErrorDto(ex.Message)); }
-        catch (Exception ex) { _logger.LogError(ex, "Merge contacts failed (source={Source}, target={Target})", id, req.TargetContactId); return Problem("Unexpected error", statusCode: 500); }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Merge contacts failed (source={Source}, target={Target})", id, req.TargetContactId);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -264,9 +330,25 @@ public sealed class ContactsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetSymbolAsync(Guid id, Guid attachmentId, CancellationToken ct)
     {
-        try { await _contacts.SetSymbolAttachmentAsync(id, _current.UserId, attachmentId, ct); return NoContent(); }
-        catch (ArgumentException ex) { _logger.LogWarning(ex, "SetSymbol failed for contact {ContactId}", id); return NotFound(); }
-        catch (Exception ex) { _logger.LogError(ex, "SetSymbol failed for contact {ContactId}", id); return Problem("Unexpected error", statusCode: 500); }
+        try
+        {
+            await _contacts.SetSymbolAttachmentAsync(id, _current.UserId, attachmentId, ct);
+            return NoContent();
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "SetSymbol failed for contact {ContactId}", id);
+            return NotFound(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SetSymbol failed for contact {ContactId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>
@@ -280,8 +362,24 @@ public sealed class ContactsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ClearSymbolAsync(Guid id, CancellationToken ct)
     {
-        try { await _contacts.SetSymbolAttachmentAsync(id, _current.UserId, null, ct); return NoContent(); }
-        catch (ArgumentException ex) { _logger.LogWarning(ex, "ClearSymbol failed for contact {ContactId}", id); return NotFound(); }
-        catch (Exception ex) { _logger.LogError(ex, "ClearSymbol failed for contact {ContactId}", id); return Problem("Unexpected error", statusCode: 500); }
+        try
+        {
+            await _contacts.SetSymbolAttachmentAsync(id, _current.UserId, null, ct);
+            return NoContent();
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "ClearSymbol failed for contact {ContactId}", id);
+            return NotFound(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "ClearSymbol failed for contact {ContactId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 }

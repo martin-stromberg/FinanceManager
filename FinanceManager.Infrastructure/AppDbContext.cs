@@ -2,6 +2,7 @@
 using DocumentFormat.OpenXml.Vml;
 using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Attachments; // new
+using FinanceManager.Domain.Budget;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Notifications; // new
 using FinanceManager.Domain.Postings;
@@ -17,6 +18,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using FinanceManager.Shared.Dtos.Budget;
 
 namespace FinanceManager.Infrastructure;
 
@@ -73,6 +75,8 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<ReportFavorite> ReportFavorites => Set<ReportFavorite>(); // new
     /// <summary>Home KPI configuration records.</summary>
     public DbSet<HomeKpi> HomeKpis => Set<HomeKpi>(); // new
+    /// <summary>Cached report data entries.</summary>
+    public DbSet<ReportCacheEntry> ReportCacheEntries => Set<ReportCacheEntry>();
     /// <summary>IP blocks for rate limiting / security.</summary>
     public DbSet<IpBlock> IpBlocks => Set<IpBlock>(); // new
     /// <summary>Notification entities for user notifications.</summary>
@@ -81,6 +85,16 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<Attachment> Attachments => Set<Attachment>(); // new
     /// <summary>Attachment categories.</summary>
     public DbSet<AttachmentCategory> AttachmentCategories => Set<AttachmentCategory>(); // new
+    /// <summary>Budget categories.</summary>
+    public DbSet<BudgetCategory> BudgetCategories => Set<BudgetCategory>();
+    /// <summary>Budget purposes.</summary>
+    public DbSet<BudgetPurpose> BudgetPurposes => Set<BudgetPurpose>();
+
+    /// <summary>Budget rules.</summary>
+    public DbSet<BudgetRule> BudgetRules => Set<BudgetRule>();
+
+    /// <summary>Budget overrides.</summary>
+    public DbSet<BudgetOverride> BudgetOverrides => Set<BudgetOverride>();
 
     /// <summary>
     /// Configure the EF Core model: indexes, constraints and relationships.
@@ -308,6 +322,17 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.Take).IsRequired();
         });
 
+        modelBuilder.Entity<ReportCacheEntry>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => new { x.OwnerUserId, x.CacheKey }).IsUnique();
+            b.Property(x => x.OwnerUserId).IsRequired();
+            b.Property(x => x.CacheKey).HasMaxLength(120).IsRequired();
+            b.Property(x => x.CacheValue).IsRequired();
+            b.Property(x => x.NeedsRefresh).IsRequired();
+            b.Property(x => x.Parameter).HasMaxLength(200).IsRequired();
+        });
+
         // HomeKpi configuration
         modelBuilder.Entity<HomeKpi>(b =>
         {
@@ -369,6 +394,55 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.OwnerUserId).IsRequired();
             b.Property(x => x.IsSystem).IsRequired();
             b.HasIndex(x => new { x.OwnerUserId, x.Name }).IsUnique();
+        });
+
+        modelBuilder.Entity<BudgetCategory>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Name).HasMaxLength(150).IsRequired();
+            b.HasIndex(x => new { x.OwnerUserId, x.Name }).IsUnique();
+        });
+
+        modelBuilder.Entity<BudgetPurpose>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Name).HasMaxLength(150).IsRequired();
+            b.Property(x => x.Description).HasMaxLength(500);
+            b.Property(x => x.SourceType).HasConversion<short>().IsRequired();
+            b.Property(x => x.SourceId).IsRequired();
+            b.Property(x => x.BudgetCategoryId);
+            b.HasIndex(x => new { x.OwnerUserId, x.Name });
+            b.HasIndex(x => new { x.OwnerUserId, x.SourceType, x.SourceId });
+
+            b.HasOne<BudgetCategory>()
+                .WithMany()
+                .HasForeignKey(x => x.BudgetCategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<BudgetRule>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Amount).HasPrecision(18, 2);
+            b.Property(x => x.Interval).HasConversion<short>().IsRequired();
+            b.Property(x => x.StartDate).IsRequired();
+            b.Property(x => x.EndDate);
+            b.Property(x => x.BudgetPurposeId);
+            b.Property(x => x.BudgetCategoryId);
+
+            b.HasIndex(x => new { x.OwnerUserId, x.BudgetPurposeId });
+            b.HasIndex(x => new { x.OwnerUserId, x.BudgetCategoryId });
+            b.HasIndex(x => new { x.BudgetPurposeId, x.StartDate });
+            b.HasIndex(x => new { x.BudgetCategoryId, x.StartDate });
+        });
+
+        modelBuilder.Entity<BudgetOverride>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Amount).HasPrecision(18, 2);
+            b.Property(x => x.PeriodYear).IsRequired();
+            b.Property(x => x.PeriodMonth).IsRequired();
+            b.HasIndex(x => new { x.OwnerUserId, x.BudgetPurposeId, x.PeriodYear, x.PeriodMonth }).IsUnique();
         });
     }
     /// <summary>
@@ -542,13 +616,31 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             .Where(c => c.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);        
+
+        // Budgets
+        var budgetPurposes = await BudgetPurposes.Where(x => x.OwnerUserId == userId).ToListAsync(ct);
+        var budgetPurposeIds = budgetPurposes.Select(x => x.Id).ToList();
+
+        var budgetRules = await BudgetRules
+            .Where(x => x.OwnerUserId == userId)
+            .Where(x => x.BudgetPurposeId != null && budgetPurposeIds.Contains(x.BudgetPurposeId.Value))
+            .ToListAsync(ct);
+        var budgetOverrides = await BudgetOverrides.Where(x => x.OwnerUserId == userId && budgetPurposeIds.Contains(x.BudgetPurposeId)).ToListAsync(ct);
+
+        BudgetOverrides.RemoveRange(budgetOverrides);
+        await SaveChangesAsync(ct);
+
+        BudgetRules.RemoveRange(budgetRules);
+        await SaveChangesAsync(ct);
+
+        BudgetPurposes.RemoveRange(budgetPurposes);
+        await SaveChangesAsync(ct);
+
+        // Budget categories (delete last because purposes reference them)
+        await BudgetCategories
+            .Where(c => c.OwnerUserId == userId)
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
     }
 
-    /// <summary>
-    /// Legacy synchronous wrapper for <see cref="ClearUserDataAsync(Guid, Action{int,int}, CancellationToken)"/>.
-    /// </summary>
-    /// <param name="userId">The user identifier whose data should be removed.</param>
-    /// <param name="progressCallback">Callback invoked after each sub-step with (step, total).</param>
-    internal void ClearUserData(Guid userId, Action<int, int> progressCallback)
-        => ClearUserDataAsync(userId, progressCallback, CancellationToken.None).GetAwaiter().GetResult();
 }

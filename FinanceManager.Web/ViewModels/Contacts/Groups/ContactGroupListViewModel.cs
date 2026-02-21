@@ -82,13 +82,11 @@ public sealed class ContactGroupListViewModel : BaseListViewModel<ContactGroupLi
     {
         var tab = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("New", localizer["Ribbon_New"], "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, "New", () => {
+            new UiRibbonAction("New", localizer["Ribbon_New"], "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, () => {
                 RaiseUiActionRequested("New");
-                //var nav = ServiceProvider.GetRequiredService<NavigationManager>();
-                //nav.NavigateTo("/card/contacts/categories/new");
                 return Task.CompletedTask;
             }),
-            new UiRibbonAction("Back", localizer["Ribbon_Back"], "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Small, false, null, "Back", () => {
+            new UiRibbonAction("Back", localizer["Ribbon_Back"], "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Small, false, null, () => {
                 var nav = ServiceProvider.GetRequiredService<NavigationManager>();
                 nav.NavigateTo("/list/contacts");
                 return Task.CompletedTask;

@@ -150,7 +150,6 @@ public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPric
                     UiRibbonItemSize.Large,
                     false,
                     null,
-                    "Back",
                     () => { _nav.NavigateTo($"/card/securities/{SecurityId}"); return Task.CompletedTask; }
                 )
             }),
@@ -164,7 +163,6 @@ public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPric
                     UiRibbonItemSize.Small,
                     SecurityId == Guid.Empty,
                     null,
-                    "Backfill",
                     () => { RequestOpenBackfill(); return Task.CompletedTask; }
                 )
             })

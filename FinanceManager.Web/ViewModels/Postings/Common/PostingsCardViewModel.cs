@@ -116,16 +116,16 @@ public sealed class PostingsCardViewModel : BaseCardViewModel<(string Key, strin
         };
         var nav = new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, new List<UiRibbonAction>
         {
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, "Back", () => { RaiseUiActionRequested("Back", kindLower); return Task.CompletedTask; })
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back", kindLower); return Task.CompletedTask; })
         });
 
         var linked = new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, new List<UiRibbonAction>
         {
-            new UiRibbonAction("OpenAccount", localizer["Ribbon_OpenAccount"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Posting?.AccountId == null, null, "OpenAccount", () => { RaiseUiActionRequested("OpenAccount"); return Task.CompletedTask; }),
-            new UiRibbonAction("OpenContact", localizer["Ribbon_OpenContact"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Posting?.ContactId == null, null, "OpenContact", () => { RaiseUiActionRequested("OpenContact"); return Task.CompletedTask; }),
-            new UiRibbonAction("OpenSavingsPlan", localizer["Ribbon_OpenSavingsPlan"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Posting?.SavingsPlanId == null, null, "OpenSavingsPlan", () => { RaiseUiActionRequested("OpenSavingsPlan"); return Task.CompletedTask; }),
-            new UiRibbonAction("OpenSecurity", localizer["Ribbon_OpenSecurity"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Posting?.SecurityId == null, null, "OpenSecurity", () => { RaiseUiActionRequested("OpenSecurity"); return Task.CompletedTask; }),
-            new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, false, null, "OpenAttachments", () => { RaiseUiActionRequested("OpenAttachments"); return Task.CompletedTask; })
+            new UiRibbonAction("OpenAccount", localizer["Ribbon_OpenAccount"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Posting?.AccountId == null, null, () => { RaiseUiActionRequested("OpenAccount"); return Task.CompletedTask; }),
+            new UiRibbonAction("OpenContact", localizer["Ribbon_OpenContact"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Posting?.ContactId == null, null, () => { RaiseUiActionRequested("OpenContact"); return Task.CompletedTask; }),
+            new UiRibbonAction("OpenSavingsPlan", localizer["Ribbon_OpenSavingsPlan"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Posting?.SavingsPlanId == null, null, () => { RaiseUiActionRequested("OpenSavingsPlan"); return Task.CompletedTask; }),
+            new UiRibbonAction("OpenSecurity", localizer["Ribbon_OpenSecurity"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Posting?.SecurityId == null, null, () => { RaiseUiActionRequested("OpenSecurity"); return Task.CompletedTask; }),
+            new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("OpenAttachments"); return Task.CompletedTask; })
         });
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, linked }) };

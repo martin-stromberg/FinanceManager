@@ -1,0 +1,83 @@
+/* =====================================================
+   app.BudgetReport.css - Styles for BudgetReport page
+   ===================================================== */
+
+.budget-report {
+    padding: 0 0.75rem;
+}
+
+.budget-report-sheet {
+    background: #ffffff;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .05);
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    position: relative;
+}
+
+.budget-report-title {
+    margin: 0 0 1rem 0;
+}
+
+.budget-report-section-title {
+    margin: 1.25rem 0 0.5rem 0;
+}
+
+.budget-report-chart {
+    height: 220px;
+    border: 1px dashed #bbb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 1rem 0;
+    border-radius: var(--radius);
+}
+
+.budget-report-table {
+    width: 100%;
+}
+
+.budget-report-loading {
+    position: sticky;
+    top: 0.75rem;
+    margin: 0 auto 0.75rem;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    color: var(--text-muted, #666);
+    z-index: 3;
+    border-radius: var(--radius);
+    padding: 0.5rem 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(2px);
+    width: max-content;
+}
+
+.budget-report-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #d0d0d0;
+    border-top-color: var(--accent, #3b82f6);
+    border-radius: 50%;
+    animation: budget-report-spin 0.9s linear infinite;
+}
+
+.budget-report-loading-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+}
+
+.budget-report-loading-range {
+    font-size: 0.85rem;
+    color: var(--text-muted, #666);
+}
+
+@keyframes budget-report-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

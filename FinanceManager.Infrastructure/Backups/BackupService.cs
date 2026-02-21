@@ -222,6 +222,7 @@ public sealed class BackupService : IBackupService
         var draftSvc = scope.ServiceProvider.GetRequiredService<IStatementDraftService>();
         var aggSvc = scope.ServiceProvider.GetRequiredService<FinanceManager.Application.Aggregates.IPostingAggregateService>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<SetupImportService>>();
+        var reportCache = scope.ServiceProvider.GetService<FinanceManager.Application.Budget.IReportCacheService>();
         var importerLegacy = new SetupImportService(db, draftSvc, aggSvc, logger);
 
         // propagate nested progress: main step 1 = reading, step 2 = importing (with subprogress)
@@ -230,6 +231,12 @@ public sealed class BackupService : IBackupService
             progressCallback(e.StepDescription, e.Step, e.Total, e.SubStep, e.SubTotal);
         };
         await importerLegacy.ImportAsync(userId, ndjson, replaceExisting: true, ct);
+
+        if (reportCache != null)
+        {
+            await reportCache.MarkAllReportCacheEntriesForUpdateAsync(userId, ct);
+            reportCache.EnqueueBudgetReportCacheRefresh(userId);
+        }
         return true;
     }
 
@@ -399,6 +406,30 @@ public sealed class BackupService : IBackupService
             .ToListAsync(ct);
         var accountShares = accountShareEntities.Select(s => s.ToBackupDto()).ToList();
 
+        // Budget categories
+        var budgetCategoryEntities = await _db.BudgetCategories.AsNoTracking()
+            .Where(c => c.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var budgetCategories = budgetCategoryEntities.Select(c => c.ToBackupDto()).ToList();
+
+        // Budget purposes, rules, overrides
+        var budgetPurposeEntities = await _db.BudgetPurposes.AsNoTracking()
+            .Where(b => b.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var budgetPurposes = budgetPurposeEntities.Select(b => b.ToBackupDto()).ToList();
+
+        var budgetPurposeIds = budgetPurposeEntities.Select(b => b.Id).ToList();
+
+        var budgetRuleEntities = await _db.BudgetRules.AsNoTracking()
+            .Where(r => r.OwnerUserId == userId && r.BudgetPurposeId != null && budgetPurposeIds.Contains(r.BudgetPurposeId.Value))
+            .ToListAsync(ct);
+        var budgetRules = budgetRuleEntities.Select(r => r.ToBackupDto()).ToList();
+
+        var budgetOverrideEntities = await _db.BudgetOverrides.AsNoTracking()
+            .Where(o => o.OwnerUserId == userId && budgetPurposeIds.Contains(o.BudgetPurposeId))
+            .ToListAsync(ct);
+        var budgetOverrides = budgetOverrideEntities.Select(o => o.ToBackupDto()).ToList();
+
         return new
         {
             Accounts = accounts,
@@ -420,7 +451,11 @@ public sealed class BackupService : IBackupService
             AttachmentCategories = attachmentCategories,
             Attachments = attachments,
             Notifications = notifications,
-            AccountShares = accountShares
+            AccountShares = accountShares,
+            BudgetCategories = budgetCategories,
+            BudgetPurposes = budgetPurposes,
+            BudgetRules = budgetRules,
+            BudgetOverrides = budgetOverrides
         };
     }
 

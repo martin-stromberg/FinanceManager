@@ -17,7 +17,7 @@
     flex-direction: column;
     justify-content: flex-start;
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* allow tooltips to overflow */
 }
 
 .kpi-tile h4 {
@@ -222,4 +222,133 @@
     padding: .2rem .3rem;
     border-radius: 4px;
     width: 100%;
+}
+
+/* Monthly budget KPI */
+.budget-kpi {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: .25rem;
+    flex: 1;
+    min-height: 0;
+}
+
+.budget-mid {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.budget-mid-inner {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+}
+
+.budget-head {
+    display: flex;
+    justify-content: space-between;
+    gap: .5rem;
+    gap: .5rem;
+    font-size: .65rem;
+    opacity: .8;
+}
+
+.budget-head-left {
+    text-align: left;
+}
+
+.budget-head-right {
+    text-align: right;
+}
+
+.budget-bar {
+    height: 18px;
+    border-radius: 999px;
+    overflow: hidden;
+    display: flex;    
+}
+
+
+
+.budget-side {
+    height: 100%;
+    position: relative;
+}
+
+.budget-side .budget-fill {
+    height: 100%;
+}
+
+.kpi-tooltip {
+    pointer-events: none;
+    position: absolute;
+    z-index: 60;
+    background: #ffffff;
+    color: #1b2430;
+    padding: .4rem;
+    border-radius: 6px;
+    border: 1px solid rgba(27,36,48,0.08);
+    box-shadow: 0 8px 24px rgba(27,36,48,0.08);
+    min-width: 180px;
+    font-size: .85rem;
+}
+.kpi-tooltip-title { font-weight:600; margin-bottom:.25rem; }
+.kpi-tooltip-row { display:flex; justify-content:space-between; margin-top:.15rem; }
+.kpi-tooltip-row-strong { font-weight:600; margin-top:.25rem; }
+.kpi-tooltip-income { left:6px; top:-8px; }
+.kpi-tooltip-expense { right:6px; top:-8px; }
+}
+
+.budget-side.income {
+    display: flex;
+    /* right-align the actual income fill within the income area */
+    justify-content: flex-end;
+    background: rgba(45, 157, 79, 0.18);
+}
+
+.budget-side.income .budget-fill {
+    background: linear-gradient(90deg,#2d9d4f,#1f7a3b);
+}
+
+.budget-side.expense {
+    display: flex;
+    justify-content: flex-start;
+    background: rgba(185, 65, 65, 0.12);
+}
+
+.budget-side.expense .budget-fill {
+    background: linear-gradient(90deg,#b55,#8b3b3b);
+}
+
+.budget-result {
+    margin-top: auto;
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-top: auto;
+    margin-bottom: .4rem;
+    position: relative;
+    z-index: 1;
+}
+
+.budget-text-pos {
+    color: #43e97b;
+}
+.budget-text-neg {
+    color: #ff5c5c;
+}
+.budget-saldo-pos {
+    background-color: #43e97b;
+}
+.budget-saldo-neg {
+    background-color: #ff5c5c;
+}
+.budget-soll-pos {
+    background-color: #2e8c5a;
+}
+.budget-soll-neg {
+    background-color: #b23b3b;
 }

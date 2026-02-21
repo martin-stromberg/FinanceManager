@@ -294,13 +294,13 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
     {
         var actions = new List<UiRibbonAction>
         {
-            new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, "New", null),
-            new UiRibbonAction("Categories", localizer["Ribbon_Categories"].Value, "<svg><use href='/icons/sprite.svg#groups'/></svg>", UiRibbonItemSize.Small, false, null, "Categories", () => { RaiseUiActionRequested("OpenCategories"); return Task.CompletedTask; }),
+            new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("New"); return Task.CompletedTask; }),
+            new UiRibbonAction("Categories", localizer["Ribbon_Categories"].Value, "<svg><use href='/icons/sprite.svg#groups'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("OpenCategories"); return Task.CompletedTask; }),
         };
 
         var filter = new List<UiRibbonAction>
         {
-            new UiRibbonAction("ToggleActive", OnlyActive ? localizer["OnlyActive"].Value : localizer["StatusArchived"].Value, "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, false, null, null, new Func<Task>(() => { ToggleActive(); return Task.CompletedTask; }))
+            new UiRibbonAction("ToggleActive", OnlyActive ? localizer["OnlyActive"].Value : localizer["StatusArchived"].Value, "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, false, null, () => { ToggleActive(); return Task.CompletedTask; })
         };
 
         var tabsActions = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, actions) };

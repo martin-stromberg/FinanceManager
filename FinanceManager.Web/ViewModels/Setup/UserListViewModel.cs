@@ -116,7 +116,6 @@ public sealed class UserListViewModel : BaseListViewModel<UserListItem>
                 UiRibbonItemSize.Large,
                 false,
                 null,
-                "New",
                 new Func<Task>(() => { RaiseUiActionRequested("New"); return Task.CompletedTask; })
             )
         };

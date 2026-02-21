@@ -126,10 +126,12 @@ public sealed partial class StatementDraftService
             .Where(c => c.OwnerUserId == ownerUserId)
             .ToListAsync(ct);
         var selfContact = contacts.First(c => c.Type == ContactType.Self);
-        var aliasLookup = await _db.AliasNames.AsNoTracking()
+        var aliasNames = await _db.AliasNames.AsNoTracking()
             .Where(a => contacts.Select(c => c.Id).Contains(a.ContactId))
+            .ToListAsync(ct);
+        var aliasLookup = aliasNames
             .GroupBy(a => a.ContactId)
-            .ToDictionaryAsync(g => g.Key, g => g.Select(x => x.Pattern).ToList(), ct);
+            .ToDictionary(g => g.Key, g => g.Select(x => x.Pattern).ToList());
         var savingPlans = await _db.SavingsPlans.AsNoTracking()
             .Where(sp => sp.OwnerUserId == ownerUserId && sp.IsActive)
             .ToListAsync(ct);

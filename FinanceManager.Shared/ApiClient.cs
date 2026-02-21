@@ -41,8 +41,12 @@ public partial class ApiClient : IApiClient
     /// <param name="resp">The HTTP response message to inspect.</param>
     private async Task EnsureSuccessOrSetErrorAsync(HttpResponseMessage resp)
     {
-        LastError = null; LastErrorCode = null;
-        if (resp.IsSuccessStatusCode) return;
+        LastError = null;
+        LastErrorCode = null;
+        if (resp.IsSuccessStatusCode)
+        {
+            return;
+        }
 
         try
         {
@@ -54,10 +58,30 @@ public partial class ApiClient : IApiClient
                     using var doc = JsonDocument.Parse(content);
                     if (doc.RootElement.ValueKind == JsonValueKind.Object)
                     {
-                        if (doc.RootElement.TryGetProperty("message", out var m) && m.ValueKind == JsonValueKind.String)
-                            LastError = m.GetString();
+                        if (doc.RootElement.TryGetProperty("title", out var title) && title.ValueKind == JsonValueKind.String)
+                        {
+                            LastError = title.GetString();
+                        }
+                        if (doc.RootElement.TryGetProperty("detail", out var detail) && detail.ValueKind == JsonValueKind.String)
+                        {
+                            LastError = string.IsNullOrWhiteSpace(LastError) ? detail.GetString() : $"{LastError}: {detail.GetString()}";
+                        }
+
+                        // New standardized API error DTO: { origin, code, message }
+                        if (doc.RootElement.TryGetProperty("code", out var code) && code.ValueKind == JsonValueKind.String)
+                        {
+                            LastErrorCode = code.GetString();
+                        }
+                        if (doc.RootElement.TryGetProperty("message", out var msg) && msg.ValueKind == JsonValueKind.String)
+                        {
+                            LastError = msg.GetString();
+                        }
+
+                        // Legacy API error shape: { error, message }
                         if (doc.RootElement.TryGetProperty("error", out var e) && e.ValueKind == JsonValueKind.String)
-                            LastErrorCode = e.GetString();
+                        {
+                            LastErrorCode ??= e.GetString();
+                        }
 
                         if (doc.RootElement.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Object)
                         {
@@ -67,7 +91,6 @@ public partial class ApiClient : IApiClient
                 }
                 catch
                 {
-                    // not JSON, use raw content
                     LastError = content;
                 }
             }
@@ -77,7 +100,10 @@ public partial class ApiClient : IApiClient
             // ignore
         }
 
-        if (string.IsNullOrWhiteSpace(LastError)) LastError = resp.ReasonPhrase ?? $"HTTP {(int)resp.StatusCode}";
+        if (string.IsNullOrWhiteSpace(LastError))
+        {
+            LastError = resp.ReasonPhrase ?? $"HTTP {(int)resp.StatusCode}";
+        }
         resp.EnsureSuccessStatusCode();
     }
 
@@ -146,5 +172,16 @@ public partial class ApiClient : IApiClient
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Lists budget rules that apply to a budget category.
+    /// </summary>
+    public async Task<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto>> Budgets_ListRulesByCategoryAsync(Guid budgetCategoryId, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/budget/rules/by-category/{budgetCategoryId}", ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+        var list = await resp.Content.ReadFromJsonAsync<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto>>(cancellationToken: ct);
+        return list ?? Array.Empty<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto>();
     }
 }
