@@ -66,7 +66,7 @@ public class ApiClientBackupsTests : IClassFixture<TestWebApplicationFactory>
         up2.FileName.Should().Be("custom.zip");
 
         var list = await api.Backups_ListAsync();
-        list.Should().HaveCountGreaterOrEqualTo(2);
+        list.Should().HaveCountGreaterThanOrEqualTo(2);
     }
 
     [Fact]

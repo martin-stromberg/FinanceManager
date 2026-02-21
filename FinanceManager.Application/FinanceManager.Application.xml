@@ -928,16 +928,6 @@
             Indicates whether the current user has administrative privileges.
             </summary>
         </member>
-        <member name="T:FinanceManager.Application.IDateTimeProvider">
-            <summary>
-            Provides the current system time in UTC. Abstraction useful for testing.
-            </summary>
-        </member>
-        <member name="P:FinanceManager.Application.IDateTimeProvider.UtcNow">
-            <summary>
-            Gets the current UTC date/time.
-            </summary>
-        </member>
         <member name="T:FinanceManager.Application.Notifications.IHolidayProvider">
             <summary>
             Provides information about public holidays for a given date and region.
@@ -2390,18 +2380,6 @@
             <summary>
             Collection of parsed movements/transactions from the statement file.
             </summary>
-        </member>
-        <member name="T:FinanceManager.Application.SystemDateTimeProvider">
-            <summary>
-            Production implementation of <see cref="T:FinanceManager.Application.IDateTimeProvider"/> that returns system UTC time.
-            Use this implementation for runtime; tests can replace it with a deterministic provider.
-            </summary>
-        </member>
-        <member name="P:FinanceManager.Application.SystemDateTimeProvider.UtcNow">
-            <summary>
-            Gets the current UTC date and time from the system clock.
-            </summary>
-            <value>The current <see cref="T:System.DateTime"/> in UTC.</value>
         </member>
         <member name="T:FinanceManager.Application.Users.IUserAdminService">
             <summary>

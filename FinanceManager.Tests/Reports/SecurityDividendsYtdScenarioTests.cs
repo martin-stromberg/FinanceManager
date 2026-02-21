@@ -8,7 +8,6 @@ using FinanceManager.Infrastructure.Reports;
 using FinanceManager.Infrastructure.Statements;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Xunit.Abstractions;
 using FinanceManager.Application.Accounts;
 using Microsoft.Extensions.Logging.Abstractions;
 

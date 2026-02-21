@@ -34,6 +34,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using FinanceManager.Application.Budget;
 using FinanceManager.Infrastructure.Budget; // new
+using System;
 
 namespace FinanceManager.Infrastructure;
 
@@ -65,7 +66,7 @@ public static class ServiceCollectionExtensions
             options.UseSqlite(connectionString ?? "Data Source=financemanager.db");
         });
 
-        services.AddScoped<IDateTimeProvider, SystemDateTimeProvider>();
+        services.AddSingleton<TimeProvider>(TimeProvider.System);
         // Register identity-compatible password hasher that delegates to legacy implementation
         services.AddScoped<Microsoft.AspNetCore.Identity.IPasswordHasher<User>, Pbkdf2IdentityPasswordHasher>();
         // Expose hashing helper for internal services

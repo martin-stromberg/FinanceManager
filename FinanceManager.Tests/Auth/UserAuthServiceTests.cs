@@ -16,7 +16,7 @@ namespace FinanceManager.Tests.Auth;
 
 public sealed class UserAuthServiceTests
 {
-    private static (UserAuthService sut, AppDbContext db, Mock<UserManager<User>> userManager, Mock<SignInManager<User>> signInManager, Mock<IJwtTokenService> jwt, TestClock clock) Create()
+    private static (UserAuthService sut, AppDbContext db, Mock<UserManager<User>> userManager, Mock<SignInManager<User>> signInManager, Mock<IJwtTokenService> jwt, TimeProvider timeProvider) Create()
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -47,7 +47,7 @@ public sealed class UserAuthServiceTests
             .ReturnsAsync(IdentityResult.Success);
 
         var jwt = new Mock<IJwtTokenService>();
-        var clock = new TestClock();
+        var timeProvider = TimeProvider.System;
 
         jwt.Setup(j => j.CreateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<bool>(), out It.Ref<DateTime>.IsAny, It.IsAny<string?>(), It.IsAny<string?>()))
             .Returns("token");
@@ -135,14 +135,14 @@ public sealed class UserAuthServiceTests
             });
 
         // pass signInManagerMock.Object and real roleManager to service
-        var sut = new UserAuthService(db, userManagerMock.Object, signInManagerMock.Object, jwt.Object, passwordHasherMock.Object, clock, logger.Object, new FinanceManager.Infrastructure.Auth.UserAuthService.NoopIpBlockService(), roleManager);
-        return (sut, db, userManagerMock, signInManagerMock, jwt, clock);
+        var sut = new UserAuthService(db, userManagerMock.Object, signInManagerMock.Object, jwt.Object, passwordHasherMock.Object, timeProvider, logger.Object, new FinanceManager.Infrastructure.Auth.UserAuthService.NoopIpBlockService(), roleManager);
+        return (sut, db, userManagerMock, signInManagerMock, jwt, timeProvider);
     }
 
     [Fact]
     public async Task RegisterAsync_ShouldCreateFirstUserAsAdmin_WhenNoUsersExist()
     {
-        var (sut, db, _, _, _, clock) = Create();
+        var (sut, db, _, _, _, _) = Create();
         var cmd = new RegisterUserCommand("alice", "Password123", null, null);
         var result = await sut.RegisterAsync(cmd, CancellationToken.None);
 
@@ -193,7 +193,7 @@ public sealed class UserAuthServiceTests
     [Fact]
     public async Task LoginAsync_FirstAndSecondInvalid_NoLock()
     {
-        var (sut, db, userManager, signInManager, _, clock) = Create();
+        var (sut, db, userManager, signInManager, _, _) = Create();
         var user = new User("bob", "HASH::pw", false);
         db.Users.Add(user); db.SaveChanges();
         signInManager.Setup(s => s.PasswordSignInAsync(user, "wrong", false, true)).ReturnsAsync(SignInResult.Failed);
@@ -211,7 +211,7 @@ public sealed class UserAuthServiceTests
     [Fact]
     public async Task LoginAsync_ThirdInvalid_LeadsToIdentityLockout()
     {
-        var (sut, db, userManager, signInManager, _, clock) = Create();
+        var (sut, db, userManager, signInManager, _, _) = Create();
         var user = new User("bob", "HASH::pw", false);
         db.Users.Add(user); db.SaveChanges();
 
@@ -232,7 +232,7 @@ public sealed class UserAuthServiceTests
     [Fact]
     public async Task LoginAsync_Success_ResetsIdentityLockout()
     {
-        var (sut, db, userManager, signInManager, _, clock) = Create();
+        var (sut, db, userManager, signInManager, _, _) = Create();
         var user = new User("bob", "HASH::pw", false);
         db.Users.Add(user); db.SaveChanges();
 
@@ -245,7 +245,7 @@ public sealed class UserAuthServiceTests
     [Fact]
     public async Task LoginAsync_ShouldReturnToken_OnValidCredentials()
     {
-        var (sut, db, userManager, signInManager, jwt, clock) = Create();
+        var (sut, db, userManager, signInManager, jwt, _) = Create();
         var user = new User("bob", "HASH::pw", false);
         db.Users.Add(user); db.SaveChanges();
         signInManager.Setup(s => s.PasswordSignInAsync(user, "pw", false, true)).ReturnsAsync(SignInResult.Success);
@@ -258,7 +258,7 @@ public sealed class UserAuthServiceTests
     [Fact]
     public async Task LoginAsync_ShouldSucceed_AfterIdentityLockExpired_AndValidCredentials()
     {
-        var (sut, db, userManager, signInManager, jwt, clock) = Create();
+        var (sut, db, userManager, signInManager, jwt, _) = Create();
         var user = new User("bob", "HASH::pw", false);
         db.Users.Add(user);
         db.SaveChanges();
@@ -279,7 +279,7 @@ public sealed class UserAuthServiceTests
     [Fact]
     public async Task LoginAsync_ShouldNotIncrementAttempts_WhileLocked()
     {
-        var (sut, db, userManager, signInManager, _, clock) = Create();
+        var (sut, db, userManager, signInManager, _, _) = Create();
         var user = new User("eve", "HASH::pw", false);
         db.Users.Add(user);
         db.SaveChanges();
@@ -292,8 +292,4 @@ public sealed class UserAuthServiceTests
         Assert.Contains("locked", res.Error ?? string.Empty, StringComparison.OrdinalIgnoreCase);
     }
 
-    private sealed class TestClock : IDateTimeProvider
-    {
-        public DateTime UtcNow { get; set; } = DateTime.UtcNow;
-    }
 }
