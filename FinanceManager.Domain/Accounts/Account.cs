@@ -172,16 +172,16 @@ public sealed class Account : Entity, IAggregateRoot
     /// <param name="BankContactId">Bank contact identifier.</param>
     /// <param name="SymbolAttachmentId">Optional symbol attachment id.</param>
     /// <param name="SavingsPlanExpectation">Configured savings plan expectation.</param>
-    /// <param name="SecurityProcessingEnabled">Indicates whether security processing is allowed.</param>
     /// <param name="CreatedUtc">Entity creation timestamp UTC.</param>
     /// <param name="ModifiedUtc">Entity last modified timestamp UTC, if any.</param>
-    public sealed record AccountBackupDto(Guid Id, Guid OwnerUserId, AccountType Type, string Name, string? Iban, decimal CurrentBalance, Guid BankContactId, Guid? SymbolAttachmentId, SavingsPlanExpectation SavingsPlanExpectation, bool SecurityProcessingEnabled, DateTime CreatedUtc, DateTime? ModifiedUtc);
+    /// <param name="SecurityProcessingEnabled">Indicates whether security processing is allowed.</param>
+    public sealed record AccountBackupDto(Guid Id, Guid OwnerUserId, AccountType Type, string Name, string? Iban, decimal CurrentBalance, Guid BankContactId, Guid? SymbolAttachmentId, SavingsPlanExpectation SavingsPlanExpectation, DateTime CreatedUtc, DateTime? ModifiedUtc, bool SecurityProcessingEnabled = true);
 
     /// <summary>
     /// Creates a backup DTO representing the serializable state of this account.
     /// </summary>
     /// <returns>A <see cref="AccountBackupDto"/> containing values needed to restore the account.</returns>
-    public AccountBackupDto ToBackupDto() => new AccountBackupDto(Id, OwnerUserId, Type, Name, Iban, CurrentBalance, BankContactId, SymbolAttachmentId, SavingsPlanExpectation, SecurityProcessingEnabled, CreatedUtc, ModifiedUtc);
+    public AccountBackupDto ToBackupDto() => new AccountBackupDto(Id, OwnerUserId, Type, Name, Iban, CurrentBalance, BankContactId, SymbolAttachmentId, SavingsPlanExpectation, CreatedUtc, ModifiedUtc, SecurityProcessingEnabled);
 
     /// <summary>
     /// Applies values from a backup DTO to this account instance.

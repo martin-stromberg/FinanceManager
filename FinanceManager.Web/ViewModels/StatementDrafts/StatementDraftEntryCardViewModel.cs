@@ -113,7 +113,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         }
 
         // Security-related fields are only shown when the selected contact equals the bank contact of the statement draft
-            var contactIsBankContact = (_entryDetail?.BankContactId.HasValue == true && entry.ContactId.HasValue && _entryDetail!.BankContactId == entry.ContactId);
+        var contactIsBankContact = (_entryDetail?.BankContactId.HasValue == true && entry.ContactId.HasValue && _entryDetail!.BankContactId == entry.ContactId);
         var hasSecurityData = entry.SecurityId is not null && entry.SecurityId != Guid.Empty
             || entry.SecurityTransactionType.HasValue
             || entry.SecurityQuantity.HasValue
@@ -121,7 +121,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             || entry.SecurityTaxAmount.HasValue;
         if ((_accountAllowsSecurity && contactIsBankContact) || hasSecurityData)
         {
-            var securityEditable = _accountAllowsSecurity;
+            var securityEditable = _accountAllowsSecurity && !isLocked && contactIsBankContact;
             fields.Add(new CardField("Card_Caption_StatementDrafts_Security", CardFieldKind.Text, text: _securityName, editable: securityEditable, lookupType: "Security", lookupField: "Name", valueId: entry.SecurityId, allowAdd: true, recordCreationNameSuggestion: entry.Subject));
             // Show localized enum label so the lookup's localized names match and the dropdown selection displays correctly
             string? txText = null;

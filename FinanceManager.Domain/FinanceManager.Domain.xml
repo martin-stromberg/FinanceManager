@@ -126,11 +126,11 @@
             <param name="BankContactId">Bank contact identifier.</param>
             <param name="SymbolAttachmentId">Optional symbol attachment id.</param>
             <param name="SavingsPlanExpectation">Configured savings plan expectation.</param>
-            <param name="SecurityProcessingEnabled">Indicates whether security processing is allowed.</param>
             <param name="CreatedUtc">Entity creation timestamp UTC.</param>
             <param name="ModifiedUtc">Entity last modified timestamp UTC, if any.</param>
+            <param name="SecurityProcessingEnabled">Indicates whether security processing is allowed.</param>
         </member>
-        <member name="M:FinanceManager.Domain.Accounts.Account.AccountBackupDto.#ctor(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.String,System.Decimal,System.Guid,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.DateTime,System.Nullable{System.DateTime})">
+        <member name="M:FinanceManager.Domain.Accounts.Account.AccountBackupDto.#ctor(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.String,System.Decimal,System.Guid,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.DateTime,System.Nullable{System.DateTime},System.Boolean)">
             <summary>
             DTO carrying the serializable state of an <see cref="T:FinanceManager.Domain.Accounts.Account"/> for backup purposes.
             </summary>
@@ -143,9 +143,9 @@
             <param name="BankContactId">Bank contact identifier.</param>
             <param name="SymbolAttachmentId">Optional symbol attachment id.</param>
             <param name="SavingsPlanExpectation">Configured savings plan expectation.</param>
-            <param name="SecurityProcessingEnabled">Indicates whether security processing is allowed.</param>
             <param name="CreatedUtc">Entity creation timestamp UTC.</param>
             <param name="ModifiedUtc">Entity last modified timestamp UTC, if any.</param>
+            <param name="SecurityProcessingEnabled">Indicates whether security processing is allowed.</param>
         </member>
         <member name="P:FinanceManager.Domain.Accounts.Account.AccountBackupDto.Id">
             <summary>Entity identifier.</summary>
@@ -174,14 +174,14 @@
         <member name="P:FinanceManager.Domain.Accounts.Account.AccountBackupDto.SavingsPlanExpectation">
             <summary>Configured savings plan expectation.</summary>
         </member>
-        <member name="P:FinanceManager.Domain.Accounts.Account.AccountBackupDto.SecurityProcessingEnabled">
-            <summary>Indicates whether security processing is allowed.</summary>
-        </member>
         <member name="P:FinanceManager.Domain.Accounts.Account.AccountBackupDto.CreatedUtc">
             <summary>Entity creation timestamp UTC.</summary>
         </member>
         <member name="P:FinanceManager.Domain.Accounts.Account.AccountBackupDto.ModifiedUtc">
             <summary>Entity last modified timestamp UTC, if any.</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.Account.AccountBackupDto.SecurityProcessingEnabled">
+            <summary>Indicates whether security processing is allowed.</summary>
         </member>
         <member name="M:FinanceManager.Domain.Accounts.Account.ToBackupDto">
             <summary>
