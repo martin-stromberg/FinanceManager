@@ -130,7 +130,7 @@ public sealed class AccountsController : ControllerBase
                 bankContactId = createdContact.Id;
             }
 
-            var account = await _accounts.CreateAsync(_current.UserId, req.Name.Trim(), req.Type, req.Iban?.Trim(), bankContactId, req.SavingsPlanExpectation, ct);
+            var account = await _accounts.CreateAsync(_current.UserId, req.Name.Trim(), req.Type, req.Iban?.Trim(), bankContactId, req.SavingsPlanExpectation, req.SecurityProcessingEnabled, ct);
             if (req.SymbolAttachmentId.HasValue)
             {
                 await _accounts.SetSymbolAttachmentAsync(account.Id, _current.UserId, req.SymbolAttachmentId.Value, ct);
@@ -183,7 +183,7 @@ public sealed class AccountsController : ControllerBase
             {
                 return BadRequest(new { error = "Bank contact required (existing or new)" });
             }
-            var updated = await _accounts.UpdateAsync(id, _current.UserId, req.Name.Trim(), req.Iban?.Trim(), bankContactId, req.SavingsPlanExpectation, ct);
+            var updated = await _accounts.UpdateAsync(id, _current.UserId, req.Name.Trim(), req.Iban?.Trim(), bankContactId, req.SavingsPlanExpectation, req.SecurityProcessingEnabled, ct);
             if (updated is null) return NotFound();
             if (req.SymbolAttachmentId.HasValue)
             {

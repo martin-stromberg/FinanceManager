@@ -32,7 +32,7 @@ public sealed class AccountService : IAccountService
     public async Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, CancellationToken ct)
     {
         // default expectation for older callers
-        return await CreateAsync(ownerUserId, name, type, iban, bankContactId, SavingsPlanExpectation.Optional, ct);
+        return await CreateAsync(ownerUserId, name, type, iban, bankContactId, SavingsPlanExpectation.Optional, securityProcessingEnabled: true, ct);
     }
 
     /// <summary>
@@ -47,7 +47,7 @@ public sealed class AccountService : IAccountService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The created <see cref="AccountDto"/> representing the persisted account.</returns>
     /// <exception cref="ArgumentException">Thrown when the bank contact is invalid, the name is missing or already exists, or the IBAN already exists for the user.</exception>
-    public async Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, CancellationToken ct)
+    public async Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct)
     {
         if (!await _db.Contacts.AsNoTracking().AnyAsync(c => c.Id == bankContactId && c.OwnerUserId == ownerUserId && c.Type == ContactType.Bank, ct))
         {
@@ -75,9 +75,10 @@ public sealed class AccountService : IAccountService
         }
         var account = new Domain.Accounts.Account(ownerUserId, type, name, iban, bankContactId);
         account.SetSavingsPlanExpectation(expectation);
+        account.SetSecurityProcessingEnabled(securityProcessingEnabled);
         _db.Accounts.Add(account);
         await _db.SaveChangesAsync(ct);
-        return new AccountDto(account.Id, account.Name, account.Type, account.Iban, account.CurrentBalance, account.BankContactId, account.SymbolAttachmentId, account.SavingsPlanExpectation);
+        return new AccountDto(account.Id, account.Name, account.Type, account.Iban, account.CurrentBalance, account.BankContactId, account.SymbolAttachmentId, account.SavingsPlanExpectation, account.SecurityProcessingEnabled);
     }
 
     /// <summary>
@@ -92,7 +93,7 @@ public sealed class AccountService : IAccountService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The updated <see cref="AccountDto"/>, or <c>null</c> when the account was not found.</returns>
     /// <exception cref="ArgumentException">Thrown when the bank contact is invalid, the name is missing or already exists, or the IBAN already exists for the user.</exception>
-    public async Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, CancellationToken ct)
+    public async Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct)
     {
         var account = await _db.Accounts.FirstOrDefaultAsync(a => a.Id == id && a.OwnerUserId == ownerUserId, ct);
         if (account == null) return null;
@@ -120,8 +121,9 @@ public sealed class AccountService : IAccountService
         account.SetIban(iban);
         account.SetBankContact(bankContactId);
         account.SetSavingsPlanExpectation(expectation);
+        account.SetSecurityProcessingEnabled(securityProcessingEnabled);
         await _db.SaveChangesAsync(ct);
-        return new AccountDto(account.Id, account.Name, account.Type, account.Iban, account.CurrentBalance, account.BankContactId, account.SymbolAttachmentId, account.SavingsPlanExpectation);
+        return new AccountDto(account.Id, account.Name, account.Type, account.Iban, account.CurrentBalance, account.BankContactId, account.SymbolAttachmentId, account.SavingsPlanExpectation, account.SecurityProcessingEnabled);
     }
 
     /// <summary>
@@ -208,7 +210,8 @@ public sealed class AccountService : IAccountService
                         (a.SymbolAttachmentId.HasValue && a.SymbolAttachmentId.Value != Guid.Empty) ? a.SymbolAttachmentId
                             : (c != null && c.SymbolAttachmentId.HasValue && c.SymbolAttachmentId.Value != Guid.Empty) ? c.SymbolAttachmentId
                             : cat.SymbolAttachmentId,
-                        a.SavingsPlanExpectation
+                        a.SavingsPlanExpectation,
+                        a.SecurityProcessingEnabled
                     );
 
         return await query.Skip(skip).Take(take).ToListAsync(ct);
@@ -240,7 +243,8 @@ public sealed class AccountService : IAccountService
                         (a.SymbolAttachmentId.HasValue && a.SymbolAttachmentId.Value != Guid.Empty) ? a.SymbolAttachmentId
                             : (c != null && c.SymbolAttachmentId.HasValue && c.SymbolAttachmentId.Value != Guid.Empty) ? c.SymbolAttachmentId
                             : cat.SymbolAttachmentId,
-                        a.SavingsPlanExpectation
+                        a.SavingsPlanExpectation,
+                        a.SecurityProcessingEnabled
                     );
 
         return await query.FirstOrDefaultAsync(ct);
@@ -271,7 +275,8 @@ public sealed class AccountService : IAccountService
                         (a.SymbolAttachmentId.HasValue && a.SymbolAttachmentId.Value != Guid.Empty) ? a.SymbolAttachmentId
                             : (c != null && c.SymbolAttachmentId.HasValue && c.SymbolAttachmentId.Value != Guid.Empty) ? c.SymbolAttachmentId
                             : cat.SymbolAttachmentId,
-                        a.SavingsPlanExpectation
+                        a.SavingsPlanExpectation,
+                        a.SecurityProcessingEnabled
                     );
 
         return query.FirstOrDefault();

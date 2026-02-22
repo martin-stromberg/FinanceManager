@@ -13,4 +13,5 @@ public sealed record AccountUpdateRequest(
     string? NewBankContactName,
     Guid? SymbolAttachmentId,
     SavingsPlanExpectation SavingsPlanExpectation,
-    bool Archived);
+    bool SecurityProcessingEnabled = true,
+    bool Archived = false);

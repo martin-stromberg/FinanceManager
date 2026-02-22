@@ -55,7 +55,7 @@ public sealed class AccountDetailViewModelTests
         var (vm, apiMock) = CreateVm();
 
         apiMock.Setup(a => a.GetAccountAsync(accountId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(accountId, "My Account", FinanceManager.Shared.Dtos.Accounts.AccountType.Giro, "DE00", 0m, bankContactId, null, FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.Optional));
+            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(accountId, "My Account", FinanceManager.Shared.Dtos.Accounts.AccountType.Giro, "DE00", 0m, bankContactId, null, FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.Optional, true));
 
         apiMock.Setup(a => a.Contacts_GetAsync(bankContactId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ContactDto(bankContactId, "Bank A", ContactType.Bank, null, null, false, null));
@@ -90,7 +90,7 @@ public sealed class AccountDetailViewModelTests
         var (vm, apiMock) = CreateVm();
 
         apiMock.Setup(a => a.CreateAccountAsync(It.IsAny<FinanceManager.Shared.Dtos.Accounts.AccountCreateRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(createdId, "Created", FinanceManager.Shared.Dtos.Accounts.AccountType.Savings, null, 0m, Guid.NewGuid(), null, FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.Optional));
+            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(createdId, "Created", FinanceManager.Shared.Dtos.Accounts.AccountType.Savings, null, 0m, Guid.NewGuid(), null, FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.Optional, true));
 
         // Initialize for new account
         await vm.InitializeAsync(Guid.Empty);
@@ -116,10 +116,10 @@ public sealed class AccountDetailViewModelTests
         var (vm, apiMock) = CreateVm();
 
         apiMock.Setup(a => a.GetAccountAsync(accountId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(accountId, "Existing", FinanceManager.Shared.Dtos.Accounts.AccountType.Giro, null, 0m, Guid.NewGuid(), null, FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.Optional));
+            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(accountId, "Existing", FinanceManager.Shared.Dtos.Accounts.AccountType.Giro, null, 0m, Guid.NewGuid(), null, FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.Optional, true));
 
         apiMock.Setup(a => a.UpdateAccountAsync(accountId, It.IsAny<FinanceManager.Shared.Dtos.Accounts.AccountUpdateRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(accountId, "ExistingUpdated", FinanceManager.Shared.Dtos.Accounts.AccountType.Giro, null, 0m, Guid.NewGuid(), null, FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.Optional));
+            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(accountId, "ExistingUpdated", FinanceManager.Shared.Dtos.Accounts.AccountType.Giro, null, 0m, Guid.NewGuid(), null, FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.Optional, true));
 
         await vm.InitializeAsync(accountId);
 
@@ -142,7 +142,7 @@ public sealed class AccountDetailViewModelTests
         var (vm, apiMock) = CreateVm();
 
         apiMock.Setup(a => a.GetAccountAsync(accountId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(accountId, "ToDelete", FinanceManager.Shared.Dtos.Accounts.AccountType.Giro, null, 0m, Guid.NewGuid(), null, FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.Optional));
+            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(accountId, "ToDelete", FinanceManager.Shared.Dtos.Accounts.AccountType.Giro, null, 0m, Guid.NewGuid(), null, FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.Optional, true));
 
         apiMock.Setup(a => a.DeleteAccountAsync(accountId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 

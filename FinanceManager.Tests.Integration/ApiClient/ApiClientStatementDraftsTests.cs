@@ -47,7 +47,8 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                 BankContactId: null,
                 NewBankContactName: "Test Bank",
                 SymbolAttachmentId: null,
-                SavingsPlanExpectation: SavingsPlanExpectation.Optional));
+                SavingsPlanExpectation: SavingsPlanExpectation.Optional,
+                SecurityProcessingEnabled: true));
             accountId = acc.Id;
             accountIban = acc.Iban;
         }
@@ -99,7 +100,8 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                 BankContactId: null,
                 NewBankContactName: "Test Bank",
                 SymbolAttachmentId: null,
-                SavingsPlanExpectation: SavingsPlanExpectation.Optional));
+                SavingsPlanExpectation: SavingsPlanExpectation.Optional,
+                SecurityProcessingEnabled: true));
         var afterAccount = await api.StatementDrafts_SetAccountAsync(first.DraftId, secondAccount.Id);
         afterAccount.Should().NotBeNull();
         afterAccount!.DetectedAccountId.Should().Be(secondAccount.Id);
@@ -165,7 +167,8 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                 BankContactId: null,
                 NewBankContactName: "Test Bank",
                 SymbolAttachmentId: null,
-                SavingsPlanExpectation: SavingsPlanExpectation.Optional));
+                SavingsPlanExpectation: SavingsPlanExpectation.Optional,
+                SecurityProcessingEnabled: true));
             accountId = acc.Id;
             accountIban = acc.Iban;
         }

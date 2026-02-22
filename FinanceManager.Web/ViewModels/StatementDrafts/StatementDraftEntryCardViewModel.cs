@@ -41,6 +41,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
     private bool _contactIsSelf = false;
     private bool _contactIsPaymentIntermediary = false;
     private bool _accountAllowsSavings = true;
+    private bool _accountAllowsSecurity = true;
 
     /// <summary>
     /// Initializes a new instance of <see cref="StatementDraftEntryCardViewModel"/>.
@@ -113,9 +114,15 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
 
         // Security-related fields are only shown when the selected contact equals the bank contact of the statement draft
         var contactIsBankContact = (_entryDetail?.BankContactId.HasValue == true && entry.ContactId.HasValue && _entryDetail!.BankContactId == entry.ContactId);
-        if (contactIsBankContact || (entry.SecurityId is not null && entry.SecurityId != Guid.Empty))
+        var hasSecurityData = entry.SecurityId is not null && entry.SecurityId != Guid.Empty
+            || entry.SecurityTransactionType.HasValue
+            || entry.SecurityQuantity.HasValue
+            || entry.SecurityFeeAmount.HasValue
+            || entry.SecurityTaxAmount.HasValue;
+        if ((_accountAllowsSecurity && contactIsBankContact) || hasSecurityData)
         {
-            fields.Add(new CardField("Card_Caption_StatementDrafts_Security", CardFieldKind.Text, text: _securityName, editable: true, lookupType: "Security", lookupField: "Name", valueId: entry.SecurityId, allowAdd: true, recordCreationNameSuggestion: entry.Subject));
+            var securityEditable = _accountAllowsSecurity && !isLocked && contactIsBankContact;
+            fields.Add(new CardField("Card_Caption_StatementDrafts_Security", CardFieldKind.Text, text: _securityName, editable: securityEditable, lookupType: "Security", lookupField: "Name", valueId: entry.SecurityId, allowAdd: true, recordCreationNameSuggestion: entry.Subject));
             // Show localized enum label so the lookup's localized names match and the dropdown selection displays correctly
             string? txText = null;
             try
@@ -130,10 +137,10 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                 }
             }
             catch { txText = entry.SecurityTransactionType?.ToString(); }
-            fields.Add(new CardField("Card_Caption_StatementDrafts_TransactionType", CardFieldKind.Text, text: txText, editable: true, lookupType: "Enum:SecurityTransactionType"));
-            fields.Add(new CardField("Card_Caption_StatementDrafts_Quantity", CardFieldKind.Text, text: entry.SecurityQuantity?.ToString(), editable: true));
-            fields.Add(new CardField("Card_Caption_StatementDrafts_Fee", CardFieldKind.Currency, text: entry.SecurityFeeAmount?.ToString(), amount: entry.SecurityFeeAmount, editable: true));
-            fields.Add(new CardField("Card_Caption_StatementDrafts_Tax", CardFieldKind.Currency, text: entry.SecurityTaxAmount?.ToString(), amount: entry.SecurityTaxAmount, editable: true));
+            fields.Add(new CardField("Card_Caption_StatementDrafts_TransactionType", CardFieldKind.Text, text: txText, editable: securityEditable, lookupType: "Enum:SecurityTransactionType"));
+            fields.Add(new CardField("Card_Caption_StatementDrafts_Quantity", CardFieldKind.Text, text: entry.SecurityQuantity?.ToString(), editable: securityEditable));
+            fields.Add(new CardField("Card_Caption_StatementDrafts_Fee", CardFieldKind.Currency, text: entry.SecurityFeeAmount?.ToString(), amount: entry.SecurityFeeAmount, editable: securityEditable));
+            fields.Add(new CardField("Card_Caption_StatementDrafts_Tax", CardFieldKind.Currency, text: entry.SecurityTaxAmount?.ToString(), amount: entry.SecurityTaxAmount, editable: securityEditable));
         }
 
         // If this entry is associated with a split/group draft, show assigned amount and difference immediately after Amount
@@ -282,7 +289,8 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                     if (detectedAccount != null)
                     {
                         _accountAllowsSavings = detectedAccount.SavingsPlanExpectation != SavingsPlanExpectation.None;
-                      }
+                        _accountAllowsSecurity = detectedAccount.SecurityProcessingEnabled;
+                    }
                 }
             }
             catch { /* ignore */ }
@@ -799,6 +807,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
 	                    if (detectedAccount != null)
                         {
                             _accountAllowsSavings = detectedAccount.SavingsPlanExpectation != SavingsPlanExpectation.None;
+                            _accountAllowsSecurity = detectedAccount.SecurityProcessingEnabled;
                         }
                     }
                 }
@@ -820,7 +829,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
              ClearPendingChanges();
 
              // refresh card
-            CardRecord = new CardRecord(BuildFields(), Entry);
+             CardRecord = new CardRecord(BuildFields(), Entry);
 
              return true;
         }

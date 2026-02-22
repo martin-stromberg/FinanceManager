@@ -1023,7 +1023,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         {
             var bank = bankContacts[i];
             var iban = ibans.Length > i ? ibans[i] : $"DE00{Guid.NewGuid():N}";
-            var acc = await api.CreateAccountAsync(new AccountCreateRequest($"{bank.Name} Konto", i == 0 ? AccountType.Giro : AccountType.Savings, iban, bank.Id, null, null, SavingsPlanExpectation.Optional));
+            var acc = await api.CreateAccountAsync(new AccountCreateRequest($"{bank.Name} Konto", i == 0 ? AccountType.Giro : AccountType.Savings, iban, bank.Id, null, null, SavingsPlanExpectation.Optional, true));
             acc.Should().NotBeNull();
             result.Add(acc);
         }

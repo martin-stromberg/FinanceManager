@@ -17,10 +17,10 @@ public sealed class StatementDraftBookingTests
 {
     private sealed class TestAccountService : IAccountService
     {
-        public Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, CancellationToken ct)
+        public Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct)
             => throw new NotImplementedException();
 
-        public Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, CancellationToken ct)
+        public Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct)
             => throw new NotImplementedException();
 
         public Task<bool> DeleteAsync(Guid id, Guid ownerUserId, CancellationToken ct)
@@ -515,6 +515,33 @@ public sealed class StatementDraftBookingTests
         var res = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
         Assert.False(res.Success);
         Assert.True(res.Validation.Messages.Any(m => m.Code == "SECURITY_MISSING_QUANTITY"));
+        conn.Dispose();
+    }
+
+    [Fact]
+    public async Task Booking_Fails_WhenSecurityProcessingDisabledForAccount()
+    {
+        var (sut, db, conn, owner) = Create();
+        var (acc, bank) = await AddAccountAsync(db, owner);
+        acc.SetSecurityProcessingEnabled(false);
+        await db.SaveChangesAsync();
+
+        var draft = await CreateDraftAsync(db, owner, acc.Id);
+        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId);
+        var entry = draft.AddEntry(DateTime.Today, 200m, "Trade", bank.Name, DateTime.Today, "EUR", null, false);
+        db.Entry(entry).State = EntityState.Added;
+        entry.MarkAccounted(account!.BankContactId);
+        await db.SaveChangesAsync();
+
+        var sec = new Security(owner, "ETF X", "DE000A0", null, null, "EUR", null);
+        db.Securities.Add(sec);
+        await db.SaveChangesAsync();
+
+        await sut.SetEntrySecurityAsync(draft.Id, entry.Id, sec.Id, SecurityTransactionType.Buy, 1.0m, 1.00m, 1.00m, owner, CancellationToken.None);
+
+        var res = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
+        Assert.False(res.Success);
+        Assert.True(res.Validation.Messages.Any(m => m.Code == "SECURITY_ACCOUNT_NOT_ALLOWED"));
         conn.Dispose();
     }
 

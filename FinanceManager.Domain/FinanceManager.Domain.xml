@@ -60,6 +60,11 @@
             Expected savings plan behavior attached to this account.
             </summary>
         </member>
+        <member name="P:FinanceManager.Domain.Accounts.Account.SecurityProcessingEnabled">
+            <summary>
+            Indicates whether this account allows security processing on statement entries.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Domain.Accounts.Account.Rename(System.String)">
             <summary>
             Renames the account.
@@ -102,6 +107,12 @@
             </summary>
             <param name="expectation">Savings plan expectation value.</param>
         </member>
+        <member name="M:FinanceManager.Domain.Accounts.Account.SetSecurityProcessingEnabled(System.Boolean)">
+            <summary>
+            Enables or disables security processing for statement entries on this account.
+            </summary>
+            <param name="enabled">True to allow security processing; otherwise false.</param>
+        </member>
         <member name="T:FinanceManager.Domain.Accounts.Account.AccountBackupDto">
             <summary>
             DTO carrying the serializable state of an <see cref="T:FinanceManager.Domain.Accounts.Account"/> for backup purposes.
@@ -117,8 +128,9 @@
             <param name="SavingsPlanExpectation">Configured savings plan expectation.</param>
             <param name="CreatedUtc">Entity creation timestamp UTC.</param>
             <param name="ModifiedUtc">Entity last modified timestamp UTC, if any.</param>
+            <param name="SecurityProcessingEnabled">Indicates whether security processing is allowed.</param>
         </member>
-        <member name="M:FinanceManager.Domain.Accounts.Account.AccountBackupDto.#ctor(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.String,System.Decimal,System.Guid,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.DateTime,System.Nullable{System.DateTime})">
+        <member name="M:FinanceManager.Domain.Accounts.Account.AccountBackupDto.#ctor(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.String,System.Decimal,System.Guid,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.DateTime,System.Nullable{System.DateTime},System.Boolean)">
             <summary>
             DTO carrying the serializable state of an <see cref="T:FinanceManager.Domain.Accounts.Account"/> for backup purposes.
             </summary>
@@ -133,6 +145,7 @@
             <param name="SavingsPlanExpectation">Configured savings plan expectation.</param>
             <param name="CreatedUtc">Entity creation timestamp UTC.</param>
             <param name="ModifiedUtc">Entity last modified timestamp UTC, if any.</param>
+            <param name="SecurityProcessingEnabled">Indicates whether security processing is allowed.</param>
         </member>
         <member name="P:FinanceManager.Domain.Accounts.Account.AccountBackupDto.Id">
             <summary>Entity identifier.</summary>
@@ -166,6 +179,9 @@
         </member>
         <member name="P:FinanceManager.Domain.Accounts.Account.AccountBackupDto.ModifiedUtc">
             <summary>Entity last modified timestamp UTC, if any.</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.Account.AccountBackupDto.SecurityProcessingEnabled">
+            <summary>Indicates whether security processing is allowed.</summary>
         </member>
         <member name="M:FinanceManager.Domain.Accounts.Account.ToBackupDto">
             <summary>

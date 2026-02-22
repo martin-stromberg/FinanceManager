@@ -54,7 +54,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
             {
                 if (id == Guid.Empty)
                 {
-                    Account = new AccountDto(Guid.Empty, string.Empty, AccountType.Giro, null, 0m, Guid.Empty, null, SavingsPlanExpectation.Optional);
+                    Account = new AccountDto(Guid.Empty, string.Empty, AccountType.Giro, null, 0m, Guid.Empty, null, SavingsPlanExpectation.Optional, true);
                     CardRecord = await BuildCardRecordsAsync(Account);
                     return;
                 }
@@ -137,6 +137,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
                 new CardField("Card_Caption_Account_Symbol", CardFieldKind.Symbol, symbolId: a.SymbolAttachmentId, editable: a.Id != Guid.Empty),
                 new CardField("Card_Caption_Account_Contact", CardFieldKind.Text, text: bankContactName ?? "-", editable: true, lookupType: "Contact", lookupField: "Name", valueId: a.BankContactId, lookupFilter: "Type=Bank"),
                 new CardField("Card_Caption_Account_SavingsPlanExpectation", CardFieldKind.Text, text: a.SavingsPlanExpectation.ToString(), editable: true, lookupType: "Enum:SavingsPlanExpectation"),
+                new CardField("Card_Caption_Account_SecurityProcessing", CardFieldKind.Boolean, boolValue: a.SecurityProcessingEnabled, editable: true)
             };
 
             var record = new CardRecord(fields, a);
@@ -182,8 +183,11 @@ namespace FinanceManager.Web.ViewModels.Accounts
 
             var symbolId = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_Symbol")?.SymbolId ?? Account?.SymbolAttachmentId;
             var bankContactId = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_Contact")?.ValueId ?? Account?.BankContactId ?? Guid.Empty;
+            var securityProcessing = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_SecurityProcessing")?.BoolValue
+                ?? Account?.SecurityProcessingEnabled
+                ?? true;
 
-            return new AccountDto(Account?.Id ?? Guid.Empty, name, type, string.IsNullOrWhiteSpace(iban) ? null : iban, Account?.CurrentBalance ?? 0m, bankContactId, symbolId, spExpectation)
+            return new AccountDto(Account?.Id ?? Guid.Empty, name, type, string.IsNullOrWhiteSpace(iban) ? null : iban, Account?.CurrentBalance ?? 0m, bankContactId, symbolId, spExpectation, securityProcessing)
             {
                 Name = name,
                 Type = type,
@@ -191,6 +195,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
                 SymbolAttachmentId = symbolId,
                 BankContactId = bankContactId,
                 SavingsPlanExpectation = spExpectation,
+                SecurityProcessingEnabled = securityProcessing,
                 CurrentBalance = Account?.CurrentBalance ?? 0m,
                 Id = Account?.Id ?? Guid.Empty
             };
@@ -295,7 +300,8 @@ namespace FinanceManager.Web.ViewModels.Accounts
                         newDto.BankContactId == Guid.Empty ? null : newDto.BankContactId,
                         null,
                         newDto.SymbolAttachmentId,
-                        newDto.SavingsPlanExpectation);
+                        newDto.SavingsPlanExpectation,
+                        newDto.SecurityProcessingEnabled);
 
                     var created = await api.CreateAccountAsync(createReq);
                     if (created == null)
@@ -325,6 +331,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
                     null,
                     newDto.SymbolAttachmentId,
                     newDto.SavingsPlanExpectation,
+                    newDto.SecurityProcessingEnabled,
                     false);
 
                 var updated = await api.UpdateAccountAsync(Id, req);

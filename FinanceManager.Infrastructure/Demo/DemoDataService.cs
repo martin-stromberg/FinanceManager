@@ -164,6 +164,7 @@ public sealed class DemoDataService : IDemoDataService
                 iban: "DE00DEMO0000000001",
                 bankContactId: giroBank.Id,
                 expectation: SavingsPlanExpectation.Optional,
+                securityProcessingEnabled: true,
                 ct: ct);
 
             // Create two savings accounts
@@ -174,6 +175,7 @@ public sealed class DemoDataService : IDemoDataService
                 iban: "DE00DEMO0000000002",
                 bankContactId: savingsBank.Id,
                 expectation: SavingsPlanExpectation.None,
+                securityProcessingEnabled: true,
                 ct: ct);
 
             var accSave2 = await _accountService.CreateAsync(
@@ -183,6 +185,7 @@ public sealed class DemoDataService : IDemoDataService
                 iban: "DE00DEMO0000000003",
                 bankContactId: savingsBank.Id,
                 expectation: SavingsPlanExpectation.None,
+                securityProcessingEnabled: true,
                 ct: ct);
 
             // if requested, create statement draft and entries for KFZ Versicherung
