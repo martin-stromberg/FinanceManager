@@ -241,10 +241,15 @@ public sealed partial class StatementDraftService : IStatementDraftService
             {
                 var effContactId = contactId ?? entry.ContactId;
                 Guid? bankContactId = null;
+                Account? accountForSecurity = null;
                 if (draft.DetectedAccountId.HasValue)
                 {
-                    var accountForSecurity = await _db.Accounts.AsNoTracking().FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId.Value, ct);
+                    accountForSecurity = await _db.Accounts.AsNoTracking().FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId.Value, ct);
                     bankContactId = accountForSecurity?.BankContactId;
+                }
+                if (accountForSecurity != null && !accountForSecurity.SecurityProcessingEnabled)
+                {
+                    throw new FinanceManager.Application.Exceptions.DomainValidationException("SECURITY_ACCOUNT_NOT_ALLOWED", "Security processing is not allowed for the detected account.");
                 }
                 if (!effContactId.HasValue || bankContactId == null || effContactId.Value != bankContactId.Value)
                 {
@@ -1697,8 +1702,17 @@ public sealed partial class StatementDraftService : IStatementDraftService
                         }
                     }
                 }
-                if (ce.SecurityId != null && account != null)
+                var ceHasSecurity = ce.SecurityId != null
+                    || ce.SecurityTransactionType != null
+                    || ce.SecurityQuantity != null
+                    || ce.SecurityFeeAmount != null
+                    || ce.SecurityTaxAmount != null;
+                if (ceHasSecurity && account != null)
                 {
+                    if (!account.SecurityProcessingEnabled)
+                    {
+                        Add("SECURITY_ACCOUNT_NOT_ALLOWED", "Error", prefix + "Wertpapierabwicklung ist für dieses Konto deaktiviert.", parentEntry.DraftId, parentEntry.Id);
+                    }
                     if (ce.ContactId != account.BankContactId)
                     {
                         Add("SECURITY_INVALID_CONTACT", "Error", prefix + "Wertpapierbuchung erfordert Bankkontakt des Kontos.", parentEntry.DraftId, parentEntry.Id);
@@ -1785,8 +1799,17 @@ public sealed partial class StatementDraftService : IStatementDraftService
                         Add("SAVINGSPLAN_INVALID_ACCOUNT", "Error", "Sparplan auf Sparkonto ist nicht zulässig.", null, e.Id);
                     }
                 }
-                if (e.SecurityId != null && account != null)
+                var hasSecurity = e.SecurityId != null
+                    || e.SecurityTransactionType != null
+                    || e.SecurityQuantity != null
+                    || e.SecurityFeeAmount != null
+                    || e.SecurityTaxAmount != null;
+                if (hasSecurity && account != null)
                 {
+                    if (!account.SecurityProcessingEnabled)
+                    {
+                        Add("SECURITY_ACCOUNT_NOT_ALLOWED", "Error", "Wertpapierabwicklung ist für dieses Konto deaktiviert.", null, e.Id);
+                    }
                     if (e.ContactId != account.BankContactId)
                     {
                         Add("SECURITY_INVALID_CONTACT", "Error", "Wertpapierbuchung erfordert Bankkontakt des Kontos.", null, e.Id);

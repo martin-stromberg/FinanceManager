@@ -132,6 +132,9 @@
   <data name="Card_Caption_Account_SavingsPlanExpectation" xml:space="preserve">
     <value>Sparplanangabe</value>
   </data>
+  <data name="Card_Caption_Account_SecurityProcessing" xml:space="preserve">
+    <value>Wertpapierabwicklung</value>
+  </data>
   <data name="Card_Caption_Account_Symbol" xml:space="preserve">
     <value>Symbol</value>
   </data>

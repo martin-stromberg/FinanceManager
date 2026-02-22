@@ -1519,7 +1519,7 @@
             Request payload to create a new bank account.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Accounts.AccountCreateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Nullable{System.Guid},System.String,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation)">
+        <member name="M:FinanceManager.Shared.Dtos.Accounts.AccountCreateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Nullable{System.Guid},System.String,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean)">
             <summary>
             Request payload to create a new bank account.
             </summary>
@@ -1529,7 +1529,7 @@
             DTO representing a bank account and its core properties used by the client UI.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Accounts.AccountDto.#ctor(System.Guid,System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Decimal,System.Guid,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation)">
+        <member name="M:FinanceManager.Shared.Dtos.Accounts.AccountDto.#ctor(System.Guid,System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Decimal,System.Guid,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean)">
             <summary>
             DTO representing a bank account and its core properties used by the client UI.
             </summary>
@@ -1550,7 +1550,7 @@
             Request payload to update an existing bank account.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Accounts.AccountUpdateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Nullable{System.Guid},System.String,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean)">
+        <member name="M:FinanceManager.Shared.Dtos.Accounts.AccountUpdateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Nullable{System.Guid},System.String,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.Boolean)">
             <summary>
             Request payload to update an existing bank account.
             </summary>

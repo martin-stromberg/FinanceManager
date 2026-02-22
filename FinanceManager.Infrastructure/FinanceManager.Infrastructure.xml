@@ -29,7 +29,7 @@
             <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Accounts.AccountDto"/> representing the persisted account.</returns>
             <exception cref="T:System.ArgumentException">Thrown when the bank contact is invalid, the name is missing or already exists, or the IBAN already exists for the user.</exception>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Accounts.AccountService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Infrastructure.Accounts.AccountService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Creates a new account for the specified owner.
             </summary>
@@ -43,7 +43,7 @@
             <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Accounts.AccountDto"/> representing the persisted account.</returns>
             <exception cref="T:System.ArgumentException">Thrown when the bank contact is invalid, the name is missing or already exists, or the IBAN already exists for the user.</exception>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Accounts.AccountService.UpdateAsync(System.Guid,System.Guid,System.String,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Infrastructure.Accounts.AccountService.UpdateAsync(System.Guid,System.Guid,System.String,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Updates an existing account.
             </summary>
@@ -2329,6 +2329,18 @@
             <inheritdoc />
         </member>
         <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurityDividendTaxConnectionInReports.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.BankAccount_SecurityProcessingEnabled">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.BankAccount_SecurityProcessingEnabled.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.BankAccount_SecurityProcessingEnabled.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.BankAccount_SecurityProcessingEnabled.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
         <member name="T:FinanceManager.Infrastructure.Notifications.HolidayProviderResolver">

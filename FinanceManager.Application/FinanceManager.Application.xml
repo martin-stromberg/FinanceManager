@@ -9,7 +9,7 @@
             Service interface for managing accounts (create, update, delete, list and symbol assignment).
             </summary>
         </member>
-        <member name="M:FinanceManager.Application.Accounts.IAccountService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Application.Accounts.IAccountService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Creates a new account for the specified owner.
             </summary>
@@ -22,7 +22,7 @@
             <param name="ct">Cancellation token.</param>
             <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Accounts.AccountDto"/>.</returns>
         </member>
-        <member name="M:FinanceManager.Application.Accounts.IAccountService.UpdateAsync(System.Guid,System.Guid,System.String,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Application.Accounts.IAccountService.UpdateAsync(System.Guid,System.Guid,System.String,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Updates an existing account. Returns null when not found.
             </summary>

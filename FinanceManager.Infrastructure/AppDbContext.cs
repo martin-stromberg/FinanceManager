@@ -129,6 +129,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 
             // SavingsPlanExpectation mapping
             b.Property(x => x.SavingsPlanExpectation).HasConversion<short>().IsRequired();
+            b.Property(x => x.SecurityProcessingEnabled).HasDefaultValue(true).IsRequired();
         });
 
         modelBuilder.Entity<Contact>(b =>

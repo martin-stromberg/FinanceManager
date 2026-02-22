@@ -21,8 +21,8 @@ public sealed class Account : Entity, IAggregateRoot
         Name = Guards.NotNullOrWhiteSpace(name, nameof(name));
         Iban = iban?.Trim();
         BankContactId = Guards.NotEmpty(bankContactId, nameof(bankContactId));
-        // default expectation to Optional to preserve previous behavior
         SavingsPlanExpectation = SavingsPlanExpectation.Optional;
+        SecurityProcessingEnabled = true;
     }
 
     /// <summary>
@@ -64,6 +64,11 @@ public sealed class Account : Entity, IAggregateRoot
     /// Expected savings plan behavior attached to this account.
     /// </summary>
     public SavingsPlanExpectation SavingsPlanExpectation { get; private set; }
+
+    /// <summary>
+    /// Indicates whether this account allows security processing on statement entries.
+    /// </summary>
+    public bool SecurityProcessingEnabled { get; private set; }
 
     /// <summary>
     /// Renames the account.
@@ -141,6 +146,19 @@ public sealed class Account : Entity, IAggregateRoot
         }
     }
 
+    /// <summary>
+    /// Enables or disables security processing for statement entries on this account.
+    /// </summary>
+    /// <param name="enabled">True to allow security processing; otherwise false.</param>
+    public void SetSecurityProcessingEnabled(bool enabled)
+    {
+        if (SecurityProcessingEnabled != enabled)
+        {
+            SecurityProcessingEnabled = enabled;
+            Touch();
+        }
+    }
+
     // Backup DTO
     /// <summary>
     /// DTO carrying the serializable state of an <see cref="Account"/> for backup purposes.
@@ -154,15 +172,16 @@ public sealed class Account : Entity, IAggregateRoot
     /// <param name="BankContactId">Bank contact identifier.</param>
     /// <param name="SymbolAttachmentId">Optional symbol attachment id.</param>
     /// <param name="SavingsPlanExpectation">Configured savings plan expectation.</param>
+    /// <param name="SecurityProcessingEnabled">Indicates whether security processing is allowed.</param>
     /// <param name="CreatedUtc">Entity creation timestamp UTC.</param>
     /// <param name="ModifiedUtc">Entity last modified timestamp UTC, if any.</param>
-    public sealed record AccountBackupDto(Guid Id, Guid OwnerUserId, AccountType Type, string Name, string? Iban, decimal CurrentBalance, Guid BankContactId, Guid? SymbolAttachmentId, SavingsPlanExpectation SavingsPlanExpectation, DateTime CreatedUtc, DateTime? ModifiedUtc);
+    public sealed record AccountBackupDto(Guid Id, Guid OwnerUserId, AccountType Type, string Name, string? Iban, decimal CurrentBalance, Guid BankContactId, Guid? SymbolAttachmentId, SavingsPlanExpectation SavingsPlanExpectation, bool SecurityProcessingEnabled, DateTime CreatedUtc, DateTime? ModifiedUtc);
 
     /// <summary>
     /// Creates a backup DTO representing the serializable state of this account.
     /// </summary>
     /// <returns>A <see cref="AccountBackupDto"/> containing values needed to restore the account.</returns>
-    public AccountBackupDto ToBackupDto() => new AccountBackupDto(Id, OwnerUserId, Type, Name, Iban, CurrentBalance, BankContactId, SymbolAttachmentId, SavingsPlanExpectation, CreatedUtc, ModifiedUtc);
+    public AccountBackupDto ToBackupDto() => new AccountBackupDto(Id, OwnerUserId, Type, Name, Iban, CurrentBalance, BankContactId, SymbolAttachmentId, SavingsPlanExpectation, SecurityProcessingEnabled, CreatedUtc, ModifiedUtc);
 
     /// <summary>
     /// Applies values from a backup DTO to this account instance.
@@ -180,6 +199,7 @@ public sealed class Account : Entity, IAggregateRoot
         SetBankContact(dto.BankContactId);
         SetSymbolAttachment(dto.SymbolAttachmentId);
         SetSavingsPlanExpectation(dto.SavingsPlanExpectation);
+        SetSecurityProcessingEnabled(dto.SecurityProcessingEnabled);
         SetDates(dto.CreatedUtc, dto.ModifiedUtc);
     }
 }

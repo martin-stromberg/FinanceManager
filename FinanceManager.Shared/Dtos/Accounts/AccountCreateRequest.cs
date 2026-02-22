@@ -12,4 +12,5 @@ public sealed record AccountCreateRequest(
     Guid? BankContactId,
     string? NewBankContactName,
     Guid? SymbolAttachmentId,
-    SavingsPlanExpectation SavingsPlanExpectation);
+    SavingsPlanExpectation SavingsPlanExpectation,
+    bool SecurityProcessingEnabled = true);

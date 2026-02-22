@@ -11,4 +11,5 @@ public sealed record AccountDto(
     decimal CurrentBalance,
     Guid BankContactId,
     Guid? SymbolAttachmentId,
-    SavingsPlanExpectation SavingsPlanExpectation);
+    SavingsPlanExpectation SavingsPlanExpectation,
+    bool SecurityProcessingEnabled);

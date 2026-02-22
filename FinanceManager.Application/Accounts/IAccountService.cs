@@ -16,7 +16,7 @@ public interface IAccountService
     /// <param name="expectation">Savings plan expectation for the account.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The created <see cref="AccountDto"/>.</returns>
-    Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, CancellationToken ct);
+    Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct);
 
     /// <summary>
     /// Updates an existing account. Returns null when not found.
@@ -29,7 +29,7 @@ public interface IAccountService
     /// <param name="expectation">Savings plan expectation.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Updated <see cref="AccountDto"/> or null when not found.</returns>
-    Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, CancellationToken ct);
+    Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct);
 
     /// <summary>
     /// Deletes an account. Returns true when deleted.

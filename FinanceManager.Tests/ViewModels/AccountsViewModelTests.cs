@@ -51,8 +51,8 @@ public sealed class AccountsViewModelTests
         var (vm, apiMock) = CreateVm(isAuthenticated: true);
         var accounts = new List<AccountDto>
         {
-            new AccountDto(Guid.NewGuid(), "A", AccountType.Giro, "DE00", 10m, Guid.NewGuid(), null, SavingsPlanExpectation.Optional),
-            new AccountDto(Guid.NewGuid(), "B", AccountType.Savings, null, 20m, Guid.NewGuid(), null, SavingsPlanExpectation.Optional)
+            new AccountDto(Guid.NewGuid(), "A", AccountType.Giro, "DE00", 10m, Guid.NewGuid(), null, SavingsPlanExpectation.Optional, true),
+            new AccountDto(Guid.NewGuid(), "B", AccountType.Savings, null, 20m, Guid.NewGuid(), null, SavingsPlanExpectation.Optional, true)
         };
         apiMock.Setup(a => a.GetAccountsAsync(0, 50, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(accounts);

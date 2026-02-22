@@ -60,7 +60,8 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
                 BankContactId: null,
                 NewBankContactName: "Test Bank",
                 SymbolAttachmentId: null,
-                SavingsPlanExpectation: SavingsPlanExpectation.Optional))
+                SavingsPlanExpectation: SavingsPlanExpectation.Optional,
+                SecurityProcessingEnabled: true))
             : accounts[0];
 
         // Create entities via API
