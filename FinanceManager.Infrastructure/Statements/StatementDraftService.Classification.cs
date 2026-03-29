@@ -204,11 +204,17 @@ public sealed partial class StatementDraftService
             TryAutoAssignContact(contacts, aliasLookup, bankContactId, selfContact, entry);
             if (bankAccount is not null && bankAccount.SavingsPlanExpectation != SavingsPlanExpectation.None)
                 TryAutoAssignSavingsPlan(entry, savingPlans, selfContact);
-            TryAutoAssignSecurity(securities, contacts, bankContactId, entry);
+            TryAutoAssignSecurity(securities, contacts, bankContactId, bankAccount?.SecurityProcessingEnabled ?? false, entry);
         }
 
-        static void TryAutoAssignSecurity(IEnumerable<Domain.Securities.Security> securities, List<Contact> contacts, Guid? bankContactId, StatementDraftEntry entry)
+        static void TryAutoAssignSecurity(IEnumerable<Domain.Securities.Security> securities, List<Contact> contacts, Guid? bankContactId, bool accountAllowsSecurity, StatementDraftEntry entry)
         {
+            if (!accountAllowsSecurity)
+            {
+                // Account explicitly disallows security processing: ensure no security assigned during auto-classification
+                entry.SetSecurity(null, null, null, null, null);
+                return;
+            }
             if (entry.ContactId is not null && entry.ContactId != bankContactId)
             {
                 return;
