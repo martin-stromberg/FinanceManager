@@ -1,189 +1,86 @@
 # Finance Manager
 
-> Persönliche Finanzverwaltung mit Kontoauszug-Import, Sparplänen, Wertpapiertracking und Auswertungenzu diesen Themen.
-> Es handelt sich hierbei um eine Webanwendung, die auf Linux und Windowssystemen eingerichtet werden kann.
->
-> Dieses Projekt wurde zum größten Teil anhand von Anweisungen an GitHub Copilot erstellt.
+Kompakte Übersicht
 
-## Inhalt
-1. Überblick
-2. Kernfunktionen
-3. Architektur & Schichten
-4. Technologie-Stack
-   4.1 NuGet-Pakete (Abhängigkeiten)
-5. Authentifizierung & Sicherheit (Kurz)
-6. Internationalisierung
-7. Installation
-8. Entwicklung & Build
-9. Lizenz / Status
+`FinanceManager` ist eine Blazor Server Webanwendung (.NET 10) zur Verwaltung persönlicher Finanzen: Import und Klassifikation von Kontoauszügen, Buchungen (Bank / Kontakt / Sparplan / Wertpapier), Berichte und KPI‑Dashboard.
 
-## 1. Überblick
-FinanceManager ist eine Blazor Server Anwendung (.NET 10) zur Verwaltung persönlicher Finanzen. Importierte Kontoauszüge (CSV/PDF) werden verarbeitet, Buchungen kategorisiert und in Bank-/Kontakt-/Sparplan- und Wertpapierposten überführt. Ergänzend existieren Auswertungen (Monat, Quartal, Jahr, YTD) und ein KPI-Dashboard. Mehrere Benutzer werden unterstützt. 
+Kurz: Import → Klassifikation → Validierung → Buchung → Reporting.
 
-## 2. Kernfunktionen
-- Benutzeranmeldung
-  - Registrierungsmölglichkeit nur bei leerer Datenbank, der erste Benutzer ist Administrator
-  - Benutzerverwaltung im Administrationsbereich
-  - IP-Sperrliste bei wiederholten fehlerhaften Anmeldeversuchen
-- Konten: Verwaltung von Giro- & Sparkonten
-- Kontakte & Kategorien: Verwaltung inkl. Aliasnamen (Wildcards ? *). Automatische Zuordnung beim Import. Merge-Funktion.
-- Kontoauszüge: 
-  - Import von CSV & PDF
-  - unterstützte Banken: ING, Wüstenrot
-  - Duplikatserkennung für bereits gebuchte Posten
-  - automatische und manuelle Kontierung für Kontakte, Sparpläne und Wertpapiere
-  - Plausibilitätsprüfungen vor dem Buchen
-  - Dateianhänge pro Buchung
-  - Erfassung der Kontobewegungen als Posten pro Kontierung
-- Sparpläne: 
-  - Einmalig (Zielbetrag/Zieldatum), wiederkehrend (Intervalle), offen. 
-  - Status/Analyse (erreicht/erforderlich/Prognose). 
-  - Archivierung möglich.
-- Wertpapiere: 
-  - Aktien/Fonds, 
-  - Transaktionen (Kauf, Verkauf, Dividende/Zins, Gebühren, Steuern, Menge). 
-  - Kursdienst via AlphaVantage inklusive Limit-Erkennung.
-- Auswertungen: 
-  - Aggregationen Monat / Quartal / Jahr, YTD, 
-  - Vorjahresvergleich, 
-  - P&L nach Kategorien. 
-  - Export CSV/XLSX.
-  - Favoritenberichte: 
-    - Konfigurierbare Report-Favoriten, 
-    - Filter auf einzelne Konten (Bankkonto/Kontakt/Sparpläne/Wertpapiere/Kategorien), 
-    - YTD/Charts/Vergleiche.
-- KPI Dashboard: 
-  - Kacheln für Favoritenberichte; 
-  - feste Berechnungsweisen für Dividenden/Monatsumsätze etc.
-- Backups: 
-  - Erstellen von Wiederherstellungspunkten pro Benutzer
-  - Herunterladen (Zip mit NDJSON; v3 Schema)
-  - Wiederherstellen alter Bestände, 
-  - Löschen 
-- Anhänge: 
-  - Upload an Kontoauszug/Kontobewegung/Contact; 
-  - Kategorien; 
-  - Größen-/MIME-Validierung; 
-  - Reassign/Referenzen bei Buchung; 
-  - Download.
-- Benachrichtigungen: 
-  - Monatsabschluss-Reminder (letzter Werktag; Land/Subdivision/Uhrzeit konfigurierbar) inkl. Anzeige auf der Startseite.
-- Adminbereich: 
-  - Benutzerverwaltung (Anlegen, Bearbeiten, Sperren/Entsperren, Löschen) 
-  - IP-Sperrliste.
+## Für Nutzer
+Kurzbeschreibung und was die Anwendung bietet (nicht‑technisch):
+- Kontoauszüge (CSV/PDF) importieren und automatisch oder manuell kategorisieren
+- Sparpläne verwalten (einmalig oder wiederkehrend) und Zielerreichung verfolgen
+- Wertpapiertransaktionen (Kauf/Verkauf/Dividende) erfassen und Gebühren/Steuern berücksichtigen
+- Berichte und KPI‑Dashboard; Daten als CSV/XLSX exportieren
+- Anhänge pro Buchung verwalten und Backups erstellen
 
+Schnelle Nutzung (Kurz):
+1. Registrieren / Anmelden
+2. Konto anlegen (Bankkontakt zuordnen)
+3. Kontoauszug hochladen (Import) → Entwürfe prüfen
+4. Einträge klassifizieren / fehlende Angaben ergänzen
+5. Buchung durchführen → Postings werden erstellt
 
-## 3. Architektur & Schichten (geplant)
+Hinweis: Diese README beschreibt die Entwicklungs‑ und Installationsdetails. Für eine reine Nutzer‑Installation wird eine gehostete Instanz oder eine einfache Install‑Anleitung benötigt (siehe `docs/` oder Admin/Hilfe im Webinterface).
 
-> Dieser Absatz bedarf einer genaueren Ausarbeitung
+## Für Entwickler
+Kurz: welche Informationen Entwickler brauchen, um das Projekt lokal zu betreiben und weiterzuentwickeln.
 
-```
-Presentation (Blazor Server)
-  → Application Layer (Use Cases, DTOs, Orchestrierung)
-       → Domain Layer (Entities, Value Objects, Invarianten, Domain Services)
-            → Infrastructure (EF Core, AlphaVantage, Import Parser, Logging, Security)
-Shared Library (Domain + Contracts) für Wiederverwendung in Blazor + MAUI.
-```
-Querschnittsthemen: Logging, Auth (JWT), Internationalisierung, Validation, Rate Limiting.
-
-## 4. Technologie-Stack
-- .NET 10, C# 14
-- Blazor Server (Razor Components)
-- EF Core (Sqlite/SQL Server)
-- AlphaVantage API (Wertpapierkurse; API-Key nutzer-/adminbasiert in DB)
-- Auth: JWT (kurzlebig), Passwort-Hash Ziel Argon2id/bcrypt
-- Logging: ILogger Abstraktion (Serilog)
-- Validation: DataAnnotations / später FluentValidation
-- Internationalisierung: resx Ressourcen, CultureInfo
-- Build/Format: dotnet CLI, EditorConfig, Analyzers/StyleCop
-- Tests: xUnit, FluentAssertions (Projekt `FinanceManager.Tests`)
-
-### 4.1 NuGet-Pakete (Abhängigkeiten)
-Gruppiert; bei gemeinsamen Namespaces mit `*`.
-
-- Microsoft.EntityFrameworkCore*
-  - Microsoft.EntityFrameworkCore — https://www.nuget.org/packages/Microsoft.EntityFrameworkCore/
-  - Microsoft.EntityFrameworkCore.Sqlite — https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Sqlite/
-  - Microsoft.EntityFrameworkCore.Design — https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Design/
-  - Microsoft.EntityFrameworkCore.InMemory (Tests) — https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.InMemory/
-- Microsoft.Extensions*
-  - Microsoft.Extensions.Hosting.Abstractions — https://www.nuget.org/packages/Microsoft.Extensions.Hosting.Abstractions/
-  - Microsoft.Extensions.Http — https://www.nuget.org/packages/Microsoft.Extensions.Http/
-  - Microsoft.Extensions.Caching.Memory — https://www.nuget.org/packages/Microsoft.Extensions.Caching.Memory/
-  - Microsoft.Extensions.Identity.Core — https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/
-- Microsoft.AspNetCore*
-  - Microsoft.AspNetCore.Authentication.JwtBearer — https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.JwtBearer/
-  - Microsoft.AspNetCore.Cryptography.KeyDerivation — https://www.nuget.org/packages/Microsoft.AspNetCore.Cryptography.KeyDerivation/
-  - Microsoft.AspNetCore.Identity — https://www.nuget.org/packages/Microsoft.AspNetCore.Identity/
-  - Microsoft.AspNetCore.Identity.EntityFrameworkCore — https://www.nuget.org/packages/Microsoft.AspNetCore.Identity.EntityFrameworkCore/
-  - Microsoft.AspNetCore.Mvc.Core (Tests) — https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.Core/
-  - Microsoft.AspNetCore.Mvc.Testing (Tests) — https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.Testing/
-- IdentityModel / JWT
-  - Microsoft.IdentityModel.Tokens — https://www.nuget.org/packages/Microsoft.IdentityModel.Tokens/
-  - System.IdentityModel.Tokens.Jwt — https://www.nuget.org/packages/System.IdentityModel.Tokens.Jwt/
-- Serilog*
-  - Serilog.AspNetCore — https://www.nuget.org/packages/Serilog.AspNetCore/
-  - Serilog.Enrichers.Environment — https://www.nuget.org/packages/Serilog.Enrichers.Environment/
-  - Serilog.Enrichers.Process — https://www.nuget.org/packages/Serilog.Enrichers.Process/
-  - Serilog.Enrichers.Thread — https://www.nuget.org/packages/Serilog.Enrichers.Thread/
-  - Serilog.Settings.Configuration — https://www.nuget.org/packages/Serilog.Settings.Configuration/
-  - Serilog.Sinks.Console — https://www.nuget.org/packages/Serilog.Sinks.Console/
-- Dokumente / Krypto
-  - DocumentFormat.OpenXml — https://www.nuget.org/packages/DocumentFormat.OpenXml/
-  - itext — https://www.nuget.org/packages/itext/
-  - itext.bouncy-castle-adapter — https://www.nuget.org/packages/itext.bouncy-castle-adapter/
-  - PdfPig — https://www.nuget.org/packages/PdfPig/
-  - Portable.BouncyCastle — https://www.nuget.org/packages/Portable.BouncyCastle/
-- Test-Tooling
-  - coverlet.collector — https://www.nuget.org/packages/coverlet.collector/
-  - Microsoft.NET.Test.Sdk — https://www.nuget.org/packages/Microsoft.NET.Test.Sdk/
-  - xunit.v3 — https://www.nuget.org/packages/xunit.v3/
-  - xunit.runner.visualstudio — https://www.nuget.org/packages/xunit.runner.visualstudio/
-  - FluentAssertions — https://www.nuget.org/packages/FluentAssertions/
-  - Moq — https://www.nuget.org/packages/Moq/
-  - bunit — https://www.nuget.org/packages/bunit/
-
-## 5. Authentifizierung & Sicherheit (Kurz)
-- JWT Bearer für API Calls.
-- Duplikatserkennung verhindert Doppelbuchung.
-- IP-Sperren bei Fehlversuchen; Admin-Verwaltung.
-
-## 6. Internationalisierung
-- Sprachen: de, en. Fallback-Kette: Benutzer > Browser/System > de.
-- Benutzerpräferenz speicherbar; 
-- Alle UI-Texte via Ressourcen – keine Hardcoded Strings.
-
-## 7. Installation
-- AlphaVantage API-Key pro Benutzer im Profil; optional Freigabe eines Admin-Keys, der für Hintergrundjobs verwendet werden kann.
-- Weitere Installationshinweise folgen in `docs/install.md`.
-
-## 8. Entwicklung & Build
-### Voraussetzungen
+Voraussetzungen
 - .NET 10 SDK
+- (optional) SQLite oder SQL Server für Produktion
 
-### Lokaler Start
-```
+Schnellstart (lokal)
+
+```bash
+git clone <repo-url>
+cd FinanceManager
 dotnet restore
 dotnet build
 cd FinanceManager.Web
 dotnet run
 ```
-Standard URL: https://localhost:5001 (HTTPS) / http://localhost:5000 (HTTP)
 
-### Tests
+Default URLs are printed when you run the application (see the console output from `dotnet run`). Do not rely on a hardcoded port — configure `ASPNETCORE_URLS`, `launchSettings.json` or use `dotnet run --urls "http://localhost:5002;https://localhost:5003"` to override the defaults.
+
+Datenbankmigrationen
+
+Änderungen am Domain‑Modell müssen gegen den korrekten DbContext migriert werden. Beispiel für `AppDbContext`:
+
+```bash
+dotnet ef migrations add 20260329_AddSomething -p FinanceManager.Infrastructure -s FinanceManager.Web --context AppDbContext --output-dir Data/Migrations
+dotnet ef database update -p FinanceManager.Infrastructure -s FinanceManager.Web --context AppDbContext
 ```
+
+Tests & Qualität
+
+```bash
 dotnet test
 ```
+- Formatierung: `dotnet format` vor PR
+- CI soll Build, Tests und Formatierung prüfen
 
-### Code-Qualität
-- `dotnet format` vor Pull Request.
+Dokumentation & API
 
-## 9. Lizenz / Status
-- Lizenz: MIT. Siehe Datei `LICENSE` im Repository.
-- Aktueller Status: Betriebsbereit, aber Nutzung auf eigene Verantwortung (Beta). Feedback willkommen!
+- Projektdokumentation unter `docs/` (Flows, Business Rules, API stubs)
+- Installationsanleitung: `docs/install.md`
+- Teil‑OpenAPI: `docs/api/openapi.yaml` (Accounts + models)
+- Detaillierte Controller‑Docs in `docs/api/`
 
----
-Weiterführende Dokumente:
-- Anforderungen: `docs/Anforderungskatalog.md`
-- Umsetzungsstatus: `docs/Anforderungsstatus.md`
-- Programmierrichtlinien: `.github/copilot-instructions.md`
+Entwicklungskonventionen
+
+- Siehe `.github/copilot-instructions.md` für Coding‑Guidelines (Naming, Async, Logging, Tests).
+- Branching & Commits: Conventional Commits (`feat:`, `fix:`, `docs:` ...)
+
+Security
+
+- Keine Secrets im Repo. Verwende Environment Variables oder Secret Manager.
+- JWTs werden via HttpOnly Cookie verwaltet; sichere Konfiguration in Produktion.
+
+Kontakt / Issues
+
+- Öffne Issues für Bugs/Feature‑Requests. Für größere Änderungen bitte zuerst Design‑Discussion.
+
+Lizenz
+
+- MIT — siehe `LICENSE`.

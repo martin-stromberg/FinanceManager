@@ -336,8 +336,16 @@ public sealed partial class StatementDraftService : IStatementDraftService
         var line = parsedDraft.Movements.FirstOrDefault();
         var security = allSecurities.FirstOrDefault(s => s.IsActive && line.Subject.Contains(s.Identifier, StringComparison.OrdinalIgnoreCase));
         if (security is not null)
-            foreach (var draft in allDrafts.Where(draft => draft.DetectedAccountId == account.Id))
+        {
+            // Respect account setting: if security processing is disabled on the detected account, do not add security details
+            if (account == null || !account.SecurityProcessingEnabled)
             {
+                // nothing to do - skip applying security details when account disallows it
+            }
+            else
+            {
+                foreach (var draft in allDrafts.Where(draft => draft.DetectedAccountId == account.Id))
+                {
                 var draftEntries = (await _db.StatementDraftEntries
                     .Where(e => e.DraftId == draft.DraftId)
                     .Where(e => e.ContactId == account.BankContactId)
@@ -393,7 +401,8 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 await _db.SaveChangesAsync();
                 break;
             }
-
+            }
+        }
     }
 
     /// <summary>
