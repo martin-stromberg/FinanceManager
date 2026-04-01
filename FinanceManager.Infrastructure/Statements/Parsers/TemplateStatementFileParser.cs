@@ -121,15 +121,43 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// Template XML documents used for parsing. Implementations must provide one or more templates.
         /// </summary>
         protected string[] Templates { get; init; }
-
-        private enum ParseMode
+        /// <summary>
+        /// Specifies the available modes for parsing input data.
+        /// </summary>
+        /// <remarks>Use this enumeration to indicate how input should be interpreted during parsing
+        /// operations. Each value represents a distinct parsing strategy, such as ignoring input, parsing key-value
+        /// pairs, or handling tabular data.</remarks>
+        protected enum ParseMode
         {
-
+            /// <summary>
+            /// Represents the absence of a value or a default state.
+            /// </summary>
             None,
+            /// <summary>
+            /// Represents a mode where input lines are ignored until a specific end condition is met. In this mode, lines are typically skipped
+            /// </summary>
             Ignore,
+            /// <summary>
+            /// Represents a key/value pair consisting of two related objects.
+            /// </summary>
+            /// <remarks>This type is commonly used to store and transfer pairs of associated data,
+            /// such as entries in a dictionary or configuration setting. The key is typically used for lookup or
+            /// identification, while the value holds the associated data.</remarks>
             KeyValue,
+            /// <summary>
+            /// Represents a table structure for organizing and displaying data in rows and columns.
+            /// </summary>
             Table,
+            /// <summary>
+            /// Represents the header section of a table, typically containing column titles or labels.
+            /// </summary>
             TableHeader,
+            /// <summary>
+            /// Represents a table structure that can be dynamically defined or modified at runtime.
+            /// </summary>
+            /// <remarks>Use this class to create tables whose schema or content may change during
+            /// execution, such as for dynamic data grids or user-configurable layouts. The specific behavior and
+            /// capabilities depend on the implementation.</remarks>
             DynamicTable
         }
 
@@ -170,8 +198,10 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                     throw new ApplicationException("Unknown variable mode!");
             }
         }
-
-        private ParseMode CurrentMode = ParseMode.None;
+        /// <summary>
+        /// Gets the current parsing mode used by the parser.
+        /// </summary>
+        protected ParseMode CurrentMode { get; private set; } = ParseMode.None;
         private string[] EndKeywords = null;
         private string TableFieldSeparator = ";";
         private bool RemoveDuplicates = false;
@@ -192,6 +222,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
 
         private IEnumerable<StatementMovement> ParseNextLine(string line)
         {
+            OnBeforeParseLine(ref line);
             switch (CurrentMode)
             {
                 case ParseMode.None:
@@ -260,6 +291,16 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                     break;
             }
         }
+        /// <summary>
+        /// Invoked before a line is parsed, allowing derived classes to perform custom pre-processing or validation.
+        /// </summary>
+        /// <remarks>Override this method in a derived class to implement custom logic that should execute
+        /// before parsing each line. The base implementation throws a NotImplementedException.</remarks>
+        /// <param name="line">The line of text that is about to be parsed. Cannot be null.</param>
+        protected virtual void OnBeforeParseLine(ref string line)
+        {
+        }
+
         /// <summary>
         /// Called when a table section has finished and allows derived classes to return a final aggregate record
         /// (for example a subtotal row). The default implementation returns <c>null</c>.

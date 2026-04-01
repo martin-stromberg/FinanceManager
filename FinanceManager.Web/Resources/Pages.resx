@@ -1680,4 +1680,7 @@
   <data name="Kpi_MonthlyBudget_LabelExpected" xml:space="preserve">
     <value>Expected</value>
   </data>
+  <data name="Validation_Valid" xml:space="preserve">
+    <value>Alle entries are valid.</value>
+  </data>
 </root>
