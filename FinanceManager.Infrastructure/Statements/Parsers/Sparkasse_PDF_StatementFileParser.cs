@@ -106,6 +106,8 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
             ExtractPostingdescriptionFromCounterparty(rec);
             rec.BookingDate = CorrectDate(rec.BookingDate);
             rec.ValutaDate = CorrectDate(rec.ValutaDate, rec.BookingDate);
+            rec.IsPreview = (rec.BookingDate == DateTime.MinValue)
+                    || (rec.BookingDate > DateTime.Today);
             return base.ProcessFoundRecord(rec);
         }
 
