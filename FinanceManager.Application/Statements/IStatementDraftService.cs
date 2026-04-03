@@ -225,6 +225,16 @@ public interface IStatementDraftService
     Task<StatementDraftEntryDto?> UpdateEntryCoreAsync(Guid draftId, Guid entryId, Guid ownerUserId, DateTime bookingDate, DateTime? valutaDate, decimal amount, string subject, string? recipientName, string? currencyCode, string? bookingDescription, CancellationToken ct);
 
     /// <summary>
+    /// Applies a batch of entry updates atomically. Validates each update and either commits all changes or none.
+    /// </summary>
+    /// <param name="draftId">Identifier of the draft.</param>
+    /// <param name="ownerUserId">Owner user identifier performing the update.</param>
+    /// <param name="request">Batch update request DTO.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A tuple containing success flag and either success or error response DTOs.</returns>
+    Task<(bool Success, FinanceManager.Shared.Dtos.Statements.BatchUpdateSuccessResponseDto SuccessResponse, FinanceManager.Shared.Dtos.Statements.BatchUpdateErrorResponseDto? ErrorResponse)> ApplyBatchEntryUpdatesAsync(Guid draftId, Guid ownerUserId, FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto request, CancellationToken ct);
+
+    /// <summary>
     /// Sets a flag whether the linked savings plan should be archived on booking and returns the updated draft DTO.
     /// </summary>
     /// <param name="draftId">Identifier of the draft.</param>

@@ -3,6 +3,7 @@
 @using FinanceManager.Web.ViewModels.Common
 @using FinanceManager.Web.Components.Shared
 @using FinanceManager.Web.ViewModels.StatementDrafts
+@using FinanceManager.Web.Shared.QuickEdit
 @inject IJSRuntime JS
 @using Microsoft.AspNetCore.Components.Forms
 @inject FinanceManager.Shared.IApiClient Api
@@ -48,11 +49,20 @@ else
         </div>
     }
 
-    @* If the provider exposes an embedded list, render it below the card *@
+    @* If the provider exposes an embedded list, render it below the card. When the embedded list is the
+       StatementDraft entries list and quick-edit is active, render the QuickEditTable component instead
+       of the normal paged list so the inline editor becomes visible. *@
     @if (Provider?.EmbeddedList is FinanceManager.Web.ViewModels.Common.BaseListViewModel emb)
     {
         <div style="margin-top:1.25rem;">
-            <GenericListPage TItem="object" Provider="@(emb as IListProvider)" Localizer="Localizer" SearchPlaceholder="" RangeFromLabel="" RangeToLabel="" LoadingText="@LoadingText" EmptyText="@Localizer?["List_Result_NoItems"]" EndOfListText="@Localizer?["List_Result_EndOfList"]" ItemClick="OnEmbeddedItemClick" />
+            @if (emb is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel sd && sd.IsQuickEditActive)
+            {
+                <QuickEditTable ViewModel="sd" />
+            }
+            else
+            {
+                <GenericListPage TItem="object" Provider="@(emb as IListProvider)" Localizer="Localizer" SearchPlaceholder="" RangeFromLabel="" RangeToLabel="" LoadingText="@LoadingText" EmptyText="@Localizer?["List_Result_NoItems"]" EndOfListText="@Localizer?["List_Result_EndOfList"]" ItemClick="OnEmbeddedItemClick" />
+            }
         </div>
     }
 }

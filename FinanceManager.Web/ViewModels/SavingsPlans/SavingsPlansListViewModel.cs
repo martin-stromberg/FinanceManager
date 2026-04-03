@@ -12,7 +12,7 @@ namespace FinanceManager.Web.ViewModels.SavingsPlans;
 /// </summary>
 public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanListItem>
 {
-    private readonly Shared.IApiClient _api;
+    private readonly FinanceManager.Shared.IApiClient _api;
 
     /// <summary>
     /// Initializes a new instance of <see cref="SavingsPlansListViewModel"/>.
@@ -20,7 +20,7 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
     /// <param name="sp">Service provider used to resolve required services like the API client and localization.</param>
     public SavingsPlansListViewModel(IServiceProvider sp) : base(sp)
     {
-        _api = sp.GetRequiredService<Shared.IApiClient>();
+        _api = sp.GetRequiredService<FinanceManager.Shared.IApiClient>();
     }
 
     /// <summary>

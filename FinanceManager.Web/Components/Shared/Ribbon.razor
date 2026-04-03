@@ -110,8 +110,8 @@
     [Parameter] public string AriaTabsLabel { get; set; } = "Ribbon tabs";
     [Parameter] public string AriaGroupsLabel { get; set; } = "Ribbon action groups";
 
-    private List<RibbonTab<TTabEnum>>? TabsToRender => _tabsToRender ??= BuildTabsToRender();
-    private List<RibbonTab<TTabEnum>>? _tabsToRender;
+    // Always rebuild tabs on each render so dynamic Disabled states from provider are up-to-date
+    private List<RibbonTab<TTabEnum>>? TabsToRender => BuildTabsToRender();
 
     private List<RibbonTab<TTabEnum>>? BuildTabsToRender()
     {
@@ -206,7 +206,7 @@
 
     protected override void OnParametersSet()
     {
-        _tabsToRender = null;
+        // Ensure tabs are recomputed on next render
         var regs = Provider?.GetRibbonRegisters(Localizer);
         if (regs != null && regs.Any())
         {

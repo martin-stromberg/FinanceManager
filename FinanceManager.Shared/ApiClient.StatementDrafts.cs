@@ -147,6 +147,56 @@ public partial class ApiClient
     }
 
     /// <summary>
+    /// Calls the backend batch update endpoint for statement draft entries.
+    /// Returns the success DTO on 200 or structured per-entry errors on 400.
+    /// Uses explicit serialization to avoid empty-body Json deserialization errors.
+    /// </summary>
+    public async Task<(FinanceManager.Shared.Dtos.Statements.BatchUpdateSuccessResponseDto? Success, FinanceManager.Shared.Dtos.Statements.BatchUpdateErrorResponseDto? Error)> StatementDrafts_BatchUpdateDetailedAsync(Guid draftId, FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto req, CancellationToken ct = default)
+    {
+        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        using var content = new StringContent(JsonSerializer.Serialize(req, options), System.Text.Encoding.UTF8, "application/json");
+        var resp = await _http.PostAsync($"/api/statement-drafts/{draftId}/entries/batch-update", content, ct);
+        if (resp.IsSuccessStatusCode)
+        {
+            try
+            {
+                var ok = await resp.Content.ReadFromJsonAsync<FinanceManager.Shared.Dtos.Statements.BatchUpdateSuccessResponseDto>(cancellationToken: ct);
+                return (ok, null);
+            }
+            catch
+            {
+                // successful but no body -> return a success marker
+                return (new FinanceManager.Shared.Dtos.Statements.BatchUpdateSuccessResponseDto { UpdatedDraft = null }, null);
+            }
+        }
+
+        // Try parse structured error response (per-entry errors)
+        try
+        {
+            var err = await resp.Content.ReadFromJsonAsync<FinanceManager.Shared.Dtos.Statements.BatchUpdateErrorResponseDto>(cancellationToken: ct);
+            if (err != null)
+            {
+                return (null, err);
+            }
+        }
+        catch
+        {
+            
+            // ignore parse errors
+        }
+
+        try
+        {
+            await EnsureSuccessOrSetErrorAsync(resp);
+        }
+        catch
+        {
+            // EnsureSuccessOrSetErrorAsync populated LastError/LastErrorCode
+        }
+        return (null, null);
+    }
+
+    /// <summary>
     /// Updates core fields of a draft entry (dates, amount, textual fields).
     /// </summary>
     /// <param name="draftId">Draft identifier.</param>

@@ -1,0 +1,7 @@
+/* FinanceManager.Web styles bundle placeholder
+   This file mirrors the generated bundle path requested by the app root (/FinanceManager.Web.styles.css)
+   and prevents 404s during development. Real styles are served from /css/* but the runtime may request
+   this specific bundle name in some setups.
+*/
+:root { --fm-border: #ddd; }
+body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }

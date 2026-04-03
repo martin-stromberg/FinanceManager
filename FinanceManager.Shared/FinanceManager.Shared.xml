@@ -1151,6 +1151,13 @@
             <param name="ct">Cancellation token.</param>
             <returns>Entry detail DTO or null when not found.</returns>
         </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_BatchUpdateDetailedAsync(System.Guid,FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto,System.Threading.CancellationToken)">
+            <summary>
+            Calls the backend batch update endpoint for statement draft entries.
+            Returns the success DTO on 200 or structured per-entry errors on 400.
+            Uses explicit serialization to avoid empty-body Json deserialization errors.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_UpdateEntryCoreAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftUpdateEntryCoreRequest,System.Threading.CancellationToken)">
             <summary>
             Updates core fields of a draft entry (dates, amount, textual fields).
@@ -4465,6 +4472,59 @@
             Request payload to update an existing IP block entry.
             </summary>
         </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto">
+            <summary>
+            Request DTO for batch updating draft entries.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto.Updates">
+            <summary>List of entry updates to apply.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.EntryUpdateDto">
+            <summary>Update for a single entry.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.EntryUpdateDto.EntryId">
+            <summary>Entry identifier.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.EntryUpdateDto.Fields">
+            <summary>Field key -> value mapping for changed fields.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.BatchUpdateSuccessResponseDto">
+            <summary>Success response for batch update.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.BatchUpdateSuccessResponseDto.Success">
+            <summary>Success flag (true).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.BatchUpdateSuccessResponseDto.UpdatedDraft">
+            <summary>Updated draft snapshot when update succeeded.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.BatchUpdateErrorResponseDto">
+            <summary>Error response containing per-entry validation failures.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.BatchUpdateErrorResponseDto.Success">
+            <summary>Success flag (false).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.BatchUpdateErrorResponseDto.Errors">
+            <summary>Per-entry errors describing which fields failed validation.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.EntryErrorDto">
+            <summary>Errors for a single entry.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.EntryErrorDto.EntryId">
+            <summary>Entry identifier the errors belong to.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.EntryErrorDto.FieldErrors">
+            <summary>Field-level errors for this entry.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.FieldErrorDto">
+            <summary>Field-level validation error.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.FieldErrorDto.Field">
+            <summary>Field key.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.FieldErrorDto.Message">
+            <summary>Human readable message (localized by caller/service).</summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Statements.BookingResult">
             <summary>
             Result of a booking attempt for a draft or single entry.
@@ -5985,6 +6045,16 @@
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.StatementDrafts_DeleteAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>Deletes a statement draft. Returns false when not found.</summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.StatementDrafts_BatchUpdateDetailedAsync(System.Guid,FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto,System.Threading.CancellationToken)">
+            <summary>
+            Applies a batch update for entries belonging to the specified draft. Returns success DTO on 200.
+            On validation failure the underlying implementation should set <see cref="P:FinanceManager.Shared.IApiClient.LastError"/>, <see cref="P:FinanceManager.Shared.IApiClient.LastErrorCode"/>
+            and return <c>null</c> (the raw error body may be available in <see cref="P:FinanceManager.Shared.IApiClient.LastError"/>).
+            </summary>
+            <summary>
+            Calls batch update endpoint and returns either a success DTO or an error DTO containing per-entry validation failures.
+            </summary>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.StatementDrafts_SetEntrySplitDraftAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.StatementDraftSetSplitDraftRequest,System.Threading.CancellationToken)">
             <summary>

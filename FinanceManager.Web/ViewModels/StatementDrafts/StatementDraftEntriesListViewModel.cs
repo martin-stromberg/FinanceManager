@@ -6,6 +6,9 @@ namespace FinanceManager.Web.ViewModels.StatementDrafts;
 // Embedded list view model for statement draft entries (non-persistent, constructed from already-loaded draft)
 internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<StatementDraftEntryItem>
 {
+    // Quick-edit state: original snapshot and current edited values per entry id
+    private readonly Dictionary<Guid, IDictionary<string, object?>> _editValues = new();
+    private readonly Dictionary<Guid, IDictionary<string, object?>> _originalValues = new();
     private readonly Guid _draftId;
     private List<StatementDraftEntryDto> _allEntries = new();
     private int _skip;
@@ -19,12 +22,187 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     private Dictionary<Guid, string?> _securityNames = new();
     // map of entry id -> hint text
     private readonly Dictionary<Guid, string> _entryHints = new();
+    // flag to request UI focus on first invalid entry after validation
+    private bool _focusFirstInvalidRequested;
 
     public StatementDraftEntriesListViewModel(IServiceProvider sp, Guid draftId)
         : base(sp)
     {
         _draftId = draftId;
         _api = sp.GetRequiredService<IApiClient>();
+    }
+
+    /// <summary>
+    /// Fields that are editable in quick-edit mode for entries.
+    /// </summary>
+    // Editable fields for quick-edit mode. Order is not important here but must include all keys the UI may edit.
+    public override IReadOnlyList<string> EditableFields => new[] { "BookingDate", "ValutaDate", "Amount", "BookingDescription", "RecipientName", "Subject" };
+
+    /// <summary>
+    /// Returns whether the specified row/item is editable in quick-edit mode.
+    /// Entries with status AlreadyBooked are not editable.
+    /// </summary>
+    /// <param name="item">Row item instance.</param>
+    public override bool IsRowEditable(object item)
+    {
+        if (item is StatementDraftEntryItem sdi)
+            return sdi.Status != StatementDraftEntryStatus.AlreadyBooked;
+        return false;
+    }
+
+    /// <summary>
+    /// Begins quick-edit session by preparing original and edit snapshots for currently loaded items.
+    /// </summary>
+    public override Task BeginQuickEditAsync()
+    {
+        _editValues.Clear();
+        _originalValues.Clear();
+        foreach (var it in Items)
+        {
+            var dict = new Dictionary<string, object?>
+            {
+                ["BookingDate"] = it.BookingDate,
+                ["ValutaDate"] = it.ValutaDate,
+                ["RecipientName"] = it.RecipientName,
+                ["Subject"] = it.Subject,
+                ["Amount"] = it.Amount,
+                ["BookingDescription"] = it.BookingDescription,
+                ["Status"] = it.Status
+            };
+            _originalValues[it.Id] = new Dictionary<string, object?>(dict);
+            _editValues[it.Id] = new Dictionary<string, object?>(dict);
+        }
+        return base.BeginQuickEditAsync();
+    }
+
+    /// <summary>
+    /// Ends quick-edit session. Default implementation clears edit snapshots.
+    /// </summary>
+    public override Task EndQuickEditAsync()
+    {
+        _editValues.Clear();
+        _originalValues.Clear();
+        return base.EndQuickEditAsync();
+    }
+
+    /// <summary>
+    /// Returns the current edited value for the given entry id and field key.
+    /// </summary>
+    public object? GetEditValue(Guid entryId, string field)
+    {
+        if (_editValues.TryGetValue(entryId, out var map) && map.TryGetValue(field, out var v))
+            return v;
+        return null;
+    }
+
+    /// <summary>
+    /// Sets an edited value for the given entry id and field key.
+    /// Raises state changed so UI can re-render.
+    /// </summary>
+    public void SetEditValue(Guid entryId, string field, object? value)
+    {
+        if (!_editValues.TryGetValue(entryId, out var map)) return;
+        map[field] = value;
+        RaiseStateChanged();
+    }
+
+    /// <summary>
+    /// Resets the edited values for a given entry to the original snapshot.
+    /// </summary>
+    public void ResetRow(Guid entryId)
+    {
+        if (_originalValues.TryGetValue(entryId, out var orig))
+        {
+            _editValues[entryId] = new Dictionary<string, object?>(orig);
+            // Also restore visible values on the lightweight item so UI shows restored values
+            var item = Items.FirstOrDefault(i => i.Id == entryId);
+            if (item != null)
+            {
+                if (orig.TryGetValue("BookingDate", out var bd) && bd is DateTime bdt) item.BookingDate = bdt;
+                if (orig.TryGetValue("ValutaDate", out var vd))
+                {
+                    if (vd is DateTime vdt) item.ValutaDate = vdt;
+                    else item.ValutaDate = null;
+                }
+                if (orig.TryGetValue("Amount", out var am) && am is decimal d) item.Amount = d;
+                if (orig.TryGetValue("RecipientName", out var rn)) item.RecipientName = rn as string;
+                if (orig.TryGetValue("Subject", out var s)) item.Subject = s as string;
+                if (orig.TryGetValue("BookingDescription", out var bdsc)) item.BookingDescription = bdsc as string;
+                if (orig.TryGetValue("Status", out var st) && st is StatementDraftEntryStatus ss) item.Status = ss;
+            }
+            RaiseStateChanged();
+        }
+    }
+
+    /// <summary>
+    /// Collects changed rows as a mapping EntryId -> (field -> newValue).
+    /// Only fields that differ from the original snapshot are returned.
+    /// </summary>
+    public override IReadOnlyDictionary<Guid, IDictionary<string, object?>> CollectChangedRows()
+    {
+        var result = new Dictionary<Guid, IDictionary<string, object?>>();
+        foreach (var kv in _editValues)
+        {
+            if (!_originalValues.TryGetValue(kv.Key, out var orig)) continue;
+            var diffs = new Dictionary<string, object?>();
+            foreach (var f in kv.Value.Keys)
+            {
+                var newV = kv.Value[f];
+                orig.TryGetValue(f, out var oldV);
+                if (!object.Equals(newV, oldV))
+                    diffs[f] = newV;
+            }
+            // Additionally, allow status changes applied to the lightweight item (e.g., ResetDup) to be included
+            if (Items.FirstOrDefault(i => i.Id == kv.Key) is var lightweight && lightweight != null)
+            {
+                if (lightweight.Status != null)
+                {
+                    // if original snapshot did not include status change, include it
+                    if (!orig.TryGetValue("Status", out var origStatus) || !object.Equals(origStatus, lightweight.Status))
+                    {
+                        diffs["Status"] = lightweight.Status;
+                    }
+                }
+            }
+            if (diffs.Count > 0) result[kv.Key] = diffs;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Performs basic client-side validation for a single row based on current edit values.
+    /// Returns tuples of (field, message) for validation errors.
+    /// </summary>
+    public override IEnumerable<(string Field, string Message)> ValidateRow(object item)
+    {
+        if (item is not StatementDraftEntryItem it) yield break;
+        if (!_editValues.TryGetValue(it.Id, out var map)) yield break;
+
+        // BookingDate must be set
+        if (map.TryGetValue("BookingDate", out var bd) && bd is DateTime dt)
+        {
+            if (dt == DateTime.MinValue)
+                yield return ("BookingDate", "Booking date is required");
+        }
+
+        // Amount must be a valid decimal
+        if (map.TryGetValue("Amount", out var amt))
+        {
+            if (amt == null || !(amt is decimal))
+                yield return ("Amount", "Amount is required");
+        }
+
+        // Subject length
+        if (map.TryGetValue("Subject", out var subj) && subj is string s)
+        {
+            if (s.Length > 500) yield return ("Subject", "Subject too long");
+        }
+
+        // RecipientName length
+        if (map.TryGetValue("RecipientName", out var rec) && rec is string r)
+        {
+            if (r.Length > 250) yield return ("RecipientName", "Recipient name too long");
+        }
     }
 
     protected override async Task LoadPageAsync(bool resetPaging)
@@ -71,9 +249,11 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
                 Id = d.Id,
                 DraftId = _draftId,
                 BookingDate = d.BookingDate,
+                    ValutaDate = d.ValutaDate,
                 Amount = d.Amount,
                 RecipientName = d.RecipientName,
-                Subject = d.Subject,
+                    Subject = d.Subject,
+                    BookingDescription = d.BookingDescription,
                 Status = d.Status
             }).ToList();
 
@@ -127,18 +307,131 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     public void ApplyValidationMessages(DraftValidationResultDto? result)
     {
         _entryHints.Clear();
+        var L = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
         if (result != null && result.Messages != null)
         {
             var byEntry = result.Messages.Where(m => m.EntryId != null)
                 .GroupBy(m => m.EntryId!.Value);
             foreach (var g in byEntry)
             {
-                var combined = string.Join("; ", g.Select(m => $"[{m.Severity}] {m.Message}"));
+                // Build localized message per entry: translate severity and known message texts when possible
+                var parts = new List<string>();
+                foreach (var m in g)
+                {
+                    // translate severity (e.g. Error -> Fehler)
+                    string severityKey = $"Validation_Severity_{m.Severity}";
+                    var severityLocalized = L[severityKey].Value;
+                    if (string.IsNullOrWhiteSpace(severityLocalized) || severityLocalized == severityKey)
+                    {
+                        severityLocalized = m.Severity ?? string.Empty;
+                    }
+
+                    // try to map common English message texts to resource keys (e.g. "Invalid date format")
+                    string normalized = string.Empty;
+                    if (!string.IsNullOrWhiteSpace(m.Message))
+                    {
+                        var partsWords = m.Message.Split(new[] { ' ', '\t', '\r', '\n', '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
+                        normalized = string.Concat(partsWords.Select(w => char.ToUpperInvariant(w[0]) + (w.Length > 1 ? w.Substring(1) : string.Empty)));
+                    }
+
+                    string msgLocalized = string.Empty;
+                    if (!string.IsNullOrWhiteSpace(normalized))
+                    {
+                        var msgKey = $"Validation_Message_{normalized}";
+                        var candidate = L[msgKey].Value;
+                        if (!string.IsNullOrWhiteSpace(candidate) && candidate != msgKey)
+                        {
+                            msgLocalized = candidate;
+                        }
+                    }
+
+                    if (string.IsNullOrWhiteSpace(msgLocalized))
+                    {
+                        // fallback to original server-provided message
+                        msgLocalized = m.Message ?? string.Empty;
+                    }
+
+                    parts.Add($"[{severityLocalized}] {msgLocalized}");
+                }
+
+                var combined = string.Join("; ", parts);
                 _entryHints[g.Key] = combined;
             }
         }
         // rebuild records so hints are applied
         BuildRecords();
         RaiseStateChanged();
+    }
+
+    /// <summary>
+    /// Request that the UI focuses the first entry that has validation hints.
+    /// The request is consumed by the component rendering the list.
+    /// </summary>
+    public void RequestFocusFirstInvalid()
+    {
+        _focusFirstInvalidRequested = true;
+        RaiseStateChanged();
+    }
+
+    /// <summary>
+    /// If a focus request was previously issued, returns the first entry id that has a hint and clears the request.
+    /// </summary>
+    public Guid? ConsumeFocusFirstInvalid()
+    {
+        if (!_focusFirstInvalidRequested) return null;
+        _focusFirstInvalidRequested = false;
+        if (_entryHints.Count == 0) return null;
+        return _entryHints.Keys.FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Validates client-side edit state for all changed rows and returns whether all rows are valid.
+    /// Also populates _entryHints for display.
+    /// </summary>
+    public bool ValidateAllChangedRows()
+    {
+        _entryHints.Clear();
+        var changed = CollectChangedRows();
+        foreach (var kv in changed)
+        {
+            var id = kv.Key;
+            var recItem = Items.FirstOrDefault(i => i.Id == id);
+            if (recItem == null) continue;
+            var errors = ValidateRow(recItem).ToList();
+            if (errors.Any())
+            {
+                _entryHints[id] = string.Join("; ", errors.Select(e => $"{e.Field}: {e.Message}"));
+            }
+        }
+        BuildRecords();
+        RaiseStateChanged();
+        return !_entryHints.Any();
+    }
+
+    /// <summary>
+    /// Returns true when there are any changed rows pending in the quick-edit buffer.
+    /// </summary>
+    public bool HasChangedRows()
+    {
+        var changed = CollectChangedRows();
+        return changed != null && changed.Count > 0;
+    }
+
+    /// <summary>
+    /// Performs a non-mutating client-side validation of changed rows and returns whether they are all valid.
+    /// Does not populate hints or mutate state.
+    /// </summary>
+    public bool ChangedRowsAreValid()
+    {
+        var changed = CollectChangedRows();
+        foreach (var kv in changed)
+        {
+            var id = kv.Key;
+            var recItem = Items.FirstOrDefault(i => i.Id == id);
+            if (recItem == null) continue;
+            var errors = ValidateRow(recItem);
+            if (errors.Any()) return false;
+        }
+        return true;
     }
 }

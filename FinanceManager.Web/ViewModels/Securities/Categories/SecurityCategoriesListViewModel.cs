@@ -26,7 +26,7 @@ public sealed record SecurityCategoryItem(Guid Id, string Name, Guid? SymbolId) 
 /// </summary>
 public sealed class SecurityCategoriesListViewModel : BaseListViewModel<SecurityCategoryItem>
 {
-    private readonly Shared.IApiClient _api;
+    private readonly FinanceManager.Shared.IApiClient _api;
     private readonly NavigationManager _nav;
 
     /// <summary>
@@ -35,7 +35,7 @@ public sealed class SecurityCategoriesListViewModel : BaseListViewModel<Security
     /// <param name="sp">Service provider used to resolve required services, such as the API client and navigation manager.</param>
     public SecurityCategoriesListViewModel(IServiceProvider sp) : base(sp)
     {
-        _api = sp.GetRequiredService<Shared.IApiClient>();
+        _api = sp.GetRequiredService<FinanceManager.Shared.IApiClient>();
         _nav = sp.GetRequiredService<NavigationManager>();
     }
 

@@ -1359,6 +1359,18 @@
   <data name="StatementDrafts_SuggestedDescription" xml:space="preserve">
     <value>Buchungen vom {0}</value>
   </data>
+  <data name="StatementDrafts_SaveQuickEdit_RowsFailedValidation" xml:space="preserve">
+    <value>Einige Zeilen enthalten Validierungsfehler. Bitte prüfen und korrigieren Sie die markierten Einträge.</value>
+  </data>
+  <data name="Validation_Severity_Error" xml:space="preserve">
+    <value>Fehler</value>
+  </data>
+  <data name="Validation_Severity_Warning" xml:space="preserve">
+    <value>Warnung</value>
+  </data>
+  <data name="Validation_Message_InvalidDateFormat" xml:space="preserve">
+    <value>Ungültiges Datumsformat</value>
+  </data>
   <data name="Ribbon_NewEntry" xml:space="preserve">
     <value>Neuer Eintrag</value>
   </data>
@@ -1682,6 +1694,42 @@
   </data>
   <data name="Validation_Valid" xml:space="preserve">
     <value>Alle Einträge sind buchbar.</value>
+  </data>
+  <data name="List_Th_BookingDate" xml:space="preserve">
+    <value>Buchungsdatum</value>
+  </data>
+  <data name="List_Th_Valuta" xml:space="preserve">
+    <value>Valuta</value>
+  </data>
+  <data name="List_Th_Amount" xml:space="preserve">
+    <value>Betrag</value>
+  </data>
+  <data name="List_Th_BookingDescription" xml:space="preserve">
+    <value>Buchungsbeschreibung</value>
+  </data>
+  <data name="List_Th_Recipient" xml:space="preserve">
+    <value>Empfänger</value>
+  </data>
+  <data name="List_Th_Purpose" xml:space="preserve">
+    <value>Verwendungszweck</value>
+  </data>
+  <data name="List_Th_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="List_Th_Actions" xml:space="preserve">
+    <value>Aktionen</value>
+  </data>
+  <data name="Ribbon_QuickEdit" xml:space="preserve">
+    <value>Schnellbearbeitung</value>
+  </data>
+  <data name="Ribbon_SaveQuickEdit" xml:space="preserve">
+    <value>Änderungen speichern</value>
+  </data>
+  <data name="Ribbon_CancelQuickEdit" xml:space="preserve">
+    <value>Änderungen verwerfen</value>
+  </data>
+  <data name="Ribbon_Group_QuickEdit" xml:space="preserve">
+    <value>Schnellbearbeitung</value>
   </data>
   <data name="Kpi_MonthlyBudget_Income" xml:space="preserve">
     <value>Einnahmen</value>

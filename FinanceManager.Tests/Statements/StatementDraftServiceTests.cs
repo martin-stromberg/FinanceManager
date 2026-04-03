@@ -153,6 +153,68 @@ public sealed class StatementDraftServiceTests
     }
 
     [Fact]
+    public async Task ApplyBatchEntryUpdatesAsync_ShouldApplyChanges_WhenValid()
+    {
+        var (sut, db, owner) = Create();
+
+        // create empty draft
+        var draft = await sut.CreateEmptyDraftAsync(owner, "file.csv", CancellationToken.None);
+        Assert.NotNull(draft);
+        var created = await sut.AddEntryAsync(draft.DraftId, owner, DateTime.Today, 10m, "Initial", CancellationToken.None);
+        Assert.NotNull(created);
+        var entry = created.Entries.First();
+
+        // prepare batch update
+        var req = new FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto();
+        var newValuta = DateTime.Today.AddDays(1);
+        req.Updates.Add(new FinanceManager.Shared.Dtos.Statements.EntryUpdateDto
+        {
+            EntryId = entry.Id,
+            Fields = new Dictionary<string, object?>
+            {
+                ["Subject"] = "Updated",
+                ["Amount"] = 15.5m,
+                ["ValutaDate"] = newValuta,
+                ["BookingDescription"] = "Updated description"
+            }
+        });
+        var result = await sut.ApplyBatchEntryUpdatesAsync(draft.DraftId, owner, req, CancellationToken.None);
+        Assert.True(result.Success);
+        Assert.NotNull(result.SuccessResponse);
+        var updated = await sut.GetDraftAsync(draft.DraftId, owner, CancellationToken.None);
+        Assert.Contains(updated.Entries, e => e.Id == entry.Id && e.Subject == "Updated" && e.Amount == 15.5m && e.ValutaDate == newValuta && e.BookingDescription == "Updated description");
+    }
+
+    [Fact]
+    public async Task ApplyBatchEntryUpdatesAsync_ShouldReturnErrors_WhenInvalid()
+    {
+        var (sut, db, owner) = Create();
+
+        // create empty draft and entry
+        var draft = await sut.CreateEmptyDraftAsync(owner, "file.csv", CancellationToken.None);
+        Assert.NotNull(draft);
+        var created = await sut.AddEntryAsync(draft.DraftId, owner, DateTime.Today, 10m, "Initial", CancellationToken.None);
+        Assert.NotNull(created);
+        var entry = created.Entries.First();
+
+        // prepare batch update with invalid amount (zero)
+        var req = new FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto();
+        req.Updates.Add(new FinanceManager.Shared.Dtos.Statements.EntryUpdateDto
+        {
+            EntryId = entry.Id,
+            Fields = new Dictionary<string, object?>
+            {
+                ["Amount"] = 0m
+            }
+        });
+        var result = await sut.ApplyBatchEntryUpdatesAsync(draft.DraftId, owner, req, CancellationToken.None);
+        Assert.False(result.Success);
+        Assert.NotNull(result.ErrorResponse);
+        Assert.NotEmpty(result.ErrorResponse.Errors);
+        Assert.Contains(result.ErrorResponse.Errors, e => e.EntryId == entry.Id && e.FieldErrors.Any(fe => fe.Field == "Amount"));
+    }
+
+    [Fact]
     public async Task CreateDraftAsync_ShouldHaveNullDetectedAccount_WhenNoAccounts()
     {
         var (sut, _, owner) = Create();

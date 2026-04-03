@@ -600,6 +600,15 @@ public interface IApiClient
     Task<bool> StatementDrafts_CancelBookAllAsync(CancellationToken ct = default);
     /// <summary>Deletes a statement draft. Returns false when not found.</summary>
     Task<bool> StatementDrafts_DeleteAsync(Guid draftId, CancellationToken ct = default);
+    /// <summary>
+    /// Applies a batch update for entries belonging to the specified draft. Returns success DTO on 200.
+    /// On validation failure the underlying implementation should set <see cref="LastError"/>, <see cref="LastErrorCode"/>
+    /// and return <c>null</c> (the raw error body may be available in <see cref="LastError"/>).
+    /// </summary>
+    /// <summary>
+    /// Calls batch update endpoint and returns either a success DTO or an error DTO containing per-entry validation failures.
+    /// </summary>
+    Task<(FinanceManager.Shared.Dtos.Statements.BatchUpdateSuccessResponseDto? Success, FinanceManager.Shared.Dtos.Statements.BatchUpdateErrorResponseDto? Error)> StatementDrafts_BatchUpdateDetailedAsync(Guid draftId, FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto req, CancellationToken ct = default);
     // Add to IApiClient interface in the Statement Drafts region:
     /// <summary>
     /// Assigns or clears a split draft group for a draft entry and returns updated split difference.

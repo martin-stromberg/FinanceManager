@@ -1359,6 +1359,18 @@
   <data name="StatementDrafts_SuggestedDescription" xml:space="preserve">
     <value>Postings of {0}</value>
   </data>
+  <data name="StatementDrafts_SaveQuickEdit_RowsFailedValidation" xml:space="preserve">
+    <value>Some rows have validation errors. Please review and correct the highlighted entries.</value>
+  </data>
+  <data name="Validation_Severity_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Validation_Severity_Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="Validation_Message_InvalidDateFormat" xml:space="preserve">
+    <value>Invalid date format</value>
+  </data>
   <data name="Ribbon_NewEntry" xml:space="preserve">
     <value>New entry</value>
   </data>

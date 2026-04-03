@@ -4661,6 +4661,13 @@
             Provides operations to create drafts from uploaded files, manage draft entries and perform booking into postings.
             </summary>
         </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftService.ApplyBatchEntryUpdatesAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto,System.Threading.CancellationToken)">
+            <summary>
+            Applies a batch of entry updates atomically. Validates inputs and applies all changes in a single DB transaction.
+            Returns per-entry field errors when validation fails; in that case no changes are committed.
+            </summary>
+            <inheritdoc />
+        </member>
         <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftService.NormalizeUmlauts(System.String)">
             <summary>
             Normalizes German umlauts in the provided text to ASCII-friendly replacements.

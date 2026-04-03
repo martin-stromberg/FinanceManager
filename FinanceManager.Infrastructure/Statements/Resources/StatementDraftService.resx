@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="BatchUpdate_EntryNotFound" xml:space="preserve">
+    <value>Entry not found in draft</value>
+  </data>
+  <data name="BatchUpdate_InvalidDateFormat" xml:space="preserve">
+    <value>Invalid date format</value>
+  </data>
+  <data name="BatchUpdate_AmountRequired" xml:space="preserve">
+    <value>Amount is required</value>
+  </data>
+  <data name="BatchUpdate_AmountNotZero" xml:space="preserve">
+    <value>Amount must not be zero</value>
+  </data>
+  <data name="BatchUpdate_SubjectTooLong" xml:space="preserve">
+    <value>Subject too long</value>
+  </data>
+</root>

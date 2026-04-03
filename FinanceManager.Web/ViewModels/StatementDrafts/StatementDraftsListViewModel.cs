@@ -15,7 +15,7 @@ namespace FinanceManager.Web.ViewModels.StatementDrafts;
 /// </summary>
 public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDraftsListViewModel.DraftItem>, FinanceManager.Web.ViewModels.Common.IUploadFilesViewModel
 {
-    private readonly Shared.IApiClient _api;
+    private readonly FinanceManager.Shared.IApiClient _api;
     private readonly NavigationManager _nav;
 
     /// <summary>
@@ -29,7 +29,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
     /// <param name="sp">Service provider used to resolve dependencies.</param>
     public StatementDraftsListViewModel(IServiceProvider sp) : base(sp)
     {
-        _api = sp.GetRequiredService<Shared.IApiClient>();
+        _api = sp.GetRequiredService<FinanceManager.Shared.IApiClient>();
         _nav = sp.GetRequiredService<NavigationManager>();
         // disable generic range/search UI for drafts list
         AllowRangeFiltering = false;

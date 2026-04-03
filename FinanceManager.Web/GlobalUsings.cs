@@ -12,6 +12,7 @@ global using FinanceManager.Shared.Dtos.Securities;
 global using FinanceManager.Shared.Dtos.Security;
 global using FinanceManager.Shared.Dtos.Statements;
 global using FinanceManager.Shared.Dtos.Users;
+global using Shared = FinanceManager.Shared;
 
 global using FinanceManager.Web.ViewModels.Accounts;
 global using FinanceManager.Web.ViewModels.Common;
