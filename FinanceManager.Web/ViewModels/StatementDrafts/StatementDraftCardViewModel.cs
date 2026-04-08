@@ -347,7 +347,8 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
             // Manage group (primary actions)
             var manageItems = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, Draft == null, null, new Func<Task>(async () => { await SaveAsync(); })),
+            // Save should be enabled when there are pending changes (including create-mode selections)
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, new Func<Task>(async () => { await SaveAsync(); })),
             new UiRibbonAction("Add", localizer["Ribbon_NewEntry"].Value, "<svg><use href='/icons/sprite.svg#new'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { Navigation.NavigateTo($"/card/statement-drafts/entries/new?draftId={DraftId}"); return Task.CompletedTask; })),
             new UiRibbonAction("Book", localizer["Ribbon_Book"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(async () => { await BookAsync(); })),
             new UiRibbonAction("DeleteDraft", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })),
