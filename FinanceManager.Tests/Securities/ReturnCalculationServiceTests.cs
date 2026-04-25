@@ -592,4 +592,433 @@ public sealed class ReturnCalculationServiceTests
         result!.Value.Should().BeLessThan(0m);
         result!.Value.Should().BeApproximately(-0.2m, 0.0001m);
     }
+
+    /// <summary>
+    /// When annualised return equals the risk-free rate, excess return is 0 → Sharpe Ratio = 0.
+    /// </summary>
+    [Fact]
+    public void CalculateSharpeRatio_Should_ReturnZero_When_AnnualisedReturnEqualsRiskFreeRate()
+    {
+        // Arrange
+        decimal annualisedReturn = 0.04m;
+        decimal riskFreeRate = 0.04m;
+        decimal volatility = 0.15m;
+
+        // Act
+        decimal? result = _sut.CalculateSharpeRatio(annualisedReturn, riskFreeRate, volatility);
+
+        // Assert
+        result.Should().Be(0m);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // CalculateDividendYield
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Dividend yield = totalDividends / investedCapital.
+    /// 50 / 1000 = 0.05 = 5 %.
+    /// </summary>
+    [Fact]
+    public void CalculateDividendYield_Should_ReturnCorrectYield_When_DividendsAndCapitalArePositive()
+    {
+        // Arrange
+        decimal totalDividends = 50m;
+        decimal investedCapital = 1_000m;
+
+        // Act
+        decimal? result = _sut.CalculateDividendYield(totalDividends, investedCapital);
+
+        // Assert
+        result.Should().Be(0.05m);
+    }
+
+    /// <summary>
+    /// When invested capital is zero the method must return null to avoid division by zero.
+    /// </summary>
+    [Fact]
+    public void CalculateDividendYield_Should_ReturnNull_When_InvestedCapitalIsZero()
+    {
+        // Act
+        decimal? result = _sut.CalculateDividendYield(50m, 0m);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// When total dividends are zero the yield is exactly 0 (not null).
+    /// </summary>
+    [Fact]
+    public void CalculateDividendYield_Should_ReturnZero_When_TotalDividendsIsZero()
+    {
+        // Act
+        decimal? result = _sut.CalculateDividendYield(0m, 1_000m);
+
+        // Assert
+        result.Should().Be(0m);
+    }
+
+    /// <summary>
+    /// Negative dividends (e.g. withholding tax refund reversal) produce a negative yield.
+    /// </summary>
+    [Fact]
+    public void CalculateDividendYield_Should_HandleNegativeDividends_When_DividendsAreNegative()
+    {
+        // Arrange
+        decimal totalDividends = -30m;
+        decimal investedCapital = 1_000m;
+
+        // Act
+        decimal? result = _sut.CalculateDividendYield(totalDividends, investedCapital);
+
+        // Assert
+        result.Should().Be(-0.03m);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // CalculateTaxRate
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Tax rate = totalTaxes / |grossReturn|. 20 / 100 = 20 %.
+    /// </summary>
+    [Fact]
+    public void CalculateTaxRate_Should_ReturnCorrectRate_When_TaxesAndGrossReturnArePositive()
+    {
+        // Arrange
+        decimal totalTaxes = 20m;
+        decimal grossReturn = 100m;
+
+        // Act
+        decimal? result = _sut.CalculateTaxRate(totalTaxes, grossReturn);
+
+        // Assert
+        result.Should().Be(0.20m);
+    }
+
+    /// <summary>
+    /// When gross return is zero the method must return null to avoid division by zero.
+    /// </summary>
+    [Fact]
+    public void CalculateTaxRate_Should_ReturnNull_When_GrossReturnIsZero()
+    {
+        // Act
+        decimal? result = _sut.CalculateTaxRate(20m, 0m);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// When taxes are zero the tax rate is exactly 0 (not null).
+    /// </summary>
+    [Fact]
+    public void CalculateTaxRate_Should_ReturnZero_When_TotalTaxesIsZero()
+    {
+        // Act
+        decimal? result = _sut.CalculateTaxRate(0m, 200m);
+
+        // Assert
+        result.Should().Be(0m);
+    }
+
+    /// <summary>
+    /// When gross return is negative (loss) the denominator uses |grossReturn|,
+    /// so the tax rate is still a positive fraction.
+    /// </summary>
+    [Fact]
+    public void CalculateTaxRate_Should_UseAbsoluteValue_When_GrossReturnIsNegative()
+    {
+        // Arrange – negative return but withholding tax was still charged
+        decimal totalTaxes = 10m;
+        decimal grossReturn = -200m;
+
+        // Act
+        decimal? result = _sut.CalculateTaxRate(totalTaxes, grossReturn);
+
+        // Assert – 10 / 200 = 0.05
+        result.Should().Be(0.05m);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // CalculateTotalReturn — additional edge cases
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Negative net dividends (high withholding taxes) reduce total return below
+    /// (MarketValue - InvestedCapital) / InvestedCapital.
+    /// Invested=1000, MarketValue=1100, NetDividends=−20 → (1100 − 20 − 1000) / 1000 = 0.08.
+    /// </summary>
+    [Fact]
+    public void CalculateTotalReturn_Should_ReduceReturn_When_NetDividendsAreNegative()
+    {
+        // Arrange
+        decimal invested = 1_000m;
+        decimal marketValue = 1_100m;
+        decimal netDividends = -20m;
+
+        // Act
+        decimal? result = _sut.CalculateTotalReturn(invested, marketValue, netDividends);
+
+        // Assert
+        result.Should().Be(0.08m);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // CalculateIrr — additional edge cases
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// A list with fewer than 2 cashflows must return null immediately.
+    /// </summary>
+    [Fact]
+    public void CalculateIrr_Should_ReturnNull_When_ListHasExactlyOneCashflow()
+    {
+        // Arrange
+        var cashflows = new[] { new CashflowPoint(new DateTime(2024, 1, 1), -1_000m) };
+
+        // Act
+        decimal? result = _sut.CalculateIrr(cashflows);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// An empty cashflow list must return null.
+    /// </summary>
+    [Fact]
+    public void CalculateIrr_Should_ReturnNull_When_ListIsEmpty()
+    {
+        // Act
+        decimal? result = _sut.CalculateIrr(Array.Empty<CashflowPoint>());
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// A null input must return null.
+    /// </summary>
+    [Fact]
+    public void CalculateIrr_Should_ReturnNull_When_InputIsNull()
+    {
+        // Act
+        decimal? result = _sut.CalculateIrr(null!);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// When all cashflows have the same sign (no sign change), IRR is not computable → null.
+    /// </summary>
+    [Fact]
+    public void CalculateIrr_Should_ReturnNull_When_CashflowsHaveNoSignChange()
+    {
+        // Arrange – all positive cashflows → no sign change
+        var cashflows = new[]
+        {
+            new CashflowPoint(new DateTime(2024, 1, 1),  500m),
+            new CashflowPoint(new DateTime(2024, 6, 1),  600m),
+        };
+
+        // Act
+        decimal? result = _sut.CalculateIrr(cashflows);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // CalculateCagr — additional edge cases
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// A negative time period is invalid → null.
+    /// </summary>
+    [Fact]
+    public void CalculateCagr_Should_ReturnNull_When_YearsIsNegative()
+    {
+        // Act
+        decimal? result = _sut.CalculateCagr(1_000m, 1_500m, -1.0);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// When endValue is negative and years is non-integer, Math.Pow returns NaN → null.
+    /// </summary>
+    [Fact]
+    public void CalculateCagr_Should_ReturnNull_When_EndValueIsNegativeAndYearsIsNonInteger()
+    {
+        // Act
+        decimal? result = _sut.CalculateCagr(1_000m, -500m, 1.5);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // CalculateVolatility — additional edge cases
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// A null input must return null.
+    /// </summary>
+    [Fact]
+    public void CalculateVolatility_Should_ReturnNull_When_InputIsNull()
+    {
+        // Act
+        decimal? result = _sut.CalculateVolatility(null!);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// When all prices are zero or negative, the log-return computation is skipped for every pair
+    /// (previous &lt;= 0 or current &lt;= 0). The underlying array stays at its default 0.0, which is
+    /// neither NaN nor Infinity, so those entries are counted as valid and the method returns 0
+    /// (annualised volatility of zero returns) rather than null.
+    /// </summary>
+    [Fact]
+    public void CalculateVolatility_Should_ReturnNull_When_AllPricesAreZeroOrNegative()
+    {
+        // Arrange
+        var prices = new decimal[] { 0m, -10m, 0m, -5m };
+
+        // Act
+        decimal? result = _sut.CalculateVolatility(prices);
+
+        // Assert – default 0.0 entries still satisfy !NaN && !Infinity, so validCount ≥ 2 → 0 returned
+        result.Should().Be(0m);
+    }
+
+    /// <summary>
+    /// BUG-2: The entry guard checks for fewer than 2 prices, but because only 2 prices produce
+    /// exactly 1 log return (validCount = 1), the internal guard "validCount &lt; 2" fires → null.
+    /// This test documents the actual (surprising) behavior: 2 prices are NOT enough.
+    /// </summary>
+    [Fact]
+    public void CalculateVolatility_Should_ReturnNull_When_ExactlyTwoPricesProvided()
+    {
+        // Arrange – 2 prices → 1 log return → validCount == 1 → internal guard returns null
+        var prices = new decimal[] { 100m, 110m };
+
+        // Act
+        decimal? result = _sut.CalculateVolatility(prices);
+
+        // Assert – documents BUG-2: factual minimum is 3 prices, not 2
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Three prices produce 2 valid log returns (validCount == 2), which satisfies the
+    /// internal guard. This is the effective minimum for a non-null result.
+    /// </summary>
+    [Fact]
+    public void CalculateVolatility_Should_ReturnNonNull_When_ExactlyThreePricesProvided()
+    {
+        // Arrange – minimum viable input
+        var prices = new decimal[] { 100m, 110m, 105m };
+
+        // Act
+        decimal? result = _sut.CalculateVolatility(prices);
+
+        // Assert
+        result.Should().NotBeNull().And.BeGreaterThan(0m);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // CalculateTwr — additional edge cases
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// A null input must return null (guard before Count check).
+    /// </summary>
+    [Fact]
+    public void CalculateTwr_Should_ReturnNull_When_InputIsNull()
+    {
+        // Act
+        decimal? result = _sut.CalculateTwr(null!);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// When all periods have denominator == 0 (empty portfolio for all periods),
+    /// no valid periods exist → null.
+    /// </summary>
+    [Fact]
+    public void CalculateTwr_Should_ReturnNull_When_AllPeriodsHaveZeroDenominator()
+    {
+        // Arrange – each period: StartValue=0, ExternalCashflow=0 → denominator = 0 → skipped
+        var periods = new[]
+        {
+            new TwrPeriodInput(new DateTime(2024, 1, 1), new DateTime(2024, 3, 31), 0m, 1_000m, 0m),
+            new TwrPeriodInput(new DateTime(2024, 4, 1), new DateTime(2024, 6, 30), 0m, 1_200m, 0m),
+        };
+
+        // Act
+        decimal? result = _sut.CalculateTwr(periods);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // CalculateMaxDrawdown — additional edge cases
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// A null input must return null.
+    /// </summary>
+    [Fact]
+    public void CalculateMaxDrawdown_Should_ReturnNull_When_InputIsNull()
+    {
+        // Act
+        decimal? result = _sut.CalculateMaxDrawdown(null!);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// When all portfolio values are identical, the drawdown from peak to trough is 0.
+    /// </summary>
+    [Fact]
+    public void CalculateMaxDrawdown_Should_ReturnZero_When_AllValuesAreIdentical()
+    {
+        // Arrange
+        var values = new decimal[] { 1_000m, 1_000m, 1_000m, 1_000m };
+
+        // Act
+        decimal? result = _sut.CalculateMaxDrawdown(values);
+
+        // Assert
+        result.Should().Be(0m);
+    }
+
+    /// <summary>
+    /// When the first value is zero, the peak starts at 0 and the guard (peak &gt; 0) prevents
+    /// any drawdown from being recorded until a positive peak is established.
+    /// With a monotonically non-decreasing series after the initial zero, no trough ever falls
+    /// below the peak → max drawdown stays at 0.
+    /// </summary>
+    [Fact]
+    public void CalculateMaxDrawdown_Should_ReturnZero_When_FirstValueIsZero()
+    {
+        // Arrange – first value is 0, subsequent values only increase
+        var values = new decimal[] { 0m, 500m, 600m };
+
+        // Act
+        decimal? result = _sut.CalculateMaxDrawdown(values);
+
+        // Assert
+        result.Should().Be(0m);
+    }
 }

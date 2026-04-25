@@ -134,4 +134,106 @@ public sealed class ReturnAnalysisCacheTests : IDisposable
         callCountTarget.Should().Be(2, because: "target entry was invalidated and factory must be called again");
         callCountOther.Should().Be(1,  because: "other entry was NOT invalidated and should still be cached");
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Null factory result must not be cached
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// When the factory returns null the result must NOT be cached.
+    /// A second call must invoke the factory again.
+    /// </summary>
+    [Fact]
+    public async Task GetOrCreateAsync_Should_NotCacheResult_When_FactoryReturnsNull()
+    {
+        // Arrange
+        int callCount = 0;
+        Task<string?> Factory()
+        {
+            callCount++;
+            return Task.FromResult<string?>(null);
+        }
+
+        // Act – two calls with the same key
+        await _sut.GetOrCreateAsync("key-null", Factory, TimeSpan.FromMinutes(5));
+        await _sut.GetOrCreateAsync("key-null", Factory, TimeSpan.FromMinutes(5));
+
+        // Assert – factory must have been called twice (null result not cached)
+        callCount.Should().Be(2);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // TTL expiry triggers factory again
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// An entry with a very short TTL must expire and trigger the factory again.
+    /// </summary>
+    [Fact]
+    public async Task GetOrCreateAsync_Should_CallFactoryAgain_When_EntryHasExpired()
+    {
+        // Arrange – populate with 1 ms TTL
+        const string key = "ttl-expire-key";
+        await _sut.GetOrCreateAsync(key, () => Task.FromResult<string?>("v1"), TimeSpan.FromMilliseconds(1));
+
+        // Wait for expiry
+        await Task.Delay(100);
+
+        int callCount = 0;
+
+        // Act
+        string? result = await _sut.GetOrCreateAsync(
+            key,
+            () => { callCount++; return Task.FromResult<string?>("v2"); },
+            TimeSpan.FromMinutes(5));
+
+        // Assert
+        callCount.Should().Be(1);
+        result.Should().Be("v2");
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // InvalidateAsync on empty cache
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// InvalidateAsync must not throw when the cache is empty.
+    /// </summary>
+    [Fact]
+    public async Task InvalidateAsync_Should_NotThrow_When_CacheIsEmpty()
+    {
+        // Act & Assert
+        Func<Task> act = async () => await _sut.InvalidateAsync("any-prefix");
+        await act.Should().NotThrowAsync();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Concurrent access must not throw
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Concurrent calls with the same key must not throw (race condition is a known limitation,
+    /// but no exception may be raised — BUG-3: factory may be called more than once).
+    /// </summary>
+    [Fact]
+    public async Task GetOrCreateAsync_Should_NotThrow_When_CalledConcurrently()
+    {
+        // Arrange – 20 parallel tasks with the same key
+        int callCount = 0;
+        Task<string?> Factory()
+        {
+            Interlocked.Increment(ref callCount);
+            return Task.FromResult<string?>("v");
+        }
+
+        var tasks = Enumerable.Range(0, 20)
+            .Select(_ => _sut.GetOrCreateAsync("concurrent-key", Factory, TimeSpan.FromMinutes(5)));
+
+        // Act
+        Func<Task> act = async () => await Task.WhenAll(tasks);
+
+        // Assert – no exception; factory called at least once (race condition documented by BUG-3)
+        await act.Should().NotThrowAsync();
+        callCount.Should().BeGreaterThanOrEqualTo(1);
+    }
 }

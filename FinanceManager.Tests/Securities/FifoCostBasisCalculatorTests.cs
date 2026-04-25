@@ -338,4 +338,210 @@ public sealed class FifoCostBasisCalculatorTests
         result.RemainingLots.Should().BeEmpty();
         result.HasOversellWarning.Should().BeFalse();
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Edge cases: null / zero quantity on Buy and Sell
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// A buy transaction with a null quantity must not create a lot.
+    /// The result should have zero shares held and empty lots.
+    /// </summary>
+    [Fact]
+    public void Calculate_Should_NotCreateLot_When_BuyQuantityIsNull()
+    {
+        // Arrange
+        var tx = new SecurityTransaction(Guid.NewGuid(), DateTime.Today, SecurityPostingSubType.Buy, -1_000m, null, Guid.NewGuid());
+
+        // Act
+        FifoCostBasisResult result = _sut.Calculate([tx]);
+
+        // Assert
+        result.RemainingLots.Should().BeEmpty();
+        result.TotalSharesHeld.Should().Be(0m);
+        result.TotalCostBasis.Should().Be(0m);
+    }
+
+    /// <summary>
+    /// A buy transaction with quantity zero must not create a lot.
+    /// </summary>
+    [Fact]
+    public void Calculate_Should_NotCreateLot_When_BuyQuantityIsZero()
+    {
+        // Arrange
+        var tx = new SecurityTransaction(Guid.NewGuid(), DateTime.Today, SecurityPostingSubType.Buy, -1_000m, 0m, Guid.NewGuid());
+
+        // Act
+        FifoCostBasisResult result = _sut.Calculate([tx]);
+
+        // Assert
+        result.RemainingLots.Should().BeEmpty();
+        result.TotalSharesHeld.Should().Be(0m);
+    }
+
+    /// <summary>
+    /// A sell transaction with a null quantity must be silently skipped.
+    /// </summary>
+    [Fact]
+    public void Calculate_Should_SkipSell_When_SellQuantityIsNull()
+    {
+        // Arrange: buy 10 shares, then attempt to sell with null quantity
+        var buy  = Buy(DateTime.Today.AddDays(-1), 1_000m, 10m);
+        var sell = new SecurityTransaction(Guid.NewGuid(), DateTime.Today, SecurityPostingSubType.Sell, 1_000m, null, Guid.NewGuid());
+
+        // Act
+        FifoCostBasisResult result = _sut.Calculate([buy, sell]);
+
+        // Assert – sell is skipped; 10 shares still held
+        result.TotalSharesHeld.Should().Be(10m);
+        result.HasOversellWarning.Should().BeFalse();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Edge cases: fee without matching lot
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// A fee whose GroupId does not match any buy lot must be silently skipped
+    /// without affecting cost basis.
+    /// </summary>
+    [Fact]
+    public void Calculate_Should_NotCrash_When_FeeHasNoMatchingBuyLot()
+    {
+        // Arrange – fee with a random GroupId; no matching buy
+        var fee = Fee(DateTime.Today, 10m, Guid.NewGuid());
+
+        // Act
+        FifoCostBasisResult result = _sut.Calculate([fee]);
+
+        // Assert
+        result.TotalCostBasis.Should().Be(0m);
+        result.RemainingLots.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// A fee linked to a fully-sold lot must not crash.
+    /// The lot is gone after the sell, but the fee arrives later.
+    /// </summary>
+    [Fact]
+    public void Calculate_Should_NotCrash_When_FeeLinkedToFullySoldLot()
+    {
+        // Arrange: Buy 10 → Sell 10 → Fee referencing same GroupId as Buy
+        var groupId = Guid.NewGuid();
+        var buy  = Buy(DateTime.Today.AddDays(-2), 1_000m, 10m, groupId);
+        var sell = Sell(DateTime.Today.AddDays(-1), 1_000m, 10m);
+        var fee  = Fee(DateTime.Today, 5m, groupId);
+
+        // Act
+        FifoCostBasisResult result = _sut.Calculate([buy, sell, fee]);
+
+        // Assert – no crash; all lots consumed; no oversell warning
+        result.RemainingLots.Should().BeEmpty();
+        result.TotalSharesHeld.Should().Be(0m);
+        result.HasOversellWarning.Should().BeFalse();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Multiple fees on the same GroupId
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Multiple fees referencing the same buy lot via GroupId must accumulate on the lot's cost basis.
+    /// Buy 10 @ 100 = 1000 + fee1 (5) + fee2 (3) → TotalCostBasis = 1008.
+    /// </summary>
+    [Fact]
+    public void Calculate_Should_AccumulateFees_When_MultipleFeesShareSameGroupId()
+    {
+        // Arrange – buy on an earlier date so it is always sorted before the fees
+        var groupId = Guid.NewGuid();
+        var buy  = Buy(DateTime.Today.AddDays(-1), 1_000m, 10m, groupId);
+        var fee1 = Fee(DateTime.Today, 5m, groupId);
+        var fee2 = Fee(DateTime.Today, 3m, groupId);
+
+        // Act
+        FifoCostBasisResult result = _sut.Calculate([buy, fee1, fee2]);
+
+        // Assert – 1000 + 5 + 3 = 1008
+        result.TotalCostBasis.Should().Be(1_008m);
+        result.TotalSharesHeld.Should().Be(10m);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Oversell across multiple lots
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// A sell that exceeds all available lots must set the oversell warning flag.
+    /// After an oversell, TotalSharesHeld must not go below zero.
+    /// </summary>
+    [Fact]
+    public void Calculate_Should_SetOversellWarning_When_SellExceedsAllLots()
+    {
+        // Arrange: buy 10 + buy 5 = 15 total; sell 20 = oversell
+        var buy1 = Buy(DateTime.Today.AddDays(-2), 1_000m, 10m);
+        var buy2 = Buy(DateTime.Today.AddDays(-1),   500m,  5m);
+        var sell = Sell(DateTime.Today, 2_000m, 20m);
+
+        // Act
+        FifoCostBasisResult result = _sut.Calculate([buy1, buy2, sell]);
+
+        // Assert
+        result.HasOversellWarning.Should().BeTrue();
+        result.OversellWarningMessage.Should().NotBeNullOrEmpty();
+        result.TotalSharesHeld.Should().Be(0m);
+        result.RemainingLots.Should().BeEmpty();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Buy after full sell
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// After a complete sell-out (0 shares remaining), a new buy creates a fresh lot
+    /// as if starting from scratch.
+    /// </summary>
+    [Fact]
+    public void Calculate_Should_CreateNewLot_When_BuyAfterFullSell()
+    {
+        // Arrange: buy 10 → sell 10 → buy 5
+        var buy1 = Buy(DateTime.Today.AddDays(-2), 1_000m, 10m);
+        var sell = Sell(DateTime.Today.AddDays(-1), 1_000m, 10m);
+        var buy2 = Buy(DateTime.Today, 600m, 5m);
+
+        // Act
+        FifoCostBasisResult result = _sut.Calculate([buy1, sell, buy2]);
+
+        // Assert
+        result.TotalSharesHeld.Should().Be(5m);
+        result.RemainingLots.Should().HaveCount(1);
+        result.TotalCostBasis.Should().Be(600m);
+        result.HasOversellWarning.Should().BeFalse();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Same-date sort: Buy-before-Sell when Buy Id is smaller
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// When a buy and a sell share the same date, the buy (lower Id) is processed
+    /// first due to the ThenBy(Id) sort — so the sell does not trigger an oversell warning.
+    /// </summary>
+    [Fact]
+    public void Calculate_Should_ProcessBuyBeforeSell_When_SameDateAndBuyIdIsSmaller()
+    {
+        // Arrange – deterministic GUIDs: buy Id < sell Id → buy sorts first
+        var buyId  = new Guid("00000000-0000-0000-0000-000000000001");
+        var sellId = new Guid("00000000-0000-0000-0000-000000000002");
+        var date   = new DateTime(2024, 6, 1);
+
+        var buy  = new SecurityTransaction(buyId,  date, SecurityPostingSubType.Buy,  -1_000m, 10m, Guid.NewGuid());
+        var sell = new SecurityTransaction(sellId, date, SecurityPostingSubType.Sell,    900m,  8m, Guid.NewGuid());
+
+        // Act – deliberately pass in reversed order; the sorter corrects it
+        FifoCostBasisResult result = _sut.Calculate([sell, buy]);
+
+        // Assert
+        result.TotalSharesHeld.Should().Be(2m);
+        result.HasOversellWarning.Should().BeFalse();
+    }
 }
