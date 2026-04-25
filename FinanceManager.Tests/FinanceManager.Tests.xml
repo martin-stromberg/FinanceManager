@@ -320,6 +320,31 @@
             NOTE: MinEntriesPerDraft (new feature) is NOT yet applied by the implementation – tests document current behaviour (TDD baseline).
             </summary>
         </member>
+        <member name="M:FinanceManager.Tests.Statements.StatementDraftSecurityClassificationTests.CreateSecurityAccountAsync(FinanceManager.Infrastructure.AppDbContext,System.Guid)">
+            <summary>
+            Creates a bank contact and an account with security processing enabled.
+            Securities may only be auto-assigned when a detected account explicitly allows it.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Statements.StatementDraftSecurityClassificationTests.AutoAssignSecurity_ByIdentifier_SetsSecurityId">
+            <summary>
+            Verifies that an entry whose subject contains the security identifier gets the security auto-assigned.
+            A detected account with security processing enabled is required for auto-assignment.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Statements.StatementDraftSecurityClassificationTests.AutoAssignSecurity_ByNameWithUmlauts_SetsSecurityId">
+            <summary>
+            Verifies that a security name containing umlauts is matched when the entry subject uses the
+            ASCII equivalents (ue/oe/ae). A detected account with security processing enabled is required.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Statements.StatementDraftSecurityClassificationTests.AutoAssignSecurity_MultipleMatches_AssignsFirstByName_AndKeepsStatusOpen">
+            <summary>
+            Verifies that when multiple securities match the entry subject, the first by name is assigned
+            and the entry status remains Open to flag the ambiguity.
+            A detected account with security processing enabled is required.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Tests.Statements.StatementDraftSplitLinkTests.BookAsync_ShouldUseParentBookingDateAndChildBookingAsValuta_WhenSplitDraftsLinked">
             <summary>
             Ensures split-draft postings use the parent booking date and child booking dates as valuta dates.
