@@ -1,52 +1,113 @@
-# F003 – Ausgabenverwaltung
+# F003 – Ausgabenverwaltung / Postings
 
 ## Einleitung
 
-Die Ausgabenverwaltung ermöglicht es Ihnen, alle Ihre Ausgaben und Einnahmen zu erfassen und zu verwalten. Jede Transaktion wird einzeln registriert und kann später abgerufen oder bearbeitet werden. Dies ist das Herzstück des Finanzmanagements.
+Die Ausgabenverwaltung ermöglicht es Ihnen, all Ihre Transaktionen (Posten) zu verwalten. Diese umfassen:
+- **Bankposten**: Transaktionen von Bankkonten (aus Kontoauszügen)
+- **Kontaktposten**: Transaktionen mit Kontakten
+- **Sparplanposten**: Transaktionen für Ersparnispläne
+- **Wertpapierposten**: Transaktionen für Wertpapiere (Käufe/Verkäufe)
+
+**Wichtig**: Posten werden hauptsächlich durch den **Kontoauszug-Import** automatisch erstellt, können aber auch manuell hinzugefügt werden.
 
 ## Wer nutzt es?
 
-**Sachbearbeiter und Finanzverwalter** nutzen diese Funktion täglich, um Transaktionen zu erfassen, zu prüfen und zu korrigieren. Jede Geldbewegung wird dokumentiert.
+**Sachbearbeiter und Finanzverwalter** nutzen diese Funktion täglich, um:
+- Transaktionen einzusehen und zu verwalten
+- Transaktionen zu suchen und zu filtern
+- Transaktionen zu bearbeiten
+- Transaktionen zu kategorisieren
+- Transaktionen zu exportieren
+- Berichte über Transaktionen zu erstellen
 
 ## Schritt-für-Schritt-Anleitung
 
-### Ausgabe/Einnahme erfassen
+### Posten anzeigen
 
-1. Sie navigieren zur **Ausgabenverwaltung** oder **Posten**.
-2. Sie klicken auf **Neue Ausgabe** oder **Neue Einnahme**.
-3. Sie füllen folgende Felder aus:
-   - **Datum** (Transaktionsdatum)
-   - **Betrag** (in EUR)
-   - **Beschreibung** (z.B. "Büromaterial")
-   - **Kategorie** (z.B. "Bürokosten")
-   - **Konto** (von welchem Konto die Transaktion kommt)
-4. Sie klicken **Speichern**.
+1. Sie navigieren zu **Konten** → **Kontodetails** oder zur entsprechenden Entität (Kontakt, Sparplan, Wertpapier)
+2. Sie sehen eine Liste aller Posten für diese Entität
+3. Sie können die Liste mit Datum und Suchtext filtern
 
-### Ausgabe bearbeiten
+### Posten suchen und filtern
 
-1. Sie öffnen die Ausgabenliste.
-2. Sie klicken auf eine Transaktion, um zur Detailseite zu gehen.
-3. Sie klicken **Bearbeiten**.
-4. Sie ändern die gewünschten Informationen.
-5. Sie klicken **Speichern**.
+1. In der Postenliste können Sie:
+   - **Nach Text suchen**: z.B. "Staples", "Miete" (sucht in Beschreibung, Empfänger, Betreff)
+   - **Nach Datum filtern**: Von/Bis Datum eingeben
+   - **Pagination**: Seiten durchblättern (Standard: 50 Posten pro Seite)
 
-### Ausgabe löschen
+### Posten anschauen und bearbeiten
 
-1. Sie öffnen die Detailseite einer Transaktion.
-2. Sie klicken **Löschen**.
-3. Die Transaktion wird aus dem System entfernt.
+1. Sie klicken auf einen Posten in der Liste
+2. Sie sehen die Postdetails:
+   - Buchungsdatum
+   - Wertstellungsdatum
+   - Betrag
+   - Art (Bank/Kontakt/Sparplan/Wertpapier)
+   - Beschreibung/Betreff
+   - Verknüpfte Posten (wenn gruppiert)
+3. **Bearbeitung**:
+   - ✅ **Manuelle Posten**: können bearbeitet UND gelöscht werden
+   - ⛔ **Bankposten**: sind read-only (können nicht gelöscht werden, da sie aus authoritative Kontoauszüge stammen)
+   - Wenn Sie einen Bankposten ändern möchten, kontaktieren Sie Ihre Bank
+
+### Posten exportieren
+
+1. In der Postenliste klicken Sie auf **Exportieren**
+2. Sie wählen das Format:
+   - **CSV**: Komma-getrennte Werte (für Excel)
+   - **XLSX**: Excel-Format
+3. Sie können einen Datumsbereich wählen
+4. Die Datei wird heruntergeladen
+
+## Datenfelder
+
+### Alle Posten haben:
+- **BookingDate**: Buchungsdatum (Transaktionsdatum)
+- **ValutaDate**: Wertstellungsdatum (Effektivdatum)
+- **Amount**: Betrag in EUR (absolut, Vorzeichen in UI)
+- **Kind**: Art des Postens (Bank/Kontakt/SavingsPlan/Security)
+- **Description**: Beschreibung der Transaktion
+
+### Zusätzlich bei Bankposten (Bank):
+- **AccountId**: Von welchem Konto
+- **Subject**: Betreff (z.B. Überweisungsbetreff)
+- **RecipientName**: Name des Empfängers/Absenders
+
+### Zusätzlich bei Kontaktposten (Contact):
+- **ContactId**: Mit welchem Kontakt
+- **Description**: Beschreibung
+
+### Zusätzlich bei Sparplanposten (SavingsPlan):
+- **SavingsPlanId**: Zu welchem Sparplan
+- **Description**: Beschreibung
+
+### Zusätzlich bei Wertpapierposten (Security):
+- **SecurityId**: Zu welchem Wertpapier
+- **SecuritySubType**: Untertyp (z.B. DIVIDEND, SPLIT)
+- **Quantity**: Menge/Anzahl
 
 ## Beispiel
 
-Sie kaufen Büromaterial für 150 EUR. Sie erfassen dies wie folgt:
+### Bankposten
+- **BookingDate**: 15.01.2024
+- **Amount**: 150,00 EUR
+- **Description**: "Papier, Stifte und Klebenotizen"
+- **AccountId**: "Geschäftskonto"
+- **RecipientName**: "Staples"
 
-- **Datum**: 15.01.2024
-- **Betrag**: 150,00 EUR
-- **Beschreibung**: "Papier, Stifte und Klebenotizen bei Staples"
-- **Kategorie**: "Büromaterial"
-- **Konto**: "Geschäftskonto"
+### Sparplanposten
+- **BookingDate**: 20.01.2024
+- **Amount**: 500,00 EUR
+- **SavingsPlanId**: "Notfallfonds"
+- **Description**: "Automatische monatliche Einzahlung"
 
-Die Software speichert diese Transaktion und zieht den Betrag vom Kontosaldo ab.
+## Hinweise
+
+- **Automatische Erstellung**: Die meisten Posten werden durch **Kontoauszug-Importe** automatisch erstellt
+- **Gruppierung**: Zusammenhängende Posten (z.B. Split-Transaktionen) werden als Gruppe verlinkt
+- **Read-Only Konzept**: Bankposten sollten nicht manuell gelöscht werden (stammen aus authoritative Kontoauszüge)
+- **Export**: Posten können jederzeit in CSV/XLSX exportiert werden für externe Analysen
+
 
 ## Was passiert im Hintergrund?
 
@@ -67,7 +128,14 @@ A: Ja, Sie können nach Datum, Kategorie, Betrag und anderen Kriterien filtern.
 A: Ja, die Software kann Transaktionen automatisch kategorisieren (siehe F005).
 
 **F: Kann ich ein Datum rückwirkend ändern?**  
-A: Ja, Sie können das Datum jederzeit anpassen, solange die Transaktion nicht verbucht ist.
+A: 
+- ✅ **Manuelle Posten**: Ja, Sie können alle Felder jederzeit ändern
+- ⛔ **Bankposten**: Nein, Bankposten sind read-only und können nicht geändert werden (stammen aus authoritative Kontoauszüge)
+
+**F: Kann ich Transaktionen löschen?**  
+A: 
+- ✅ **Manuelle Posten**: Ja, Sie können manuelle Posten jederzeit löschen
+- ⛔ **Bankposten**: Nein, Bankposten können nicht gelöscht werden (read-only aus authoritative Kontoauszüge)
 
 ## Verwandte Funktionen
 

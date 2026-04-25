@@ -264,6 +264,7 @@ namespace FinanceManager.Web
                 app.UseHttpsRedirection();
             }
 
+            // Serve ALL static files including help HTML pages
             app.UseStaticFiles();
             app.UseAntiforgery();
 
@@ -272,7 +273,10 @@ namespace FinanceManager.Web
 
             app.UseMiddleware<JwtRefreshMiddleware>();
 
+            // Map static assets for CSS/JS bundling
             app.MapStaticAssets();
+
+            // Blazor routing comes last (catches everything else)
             app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
             app.MapControllers();
         }

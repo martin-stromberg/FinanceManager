@@ -278,6 +278,19 @@ ServiceFabricBackup/
 # Microsoft Fakes
 FakesAssemblies/
 
+# ============================================================================
+# Help Pages Build Artifacts (Phase 1-3)
+# ============================================================================
+# Generated HTML files are not versioned (regenerated on each build)
+FinanceManager.Web/wwwroot/help/**/*.html
+
+# Search indexes are auto-generated
+FinanceManager.Web/wwwroot/help/**/search-index.json
+
+# Generated English documentation (Phase 1: Copy, Phase 2+: Translations)
+docs/business/features/*.en.md
+docs/business/features/*-domain.en.md
+
 # GhostDoc plugin setting file
 *.GhostDoc.xml
 

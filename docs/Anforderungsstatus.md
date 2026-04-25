@@ -1,4 +1,4 @@
-﻿# Mapping: Anforderungen zu Implementierung (FinanceManager)
+# Mapping: Anforderungen zu Implementierung (FinanceManager)
 
 Dieses Dokument zeigt, wie die Anforderungen aus dem Anforderungskatalog im aktuellen Code umgesetzt sind. Es dient als Übersicht für den Projektstand und zur Identifikation offener Punkte.
 
@@ -20,6 +20,8 @@ Stand: 2025-10-11
 | FA-AUSZ-008      | ✔      | Empfänger muss Kontakt zugeordnet werden                                | StatementDraftService, UI                                                                                                                                                       |
 | FA-AUSZ-009      | ~      | Wertpapierzuordnung bei eigener Bank                                    | UI & API; PDF-Detailimport (ING) erweitert; Depot-/Positionslogik offen                                                                                                         |
 | FA-AUSZ-010      | ✔      | PDF-Parsing mit Tabellenextraktion                                      | ING_StatementFileReader, Barclays_StatementFileReader, erweiterbar                                                                                                              |
+| FA-AUSZ-018      | ✔      | Sparkasse PDF Import / Parsing                                          | `Sparkasse_PDF_StatementFile` + `Sparkasse_PDF_StatementFileParser` implementiert; DI-Registrierung hinzugefügt; initiales Template übernommen (anpassbar) und heuristische Erkennung (mind. 2 Trennlinien + "Sparkasse" in einer vorherigen Zeile) |
+| FA-UI-004       | ✖      | Schnellbearbeitungsmodus für eingebettete Listen (Inline-QuickEdit)     | Feature geplant: `QuickEdit` Toggle im Ribbon, `BaseListViewModel` erweitert (EditableFields, IsRowEditable, BeginQuickEdit/EndQuickEdit, CollectChangedRows, ValidateRow). Spezifikation: `docs/requirements/quick-edit-embeddedlist.md` · API: Batch-Update `/api/statement-drafts/{id}/entries/batch-update` (geplant) |
 | FA-AUSZ-011      | ✔      | Import-Pipeline mit Format-Strategie                                    | StatementDraftService, Reader-Interface                                                                                                                                         |
 | FA-AUSZ-012      | ✔      | Anzeige Gesamtbetrag verknüpfter Aufteilungs-Auszüge im Eintrag         | StatementDraftsController GetEntry; EntryDetail UI                                                                                                                              |
 | FA-AUSZ-013      | ~      | Status offen bei Zahlungsintermediär bis vollständig gesplittet         | TryAutoAssignContact; fehlende Gesamtaggregation über alle verknüpften Splits offen                                                                                             |

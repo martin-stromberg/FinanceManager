@@ -1,0 +1,77 @@
+@page "/help"
+@rendermode InteractiveServer
+@using System.Globalization
+
+@{
+    var lang = CultureInfo.CurrentUICulture.Name.StartsWith("en") ? "en" : "de";
+}
+
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>
+                @(lang == "en" ? "📖 Help & Documentation" : "📖 Hilfe & Dokumentation")
+            </h1>
+            <p class="lead text-muted">
+                @(lang == "en" 
+                    ? "Find answers to your questions about FinanceManager features and how to use them." 
+                    : "Hier finden Sie Antworten auf Ihre Fragen zu FinanceManager-Funktionen und deren Verwendung.")
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 mb-3">
+            <div class="input-group input-group-lg">
+                <input type="text" 
+                       class="form-control" 
+                       id="helpSearch" 
+                       placeholder="@(lang == "en" ? "Search documentation..." : "Dokumentation durchsuchen...")"
+                       aria-label="Search help">
+                <button class="btn btn-primary" type="button" id="searchBtn">
+                    🔍
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div id="searchResults" class="d-none">
+                <!-- Search results will be inserted here -->
+            </div>
+
+            <div id="featureList">
+                <!-- Features will be loaded here -->
+                <div class="alert alert-info">
+                    @(lang == "en" ? "Loading documentation..." : "Dokumentation wird geladen...")
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.feature-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid #0d6efd;
+    cursor: pointer;
+}
+
+.feature-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    border-left-color: #0a58ca;
+}
+
+.search-highlight {
+    background-color: #fff3cd;
+    padding: 0.1rem 0.2rem;
+    border-radius: 0.2rem;
+    font-weight: 500;
+}
+</style>
+
+<!-- Load the help search script directly after the HTML -->
+<script src="/help/js/help-search.js" defer></script>
+

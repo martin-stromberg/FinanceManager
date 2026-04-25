@@ -980,6 +980,33 @@
             Resource base name: Controller (see `Resources/Controller.*.resx`).
             </summary>
         </member>
+        <member name="T:FinanceManager.Web.Controllers.HelpController">
+            <summary>
+            Controller for serving help documentation pages and content.
+            Provides static HTML files and markdown content for help documentation.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.HelpController.#ctor(Microsoft.AspNetCore.Hosting.IWebHostEnvironment,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.HelpController})">
+            <summary>
+            Initializes a new instance of HelpController.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.HelpController.GetHelpPage(System.String,System.String)">
+            <summary>
+            Gets a help documentation page by language and feature ID (legacy HTML endpoint).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.HelpController.GetMarkdown(System.String,System.String)">
+            <summary>
+            Gets the markdown content for a feature by language and feature ID.
+            Used by the Blazor help page view component.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.HelpController.GetSearchIndex(System.String)">
+            <summary>
+            Gets the search index for help pages by language.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.Controllers.HomeKpisController">
             <summary>
             Manages Home KPI widgets for the signed-in user: list, create, update, delete and retrieve single entries.

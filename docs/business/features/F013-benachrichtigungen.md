@@ -2,75 +2,141 @@
 
 ## Einleitung
 
-Die Benachrichtigungen halten Sie über wichtige finanzielle Ereignisse auf dem Laufenden. Sie erhalten automatische Warnungen bei Budget-Überschreitungen, erfälligen Aufgaben oder anderen wichtigen Vorfällen. Dies hilft Ihnen, schnell zu reagieren und finanzielle Risiken zu minimieren.
+Das Benachrichtigungssystem informiert Sie über wichtige finanzielle Ereignisse in Echtzeit. Das System generiert Benachrichtigungen bei:
+- Budget-Überschreitungen
+- Sparplan-Meilensteinen
+- Anderen konfigurierten Events
+
+Sie können Benachrichtigungen in der Anwendung anzeigen und verwalten. 
+
+**Hinweis**: Die Konfiguration von Benachrichtigungstypen erfolgt über **Benutzereinstellungen (F014)**, nicht hier.
 
 ## Wer nutzt es?
 
-**Sachbearbeiter und Finanzverwalter** nutzen diese Funktion, um über kritische Ereignisse informiert zu werden. Dies ist wichtig für eine schnelle Reaktion auf Abweichungen.
+**Sachbearbeiter und Finanzverwalter** nutzen diese Funktion, um:
+- Aktive Benachrichtigungen einzusehen
+- Benachrichtigungen zu bearbeiten
+- Benachrichtigungen zu verwerfen
+- Notification-Feed zu überblicken
+
+Dies hilft bei der schnellen Reaktion auf kritische Ereignisse.
 
 ## Schritt-für-Schritt-Anleitung
 
-### Benachrichtigungen konfigurieren
+### Benachrichtigungen anzeigen
 
-1. Sie navigieren zu **Einstellungen** → **Benachrichtigungen**.
-2. Sie sehen eine Liste von möglichen Benachrichtigungstypen:
-   - Budget-Überschreitung
-   - Neue Transaktion
-   - Sparplan-Meilenstein
-   - Tägliche Zusammenfassung
-3. Sie aktivieren/deaktivieren jeden Typ nach Bedarf.
-4. Sie wählen die **Benachrichtigungsmethode** (E-Mail, In-App-Popup).
-5. Sie legen die **Häufigkeit** fest (täglich, wöchentlich, sofort).
-6. Sie klicken **Speichern**.
+1. Sie navigieren zu **Benachrichtigungen** (üblicherweise ein Icon in der Header/Menü)
+2. Das System zeigt alle **aktiven Benachrichtigungen** an (zeitlich gefiltert nach UTC-Zeit)
+3. Sie sehen:
+   - Benachrichtigungstext
+   - Zeitpunkt der Benachrichtigung
+   - *(Optional)* Link zur betroffenen Entität
 
-### Benachrichtigungen empfangen
+### Benachrichtigung bearbeiten/anzeigen
 
-1. Wenn ein Ereignis auftritt (z.B. Budget überschritten), sendet die Software eine Benachrichtigung.
-2. Sie erhalten eine **E-Mail** oder sehen ein **Popup** in der Anwendung.
-3. Sie klicken auf die Benachrichtigung, um zum relevanten Bereich zu navigieren.
+1. Sie klicken auf eine Benachrichtigung
+2. Sie sehen Details der Benachrichtigung
+3. Sie können:
+   - Die Benachrichtigung **lesen/verstehen**
+   - Zur betroffenen Entität **navigieren** (z.B. zum Budget)
 
-### Benachrichtigungs-Verlauf anzeigen
+### Benachrichtigung verwerfen/abdismissen
 
-1. Sie navigieren zu **Benachrichtigungen** → **Verlauf**.
-2. Sie sehen alle bisherigen Benachrichtigungen.
-3. Sie können diese archivieren oder löschen.
+1. Sie öffnen eine Benachrichtigung
+2. Sie klicken **Verwerfen**, **Schließen** oder **X**
+3. Die Benachrichtigung wird als "dismisst" markiert
+4. Sie wird aus der aktiven Benachrichtigungsliste entfernt
 
-## Beispiel
+### Benachrichtigungsfilter (Optional)
 
-Sie haben folgende Benachrichtigungen konfiguriert:
+1. Die API unterstützt Filterung nach:
+   - **Status**: Aktiv, verworfen, archiviert
+   - **Typ**: Budget, SavingsPlan, etc.
+   - **Datum**: Von/Bis
 
-1. **Budget-Überschreitung**: Sofort per E-Mail
-2. **Tägliche Zusammenfassung**: Jeden Morgen um 08:00 Uhr
-3. **Sparplan-Meilenstein**: Wöchentlich, wenn Sie 25%, 50%, 75% eines Sparziels erreicht haben
+*(Dies hängt von der UI-Implementierung ab)*
 
-Jetzt geschieht folgendes:
-- Montag 11:00 Uhr: Sie überschreiten Ihr Bürokosten-Budget. **Sofort-Benachrichtigung** per E-Mail.
-- Dienstag 08:00 Uhr: Tägliche Zusammenfassung mit allen Transaktionen der letzten 24 Stunden.
-- Freitag 15:00 Uhr: Ihr Notgroschen-Sparplan erreicht 75%. Wöchentliche Benachrichtigung.
+## Datenfelder
 
-## Was passiert im Hintergrund?
+### Alle Benachrichtigungen haben:
+- **Id**: Eindeutige Identifikation
+- **UserId**: Gehört dem aktuellen Benutzer
+- **Title**: Benachrichtigungstitel
+- **Message**: Benachrichtigungstext
+- **Type**: Art der Benachrichtigung (Budget, SavingsPlan, etc.)
+- **CreatedAt**: UTC-Zeitpunkt der Benachrichtigung
+- **DismissedAt**: UTC-Zeitpunkt des Verwerfens (optional)
+- **EntityLink**: Link zur betroffenen Entität (optional)
 
-Die Software überwacht kontinuierlich Ihre Transaktionen, Budgets und Sparziele. Wenn vordefinierte Bedingungen erfüllt sind, wird eine Benachrichtigung generiert und über das konfigurierte Medium versendet.
+## Beispiele
+
+### Beispiel 1: Budget-Benachrichtigung
+```
+Titel: "Budget überschritten"
+Message: "Ihr Budget für 'Bürokosten' wurde überschritten (€ 4.500 von € 5.000)"
+Type: BudgetExceeded
+CreatedAt: 2026-04-11T11:30:00Z
+EntityLink: /budgets/xyz
+```
+
+### Beispiel 2: Sparplan-Benachrichtigung
+```
+Titel: "Sparziel erreicht!"
+Message: "Sie haben 75% Ihres 'Notfallfonds'-Sparplans erreicht (€ 3.750 von € 5.000)"
+Type: SavingsPlanMilestone
+CreatedAt: 2026-04-11T14:15:00Z
+EntityLink: /savingsplans/abc
+```
+
+## Technische Details
+
+### API-Endpoints
+- `GET /api/notifications` - Alle aktiven Benachrichtigungen abrufen
+- `DELETE /api/notifications/{id}` oder `POST /api/notifications/{id}/dismiss` - Benachrichtigung verwerfen
+
+### Filtern
+Benachrichtigungen werden automatisch gefiltert nach:
+- **Benutzer**: Nur Benachrichtigungen des aktuellen Benutzers
+- **Zeit**: Nur Benachrichtigungen die noch gültig sind (DateTime.UtcNow)
+- **Status**: Nur aktive (nicht verworfene) Benachrichtigungen
+
+### Notification Types (Beispiele)
+- `BudgetExceeded` - Budget überschritten
+- `SavingsPlanMilestone` - Sparplan-Ziel erreicht
+- `StatementImported` - Kontoauszug importiert
+- Weitere abhängig von Geschäftslogik
 
 ## Häufige Fragen (FAQ)
 
-**F: Kann ich eine einzelne Benachrichtigung deaktivieren?**  
-A: Ja, Sie können Benachrichtigungstypen einzeln oder in Gruppen deaktivieren.
+**F: Wo konfiguriere ich Benachrichtigungstypen?**  
+A: In den **Benutzereinstellungen (F014)**, nicht hier. Dieses Feature zeigt nur Benachrichtigungen an.
 
-**F: Wie oft kann ich Benachrichtigungen erhalten?**  
-A: Dies hängt von der Konfiguration ab. Sie können alles von Echtzeit bis wöchentlich einstellen.
+**F: Werden Benachrichtigungen per E-Mail versendet?**  
+A: Das hängt von den Benutzereinstellungen ab. Im NotificationsController werden nur In-App-Benachrichtigungen verwaltet.
 
-**F: Was passiert, wenn ich keine E-Mail erhalten?**  
-A: Prüfen Sie Ihre Spam-Filter. Sie können auch In-App-Benachrichtigungen verwenden.
+**F: Kann ich alte Benachrichtigungen sehen?**  
+A: Das NotificationsController zeigt nur "aktive" Benachrichtigungen. Ein Verlauf ist optional nicht in dieser API implementiert.
 
-**F: Kann ich die Benachrichtigungszeit personalisieren?**  
-A: Ja, Sie können Zeit und Häufigkeit für die meisten Benachrichtigungen einstellen.
+**F: Kann ich Benachrichtigungen zeitbasiert filtern?**  
+A: Ja, das System filtert automatisch nach UTC-Zeit. Nur zeitlich gültige Benachrichtigungen werden angezeigt.
 
-**F: Werden alte Benachrichtigungen automatisch gelöscht?**  
-A: Dies hängt von den Einstellungen ab. Sie können sie manuell löschen oder archivieren.
+**F: Was passiert, wenn ich eine Benachrichtigung verwerfe?**  
+A: Sie wird aus der aktiven Liste entfernt (DismissedAt wird gesetzt), aber nicht gelöscht.
+
+**F: Werden Benachrichtigungen automatisch archiviert?**  
+A: Das hängt von der Geschäftslogik ab. Aktuell können sie manuell verworfen werden.
+
+## Hinweise
+
+- **Echtzeit-System**: Benachrichtigungen werden asynchron generiert
+- **UTC-Zeit**: Alle Zeitpunkte sind in UTC
+- **Benutzer-isoliert**: Jeder Benutzer sieht nur seine eigenen Benachrichtigungen
+- **Konfiguration woanders**: Benachrichtigungstypen und Einstellungen sind in Benutzereinstellungen (F014)
+- **API-fokussiert**: NotificationsController ist primär für die API, nicht für UI-Darstellung
 
 ## Verwandte Funktionen
 
+- [F014 – Benutzereinstellungen](./F014-benutzereinstellungen.md) ← Benachrichtigungen KONFIGURIEREN
 - [F008 – Budgetplanung](./F008-budgetplanung.md)
 - [F010 – Ersparnispläne](./F010-ersparnisplaene.md)
-- [F014 – Benutzereinstellungen](./F014-benutzereinstellungen.md)
+

@@ -1,12 +1,18 @@
 # F005 – Automatische Kategorisierung
 
+## ⏳ STATUS: GEPLANT (NICHT YET IMPLEMENTIERT)
+
+**HINWEIS**: Diese Funktion ist aktuell noch in Planung und nicht im Produktionssystem implementiert. Die folgende Dokumentation beschreibt die geplante Funktionalität.
+
 ## Einleitung
 
 Die automatische Kategorisierung ist ein intelligentes System, das Ihre Transaktionen automatisch in die richtige Kategorie einordnet. Basierend auf der Beschreibung der Transaktion erkennt die Software wiederkehrende Muster und schlägt die passende Kategorie vor. Dies spart Zeit und sorgt für Konsistenz.
 
+**Verfügbarkeit**: Geplant für Q2 2024
+
 ## Wer nutzt es?
 
-**Sachbearbeiter und Finanzverwalter** profitieren von dieser Funktion, da sie weniger Zeit für manuelle Kategorisierung aufwenden. Besonders bei Massenimporten ist dies hilfreich.
+**Sachbearbeiter und Finanzverwalter** werden von dieser Funktion profitieren, da sie weniger Zeit für manuelle Kategorisierung aufwenden müssen. Besonders bei Massenimporten ist dies hilfreich.
 
 ## Schritt-für-Schritt-Anleitung
 

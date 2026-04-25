@@ -2343,6 +2343,18 @@
         <member name="M:FinanceManager.Infrastructure.Migrations.BankAccount_SecurityProcessingEnabled.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddIbanUniqueConstraint">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddIbanUniqueConstraint.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddIbanUniqueConstraint.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddIbanUniqueConstraint.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Notifications.HolidayProviderResolver">
             <summary>
             Resolves an implementation of <see cref="T:FinanceManager.Application.Notifications.IHolidayProvider"/> for a requested <see cref="T:FinanceManager.Domain.Notifications.HolidayProviderKind"/>.

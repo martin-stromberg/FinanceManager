@@ -927,6 +927,9 @@
   <data name="Nav_Setup" xml:space="preserve">
     <value>Setup</value>
   </data>
+  <data name="Nav_Help" xml:space="preserve">
+    <value>Help</value>
+  </data>
   <data name="Nav_Users" xml:space="preserve">
     <value>Users</value>
   </data>
