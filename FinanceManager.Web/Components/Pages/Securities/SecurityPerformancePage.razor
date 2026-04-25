@@ -1,0 +1,102 @@
+@page "/securities/{Id:guid}/performance"
+@rendermode InteractiveServer
+@using FinanceManager.Application
+@using FinanceManager.Application.Securities
+@using FinanceManager.Application.Securities.ReturnAnalysis
+@using FinanceManager.Web.Components.Pages.Securities
+@inject IReturnAnalysisService ReturnAnalysis
+@inject ISecurityService SecurityService
+@inject ICurrentUserService CurrentUser
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Renditeanalyse</PageTitle>
+
+@if (!CurrentUser.IsAuthenticated)
+{
+    <p>Bitte anmelden.</p>
+    return;
+}
+
+@if (_notFound)
+{
+    <p>Wertpapier nicht gefunden oder kein Zugriff.</p>
+    <button @onclick='(() => Nav.NavigateTo("/list/securities"))'>Zur Übersicht</button>
+    return;
+}
+
+<div class="perf-page">
+    <div class="perf-header">
+        <button class="back-btn" @onclick='(() => Nav.NavigateTo($"/card/securities/{Id}"))' title="Zurück zur Detailseite">
+            ←
+        </button>
+        <h2>@(_securityName ?? "Renditeanalyse") – Renditeanalyse</h2>
+    </div>
+
+    <div class="tab-bar" role="tablist">
+        @foreach (var tab in _tabs)
+        {
+            <button class="tab-btn @(tab == _activeTab ? "active" : "")"
+                    role="tab"
+                    aria-selected="@(tab == _activeTab)"
+                    @onclick="(() => SelectTab(tab))">
+                @GetTabLabel(tab)
+            </button>
+        }
+    </div>
+
+    <div class="tab-content" role="tabpanel">
+        @if (_activeTab == TabId.Overview)
+        {
+            <OverviewTab SecurityId="Id" />
+        }
+        else if (_activeTab == TabId.TimeSeries)
+        {
+            <TimeSeriesTab SecurityId="Id" />
+        }
+        else if (_activeTab == TabId.Cashflows)
+        {
+            <CashflowTab SecurityId="Id" />
+        }
+        else if (_activeTab == TabId.Metrics)
+        {
+            <MetricsTab SecurityId="Id" />
+        }
+        else if (_activeTab == TabId.Benchmark)
+        {
+            <BenchmarkTab SecurityId="Id" />
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>Security identifier from the route.</summary>
+    [Parameter] public Guid Id { get; set; }
+
+    private enum TabId { Overview, TimeSeries, Cashflows, Metrics, Benchmark }
+    private readonly TabId[] _tabs = [TabId.Overview, TabId.TimeSeries, TabId.Cashflows, TabId.Metrics, TabId.Benchmark];
+    private TabId _activeTab = TabId.Overview;
+    private string? _securityName;
+    private bool _notFound;
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!CurrentUser.IsAuthenticated) { return; }
+        var security = await SecurityService.GetAsync(Id, CurrentUser.UserId, CancellationToken.None);
+        if (security == null) { _notFound = true; return; }
+        _securityName = security.Name;
+    }
+
+    private void SelectTab(TabId tab) { _activeTab = tab; }
+
+    private static string GetTabLabel(TabId tab) => tab switch
+    {
+        TabId.Overview => "Übersicht",
+        TabId.TimeSeries => "Zeitliche Entwicklung",
+        TabId.Cashflows => "Cashflows",
+        TabId.Metrics => "Kennzahlen",
+        TabId.Benchmark => "Benchmark",
+        _ => tab.ToString()
+    };
+}

@@ -1,0 +1,100 @@
+@using FinanceManager.Application
+@using FinanceManager.Application.Securities.ReturnAnalysis
+@inject IReturnAnalysisService ReturnAnalysis
+@inject ICurrentUserService CurrentUser
+@inject NavigationManager Nav
+
+@if (_loading)
+{
+    <div class="return-summary-widget skeleton" role="status" aria-live="polite">
+        <span class="visually-hidden">Rendite wird geladen...</span>
+    </div>
+}
+else if (_error != null)
+{
+    <div class="return-summary-widget error-state">
+        <span>@_error</span>
+    </div>
+}
+else if (_summary == null)
+{
+    <div class="return-summary-widget no-data">
+        <span>Keine Transaktionsdaten vorhanden.</span>
+    </div>
+}
+else
+{
+    <div class="return-summary-widget @GetReturnClass()" title="Renditeübersicht">
+        <div class="rsw-row rsw-header">
+            <span class="rsw-label">Gesamtrendite</span>
+            <span class="rsw-value @GetReturnClass()">
+                @((_summary.TotalReturnPercent >= 0 ? "▲" : "▼") + FormatPercent(_summary.TotalReturnPercent))
+            </span>
+        </div>
+        <div class="rsw-row">
+            <span class="rsw-label">Marktwert</span>
+            <span class="rsw-value">@FormatAmount(_summary.CurrentMarketValue, _summary.CurrencyCode)</span>
+        </div>
+        <div class="rsw-row">
+            <span class="rsw-label">Investiert</span>
+            <span class="rsw-value">@FormatAmount(_summary.InvestedCapital, _summary.CurrencyCode)</span>
+        </div>
+        @if (_summary.Cagr.HasValue)
+        {
+            <div class="rsw-row">
+                <span class="rsw-label">CAGR p.a.</span>
+                <span class="rsw-value">@FormatPercent(_summary.Cagr.Value)</span>
+            </div>
+        }
+        @if (_summary.Irr.HasValue)
+        {
+            <div class="rsw-row">
+                <span class="rsw-label">IRR (pers.)</span>
+                <span class="rsw-value">@FormatPercent(_summary.Irr.Value)</span>
+            </div>
+        }
+        @if (_summary.HasMissingPrices)
+        {
+            <div class="rsw-row rsw-warning" role="alert">
+                <span>⚠ @(_summary.MissingPricesHint ?? "Fehlende Kursdaten")</span>
+            </div>
+        }
+        <div class="rsw-actions">
+            <button class="rsw-detail-btn" @onclick="NavigateToPerformance" title="Detaillierte Renditeanalyse öffnen">
+                Detaillierte Analyse →
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>Security identifier to show return data for.</summary>
+    [Parameter, EditorRequired] public Guid SecurityId { get; set; }
+
+    private ReturnSummaryDto? _summary;
+    private bool _loading = true;
+    private string? _error;
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (SecurityId == Guid.Empty) { _loading = false; return; }
+        _loading = true;
+        _error = null;
+        try
+        {
+            _summary = await ReturnAnalysis.GetReturnSummaryAsync(SecurityId, CurrentUser.UserId, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _error = "Renditeanalyse nicht verfügbar: " + ex.Message;
+        }
+        finally { _loading = false; }
+    }
+
+    private void NavigateToPerformance() => Nav.NavigateTo($"/securities/{SecurityId}/performance");
+
+    private static string FormatPercent(decimal value) => value.ToString("+0.00%;-0.00%;0.00%");
+    private static string FormatAmount(decimal amount, string currency) => $"{amount:N2} {currency}";
+    private string GetReturnClass() => _summary?.TotalReturnPercent >= 0 ? "positive" : "negative";
+}

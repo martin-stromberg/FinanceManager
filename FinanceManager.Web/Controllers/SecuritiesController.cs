@@ -2,6 +2,7 @@ using FinanceManager.Application;
 using FinanceManager.Application.Attachments;
 using FinanceManager.Application.Reports;
 using FinanceManager.Application.Securities;
+using FinanceManager.Application.Securities.ReturnAnalysis;
 using FinanceManager.Domain.Attachments;
 using FinanceManager.Domain.Postings;
 using FinanceManager.Infrastructure;
@@ -41,6 +42,7 @@ public sealed class SecuritiesController : ControllerBase
     private readonly ILogger<SecuritiesController> _logger;
     private readonly IParentAssignmentService _parentAssign;
     private readonly IStringLocalizer<Controller> _localizer;
+    private readonly IReturnAnalysisService _returnAnalysis;
 
     /// <summary>
     /// Initializes a new instance of <see cref="SecuritiesController"/>.
@@ -55,6 +57,7 @@ public sealed class SecuritiesController : ControllerBase
     /// <param name="logger">Logger used for diagnostic messages.</param>
     /// <param name="parentAssign">Service that manages server-side create-and-assign operations.</param>
     /// <param name="localizer">Localizer for generating user-friendly error messages.</param>
+    /// <param name="returnAnalysis">Service providing return analysis calculations.</param>
     public SecuritiesController(
         ISecurityService service,
         ICurrentUserService current,
@@ -65,7 +68,8 @@ public sealed class SecuritiesController : ControllerBase
         ISecurityReportService reports,
         ILogger<SecuritiesController> logger,
         IParentAssignmentService parentAssign,
-        IStringLocalizer<Controller> localizer)
+        IStringLocalizer<Controller> localizer,
+        IReturnAnalysisService returnAnalysis)
     {
         _service = service;
         _current = current;
@@ -77,6 +81,7 @@ public sealed class SecuritiesController : ControllerBase
         _logger = logger;
         _parentAssign = parentAssign;
         _localizer = localizer;
+        _returnAnalysis = returnAnalysis;
     }
 
     /// <summary>
@@ -393,5 +398,175 @@ public sealed class SecuritiesController : ControllerBase
     {
         var data = await _reports.GetDividendAggregatesAsync(_current.UserId, ct);
         return Ok(data);
+    }
+
+    /// <summary>
+    /// Returns the compact return summary for a security.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with <see cref="ReturnSummaryDto"/>; 404 when not found or not owned by user.</returns>
+    [HttpGet("{id:guid}/return-summary")]
+    [ProducesResponseType(typeof(ReturnSummaryDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetReturnSummaryAsync(Guid id, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Getting return summary for security {SecurityId}", id);
+        var result = await _returnAnalysis.GetReturnSummaryAsync(id, _current.UserId, ct);
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>
+    /// Returns sparkline chart data for a security (separate from summary to keep cache lean).
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with <see cref="SparklineDataDto"/>; 404 when not found or insufficient price data.</returns>
+    [HttpGet("{id:guid}/return-sparkline")]
+    [ProducesResponseType(typeof(SparklineDataDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetSparklineDataAsync(Guid id, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Getting sparkline data for security {SecurityId}", id);
+        var result = await _returnAnalysis.GetSparklineDataAsync(id, _current.UserId, ct);
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>
+    /// Returns detailed return metrics for the Kennzahlen tab.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with <see cref="DetailedReturnMetricsDto"/>; 404 when not found or not owned by user.</returns>
+    [HttpGet("{id:guid}/return-metrics")]
+    [ProducesResponseType(typeof(DetailedReturnMetricsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetReturnMetricsAsync(Guid id, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Getting detailed return metrics for security {SecurityId}", id);
+        var result = await _returnAnalysis.GetDetailedMetricsAsync(id, _current.UserId, ct);
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>
+    /// Returns periodic returns (annual + monthly + dividends) for the Zeitliche Entwicklung tab.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with <see cref="PeriodicReturnsDto"/>; 404 when not found or not owned by user.</returns>
+    [HttpGet("{id:guid}/return-periodic")]
+    [ProducesResponseType(typeof(PeriodicReturnsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPeriodicReturnsAsync(Guid id, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Getting periodic returns for security {SecurityId}", id);
+        var result = await _returnAnalysis.GetPeriodicReturnsAsync(id, _current.UserId, ct);
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>
+    /// Returns cashflow timeline for the Cashflows tab.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with <see cref="CashflowTimelineDto"/>; 404 when not found or not owned by user.</returns>
+    [HttpGet("{id:guid}/return-cashflows")]
+    [ProducesResponseType(typeof(CashflowTimelineDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetCashflowTimelineAsync(Guid id, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Getting cashflow timeline for security {SecurityId}", id);
+        var result = await _returnAnalysis.GetCashflowTimelineAsync(id, _current.UserId, ct);
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>
+    /// Returns performance chart data.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="timeRange">Time range for the chart (default: All).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with <see cref="PerformanceChartDataDto"/>; 404 when not found or not owned by user.</returns>
+    [HttpGet("{id:guid}/return-chart")]
+    [ProducesResponseType(typeof(PerformanceChartDataDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPerformanceChartAsync(Guid id, [FromQuery] ChartTimeRange timeRange = ChartTimeRange.All, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Getting performance chart data for security {SecurityId}, range {TimeRange}", id, timeRange);
+        var result = await _returnAnalysis.GetPerformanceChartDataAsync(id, _current.UserId, timeRange, ct);
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>
+    /// Returns benchmark comparison data.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with <see cref="BenchmarkComparisonDto"/>; 404 when no benchmark is configured or data is insufficient.</returns>
+    [HttpGet("{id:guid}/return-benchmark")]
+    [ProducesResponseType(typeof(BenchmarkComparisonDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetBenchmarkComparisonAsync(Guid id, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Getting benchmark comparison for security {SecurityId}", id);
+        var result = await _returnAnalysis.GetBenchmarkComparisonAsync(id, _current.UserId, ct);
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>
+    /// Returns return analysis settings for the current user.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with <see cref="ReturnAnalysisSettingsDto"/>.</returns>
+    [HttpGet("return-analysis/settings")]
+    [ProducesResponseType(typeof(ReturnAnalysisSettingsDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetReturnAnalysisSettingsAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Getting return analysis settings for user {UserId}", _current.UserId);
+        var result = await _returnAnalysis.GetUserSettingsAsync(_current.UserId, ct);
+        return Ok(result ?? new ReturnAnalysisSettingsDto(null, null, false, 0));
+    }
+
+    /// <summary>
+    /// Updates return analysis settings for the current user.
+    /// </summary>
+    /// <param name="req">Settings request payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 NoContent on success; 400 BadRequest for invalid input.</returns>
+    [HttpPut("return-analysis/settings")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateReturnAnalysisSettingsAsync([FromBody] ReturnAnalysisSettingsRequest req, CancellationToken ct = default)
+    {
+        if (!ModelState.IsValid) { return ValidationProblem(ModelState); }
+        _logger.LogInformation("Updating return analysis settings for user {UserId}", _current.UserId);
+        try
+        {
+            await _returnAnalysis.UpdateUserSettingsAsync(_current.UserId, req.BenchmarkSecurityId, req.ShowSharpeRatio, req.RiskFreeRate, ct);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Update return analysis settings failed for user {UserId}", _current.UserId);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Unexpected error" });
+        }
+    }
+
+    /// <summary>
+    /// Invalidates the return analysis cache for a specific security.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <returns>204 NoContent on success.</returns>
+    [HttpDelete("{id:guid}/return-cache")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> InvalidateReturnCacheAsync(Guid id)
+    {
+        _logger.LogInformation("Invalidating return analysis cache for security {SecurityId}", id);
+        await _returnAnalysis.InvalidateCacheAsync(id, _current.UserId);
+        return NoContent();
     }
 }

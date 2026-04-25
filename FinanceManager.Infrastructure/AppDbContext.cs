@@ -116,6 +116,14 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.ImportMonthlySplitThreshold);
             b.Property(x => x.AlphaVantageApiKey).HasMaxLength(120);
             b.Property(x => x.ShareAlphaVantageApiKey).HasDefaultValue(false);
+            // Return analysis settings
+            b.Property(x => x.BenchmarkSecurityId);
+            b.Property(x => x.ShowSharpeRatio).HasDefaultValue(false).IsRequired();
+            b.Property(x => x.RiskFreeRate).HasPrecision(18, 6).HasDefaultValue(0m).IsRequired();
+            b.HasOne<FinanceManager.Domain.Securities.Security>()
+                .WithMany()
+                .HasForeignKey(x => x.BenchmarkSecurityId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<Account>(b =>
@@ -183,6 +191,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         modelBuilder.Entity<Posting>(b =>
         {
             b.HasIndex(x => new { x.AccountId, x.BookingDate });
+            b.HasIndex(x => new { x.SecurityId, x.BookingDate });
             b.Property(p => p.ParentId);
             b.Property(p => p.OriginalAmount).HasPrecision(18, 2);
         });

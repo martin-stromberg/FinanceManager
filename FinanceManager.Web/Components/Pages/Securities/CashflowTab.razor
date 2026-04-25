@@ -1,0 +1,93 @@
+@using FinanceManager.Application
+@using FinanceManager.Application.Securities.ReturnAnalysis
+@inject IReturnAnalysisService ReturnAnalysis
+@inject ICurrentUserService CurrentUser
+
+<div class="cashflow-tab">
+    @if (_loading) { <div role="status">Lade Cashflows...</div> }
+    else if (_data == null) { <div class="no-data-msg">Keine Cashflows vorhanden.</div> }
+    else
+    {
+        <section aria-label="Cashflow-Timeline">
+            <h3>Cashflow-Verlauf</h3>
+            @if (_data.Entries.Count == 0)
+            {
+                <p>Keine Einträge vorhanden.</p>
+            }
+            else
+            {
+                <div class="cf-timeline">
+                    <table class="fm-table" aria-label="Cashflow-Liste">
+                        <thead>
+                            <tr>
+                                <th scope="col">Datum</th>
+                                <th scope="col">Typ</th>
+                                <th scope="col" class="num">Betrag</th>
+                                <th scope="col">Beschreibung</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var e in _data.Entries.OrderByDescending(x => x.Date))
+                            {
+                                <tr>
+                                    <td>@e.Date.ToString("dd.MM.yyyy")</td>
+                                    <td><span class="cf-badge @e.Type.ToLowerInvariant()">@e.Type</span></td>
+                                    <td class="num @(e.Amount >= 0 ? "pos" : "neg")">@e.Amount.ToString("N2")</td>
+                                    <td>@(e.Description ?? "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+
+        @if (_data.AnnualSummaries.Count > 0)
+        {
+            <section aria-label="Jährliche Zusammenfassung">
+                <h3>Jahres-Zusammenfassung</h3>
+                <table class="fm-table" aria-label="Jährliche Cashflow-Zusammenfassung">
+                    <thead>
+                        <tr>
+                            <th scope="col">Jahr</th>
+                            <th scope="col" class="num">Käufe</th>
+                            <th scope="col" class="num">Verkäufe</th>
+                            <th scope="col" class="num">Dividenden</th>
+                            <th scope="col" class="num">Steuern</th>
+                            <th scope="col" class="num">Gebühren</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in _data.AnnualSummaries.OrderByDescending(x => x.Year))
+                        {
+                            <tr>
+                                <td>@s.Year</td>
+                                <td class="num neg">@s.TotalBuys.ToString("N2")</td>
+                                <td class="num pos">@s.TotalSells.ToString("N2")</td>
+                                <td class="num pos">@s.TotalDividends.ToString("N2")</td>
+                                <td class="num neg">@s.TotalTaxes.ToString("N2")</td>
+                                <td class="num neg">@s.TotalFees.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </section>
+        }
+    }
+</div>
+
+@code {
+    /// <summary>Security identifier.</summary>
+    [Parameter, EditorRequired] public Guid SecurityId { get; set; }
+
+    private CashflowTimelineDto? _data;
+    private bool _loading = true;
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        try { _data = await ReturnAnalysis.GetCashflowTimelineAsync(SecurityId, CurrentUser.UserId, CancellationToken.None); }
+        finally { _loading = false; }
+    }
+}

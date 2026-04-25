@@ -314,6 +314,258 @@
             For AllHistory, verify total across all returned periods equals the seeded total.
             </summary>
         </member>
+        <member name="T:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests">
+            <summary>
+            Tests for <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisCalculator"/> covering FIFO cost basis calculations.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_ReturnEmpty_For_NoTransactions">
+            <summary>
+            An empty transaction list must return a zeroed result with no lots and no warning.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_SetTotalCostBasis_For_SingleBuy">
+            <summary>
+            A single buy of 10 shares at €100 each sets TotalCostBasis=1000 and creates one lot.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_ApplyFifoCostBasis_After_PartialSell">
+            <summary>
+            Buy 10@100, Buy 5@120, Sell 8 → FIFO removes first 8 shares from lot1.
+            Remaining: 2@100 + 5@120.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_CalculateRealizedGain_On_Sell">
+            <summary>
+            Buy 10@100, Sell 10@120 → RealizedGains = (120−100)×10 = 200.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_AddFeeToLotCostBasis_When_SameGroupId">
+            <summary>
+            A Fee with the same GroupId as a Buy is added to that lot's cost basis.
+            Buy 10@100 (cost=1000) on day 1 + Fee 20 with same groupId on day 2 → lot cost = 1020, CostPerUnit = 102.
+            The fee is placed on a later date to guarantee it is processed after the buy (FIFO sort order).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_HandleOversell_WithWarning">
+            <summary>
+            Selling more shares than are held sets HasOversellWarning=true and clamps shares to 0.
+            Buy 5, Sell 10 → HasOversellWarning = true, TotalSharesHeld = 0.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_IgnoreDividendsAndTax_InCostBasis">
+            <summary>
+            Dividends and taxes must not change the cost basis or the lot count.
+            Buy 10@100, Dividend 50, Tax −10 → cost basis unchanged at 1000.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_SortByDate_ThenById">
+            <summary>
+            When two Buy transactions share the same date, the FIFO queue is filled
+            in ascending Id order (deterministic), and a subsequent Sell removes shares
+            from the correct first-in lot.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_Handle_MultipleFullSells">
+            <summary>
+            Buy 10@100, Sell 5@110, Sell 5@120 → realized gains = 5×10 + 5×20 = 150.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_ReturnZeroSharesHeld_After_FullSell">
+            <summary>
+            After a full sell, no shares are held and no lots remain.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests">
+            <summary>
+            Tests for <see cref="T:FinanceManager.Infrastructure.Securities.ReturnAnalysis.MemoryReturnAnalysisCache"/> covering cache miss, cache hit and invalidation behaviour.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests.#ctor">
+            <summary>Initializes a fresh cache instance for each test.</summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests.Dispose">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests.GetOrCreateAsync_Should_CallFactory_On_CacheMiss">
+            <summary>
+            On a cache miss the factory delegate is called and its result is returned.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests.GetOrCreateAsync_Should_ReturnCachedValue_On_CacheHit">
+            <summary>
+            On a cache hit the factory is NOT called a second time; the cached value is returned.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests.InvalidateAsync_Should_RemoveCachedEntries_WithMatchingPrefix">
+            <summary>
+            InvalidateAsync removes all cached entries whose key contains the given prefix substring.
+            After invalidation, the next call to GetOrCreateAsync triggers the factory again.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests.InvalidateAsync_Should_NotRemoveEntries_WithDifferentPrefix">
+            <summary>
+            InvalidateAsync must NOT remove entries whose key does not contain the given prefix.
+            Entries for a different security remain in the cache.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.Securities.ReturnCalculationServiceTests">
+            <summary>
+            Tests for <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService"/> covering all financial math methods.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTotalReturn_Should_ReturnPositive_When_MarketValueExceedsInvested">
+            <summary>
+            When the market value exceeds the invested capital (plus dividends), the return is positive.
+            Invested=1000, MarketValue=1200, Dividends=50 → (1200+50−1000)/1000 = 0.25 = 25 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTotalReturn_Should_ReturnNegative_When_MarketValueBelowInvested">
+            <summary>
+            When the market value is below the invested capital, the return is negative.
+            Invested=1000, MarketValue=800, Dividends=0 → −20 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTotalReturn_Should_ReturnNull_When_InvestedCapitalIsZero">
+            <summary>
+            When invested capital is zero the method must return null to avoid division by zero.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTotalReturn_Should_IncludeDividends_In_TotalReturn">
+            <summary>
+            Dividends are added to the numerator, increasing the total return.
+            Invested=1000, MarketValue=1000, Dividends=100 → 100/1000 = 10 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTwr_Should_ReturnNull_When_NoPeriods">
+            <summary>
+            An empty period list must return null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTwr_Should_ReturnNull_When_FirstPeriodHasZeroDenominator">
+            <summary>
+            When the only period has a zero denominator (StartValue=0, ExternalCashflow=0)
+            the period is skipped and the method returns null because no valid periods remain.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTwr_Should_Calculate_SinglePeriod_Correctly">
+            <summary>
+            Single period: StartValue=1000, EndValue=1100, ExternalCashflow=0 → TWR = 10 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTwr_Should_Compound_Multiple_Periods">
+            <summary>
+            Two periods each returning +10 % compound to ≈ 21 % (1.1 × 1.1 − 1).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTwr_Should_SkipPeriod_When_InitialValue_IsZero">
+            <summary>
+            When the first period has a zero denominator it is skipped;
+            only the valid second period is used in the compounding chain.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTwr_Should_Handle_ExternalCashflows_Correctly">
+            <summary>
+            Modified Dietz: StartValue=1000, EndValue=1150, ExternalCashflow=100.
+            Denominator = 1000 + 0.5×100 = 1050. PeriodReturn = (1150−1000−100)/1050 ≈ 4.76 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateIrr_Should_ReturnNull_When_NoSignChange">
+            <summary>
+            All cashflows with the same sign (no sign change) → IRR cannot be computed → null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateIrr_Should_Calculate_SimpleReturn">
+            <summary>
+            Simple buy-then-sell with 10 % gain over one year → IRR ≈ 10 %.
+            Buy −1000 on 2020-01-01, Sell +1100 on 2021-01-01.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateIrr_Should_Handle_DividendsInCashflows">
+            <summary>
+            Dividends received during the holding period increase the IRR above zero.
+            Buy −1000 on 2020-01-01, Dividend +50 after 6 months, Sell +1000 after 1 year → IRR > 0.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateIrr_Should_ReturnNull_When_NotConverged">
+            <summary>
+            A cashflow pattern that forces the bisection into a range with no sign change
+            (e.g., huge positive terminal value dwarfing initial outflow for extreme rates)
+            causes the algorithm to return null when it cannot converge.
+            Uses maxIterations=1 to guarantee non-convergence even for solvable problems.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateCagr_Should_Calculate_TwoYearGrowth">
+            <summary>
+            StartValue=1000, EndValue=1210, Years=2 → CAGR = √(1210/1000) − 1 = 10 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateCagr_Should_ReturnNull_When_StartValueIsZero">
+            <summary>
+            StartValue=0 is invalid → null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateCagr_Should_ReturnNull_When_YearsIsZero">
+            <summary>
+            Years=0 is invalid → null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateCagr_Should_Handle_NegativeReturn">
+            <summary>
+            StartValue=1000, EndValue=810, Years=1 → CAGR = 810/1000 − 1 = −19 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateVolatility_Should_ReturnNull_When_LessThanTwoPrices">
+            <summary>
+            Fewer than 2 price points → null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateVolatility_Should_Calculate_ConstantPrices_ReturnZero">
+            <summary>
+            Constant prices [100, 100, 100, 100] produce zero log returns → volatility = 0.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateVolatility_Should_Calculate_Positive_For_VariablePrices">
+            <summary>
+            Non-constant prices produce a positive annualised volatility.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateMaxDrawdown_Should_ReturnNull_When_LessThanTwoPoints">
+            <summary>
+            Fewer than 2 data points → null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateMaxDrawdown_Should_Return_Zero_For_Monotonic_Increase">
+            <summary>
+            A strictly monotonically increasing series has no drawdown → 0.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateMaxDrawdown_Should_Calculate_Negative_Value">
+            <summary>
+            [100, 120, 90, 110] → peak is 120; trough is 90 → max drawdown = (90−120)/120 = −25 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateMaxDrawdown_Should_ReturnNegative_Fraction">
+            <summary>
+            Any drawdown must be expressed as a negative fraction (not positive, not > 0).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateSharpeRatio_Should_Calculate_Positive_When_ReturnExceedsRiskFreeRate">
+            <summary>
+            Return=0.12, RiskFree=0.04, Volatility=0.16 → (0.12−0.04)/0.16 = 0.5.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateSharpeRatio_Should_ReturnNull_When_VolatilityIsZero">
+            <summary>
+            Volatility=0 → null (division by zero guard).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateSharpeRatio_Should_ReturnNegative_When_ReturnBelowRiskFreeRate">
+            <summary>
+            When the portfolio return is below the risk-free rate the Sharpe Ratio is negative.
+            Return=0.02, RiskFree=0.04, Volatility=0.10 → (0.02−0.04)/0.10 = −0.2.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Tests.Statements.StatementDraftImportSplitTests">
             <summary>
             Tests the import split logic (CreateDraftAsync) for fixed, monthly and hybrid modes.

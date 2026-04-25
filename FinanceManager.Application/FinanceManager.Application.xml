@@ -1769,6 +1769,966 @@
             <returns>A task that completes when the operation has finished.</returns>
             <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> is <see cref="F:System.Guid.Empty"/>.</exception>
         </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.ChartTimeRange">
+            <summary>Time range selection for the performance chart (FR-2.4).</summary>
+        </member>
+        <member name="F:FinanceManager.Application.Securities.ReturnAnalysis.ChartTimeRange.OneMonth">
+            <summary>One month time range.</summary>
+        </member>
+        <member name="F:FinanceManager.Application.Securities.ReturnAnalysis.ChartTimeRange.ThreeMonths">
+            <summary>Three months time range.</summary>
+        </member>
+        <member name="F:FinanceManager.Application.Securities.ReturnAnalysis.ChartTimeRange.SixMonths">
+            <summary>Six months time range.</summary>
+        </member>
+        <member name="F:FinanceManager.Application.Securities.ReturnAnalysis.ChartTimeRange.OneYear">
+            <summary>One year time range.</summary>
+        </member>
+        <member name="F:FinanceManager.Application.Securities.ReturnAnalysis.ChartTimeRange.ThreeYears">
+            <summary>Three years time range.</summary>
+        </member>
+        <member name="F:FinanceManager.Application.Securities.ReturnAnalysis.ChartTimeRange.All">
+            <summary>Entire available history.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisCalculator">
+            <summary>
+            Calculates FIFO cost basis and realized gains for a sequence of security transactions.
+            Implements <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.IFifoCostBasisCalculator"/> (FR-6). Stateless and thread-safe.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisCalculator.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisCalculator})">
+            <summary>
+            Initializes a new instance of <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisCalculator"/>.
+            </summary>
+            <param name="logger">Logger instance for diagnostic output.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisCalculator.Calculate(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction})">
+            <inheritdoc/>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisCalculator.MutableFifoLot.PurchaseDate">
+            <summary>Gets the purchase date of the lot.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisCalculator.MutableFifoLot.Quantity">
+            <summary>Gets or sets the remaining quantity in the lot.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisCalculator.MutableFifoLot.TotalCost">
+            <summary>Gets or sets the total cost basis of the remaining quantity.</summary>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisCalculator.MutableFifoLot.#ctor(System.DateTime,System.Decimal,System.Decimal)">
+            <summary>
+            Initializes a new mutable FIFO lot.
+            </summary>
+            <param name="purchaseDate">Date of purchase.</param>
+            <param name="quantity">Initial quantity.</param>
+            <param name="totalCost">Initial total cost basis.</param>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.IFifoCostBasisCalculator">
+            <summary>
+            Calculates FIFO cost basis and realized gains for a sequence of security transactions (FR-6).
+            Thread-safe, stateless.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IFifoCostBasisCalculator.Calculate(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction})">
+            <summary>
+            Processes a chronologically sorted list of security transactions using FIFO.
+            Sort order: BookingDate ascending, then by Id (tiebreaker).
+            Fee postings with same GroupId as a Buy are added to that lot's cost basis.
+            Fee postings without a matching Buy GroupId are tracked separately (standalone fees).
+            Oversell (sell > available lots): returns result with HasOversellWarning = true.
+            </summary>
+            <param name="transactions">Transactions, expected sorted by date, then Id. Mix of Buy, Sell, Fee, Dividend, Tax.</param>
+            <returns>FIFO cost basis result.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisCache">
+            <summary>
+            Abstraction for return analysis result caching. Allows future switch to distributed cache.
+            Cache key prefix scheme: "ra:{type}:{securityId}:{userId}"
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisCache.GetOrCreateAsync``1(System.String,System.Func{System.Threading.Tasks.Task{``0}},System.TimeSpan)">
+            <summary>
+            Returns a cached value or creates it via the factory and caches it.
+            </summary>
+            <typeparam name="T">Type of the cached value. Must be a reference type.</typeparam>
+            <param name="cacheKey">Unique cache key for this entry.</param>
+            <param name="factory">Async factory invoked on cache miss to produce the value.</param>
+            <param name="ttl">Time-to-live for the cache entry.</param>
+            <returns>Cached or freshly computed value, or null when the factory returns null.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisCache.InvalidateAsync(System.String)">
+            <summary>
+            Invalidates all cache entries starting with the given key prefix.
+            Example: "ra:summary:{securityId}:{userId}" invalidates summary only.
+                     "ra:{securityId}:{userId}" invalidates all entries for that security/user pair.
+            </summary>
+            <param name="cacheKeyPrefix">Prefix of the cache keys to invalidate.</param>
+            <returns>A task that completes when invalidation is done.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService">
+            <summary>
+            Orchestrates return analysis for a single security. All methods are user-scoped.
+            Results are cached for 1 hour (TTL). Cache is invalidated on new postings or price data.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService.GetReturnSummaryAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the compact return summary for the widget on the security detail page (FR-1).
+            Cached for 1 hour.
+            Returns null when the security does not exist or is not owned by the user.
+            </summary>
+            <param name="securityId">Identifier of the security.</param>
+            <param name="ownerUserId">Identifier of the owning user.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Return summary DTO, or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService.GetSparklineDataAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns sparkline data for the mini-chart (FR-1.1). Cached separately.
+            Returns null when fewer than 30 price data points.
+            </summary>
+            <param name="securityId">Identifier of the security.</param>
+            <param name="ownerUserId">Identifier of the owning user.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Sparkline data DTO, or null when insufficient price data.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService.GetDetailedMetricsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns detailed return metrics for the Kennzahlen tab (FR-2.1).
+            Returns null when the security does not exist or is not owned by the user.
+            </summary>
+            <param name="securityId">Identifier of the security.</param>
+            <param name="ownerUserId">Identifier of the owning user.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Detailed metrics DTO, or null when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService.GetPeriodicReturnsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns periodic returns (annual + monthly + dividends) for the Zeitliche Entwicklung tab (FR-2.2, FR-2.5).
+            </summary>
+            <param name="securityId">Identifier of the security.</param>
+            <param name="ownerUserId">Identifier of the owning user.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Periodic returns DTO, or null when the security is not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService.GetCashflowTimelineAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns cashflow timeline for the Cashflows tab (FR-2.3, FR-2.6).
+            </summary>
+            <param name="securityId">Identifier of the security.</param>
+            <param name="ownerUserId">Identifier of the owning user.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Cashflow timeline DTO, or null when the security is not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService.GetPerformanceChartDataAsync(System.Guid,System.Guid,FinanceManager.Application.Securities.ReturnAnalysis.ChartTimeRange,System.Threading.CancellationToken)">
+            <summary>
+            Returns performance chart data for the Übersicht tab (FR-2.4).
+            </summary>
+            <param name="securityId">Identifier of the security.</param>
+            <param name="ownerUserId">Identifier of the owning user.</param>
+            <param name="timeRange">Selected time range for the chart.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Performance chart data DTO, or null when the security is not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService.GetBenchmarkComparisonAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns benchmark comparison data (FR-7).
+            Returns null when no benchmark is configured for the user or benchmark has insufficient price data.
+            Validates that the benchmark security is owned by the same user (S-3).
+            </summary>
+            <param name="securityId">Identifier of the security.</param>
+            <param name="ownerUserId">Identifier of the owning user.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Benchmark comparison DTO, or null when no benchmark is configured or data is insufficient.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService.GetUserSettingsAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the return analysis settings for the current user (benchmark config, Sharpe Ratio opt-in).
+            </summary>
+            <param name="ownerUserId">Identifier of the user whose settings are requested.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Return analysis settings DTO, or null when the user is not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService.UpdateUserSettingsAsync(System.Guid,System.Nullable{System.Guid},System.Boolean,System.Decimal,System.Threading.CancellationToken)">
+            <summary>
+            Updates return analysis settings for the user.
+            Validates that benchmarkSecurityId (if set) is owned by ownerUserId.
+            </summary>
+            <param name="ownerUserId">Identifier of the user whose settings are updated.</param>
+            <param name="benchmarkSecurityId">Optional benchmark security id. Null clears the benchmark.</param>
+            <param name="showSharpeRatio">Whether to enable Sharpe Ratio display.</param>
+            <param name="riskFreeRate">Risk-free rate for Sharpe Ratio calculation. Must be >= 0.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A task that completes when settings have been persisted.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService.InvalidateCacheAsync(System.Guid,System.Guid)">
+            <summary>
+            Invalidates all cached results for the given security and user.
+            Called when new postings or price data arrive.
+            </summary>
+            <param name="securityId">Identifier of the security whose cache is invalidated.</param>
+            <param name="ownerUserId">Identifier of the owning user.</param>
+            <returns>A task that completes when the cache has been invalidated.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.ReturnAnalysisSettingsDto">
+            <summary>Return analysis user settings DTO.</summary>
+            <param name="BenchmarkSecurityId">Optional benchmark security id.</param>
+            <param name="BenchmarkSecurityName">Display name of the benchmark security, or null.</param>
+            <param name="ShowSharpeRatio">Whether Sharpe Ratio is enabled.</param>
+            <param name="RiskFreeRate">Risk-free rate for Sharpe Ratio (e.g. 0.04 = 4%).</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.ReturnAnalysisSettingsDto.#ctor(System.Nullable{System.Guid},System.String,System.Boolean,System.Decimal)">
+            <summary>Return analysis user settings DTO.</summary>
+            <param name="BenchmarkSecurityId">Optional benchmark security id.</param>
+            <param name="BenchmarkSecurityName">Display name of the benchmark security, or null.</param>
+            <param name="ShowSharpeRatio">Whether Sharpe Ratio is enabled.</param>
+            <param name="RiskFreeRate">Risk-free rate for Sharpe Ratio (e.g. 0.04 = 4%).</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnAnalysisSettingsDto.BenchmarkSecurityId">
+            <summary>Optional benchmark security id.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnAnalysisSettingsDto.BenchmarkSecurityName">
+            <summary>Display name of the benchmark security, or null.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnAnalysisSettingsDto.ShowSharpeRatio">
+            <summary>Whether Sharpe Ratio is enabled.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnAnalysisSettingsDto.RiskFreeRate">
+            <summary>Risk-free rate for Sharpe Ratio (e.g. 0.04 = 4%).</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.IReturnCalculationService">
+            <summary>
+            Pure financial mathematics service. All methods are stateless and thread-safe.
+            No database access. All formulas are documented in XML comments.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnCalculationService.CalculateTotalReturn(System.Decimal,System.Decimal,System.Decimal)">
+            <summary>
+            Calculates total return percentage.
+            Formula: (MarketValue + NetDividends - InvestedCapital) / InvestedCapital
+            Returns null when InvestedCapital is zero.
+            </summary>
+            <param name="investedCapital">Total invested capital.</param>
+            <param name="currentMarketValue">Current market value of holdings.</param>
+            <param name="netDividends">Net dividends received (after taxes).</param>
+            <returns>Total return as a fraction (e.g. 0.25 = 25%), or null when investedCapital is zero.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnCalculationService.CalculateTwr(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.TwrPeriodInput})">
+            <summary>
+            Calculates Time-Weighted Return (Modified Dietz, GIPS-konform) over linked periods.
+            Each period return = (EndValue - StartValue - ExternalCashflow) / (StartValue + 0.5 × ExternalCashflow).
+            Guard: When denominator = 0 (first purchase with zero prior holdings), the period is skipped (returns 0).
+            TWR = product of (1 + period_return) - 1.
+            Returns null when no valid periods exist.
+            </summary>
+            <param name="periods">Ordered list of TWR period inputs.</param>
+            <returns>Time-Weighted Return as a fraction, or null when no valid periods exist.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnCalculationService.CalculateIrr(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.CashflowPoint},System.Int32)">
+            <summary>
+            Calculates IRR (Internal Rate of Return / XIRR) via Newton-Raphson with Bisection fallback.
+            Cashflow convention: negative = investment (outflow), positive = return (inflow).
+            Day count: Actual/365 (XIRR standard).
+            Bisection fallback interval: [-0.99, 10.0] when Newton-Raphson derivative is zero or NaN.
+            Returns null when not converged after maxIterations or when cashflows have no sign change.
+            </summary>
+            <param name="cashflows">List of dated cashflows; must contain both positive and negative amounts.</param>
+            <param name="maxIterations">Maximum Newton-Raphson or Bisection iterations (default 100).</param>
+            <returns>Annualised IRR as a fraction, or null when not computable.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnCalculationService.CalculateCagr(System.Decimal,System.Decimal,System.Double)">
+            <summary>
+            Calculates CAGR (Compound Annual Growth Rate).
+            Formula: (EndValue/StartValue)^(1/years) - 1
+            Returns null when years &lt;= 0 or StartValue &lt;= 0.
+            </summary>
+            <param name="startValue">Value at the beginning of the period. Must be > 0.</param>
+            <param name="endValue">Value at the end of the period.</param>
+            <param name="years">Number of years in the holding period. Must be > 0.</param>
+            <returns>CAGR as a fraction, or null when preconditions are not met.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnCalculationService.CalculateVolatility(System.Collections.Generic.IReadOnlyList{System.Decimal})">
+            <summary>
+            Calculates annualised volatility as std. dev. of log daily returns × √252.
+            Returns null when fewer than 2 data points.
+            </summary>
+            <param name="dailyPrices">Chronologically ordered daily price series.</param>
+            <returns>Annualised volatility as a fraction, or null when insufficient data.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnCalculationService.CalculateMaxDrawdown(System.Collections.Generic.IReadOnlyList{System.Decimal})">
+            <summary>
+            Calculates maximum drawdown from peak.
+            Formula: min over time of (Value - Peak) / Peak
+            Returns null when fewer than 2 data points.
+            Result is a negative fraction (e.g. -0.25 = -25% drawdown).
+            </summary>
+            <param name="portfolioValues">Chronologically ordered portfolio value series.</param>
+            <returns>Maximum drawdown as a negative fraction, or null when insufficient data.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnCalculationService.CalculateSharpeRatio(System.Decimal,System.Decimal,System.Decimal)">
+            <summary>
+            Calculates Sharpe Ratio.
+            Formula: (AnnualisedReturn - RiskFreeRate) / Volatility
+            Returns null when volatility is zero or null.
+            </summary>
+            <param name="annualisedReturn">Annualised portfolio return (e.g. 0.12 = 12%).</param>
+            <param name="riskFreeRate">Risk-free rate (e.g. 0.04 = 4%).</param>
+            <param name="volatility">Annualised volatility. Must be > 0 for a meaningful result.</param>
+            <returns>Sharpe Ratio, or null when volatility is zero or null.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnCalculationService.CalculateDividendYield(System.Decimal,System.Decimal)">
+            <summary>
+            Calculates dividend yield for a given period.
+            Formula: TotalDividends / InvestedCapital
+            Returns null when InvestedCapital is zero.
+            </summary>
+            <param name="totalDividends">Total dividends received in the period.</param>
+            <param name="investedCapital">Total invested capital. Must be != 0 for a valid result.</param>
+            <returns>Dividend yield as a fraction, or null when investedCapital is zero.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnCalculationService.CalculateTaxRate(System.Decimal,System.Decimal)">
+            <summary>
+            Calculates tax rate as fraction of gross return.
+            Formula: TotalTaxes / GrossReturn (absolute)
+            Returns null when gross return is zero.
+            </summary>
+            <param name="totalTaxes">Total taxes paid (positive amount).</param>
+            <param name="grossReturn">Gross return before taxes. Must be != 0 for a valid result.</param>
+            <returns>Tax rate as a fraction (0..1), or null when gross return is zero.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto">
+            <summary>
+            Compact return summary for the widget on the security detail page (FR-1).
+            SparklineData is loaded separately (see IReturnAnalysisService.GetSparklineDataAsync).
+            </summary>
+            <param name="InvestedCapital">Total invested capital (sum of all buy amounts).</param>
+            <param name="CurrentMarketValue">Current market value (shares held × current price).</param>
+            <param name="TotalReturnAbsolute">Absolute total return (market value + net dividends - invested capital).</param>
+            <param name="TotalReturnPercent">Percentage total return.</param>
+            <param name="Cagr">Compound Annual Growth Rate, or null if holding period &lt; 1 year.</param>
+            <param name="Irr">Internal Rate of Return (personal return), or null when not computable.</param>
+            <param name="CostBasisPerShare">Average cost per share (FIFO basis).</param>
+            <param name="CurrentPricePerShare">Latest available price per share.</param>
+            <param name="NetDividends">Net dividends received (after taxes).</param>
+            <param name="CurrencyCode">ISO currency code.</param>
+            <param name="HasMissingPrices">Whether price data gaps exist.</param>
+            <param name="MissingPricesHint">Hint about missing price data, or null.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.#ctor(System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Decimal,System.Decimal,System.Decimal,System.String,System.Boolean,System.String)">
+            <summary>
+            Compact return summary for the widget on the security detail page (FR-1).
+            SparklineData is loaded separately (see IReturnAnalysisService.GetSparklineDataAsync).
+            </summary>
+            <param name="InvestedCapital">Total invested capital (sum of all buy amounts).</param>
+            <param name="CurrentMarketValue">Current market value (shares held × current price).</param>
+            <param name="TotalReturnAbsolute">Absolute total return (market value + net dividends - invested capital).</param>
+            <param name="TotalReturnPercent">Percentage total return.</param>
+            <param name="Cagr">Compound Annual Growth Rate, or null if holding period &lt; 1 year.</param>
+            <param name="Irr">Internal Rate of Return (personal return), or null when not computable.</param>
+            <param name="CostBasisPerShare">Average cost per share (FIFO basis).</param>
+            <param name="CurrentPricePerShare">Latest available price per share.</param>
+            <param name="NetDividends">Net dividends received (after taxes).</param>
+            <param name="CurrencyCode">ISO currency code.</param>
+            <param name="HasMissingPrices">Whether price data gaps exist.</param>
+            <param name="MissingPricesHint">Hint about missing price data, or null.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.InvestedCapital">
+            <summary>Total invested capital (sum of all buy amounts).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.CurrentMarketValue">
+            <summary>Current market value (shares held × current price).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.TotalReturnAbsolute">
+            <summary>Absolute total return (market value + net dividends - invested capital).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.TotalReturnPercent">
+            <summary>Percentage total return.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.Cagr">
+            <summary>Compound Annual Growth Rate, or null if holding period &lt; 1 year.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.Irr">
+            <summary>Internal Rate of Return (personal return), or null when not computable.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.CostBasisPerShare">
+            <summary>Average cost per share (FIFO basis).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.CurrentPricePerShare">
+            <summary>Latest available price per share.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.NetDividends">
+            <summary>Net dividends received (after taxes).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.CurrencyCode">
+            <summary>ISO currency code.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.HasMissingPrices">
+            <summary>Whether price data gaps exist.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.MissingPricesHint">
+            <summary>Hint about missing price data, or null.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.SparklineDataDto">
+            <summary>
+            Sparkline data for the mini-chart (FR-1.1). Loaded separately to keep ReturnSummaryDto lean.
+            </summary>
+            <param name="Points">Time series of (date, value) pairs showing invested capital vs. market value.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.SparklineDataDto.#ctor(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SparklinePoint})">
+            <summary>
+            Sparkline data for the mini-chart (FR-1.1). Loaded separately to keep ReturnSummaryDto lean.
+            </summary>
+            <param name="Points">Time series of (date, value) pairs showing invested capital vs. market value.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.SparklineDataDto.Points">
+            <summary>Time series of (date, value) pairs showing invested capital vs. market value.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.SparklinePoint">
+            <summary>A single point in the sparkline chart.</summary>
+            <param name="Date">Date of the data point.</param>
+            <param name="MarketValue">Portfolio market value on this date.</param>
+            <param name="InvestedCapital">Cumulative invested capital on this date.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.SparklinePoint.#ctor(System.DateTime,System.Decimal,System.Decimal)">
+            <summary>A single point in the sparkline chart.</summary>
+            <param name="Date">Date of the data point.</param>
+            <param name="MarketValue">Portfolio market value on this date.</param>
+            <param name="InvestedCapital">Cumulative invested capital on this date.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.SparklinePoint.Date">
+            <summary>Date of the data point.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.SparklinePoint.MarketValue">
+            <summary>Portfolio market value on this date.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.SparklinePoint.InvestedCapital">
+            <summary>Cumulative invested capital on this date.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto">
+            <summary>
+            Detailed return metrics for the Kennzahlen tab (FR-2.1).
+            </summary>
+            <param name="GrossReturn">Gross return before taxes and fees.</param>
+            <param name="NetReturn">Net return after taxes.</param>
+            <param name="TotalTaxes">Total taxes paid.</param>
+            <param name="TotalFees">Total fees paid.</param>
+            <param name="TaxRate">Tax rate as fraction of gross return (0..1).</param>
+            <param name="Twr">Time-Weighted Return (Modified Dietz, GIPS-konform).</param>
+            <param name="Volatility">Annualised volatility (std. dev. of log returns × √252).</param>
+            <param name="MaxDrawdown">Maximum drawdown from peak (negative fraction).</param>
+            <param name="SharpeRatio">Sharpe Ratio, or null when opt-in not enabled or not enough data.</param>
+            <param name="RealizedGains">Realized capital gains (FIFO).</param>
+            <param name="UnrealizedGains">Unrealized capital gains on current holdings.</param>
+            <param name="Irr">Internal Rate of Return, or null when not computable.</param>
+            <param name="DividendYieldCurrentYear">Dividend yield for current calendar year.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.#ctor(System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Decimal,System.Decimal,System.Nullable{System.Decimal},System.Decimal)">
+            <summary>
+            Detailed return metrics for the Kennzahlen tab (FR-2.1).
+            </summary>
+            <param name="GrossReturn">Gross return before taxes and fees.</param>
+            <param name="NetReturn">Net return after taxes.</param>
+            <param name="TotalTaxes">Total taxes paid.</param>
+            <param name="TotalFees">Total fees paid.</param>
+            <param name="TaxRate">Tax rate as fraction of gross return (0..1).</param>
+            <param name="Twr">Time-Weighted Return (Modified Dietz, GIPS-konform).</param>
+            <param name="Volatility">Annualised volatility (std. dev. of log returns × √252).</param>
+            <param name="MaxDrawdown">Maximum drawdown from peak (negative fraction).</param>
+            <param name="SharpeRatio">Sharpe Ratio, or null when opt-in not enabled or not enough data.</param>
+            <param name="RealizedGains">Realized capital gains (FIFO).</param>
+            <param name="UnrealizedGains">Unrealized capital gains on current holdings.</param>
+            <param name="Irr">Internal Rate of Return, or null when not computable.</param>
+            <param name="DividendYieldCurrentYear">Dividend yield for current calendar year.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.GrossReturn">
+            <summary>Gross return before taxes and fees.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.NetReturn">
+            <summary>Net return after taxes.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.TotalTaxes">
+            <summary>Total taxes paid.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.TotalFees">
+            <summary>Total fees paid.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.TaxRate">
+            <summary>Tax rate as fraction of gross return (0..1).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.Twr">
+            <summary>Time-Weighted Return (Modified Dietz, GIPS-konform).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.Volatility">
+            <summary>Annualised volatility (std. dev. of log returns × √252).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.MaxDrawdown">
+            <summary>Maximum drawdown from peak (negative fraction).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.SharpeRatio">
+            <summary>Sharpe Ratio, or null when opt-in not enabled or not enough data.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.RealizedGains">
+            <summary>Realized capital gains (FIFO).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.UnrealizedGains">
+            <summary>Unrealized capital gains on current holdings.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.Irr">
+            <summary>Internal Rate of Return, or null when not computable.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.DividendYieldCurrentYear">
+            <summary>Dividend yield for current calendar year.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.PeriodicReturnsDto">
+            <summary>
+            Periodic returns for the Zeitliche Entwicklung tab (FR-2.2 + FR-2.5).
+            </summary>
+            <param name="AnnualReturns">Annual return data points for the bar chart.</param>
+            <param name="MonthlyReturns">Monthly return data points for the heatmap.</param>
+            <param name="AnnualDividends">Annual dividend data for the dividend chart.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.PeriodicReturnsDto.#ctor(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.AnnualReturnPoint},System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.MonthlyReturnPoint},System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.AnnualDividendPoint})">
+            <summary>
+            Periodic returns for the Zeitliche Entwicklung tab (FR-2.2 + FR-2.5).
+            </summary>
+            <param name="AnnualReturns">Annual return data points for the bar chart.</param>
+            <param name="MonthlyReturns">Monthly return data points for the heatmap.</param>
+            <param name="AnnualDividends">Annual dividend data for the dividend chart.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.PeriodicReturnsDto.AnnualReturns">
+            <summary>Annual return data points for the bar chart.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.PeriodicReturnsDto.MonthlyReturns">
+            <summary>Monthly return data points for the heatmap.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.PeriodicReturnsDto.AnnualDividends">
+            <summary>Annual dividend data for the dividend chart.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.AnnualReturnPoint">
+            <summary>Annual return data point.</summary>
+            <param name="Year">Calendar year.</param>
+            <param name="ReturnPercent">Annual return as percentage.</param>
+            <param name="IsYtd">True if this is the current year-to-date figure.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.AnnualReturnPoint.#ctor(System.Int32,System.Decimal,System.Boolean)">
+            <summary>Annual return data point.</summary>
+            <param name="Year">Calendar year.</param>
+            <param name="ReturnPercent">Annual return as percentage.</param>
+            <param name="IsYtd">True if this is the current year-to-date figure.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.AnnualReturnPoint.Year">
+            <summary>Calendar year.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.AnnualReturnPoint.ReturnPercent">
+            <summary>Annual return as percentage.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.AnnualReturnPoint.IsYtd">
+            <summary>True if this is the current year-to-date figure.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.MonthlyReturnPoint">
+            <summary>Monthly return data point for the heatmap.</summary>
+            <param name="Year">Calendar year.</param>
+            <param name="Month">Calendar month (1-12).</param>
+            <param name="ReturnPercent">Monthly return as percentage, or null when no data.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.MonthlyReturnPoint.#ctor(System.Int32,System.Int32,System.Nullable{System.Decimal})">
+            <summary>Monthly return data point for the heatmap.</summary>
+            <param name="Year">Calendar year.</param>
+            <param name="Month">Calendar month (1-12).</param>
+            <param name="ReturnPercent">Monthly return as percentage, or null when no data.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.MonthlyReturnPoint.Year">
+            <summary>Calendar year.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.MonthlyReturnPoint.Month">
+            <summary>Calendar month (1-12).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.MonthlyReturnPoint.ReturnPercent">
+            <summary>Monthly return as percentage, or null when no data.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.AnnualDividendPoint">
+            <summary>Annual dividend summary.</summary>
+            <param name="Year">Calendar year.</param>
+            <param name="GrossDividend">Gross dividend amount.</param>
+            <param name="NetDividend">Net dividend after taxes.</param>
+            <param name="CumulativeNet">Cumulative net dividends up to and including this year.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.AnnualDividendPoint.#ctor(System.Int32,System.Decimal,System.Decimal,System.Decimal)">
+            <summary>Annual dividend summary.</summary>
+            <param name="Year">Calendar year.</param>
+            <param name="GrossDividend">Gross dividend amount.</param>
+            <param name="NetDividend">Net dividend after taxes.</param>
+            <param name="CumulativeNet">Cumulative net dividends up to and including this year.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.AnnualDividendPoint.Year">
+            <summary>Calendar year.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.AnnualDividendPoint.GrossDividend">
+            <summary>Gross dividend amount.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.AnnualDividendPoint.NetDividend">
+            <summary>Net dividend after taxes.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.AnnualDividendPoint.CumulativeNet">
+            <summary>Cumulative net dividends up to and including this year.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.CashflowTimelineDto">
+            <summary>
+            Cashflow timeline for the Cashflows tab (FR-2.3 + FR-2.6).
+            </summary>
+            <param name="Entries">Chronological cashflow entries.</param>
+            <param name="AnnualSummaries">Annual aggregated cashflows for the bar chart.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.CashflowTimelineDto.#ctor(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.CashflowEntry},System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.AnnualCashflowSummary})">
+            <summary>
+            Cashflow timeline for the Cashflows tab (FR-2.3 + FR-2.6).
+            </summary>
+            <param name="Entries">Chronological cashflow entries.</param>
+            <param name="AnnualSummaries">Annual aggregated cashflows for the bar chart.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.CashflowTimelineDto.Entries">
+            <summary>Chronological cashflow entries.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.CashflowTimelineDto.AnnualSummaries">
+            <summary>Annual aggregated cashflows for the bar chart.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.CashflowEntry">
+            <summary>A single cashflow entry in the timeline.</summary>
+            <param name="Date">Date of the cashflow.</param>
+            <param name="Type">Cashflow type ("Buy", "Sell", "Dividend", "Tax", "Fee").</param>
+            <param name="Amount">Cashflow amount.</param>
+            <param name="Description">Optional description.</param>
+            <param name="PostingId">Reference to the source posting.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.CashflowEntry.#ctor(System.DateTime,System.String,System.Decimal,System.String,System.Guid)">
+            <summary>A single cashflow entry in the timeline.</summary>
+            <param name="Date">Date of the cashflow.</param>
+            <param name="Type">Cashflow type ("Buy", "Sell", "Dividend", "Tax", "Fee").</param>
+            <param name="Amount">Cashflow amount.</param>
+            <param name="Description">Optional description.</param>
+            <param name="PostingId">Reference to the source posting.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.CashflowEntry.Date">
+            <summary>Date of the cashflow.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.CashflowEntry.Type">
+            <summary>Cashflow type ("Buy", "Sell", "Dividend", "Tax", "Fee").</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.CashflowEntry.Amount">
+            <summary>Cashflow amount.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.CashflowEntry.Description">
+            <summary>Optional description.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.CashflowEntry.PostingId">
+            <summary>Reference to the source posting.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.AnnualCashflowSummary">
+            <summary>Annual cashflow summary for the cost/tax chart.</summary>
+            <param name="Year">Calendar year.</param>
+            <param name="TotalBuys">Total buy cashflows (negative).</param>
+            <param name="TotalSells">Total sell cashflows (positive).</param>
+            <param name="TotalDividends">Total gross dividends.</param>
+            <param name="TotalTaxes">Total taxes (negative).</param>
+            <param name="TotalFees">Total fees (negative).</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.AnnualCashflowSummary.#ctor(System.Int32,System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.Decimal)">
+            <summary>Annual cashflow summary for the cost/tax chart.</summary>
+            <param name="Year">Calendar year.</param>
+            <param name="TotalBuys">Total buy cashflows (negative).</param>
+            <param name="TotalSells">Total sell cashflows (positive).</param>
+            <param name="TotalDividends">Total gross dividends.</param>
+            <param name="TotalTaxes">Total taxes (negative).</param>
+            <param name="TotalFees">Total fees (negative).</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.AnnualCashflowSummary.Year">
+            <summary>Calendar year.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.AnnualCashflowSummary.TotalBuys">
+            <summary>Total buy cashflows (negative).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.AnnualCashflowSummary.TotalSells">
+            <summary>Total sell cashflows (positive).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.AnnualCashflowSummary.TotalDividends">
+            <summary>Total gross dividends.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.AnnualCashflowSummary.TotalTaxes">
+            <summary>Total taxes (negative).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.AnnualCashflowSummary.TotalFees">
+            <summary>Total fees (negative).</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.PerformanceChartDataDto">
+            <summary>
+            Performance chart data for the Übersicht tab (FR-2.4).
+            </summary>
+            <param name="TimeRange">Selected time range.</param>
+            <param name="PortfolioValues">Portfolio market value time series.</param>
+            <param name="InvestedCapitalValues">Invested capital time series.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.PerformanceChartDataDto.#ctor(FinanceManager.Application.Securities.ReturnAnalysis.ChartTimeRange,System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.ChartPoint},System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.ChartPoint})">
+            <summary>
+            Performance chart data for the Übersicht tab (FR-2.4).
+            </summary>
+            <param name="TimeRange">Selected time range.</param>
+            <param name="PortfolioValues">Portfolio market value time series.</param>
+            <param name="InvestedCapitalValues">Invested capital time series.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.PerformanceChartDataDto.TimeRange">
+            <summary>Selected time range.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.PerformanceChartDataDto.PortfolioValues">
+            <summary>Portfolio market value time series.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.PerformanceChartDataDto.InvestedCapitalValues">
+            <summary>Invested capital time series.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.BenchmarkComparisonDto">
+            <summary>
+            Benchmark comparison data for the Benchmark tab (FR-7).
+            </summary>
+            <param name="BenchmarkSecurityId">Id of the benchmark security.</param>
+            <param name="BenchmarkName">Display name of the benchmark security.</param>
+            <param name="SecurityNormalizedValues">Normalized values for the target security (base 100).</param>
+            <param name="BenchmarkNormalizedValues">Normalized values for the benchmark (base 100).</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.BenchmarkComparisonDto.#ctor(System.Guid,System.String,System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.ChartPoint},System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.ChartPoint})">
+            <summary>
+            Benchmark comparison data for the Benchmark tab (FR-7).
+            </summary>
+            <param name="BenchmarkSecurityId">Id of the benchmark security.</param>
+            <param name="BenchmarkName">Display name of the benchmark security.</param>
+            <param name="SecurityNormalizedValues">Normalized values for the target security (base 100).</param>
+            <param name="BenchmarkNormalizedValues">Normalized values for the benchmark (base 100).</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.BenchmarkComparisonDto.BenchmarkSecurityId">
+            <summary>Id of the benchmark security.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.BenchmarkComparisonDto.BenchmarkName">
+            <summary>Display name of the benchmark security.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.BenchmarkComparisonDto.SecurityNormalizedValues">
+            <summary>Normalized values for the target security (base 100).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.BenchmarkComparisonDto.BenchmarkNormalizedValues">
+            <summary>Normalized values for the benchmark (base 100).</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.ChartPoint">
+            <summary>A single chart data point.</summary>
+            <param name="Date">Date of the data point.</param>
+            <param name="Value">Value on this date.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.ChartPoint.#ctor(System.DateTime,System.Decimal)">
+            <summary>A single chart data point.</summary>
+            <param name="Date">Date of the data point.</param>
+            <param name="Value">Value on this date.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ChartPoint.Date">
+            <summary>Date of the data point.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ChartPoint.Value">
+            <summary>Value on this date.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult">
+            <summary>FIFO cost basis calculation result.</summary>
+            <param name="TotalCostBasis">Total cost basis of all remaining lots.</param>
+            <param name="RealizedGains">Total realized gains from sells (FIFO).</param>
+            <param name="RemainingLots">Remaining open lots after all sells.</param>
+            <param name="TotalSharesHeld">Total shares currently held.</param>
+            <param name="HasOversellWarning">True when sells exceeded available lots (incomplete data).</param>
+            <param name="OversellWarningMessage">Warning message when HasOversellWarning is true.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult.#ctor(System.Decimal,System.Decimal,System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.FifoLot},System.Decimal,System.Boolean,System.String)">
+            <summary>FIFO cost basis calculation result.</summary>
+            <param name="TotalCostBasis">Total cost basis of all remaining lots.</param>
+            <param name="RealizedGains">Total realized gains from sells (FIFO).</param>
+            <param name="RemainingLots">Remaining open lots after all sells.</param>
+            <param name="TotalSharesHeld">Total shares currently held.</param>
+            <param name="HasOversellWarning">True when sells exceeded available lots (incomplete data).</param>
+            <param name="OversellWarningMessage">Warning message when HasOversellWarning is true.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult.TotalCostBasis">
+            <summary>Total cost basis of all remaining lots.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult.RealizedGains">
+            <summary>Total realized gains from sells (FIFO).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult.RemainingLots">
+            <summary>Remaining open lots after all sells.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult.TotalSharesHeld">
+            <summary>Total shares currently held.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult.HasOversellWarning">
+            <summary>True when sells exceeded available lots (incomplete data).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult.OversellWarningMessage">
+            <summary>Warning message when HasOversellWarning is true.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.FifoLot">
+            <summary>A single FIFO lot representing a purchase batch.</summary>
+            <param name="PurchaseDate">Date of purchase.</param>
+            <param name="Quantity">Number of shares in this lot.</param>
+            <param name="CostPerUnit">Cost per share for this lot.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.FifoLot.#ctor(System.DateTime,System.Decimal,System.Decimal)">
+            <summary>A single FIFO lot representing a purchase batch.</summary>
+            <param name="PurchaseDate">Date of purchase.</param>
+            <param name="Quantity">Number of shares in this lot.</param>
+            <param name="CostPerUnit">Cost per share for this lot.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoLot.PurchaseDate">
+            <summary>Date of purchase.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoLot.Quantity">
+            <summary>Number of shares in this lot.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoLot.CostPerUnit">
+            <summary>Cost per share for this lot.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.TwrPeriodInput">
+            <summary>
+            Single period input for TWR calculation (Modified Dietz).
+            </summary>
+            <param name="Start">Start of the period.</param>
+            <param name="End">End of the period.</param>
+            <param name="StartValue">Portfolio value at period start.</param>
+            <param name="EndValue">Portfolio value at period end.</param>
+            <param name="ExternalCashflow">External cashflow during the period (positive = inflow, negative = outflow).</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.TwrPeriodInput.#ctor(System.DateTime,System.DateTime,System.Decimal,System.Decimal,System.Decimal)">
+            <summary>
+            Single period input for TWR calculation (Modified Dietz).
+            </summary>
+            <param name="Start">Start of the period.</param>
+            <param name="End">End of the period.</param>
+            <param name="StartValue">Portfolio value at period start.</param>
+            <param name="EndValue">Portfolio value at period end.</param>
+            <param name="ExternalCashflow">External cashflow during the period (positive = inflow, negative = outflow).</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.TwrPeriodInput.Start">
+            <summary>Start of the period.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.TwrPeriodInput.End">
+            <summary>End of the period.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.TwrPeriodInput.StartValue">
+            <summary>Portfolio value at period start.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.TwrPeriodInput.EndValue">
+            <summary>Portfolio value at period end.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.TwrPeriodInput.ExternalCashflow">
+            <summary>External cashflow during the period (positive = inflow, negative = outflow).</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.CashflowPoint">
+            <summary>
+            A single cashflow point for IRR calculation.
+            </summary>
+            <param name="Date">Date of the cashflow.</param>
+            <param name="Amount">Amount (negative = outflow/investment, positive = inflow/return).</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.CashflowPoint.#ctor(System.DateTime,System.Decimal)">
+            <summary>
+            A single cashflow point for IRR calculation.
+            </summary>
+            <param name="Date">Date of the cashflow.</param>
+            <param name="Amount">Amount (negative = outflow/investment, positive = inflow/return).</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.CashflowPoint.Date">
+            <summary>Date of the cashflow.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.CashflowPoint.Amount">
+            <summary>Amount (negative = outflow/investment, positive = inflow/return).</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction">
+            <summary>
+            Security transaction for FIFO cost basis calculation.
+            </summary>
+            <param name="Id">Unique posting id (used as tiebreaker for same-date transactions).</param>
+            <param name="Date">Booking date.</param>
+            <param name="Type">Transaction sub-type (Buy, Sell, Dividend, Tax, Fee).</param>
+            <param name="Amount">Monetary amount (negative for outflows, positive for inflows).</param>
+            <param name="Quantity">Share quantity (positive for Buy, positive for Sell).</param>
+            <param name="GroupId">Group identifier linking related transactions (e.g., dividend + tax).</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction.#ctor(System.Guid,System.DateTime,FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType,System.Decimal,System.Nullable{System.Decimal},System.Guid)">
+            <summary>
+            Security transaction for FIFO cost basis calculation.
+            </summary>
+            <param name="Id">Unique posting id (used as tiebreaker for same-date transactions).</param>
+            <param name="Date">Booking date.</param>
+            <param name="Type">Transaction sub-type (Buy, Sell, Dividend, Tax, Fee).</param>
+            <param name="Amount">Monetary amount (negative for outflows, positive for inflows).</param>
+            <param name="Quantity">Share quantity (positive for Buy, positive for Sell).</param>
+            <param name="GroupId">Group identifier linking related transactions (e.g., dividend + tax).</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction.Id">
+            <summary>Unique posting id (used as tiebreaker for same-date transactions).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction.Date">
+            <summary>Booking date.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction.Type">
+            <summary>Transaction sub-type (Buy, Sell, Dividend, Tax, Fee).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction.Amount">
+            <summary>Monetary amount (negative for outflows, positive for inflows).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction.Quantity">
+            <summary>Share quantity (positive for Buy, positive for Sell).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction.GroupId">
+            <summary>Group identifier linking related transactions (e.g., dividend + tax).</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService">
+            <summary>
+            Implements pure financial mathematics calculations. Stateless, thread-safe, no DB access.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService.TradingDaysPerYear">
+            <summary>
+            Annualisation factor for volatility (trading days per year).
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService.IrrTolerance">
+            <summary>
+            Tolerance used for IRR convergence check.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService})">
+            <summary>
+            Initializes a new instance of <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService"/>.
+            </summary>
+            <param name="logger">Logger instance for diagnostic output.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService.CalculateTotalReturn(System.Decimal,System.Decimal,System.Decimal)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService.CalculateTwr(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.TwrPeriodInput})">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService.CalculateIrr(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.CashflowPoint},System.Int32)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService.CalculateCagr(System.Decimal,System.Decimal,System.Double)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService.CalculateVolatility(System.Collections.Generic.IReadOnlyList{System.Decimal})">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService.CalculateMaxDrawdown(System.Collections.Generic.IReadOnlyList{System.Decimal})">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService.CalculateSharpeRatio(System.Decimal,System.Decimal,System.Decimal)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService.CalculateDividendYield(System.Decimal,System.Decimal)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService.CalculateTaxRate(System.Decimal,System.Decimal)">
+            <inheritdoc/>
+        </member>
         <member name="T:FinanceManager.Application.Security.IIpBlockService">
             <summary>
             Service to manage IP blocks and rate-limit related operations.

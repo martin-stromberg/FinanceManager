@@ -1,0 +1,68 @@
+/* =====================================================
+   app.ReturnSummaryWidget.css - Return Summary Widget Styles
+   ===================================================== */
+.return-summary-widget {
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0;
+    background: var(--card-bg, #fff);
+    font-size: 0.9rem;
+}
+
+.return-summary-widget.skeleton {
+    min-height: 100px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: rsw-shimmer 1.2s infinite;
+}
+
+@keyframes rsw-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.return-summary-widget.error-state,
+.return-summary-widget.no-data {
+    color: var(--text-muted, #888);
+    font-style: italic;
+    padding: 1rem;
+}
+
+.rsw-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.2rem 0;
+    border-bottom: 1px solid var(--border-color-subtle, #f0f0f0);
+}
+
+.rsw-row:last-child { border-bottom: none; }
+
+.rsw-header { font-weight: 600; margin-bottom: 0.25rem; }
+
+.rsw-label { color: var(--text-muted, #666); }
+
+.rsw-value.positive { color: #2a7d4f; }
+.rsw-value.negative { color: #c94040; }
+
+.rsw-warning {
+    color: #b7700a;
+    font-size: 0.8rem;
+    justify-content: flex-start;
+    gap: 0.25rem;
+}
+
+.rsw-actions { margin-top: 0.5rem; text-align: right; }
+
+.rsw-detail-btn {
+    background: none;
+    border: none;
+    color: var(--primary-color, #2d6cdf);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0.2rem 0;
+    text-decoration: underline;
+}
+
+.rsw-detail-btn:hover { opacity: 0.8; }

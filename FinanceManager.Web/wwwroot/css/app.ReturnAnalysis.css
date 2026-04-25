@@ -1,0 +1,439 @@
+/* =====================================================
+   app.ReturnAnalysis.css - Return Analysis Page & Tab Styles
+   ===================================================== */
+
+/* ---- Performance Page ---- */
+.perf-page { max-width: 1000px; }
+
+.perf-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.perf-header h2 { margin: 0; }
+
+.back-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--primary-color, #2d6cdf);
+    padding: 0.25rem 0.5rem;
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
+}
+
+.tab-bar {
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 2px solid var(--border-color, #ddd);
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-muted, #666);
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-btn.active {
+    color: var(--primary-color, #2d6cdf);
+    border-bottom-color: var(--primary-color, #2d6cdf);
+    font-weight: 600;
+}
+
+.tab-btn:hover:not(.active) { color: var(--text, #333); }
+
+.tab-content { min-height: 200px; }
+
+/* ---- Overview Tab ---- */
+.overview-tab { }
+
+.time-range-selector {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.range-btn {
+    background: none;
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 4px;
+    padding: 0.25rem 0.6rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--text-muted, #666);
+    transition: background 0.15s, color 0.15s;
+}
+
+.range-btn.active {
+    background: var(--primary-color, #2d6cdf);
+    color: #fff;
+    border-color: var(--primary-color, #2d6cdf);
+}
+
+.range-btn:hover:not(.active) { background: var(--hover-bg, #f5f5f5); }
+
+.chart-placeholder,
+.no-data-msg {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted, #888);
+    font-style: italic;
+}
+
+.chart-legend {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.chart-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.chart-legend .legend-item.portfolio::before {
+    content: '';
+    display: inline-block;
+    width: 18px;
+    height: 3px;
+    background: #2d6cdf;
+    border-radius: 2px;
+}
+
+.chart-legend .legend-item.invested::before {
+    content: '';
+    display: inline-block;
+    width: 18px;
+    height: 3px;
+    background: #999;
+    border-radius: 2px;
+}
+
+.perf-svg {
+    width: 100%;
+    height: 200px;
+    border: 1px solid var(--border-color-subtle, #eee);
+    border-radius: 4px;
+    background: var(--chart-bg, #fafafa);
+}
+
+.chart-dates {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-muted, #999);
+    margin-top: 0.25rem;
+    padding: 0 0.25rem;
+}
+
+/* ---- Time Series Tab ---- */
+.timeseries-tab section { margin-bottom: 2rem; }
+
+.timeseries-tab section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text, #333);
+}
+
+.annual-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 150px;
+    padding-bottom: 1.5rem;
+    overflow-x: auto;
+}
+
+.bar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 32px;
+    flex: 1;
+}
+
+.bar-wrap {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+}
+
+.bar {
+    width: 100%;
+    min-height: 2px;
+    border-radius: 2px 2px 0 0;
+    transition: height 0.3s ease;
+}
+
+.bar.pos { background: #2a7d4f; }
+.bar.neg { background: #c94040; }
+.bar.ytd { opacity: 0.7; }
+
+.bar-label {
+    font-size: 0.7rem;
+    color: var(--text-muted, #888);
+    margin-top: 0.25rem;
+    white-space: nowrap;
+}
+
+.ytd-note {
+    font-size: 0.75rem;
+    color: var(--text-muted, #999);
+    margin-top: 0.25rem;
+}
+
+.heatmap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-x: auto;
+}
+
+.heatmap-header,
+.heatmap-row {
+    display: grid;
+    grid-template-columns: 50px repeat(12, 1fr);
+    gap: 2px;
+    align-items: center;
+}
+
+.heatmap-header span {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted, #666);
+    text-align: center;
+}
+
+.heatmap-year {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted, #666);
+}
+
+.heatmap-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    height: 24px;
+    border-radius: 2px;
+    cursor: default;
+    transition: opacity 0.15s;
+}
+
+.heatmap-cell:hover { opacity: 0.8; }
+
+.heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-muted, #888);
+}
+
+.legend-gradient {
+    flex: 1;
+    height: 8px;
+    background: linear-gradient(to right, #c94040, #f5f5f5, #2a7d4f);
+    border-radius: 4px;
+}
+
+.legend-neg { color: #c94040; }
+.legend-pos { color: #2a7d4f; }
+
+/* ---- Cashflow Tab ---- */
+.cashflow-tab section { margin-bottom: 2rem; }
+
+.cashflow-tab section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text, #333);
+}
+
+.cf-timeline { overflow-x: auto; }
+
+.fm-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.fm-table th {
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 2px solid var(--border-color, #ddd);
+    color: var(--text-muted, #666);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.fm-table td {
+    padding: 0.35rem 0.6rem;
+    border-bottom: 1px solid var(--border-color-subtle, #f0f0f0);
+    vertical-align: middle;
+}
+
+.fm-table tr:last-child td { border-bottom: none; }
+.fm-table tr:hover td { background: var(--hover-bg, #f9f9f9); }
+
+.fm-table .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.cf-pos { color: #2a7d4f; }
+.cf-neg { color: #c94040; }
+.pos { color: #2a7d4f; }
+.neg { color: #c94040; }
+
+.cf-badge {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    background: var(--badge-bg, #eee);
+    color: var(--badge-text, #555);
+}
+
+.cf-badge.buy { background: #dbeafe; color: #1d4ed8; }
+.cf-badge.sell { background: #dcfce7; color: #15803d; }
+.cf-badge.dividend { background: #fef9c3; color: #a16207; }
+.cf-badge.tax { background: #fee2e2; color: #b91c1c; }
+.cf-badge.fee { background: #f3e8ff; color: #7e22ce; }
+
+/* ---- Metrics Tab ---- */
+.metrics-tab .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+}
+
+.kpi-section {
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    background: var(--card-bg, #fff);
+}
+
+.kpi-section h3 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted, #888);
+    margin: 0 0 0.6rem 0;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border-color-subtle, #f0f0f0);
+}
+
+.kpi-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid var(--border-color-subtle, #f5f5f5);
+    cursor: default;
+}
+
+.kpi-row:last-child { border-bottom: none; }
+
+.kpi-label {
+    font-size: 0.85rem;
+    color: var(--text-muted, #555);
+    flex: 1;
+    margin-right: 0.5rem;
+}
+
+.kpi-value {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text, #222);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* ---- Benchmark Tab ---- */
+.no-benchmark-hint {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted, #888);
+}
+
+.no-benchmark-hint p { margin-bottom: 0.5rem; }
+
+.btn-primary {
+    background: var(--primary-color, #2d6cdf);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5rem 1.25rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-top: 0.75rem;
+    transition: opacity 0.15s;
+}
+
+.btn-primary:hover { opacity: 0.85; }
+
+.benchmark-name {
+    font-size: 0.9rem;
+    color: var(--text-muted, #666);
+    margin-bottom: 0.5rem;
+}
+
+.benchmark-legend {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.benchmark-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.benchmark-legend .legend-item.security::before {
+    content: '';
+    display: inline-block;
+    width: 18px;
+    height: 3px;
+    background: #2d6cdf;
+    border-radius: 2px;
+}
+
+.benchmark-legend .legend-item.benchmark::before {
+    content: '';
+    display: inline-block;
+    width: 18px;
+    height: 3px;
+    background: #e07b20;
+    border-radius: 2px;
+}
+
+.benchmark-svg {
+    width: 100%;
+    height: 220px;
+    border: 1px solid var(--border-color-subtle, #eee);
+    border-radius: 4px;
+    background: var(--chart-bg, #fafafa);
+}

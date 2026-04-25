@@ -1436,6 +1436,18 @@
             <returns>An <see cref="T:Microsoft.AspNetCore.Mvc.IActionResult"/> with 204 No Content when deleted, or 404 Not Found when not found.</returns>
             <exception cref="T:System.Exception">Unexpected errors are logged and result in a 500 Internal Server Error.</exception>
         </member>
+        <member name="T:FinanceManager.Web.Controllers.ReturnAnalysisSettingsRequest">
+            <summary>Request payload for updating return analysis settings.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Controllers.ReturnAnalysisSettingsRequest.BenchmarkSecurityId">
+            <summary>Optional benchmark security id. Null clears the benchmark.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Controllers.ReturnAnalysisSettingsRequest.ShowSharpeRatio">
+            <summary>Whether to show Sharpe Ratio in the UI.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Controllers.ReturnAnalysisSettingsRequest.RiskFreeRate">
+            <summary>Risk-free rate for Sharpe Ratio calculation (e.g. 0.04 = 4%). Must be >= 0.</summary>
+        </member>
         <member name="T:FinanceManager.Web.Controllers.SavingsPlansController">
             <summary>
             Provides CRUD, analysis, archiving and symbol management endpoints for savings plans owned by the current user.
@@ -1576,7 +1588,7 @@
             dividends aggregation and background price backfill tasks.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.#ctor(FinanceManager.Application.Securities.ISecurityService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.IBackgroundTaskManager,FinanceManager.Application.Reports.IPostingTimeSeriesService,FinanceManager.Application.Securities.ISecurityPriceService,FinanceManager.Application.Securities.ISecurityReportService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.SecuritiesController},FinanceManager.Application.Common.IParentAssignmentService,Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.#ctor(FinanceManager.Application.Securities.ISecurityService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.IBackgroundTaskManager,FinanceManager.Application.Reports.IPostingTimeSeriesService,FinanceManager.Application.Securities.ISecurityPriceService,FinanceManager.Application.Securities.ISecurityReportService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.SecuritiesController},FinanceManager.Application.Common.IParentAssignmentService,Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller},FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService)">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.SecuritiesController"/>.
             </summary>
@@ -1590,6 +1602,7 @@
             <param name="logger">Logger used for diagnostic messages.</param>
             <param name="parentAssign">Service that manages server-side create-and-assign operations.</param>
             <param name="localizer">Localizer for generating user-friendly error messages.</param>
+            <param name="returnAnalysis">Service providing return analysis calculations.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.SecuritiesController.ListAsync(System.Boolean,System.Threading.CancellationToken)">
             <summary>
@@ -1712,6 +1725,85 @@
             <param name="take">Optional take parameter (ignored; kept for compatibility).</param>
             <param name="ct">Cancellation token.</param>
             <returns>200 OK with a list of quarterly <see cref="T:FinanceManager.Shared.Dtos.Common.AggregatePointDto"/> objects.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetReturnSummaryAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the compact return summary for a security.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto"/>; 404 when not found or not owned by user.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetSparklineDataAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns sparkline chart data for a security (separate from summary to keep cache lean).
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.SparklineDataDto"/>; 404 when not found or insufficient price data.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetReturnMetricsAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns detailed return metrics for the Kennzahlen tab.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto"/>; 404 when not found or not owned by user.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetPeriodicReturnsAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns periodic returns (annual + monthly + dividends) for the Zeitliche Entwicklung tab.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.PeriodicReturnsDto"/>; 404 when not found or not owned by user.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetCashflowTimelineAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns cashflow timeline for the Cashflows tab.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.CashflowTimelineDto"/>; 404 when not found or not owned by user.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetPerformanceChartAsync(System.Guid,FinanceManager.Application.Securities.ReturnAnalysis.ChartTimeRange,System.Threading.CancellationToken)">
+            <summary>
+            Returns performance chart data.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="timeRange">Time range for the chart (default: All).</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.PerformanceChartDataDto"/>; 404 when not found or not owned by user.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetBenchmarkComparisonAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns benchmark comparison data.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.BenchmarkComparisonDto"/>; 404 when no benchmark is configured or data is insufficient.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetReturnAnalysisSettingsAsync(System.Threading.CancellationToken)">
+            <summary>
+            Returns return analysis settings for the current user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.ReturnAnalysisSettingsDto"/>.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.UpdateReturnAnalysisSettingsAsync(FinanceManager.Web.Controllers.ReturnAnalysisSettingsRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates return analysis settings for the current user.
+            </summary>
+            <param name="req">Settings request payload.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>204 NoContent on success; 400 BadRequest for invalid input.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.InvalidateReturnCacheAsync(System.Guid)">
+            <summary>
+            Invalidates the return analysis cache for a specific security.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <returns>204 NoContent on success.</returns>
         </member>
         <member name="T:FinanceManager.Web.Controllers.SecurityCategoriesController">
             <summary>
@@ -10271,6 +10363,48 @@
             Disposes asynchronous resources held by the view model. Derived classes may override to dispose additional resources.
             </summary>
             <returns>A ValueTask representing the asynchronous dispose operation.</returns>
+        </member>
+        <member name="P:FinanceManager.Web.Components.Pages.Securities.BenchmarkTab.SecurityId">
+            <summary>Security identifier.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.BenchmarkTab.OnParametersSetAsync">
+            <inheritdoc />
+        </member>
+        <member name="P:FinanceManager.Web.Components.Pages.Securities.CashflowTab.SecurityId">
+            <summary>Security identifier.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.CashflowTab.OnParametersSetAsync">
+            <inheritdoc />
+        </member>
+        <member name="P:FinanceManager.Web.Components.Pages.Securities.MetricsTab.SecurityId">
+            <summary>Security identifier.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.MetricsTab.OnParametersSetAsync">
+            <inheritdoc />
+        </member>
+        <member name="P:FinanceManager.Web.Components.Pages.Securities.OverviewTab.SecurityId">
+            <summary>Security identifier.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.OverviewTab.OnParametersSetAsync">
+            <inheritdoc />
+        </member>
+        <member name="P:FinanceManager.Web.Components.Pages.Securities.SecurityPerformancePage.Id">
+            <summary>Security identifier from the route.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.SecurityPerformancePage.OnParametersSetAsync">
+            <inheritdoc />
+        </member>
+        <member name="P:FinanceManager.Web.Components.Pages.Securities.TimeSeriesTab.SecurityId">
+            <summary>Security identifier.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.TimeSeriesTab.OnParametersSetAsync">
+            <inheritdoc />
+        </member>
+        <member name="P:FinanceManager.Web.Components.Shared.ReturnSummaryWidget.SecurityId">
+            <summary>Security identifier to show return data for.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Shared.ReturnSummaryWidget.OnParametersSetAsync">
+            <inheritdoc />
         </member>
         <member name="T:SavingsPlanCategoriesController">
             <summary>

@@ -1,0 +1,71 @@
+@using FinanceManager.Application
+@using FinanceManager.Application.Securities.ReturnAnalysis
+@inject IReturnAnalysisService ReturnAnalysis
+@inject ICurrentUserService CurrentUser
+@inject NavigationManager Nav
+
+<div class="benchmark-tab">
+    @if (_loading) { <div role="status">Lade Benchmark-Daten...</div> }
+    else if (_data == null)
+    {
+        <div class="no-benchmark-hint">
+            <p>Kein Benchmark konfiguriert.</p>
+            <p>Sie können ein vorhandenes Wertpapier als Benchmark für alle Ihre Wertpapiere festlegen.</p>
+            <button class="btn-primary" @onclick="NavigateToSettings">Benchmark festlegen</button>
+        </div>
+    }
+    else
+    {
+        <div class="benchmark-chart-area">
+            <p class="benchmark-name">Benchmark: <strong>@_data.BenchmarkName</strong></p>
+            <div class="benchmark-legend">
+                <span class="legend-item security">Dieses Wertpapier</span>
+                <span class="legend-item benchmark">@_data.BenchmarkName</span>
+            </div>
+            @{
+                var allValues = _data.SecurityNormalizedValues.Select(p => p.Value)
+                    .Concat(_data.BenchmarkNormalizedValues.Select(p => p.Value));
+                var maxVal = allValues.DefaultIfEmpty(100m).Max();
+                var minVal = allValues.DefaultIfEmpty(0m).Min();
+                var valueRange = maxVal - minVal;
+                if (valueRange == 0) { valueRange = 1m; }
+                var total = Math.Max(_data.SecurityNormalizedValues.Count, _data.BenchmarkNormalizedValues.Count);
+            }
+            <svg viewBox="0 0 @(Math.Max(total, 1)) 100" preserveAspectRatio="none" class="benchmark-svg" role="img" aria-label="Benchmark-Vergleichschart">
+                <title>Benchmark-Vergleich</title>
+                @{
+                    var secPoints = string.Join(" ", _data.SecurityNormalizedValues.Select((p, i) =>
+                        $"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}"));
+                    var bmPoints = string.Join(" ", _data.BenchmarkNormalizedValues.Select((p, i) =>
+                        $"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}"));
+                }
+                @if (!string.IsNullOrEmpty(secPoints))
+                {
+                    <polyline points="@secPoints" fill="none" stroke="#2d6cdf" stroke-width="0.8" />
+                }
+                @if (!string.IsNullOrEmpty(bmPoints))
+                {
+                    <polyline points="@bmPoints" fill="none" stroke="#e07b20" stroke-width="0.8" stroke-dasharray="3,2" />
+                }
+            </svg>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>Security identifier.</summary>
+    [Parameter, EditorRequired] public Guid SecurityId { get; set; }
+
+    private BenchmarkComparisonDto? _data;
+    private bool _loading = true;
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        try { _data = await ReturnAnalysis.GetBenchmarkComparisonAsync(SecurityId, CurrentUser.UserId, CancellationToken.None); }
+        finally { _loading = false; }
+    }
+
+    private void NavigateToSettings() => Nav.NavigateTo("/card/securities/settings");
+}
