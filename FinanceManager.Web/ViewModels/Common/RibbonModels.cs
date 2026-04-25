@@ -59,6 +59,13 @@ public sealed record UiRibbonAction(
     /// Kept as init-only for backwards compatibility with the positional constructor.
     /// </summary>
     public Func<Microsoft.AspNetCore.Components.Forms.InputFileChangeEventArgs, System.Threading.Tasks.Task>? FileCallback { get; init; }
+
+    /// <summary>
+    /// When <c>true</c> the action is completely omitted from the rendered ribbon.
+    /// Use this to hide context-sensitive buttons that should not be visible in certain states
+    /// (e.g. hiding the "Start quick-edit" button while quick-edit is already active).
+    /// </summary>
+    public bool Hidden { get; init; }
 };
 
 /// <summary>

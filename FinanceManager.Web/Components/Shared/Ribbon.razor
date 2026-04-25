@@ -140,6 +140,12 @@
 
                 foreach (var act in tab.Items)
                 {
+                    // Skip actions that are explicitly hidden for the current state
+                    if (act is FinanceManager.Web.ViewModels.Common.UiRibbonAction hiddenCheck && hiddenCheck.Hidden)
+                    {
+                        continue;
+                    }
+
                     var size = act.Size == UiRibbonItemSize.Large ? RibbonItemSize.Large : RibbonItemSize.Small;
                     existingGroup.Items.Add(new RibbonItem
                     {
