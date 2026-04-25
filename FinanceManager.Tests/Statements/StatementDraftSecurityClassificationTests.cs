@@ -1,3 +1,4 @@
+using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Securities;
 using FinanceManager.Domain.Statements;
@@ -36,6 +37,25 @@ public sealed class StatementDraftSecurityClassificationTests
         return (sut, db, conn, ownerUser.Id);
     }
 
+    /// <summary>
+    /// Creates a bank contact and an account with security processing enabled.
+    /// Securities may only be auto-assigned when a detected account explicitly allows it.
+    /// </summary>
+    private static async Task<Account> CreateSecurityAccountAsync(AppDbContext db, Guid owner)
+    {
+        var bank = new Contact(owner, "Testbank", ContactType.Bank, null, null);
+        db.Contacts.Add(bank);
+        await db.SaveChangesAsync();
+
+        var account = new Account(owner, AccountType.Giro, "Depot", null, bank.Id);
+        // SecurityProcessingEnabled defaults to true; set explicitly for clarity
+        account.SetSecurityProcessingEnabled(true);
+        db.Accounts.Add(account);
+        await db.SaveChangesAsync();
+
+        return account;
+    }
+
     private sealed class TestAccountService : IAccountService
     {
         public Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct)
@@ -72,18 +92,25 @@ public sealed class StatementDraftSecurityClassificationTests
         return draft;
     }
 
+    /// <summary>
+    /// Verifies that an entry whose subject contains the security identifier gets the security auto-assigned.
+    /// A detected account with security processing enabled is required for auto-assignment.
+    /// </summary>
     [Fact]
     public async Task AutoAssignSecurity_ByIdentifier_SetsSecurityId()
     {
         var (sut, db, conn, owner) = Create();
+
+        // Arrange: bank account with security processing enabled
+        var account = await CreateSecurityAccountAsync(db, owner);
 
         // Arrange securities
         var sec = new Security(owner, name: "ETF World", identifier: "DE000A0XYZ", description: null, alphaVantageCode: "WLD.F", currencyCode: "EUR", categoryId: null);
         db.Securities.Add(sec);
         await db.SaveChangesAsync();
 
-        // Create empty draft
-        var draft = await CreateDraftAsync(db, owner);
+        // Create draft linked to the account
+        var draft = await CreateDraftAsync(db, owner, accountId: account.Id);
 
         // Act: add entry whose subject contains the identifier -> triggers classification
         var added = await sut.AddEntryAsync(draft.Id, owner, DateTime.Today, 100m, "Trade DE000A0XYZ", CancellationToken.None);
@@ -96,17 +123,24 @@ public sealed class StatementDraftSecurityClassificationTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Verifies that a security name containing umlauts is matched when the entry subject uses the
+    /// ASCII equivalents (ue/oe/ae). A detected account with security processing enabled is required.
+    /// </summary>
     [Fact]
     public async Task AutoAssignSecurity_ByNameWithUmlauts_SetsSecurityId()
     {
         var (sut, db, conn, owner) = Create();
 
+        // Arrange: bank account with security processing enabled
+        var account = await CreateSecurityAccountAsync(db, owner);
+
         // Arrange: security name with umlauts; classification normalizes to plain ASCII (ue/oe/ae/ss)
-        var sec = new Security(owner, name: "Münchener Rückversicherung", identifier: "DE000MNRK", description: null, alphaVantageCode: null, currencyCode: "EUR", categoryId: null);
+        var sec = new Security(owner, name: "MÃ¼nchener RÃ¼ckversicherung", identifier: "DE000MNRK", description: null, alphaVantageCode: null, currencyCode: "EUR", categoryId: null);
         db.Securities.Add(sec);
         await db.SaveChangesAsync();
 
-        var draft = await CreateDraftAsync(db, owner);
+        var draft = await CreateDraftAsync(db, owner, accountId: account.Id);
 
         // Subject uses ue/ue instead of umlauts and includes spaces/punctuation
         var dto = await sut.AddEntryAsync(draft.Id, owner, DateTime.Today, 12.34m, "Dividende Muenchener Rueckversicherung AG", CancellationToken.None);
@@ -117,10 +151,18 @@ public sealed class StatementDraftSecurityClassificationTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Verifies that when multiple securities match the entry subject, the first by name is assigned
+    /// and the entry status remains Open to flag the ambiguity.
+    /// A detected account with security processing enabled is required.
+    /// </summary>
     [Fact]
     public async Task AutoAssignSecurity_MultipleMatches_AssignsFirstByName_AndKeepsStatusOpen()
     {
         var (sut, db, conn, owner) = Create();
+
+        // Arrange: bank account with security processing enabled
+        var account = await CreateSecurityAccountAsync(db, owner);
 
         // Arrange two matching securities (order by Name ascending used in classification)
         var first = new Security(owner, name: "AAA Corp", identifier: "DE111111", description: null, alphaVantageCode: null, currencyCode: "EUR", categoryId: null);
@@ -128,7 +170,7 @@ public sealed class StatementDraftSecurityClassificationTests
         db.Securities.AddRange(first, second);
         await db.SaveChangesAsync();
 
-        var draft = await CreateDraftAsync(db, owner);
+        var draft = await CreateDraftAsync(db, owner, accountId: account.Id);
 
         // Subject contains both identifiers -> ambiguous match
         var dto = await sut.AddEntryAsync(draft.Id, owner, DateTime.Today, 50m, "Trade DE111111 + DE222222", CancellationToken.None);
