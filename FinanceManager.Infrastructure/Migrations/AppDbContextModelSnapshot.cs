@@ -65,6 +65,10 @@ namespace FinanceManager.Infrastructure.Migrations
 
                     b.HasIndex("SymbolAttachmentId");
 
+                    b.HasIndex("OwnerUserId", "Iban")
+                        .IsUnique()
+                        .HasFilter("[Iban] IS NOT NULL");
+
                     b.HasIndex("OwnerUserId", "Name")
                         .IsUnique();
 

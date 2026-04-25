@@ -29,8 +29,11 @@ public sealed partial class StatementDraftService : IStatementDraftService
     private readonly IAccountService _accountService;
     private readonly IStatementFileFactory statementFileFactory;
     private readonly ILogger<StatementDraftService> _logger; // added
+    // optional localizer (not required for current implementation)
+    // private readonly Microsoft.Extensions.Localization.IStringLocalizer<StatementDraftService> _localizer; // optional localizer
     private readonly IAttachmentService? _attachments; // optional to keep compatibility with tests
     private readonly IReportCacheService? _reportCacheService;
+    // no-op
     private List<StatementDraftDto>? allDrafts = null;
     private List<FinanceManager.Domain.Securities.Security>? allSecurities = null;
     private List<Domain.Accounts.Account>? allAccounts = null;
@@ -96,7 +99,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
         IEnumerable<IStatementFileParser>? readers = null, 
         ILogger<StatementDraftService>? logger = null, 
         IAttachmentService? attachments = null,
-        IReportCacheService? reportCacheService = null) // logger param added
+        IReportCacheService? reportCacheService = null)
     {
         _db = db;
         _aggregateService = aggregateService;
@@ -105,6 +108,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
         _logger = logger ?? NullLogger<StatementDraftService>.Instance;
         _attachments = attachments;
         _reportCacheService = reportCacheService;
+        // localization not required in constructor
         _statementFileParsers = (readers is not null && readers.ToList().Any()) ? readers.ToList() : new List<IStatementFileParser>
         {
             new ING_PDF_StatementFileParser(null),

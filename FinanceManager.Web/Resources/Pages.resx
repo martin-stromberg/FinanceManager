@@ -198,6 +198,18 @@
   <data name="List_Th_Postings_Date" xml:space="preserve">
     <value>Date</value>
   </data>
+  <data name="Ribbon_QuickEdit" xml:space="preserve">
+    <value>Quick edit</value>
+  </data>
+  <data name="Ribbon_SaveQuickEdit" xml:space="preserve">
+    <value>Save edits</value>
+  </data>
+  <data name="Ribbon_CancelQuickEdit" xml:space="preserve">
+    <value>Cancel edits</value>
+  </data>
+  <data name="Ribbon_Group_QuickEdit" xml:space="preserve">
+    <value>Quick edit</value>
+  </data>
   <data name="List_Th_Postings_Valuta" xml:space="preserve">
     <value>Valuta</value>
   </data>
@@ -914,6 +926,9 @@
   </data>
   <data name="Nav_Setup" xml:space="preserve">
     <value>Setup</value>
+  </data>
+  <data name="Nav_Help" xml:space="preserve">
+    <value>Help</value>
   </data>
   <data name="Nav_Users" xml:space="preserve">
     <value>Users</value>
@@ -1679,5 +1694,44 @@
   </data>
   <data name="Kpi_MonthlyBudget_LabelExpected" xml:space="preserve">
     <value>Expected</value>
+  </data>
+  <data name="Validation_Valid" xml:space="preserve">
+    <value>Alle entries are valid.</value>
+  </data>
+  <data name="List_Th_BookingDate" xml:space="preserve">
+    <value>Booking date</value>
+  </data>
+  <data name="List_Th_Valuta" xml:space="preserve">
+    <value>Valuta</value>
+  </data>
+  <data name="List_Th_Amount" xml:space="preserve">
+    <value>Amount</value>
+  </data>
+  <data name="List_Th_BookingDescription" xml:space="preserve">
+    <value>Booking description</value>
+  </data>
+  <data name="List_Th_Recipient" xml:space="preserve">
+    <value>Recipient</value>
+  </data>
+  <data name="List_Th_Purpose" xml:space="preserve">
+    <value>Purpose</value>
+  </data>
+  <data name="List_Th_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="List_Th_Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Ribbon_QuickEdit" xml:space="preserve">
+    <value>Quick edit</value>
+  </data>
+  <data name="Ribbon_SaveQuickEdit" xml:space="preserve">
+    <value>Save edits</value>
+  </data>
+  <data name="Ribbon_CancelQuickEdit" xml:space="preserve">
+    <value>Cancel edits</value>
+  </data>
+  <data name="Ribbon_Group_QuickEdit" xml:space="preserve">
+    <value>Quick edit</value>
   </data>
 </root>

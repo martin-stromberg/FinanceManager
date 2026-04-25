@@ -110,8 +110,8 @@
     [Parameter] public string AriaTabsLabel { get; set; } = "Ribbon tabs";
     [Parameter] public string AriaGroupsLabel { get; set; } = "Ribbon action groups";
 
-    private List<RibbonTab<TTabEnum>>? TabsToRender => _tabsToRender ??= BuildTabsToRender();
-    private List<RibbonTab<TTabEnum>>? _tabsToRender;
+    // Always rebuild tabs on each render so dynamic Disabled states from provider are up-to-date
+    private List<RibbonTab<TTabEnum>>? TabsToRender => BuildTabsToRender();
 
     private List<RibbonTab<TTabEnum>>? BuildTabsToRender()
     {
@@ -140,6 +140,12 @@
 
                 foreach (var act in tab.Items)
                 {
+                    // Skip actions that are explicitly hidden for the current state
+                    if (act is FinanceManager.Web.ViewModels.Common.UiRibbonAction hiddenCheck && hiddenCheck.Hidden)
+                    {
+                        continue;
+                    }
+
                     var size = act.Size == UiRibbonItemSize.Large ? RibbonItemSize.Large : RibbonItemSize.Small;
                     existingGroup.Items.Add(new RibbonItem
                     {
@@ -206,7 +212,7 @@
 
     protected override void OnParametersSet()
     {
-        _tabsToRender = null;
+        // Ensure tabs are recomputed on next render
         var regs = Provider?.GetRibbonRegisters(Localizer);
         if (regs != null && regs.Any())
         {

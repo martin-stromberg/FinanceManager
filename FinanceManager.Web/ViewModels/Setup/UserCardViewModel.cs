@@ -14,7 +14,7 @@ namespace FinanceManager.Web.ViewModels.Setup;
 [FinanceManager.Web.ViewModels.Common.CardRoute("users")]
 public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Value)>
 {
-    private readonly Shared.IApiClient _api;
+    private readonly FinanceManager.Shared.IApiClient _api;
 
     /// <summary>
     /// Initializes a new instance of <see cref="UserCardViewModel"/>.
@@ -22,7 +22,7 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
     /// <param name="sp">Service provider used to resolve additional services such as localizer.</param>
     /// <param name="apiClient">API client used to call admin user endpoints. Must not be <c>null</c>.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="apiClient"/> is <c>null</c>.</exception>
-    public UserCardViewModel(IServiceProvider sp, Shared.IApiClient apiClient) : base(sp)
+    public UserCardViewModel(IServiceProvider sp, FinanceManager.Shared.IApiClient apiClient) : base(sp)
     {
         _api = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
     }

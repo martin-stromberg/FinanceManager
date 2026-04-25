@@ -184,4 +184,6 @@ public partial class ApiClient : IApiClient
         var list = await resp.Content.ReadFromJsonAsync<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto>>(cancellationToken: ct);
         return list ?? Array.Empty<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto>();
     }
+
+    // StatementDrafts batch update method moved to ApiClient.StatementDrafts.cs
 }

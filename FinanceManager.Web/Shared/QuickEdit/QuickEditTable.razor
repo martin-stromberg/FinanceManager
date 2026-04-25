@@ -1,0 +1,285 @@
+@using FinanceManager.Web.ViewModels.StatementDrafts
+@using FinanceManager.Web.ViewModels.Common
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@inject IServiceProvider ServiceProvider
+@inject IJSRuntime JS
+
+@code {
+    [Parameter]
+    public FinanceManager.Web.ViewModels.Common.BaseListViewModel? ViewModel { get; set; }
+
+    private void OnSubjectChanged(ChangeEventArgs e, Guid id)
+    {
+        var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
+        vm?.SetEditValue(id, "Subject", e?.Value?.ToString());
+    }
+
+    private void OnRecipientChanged(ChangeEventArgs e, Guid id)
+    {
+        var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
+        vm?.SetEditValue(id, "RecipientName", e?.Value?.ToString());
+    }
+
+    private void OnAmountChanged(ChangeEventArgs e, Guid id)
+    {
+        var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
+        if (decimal.TryParse(e?.Value?.ToString(), out var d))
+            vm?.SetEditValue(id, "Amount", d);
+        else
+            vm?.SetEditValue(id, "Amount", null);
+    }
+
+    private void OnDateChanged(ChangeEventArgs e, Guid id)
+    {
+        var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
+        if (DateTime.TryParse(e?.Value?.ToString(), out var dt))
+            vm?.SetEditValue(id, "BookingDate", dt.Date);
+        else
+            vm?.SetEditValue(id, "BookingDate", null);
+    }
+
+    private void ResetRow(Guid id)
+    {
+        var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
+        vm?.ResetRow(id);
+    }
+
+    private void OnValutaChanged(ChangeEventArgs e, Guid id)
+    {
+        var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
+        if (DateTime.TryParse(e?.Value?.ToString(), out var dt))
+            vm?.SetEditValue(id, "ValutaDate", dt.Date);
+        else
+            vm?.SetEditValue(id, "ValutaDate", null);
+    }
+
+    private void OnBookingDescriptionChanged(ChangeEventArgs e, Guid id)
+    {
+        var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
+        vm?.SetEditValue(id, "BookingDescription", e?.Value?.ToString());
+    }
+
+    private async Task ResetDuplicateStatus(Guid id)
+    {
+        var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
+        if (vm == null) return;
+        // Find item and clear status if it was AlreadyBooked -> set to Open
+        var item = vm.Items.FirstOrDefault(i => i.Id == id);
+        if (item != null && item.Status == FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus.AlreadyBooked)
+        {
+            item.Status = FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus.Open;
+            // ensure edit snapshot reflects change so UI updates
+            if (vm.IsQuickEditActive)
+            {
+                vm.SetEditValue(id, "Status", item.Status);
+            }
+            // Trigger component re-render
+            await InvokeAsync(StateHasChanged);
+
+            // If quick-edit is active, focus the first editable field (BookingDate) for this row
+            try
+            {
+                var elId = $"qe_booking_{id}";
+                // allow render to complete
+                await Task.Yield();
+                await JS.InvokeVoidAsync("eval", $"document.getElementById('{elId}')?.focus()");
+            }
+            catch { }
+        }
+    }
+}
+
+@{
+    var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
+    var records = vm?.Records ?? new List<FinanceManager.Web.ViewModels.Common.ListRecord>();
+    Microsoft.Extensions.Localization.IStringLocalizer<Pages>? localizer = null;
+    try { localizer = ServiceProvider.GetService<Microsoft.Extensions.Localization.IStringLocalizer<Pages>>(); } catch { }
+    // If the ViewModel requested focusing first invalid row, consume the id and focus client-side
+    var focusId = (vm as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel)?.ConsumeFocusFirstInvalid();
+    if (focusId != null)
+    {
+        try
+        {
+            _ = JS.InvokeVoidAsync("eval", $"document.getElementById('qe_booking_{focusId}')?.focus()");
+        }
+        catch { }
+    }
+}
+
+@if (vm == null)
+{
+    <div class="text-muted">No data</div>
+}
+else
+{
+    var hasPixelWidths = vm.Columns?.Any(c => !string.IsNullOrWhiteSpace(c.Width) && c.Width.Trim().EndsWith("px", StringComparison.OrdinalIgnoreCase)) ?? false;
+    <table class="fm-table wide @(hasPixelWidths ? "fixed-layout" : null)">
+        <thead>
+            <tr>
+                @{
+                    // Helper to get title/width from vm.Columns by index with fallback
+                    string GetTitle(int idx, string fallback)
+                    {
+                        if (vm.Columns != null && vm.Columns.Count > idx)
+                            return vm.Columns[idx].Title ?? fallback;
+                        return fallback;
+                    }
+                    string? GetWidth(int idx)
+                    {
+                        if (vm.Columns != null && vm.Columns.Count > idx)
+                            return vm.Columns[idx].Width;
+                        return null;
+                    }
+                    var dateTitle = GetTitle(1, localizer != null ? (localizer["List_Th_Date"].Value ?? "Date") : "Date");
+                    var amountTitle = GetTitle(2, localizer != null ? (localizer["List_Th_Amount"].Value ?? "Amount") : "Amount");
+                    var recipientTitle = GetTitle(3, localizer != null ? (localizer["List_Th_Recipient"].Value ?? "Recipient") : "Recipient");
+                    var subjectTitle = GetTitle(4, localizer != null ? (localizer["List_Th_Subject"].Value ?? "Subject") : "Subject");
+                    var statusTitle = GetTitle(7, localizer != null ? (localizer["List_Th_Status"].Value ?? "Status") : "Status");
+                }
+                @* Headers aligned with quick-edit columns: BookingDate, Valuta, Amount, BookingDescription, Recipient, Purpose, Actions *@
+                <th>@(localizer != null ? localizer["List_Th_BookingDate"].Value : "Booking date")</th>
+                <th>@(localizer != null ? localizer["List_Th_Valuta"].Value : "Valuta")</th>
+                <th style="text-align:right;">@(localizer != null ? localizer["List_Th_Amount"].Value : "Amount")</th>
+                <th>@(localizer != null ? localizer["List_Th_BookingDescription"].Value : "Booking description")</th>
+                <th>@(localizer != null ? localizer["List_Th_Recipient"].Value : "Recipient")</th>
+                <th>@(localizer != null ? localizer["List_Th_Purpose"].Value : "Purpose")</th>
+                <th>@(localizer != null ? localizer["List_Th_Status"].Value : "Status")</th>
+                <th style="width:6rem">@(localizer != null ? (localizer["List_Th_Actions"].ResourceNotFound ? "Actions" : localizer["List_Th_Actions"].Value) : "Actions")</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                var renderedCols = 8; // BookingDate, Valuta, Amount, BookingDescription, Recipient, Purpose, Status, Actions
+            }
+            @for (int idx = 0; idx < vm.Items.Count; idx++)
+            {
+                var item = vm.Items[idx];
+                var rec = records.FirstOrDefault(r => (r.Item as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntryItem)?.Id == item.Id);
+                var editable = vm.IsRowEditable(item);
+                var isMuted = item.Status == FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus.AlreadyBooked;
+                var rowStyle = isMuted ? "cursor:pointer;opacity:.6;" : "cursor:pointer;";
+
+                <tr @key="item.Id" class="@(isMuted ? "muted-row" : null)" style="@rowStyle">
+                    @* Booking date *@
+                    <td style="text-align:left;vertical-align:middle;">
+                        @if (editable)
+                        {
+                            var bdVal = vm.GetEditValue(item.Id, "BookingDate");
+                            DateTime? bd = null;
+                            if (bdVal is DateTime bdt) bd = bdt;
+                            else if (bdVal != null && DateTime.TryParse(bdVal.ToString(), out var pb)) bd = pb;
+                            var bdInput = bd.HasValue ? bd.Value.ToString("yyyy-MM-dd") : string.Empty;
+                            <input id="qe_booking_@item.Id" type="date" class="form-control form-control-sm" value="@bdInput" @onchange="(ChangeEventArgs e) => {
+                                var s = e?.Value?.ToString() ?? string.Empty;
+                                if (DateTime.TryParse(s, out var dt)) OnDateChanged(new ChangeEventArgs{Value = s}, item.Id); else OnDateChanged(new ChangeEventArgs{Value = null}, item.Id);
+                            }" />
+                        }
+                        else
+                        {
+                            <span>@item.BookingDate.ToString("d")</span>
+                        }
+                    </td>
+
+                    @* Valuta (value date) *@
+                    <td style="text-align:left;vertical-align:middle;">
+                        @if (editable)
+                        {
+                            var editVal = vm.GetEditValue(item.Id, "ValutaDate");
+                            DateTime? valDate = item.ValutaDate;
+                            if (editVal != null)
+                            {
+                                // try unbox or parse
+                                if (editVal is DateTime d) valDate = d;
+                                else if (DateTime.TryParse(editVal.ToString(), out var pd)) valDate = pd;
+                            }
+
+                            string inputVal = valDate.HasValue ? valDate.Value.ToString("yyyy-MM-dd") : string.Empty;
+                            <input type="date" class="form-control form-control-sm" value="@inputVal" @onchange="@(e => OnValutaChanged(e, item.Id))" />
+                        }
+                        else
+                        {
+                            <span>@(item.ValutaDate.HasValue ? item.ValutaDate.Value.ToString("d") : string.Empty)</span>
+                        }
+                    </td>
+
+                    @* Amount *@
+                    <td style="text-align:right;vertical-align:middle;">
+                        @if (editable)
+                        {
+                            <input class="form-control form-control-sm text-end" value="@((vm.GetEditValue(item.Id, "Amount") as decimal?)?.ToString())" @oninput="(e) => OnAmountChanged(e, item.Id)" />
+                        }
+                        else
+                        {
+                            <span>@item.Amount.ToString("C")</span>
+                        }
+                    </td>
+
+                    @* Booking description *@
+                    <td style="vertical-align:middle;">
+                        @if (editable)
+                        {
+                            <input class="form-control form-control-sm" value='@(vm.GetEditValue(item.Id, "BookingDescription") as string ?? item.BookingDescription ?? string.Empty)' @oninput="@(e => OnBookingDescriptionChanged(e, item.Id))" />
+                        }
+                        else
+                        {
+                            <span>@(item.BookingDescription ?? string.Empty)</span>
+                        }
+                    </td>
+
+                    @* Recipient *@
+                    <td style="vertical-align:middle;">
+                        @if (editable)
+                        {
+                            <input class="form-control form-control-sm" value='@(vm.GetEditValue(item.Id, "RecipientName") as string ?? item.RecipientName ?? string.Empty)' @oninput="(e) => OnRecipientChanged(e, item.Id)" />
+                        }
+                        else
+                        {
+                            <span>@(string.IsNullOrWhiteSpace(item.RecipientName) ? string.Empty : item.RecipientName)</span>
+                        }
+                    </td>
+
+                    @* Purpose / Subject (Verwendungszweck) *@
+                    <td style="vertical-align:middle;">
+                        @if (editable)
+                        {
+                            <input class="form-control form-control-sm" value='@(vm.GetEditValue(item.Id, "Subject") as string ?? item.Subject ?? string.Empty)' @oninput="(e) => OnSubjectChanged(e, item.Id)" />
+                        }
+                        else
+                        {
+                            <span>@(string.IsNullOrWhiteSpace(item.Subject) ? string.Empty : item.Subject)</span>
+                        }
+                    </td>
+
+                    <td style="vertical-align:middle;">
+                        <span>@item.Status.ToString()</span>
+                    </td>
+
+                    <td style="vertical-align:middle;display:flex;gap:.25rem;align-items:center;">
+                        @if (editable)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="() => ResetRow(item.Id)">@(localizer != null ? localizer["Ribbon_Reset"].Value : "Reset")</button>
+                        }
+                        @* Show Reset Dup only for items marked as AlreadyBooked (duplicate) *@
+                        @if (isMuted)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-secondary" title="@(localizer != null ? localizer["Ribbon_ResetDuplicate"].Value : "Reset duplicate status")" style="pointer-events:auto;" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="@(() => ResetDuplicateStatus(item.Id))" @onpointerdown="@(() => ResetDuplicateStatus(item.Id))">@(localizer != null ? localizer["Ribbon_ResetDuplicate"].Value : "Reset Dup")</button>
+                        }
+                    </td>
+                </tr>
+
+                @if (rec != null && !string.IsNullOrWhiteSpace(rec.Hint))
+                {
+                    <tr>
+                        <td colspan="@renderedCols" style="padding:.25rem .6rem .75rem .6rem;color:var(--muted);font-size:.9rem;">@((localizer != null) ? (localizer[rec.Hint] ?? rec.Hint) : rec.Hint)</td>
+                    </tr>
+                }
+            }
+
+            @if (vm.Loading)
+            {
+                <tr><td colspan="99" style="opacity:.6;">@("Loading...")</td></tr>
+            }
+        </tbody>
+    </table>
+}

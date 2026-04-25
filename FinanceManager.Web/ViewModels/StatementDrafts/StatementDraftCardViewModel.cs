@@ -2,6 +2,7 @@ using System.Globalization;
 using FinanceManager.Shared.Dtos.Statements;
 using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.Localization;
+using System.Text.Json;
 
 namespace FinanceManager.Web.ViewModels.StatementDrafts;
 
@@ -18,6 +19,106 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
     /// <param name="sp">Service provider used to resolve dependencies (API client, navigation, localizer, etc.).</param>
     public StatementDraftCardViewModel(IServiceProvider sp) : base(sp)
     {
+    }
+
+    /// <summary>
+    /// Saves quick-edit changes collected from the embedded entries list.
+    /// Performs client-side validation, calls batch update API and handles per-entry errors.
+    /// </summary>
+    public async Task SaveQuickEditAsync()
+    {
+        if (DraftId == Guid.Empty) return;
+        if (EmbeddedList is not StatementDraftEntriesListViewModel vm) return;
+
+        // client-side validate changed rows
+        var ok = vm.ValidateAllChangedRows();
+        if (!ok)
+        {
+            // do not proceed if client validation fails; hints are already applied
+            return;
+        }
+
+        // collect changes and map to shared DTO
+        var changes = vm.CollectChangedRows();
+        if (changes == null || changes.Count == 0) return;
+
+        var req = new BatchUpdateRequestDto();
+        foreach (var kv in changes)
+        {
+            var upd = new EntryUpdateDto { EntryId = kv.Key, Fields = new Dictionary<string, object?>() };
+            foreach (var f in kv.Value)
+            {
+                upd.Fields[f.Key] = f.Value;
+            }
+            req.Updates.Add(upd);
+        }
+
+        Loading = true; RaiseStateChanged();
+        try
+        {
+            var (success, error) = await ApiClient.StatementDrafts_BatchUpdateDetailedAsync(DraftId, req, CancellationToken.None);
+            if (error != null)
+            {
+                // Map per-entry field errors to DraftValidationResultDto for embedded list to consume
+                var dv = new DraftValidationResultDto(DraftId, false, error.Errors.SelectMany(e => e.FieldErrors.Select(fe => new DraftValidationMessageDto(fe.Field /* code */, "Error", fe.Message, DraftId, e.EntryId))).ToList());
+                if (EmbeddedList is StatementDraftEntriesListViewModel evm)
+                {
+                    evm.ApplyValidationMessages(dv);
+                        // request UI focus on the first invalid row so user can correct it
+                        evm.RequestFocusFirstInvalid();
+                }
+                // also set a generic card-level error (localized when possible)
+                try
+                {
+                    var localizer = ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>();
+                    var msg = localizer["StatementDrafts_SaveQuickEdit_RowsFailedValidation"].Value;
+                    SetError(null, string.IsNullOrWhiteSpace(msg) ? "Some rows failed validation" : msg);
+                }
+                catch
+                {
+                    // best-effort localization; fallback to a reasonable English message
+                    SetError(null, "Some rows failed validation");
+                }
+                return;
+            }
+
+            if (success != null)
+            {
+                var updated = await ApiClient.StatementDrafts_GetAsync(DraftId, headerOnly: false, ct: CancellationToken.None);
+                if (updated != null)
+                {
+                    Draft = updated;
+                    // recreate embedded list to pick up latest entries
+                    var entriesVm = new StatementDraftEntriesListViewModel(ServiceProvider, Draft.DraftId);
+                    EmbeddedList = entriesVm;
+                    await entriesVm.InitializeAsync();
+                }
+            }
+
+            // end quick-edit
+            await vm.EndQuickEditAsync();
+            RaiseUiActionRequested("Saved", DraftId.ToString());
+        }
+        catch (Exception ex)
+        {
+            SetError(null, ex.Message);
+        }
+        finally
+        {
+            Loading = false; RaiseStateChanged();
+        }
+    }
+
+    /// <summary>
+    /// Cancels quick-edit session and discards local edits.
+    /// </summary>
+    public async Task CancelQuickEditAsync()
+    {
+        if (EmbeddedList is StatementDraftEntriesListViewModel vm)
+        {
+            await vm.EndQuickEditAsync();
+            RaiseStateChanged();
+        }
     }
 
     /// <summary>
@@ -172,6 +273,8 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
 
             // Expose entries via EmbeddedList which will page-load entries from API
             var entriesVm = new StatementDraftEntriesListViewModel(ServiceProvider, Draft.DraftId);
+            // ensure parent card VM is notified when the embedded list state changes so Ribbon and UI update
+            entriesVm.StateChanged += (_, __) => RaiseStateChanged();
             EmbeddedList = entriesVm;
             await entriesVm.InitializeAsync();
         }
@@ -241,9 +344,11 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, navItems));
 
         // Manage group
-        var manageItems = new List<UiRibbonAction>
+            // Manage group (primary actions)
+            var manageItems = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, false, null, new Func<Task>(async () => { await SaveAsync(); })),
+            // Save should be enabled when there are pending changes (including create-mode selections)
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, new Func<Task>(async () => { await SaveAsync(); })),
             new UiRibbonAction("Add", localizer["Ribbon_NewEntry"].Value, "<svg><use href='/icons/sprite.svg#new'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { Navigation.NavigateTo($"/card/statement-drafts/entries/new?draftId={DraftId}"); return Task.CompletedTask; })),
             new UiRibbonAction("Book", localizer["Ribbon_Book"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(async () => { await BookAsync(); })),
             new UiRibbonAction("DeleteDraft", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })),
@@ -251,6 +356,34 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
             new UiRibbonAction("Validate", localizer["Ribbon_Validate"].Value, "<svg><use href='/icons/sprite.svg#check'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(async () => { await ValidateAsync(); }))
         };
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, manageItems));
+
+        // QuickEdit group: toggle/save/cancel placed in their own group for clarity
+        var quickEditItems = new List<UiRibbonAction>
+        {
+            // QuickEdit toggle — hidden while quick-edit is already active (save/cancel are shown instead)
+            new UiRibbonAction("ToggleQuickEdit", localizer["Ribbon_QuickEdit"].Value, "<svg><use href='/icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Large, Draft == null, null, new Func<Task>(async () =>
+            {
+                if (EmbeddedList is StatementDraftEntriesListViewModel evm)
+                {
+                    if (evm.IsQuickEditActive)
+                    {
+                        await evm.EndQuickEditAsync();
+                    }
+                    else
+                    {
+                        await evm.BeginQuickEditAsync();
+                    }
+                    RaiseStateChanged();
+                }
+            })) { Hidden = EmbeddedList is StatementDraftEntriesListViewModel toggleEvm && toggleEvm.IsQuickEditActive },
+            new UiRibbonAction("SaveQuickEdit", localizer["Ribbon_SaveQuickEdit"].Value, (Loading ? "<svg class='spin'><use href='/icons/sprite.svg#spinner'/></svg>" : "<svg><use href='/icons/sprite.svg#save'/></svg>"), UiRibbonItemSize.Small,
+                // compute Disabled dynamically using embedded list state
+                !(EmbeddedList is StatementDraftEntriesListViewModel sevm && sevm.HasChangedRows() && sevm.ChangedRowsAreValid() && !Loading),
+                null, new Func<Task>(async () => { await SaveQuickEditAsync(); })) { FileCallback = null, Hidden = !(EmbeddedList is StatementDraftEntriesListViewModel saveEvm && saveEvm.IsQuickEditActive) },
+            new UiRibbonAction("CancelQuickEdit", localizer["Ribbon_CancelQuickEdit"].Value, "<svg><use href='/icons/sprite.svg#close'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(async () => { await CancelQuickEditAsync(); })) { Hidden = !(EmbeddedList is StatementDraftEntriesListViewModel cancelEvm && cancelEvm.IsQuickEditActive) }
+        };
+        tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_QuickEdit"].Value, quickEditItems));
+        // Additional comment for clarity
 
         // Statement group (Original view / download)
         var stmtItems = new List<UiRibbonAction>

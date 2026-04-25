@@ -25,11 +25,12 @@
                 <li><NavLink href="/list/securities">@L["Nav_Securities"]</NavLink></li>
                 <li><NavLink href="/list/budget/purposes">@L["Nav_BudgetPurposes"]</NavLink></li>
                 <li><NavLink href="/reports">@L["Nav_Reports"]</NavLink></li>
-                <li><NavLink href="/card/setup">@L["Nav_Setup"]</NavLink></li>
+                <li><NavLink href="/card/setup">@L["Nav_Setup"]</NavLink></li>                
                 @if (CurrentUser.IsAdmin)
                 {
                     <li><NavLink href="/list/users">@L["Nav_Users"]</NavLink></li>
                 }
+                <li><NavLink href="/help">📖 @L["Nav_Help"]</NavLink></li>
             }
         </ul>
         <div class="user-area">

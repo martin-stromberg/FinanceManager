@@ -239,7 +239,7 @@ namespace FinanceManager.Web.ViewModels.Common
                 if (!allowed) return null;
 
                 // Upload attachment using shared API client
-                var api = ServiceProvider.GetRequiredService<Shared.IApiClient>();
+                var api = ServiceProvider.GetRequiredService<FinanceManager.Shared.IApiClient>();
                 var parent = GetSymbolParent();
                 var dto = await api.Attachments_UploadFileAsync((short)parent.Kind, parent.ParentId, stream, fileName, contentType, null, (short)FinanceManager.Domain.Attachments.AttachmentRole.Symbol);
                 if (dto != null)

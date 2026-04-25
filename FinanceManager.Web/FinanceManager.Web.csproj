@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -10,6 +10,13 @@
 
   <ItemGroup>
     <None Include="wwwroot\css\app.SetupNotificationsTab.css" />
+    <!-- Ensure help pages HTML/JSON files are copied to output -->
+    <None Include="wwwroot\help\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="wwwroot\help\de\f004b.html" />
+    <Content Remove="wwwroot\help\en\f004b.html" />
   </ItemGroup>
 
   <ItemGroup>
@@ -53,9 +60,17 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="wwwroot\help\de\f001.html">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
   <Target Name="CopyInitFiles" BeforeTargets="Build">
 	  <Exec Command="if exist &quot;$(ProjectDir)init&quot; rmdir /s /q &quot;$(ProjectDir)init\&quot;" />
 	  <Exec Command="if exist &quot;$(TargetDir)init&quot; rmdir /s /q &quot;$(TargetDir)init\&quot;" />  
   </Target>
 
-</Project>
+  </Project>
+
+

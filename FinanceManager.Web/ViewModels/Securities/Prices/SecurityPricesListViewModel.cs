@@ -13,7 +13,7 @@ namespace FinanceManager.Web.ViewModels.Securities.Prices;
 /// </summary>
 public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPriceDto>
 {
-    private readonly Shared.IApiClient _api;
+    private readonly FinanceManager.Shared.IApiClient _api;
     private readonly IStringLocalizer<Pages> _L;
     private readonly NavigationManager _nav;
     private const int PageSize = 100;
@@ -37,7 +37,7 @@ public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPric
     /// <param name="securityId">Identifier of the security to load prices for.</param>
     public SecurityPricesListViewModel(IServiceProvider sp, Guid securityId) : base(sp)
     {
-        _api = sp.GetRequiredService<Shared.IApiClient>();
+        _api = sp.GetRequiredService<FinanceManager.Shared.IApiClient>();
         _L = sp.GetRequiredService<IStringLocalizer<Pages>>();
         _nav = sp.GetRequiredService<NavigationManager>();
         SecurityId = securityId;

@@ -1877,6 +1877,91 @@
             <param name="replaceExisting">When true, existing data may be replaced by the import.</param>
             <param name="ct">Cancellation token.</param>
         </member>
+        <member name="T:FinanceManager.Application.Statements.Dtos.BatchUpdateRequestDto">
+            <summary>
+            Request DTO for batch updating draft entries.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.BatchUpdateRequestDto.Updates">
+            <summary>
+            List of entry updates to apply.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Statements.Dtos.EntryUpdateDto">
+            <summary>
+            Represents an update for a single draft entry.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.EntryUpdateDto.EntryId">
+            <summary>
+            Identifier of the entry to update.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.EntryUpdateDto.Fields">
+            <summary>
+            Mapping of field key to new value. Unknown keys are ignored by the service.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Statements.Dtos.BatchUpdateSuccessResponseDto">
+            <summary>
+            Success response returned when a batch update has been applied.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.BatchUpdateSuccessResponseDto.Success">
+            <summary>
+            Always true for success responses.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.BatchUpdateSuccessResponseDto.UpdatedDraft">
+            <summary>
+            Optional updated draft snapshot. Type is kept generic to avoid tight coupling.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Statements.Dtos.BatchUpdateErrorResponseDto">
+            <summary>
+            Error response returned when validation fails for one or more entries.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.BatchUpdateErrorResponseDto.Success">
+            <summary>
+            Always false for error responses.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.BatchUpdateErrorResponseDto.Errors">
+            <summary>
+            Per-entry validation errors.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Statements.Dtos.EntryErrorDto">
+            <summary>
+            Validation errors for a single entry.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.EntryErrorDto.EntryId">
+            <summary>
+            Entry identifier the errors belong to.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.EntryErrorDto.FieldErrors">
+            <summary>
+            List of field-level errors.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Statements.Dtos.FieldErrorDto">
+            <summary>
+            Field-level validation error.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.FieldErrorDto.Field">
+            <summary>
+            Field key that failed validation.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.FieldErrorDto.Message">
+            <summary>
+            Human-readable error message (may be localized by the caller).
+            </summary>
+        </member>
         <member name="T:FinanceManager.Application.Statements.IStatementDraftService">
             <summary>
             Service to create and manage statement import drafts and their entries.
@@ -2098,6 +2183,16 @@
             <param name="bookingDescription">Optional booking description.</param>
             <param name="ct">Cancellation token.</param>
             <returns>The updated <see cref="T:FinanceManager.Shared.Dtos.Statements.StatementDraftEntryDto"/> when successful; otherwise <c>null</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IStatementDraftService.ApplyBatchEntryUpdatesAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto,System.Threading.CancellationToken)">
+            <summary>
+            Applies a batch of entry updates atomically. Validates each update and either commits all changes or none.
+            </summary>
+            <param name="draftId">Identifier of the draft.</param>
+            <param name="ownerUserId">Owner user identifier performing the update.</param>
+            <param name="request">Batch update request DTO.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A tuple containing success flag and either success or error response DTOs.</returns>
         </member>
         <member name="M:FinanceManager.Application.Statements.IStatementDraftService.SetEntryArchiveSavingsPlanOnBookingAsync(System.Guid,System.Guid,System.Boolean,System.Guid,System.Threading.CancellationToken)">
             <summary>

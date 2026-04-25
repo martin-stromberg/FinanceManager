@@ -10,7 +10,7 @@ namespace FinanceManager.Web.ViewModels.Setup;
 /// </summary>
 public sealed class SetupNotificationsViewModel : BaseViewModel
 {
-    private readonly Shared.IApiClient _api;
+    private readonly FinanceManager.Shared.IApiClient _api;
 
     /// <summary>
     /// Initializes a new instance of <see cref="SetupNotificationsViewModel"/>.
@@ -18,7 +18,7 @@ public sealed class SetupNotificationsViewModel : BaseViewModel
     /// <param name="sp">Service provider used to resolve required services (API client, localization etc.).</param>
     public SetupNotificationsViewModel(IServiceProvider sp) : base(sp)
     {
-        _api = sp.GetRequiredService<Shared.IApiClient>();
+        _api = sp.GetRequiredService<FinanceManager.Shared.IApiClient>();
     }
 
     /// <summary>

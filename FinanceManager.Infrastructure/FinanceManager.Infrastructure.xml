@@ -2343,6 +2343,18 @@
         <member name="M:FinanceManager.Infrastructure.Migrations.BankAccount_SecurityProcessingEnabled.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddIbanUniqueConstraint">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddIbanUniqueConstraint.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddIbanUniqueConstraint.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddIbanUniqueConstraint.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Notifications.HolidayProviderResolver">
             <summary>
             Resolves an implementation of <see cref="T:FinanceManager.Application.Notifications.IHolidayProvider"/> for a requested <see cref="T:FinanceManager.Domain.Notifications.HolidayProviderKind"/>.
@@ -3956,6 +3968,32 @@
             <returns>An enumerable collection of strings, each representing a non-empty line or table row extracted from the PDF.
             The collection will be empty if no content is found.</returns>
         </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Files.Sparkasse_PDF_StatementFile">
+            <summary>
+            Represents a PDF statement file specific to Sparkasse; initially a simple PdfStatementFile wrapper.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.Sparkasse_PDF_StatementFile.#ctor">
+            <summary>
+            Default constructor.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.Sparkasse_PDF_StatementFile.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.Files.Sparkasse_PDF_StatementFile})">
+            <summary>
+            Creates a new instance using the provided logger.
+            </summary>
+            <param name="logger">Logger to pass to the base PdfStatementFile.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Files.Sparkasse_PDF_StatementFile.Load(System.String,System.Byte[])">
+            <summary>
+            Loads the file and uses a heuristic to verify it's a Sparkasse PDF.
+            Detection: requires at least two lines that contain only hyphens ('-') and any line
+            before the first such separator line must start with "Sparkasse" (case-insensitive).
+            </summary>
+            <param name="fileName">Original filename.</param>
+            <param name="fileBytes">File contents.</param>
+            <returns>True when the file was loaded and matches the Sparkasse heuristic.</returns>
+        </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Files.StatementFileFactory">
             <summary>
             Provides functionality to load statement files using a set of supported file types.
@@ -4348,6 +4386,42 @@
             <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the parsed details if parsing is successful; otherwise, <see
             langword="null"/> if the file could not be parsed.</returns>
         </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Parsers.Sparkasse_PDF_StatementFileParser">
+            <summary>
+            Statement file reader implementation for Sparkasse PDF exports.
+            Initially based on the ING template – will be adapted later to Sparkasse specifics.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Sparkasse_PDF_StatementFileParser.#ctor(Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.Parsers.Sparkasse_PDF_StatementFileParser})">
+            <summary>
+            Initializes a new instance of <see cref="T:FinanceManager.Infrastructure.Statements.Parsers.Sparkasse_PDF_StatementFileParser"/>.
+            </summary>
+            <param name="logger">Logger instance used for parsing diagnostics.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Sparkasse_PDF_StatementFileParser.CanParse(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
+            <summary>
+            Determines whether the specified statement file is supported by this parser.
+            </summary>
+            <param name="statementFile">Statement file to evaluate.</param>
+            <returns>True if the file is a Sparkasse PDF; otherwise false.</returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Sparkasse_PDF_StatementFileParser.OnBeforeParseLine(System.String@)">
+            <summary>
+            Performs preprocessing on a line of text before it is parsed, allowing for custom handling based on the
+            current parsing mode.
+            </summary>
+            <remarks>Override this method to implement custom logic that should occur before each line is
+            parsed. This can be used to detect or extract specific information from the input lines based on the current
+            parsing context.</remarks>
+            <param name="line">A reference to the line of text to be processed before parsing. The value may be modified by the method.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Sparkasse_PDF_StatementFileParser.ProcessFoundRecord(FinanceManager.Application.Statements.StatementMovement)">
+            <summary>
+            Processes a found record and sanitizes PDF table derived values.
+            </summary>
+            <param name="rec">Record to process.</param>
+            <returns>Enumerable with processed record(s).</returns>
+        </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser">
             <summary>
             Base class for template-driven statement file readers.
@@ -4403,6 +4477,50 @@
             Template XML documents used for parsing. Implementations must provide one or more templates.
             </summary>
         </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ParseMode">
+            <summary>
+            Specifies the available modes for parsing input data.
+            </summary>
+            <remarks>Use this enumeration to indicate how input should be interpreted during parsing
+            operations. Each value represents a distinct parsing strategy, such as ignoring input, parsing key-value
+            pairs, or handling tabular data.</remarks>
+        </member>
+        <member name="F:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ParseMode.None">
+            <summary>
+            Represents the absence of a value or a default state.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ParseMode.Ignore">
+            <summary>
+            Represents a mode where input lines are ignored until a specific end condition is met. In this mode, lines are typically skipped
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ParseMode.KeyValue">
+            <summary>
+            Represents a key/value pair consisting of two related objects.
+            </summary>
+            <remarks>This type is commonly used to store and transfer pairs of associated data,
+            such as entries in a dictionary or configuration setting. The key is typically used for lookup or
+            identification, while the value holds the associated data.</remarks>
+        </member>
+        <member name="F:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ParseMode.Table">
+            <summary>
+            Represents a table structure for organizing and displaying data in rows and columns.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ParseMode.TableHeader">
+            <summary>
+            Represents the header section of a table, typically containing column titles or labels.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ParseMode.DynamicTable">
+            <summary>
+            Represents a table structure that can be dynamically defined or modified at runtime.
+            </summary>
+            <remarks>Use this class to create tables whose schema or content may change during
+            execution, such as for dynamic data grids or user-configurable layouts. The specific behavior and
+            capabilities depend on the implementation.</remarks>
+        </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.VariableMode">
             <summary>
             Controls how template variables are applied when multiple values are encountered.
@@ -4422,11 +4540,24 @@
             Assign the parsed value only when the existing value is empty or null.
             </summary>
         </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.CurrentMode">
+            <summary>
+            Gets the current parsing mode used by the parser.
+            </summary>
+        </member>
         <member name="F:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.CurrentSection">
             <summary>
             The currently active XML section node from the loaded template used to control parsing behaviour.
             Implementations may inspect this node when extending parsing logic.
             </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.OnBeforeParseLine(System.String@)">
+            <summary>
+            Invoked before a line is parsed, allowing derived classes to perform custom pre-processing or validation.
+            </summary>
+            <remarks>Override this method in a derived class to implement custom logic that should execute
+            before parsing each line. The base implementation throws a NotImplementedException.</remarks>
+            <param name="line">The line of text that is about to be parsed. Cannot be null.</param>
         </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.OnTableFinished">
             <summary>
@@ -4541,6 +4672,13 @@
             Service that handles creation, classification and booking of statement drafts based on parsed statement files.
             Provides operations to create drafts from uploaded files, manage draft entries and perform booking into postings.
             </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftService.ApplyBatchEntryUpdatesAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto,System.Threading.CancellationToken)">
+            <summary>
+            Applies a batch of entry updates atomically. Validates inputs and applies all changes in a single DB transaction.
+            Returns per-entry field errors when validation fails; in that case no changes are committed.
+            </summary>
+            <inheritdoc />
         </member>
         <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftService.NormalizeUmlauts(System.String)">
             <summary>

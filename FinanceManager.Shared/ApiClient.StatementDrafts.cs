@@ -147,6 +147,89 @@ public partial class ApiClient
     }
 
     /// <summary>
+    /// Calls the backend batch update endpoint for statement draft entries.
+    /// Returns the success DTO on 200 or structured per-entry errors on 400.
+    /// Uses explicit serialization to avoid empty-body Json deserialization errors.
+    /// </summary>
+    public async Task<(FinanceManager.Shared.Dtos.Statements.BatchUpdateSuccessResponseDto? Success, FinanceManager.Shared.Dtos.Statements.BatchUpdateErrorResponseDto? Error)> StatementDrafts_BatchUpdateDetailedAsync(Guid draftId, FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto req, CancellationToken ct = default)
+    {
+        // Some servers expect date fields in a specific string format. To avoid
+        // "Invalid date format" errors for boxed DateTime values inside the
+        // generic Fields dictionary, convert DateTime/DateTimeOffset values to
+        // a stable date-only string (ISO yyyy-MM-dd) before serialization.
+        var sanitized = new FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto();
+        if (req?.Updates != null)
+        {
+            sanitized.Updates = new System.Collections.Generic.List<FinanceManager.Shared.Dtos.Statements.EntryUpdateDto>();
+            foreach (var u in req.Updates)
+            {
+                var nu = new FinanceManager.Shared.Dtos.Statements.EntryUpdateDto { EntryId = u.EntryId, Fields = new System.Collections.Generic.Dictionary<string, object?>(StringComparer.Ordinal) };
+                if (u.Fields != null)
+                {
+                    foreach (var kv in u.Fields)
+                    {
+                        if (kv.Value is DateTime dt)
+                        {
+                            nu.Fields[kv.Key] = dt.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                        }
+                        else if (kv.Value is DateTimeOffset dto)
+                        {
+                            nu.Fields[kv.Key] = dto.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                        }
+                        else
+                        {
+                            nu.Fields[kv.Key] = kv.Value;
+                        }
+                    }
+                }
+                sanitized.Updates.Add(nu);
+            }
+        }
+
+        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        using var content = new StringContent(JsonSerializer.Serialize(sanitized, options), System.Text.Encoding.UTF8, "application/json");
+        var resp = await _http.PostAsync($"/api/statement-drafts/{draftId}/entries/batch-update", content, ct);
+        if (resp.IsSuccessStatusCode)
+        {
+            try
+            {
+                var ok = await resp.Content.ReadFromJsonAsync<FinanceManager.Shared.Dtos.Statements.BatchUpdateSuccessResponseDto>(cancellationToken: ct);
+                return (ok, null);
+            }
+            catch
+            {
+                // successful but no body -> return a success marker
+                return (new FinanceManager.Shared.Dtos.Statements.BatchUpdateSuccessResponseDto { UpdatedDraft = null }, null);
+            }
+        }
+
+        // Try parse structured error response (per-entry errors)
+        try
+        {
+            var err = await resp.Content.ReadFromJsonAsync<FinanceManager.Shared.Dtos.Statements.BatchUpdateErrorResponseDto>(cancellationToken: ct);
+            if (err != null)
+            {
+                return (null, err);
+            }
+        }
+        catch
+        {
+            
+            // ignore parse errors
+        }
+
+        try
+        {
+            await EnsureSuccessOrSetErrorAsync(resp);
+        }
+        catch
+        {
+            // EnsureSuccessOrSetErrorAsync populated LastError/LastErrorCode
+        }
+        return (null, null);
+    }
+
+    /// <summary>
     /// Updates core fields of a draft entry (dates, amount, textual fields).
     /// </summary>
     /// <param name="draftId">Draft identifier.</param>

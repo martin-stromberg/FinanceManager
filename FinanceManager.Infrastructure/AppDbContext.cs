@@ -123,6 +123,10 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.HasIndex(x => new { x.OwnerUserId, x.Name }).IsUnique();
             b.Property(x => x.Name).HasMaxLength(150).IsRequired();
             b.Property(x => x.Iban).HasMaxLength(34);
+            // ✅ FIXED: Add unique index for IBAN (per user, only when IBAN is provided)
+            b.HasIndex(x => new { x.OwnerUserId, x.Iban })
+                .IsUnique()
+                .HasFilter("[Iban] IS NOT NULL");
             // Symbol: optional attachment reference
             b.Property(x => x.SymbolAttachmentId);
             b.HasIndex(x => x.SymbolAttachmentId);

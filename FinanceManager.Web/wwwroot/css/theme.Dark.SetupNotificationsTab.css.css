@@ -1,4 +1,20 @@
 /* ========================================================================
    theme.Dark.Home.css - Dark Theme für Notifications Panel of Setup Page
    ======================================================================== */
+/* ========================================================================
+   theme.Dark.SetupNotificationsTab.css - Dark theme overrides for Setup Notifications tab
+   ======================================================================== */
+
+body.dark-theme .setup-notifications-tab {
+    background-color: #1e1e1f;
+    color: #e6e6e6;
+}
+
+/* keep specific controls readable in dark mode */
+body.dark-theme .setup-notifications-tab .form-row input,
+body.dark-theme .setup-notifications-tab .form-row select {
+    background: #2b2b2b;
+    color: #e6e6e6;
+    border: 1px solid #3a3a3a;
+}
 

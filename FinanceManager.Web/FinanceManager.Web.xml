@@ -980,6 +980,33 @@
             Resource base name: Controller (see `Resources/Controller.*.resx`).
             </summary>
         </member>
+        <member name="T:FinanceManager.Web.Controllers.HelpController">
+            <summary>
+            Controller for serving help documentation pages and content.
+            Provides static HTML files and markdown content for help documentation.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.HelpController.#ctor(Microsoft.AspNetCore.Hosting.IWebHostEnvironment,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.HelpController})">
+            <summary>
+            Initializes a new instance of HelpController.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.HelpController.GetHelpPage(System.String,System.String)">
+            <summary>
+            Gets a help documentation page by language and feature ID (legacy HTML endpoint).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.HelpController.GetMarkdown(System.String,System.String)">
+            <summary>
+            Gets the markdown content for a feature by language and feature ID.
+            Used by the Blazor help page view component.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.HelpController.GetSearchIndex(System.String)">
+            <summary>
+            Gets the search index for help pages by language.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.Controllers.HomeKpisController">
             <summary>
             Manages Home KPI widgets for the signed-in user: list, create, update, delete and retrieve single entries.
@@ -1772,6 +1799,26 @@
             Returns 404 Not Found when the category cannot be found or the operation is invalid.
             </returns>
             <exception cref="T:System.ArgumentException">Thrown by the underlying service when arguments are invalid (mapped to 404).</exception>
+        </member>
+        <member name="T:FinanceManager.Web.Controllers.StatementDraftEntriesController">
+            <summary>
+            Controller for operations on statement draft entries (batch updates for QuickEdit feature).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftEntriesController.#ctor(FinanceManager.Application.Statements.IStatementDraftService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.StatementDraftEntriesController})">
+            <summary>
+            Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.StatementDraftEntriesController"/>.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftEntriesController.BatchUpdate(System.Guid,FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto,System.Threading.CancellationToken)">
+            <summary>
+            Applies a batch update for entries belonging to the specified draft.
+            Returns 200 on success or 400 with per-entry validation errors.
+            </summary>
+            <param name="draftId">Draft identifier.</param>
+            <param name="req">Batch update request DTO.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Action result.</returns>
         </member>
         <member name="T:FinanceManager.Web.Controllers.StatementDraftsController">
             <summary>
@@ -4894,6 +4941,51 @@
             Resets internal items and marks the list as able to load more pages. Callers typically call this before performing a search.
             </summary>
         </member>
+        <member name="P:FinanceManager.Web.ViewModels.Common.BaseListViewModel`1.EditableFields">
+            <summary>
+            Gets the list of field keys that are editable in quick-edit mode.
+            Derived classes override to expose the editable field keys (e.g. "BookingDate", "Subject").
+            Default: empty (no editable fields).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Common.BaseListViewModel`1.IsQuickEditActive">
+            <summary>
+            When true the list is currently in quick-edit mode (UI should render editable controls).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Common.BaseListViewModel`1.IsRowEditable(System.Object)">
+            <summary>
+            Returns whether the specified row/item is editable in quick-edit mode.
+            Default implementation returns <c>false</c> — override in derived classes.
+            </summary>
+            <param name="item">Item instance as <see cref="T:System.Object"/>.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Common.BaseListViewModel`1.BeginQuickEditAsync">
+            <summary>
+            Begins quick-edit session. Default implementation flips <see cref="P:FinanceManager.Web.ViewModels.Common.BaseListViewModel`1.IsQuickEditActive"/> and completes.
+            Derived classes should override to initialize per-row edit tracking state.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Common.BaseListViewModel`1.EndQuickEditAsync">
+            <summary>
+            Ends quick-edit session. Default implementation clears the active flag. Derived classes may persist or discard changes.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Common.BaseListViewModel`1.CollectChangedRows">
+            <summary>
+            Collects changed rows as a mapping: EntryId -> (field -> newValue).
+            Default implementation returns an empty dictionary.
+            Derived classes providing quick-edit capabilities must override to return actual changed values.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Common.BaseListViewModel`1.ValidateRow(System.Object)">
+            <summary>
+            Validates a single row on the client side and returns field-level validation messages.
+            Default implementation returns no validation messages. Derived classes should implement domain-specific checks.
+            </summary>
+            <param name="item">The row item to validate.</param>
+            <returns>Enumerable of (Field, Message) tuples describing validation errors.</returns>
+        </member>
         <member name="T:FinanceManager.Web.ViewModels.Common.BooleanSelection">
             <summary>
             Selection helper used in some UI bindings to represent boolean choices.
@@ -5956,6 +6048,13 @@
             Optional file-change callback used for import-type actions. When set this callback is invoked
             with the <see cref="T:Microsoft.AspNetCore.Components.Forms.InputFileChangeEventArgs"/> when a file is selected.
             Kept as init-only for backwards compatibility with the positional constructor.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Common.UiRibbonAction.Hidden">
+            <summary>
+            When <c>true</c> the action is completely omitted from the rendered ribbon.
+            Use this to hide context-sensitive buttons that should not be visible in certain states
+            (e.g. hiding the "Start quick-edit" button while quick-edit is already active).
             </summary>
         </member>
         <member name="T:FinanceManager.Web.ViewModels.Common.UiRibbonTab">
@@ -9457,6 +9556,17 @@
             </summary>
             <param name="sp">Service provider used to resolve dependencies (API client, navigation, localizer, etc.).</param>
         </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel.SaveQuickEditAsync">
+            <summary>
+            Saves quick-edit changes collected from the embedded entries list.
+            Performs client-side validation, calls batch update API and handles per-entry errors.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel.CancelQuickEditAsync">
+            <summary>
+            Cancels quick-edit session and discards local edits.
+            </summary>
+        </member>
         <member name="P:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel.DraftId">
             <summary>
             Identifier of the currently loaded draft. <see cref="F:System.Guid.Empty"/> indicates none.
@@ -9550,6 +9660,84 @@
             this method will create the draft first and then apply pending values.
             </summary>
             <returns>True when save succeeded; otherwise false.</returns>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel.EditableFields">
+            <summary>
+            Fields that are editable in quick-edit mode for entries.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel.IsRowEditable(System.Object)">
+            <summary>
+            Returns whether the specified row/item is editable in quick-edit mode.
+            Entries with status AlreadyBooked are not editable.
+            </summary>
+            <param name="item">Row item instance.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel.BeginQuickEditAsync">
+            <summary>
+            Begins quick-edit session by preparing original and edit snapshots for currently loaded items.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel.EndQuickEditAsync">
+            <summary>
+            Ends quick-edit session. Default implementation clears edit snapshots.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel.GetEditValue(System.Guid,System.String)">
+            <summary>
+            Returns the current edited value for the given entry id and field key.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel.SetEditValue(System.Guid,System.String,System.Object)">
+            <summary>
+            Sets an edited value for the given entry id and field key.
+            Raises state changed so UI can re-render.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel.ResetRow(System.Guid)">
+            <summary>
+            Resets the edited values for a given entry to the original snapshot.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel.CollectChangedRows">
+            <summary>
+            Collects changed rows as a mapping EntryId -> (field -> newValue).
+            Only fields that differ from the original snapshot are returned.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel.ValidateRow(System.Object)">
+            <summary>
+            Performs basic client-side validation for a single row based on current edit values.
+            Returns tuples of (field, message) for validation errors.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel.RequestFocusFirstInvalid">
+            <summary>
+            Request that the UI focuses the first entry that has validation hints.
+            The request is consumed by the component rendering the list.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel.ConsumeFocusFirstInvalid">
+            <summary>
+            If a focus request was previously issued, returns the first entry id that has a hint and clears the request.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel.ValidateAllChangedRows">
+            <summary>
+            Validates client-side edit state for all changed rows and returns whether all rows are valid.
+            Also populates _entryHints for display.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel.HasChangedRows">
+            <summary>
+            Returns true when there are any changed rows pending in the quick-edit buffer.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel.ChangedRowsAreValid">
+            <summary>
+            Performs a non-mutating client-side validation of changed rows and returns whether they are all valid.
+            Does not populate hints or mutate state.
+            </summary>
         </member>
         <member name="T:FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntryCardViewModel">
             <summary>

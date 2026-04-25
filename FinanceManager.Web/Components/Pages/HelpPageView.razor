@@ -1,0 +1,285 @@
+@page "/help/view/{FeatureId}"
+@rendermode InteractiveServer
+@using System.Globalization
+@using System.Text.RegularExpressions
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+@{
+    var lang = CultureInfo.CurrentUICulture.Name.StartsWith("en") ? "en" : "de";
+}
+
+@if (isLoading)
+{
+    <div class="container mt-5">
+        <div class="alert alert-info">
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            @(lang == "en" ? "Loading..." : "Wird geladen...")
+        </div>
+    </div>
+}
+else if (error != null)
+{
+    <div class="container mt-5">
+        <div class="alert alert-danger">
+            <strong>@(lang == "en" ? "Error" : "Fehler"):</strong> @error
+            <br />
+            <small class="text-muted">FeatureId: @FeatureId</small>
+        </div>
+        <button class="btn btn-secondary" @onclick="GoBack">
+            ← @(lang == "en" ? "Back to Help" : "Zurück zur Hilfe")
+        </button>
+    </div>
+}
+else if (markdown != null)
+{
+    <div class="help-view-container">
+        <div class="help-view-header">
+            <button class="btn btn-secondary" @onclick="GoBack">
+                ← @(lang == "en" ? "Back to Help" : "Zurück zur Hilfe")
+            </button>
+        </div>
+
+        <div class="help-view-content">
+            @((MarkupString)ConvertMarkdownToHtml(markdown))
+        </div>
+    </div>
+}
+
+<style>
+.help-view-container {
+    padding: 2rem 0;
+}
+
+.help-view-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.help-view-content {
+    max-width: 900px;
+    line-height: 1.6;
+}
+
+.help-view-content h1 {
+    color: #bb86fc;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-size: 2rem;
+    border-bottom: 2px solid #bb86fc;
+    padding-bottom: 0.5rem;
+}
+
+.help-view-content h2 {
+    color: #bb86fc;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 1.5rem;
+}
+
+.help-view-content h3 {
+    color: #9575cd;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+}
+
+.help-view-content p {
+    margin-bottom: 1rem;
+    line-height: 1.8;
+}
+
+.help-view-content a {
+    color: #bb86fc;
+    text-decoration: none;
+    border-bottom: 1px dotted #bb86fc;
+}
+
+.help-view-content a:hover {
+    color: #d4a5ff;
+    border-bottom: 1px solid #d4a5ff;
+}
+
+.help-view-content ul,
+.help-view-content ol {
+    margin: 1rem 0 1rem 2rem;
+}
+
+.help-view-content li {
+    margin-bottom: 0.5rem;
+}
+
+.help-view-content code {
+    background-color: #1e1e1e;
+    color: #ce9178;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+}
+
+.help-view-content pre {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1rem 0;
+}
+
+.help-view-content blockquote {
+    border-left: 4px solid #bb86fc;
+    margin: 1rem 0;
+    padding-left: 1rem;
+    color: #9575cd;
+}
+
+.help-view-content strong {
+    color: #d4a5ff;
+    font-weight: 600;
+}
+
+.help-view-content em {
+    color: #9575cd;
+}
+
+.help-view-content table {
+    border-collapse: collapse;
+    margin: 1rem 0;
+    width: 100%;
+}
+
+.help-view-content table th,
+.help-view-content table td {
+    border: 1px solid #444;
+    padding: 0.75rem;
+    text-align: left;
+}
+
+.help-view-content table th {
+    background-color: #2d2d2d;
+    color: #bb86fc;
+}
+
+.help-view-content table tr:nth-child(even) {
+    background-color: #1f1f1f;
+}
+</style>
+
+@code {
+    [Parameter]
+    public string? FeatureId { get; set; }
+
+    private string? markdown;
+    private string? error;
+    private bool isLoading = true;
+    private string language = "de";
+
+    protected override async Task OnInitializedAsync()
+    {
+        language = CultureInfo.CurrentUICulture.Name.StartsWith("en") ? "en" : "de";
+        
+        if (string.IsNullOrEmpty(FeatureId))
+        {
+            error = language == "en" ? "Feature ID is required" : "Feature ID ist erforderlich";
+            isLoading = false;
+            return;
+        }
+
+        try
+        {
+            // Load markdown from API
+            var url = $"/api/help/markdown/{language}/{FeatureId.ToLower()}";
+            var response = await Http.GetAsync(url);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                markdown = await response.Content.ReadAsStringAsync();
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                error = language == "en" ? $"Help page not found: {FeatureId}" : $"Hilfeseite nicht gefunden: {FeatureId}";
+            }
+            else
+            {
+                error = language == "en" ? "Error loading help page" : "Fehler beim Laden der Hilfeseite";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading help page: {ex.Message}");
+            error = language == "en" ? "Error loading help page" : "Fehler beim Laden der Hilfeseite";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string ConvertMarkdownToHtml(string md)
+    {
+        if (string.IsNullOrEmpty(md))
+            return string.Empty;
+
+        // Line breaks
+        var html = md.Replace("\r\n", "\n");
+
+        // Headers (must be before other replacements)
+        html = Regex.Replace(html, @"^### (.+)$", "<h3>$1</h3>", RegexOptions.Multiline);
+        html = Regex.Replace(html, @"^## (.+)$", "<h2>$1</h2>", RegexOptions.Multiline);
+        html = Regex.Replace(html, @"^# (.+)$", "<h1>$1</h1>", RegexOptions.Multiline);
+
+        // Bold
+        html = Regex.Replace(html, @"\*\*(.+?)\*\*", "<strong>$1</strong>");
+        html = Regex.Replace(html, @"__(.+?)__", "<strong>$1</strong>");
+
+        // Italic
+        html = Regex.Replace(html, @"\*(.+?)\*", "<em>$1</em>");
+        html = Regex.Replace(html, @"_(.+?)_", "<em>$1</em>");
+
+        // Code inline
+        html = Regex.Replace(html, @"`([^`]+)`", "<code>$1</code>");
+
+        // Links [text](url) - internal help links like [Text](F001) or [Text](./F001-name.md)
+        html = Regex.Replace(html, @"\[([^\]]+)\]\(\./?(?:F\d+[^)]*\.md|F\d+)\)", m => 
+        {
+            var match = Regex.Match(m.Groups[0].Value, @"(F\d+)");
+            var featureId = match.Groups[1].Value.ToLower();
+            return $"<a href=\"/help/view/{featureId}\">{m.Groups[1].Value}</a>";
+        });
+
+        // External links
+        html = Regex.Replace(html, @"\[([^\]]+)\]\((https?://[^\)]+)\)", "<a href=\"$2\" target=\"_blank\">$1</a>");
+
+        // Paragraphs
+        html = Regex.Replace(html, @"\n\n+", "</p><p>", RegexOptions.Multiline);
+        html = $"<p>{html}</p>";
+
+        // Lists
+        html = Regex.Replace(html, @"^- (.+)$", "<li>$1</li>", RegexOptions.Multiline);
+        html = Regex.Replace(html, @"^(\d+)\. (.+)$", "<li>$2</li>", RegexOptions.Multiline);
+        html = Regex.Replace(html, @"<li>", "<ul><li>", RegexOptions.IgnoreCase);
+        html = Regex.Replace(html, @"</li>(?!.*<li>)", "</li></ul>", RegexOptions.RightToLeft | RegexOptions.IgnoreCase);
+
+        // Blockquotes
+        html = Regex.Replace(html, @"^> (.+)$", "<blockquote>$1</blockquote>", RegexOptions.Multiline);
+
+        // Line breaks
+        html = html.Replace("\n", "<br/>\n");
+
+        // Clean up
+        html = html.Replace("</p><p>", "</p>\n<p>");
+        html = html.Replace("<p><h", "<h");
+        html = html.Replace("</h><p>", "</h>\n<p>");
+        html = html.Replace("<p><ul>", "<ul>");
+        html = html.Replace("</ul><p>", "</ul>\n<p>");
+
+        return html;
+    }
+
+    private async Task GoBack()
+    {
+        await Task.CompletedTask;
+        Navigation.NavigateTo("/help");
+    }
+}

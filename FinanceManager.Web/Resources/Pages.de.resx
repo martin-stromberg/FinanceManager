@@ -225,54 +225,6 @@
   <data name="Budget_Report_Export_Row_Unbudgeted" xml:space="preserve">
     <value>Nicht budgetiert</value>
   </data>
-  <data name="Kpi_MonthlyBudget_ExpectedIncome" xml:space="preserve">
-    <value>Erwartete Einnahmen</value>
-  </data>
-  <data name="Kpi_MonthlyBudget_ExpectedExpense" xml:space="preserve">
-    <value>Erwartete Ausgaben</value>
-  </data>
-  <data name="Kpi_MonthlyBudget_Income" xml:space="preserve">
-    <value>Einnahmen</value>
-  </data>
-  <data name="Kpi_MonthlyBudget_Expenses" xml:space="preserve">
-    <value>Ausgaben</value>
-  </data>
-  <data name="Kpi_MonthlyBudget_PlannedIncome" xml:space="preserve">
-    <value>Geplante Einnahmen</value>
-  </data>
-  <data name="Kpi_MonthlyBudget_ActualIncome" xml:space="preserve">
-    <value>Ist-Einnahmen</value>
-  </data>
-  <data name="Kpi_MonthlyBudget_PlannedExpense" xml:space="preserve">
-    <value>Geplante Ausgaben</value>
-  </data>
-  <data name="Kpi_MonthlyBudget_ActualExpense" xml:space="preserve">
-    <value>Ist-Ausgaben</value>
-  </data>
-  <data name="Kpi_MonthlyBudget_LabelExpected" xml:space="preserve">
-    <value>Erwartet</value>
-  </data>
-  <data name="Kpi_MonthlyBudget_Explainer_Title" xml:space="preserve">
-    <value>Budget-Details</value>
-  </data>
-  <data name="Kpi_MonthlyBudget_UnbudgetedIncome" xml:space="preserve">
-    <value>Unbudgetierte Einnahmen</value>
-  </data>
-  <data name="Kpi_MonthlyBudget_UnbudgetedExpense" xml:space="preserve">
-    <value>Unbudgetierte Ausgaben</value>
-  </data>
-  <data name="Kpi_MonthlyBudget_Label_Planned" xml:space="preserve">
-    <value>Geplant</value>
-  </data>
-  <data name="Kpi_MonthlyBudget_Label_Actual" xml:space="preserve">
-    <value>Ist</value>
-  </data>
-  <data name="Kpi_MonthlyBudget_Label_Unbudgeted_Short" xml:space="preserve">
-    <value>davon ungeplant</value>
-  </data>
-  <data name="Kpi_MonthlyBudget_Label_Expected" xml:space="preserve">
-    <value>Erwartet</value>
-  </data>
   <data name="List_Th_Postings_Amount" xml:space="preserve">
     <value>Betrag</value>
   </data>
@@ -963,6 +915,9 @@
   <data name="Nav_Setup" xml:space="preserve">
     <value>Einrichtung</value>
   </data>
+  <data name="Nav_Help" xml:space="preserve">
+    <value>Hilfe</value>
+  </data>
   <data name="Nav_Users" xml:space="preserve">
     <value>Benutzer</value>
   </data>
@@ -1407,6 +1362,18 @@
   <data name="StatementDrafts_SuggestedDescription" xml:space="preserve">
     <value>Buchungen vom {0}</value>
   </data>
+  <data name="StatementDrafts_SaveQuickEdit_RowsFailedValidation" xml:space="preserve">
+    <value>Einige Zeilen enthalten Validierungsfehler. Bitte prüfen und korrigieren Sie die markierten Einträge.</value>
+  </data>
+  <data name="Validation_Severity_Error" xml:space="preserve">
+    <value>Fehler</value>
+  </data>
+  <data name="Validation_Severity_Warning" xml:space="preserve">
+    <value>Warnung</value>
+  </data>
+  <data name="Validation_Message_InvalidDateFormat" xml:space="preserve">
+    <value>Ungültiges Datumsformat</value>
+  </data>
   <data name="Ribbon_NewEntry" xml:space="preserve">
     <value>Neuer Eintrag</value>
   </data>
@@ -1727,5 +1694,83 @@
   </data>
   <data name="Kpi_MonthlyBudget_LabelExpected" xml:space="preserve">
     <value>Soll</value>
+  </data>
+  <data name="Validation_Valid" xml:space="preserve">
+    <value>Alle Einträge sind buchbar.</value>
+  </data>
+  <data name="List_Th_BookingDate" xml:space="preserve">
+    <value>Buchungsdatum</value>
+  </data>
+  <data name="List_Th_Valuta" xml:space="preserve">
+    <value>Valuta</value>
+  </data>
+  <data name="List_Th_Amount" xml:space="preserve">
+    <value>Betrag</value>
+  </data>
+  <data name="List_Th_BookingDescription" xml:space="preserve">
+    <value>Buchungsbeschreibung</value>
+  </data>
+  <data name="List_Th_Recipient" xml:space="preserve">
+    <value>Empfänger</value>
+  </data>
+  <data name="List_Th_Purpose" xml:space="preserve">
+    <value>Verwendungszweck</value>
+  </data>
+  <data name="List_Th_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="List_Th_Actions" xml:space="preserve">
+    <value>Aktionen</value>
+  </data>
+  <data name="Ribbon_QuickEdit" xml:space="preserve">
+    <value>Schnellbearbeitung</value>
+  </data>
+  <data name="Ribbon_SaveQuickEdit" xml:space="preserve">
+    <value>Änderungen speichern</value>
+  </data>
+  <data name="Ribbon_CancelQuickEdit" xml:space="preserve">
+    <value>Änderungen verwerfen</value>
+  </data>
+  <data name="Ribbon_Group_QuickEdit" xml:space="preserve">
+    <value>Schnellbearbeitung</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Income" xml:space="preserve">
+    <value>Einnahmen</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Expenses" xml:space="preserve">
+    <value>Ausgaben</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_PlannedIncome" xml:space="preserve">
+    <value>Geplante Einnahmen</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_ActualIncome" xml:space="preserve">
+    <value>Ist-Einnahmen</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_PlannedExpense" xml:space="preserve">
+    <value>Geplante Ausgaben</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_ActualExpense" xml:space="preserve">
+    <value>Ist-Ausgaben</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Explainer_Title" xml:space="preserve">
+    <value>Budget-Details</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_UnbudgetedIncome" xml:space="preserve">
+    <value>Unbudgetierte Einnahmen</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_UnbudgetedExpense" xml:space="preserve">
+    <value>Unbudgetierte Ausgaben</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Label_Planned" xml:space="preserve">
+    <value>Geplant</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Label_Actual" xml:space="preserve">
+    <value>Ist</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Label_Unbudgeted_Short" xml:space="preserve">
+    <value>davon ungeplant</value>
+  </data>
+  <data name="Kpi_MonthlyBudget_Label_Expected" xml:space="preserve">
+    <value>Erwartet</value>
   </data>
 </root>

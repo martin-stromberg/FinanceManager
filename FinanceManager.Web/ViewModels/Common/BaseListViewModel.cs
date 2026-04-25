@@ -1,4 +1,8 @@
 using FinanceManager.Application;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System;
 
 namespace FinanceManager.Web.ViewModels.Common
 {
@@ -200,5 +204,68 @@ namespace FinanceManager.Web.ViewModels.Common
             Items.Clear();
             CanLoadMore = true;
         }
+
+        #region QuickEdit API
+
+        /// <summary>
+        /// Gets the list of field keys that are editable in quick-edit mode.
+        /// Derived classes override to expose the editable field keys (e.g. "BookingDate", "Subject").
+        /// Default: empty (no editable fields).
+        /// </summary>
+        public virtual IReadOnlyList<string> EditableFields { get; } = Array.Empty<string>();
+
+        /// <summary>
+        /// When true the list is currently in quick-edit mode (UI should render editable controls).
+        /// </summary>
+        public bool IsQuickEditActive { get; protected set; }
+
+        /// <summary>
+        /// Returns whether the specified row/item is editable in quick-edit mode.
+        /// Default implementation returns <c>false</c> — override in derived classes.
+        /// </summary>
+        /// <param name="item">Item instance as <see cref="object"/>.</param>
+        public virtual bool IsRowEditable(object item) => false;
+
+        /// <summary>
+        /// Begins quick-edit session. Default implementation flips <see cref="IsQuickEditActive"/> and completes.
+        /// Derived classes should override to initialize per-row edit tracking state.
+        /// </summary>
+        public virtual Task BeginQuickEditAsync()
+        {
+            IsQuickEditActive = true;
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Ends quick-edit session. Default implementation clears the active flag. Derived classes may persist or discard changes.
+        /// </summary>
+        public virtual Task EndQuickEditAsync()
+        {
+            IsQuickEditActive = false;
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Collects changed rows as a mapping: EntryId -> (field -> newValue).
+        /// Default implementation returns an empty dictionary.
+        /// Derived classes providing quick-edit capabilities must override to return actual changed values.
+        /// </summary>
+        public virtual IReadOnlyDictionary<Guid, IDictionary<string, object?>> CollectChangedRows()
+        {
+            return new Dictionary<Guid, IDictionary<string, object?>>();
+        }
+
+        /// <summary>
+        /// Validates a single row on the client side and returns field-level validation messages.
+        /// Default implementation returns no validation messages. Derived classes should implement domain-specific checks.
+        /// </summary>
+        /// <param name="item">The row item to validate.</param>
+        /// <returns>Enumerable of (Field, Message) tuples describing validation errors.</returns>
+        public virtual IEnumerable<(string Field, string Message)> ValidateRow(object item)
+        {
+            return Enumerable.Empty<(string, string)>();
+        }
+
+        #endregion
     }
 }

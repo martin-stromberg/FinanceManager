@@ -1277,7 +1277,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         try
         {
             // Clear association by sending null SplitDraftId
-            var req = new Shared.Dtos.Statements.StatementDraftSetSplitDraftRequest(null);
+            var req = new FinanceManager.Shared.Dtos.Statements.StatementDraftSetSplitDraftRequest(null);
             var updated = await ApiClient.StatementDrafts_SetEntrySplitDraftAsync(DraftId, EntryId, req, CancellationToken.None);
             if (updated == null)
             {

@@ -83,6 +83,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IStatementFileParser, ING_CSV_StatementFileParser>();
         services.AddScoped<IStatementFileParser, ING_PDF_StatementFileParser>();
         services.AddScoped<IStatementFileParser, Barclays_PDF_StatementFileParser>();
+        services.AddScoped<IStatementFileParser, Sparkasse_PDF_StatementFileParser>();
         services.AddScoped<IStatementFileParser, Wuestenrot_StatementFileParser>();
         services.AddScoped<IStatementFileParser, Backup_JSON_StatementFileParser>();
         services.AddScoped<ISavingsPlanService, SavingsPlanService>();
@@ -105,6 +106,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDemoDataService, FinanceManager.Infrastructure.Demo.DemoDataService>();
         services.AddScoped<ISecurityPriceService, SecurityPriceService>();
         services.AddScoped<IStatementFile, Barclays_PDF_StatementFile>();
+        services.AddScoped<IStatementFile, Sparkasse_PDF_StatementFile>();
         services.AddScoped<IStatementFile, ING_PDF_StatementFile>();
         services.AddScoped<IStatementFile, ING_Csv_StatementFile>();
         services.AddScoped<IStatementFile, Wuestenrot_PDF_StatementFile>();
