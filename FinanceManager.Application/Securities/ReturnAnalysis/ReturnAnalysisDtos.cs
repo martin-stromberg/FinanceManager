@@ -12,6 +12,7 @@ namespace FinanceManager.Application.Securities.ReturnAnalysis;
 /// <param name="Irr">Internal Rate of Return (personal return), or null when not computable.</param>
 /// <param name="CostBasisPerShare">Average cost per share (FIFO basis).</param>
 /// <param name="CurrentPricePerShare">Latest available price per share.</param>
+/// <param name="TotalSharesHeld">Total number of shares currently held (FIFO net position).</param>
 /// <param name="NetDividends">Net dividends received (after taxes).</param>
 /// <param name="CurrencyCode">ISO currency code.</param>
 /// <param name="HasMissingPrices">Whether price data gaps exist.</param>
@@ -25,6 +26,7 @@ public sealed record ReturnSummaryDto(
     decimal? Irr,
     decimal CostBasisPerShare,
     decimal CurrentPricePerShare,
+    decimal TotalSharesHeld,
     decimal NetDividends,
     string CurrencyCode,
     bool HasMissingPrices,
@@ -165,19 +167,28 @@ public sealed record BenchmarkComparisonDto(
 public sealed record ChartPoint(DateTime Date, decimal Value);
 
 /// <summary>FIFO cost basis calculation result.</summary>
-/// <param name="TotalCostBasis">Total cost basis of all remaining lots.</param>
+/// <param name="TotalCostBasis">
+/// Total cost basis of all remaining lots, including standalone fees (fees not linked to any lot
+/// via GroupId). Represents the total invested capital as seen from a FIFO perspective.
+/// </param>
 /// <param name="RealizedGains">Total realized gains from sells (FIFO).</param>
 /// <param name="RemainingLots">Remaining open lots after all sells.</param>
 /// <param name="TotalSharesHeld">Total shares currently held.</param>
 /// <param name="HasOversellWarning">True when sells exceeded available lots (incomplete data).</param>
 /// <param name="OversellWarningMessage">Warning message when HasOversellWarning is true.</param>
+/// <param name="StandaloneFeeTotal">
+/// Sum of all fee amounts whose GroupId did not match any Buy lot (standalone fees).
+/// These are included in <see cref="TotalCostBasis"/> but are tracked separately to allow
+/// detailed cost-basis breakdowns in the UI (e.g. "Kaufpreise + Gebühren = Investiertes Kapital").
+/// </param>
 public sealed record FifoCostBasisResult(
     decimal TotalCostBasis,
     decimal RealizedGains,
     IReadOnlyList<FifoLot> RemainingLots,
     decimal TotalSharesHeld,
     bool HasOversellWarning,
-    string? OversellWarningMessage
+    string? OversellWarningMessage,
+    decimal StandaloneFeeTotal
 );
 
 /// <summary>A single FIFO lot representing a purchase batch.</summary>
@@ -185,3 +196,51 @@ public sealed record FifoCostBasisResult(
 /// <param name="Quantity">Number of shares in this lot.</param>
 /// <param name="CostPerUnit">Cost per share for this lot.</param>
 public sealed record FifoLot(DateTime PurchaseDate, decimal Quantity, decimal CostPerUnit);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// KPI Info Panel: Formula & Cashflow Breakdown (FR-1 Side Panel)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// <summary>
+/// Formula and cashflow breakdown for a single KPI, used in the info side panel (FR-1).
+/// </summary>
+/// <param name="KpiKey">Stable internal key matching the widget KPI (e.g. "TotalReturn", "InvestedCapital").</param>
+/// <param name="DisplayName">Localized display name of the KPI (e.g. "Gesamtrendite").</param>
+/// <param name="FormulaText">Human-readable formula as a complete equation.</param>
+/// <param name="Description">Short explanation of what this metric measures.</param>
+/// <param name="Groups">Posting groups, each representing one element of the formula.</param>
+public sealed record KpiBreakdownDto(
+    string KpiKey,
+    string DisplayName,
+    string FormulaText,
+    string Description,
+    IReadOnlyList<KpiFormulaGroup> Groups
+);
+
+/// <summary>
+/// A group of cashflow items representing one formula element (e.g. "Dividenden").
+/// </summary>
+/// <param name="GroupName">Display name of this formula element.</param>
+/// <param name="IsPositiveContribution">True when this group increases the KPI value.</param>
+/// <param name="Items">Individual cashflow items in this group.</param>
+/// <param name="GroupTotal">Sum of all item amounts in this group (absolute monetary value).</param>
+/// <param name="GroupTotalPercent">
+/// Optional percentage value for this group total (e.g. the percentage return for the
+/// "Gesamtrendite" result group). When set, the UI renders both the percentage and the
+/// absolute amount side by side in the info-panel result block.
+/// </param>
+public sealed record KpiFormulaGroup(
+    string GroupName,
+    bool IsPositiveContribution,
+    IReadOnlyList<KpiBreakdownItem> Items,
+    decimal GroupTotal,
+    decimal? GroupTotalPercent = null
+);
+
+/// <summary>
+/// A single cashflow item within a KPI formula group.
+/// </summary>
+/// <param name="Date">Date of the cashflow.</param>
+/// <param name="Amount">Amount (always positive; sign is indicated by <see cref="KpiFormulaGroup.IsPositiveContribution"/>).</param>
+/// <param name="Note">Optional descriptive note (e.g. number of shares).</param>
+public sealed record KpiBreakdownItem(DateTime Date, decimal Amount, string? Note);

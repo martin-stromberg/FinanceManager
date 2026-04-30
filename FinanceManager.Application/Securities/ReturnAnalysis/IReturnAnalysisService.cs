@@ -97,6 +97,18 @@ public interface IReturnAnalysisService
     Task UpdateUserSettingsAsync(Guid ownerUserId, Guid? benchmarkSecurityId, bool showSharpeRatio, decimal riskFreeRate, CancellationToken ct);
 
     /// <summary>
+    /// Returns the KPI formula and cashflow breakdown for all widget KPIs (FR-1 side panel).
+    /// Used by the info panel to display the formula, explanation, and individual postings grouped by formula element.
+    /// Cached for 1 hour together with the summary.
+    /// Returns null when the security does not exist, is not owned by the user, or has no transactions.
+    /// </summary>
+    /// <param name="securityId">Identifier of the security.</param>
+    /// <param name="ownerUserId">Identifier of the owning user.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of per-KPI breakdown DTOs, or null when not found / no data.</returns>
+    Task<IReadOnlyList<KpiBreakdownDto>?> GetKpiBreakdownsAsync(Guid securityId, Guid ownerUserId, CancellationToken ct);
+
+    /// <summary>
     /// Invalidates all cached results for the given security and user.
     /// Called when new postings or price data arrive.
     /// </summary>

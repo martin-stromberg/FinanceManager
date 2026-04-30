@@ -6900,12 +6900,16 @@
         <member name="T:FinanceManager.Web.ViewModels.Postings.Common.BasePostingsListViewModel.PostingListItem">
             <summary>
             Small wrapper record used to provide a navigation URL for posting items displayed in the list.
+            Accessible to derived classes so they can reuse the same navigation logic when overriding
+            <see cref="M:FinanceManager.Web.ViewModels.Postings.Common.BasePostingsListViewModel.BuildRecords"/>.
             </summary>
             <param name="Posting">Posting DTO wrapped by this navigation item.</param>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Postings.Common.BasePostingsListViewModel.PostingListItem.#ctor(FinanceManager.Shared.Dtos.Postings.PostingServiceDto)">
             <summary>
             Small wrapper record used to provide a navigation URL for posting items displayed in the list.
+            Accessible to derived classes so they can reuse the same navigation logic when overriding
+            <see cref="M:FinanceManager.Web.ViewModels.Postings.Common.BasePostingsListViewModel.BuildRecords"/>.
             </summary>
             <param name="Posting">Posting DTO wrapped by this navigation item.</param>
         </member>
@@ -7117,6 +7121,7 @@
             <summary>
             List view model for postings related to a specific security. Provides paging and lookup
             of posting service DTOs filtered by the configured security id.
+            Overrides column layout to include the security-specific "Anzahl" (quantity) column.
             </summary>
         </member>
         <member name="F:FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel._securityId">
@@ -7127,6 +7132,7 @@
         <member name="M:FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel.#ctor(System.IServiceProvider,System.Guid)">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel"/> for the specified security.
+            Sets column layout: Date, Valuta, Kind, Quantity, Amount, Subject, Description.
             </summary>
             <param name="services">Service provider used by the base view model.</param>
             <param name="securityId">Identifier of the security whose postings should be listed.</param>
@@ -7145,10 +7151,14 @@
             A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> when the query succeeds,
             or <c>null</c> when an error occurs.
             </returns>
-            <remarks>
-            Exceptions thrown by the API client are caught and result in a <c>null</c> return value to
-            indicate that the page could not be loaded.
-            </remarks>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel.BuildRecords">
+            <summary>
+            Builds list records with the security-specific column order:
+            Date, Valuta, Kind, Quantity, Amount, Subject, Description.
+            The Quantity cell is left empty when the value is <c>null</c> or zero
+            (e.g. for dividends, taxes and fees that carry no share count).
+            </summary>
         </member>
         <member name="T:FinanceManager.Web.ViewModels.Reports.ReportDashboardViewModel">
             <summary>

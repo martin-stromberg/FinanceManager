@@ -1,3 +1,4 @@
+@rendermode InteractiveServer
 @using FinanceManager.Application
 @using FinanceManager.Application.Securities.ReturnAnalysis
 @inject IReturnAnalysisService ReturnAnalysis
@@ -26,30 +27,50 @@ else
 {
     <div class="return-summary-widget @GetReturnClass()" title="Renditeübersicht">
         <div class="rsw-row rsw-header">
-            <span class="rsw-label">Gesamtrendite</span>
+            <span class="rsw-label">
+                Gesamtrendite
+                <button class="rsw-info-btn" @onclick='() => OpenPanel("TotalReturn")' title="Formel und Posten" aria-label="Info zu Gesamtrendite">ⓘ</button>
+            </span>
             <span class="rsw-value @GetReturnClass()">
                 @((_summary.TotalReturnPercent >= 0 ? "▲" : "▼") + FormatPercent(_summary.TotalReturnPercent))
+                <span class="rsw-value-sub">@FormatAmount(_summary.TotalReturnAbsolute, _summary.CurrencyCode)</span>
             </span>
         </div>
         <div class="rsw-row">
-            <span class="rsw-label">Marktwert</span>
+            <span class="rsw-label">
+                Marktwert
+                <button class="rsw-info-btn" @onclick='() => OpenPanel("MarketValue")' title="Formel und Posten" aria-label="Info zu Marktwert">ⓘ</button>
+            </span>
             <span class="rsw-value">@FormatAmount(_summary.CurrentMarketValue, _summary.CurrencyCode)</span>
         </div>
         <div class="rsw-row">
-            <span class="rsw-label">Investiert</span>
+            <span class="rsw-label">Anteile</span>
+            <span class="rsw-value">@FormatShares(_summary.TotalSharesHeld)</span>
+        </div>
+        <div class="rsw-row">
+            <span class="rsw-label">
+                Investiert
+                <button class="rsw-info-btn" @onclick='() => OpenPanel("InvestedCapital")' title="Formel und Posten" aria-label="Info zu Investiertes Kapital">ⓘ</button>
+            </span>
             <span class="rsw-value">@FormatAmount(_summary.InvestedCapital, _summary.CurrencyCode)</span>
         </div>
         @if (_summary.Cagr.HasValue)
         {
             <div class="rsw-row">
-                <span class="rsw-label">CAGR p.a.</span>
+                <span class="rsw-label">
+                    CAGR p.a.
+                    <button class="rsw-info-btn" @onclick='() => OpenPanel("Cagr")' title="Formel und Posten" aria-label="Info zu CAGR">ⓘ</button>
+                </span>
                 <span class="rsw-value">@FormatPercent(_summary.Cagr.Value)</span>
             </div>
         }
         @if (_summary.Irr.HasValue)
         {
             <div class="rsw-row">
-                <span class="rsw-label">IRR (pers.)</span>
+                <span class="rsw-label">
+                    IRR (pers.)
+                    <button class="rsw-info-btn" @onclick='() => OpenPanel("Irr")' title="Formel und Posten" aria-label="Info zu IRR">ⓘ</button>
+                </span>
                 <span class="rsw-value">@FormatPercent(_summary.Irr.Value)</span>
             </div>
         }
@@ -65,6 +86,80 @@ else
             </button>
         </div>
     </div>
+
+    @* ── KPI Info Side Panel ───────────────────────────────── *@
+    @if (_openKpiKey != null)
+    {
+        <div class="rsw-backdrop" @onclick="ClosePanel" aria-hidden="true"></div>
+        <aside class="rsw-panel rsw-panel--open" role="dialog" aria-modal="true"
+               aria-label="@($"Info: {GetOpenBreakdown()?.DisplayName ?? _openKpiKey}")">
+            <div class="rsw-panel-header">
+                <span class="rsw-panel-title">@(GetOpenBreakdown()?.DisplayName ?? _openKpiKey)</span>
+                <button class="rsw-panel-close" @onclick="ClosePanel" title="Schließen" aria-label="Panel schließen">✕</button>
+            </div>
+            <div class="rsw-panel-body">
+                @if (_loadingBreakdown)
+                {
+                    <p class="rsw-panel-loading">Lade Detaildaten…</p>
+                }
+                else
+                {
+                    var bd = GetOpenBreakdown();
+                    if (bd != null)
+                    {
+                        <div class="rsw-formula-box">
+                            <div class="rsw-formula-label">Formel</div>
+                            <div class="rsw-formula-text">@bd.FormulaText</div>
+                        </div>
+                        <p class="rsw-panel-desc">@bd.Description</p>
+                        @foreach (var group in bd.Groups)
+                        {
+                            if (group.Items.Count > 0)
+                            {
+                                <div class="rsw-group">
+                                    <div class="rsw-group-header @(group.IsPositiveContribution ? "rsw-group--positive" : "rsw-group--negative")">
+                                        <span class="rsw-group-name">@group.GroupName</span>
+                                        @if (group.GroupTotalPercent.HasValue)
+                                        {
+                                            <span class="rsw-group-total">
+                                                @FormatPercent(group.GroupTotalPercent.Value)
+                                                <span class="rsw-group-total-secondary">(@FormatAmount(group.GroupTotal, _summary.CurrencyCode))</span>
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="rsw-group-total">@FormatAmount(group.GroupTotal, _summary.CurrencyCode)</span>
+                                        }
+                                    </div>
+                                    @if (group.Items.Count >= 1)
+                                    {
+                                        <table class="rsw-items-table">
+                                            <tbody>
+                                                @foreach (var item in group.Items)
+                                                {
+                                                    <tr>
+                                                        <td class="rsw-item-date">@item.Date.ToString("dd.MM.yyyy")</td>
+                                                        <td class="rsw-item-note">@(item.Note ?? "")</td>
+                                                        <td class="rsw-item-amount @(item.Amount >= 0 ? "positive" : "negative")">
+                                                            @FormatAmount(item.Amount, _summary.CurrencyCode)
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    }
+                                </div>
+                            }
+                        }
+                    }
+                    else
+                    {
+                        <p class="rsw-panel-no-data">Keine Detaildaten verfügbar.</p>
+                    }
+                }
+            </div>
+        </aside>
+    }
 }
 
 @code {
@@ -75,12 +170,19 @@ else
     private bool _loading = true;
     private string? _error;
 
+    // Side-panel state
+    private string? _openKpiKey;
+    private bool _loadingBreakdown;
+    private IReadOnlyList<KpiBreakdownDto>? _breakdowns;
+
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
         if (SecurityId == Guid.Empty) { _loading = false; return; }
         _loading = true;
         _error = null;
+        _openKpiKey = null;
+        _breakdowns = null;
         try
         {
             _summary = await ReturnAnalysis.GetReturnSummaryAsync(SecurityId, CurrentUser.UserId, CancellationToken.None);
@@ -92,9 +194,36 @@ else
         finally { _loading = false; }
     }
 
+    private async Task OpenPanel(string kpiKey)
+    {
+        _openKpiKey = kpiKey;
+
+        // Load breakdowns lazily on first open
+        if (_breakdowns == null)
+        {
+            _loadingBreakdown = true;
+            StateHasChanged();
+            try
+            {
+                _breakdowns = await ReturnAnalysis.GetKpiBreakdownsAsync(SecurityId, CurrentUser.UserId, CancellationToken.None);
+            }
+            catch
+            {
+                // Non-critical: panel shows "no data" fallback
+            }
+            finally { _loadingBreakdown = false; }
+        }
+    }
+
+    private void ClosePanel() => _openKpiKey = null;
+
+    private KpiBreakdownDto? GetOpenBreakdown()
+        => _breakdowns?.FirstOrDefault(b => b.KpiKey == _openKpiKey);
+
     private void NavigateToPerformance() => Nav.NavigateTo($"/securities/{SecurityId}/performance");
 
     private static string FormatPercent(decimal value) => value.ToString("+0.00%;-0.00%;0.00%");
     private static string FormatAmount(decimal amount, string currency) => $"{amount:N2} {currency}";
+    private static string FormatShares(decimal shares) => shares.ToString("0.######");
     private string GetReturnClass() => _summary?.TotalReturnPercent >= 0 ? "positive" : "negative";
 }

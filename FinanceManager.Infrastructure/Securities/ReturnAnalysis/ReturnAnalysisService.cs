@@ -96,6 +96,13 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
     }
 
     /// <inheritdoc/>
+    public Task<IReadOnlyList<KpiBreakdownDto>?> GetKpiBreakdownsAsync(Guid securityId, Guid ownerUserId, CancellationToken ct)
+    {
+        var key = ReturnAnalysisCacheKeys.KpiBreakdown(securityId, ownerUserId);
+        return _cache.GetOrCreateAsync(key, () => ComputeKpiBreakdownsAsync(securityId, ownerUserId, ct), CacheTtl);
+    }
+
+    /// <inheritdoc/>
     public async Task<ReturnAnalysisSettingsDto?> GetUserSettingsAsync(Guid ownerUserId, CancellationToken ct)
     {
         var user = await _db.Users
@@ -248,6 +255,7 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
             Irr: irr,
             CostBasisPerShare: costBasisPerShare,
             CurrentPricePerShare: currentPricePerShare,
+            TotalSharesHeld: sharesHeld,
             NetDividends: netDividends,
             CurrencyCode: security.CurrencyCode,
             HasMissingPrices: hasMissingPrices,
@@ -575,9 +583,276 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
             BenchmarkNormalizedValues: benchmarkNormalized.AsReadOnly());
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Data loading helpers
-    // ─────────────────────────────────────────────────────────────────────────
+    /// <summary>
+    /// Computes per-KPI formula breakdowns for all widget KPIs (FR-1 side panel).
+    /// Enforces user-scoping via <see cref="LoadPostingsAsync"/> (S-1).
+    /// </summary>
+    private async Task<IReadOnlyList<KpiBreakdownDto>?> ComputeKpiBreakdownsAsync(
+        Guid securityId, Guid ownerUserId, CancellationToken ct)
+    {
+        var security = await _db.Securities
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == securityId && s.OwnerUserId == ownerUserId, ct);
+
+        if (security == null) return null;
+
+        var transactions = await LoadPostingsAsync(securityId, ownerUserId, ct);
+        if (transactions.Count == 0) return null;
+
+        var fifoResult = _fifo.Calculate(transactions);
+
+        var latestPriceRow = await _db.SecurityPrices
+            .AsNoTracking()
+            .Where(sp => sp.SecurityId == securityId)
+            .OrderByDescending(sp => sp.Date)
+            .Select(sp => sp.Close)
+            .FirstOrDefaultAsync(ct);
+
+        decimal currentPrice = latestPriceRow;
+        decimal sharesHeld = fifoResult.TotalSharesHeld;
+        decimal currentMarketValue = sharesHeld * currentPrice;
+        decimal investedCapital = fifoResult.TotalCostBasis;
+
+        // Categorised transactions
+        var buys = transactions.Where(t => t.Type == SecurityPostingSubType.Buy).ToList();
+        var sells = transactions.Where(t => t.Type == SecurityPostingSubType.Sell).ToList();
+        var dividends = transactions.Where(t => t.Type == SecurityPostingSubType.Dividend).ToList();
+        var taxes = transactions.Where(t => t.Type == SecurityPostingSubType.Tax).ToList();
+        var fees = transactions.Where(t => t.Type == SecurityPostingSubType.Fee).ToList();
+
+        decimal grossDividends = dividends.Sum(t => t.Amount);
+        decimal totalTaxes = taxes.Sum(t => Math.Abs(t.Amount));
+        decimal totalFees = fees.Sum(t => Math.Abs(t.Amount));
+        decimal netDividends = grossDividends - totalTaxes;
+        decimal unrealizedGain = currentMarketValue - investedCapital;
+        decimal totalReturnAbsolute = currentMarketValue - investedCapital + netDividends;
+        decimal? totalReturnPercent = _calc.CalculateTotalReturn(investedCapital, currentMarketValue, netDividends);
+        DateTime firstBuyDate = buys.Count > 0 ? buys.Min(t => t.Date) : DateTime.Today;
+
+        // ── Build per-buy item list ───────────────────────────────────────────
+        // Used by both the TotalReturn ("Kursgewinne / -verluste") and the InvestedCapital ("Käufe") KPIs.
+        // Each buy posting becomes its own item. Fees that share a GroupId with a buy (linked fees) are
+        // placed immediately after that buy. Standalone fees (GroupId == Guid.Empty or no matching buy)
+        // are appended at the end of the list.
+        // Amounts are stored as positive values; the TotalReturn variant negates them (outflows).
+        var buyGroupIds = buys
+            .Where(b => b.GroupId != Guid.Empty)
+            .Select(b => b.GroupId)
+            .ToHashSet();
+        var feesByGroupId = fees.ToLookup(f => f.GroupId);
+
+        var buysGroupItemsList = new List<KpiBreakdownItem>();
+        foreach (var buy in buys)
+        {
+            decimal absAmt = Math.Abs(buy.Amount);
+            decimal pricePerShare = buy.Quantity is > 0 ? absAmt / buy.Quantity.Value : 0m;
+            buysGroupItemsList.Add(new KpiBreakdownItem(
+                buy.Date,
+                absAmt,
+                $"{buy.Quantity:G6} Anteile à {pricePerShare:N2}"));
+
+            if (buy.GroupId != Guid.Empty)
+            {
+                foreach (var fee in feesByGroupId[buy.GroupId])
+                {
+                    buysGroupItemsList.Add(new KpiBreakdownItem(fee.Date, Math.Abs(fee.Amount), "Gebühr"));
+                }
+            }
+        }
+
+        // Standalone fees: GroupId == Guid.Empty or GroupId not matching any buy
+        foreach (var fee in fees.Where(f => f.GroupId == Guid.Empty || !buyGroupIds.Contains(f.GroupId)))
+        {
+            buysGroupItemsList.Add(new KpiBreakdownItem(fee.Date, Math.Abs(fee.Amount), "Gebühr (ohne Kaufzuordnung)"));
+        }
+
+        // Build mixed dividends + taxes list for the "Dividenden (netto)" group in TotalReturn.
+        // Taxes that share a GroupId with a dividend are placed directly after that dividend.
+        // Remaining taxes (standalone or unmatched GroupId) are appended at the end, sorted by date.
+        var dividendGroupIds = dividends
+            .Where(d => d.GroupId != Guid.Empty)
+            .Select(d => d.GroupId)
+            .ToHashSet();
+        var taxesByGroupId = taxes.ToLookup(t => t.GroupId);
+        var netDividendItems = new List<KpiBreakdownItem>();
+        foreach (var div in dividends)
+        {
+            netDividendItems.Add(new KpiBreakdownItem(div.Date, div.Amount, null));
+            if (div.GroupId != Guid.Empty)
+            {
+                foreach (var tax in taxesByGroupId[div.GroupId])
+                {
+                    netDividendItems.Add(new KpiBreakdownItem(tax.Date, -Math.Abs(tax.Amount), "Steuer"));
+                }
+            }
+        }
+
+        foreach (var tax in taxes
+            .Where(t => t.GroupId == Guid.Empty || !dividendGroupIds.Contains(t.GroupId))
+            .OrderBy(t => t.Date))
+        {
+            netDividendItems.Add(new KpiBreakdownItem(tax.Date, -Math.Abs(tax.Amount), "Steuer"));
+        }
+
+        var result = new List<KpiBreakdownDto>
+        {
+            // ── Gesamtrendite (Total Return) ──────────────────────────────────
+            // Formel: Total Return = Marktwert − Investiertes Kapital + (Dividenden − Steuern)
+            new KpiBreakdownDto(
+                KpiKey: "TotalReturn",
+                DisplayName: "Gesamtrendite",
+                FormulaText: "Gesamtrendite = Marktwert − Investiertes Kapital + (Dividenden − Steuern)",
+                Description: "Die prozentuale Rendite seit dem Erstkauf. Berücksichtigt Kursgewinne/-verluste, Dividenden (abzüglich Steuern) und Gebühren.",
+                Groups:
+                [
+                    new KpiFormulaGroup(
+                        GroupName: "Aktueller Marktwert",
+                        IsPositiveContribution: true,
+                        Items: [new KpiBreakdownItem(DateTime.Today, currentMarketValue, $"{sharesHeld:G6} Anteile × {currentPrice:N2}")],
+                        GroupTotal: currentMarketValue),
+                    new KpiFormulaGroup(
+                        GroupName: "Investiertes Kapital",
+                        IsPositiveContribution: false,
+                        Items: buysGroupItemsList.Select(it => it with { Amount = -it.Amount }).ToList(),
+                        GroupTotal: -investedCapital),
+                    new KpiFormulaGroup(
+                        GroupName: "Dividenden (netto)",
+                        IsPositiveContribution: true,
+                        Items: netDividendItems,
+                        GroupTotal: netDividends),
+                    new KpiFormulaGroup(
+                        GroupName: "Gesamtrendite",
+                        IsPositiveContribution: totalReturnAbsolute >= 0,
+                        Items: [new KpiBreakdownItem(DateTime.Today, totalReturnAbsolute, "= Marktwert − Investiertes Kapital + Netto-Dividenden")],
+                        GroupTotal: totalReturnAbsolute,
+                        GroupTotalPercent: totalReturnPercent),
+                ]),
+
+            // ── Marktwert (Current Market Value) ────────────────────────────
+            new KpiBreakdownDto(
+                KpiKey: "MarketValue",
+                DisplayName: "Marktwert",
+                FormulaText: "Marktwert = Anzahl Anteile × Aktueller Kurs",
+                Description: "Der aktuelle Marktwert des Bestands, berechnet aus den gehaltenen Anteilen und dem zuletzt verfügbaren Kurs.",
+                Groups:
+                [
+                    new KpiFormulaGroup(
+                        GroupName: "Käufe (Anteilszugänge)",
+                        IsPositiveContribution: true,
+                        Items: buys
+                            .Select(t => new KpiBreakdownItem(
+                                t.Date,
+                                Math.Abs(t.Amount),
+                                t.Quantity.HasValue ? $"+{t.Quantity:N4} Anteile" : null))
+                            .ToList(),
+                        GroupTotal: buys.Sum(t => Math.Abs(t.Amount))),
+                    new KpiFormulaGroup(
+                        GroupName: "Verkäufe (Anteilsabgänge)",
+                        IsPositiveContribution: false,
+                        Items: sells
+                            .Select(t => new KpiBreakdownItem(
+                                t.Date,
+                                t.Amount,
+                                t.Quantity.HasValue ? $"−{t.Quantity:N4} Anteile" : null))
+                            .ToList(),
+                        GroupTotal: sells.Sum(t => t.Amount)),
+                ]),
+
+            // ── Investiertes Kapital ─────────────────────────────────────────
+            new KpiBreakdownDto(
+                KpiKey: "InvestedCapital",
+                DisplayName: "Investiertes Kapital",
+                FormulaText: "Investiertes Kapital = Σ Kaufbeträge + Gebühren (FIFO-Kostenbasis der noch gehaltenen Anteile)",
+                Description: "Der Gesamtbetrag, der für die aktuell gehaltenen Anteile bezahlt wurde, inklusive aller Gebühren. Wird nach der FIFO-Methode berechnet: Verkäufe reduzieren zuerst die ältesten Kauflots.",
+                Groups:
+                [
+                    new KpiFormulaGroup(
+                        GroupName: "Käufe",
+                        IsPositiveContribution: false,
+                        Items: buysGroupItemsList,
+                        GroupTotal: buysGroupItemsList.Sum(it => it.Amount)),
+                    new KpiFormulaGroup(
+                        GroupName: "Verkäufe (FIFO-Anpassung)",
+                        IsPositiveContribution: true,
+                        Items: sells
+                            .Select(t => new KpiBreakdownItem(
+                                t.Date,
+                                t.Amount,
+                                t.Quantity.HasValue ? $"{t.Quantity:N4} Anteile" : null))
+                            .ToList(),
+                        GroupTotal: sells.Sum(t => t.Amount)),
+                ]),
+
+            // ── CAGR ─────────────────────────────────────────────────────────
+            new KpiBreakdownDto(
+                KpiKey: "Cagr",
+                DisplayName: "CAGR p.a.",
+                FormulaText: "CAGR = ((Marktwert + Nettodividenden) / Investiertes Kapital) ^ (1 / Jahre) − 1",
+                Description: "Durchschnittliche jährliche Wachstumsrate unter der Annahme gleichmäßigen Wachstums. Wird nur angezeigt, wenn die Haltedauer mindestens 1 Jahr beträgt.",
+                Groups:
+                [
+                    new KpiFormulaGroup(
+                        GroupName: "Investiertes Kapital (Basis)",
+                        IsPositiveContribution: false,
+                        Items: [new KpiBreakdownItem(firstBuyDate, investedCapital, "Gesamte FIFO-Kostenbasis")],
+                        GroupTotal: investedCapital),
+                    new KpiFormulaGroup(
+                        GroupName: "Marktwert (heute)",
+                        IsPositiveContribution: true,
+                        Items: [new KpiBreakdownItem(DateTime.Today, currentMarketValue, $"{sharesHeld:N4} Anteile × Aktueller Kurs")],
+                        GroupTotal: currentMarketValue),
+                    new KpiFormulaGroup(
+                        GroupName: "Nettodividenden",
+                        IsPositiveContribution: true,
+                        Items: [new KpiBreakdownItem(DateTime.Today, netDividends, $"Brutto {grossDividends:N2} − Steuern {totalTaxes:N2}")],
+                        GroupTotal: netDividends),
+                ]),
+
+            // ── IRR (persönliche Rendite) ─────────────────────────────────────
+            new KpiBreakdownDto(
+                KpiKey: "Irr",
+                DisplayName: "IRR (pers.)",
+                FormulaText: "IRR = Interner Zinsfuß aller zeitgewichteten Cashflows (XIRR-Methode)",
+                Description: "Die persönliche Rendite (Internal Rate of Return) berücksichtigt den genauen Zeitpunkt jeder Ein- und Auszahlung. Liefert das individuell erzielte Renditeergebnis.",
+                Groups:
+                [
+                    new KpiFormulaGroup(
+                        GroupName: "Kaufzahlungen (Abflüsse)",
+                        IsPositiveContribution: false,
+                        Items: buys
+                            .Select(t => new KpiBreakdownItem(t.Date, Math.Abs(t.Amount), t.Quantity.HasValue ? $"{t.Quantity:N4} Anteile" : null))
+                            .ToList(),
+                        GroupTotal: buys.Sum(t => Math.Abs(t.Amount))),
+                    new KpiFormulaGroup(
+                        GroupName: "Dividenden (Zuflüsse)",
+                        IsPositiveContribution: true,
+                        Items: dividends.Select(t => new KpiBreakdownItem(t.Date, t.Amount, null)).ToList(),
+                        GroupTotal: grossDividends),
+                    new KpiFormulaGroup(
+                        GroupName: "Steuern (Abflüsse)",
+                        IsPositiveContribution: false,
+                        Items: taxes.Select(t => new KpiBreakdownItem(t.Date, Math.Abs(t.Amount), null)).ToList(),
+                        GroupTotal: totalTaxes),
+                    new KpiFormulaGroup(
+                        GroupName: "Gebühren (Abflüsse)",
+                        IsPositiveContribution: false,
+                        Items: fees.Select(t => new KpiBreakdownItem(t.Date, Math.Abs(t.Amount), null)).ToList(),
+                        GroupTotal: totalFees),
+                    new KpiFormulaGroup(
+                        GroupName: "Verkaufserlöse (Zuflüsse)",
+                        IsPositiveContribution: true,
+                        Items: sells.Select(t => new KpiBreakdownItem(t.Date, t.Amount, null)).ToList(),
+                        GroupTotal: sells.Sum(t => t.Amount)),
+                    new KpiFormulaGroup(
+                        GroupName: "Aktueller Marktwert (Terminal-Cashflow)",
+                        IsPositiveContribution: true,
+                        Items: [new KpiBreakdownItem(DateTime.Today, currentMarketValue, "Fiktiver Verkauf zum heutigen Kurs")],
+                        GroupTotal: currentMarketValue),
+                ]),
+        };
+
+        return result.AsReadOnly();
+    }
 
     /// <summary>
     /// Loads all security transactions for the given security, enforcing ownership via JOIN on Security (Blocker S-1).

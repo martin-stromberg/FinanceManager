@@ -1,4 +1,5 @@
 using FinanceManager.Shared;
+using FinanceManager.Web.ViewModels.Common;
 using FinanceManager.Web.ViewModels.Postings.Common;
 
 namespace FinanceManager.Web.ViewModels.Postings
@@ -6,6 +7,7 @@ namespace FinanceManager.Web.ViewModels.Postings
     /// <summary>
     /// List view model for postings related to a specific security. Provides paging and lookup
     /// of posting service DTOs filtered by the configured security id.
+    /// Overrides column layout to include the security-specific "Anzahl" (quantity) column.
     /// </summary>
     public sealed class SecurityPostingsListViewModel : BasePostingsListViewModel
     {
@@ -16,6 +18,7 @@ namespace FinanceManager.Web.ViewModels.Postings
 
         /// <summary>
         /// Initializes a new instance of <see cref="SecurityPostingsListViewModel"/> for the specified security.
+        /// Sets column layout: Date, Valuta, Kind, Quantity, Amount, Subject, Description.
         /// </summary>
         /// <param name="services">Service provider used by the base view model.</param>
         /// <param name="securityId">Identifier of the security whose postings should be listed.</param>
@@ -23,6 +26,19 @@ namespace FinanceManager.Web.ViewModels.Postings
         {
             _securityId = securityId;
             AllowRangeFiltering = true;
+
+            // Override columns: reorder and add Quantity between Kind and Amount.
+            // Recipient is omitted as it is not meaningful for security postings.
+            Columns = new[]
+            {
+                new ListColumn("date",        "Datum",              Align: ListColumnAlign.Left,  Width: "8rem"),
+                new ListColumn("valuta",      "Valuta",             Align: ListColumnAlign.Left,  Width: "8rem"),
+                new ListColumn("kind",        "Art",                Align: ListColumnAlign.Left,  Width: "9rem"),
+                new ListColumn("quantity",    "Anzahl",             Align: ListColumnAlign.Right, Width: "7rem"),
+                new ListColumn("amount",      "Betrag",             Align: ListColumnAlign.Right, Width: "10rem"),
+                new ListColumn("subject",     "Verwendungszweck",   Width: "22%"),
+                new ListColumn("description", "Beschreibung")
+            };
         }
 
         /// <summary>
@@ -38,10 +54,6 @@ namespace FinanceManager.Web.ViewModels.Postings
         /// A task that resolves to a read-only list of <see cref="PostingServiceDto"/> when the query succeeds,
         /// or <c>null</c> when an error occurs.
         /// </returns>
-        /// <remarks>
-        /// Exceptions thrown by the API client are caught and result in a <c>null</c> return value to
-        /// indicate that the page could not be loaded.
-        /// </remarks>
         protected override async Task<IReadOnlyList<PostingServiceDto>?> QueryPageAsync(IApiClient api, int skip, int take, string search, DateTime? from, DateTime? to)
         {
             try
@@ -53,6 +65,42 @@ namespace FinanceManager.Web.ViewModels.Postings
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Builds list records with the security-specific column order:
+        /// Date, Valuta, Kind, Quantity, Amount, Subject, Description.
+        /// The Quantity cell is left empty when the value is <c>null</c> or zero
+        /// (e.g. for dividends, taxes and fees that carry no share count).
+        /// </summary>
+        protected override void BuildRecords()
+        {
+            Columns = Columns ?? Array.Empty<ListColumn>();
+            Records = Items.Select(i =>
+            {
+                var navItem = new PostingListItem(i);
+
+                var kindText = (i.Kind == PostingKind.Security && i.SecuritySubType.HasValue)
+                    ? $"Security-{i.SecuritySubType}"
+                    : i.Kind.ToString();
+
+                // Show quantity only when it is non-null and non-zero; use up to 6 significant
+                // decimal places without trailing zeros (e.g. "12,5" instead of "12,500000").
+                var quantityText = (i.Quantity.HasValue && i.Quantity.Value != 0m)
+                    ? i.Quantity.Value.ToString("0.######")
+                    : string.Empty;
+
+                return new ListRecord(new[]
+                {
+                    new ListCell(ListCellKind.Text,     Text: i.BookingDate.ToString("d")),
+                    new ListCell(ListCellKind.Text,     Text: i.ValutaDate.ToString("d")),
+                    new ListCell(ListCellKind.Text,     Text: kindText),
+                    new ListCell(ListCellKind.Text,     Text: quantityText),
+                    new ListCell(ListCellKind.Currency, Amount: i.Amount),
+                    new ListCell(ListCellKind.Text,     Text: i.Subject ?? string.Empty),
+                    new ListCell(ListCellKind.Text,     Text: i.Description ?? string.Empty)
+                }, navItem);
+            }).ToList();
         }
     }
 }

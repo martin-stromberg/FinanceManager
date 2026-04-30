@@ -3262,6 +3262,9 @@
         <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisCacheKeys.Benchmark(System.Guid,System.Guid)">
             <summary>Cache key for benchmark comparison data.</summary>
         </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisCacheKeys.KpiBreakdown(System.Guid,System.Guid)">
+            <summary>Cache key for KPI breakdown data (info panel).</summary>
+        </member>
         <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisCacheKeys.SecurityUserToken(System.Guid,System.Guid)">
             <summary>
             Returns the prefix used to invalidate all cache entries for a specific security/user pair.
@@ -3311,6 +3314,9 @@
         <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetBenchmarkComparisonAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
             <inheritdoc/>
         </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetKpiBreakdownsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
         <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetUserSettingsAsync(System.Guid,System.Threading.CancellationToken)">
             <inheritdoc/>
         </member>
@@ -3319,6 +3325,12 @@
         </member>
         <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.InvalidateCacheAsync(System.Guid,System.Guid)">
             <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.ComputeKpiBreakdownsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Computes per-KPI formula breakdowns for all widget KPIs (FR-1 side panel).
+            Enforces user-scoping via <see cref="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.LoadPostingsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)"/> (S-1).
+            </summary>
         </member>
         <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.LoadPostingsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
             <summary>

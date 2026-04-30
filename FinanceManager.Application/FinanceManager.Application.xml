@@ -1960,6 +1960,18 @@
             <param name="ct">Cancellation token.</param>
             <returns>A task that completes when settings have been persisted.</returns>
         </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService.GetKpiBreakdownsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the KPI formula and cashflow breakdown for all widget KPIs (FR-1 side panel).
+            Used by the info panel to display the formula, explanation, and individual postings grouped by formula element.
+            Cached for 1 hour together with the summary.
+            Returns null when the security does not exist, is not owned by the user, or has no transactions.
+            </summary>
+            <param name="securityId">Identifier of the security.</param>
+            <param name="ownerUserId">Identifier of the owning user.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>List of per-KPI breakdown DTOs, or null when not found / no data.</returns>
+        </member>
         <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService.InvalidateCacheAsync(System.Guid,System.Guid)">
             <summary>
             Invalidates all cached results for the given security and user.
@@ -2108,12 +2120,13 @@
             <param name="Irr">Internal Rate of Return (personal return), or null when not computable.</param>
             <param name="CostBasisPerShare">Average cost per share (FIFO basis).</param>
             <param name="CurrentPricePerShare">Latest available price per share.</param>
+            <param name="TotalSharesHeld">Total number of shares currently held (FIFO net position).</param>
             <param name="NetDividends">Net dividends received (after taxes).</param>
             <param name="CurrencyCode">ISO currency code.</param>
             <param name="HasMissingPrices">Whether price data gaps exist.</param>
             <param name="MissingPricesHint">Hint about missing price data, or null.</param>
         </member>
-        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.#ctor(System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Decimal,System.Decimal,System.Decimal,System.String,System.Boolean,System.String)">
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.#ctor(System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.String,System.Boolean,System.String)">
             <summary>
             Compact return summary for the widget on the security detail page (FR-1).
             SparklineData is loaded separately (see IReturnAnalysisService.GetSparklineDataAsync).
@@ -2126,6 +2139,7 @@
             <param name="Irr">Internal Rate of Return (personal return), or null when not computable.</param>
             <param name="CostBasisPerShare">Average cost per share (FIFO basis).</param>
             <param name="CurrentPricePerShare">Latest available price per share.</param>
+            <param name="TotalSharesHeld">Total number of shares currently held (FIFO net position).</param>
             <param name="NetDividends">Net dividends received (after taxes).</param>
             <param name="CurrencyCode">ISO currency code.</param>
             <param name="HasMissingPrices">Whether price data gaps exist.</param>
@@ -2154,6 +2168,9 @@
         </member>
         <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.CurrentPricePerShare">
             <summary>Latest available price per share.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.TotalSharesHeld">
+            <summary>Total number of shares currently held (FIFO net position).</summary>
         </member>
         <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.NetDividends">
             <summary>Net dividends received (after taxes).</summary>
@@ -2585,6 +2602,96 @@
         </member>
         <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoLot.CostPerUnit">
             <summary>Cost per share for this lot.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownDto">
+            <summary>
+            Formula and cashflow breakdown for a single KPI, used in the info side panel (FR-1).
+            </summary>
+            <param name="KpiKey">Stable internal key matching the widget KPI (e.g. "TotalReturn", "InvestedCapital").</param>
+            <param name="DisplayName">Localized display name of the KPI (e.g. "Gesamtrendite").</param>
+            <param name="FormulaText">Human-readable formula as a complete equation.</param>
+            <param name="Description">Short explanation of what this metric measures.</param>
+            <param name="Groups">Posting groups, each representing one element of the formula.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownDto.#ctor(System.String,System.String,System.String,System.String,System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup})">
+            <summary>
+            Formula and cashflow breakdown for a single KPI, used in the info side panel (FR-1).
+            </summary>
+            <param name="KpiKey">Stable internal key matching the widget KPI (e.g. "TotalReturn", "InvestedCapital").</param>
+            <param name="DisplayName">Localized display name of the KPI (e.g. "Gesamtrendite").</param>
+            <param name="FormulaText">Human-readable formula as a complete equation.</param>
+            <param name="Description">Short explanation of what this metric measures.</param>
+            <param name="Groups">Posting groups, each representing one element of the formula.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownDto.KpiKey">
+            <summary>Stable internal key matching the widget KPI (e.g. "TotalReturn", "InvestedCapital").</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownDto.DisplayName">
+            <summary>Localized display name of the KPI (e.g. "Gesamtrendite").</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownDto.FormulaText">
+            <summary>Human-readable formula as a complete equation.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownDto.Description">
+            <summary>Short explanation of what this metric measures.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownDto.Groups">
+            <summary>Posting groups, each representing one element of the formula.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup">
+            <summary>
+            A group of cashflow items representing one formula element (e.g. "Dividenden").
+            </summary>
+            <param name="GroupName">Display name of this formula element.</param>
+            <param name="IsPositiveContribution">True when this group increases the KPI value.</param>
+            <param name="Items">Individual cashflow items in this group.</param>
+            <param name="GroupTotal">Sum of all item amounts in this group.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.#ctor(System.String,System.Boolean,System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem},System.Decimal)">
+            <summary>
+            A group of cashflow items representing one formula element (e.g. "Dividenden").
+            </summary>
+            <param name="GroupName">Display name of this formula element.</param>
+            <param name="IsPositiveContribution">True when this group increases the KPI value.</param>
+            <param name="Items">Individual cashflow items in this group.</param>
+            <param name="GroupTotal">Sum of all item amounts in this group.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.GroupName">
+            <summary>Display name of this formula element.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.IsPositiveContribution">
+            <summary>True when this group increases the KPI value.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.Items">
+            <summary>Individual cashflow items in this group.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.GroupTotal">
+            <summary>Sum of all item amounts in this group.</summary>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem">
+            <summary>
+            A single cashflow item within a KPI formula group.
+            </summary>
+            <param name="Date">Date of the cashflow.</param>
+            <param name="Amount">Amount (always positive; sign is indicated by <see cref="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.IsPositiveContribution"/>).</param>
+            <param name="Note">Optional descriptive note (e.g. number of shares).</param>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.#ctor(System.DateTime,System.Decimal,System.String)">
+            <summary>
+            A single cashflow item within a KPI formula group.
+            </summary>
+            <param name="Date">Date of the cashflow.</param>
+            <param name="Amount">Amount (always positive; sign is indicated by <see cref="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.IsPositiveContribution"/>).</param>
+            <param name="Note">Optional descriptive note (e.g. number of shares).</param>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.Date">
+            <summary>Date of the cashflow.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.Amount">
+            <summary>Amount (always positive; sign is indicated by <see cref="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.IsPositiveContribution"/>).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.Note">
+            <summary>Optional descriptive note (e.g. number of shares).</summary>
         </member>
         <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.TwrPeriodInput">
             <summary>

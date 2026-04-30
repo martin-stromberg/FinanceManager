@@ -1,6 +1,4 @@
-/* =====================================================
-   app.ReturnSummaryWidget.css - Return Summary Widget Styles
-   ===================================================== */
+/* Return Summary Widget – Scoped Component Styles */
 .return-summary-widget {
     border: 1px solid var(--border-color, #ddd);
     border-radius: 6px;
@@ -277,3 +275,21 @@
 .rsw-item-amount.positive { color: #2a7d4f; }
 .rsw-item-amount.negative { color: #c94040; }
 
+/* ── Secondary/sub value display ─────────────────────── */
+
+/* Subtext below the main % value in the widget header row */
+.rsw-value-sub {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 400;
+    opacity: 0.7;
+    letter-spacing: 0;
+}
+
+/* Secondary amount (€) shown alongside the % in the info-panel result group header */
+.rsw-group-total-secondary {
+    font-size: 0.8rem;
+    font-weight: 400;
+    opacity: 0.75;
+    margin-left: 0.3rem;
+}

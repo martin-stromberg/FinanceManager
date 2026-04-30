@@ -243,6 +243,9 @@
   <data name="List_Th_Postings_Kind" xml:space="preserve">
     <value>Kind</value>
   </data>
+  <data name="List_Th_Postings_Quantity" xml:space="preserve">
+    <value>Quantity</value>
+  </data>
   <data name="List_Th_Postings_Recipient" xml:space="preserve">
     <value>Recipient</value>
   </data>

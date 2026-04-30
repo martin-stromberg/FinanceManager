@@ -36,6 +36,10 @@ internal static class ReturnAnalysisCacheKeys
     internal static string Benchmark(Guid securityId, Guid userId)
         => $"ra:benchmark:{securityId}:{userId}";
 
+    /// <summary>Cache key for KPI breakdown data (info panel).</summary>
+    internal static string KpiBreakdown(Guid securityId, Guid userId)
+        => $"ra:kpibreakdown:{securityId}:{userId}";
+
     /// <summary>
     /// Returns the prefix used to invalidate all cache entries for a specific security/user pair.
     /// Matches keys of format <c>ra:*:{securityId}:{userId}*</c> by containing both IDs.
