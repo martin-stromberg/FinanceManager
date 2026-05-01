@@ -3336,12 +3336,15 @@
             Enforces user-scoping via <see cref="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.LoadPostingsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)"/> (S-1).
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.BuildCagrBreakdown(System.DateTime,System.Decimal,System.Decimal,System.Collections.Generic.List{FinanceManager.Shared.Dtos.Securities.KpiBreakdownItem},System.Decimal,System.Collections.Generic.List{FinanceManager.Shared.Dtos.Securities.KpiBreakdownItem},System.Decimal,System.Decimal,System.Collections.Generic.List{FinanceManager.Shared.Dtos.Securities.KpiBreakdownItem},System.Decimal)">
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.BuildCagrBreakdown(System.DateTime,System.DateTime,System.Decimal,System.Decimal,System.Collections.Generic.List{FinanceManager.Shared.Dtos.Securities.KpiBreakdownItem},System.Decimal,System.Collections.Generic.List{FinanceManager.Shared.Dtos.Securities.KpiBreakdownItem},System.Decimal,System.Decimal,System.Collections.Generic.List{FinanceManager.Shared.Dtos.Securities.KpiBreakdownItem},System.Decimal)">
             <summary>
             Builds the CAGR <see cref="T:FinanceManager.Shared.Dtos.Securities.KpiBreakdownDto"/> with formula groups:
             Marktwert, (Verkaufserlöse), Nettodividenden, Investiertes Kapital, Anlagedauer, Ergebnis (CAGR).
             </summary>
             <param name="firstBuyDate">Date of the earliest buy transaction.</param>
+            <param name="cagrEndDate">
+            End date of the investment period: last sell date if position is fully sold, otherwise today.
+            </param>
             <param name="buys">All buy transactions for the security.</param>
             <param name="currentPrice">Current price per share.</param>
             <param name="netDividendItems">Pre-built dividend + linked-tax item list (shared with TotalReturn).</param>

@@ -265,16 +265,21 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         decimal? totalReturnPercent = _calc.CalculateTotalReturn(historicalInvestedCapital, currentMarketValue + totalSalesProceeds, netDividends);
         decimal totalReturnAbsolute = currentMarketValue + totalSalesProceeds + netDividends - historicalInvestedCapital;
 
-        // CAGR: from first buy date to today
+        // CAGR: from first buy date to last sell date (if fully sold) or today
         var firstBuy = transactions
             .Where(t => t.Type == SecurityPostingSubType.Buy)
             .OrderBy(t => t.Date)
             .FirstOrDefault();
 
+        // When position is fully sold, investment period ends at last sell date — not today.
+        DateTime cagrEndDate = sharesHeld <= 0m && sells.Count > 0
+            ? sells.Max(t => t.Date)
+            : DateTime.Today;
+
         decimal? cagr = null;
         if (firstBuy != null && historicalInvestedCapital > 0m)
         {
-            double years = (DateTime.Today - firstBuy.Date.Date).TotalDays / 365.25;
+            double years = (cagrEndDate.Date - firstBuy.Date.Date).TotalDays / 365.25;
             if (years >= 1.0)
             {
                 cagr = _calc.CalculateCagr(historicalInvestedCapital, currentMarketValue + totalSalesProceeds + netDividends, years);
@@ -713,6 +718,11 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         decimal netDividends = grossDividends - totalTaxes;
         DateTime firstBuyDate = buys.Count > 0 ? buys.Min(t => t.Date) : DateTime.Today;
 
+        // When position is fully sold, investment period ends at last sell date — not today.
+        DateTime cagrEndDate = sharesHeld <= 0m && sells.Count > 0
+            ? sells.Max(t => t.Date)
+            : DateTime.Today;
+
         // ── Build per-buy item list ───────────────────────────────────────────
         // Used by both the TotalReturn ("Kursgewinne / -verluste") and the InvestedCapital ("Käufe") KPIs.
         // Each buy posting becomes its own item. Fees that share a GroupId with a buy (linked fees) are
@@ -946,9 +956,11 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
 
             // ── CAGR ─────────────────────────────────────────────────────────
             // Formel: CAGR = ((Marktwert + Verkaufserlöse + Nettodividenden) / Investiertes Kapital) ^ (1 / Jahre) − 1
-            // Jahre = (DateTime.Today − firstBuyDate).TotalDays / 365.25
+            // Jahre = (cagrEndDate − firstBuyDate).TotalDays / 365.25
+            // cagrEndDate = last sell date if fully sold, otherwise today
             BuildCagrBreakdown(
                 firstBuyDate,
+                cagrEndDate,
                 sharesHeld,
                 currentPrice,
                 netDividendItems,
@@ -999,6 +1011,9 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
     /// Marktwert, (Verkaufserlöse), Nettodividenden, Investiertes Kapital, Anlagedauer, Ergebnis (CAGR).
     /// </summary>
     /// <param name="firstBuyDate">Date of the earliest buy transaction.</param>
+    /// <param name="cagrEndDate">
+    /// End date of the investment period: last sell date if position is fully sold, otherwise today.
+    /// </param>
     /// <param name="buys">All buy transactions for the security.</param>
     /// <param name="currentPrice">Current price per share.</param>
     /// <param name="netDividendItems">Pre-built dividend + linked-tax item list (shared with TotalReturn).</param>
@@ -1010,6 +1025,7 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
     /// <param name="totalSalesProceeds">Net sales proceeds (gross sell amounts minus sell-linked fees).</param>
     private KpiBreakdownDto BuildCagrBreakdown(
         DateTime firstBuyDate,
+        DateTime cagrEndDate,
         decimal sharesHeld,
         decimal currentPrice,
         List<KpiBreakdownItem> netDividendItems,
@@ -1027,22 +1043,27 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         };
 
         // ── Gruppe 4: Anlagedauer – informational text items (no EUR amounts) ────────────────
-        double cagrYears = (DateTime.Today - firstBuyDate.Date).TotalDays / 365.25;
+        double cagrYears = (cagrEndDate.Date - firstBuyDate.Date).TotalDays / 365.25;
 
-        int fullYears = DateTime.Today.Year - firstBuyDate.Year;
-        int monthDiff = DateTime.Today.Month - firstBuyDate.Month;
-        if (monthDiff < 0 || (monthDiff == 0 && DateTime.Today.Day < firstBuyDate.Day))
+        int fullYears = cagrEndDate.Year - firstBuyDate.Year;
+        int monthDiff = cagrEndDate.Month - firstBuyDate.Month;
+        if (monthDiff < 0 || (monthDiff == 0 && cagrEndDate.Day < firstBuyDate.Day))
         {
             fullYears--;
             monthDiff = (monthDiff + 12) % 12;
         }
         string durationText = _localizer.Format("Item_HoldingPeriodYearsMonths", fullYears, monthDiff);
 
+        // When position is fully sold, the end item shows the last sell date; otherwise today.
+        string endDateLabel = cagrEndDate.Date == DateTime.Today.Date
+            ? _localizer["Item_Today"]
+            : _localizer["Item_LastSell"];
+
         var anlagedauerItems = new List<KpiBreakdownItem>
         {
             new(firstBuyDate, 0m, _localizer["Item_FirstBuy"]),
-            new(DateTime.Today, 0m, _localizer["Item_Today"]),
-            new(DateTime.Today, 0m, _localizer.Format("Item_Period", durationText)),
+            new(cagrEndDate, 0m, endDateLabel),
+            new(cagrEndDate, 0m, _localizer.Format("Item_Period", durationText)),
         };
 
         // ── Gruppe 5: CAGR-Ergebnis ────────────────────────────────────────────────────────────

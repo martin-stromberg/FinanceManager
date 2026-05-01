@@ -65,6 +65,7 @@
   <data name="Item_SellWithDetails" xml:space="preserve"><value>Sale: {0} units @ {1}</value></data>
   <data name="Item_FirstBuy" xml:space="preserve"><value>First Purchase</value></data>
   <data name="Item_Today" xml:space="preserve"><value>Today</value></data>
+  <data name="Item_LastSell" xml:space="preserve"><value>Last sell</value></data>
   <data name="Item_Period" xml:space="preserve"><value>Period: {0}</value></data>
   <data name="Item_HoldingPeriodYearsMonths" xml:space="preserve"><value>{0} year(s) {1} month(s)</value></data>
   <data name="Item_AddShares" xml:space="preserve"><value>+{0} shares</value></data>

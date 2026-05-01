@@ -71,6 +71,7 @@ public sealed class TestReturnAnalysisLocalizer : IReturnAnalysisLocalizer
         ["Item_SellWithDetails"]         = "Verkauf: {0} Stk. à {1}",
         ["Item_FirstBuy"]                = "Erster Kauf",
         ["Item_Today"]                   = "Heute",
+        ["Item_LastSell"]                = "Letzter Verkauf",
         ["Item_Period"]                  = "Zeitraum: {0}",
         ["Item_HoldingPeriodYearsMonths"] = "{0} Jahr(e) {1} Monat(e)",
         ["Item_AddShares"]               = "+{0} Anteile",
