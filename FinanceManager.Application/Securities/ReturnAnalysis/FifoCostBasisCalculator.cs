@@ -157,7 +157,9 @@ public sealed class FifoCostBasisCalculator : IFifoCostBasisCalculator
         bool currentOversellWarning,
         string? currentOversellMessage)
     {
-        decimal sellQuantity = tx.Quantity ?? 0m;
+        // Domain convention: sell Quantity is stored as a negative value (shares leaving the portfolio).
+        // Use Math.Abs so that both negative (domain imports) and positive (manual entries) work correctly.
+        decimal sellQuantity = Math.Abs(tx.Quantity ?? 0m);
 
         if (sellQuantity <= 0m)
         {

@@ -206,9 +206,8 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         decimal currentPricePerShare = latestPrice?.Close ?? 0m;
         decimal sharesHeld = fifoResult.TotalSharesHeld;
         decimal currentMarketValue = sharesHeld * currentPricePerShare;
-        decimal investedCapital = fifoResult.TotalCostBasis;
 
-        // Net dividends = sum of Dividend postings - sum of Tax postings (taxes reduce dividend income)
+        // Net dividends= sum of Dividend postings - sum of Tax postings (taxes reduce dividend income)
         decimal grossDividends = transactions
             .Where(t => t.Type == SecurityPostingSubType.Dividend)
             .Sum(t => t.Amount);
@@ -233,6 +232,22 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
                 : 0m;
             totalSalesProceeds += (saleAmount - linkedFees);
         }
+
+        // Invested capital = total buy outflows + fees linked to buys (not to sells).
+        // Fees whose GroupId matches a sell are already deducted from salesProceeds above;
+        // including them here would double-count them. Fees with no matching sell GroupId
+        // (buy-linked or standalone without GroupId) are genuine acquisition costs.
+        var sellGroupIds = sells
+            .Where(s => s.GroupId != Guid.Empty)
+            .Select(s => s.GroupId)
+            .ToHashSet();
+
+        decimal investedCapital =
+            transactions.Where(t => t.Type == SecurityPostingSubType.Buy)
+                        .Sum(t => Math.Abs(t.Amount))
+            + transactions.Where(t => t.Type == SecurityPostingSubType.Fee
+                                       && !sellGroupIds.Contains(t.GroupId))
+                          .Sum(t => Math.Abs(t.Amount));
 
         decimal? totalReturnPercent = _calc.CalculateTotalReturn(investedCapital, currentMarketValue + totalSalesProceeds, netDividends);
         decimal totalReturnAbsolute = currentMarketValue + totalSalesProceeds + netDividends - investedCapital;
@@ -331,7 +346,6 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         var latestPrice = filledPrices.Count > 0 ? filledPrices[^1].Close : 0m;
         decimal sharesHeld = fifoResult.TotalSharesHeld;
         decimal currentMarketValue = sharesHeld * latestPrice;
-        decimal investedCapital = fifoResult.TotalCostBasis;
 
         decimal grossDividends = transactions
             .Where(t => t.Type == SecurityPostingSubType.Dividend)
@@ -360,6 +374,19 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
                 : 0m;
             totalSalesProceeds += (saleAmount - linkedFees);
         }
+
+        // Invested capital = total buy outflows + fees NOT linked to sells (same logic as ComputeReturnSummaryAsync).
+        var sellGroupIds = sells
+            .Where(s => s.GroupId != Guid.Empty)
+            .Select(s => s.GroupId)
+            .ToHashSet();
+
+        decimal investedCapital =
+            transactions.Where(t => t.Type == SecurityPostingSubType.Buy)
+                        .Sum(t => Math.Abs(t.Amount))
+            + transactions.Where(t => t.Type == SecurityPostingSubType.Fee
+                                       && !sellGroupIds.Contains(t.GroupId))
+                          .Sum(t => Math.Abs(t.Amount));
 
         decimal grossReturn = currentMarketValue + totalSalesProceeds + grossDividends - investedCapital;
         decimal netReturn = currentMarketValue + totalSalesProceeds + netDividends - investedCapital;
