@@ -229,18 +229,35 @@ public sealed record KpiBreakdownDto(
 /// "Gesamtrendite" result group). When set, the UI renders both the percentage and the
 /// absolute amount side by side in the info-panel result block.
 /// </param>
+/// <param name="GroupNote">
+/// Optional informational text to display instead of a monetary amount in the group header
+/// (e.g. the holding period for the "Anlagedauer" group). When set, the UI renders this
+/// text in place of the formatted EUR value and omits amount columns from item rows.
+/// </param>
 public sealed record KpiFormulaGroup(
     string GroupName,
     bool IsPositiveContribution,
     IReadOnlyList<KpiBreakdownItem> Items,
     decimal GroupTotal,
-    decimal? GroupTotalPercent = null
+    decimal? GroupTotalPercent = null,
+    string? GroupNote = null
 );
 
 /// <summary>
 /// A single cashflow item within a KPI formula group.
 /// </summary>
 /// <param name="Date">Date of the cashflow.</param>
-/// <param name="Amount">Amount (always positive; sign is indicated by <see cref="KpiFormulaGroup.IsPositiveContribution"/>).</param>
+/// <param name="Amount">Amount displayed for this item. For IRR breakdown groups this is the present value
+/// (discounted cashflow); for all other groups it is the raw cashflow amount.</param>
 /// <param name="Note">Optional descriptive note (e.g. number of shares).</param>
-public sealed record KpiBreakdownItem(DateTime Date, decimal Amount, string? Note);
+public sealed record KpiBreakdownItem(DateTime Date, decimal Amount, string? Note)
+{
+    /// <summary>Years since t₀ for discounting (used in IRR breakdown). Null when not applicable.</summary>
+    public decimal? YearsSinceT0 { get; init; }
+
+    /// <summary>Discount factor 1/(1+r)^t (used in IRR breakdown). Null when not applicable.</summary>
+    public decimal? DiscountFactor { get; init; }
+
+    /// <summary>Original (undiscounted) cashflow amount (used in IRR breakdown). Null when not applicable.</summary>
+    public decimal? OriginalCashflow { get; init; }
+}

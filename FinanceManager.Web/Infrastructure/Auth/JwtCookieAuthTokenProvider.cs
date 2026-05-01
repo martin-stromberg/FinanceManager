@@ -60,7 +60,7 @@ namespace FinanceManager.Web.Infrastructure.Auth
             var lifetimeMinutes = int.TryParse(_configuration["Jwt:LifetimeMinutes"], out var lm) ? lm : 30;
             var renewalWindow = TimeSpan.FromMinutes(Math.Max(MinRenewalWindow.TotalMinutes, lm / 2.0));
 
-            // Cache noch gültig?
+            // Cache noch gï¿½ltig?
             if (_cachedToken != null && _cachedExpiry - renewalWindow > now)
             {
                 return Task.FromResult<string?>(_cachedToken);
@@ -126,6 +126,16 @@ namespace FinanceManager.Web.Infrastructure.Auth
             InvalidateCache();
         }
 
+        /// <inheritdoc/>
+        public void InvalidateCache()
+        {
+            lock (_sync)
+            {
+                _cachedToken = null;
+                _cachedExpiry = DateTimeOffset.MinValue;
+            }
+        }
+
         /// <summary>
         /// Issues a new JWT for the supplied claims with the configured lifetime.
         /// The returned tuple contains the serialized token and the expiry timestamp.
@@ -141,7 +151,7 @@ namespace FinanceManager.Web.Infrastructure.Auth
             var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
             var creds = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
 
-            // Claims filtern: Keine doppelten exp/nbf/iat erneut hinzufügen
+            // Claims filtern: Keine doppelten exp/nbf/iat erneut hinzufï¿½gen
             var filtered = claims.Where(c =>
                 c.Type != JwtRegisteredClaimNames.Exp &&
                 c.Type != JwtRegisteredClaimNames.Nbf &&
@@ -190,16 +200,5 @@ namespace FinanceManager.Web.Infrastructure.Auth
             }
         }
 
-        /// <summary>
-        /// Invalidates any cached token.
-        /// </summary>
-        private void InvalidateCache()
-        {
-            lock (_sync)
-            {
-                _cachedToken = null;
-                _cachedExpiry = DateTimeOffset.MinValue;
-            }
-        }
     }
 }

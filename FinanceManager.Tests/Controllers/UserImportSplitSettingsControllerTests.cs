@@ -1,14 +1,17 @@
 using FinanceManager.Application;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure; // AppDbContext
+using FinanceManager.Infrastructure.Auth;
 using FinanceManager.Tests.TestHelpers;
 using FinanceManager.Web.Controllers;
+using FinanceManager.Web.Infrastructure.Auth;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
+using Moq;
 using System.Security.Claims;
 
 namespace FinanceManager.Tests.Controllers;
@@ -43,7 +46,12 @@ public sealed class UserImportSplitSettingsControllerTests
 
         var logger = LoggerFactory.Create(b => { }).CreateLogger<UserSettingsController>();
 
-        var controller = new UserSettingsController(db, current, logger, localizer);
+        var jwtMock = new Mock<IJwtTokenService>();
+        jwtMock.Setup(j => j.CreateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<bool>(), out It.Ref<DateTime>.IsAny, It.IsAny<string?>(), It.IsAny<string?>()))
+               .Returns("token");
+        var tokenProviderMock = new Mock<IAuthTokenProvider>();
+
+        var controller = new UserSettingsController(db, current, logger, localizer, jwtMock.Object, tokenProviderMock.Object);
         var http = new DefaultHttpContext();
         http.User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, current.UserId.ToString()) }, "test"));
         controller.ControllerContext = new ControllerContext { HttpContext = http };

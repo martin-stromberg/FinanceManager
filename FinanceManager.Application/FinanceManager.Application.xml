@@ -1864,6 +1864,19 @@
             <param name="cacheKeyPrefix">Prefix of the cache keys to invalidate.</param>
             <returns>A task that completes when invalidation is done.</returns>
         </member>
+        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisLocalizer">
+            <summary>
+            Provides localized strings for the <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService"/> KPI labels,
+            formula texts, group names, item notes and warnings.
+            Implemented in the Web layer using <c>IStringLocalizer</c>; in tests a simple stub is used.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisLocalizer.Item(System.String)">
+            <summary>Returns the localized string for the given resource key.</summary>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisLocalizer.Format(System.String,System.Object[])">
+            <summary>Returns the localized and formatted string for the given resource key and arguments.</summary>
+        </member>
         <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService">
             <summary>
             Orchestrates return analysis for a single security. All methods are user-scoped.
@@ -2548,24 +2561,43 @@
         </member>
         <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult">
             <summary>FIFO cost basis calculation result.</summary>
-            <param name="TotalCostBasis">Total cost basis of all remaining lots.</param>
+            <param name="TotalCostBasis">
+            Total cost basis of all remaining lots, including standalone fees (fees not linked to any lot
+            via GroupId). Represents the total invested capital as seen from a FIFO perspective.
+            </param>
             <param name="RealizedGains">Total realized gains from sells (FIFO).</param>
             <param name="RemainingLots">Remaining open lots after all sells.</param>
             <param name="TotalSharesHeld">Total shares currently held.</param>
             <param name="HasOversellWarning">True when sells exceeded available lots (incomplete data).</param>
             <param name="OversellWarningMessage">Warning message when HasOversellWarning is true.</param>
+            <param name="StandaloneFeeTotal">
+            Sum of all fee amounts whose GroupId did not match any Buy lot (standalone fees).
+            These are included in <see cref="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult.TotalCostBasis"/> but are tracked separately to allow
+            detailed cost-basis breakdowns in the UI (e.g. "Kaufpreise + Gebühren = Investiertes Kapital").
+            </param>
         </member>
-        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult.#ctor(System.Decimal,System.Decimal,System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.FifoLot},System.Decimal,System.Boolean,System.String)">
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult.#ctor(System.Decimal,System.Decimal,System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.FifoLot},System.Decimal,System.Boolean,System.String,System.Decimal)">
             <summary>FIFO cost basis calculation result.</summary>
-            <param name="TotalCostBasis">Total cost basis of all remaining lots.</param>
+            <param name="TotalCostBasis">
+            Total cost basis of all remaining lots, including standalone fees (fees not linked to any lot
+            via GroupId). Represents the total invested capital as seen from a FIFO perspective.
+            </param>
             <param name="RealizedGains">Total realized gains from sells (FIFO).</param>
             <param name="RemainingLots">Remaining open lots after all sells.</param>
             <param name="TotalSharesHeld">Total shares currently held.</param>
             <param name="HasOversellWarning">True when sells exceeded available lots (incomplete data).</param>
             <param name="OversellWarningMessage">Warning message when HasOversellWarning is true.</param>
+            <param name="StandaloneFeeTotal">
+            Sum of all fee amounts whose GroupId did not match any Buy lot (standalone fees).
+            These are included in <see cref="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult.TotalCostBasis"/> but are tracked separately to allow
+            detailed cost-basis breakdowns in the UI (e.g. "Kaufpreise + Gebühren = Investiertes Kapital").
+            </param>
         </member>
         <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult.TotalCostBasis">
-            <summary>Total cost basis of all remaining lots.</summary>
+            <summary>
+            Total cost basis of all remaining lots, including standalone fees (fees not linked to any lot
+            via GroupId). Represents the total invested capital as seen from a FIFO perspective.
+            </summary>
         </member>
         <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult.RealizedGains">
             <summary>Total realized gains from sells (FIFO).</summary>
@@ -2581,6 +2613,13 @@
         </member>
         <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult.OversellWarningMessage">
             <summary>Warning message when HasOversellWarning is true.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult.StandaloneFeeTotal">
+            <summary>
+            Sum of all fee amounts whose GroupId did not match any Buy lot (standalone fees).
+            These are included in <see cref="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult.TotalCostBasis"/> but are tracked separately to allow
+            detailed cost-basis breakdowns in the UI (e.g. "Kaufpreise + Gebühren = Investiertes Kapital").
+            </summary>
         </member>
         <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.FifoLot">
             <summary>A single FIFO lot representing a purchase batch.</summary>
@@ -2645,16 +2684,36 @@
             <param name="GroupName">Display name of this formula element.</param>
             <param name="IsPositiveContribution">True when this group increases the KPI value.</param>
             <param name="Items">Individual cashflow items in this group.</param>
-            <param name="GroupTotal">Sum of all item amounts in this group.</param>
+            <param name="GroupTotal">Sum of all item amounts in this group (absolute monetary value).</param>
+            <param name="GroupTotalPercent">
+            Optional percentage value for this group total (e.g. the percentage return for the
+            "Gesamtrendite" result group). When set, the UI renders both the percentage and the
+            absolute amount side by side in the info-panel result block.
+            </param>
+            <param name="GroupNote">
+            Optional informational text to display instead of a monetary amount in the group header
+            (e.g. the holding period for the "Anlagedauer" group). When set, the UI renders this
+            text in place of the formatted EUR value and omits amount columns from item rows.
+            </param>
         </member>
-        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.#ctor(System.String,System.Boolean,System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem},System.Decimal)">
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.#ctor(System.String,System.Boolean,System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem},System.Decimal,System.Nullable{System.Decimal},System.String)">
             <summary>
             A group of cashflow items representing one formula element (e.g. "Dividenden").
             </summary>
             <param name="GroupName">Display name of this formula element.</param>
             <param name="IsPositiveContribution">True when this group increases the KPI value.</param>
             <param name="Items">Individual cashflow items in this group.</param>
-            <param name="GroupTotal">Sum of all item amounts in this group.</param>
+            <param name="GroupTotal">Sum of all item amounts in this group (absolute monetary value).</param>
+            <param name="GroupTotalPercent">
+            Optional percentage value for this group total (e.g. the percentage return for the
+            "Gesamtrendite" result group). When set, the UI renders both the percentage and the
+            absolute amount side by side in the info-panel result block.
+            </param>
+            <param name="GroupNote">
+            Optional informational text to display instead of a monetary amount in the group header
+            (e.g. the holding period for the "Anlagedauer" group). When set, the UI renders this
+            text in place of the formatted EUR value and omits amount columns from item rows.
+            </param>
         </member>
         <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.GroupName">
             <summary>Display name of this formula element.</summary>
@@ -2666,14 +2725,29 @@
             <summary>Individual cashflow items in this group.</summary>
         </member>
         <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.GroupTotal">
-            <summary>Sum of all item amounts in this group.</summary>
+            <summary>Sum of all item amounts in this group (absolute monetary value).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.GroupTotalPercent">
+            <summary>
+            Optional percentage value for this group total (e.g. the percentage return for the
+            "Gesamtrendite" result group). When set, the UI renders both the percentage and the
+            absolute amount side by side in the info-panel result block.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.GroupNote">
+            <summary>
+            Optional informational text to display instead of a monetary amount in the group header
+            (e.g. the holding period for the "Anlagedauer" group). When set, the UI renders this
+            text in place of the formatted EUR value and omits amount columns from item rows.
+            </summary>
         </member>
         <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem">
             <summary>
             A single cashflow item within a KPI formula group.
             </summary>
             <param name="Date">Date of the cashflow.</param>
-            <param name="Amount">Amount (always positive; sign is indicated by <see cref="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.IsPositiveContribution"/>).</param>
+            <param name="Amount">Amount displayed for this item. For IRR breakdown groups this is the present value
+            (discounted cashflow); for all other groups it is the raw cashflow amount.</param>
             <param name="Note">Optional descriptive note (e.g. number of shares).</param>
         </member>
         <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.#ctor(System.DateTime,System.Decimal,System.String)">
@@ -2681,17 +2755,28 @@
             A single cashflow item within a KPI formula group.
             </summary>
             <param name="Date">Date of the cashflow.</param>
-            <param name="Amount">Amount (always positive; sign is indicated by <see cref="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.IsPositiveContribution"/>).</param>
+            <param name="Amount">Amount displayed for this item. For IRR breakdown groups this is the present value
+            (discounted cashflow); for all other groups it is the raw cashflow amount.</param>
             <param name="Note">Optional descriptive note (e.g. number of shares).</param>
         </member>
         <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.Date">
             <summary>Date of the cashflow.</summary>
         </member>
         <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.Amount">
-            <summary>Amount (always positive; sign is indicated by <see cref="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.IsPositiveContribution"/>).</summary>
+            <summary>Amount displayed for this item. For IRR breakdown groups this is the present value
+            (discounted cashflow); for all other groups it is the raw cashflow amount.</summary>
         </member>
         <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.Note">
             <summary>Optional descriptive note (e.g. number of shares).</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.YearsSinceT0">
+            <summary>Years since t₀ for discounting (used in IRR breakdown). Null when not applicable.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.DiscountFactor">
+            <summary>Discount factor 1/(1+r)^t (used in IRR breakdown). Null when not applicable.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.OriginalCashflow">
+            <summary>Original (undiscounted) cashflow amount (used in IRR breakdown). Null when not applicable.</summary>
         </member>
         <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.TwrPeriodInput">
             <summary>

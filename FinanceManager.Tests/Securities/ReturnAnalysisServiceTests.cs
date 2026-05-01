@@ -4,6 +4,7 @@ using FinanceManager.Domain.Securities;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Securities.ReturnAnalysis;
+using FinanceManager.Tests.TestHelpers;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -66,7 +67,8 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
             _calcMock.Object,
             _fifoMock.Object,
             _cache,
-            NullLogger<ReturnAnalysisService>.Instance);
+            NullLogger<ReturnAnalysisService>.Instance,
+            new TestReturnAnalysisLocalizer());
     }
 
     /// <inheritdoc/>
@@ -423,7 +425,8 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
             _calcMock.Object,
             _fifoMock.Object,
             cacheMock.Object,
-            NullLogger<ReturnAnalysisService>.Instance);
+            NullLogger<ReturnAnalysisService>.Instance,
+            new TestReturnAnalysisLocalizer());
 
         var secId = Guid.NewGuid();
         var userId = Guid.NewGuid();
@@ -911,4 +914,711 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         tr.Groups[0].Items[0].Amount.Should().BeGreaterThanOrEqualTo(0m, "market value must be positive");
         tr.Groups[0].Items[0].Note.Should().Contain("Anteile", "note must reference share count and price");
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // CAGR Breakdown — GetKpiBreakdownsAsync
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// The CAGR breakdown must contain exactly 5 groups in the correct order:
+    /// Marktwert, Nettodividenden, Investiertes Kapital, Anlagedauer, CAGR (Ergebnis).
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_CagrBreakdown_Should_HaveExactlyFiveGroups_In_CorrectOrder()
+    {
+        // Arrange – one buy posting > 1 year ago so CAGR is computable
+        var (security, user) = SetupSecurityAndUser();
+        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
+        _db.Postings.Add(buy);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
+        await _db.SaveChangesAsync();
+
+        _fifoMock
+            .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
+            .Returns(new FifoCostBasisResult(1_000m, 0m, Array.Empty<FifoLot>(), 10m, false, null, 0m));
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var cagr = result!.First(b => b.KpiKey == "Cagr");
+
+        cagr.Groups.Should().HaveCount(5, "CAGR breakdown must have exactly 5 formula groups");
+        cagr.Groups[0].GroupName.Should().Be("Marktwert");
+        cagr.Groups[1].GroupName.Should().Be("Nettodividenden (Dividenden − Steuern)");
+        cagr.Groups[2].GroupName.Should().Be("Investiertes Kapital");
+        cagr.Groups[3].GroupName.Should().Be("Anlagedauer");
+        cagr.Groups[4].GroupName.Should().Be("CAGR (Ergebnis)");
+    }
+
+    /// <summary>
+    /// Group[0] "Marktwert" must contain exactly one item representing
+    /// total shares held × current price – identical to TotalReturn's Marktwert group.
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_CagrBreakdown_Group0_Should_ContainMarktwertItems()
+    {
+        // Arrange – two buy postings; FIFO reports 11 shares held, price = 110 → market value = 1210
+        var (security, user) = SetupSecurityAndUser();
+        var buy1 = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -500m, 5m);
+        var buy2 = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-300), -600m, 6m);
+        _db.Postings.AddRange(buy1, buy2);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 110m)); // current price = 110
+        await _db.SaveChangesAsync();
+
+        _fifoMock
+            .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
+            .Returns(new FifoCostBasisResult(1_100m, 0m, Array.Empty<FifoLot>(), 11m, false, null, 0m));
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var cagrGroup0 = result!.First(b => b.KpiKey == "Cagr").Groups[0];
+
+        cagrGroup0.GroupName.Should().Be("Marktwert");
+        cagrGroup0.IsPositiveContribution.Should().BeTrue();
+        cagrGroup0.Items.Should().HaveCount(1, "exactly one item: total shares held × current price");
+
+        // Single item: 11 shares × 110 = 1210
+        cagrGroup0.Items[0].Amount.Should().Be(11m * 110m, "11 shares held × 110 EUR current price");
+        cagrGroup0.Items[0].Note.Should().Contain("Anteile", "note must reference share count and current price");
+    }
+
+    /// <summary>
+    /// Group[1] "Nettodividenden" must contain dividend items and tax items (negative).
+    /// The GroupTotal must equal gross dividends minus taxes.
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_CagrBreakdown_Group1_Should_ContainNetDividendItems()
+    {
+        // Arrange
+        var (security, user) = SetupSecurityAndUser();
+        var groupId = Guid.NewGuid();
+
+        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
+        var dividend = new Posting(
+            Guid.NewGuid(), PostingKind.Security,
+            null, null, null, security.Id,
+            DateTime.Today.AddDays(-100), 80m,
+            null, null, null, SecurityPostingSubType.Dividend, null);
+        dividend.SetGroup(groupId);
+
+        var tax = new Posting(
+            Guid.NewGuid(), PostingKind.Security,
+            null, null, null, security.Id,
+            DateTime.Today.AddDays(-100), -20m,
+            null, null, null, SecurityPostingSubType.Tax, null);
+        tax.SetGroup(groupId);
+
+        _db.Postings.AddRange(buy, dividend, tax);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
+        await _db.SaveChangesAsync();
+
+        _fifoMock
+            .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
+            .Returns(new FifoCostBasisResult(1_000m, 0m, Array.Empty<FifoLot>(), 10m, false, null, 0m));
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var cagrGroup1 = result!.First(b => b.KpiKey == "Cagr").Groups[1];
+
+        cagrGroup1.GroupName.Should().Be("Nettodividenden (Dividenden − Steuern)");
+        cagrGroup1.Items.Should().HaveCount(2, "one dividend item + one linked tax item");
+
+        // Dividend item
+        cagrGroup1.Items[0].Amount.Should().Be(80m, "gross dividend amount");
+
+        // Tax item (negative)
+        cagrGroup1.Items[1].Amount.Should().Be(-20m, "tax is a negative deduction");
+        cagrGroup1.Items[1].Note.Should().Be("Steuer");
+
+        cagrGroup1.GroupTotal.Should().Be(60m, "netDividends = 80 − 20 = 60");
+    }
+
+    /// <summary>
+    /// Group[2] "Investiertes Kapital" must contain the buy items (positive amounts) and their fees.
+    /// The GroupTotal must equal the total cost basis (investedCapital).
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_CagrBreakdown_Group2_Should_ContainInvestedCapitalItems()
+    {
+        // Arrange – two buy postings
+        var (security, user) = SetupSecurityAndUser();
+        var buy1 = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -500m, 5m);
+        var buy2 = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-300), -600m, 6m);
+        _db.Postings.AddRange(buy1, buy2);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 110m));
+        await _db.SaveChangesAsync();
+
+        _fifoMock
+            .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
+            .Returns(new FifoCostBasisResult(1_100m, 0m, Array.Empty<FifoLot>(), 11m, false, null, 0m));
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var cagrGroup2 = result!.First(b => b.KpiKey == "Cagr").Groups[2];
+
+        cagrGroup2.GroupName.Should().Be("Investiertes Kapital");
+        cagrGroup2.IsPositiveContribution.Should().BeFalse("invested capital is a cost, hence negative contribution");
+        cagrGroup2.Items.Should().HaveCount(2, "one item per buy posting");
+        cagrGroup2.Items[0].Amount.Should().Be(500m, "buy1 amount positive");
+        cagrGroup2.Items[1].Amount.Should().Be(600m, "buy2 amount positive");
+        cagrGroup2.GroupTotal.Should().Be(1_100m, "GroupTotal = investedCapital");
+    }
+
+    /// <summary>
+    /// Group[3] "Anlagedauer" must have a non-null GroupNote with the holding period text
+    /// and must contain three text-only items (Erster Kauf, Heute, Zeitraum).
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_CagrBreakdown_Group3_Should_HaveGroupNoteWithDuration()
+    {
+        // Arrange – buy > 1 year ago so duration is meaningful
+        var (security, user) = SetupSecurityAndUser();
+        var firstBuyDate = DateTime.Today.AddDays(-400);
+        var buy = CreateBuyPosting(security.Id, firstBuyDate, -1_000m, 10m);
+        _db.Postings.Add(buy);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
+        await _db.SaveChangesAsync();
+
+        _fifoMock
+            .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
+            .Returns(new FifoCostBasisResult(1_000m, 0m, Array.Empty<FifoLot>(), 10m, false, null, 0m));
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var cagrGroup3 = result!.First(b => b.KpiKey == "Cagr").Groups[3];
+
+        cagrGroup3.GroupName.Should().Be("Anlagedauer");
+        cagrGroup3.GroupNote.Should().NotBeNullOrEmpty("GroupNote must contain the human-readable duration");
+        cagrGroup3.GroupNote.Should().Contain("Jahr", "duration text must mention years");
+
+        cagrGroup3.Items.Should().HaveCount(3, "items: Erster Kauf, Heute, Zeitraum");
+        cagrGroup3.Items[0].Note.Should().Be("Erster Kauf");
+        cagrGroup3.Items[0].Date.Should().Be(firstBuyDate);
+        cagrGroup3.Items[1].Note.Should().Be("Heute");
+        cagrGroup3.Items[1].Date.Should().Be(DateTime.Today);
+        cagrGroup3.Items[2].Note.Should().Contain("Zeitraum", "third item must describe the time span");
+    }
+
+    /// <summary>
+    /// Group[4] "CAGR (Ergebnis)" must have GroupTotalPercent set to the computed CAGR value
+    /// and must have no items (result-only group).
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_CagrBreakdown_Group4_Should_HaveGroupTotalPercent()
+    {
+        // Arrange – buy > 1 year ago; mock returns 0.12 for CAGR
+        var (security, user) = SetupSecurityAndUser();
+        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
+        _db.Postings.Add(buy);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
+        await _db.SaveChangesAsync();
+
+        _fifoMock
+            .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
+            .Returns(new FifoCostBasisResult(1_000m, 0m, Array.Empty<FifoLot>(), 10m, false, null, 0m));
+
+        _calcMock
+            .Setup(c => c.CalculateCagr(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<double>()))
+            .Returns(0.12m);
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var cagrGroup4 = result!.First(b => b.KpiKey == "Cagr").Groups[4];
+
+        cagrGroup4.GroupName.Should().Be("CAGR (Ergebnis)");
+        cagrGroup4.GroupTotalPercent.Should().Be(0.12m, "GroupTotalPercent must carry the CAGR decimal value");
+        cagrGroup4.Items.Should().BeEmpty("result group has no individual items");
+    }
+
+    /// <summary>
+    /// Edge case: when the holding period in years is 0 (today is the first buy day),
+    /// the CAGR result group must have GroupTotalPercent = 0 (not null, not error).
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_CagrBreakdown_Group4_Should_ReturnZero_When_YearsIsZero()
+    {
+        // Arrange – buy today (years = 0)
+        var (security, user) = SetupSecurityAndUser();
+        var buy = CreateBuyPosting(security.Id, DateTime.Today, -1_000m, 10m);
+        _db.Postings.Add(buy);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
+        await _db.SaveChangesAsync();
+
+        _fifoMock
+            .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
+            .Returns(new FifoCostBasisResult(1_000m, 0m, Array.Empty<FifoLot>(), 10m, false, null, 0m));
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var cagrGroup4 = result!.First(b => b.KpiKey == "Cagr").Groups[4];
+
+        cagrGroup4.GroupTotalPercent.Should().Be(0m,
+            "when holding period is 0 years, CAGR must be 0 (edge case guard)");
+
+        // CalculateCagr must NOT be called because cagrYears <= 0
+        _calcMock.Verify(
+            c => c.CalculateCagr(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<double>()),
+            Times.Never,
+            "CalculateCagr must be skipped when years <= 0");
+    }
+
+    /// <summary>
+    /// Edge case: when investedCapital is 0, the CAGR result group must have GroupTotalPercent = 0
+    /// (no division by zero).
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_CagrBreakdown_Group4_Should_ReturnZero_When_InvestedCapitalIsZero()
+    {
+        // Arrange – FIFO returns 0 cost basis (e.g. all shares sold)
+        var (security, user) = SetupSecurityAndUser();
+        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
+        _db.Postings.Add(buy);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
+        await _db.SaveChangesAsync();
+
+        _fifoMock
+            .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
+            .Returns(new FifoCostBasisResult(0m, 1_000m, Array.Empty<FifoLot>(), 0m, false, null, 0m));
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var cagrGroup4 = result!.First(b => b.KpiKey == "Cagr").Groups[4];
+
+        cagrGroup4.GroupTotalPercent.Should().Be(0m,
+            "when invested capital is 0, CAGR must be 0 to avoid division by zero");
+
+        // CalculateCagr must NOT be called because investedCapital <= 0
+        _calcMock.Verify(
+            c => c.CalculateCagr(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<double>()),
+            Times.Never,
+            "CalculateCagr must be skipped when investedCapital <= 0");
+    }
+
+    /// <summary>
+    /// The CAGR FormulaText must contain the complete formula as specified.
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_CagrBreakdown_Should_HaveCorrectFormulaText()
+    {
+        // Arrange
+        var (security, user) = SetupSecurityAndUser();
+        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
+        _db.Postings.Add(buy);
+        await _db.SaveChangesAsync();
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var cagr = result!.First(b => b.KpiKey == "Cagr");
+
+        cagr.FormulaText.Should().Contain("Marktwert", "formula must reference Marktwert");
+        cagr.FormulaText.Should().Contain("Nettodividenden", "formula must reference Nettodividenden");
+        cagr.FormulaText.Should().Contain("Investiertes Kapital", "formula must reference Investiertes Kapital");
+        cagr.FormulaText.Should().Contain("Jahre", "formula must reference Jahre");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // IRR Breakdown — GetKpiBreakdownsAsync
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// The IRR breakdown must contain exactly 2 groups:
+    /// [0] "Cashflows (Eingabe für IRR-Berechnung)" and [1] "IRR (Ergebnis)".
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_IrrBreakdown_Should_HaveExactlyTwoGroups()
+    {
+        // Arrange
+        var (security, user) = SetupSecurityAndUser();
+        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
+        _db.Postings.Add(buy);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
+        await _db.SaveChangesAsync();
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var irr = result!.First(b => b.KpiKey == "Irr");
+
+        irr.Groups.Should().HaveCount(3, "IRR breakdown must have exactly 3 formula groups");
+        irr.Groups[0].GroupName.Should().Be("Cashflows & Barwerte (XIRR-Berechnung)");
+        irr.Groups[1].GroupName.Should().Be("Summe der Barwerte (Probe)");
+        irr.Groups[2].GroupName.Should().Be("IRR (Ergebnis)");
+    }
+
+    /// <summary>
+    /// The cashflow timeline items must be sorted chronologically (oldest first),
+    /// with the terminal market-value entry last (today's date).
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_IrrBreakdown_CashflowItems_ShouldBeChronologicallySorted()
+    {
+        // Arrange – buy on day -400, dividend on day -200, another buy on day -100
+        var (security, user) = SetupSecurityAndUser();
+        var buy1 = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
+        var dividend = new Posting(
+            Guid.NewGuid(), PostingKind.Security, null, null, null,
+            security.Id, DateTime.Today.AddDays(-200), 50m,
+            null, null, null, SecurityPostingSubType.Dividend, null);
+        var buy2 = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-100), -500m, 5m);
+        _db.Postings.AddRange(buy1, dividend, buy2);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 110m));
+        await _db.SaveChangesAsync();
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var timelineGroup = result!.First(b => b.KpiKey == "Irr").Groups[0];
+
+        var dates = timelineGroup.Items.Select(i => i.Date).ToList();
+        dates.Should().BeInAscendingOrder("cashflow items must be sorted chronologically, oldest first");
+
+        // Last item must be terminal (today)
+        timelineGroup.Items[^1].Date.Date.Should().Be(DateTime.Today,
+            "the terminal market-value cashflow must have today's date and be last");
+    }
+
+    /// <summary>
+    /// Each buy posting must appear as a negative cashflow item (Mittelabfluss) in the timeline.
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_IrrBreakdown_BuysMustAppearAsNegativeAmounts()
+    {
+        // Arrange – single buy
+        var (security, user) = SetupSecurityAndUser();
+        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
+        _db.Postings.Add(buy);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
+        await _db.SaveChangesAsync();
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var timelineItems = result!.First(b => b.KpiKey == "Irr").Groups[0].Items;
+
+        var buyItems = timelineItems.Where(i => i.Note != null && i.Note.StartsWith("Kauf")).ToList();
+        buyItems.Should().HaveCount(1, "one buy posting should produce one cashflow item");
+        buyItems[0].Amount.Should().BeNegative("buys are outflows and must be negative cashflows");
+        buyItems[0].Amount.Should().Be(-1_000m, "buy amount = −1000 (no linked fees)");
+    }
+
+    /// <summary>
+    /// Each dividend must appear as a net-positive cashflow (gross minus linked taxes) in the timeline.
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_IrrBreakdown_DividendsMustAppearAsNetPositiveAmounts()
+    {
+        // Arrange – buy + dividend (80 gross) with a linked tax (−20)
+        var (security, user) = SetupSecurityAndUser();
+        var divGroupId = Guid.NewGuid();
+        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
+        var dividend = new Posting(
+            Guid.NewGuid(), PostingKind.Security, null, null, null,
+            security.Id, DateTime.Today.AddDays(-100), 80m,
+            null, null, null, SecurityPostingSubType.Dividend, null);
+        dividend.SetGroup(divGroupId);
+        var tax = new Posting(
+            Guid.NewGuid(), PostingKind.Security, null, null, null,
+            security.Id, DateTime.Today.AddDays(-100), -20m,
+            null, null, null, SecurityPostingSubType.Tax, null);
+        tax.SetGroup(divGroupId);
+        _db.Postings.AddRange(buy, dividend, tax);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 110m));
+        await _db.SaveChangesAsync();
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var timelineItems = result!.First(b => b.KpiKey == "Irr").Groups[0].Items;
+
+        var divItems = timelineItems.Where(i => i.Note == "Dividende (netto)").ToList();
+        divItems.Should().HaveCount(1, "one dividend posting must produce one net-dividend cashflow item");
+        divItems[0].Amount.Should().Be(60m, "net dividend = 80 gross − 20 tax = 60");
+        divItems[0].Amount.Should().BePositive("dividends (net) are inflows and must be positive");
+    }
+
+    /// <summary>
+    /// The last item in the cashflow timeline must be the current market value with today's date.
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_IrrBreakdown_LastItemMustBeCurrentMarketValue()
+    {
+        // Arrange
+        var (security, user) = SetupSecurityAndUser();
+        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
+        _db.Postings.Add(buy);
+        // FIFO: 10 shares held; price 130 → market value = 1 300
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 130m));
+        _fifoMock
+            .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
+            .Returns(new FifoCostBasisResult(1_000m, 0m, Array.Empty<FifoLot>(), 10m, false, null, 0m));
+        await _db.SaveChangesAsync();
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var timelineItems = result!.First(b => b.KpiKey == "Irr").Groups[0].Items;
+
+        var lastItem = timelineItems[^1];
+        lastItem.Date.Date.Should().Be(DateTime.Today, "terminal cashflow must have today's date");
+        lastItem.Amount.Should().Be(1_300m, "terminal cashflow = 10 shares × 130 = 1 300");
+        lastItem.Note.Should().Contain("Marktwert", "note must identify the entry as the market-value terminal cashflow");
+    }
+
+    /// <summary>
+    /// The IRR result group (Group[1]) must carry the computed IRR as GroupTotalPercent.
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_IrrBreakdown_ResultGroup_ShouldHaveGroupTotalPercent()
+    {
+        // Arrange – configure the IRR mock to return 12.4 %
+        _calcMock.Setup(c => c.CalculateIrr(It.IsAny<IReadOnlyList<CashflowPoint>>()))
+            .Returns(0.124m);
+
+        var (security, user) = SetupSecurityAndUser();
+        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
+        _db.Postings.Add(buy);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
+        await _db.SaveChangesAsync();
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var irrResultGroup = result!.First(b => b.KpiKey == "Irr").Groups[2];
+
+        irrResultGroup.Items.Should().BeEmpty("result group has no line items, only a percentage total");
+        irrResultGroup.GroupTotalPercent.Should().Be(0.124m, "GroupTotalPercent must match the value returned by CalculateIrr");
+    }
+
+    /// <summary>
+    /// The IRR FormulaText must contain "IRR" and the summation symbol "Σ" or the key term "Cashflow".
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_IrrBreakdown_FormulaText_ShouldContainKeyTerms()
+    {
+        // Arrange
+        var (security, user) = SetupSecurityAndUser();
+        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
+        _db.Postings.Add(buy);
+        await _db.SaveChangesAsync();
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var irr = result!.First(b => b.KpiKey == "Irr");
+
+        irr.FormulaText.Should().Contain("IRR", "formula must reference the IRR abbreviation");
+        irr.FormulaText.Should().Contain("Σ", "formula must include the summation symbol");
+        irr.FormulaText.Should().Contain("Cashflow", "formula must reference Cashflow");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // IRR Breakdown – Discounting (XIRR detail fields)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// When IRR is computable the GroupNote of the timeline group must contain the
+    /// formatted IRR rate so the user can read "r = X,XX %".
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_IrrBreakdown_TimelineGroupNote_ShouldContainIrrRate()
+    {
+        // Arrange – IRR mock returns 3.95 %
+        _calcMock.Setup(c => c.CalculateIrr(It.IsAny<IReadOnlyList<CashflowPoint>>()))
+            .Returns(0.0395m);
+
+        var (security, user) = SetupSecurityAndUser();
+        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
+        _db.Postings.Add(buy);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
+        await _db.SaveChangesAsync();
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var timelineGroup = result!.First(b => b.KpiKey == "Irr").Groups[0];
+
+        timelineGroup.GroupNote.Should().NotBeNullOrEmpty("timeline group must carry a GroupNote when IRR is available");
+        timelineGroup.GroupNote.Should().Contain("3,95", "GroupNote must include the IRR rate formatted as a percentage");
+        timelineGroup.GroupNote.Should().Contain("%", "GroupNote must include the % sign");
+    }
+
+    /// <summary>
+    /// When IRR is computable each timeline item must have YearsSinceT0, DiscountFactor,
+    /// and OriginalCashflow populated.
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_IrrBreakdown_ItemsWithIrr_ShouldHaveDiscountFields()
+    {
+        // Arrange – IRR mock returns a non-null value so discounting is applied
+        _calcMock.Setup(c => c.CalculateIrr(It.IsAny<IReadOnlyList<CashflowPoint>>()))
+            .Returns(0.05m);
+
+        var (security, user) = SetupSecurityAndUser();
+        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-365), -1_000m, 10m);
+        _db.Postings.Add(buy);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 110m));
+        await _db.SaveChangesAsync();
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var items = result!.First(b => b.KpiKey == "Irr").Groups[0].Items;
+
+        items.Should().NotBeEmpty();
+        foreach (var item in items)
+        {
+            item.YearsSinceT0.Should().NotBeNull("every item must have YearsSinceT0 when IRR is available");
+            item.DiscountFactor.Should().NotBeNull("every item must have DiscountFactor when IRR is available");
+            item.OriginalCashflow.Should().NotBeNull("every item must have OriginalCashflow when IRR is available");
+        }
+    }
+
+    /// <summary>
+    /// The first cashflow item is at t₀, so its discount factor must equal 1.0 exactly.
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_IrrBreakdown_FirstItem_DiscountFactorShouldBeOne()
+    {
+        // Arrange
+        _calcMock.Setup(c => c.CalculateIrr(It.IsAny<IReadOnlyList<CashflowPoint>>()))
+            .Returns(0.08m);
+
+        var (security, user) = SetupSecurityAndUser();
+        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
+        _db.Postings.Add(buy);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 115m));
+        await _db.SaveChangesAsync();
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var firstItem = result!.First(b => b.KpiKey == "Irr").Groups[0].Items[0];
+
+        firstItem.YearsSinceT0.Should().Be(0m, "the first item is at t₀, years since t₀ must be 0");
+        firstItem.DiscountFactor.Should().Be(1m, "discount factor at t=0 is always 1/(1+r)^0 = 1");
+    }
+
+    /// <summary>
+    /// The Amount of each item must approximately equal OriginalCashflow / (1+r)^t.
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_IrrBreakdown_ItemAmount_ShouldEqualDiscountedCashflow()
+    {
+        // Arrange – use a known IRR so we can verify the arithmetic
+        const decimal irrRate = 0.10m;
+        _calcMock.Setup(c => c.CalculateIrr(It.IsAny<IReadOnlyList<CashflowPoint>>()))
+            .Returns(irrRate);
+
+        var (security, user) = SetupSecurityAndUser();
+        // Buy today (t=0) and another buy 365 days ago
+        var buyT0 = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-365), -1_000m, 10m);
+        _db.Postings.Add(buyT0);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
+        await _db.SaveChangesAsync();
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var items = result!.First(b => b.KpiKey == "Irr").Groups[0].Items;
+
+        foreach (var item in items)
+        {
+            item.OriginalCashflow.Should().NotBeNull();
+            item.YearsSinceT0.Should().NotBeNull();
+            item.DiscountFactor.Should().NotBeNull();
+
+            decimal expectedPv = item.OriginalCashflow!.Value * item.DiscountFactor!.Value;
+            item.Amount.Should().BeApproximately(expectedPv, 0.01m,
+                "Amount must equal OriginalCashflow × DiscountFactor = Cashflow / (1+r)^t");
+        }
+    }
+
+    /// <summary>
+    /// Group[1] "Summe der Barwerte (Probe)" must have GroupTotal approximately equal to 0
+    /// when a valid IRR is used (by definition of IRR the sum of present values = 0).
+    /// </summary>
+    [Fact]
+    public async Task GetKpiBreakdownsAsync_IrrBreakdown_SumOfPresentValues_ShouldBeApproxZero()
+    {
+        // Arrange – use the real IRR calculator via a slightly different mock setup:
+        // configure a buy and a market value so the IRR solver would return a real rate.
+        // Here we rely on the real CalculateIrr via a concrete mock return value that is
+        // self-consistent with the cashflows we supply.
+        // Buy: −1 000 at t₀.  Terminal: 1 100 after 1 year.  IRR ≈ 10 %.
+        const decimal irrRate = 0.10m;
+        _calcMock.Setup(c => c.CalculateIrr(It.IsAny<IReadOnlyList<CashflowPoint>>()))
+            .Returns(irrRate);
+        _fifoMock
+            .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
+            .Returns(new FifoCostBasisResult(1_000m, 0m, Array.Empty<FifoLot>(), 10m, false, null, 0m));
+
+        var (security, user) = SetupSecurityAndUser();
+        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-365), -1_000m, 10m);
+        _db.Postings.Add(buy);
+        // 10 shares × 110 = 1 100 → terminal cashflow
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 110m));
+        await _db.SaveChangesAsync();
+
+        // Act
+        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        var sumGroup = result!.First(b => b.KpiKey == "Irr").Groups[1];
+
+        sumGroup.GroupName.Should().Be("Summe der Barwerte (Probe)");
+        // The sum of PVs = PV(−1000 at t=0) + PV(1100 at t=1)
+        // = −1000 + 1100/1.10 = −1000 + 1000 = 0
+        sumGroup.GroupTotal.Should().BeApproximately(0m, 1.0m,
+            "sum of all present values must be approximately 0 when IRR is correctly computed");
+    }
 }
+

@@ -2275,7 +2275,7 @@
             All endpoints operate on the currently authenticated user resolved via <see cref="T:FinanceManager.Application.ICurrentUserService"/>.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.UserSettingsController.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.UserSettingsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
+        <member name="M:FinanceManager.Web.Controllers.UserSettingsController.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.UserSettingsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller},FinanceManager.Infrastructure.Auth.IJwtTokenService,IAuthTokenProvider)">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.UserSettingsController"/>
             </summary>
@@ -2283,6 +2283,8 @@
             <param name="current">Service that exposes current user information.</param>
             <param name="logger">Logger instance for diagnostics and error reporting.</param>
             <param name="localizer">Localizer for accessing localized strings.</param>
+            <param name="jwt">Service used to issue new JWT tokens after profile changes.</param>
+            <param name="tokenProvider">Token provider whose cache is invalidated after the auth cookie is replaced.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.UserSettingsController.GetProfileAsync(System.Threading.CancellationToken)">
             <summary>
@@ -2491,6 +2493,9 @@
             Clears any internally cached token. Call this when the user logs out to ensure subsequent calls don't return a stale token.
             </summary>
         </member>
+        <member name="M:FinanceManager.Web.Infrastructure.Auth.JwtCookieAuthTokenProvider.InvalidateCache">
+            <inheritdoc/>
+        </member>
         <member name="M:FinanceManager.Web.Infrastructure.Auth.JwtCookieAuthTokenProvider.IssueToken(System.Collections.Generic.IEnumerable{System.Security.Claims.Claim},System.Int32)">
             <summary>
             Issues a new JWT for the supplied claims with the configured lifetime.
@@ -2511,11 +2516,6 @@
         <member name="M:FinanceManager.Web.Infrastructure.Auth.JwtCookieAuthTokenProvider.Cache(System.String,System.DateTimeOffset)">
             <summary>
             Caches the token and its expiry in-memory for quick subsequent access.
-            </summary>
-        </member>
-        <member name="M:FinanceManager.Web.Infrastructure.Auth.JwtCookieAuthTokenProvider.InvalidateCache">
-            <summary>
-            Invalidates any cached token.
             </summary>
         </member>
         <member name="T:FinanceManager.Web.Infrastructure.Auth.JwtRefreshMiddleware">
@@ -3512,19 +3512,21 @@
         </member>
         <member name="T:FinanceManager.Web.Services.PagesStringLocalizer">
             <summary>
-            Simple string localizer that reads localization values from the compiled resource set for the <c>Pages</c> resource class.
-            This implementation implements <see cref="T:Microsoft.Extensions.Localization.IStringLocalizer`1"/> and performs lookups in the current <see cref="P:System.Globalization.CultureInfo.CurrentUICulture"/>.
-            </summary>
-        </member>
-        <member name="M:FinanceManager.Web.Services.PagesStringLocalizer.#ctor">
-            <summary>
-            Initializes a new instance of the <see cref="T:FinanceManager.Web.Services.PagesStringLocalizer"/> class and loads the resource set
-            for the current UI culture.
+            String localizer that reads localization values from the compiled resource set for the <c>Pages</c> resource class.
+            This implementation implements <see cref="T:Microsoft.Extensions.Localization.IStringLocalizer`1"/> and resolves the resource set on every
+            lookup against <see cref="P:System.Globalization.CultureInfo.CurrentUICulture"/>, which is set per-request by the localization middleware.
             </summary>
             <remarks>
-            The constructor uses <see cref="M:System.Resources.ResourceManager.GetResourceSet(System.Globalization.CultureInfo,System.Boolean,System.Boolean)"/> to obtain the resources for <see cref="T:FinanceManager.Web.Pages"/>.
-            If the resource assembly is not available a <see cref="T:System.Resources.MissingManifestResourceException"/> may be thrown by <see cref="T:System.Resources.ResourceManager"/>.
+            The <see cref="T:System.Resources.ResourceManager"/> is shared as a singleton field because it is thread-safe and caches the
+            individual <see cref="T:System.Resources.ResourceSet"/> instances internally. The resource set is intentionally NOT cached at
+            construction time so that the correct culture is honoured on every request.
             </remarks>
+        </member>
+        <member name="M:FinanceManager.Web.Services.PagesStringLocalizer.GetCurrentResourceSet">
+            <summary>
+            Resolves the <see cref="T:System.Resources.ResourceSet"/> for the current request's UI culture.
+            Must be called per-lookup (not cached) so that culture changes between requests are respected.
+            </summary>
         </member>
         <member name="P:FinanceManager.Web.Services.PagesStringLocalizer.Item(System.String)">
             <summary>
@@ -3548,8 +3550,7 @@
             <summary>
             Returns all localized strings from the resource set for the current UI culture.
             </summary>
-            <param name="includeParentCultures">When true include values from parent cultures. This parameter is currently
-            forwarded to <see cref="M:System.Resources.ResourceManager.GetResourceSet(System.Globalization.CultureInfo,System.Boolean,System.Boolean)"/> when resources are resolved.</param>
+            <param name="includeParentCultures">When <c>true</c>, parent cultures are included via <see cref="T:System.Resources.ResourceManager"/> fallback.</param>
             <returns>An enumerable of <see cref="T:Microsoft.Extensions.Localization.LocalizedString"/> instances representing available localized values.</returns>
         </member>
         <member name="T:FinanceManager.Web.Services.PostingsQueryService">
@@ -3692,6 +3693,25 @@
             </summary>
             <param name="context">Context describing the background task, including TaskId and UserId. Must not be <c>null</c>.</param>
             <param name="ct">Cancellation token used to cancel the operation.</param>
+        </member>
+        <member name="T:FinanceManager.Web.Services.ReturnAnalysisLocalizer">
+            <summary>
+            Web-layer implementation of <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisLocalizer"/>.
+            Delegates all lookups to the standard ASP.NET Core <see cref="T:Microsoft.Extensions.Localization.IStringLocalizer`1"/>
+            so that resource files under <c>Resources/Services/ReturnAnalysisLocalizer.*.resx</c> are used.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Services.ReturnAnalysisLocalizer.#ctor(Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Services.ReturnAnalysisLocalizer})">
+            <summary>
+            Initializes a new instance of <see cref="T:FinanceManager.Web.Services.ReturnAnalysisLocalizer"/>.
+            </summary>
+            <param name="localizer">ASP.NET Core string localizer for this resource type.</param>
+        </member>
+        <member name="P:FinanceManager.Web.Services.ReturnAnalysisLocalizer.Item(System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Web.Services.ReturnAnalysisLocalizer.Format(System.String,System.Object[])">
+            <inheritdoc/>
         </member>
         <member name="T:FinanceManager.Web.Services.SecurityPricesBackfillExecutor">
             <summary>
@@ -10537,6 +10557,13 @@
             <exception cref="T:System.OperationCanceledException">Thrown when the operation is cancelled via the provided <paramref name="cancellationToken"/>.</exception>
             <exception cref="T:System.InvalidOperationException">May be thrown when the provider is not properly configured or cannot obtain a token due to configuration errors.</exception>
         </member>
+        <member name="M:IAuthTokenProvider.InvalidateCache">
+            <summary>
+            Invalidates any internally cached token, forcing the next call to <see cref="M:IAuthTokenProvider.GetAccessTokenAsync(System.Threading.CancellationToken)"/> to re-read the token source.
+            Call this after the auth cookie is replaced (e.g. after a profile language change) so that subsequent server-side
+            API calls pick up the updated token.
+            </summary>
+        </member>
         <member name="T:NoOpAuthTokenProvider">
             <summary>
             A no-op authentication token provider that does not supply any access token.
@@ -10553,6 +10580,9 @@
             A task that resolves to the access token string when available, or <c>null</c> when no token is provided.
             </returns>
             <exception cref="T:System.OperationCanceledException">May be thrown if the operation is cancelled via the provided <paramref name="cancellationToken"/>.</exception>
+        </member>
+        <member name="M:NoOpAuthTokenProvider.InvalidateCache">
+            <inheritdoc/>
         </member>
     </members>
 </doc>

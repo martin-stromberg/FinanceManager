@@ -30,7 +30,8 @@ public sealed class FifoCostBasisCalculator : IFifoCostBasisCalculator
                 RemainingLots: Array.Empty<FifoLot>(),
                 TotalSharesHeld: 0m,
                 HasOversellWarning: false,
-                OversellWarningMessage: null
+                OversellWarningMessage: null,
+                StandaloneFeeTotal: 0m
             );
         }
 
@@ -48,6 +49,7 @@ public sealed class FifoCostBasisCalculator : IFifoCostBasisCalculator
         var groupIdToLot = new Dictionary<Guid, MutableFifoLot>();
 
         decimal realizedGains = 0m;
+        decimal standaloneFeeTotal = 0m; // fees not linked to any lot via GroupId
         bool hasOversellWarning = false;
         string? oversellWarningMessage = null;
 
@@ -65,7 +67,7 @@ public sealed class FifoCostBasisCalculator : IFifoCostBasisCalculator
                     break;
 
                 case SecurityPostingSubType.Fee:
-                    ProcessFee(tx, groupIdToLot);
+                    standaloneFeeTotal += ProcessFee(tx, groupIdToLot);
                     break;
 
                 case SecurityPostingSubType.Dividend:
@@ -96,13 +98,22 @@ public sealed class FifoCostBasisCalculator : IFifoCostBasisCalculator
             totalSharesHeld += lot.Quantity;
         }
 
+        // Design decision (Option A): standalone fees – fees whose GroupId did not match any Buy lot –
+        // are always added to TotalCostBasis regardless of GroupId linkage. Fees linked via GroupId
+        // are already embedded in the respective lot's TotalCost above.
+        // Rationale: GroupId assignment depends on the UI data-entry path and is not guaranteed for
+        // every import or manual entry. Excluding standalone fees would silently underreport invested
+        // capital for users who recorded fees without a matching GroupId.
+        totalCostBasis += standaloneFeeTotal;
+
         return new FifoCostBasisResult(
             TotalCostBasis: totalCostBasis,
             RealizedGains: realizedGains,
             RemainingLots: remainingLots.AsReadOnly(),
             TotalSharesHeld: totalSharesHeld,
             HasOversellWarning: hasOversellWarning,
-            OversellWarningMessage: oversellWarningMessage
+            OversellWarningMessage: oversellWarningMessage,
+            StandaloneFeeTotal: standaloneFeeTotal
         );
     }
 
@@ -207,7 +218,7 @@ public sealed class FifoCostBasisCalculator : IFifoCostBasisCalculator
         return (currentRealizedGains, currentOversellWarning, currentOversellMessage);
     }
 
-    private void ProcessFee(
+    private decimal ProcessFee(
         SecurityTransaction tx,
         Dictionary<Guid, MutableFifoLot> groupIdToLot)
     {
@@ -215,20 +226,25 @@ public sealed class FifoCostBasisCalculator : IFifoCostBasisCalculator
 
         if (groupIdToLot.TryGetValue(tx.GroupId, out MutableFifoLot? associatedLot))
         {
-            // Fee is linked to a Buy via GroupId: add to that lot's cost basis
+            // Fee is linked to a Buy via GroupId: add to that lot's cost basis (per-unit cost increases).
             associatedLot.TotalCost += feeAmount;
 
             _logger.LogDebug(
                 "FifoCostBasisCalculator: Fee {Id}: amount={Fee:F2} added to lot purchased on {PurchaseDate:d} (groupId={GroupId}).",
                 tx.Id, feeAmount, associatedLot.PurchaseDate, tx.GroupId);
+
+            return 0m; // linked fee: already captured in lot.TotalCost, not standalone
         }
         else
         {
-            // Standalone fee: not associated with a specific lot
-            // Tracked in logs but not distributed across lots (kept separate per spec)
+            // Standalone fee: GroupId has no matching Buy lot.
+            // Per Option-A design: the caller accumulates these and adds them to TotalCostBasis
+            // so that invested capital is never under-reported when GroupId is absent or wrong.
             _logger.LogDebug(
-                "FifoCostBasisCalculator: Standalone fee {Id}: amount={Fee:F2}, groupId={GroupId} has no matching Buy lot.",
+                "FifoCostBasisCalculator: Standalone fee {Id}: amount={Fee:F2}, groupId={GroupId} – added to TotalCostBasis (no matching Buy lot).",
                 tx.Id, feeAmount, tx.GroupId);
+
+            return feeAmount; // caller adds this to standaloneFeeTotal → TotalCostBasis
         }
     }
 

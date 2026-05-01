@@ -1,5 +1,6 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Notifications;
+using FinanceManager.Application.Securities.ReturnAnalysis;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Notifications;
@@ -63,6 +64,7 @@ namespace FinanceManager.Web
             // Localization
             builder.Services.AddLocalization(o => o.ResourcesPath = "Resources");
             builder.Services.AddSingleton<IStringLocalizer<Pages>, PagesStringLocalizer>();
+            builder.Services.AddScoped<IReturnAnalysisLocalizer, ReturnAnalysisLocalizer>();
 
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();

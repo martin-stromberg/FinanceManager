@@ -3283,7 +3283,7 @@
             Database ownership is enforced by joining postings and price data through the Security entity (Blocker S-1).
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Securities.ReturnAnalysis.IReturnCalculationService,FinanceManager.Application.Securities.ReturnAnalysis.IFifoCostBasisCalculator,FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisCache,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService})">
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Securities.ReturnAnalysis.IReturnCalculationService,FinanceManager.Application.Securities.ReturnAnalysis.IFifoCostBasisCalculator,FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisCache,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService},FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisLocalizer)">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService"/>.
             </summary>
@@ -3292,6 +3292,7 @@
             <param name="fifo">FIFO cost basis calculator.</param>
             <param name="cache">Return analysis cache abstraction.</param>
             <param name="logger">Logger instance.</param>
+            <param name="localizer">Localizer for KPI labels, formula texts and item notes.</param>
         </member>
         <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetReturnSummaryAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
             <inheritdoc/>
@@ -3332,6 +3333,20 @@
             Enforces user-scoping via <see cref="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.LoadPostingsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)"/> (S-1).
             </summary>
         </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.BuildCagrBreakdown(System.DateTime,System.Decimal,System.Decimal,System.Collections.Generic.List{FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem},System.Decimal,System.Collections.Generic.List{FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem},System.Decimal,System.Decimal)">
+            <summary>
+            Builds the CAGR <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownDto"/> with five formula groups:
+            Marktwert, Nettodividenden, Investiertes Kapital, Anlagedauer, Ergebnis (CAGR).
+            </summary>
+            <param name="firstBuyDate">Date of the earliest buy transaction.</param>
+            <param name="buys">All buy transactions for the security.</param>
+            <param name="currentPrice">Current price per share.</param>
+            <param name="netDividendItems">Pre-built dividend + linked-tax item list (shared with TotalReturn).</param>
+            <param name="netDividends">Net dividends amount (gross dividends − taxes).</param>
+            <param name="buysGroupItemsList">Pre-built buy + linked-fee item list with positive amounts.</param>
+            <param name="investedCapital">Total FIFO cost basis (invested capital).</param>
+            <param name="currentMarketValue">Current market value (shares held × current price).</param>
+        </member>
         <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.LoadPostingsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
             <summary>
             Loads all security transactions for the given security, enforcing ownership via JOIN on Security (Blocker S-1).
@@ -3353,12 +3368,28 @@
             The current market value is added as the terminal inflow on <paramref name="terminalDate"/>.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.BuildTwrPeriods(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.IReadOnlyList{System.ValueTuple{System.DateTime,System.Decimal}})">
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.BuildIrrTimelineItems(System.Collections.Generic.List{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.List{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.List{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.List{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.List{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Linq.ILookup{System.Guid,FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Linq.ILookup{System.Guid,FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Decimal,System.Nullable{System.Decimal})">
             <summary>
-            Builds TWR periods from transactions and forward-filled prices.
-            Each period spans between consecutive cashflow events.
+            Builds the chronologically-sorted cashflow timeline items for the IRR info-panel breakdown.
+            Each buy (plus its linked fees) becomes one negative item; each dividend minus linked taxes
+            becomes one positive item; each sell becomes one positive item.
+            The current market value is appended last as the terminal positive cashflow.
+            When <paramref name="irrValue"/> is provided the <see cref="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.Amount"/> of each
+            item is the discounted present value (Cashflow / (1+r)^t); the original cashflow, the years
+            since t₀, and the discount factor are stored in the dedicated fields of
+            <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem"/>.
             </summary>
+            <param name="buys">Buy transactions.</param>
+            <param name="dividends">Dividend transactions.</param>
+            <param name="sells">Sell transactions.</param>
+            <param name="taxes">Tax transactions.</param>
+            <param name="fees">Fee transactions.</param>
+            <param name="feesByGroupId">Lookup of fees keyed by GroupId (for linking to buys).</param>
+            <param name="taxesByGroupId">Lookup of taxes keyed by GroupId (for linking to dividends).</param>
+            <param name="currentMarketValue">Current market value of the holding (terminal inflow).</param>
+            <param name="irrValue">Computed IRR rate used to discount each cashflow. Null → no discounting.</param>
         </member>
+        <!-- Badly formed XML comment ignored for member "M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.BuildTwrPeriods(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.IReadOnlyList{System.ValueTuple{System.DateTime,System.Decimal}})" -->
         <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.BuildSparklinePoints(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.IReadOnlyList{System.ValueTuple{System.DateTime,System.Decimal}})">
             <summary>
             Builds sparkline data points from transactions and forward-filled prices.

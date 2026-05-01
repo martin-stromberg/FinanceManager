@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- KPI DisplayNames -->
+  <data name="Kpi_TotalReturn_DisplayName" xml:space="preserve"><value>Gesamtrendite</value></data>
+  <data name="Kpi_MarketValue_DisplayName" xml:space="preserve"><value>Marktwert</value></data>
+  <data name="Kpi_InvestedCapital_DisplayName" xml:space="preserve"><value>Investiertes Kapital</value></data>
+  <data name="Kpi_Cagr_DisplayName" xml:space="preserve"><value>CAGR p.a.</value></data>
+  <data name="Kpi_Irr_DisplayName" xml:space="preserve"><value>IRR (pers.)</value></data>
+
+  <!-- KPI Formula texts -->
+  <data name="Kpi_TotalReturn_Formula" xml:space="preserve"><value>Gesamtrendite (%) = (Marktwert + Netto-Dividenden − Investiertes Kapital) / Investiertes Kapital × 100</value></data>
+  <data name="Kpi_MarketValue_Formula" xml:space="preserve"><value>Marktwert = Anzahl Anteile × Aktueller Kurs</value></data>
+  <data name="Kpi_InvestedCapital_Formula" xml:space="preserve"><value>Investiertes Kapital = Σ Kaufbeträge + Gebühren (FIFO-Kostenbasis der noch gehaltenen Anteile)</value></data>
+  <data name="Kpi_Cagr_Formula" xml:space="preserve"><value>CAGR = ((Marktwert + Nettodividenden) / Investiertes Kapital) ^ (1 / Jahre) − 1</value></data>
+  <data name="Kpi_Irr_Formula" xml:space="preserve"><value>Barwert = Cashflow / Diskontfaktor   |   Diskontfaktor = (1 + r)^t   |   IRR = r, sodass Σ Barwerte = 0</value></data>
+
+  <!-- KPI Descriptions -->
+  <data name="Kpi_TotalReturn_Description" xml:space="preserve"><value>Zeigt die prozentuale Gesamtrendite des Wertpapiers. Die Aufschlüsselung unten zeigt, wie sich die absoluten Bestandteile zusammensetzen.</value></data>
+  <data name="Kpi_MarketValue_Description" xml:space="preserve"><value>Der aktuelle Marktwert des Bestands, berechnet aus den gehaltenen Anteilen und dem zuletzt verfügbaren Kurs.</value></data>
+  <data name="Kpi_InvestedCapital_Description" xml:space="preserve"><value>Der Gesamtbetrag, der für die aktuell gehaltenen Anteile bezahlt wurde, inklusive aller Gebühren. Wird nach der FIFO-Methode berechnet: Verkäufe reduzieren zuerst die ältesten Kauflots.</value></data>
+  <data name="Kpi_Cagr_Description" xml:space="preserve"><value>Durchschnittliche jährliche Wachstumsrate unter der Annahme gleichmäßigen Wachstums. Jahre = Zeitraum vom ersten Kauf bis heute in vollen Jahren.</value></data>
+  <data name="Kpi_Irr_Description" xml:space="preserve"><value>Der Interne Zinsfuß (IRR) ist die persönliche Rendite p.a., die mit dem tatsächlichen Zeitpunkt jeder Ein- und Auszahlung gewichtet wird. &#xD;&#xA;Er gibt an: Hätte ich mein Geld stattdessen zu einem festen Zinssatz angelegt, welcher Zinssatz hätte exakt dasselbe Endergebnis geliefert? Je früher ein Kauf und je später eine Dividende oder der Verkauf, desto stärker wird die Rendite beeinflusst. Die berechnete Rate ist jener Wert r, bei dem die Summe aller abdiskontierten Cashflows (Barwerte) gleich null ergibt. Die Cashflows mit ihren Barwerten sind chronologisch unten aufgelistet.</value></data>
+
+  <!-- Group names -->
+  <data name="Group_MarketValue" xml:space="preserve"><value>Marktwert</value></data>
+  <data name="Group_CurrentMarketValue" xml:space="preserve"><value>Aktueller Marktwert</value></data>
+  <data name="Group_NetDividends" xml:space="preserve"><value>Nettodividenden (Dividenden − Steuern)</value></data>
+  <data name="Group_DividendsNet" xml:space="preserve"><value>Dividenden (netto)</value></data>
+  <data name="Group_InvestedCapital" xml:space="preserve"><value>Investiertes Kapital</value></data>
+  <data name="Group_HoldingPeriod" xml:space="preserve"><value>Anlagedauer</value></data>
+  <data name="Group_TotalReturn_Result" xml:space="preserve"><value>Gesamtrendite</value></data>
+  <data name="Group_Cagr_Result" xml:space="preserve"><value>CAGR (Ergebnis)</value></data>
+  <data name="Group_IrrCashflows" xml:space="preserve"><value>Cashflows &amp; Barwerte (XIRR-Berechnung)</value></data>
+  <data name="Group_IrrProbe" xml:space="preserve"><value>Summe der Barwerte (Probe)</value></data>
+  <data name="Group_Irr_Result" xml:space="preserve"><value>IRR (Ergebnis)</value></data>
+  <data name="Group_Buys_WithShares" xml:space="preserve"><value>Käufe (Anteilszugänge)</value></data>
+  <data name="Group_Sells_WithShares" xml:space="preserve"><value>Verkäufe (Anteilsabgänge)</value></data>
+  <data name="Group_Buys" xml:space="preserve"><value>Käufe</value></data>
+  <data name="Group_Sells_Fifo" xml:space="preserve"><value>Verkäufe (FIFO-Anpassung)</value></data>
+
+  <!-- Group notes / dynamic texts -->
+  <data name="Group_Irr_RateNote" xml:space="preserve"><value>r = {0} %  –  Die Rate, bei der die Summe aller Barwerte = 0 ergibt</value></data>
+  <data name="Group_Irr_SignNote" xml:space="preserve"><value>Negativer Wert = Mittelabfluss (Kauf), Positiver Wert = Mittelzufluss (Dividende / Marktwert)</value></data>
+  <data name="Group_IrrProbe_OK" xml:space="preserve"><value>Entspricht 0 – die IRR-Rate ist korrekt berechnet</value></data>
+  <data name="Group_IrrProbe_Rounding" xml:space="preserve"><value>Rundungsdifferenz: Die Abweichung von {0} EUR entsteht durch die auf 2 Dezimalstellen gerundeten Anzeigebeträge. Die interne Berechnung ergibt exakt 0.</value></data>
+
+  <!-- Item labels / notes -->
+  <data name="Item_SharesTimesPrice" xml:space="preserve"><value>{0} Anteile × {1}</value></data>
+  <data name="Item_BuySharesAtPrice" xml:space="preserve"><value>{0} Anteile à {1}</value></data>
+  <data name="Item_Buy" xml:space="preserve"><value>Kauf: {0} Stk. à {1}</value></data>
+  <data name="Item_BuySimple" xml:space="preserve"><value>Kauf</value></data>
+  <data name="Item_Fee" xml:space="preserve"><value>Gebühr</value></data>
+  <data name="Item_StandaloneFee" xml:space="preserve"><value>Gebühr (ohne Kaufzuordnung)</value></data>
+  <data name="Item_Dividend_Net" xml:space="preserve"><value>Dividende (netto)</value></data>
+  <data name="Item_Tax" xml:space="preserve"><value>Steuer</value></data>
+  <data name="Item_MarketValueTerminal" xml:space="preserve"><value>Aktueller Marktwert (fiktiver Abschluss)</value></data>
+  <data name="Item_Sell" xml:space="preserve"><value>Verkauf</value></data>
+  <data name="Item_SellWithDetails" xml:space="preserve"><value>Verkauf: {0} Stk. à {1}</value></data>
+  <data name="Item_FirstBuy" xml:space="preserve"><value>Erster Kauf</value></data>
+  <data name="Item_Today" xml:space="preserve"><value>Heute</value></data>
+  <data name="Item_Period" xml:space="preserve"><value>Zeitraum: {0}</value></data>
+  <data name="Item_HoldingPeriodYearsMonths" xml:space="preserve"><value>{0} Jahr(e) {1} Monat(e)</value></data>
+  <data name="Item_AddShares" xml:space="preserve"><value>+{0} Anteile</value></data>
+  <data name="Item_SubtractShares" xml:space="preserve"><value>−{0} Anteile</value></data>
+  <data name="Item_Shares" xml:space="preserve"><value>{0} Anteile</value></data>
+  <data name="Item_TotalReturn_Note" xml:space="preserve"><value>= Marktwert − Investiertes Kapital + Netto-Dividenden</value></data>
+
+  <!-- Warnings -->
+  <data name="Warning_NoPriceAvailable" xml:space="preserve"><value>Kein aktueller Kurs verfügbar.</value></data>
+  <data name="Warning_MissingPrices" xml:space="preserve"><value>Fehlende Kursdaten</value></data>
+</root>

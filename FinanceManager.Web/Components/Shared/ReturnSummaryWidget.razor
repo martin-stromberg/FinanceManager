@@ -4,11 +4,12 @@
 @inject IReturnAnalysisService ReturnAnalysis
 @inject ICurrentUserService CurrentUser
 @inject NavigationManager Nav
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Shared.ReturnSummaryWidget> Localizer
 
 @if (_loading)
 {
     <div class="return-summary-widget skeleton" role="status" aria-live="polite">
-        <span class="visually-hidden">Rendite wird geladen...</span>
+        <span class="visually-hidden">@Localizer["Loading"]</span>
     </div>
 }
 else if (_error != null)
@@ -20,16 +21,16 @@ else if (_error != null)
 else if (_summary == null)
 {
     <div class="return-summary-widget no-data">
-        <span>Keine Transaktionsdaten vorhanden.</span>
+        <span>@Localizer["NoTransactions"]</span>
     </div>
 }
 else
 {
-    <div class="return-summary-widget @GetReturnClass()" title="Renditeübersicht">
+    <div class="return-summary-widget @GetReturnClass()" title="@Localizer["Widget_Title"]">
         <div class="rsw-row rsw-header">
             <span class="rsw-label">
-                Gesamtrendite
-                <button class="rsw-info-btn" @onclick='() => OpenPanel("TotalReturn")' title="Formel und Posten" aria-label="Info zu Gesamtrendite">ⓘ</button>
+                @Localizer["Label_TotalReturn"]
+                <button class="rsw-info-btn" @onclick='() => OpenPanel("TotalReturn")' title="@Localizer["Aria_FormulaAndItems"]" aria-label="@string.Format(Localizer["Aria_InfoAbout"], Localizer["Label_TotalReturn"])">ⓘ</button>
             </span>
             <span class="rsw-value @GetReturnClass()">
                 @((_summary.TotalReturnPercent >= 0 ? "▲" : "▼") + FormatPercent(_summary.TotalReturnPercent))
@@ -38,19 +39,19 @@ else
         </div>
         <div class="rsw-row">
             <span class="rsw-label">
-                Marktwert
-                <button class="rsw-info-btn" @onclick='() => OpenPanel("MarketValue")' title="Formel und Posten" aria-label="Info zu Marktwert">ⓘ</button>
+                @Localizer["Label_MarketValue"]
+                <button class="rsw-info-btn" @onclick='() => OpenPanel("MarketValue")' title="@Localizer["Aria_FormulaAndItems"]" aria-label="@string.Format(Localizer["Aria_InfoAbout"], Localizer["Label_MarketValue"])">ⓘ</button>
             </span>
             <span class="rsw-value">@FormatAmount(_summary.CurrentMarketValue, _summary.CurrencyCode)</span>
         </div>
         <div class="rsw-row">
-            <span class="rsw-label">Anteile</span>
+            <span class="rsw-label">@Localizer["Label_Shares"]</span>
             <span class="rsw-value">@FormatShares(_summary.TotalSharesHeld)</span>
         </div>
         <div class="rsw-row">
             <span class="rsw-label">
-                Investiert
-                <button class="rsw-info-btn" @onclick='() => OpenPanel("InvestedCapital")' title="Formel und Posten" aria-label="Info zu Investiertes Kapital">ⓘ</button>
+                @Localizer["Label_Invested"]
+                <button class="rsw-info-btn" @onclick='() => OpenPanel("InvestedCapital")' title="@Localizer["Aria_FormulaAndItems"]" aria-label="@string.Format(Localizer["Aria_InfoAbout"], Localizer["Label_Invested"])">ⓘ</button>
             </span>
             <span class="rsw-value">@FormatAmount(_summary.InvestedCapital, _summary.CurrencyCode)</span>
         </div>
@@ -58,8 +59,8 @@ else
         {
             <div class="rsw-row">
                 <span class="rsw-label">
-                    CAGR p.a.
-                    <button class="rsw-info-btn" @onclick='() => OpenPanel("Cagr")' title="Formel und Posten" aria-label="Info zu CAGR">ⓘ</button>
+                    @Localizer["Label_Cagr"]
+                    <button class="rsw-info-btn" @onclick='() => OpenPanel("Cagr")' title="@Localizer["Aria_FormulaAndItems"]" aria-label="@string.Format(Localizer["Aria_InfoAbout"], Localizer["Label_Cagr"])">ⓘ</button>
                 </span>
                 <span class="rsw-value">@FormatPercent(_summary.Cagr.Value)</span>
             </div>
@@ -68,8 +69,8 @@ else
         {
             <div class="rsw-row">
                 <span class="rsw-label">
-                    IRR (pers.)
-                    <button class="rsw-info-btn" @onclick='() => OpenPanel("Irr")' title="Formel und Posten" aria-label="Info zu IRR">ⓘ</button>
+                    @Localizer["Label_Irr"]
+                    <button class="rsw-info-btn" @onclick='() => OpenPanel("Irr")' title="@Localizer["Aria_FormulaAndItems"]" aria-label="@string.Format(Localizer["Aria_InfoAbout"], Localizer["Label_Irr"])">ⓘ</button>
                 </span>
                 <span class="rsw-value">@FormatPercent(_summary.Irr.Value)</span>
             </div>
@@ -77,12 +78,12 @@ else
         @if (_summary.HasMissingPrices)
         {
             <div class="rsw-row rsw-warning" role="alert">
-                <span>⚠ @(_summary.MissingPricesHint ?? "Fehlende Kursdaten")</span>
+                <span>⚠ @(_summary.MissingPricesHint ?? Localizer["Warning_MissingPrices"])</span>
             </div>
         }
         <div class="rsw-actions">
-            <button class="rsw-detail-btn" @onclick="NavigateToPerformance" title="Detaillierte Renditeanalyse öffnen">
-                Detaillierte Analyse →
+            <button class="rsw-detail-btn" @onclick="NavigateToPerformance" title="@Localizer["Btn_DetailedAnalysis"]">
+                @Localizer["Btn_DetailedAnalysis"]
             </button>
         </div>
     </div>
@@ -95,12 +96,12 @@ else
                aria-label="@($"Info: {GetOpenBreakdown()?.DisplayName ?? _openKpiKey}")">
             <div class="rsw-panel-header">
                 <span class="rsw-panel-title">@(GetOpenBreakdown()?.DisplayName ?? _openKpiKey)</span>
-                <button class="rsw-panel-close" @onclick="ClosePanel" title="Schließen" aria-label="Panel schließen">✕</button>
+                <button class="rsw-panel-close" @onclick="ClosePanel" title="@Localizer["Panel_Close"]" aria-label="@Localizer["Panel_CloseAria"]">✕</button>
             </div>
             <div class="rsw-panel-body">
                 @if (_loadingBreakdown)
                 {
-                    <p class="rsw-panel-loading">Lade Detaildaten…</p>
+                    <p class="rsw-panel-loading">@Localizer["Panel_Loading"]</p>
                 }
                 else
                 {
@@ -108,13 +109,13 @@ else
                     if (bd != null)
                     {
                         <div class="rsw-formula-box">
-                            <div class="rsw-formula-label">Formel</div>
+                            <div class="rsw-formula-label">@Localizer["Panel_Formula"]</div>
                             <div class="rsw-formula-text">@bd.FormulaText</div>
                         </div>
                         <p class="rsw-panel-desc">@bd.Description</p>
                         @foreach (var group in bd.Groups)
                         {
-                            if (group.Items.Count > 0)
+                            if (group.Items.Count > 0 || group.GroupTotalPercent.HasValue || !string.IsNullOrEmpty(group.GroupNote))
                             {
                                 <div class="rsw-group">
                                     <div class="rsw-group-header @(group.IsPositiveContribution ? "rsw-group--positive" : "rsw-group--negative")">
@@ -123,7 +124,10 @@ else
                                         {
                                             <span class="rsw-group-total">
                                                 @FormatPercent(group.GroupTotalPercent.Value)
-                                                <span class="rsw-group-total-secondary">(@FormatAmount(group.GroupTotal, _summary.CurrencyCode))</span>
+                                                @if (group.GroupTotal != 0m)
+                                                {
+                                                    <span class="rsw-group-total-secondary">(@FormatAmount(group.GroupTotal, _summary.CurrencyCode))</span>
+                                                }
                                             </span>
                                         }
                                         else
@@ -131,19 +135,56 @@ else
                                             <span class="rsw-group-total">@FormatAmount(group.GroupTotal, _summary.CurrencyCode)</span>
                                         }
                                     </div>
+                                    @if (!string.IsNullOrEmpty(group.GroupNote))
+                                    {
+                                        <div class="rsw-group-note-row">@group.GroupNote</div>
+                                    }
+                                    @if (group.Items.Count == 0 && group.GroupTotal != 0m && !group.GroupTotalPercent.HasValue && string.IsNullOrEmpty(group.GroupNote))
+                                    {
+                                        @* Group has no items but a meaningful total – show as single row *@
+                                        <div class="rsw-group-total-row">
+                                            <span class="rsw-group-total-row-label">@Localizer["Panel_Sum"]</span>
+                                            <span class="rsw-item-amount @(group.GroupTotal >= 0 ? "positive" : "negative")">
+                                                @FormatAmount(group.GroupTotal, _summary.CurrencyCode)
+                                            </span>
+                                        </div>
+                                    }
                                     @if (group.Items.Count >= 1)
                                     {
                                         <table class="rsw-items-table">
                                             <tbody>
                                                 @foreach (var item in group.Items)
                                                 {
-                                                    <tr>
-                                                        <td class="rsw-item-date">@item.Date.ToString("dd.MM.yyyy")</td>
-                                                        <td class="rsw-item-note">@(item.Note ?? "")</td>
-                                                        <td class="rsw-item-amount @(item.Amount >= 0 ? "positive" : "negative")">
-                                                            @FormatAmount(item.Amount, _summary.CurrencyCode)
-                                                        </td>
-                                                    </tr>
+                                                    @if (!string.IsNullOrEmpty(group.GroupNote) && item.Amount == 0m && item.DiscountFactor == null)
+                                                    {
+                                                        @* Text-only group (e.g. Anlagedauer): show date + note, no EUR amount *@
+                                                        <tr>
+                                                            <td class="rsw-item-date">@item.Date.ToString("dd.MM.yyyy")</td>
+                                                            <td class="rsw-item-note" colspan="2">@(item.Note ?? "")</td>
+                                                        </tr>
+                                                    }
+                                                    else
+                                                    {
+                                                        <tr>
+                                                            <td class="rsw-item-date">@item.Date.ToString("dd.MM.yyyy")</td>
+                                                            <td class="rsw-item-note">@(item.Note ?? "")</td>
+                                                            <td class="rsw-item-amount @(item.Amount >= 0 ? "positive" : "negative")">
+                                                                @FormatAmount(item.Amount, _summary.CurrencyCode)
+                                                            </td>
+                                                        </tr>
+                                                        @if (item.DiscountFactor != null)
+                                                        {
+                                                            <tr class="rsw-item-detail-row">
+                                                                <td></td>
+                                                                <td colspan="2" class="rsw-item-detail">
+                                                                    <div>@Localizer["Panel_Cashflow"] <strong>@FormatAmount(item.OriginalCashflow!.Value, _summary.CurrencyCode)</strong></div>
+                                                                    <div>@Localizer["Panel_T"] <strong>@item.YearsSinceT0!.Value.ToString("N2") @Localizer["Panel_Years"]</strong></div>
+                                                                    <div>@Localizer["Panel_DiscountFactor"] <strong>@item.DiscountFactor.Value.ToString("N4")</strong></div>
+                                                                    <div>@Localizer["Panel_PresentValue"] <strong>@FormatAmount(item.Amount, _summary.CurrencyCode)</strong></div>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
                                                 }
                                             </tbody>
                                         </table>
@@ -154,7 +195,7 @@ else
                     }
                     else
                     {
-                        <p class="rsw-panel-no-data">Keine Detaildaten verfügbar.</p>
+                        <p class="rsw-panel-no-data">@Localizer["Panel_NoData"]</p>
                     }
                 }
             </div>
@@ -189,7 +230,7 @@ else
         }
         catch (Exception ex)
         {
-            _error = "Renditeanalyse nicht verfügbar: " + ex.Message;
+            _error = Localizer["ErrorPrefix"] + ex.Message;
         }
         finally { _loading = false; }
     }

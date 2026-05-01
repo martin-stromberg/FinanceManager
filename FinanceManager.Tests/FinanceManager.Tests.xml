@@ -394,8 +394,9 @@
         </member>
         <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_NotCrash_When_FeeHasNoMatchingBuyLot">
             <summary>
-            A fee whose GroupId does not match any buy lot must be silently skipped
-            without affecting cost basis.
+            A standalone fee (GroupId does not match any Buy lot) must be included in TotalCostBasis.
+            This reflects Option-A: standalone fees always contribute to invested capital, regardless
+            of whether they were linked via GroupId.
             </summary>
         </member>
         <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_NotCrash_When_FeeLinkedToFullySoldLot">
@@ -409,6 +410,19 @@
             Multiple fees referencing the same buy lot via GroupId must accumulate on the lot's cost basis.
             Buy 10 @ 100 = 1000 + fee1 (5) + fee2 (3) → TotalCostBasis = 1008.
             </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_IncludeStandaloneFeesInTotalCostBasis">
+             <summary>
+             Regression test for the standalone-fee bug:
+             Fees without a matching GroupId (standalone) must be included in TotalCostBasis so that
+             invested capital is never under-reported when fees were recorded without a GroupId link.
+            
+             Scenario:
+               Buy1 (1 000 €, 10 shares, groupId=A) + Fee1 (20 €, same groupId=A) → lot cost = 1 020 (linked)
+               Buy2 (  600 €,  5 shares, groupId=B) + Fee2 (15 €, random groupId) → standalone fee
+               Expected TotalCostBasis = 1020 + 600 + 15 = 1635
+               Expected StandaloneFeeTotal = 15
+             </summary>
         </member>
         <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_SetOversellWarning_When_SellExceedsAllLots">
             <summary>
@@ -632,24 +646,149 @@
         </member>
         <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_Should_IncludeDividends_In_TotalReturnBreakdown">
             <summary>
-            The TotalReturn breakdown must include a "Dividenden (brutto)" group
+            The TotalReturn breakdown must include a "Dividenden (netto)" group (Group[2])
             containing each dividend posting with the correct amount.
             </summary>
         </member>
-        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_Should_BreakDownCapitalGains_Into_TwoItems">
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_Should_BreakDownTotalReturn_Into_FourGroups">
             <summary>
-            The TotalReturn breakdown must contain exactly two items in the "Kursgewinne / -verluste" group:
-            one for the negative invested capital (outflow) and one for the positive current market value.
-            Their sum must equal the unrealized gain.
+            The TotalReturn breakdown must use the new four-group structure:
+            [0] "Aktueller Marktwert" (positiv), [1] "Investiertes Kapital" (negativ),
+            [2] "Dividenden (netto)" (positiv), [3] "Gesamtrendite" (Ergebnis).
+            Group[0] must have one item with the current market value.
+            Group[1] must have the buy items negated (outflows).
             </summary>
         </member>
         <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_Should_PopulateItems_For_FeesGroup">
             <summary>
-            The TotalReturn breakdown must include a "Gebühren (Abzug)" group with one item per fee
-            posting, each carrying the absolute fee amount and the correct date.
-            The group total must equal the sum of all absolute fee amounts.
-            This is a regression test for the bug where <c>GroupTotal</c> was set but
-            <c>Items</c> remained empty (no individual fee rows shown in the info panel).
+            Fees in TotalReturn must appear inside Group[1] "Investiertes Kapital" as negated items
+            (standalone fees with note "Gebühr (ohne Kaufzuordnung)"), not in a separate fees group.
+            This is a regression test ensuring individual fee rows are always visible in the info panel.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_Should_ListEachBuyAndFeeAsSeperateItem_In_InvestedCapitalBreakdown">
+            <summary>
+            The InvestedCapital and TotalReturn breakdowns must list each buy posting and each linked fee
+            (same GroupId) as separate items. Fees with a GroupId that does not match any buy (standalone)
+            must be appended at the end of the "Käufe" group with the note "Gebühr (ohne Kaufzuordnung)".
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Should_HaveExactlyFiveGroups_In_CorrectOrder">
+            <summary>
+            The CAGR breakdown must contain exactly 5 groups in the correct order:
+            Marktwert, Nettodividenden, Investiertes Kapital, Anlagedauer, CAGR (Ergebnis).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Group0_Should_ContainMarktwertItems">
+            <summary>
+            Group[0] "Marktwert" must contain exactly one item representing
+            total shares held × current price – identical to TotalReturn's Marktwert group.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Group1_Should_ContainNetDividendItems">
+            <summary>
+            Group[1] "Nettodividenden" must contain dividend items and tax items (negative).
+            The GroupTotal must equal gross dividends minus taxes.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Group2_Should_ContainInvestedCapitalItems">
+            <summary>
+            Group[2] "Investiertes Kapital" must contain the buy items (positive amounts) and their fees.
+            The GroupTotal must equal the total cost basis (investedCapital).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Group3_Should_HaveGroupNoteWithDuration">
+            <summary>
+            Group[3] "Anlagedauer" must have a non-null GroupNote with the holding period text
+            and must contain three text-only items (Erster Kauf, Heute, Zeitraum).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Group4_Should_HaveGroupTotalPercent">
+            <summary>
+            Group[4] "CAGR (Ergebnis)" must have GroupTotalPercent set to the computed CAGR value
+            and must have no items (result-only group).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Group4_Should_ReturnZero_When_YearsIsZero">
+            <summary>
+            Edge case: when the holding period in years is 0 (today is the first buy day),
+            the CAGR result group must have GroupTotalPercent = 0 (not null, not error).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Group4_Should_ReturnZero_When_InvestedCapitalIsZero">
+            <summary>
+            Edge case: when investedCapital is 0, the CAGR result group must have GroupTotalPercent = 0
+            (no division by zero).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Should_HaveCorrectFormulaText">
+            <summary>
+            The CAGR FormulaText must contain the complete formula as specified.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_Should_HaveExactlyTwoGroups">
+            <summary>
+            The IRR breakdown must contain exactly 2 groups:
+            [0] "Cashflows (Eingabe für IRR-Berechnung)" and [1] "IRR (Ergebnis)".
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_CashflowItems_ShouldBeChronologicallySorted">
+            <summary>
+            The cashflow timeline items must be sorted chronologically (oldest first),
+            with the terminal market-value entry last (today's date).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_BuysMustAppearAsNegativeAmounts">
+            <summary>
+            Each buy posting must appear as a negative cashflow item (Mittelabfluss) in the timeline.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_DividendsMustAppearAsNetPositiveAmounts">
+            <summary>
+            Each dividend must appear as a net-positive cashflow (gross minus linked taxes) in the timeline.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_LastItemMustBeCurrentMarketValue">
+            <summary>
+            The last item in the cashflow timeline must be the current market value with today's date.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_ResultGroup_ShouldHaveGroupTotalPercent">
+            <summary>
+            The IRR result group (Group[1]) must carry the computed IRR as GroupTotalPercent.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_FormulaText_ShouldContainKeyTerms">
+            <summary>
+            The IRR FormulaText must contain "IRR" and the summation symbol "Σ" or the key term "Cashflow".
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_TimelineGroupNote_ShouldContainIrrRate">
+            <summary>
+            When IRR is computable the GroupNote of the timeline group must contain the
+            formatted IRR rate so the user can read "r = X,XX %".
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_ItemsWithIrr_ShouldHaveDiscountFields">
+            <summary>
+            When IRR is computable each timeline item must have YearsSinceT0, DiscountFactor,
+            and OriginalCashflow populated.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_FirstItem_DiscountFactorShouldBeOne">
+            <summary>
+            The first cashflow item is at t₀, so its discount factor must equal 1.0 exactly.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_ItemAmount_ShouldEqualDiscountedCashflow">
+            <summary>
+            The Amount of each item must approximately equal OriginalCashflow / (1+r)^t.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_SumOfPresentValues_ShouldBeApproxZero">
+            <summary>
+            Group[1] "Summe der Barwerte (Probe)" must have GroupTotal approximately equal to 0
+            when a valid IRR is used (by definition of IRR the sum of present values = 0).
             </summary>
         </member>
         <member name="T:FinanceManager.Tests.Securities.ReturnCalculationServiceTests">
@@ -1004,6 +1143,19 @@
              - Sum check compares parent entry amount with sum of ALL child draft entry amounts across the group.
              - Booking parent books all grouped child drafts (and commits them) while unrelated drafts remain untouched.
             </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.TestHelpers.TestReturnAnalysisLocalizer">
+            <summary>
+            Stub implementation of <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisLocalizer"/> for unit tests.
+            Returns the German (de) translation for every key so that existing string assertions
+            continue to work without modification. Unknown keys fall back to the key itself.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Tests.TestHelpers.TestReturnAnalysisLocalizer.Item(System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Tests.TestHelpers.TestReturnAnalysisLocalizer.Format(System.String,System.Object[])">
+            <inheritdoc/>
         </member>
         <member name="M:FinanceManager.Tests.ViewModels.PostingsSecurityViewModelTests.GetQuantityCell(FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel,FinanceManager.Web.ViewModels.Common.ListRecord)">
             <summary>Returns the Quantity cell from a record by looking up the column index.</summary>

@@ -402,8 +402,9 @@ public sealed class FifoCostBasisCalculatorTests
     // ──────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// A fee whose GroupId does not match any buy lot must be silently skipped
-    /// without affecting cost basis.
+    /// A standalone fee (GroupId does not match any Buy lot) must be included in TotalCostBasis.
+    /// This reflects Option-A: standalone fees always contribute to invested capital, regardless
+    /// of whether they were linked via GroupId.
     /// </summary>
     [Fact]
     public void Calculate_Should_NotCrash_When_FeeHasNoMatchingBuyLot()
@@ -414,8 +415,9 @@ public sealed class FifoCostBasisCalculatorTests
         // Act
         FifoCostBasisResult result = _sut.Calculate([fee]);
 
-        // Assert
-        result.TotalCostBasis.Should().Be(0m);
+        // Assert – standalone fee is included in TotalCostBasis and exposed as StandaloneFeeTotal
+        result.TotalCostBasis.Should().Be(10m);
+        result.StandaloneFeeTotal.Should().Be(10m);
         result.RemainingLots.Should().BeEmpty();
     }
 
@@ -461,9 +463,57 @@ public sealed class FifoCostBasisCalculatorTests
         // Act
         FifoCostBasisResult result = _sut.Calculate([buy, fee1, fee2]);
 
-        // Assert – 1000 + 5 + 3 = 1008
+        // Assert – 1000 + 5 + 3 = 1008; no standalone fees
         result.TotalCostBasis.Should().Be(1_008m);
+        result.StandaloneFeeTotal.Should().Be(0m);
         result.TotalSharesHeld.Should().Be(10m);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Regression: standalone fees always included in TotalCostBasis (Option A)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Regression test for the standalone-fee bug:
+    /// Fees without a matching GroupId (standalone) must be included in TotalCostBasis so that
+    /// invested capital is never under-reported when fees were recorded without a GroupId link.
+    ///
+    /// Scenario:
+    ///   Buy1 (1 000 €, 10 shares, groupId=A) + Fee1 (20 €, same groupId=A) → lot cost = 1 020 (linked)
+    ///   Buy2 (  600 €,  5 shares, groupId=B) + Fee2 (15 €, random groupId) → standalone fee
+    ///   Expected TotalCostBasis = 1020 + 600 + 15 = 1635
+    ///   Expected StandaloneFeeTotal = 15
+    /// </summary>
+    [Fact]
+    public void Calculate_Should_IncludeStandaloneFeesInTotalCostBasis()
+    {
+        // Arrange
+        var groupA = Guid.NewGuid();
+        var d1 = new DateTime(2024, 1, 1);
+        var d2 = new DateTime(2024, 2, 1);
+        var d3 = new DateTime(2024, 2, 2);
+
+        var buy1  = Buy(d1, 1_000m, 10m, groupA);
+        var fee1  = Fee(d1.AddDays(1), 20m, groupA);   // linked via groupA → added to lot1
+        var buy2  = Buy(d2, 600m, 5m);                  // separate buy with its own auto GroupId
+        var fee2  = Fee(d3, 15m, Guid.NewGuid());       // standalone: no matching Buy lot
+
+        // Act
+        FifoCostBasisResult result = _sut.Calculate([buy1, fee1, buy2, fee2]);
+
+        // Assert
+        result.TotalCostBasis.Should().Be(1_635m);       // 1020 (lot1) + 600 (lot2) + 15 (standalone)
+        result.StandaloneFeeTotal.Should().Be(15m);
+        result.TotalSharesHeld.Should().Be(15m);         // 10 + 5
+        result.RemainingLots.Should().HaveCount(2);
+
+        // Lot1: 10 shares, cost = 1020 (buy 1000 + linked fee 20)
+        result.RemainingLots[0].Quantity.Should().Be(10m);
+        result.RemainingLots[0].CostPerUnit.Should().Be(102m);   // 1020 / 10
+
+        // Lot2: 5 shares, cost = 600
+        result.RemainingLots[1].Quantity.Should().Be(5m);
+        result.RemainingLots[1].CostPerUnit.Should().Be(120m);   // 600 / 5
     }
 
     // ──────────────────────────────────────────────────────────────────────────
