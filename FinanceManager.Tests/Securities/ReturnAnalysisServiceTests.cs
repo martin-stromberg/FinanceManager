@@ -212,11 +212,12 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
     ///   Sell 25 shares  +1151,50 EUR (GroupId B, Quantity stored as −25 in domain model)
     ///
     /// Expected:
-    ///   TotalSharesHeld    = 0        (all sold)
-    ///   CurrentMarketValue = 0        (no remaining shares × price)
-    ///   investedCapital    = 965,04   (buy 957,75 + buy-fee 7,29)
-    ///   salesProceeds net  = 1143,72  (sell 1151,50 − sell-fee 7,78)
-    ///   TotalReturnAbsolute = 1143,72 − 965,04 = 178,68
+    ///   TotalSharesHeld        = 0        (all sold)
+    ///   CurrentMarketValue     = 0        (no remaining shares × price)
+    ///   InvestedCapital        = 0        (FIFO cost basis of CURRENTLY HELD shares; fully sold → 0)
+    ///   historicalInvestedCap  = 965,04   (internal only; buy 957,75 + buy-fee 7,29 → used for return calc)
+    ///   salesProceeds net      = 1143,72  (sell 1151,50 − sell-fee 7,78)
+    ///   TotalReturnAbsolute    = 1143,72 − 965,04 = 178,68
     /// </summary>
     [Fact]
     public async Task GetReturnSummaryAsync_Should_IncludeSalesProceedsNetOfFees_When_FullSellCycleExists()
@@ -236,9 +237,9 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         const decimal sellFeeAmount = -7.78m;
 
         // Expected derived values
-        const decimal expectedInvestedCapital   = 957.75m + 7.29m;    // 965,04
-        const decimal expectedSalesProceeds     = 1151.50m - 7.78m;   // 1143,72
-        const decimal expectedReturnAbsolute    = expectedSalesProceeds - expectedInvestedCapital; // 178,68
+        const decimal historicalInvestedCapital = 957.75m + 7.29m;     // 965,04 — used internally for return calc
+        const decimal expectedSalesProceeds     = 1151.50m - 7.78m;    // 1143,72
+        const decimal expectedReturnAbsolute    = expectedSalesProceeds - historicalInvestedCapital; // 178,68
 
         var (security, user) = SetupSecurityAndUser();
         var buyDate  = new DateTime(2020, 3, 26);
@@ -283,8 +284,10 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         result.Should().NotBeNull();
         result!.TotalSharesHeld.Should().Be(0m, because: "all 25 shares were sold");
         result.CurrentMarketValue.Should().Be(0m, because: "no shares remain → no market value");
+        result.InvestedCapital.Should().Be(0m,
+            because: "InvestedCapital shows FIFO cost basis of currently held shares; fully sold means 0");
         result.TotalReturnAbsolute.Should().BeApproximately(expectedReturnAbsolute, 0.01m,
-            because: $"net sales proceeds ({expectedSalesProceeds}) minus invested capital ({expectedInvestedCapital}) = {expectedReturnAbsolute}");
+            because: $"net sales proceeds ({expectedSalesProceeds}) minus historical invested capital ({historicalInvestedCapital}) = {expectedReturnAbsolute}");
     }
 
     // ─────────────────────────────────────────────────────────────────────────

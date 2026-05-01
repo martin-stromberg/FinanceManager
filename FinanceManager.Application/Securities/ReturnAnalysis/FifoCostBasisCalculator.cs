@@ -35,9 +35,13 @@ public sealed class FifoCostBasisCalculator : IFifoCostBasisCalculator
             );
         }
 
-        // Sort by Date ascending, then by Id ascending (deterministic tiebreaker)
+        // Sort by Date ascending, then by SubType (Buy=0 before Sell=1 before Fee=3) so that
+        // buy lots and sell lots are registered in groupIdToLot before linked fees are processed.
+        // Without this, a fee with the same date as its parent buy/sell could sort before it
+        // (random GUID tiebreaker) and fail to associate with the lot.
         var sorted = transactions
             .OrderBy(t => t.Date)
+            .ThenBy(t => t.Type)
             .ThenBy(t => t.Id)
             .ToList();
 

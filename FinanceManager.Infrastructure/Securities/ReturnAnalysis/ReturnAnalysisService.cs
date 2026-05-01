@@ -233,24 +233,37 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
             totalSalesProceeds += (saleAmount - linkedFees);
         }
 
-        // Invested capital = total buy outflows + fees linked to buys (not to sells).
-        // Fees whose GroupId matches a sell are already deducted from salesProceeds above;
-        // including them here would double-count them. Fees with no matching sell GroupId
-        // (buy-linked or standalone without GroupId) are genuine acquisition costs.
+        // Two distinct invested-capital figures are needed:
+        //
+        // 1. historicalInvestedCapital – the total cash outflow for acquiring shares (ever).
+        //    Used as the denominator for TotalReturn%, CAGR and absolute return.
+        //    = sum(abs(Buy amounts)) + sum(abs(Fee amounts) where fee is NOT linked to a sell)
+        //    Sell-linked fees are excluded because they are already deducted from salesProceeds.
+        //
+        // 2. investedCapital (for display as "Investiert") – the FIFO cost basis of the
+        //    CURRENTLY HELD shares. Zero when all shares have been sold.
+        //    = fifoResult.TotalCostBasis
         var sellGroupIds = sells
             .Where(s => s.GroupId != Guid.Empty)
             .Select(s => s.GroupId)
             .ToHashSet();
 
-        decimal investedCapital =
+        decimal historicalInvestedCapital =
             transactions.Where(t => t.Type == SecurityPostingSubType.Buy)
                         .Sum(t => Math.Abs(t.Amount))
             + transactions.Where(t => t.Type == SecurityPostingSubType.Fee
                                        && !sellGroupIds.Contains(t.GroupId))
                           .Sum(t => Math.Abs(t.Amount));
 
-        decimal? totalReturnPercent = _calc.CalculateTotalReturn(investedCapital, currentMarketValue + totalSalesProceeds, netDividends);
-        decimal totalReturnAbsolute = currentMarketValue + totalSalesProceeds + netDividends - investedCapital;
+        // FIFO cost basis of currently held shares only (no standalone fees), zero when fully sold.
+        // = sum of remaining lot TotalCosts (buy price + linked fees per lot, pro-rated by FIFO consumption)
+        // StandaloneFeeTotal is intentionally excluded here: it cannot be attributed to specific remaining
+        // shares and would misrepresent "Investiert" when a position is fully sold (all standalone fees
+        // remain in TotalCostBasis even though 0 shares are held).
+        decimal investedCapital = fifoResult.TotalCostBasis - fifoResult.StandaloneFeeTotal;
+
+        decimal? totalReturnPercent = _calc.CalculateTotalReturn(historicalInvestedCapital, currentMarketValue + totalSalesProceeds, netDividends);
+        decimal totalReturnAbsolute = currentMarketValue + totalSalesProceeds + netDividends - historicalInvestedCapital;
 
         // CAGR: from first buy date to today
         var firstBuy = transactions
@@ -259,12 +272,12 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
             .FirstOrDefault();
 
         decimal? cagr = null;
-        if (firstBuy != null && investedCapital > 0m)
+        if (firstBuy != null && historicalInvestedCapital > 0m)
         {
             double years = (DateTime.Today - firstBuy.Date.Date).TotalDays / 365.25;
             if (years >= 1.0)
             {
-                cagr = _calc.CalculateCagr(investedCapital, currentMarketValue + totalSalesProceeds + netDividends, years);
+                cagr = _calc.CalculateCagr(historicalInvestedCapital, currentMarketValue + totalSalesProceeds + netDividends, years);
             }
         }
 
@@ -375,21 +388,24 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
             totalSalesProceeds += (saleAmount - linkedFees);
         }
 
-        // Invested capital = total buy outflows + fees NOT linked to sells (same logic as ComputeReturnSummaryAsync).
+        // See ComputeReturnSummaryAsync for the two-capital explanation.
         var sellGroupIds = sells
             .Where(s => s.GroupId != Guid.Empty)
             .Select(s => s.GroupId)
             .ToHashSet();
 
-        decimal investedCapital =
+        decimal historicalInvestedCapital =
             transactions.Where(t => t.Type == SecurityPostingSubType.Buy)
                         .Sum(t => Math.Abs(t.Amount))
             + transactions.Where(t => t.Type == SecurityPostingSubType.Fee
                                        && !sellGroupIds.Contains(t.GroupId))
                           .Sum(t => Math.Abs(t.Amount));
 
-        decimal grossReturn = currentMarketValue + totalSalesProceeds + grossDividends - investedCapital;
-        decimal netReturn = currentMarketValue + totalSalesProceeds + netDividends - investedCapital;
+        // FIFO cost basis of currently held shares only — see ComputeReturnSummaryAsync for full rationale.
+        decimal investedCapital = fifoResult.TotalCostBasis - fifoResult.StandaloneFeeTotal;
+
+        decimal grossReturn = currentMarketValue + totalSalesProceeds + grossDividends - historicalInvestedCapital;
+        decimal netReturn = currentMarketValue + totalSalesProceeds + netDividends - historicalInvestedCapital;
         decimal taxRate = _calc.CalculateTaxRate(totalTaxes, grossReturn) ?? 0m;
 
         // TWR
