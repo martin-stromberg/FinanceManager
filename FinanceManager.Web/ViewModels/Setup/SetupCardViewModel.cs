@@ -39,8 +39,8 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     {
         new KeyValuePair<string, string>("profile", Localizer?["Setup_Section_Profile"].Value ?? "Profil"),
         new KeyValuePair<string, string>("notifications", Localizer?["Setup_Section_Notifications"].Value ?? "Benachrichtigungen"),
-        new KeyValuePair<string, string>("statements", Localizer?["Setup_Section_Statements"].Value ?? "Kontoauszüge"),
-        new KeyValuePair<string, string>("attachments", Localizer?["Setup_Section_Attachments"].Value ?? "Anhänge"),
+        new KeyValuePair<string, string>("statements", Localizer?["Setup_Section_Statements"].Value ?? "Kontoauszï¿½ge"),
+        new KeyValuePair<string, string>("attachments", Localizer?["Setup_Section_Attachments"].Value ?? "Anhï¿½nge"),
         new KeyValuePair<string, string>("backup", Localizer?["Setup_Section_Backup"].Value ?? "Backup"),
         new KeyValuePair<string, string>("security", Localizer?["Setup_Section_Security"].Value ?? "Sicherheit"),
     };
@@ -204,6 +204,14 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                         try
                         {
                             await ApiClient.Budgets_ResetReportCacheAsync();
+                            
+                            // Also reset Return Analysis cache for securities
+                            var returnAnalysisCache = ServiceProvider.GetService<FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisCache>();
+                            if (returnAnalysisCache != null)
+                            {
+                                await returnAnalysisCache.InvalidateAsync(null);
+                            }
+                            
                             SetError(null, localizer["Info_ResetReportCache"].Value ?? "Report cache reset.");
                             RaiseStateChanged();
                         }
