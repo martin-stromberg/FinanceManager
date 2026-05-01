@@ -201,6 +201,94 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         result.MissingPricesHint.Should().Be("Oversell detected");
     }
 
+    /// <summary>
+    /// Full buy–sell cycle: one buy with fee (GroupId A) and one complete sell with fee (GroupId B).
+    /// After selling all 25 shares the market value must be zero, sales proceeds net of sell-fee
+    /// must be included in TotalReturnAbsolute, and the buy-fee must be part of invested capital.
+    ///
+    /// Transactions (exact values from production database):
+    ///   Buy  25 shares  −957,75 EUR  (GroupId A)
+    ///   Fee             −7,29  EUR   (GroupId A – linked to buy)
+    ///   Fee             −7,78  EUR   (GroupId B – linked to sell)
+    ///   Sell 25 shares  +1151,50 EUR (GroupId B)
+    ///
+    /// Expected:
+    ///   investedCapital    = 965,04  (FIFO: buy + buy-fee)
+    ///   currentMarketValue = 0       (0 shares held)
+    ///   salesProceeds net  = 1151,50 − 7,78 = 1143,72
+    ///   TotalReturnAbsolute = 0 + 1143,72 + 0 − 965,04 = 178,68
+    ///   TotalSharesHeld    = 0
+    /// </summary>
+    [Fact]
+    public async Task GetReturnSummaryAsync_Should_IncludeSalesProceedsNetOfFees_When_FullSellCycleExists()
+    {
+        // Arrange
+        var groupBuy  = new Guid("9be20b76-c600-4ab5-b388-e02a2b89bffa");
+        var groupSell = new Guid("ca09994a-decd-40a7-9eff-a51d1ba581ed");
+        const decimal buyAmount    = -957.75m;
+        const decimal buyFeeAmount = -7.29m;
+        const decimal sellAmount   = 1151.50m;
+        const decimal sellFeeAmount = -7.78m;
+        const decimal investedCapital = 965.04m; // 957,75 + 7,29
+
+        // FIFO: all 25 shares sold → 0 remaining, cost basis = buy + buy-fee
+        _fifoMock
+            .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
+            .Returns(new FifoCostBasisResult(investedCapital, 0m, Array.Empty<FifoLot>(), 0m, false, null, 0m));
+
+        var (security, user) = SetupSecurityAndUser();
+        var buyDate  = new DateTime(2020, 3, 26);
+        var sellDate = new DateTime(2024, 8, 6);
+
+        var buyPosting = new Posting(
+            Guid.NewGuid(), PostingKind.Security,
+            null, null, null, security.Id,
+            buyDate, buyAmount,
+            null, null, null,
+            SecurityPostingSubType.Buy, 25m)
+            .SetGroup(groupBuy);
+
+        var buyFeePosting = new Posting(
+            Guid.NewGuid(), PostingKind.Security,
+            null, null, null, security.Id,
+            buyDate, buyFeeAmount,
+            null, null, null,
+            SecurityPostingSubType.Fee, null)
+            .SetGroup(groupBuy);
+
+        var sellFeePosting = new Posting(
+            Guid.NewGuid(), PostingKind.Security,
+            null, null, null, security.Id,
+            sellDate, sellFeeAmount,
+            null, null, null,
+            SecurityPostingSubType.Fee, null)
+            .SetGroup(groupSell);
+
+        var sellPosting = new Posting(
+            Guid.NewGuid(), PostingKind.Security,
+            null, null, null, security.Id,
+            sellDate, sellAmount,
+            null, null, null,
+            SecurityPostingSubType.Sell, -25m)
+            .SetGroup(groupSell);
+
+        _db.Postings.AddRange(buyPosting, buyFeePosting, sellFeePosting, sellPosting);
+        await _db.SaveChangesAsync();
+
+        // Act
+        ReturnSummaryDto? result = await _sut.GetReturnSummaryAsync(security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.TotalSharesHeld.Should().Be(0m, because: "all shares were sold");
+        result.CurrentMarketValue.Should().Be(0m, because: "no shares held → no market value");
+
+        const decimal expectedSalesProceeds = sellAmount + sellFeeAmount; // 1151,50 − 7,78 = 1143,72
+        const decimal expectedReturnAbsolute = expectedSalesProceeds - investedCapital; // 1143,72 − 965,04 = 178,68
+        result.TotalReturnAbsolute.Should().BeApproximately(expectedReturnAbsolute, 0.01m,
+            because: "TotalReturnAbsolute must include sales proceeds net of sell-fee minus invested capital");
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // GetSparklineDataAsync
     // ─────────────────────────────────────────────────────────────────────────
