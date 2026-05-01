@@ -13,10 +13,10 @@
   <data name="Kpi_Irr_DisplayName" xml:space="preserve"><value>IRR (pers.)</value></data>
 
   <!-- KPI Formula texts -->
-  <data name="Kpi_TotalReturn_Formula" xml:space="preserve"><value>Gesamtrendite (%) = (Marktwert + Netto-Dividenden − Investiertes Kapital) / Investiertes Kapital × 100</value></data>
+  <data name="Kpi_TotalReturn_Formula" xml:space="preserve"><value>Gesamtrendite (%) = (Marktwert + Verkaufserlöse (netto) + Netto-Dividenden − Investiertes Kapital) / Investiertes Kapital × 100</value></data>
   <data name="Kpi_MarketValue_Formula" xml:space="preserve"><value>Marktwert = Anzahl Anteile × Aktueller Kurs</value></data>
   <data name="Kpi_InvestedCapital_Formula" xml:space="preserve"><value>Investiertes Kapital = Σ Kaufbeträge + Gebühren (FIFO-Kostenbasis der noch gehaltenen Anteile)</value></data>
-  <data name="Kpi_Cagr_Formula" xml:space="preserve"><value>CAGR = ((Marktwert + Nettodividenden) / Investiertes Kapital) ^ (1 / Jahre) − 1</value></data>
+  <data name="Kpi_Cagr_Formula" xml:space="preserve"><value>CAGR = ((Marktwert + Verkaufserlöse (netto) + Nettodividenden) / Investiertes Kapital) ^ (1 / Jahre) − 1</value></data>
   <data name="Kpi_Irr_Formula" xml:space="preserve"><value>Barwert = Cashflow / Diskontfaktor   |   Diskontfaktor = (1 + r)^t   |   IRR = r, sodass Σ Barwerte = 0</value></data>
 
   <!-- KPI Descriptions -->
@@ -42,6 +42,8 @@
   <data name="Group_Sells_WithShares" xml:space="preserve"><value>Verkäufe (Anteilsabgänge)</value></data>
   <data name="Group_Buys" xml:space="preserve"><value>Käufe</value></data>
   <data name="Group_Sells_Fifo" xml:space="preserve"><value>Verkäufe (FIFO-Anpassung)</value></data>
+  <data name="Group_SalesProceeds_Net" xml:space="preserve"><value>Verkaufserlöse (netto)</value></data>
+  <data name="Group_RemainingFifoCostBasis" xml:space="preserve"><value>FIFO-Kostenbasis (gehaltene Anteile)</value></data>
 
   <!-- Group notes / dynamic texts -->
   <data name="Group_Irr_RateNote" xml:space="preserve"><value>r = {0} %  –  Die Rate, bei der die Summe aller Barwerte = 0 ergibt</value></data>
@@ -68,7 +70,8 @@
   <data name="Item_AddShares" xml:space="preserve"><value>+{0} Anteile</value></data>
   <data name="Item_SubtractShares" xml:space="preserve"><value>−{0} Anteile</value></data>
   <data name="Item_Shares" xml:space="preserve"><value>{0} Anteile</value></data>
-  <data name="Item_TotalReturn_Note" xml:space="preserve"><value>= Marktwert − Investiertes Kapital + Netto-Dividenden</value></data>
+  <data name="Item_TotalReturn_Note" xml:space="preserve"><value>= Marktwert + Verkaufserlöse (netto) − Investiertes Kapital + Netto-Dividenden</value></data>
+  <data name="Item_PositionFullySold" xml:space="preserve"><value>Position vollständig verkauft</value></data>
 
   <!-- Warnings -->
   <data name="Warning_NoPriceAvailable" xml:space="preserve"><value>Kein aktueller Kurs verfügbar.</value></data>

@@ -696,7 +696,10 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         decimal currentPrice = latestPriceRow;
         decimal sharesHeld = fifoResult.TotalSharesHeld;
         decimal currentMarketValue = sharesHeld * currentPrice;
-        decimal investedCapital = fifoResult.TotalCostBasis;
+
+        // FIFO cost basis of currently held shares only (= 0 when position is fully sold).
+        // StandaloneFeeTotal covers fees not linked to any buy lot (including sell-linked fees).
+        decimal displayInvestedCapital = fifoResult.TotalCostBasis - fifoResult.StandaloneFeeTotal;
 
         // Categorised transactions
         var buys = transactions.Where(t => t.Type == SecurityPostingSubType.Buy).ToList();
@@ -707,11 +710,7 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
 
         decimal grossDividends = dividends.Sum(t => t.Amount);
         decimal totalTaxes = taxes.Sum(t => Math.Abs(t.Amount));
-        decimal totalFees = fees.Sum(t => Math.Abs(t.Amount));
         decimal netDividends = grossDividends - totalTaxes;
-        decimal unrealizedGain = currentMarketValue - investedCapital;
-        decimal totalReturnAbsolute = currentMarketValue - investedCapital + netDividends;
-        decimal? totalReturnPercent = _calc.CalculateTotalReturn(investedCapital, currentMarketValue, netDividends);
         DateTime firstBuyDate = buys.Count > 0 ? buys.Min(t => t.Date) : DateTime.Today;
 
         // ── Build per-buy item list ───────────────────────────────────────────
@@ -725,6 +724,9 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
             .Select(b => b.GroupId)
             .ToHashSet();
         var feesByGroupId = fees.ToLookup(f => f.GroupId);
+
+        // GroupIds associated with sell transactions – used to exclude sell-linked fees from buysGroupItemsList
+        var sellGroupIds = sells.Where(s => s.GroupId != Guid.Empty).Select(s => s.GroupId).ToHashSet();
 
         var buysGroupItemsList = new List<KpiBreakdownItem>();
         foreach (var buy in buys)
@@ -745,14 +747,48 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
             }
         }
 
-        // Standalone fees: GroupId == Guid.Empty or GroupId not matching any buy
-        foreach (var fee in fees.Where(f => f.GroupId == Guid.Empty || !buyGroupIds.Contains(f.GroupId)))
+        // Standalone fees: not linked to any buy AND not linked to any sell
+        foreach (var fee in fees.Where(f => (f.GroupId == Guid.Empty || !buyGroupIds.Contains(f.GroupId)) && !sellGroupIds.Contains(f.GroupId)))
         {
             buysGroupItemsList.Add(new KpiBreakdownItem(fee.Date, Math.Abs(fee.Amount), _localizer["Item_StandaloneFee"]));
         }
 
-        // Build mixed dividends + taxes list for the "Dividenden (netto)" group in TotalReturn.
-        // Taxes that share a GroupId with a dividend are placed directly after that dividend.
+        // ── Sell net proceeds: gross sell amount with linked fees as sub-items ──────────────
+        // GroupTotal = totalSalesProceeds (net), individual items show gross + fee breakdown.
+        var sellNetItems = new List<KpiBreakdownItem>();
+        decimal totalSalesProceeds = 0m;
+        foreach (var sell in sells)
+        {
+            decimal linkedFees = sell.GroupId != Guid.Empty
+                ? feesByGroupId[sell.GroupId].Sum(f => Math.Abs(f.Amount))
+                : 0m;
+            totalSalesProceeds += sell.Amount - linkedFees;
+            decimal absQty = sell.Quantity.HasValue ? Math.Abs(sell.Quantity.Value) : 0m;
+            decimal pricePerShare = absQty > 0 ? sell.Amount / absQty : sell.Amount;
+            string sellLabel = absQty > 0
+                ? _localizer.Format("Item_SellWithDetails", absQty.ToString("G6"), pricePerShare.ToString("N2"))
+                : _localizer["Item_Sell"];
+            sellNetItems.Add(new KpiBreakdownItem(sell.Date, sell.Amount, sellLabel));
+            if (sell.GroupId != Guid.Empty)
+            {
+                foreach (var fee in feesByGroupId[sell.GroupId])
+                {
+                    sellNetItems.Add(new KpiBreakdownItem(fee.Date, -Math.Abs(fee.Amount), _localizer["Item_Fee"]));
+                }
+            }
+        }
+
+        // Historical invested capital: total buy outflows + fees not linked to sells.
+        // Used as denominator for TotalReturn% and CAGR (matches ComputeReturnSummaryAsync).
+        decimal historicalInvestedCapital =
+            transactions.Where(t => t.Type == SecurityPostingSubType.Buy).Sum(t => Math.Abs(t.Amount))
+            + transactions.Where(t => t.Type == SecurityPostingSubType.Fee && !sellGroupIds.Contains(t.GroupId))
+                          .Sum(t => Math.Abs(t.Amount));
+
+        decimal totalReturnAbsolute = currentMarketValue + totalSalesProceeds + netDividends - historicalInvestedCapital;
+        decimal? totalReturnPercent = _calc.CalculateTotalReturn(historicalInvestedCapital, currentMarketValue + totalSalesProceeds, netDividends);
+
+        // Build mixed dividends + taxes list for the "Dividenden (netto)" group in TotalReturn.        // Taxes that share a GroupId with a dividend are placed directly after that dividend.
         // Remaining taxes (standalone or unmatched GroupId) are appended at the end, sorted by date.
         var dividendGroupIds = dividends
             .Where(d => d.GroupId != Guid.Empty)
@@ -797,39 +833,69 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
             ? _localizer.Format("Group_Irr_RateNote", (irrValue.Value * 100m).ToString("N2"))
             : _localizer["Group_Irr_SignNote"];
 
+        // ── Build TotalReturn groups (conditional sells group when there are sales) ──────────
+        var totalReturnGroups = new List<KpiFormulaGroup>
+        {
+            new(
+                GroupName: _localizer["Group_CurrentMarketValue"],
+                IsPositiveContribution: true,
+                Items: [new KpiBreakdownItem(DateTime.Today, currentMarketValue, _localizer.Format("Item_SharesTimesPrice", sharesHeld.ToString("G6"), currentPrice.ToString("N2")))],
+                GroupTotal: currentMarketValue),
+        };
+        if (sells.Count > 0)
+        {
+            totalReturnGroups.Add(new KpiFormulaGroup(
+                GroupName: _localizer["Group_SalesProceeds_Net"],
+                IsPositiveContribution: totalSalesProceeds >= 0,
+                Items: sellNetItems,
+                GroupTotal: totalSalesProceeds));
+        }
+
+        totalReturnGroups.Add(new KpiFormulaGroup(
+            GroupName: _localizer["Group_InvestedCapital"],
+            IsPositiveContribution: false,
+            Items: buysGroupItemsList.Select(it => it with { Amount = -it.Amount }).ToList(),
+            GroupTotal: -historicalInvestedCapital));
+        totalReturnGroups.Add(new KpiFormulaGroup(
+            GroupName: _localizer["Group_DividendsNet"],
+            IsPositiveContribution: true,
+            Items: netDividendItems,
+            GroupTotal: netDividends));
+        totalReturnGroups.Add(new KpiFormulaGroup(
+            GroupName: _localizer["Group_TotalReturn_Result"],
+            IsPositiveContribution: totalReturnAbsolute >= 0,
+            Items: [new KpiBreakdownItem(DateTime.Today, totalReturnAbsolute, _localizer["Item_TotalReturn_Note"])],
+            GroupTotal: totalReturnAbsolute,
+            GroupTotalPercent: totalReturnPercent));
+
+        // ── InvestedCapital: FIFO cost basis of currently held shares (remaining lots) ──────
+        var investedCapitalItems = new List<KpiBreakdownItem>();
+        if (sharesHeld <= 0m || fifoResult.RemainingLots.Count == 0)
+        {
+            investedCapitalItems.Add(new KpiBreakdownItem(DateTime.Today, 0m, _localizer["Item_PositionFullySold"]));
+        }
+        else
+        {
+            foreach (var lot in fifoResult.RemainingLots)
+            {
+                decimal lotCost = lot.Quantity * lot.CostPerUnit;
+                investedCapitalItems.Add(new KpiBreakdownItem(
+                    lot.PurchaseDate,
+                    lotCost,
+                    _localizer.Format("Item_BuySharesAtPrice", lot.Quantity.ToString("G6"), lot.CostPerUnit.ToString("N2"))));
+            }
+        }
+
         var result = new List<KpiBreakdownDto>
         {
             // ── Gesamtrendite (Total Return) ──────────────────────────────────
-            // Formel: Total Return = Marktwert − Investiertes Kapital + (Dividenden − Steuern)
+            // Formel: Total Return = Marktwert + Verkaufserlöse (netto) − Investiertes Kapital (historisch) + (Dividenden − Steuern)
             new KpiBreakdownDto(
                 KpiKey: "TotalReturn",
                 DisplayName: _localizer["Kpi_TotalReturn_DisplayName"],
                 FormulaText: _localizer["Kpi_TotalReturn_Formula"],
                 Description: _localizer["Kpi_TotalReturn_Description"],
-                Groups:
-                [
-                    new KpiFormulaGroup(
-                        GroupName: _localizer["Group_CurrentMarketValue"],
-                        IsPositiveContribution: true,
-                        Items: [new KpiBreakdownItem(DateTime.Today, currentMarketValue, _localizer.Format("Item_SharesTimesPrice", sharesHeld.ToString("G6"), currentPrice.ToString("N2")))],
-                        GroupTotal: currentMarketValue),
-                    new KpiFormulaGroup(
-                        GroupName: _localizer["Group_InvestedCapital"],
-                        IsPositiveContribution: false,
-                        Items: buysGroupItemsList.Select(it => it with { Amount = -it.Amount }).ToList(),
-                        GroupTotal: -investedCapital),
-                    new KpiFormulaGroup(
-                        GroupName: _localizer["Group_DividendsNet"],
-                        IsPositiveContribution: true,
-                        Items: netDividendItems,
-                        GroupTotal: netDividends),
-                    new KpiFormulaGroup(
-                        GroupName: _localizer["Group_TotalReturn_Result"],
-                        IsPositiveContribution: totalReturnAbsolute >= 0,
-                        Items: [new KpiBreakdownItem(DateTime.Today, totalReturnAbsolute, _localizer["Item_TotalReturn_Note"])],
-                        GroupTotal: totalReturnAbsolute,
-                        GroupTotalPercent: totalReturnPercent),
-                ]),
+                Groups: totalReturnGroups),
 
             // ── Marktwert (Current Market Value) ────────────────────────────
             new KpiBreakdownDto(
@@ -862,6 +928,8 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
                 ]),
 
             // ── Investiertes Kapital ─────────────────────────────────────────
+            // Shows FIFO cost basis of currently held shares (remaining lots).
+            // When position is fully sold, displays a "Position vollständig verkauft" note.
             new KpiBreakdownDto(
                 KpiKey: "InvestedCapital",
                 DisplayName: _localizer["Kpi_InvestedCapital_DisplayName"],
@@ -870,24 +938,14 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
                 Groups:
                 [
                     new KpiFormulaGroup(
-                        GroupName: _localizer["Group_Buys"],
-                        IsPositiveContribution: false,
-                        Items: buysGroupItemsList,
-                        GroupTotal: buysGroupItemsList.Sum(it => it.Amount)),
-                    new KpiFormulaGroup(
-                        GroupName: _localizer["Group_Sells_Fifo"],
+                        GroupName: _localizer["Group_RemainingFifoCostBasis"],
                         IsPositiveContribution: true,
-                        Items: sells
-                            .Select(t => new KpiBreakdownItem(
-                                t.Date,
-                                t.Amount,
-                                t.Quantity.HasValue ? _localizer.Format("Item_Shares", t.Quantity.Value.ToString("N4")) : null))
-                            .ToList(),
-                        GroupTotal: sells.Sum(t => t.Amount)),
+                        Items: investedCapitalItems,
+                        GroupTotal: displayInvestedCapital),
                 ]),
 
             // ── CAGR ─────────────────────────────────────────────────────────
-            // Formel: CAGR = ((Marktwert + Nettodividenden) / Investiertes Kapital) ^ (1 / Jahre) − 1
+            // Formel: CAGR = ((Marktwert + Verkaufserlöse + Nettodividenden) / Investiertes Kapital) ^ (1 / Jahre) − 1
             // Jahre = (DateTime.Today − firstBuyDate).TotalDays / 365.25
             BuildCagrBreakdown(
                 firstBuyDate,
@@ -896,8 +954,10 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
                 netDividendItems,
                 netDividends,
                 buysGroupItemsList,
-                investedCapital,
-                currentMarketValue),
+                historicalInvestedCapital,
+                currentMarketValue,
+                sellNetItems,
+                totalSalesProceeds),
 
             // ── IRR (persönliche Rendite) ─────────────────────────────────────
             new KpiBreakdownDto(
@@ -935,8 +995,8 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
 
 
     /// <summary>
-    /// Builds the CAGR <see cref="KpiBreakdownDto"/> with five formula groups:
-    /// Marktwert, Nettodividenden, Investiertes Kapital, Anlagedauer, Ergebnis (CAGR).
+    /// Builds the CAGR <see cref="KpiBreakdownDto"/> with formula groups:
+    /// Marktwert, (Verkaufserlöse), Nettodividenden, Investiertes Kapital, Anlagedauer, Ergebnis (CAGR).
     /// </summary>
     /// <param name="firstBuyDate">Date of the earliest buy transaction.</param>
     /// <param name="buys">All buy transactions for the security.</param>
@@ -944,8 +1004,10 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
     /// <param name="netDividendItems">Pre-built dividend + linked-tax item list (shared with TotalReturn).</param>
     /// <param name="netDividends">Net dividends amount (gross dividends − taxes).</param>
     /// <param name="buysGroupItemsList">Pre-built buy + linked-fee item list with positive amounts.</param>
-    /// <param name="investedCapital">Total FIFO cost basis (invested capital).</param>
+    /// <param name="historicalInvestedCapital">Total historical buy outflows + non-sell fees (denominator for CAGR).</param>
     /// <param name="currentMarketValue">Current market value (shares held × current price).</param>
+    /// <param name="sellNetItems">Pre-built sell item list for the conditional sales proceeds group.</param>
+    /// <param name="totalSalesProceeds">Net sales proceeds (gross sell amounts minus sell-linked fees).</param>
     private KpiBreakdownDto BuildCagrBreakdown(
         DateTime firstBuyDate,
         decimal sharesHeld,
@@ -953,8 +1015,10 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         List<KpiBreakdownItem> netDividendItems,
         decimal netDividends,
         List<KpiBreakdownItem> buysGroupItemsList,
-        decimal investedCapital,
-        decimal currentMarketValue)
+        decimal historicalInvestedCapital,
+        decimal currentMarketValue,
+        List<KpiBreakdownItem> sellNetItems,
+        decimal totalSalesProceeds)
     {
         // ── Gruppe 1: Marktwert – single item (total shares held × current price) ──────────
         var marktwertItems = new List<KpiBreakdownItem>
@@ -983,50 +1047,62 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
 
         // ── Gruppe 5: CAGR-Ergebnis ────────────────────────────────────────────────────────────
         decimal? cagrValue;
-        if (cagrYears <= 0 || investedCapital <= 0)
+        if (cagrYears <= 0 || historicalInvestedCapital <= 0)
         {
             cagrValue = 0m;
         }
         else
         {
-            cagrValue = _calc.CalculateCagr(investedCapital, currentMarketValue + netDividends, cagrYears);
+            cagrValue = _calc.CalculateCagr(historicalInvestedCapital, currentMarketValue + totalSalesProceeds + netDividends, cagrYears);
         }
+
+        // ── Build CAGR groups (conditional sells group) ───────────────────────────────────────
+        var cagrGroups = new List<KpiFormulaGroup>
+        {
+            new(
+                GroupName: _localizer["Group_MarketValue"],
+                IsPositiveContribution: true,
+                Items: marktwertItems,
+                GroupTotal: currentMarketValue),
+        };
+        if (sellNetItems.Count > 0)
+        {
+            cagrGroups.Add(new KpiFormulaGroup(
+                GroupName: _localizer["Group_SalesProceeds_Net"],
+                IsPositiveContribution: totalSalesProceeds >= 0,
+                Items: sellNetItems,
+                GroupTotal: totalSalesProceeds));
+        }
+
+        cagrGroups.Add(new KpiFormulaGroup(
+            GroupName: _localizer["Group_NetDividends"],
+            IsPositiveContribution: true,
+            Items: netDividendItems,
+            GroupTotal: netDividends));
+        cagrGroups.Add(new KpiFormulaGroup(
+            GroupName: _localizer["Group_InvestedCapital"],
+            IsPositiveContribution: false,
+            Items: buysGroupItemsList,
+            GroupTotal: historicalInvestedCapital));
+        cagrGroups.Add(new KpiFormulaGroup(
+            GroupName: _localizer["Group_HoldingPeriod"],
+            IsPositiveContribution: true,
+            Items: anlagedauerItems,
+            GroupTotal: 0m,
+            GroupNote: durationText));
+        cagrGroups.Add(new KpiFormulaGroup(
+            GroupName: _localizer["Group_Cagr_Result"],
+            IsPositiveContribution: cagrValue.HasValue && cagrValue.Value >= 0m,
+            Items: [],
+            GroupTotal: 0m,
+            GroupTotalPercent: cagrValue));
 
         return new KpiBreakdownDto(
             KpiKey: "Cagr",
             DisplayName: _localizer["Kpi_Cagr_DisplayName"],
             FormulaText: _localizer["Kpi_Cagr_Formula"],
             Description: _localizer["Kpi_Cagr_Description"],
-            Groups:
-            [
-                new KpiFormulaGroup(
-                    GroupName: _localizer["Group_MarketValue"],
-                    IsPositiveContribution: true,
-                    Items: marktwertItems,
-                    GroupTotal: currentMarketValue),
-                new KpiFormulaGroup(
-                    GroupName: _localizer["Group_NetDividends"],
-                    IsPositiveContribution: true,
-                    Items: netDividendItems,
-                    GroupTotal: netDividends),
-                new KpiFormulaGroup(
-                    GroupName: _localizer["Group_InvestedCapital"],
-                    IsPositiveContribution: false,
-                    Items: buysGroupItemsList,
-                    GroupTotal: investedCapital),
-                new KpiFormulaGroup(
-                    GroupName: _localizer["Group_HoldingPeriod"],
-                    IsPositiveContribution: true,
-                    Items: anlagedauerItems,
-                    GroupTotal: 0m,
-                    GroupNote: durationText),
-                new KpiFormulaGroup(
-                    GroupName: _localizer["Group_Cagr_Result"],
-                    IsPositiveContribution: cagrValue.HasValue && cagrValue.Value >= 0m,
-                    Items: [],
-                    GroupTotal: 0m,
-                    GroupTotalPercent: cagrValue),
-            ]);
+            Groups: cagrGroups);
     }
 
     /// <summary>

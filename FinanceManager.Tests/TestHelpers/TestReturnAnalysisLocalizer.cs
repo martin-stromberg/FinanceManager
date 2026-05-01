@@ -19,10 +19,10 @@ public sealed class TestReturnAnalysisLocalizer : IReturnAnalysisLocalizer
         ["Kpi_Irr_DisplayName"]             = "IRR (pers.)",
 
         // KPI Formula texts
-        ["Kpi_TotalReturn_Formula"]     = "Gesamtrendite (%) = (Marktwert + Netto-Dividenden − Investiertes Kapital) / Investiertes Kapital × 100",
+        ["Kpi_TotalReturn_Formula"]     = "Gesamtrendite (%) = (Marktwert + Verkaufserlöse (netto) + Netto-Dividenden − Investiertes Kapital) / Investiertes Kapital × 100",
         ["Kpi_MarketValue_Formula"]     = "Marktwert = Anzahl Anteile × Aktueller Kurs",
         ["Kpi_InvestedCapital_Formula"] = "Investiertes Kapital = Σ Kaufbeträge + Gebühren (FIFO-Kostenbasis der noch gehaltenen Anteile)",
-        ["Kpi_Cagr_Formula"]            = "CAGR = ((Marktwert + Nettodividenden) / Investiertes Kapital) ^ (1 / Jahre) − 1",
+        ["Kpi_Cagr_Formula"]            = "CAGR = ((Marktwert + Verkaufserlöse (netto) + Nettodividenden) / Investiertes Kapital) ^ (1 / Jahre) − 1",
         ["Kpi_Irr_Formula"]             = "Barwert = Cashflow / Diskontfaktor   |   Diskontfaktor = (1 + r)^t   |   IRR = r, sodass Σ Barwerte = 0",
 
         // KPI Descriptions
@@ -48,6 +48,8 @@ public sealed class TestReturnAnalysisLocalizer : IReturnAnalysisLocalizer
         ["Group_Sells_WithShares"] = "Verkäufe (Anteilsabgänge)",
         ["Group_Buys"]             = "Käufe",
         ["Group_Sells_Fifo"]       = "Verkäufe (FIFO-Anpassung)",
+        ["Group_SalesProceeds_Net"] = "Verkaufserlöse (netto)",
+        ["Group_RemainingFifoCostBasis"] = "FIFO-Kostenbasis (gehaltene Anteile)",
 
         // Group notes / dynamic texts
         ["Group_Irr_RateNote"]      = "r = {0} %  –  Die Rate, bei der die Summe aller Barwerte = 0 ergibt",
@@ -74,7 +76,8 @@ public sealed class TestReturnAnalysisLocalizer : IReturnAnalysisLocalizer
         ["Item_AddShares"]               = "+{0} Anteile",
         ["Item_SubtractShares"]          = "−{0} Anteile",
         ["Item_Shares"]                  = "{0} Anteile",
-        ["Item_TotalReturn_Note"]        = "= Marktwert − Investiertes Kapital + Netto-Dividenden",
+        ["Item_TotalReturn_Note"]        = "= Marktwert + Verkaufserlöse (netto) − Investiertes Kapital + Netto-Dividenden",
+        ["Item_PositionFullySold"]       = "Position vollständig verkauft",
 
         // Warnings
         ["Warning_NoPriceAvailable"] = "Kein aktueller Kurs verfügbar.",

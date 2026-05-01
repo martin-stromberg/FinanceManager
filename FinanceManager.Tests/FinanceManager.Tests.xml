@@ -544,6 +544,26 @@
             and MissingPricesHint must be populated with the oversell warning message.
             </summary>
         </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetReturnSummaryAsync_Should_IncludeSalesProceedsNetOfFees_When_FullSellCycleExists">
+             <summary>
+             Full buy–sell cycle using the real <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisCalculator"/>.
+             One buy with linked fee (GroupId A) is fully liquidated by a sell with linked fee (GroupId B).
+            
+             Transactions (exact values from production database, Fraport AG):
+               Buy  25 shares  −957,75 EUR  (GroupId A)
+               Fee             −7,29  EUR   (GroupId A – linked to buy, added to cost basis by FIFO)
+               Fee             −7,78  EUR   (GroupId B – linked to sell, deducted from sales proceeds)
+               Sell 25 shares  +1151,50 EUR (GroupId B, Quantity stored as −25 in domain model)
+            
+             Expected:
+               TotalSharesHeld        = 0        (all sold)
+               CurrentMarketValue     = 0        (no remaining shares × price)
+               InvestedCapital        = 0        (FIFO cost basis of CURRENTLY HELD shares; fully sold → 0)
+               historicalInvestedCap  = 965,04   (internal only; buy 957,75 + buy-fee 7,29 → used for return calc)
+               salesProceeds net      = 1143,72  (sell 1151,50 − sell-fee 7,78)
+               TotalReturnAbsolute    = 1143,72 − 965,04 = 178,68
+             </summary>
+        </member>
         <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetSparklineDataAsync_Should_ReturnNull_When_NoTransactionsExist">
             <summary>
             When there are no transactions for the security, the method must return null.
@@ -717,8 +737,9 @@
         </member>
         <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Group4_Should_ReturnZero_When_InvestedCapitalIsZero">
             <summary>
-            Edge case: when investedCapital is 0, the CAGR result group must have GroupTotalPercent = 0
-            (no division by zero).
+            Edge case: when there are no buy transactions (historicalInvestedCapital = 0),
+            the CAGR result group must have GroupTotalPercent = 0 (no division by zero).
+            With no buys, firstBuyDate = Today → cagrYears = 0, which also triggers the guard.
             </summary>
         </member>
         <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Should_HaveCorrectFormulaText">

@@ -13,10 +13,10 @@
   <data name="Kpi_Irr_DisplayName" xml:space="preserve"><value>IRR (personal)</value></data>
 
   <!-- KPI Formula texts -->
-  <data name="Kpi_TotalReturn_Formula" xml:space="preserve"><value>Total Return (%) = (Market Value + Net Dividends − Invested Capital) / Invested Capital × 100</value></data>
+  <data name="Kpi_TotalReturn_Formula" xml:space="preserve"><value>Total Return (%) = (Market Value + Net Sales Proceeds + Net Dividends − Invested Capital) / Invested Capital × 100</value></data>
   <data name="Kpi_MarketValue_Formula" xml:space="preserve"><value>Market Value = Number of Shares × Current Price</value></data>
   <data name="Kpi_InvestedCapital_Formula" xml:space="preserve"><value>Invested Capital = Σ Purchase Amounts + Fees (FIFO cost basis of currently held shares)</value></data>
-  <data name="Kpi_Cagr_Formula" xml:space="preserve"><value>CAGR = ((Market Value + Net Dividends) / Invested Capital) ^ (1 / Years) − 1</value></data>
+  <data name="Kpi_Cagr_Formula" xml:space="preserve"><value>CAGR = ((Market Value + Net Sales Proceeds + Net Dividends) / Invested Capital) ^ (1 / Years) − 1</value></data>
   <data name="Kpi_Irr_Formula" xml:space="preserve"><value>Present Value = Cash Flow / Discount Factor   |   Discount Factor = (1 + r)^t   |   IRR = r, such that Σ Present Values = 0</value></data>
 
   <!-- KPI Descriptions -->
@@ -42,6 +42,8 @@
   <data name="Group_Sells_WithShares" xml:space="preserve"><value>Sales (share reductions)</value></data>
   <data name="Group_Buys" xml:space="preserve"><value>Purchases</value></data>
   <data name="Group_Sells_Fifo" xml:space="preserve"><value>Sales (FIFO adjustment)</value></data>
+  <data name="Group_SalesProceeds_Net" xml:space="preserve"><value>Net Sales Proceeds</value></data>
+  <data name="Group_RemainingFifoCostBasis" xml:space="preserve"><value>FIFO Cost Basis (held shares)</value></data>
 
   <!-- Group notes / dynamic texts -->
   <data name="Group_Irr_RateNote" xml:space="preserve"><value>r = {0} %  –  The rate at which the sum of all present values equals 0</value></data>
@@ -68,7 +70,8 @@
   <data name="Item_AddShares" xml:space="preserve"><value>+{0} shares</value></data>
   <data name="Item_SubtractShares" xml:space="preserve"><value>−{0} shares</value></data>
   <data name="Item_Shares" xml:space="preserve"><value>{0} shares</value></data>
-  <data name="Item_TotalReturn_Note" xml:space="preserve"><value>= Market Value − Invested Capital + Net Dividends</value></data>
+  <data name="Item_TotalReturn_Note" xml:space="preserve"><value>= Market Value + Net Sales Proceeds − Invested Capital + Net Dividends</value></data>
+  <data name="Item_PositionFullySold" xml:space="preserve"><value>Position fully sold</value></data>
 
   <!-- Warnings -->
   <data name="Warning_NoPriceAvailable" xml:space="preserve"><value>No current price available.</value></data>

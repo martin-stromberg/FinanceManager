@@ -697,10 +697,12 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         _db.Postings.AddRange(buy1, buy2);
         await _db.SaveChangesAsync();
 
-        // Configure FIFO mock to return the sum of buys as cost basis
+        // Configure FIFO mock to return two remaining lots matching the two buys
         _fifoMock
             .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
-            .Returns(new FifoCostBasisResult(1_100m, 0m, Array.Empty<FifoLot>(), 11m, false, null, 0m));
+            .Returns(new FifoCostBasisResult(1_100m, 0m,
+                new FifoLot[] { new(DateTime.Today.AddDays(-200), 5m, 100m), new(DateTime.Today.AddDays(-100), 6m, 100m) },
+                11m, false, null, 0m));
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -708,11 +710,11 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         // Assert
         result.Should().NotBeNull();
         var ic = result!.First(b => b.KpiKey == "InvestedCapital");
-        var buysGroup = ic.Groups.FirstOrDefault(g => g.GroupName == "Käufe");
+        var fifoGroup = ic.Groups.FirstOrDefault(g => g.GroupName == "FIFO-Kostenbasis (gehaltene Anteile)");
 
-        buysGroup.Should().NotBeNull();
-        buysGroup!.Items.Should().HaveCount(2);
-        buysGroup.GroupTotal.Should().Be(1_100m); // 500 + 600
+        fifoGroup.Should().NotBeNull();
+        fifoGroup!.Items.Should().HaveCount(2, "one item per remaining FIFO lot");
+        fifoGroup.GroupTotal.Should().Be(1_100m); // 5*100 + 6*100
     }
 
     /// <summary>
@@ -941,43 +943,33 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         _db.Postings.AddRange(buy1, fee1, buy2, standaloneFee);
         await _db.SaveChangesAsync();
 
-        // FIFO: cost basis = 500 + 10 + 600 + 5 = 1 115; 11 shares; standalone fee total = 5
+        // FIFO: two remaining lots (buy1 absorbs its linked fee in CostPerUnit), standalone fee in StandaloneFeeTotal
         _fifoMock
             .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
-            .Returns(new FifoCostBasisResult(1_115m, 0m, Array.Empty<FifoLot>(), 11m, false, null, 5m));
+            .Returns(new FifoCostBasisResult(1_115m, 0m,
+                new FifoLot[] { new(DateTime.Today.AddDays(-200), 5m, 102m), new(DateTime.Today.AddDays(-100), 6m, 100m) },
+                11m, false, null, 5m));
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
 
-        // Assert – InvestedCapital "Käufe" group
+        // Assert – InvestedCapital "FIFO-Kostenbasis" group (remaining lots)
         result.Should().NotBeNull();
         var ic = result!.First(b => b.KpiKey == "InvestedCapital");
-        var buysGroup = ic.Groups.First(g => g.GroupName == "Käufe");
+        var fifoGroup = ic.Groups.First(g => g.GroupName == "FIFO-Kostenbasis (gehaltene Anteile)");
 
-        buysGroup.Items.Should().HaveCount(4,
-            "two buys + one linked fee + one standalone fee must each appear as a separate item");
+        fifoGroup.Items.Should().HaveCount(2, "one item per remaining FIFO lot");
 
-        // buy1
-        buysGroup.Items[0].Date.Should().Be(DateTime.Today.AddDays(-200));
-        buysGroup.Items[0].Amount.Should().Be(500m, "buy1 amount must be absolute (positive)");
-        buysGroup.Items[0].Note.Should().Contain("Anteile", "note must reference share count and price");
+        // lot1: 5 shares at 102 (buy + linked fee embedded) = 510
+        fifoGroup.Items[0].Date.Should().Be(DateTime.Today.AddDays(-200));
+        fifoGroup.Items[0].Amount.Should().Be(510m, "lot1: 5 × 102");
+        fifoGroup.Items[0].Note.Should().Contain("Anteile");
 
-        // fee linked to buy1 (immediately after buy1)
-        buysGroup.Items[1].Date.Should().Be(DateTime.Today.AddDays(-200));
-        buysGroup.Items[1].Amount.Should().Be(10m, "linked fee amount must be absolute (positive)");
-        buysGroup.Items[1].Note.Should().Be("Gebühr");
+        // lot2: 6 shares at 100 = 600
+        fifoGroup.Items[1].Date.Should().Be(DateTime.Today.AddDays(-100));
+        fifoGroup.Items[1].Amount.Should().Be(600m, "lot2: 6 × 100");
 
-        // buy2
-        buysGroup.Items[2].Date.Should().Be(DateTime.Today.AddDays(-100));
-        buysGroup.Items[2].Amount.Should().Be(600m, "buy2 amount must be absolute (positive)");
-        buysGroup.Items[2].Note.Should().Contain("Anteile");
-
-        // standalone fee at the end
-        buysGroup.Items[3].Date.Should().Be(DateTime.Today.AddDays(-50));
-        buysGroup.Items[3].Amount.Should().Be(5m, "standalone fee amount must be absolute (positive)");
-        buysGroup.Items[3].Note.Should().Be("Gebühr (ohne Kaufzuordnung)");
-
-        buysGroup.GroupTotal.Should().Be(1_115m, "group total must equal sum of all buy and fee amounts");
+        fifoGroup.GroupTotal.Should().Be(1_110m, "displayInvestedCapital = TotalCostBasis(1115) − StandaloneFeeTotal(5)");
 
         // Assert – TotalReturn Group[1] "Investiertes Kapital" (same items but negated; market value is now Group[0])
         var tr = result.First(b => b.KpiKey == "TotalReturn");
@@ -1272,22 +1264,32 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
     }
 
     /// <summary>
-    /// Edge case: when investedCapital is 0, the CAGR result group must have GroupTotalPercent = 0
-    /// (no division by zero).
+    /// Edge case: when there are no buy transactions (historicalInvestedCapital = 0),
+    /// the CAGR result group must have GroupTotalPercent = 0 (no division by zero).
+    /// With no buys, firstBuyDate = Today → cagrYears = 0, which also triggers the guard.
     /// </summary>
     [Fact]
     public async Task GetKpiBreakdownsAsync_CagrBreakdown_Group4_Should_ReturnZero_When_InvestedCapitalIsZero()
     {
-        // Arrange – FIFO returns 0 cost basis (e.g. all shares sold)
+        // Arrange – only a dividend posting (no buy) so historicalInvestedCapital = 0
         var (security, user) = SetupSecurityAndUser();
-        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
-        _db.Postings.Add(buy);
+        var dividend = new Posting(
+            Guid.NewGuid(),
+            PostingKind.Security,
+            null, null, null,
+            security.Id,
+            DateTime.Today.AddDays(-400),
+            50m,
+            null, null, null,
+            SecurityPostingSubType.Dividend,
+            null);
+        _db.Postings.Add(dividend);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
         await _db.SaveChangesAsync();
 
         _fifoMock
             .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
-            .Returns(new FifoCostBasisResult(0m, 1_000m, Array.Empty<FifoLot>(), 0m, false, null, 0m));
+            .Returns(new FifoCostBasisResult(0m, 0m, Array.Empty<FifoLot>(), 0m, false, null, 0m));
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
