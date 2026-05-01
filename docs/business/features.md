@@ -30,6 +30,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 | F014 | Benutzereinstellungen | Personalisierung der Anwendung | ✅ Dokumentiert |
 | F015 | Datensicherung | Backup und Wiederherstellung von Daten | 🔄 In Bearbeitung |
 | F016 | Berichte & Dashboards | Finanzielle Übersichtsberichte und Auswertungen | ✅ Dokumentiert |
+| F017 | Wertpapier-Renditeanalyse | Performance-Analyse mit TWR, IRR, CAGR, Sharpe Ratio, Max. Drawdown | 🔄 In Bearbeitung |
 
 ---
 
@@ -61,14 +62,15 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 - F013 – Benachrichtigungen (technische Details: E-Mail, Holiday-API)
 - F015 – Datensicherung (technische Details: Backup-Format, Restore-Prozess)
 
-**Domain Layer (Agent 4):** ✅ 5 Features dokumentiert (fachliche Datenmodelle)
+**Domain Layer (Agent 4):** ✅ 5 Features + 1 in Bearbeitung (fachliche Datenmodelle)
 - F001 – Kontenübersicht (Account-Entität, Geschäftsregeln)
 - F003 – Ausgabenverwaltung (Posting-Entität, Aggregates)
 - F006 – Wertpapier-Verwaltung (Security-Entität, Portfolio-Berechnung)
 - F008 – Budgetplanung (BudgetRule, BudgetCategory, BudgetOverride)
 - F012 – Kontakte (Contact-Entität, Self-Contact, Kontakt-Gruppen)
+- F017 – Wertpapier-Renditeanalyse (Kennzahlen, FIFO, Sicherheitsregeln) 🔄
 
-**Gesamtfortschritt:** ✅ 100% – Alle 16 Features vollständig dokumentiert
+**Gesamtfortschritt:** 🔄 In Bearbeitung – 16 von 17 Features vollständig dokumentiert (F017 in Bearbeitung)
 
 **Dokumentations-Art:**
 - **Benutzer-Perspektive** (Web Layer): Schritt-für-Schritt für Endbenutzer
@@ -76,7 +78,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 - **Technische Perspektive** (Infrastructure Layer): Externe APIs, Datenformate, Integration
 - **Domain-Perspektive** (Domain Layer): Datenmodelle, Geschäftsregeln, Aggregates
 
-**Letzte Aktualisierung**: 15.01.2025
+**Letzte Aktualisierung**: 15.07.2025
 
 ---
 

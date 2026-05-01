@@ -531,6 +531,12 @@ public interface IApiClient
     Task<BackgroundTaskInfo> Securities_EnqueueBackfillAsync(Guid? securityId, DateTime? fromDateUtc, DateTime? toDateUtc, CancellationToken ct = default);
     /// <summary>Lists upcoming or past dividends for a security.</summary>
     Task<IReadOnlyList<AggregatePointDto>> Securities_GetDividendsAsync(string? period = null, int? take = null, CancellationToken ct = default);
+    /// <summary>Gets the compact return summary for a security. Returns null when not found.</summary>
+    Task<ReturnSummaryDto?> Securities_GetReturnSummaryAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Gets the KPI formula and cashflow breakdowns for a security (info side panel). Returns null when not found.</summary>
+    Task<IReadOnlyList<KpiBreakdownDto>?> Securities_GetKpiBreakdownsAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Invalidates the return analysis cache for all securities of the current user.</summary>
+    Task Securities_ResetReturnCacheAsync(CancellationToken ct = default);
 
     // Statement Drafts
 

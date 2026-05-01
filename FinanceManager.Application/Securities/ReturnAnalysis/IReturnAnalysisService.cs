@@ -116,6 +116,14 @@ public interface IReturnAnalysisService
     /// <param name="ownerUserId">Identifier of the owning user.</param>
     /// <returns>A task that completes when the cache has been invalidated.</returns>
     Task InvalidateCacheAsync(Guid securityId, Guid ownerUserId);
+
+    /// <summary>
+    /// Invalidates all cached return analysis results for the given user across all securities.
+    /// Used by the API endpoint to reset the full return analysis cache for a user at once.
+    /// </summary>
+    /// <param name="ownerUserId">Identifier of the user whose entire return analysis cache should be cleared.</param>
+    /// <returns>A task that completes when the cache has been invalidated.</returns>
+    Task InvalidateAllUserCachesAsync(Guid ownerUserId);
 }
 
 /// <summary>Return analysis user settings DTO.</summary>

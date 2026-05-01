@@ -243,5 +243,47 @@ public partial class ApiClient
         return (await resp.Content.ReadFromJsonAsync<IReadOnlyList<AggregatePointDto>>(cancellationToken: ct))!;
     }
 
+    /// <summary>
+    /// Gets the compact return summary for a security.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The <see cref="ReturnSummaryDto"/> when found; otherwise null.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<ReturnSummaryDto?> Securities_GetReturnSummaryAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/return-summary", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<ReturnSummaryDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Gets the KPI formula and cashflow breakdowns for a security (for the info side panel).
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>A read-only list of <see cref="KpiBreakdownDto"/> when found; otherwise null.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<IReadOnlyList<KpiBreakdownDto>?> Securities_GetKpiBreakdownsAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/return-kpi-breakdowns", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<IReadOnlyList<KpiBreakdownDto>>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Invalidates the return analysis cache for all securities of the current user.
+    /// </summary>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>A task that completes when the cache has been invalidated.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
+    public async Task Securities_ResetReturnCacheAsync(CancellationToken ct = default)
+    {
+        var resp = await _http.DeleteAsync("/api/securities/return-cache", ct);
+        resp.EnsureSuccessStatusCode();
+    }
+
     #endregion Securities
 }

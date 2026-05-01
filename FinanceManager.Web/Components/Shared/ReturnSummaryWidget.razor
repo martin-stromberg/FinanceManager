@@ -1,8 +1,6 @@
 @rendermode InteractiveServer
-@using FinanceManager.Application
-@using FinanceManager.Application.Securities.ReturnAnalysis
-@inject IReturnAnalysisService ReturnAnalysis
-@inject ICurrentUserService CurrentUser
+@using FinanceManager.Shared
+@inject IApiClient ApiClient
 @inject NavigationManager Nav
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Shared.ReturnSummaryWidget> Localizer
 
@@ -226,7 +224,7 @@ else
         _breakdowns = null;
         try
         {
-            _summary = await ReturnAnalysis.GetReturnSummaryAsync(SecurityId, CurrentUser.UserId, CancellationToken.None);
+            _summary = await ApiClient.Securities_GetReturnSummaryAsync(SecurityId, CancellationToken.None);
         }
         catch (Exception ex)
         {
@@ -246,7 +244,7 @@ else
             StateHasChanged();
             try
             {
-                _breakdowns = await ReturnAnalysis.GetKpiBreakdownsAsync(SecurityId, CurrentUser.UserId, CancellationToken.None);
+                _breakdowns = await ApiClient.Securities_GetKpiBreakdownsAsync(SecurityId, CancellationToken.None);
             }
             catch
             {

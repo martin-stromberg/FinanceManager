@@ -1994,6 +1994,14 @@
             <param name="ownerUserId">Identifier of the owning user.</param>
             <returns>A task that completes when the cache has been invalidated.</returns>
         </member>
+        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService.InvalidateAllUserCachesAsync(System.Guid)">
+            <summary>
+            Invalidates all cached return analysis results for the given user across all securities.
+            Used by the API endpoint to reset the full return analysis cache for a user at once.
+            </summary>
+            <param name="ownerUserId">Identifier of the user whose entire return analysis cache should be cleared.</param>
+            <returns>A task that completes when the cache has been invalidated.</returns>
+        </member>
         <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.ReturnAnalysisSettingsDto">
             <summary>Return analysis user settings DTO.</summary>
             <param name="BenchmarkSecurityId">Optional benchmark security id.</param>
@@ -2120,83 +2128,6 @@
             <param name="grossReturn">Gross return before taxes. Must be != 0 for a valid result.</param>
             <returns>Tax rate as a fraction (0..1), or null when gross return is zero.</returns>
         </member>
-        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto">
-            <summary>
-            Compact return summary for the widget on the security detail page (FR-1).
-            SparklineData is loaded separately (see IReturnAnalysisService.GetSparklineDataAsync).
-            </summary>
-            <param name="InvestedCapital">Total invested capital (sum of all buy amounts).</param>
-            <param name="CurrentMarketValue">Current market value (shares held × current price).</param>
-            <param name="TotalReturnAbsolute">Absolute total return (market value + net dividends - invested capital).</param>
-            <param name="TotalReturnPercent">Percentage total return.</param>
-            <param name="Cagr">Compound Annual Growth Rate, or null if holding period &lt; 1 year.</param>
-            <param name="Irr">Internal Rate of Return (personal return), or null when not computable.</param>
-            <param name="CostBasisPerShare">Average cost per share (FIFO basis).</param>
-            <param name="CurrentPricePerShare">Latest available price per share.</param>
-            <param name="TotalSharesHeld">Total number of shares currently held (FIFO net position).</param>
-            <param name="NetDividends">Net dividends received (after taxes).</param>
-            <param name="CurrencyCode">ISO currency code.</param>
-            <param name="HasMissingPrices">Whether price data gaps exist.</param>
-            <param name="MissingPricesHint">Hint about missing price data, or null.</param>
-        </member>
-        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.#ctor(System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.String,System.Boolean,System.String)">
-            <summary>
-            Compact return summary for the widget on the security detail page (FR-1).
-            SparklineData is loaded separately (see IReturnAnalysisService.GetSparklineDataAsync).
-            </summary>
-            <param name="InvestedCapital">Total invested capital (sum of all buy amounts).</param>
-            <param name="CurrentMarketValue">Current market value (shares held × current price).</param>
-            <param name="TotalReturnAbsolute">Absolute total return (market value + net dividends - invested capital).</param>
-            <param name="TotalReturnPercent">Percentage total return.</param>
-            <param name="Cagr">Compound Annual Growth Rate, or null if holding period &lt; 1 year.</param>
-            <param name="Irr">Internal Rate of Return (personal return), or null when not computable.</param>
-            <param name="CostBasisPerShare">Average cost per share (FIFO basis).</param>
-            <param name="CurrentPricePerShare">Latest available price per share.</param>
-            <param name="TotalSharesHeld">Total number of shares currently held (FIFO net position).</param>
-            <param name="NetDividends">Net dividends received (after taxes).</param>
-            <param name="CurrencyCode">ISO currency code.</param>
-            <param name="HasMissingPrices">Whether price data gaps exist.</param>
-            <param name="MissingPricesHint">Hint about missing price data, or null.</param>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.InvestedCapital">
-            <summary>Total invested capital (sum of all buy amounts).</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.CurrentMarketValue">
-            <summary>Current market value (shares held × current price).</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.TotalReturnAbsolute">
-            <summary>Absolute total return (market value + net dividends - invested capital).</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.TotalReturnPercent">
-            <summary>Percentage total return.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.Cagr">
-            <summary>Compound Annual Growth Rate, or null if holding period &lt; 1 year.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.Irr">
-            <summary>Internal Rate of Return (personal return), or null when not computable.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.CostBasisPerShare">
-            <summary>Average cost per share (FIFO basis).</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.CurrentPricePerShare">
-            <summary>Latest available price per share.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.TotalSharesHeld">
-            <summary>Total number of shares currently held (FIFO net position).</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.NetDividends">
-            <summary>Net dividends received (after taxes).</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.CurrencyCode">
-            <summary>ISO currency code.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.HasMissingPrices">
-            <summary>Whether price data gaps exist.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto.MissingPricesHint">
-            <summary>Hint about missing price data, or null.</summary>
-        </member>
         <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.SparklineDataDto">
             <summary>
             Sparkline data for the mini-chart (FR-1.1). Loaded separately to keep ReturnSummaryDto lean.
@@ -2232,81 +2163,6 @@
         </member>
         <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.SparklinePoint.InvestedCapital">
             <summary>Cumulative invested capital on this date.</summary>
-        </member>
-        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto">
-            <summary>
-            Detailed return metrics for the Kennzahlen tab (FR-2.1).
-            </summary>
-            <param name="GrossReturn">Gross return before taxes and fees.</param>
-            <param name="NetReturn">Net return after taxes.</param>
-            <param name="TotalTaxes">Total taxes paid.</param>
-            <param name="TotalFees">Total fees paid.</param>
-            <param name="TaxRate">Tax rate as fraction of gross return (0..1).</param>
-            <param name="Twr">Time-Weighted Return (Modified Dietz, GIPS-konform).</param>
-            <param name="Volatility">Annualised volatility (std. dev. of log returns × √252).</param>
-            <param name="MaxDrawdown">Maximum drawdown from peak (negative fraction).</param>
-            <param name="SharpeRatio">Sharpe Ratio, or null when opt-in not enabled or not enough data.</param>
-            <param name="RealizedGains">Realized capital gains (FIFO).</param>
-            <param name="UnrealizedGains">Unrealized capital gains on current holdings.</param>
-            <param name="Irr">Internal Rate of Return, or null when not computable.</param>
-            <param name="DividendYieldCurrentYear">Dividend yield for current calendar year.</param>
-        </member>
-        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.#ctor(System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Decimal,System.Decimal,System.Nullable{System.Decimal},System.Decimal)">
-            <summary>
-            Detailed return metrics for the Kennzahlen tab (FR-2.1).
-            </summary>
-            <param name="GrossReturn">Gross return before taxes and fees.</param>
-            <param name="NetReturn">Net return after taxes.</param>
-            <param name="TotalTaxes">Total taxes paid.</param>
-            <param name="TotalFees">Total fees paid.</param>
-            <param name="TaxRate">Tax rate as fraction of gross return (0..1).</param>
-            <param name="Twr">Time-Weighted Return (Modified Dietz, GIPS-konform).</param>
-            <param name="Volatility">Annualised volatility (std. dev. of log returns × √252).</param>
-            <param name="MaxDrawdown">Maximum drawdown from peak (negative fraction).</param>
-            <param name="SharpeRatio">Sharpe Ratio, or null when opt-in not enabled or not enough data.</param>
-            <param name="RealizedGains">Realized capital gains (FIFO).</param>
-            <param name="UnrealizedGains">Unrealized capital gains on current holdings.</param>
-            <param name="Irr">Internal Rate of Return, or null when not computable.</param>
-            <param name="DividendYieldCurrentYear">Dividend yield for current calendar year.</param>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.GrossReturn">
-            <summary>Gross return before taxes and fees.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.NetReturn">
-            <summary>Net return after taxes.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.TotalTaxes">
-            <summary>Total taxes paid.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.TotalFees">
-            <summary>Total fees paid.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.TaxRate">
-            <summary>Tax rate as fraction of gross return (0..1).</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.Twr">
-            <summary>Time-Weighted Return (Modified Dietz, GIPS-konform).</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.Volatility">
-            <summary>Annualised volatility (std. dev. of log returns × √252).</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.MaxDrawdown">
-            <summary>Maximum drawdown from peak (negative fraction).</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.SharpeRatio">
-            <summary>Sharpe Ratio, or null when opt-in not enabled or not enough data.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.RealizedGains">
-            <summary>Realized capital gains (FIFO).</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.UnrealizedGains">
-            <summary>Unrealized capital gains on current holdings.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.Irr">
-            <summary>Internal Rate of Return, or null when not computable.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto.DividendYieldCurrentYear">
-            <summary>Dividend yield for current calendar year.</summary>
         </member>
         <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.PeriodicReturnsDto">
             <summary>
@@ -2641,142 +2497,6 @@
         </member>
         <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.FifoLot.CostPerUnit">
             <summary>Cost per share for this lot.</summary>
-        </member>
-        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownDto">
-            <summary>
-            Formula and cashflow breakdown for a single KPI, used in the info side panel (FR-1).
-            </summary>
-            <param name="KpiKey">Stable internal key matching the widget KPI (e.g. "TotalReturn", "InvestedCapital").</param>
-            <param name="DisplayName">Localized display name of the KPI (e.g. "Gesamtrendite").</param>
-            <param name="FormulaText">Human-readable formula as a complete equation.</param>
-            <param name="Description">Short explanation of what this metric measures.</param>
-            <param name="Groups">Posting groups, each representing one element of the formula.</param>
-        </member>
-        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownDto.#ctor(System.String,System.String,System.String,System.String,System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup})">
-            <summary>
-            Formula and cashflow breakdown for a single KPI, used in the info side panel (FR-1).
-            </summary>
-            <param name="KpiKey">Stable internal key matching the widget KPI (e.g. "TotalReturn", "InvestedCapital").</param>
-            <param name="DisplayName">Localized display name of the KPI (e.g. "Gesamtrendite").</param>
-            <param name="FormulaText">Human-readable formula as a complete equation.</param>
-            <param name="Description">Short explanation of what this metric measures.</param>
-            <param name="Groups">Posting groups, each representing one element of the formula.</param>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownDto.KpiKey">
-            <summary>Stable internal key matching the widget KPI (e.g. "TotalReturn", "InvestedCapital").</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownDto.DisplayName">
-            <summary>Localized display name of the KPI (e.g. "Gesamtrendite").</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownDto.FormulaText">
-            <summary>Human-readable formula as a complete equation.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownDto.Description">
-            <summary>Short explanation of what this metric measures.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownDto.Groups">
-            <summary>Posting groups, each representing one element of the formula.</summary>
-        </member>
-        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup">
-            <summary>
-            A group of cashflow items representing one formula element (e.g. "Dividenden").
-            </summary>
-            <param name="GroupName">Display name of this formula element.</param>
-            <param name="IsPositiveContribution">True when this group increases the KPI value.</param>
-            <param name="Items">Individual cashflow items in this group.</param>
-            <param name="GroupTotal">Sum of all item amounts in this group (absolute monetary value).</param>
-            <param name="GroupTotalPercent">
-            Optional percentage value for this group total (e.g. the percentage return for the
-            "Gesamtrendite" result group). When set, the UI renders both the percentage and the
-            absolute amount side by side in the info-panel result block.
-            </param>
-            <param name="GroupNote">
-            Optional informational text to display instead of a monetary amount in the group header
-            (e.g. the holding period for the "Anlagedauer" group). When set, the UI renders this
-            text in place of the formatted EUR value and omits amount columns from item rows.
-            </param>
-        </member>
-        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.#ctor(System.String,System.Boolean,System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem},System.Decimal,System.Nullable{System.Decimal},System.String)">
-            <summary>
-            A group of cashflow items representing one formula element (e.g. "Dividenden").
-            </summary>
-            <param name="GroupName">Display name of this formula element.</param>
-            <param name="IsPositiveContribution">True when this group increases the KPI value.</param>
-            <param name="Items">Individual cashflow items in this group.</param>
-            <param name="GroupTotal">Sum of all item amounts in this group (absolute monetary value).</param>
-            <param name="GroupTotalPercent">
-            Optional percentage value for this group total (e.g. the percentage return for the
-            "Gesamtrendite" result group). When set, the UI renders both the percentage and the
-            absolute amount side by side in the info-panel result block.
-            </param>
-            <param name="GroupNote">
-            Optional informational text to display instead of a monetary amount in the group header
-            (e.g. the holding period for the "Anlagedauer" group). When set, the UI renders this
-            text in place of the formatted EUR value and omits amount columns from item rows.
-            </param>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.GroupName">
-            <summary>Display name of this formula element.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.IsPositiveContribution">
-            <summary>True when this group increases the KPI value.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.Items">
-            <summary>Individual cashflow items in this group.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.GroupTotal">
-            <summary>Sum of all item amounts in this group (absolute monetary value).</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.GroupTotalPercent">
-            <summary>
-            Optional percentage value for this group total (e.g. the percentage return for the
-            "Gesamtrendite" result group). When set, the UI renders both the percentage and the
-            absolute amount side by side in the info-panel result block.
-            </summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiFormulaGroup.GroupNote">
-            <summary>
-            Optional informational text to display instead of a monetary amount in the group header
-            (e.g. the holding period for the "Anlagedauer" group). When set, the UI renders this
-            text in place of the formatted EUR value and omits amount columns from item rows.
-            </summary>
-        </member>
-        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem">
-            <summary>
-            A single cashflow item within a KPI formula group.
-            </summary>
-            <param name="Date">Date of the cashflow.</param>
-            <param name="Amount">Amount displayed for this item. For IRR breakdown groups this is the present value
-            (discounted cashflow); for all other groups it is the raw cashflow amount.</param>
-            <param name="Note">Optional descriptive note (e.g. number of shares).</param>
-        </member>
-        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.#ctor(System.DateTime,System.Decimal,System.String)">
-            <summary>
-            A single cashflow item within a KPI formula group.
-            </summary>
-            <param name="Date">Date of the cashflow.</param>
-            <param name="Amount">Amount displayed for this item. For IRR breakdown groups this is the present value
-            (discounted cashflow); for all other groups it is the raw cashflow amount.</param>
-            <param name="Note">Optional descriptive note (e.g. number of shares).</param>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.Date">
-            <summary>Date of the cashflow.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.Amount">
-            <summary>Amount displayed for this item. For IRR breakdown groups this is the present value
-            (discounted cashflow); for all other groups it is the raw cashflow amount.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.Note">
-            <summary>Optional descriptive note (e.g. number of shares).</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.YearsSinceT0">
-            <summary>Years since t₀ for discounting (used in IRR breakdown). Null when not applicable.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.DiscountFactor">
-            <summary>Discount factor 1/(1+r)^t (used in IRR breakdown). Null when not applicable.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.KpiBreakdownItem.OriginalCashflow">
-            <summary>Original (undiscounted) cashflow amount (used in IRR breakdown). Null when not applicable.</summary>
         </member>
         <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.TwrPeriodInput">
             <summary>

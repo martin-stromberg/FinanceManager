@@ -24,6 +24,7 @@ This document provides a high-level description of the main functional areas of 
 
 - Security (Securities)
   - Security postings (Buy/Sell/Dividend + Fee/Tax) are created only when the account allows security processing and the entry's contact is the account's bank contact.
+  - **Return Analysis (Renditeanalyse):** A dedicated performance analysis is available for each security at `/securities/{id}/performance`. It provides TWR, IRR, CAGR, volatility, max drawdown, realized/unrealized gains, cashflow timeline, and optional benchmark comparison and Sharpe Ratio. A compact summary widget is embedded on the security detail page. See [`docs/business/features/F017-renditeanalyse.md`](./features/F017-renditeanalyse.md) for the user-facing documentation and [`docs/business/features/F017-renditeanalyse-domain.md`](./features/F017-renditeanalyse-domain.md) for business rules and domain logic.
 
 - Savings Plans
   - Savings plans allow users to define targets or recurring contributions that draft entries can be assigned to.

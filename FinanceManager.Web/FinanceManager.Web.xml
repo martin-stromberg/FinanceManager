@@ -1732,7 +1732,7 @@
             </summary>
             <param name="id">Security identifier.</param>
             <param name="ct">Cancellation token.</param>
-            <returns>200 OK with <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.ReturnSummaryDto"/>; 404 when not found or not owned by user.</returns>
+            <returns>200 OK with <see cref="T:FinanceManager.Shared.Dtos.Securities.ReturnSummaryDto"/>; 404 when not found or not owned by user.</returns>
         </member>
         <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetSparklineDataAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>
@@ -1748,7 +1748,7 @@
             </summary>
             <param name="id">Security identifier.</param>
             <param name="ct">Cancellation token.</param>
-            <returns>200 OK with <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.DetailedReturnMetricsDto"/>; 404 when not found or not owned by user.</returns>
+            <returns>200 OK with <see cref="T:FinanceManager.Shared.Dtos.Securities.DetailedReturnMetricsDto"/>; 404 when not found or not owned by user.</returns>
         </member>
         <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetPeriodicReturnsAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>
@@ -1804,6 +1804,20 @@
             </summary>
             <param name="id">Security identifier.</param>
             <returns>204 NoContent on success.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.InvalidateAllReturnCacheAsync">
+            <summary>
+            Invalidates the return analysis cache for all securities of the current user.
+            </summary>
+            <returns>204 NoContent on success.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetKpiBreakdownsAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the KPI formula and cashflow breakdown for all widget KPIs of a security.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with list of <see cref="T:FinanceManager.Shared.Dtos.Securities.KpiBreakdownDto"/>; 404 when not found or no data.</returns>
         </member>
         <member name="T:FinanceManager.Web.Controllers.SecurityCategoriesController">
             <summary>

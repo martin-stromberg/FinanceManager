@@ -204,14 +204,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                         try
                         {
                             await ApiClient.Budgets_ResetReportCacheAsync();
-                            
-                            // Also reset Return Analysis cache for securities
-                            var returnAnalysisCache = ServiceProvider.GetService<FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisCache>();
-                            if (returnAnalysisCache != null)
-                            {
-                                await returnAnalysisCache.InvalidateAsync(null);
-                            }
-                            
+                            await ApiClient.Securities_ResetReturnCacheAsync();
                             SetError(null, localizer["Info_ResetReportCache"].Value ?? "Report cache reset.");
                             RaiseStateChanged();
                         }

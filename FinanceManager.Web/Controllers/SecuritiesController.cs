@@ -569,4 +569,33 @@ public sealed class SecuritiesController : ControllerBase
         await _returnAnalysis.InvalidateCacheAsync(id, _current.UserId);
         return NoContent();
     }
+
+    /// <summary>
+    /// Invalidates the return analysis cache for all securities of the current user.
+    /// </summary>
+    /// <returns>204 NoContent on success.</returns>
+    [HttpDelete("return-cache")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> InvalidateAllReturnCacheAsync()
+    {
+        _logger.LogInformation("Invalidating all return analysis cache for user {UserId}", _current.UserId);
+        await _returnAnalysis.InvalidateAllUserCachesAsync(_current.UserId);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Returns the KPI formula and cashflow breakdown for all widget KPIs of a security.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with list of <see cref="KpiBreakdownDto"/>; 404 when not found or no data.</returns>
+    [HttpGet("{id:guid}/return-kpi-breakdowns")]
+    [ProducesResponseType(typeof(IReadOnlyList<KpiBreakdownDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetKpiBreakdownsAsync(Guid id, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Getting KPI breakdowns for security {SecurityId}", id);
+        var result = await _returnAnalysis.GetKpiBreakdownsAsync(id, _current.UserId, ct);
+        return result == null ? NotFound() : Ok(result);
+    }
 }

@@ -168,6 +168,10 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         return _cache.InvalidateAsync(token);
     }
 
+    /// <inheritdoc/>
+    public Task InvalidateAllUserCachesAsync(Guid ownerUserId)
+        => _cache.InvalidateAsync(ownerUserId.ToString());
+
     // ─────────────────────────────────────────────────────────────────────────
     // Private computation methods
     // ─────────────────────────────────────────────────────────────────────────
