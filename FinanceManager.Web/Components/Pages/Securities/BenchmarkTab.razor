@@ -34,9 +34,9 @@
                 <title>Benchmark-Vergleich</title>
                 @{
                     var secPoints = string.Join(" ", _vm.Data.SecurityNormalizedValues.Select((p, i) =>
-                        $"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}"));
+                        FormattableString.Invariant($"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}")));
                     var bmPoints = string.Join(" ", _vm.Data.BenchmarkNormalizedValues.Select((p, i) =>
-                        $"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}"));
+                        FormattableString.Invariant($"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}")));
                 }
                 @if (!string.IsNullOrEmpty(secPoints))
                 {

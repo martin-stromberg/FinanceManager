@@ -45,9 +45,9 @@
                     <title>Portfolio-Wertentwicklung</title>
                     @{
                         var portfolioPoints = string.Join(" ", _vm.Data.PortfolioValues.Select((p, i) =>
-                            $"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}"));
+                            FormattableString.Invariant($"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}")));
                         var investedPoints = string.Join(" ", _vm.Data.InvestedCapitalValues.Select((p, i) =>
-                            $"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}"));
+                            FormattableString.Invariant($"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}")));
                     }
                     @if (!string.IsNullOrEmpty(portfolioPoints))
                     {
