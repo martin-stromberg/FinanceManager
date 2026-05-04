@@ -235,6 +235,15 @@
 .rsw-group-name { flex: 1; }
 .rsw-group-total { font-variant-numeric: tabular-nums; }
 
+.rsw-group-note-row {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.75rem;
+    color: var(--text-muted, #888);
+    border-top: 1px solid var(--border-color-subtle, #f0f0f0);
+    background: var(--card-bg, #fff);
+    font-style: italic;
+}
+
 .rsw-group-single {
     padding: 0.3rem 0.75rem;
     font-size: 0.82rem;
@@ -276,4 +285,58 @@
 
 .rsw-item-amount.positive { color: #2a7d4f; }
 .rsw-item-amount.negative { color: #c94040; }
+
+/* ── IRR discount detail row ──────────────────────────── */
+.rsw-item-detail-row td {
+    padding-top: 0;
+    padding-bottom: 0.4rem;
+    border-top: none;
+}
+
+.rsw-item-detail {
+    font-size: 0.75rem;
+    color: var(--text-muted, #888);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.6;
+}
+
+.rsw-item-detail div {
+    display: block;
+}
+
+/* ── Group total row (no items, but total value) ─────── */
+.rsw-group-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-top: 1px solid var(--border-color-subtle, #f0f0f0);
+    background: var(--border-color-subtle, #f7f8fa);
+}
+
+.rsw-group-total-row-label {
+    color: var(--text-muted, #666);
+    font-weight: 400;
+}
+
+/* ── Secondary/sub value display ─────────────────────── */
+
+/* Subtext below the main % value in the widget header row */
+.rsw-value-sub {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 400;
+    opacity: 0.7;
+    letter-spacing: 0;
+}
+
+/* Secondary amount (€) shown alongside the % in the info-panel result group header */
+.rsw-group-total-secondary {
+    font-size: 0.8rem;
+    font-weight: 400;
+    opacity: 0.75;
+    margin-left: 0.3rem;
+}
 
