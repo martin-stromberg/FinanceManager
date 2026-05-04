@@ -1,16 +1,15 @@
 @using FinanceManager.Application
-@using FinanceManager.Application.Securities.ReturnAnalysis
-@inject IReturnAnalysisService ReturnAnalysis
-@inject ICurrentUserService CurrentUser
+@using FinanceManager.Web.ViewModels.Securities.ReturnAnalysis
+@inject IServiceProvider Services
 
 <div class="timeseries-tab">
-    @if (_loading) { <div role="status">Lade Daten...</div> }
-    else if (_data == null) { <div class="no-data-msg">Keine Renditedaten verfügbar.</div> }
+    @if (_vm?.IsLoading == true) { <div role="status">Lade Daten...</div> }
+    else if (_vm?.Data == null) { <div class="no-data-msg">Keine Renditedaten verfügbar.</div> }
     else
     {
         <section aria-label="Jahresrenditen">
             <h3>Jahresrenditen</h3>
-            @if (_data.AnnualReturns.Count == 0)
+            @if (_vm.Data.AnnualReturns.Count == 0)
             {
                 <p>Keine Jahresdaten vorhanden.</p>
             }
@@ -18,10 +17,10 @@
             {
                 <div class="annual-bars">
                     @{
-                        var maxAbs = _data.AnnualReturns.Select(r => Math.Abs(r.ReturnPercent)).DefaultIfEmpty(1m).Max();
+                        var maxAbs = _vm.Data.AnnualReturns.Select(r => Math.Abs(r.ReturnPercent)).DefaultIfEmpty(1m).Max();
                         if (maxAbs == 0) { maxAbs = 1m; }
                     }
-                    @foreach (var yr in _data.AnnualReturns)
+                    @foreach (var yr in _vm.Data.AnnualReturns)
                     {
                         var height = Math.Abs(yr.ReturnPercent) / maxAbs * 100m;
                         var isPos = yr.ReturnPercent >= 0;
@@ -40,15 +39,15 @@
 
         <section aria-label="Monatsrenditen-Heatmap">
             <h3>Monatliche Renditen</h3>
-            @if (_data.MonthlyReturns.Count == 0)
+            @if (_vm.Data.MonthlyReturns.Count == 0)
             {
                 <p>Keine Monatsdaten vorhanden.</p>
             }
             else
             {
-                var years = _data.MonthlyReturns.Select(r => r.Year).Distinct().OrderBy(y => y).ToList();
+                var years = _vm.Data.MonthlyReturns.Select(r => r.Year).Distinct().OrderBy(y => y).ToList();
                 var monthNames = new[] { "Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez" };
-                var maxAbs = _data.MonthlyReturns.Where(r => r.ReturnPercent.HasValue).Select(r => Math.Abs(r.ReturnPercent!.Value)).DefaultIfEmpty(0.05m).Max();
+                var maxAbs = _vm.Data.MonthlyReturns.Where(r => r.ReturnPercent.HasValue).Select(r => Math.Abs(r.ReturnPercent!.Value)).DefaultIfEmpty(0.05m).Max();
                 if (maxAbs == 0) { maxAbs = 0.05m; }
 
                 <div class="heatmap" role="table" aria-label="Monatsrenditen">
@@ -62,7 +61,7 @@
                             <span class="heatmap-year" role="rowheader">@year</span>
                             @for (int m = 1; m <= 12; m++)
                             {
-                                var cell = _data.MonthlyReturns.FirstOrDefault(r => r.Year == year && r.Month == m);
+                                var cell = _vm.Data.MonthlyReturns.FirstOrDefault(r => r.Year == year && r.Month == m);
                                 var pct = cell?.ReturnPercent;
                                 var bg = pct.HasValue ? GetHeatColor(pct.Value, maxAbs) : "transparent";
                                 var label = pct.HasValue ? pct.Value.ToString("+0.00%;-0.00%") : "-";
@@ -87,15 +86,38 @@
     /// <summary>Security identifier.</summary>
     [Parameter, EditorRequired] public Guid SecurityId { get; set; }
 
-    private PeriodicReturnsDto? _data;
-    private bool _loading = true;
+    private SecurityPerformanceTimeSeriesTabViewModel? _vm;
+
+    /// <inheritdoc />
+    protected override Task OnInitializedAsync()
+    {
+        _vm = new SecurityPerformanceTimeSeriesTabViewModel(Services);
+        _vm.StateChanged += VmOnStateChanged;
+        return Task.CompletedTask;
+    }
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
-        _loading = true;
-        try { _data = await ReturnAnalysis.GetPeriodicReturnsAsync(SecurityId, CurrentUser.UserId, CancellationToken.None); }
-        finally { _loading = false; }
+        if (_vm == null)
+        {
+            return;
+        }
+
+        await _vm.LoadAsync(SecurityId, CancellationToken.None);
+    }
+
+    public void Dispose()
+    {
+        if (_vm != null)
+        {
+            _vm.StateChanged -= VmOnStateChanged;
+        }
+    }
+
+    private void VmOnStateChanged(object? sender, EventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private static string GetHeatColor(decimal value, decimal maxAbs)

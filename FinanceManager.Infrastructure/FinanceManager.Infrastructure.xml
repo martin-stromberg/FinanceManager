@@ -3309,7 +3309,7 @@
         <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetCashflowTimelineAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
             <inheritdoc/>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetPerformanceChartDataAsync(System.Guid,System.Guid,FinanceManager.Application.Securities.ReturnAnalysis.ChartTimeRange,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetPerformanceChartDataAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Securities.ChartTimeRange,System.Threading.CancellationToken)">
             <inheritdoc/>
         </member>
         <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetBenchmarkComparisonAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
@@ -3429,9 +3429,9 @@
             Builds annual dividend summary list.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetFromDateForTimeRange(FinanceManager.Application.Securities.ReturnAnalysis.ChartTimeRange)">
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetFromDateForTimeRange(FinanceManager.Shared.Dtos.Securities.ChartTimeRange)">
             <summary>
-            Converts a <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.ChartTimeRange"/> to an absolute from-date.
+            Converts a <see cref="T:FinanceManager.Shared.Dtos.Securities.ChartTimeRange"/> to an absolute from-date.
             </summary>
         </member>
         <member name="T:FinanceManager.Infrastructure.Securities.SecurityCategoryService">

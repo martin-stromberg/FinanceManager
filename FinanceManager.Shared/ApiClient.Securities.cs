@@ -259,6 +259,82 @@ public partial class ApiClient
     }
 
     /// <summary>
+    /// Gets detailed return metrics for a security.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The <see cref="DetailedReturnMetricsDto"/> when found; otherwise null.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<DetailedReturnMetricsDto?> Securities_GetReturnMetricsAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/return-metrics", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<DetailedReturnMetricsDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Gets periodic returns (annual/monthly/dividends) for a security.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The <see cref="PeriodicReturnsDto"/> when found; otherwise null.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<PeriodicReturnsDto?> Securities_GetPeriodicReturnsAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/return-periodic", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<PeriodicReturnsDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Gets cashflow timeline data for a security.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The <see cref="CashflowTimelineDto"/> when found; otherwise null.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<CashflowTimelineDto?> Securities_GetCashflowTimelineAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/return-cashflows", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<CashflowTimelineDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Gets performance chart data for a security and time range.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="timeRange">Chart time range filter.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The <see cref="PerformanceChartDataDto"/> when found; otherwise null.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<PerformanceChartDataDto?> Securities_GetPerformanceChartAsync(Guid id, ChartTimeRange timeRange = ChartTimeRange.All, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/return-chart?timeRange={timeRange}", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<PerformanceChartDataDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Gets benchmark comparison data for a security.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The <see cref="BenchmarkComparisonDto"/> when found; otherwise null.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<BenchmarkComparisonDto?> Securities_GetBenchmarkComparisonAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/return-benchmark", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<BenchmarkComparisonDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
     /// Gets the KPI formula and cashflow breakdowns for a security (for the info side panel).
     /// </summary>
     /// <param name="id">Security identifier.</param>

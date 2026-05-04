@@ -533,6 +533,16 @@ public interface IApiClient
     Task<IReadOnlyList<AggregatePointDto>> Securities_GetDividendsAsync(string? period = null, int? take = null, CancellationToken ct = default);
     /// <summary>Gets the compact return summary for a security. Returns null when not found.</summary>
     Task<ReturnSummaryDto?> Securities_GetReturnSummaryAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Gets detailed return metrics for a security. Returns null when not found.</summary>
+    Task<DetailedReturnMetricsDto?> Securities_GetReturnMetricsAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Gets periodic return data (annual/monthly) for a security. Returns null when not found.</summary>
+    Task<PeriodicReturnsDto?> Securities_GetPeriodicReturnsAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Gets cashflow timeline data for a security. Returns null when not found.</summary>
+    Task<CashflowTimelineDto?> Securities_GetCashflowTimelineAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Gets performance chart data for a security and time range. Returns null when not found.</summary>
+    Task<PerformanceChartDataDto?> Securities_GetPerformanceChartAsync(Guid id, ChartTimeRange timeRange = ChartTimeRange.All, CancellationToken ct = default);
+    /// <summary>Gets benchmark comparison data for a security. Returns null when not found.</summary>
+    Task<BenchmarkComparisonDto?> Securities_GetBenchmarkComparisonAsync(Guid id, CancellationToken ct = default);
     /// <summary>Gets the KPI formula and cashflow breakdowns for a security (info side panel). Returns null when not found.</summary>
     Task<IReadOnlyList<KpiBreakdownDto>?> Securities_GetKpiBreakdownsAsync(Guid id, CancellationToken ct = default);
     /// <summary>Invalidates the return analysis cache for all securities of the current user.</summary>

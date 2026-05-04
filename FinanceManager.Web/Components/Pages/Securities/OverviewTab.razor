@@ -1,24 +1,26 @@
 @using FinanceManager.Application
-@using FinanceManager.Application.Securities.ReturnAnalysis
-@inject IReturnAnalysisService ReturnAnalysis
-@inject ICurrentUserService CurrentUser
+@using FinanceManager.Web.ViewModels.Securities.ReturnAnalysis
+@inject IServiceProvider Services
 
 <div class="overview-tab">
     <div class="time-range-selector">
-        @foreach (var range in _ranges)
+        @if (_vm != null)
         {
-            <button class="range-btn @(_selectedRange == range ? "active" : "")"
-                    @onclick="(() => SelectRangeAsync(range))">
-                @GetRangeLabel(range)
-            </button>
+            @foreach (var range in _vm.Ranges)
+            {
+                <button class="range-btn @(_vm.SelectedRange == range ? "active" : "")"
+                        @onclick="(() => _vm.SelectRangeAsync(range, CancellationToken.None))">
+                    @SecurityPerformanceOverviewTabViewModel.GetRangeLabel(range)
+                </button>
+            }
         }
     </div>
 
-    @if (_loading)
+    @if (_vm?.IsLoading == true)
     {
         <div class="chart-placeholder" role="status">Lade Chartdaten...</div>
     }
-    else if (_data == null || _data.PortfolioValues.Count == 0)
+    else if (_vm?.Data == null || _vm.Data.PortfolioValues.Count == 0)
     {
         <div class="no-data-msg">Keine Kursdaten für den gewählten Zeitraum vorhanden.</div>
     }
@@ -31,20 +33,20 @@
             </div>
             <div class="simple-line-chart" aria-label="Performance-Chart">
                 @{
-                    var allValues = _data.PortfolioValues.Select(p => p.Value)
-                        .Concat(_data.InvestedCapitalValues.Select(p => p.Value));
+                    var allValues = _vm.Data.PortfolioValues.Select(p => p.Value)
+                        .Concat(_vm.Data.InvestedCapitalValues.Select(p => p.Value));
                     var maxVal = allValues.DefaultIfEmpty(1m).Max();
                     var minVal = allValues.DefaultIfEmpty(0m).Min();
                     var valueRange = maxVal - minVal;
                     if (valueRange == 0) { valueRange = 1m; }
-                    var total = _data.PortfolioValues.Count;
+                    var total = _vm.Data.PortfolioValues.Count;
                 }
                 <svg viewBox="0 0 @total 100" preserveAspectRatio="none" class="perf-svg" role="img">
                     <title>Portfolio-Wertentwicklung</title>
                     @{
-                        var portfolioPoints = string.Join(" ", _data.PortfolioValues.Select((p, i) =>
+                        var portfolioPoints = string.Join(" ", _vm.Data.PortfolioValues.Select((p, i) =>
                             $"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}"));
-                        var investedPoints = string.Join(" ", _data.InvestedCapitalValues.Select((p, i) =>
+                        var investedPoints = string.Join(" ", _vm.Data.InvestedCapitalValues.Select((p, i) =>
                             $"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}"));
                     }
                     @if (!string.IsNullOrEmpty(portfolioPoints))
@@ -57,8 +59,8 @@
                     }
                 </svg>
                 <div class="chart-dates">
-                    <span>@(_data.PortfolioValues.FirstOrDefault()?.Date.ToString("dd.MM.yy"))</span>
-                    <span>@(_data.PortfolioValues.LastOrDefault()?.Date.ToString("dd.MM.yy"))</span>
+                    <span>@(_vm.Data.PortfolioValues.FirstOrDefault()?.Date.ToString("dd.MM.yy"))</span>
+                    <span>@(_vm.Data.PortfolioValues.LastOrDefault()?.Date.ToString("dd.MM.yy"))</span>
                 </div>
             </div>
         </div>
@@ -69,47 +71,37 @@
     /// <summary>Security identifier.</summary>
     [Parameter, EditorRequired] public Guid SecurityId { get; set; }
 
-    private static readonly ChartTimeRange[] _ranges =
-    [
-        ChartTimeRange.OneMonth, ChartTimeRange.ThreeMonths, ChartTimeRange.SixMonths,
-        ChartTimeRange.OneYear, ChartTimeRange.ThreeYears, ChartTimeRange.All
-    ];
+    private SecurityPerformanceOverviewTabViewModel? _vm;
 
-    private ChartTimeRange _selectedRange = ChartTimeRange.OneYear;
-    private PerformanceChartDataDto? _data;
-    private bool _loading = true;
+    /// <inheritdoc />
+    protected override Task OnInitializedAsync()
+    {
+        _vm = new SecurityPerformanceOverviewTabViewModel(Services);
+        _vm.StateChanged += VmOnStateChanged;
+        return Task.CompletedTask;
+    }
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
-        await LoadAsync(_selectedRange);
-    }
-
-    private async Task SelectRangeAsync(ChartTimeRange range)
-    {
-        _selectedRange = range;
-        await LoadAsync(range);
-    }
-
-    private async Task LoadAsync(ChartTimeRange range)
-    {
-        _loading = true;
-        StateHasChanged();
-        try
+        if (_vm == null)
         {
-            _data = await ReturnAnalysis.GetPerformanceChartDataAsync(SecurityId, CurrentUser.UserId, range, CancellationToken.None);
+            return;
         }
-        finally { _loading = false; StateHasChanged(); }
+
+        await _vm.LoadAsync(SecurityId, CancellationToken.None);
     }
 
-    private static string GetRangeLabel(ChartTimeRange range) => range switch
+    public void Dispose()
     {
-        ChartTimeRange.OneMonth => "1M",
-        ChartTimeRange.ThreeMonths => "3M",
-        ChartTimeRange.SixMonths => "6M",
-        ChartTimeRange.OneYear => "1J",
-        ChartTimeRange.ThreeYears => "3J",
-        ChartTimeRange.All => "Gesamt",
-        _ => range.ToString()
-    };
+        if (_vm != null)
+        {
+            _vm.StateChanged -= VmOnStateChanged;
+        }
+    }
+
+    private void VmOnStateChanged(object? sender, EventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
 }

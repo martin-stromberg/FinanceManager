@@ -1,41 +1,40 @@
 @using FinanceManager.Application
-@using FinanceManager.Application.Securities.ReturnAnalysis
-@inject IReturnAnalysisService ReturnAnalysis
-@inject ICurrentUserService CurrentUser
+@using FinanceManager.Web.ViewModels.Securities.ReturnAnalysis
+@inject IServiceProvider Services
 
 <div class="metrics-tab">
-    @if (_loading) { <div role="status">Lade Kennzahlen...</div> }
-    else if (_data == null) { <div class="no-data-msg">Keine Kennzahlen verfügbar.</div> }
+    @if (_vm?.IsLoading == true) { <div role="status">Lade Kennzahlen...</div> }
+    else if (_vm?.Data == null) { <div class="no-data-msg">Keine Kennzahlen verfügbar.</div> }
     else
     {
         <div class="kpi-grid">
             <div class="kpi-section">
                 <h3>Rendite</h3>
-                @KpiRow("Bruttorendite", _data.GrossReturn.ToString("N2") + " €", "Gesamtrendite vor Steuern und Gebühren")
-                @KpiRow("Nettorendite", _data.NetReturn.ToString("N2") + " €", "Rendite nach Steuern")
-                @KpiRow("TWR (zeitgewichtet)", _data.Twr.HasValue ? _data.Twr.Value.ToString("+0.00%;-0.00%") : "–", "Time-Weighted Return (Modified Dietz, GIPS-konform)")
-                @KpiRow("IRR (persönlich)", _data.Irr.HasValue ? _data.Irr.Value.ToString("+0.00%;-0.00%") : "–", "Internal Rate of Return – Ihre persönliche Rendite")
-                @if (_data.SharpeRatio.HasValue)
+                @KpiRow("Bruttorendite", _vm.Data.GrossReturn.ToString("N2") + " €", "Gesamtrendite vor Steuern und Gebühren")
+                @KpiRow("Nettorendite", _vm.Data.NetReturn.ToString("N2") + " €", "Rendite nach Steuern")
+                @KpiRow("TWR (zeitgewichtet)", _vm.Data.Twr.HasValue ? _vm.Data.Twr.Value.ToString("+0.00%;-0.00%") : "–", "Time-Weighted Return (Modified Dietz, GIPS-konform)")
+                @KpiRow("IRR (persönlich)", _vm.Data.Irr.HasValue ? _vm.Data.Irr.Value.ToString("+0.00%;-0.00%") : "–", "Internal Rate of Return – Ihre persönliche Rendite")
+                @if (_vm.Data.SharpeRatio.HasValue)
                 {
-                    @KpiRow("Sharpe Ratio", _data.SharpeRatio.Value.ToString("F2"), "(Rendite – risikofreier Zinssatz) / Volatilität")
+                    @KpiRow("Sharpe Ratio", _vm.Data.SharpeRatio.Value.ToString("F2"), "(Rendite – risikofreier Zinssatz) / Volatilität")
                 }
             </div>
             <div class="kpi-section">
                 <h3>Risiko</h3>
-                @KpiRow("Volatilität (p.a.)", _data.Volatility.HasValue ? _data.Volatility.Value.ToString("P2") : "–", "Annualisierte Standardabweichung der Log-Tagesrenditen")
-                @KpiRow("Max. Drawdown", _data.MaxDrawdown.HasValue ? _data.MaxDrawdown.Value.ToString("P2") : "–", "Maximaler Verlust vom Höchststand")
+                @KpiRow("Volatilität (p.a.)", _vm.Data.Volatility.HasValue ? _vm.Data.Volatility.Value.ToString("P2") : "–", "Annualisierte Standardabweichung der Log-Tagesrenditen")
+                @KpiRow("Max. Drawdown", _vm.Data.MaxDrawdown.HasValue ? _vm.Data.MaxDrawdown.Value.ToString("P2") : "–", "Maximaler Verlust vom Höchststand")
             </div>
             <div class="kpi-section">
                 <h3>Steuern &amp; Gebühren</h3>
-                @KpiRow("Gezahlte Steuern", _data.TotalTaxes.ToString("N2") + " €")
-                @KpiRow("Gezahlte Gebühren", _data.TotalFees.ToString("N2") + " €")
-                @KpiRow("Steuerquote", _data.TaxRate.ToString("P1"))
+                @KpiRow("Gezahlte Steuern", _vm.Data.TotalTaxes.ToString("N2") + " €")
+                @KpiRow("Gezahlte Gebühren", _vm.Data.TotalFees.ToString("N2") + " €")
+                @KpiRow("Steuerquote", _vm.Data.TaxRate.ToString("P1"))
             </div>
             <div class="kpi-section">
                 <h3>Gewinne</h3>
-                @KpiRow("Realisierte Gewinne", _data.RealizedGains.ToString("N2") + " €", "Realisierte Kursgewinne (FIFO)")
-                @KpiRow("Nicht realisierte Gewinne", _data.UnrealizedGains.ToString("N2") + " €", "Buchgewinne auf aktuelle Positionen")
-                @KpiRow("Dividendenrendite akt. Jahr", _data.DividendYieldCurrentYear.ToString("P2"))
+                @KpiRow("Realisierte Gewinne", _vm.Data.RealizedGains.ToString("N2") + " €", "Realisierte Kursgewinne (FIFO)")
+                @KpiRow("Nicht realisierte Gewinne", _vm.Data.UnrealizedGains.ToString("N2") + " €", "Buchgewinne auf aktuelle Positionen")
+                @KpiRow("Dividendenrendite akt. Jahr", _vm.Data.DividendYieldCurrentYear.ToString("P2"))
             </div>
         </div>
     }
@@ -45,15 +44,38 @@
     /// <summary>Security identifier.</summary>
     [Parameter, EditorRequired] public Guid SecurityId { get; set; }
 
-    private DetailedReturnMetricsDto? _data;
-    private bool _loading = true;
+    private SecurityPerformanceMetricsTabViewModel? _vm;
+
+    /// <inheritdoc />
+    protected override Task OnInitializedAsync()
+    {
+        _vm = new SecurityPerformanceMetricsTabViewModel(Services);
+        _vm.StateChanged += VmOnStateChanged;
+        return Task.CompletedTask;
+    }
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
-        _loading = true;
-        try { _data = await ReturnAnalysis.GetDetailedMetricsAsync(SecurityId, CurrentUser.UserId, CancellationToken.None); }
-        finally { _loading = false; }
+        if (_vm == null)
+        {
+            return;
+        }
+
+        await _vm.LoadAsync(SecurityId, CancellationToken.None);
+    }
+
+    public void Dispose()
+    {
+        if (_vm != null)
+        {
+            _vm.StateChanged -= VmOnStateChanged;
+        }
+    }
+
+    private void VmOnStateChanged(object? sender, EventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private RenderFragment KpiRow(string label, string value, string? tooltip = null) => __builder =>

@@ -1,12 +1,11 @@
 @using FinanceManager.Application
-@using FinanceManager.Application.Securities.ReturnAnalysis
-@inject IReturnAnalysisService ReturnAnalysis
-@inject ICurrentUserService CurrentUser
+@using FinanceManager.Web.ViewModels.Securities.ReturnAnalysis
+@inject IServiceProvider Services
 @inject NavigationManager Nav
 
 <div class="benchmark-tab">
-    @if (_loading) { <div role="status">Lade Benchmark-Daten...</div> }
-    else if (_data == null)
+    @if (_vm?.IsLoading == true) { <div role="status">Lade Benchmark-Daten...</div> }
+    else if (_vm?.Data == null)
     {
         <div class="no-benchmark-hint">
             <p>Kein Benchmark konfiguriert.</p>
@@ -17,26 +16,26 @@
     else
     {
         <div class="benchmark-chart-area">
-            <p class="benchmark-name">Benchmark: <strong>@_data.BenchmarkName</strong></p>
+            <p class="benchmark-name">Benchmark: <strong>@_vm.Data.BenchmarkName</strong></p>
             <div class="benchmark-legend">
                 <span class="legend-item security">Dieses Wertpapier</span>
-                <span class="legend-item benchmark">@_data.BenchmarkName</span>
+                <span class="legend-item benchmark">@_vm.Data.BenchmarkName</span>
             </div>
             @{
-                var allValues = _data.SecurityNormalizedValues.Select(p => p.Value)
-                    .Concat(_data.BenchmarkNormalizedValues.Select(p => p.Value));
+                var allValues = _vm.Data.SecurityNormalizedValues.Select(p => p.Value)
+                    .Concat(_vm.Data.BenchmarkNormalizedValues.Select(p => p.Value));
                 var maxVal = allValues.DefaultIfEmpty(100m).Max();
                 var minVal = allValues.DefaultIfEmpty(0m).Min();
                 var valueRange = maxVal - minVal;
                 if (valueRange == 0) { valueRange = 1m; }
-                var total = Math.Max(_data.SecurityNormalizedValues.Count, _data.BenchmarkNormalizedValues.Count);
+                var total = Math.Max(_vm.Data.SecurityNormalizedValues.Count, _vm.Data.BenchmarkNormalizedValues.Count);
             }
             <svg viewBox="0 0 @(Math.Max(total, 1)) 100" preserveAspectRatio="none" class="benchmark-svg" role="img" aria-label="Benchmark-Vergleichschart">
                 <title>Benchmark-Vergleich</title>
                 @{
-                    var secPoints = string.Join(" ", _data.SecurityNormalizedValues.Select((p, i) =>
+                    var secPoints = string.Join(" ", _vm.Data.SecurityNormalizedValues.Select((p, i) =>
                         $"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}"));
-                    var bmPoints = string.Join(" ", _data.BenchmarkNormalizedValues.Select((p, i) =>
+                    var bmPoints = string.Join(" ", _vm.Data.BenchmarkNormalizedValues.Select((p, i) =>
                         $"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}"));
                 }
                 @if (!string.IsNullOrEmpty(secPoints))
@@ -56,15 +55,38 @@
     /// <summary>Security identifier.</summary>
     [Parameter, EditorRequired] public Guid SecurityId { get; set; }
 
-    private BenchmarkComparisonDto? _data;
-    private bool _loading = true;
+    private SecurityPerformanceBenchmarkTabViewModel? _vm;
+
+    /// <inheritdoc />
+    protected override Task OnInitializedAsync()
+    {
+        _vm = new SecurityPerformanceBenchmarkTabViewModel(Services);
+        _vm.StateChanged += VmOnStateChanged;
+        return Task.CompletedTask;
+    }
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
-        _loading = true;
-        try { _data = await ReturnAnalysis.GetBenchmarkComparisonAsync(SecurityId, CurrentUser.UserId, CancellationToken.None); }
-        finally { _loading = false; }
+        if (_vm == null)
+        {
+            return;
+        }
+
+        await _vm.LoadAsync(SecurityId, CancellationToken.None);
+    }
+
+    public void Dispose()
+    {
+        if (_vm != null)
+        {
+            _vm.StateChanged -= VmOnStateChanged;
+        }
+    }
+
+    private void VmOnStateChanged(object? sender, EventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private void NavigateToSettings() => Nav.NavigateTo("/card/securities/settings");

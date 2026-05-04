@@ -1,16 +1,15 @@
 @using FinanceManager.Application
-@using FinanceManager.Application.Securities.ReturnAnalysis
-@inject IReturnAnalysisService ReturnAnalysis
-@inject ICurrentUserService CurrentUser
+@using FinanceManager.Web.ViewModels.Securities.ReturnAnalysis
+@inject IServiceProvider Services
 
 <div class="cashflow-tab">
-    @if (_loading) { <div role="status">Lade Cashflows...</div> }
-    else if (_data == null) { <div class="no-data-msg">Keine Cashflows vorhanden.</div> }
+    @if (_vm?.IsLoading == true) { <div role="status">Lade Cashflows...</div> }
+    else if (_vm?.Data == null) { <div class="no-data-msg">Keine Cashflows vorhanden.</div> }
     else
     {
         <section aria-label="Cashflow-Timeline">
             <h3>Cashflow-Verlauf</h3>
-            @if (_data.Entries.Count == 0)
+            @if (_vm.Data.Entries.Count == 0)
             {
                 <p>Keine Einträge vorhanden.</p>
             }
@@ -27,7 +26,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var e in _data.Entries.OrderByDescending(x => x.Date))
+                            @foreach (var e in _vm.Data.Entries.OrderByDescending(x => x.Date))
                             {
                                 <tr>
                                     <td>@e.Date.ToString("dd.MM.yyyy")</td>
@@ -42,7 +41,7 @@
             }
         </section>
 
-        @if (_data.AnnualSummaries.Count > 0)
+        @if (_vm.Data.AnnualSummaries.Count > 0)
         {
             <section aria-label="Jährliche Zusammenfassung">
                 <h3>Jahres-Zusammenfassung</h3>
@@ -58,7 +57,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var s in _data.AnnualSummaries.OrderByDescending(x => x.Year))
+                        @foreach (var s in _vm.Data.AnnualSummaries.OrderByDescending(x => x.Year))
                         {
                             <tr>
                                 <td>@s.Year</td>
@@ -80,14 +79,37 @@
     /// <summary>Security identifier.</summary>
     [Parameter, EditorRequired] public Guid SecurityId { get; set; }
 
-    private CashflowTimelineDto? _data;
-    private bool _loading = true;
+    private SecurityPerformanceCashflowTabViewModel? _vm;
+
+    /// <inheritdoc />
+    protected override Task OnInitializedAsync()
+    {
+        _vm = new SecurityPerformanceCashflowTabViewModel(Services);
+        _vm.StateChanged += VmOnStateChanged;
+        return Task.CompletedTask;
+    }
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
-        _loading = true;
-        try { _data = await ReturnAnalysis.GetCashflowTimelineAsync(SecurityId, CurrentUser.UserId, CancellationToken.None); }
-        finally { _loading = false; }
+        if (_vm == null)
+        {
+            return;
+        }
+
+        await _vm.LoadAsync(SecurityId, CancellationToken.None);
+    }
+
+    public void Dispose()
+    {
+        if (_vm != null)
+        {
+            _vm.StateChanged -= VmOnStateChanged;
+        }
+    }
+
+    private void VmOnStateChanged(object? sender, EventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
     }
 }

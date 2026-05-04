@@ -1756,7 +1756,7 @@
             </summary>
             <param name="id">Security identifier.</param>
             <param name="ct">Cancellation token.</param>
-            <returns>200 OK with <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.PeriodicReturnsDto"/>; 404 when not found or not owned by user.</returns>
+            <returns>200 OK with <see cref="T:FinanceManager.Shared.Dtos.Securities.PeriodicReturnsDto"/>; 404 when not found or not owned by user.</returns>
         </member>
         <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetCashflowTimelineAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>
@@ -1764,16 +1764,16 @@
             </summary>
             <param name="id">Security identifier.</param>
             <param name="ct">Cancellation token.</param>
-            <returns>200 OK with <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.CashflowTimelineDto"/>; 404 when not found or not owned by user.</returns>
+            <returns>200 OK with <see cref="T:FinanceManager.Shared.Dtos.Securities.CashflowTimelineDto"/>; 404 when not found or not owned by user.</returns>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetPerformanceChartAsync(System.Guid,FinanceManager.Application.Securities.ReturnAnalysis.ChartTimeRange,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetPerformanceChartAsync(System.Guid,FinanceManager.Shared.Dtos.Securities.ChartTimeRange,System.Threading.CancellationToken)">
             <summary>
             Returns performance chart data.
             </summary>
             <param name="id">Security identifier.</param>
             <param name="timeRange">Time range for the chart (default: All).</param>
             <param name="ct">Cancellation token.</param>
-            <returns>200 OK with <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.PerformanceChartDataDto"/>; 404 when not found or not owned by user.</returns>
+            <returns>200 OK with <see cref="T:FinanceManager.Shared.Dtos.Securities.PerformanceChartDataDto"/>; 404 when not found or not owned by user.</returns>
         </member>
         <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetBenchmarkComparisonAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>
@@ -1781,7 +1781,7 @@
             </summary>
             <param name="id">Security identifier.</param>
             <param name="ct">Cancellation token.</param>
-            <returns>200 OK with <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.BenchmarkComparisonDto"/>; 404 when no benchmark is configured or data is insufficient.</returns>
+            <returns>200 OK with <see cref="T:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto"/>; 404 when no benchmark is configured or data is insufficient.</returns>
         </member>
         <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetReturnAnalysisSettingsAsync(System.Threading.CancellationToken)">
             <summary>
@@ -8383,6 +8383,231 @@
             <param name="localizer">Localizer used to resolve UI labels.</param>
             <returns>Collection of ribbon registers describing available tabs and actions for the UI.</returns>
         </member>
+        <member name="T:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceBenchmarkTabViewModel">
+            <summary>
+            View model for the security performance benchmark tab.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceBenchmarkTabViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="services">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceBenchmarkTabViewModel.Data">
+            <summary>
+            Loaded benchmark comparison data.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceBenchmarkTabViewModel.IsLoading">
+            <summary>
+            Gets whether loading is in progress.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceBenchmarkTabViewModel.LoadAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Loads data for the given security.
+            </summary>
+            <param name="securityId">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceCashflowTabViewModel">
+            <summary>
+            View model for the security performance cashflow tab.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceCashflowTabViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="services">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceCashflowTabViewModel.Data">
+            <summary>
+            Loaded cashflow data.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceCashflowTabViewModel.IsLoading">
+            <summary>
+            Gets whether loading is in progress.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceCashflowTabViewModel.LoadAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Loads data for the given security.
+            </summary>
+            <param name="securityId">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceMetricsTabViewModel">
+            <summary>
+            View model for the security performance metrics tab.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceMetricsTabViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="services">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceMetricsTabViewModel.Data">
+            <summary>
+            Loaded metrics data.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceMetricsTabViewModel.IsLoading">
+            <summary>
+            Gets whether loading is in progress.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceMetricsTabViewModel.LoadAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Loads data for the given security.
+            </summary>
+            <param name="securityId">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel">
+            <summary>
+            View model for the security performance overview tab.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="services">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.SecurityId">
+            <summary>
+            Security identifier currently bound to this tab.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.SelectedRange">
+            <summary>
+            Selected chart time range.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.Ranges">
+            <summary>
+            Available time ranges.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.Data">
+            <summary>
+            Loaded chart data.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.IsLoading">
+            <summary>
+            Gets whether loading is in progress.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.LoadAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Loads chart data for the current selection.
+            </summary>
+            <param name="securityId">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.SelectRangeAsync(FinanceManager.Shared.Dtos.Securities.ChartTimeRange,System.Threading.CancellationToken)">
+            <summary>
+            Selects a new range and reloads chart data.
+            </summary>
+            <param name="range">Range to load.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.GetRangeLabel(FinanceManager.Shared.Dtos.Securities.ChartTimeRange)">
+            <summary>
+            Returns short label for a chart range.
+            </summary>
+            <param name="range">Chart range.</param>
+            <returns>Short display label.</returns>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel">
+            <summary>
+            View model for the security performance page shell.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="services">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.SecurityId">
+            <summary>
+            Security identifier currently shown by the page.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.SecurityName">
+            <summary>
+            Name of the selected security.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.NotFound">
+            <summary>
+            Gets whether the requested security could not be found.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.ActiveTabKey">
+            <summary>
+            Active tab key.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.Tabs">
+            <summary>
+            All available tab keys.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.LoadAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Loads page header data for the given security.
+            </summary>
+            <param name="securityId">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.SelectTab(System.String)">
+            <summary>
+            Sets the active tab key if valid.
+            </summary>
+            <param name="tabKey">Target tab key.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.GetTabLabel(System.String)">
+            <summary>
+            Returns a localized display label for a tab key.
+            </summary>
+            <param name="tabKey">Tab key.</param>
+            <returns>Display label.</returns>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceTimeSeriesTabViewModel">
+            <summary>
+            View model for the security performance time series tab.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceTimeSeriesTabViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="services">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceTimeSeriesTabViewModel.Data">
+            <summary>
+            Loaded periodic return data.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceTimeSeriesTabViewModel.IsLoading">
+            <summary>
+            Gets whether loading is in progress.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceTimeSeriesTabViewModel.LoadAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Loads data for the given security.
+            </summary>
+            <param name="securityId">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
         <member name="T:FinanceManager.Web.ViewModels.Securities.SecuritiesListViewModel">
             <summary>
             List view model for securities. Responsible for loading securities, preparing display symbol mapping
@@ -10411,11 +10636,17 @@
         <member name="P:FinanceManager.Web.Components.Pages.Securities.BenchmarkTab.SecurityId">
             <summary>Security identifier.</summary>
         </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.BenchmarkTab.OnInitializedAsync">
+            <inheritdoc />
+        </member>
         <member name="M:FinanceManager.Web.Components.Pages.Securities.BenchmarkTab.OnParametersSetAsync">
             <inheritdoc />
         </member>
         <member name="P:FinanceManager.Web.Components.Pages.Securities.CashflowTab.SecurityId">
             <summary>Security identifier.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.CashflowTab.OnInitializedAsync">
+            <inheritdoc />
         </member>
         <member name="M:FinanceManager.Web.Components.Pages.Securities.CashflowTab.OnParametersSetAsync">
             <inheritdoc />
@@ -10423,11 +10654,17 @@
         <member name="P:FinanceManager.Web.Components.Pages.Securities.MetricsTab.SecurityId">
             <summary>Security identifier.</summary>
         </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.MetricsTab.OnInitializedAsync">
+            <inheritdoc />
+        </member>
         <member name="M:FinanceManager.Web.Components.Pages.Securities.MetricsTab.OnParametersSetAsync">
             <inheritdoc />
         </member>
         <member name="P:FinanceManager.Web.Components.Pages.Securities.OverviewTab.SecurityId">
             <summary>Security identifier.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.OverviewTab.OnInitializedAsync">
+            <inheritdoc />
         </member>
         <member name="M:FinanceManager.Web.Components.Pages.Securities.OverviewTab.OnParametersSetAsync">
             <inheritdoc />
@@ -10435,11 +10672,17 @@
         <member name="P:FinanceManager.Web.Components.Pages.Securities.SecurityPerformancePage.Id">
             <summary>Security identifier from the route.</summary>
         </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.SecurityPerformancePage.OnInitializedAsync">
+            <inheritdoc />
+        </member>
         <member name="M:FinanceManager.Web.Components.Pages.Securities.SecurityPerformancePage.OnParametersSetAsync">
             <inheritdoc />
         </member>
         <member name="P:FinanceManager.Web.Components.Pages.Securities.TimeSeriesTab.SecurityId">
             <summary>Security identifier.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.TimeSeriesTab.OnInitializedAsync">
+            <inheritdoc />
         </member>
         <member name="M:FinanceManager.Web.Components.Pages.Securities.TimeSeriesTab.OnParametersSetAsync">
             <inheritdoc />

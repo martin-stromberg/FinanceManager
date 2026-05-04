@@ -1,24 +1,26 @@
 @page "/securities/{Id:guid}/performance"
 @rendermode InteractiveServer
-@using FinanceManager.Application
-@using FinanceManager.Application.Securities
-@using FinanceManager.Application.Securities.ReturnAnalysis
 @using FinanceManager.Web.Components.Pages.Securities
-@inject IReturnAnalysisService ReturnAnalysis
-@inject ISecurityService SecurityService
-@inject ICurrentUserService CurrentUser
+@using FinanceManager.Web.ViewModels.Securities.ReturnAnalysis
+@inject IServiceProvider Services
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 
 <PageTitle>Renditeanalyse</PageTitle>
 
-@if (!CurrentUser.IsAuthenticated)
+@if (_vm == null)
+{
+    <p>Lade Seite...</p>
+    return;
+}
+
+@if (!_vm.IsAuthenticated)
 {
     <p>Bitte anmelden.</p>
     return;
 }
 
-@if (_notFound)
+@if (_vm.NotFound)
 {
     <p>Wertpapier nicht gefunden oder kein Zugriff.</p>
     <button @onclick='(() => Nav.NavigateTo("/list/securities"))'>Zur Übersicht</button>
@@ -30,39 +32,39 @@
         <button class="back-btn" @onclick='(() => Nav.NavigateTo($"/card/securities/{Id}"))' title="Zurück zur Detailseite">
             ←
         </button>
-        <h2>@(_securityName ?? "Renditeanalyse") – Renditeanalyse</h2>
+        <h2>@(_vm.SecurityName ?? "Renditeanalyse") – Renditeanalyse</h2>
     </div>
 
     <div class="tab-bar" role="tablist">
-        @foreach (var tab in _tabs)
+        @foreach (var tab in _vm.Tabs)
         {
-            <button class="tab-btn @(tab == _activeTab ? "active" : "")"
+            <button class="tab-btn @(tab == _vm.ActiveTabKey ? "active" : "")"
                     role="tab"
-                    aria-selected="@(tab == _activeTab)"
-                    @onclick="(() => SelectTab(tab))">
-                @GetTabLabel(tab)
+                    aria-selected="@(tab == _vm.ActiveTabKey)"
+                    @onclick="(() => _vm.SelectTab(tab))">
+                @SecurityPerformancePageViewModel.GetTabLabel(tab)
             </button>
         }
     </div>
 
     <div class="tab-content" role="tabpanel">
-        @if (_activeTab == TabId.Overview)
+        @if (_vm.ActiveTabKey == "Overview")
         {
             <OverviewTab SecurityId="Id" />
         }
-        else if (_activeTab == TabId.TimeSeries)
+        else if (_vm.ActiveTabKey == "TimeSeries")
         {
             <TimeSeriesTab SecurityId="Id" />
         }
-        else if (_activeTab == TabId.Cashflows)
+        else if (_vm.ActiveTabKey == "Cashflows")
         {
             <CashflowTab SecurityId="Id" />
         }
-        else if (_activeTab == TabId.Metrics)
+        else if (_vm.ActiveTabKey == "Metrics")
         {
             <MetricsTab SecurityId="Id" />
         }
-        else if (_activeTab == TabId.Benchmark)
+        else if (_vm.ActiveTabKey == "Benchmark")
         {
             <BenchmarkTab SecurityId="Id" />
         }
@@ -73,30 +75,37 @@
     /// <summary>Security identifier from the route.</summary>
     [Parameter] public Guid Id { get; set; }
 
-    private enum TabId { Overview, TimeSeries, Cashflows, Metrics, Benchmark }
-    private readonly TabId[] _tabs = [TabId.Overview, TabId.TimeSeries, TabId.Cashflows, TabId.Metrics, TabId.Benchmark];
-    private TabId _activeTab = TabId.Overview;
-    private string? _securityName;
-    private bool _notFound;
+    private SecurityPerformancePageViewModel? _vm;
+
+    /// <inheritdoc />
+    protected override Task OnInitializedAsync()
+    {
+        _vm = new SecurityPerformancePageViewModel(Services);
+        _vm.StateChanged += VmOnStateChanged;
+        return Task.CompletedTask;
+    }
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
-        if (!CurrentUser.IsAuthenticated) { return; }
-        var security = await SecurityService.GetAsync(Id, CurrentUser.UserId, CancellationToken.None);
-        if (security == null) { _notFound = true; return; }
-        _securityName = security.Name;
+        if (_vm == null)
+        {
+            return;
+        }
+
+        await _vm.LoadAsync(Id, CancellationToken.None);
     }
 
-    private void SelectTab(TabId tab) { _activeTab = tab; }
-
-    private static string GetTabLabel(TabId tab) => tab switch
+    public void Dispose()
     {
-        TabId.Overview => "Übersicht",
-        TabId.TimeSeries => "Zeitliche Entwicklung",
-        TabId.Cashflows => "Cashflows",
-        TabId.Metrics => "Kennzahlen",
-        TabId.Benchmark => "Benchmark",
-        _ => tab.ToString()
-    };
+        if (_vm != null)
+        {
+            _vm.StateChanged -= VmOnStateChanged;
+        }
+    }
+
+    private void VmOnStateChanged(object? sender, EventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
 }
