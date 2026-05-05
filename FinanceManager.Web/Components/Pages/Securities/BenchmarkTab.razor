@@ -30,13 +30,13 @@
                 if (valueRange == 0) { valueRange = 1m; }
                 var total = Math.Max(_vm.Data.SecurityNormalizedValues.Count, _vm.Data.BenchmarkNormalizedValues.Count);
             }
-            <svg viewBox="0 0 @(Math.Max(total, 1)) 100" preserveAspectRatio="none" class="benchmark-svg" role="img" aria-label="Benchmark-Vergleichschart">
+            <svg viewBox="0 0 @(Math.Max(total, 1)) 110" preserveAspectRatio="none" class="benchmark-svg" role="img" aria-label="Benchmark-Vergleichschart">
                 <title>Benchmark-Vergleich</title>
                 @{
                     var secPoints = string.Join(" ", _vm.Data.SecurityNormalizedValues.Select((p, i) =>
-                        FormattableString.Invariant($"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}")));
+                        FormattableString.Invariant($"{i},{100m - (p.Value - minVal) / valueRange * 90m:F1}")));
                     var bmPoints = string.Join(" ", _vm.Data.BenchmarkNormalizedValues.Select((p, i) =>
-                        FormattableString.Invariant($"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}")));
+                        FormattableString.Invariant($"{i},{100m - (p.Value - minVal) / valueRange * 90m:F1}")));
                 }
                 @if (!string.IsNullOrEmpty(secPoints))
                 {
@@ -46,6 +46,12 @@
                 {
                     <polyline points="@bmPoints" fill="none" stroke="#e07b20" stroke-width="0.8" stroke-dasharray="3,2" />
                 }
+                @* X-axis baseline *@
+                <line x1="0" y1="100" x2="@(Math.Max(total - 1, 1))" y2="100" stroke="#ccc" stroke-width="0.3" />
+                @* Start date label *@
+                <text x="0" y="108" font-size="5" fill="#888" text-anchor="start">@_vm.Data.StartDate.ToString("MM/yyyy")</text>
+                @* End date label *@
+                <text x="@(Math.Max(total - 1, 1))" y="108" font-size="5" fill="#888" text-anchor="end">@_vm.Data.EndDate.ToString("MM/yyyy")</text>
             </svg>
         </div>
     }

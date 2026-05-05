@@ -724,16 +724,33 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
 
         var firstDate = transactions.Min(t => t.Date).Date;
 
-        var securityPrices = await LoadPriceHistoryAsync(securityId, ownerUserId, firstDate, DateTime.Today, ct);
+        // When the security is fully sold, end the chart at the last sell date instead of today
+        var sharesHeldToday = ComputeSharesHeldOnDate(transactions, DateTime.Today);
+        DateTime endDate;
+        if (sharesHeldToday == 0m)
+        {
+            // Find the last sell transaction that brought shares to zero
+            var lastSell = transactions
+                .Where(t => t.Type == SecurityPostingSubType.Sell)
+                .OrderByDescending(t => t.Date)
+                .FirstOrDefault();
+            endDate = lastSell?.Date.Date ?? DateTime.Today;
+        }
+        else
+        {
+            endDate = DateTime.Today;
+        }
+
+        var securityPrices = await LoadPriceHistoryAsync(securityId, ownerUserId, firstDate, endDate, ct);
         if (securityPrices.Count < 2) return null;
 
         // Load benchmark price history for the same period
-        var benchmarkPrices = await LoadPriceHistoryAsync(benchmarkId, ownerUserId, firstDate, DateTime.Today, ct);
+        var benchmarkPrices = await LoadPriceHistoryAsync(benchmarkId, ownerUserId, firstDate, endDate, ct);
         if (benchmarkPrices.Count < 2) return null;
 
         // Normalize both to base 100 at the earliest common date
-        var securityFilled = ForwardFill(securityPrices, firstDate, DateTime.Today);
-        var benchmarkFilled = ForwardFill(benchmarkPrices, firstDate, DateTime.Today);
+        var securityFilled = ForwardFill(securityPrices, firstDate, endDate);
+        var benchmarkFilled = ForwardFill(benchmarkPrices, firstDate, endDate);
 
         if (securityFilled.Count == 0 || benchmarkFilled.Count == 0) return null;
 
@@ -754,7 +771,9 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
             BenchmarkSecurityId: benchmarkId,
             BenchmarkName: benchmarkSecurity.Name,
             SecurityNormalizedValues: securityNormalized.AsReadOnly(),
-            BenchmarkNormalizedValues: benchmarkNormalized.AsReadOnly());
+            BenchmarkNormalizedValues: benchmarkNormalized.AsReadOnly(),
+            StartDate: firstDate,
+            EndDate: endDate);
     }
 
     /// <summary>

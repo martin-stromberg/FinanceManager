@@ -4856,7 +4856,7 @@
             <param name="SecurityNormalizedValues">Normalized values for the target security (base 100).</param>
             <param name="BenchmarkNormalizedValues">Normalized values for the benchmark (base 100).</param>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.#ctor(System.Guid,System.String,System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.ChartPoint},System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.ChartPoint})">
+        <member name="M:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.#ctor(System.Guid,System.String,System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.ChartPoint},System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.ChartPoint},System.DateTime,System.DateTime)">
             <summary>
             Benchmark comparison data for the Benchmark tab (FR-7).
             </summary>

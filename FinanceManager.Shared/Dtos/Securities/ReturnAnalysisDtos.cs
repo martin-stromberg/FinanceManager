@@ -236,11 +236,15 @@ public sealed record PerformanceChartDataDto(
 /// <param name="BenchmarkName">Display name of the benchmark security.</param>
 /// <param name="SecurityNormalizedValues">Normalized values for the target security (base 100).</param>
 /// <param name="BenchmarkNormalizedValues">Normalized values for the benchmark (base 100).</param>
+/// <param name="StartDate">Start date of the comparison period (first transaction date).</param>
+/// <param name="EndDate">End date of the comparison period (last sell date when fully sold, otherwise today).</param>
 public sealed record BenchmarkComparisonDto(
     Guid BenchmarkSecurityId,
     string BenchmarkName,
     IReadOnlyList<ChartPoint> SecurityNormalizedValues,
-    IReadOnlyList<ChartPoint> BenchmarkNormalizedValues
+    IReadOnlyList<ChartPoint> BenchmarkNormalizedValues,
+    DateTime StartDate,
+    DateTime EndDate
 );
 
 /// <summary>Request payload for updating return analysis settings via API client.</summary>
