@@ -361,5 +361,26 @@ public partial class ApiClient
         resp.EnsureSuccessStatusCode();
     }
 
+    /// <summary>Gets return analysis settings for the current user.</summary>
+    public async Task<ReturnAnalysisSettingsResponse?> Securities_GetReturnAnalysisSettingsAsync(CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync("/api/securities/return-analysis/settings", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<ReturnAnalysisSettingsResponse>(cancellationToken: ct);
+    }
+
+    /// <summary>Updates return analysis settings for the current user.</summary>
+    public async Task<bool> Securities_UpdateReturnAnalysisSettingsAsync(ReturnAnalysisSettingsUpdateRequest request, CancellationToken ct = default)
+    {
+        var resp = await _http.PutAsJsonAsync("/api/securities/return-analysis/settings", request, ct);
+        if (!resp.IsSuccessStatusCode)
+        {
+            await EnsureSuccessOrSetErrorAsync(resp);
+            return false;
+        }
+        return true;
+    }
+
     #endregion Securities
 }

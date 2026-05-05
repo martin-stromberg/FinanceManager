@@ -89,5 +89,9 @@
         _ = InvokeAsync(StateHasChanged);
     }
 
-    private void NavigateToSettings() => Nav.NavigateTo("/card/securities/settings");
+    private void NavigateToSettings()
+    {
+        var back = Nav.Uri;
+        Nav.NavigateTo($"/securities/benchmark-settings?back={Uri.EscapeDataString(back)}");
+    }
 }

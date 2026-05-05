@@ -824,6 +824,71 @@
             </para>
             </summary>
         </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetPerformanceChartDataAsync_Should_SimulatePrices_WhenNoPriceHistoryExists">
+            <summary>
+            When no real price history exists for a security, ComputePerformanceChartDataAsync must
+            simulate prices from buy/sell transaction amounts. The implied unit price for each
+            transaction is |Amount| / |Quantity|. Between two anchor points (e.g., buy price and sell
+            price), the price is linearly interpolated for each calendar day.
+            <para>
+            Example: buy 10 shares for 100€ on 15.01 (price = 10€); sell 10 shares for 150€ on 20.01
+            (price = 15€). Expected simulated prices: 15.01→10€, 16.01→11€, 17.01→12€, 18.01→13€,
+            19.01→14€, 20.01→15€. Portfolio values are shares × price (0 after sell).
+            </para>
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetPerformanceChartDataAsync_Should_SimulatePrices_ForOwnershipPeriod_WhenRealPricesStartAfterSell">
+            <summary>
+            When real price history only exists AFTER the last sell (i.e., during the ownership
+            period there are no prices), the chart must still show simulated prices for the
+            ownership period. The post-sell data points must show portfolio value 0 because no
+            shares are held regardless of the real price.
+            <para>
+            Scenario: buy Jan 15 (10 shares, 100€ → 10€/share), sell Jan 20 (150€ → 15€/share),
+            first real price on Jan 25 (20€). The Jan 15-19 period must be simulated.
+            </para>
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetPerformanceChartDataAsync_Should_SimulatePrices_ForGapBeforeFirstRealPrice_WhenRealPricesStartMidOwnership">
+            <summary>
+            When real price history starts WITHIN the ownership period (after the buy but before
+            the sell), the chart must simulate prices for the gap before the first real price and
+            then use real prices for the remainder. This ensures a continuous chart from the first
+            buy onwards.
+            <para>
+            Scenario: buy Jan 1 (10 shares, 100€ → 10€/share), first real price Jan 11 (25€),
+            sell Jan 21 (300€ → 30€/share). The Jan 1-10 period must use simulated prices;
+            Jan 11+ must use the real price (25€, NOT the simulated ~15€).
+            </para>
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetPeriodicReturnsAsync_Should_StopAtLastTransactionYear_When_PositionFullyClosed">
+            <summary>
+            When a security was bought in year A and sold in year B (B &lt; current year),
+            the result must contain entries only for years A through B, not beyond.
+            A fully closed position must not produce empty years after the sale.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetPeriodicReturnsAsync_Should_ReturnPositiveAnnualReturn_When_StockAppreciatedInBuyYear">
+            <summary>
+            In the year of the first purchase (starting portfolio value = 0), the Modified Dietz
+            formula must return a meaningful return (positive when stock appreciated, negative when
+            it declined) instead of 0 as the old simple-HPR formula produced.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetPeriodicReturnsAsync_Should_ReturnPositiveAnnualReturn_When_SoldWithGainInSellYear">
+            <summary>
+            In the year of a full sale (ending portfolio value = 0), the Modified Dietz formula must
+            produce a positive return when the sell proceeds exceed the start-of-year market value
+            minus fees.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetPeriodicReturnsAsync_Should_ProduceMonthlyReturn_When_PositionOpenedMidMonth">
+            <summary>
+            Monthly returns must not be null for months where the position was held, even if the
+            position was opened with a buy in that same month (starting value = 0).
+            </summary>
+        </member>
         <member name="T:FinanceManager.Tests.Securities.ReturnCalculationServiceTests">
             <summary>
             Tests for <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService"/> covering all financial math methods.

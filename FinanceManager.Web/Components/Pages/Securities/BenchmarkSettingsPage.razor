@@ -1,0 +1,120 @@
+@page "/securities/benchmark-settings"
+@rendermode InteractiveServer
+@inject IServiceProvider Services
+@inject NavigationManager Nav
+
+<PageTitle>Benchmark-Einstellungen</PageTitle>
+
+@if (_vm == null || _vm.IsLoading)
+{
+    <p>Lade...</p>
+    return;
+}
+
+@if (!_vm.IsAuthenticated)
+{
+    <p>Bitte anmelden.</p>
+    return;
+}
+
+<div class="benchmark-settings-page">
+    <div class="perf-header">
+        <button class="back-btn" @onclick="GoBack" title="Zurück">←</button>
+        <h2>Benchmark-Einstellungen</h2>
+    </div>
+
+    <div class="benchmark-settings-content">
+        <p class="hint">
+            Wählen Sie ein Wertpapier als globalen Benchmark für alle Renditeanalysen.
+            Der Benchmark wird in der <strong>Benchmark</strong>-Registerkarte jedes Wertpapiers als Vergleichslinie angezeigt.
+        </p>
+
+        @if (!string.IsNullOrEmpty(_vm.LastError))
+        {
+            <div class="error-message" role="alert">@_vm.LastError</div>
+        }
+
+        <div class="form-group">
+            <label for="benchmark-select">Benchmark-Wertpapier</label>
+            <select id="benchmark-select" value="@_selectedBenchmarkId" @onchange="OnBenchmarkChanged">
+                <option value="">– Kein Benchmark –</option>
+                @foreach (var sec in _vm.AvailableSecurities)
+                {
+                    <option value="@sec.Id">@sec.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="action-bar">
+            <button class="btn-primary" @onclick="SaveAsync" disabled="@_vm.IsSaving">
+                @(_vm.IsSaving ? "Speichert..." : "Speichern")
+            </button>
+            <button class="btn-secondary" @onclick="GoBack" disabled="@_vm.IsSaving">
+                Abbrechen
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, SupplyParameterFromQuery(Name = "back")] public string? Back { get; set; }
+
+    private SecurityBenchmarkSettingsViewModel? _vm;
+    private string _selectedBenchmarkId = string.Empty;
+
+    protected override Task OnInitializedAsync()
+    {
+        _vm = new SecurityBenchmarkSettingsViewModel(Services);
+        _vm.StateChanged += VmOnStateChanged;
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_vm == null) return;
+        await _vm.LoadAsync(CancellationToken.None);
+        _selectedBenchmarkId = _vm.SelectedBenchmarkSecurityId?.ToString() ?? string.Empty;
+    }
+
+    public void Dispose()
+    {
+        if (_vm != null)
+        {
+            _vm.StateChanged -= VmOnStateChanged;
+        }
+    }
+
+    private void VmOnStateChanged(object? sender, EventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void OnBenchmarkChanged(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        if (string.IsNullOrEmpty(val) || !Guid.TryParse(val, out var guid))
+            _vm!.SelectedBenchmarkSecurityId = null;
+        else
+            _vm!.SelectedBenchmarkSecurityId = guid;
+        _selectedBenchmarkId = val ?? string.Empty;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_vm == null) return;
+        var ok = await _vm.SaveAsync(CancellationToken.None);
+        if (ok) GoBack();
+    }
+
+    private void GoBack()
+    {
+        if (!string.IsNullOrWhiteSpace(Back))
+        {
+            Nav.NavigateTo(Back);
+        }
+        else
+        {
+            Nav.NavigateTo("/list/securities");
+        }
+    }
+}

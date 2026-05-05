@@ -242,3 +242,25 @@ public sealed record BenchmarkComparisonDto(
     IReadOnlyList<ChartPoint> SecurityNormalizedValues,
     IReadOnlyList<ChartPoint> BenchmarkNormalizedValues
 );
+
+/// <summary>Request payload for updating return analysis settings via API client.</summary>
+/// <param name="BenchmarkSecurityId">Optional benchmark security id. Null clears the benchmark.</param>
+/// <param name="ShowSharpeRatio">Whether to show Sharpe Ratio in the UI.</param>
+/// <param name="RiskFreeRate">Risk-free rate for Sharpe Ratio calculation (e.g. 0.04 = 4%). Must be >= 0.</param>
+public sealed record ReturnAnalysisSettingsUpdateRequest(
+    Guid? BenchmarkSecurityId,
+    bool ShowSharpeRatio,
+    decimal RiskFreeRate
+);
+
+/// <summary>Return analysis settings for the current user (client-side response DTO).</summary>
+/// <param name="BenchmarkSecurityId">Optional benchmark security id. Null means no benchmark set.</param>
+/// <param name="BenchmarkSecurityName">Display name of the benchmark security, or null when none set.</param>
+/// <param name="ShowSharpeRatio">Whether to show Sharpe Ratio in the UI.</param>
+/// <param name="RiskFreeRate">Risk-free rate for Sharpe Ratio calculation.</param>
+public sealed record ReturnAnalysisSettingsResponse(
+    Guid? BenchmarkSecurityId,
+    string? BenchmarkSecurityName,
+    bool ShowSharpeRatio,
+    decimal RiskFreeRate
+);

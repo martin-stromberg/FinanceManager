@@ -1121,6 +1121,12 @@
             <returns>A task that completes when the cache has been invalidated.</returns>
             <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
         </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_GetReturnAnalysisSettingsAsync(System.Threading.CancellationToken)">
+            <summary>Gets return analysis settings for the current user.</summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_UpdateReturnAnalysisSettingsAsync(FinanceManager.Shared.Dtos.Securities.ReturnAnalysisSettingsUpdateRequest,System.Threading.CancellationToken)">
+            <summary>Updates return analysis settings for the current user.</summary>
+        </member>
         <member name="M:FinanceManager.Shared.ApiClient.SecurityCategories_ListAsync(System.Threading.CancellationToken)">
             <summary>
             Lists security categories for the current user.
@@ -4626,14 +4632,24 @@
             <param name="AnnualReturns">Annual return data points for the bar chart.</param>
             <param name="MonthlyReturns">Monthly return data points for the heatmap.</param>
             <param name="AnnualDividends">Annual dividend data for the dividend chart.</param>
+            <param name="HasSimulatedPrices">
+            True when no real price history was available and returns were computed from
+            transaction-implied prices (linear interpolation between buy/sell anchors).
+            Consumers should display a disclaimer in this case.
+            </param>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Securities.PeriodicReturnsDto.#ctor(System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.AnnualReturnPoint},System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.MonthlyReturnPoint},System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.AnnualDividendPoint})">
+        <member name="M:FinanceManager.Shared.Dtos.Securities.PeriodicReturnsDto.#ctor(System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.AnnualReturnPoint},System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.MonthlyReturnPoint},System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.AnnualDividendPoint},System.Boolean)">
             <summary>
             Periodic returns for the Zeitliche Entwicklung tab (FR-2.2 + FR-2.5).
             </summary>
             <param name="AnnualReturns">Annual return data points for the bar chart.</param>
             <param name="MonthlyReturns">Monthly return data points for the heatmap.</param>
             <param name="AnnualDividends">Annual dividend data for the dividend chart.</param>
+            <param name="HasSimulatedPrices">
+            True when no real price history was available and returns were computed from
+            transaction-implied prices (linear interpolation between buy/sell anchors).
+            Consumers should display a disclaimer in this case.
+            </param>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Securities.PeriodicReturnsDto.AnnualReturns">
             <summary>Annual return data points for the bar chart.</summary>
@@ -4643,6 +4659,13 @@
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Securities.PeriodicReturnsDto.AnnualDividends">
             <summary>Annual dividend data for the dividend chart.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.PeriodicReturnsDto.HasSimulatedPrices">
+            <summary>
+            True when no real price history was available and returns were computed from
+            transaction-implied prices (linear interpolation between buy/sell anchors).
+            Consumers should display a disclaimer in this case.
+            </summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Securities.AnnualReturnPoint">
             <summary>Annual return data point.</summary>
@@ -4853,6 +4876,53 @@
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.BenchmarkNormalizedValues">
             <summary>Normalized values for the benchmark (base 100).</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Securities.ReturnAnalysisSettingsUpdateRequest">
+            <summary>Request payload for updating return analysis settings via API client.</summary>
+            <param name="BenchmarkSecurityId">Optional benchmark security id. Null clears the benchmark.</param>
+            <param name="ShowSharpeRatio">Whether to show Sharpe Ratio in the UI.</param>
+            <param name="RiskFreeRate">Risk-free rate for Sharpe Ratio calculation (e.g. 0.04 = 4%). Must be >= 0.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Securities.ReturnAnalysisSettingsUpdateRequest.#ctor(System.Nullable{System.Guid},System.Boolean,System.Decimal)">
+            <summary>Request payload for updating return analysis settings via API client.</summary>
+            <param name="BenchmarkSecurityId">Optional benchmark security id. Null clears the benchmark.</param>
+            <param name="ShowSharpeRatio">Whether to show Sharpe Ratio in the UI.</param>
+            <param name="RiskFreeRate">Risk-free rate for Sharpe Ratio calculation (e.g. 0.04 = 4%). Must be >= 0.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.ReturnAnalysisSettingsUpdateRequest.BenchmarkSecurityId">
+            <summary>Optional benchmark security id. Null clears the benchmark.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.ReturnAnalysisSettingsUpdateRequest.ShowSharpeRatio">
+            <summary>Whether to show Sharpe Ratio in the UI.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.ReturnAnalysisSettingsUpdateRequest.RiskFreeRate">
+            <summary>Risk-free rate for Sharpe Ratio calculation (e.g. 0.04 = 4%). Must be >= 0.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Securities.ReturnAnalysisSettingsResponse">
+            <summary>Return analysis settings for the current user (client-side response DTO).</summary>
+            <param name="BenchmarkSecurityId">Optional benchmark security id. Null means no benchmark set.</param>
+            <param name="BenchmarkSecurityName">Display name of the benchmark security, or null when none set.</param>
+            <param name="ShowSharpeRatio">Whether to show Sharpe Ratio in the UI.</param>
+            <param name="RiskFreeRate">Risk-free rate for Sharpe Ratio calculation.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Securities.ReturnAnalysisSettingsResponse.#ctor(System.Nullable{System.Guid},System.String,System.Boolean,System.Decimal)">
+            <summary>Return analysis settings for the current user (client-side response DTO).</summary>
+            <param name="BenchmarkSecurityId">Optional benchmark security id. Null means no benchmark set.</param>
+            <param name="BenchmarkSecurityName">Display name of the benchmark security, or null when none set.</param>
+            <param name="ShowSharpeRatio">Whether to show Sharpe Ratio in the UI.</param>
+            <param name="RiskFreeRate">Risk-free rate for Sharpe Ratio calculation.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.ReturnAnalysisSettingsResponse.BenchmarkSecurityId">
+            <summary>Optional benchmark security id. Null means no benchmark set.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.ReturnAnalysisSettingsResponse.BenchmarkSecurityName">
+            <summary>Display name of the benchmark security, or null when none set.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.ReturnAnalysisSettingsResponse.ShowSharpeRatio">
+            <summary>Whether to show Sharpe Ratio in the UI.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.ReturnAnalysisSettingsResponse.RiskFreeRate">
+            <summary>Risk-free rate for Sharpe Ratio calculation.</summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Securities.SecurityBackfillRequest">
             <summary>
@@ -6597,6 +6667,12 @@
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.Securities_GetBenchmarkComparisonAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>Gets benchmark comparison data for a security. Returns null when not found.</summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Securities_GetReturnAnalysisSettingsAsync(System.Threading.CancellationToken)">
+            <summary>Gets return analysis settings for the current user. Returns null when not found.</summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Securities_UpdateReturnAnalysisSettingsAsync(FinanceManager.Shared.Dtos.Securities.ReturnAnalysisSettingsUpdateRequest,System.Threading.CancellationToken)">
+            <summary>Updates return analysis settings for the current user. Returns true on success.</summary>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.Securities_GetKpiBreakdownsAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>Gets the KPI formula and cashflow breakdowns for a security (info side panel). Returns null when not found.</summary>

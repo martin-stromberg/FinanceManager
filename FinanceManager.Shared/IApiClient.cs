@@ -543,6 +543,10 @@ public interface IApiClient
     Task<PerformanceChartDataDto?> Securities_GetPerformanceChartAsync(Guid id, ChartTimeRange timeRange = ChartTimeRange.All, CancellationToken ct = default);
     /// <summary>Gets benchmark comparison data for a security. Returns null when not found.</summary>
     Task<BenchmarkComparisonDto?> Securities_GetBenchmarkComparisonAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Gets return analysis settings for the current user. Returns null when not found.</summary>
+    Task<ReturnAnalysisSettingsResponse?> Securities_GetReturnAnalysisSettingsAsync(CancellationToken ct = default);
+    /// <summary>Updates return analysis settings for the current user. Returns true on success.</summary>
+    Task<bool> Securities_UpdateReturnAnalysisSettingsAsync(ReturnAnalysisSettingsUpdateRequest request, CancellationToken ct = default);
     /// <summary>Gets the KPI formula and cashflow breakdowns for a security (info side panel). Returns null when not found.</summary>
     Task<IReadOnlyList<KpiBreakdownDto>?> Securities_GetKpiBreakdownsAsync(Guid id, CancellationToken ct = default);
     /// <summary>Invalidates the return analysis cache for all securities of the current user.</summary>

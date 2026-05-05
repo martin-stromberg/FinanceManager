@@ -3330,6 +3330,24 @@
         <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.InvalidateAllUserCachesAsync(System.Guid)">
             <inheritdoc/>
         </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.ComputeModifiedDietz(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.IReadOnlyList{System.ValueTuple{System.DateTime,System.Decimal}},System.DateTime,System.DateTime)">
+            <summary>
+            Computes the Modified Dietz return for a given period, correctly accounting for
+            external cash flows (buys, sells, fees) that occur within the period.
+            <para>
+            Unlike simple HPR, Modified Dietz handles periods where the starting or ending
+            portfolio value is zero (e.g. the year of first purchase or the year of full sale).
+            </para>
+            </summary>
+            <param name="transactions">All transactions for the security.</param>
+            <param name="filledPrices">Forward-filled daily price series.</param>
+            <param name="periodStart">First day of the period (inclusive).</param>
+            <param name="periodEnd">Last day of the period (inclusive).</param>
+            <returns>
+            Return as a decimal fraction (e.g. 0.05 = 5%), or <c>null</c> when no capital
+            is deployed in the period (denominator is zero).
+            </returns>
+        </member>
         <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.ComputeKpiBreakdownsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
             <summary>
             Computes per-KPI formula breakdowns for all widget KPIs (FR-1 side panel).
@@ -3428,6 +3446,34 @@
             <summary>
             Builds annual dividend summary list.
             </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.MergeSimulatedAndRealPrices(System.Collections.Generic.List{System.ValueTuple{System.DateTime,System.Decimal}},System.Collections.Generic.List{System.ValueTuple{System.DateTime,System.Decimal}})">
+            <summary>
+            Merges simulated and real price series so that the chart always starts from the first
+            buy transaction. Simulated prices are used only for dates strictly before the first real
+            price entry; real prices take precedence for all overlapping or later dates.
+            </summary>
+            <param name="simulated">Prices derived from transaction implied prices.</param>
+            <param name="real">Actual price history loaded from the database.</param>
+            <returns>
+            A merged, chronologically ordered list: simulated entries up to (but not including) the
+            first real price date, followed by all real price entries. When no real prices exist, the
+            full simulated series is returned. When simulated is empty, the real series is returned.
+            </returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.SimulatePricesFromTransactions(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction})">
+            <summary>
+            Simulates a daily price series from buy/sell transaction implied prices when no real
+            price history is available. The implied unit price for each transaction is
+            <c>|Amount| / |Quantity|</c>. Between consecutive anchor points the price is linearly
+            interpolated; the series covers exactly the period from the first to the last buy/sell
+            transaction date.
+            </summary>
+            <param name="transactions">Chronologically ordered security transactions.</param>
+            <returns>
+            List of <c>(Date, SimulatedClose)</c> tuples. Returns an empty list when no buy/sell
+            transactions with both a non-zero quantity and a non-zero amount exist.
+            </returns>
         </member>
         <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetFromDateForTimeRange(FinanceManager.Shared.Dtos.Securities.ChartTimeRange)">
             <summary>
