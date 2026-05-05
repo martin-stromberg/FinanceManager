@@ -33,6 +33,7 @@
                         var height = Math.Abs(yr.ReturnPercent) / maxAbs * 100m;
                         var isPos = yr.ReturnPercent >= 0;
                         <div class="bar-col" title="@yr.Year: @yr.ReturnPercent.ToString("+0.00%;-0.00%")">
+                            <span class="bar-value @(isPos ? "pos" : "neg")">@yr.ReturnPercent.ToString("+0.0%;-0.0%")</span>
                             <div class="bar-wrap">
                                 <div class="bar @(isPos ? "pos" : "neg") @(yr.IsYtd ? "ytd" : "")"
                                      style="height:@(height.ToString("F0"))%"></div>
