@@ -111,7 +111,7 @@ public sealed class SecurityPerformanceOverviewTabViewModel : BaseViewModel
             foreach (var range in rangesToTry)
             {
                 data = await ApiClient.Securities_GetPerformanceChartAsync(SecurityId, range, ct);
-                if (data?.PortfolioValues.Count > 0)
+                if (data?.PortfolioValues.Count > 0 && data.PortfolioValues.Any(p => p.Value != 0m))
                 {
                     // Reflect the actually displayed range in the active button
                     SelectedRange = range;
@@ -119,7 +119,7 @@ public sealed class SecurityPerformanceOverviewTabViewModel : BaseViewModel
                 }
             }
 
-            Data = data?.PortfolioValues.Count > 0 ? data : null;
+            Data = data?.PortfolioValues.Count > 0 && data.PortfolioValues.Any(p => p.Value != 0m) ? data : null;
         }
         catch (Exception ex)
         {
