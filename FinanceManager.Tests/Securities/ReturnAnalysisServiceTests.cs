@@ -1971,5 +1971,168 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         valuesByDate[sellDate.Date].Value.Should().Be(0m,
             "sell date: all shares sold → 0");
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // GetPeriodicReturnsAsync – Modified Dietz
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// When a security was bought in year A and sold in year B (B &lt; current year),
+    /// the result must contain entries only for years A through B, not beyond.
+    /// A fully closed position must not produce empty years after the sale.
+    /// </summary>
+    [Fact]
+    public async Task GetPeriodicReturnsAsync_Should_StopAtLastTransactionYear_When_PositionFullyClosed()
+    {
+        // Arrange – buy on 2020-06-01, sell on 2021-03-01 (both in the past)
+        var (security, user) = SetupSecurityAndUser();
+
+        var buyDate  = new DateTime(2020, 6, 1);
+        var sellDate = new DateTime(2021, 3, 1);
+
+        var buy = CreateBuyPosting(security.Id, buyDate, -1_000m, 10m);
+        var sell = new Posting(
+            Guid.NewGuid(), PostingKind.Security,
+            null, null, null, security.Id, sellDate,
+            1_200m, null, null, null, SecurityPostingSubType.Sell, -10m);
+
+        _db.Postings.AddRange(buy, sell);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate,  100m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, sellDate, 120m));
+        await _db.SaveChangesAsync();
+
+        // Act
+        PeriodicReturnsDto? result = await _sut.GetPeriodicReturnsAsync(
+            security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+
+        var years = result!.AnnualReturns.Select(r => r.Year).ToList();
+        years.Should().BeEquivalentTo(new[] { 2020, 2021 },
+            "only the years with activity should appear; no empty years after the sell");
+        result.AnnualReturns.Should().AllSatisfy(r =>
+            r.IsYtd.Should().BeFalse("position is fully closed, no year is a YTD estimate"));
+    }
+
+    /// <summary>
+    /// In the year of the first purchase (starting portfolio value = 0), the Modified Dietz
+    /// formula must return a meaningful return (positive when stock appreciated, negative when
+    /// it declined) instead of 0 as the old simple-HPR formula produced.
+    /// </summary>
+    [Fact]
+    public async Task GetPeriodicReturnsAsync_Should_ReturnPositiveAnnualReturn_When_StockApprecia­tedInBuyYear()
+    {
+        // Arrange – buy 10 shares on 2022-01-02 for 1 000 € (100 €/share).
+        //           Year-end price is 120 €/share → 20 % gain.
+        var (security, user) = SetupSecurityAndUser();
+
+        var buyDate     = new DateTime(2022, 1, 2);
+        var yearEndDate = new DateTime(2022, 12, 31);
+
+        var buy = CreateBuyPosting(security.Id, buyDate, -1_000m, 10m);
+
+        _db.Postings.Add(buy);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate,     100m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, yearEndDate, 120m));
+        await _db.SaveChangesAsync();
+
+        // Act
+        PeriodicReturnsDto? result = await _sut.GetPeriodicReturnsAsync(
+            security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+
+        var annual2022 = result!.AnnualReturns.FirstOrDefault(r => r.Year == 2022);
+        annual2022.Should().NotBeNull("2022 must have an annual return entry");
+        annual2022!.ReturnPercent.Should().BeGreaterThan(0m,
+            "the stock appreciated 20 % in the buy year, so the return must be positive");
+    }
+
+    /// <summary>
+    /// In the year of a full sale (ending portfolio value = 0), the Modified Dietz formula must
+    /// produce a positive return when the sell proceeds exceed the start-of-year market value
+    /// minus fees.
+    /// </summary>
+    [Fact]
+    public async Task GetPeriodicReturnsAsync_Should_ReturnPositiveAnnualReturn_When_SoldWithGainInSellYear()
+    {
+        // Arrange – buy 10 shares in 2022, sell them in 2023 for a higher price.
+        //   2022-01-02: buy 10 shares @ 100 €  → amount -1 000 €
+        //   2022-12-31: price = 100 € (flat year)
+        //   2023-06-01: sell 10 shares @ 130 € → amount +1 300 €
+        //   2023-06-01: fee                    → amount -   10 €
+        var (security, user) = SetupSecurityAndUser();
+
+        var buyDate  = new DateTime(2022, 1, 2);
+        var sellDate = new DateTime(2023, 6, 1);
+
+        var buy = CreateBuyPosting(security.Id, buyDate, -1_000m, 10m);
+
+        var sell = new Posting(
+            Guid.NewGuid(), PostingKind.Security,
+            null, null, null, security.Id, sellDate,
+            1_300m, null, null, null, SecurityPostingSubType.Sell, -10m);
+
+        var fee = new Posting(
+            Guid.NewGuid(), PostingKind.Security,
+            null, null, null, security.Id, sellDate,
+            -10m, null, null, null, SecurityPostingSubType.Fee, null);
+
+        _db.Postings.AddRange(buy, sell, fee);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate,                   100m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, new DateTime(2022, 12, 31), 100m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, sellDate,                  130m));
+        await _db.SaveChangesAsync();
+
+        // Act
+        PeriodicReturnsDto? result = await _sut.GetPeriodicReturnsAsync(
+            security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+
+        var annual2023 = result!.AnnualReturns.FirstOrDefault(r => r.Year == 2023);
+        annual2023.Should().NotBeNull("2023 must have an annual return entry");
+        annual2023!.ReturnPercent.Should().BeGreaterThan(0m,
+            "the position was sold at a 30 % gain in 2023, so the annual return must be positive");
+    }
+
+    /// <summary>
+    /// Monthly returns must not be null for months where the position was held, even if the
+    /// position was opened with a buy in that same month (starting value = 0).
+    /// </summary>
+    [Fact]
+    public async Task GetPeriodicReturnsAsync_Should_ProduceMonthlyReturn_When_PositionOpenedMidMonth()
+    {
+        // Arrange – buy 10 shares on 2022-03-15 for 1 000 € (100 €/share).
+        //           Month-end price (March 31) is 110 €/share.
+        var (security, user) = SetupSecurityAndUser();
+
+        var buyDate      = new DateTime(2022, 3, 15);
+        var marchEndDate = new DateTime(2022, 3, 31);
+
+        var buy = CreateBuyPosting(security.Id, buyDate, -1_000m, 10m);
+
+        _db.Postings.Add(buy);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate,      100m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, marchEndDate, 110m));
+        await _db.SaveChangesAsync();
+
+        // Act
+        PeriodicReturnsDto? result = await _sut.GetPeriodicReturnsAsync(
+            security.Id, user.Id, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+
+        var march2022 = result!.MonthlyReturns.FirstOrDefault(r => r.Year == 2022 && r.Month == 3);
+        march2022.Should().NotBeNull("March 2022 must be present");
+        march2022!.ReturnPercent.Should().NotBeNull(
+            "the month has capital deployed (buy + prices), so a return must be computed");
+        march2022.ReturnPercent!.Value.Should().BeGreaterThan(0m,
+            "stock gained 10 % from the buy day to month-end");
+    }
 }
 

@@ -481,27 +481,29 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         int currentYear = DateTime.Today.Year;
         int firstYear = firstDate.Year;
 
+        // When the position is fully closed, only compute returns up to the last transaction year
+        // to avoid showing empty years after the final sale.
+        decimal sharesHeldToday = ComputeSharesHeldOnDate(transactions, DateTime.Today);
+        int lastYear = sharesHeldToday > 0m
+            ? currentYear
+            : transactions.Max(t => t.Date).Year;
+
         var annualReturns = new List<AnnualReturnPoint>();
         var monthlyReturns = new List<MonthlyReturnPoint>();
 
-        for (int year = firstYear; year <= currentYear; year++)
+        for (int year = firstYear; year <= lastYear; year++)
         {
-            bool isYtd = year == currentYear;
+            // isYtd only applies to the current calendar year while the position is still open
+            bool isYtd = year == currentYear && sharesHeldToday > 0m;
 
-            // Annual return: compare start-of-year portfolio value to end-of-year
             var yearStartDate = new DateTime(year, 1, 1);
             var yearEndDate = isYtd ? DateTime.Today : new DateTime(year, 12, 31);
 
-            decimal startValue = GetPortfolioValueOnDate(transactions, filledPrices, yearStartDate);
-            decimal endValue = GetPortfolioValueOnDate(transactions, filledPrices, yearEndDate);
+            // Use Modified Dietz to correctly account for cash flows (buys, sells, fees)
+            // within the period. Returns null when no capital is deployed (denominator = 0).
+            decimal? annualReturn = ComputeModifiedDietz(transactions, filledPrices, yearStartDate, yearEndDate);
+            annualReturns.Add(new AnnualReturnPoint(year, annualReturn ?? 0m, isYtd));
 
-            decimal annualReturn = startValue > 0m
-                ? (endValue - startValue) / startValue
-                : 0m;
-
-            annualReturns.Add(new AnnualReturnPoint(year, annualReturn * 100m, isYtd));
-
-            // Monthly returns
             int lastMonth = isYtd ? DateTime.Today.Month : 12;
             for (int month = 1; month <= lastMonth; month++)
             {
@@ -510,24 +512,80 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
                     ? DateTime.Today
                     : new DateTime(year, month, DateTime.DaysInMonth(year, month));
 
-                decimal mStartValue = GetPortfolioValueOnDate(transactions, filledPrices, monthStart);
-                decimal mEndValue = GetPortfolioValueOnDate(transactions, filledPrices, monthEnd);
-
-                decimal? monthReturn = mStartValue > 0m
-                    ? (mEndValue - mStartValue) / mStartValue * 100m
-                    : null;
-
+                decimal? monthReturn = ComputeModifiedDietz(transactions, filledPrices, monthStart, monthEnd);
                 monthlyReturns.Add(new MonthlyReturnPoint(year, month, monthReturn));
             }
         }
 
         // Annual dividends
-        var annualDividends = BuildAnnualDividends(transactions, firstYear, currentYear);
+        var annualDividends = BuildAnnualDividends(transactions, firstYear, lastYear);
 
         return new PeriodicReturnsDto(
             AnnualReturns: annualReturns.AsReadOnly(),
             MonthlyReturns: monthlyReturns.AsReadOnly(),
             AnnualDividends: annualDividends);
+    }
+
+    /// <summary>
+    /// Computes the Modified Dietz return for a given period, correctly accounting for
+    /// external cash flows (buys, sells, fees) that occur within the period.
+    /// <para>
+    /// Unlike simple HPR, Modified Dietz handles periods where the starting or ending
+    /// portfolio value is zero (e.g. the year of first purchase or the year of full sale).
+    /// </para>
+    /// </summary>
+    /// <param name="transactions">All transactions for the security.</param>
+    /// <param name="filledPrices">Forward-filled daily price series.</param>
+    /// <param name="periodStart">First day of the period (inclusive).</param>
+    /// <param name="periodEnd">Last day of the period (inclusive).</param>
+    /// <returns>
+    /// Return as a decimal fraction (e.g. 0.05 = 5%), or <c>null</c> when no capital
+    /// is deployed in the period (denominator is zero).
+    /// </returns>
+    private static decimal? ComputeModifiedDietz(
+        IReadOnlyList<SecurityTransaction> transactions,
+        IReadOnlyList<(DateTime Date, decimal Close)> filledPrices,
+        DateTime periodStart,
+        DateTime periodEnd)
+    {
+        // V_start: value at end of the day before the period starts (excludes same-day cash flows)
+        decimal startValue = GetPortfolioValueOnDate(transactions, filledPrices, periodStart.AddDays(-1));
+        // V_end: value at end of the last day of the period (includes same-day cash flows)
+        decimal endValue = GetPortfolioValueOnDate(transactions, filledPrices, periodEnd);
+
+        int totalDays = Math.Max(1, (int)(periodEnd.Date - periodStart.Date).TotalDays);
+
+        decimal cfNet = 0m;
+        decimal cfWeighted = 0m;
+
+        foreach (var tx in transactions)
+        {
+            if (tx.Date.Date < periodStart.Date || tx.Date.Date > periodEnd.Date) continue;
+            if (tx.Type != SecurityPostingSubType.Buy
+                && tx.Type != SecurityPostingSubType.Sell
+                && tx.Type != SecurityPostingSubType.Fee) continue;
+
+            // Sign convention (from the investor's perspective):
+            //   Buy / Fee: money flows INTO the position → positive cash flow
+            //              Amount is stored as negative in DB, so use Math.Abs
+            //   Sell:      money flows OUT of the position → negative cash flow
+            //              Amount is stored as positive in DB, so negate
+            decimal cf = tx.Type == SecurityPostingSubType.Sell
+                ? -tx.Amount
+                : Math.Abs(tx.Amount);
+
+            // Weight = fraction of period remaining when the cash flow occurred
+            int dayIndex = (int)(tx.Date.Date - periodStart.Date).TotalDays;
+            decimal weight = (decimal)(totalDays - dayIndex) / totalDays;
+
+            cfNet += cf;
+            cfWeighted += cf * weight;
+        }
+
+        decimal denominator = startValue + cfWeighted;
+        if (denominator == 0m) return null;
+
+        return (endValue - startValue - cfNet) / denominator;
     }
 
     private async Task<CashflowTimelineDto?> ComputeCashflowTimelineAsync(
