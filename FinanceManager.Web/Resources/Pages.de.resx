@@ -630,6 +630,9 @@
   <data name="Ribbon_Prices" xml:space="preserve">
     <value>Kurse</value>
   </data>
+  <data name="Ribbon_Performance" xml:space="preserve">
+    <value>Detaillierte Analyse</value>
+  </data>
   <data name="Ribbon_ToggleActive" xml:space="preserve">
     <value>Nur aktive</value>
   </data>

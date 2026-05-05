@@ -1,7 +1,6 @@
 @rendermode InteractiveServer
 @using FinanceManager.Shared
 @inject IApiClient ApiClient
-@inject NavigationManager Nav
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Shared.ReturnSummaryWidget> Localizer
 
 @if (_loading)
@@ -79,11 +78,6 @@ else
                 <span>⚠ @(_summary.MissingPricesHint ?? Localizer["Warning_MissingPrices"])</span>
             </div>
         }
-        <div class="rsw-actions">
-            <button class="rsw-detail-btn" @onclick="NavigateToPerformance" title="@Localizer["Btn_DetailedAnalysis"]">
-                @Localizer["Btn_DetailedAnalysis"]
-            </button>
-        </div>
     </div>
 
     @* ── KPI Info Side Panel ───────────────────────────────── *@
@@ -258,8 +252,6 @@ else
 
     private KpiBreakdownDto? GetOpenBreakdown()
         => _breakdowns?.FirstOrDefault(b => b.KpiKey == _openKpiKey);
-
-    private void NavigateToPerformance() => Nav.NavigateTo($"/securities/{SecurityId}/performance");
 
     private static string FormatPercent(decimal value) => value.ToString("+0.00%;-0.00%;0.00%");
     private static string FormatAmount(decimal amount, string currency) => $"{amount:N2} {currency}";

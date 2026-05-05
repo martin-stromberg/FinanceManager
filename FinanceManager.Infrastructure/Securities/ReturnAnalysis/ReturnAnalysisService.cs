@@ -1296,18 +1296,14 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
             items.Add(new KpiBreakdownItem(div.Date, netDivCashflow, _localizer["Item_Dividend_Net"]));
         }
 
-        // Sells: positive cashflow = proceeds net of linked fees (analogous to buys including linked fees)
+        // Sells: positive cashflow (proceeds)
         foreach (var sell in sells)
         {
-            decimal linkedFeeAmt = sell.GroupId != Guid.Empty
-                ? feesByGroupId[sell.GroupId].Sum(f => f.Amount) // negative domain values reduce proceeds
-                : 0m;
-            decimal cashflowAmt = sell.Amount + linkedFeeAmt;
             decimal absPrice = sell.Quantity is > 0m ? sell.Amount / sell.Quantity.Value : 0m;
             string label = sell.Quantity.HasValue
                 ? _localizer.Format("Item_SellWithDetails", sell.Quantity.Value.ToString("G6"), absPrice.ToString("N2"))
                 : _localizer["Item_Sell"];
-            items.Add(new KpiBreakdownItem(sell.Date, cashflowAmt, label));
+            items.Add(new KpiBreakdownItem(sell.Date, sell.Amount, label));
         }
 
         // Sort chronologically

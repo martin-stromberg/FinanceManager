@@ -1711,5 +1711,70 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         sumGroup.GroupTotal.Should().BeApproximately(0m, 1.0m,
             "sum of all present values must be approximately 0 when IRR is correctly computed");
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // GetPerformanceChartDataAsync
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// After a full sell of all shares, all chart data points for dates on or after the
+    /// sell date must have a portfolio value of 0 (no shares held).
+    /// <para>
+    /// Regression guard for a sign-convention bug: domain sell quantities are stored as
+    /// negative values (e.g. −10). When <c>ComputeSharesHeldOnDate</c> subtracts a negative
+    /// quantity (<c>shares -= −10</c>), shares are incorrectly increased instead of decreased,
+    /// causing the market value to double rather than drop to zero.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task GetPerformanceChartDataAsync_Should_ShowZeroMarketValue_AfterFullSell()
+    {
+        // Arrange
+        var (security, user) = SetupSecurityAndUser();
+
+        var buyDate  = DateTime.Today.AddDays(-10);
+        var sellDate = DateTime.Today.AddDays(-5);
+
+        // Buy: 10 shares; amount is negative (cash outflow), quantity is positive
+        var buy = CreateBuyPosting(security.Id, buyDate, -1_000m, 10m);
+
+        // Sell: 10 shares; amount is positive (cash inflow), quantity is NEGATIVE (domain convention)
+        var sell = new Posting(
+            Guid.NewGuid(),
+            PostingKind.Security,
+            null, null, null,
+            security.Id,
+            sellDate,
+            1_100m,
+            null, null, null,
+            SecurityPostingSubType.Sell,
+            -10m); // negative quantity — the sign convention that triggers the bug
+
+        _db.Postings.AddRange(buy, sell);
+
+        // Price of 120 on and after the sell date; the test verifies market value = 0, not 2400
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate,  100m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, sellDate, 120m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
+
+        await _db.SaveChangesAsync();
+
+        // Act
+        PerformanceChartDataDto? result = await _sut.GetPerformanceChartDataAsync(
+            security.Id, user.Id, ChartTimeRange.All, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+
+        var pointsAfterSell = result!.PortfolioValues
+            .Where(p => p.Date.Date >= sellDate.Date)
+            .ToList();
+
+        pointsAfterSell.Should().NotBeEmpty("there must be chart data points on and after the sell date");
+        pointsAfterSell.Should().AllSatisfy(p =>
+            p.Value.Should().Be(0m,
+                $"market value on {p.Date:d} must be 0 because all shares have been sold " +
+                $"(bug: negative sell quantity subtracted as positive would double share count instead)"));
+    }
 }
 

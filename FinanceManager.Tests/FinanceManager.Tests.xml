@@ -812,6 +812,18 @@
             when a valid IRR is used (by definition of IRR the sum of present values = 0).
             </summary>
         </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetPerformanceChartDataAsync_Should_ShowZeroMarketValue_AfterFullSell">
+            <summary>
+            After a full sell of all shares, all chart data points for dates on or after the
+            sell date must have a portfolio value of 0 (no shares held).
+            <para>
+            Regression guard for a sign-convention bug: domain sell quantities are stored as
+            negative values (e.g. −10). When <c>ComputeSharesHeldOnDate</c> subtracts a negative
+            quantity (<c>shares -= −10</c>), shares are incorrectly increased instead of decreased,
+            causing the market value to double rather than drop to zero.
+            </para>
+            </summary>
+        </member>
         <member name="T:FinanceManager.Tests.Securities.ReturnCalculationServiceTests">
             <summary>
             Tests for <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService"/> covering all financial math methods.

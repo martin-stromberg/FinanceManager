@@ -8,13 +8,15 @@ namespace FinanceManager.Infrastructure.Securities.ReturnAnalysis;
 /// </remarks>
 internal static class ReturnAnalysisCacheKeys
 {
+    private const string Version = "v2";
+
     /// <summary>Cache key for a return summary entry.</summary>
     internal static string Summary(Guid securityId, Guid userId)
         => $"ra:summary:{securityId}:{userId}";
 
     /// <summary>Cache key for sparkline data.</summary>
     internal static string Sparkline(Guid securityId, Guid userId)
-        => $"ra:sparkline:{securityId}:{userId}";
+        => $"ra:sparkline:{Version}:{securityId}:{userId}";
 
     /// <summary>Cache key for detailed metrics.</summary>
     internal static string Metrics(Guid securityId, Guid userId)
@@ -22,7 +24,7 @@ internal static class ReturnAnalysisCacheKeys
 
     /// <summary>Cache key for periodic returns.</summary>
     internal static string Periodic(Guid securityId, Guid userId)
-        => $"ra:periodic:{securityId}:{userId}";
+        => $"ra:periodic:{Version}:{securityId}:{userId}";
 
     /// <summary>Cache key for cashflow timeline.</summary>
     internal static string Cashflow(Guid securityId, Guid userId)
@@ -30,7 +32,7 @@ internal static class ReturnAnalysisCacheKeys
 
     /// <summary>Cache key for performance chart data with a given time range.</summary>
     internal static string Chart(Guid securityId, Guid userId, string timeRange)
-        => $"ra:chart:{securityId}:{userId}:{timeRange}";
+        => $"ra:chart:{Version}:{securityId}:{userId}:{timeRange}";
 
     /// <summary>Cache key for benchmark comparison data.</summary>
     internal static string Benchmark(Guid securityId, Guid userId)

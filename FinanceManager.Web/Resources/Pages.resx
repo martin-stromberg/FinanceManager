@@ -645,6 +645,9 @@
   <data name="Ribbon_Prices" xml:space="preserve">
     <value>Prices</value>
   </data>
+  <data name="Ribbon_Performance" xml:space="preserve">
+    <value>Detailed analysis</value>
+  </data>
   <data name="Ribbon_ToggleActive" xml:space="preserve">
     <value>Only active</value>
   </data>

@@ -366,6 +366,7 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
             {
                 new UiRibbonAction("Postings", localizer["Ribbon_Postings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, !(Id != Guid.Empty), null, () => { var url = $"/list/postings/security/{Id}"; RaiseUiActionRequested("OpenPostings", url); return Task.CompletedTask; }),
                 new UiRibbonAction("Prices", localizer["Ribbon_Prices"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, !(Id != Guid.Empty), null, () => { var url = $"/list/securities/prices/{Id}"; RaiseUiActionRequested("OpenPrices", url); return Task.CompletedTask; }),
+                new UiRibbonAction("Performance", localizer["Ribbon_Performance"].Value, "<svg><use href='/icons/sprite.svg#chart'/></svg>", UiRibbonItemSize.Small, !(Id != Guid.Empty), null, () => { var url = $"/securities/{Id}/performance"; RaiseUiActionRequested("OpenPerformance", url); return Task.CompletedTask; }),
                 new UiRibbonAction("Attachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, !(Id != Guid.Empty), null, () => { RequestOpenAttachments(AttachmentEntityKind.Security, Id); return Task.CompletedTask; })
             })
         };

@@ -177,6 +177,9 @@ else
                 case "OpenPrices":
                     if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
                     break;
+                case "OpenPerformance":
+                    if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
+                    break;
                 case "OpenBankContact":
                     {
                         var bankParts = (payload ?? string.Empty).Split(',', 2);
