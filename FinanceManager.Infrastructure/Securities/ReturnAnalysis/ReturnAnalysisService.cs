@@ -480,7 +480,12 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         // Fall back to transaction-implied prices (linearly interpolated between buy/sell anchors)
         // when no real price data exists, so that portfolio values are never all-zero.
         var simulatedPrices = SimulatePricesFromTransactions(transactions);
-        bool hasSimulatedPrices = prices.Count == 0 && simulatedPrices.Count > 0;
+
+        // Simulated prices are actually used when they predate the first real price entry,
+        // or when there are no real prices at all.
+        bool hasSimulatedPrices = simulatedPrices.Count > 0
+            && (prices.Count == 0 || simulatedPrices.Any(p => p.Date.Date < prices[0].Date.Date));
+
         var mergedPrices = MergeSimulatedAndRealPrices(simulatedPrices, prices);
         var filledPrices = ForwardFill(mergedPrices, firstDate, DateTime.Today);
 
