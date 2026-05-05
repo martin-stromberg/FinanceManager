@@ -7,6 +7,14 @@
     else if (_vm?.Data == null) { <div class="no-data-msg">Keine Renditedaten verfügbar.</div> }
     else
     {
+        @if (_vm.Data.HasSimulatedPrices)
+        {
+            <div class="info-banner" role="alert">
+                <strong>Hinweis:</strong> Für dieses Wertpapier liegen keine Kursdaten vor.
+                Die Renditen wurden aus den Transaktionspreisen (lineare Interpolation zwischen Kauf und Verkauf) hochgerechnet
+                und spiegeln <em>nicht</em> die reale Kursentwicklung wider.
+            </div>
+        }
         <section aria-label="Jahresrenditen">
             <h3>Jahresrenditen</h3>
             @if (_vm.Data.AnnualReturns.Count == 0)

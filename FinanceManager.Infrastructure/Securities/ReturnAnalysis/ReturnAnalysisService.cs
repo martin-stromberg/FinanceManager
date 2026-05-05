@@ -480,6 +480,7 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         // Fall back to transaction-implied prices (linearly interpolated between buy/sell anchors)
         // when no real price data exists, so that portfolio values are never all-zero.
         var simulatedPrices = SimulatePricesFromTransactions(transactions);
+        bool hasSimulatedPrices = prices.Count == 0 && simulatedPrices.Count > 0;
         var mergedPrices = MergeSimulatedAndRealPrices(simulatedPrices, prices);
         var filledPrices = ForwardFill(mergedPrices, firstDate, DateTime.Today);
 
@@ -528,7 +529,8 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         return new PeriodicReturnsDto(
             AnnualReturns: annualReturns.AsReadOnly(),
             MonthlyReturns: monthlyReturns.AsReadOnly(),
-            AnnualDividends: annualDividends);
+            AnnualDividends: annualDividends,
+            HasSimulatedPrices: hasSimulatedPrices);
     }
 
     /// <summary>

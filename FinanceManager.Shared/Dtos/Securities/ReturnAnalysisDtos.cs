@@ -159,10 +159,16 @@ public sealed record ChartPoint(DateTime Date, decimal Value);
 /// <param name="AnnualReturns">Annual return data points for the bar chart.</param>
 /// <param name="MonthlyReturns">Monthly return data points for the heatmap.</param>
 /// <param name="AnnualDividends">Annual dividend data for the dividend chart.</param>
+/// <param name="HasSimulatedPrices">
+/// True when no real price history was available and returns were computed from
+/// transaction-implied prices (linear interpolation between buy/sell anchors).
+/// Consumers should display a disclaimer in this case.
+/// </param>
 public sealed record PeriodicReturnsDto(
     IReadOnlyList<AnnualReturnPoint> AnnualReturns,
     IReadOnlyList<MonthlyReturnPoint> MonthlyReturns,
-    IReadOnlyList<AnnualDividendPoint> AnnualDividends
+    IReadOnlyList<AnnualDividendPoint> AnnualDividends,
+    bool HasSimulatedPrices = false
 );
 
 /// <summary>Annual return data point.</summary>
