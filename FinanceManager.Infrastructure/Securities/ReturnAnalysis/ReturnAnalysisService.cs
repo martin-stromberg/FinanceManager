@@ -476,14 +476,19 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
 
         var firstDate = transactions.Min(t => t.Date).Date;
         var prices = await LoadPriceHistoryAsync(securityId, ownerUserId, firstDate, DateTime.Today, ct);
-        var filledPrices = ForwardFill(prices, firstDate, DateTime.Today);
+
+        // Fall back to transaction-implied prices (linearly interpolated between buy/sell anchors)
+        // when no real price data exists, so that portfolio values are never all-zero.
+        var simulatedPrices = SimulatePricesFromTransactions(transactions);
+        var mergedPrices = MergeSimulatedAndRealPrices(simulatedPrices, prices);
+        var filledPrices = ForwardFill(mergedPrices, firstDate, DateTime.Today);
 
         int currentYear = DateTime.Today.Year;
         int firstYear = firstDate.Year;
 
         // When the position is fully closed, only compute returns up to the last transaction year
         // to avoid showing empty years after the final sale.
-        decimal sharesHeldToday = ComputeSharesHeldOnDate(transactions, DateTime.Today);
+        decimal sharesHeldToday= ComputeSharesHeldOnDate(transactions, DateTime.Today);
         int lastYear = sharesHeldToday > 0m
             ? currentYear
             : transactions.Max(t => t.Date).Year;
