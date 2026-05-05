@@ -4855,6 +4855,8 @@
             <param name="BenchmarkName">Display name of the benchmark security.</param>
             <param name="SecurityNormalizedValues">Normalized values for the target security (base 100).</param>
             <param name="BenchmarkNormalizedValues">Normalized values for the benchmark (base 100).</param>
+            <param name="StartDate">Start date of the comparison period (first transaction date).</param>
+            <param name="EndDate">End date of the comparison period (last sell date when fully sold, otherwise today).</param>
         </member>
         <member name="M:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.#ctor(System.Guid,System.String,System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.ChartPoint},System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.ChartPoint},System.DateTime,System.DateTime)">
             <summary>
@@ -4864,6 +4866,8 @@
             <param name="BenchmarkName">Display name of the benchmark security.</param>
             <param name="SecurityNormalizedValues">Normalized values for the target security (base 100).</param>
             <param name="BenchmarkNormalizedValues">Normalized values for the benchmark (base 100).</param>
+            <param name="StartDate">Start date of the comparison period (first transaction date).</param>
+            <param name="EndDate">End date of the comparison period (last sell date when fully sold, otherwise today).</param>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.BenchmarkSecurityId">
             <summary>Id of the benchmark security.</summary>
@@ -4876,6 +4880,12 @@
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.BenchmarkNormalizedValues">
             <summary>Normalized values for the benchmark (base 100).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.StartDate">
+            <summary>Start date of the comparison period (first transaction date).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.EndDate">
+            <summary>End date of the comparison period (last sell date when fully sold, otherwise today).</summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Securities.ReturnAnalysisSettingsUpdateRequest">
             <summary>Request payload for updating return analysis settings via API client.</summary>

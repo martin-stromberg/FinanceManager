@@ -43,6 +43,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
         new KeyValuePair<string, string>("attachments", Localizer?["Setup_Section_Attachments"].Value ?? "Anh�nge"),
         new KeyValuePair<string, string>("backup", Localizer?["Setup_Section_Backup"].Value ?? "Backup"),
         new KeyValuePair<string, string>("security", Localizer?["Setup_Section_Security"].Value ?? "Sicherheit"),
+        new KeyValuePair<string, string>("returnanalysis", Localizer?["Setup_Section_ReturnAnalysis"].Value ?? "Renditeanalyse"),
     };
 
     /// <summary>
@@ -81,12 +82,32 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
         {
             RaisePanelUiAction<SetupSecurityViewModel>(typeof(FinanceManager.Web.Components.Pages.Setup.SetupSecurityTab));
         }
+        else if (string.Equals(key, "returnanalysis", StringComparison.OrdinalIgnoreCase))
+        {
+            RaisePanelUiAction<SetupReturnAnalysisViewModel>(typeof(FinanceManager.Web.Components.Pages.Setup.SetupReturnAnalysisTab));
+        }
     }
 
     /// <summary>
     /// Gets the background task types that should be visible for this card.
     /// </summary>
     public override BackgroundTaskType[]? VisibleBackgroundTaskTypes => new BackgroundTaskType[] { BackgroundTaskType.RebuildAggregates, BackgroundTaskType.BackupRestore };
+
+    /// <summary>
+    /// Initializes the setup card. After loading, automatically selects the section specified by
+    /// <see cref="BaseCardViewModel{T}.InitPrefill"/> when a valid section key was provided via the
+    /// <c>?prefill=</c> query parameter.
+    /// </summary>
+    /// <param name="id">Identifier of the record. Ignored for the setup card.</param>
+    /// <returns>A task representing the asynchronous initialization operation.</returns>
+    public override async Task InitializeAsync(Guid id)
+    {
+        await LoadAsync(id);
+        if (!string.IsNullOrWhiteSpace(InitPrefill))
+        {
+            ChangeView(InitPrefill);
+        }
+    }
 
     /// <summary>
     /// Loads the card record and initializes the embedded panel for the setup UI.
@@ -162,7 +183,8 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
             || ((vm is SetupNotificationsViewModel) && SelectedSection == "notifications")
             || ((vm is SetupProfileViewModel) && SelectedSection == "profile")
             || ((vm is SetupBackupsViewModel) && SelectedSection == "backup")
-            || ((vm is SetupSecurityViewModel) && SelectedSection == "security");
+            || ((vm is SetupSecurityViewModel) && SelectedSection == "security")
+            || ((vm is SetupReturnAnalysisViewModel) && SelectedSection == "returnanalysis");
     }
 
     /// <summary>

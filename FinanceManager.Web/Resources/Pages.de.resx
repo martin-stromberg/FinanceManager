@@ -954,6 +954,27 @@
   <data name="Setup_Section_Security" xml:space="preserve">
     <value>Sicherheit</value>
   </data>
+  <data name="Setup_Section_ReturnAnalysis" xml:space="preserve">
+    <value>Renditeanalyse</value>
+  </data>
+  <data name="SetupReturnAnalysis_Title" xml:space="preserve">
+    <value>Renditeanalyse – Benchmark</value>
+  </data>
+  <data name="SetupReturnAnalysis_Description" xml:space="preserve">
+    <value>Wählen Sie ein Wertpapier als globalen Benchmark für alle Renditeanalysen.</value>
+  </data>
+  <data name="SetupReturnAnalysis_Label_Benchmark" xml:space="preserve">
+    <value>Benchmark-Wertpapier</value>
+  </data>
+  <data name="SetupReturnAnalysis_NoBenchmark" xml:space="preserve">
+    <value>– Kein Benchmark –</value>
+  </data>
+  <data name="Btn_Saving" xml:space="preserve">
+    <value>Wird gespeichert…</value>
+  </data>
+  <data name="Msg_SavedSuccessfully" xml:space="preserve">
+    <value>Erfolgreich gespeichert.</value>
+  </data>
   <data name="SetupProfile_Title" xml:space="preserve">
     <value>Profil</value>
   </data>

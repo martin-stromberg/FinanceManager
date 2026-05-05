@@ -8665,42 +8665,6 @@
             <param name="security">List item representing the security. May be <c>null</c>.</param>
             <returns>Attachment id to use for the symbol or <c>null</c> when none is available.</returns>
         </member>
-        <member name="T:FinanceManager.Web.ViewModels.Securities.SecurityBenchmarkSettingsViewModel">
-            <summary>
-            View model for the benchmark settings page.
-            Allows the user to select a security as benchmark for all return analysis comparisons.
-            </summary>
-        </member>
-        <member name="M:FinanceManager.Web.ViewModels.Securities.SecurityBenchmarkSettingsViewModel.#ctor(System.IServiceProvider)">
-            <summary>Creates a new instance.</summary>
-            <param name="services">Service provider.</param>
-        </member>
-        <member name="P:FinanceManager.Web.ViewModels.Securities.SecurityBenchmarkSettingsViewModel.IsLoading">
-            <summary>Whether the data is being loaded.</summary>
-        </member>
-        <member name="P:FinanceManager.Web.ViewModels.Securities.SecurityBenchmarkSettingsViewModel.IsSaving">
-            <summary>Whether a save operation is in progress.</summary>
-        </member>
-        <member name="P:FinanceManager.Web.ViewModels.Securities.SecurityBenchmarkSettingsViewModel.AvailableSecurities">
-            <summary>All securities available for selection as benchmark.</summary>
-        </member>
-        <member name="P:FinanceManager.Web.ViewModels.Securities.SecurityBenchmarkSettingsViewModel.SelectedBenchmarkSecurityId">
-            <summary>Currently selected benchmark security id. Null means no benchmark.</summary>
-        </member>
-        <member name="P:FinanceManager.Web.ViewModels.Securities.SecurityBenchmarkSettingsViewModel.CurrentSettings">
-            <summary>Loaded settings for display.</summary>
-        </member>
-        <member name="M:FinanceManager.Web.ViewModels.Securities.SecurityBenchmarkSettingsViewModel.LoadAsync(System.Threading.CancellationToken)">
-            <summary>Loads all securities and the current benchmark settings.</summary>
-            <param name="ct">Cancellation token.</param>
-        </member>
-        <member name="M:FinanceManager.Web.ViewModels.Securities.SecurityBenchmarkSettingsViewModel.SaveAsync(System.Threading.CancellationToken)">
-            <summary>
-            Saves the selected benchmark security. Clears the benchmark when <see cref="P:FinanceManager.Web.ViewModels.Securities.SecurityBenchmarkSettingsViewModel.SelectedBenchmarkSecurityId"/> is null.
-            </summary>
-            <param name="ct">Cancellation token.</param>
-            <returns>True on success.</returns>
-        </member>
         <member name="T:FinanceManager.Web.ViewModels.Securities.SecurityCardViewModel">
             <summary>
             View model for a single security card. Provides load/save/archive/delete operations,
@@ -9226,6 +9190,15 @@
             Gets the background task types that should be visible for this card.
             </summary>
         </member>
+        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.InitializeAsync(System.Guid)">
+            <summary>
+            Initializes the setup card. After loading, automatically selects the section specified by
+            <see cref="P:FinanceManager.Web.ViewModels.Common.BaseCardViewModel`1.InitPrefill"/> when a valid section key was provided via the
+            <c>?prefill=</c> query parameter.
+            </summary>
+            <param name="id">Identifier of the record. Ignored for the setup card.</param>
+            <returns>A task representing the asynchronous initialization operation.</returns>
+        </member>
         <member name="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.LoadAsync(System.Guid)">
             <summary>
             Loads the card record and initializes the embedded panel for the setup UI.
@@ -9496,6 +9469,49 @@
             </summary>
             <param name="localizer">Localizer used to resolve UI labels and hints.</param>
             <returns>Collection of ribbon registers describing available tabs and actions for the UI.</returns>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel">
+            <summary>
+            View model for the return analysis / benchmark settings section inside the setup card.
+            Loads the list of available securities and the current benchmark selection, and persists changes.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.#ctor(System.IServiceProvider)">
+            <summary>Creates a new instance.</summary>
+            <param name="sp">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.Loading">
+            <summary>Whether a load operation is in progress.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.Saving">
+            <summary>Whether a save operation is in progress.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.SavedOk">
+            <summary>True after a successful save.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.Error">
+            <summary>Error message from the last load operation, if any.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.SaveError">
+            <summary>Error message from the last save operation, if any.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.AvailableSecurities">
+            <summary>All securities available for selection as benchmark.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.SelectedBenchmarkSecurityId">
+            <summary>Currently selected benchmark security id. Null means no benchmark.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.LoadAsync(System.Threading.CancellationToken)">
+            <summary>
+            Loads available securities and the current benchmark settings in parallel.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.SaveAsync(System.Threading.CancellationToken)">
+            <summary>
+            Saves the selected benchmark, preserving the existing Sharpe Ratio and risk-free rate values.
+            </summary>
+            <param name="ct">Cancellation token.</param>
         </member>
         <member name="T:FinanceManager.Web.ViewModels.Setup.SetupSecurityViewModel">
             <summary>

@@ -97,7 +97,6 @@
 
     private void NavigateToSettings()
     {
-        var back = Nav.Uri;
-        Nav.NavigateTo($"/securities/benchmark-settings?back={Uri.EscapeDataString(back)}");
+        Nav.NavigateTo("/card/setup?prefill=returnanalysis");
     }
 }
