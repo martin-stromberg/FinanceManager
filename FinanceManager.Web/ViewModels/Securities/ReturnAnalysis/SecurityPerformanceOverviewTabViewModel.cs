@@ -101,7 +101,25 @@ public sealed class SecurityPerformanceOverviewTabViewModel : BaseViewModel
 
         try
         {
-            Data = await ApiClient.Securities_GetPerformanceChartAsync(SecurityId, SelectedRange, ct);
+            // Try the selected range first; if it returns no data automatically escalate to
+            // progressively wider ranges so the chart is never empty when older data exists.
+            var rangesToTry = RangesInternal
+                .SkipWhile(r => r != SelectedRange)
+                .ToList();
+
+            PerformanceChartDataDto? data = null;
+            foreach (var range in rangesToTry)
+            {
+                data = await ApiClient.Securities_GetPerformanceChartAsync(SecurityId, range, ct);
+                if (data?.PortfolioValues.Count > 0)
+                {
+                    // Reflect the actually displayed range in the active button
+                    SelectedRange = range;
+                    break;
+                }
+            }
+
+            Data = data?.PortfolioValues.Count > 0 ? data : null;
         }
         catch (Exception ex)
         {
