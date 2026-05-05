@@ -1844,5 +1844,132 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         valuesByDate[sellDate.Date].Value.Should().Be(0m,
             "sell date: all shares sold, market value = 0");
     }
+
+    /// <summary>
+    /// When real price history only exists AFTER the last sell (i.e., during the ownership
+    /// period there are no prices), the chart must still show simulated prices for the
+    /// ownership period. The post-sell data points must show portfolio value 0 because no
+    /// shares are held regardless of the real price.
+    /// <para>
+    /// Scenario: buy Jan 15 (10 shares, 100€ → 10€/share), sell Jan 20 (150€ → 15€/share),
+    /// first real price on Jan 25 (20€). The Jan 15-19 period must be simulated.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task GetPerformanceChartDataAsync_Should_SimulatePrices_ForOwnershipPeriod_WhenRealPricesStartAfterSell()
+    {
+        // Arrange
+        var (security, user) = SetupSecurityAndUser();
+
+        var buyDate   = new DateTime(2020, 1, 15);
+        var sellDate  = new DateTime(2020, 1, 20);
+        var priceDate = new DateTime(2020, 1, 25); // real price only AFTER the sell
+
+        var buy = CreateBuyPosting(security.Id, buyDate, -100m, 10m); // 10€/share
+        var sell = new Posting(
+            Guid.NewGuid(),
+            PostingKind.Security,
+            null, null, null,
+            security.Id,
+            sellDate,
+            150m,
+            null, null, null,
+            SecurityPostingSubType.Sell,
+            -10m); // 15€/share
+
+        _db.Postings.AddRange(buy, sell);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, priceDate, 20m)); // only after sell
+        await _db.SaveChangesAsync();
+
+        // Act
+        PerformanceChartDataDto? result = await _sut.GetPerformanceChartDataAsync(
+            security.Id, user.Id, ChartTimeRange.All, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull("chart must include the ownership period even though real prices only start after the sell");
+
+        var valuesByDate = result!.PortfolioValues.ToDictionary(p => p.Date.Date);
+
+        // Ownership start must be present (simulated)
+        valuesByDate.Should().ContainKey(buyDate.Date,
+            "buy date must be covered by simulated prices");
+
+        // Jan 15: 10 shares × 10€ = 100€
+        valuesByDate[buyDate.Date].Value.Should().BeApproximately(100m, 0.01m,
+            "buy date: 10 shares × simulated price 10€");
+
+        // Sell date and after: no shares held → 0
+        valuesByDate[sellDate.Date].Value.Should().Be(0m,
+            "sell date: all shares sold → 0");
+        valuesByDate[priceDate.Date].Value.Should().Be(0m,
+            "after sell with real price: 0 shares × 20€ = 0");
+    }
+
+    /// <summary>
+    /// When real price history starts WITHIN the ownership period (after the buy but before
+    /// the sell), the chart must simulate prices for the gap before the first real price and
+    /// then use real prices for the remainder. This ensures a continuous chart from the first
+    /// buy onwards.
+    /// <para>
+    /// Scenario: buy Jan 1 (10 shares, 100€ → 10€/share), first real price Jan 11 (25€),
+    /// sell Jan 21 (300€ → 30€/share). The Jan 1-10 period must use simulated prices;
+    /// Jan 11+ must use the real price (25€, NOT the simulated ~15€).
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task GetPerformanceChartDataAsync_Should_SimulatePrices_ForGapBeforeFirstRealPrice_WhenRealPricesStartMidOwnership()
+    {
+        // Arrange
+        var (security, user) = SetupSecurityAndUser();
+
+        var buyDate   = new DateTime(2020, 1,  1);
+        var priceDate = new DateTime(2020, 1, 11); // real price starts mid-ownership
+        var sellDate  = new DateTime(2020, 1, 21);
+
+        // Buy: 10 shares, 100€ → 10€/share
+        var buy = CreateBuyPosting(security.Id, buyDate, -100m, 10m);
+
+        // Sell: 10 shares, 300€ → 30€/share
+        // (simulated price on Jan 11 would be ~15€, real is 25€ — clearly different)
+        var sell = new Posting(
+            Guid.NewGuid(),
+            PostingKind.Security,
+            null, null, null,
+            security.Id,
+            sellDate,
+            300m,
+            null, null, null,
+            SecurityPostingSubType.Sell,
+            -10m);
+
+        _db.Postings.AddRange(buy, sell);
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, priceDate, 25m)); // mid-period real price
+        await _db.SaveChangesAsync();
+
+        // Act
+        PerformanceChartDataDto? result = await _sut.GetPerformanceChartDataAsync(
+            security.Id, user.Id, ChartTimeRange.All, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull("chart must start from the buy date, not the first real price");
+
+        var valuesByDate = result!.PortfolioValues.ToDictionary(p => p.Date.Date);
+
+        // Jan 1: pre-price-history gap → must be simulated (10€/share)
+        valuesByDate.Should().ContainKey(buyDate.Date,
+            "buy date must be present via simulated price");
+        valuesByDate[buyDate.Date].Value.Should().BeApproximately(100m, 0.01m,
+            "buy date: 10 shares × simulated price 10€ = 100€");
+
+        // Jan 11: must use real price 25€, NOT simulated ~15€
+        valuesByDate.Should().ContainKey(priceDate.Date,
+            "first real price date must be in the chart");
+        valuesByDate[priceDate.Date].Value.Should().BeApproximately(250m, 0.01m,
+            "Jan 11: 10 shares × real price 25€ = 250€ (not simulated ~150€)");
+
+        // Jan 21: all sold → 0
+        valuesByDate[sellDate.Date].Value.Should().Be(0m,
+            "sell date: all shares sold → 0");
+    }
 }
 

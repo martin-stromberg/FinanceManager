@@ -585,19 +585,24 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
 
         var fromDate = GetFromDateForTimeRange(timeRange);
         var prices = await LoadPriceHistoryAsync(securityId, ownerUserId, fromDate, DateTime.Today, ct);
-        var filledPrices = ForwardFill(prices, fromDate, DateTime.Today);
 
-        // When no real price data is available, simulate prices from buy/sell transaction implied prices
-        if (filledPrices.Count == 0)
+        // Simulate prices from transaction implied prices (|Amount| / |Quantity|) with linear
+        // interpolation between anchors. Used to fill gaps before real price history begins.
+        var simulatedPrices = SimulatePricesFromTransactions(transactions);
+
+        // Merge: simulated prices cover gaps before the first real price entry so that the
+        // chart always starts from the first buy, even when the price feed begins later.
+        var mergedPrices = MergeSimulatedAndRealPrices(simulatedPrices, prices);
+
+        // Determine the effective chart start: use the first available price (simulated or real),
+        // bounded from below by the time-range filter only when it has a meaningful date.
+        var effectiveFrom = mergedPrices.Count > 0 ? mergedPrices[0].Date : fromDate;
+        if (fromDate > DateTime.MinValue && fromDate > effectiveFrom)
         {
-            var simulatedPrices = SimulatePricesFromTransactions(transactions);
-            if (simulatedPrices.Count > 0)
-            {
-                var simFrom = simulatedPrices[0].Date;
-                filledPrices = ForwardFill(simulatedPrices, simFrom, DateTime.Today);
-            }
+            effectiveFrom = fromDate;
         }
 
+        var filledPrices = ForwardFill(mergedPrices, effectiveFrom, DateTime.Today);
         if (filledPrices.Count == 0) return null;
 
         var portfolioValues = new List<ChartPoint>(filledPrices.Count);
@@ -1559,6 +1564,31 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         }
 
         return result.AsReadOnly();
+    }
+
+    /// <summary>
+    /// Merges simulated and real price series so that the chart always starts from the first
+    /// buy transaction. Simulated prices are used only for dates strictly before the first real
+    /// price entry; real prices take precedence for all overlapping or later dates.
+    /// </summary>
+    /// <param name="simulated">Prices derived from transaction implied prices.</param>
+    /// <param name="real">Actual price history loaded from the database.</param>
+    /// <returns>
+    /// A merged, chronologically ordered list: simulated entries up to (but not including) the
+    /// first real price date, followed by all real price entries. When no real prices exist, the
+    /// full simulated series is returned. When simulated is empty, the real series is returned.
+    /// </returns>
+    private static List<(DateTime Date, decimal Close)> MergeSimulatedAndRealPrices(
+        List<(DateTime Date, decimal Close)> simulated,
+        List<(DateTime Date, decimal Close)> real)
+    {
+        if (simulated.Count == 0) return real;
+        if (real.Count == 0) return simulated;
+
+        // Only keep simulated entries that predate the first real price so real data wins
+        var firstRealDate = real[0].Date.Date;
+        var simBeforeReal = simulated.Where(p => p.Date.Date < firstRealDate).ToList();
+        return [.. simBeforeReal, .. real];
     }
 
     /// <summary>
