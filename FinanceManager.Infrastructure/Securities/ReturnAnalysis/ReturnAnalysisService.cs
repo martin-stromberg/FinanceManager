@@ -1476,7 +1476,7 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
             if (tx.Type == SecurityPostingSubType.Buy)
                 shares += tx.Quantity ?? 0m;
             else if (tx.Type == SecurityPostingSubType.Sell)
-                shares -= tx.Quantity ?? 0m;
+                shares -= Math.Abs(tx.Quantity ?? 0m); // sell quantities are stored as negative; use Abs to subtract correctly
         }
         return Math.Max(0m, shares);
     }
