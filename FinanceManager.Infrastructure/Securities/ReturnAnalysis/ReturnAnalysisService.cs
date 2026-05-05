@@ -587,18 +587,27 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         var prices = await LoadPriceHistoryAsync(securityId, ownerUserId, fromDate, DateTime.Today, ct);
         var filledPrices = ForwardFill(prices, fromDate, DateTime.Today);
 
+        // When no real price data is available, simulate prices from buy/sell transaction implied prices
+        if (filledPrices.Count == 0)
+        {
+            var simulatedPrices = SimulatePricesFromTransactions(transactions);
+            if (simulatedPrices.Count > 0)
+            {
+                var simFrom = simulatedPrices[0].Date;
+                filledPrices = ForwardFill(simulatedPrices, simFrom, DateTime.Today);
+            }
+        }
+
         if (filledPrices.Count == 0) return null;
 
         var portfolioValues = new List<ChartPoint>(filledPrices.Count);
         var investedCapitalValues = new List<ChartPoint>(filledPrices.Count);
 
-        // Build running invested capital per day
-        var allTransactions = await LoadPostingsAsync(securityId, ownerUserId, ct);
         foreach (var (date, close) in filledPrices)
         {
-            decimal sharesHeld = ComputeSharesHeldOnDate(allTransactions, date);
+            decimal sharesHeld = ComputeSharesHeldOnDate(transactions, date);
             decimal marketValue = sharesHeld * close;
-            decimal investedCapital = ComputeInvestedCapitalOnDate(allTransactions, date);
+            decimal investedCapital = ComputeInvestedCapitalOnDate(transactions, date);
 
             portfolioValues.Add(new ChartPoint(date, marketValue));
             investedCapitalValues.Add(new ChartPoint(date, investedCapital));
@@ -1550,6 +1559,52 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         }
 
         return result.AsReadOnly();
+    }
+
+    /// <summary>
+    /// Simulates a daily price series from buy/sell transaction implied prices when no real
+    /// price history is available. The implied unit price for each transaction is
+    /// <c>|Amount| / |Quantity|</c>. Between consecutive anchor points the price is linearly
+    /// interpolated; the series covers exactly the period from the first to the last buy/sell
+    /// transaction date.
+    /// </summary>
+    /// <param name="transactions">Chronologically ordered security transactions.</param>
+    /// <returns>
+    /// List of <c>(Date, SimulatedClose)</c> tuples. Returns an empty list when no buy/sell
+    /// transactions with both a non-zero quantity and a non-zero amount exist.
+    /// </returns>
+    private static List<(DateTime Date, decimal Close)> SimulatePricesFromTransactions(
+        IReadOnlyList<SecurityTransaction> transactions)
+    {
+        var anchors = transactions
+            .Where(t => (t.Type == SecurityPostingSubType.Buy || t.Type == SecurityPostingSubType.Sell)
+                     && t.Quantity.HasValue && t.Quantity.Value != 0m && t.Amount != 0m)
+            .OrderBy(t => t.Date)
+            .Select(t => (Date: t.Date.Date, Price: Math.Abs(t.Amount) / Math.Abs(t.Quantity!.Value)))
+            .ToList();
+
+        if (anchors.Count == 0) return [];
+
+        var result = new List<(DateTime Date, decimal Close)>();
+
+        for (int i = 0; i < anchors.Count - 1; i++)
+        {
+            var (startDate, startPrice) = anchors[i];
+            var (endDate, endPrice) = anchors[i + 1];
+            int totalDays = (int)(endDate - startDate).TotalDays;
+
+            for (int d = 0; d < totalDays; d++)
+            {
+                decimal fraction = totalDays > 0 ? (decimal)d / totalDays : 0m;
+                decimal price = startPrice + fraction * (endPrice - startPrice);
+                result.Add((startDate.AddDays(d), price));
+            }
+        }
+
+        // Add the final anchor point
+        result.Add(anchors[^1]);
+
+        return result;
     }
 
     /// <summary>

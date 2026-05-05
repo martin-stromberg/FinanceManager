@@ -1776,5 +1776,73 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
                 $"market value on {p.Date:d} must be 0 because all shares have been sold " +
                 $"(bug: negative sell quantity subtracted as positive would double share count instead)"));
     }
+
+    /// <summary>
+    /// When no real price history exists for a security, ComputePerformanceChartDataAsync must
+    /// simulate prices from buy/sell transaction amounts. The implied unit price for each
+    /// transaction is |Amount| / |Quantity|. Between two anchor points (e.g., buy price and sell
+    /// price), the price is linearly interpolated for each calendar day.
+    /// <para>
+    /// Example: buy 10 shares for 100€ on 15.01 (price = 10€); sell 10 shares for 150€ on 20.01
+    /// (price = 15€). Expected simulated prices: 15.01→10€, 16.01→11€, 17.01→12€, 18.01→13€,
+    /// 19.01→14€, 20.01→15€. Portfolio values are shares × price (0 after sell).
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task GetPerformanceChartDataAsync_Should_SimulatePrices_WhenNoPriceHistoryExists()
+    {
+        // Arrange
+        var (security, user) = SetupSecurityAndUser();
+
+        var buyDate  = new DateTime(2020, 1, 15);
+        var sellDate = new DateTime(2020, 1, 20);
+
+        // Buy: 10 shares, 100€ outflow → implied price = 10€/share
+        var buy = CreateBuyPosting(security.Id, buyDate, -100m, 10m);
+
+        // Sell: 10 shares, 150€ inflow, negative quantity (domain convention)
+        // → implied price = |150| / |-10| = 15€/share
+        var sell = new Posting(
+            Guid.NewGuid(),
+            PostingKind.Security,
+            null, null, null,
+            security.Id,
+            sellDate,
+            150m,
+            null, null, null,
+            SecurityPostingSubType.Sell,
+            -10m);
+
+        _db.Postings.AddRange(buy, sell);
+        // deliberately no SecurityPrices — simulation must produce the chart data
+        await _db.SaveChangesAsync();
+
+        // Act
+        PerformanceChartDataDto? result = await _sut.GetPerformanceChartDataAsync(
+            security.Id, user.Id, ChartTimeRange.All, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull("chart must be produced even without real price data");
+
+        var valuesByDate = result!.PortfolioValues.ToDictionary(p => p.Date.Date);
+
+        // 15.01: 10 shares × 10€ = 100
+        valuesByDate[buyDate.Date].Value.Should().BeApproximately(100m, 0.01m,
+            "buy date: 10 shares × simulated price 10€");
+
+        // 16.01 – 19.01: linearly interpolated prices 11€ – 14€
+        valuesByDate[new DateTime(2020, 1, 16)].Value.Should().BeApproximately(110m, 0.01m,
+            "day +1: 10 shares × 11€");
+        valuesByDate[new DateTime(2020, 1, 17)].Value.Should().BeApproximately(120m, 0.01m,
+            "day +2: 10 shares × 12€");
+        valuesByDate[new DateTime(2020, 1, 18)].Value.Should().BeApproximately(130m, 0.01m,
+            "day +3: 10 shares × 13€");
+        valuesByDate[new DateTime(2020, 1, 19)].Value.Should().BeApproximately(140m, 0.01m,
+            "day +4: 10 shares × 14€");
+
+        // 20.01: all shares sold → 0 shares × 15€ = 0
+        valuesByDate[sellDate.Date].Value.Should().Be(0m,
+            "sell date: all shares sold, market value = 0");
+    }
 }
 
