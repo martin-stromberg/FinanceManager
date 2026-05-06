@@ -748,23 +748,35 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         var benchmarkPrices = await LoadPriceHistoryAsync(benchmarkId, ownerUserId, firstDate, endDate, ct);
         if (benchmarkPrices.Count < 2) return null;
 
-        // Normalize both to base 100 at the earliest common date
+        // Normalize both to base 100 at the first date the benchmark has price data
         var securityFilled = ForwardFill(securityPrices, firstDate, endDate);
         var benchmarkFilled = ForwardFill(benchmarkPrices, firstDate, endDate);
 
         if (securityFilled.Count == 0 || benchmarkFilled.Count == 0) return null;
 
-        decimal securityBase = securityFilled[0].Close;
-        decimal benchmarkBase = benchmarkFilled[0].Close;
+        // The comparison starts at the earliest date the benchmark actually has price data.
+        // The security may have data earlier (context zone before the benchmark was available).
+        var comparisonStart = benchmarkFilled[0].Date.Date;
 
-        if (securityBase == 0m || benchmarkBase == 0m) return null;
+        // Find the security's price at comparisonStart for common normalization base.
+        var securityAtComparison = securityFilled.Find(p => p.Date.Date >= comparisonStart);
+        if (securityAtComparison == default) return null;
 
+        decimal securityCompBase = securityAtComparison.Close;
+        decimal benchmarkCompBase = benchmarkFilled[0].Close;
+
+        if (securityCompBase == 0m || benchmarkCompBase == 0m) return null;
+
+        // Security: full period normalized at comparisonStart.
+        // Values before comparisonStart reflect the security's performance relative to that anchor
+        // (i.e., values < 100 show where the security was relative to its comparisonStart price).
         var securityNormalized = securityFilled
-            .Select(p => new ChartPoint(p.Date, p.Close / securityBase * 100m))
+            .Select(p => new ChartPoint(p.Date, p.Close / securityCompBase * 100m))
             .ToList();
 
+        // Benchmark: from comparisonStart onward, starts at 100.
         var benchmarkNormalized = benchmarkFilled
-            .Select(p => new ChartPoint(p.Date, p.Close / benchmarkBase * 100m))
+            .Select(p => new ChartPoint(p.Date, p.Close / benchmarkCompBase * 100m))
             .ToList();
 
         return new BenchmarkComparisonDto(
@@ -773,6 +785,7 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
             SecurityNormalizedValues: securityNormalized.AsReadOnly(),
             BenchmarkNormalizedValues: benchmarkNormalized.AsReadOnly(),
             StartDate: firstDate,
+            ComparisonStartDate: comparisonStart,
             EndDate: endDate);
     }
 

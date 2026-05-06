@@ -234,9 +234,22 @@ public sealed record PerformanceChartDataDto(
 /// </summary>
 /// <param name="BenchmarkSecurityId">Id of the benchmark security.</param>
 /// <param name="BenchmarkName">Display name of the benchmark security.</param>
-/// <param name="SecurityNormalizedValues">Normalized values for the target security (base 100).</param>
-/// <param name="BenchmarkNormalizedValues">Normalized values for the benchmark (base 100).</param>
-/// <param name="StartDate">Start date of the comparison period (first transaction date).</param>
+/// <param name="SecurityNormalizedValues">
+/// Normalized values for the target security over the full range from <see cref="StartDate"/> to
+/// <see cref="EndDate"/>. Values are normalized to 100 at <see cref="ComparisonStartDate"/>, so the
+/// security's value before <see cref="ComparisonStartDate"/> represents its performance relative to
+/// that anchor point (context zone).
+/// </param>
+/// <param name="BenchmarkNormalizedValues">
+/// Normalized values for the benchmark from <see cref="ComparisonStartDate"/> to <see cref="EndDate"/>,
+/// normalized to 100 at <see cref="ComparisonStartDate"/>.
+/// </param>
+/// <param name="StartDate">Start date of the security's history (first transaction date).</param>
+/// <param name="ComparisonStartDate">
+/// The first date on which both the security and the benchmark have price data. Both series are
+/// normalized to 100 at this date. Before this date only the security context line is shown.
+/// Equals <see cref="StartDate"/> when both series start simultaneously.
+/// </param>
 /// <param name="EndDate">End date of the comparison period (last sell date when fully sold, otherwise today).</param>
 public sealed record BenchmarkComparisonDto(
     Guid BenchmarkSecurityId,
@@ -244,6 +257,7 @@ public sealed record BenchmarkComparisonDto(
     IReadOnlyList<ChartPoint> SecurityNormalizedValues,
     IReadOnlyList<ChartPoint> BenchmarkNormalizedValues,
     DateTime StartDate,
+    DateTime ComparisonStartDate,
     DateTime EndDate
 );
 

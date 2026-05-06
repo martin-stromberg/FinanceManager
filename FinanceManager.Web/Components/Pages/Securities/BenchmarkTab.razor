@@ -22,37 +22,90 @@
                 <span class="legend-item benchmark">@_vm.Data.BenchmarkName</span>
             </div>
             @{
+                var startDate = _vm.Data.StartDate.Date;
+                var compDate  = _vm.Data.ComparisonStartDate.Date;
+                var endDate   = _vm.Data.EndDate.Date;
+                var totalDays = Math.Max(1, (int)(endDate - startDate).TotalDays);
+                var compDays  = (int)(compDate - startDate).TotalDays;
+                var hasPreOverlap = compDays > 0;
+
                 var allValues = _vm.Data.SecurityNormalizedValues.Select(p => p.Value)
                     .Concat(_vm.Data.BenchmarkNormalizedValues.Select(p => p.Value));
-                var maxVal = allValues.DefaultIfEmpty(100m).Max();
-                var minVal = allValues.DefaultIfEmpty(0m).Min();
+                var maxVal     = allValues.DefaultIfEmpty(100m).Max();
+                var minVal     = allValues.DefaultIfEmpty(0m).Min();
                 var valueRange = maxVal - minVal;
                 if (valueRange == 0) { valueRange = 1m; }
-                var total = Math.Max(_vm.Data.SecurityNormalizedValues.Count, _vm.Data.BenchmarkNormalizedValues.Count);
-            }
-            <svg viewBox="0 0 @(Math.Max(total, 1)) 110" preserveAspectRatio="none" class="benchmark-svg" role="img" aria-label="Benchmark-Vergleichschart">
-                <title>Benchmark-Vergleich</title>
-                @{
-                    var secPoints = string.Join(" ", _vm.Data.SecurityNormalizedValues.Select((p, i) =>
-                        FormattableString.Invariant($"{i},{100m - (p.Value - minVal) / valueRange * 90m:F1}")));
-                    var bmPoints = string.Join(" ", _vm.Data.BenchmarkNormalizedValues.Select((p, i) =>
-                        FormattableString.Invariant($"{i},{100m - (p.Value - minVal) / valueRange * 90m:F1}")));
+
+                string ToPoint(ChartPoint p)
+                {
+                    var x = (int)(p.Date.Date - startDate).TotalDays;
+                    var y = 100m - (p.Value - minVal) / valueRange * 90m;
+                    return FormattableString.Invariant($"{x},{y:F1}");
                 }
+
+                var secPrePoints = string.Join(" ",
+                    _vm.Data.SecurityNormalizedValues
+                        .Where(p => p.Date.Date <= compDate)
+                        .Select(ToPoint));
+
+                var secPoints = string.Join(" ",
+                    _vm.Data.SecurityNormalizedValues
+                        .Where(p => p.Date.Date >= compDate)
+                        .Select(ToPoint));
+
+                var bmPoints = string.Join(" ",
+                    _vm.Data.BenchmarkNormalizedValues.Select(ToPoint));
+            }
+            <svg viewBox="0 0 @totalDays 115" preserveAspectRatio="none" class="benchmark-svg" role="img" aria-label="Benchmark-Vergleichschart">
+                <title>Benchmark-Vergleich</title>
+
+                @if (hasPreOverlap)
+                {
+                    @* Shaded context zone before benchmark data starts *@
+                    <rect x="0" y="0" width="@compDays" height="100" fill="#f0f0f0" opacity="0.6" />
+
+                    @* Security context line (lighter) *@
+                    @if (!string.IsNullOrEmpty(secPrePoints))
+                    {
+                        <polyline points="@secPrePoints" fill="none" stroke="#2d6cdf" stroke-width="0.6" opacity="0.35" />
+                    }
+                }
+
+                @* Security comparison line *@
                 @if (!string.IsNullOrEmpty(secPoints))
                 {
                     <polyline points="@secPoints" fill="none" stroke="#2d6cdf" stroke-width="0.8" />
                 }
+
+                @* Benchmark line *@
                 @if (!string.IsNullOrEmpty(bmPoints))
                 {
                     <polyline points="@bmPoints" fill="none" stroke="#e07b20" stroke-width="0.8" stroke-dasharray="3,2" />
                 }
+
                 @* X-axis baseline *@
-                <line x1="0" y1="100" x2="@(Math.Max(total - 1, 1))" y2="100" stroke="#ccc" stroke-width="0.3" />
-                @* Start date label *@
-                <text x="0" y="108" font-size="5" fill="#888" text-anchor="start">@_vm.Data.StartDate.ToString("MM/yyyy")</text>
-                @* End date label *@
-                <text x="@(Math.Max(total - 1, 1))" y="108" font-size="5" fill="#888" text-anchor="end">@_vm.Data.EndDate.ToString("MM/yyyy")</text>
+                <line x1="0" y1="100" x2="@totalDays" y2="100" stroke="#ccc" stroke-width="0.3" />
+
+                @if (hasPreOverlap)
+                {
+                    @* Vertical separator at comparison start *@
+                    <line x1="@compDays" y1="0" x2="@compDays" y2="100" stroke="#aaa" stroke-width="0.5" stroke-dasharray="2,2" />
+                    @* Comparison start date label (offset slightly right to avoid overlap with start label) *@
+                    @((MarkupString)FormattableString.Invariant($"<text x=\"{compDays + 2}\" y=\"110\" font-size=\"4\" fill=\"#888\" text-anchor=\"start\">{compDate:MM/yyyy}</text>"))
+                }
+
+                @* Start date *@
+                @((MarkupString)$"<text x=\"1\" y=\"110\" font-size=\"4\" fill=\"#888\" text-anchor=\"start\">{startDate:MM/yyyy}</text>")
+                @* End date *@
+                @((MarkupString)FormattableString.Invariant($"<text x=\"{totalDays - 1}\" y=\"110\" font-size=\"4\" fill=\"#888\" text-anchor=\"end\">{endDate:MM/yyyy}</text>"))
             </svg>
+
+            @if (hasPreOverlap)
+            {
+                <p class="benchmark-context-hint">
+                    <em>Grauer Bereich: Vorperiode ohne Benchmark-Daten. Ab @compDate.ToString("MMMM yyyy") starten beide Linien bei 100&thinsp;% für den direkten Vergleich.</em>
+                </p>
+            }
         </div>
     }
 </div>

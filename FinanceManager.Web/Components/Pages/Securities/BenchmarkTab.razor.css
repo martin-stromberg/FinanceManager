@@ -1,0 +1,9 @@
+.benchmark-context-hint {
+    font-size: .78rem;
+    color: #888;
+    margin-top: .35rem;
+    padding: .25rem .5rem;
+    background: #f7f7f7;
+    border-left: 3px solid #ccc;
+    border-radius: 2px;
+}
