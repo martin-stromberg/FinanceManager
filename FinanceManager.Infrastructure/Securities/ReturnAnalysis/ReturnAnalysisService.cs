@@ -779,11 +779,26 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
             .Select(p => new ChartPoint(p.Date, p.Close / benchmarkCompBase * 100m))
             .ToList();
 
+        // Pre-overlap benchmark values: forward-fill the raw benchmark prices in [firstDate, comparisonStart).
+        // These use the same normalization base so the curve connects seamlessly at comparisonStart = 100.
+        // If no benchmark prices exist before comparisonStart, the list is empty and the chart falls back
+        // to a flat reference line.
+        List<ChartPoint> benchmarkPreOverlap = [];
+        if (comparisonStart > firstDate)
+        {
+            var preOverlapEnd = comparisonStart.AddDays(-1);
+            var preOverlapFilled = ForwardFill(benchmarkPrices, firstDate, preOverlapEnd);
+            benchmarkPreOverlap = preOverlapFilled
+                .Select(p => new ChartPoint(p.Date, p.Close / benchmarkCompBase * 100m))
+                .ToList();
+        }
+
         return new BenchmarkComparisonDto(
             BenchmarkSecurityId: benchmarkId,
             BenchmarkName: benchmarkSecurity.Name,
             SecurityNormalizedValues: securityNormalized.AsReadOnly(),
             BenchmarkNormalizedValues: benchmarkNormalized.AsReadOnly(),
+            BenchmarkPreOverlapValues: benchmarkPreOverlap.AsReadOnly(),
             StartDate: firstDate,
             ComparisonStartDate: comparisonStart,
             EndDate: endDate);

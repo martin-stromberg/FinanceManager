@@ -28,9 +28,11 @@
                 var totalDays = Math.Max(1, (int)(endDate - startDate).TotalDays);
                 var compDays  = (int)(compDate - startDate).TotalDays;
                 var hasPreOverlap = compDays > 0;
+                var hasBmPreCurve = hasPreOverlap && _vm.Data.BenchmarkPreOverlapValues.Count > 0;
 
                 var allValues = _vm.Data.SecurityNormalizedValues.Select(p => p.Value)
-                    .Concat(_vm.Data.BenchmarkNormalizedValues.Select(p => p.Value));
+                    .Concat(_vm.Data.BenchmarkNormalizedValues.Select(p => p.Value))
+                    .Concat(_vm.Data.BenchmarkPreOverlapValues.Select(p => p.Value));
                 var maxVal     = allValues.DefaultIfEmpty(100m).Max();
                 var minVal     = allValues.DefaultIfEmpty(0m).Min();
                 var valueRange = maxVal - minVal;
@@ -55,10 +57,21 @@
 
                 var bmPoints = string.Join(" ",
                     _vm.Data.BenchmarkNormalizedValues.Select(ToPoint));
-            }
-            @{
-                // Y-coordinate for normalized value = 100 (the comparison baseline)
-                var yBase = FormattableString.Invariant($"{100m - (100m - minVal) / valueRange * 90m:F1}");
+
+                // Real benchmark curve for the pre-overlap zone (actual prices, same normalization).
+                var bmPrePoints = hasBmPreCurve
+                    ? string.Join(" ", _vm.Data.BenchmarkPreOverlapValues.Select(ToPoint))
+                    : string.Empty;
+
+                // Flat-line fallback: only when no real benchmark prices exist in the pre-overlap zone.
+                // Computed as Y coordinate of value=100 (the comparison baseline).
+                var yBase100 = FormattableString.Invariant(
+                    $"{100m - (100m - minVal) / valueRange * 90m:F1}");
+
+                // X of the first real benchmark pre-overlap point (for the flat line from startDate to there)
+                var bmPreFirstX = hasBmPreCurve
+                    ? (int)(_vm.Data.BenchmarkPreOverlapValues[0].Date.Date - startDate).TotalDays
+                    : compDays;
             }
             <svg viewBox="0 0 @totalDays 115" preserveAspectRatio="none" class="benchmark-svg" role="img" aria-label="Benchmark-Vergleichschart">
                 <title>Benchmark-Vergleich</title>
@@ -71,10 +84,23 @@
                         <polyline points="@secPrePoints" fill="none" stroke="#2d6cdf" stroke-width="0.6" opacity="0.35" />
                     }
 
-                    @* Hypothetical benchmark reference: flat dashed line at the comparison baseline (value = 100)
-                       since no real benchmark prices exist before comparisonStart *@
-                    @((MarkupString)FormattableString.Invariant(
-                        $"<line x1=\"0\" y1=\"{yBase}\" x2=\"{compDays}\" y2=\"{yBase}\" stroke=\"#e07b20\" stroke-width=\"0.5\" stroke-dasharray=\"1,3\" opacity=\"0.55\" />"))
+                    @if (hasBmPreCurve)
+                    {
+                        @* Where prices exist before compDate: flat lead-in line from startDate to first real point *@
+                        @if (bmPreFirstX > 0)
+                        {
+                            @((MarkupString)FormattableString.Invariant(
+                                $"<line x1=\"0\" y1=\"{yBase100}\" x2=\"{bmPreFirstX}\" y2=\"{yBase100}\" stroke=\"#e07b20\" stroke-width=\"0.5\" stroke-dasharray=\"1,3\" opacity=\"0.55\" />"))
+                        }
+                        @* Real benchmark curve for the pre-overlap zone *@
+                        <polyline points="@bmPrePoints" fill="none" stroke="#e07b20" stroke-width="0.6" stroke-dasharray="3,2" opacity="0.6" />
+                    }
+                    else
+                    {
+                        @* No benchmark prices at all before compDate: flat reference line at baseline *@
+                        @((MarkupString)FormattableString.Invariant(
+                            $"<line x1=\"0\" y1=\"{yBase100}\" x2=\"{compDays}\" y2=\"{yBase100}\" stroke=\"#e07b20\" stroke-width=\"0.5\" stroke-dasharray=\"1,3\" opacity=\"0.55\" />"))
+                    }
                 }
 
                 @* Security comparison line *@
@@ -109,7 +135,14 @@
             @if (hasPreOverlap)
             {
                 <p class="benchmark-context-hint">
-                    <em>Vorperiode (vor @compDate.ToString("MMMM yyyy")): Für den Benchmark lagen noch keine Kursdaten vor. Die gepunktete Linie zeigt den fiktiven Vergleichsbasiskurs (100&thinsp;%).</em>
+                    @if (hasBmPreCurve)
+                    {
+                        <em>Vorperiode (vor @compDate.ToString("MMMM yyyy")): Die gestrichelte Benchmark-Linie basiert auf realen Kursen aus diesem Zeitraum, normiert auf den Vergleichsbasiswert (100&thinsp;%) am @compDate.ToString("dd.MM.yyyy").</em>
+                    }
+                    else
+                    {
+                        <em>Vorperiode (vor @compDate.ToString("MMMM yyyy")): Für den Benchmark lagen in diesem Zeitraum keine Kursdaten vor. Die gepunktete Linie zeigt den fiktiven Vergleichsbasiskurs (100&thinsp;%).</em>
+                    }
                 </p>
             }
         </div>

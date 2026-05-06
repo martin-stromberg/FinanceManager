@@ -244,6 +244,13 @@ public sealed record PerformanceChartDataDto(
 /// Normalized values for the benchmark from <see cref="ComparisonStartDate"/> to <see cref="EndDate"/>,
 /// normalized to 100 at <see cref="ComparisonStartDate"/>.
 /// </param>
+/// <param name="BenchmarkPreOverlapValues">
+/// Benchmark values in the pre-overlap zone from <see cref="StartDate"/> to <see cref="ComparisonStartDate"/>
+/// (exclusive), normalized using the same base as <see cref="BenchmarkNormalizedValues"/>. The curve is
+/// derived from actual benchmark price data (forward-filled) and connects seamlessly at
+/// <see cref="ComparisonStartDate"/> = 100. Empty when the benchmark has no price data before
+/// <see cref="ComparisonStartDate"/> (in that case the chart renders a flat reference line instead).
+/// </param>
 /// <param name="StartDate">Start date of the security's history (first transaction date).</param>
 /// <param name="ComparisonStartDate">
 /// The first date on which both the security and the benchmark have price data. Both series are
@@ -256,6 +263,7 @@ public sealed record BenchmarkComparisonDto(
     string BenchmarkName,
     IReadOnlyList<ChartPoint> SecurityNormalizedValues,
     IReadOnlyList<ChartPoint> BenchmarkNormalizedValues,
+    IReadOnlyList<ChartPoint> BenchmarkPreOverlapValues,
     DateTime StartDate,
     DateTime ComparisonStartDate,
     DateTime EndDate
