@@ -1,4 +1,5 @@
 using FinanceManager.Web.ViewModels.Common;
+using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Web.ViewModels.Securities.ReturnAnalysis;
 
@@ -15,7 +16,14 @@ public sealed class SecurityPerformancePageViewModel : BaseViewModel
     /// <param name="services">Service provider.</param>
     public SecurityPerformancePageViewModel(IServiceProvider services) : base(services)
     {
+        OverviewTabVm = CreateSubViewModel<SecurityPerformanceOverviewTabViewModel>(singletonPerType: true);
     }
+
+    /// <summary>
+    /// View model for the overview tab. Owned and lifecycle-managed by this page view model
+    /// so that its state (selected range, chart data) can be accessed for ribbon button rendering.
+    /// </summary>
+    public SecurityPerformanceOverviewTabViewModel OverviewTabVm { get; }
 
     /// <summary>
     /// Security identifier currently shown by the page.
@@ -108,4 +116,74 @@ public sealed class SecurityPerformancePageViewModel : BaseViewModel
         "Benchmark" => "Benchmark",
         _ => tabKey
     };
+
+    /// <inheritdoc />
+    protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
+    {
+        var tabs = new List<UiRibbonTab>();
+
+        // Navigation group: always-visible back button to the security card.
+        tabs.Add(new UiRibbonTab(
+            localizer["Ribbon_Group_Navigation"].Value,
+            new List<UiRibbonAction>
+            {
+                new UiRibbonAction(
+                    "Back",
+                    localizer["Ribbon_Back"].Value,
+                    "<svg><use href='/icons/sprite.svg#back'/></svg>",
+                    UiRibbonItemSize.Large,
+                    false,
+                    null,
+                    () => { Navigation.NavigateTo($"/card/securities/{SecurityId}"); return Task.CompletedTask; }
+                )
+            },
+            Sort: 0
+        ));
+
+        // Zeitraum group: time range selector, only shown while the Overview tab is active.
+        if (ActiveTabKey == "Overview")
+        {
+            tabs.Add(new UiRibbonTab(
+                "Zeitraum",
+                OverviewTabVm.Ranges
+                    .Select(range => new UiRibbonAction(
+                        $"Range_{range}",
+                        (range == OverviewTabVm.SelectedRange ? "▸ " : string.Empty) + SecurityPerformanceOverviewTabViewModel.GetRangeLabel(range),
+                        "<svg><use href='/icons/sprite.svg#calendar'/></svg>",
+                        UiRibbonItemSize.Small,
+                        false,
+                        null,
+                        async () => { await OverviewTabVm.SelectRangeAsync(range); }
+                    ))
+                    .ToList(),
+                Sort: 10
+            ));
+        }
+
+        // Einstellungen group: benchmark setup button, only shown while the Benchmark tab is active.
+        if (ActiveTabKey == "Benchmark")
+        {
+            tabs.Add(new UiRibbonTab(
+                "Einstellungen",
+                new List<UiRibbonAction>
+                {
+                    new UiRibbonAction(
+                        "BenchmarkSetup",
+                        "Benchmark einrichten",
+                        "<svg><use href='/icons/sprite.svg#settings'/></svg>",
+                        UiRibbonItemSize.Large,
+                        false,
+                        null,
+                        () => { Navigation.NavigateTo("/card/setup?prefill=returnanalysis"); return Task.CompletedTask; }
+                    )
+                },
+                Sort: 10
+            ));
+        }
+
+        return new List<UiRibbonRegister>
+        {
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs)
+        };
+    }
 }

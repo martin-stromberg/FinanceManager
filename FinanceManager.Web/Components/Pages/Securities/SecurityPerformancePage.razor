@@ -1,10 +1,12 @@
 @page "/securities/{Id:guid}/performance"
 @rendermode InteractiveServer
 @using FinanceManager.Web.Components.Pages.Securities
+@using FinanceManager.Web.Components.Shared
 @using FinanceManager.Web.ViewModels.Securities.ReturnAnalysis
 @inject IServiceProvider Services
 @inject NavigationManager Nav
 @inject IJSRuntime JS
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
 
 <PageTitle>Renditeanalyse</PageTitle>
 
@@ -28,10 +30,9 @@
 }
 
 <div class="perf-page">
+    <Ribbon TTabEnum="string" Provider="_vm" Localizer="Localizer" />
+
     <div class="perf-header">
-        <button class="back-btn" @onclick='(() => Nav.NavigateTo($"/card/securities/{Id}"))' title="Zurück zur Detailseite">
-            ←
-        </button>
         <h2>@(_vm.SecurityName ?? "Renditeanalyse") – Renditeanalyse</h2>
     </div>
 
@@ -50,7 +51,7 @@
     <div class="tab-content" role="tabpanel">
         @if (_vm.ActiveTabKey == "Overview")
         {
-            <OverviewTab SecurityId="Id" />
+            <OverviewTab SecurityId="Id" ViewModel="_vm.OverviewTabVm" />
         }
         else if (_vm.ActiveTabKey == "TimeSeries")
         {

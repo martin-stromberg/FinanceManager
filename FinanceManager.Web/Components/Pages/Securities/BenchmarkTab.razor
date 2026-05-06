@@ -1,7 +1,6 @@
 @using FinanceManager.Application
 @using FinanceManager.Web.ViewModels.Securities.ReturnAnalysis
 @inject IServiceProvider Services
-@inject NavigationManager Nav
 
 <div class="benchmark-tab">
     @if (_vm?.IsLoading == true) { <div role="status">Lade Benchmark-Daten...</div> }
@@ -9,8 +8,7 @@
     {
         <div class="no-benchmark-hint">
             <p>Kein Benchmark konfiguriert.</p>
-            <p>Sie können ein vorhandenes Wertpapier als Benchmark für alle Ihre Wertpapiere festlegen.</p>
-            <button class="btn-primary" @onclick="NavigateToSettings">Benchmark festlegen</button>
+            <p>Sie können ein vorhandenes Wertpapier als Benchmark für alle Ihre Wertpapiere festlegen. Nutzen Sie dazu die Schaltfläche <strong>Benchmark einrichten</strong> in der Aktionsleiste.</p>
         </div>
     }
     else
@@ -185,10 +183,5 @@
     private void VmOnStateChanged(object? sender, EventArgs e)
     {
         _ = InvokeAsync(StateHasChanged);
-    }
-
-    private void NavigateToSettings()
-    {
-        Nav.NavigateTo("/card/setup?prefill=returnanalysis");
     }
 }

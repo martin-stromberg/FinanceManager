@@ -3,19 +3,6 @@
 @inject IServiceProvider Services
 
 <div class="overview-tab">
-    <div class="time-range-selector">
-        @if (_vm != null)
-        {
-            @foreach (var range in _vm.Ranges)
-            {
-                <button class="range-btn @(_vm.SelectedRange == range ? "active" : "")"
-                        @onclick="(() => _vm.SelectRangeAsync(range, CancellationToken.None))">
-                    @SecurityPerformanceOverviewTabViewModel.GetRangeLabel(range)
-                </button>
-            }
-        }
-    </div>
-
     @if (_vm?.IsLoading == true)
     {
         <div class="chart-placeholder" role="status">Lade Chartdaten...</div>
@@ -71,25 +58,37 @@
     /// <summary>Security identifier.</summary>
     [Parameter, EditorRequired] public Guid SecurityId { get; set; }
 
-    private SecurityPerformanceOverviewTabViewModel? _vm;
+    /// <summary>
+    /// Pre-created view model supplied by the parent page. When provided the component subscribes
+    /// to its <see cref="SecurityPerformanceOverviewTabViewModel.StateChanged"/> event and calls
+    /// <see cref="SecurityPerformanceOverviewTabViewModel.LoadAsync"/> on parameter changes.
+    /// </summary>
+    [Parameter, EditorRequired] public SecurityPerformanceOverviewTabViewModel? ViewModel { get; set; }
 
-    /// <inheritdoc />
-    protected override Task OnInitializedAsync()
-    {
-        _vm = new SecurityPerformanceOverviewTabViewModel(Services);
-        _vm.StateChanged += VmOnStateChanged;
-        return Task.CompletedTask;
-    }
+    private SecurityPerformanceOverviewTabViewModel? _vm;
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
-        if (_vm == null)
+        if (_vm != ViewModel)
         {
-            return;
+            if (_vm != null)
+            {
+                _vm.StateChanged -= VmOnStateChanged;
+            }
+
+            _vm = ViewModel;
+
+            if (_vm != null)
+            {
+                _vm.StateChanged += VmOnStateChanged;
+            }
         }
 
-        await _vm.LoadAsync(SecurityId, CancellationToken.None);
+        if (_vm != null)
+        {
+            await _vm.LoadAsync(SecurityId, CancellationToken.None);
+        }
     }
 
     public void Dispose()
