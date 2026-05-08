@@ -42,6 +42,12 @@ public sealed class SetupReturnAnalysisViewModel : BaseViewModel
     /// <summary>Currently selected benchmark security id. Null means no benchmark.</summary>
     public Guid? SelectedBenchmarkSecurityId { get; set; }
 
+    /// <summary>Whether the Sharpe Ratio should be shown in analyses.</summary>
+    public bool ShowSharpeRatio { get; set; }
+
+    /// <summary>Risk-free rate used for return calculations (decimal, e.g. 0.04 = 4%). Must be >= 0.</summary>
+    public decimal RiskFreeRate { get; set; }
+
     /// <summary>
     /// Loads available securities and the current benchmark settings in parallel.
     /// </summary>
@@ -65,6 +71,8 @@ public sealed class SetupReturnAnalysisViewModel : BaseViewModel
             AvailableSecurities = securitiesTask.Result;
             _currentSettings = settingsTask.Result;
             SelectedBenchmarkSecurityId = _currentSettings?.BenchmarkSecurityId;
+            ShowSharpeRatio = _currentSettings?.ShowSharpeRatio ?? false;
+            RiskFreeRate = _currentSettings?.RiskFreeRate ?? 0m;
         }
         catch (Exception ex)
         {
@@ -83,7 +91,7 @@ public sealed class SetupReturnAnalysisViewModel : BaseViewModel
     /// <param name="ct">Cancellation token.</param>
     public async Task SaveAsync(CancellationToken ct = default)
     {
-        _logger.LogInformation("Saving benchmark settings, BenchmarkSecurityId={BenchmarkSecurityId}", SelectedBenchmarkSecurityId);
+        _logger.LogInformation("Saving return analysis settings: BenchmarkSecurityId={BenchmarkSecurityId}, ShowSharpeRatio={ShowSharpeRatio}, RiskFreeRate={RiskFreeRate}", SelectedBenchmarkSecurityId, ShowSharpeRatio, RiskFreeRate);
 
         Saving = true;
         SavedOk = false;
@@ -92,10 +100,19 @@ public sealed class SetupReturnAnalysisViewModel : BaseViewModel
 
         try
         {
+            // Validation: risk-free rate must be non-negative
+            if (RiskFreeRate < 0m)
+            {
+                SaveError = "RiskFreeRate must be >= 0.";
+                Saving = false;
+                RaiseStateChanged();
+                return;
+            }
+
             var req = new ReturnAnalysisSettingsUpdateRequest(
                 SelectedBenchmarkSecurityId,
-                _currentSettings?.ShowSharpeRatio ?? false,
-                _currentSettings?.RiskFreeRate ?? 0m);
+                ShowSharpeRatio,
+                RiskFreeRate);
 
             var ok = await ApiClient.Securities_UpdateReturnAnalysisSettingsAsync(req, ct);
 
@@ -104,8 +121,8 @@ public sealed class SetupReturnAnalysisViewModel : BaseViewModel
                 _currentSettings = new ReturnAnalysisSettingsResponse(
                     SelectedBenchmarkSecurityId,
                     AvailableSecurities.FirstOrDefault(s => s.Id == SelectedBenchmarkSecurityId)?.Name,
-                    _currentSettings?.ShowSharpeRatio ?? false,
-                    _currentSettings?.RiskFreeRate ?? 0m);
+                    ShowSharpeRatio,
+                    RiskFreeRate);
                 SavedOk = true;
             }
             else

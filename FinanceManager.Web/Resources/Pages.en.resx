@@ -1764,4 +1764,13 @@
   <data name="Validation_Valid" xml:space="preserve">
     <value>Alle entries are valid.</value>
   </data>
+  <data name="SetupReturnAnalysis_Label_ShowSharpeRatio" xml:space="preserve">
+    <value>Show Sharpe Ratio</value>
+  </data>
+  <data name="SetupReturnAnalysis_Label_RiskFreeRate" xml:space="preserve">
+    <value>Risk-free rate (e.g. 0.04 = 4%)</value>
+  </data>
+  <data name="SetupReturnAnalysis_Help_RiskFreeRate" xml:space="preserve">
+    <value>The risk-free rate used when calculating the Sharpe Ratio. Enter as decimal (e.g. 0.04 for 4%). Must be >= 0.</value>
+  </data>
 </root>

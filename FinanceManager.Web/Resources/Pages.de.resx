@@ -1797,4 +1797,13 @@
   <data name="Kpi_MonthlyBudget_Label_Expected" xml:space="preserve">
     <value>Erwartet</value>
   </data>
+  <data name="SetupReturnAnalysis_Label_ShowSharpeRatio" xml:space="preserve">
+    <value>Sharpe Ratio anzeigen</value>
+  </data>
+  <data name="SetupReturnAnalysis_Label_RiskFreeRate" xml:space="preserve">
+    <value>Risikofreier Zinssatz (z.B. 0.04 = 4%)</value>
+  </data>
+  <data name="SetupReturnAnalysis_Help_RiskFreeRate" xml:space="preserve">
+    <value>Der risikofreie Zinssatz, der zur Berechnung der Sharpe Ratio verwendet wird. Als Dezimalzahl eingeben (z.B. 0.04 für 4%). Muss >= 0 sein.</value>
+  </data>
 </root>

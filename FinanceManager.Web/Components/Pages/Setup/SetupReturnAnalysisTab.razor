@@ -32,6 +32,17 @@
                     }
                 </select>
             </div>
+
+            <div class="form-row">
+                <label for="show-sharpe">@Localizer["SetupReturnAnalysis_Label_ShowSharpeRatio"]</label>
+                <input id="show-sharpe" type="checkbox" @bind="_vm.ShowSharpeRatio" />
+            </div>
+
+            <div class="form-row">
+                <label for="risk-free">@Localizer["SetupReturnAnalysis_Label_RiskFreeRate"]</label>
+                <input id="risk-free" type="number" step="0.01" min="0" @bind="_vm.RiskFreeRate" />
+                <div class="help-text">@Localizer["SetupReturnAnalysis_Help_RiskFreeRate"]</div>
+            </div>
         </div>
 
         <div style="margin-top:1rem;display:flex;gap:.5rem;align-items:center;">
