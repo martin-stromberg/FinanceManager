@@ -71,6 +71,24 @@ Technical guide for implementing API clients with best practices, error handling
 
 ---
 
+### Controller-spezifische Detaildokumente
+
+- [SecuritiesController.md](./SecuritiesController.md) - Securities-Endpunkte inkl. Analyse/Fix der `PriceProviderException`, sanitisiertem Logging ohne ApiKey-Leakage, Fehlerklassifikation (`INVALID_SYMBOL_OR_FUNCTION`, `RATE_LIMIT`, `TRANSIENT_NETWORK`, `UNKNOWN_PROVIDER_ERROR`) und Retry-Verhalten
+- [StatementDraftEntriesController.md](./StatementDraftEntriesController.md) - QuickEdit-Batch-Update für Statement-Draft-Entries
+- [HelpController.md](./HelpController.md) - Öffentliche Help-Endpunkte für HTML, Markdown und Search-Index
+
+---
+
+## 🔗 Feature-Querverweise (Security Price Error Handling)
+
+- API: [SecuritiesController.md](./SecuritiesController.md)
+- Flow: [../flows/security-price-worker.md](../flows/security-price-worker.md)
+- Business: [../business/features/F007-wertpapierpreise.md](../business/features/F007-wertpapierpreise.md)
+- Tests: [../../FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs](../../FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs)
+- Dokumentations-/Lifecycle-Report: [../documentation-plan.md](../documentation-plan.md)
+
+---
+
 ## 🚀 Quick Navigation by Task
 
 ### I need to...

@@ -19,7 +19,10 @@ public interface IPriceProvider
     /// </returns>
     /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the provided <paramref name="ct"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the provider is not properly configured (for example missing API key).</exception>
-    /// <exception cref="System.Net.Http.HttpRequestException">Thrown when underlying HTTP requests fail and are not considered transient (or after retries are exhausted).</exception>
-    /// <exception cref="RequestLimitExceededException">Thrown when the upstream provider signals a rate-limit condition and further requests must be stopped.</exception>
+    /// <exception cref="PriceProviderException">
+    /// Thrown when the upstream provider reports a classified error (for example invalid symbol/function, rate limit,
+    /// transient network exhaustion, or unknown provider response).
+    /// </exception>
+    /// <exception cref="System.Net.Http.HttpRequestException">Thrown when underlying HTTP requests fail unexpectedly.</exception>
     Task<IReadOnlyList<(DateTime date, decimal close)>> GetDailyPricesAsync(string symbol, DateTime startDateExclusive, DateTime endDateInclusive, CancellationToken ct);
 }

@@ -44,6 +44,7 @@ This document provides a high-level description of the main functional areas of 
 - Import & classification internals: `docs/flows/import-classification.md`
 - Posting aggregates & reporting: `docs/flows/posting-aggregates.md`
 - Split / UploadGroup handling: `docs/flows/split-uploadgroup.md`
+- Security price worker & provider error handling: `docs/flows/security-price-worker.md`
 - Savings plans (detailed rules): `docs/business/savings-plans.md`
 - Security processing rules: `docs/business/security-processing.md`
  - Budget planning: `docs/business/budget-planning.md`

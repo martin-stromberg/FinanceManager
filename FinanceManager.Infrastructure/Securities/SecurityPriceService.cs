@@ -103,18 +103,20 @@ public class SecurityPriceService : ISecurityPriceService
     /// </summary>
     /// <param name="ownerUserId">The owner of the security.</param>
     /// <param name="securityId">The security identifier.</param>
-    /// <param name="message">A short error message to record. May be <c>null</c> or empty to clear the error.</param>
+    /// <param name="message">A short safe user-facing message to record. May be <c>null</c> or empty to clear the error.</param>
+    /// <param name="errorClass">Stable provider error class code.</param>
+    /// <param name="providerRawMessage">Optional internal provider details for diagnostics.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes when the operation has been applied.</returns>
     /// <exception cref="ArgumentException">Thrown when the security does not exist or is not owned by <paramref name="ownerUserId"/>.</exception>
-    public async Task SetPriceErrorAsync(Guid ownerUserId, Guid securityId, string message, CancellationToken ct)
+    public async Task SetPriceErrorAsync(Guid ownerUserId, Guid securityId, string message, string? errorClass, string? providerRawMessage, CancellationToken ct)
     {
         // ensure security belongs to user
         var entity = await _db.Securities.FirstOrDefaultAsync(s => s.Id == securityId && s.OwnerUserId == ownerUserId, ct);
         if (entity == null) throw new ArgumentException("Security not found or not owned by user");
 
-        // Domain method to set price error message on entity
-        entity.SetPriceError(message ?? string.Empty);
+        // Domain method to set classified price error message on entity
+        entity.SetPriceError(errorClass ?? "UNKNOWN_PROVIDER_ERROR", message ?? string.Empty, providerRawMessage);
         await _db.SaveChangesAsync(ct);
     }
 }

@@ -4315,6 +4315,21 @@
             A value indicating whether a pricing error has occurred for the current instance.
             </summary>
         </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityDto.PriceErrorClass">
+            <summary>
+            Stable provider error class code for the active price error (for example <c>INVALID_SYMBOL_OR_FUNCTION</c>).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityDto.PriceErrorMessage">
+            <summary>
+            Safe user-facing summary for the active price error.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityDto.PriceErrorSinceUtc">
+            <summary>
+            UTC timestamp since when the active price error exists.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType">
             <summary>
             Posting sub-types used for detailed security posting categorization.

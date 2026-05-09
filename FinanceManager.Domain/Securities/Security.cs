@@ -103,6 +103,16 @@ public sealed class Security: Entity
     public DateTime? PriceErrorSinceUtc { get; private set; }
 
     /// <summary>
+    /// Stable error class code for the active price error (for example <c>INVALID_SYMBOL_OR_FUNCTION</c>).
+    /// </summary>
+    public string? PriceErrorClass { get; private set; }
+
+    /// <summary>
+    /// Optional internal provider raw message for diagnostics. Must not be displayed as-is to end users.
+    /// </summary>
+    public string? PriceErrorProviderMessage { get; private set; }
+
+    /// <summary>
     /// Optional reference to a symbol attachment.
     /// </summary>
     /// <value>Attachment GUID or <c>null</c>.</value>
@@ -151,6 +161,23 @@ public sealed class Security: Entity
         HasPriceError = true;
         PriceErrorMessage = string.IsNullOrWhiteSpace(message) ? "Unknown error" : message;
         PriceErrorSinceUtc = DateTime.UtcNow;
+        PriceErrorClass = "UNKNOWN_PROVIDER_ERROR";
+        PriceErrorProviderMessage = null;
+    }
+
+    /// <summary>
+    /// Marks the security as having a classified price-fetch error and records safe user message plus internal provider details.
+    /// </summary>
+    /// <param name="errorClass">Stable provider error class code.</param>
+    /// <param name="userMessage">Safe user-facing summary.</param>
+    /// <param name="providerRawMessage">Internal provider details for diagnostics.</param>
+    public void SetPriceError(string errorClass, string userMessage, string? providerRawMessage)
+    {
+        HasPriceError = true;
+        PriceErrorClass = string.IsNullOrWhiteSpace(errorClass) ? "UNKNOWN_PROVIDER_ERROR" : errorClass.Trim();
+        PriceErrorMessage = string.IsNullOrWhiteSpace(userMessage) ? "Unknown error" : userMessage.Trim();
+        PriceErrorProviderMessage = string.IsNullOrWhiteSpace(providerRawMessage) ? null : providerRawMessage.Trim();
+        PriceErrorSinceUtc = DateTime.UtcNow;
     }
 
     /// <summary>
@@ -161,6 +188,8 @@ public sealed class Security: Entity
         HasPriceError = false;
         PriceErrorMessage = null;
         PriceErrorSinceUtc = null;
+        PriceErrorClass = null;
+        PriceErrorProviderMessage = null;
     }
 
     /// <summary>

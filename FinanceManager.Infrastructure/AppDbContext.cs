@@ -254,6 +254,9 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.Identifier).HasMaxLength(50).IsRequired();
             b.Property(x => x.CurrencyCode).HasMaxLength(10).IsRequired();
             b.Property(x => x.AlphaVantageCode).HasMaxLength(50);
+            b.Property(x => x.PriceErrorClass).HasMaxLength(64);
+            b.Property(x => x.PriceErrorMessage).HasMaxLength(500);
+            b.Property(x => x.PriceErrorProviderMessage).HasMaxLength(2000);
             b.HasOne<SecurityCategory>()
                 .WithMany()
                 .HasForeignKey(x => x.CategoryId)

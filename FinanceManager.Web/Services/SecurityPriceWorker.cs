@@ -39,8 +39,8 @@ public sealed class SecurityPriceWorker : BackgroundService
     /// <param name="stoppingToken">Token used to indicate service shutdown.</param>
     /// <returns>A task that completes when the background service stops.</returns>
     /// <remarks>
-    /// Exceptions during a single run are logged. When a <see cref="RequestLimitExceededException"/> occurs it is
-    /// logged as a warning; other exceptions are logged as errors. After each run the worker pauses for one hour.
+    /// Exceptions during a single run are logged. Classified provider failures are handled inside the run;
+    /// unhandled exceptions are logged as errors. After each run the worker pauses for one hour.
     /// </remarks>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -49,10 +49,6 @@ public sealed class SecurityPriceWorker : BackgroundService
             try
             {
                 await RunOnceAsync(stoppingToken);
-            }
-            catch (RequestLimitExceededException ex)
-            {
-                _logger.LogWarning(ex, "AlphaVantage limit exceeded. Pausing worker run.");
             }
             catch (Exception ex)
             {
@@ -86,6 +82,7 @@ public sealed class SecurityPriceWorker : BackgroundService
     /// </remarks>
     private async Task RunOnceAsync(CancellationToken ct)
     {
+        var runId = Guid.NewGuid();
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var prices = scope.ServiceProvider.GetRequiredService<IPriceProvider>();
@@ -167,24 +164,38 @@ public sealed class SecurityPriceWorker : BackgroundService
                 await db.SaveChangesAsync(ct);
                 processed++;
             }
-            catch (RequestLimitExceededException ex)
+            catch (PriceProviderException ex)
             {
-                _logger.LogWarning(ex, "AlphaVantage rate limit reached while processing {Code}. Stopping this run.", sec.AlphaVantageCode);
-                break; // stop run on rate limit
-            }
-            catch (InvalidOperationException ex)
-            {
-                // Domain error (e.g. invalid symbol): mark security as errored and notify user
-                _logger.LogWarning(ex, "Blocking further price fetches for security {SecurityId} ({Code}) due to error.", sec.Id, sec.AlphaVantageCode);
+                var errorClassCode = ex.ErrorClassCode;
+                _logger.LogWarning(
+                    ex,
+                    "Security price fetch failed. RunId={RunId} SecurityId={SecurityId} OwnerUserId={OwnerUserId} Symbol={Symbol} ErrorClass={ErrorClass}",
+                    runId,
+                    sec.Id,
+                    sec.OwnerUserId,
+                    sec.AlphaVantageCode,
+                    errorClassCode);
+
+                if (ex.ErrorClass == PriceProviderErrorClass.RateLimit)
+                {
+                    _logger.LogWarning("SecurityPriceWorker stopping run due to provider rate limit. RunId={RunId}", runId);
+                    break;
+                }
+
+                if (ex.ErrorClass == PriceProviderErrorClass.TransientNetwork)
+                {
+                    continue;
+                }
 
                 var entity = await db.Securities.FirstOrDefaultAsync(s => s.Id == sec.Id, ct);
                 if (entity != null)
                 {
-                    entity.SetPriceError(ex.Message);
+                    var userMessage = BuildUserNotificationMessage(ex.ErrorClass, sec.Name, sec.Identifier, DateTime.UtcNow);
+                    entity.SetPriceError(errorClassCode, userMessage, SanitizeProviderRawMessage(ex.ProviderRawMessage));
                     await db.SaveChangesAsync(ct);
 
                     var title = "Kursabruf fehlgeschlagen";
-                    var msg = $"Für '{sec.Name}' ({sec.Identifier}) ist beim Kursabruf ein Fehler aufgetreten: {ex.Message}\nWeitere Abrufe wurden gestoppt, bis du den Hinweis bestätigst.";
+                    var msg = userMessage;
                     var trigger = $"security:error:{sec.Id}";
                     await notifier.CreateForUserAsync(sec.OwnerUserId, title, msg, NotificationType.SystemAlert, NotificationTarget.HomePage, DateTime.UtcNow.Date, trigger, ct);
                 }
@@ -192,7 +203,7 @@ public sealed class SecurityPriceWorker : BackgroundService
             catch (Exception ex)
             {
                 // Unexpected error: log but don't mark security as errored (may be transient)
-                _logger.LogError(ex, "Failed to update prices for security {SecurityId} ({Code})", sec.Id, sec.AlphaVantageCode);
+                _logger.LogError(ex, "Failed to update prices for security {SecurityId} ({Code}) in run {RunId}", sec.Id, sec.AlphaVantageCode, runId);
             }
 
             if (delayPerRequest > TimeSpan.Zero)
@@ -203,5 +214,34 @@ public sealed class SecurityPriceWorker : BackgroundService
 
         _logger.LogInformation("SecurityPriceWorker: Processed {Processed} securities, inserted {Inserted} prices (limit {Limit}, rpm {Rpm}).",
             processed, inserted, maxSymbols, rpm);
+    }
+
+    private static string BuildUserNotificationMessage(PriceProviderErrorClass errorClass, string securityName, string securityIdentifier, DateTime occurredUtc)
+    {
+        var occurredText = occurredUtc.ToString("yyyy-MM-dd HH:mm 'UTC'");
+        return errorClass switch
+        {
+            PriceProviderErrorClass.InvalidSymbolOrFunction =>
+                $"Für '{securityName}' ({securityIdentifier}) konnte kein Kurs geladen werden ({occurredText}). Bitte Symbol prüfen, speichern und anschließend den Abruf erneut starten.",
+            PriceProviderErrorClass.UnknownProviderError =>
+                $"Für '{securityName}' ({securityIdentifier}) ist beim Kursabruf ein externer Fehler aufgetreten ({occurredText}). Bitte Hinweis bestätigen und den Abruf später erneut starten.",
+            _ =>
+                $"Für '{securityName}' ({securityIdentifier}) ist beim Kursabruf ein Fehler aufgetreten ({occurredText})."
+        };
+    }
+
+    private static string? SanitizeProviderRawMessage(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var filtered = new string(value.Where(ch => !char.IsControl(ch) || ch is '\n' or '\r' or '\t').ToArray()).Trim();
+        if (filtered.Length == 0)
+        {
+            return null;
+        }
+        return filtered.Length <= 2000 ? filtered : filtered[..2000];
     }
 }

@@ -1,5 +1,6 @@
-using FinanceManager.Application;
 using System.Net;
+using FinanceManager.Application;
+using Microsoft.Extensions.Logging;
 
 namespace FinanceManager.Web.Services;
 
@@ -13,6 +14,7 @@ public sealed class AlphaVantagePriceProvider : IPriceProvider
     private readonly IAlphaVantageKeyResolver _keys;
     private readonly ICurrentUserService _current;
     private readonly IHttpClientFactory _httpFactory;
+    private readonly ILogger<AlphaVantage> _alphaVantageLogger;
 
     /// <summary>
     /// Initializes a new instance of <see cref="AlphaVantagePriceProvider"/>.
@@ -20,11 +22,17 @@ public sealed class AlphaVantagePriceProvider : IPriceProvider
     /// <param name="keys">Resolver used to obtain per-user or shared AlphaVantage API keys.</param>
     /// <param name="current">Service that provides current user context.</param>
     /// <param name="httpFactory">Http client factory used to create clients configured for AlphaVantage.</param>
-    public AlphaVantagePriceProvider(IAlphaVantageKeyResolver keys, ICurrentUserService current, IHttpClientFactory httpFactory)
+    /// <param name="alphaVantageLogger">Logger passed to the underlying <see cref="AlphaVantage"/> client.</param>
+    public AlphaVantagePriceProvider(
+        IAlphaVantageKeyResolver keys,
+        ICurrentUserService current,
+        IHttpClientFactory httpFactory,
+        ILogger<AlphaVantage> alphaVantageLogger)
     {
         _keys = keys;
         _current = current;
         _httpFactory = httpFactory;
+        _alphaVantageLogger = alphaVantageLogger;
     }
 
     /// <summary>
@@ -38,11 +46,10 @@ public sealed class AlphaVantagePriceProvider : IPriceProvider
     /// A read-only list of tuples containing the date and the closing price for that date, ordered by date ascending.
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown when no AlphaVantage API key is configured (neither per-user nor shared).</exception>
-    /// <exception cref="RequestLimitExceededException">Thrown when AlphaVantage indicates the client should stop further requests due to rate limits.</exception>
-    /// <exception cref="HttpRequestException">Thrown when underlying HTTP requests fail and are not considered transient (or after retries fail).</exception>
+    /// <exception cref="PriceProviderException">Thrown when AlphaVantage returns a classified provider error.</exception>
     public async Task<IReadOnlyList<(DateTime date, decimal close)>> GetDailyPricesAsync(string symbol, DateTime startDateExclusive, DateTime endDateInclusive, CancellationToken ct)
     {
-        // Benutzer-Schlüssel bevorzugen; Fallback auf freigegebenen Admin-Schlüssel
+        // Benutzer-Schlï¿½ssel bevorzugen; Fallback auf freigegebenen Admin-Schlï¿½ssel
         var apiKey = _current.IsAuthenticated
             ? await _keys.GetForUserAsync(_current.UserId, ct)
             : await _keys.GetSharedAsync(ct);
@@ -53,14 +60,33 @@ public sealed class AlphaVantagePriceProvider : IPriceProvider
         }
 
         var http = _httpFactory.CreateClient("AlphaVantage");
-        var api = new AlphaVantage(http, apiKey);
+        var api = new AlphaVantage(http, apiKey, _alphaVantageLogger);
 
-        // Resilienz: Retry bei transienten HTTP-Fehlern, kein Retry bei Rate-Limit (RequestLimitExceededException) / 429
-        var series = await ExecuteWithRetryAsync(
-            async () => await api.GetTimeSeriesDailyAsync(symbol, ct),
-            maxRetries: 3,
-            initialDelayMs: 400,
-            ct);
+        // Resilienz: Retry bei transienten HTTP-Fehlern, kein Retry bei klassifiziertem Rate-Limit / 429
+        AlphaVantage.TimeSeriesDaily? series;
+        try
+        {
+            series = await ExecuteWithRetryAsync(
+                async () => await api.GetTimeSeriesDailyAsync(symbol, ct),
+                maxRetries: 3,
+                initialDelayMs: 400,
+                ct);
+        }
+        catch (PriceProviderException)
+        {
+            throw;
+        }
+        catch (HttpRequestException ex)
+        {
+            var errorClass = ex.StatusCode == HttpStatusCode.TooManyRequests
+                ? PriceProviderErrorClass.RateLimit
+                : PriceProviderErrorClass.TransientNetwork;
+            throw new PriceProviderException(errorClass, ex.Message, "Price provider request failed after retries.", ex);
+        }
+        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            throw new PriceProviderException(PriceProviderErrorClass.TransientNetwork, ex.Message, "Price provider request timed out after retries.", ex);
+        }
 
         if (series is null) { return Array.Empty<(DateTime, decimal)>(); }
 
@@ -76,7 +102,7 @@ public sealed class AlphaVantagePriceProvider : IPriceProvider
 
     /// <summary>
     /// Executes an asynchronous operation with simple retry semantics for transient network errors.
-    /// This helper will not retry when a <see cref="RequestLimitExceededException"/> is thrown by the operation.
+    /// This helper will not retry when a classified non-transient provider error is thrown by the operation.
     /// </summary>
     /// <typeparam name="T">Return type of the operation.</typeparam>
     /// <param name="operation">Asynchronous operation to execute.</param>
@@ -84,7 +110,7 @@ public sealed class AlphaVantagePriceProvider : IPriceProvider
     /// <param name="initialDelayMs">Initial backoff delay in milliseconds that will be multiplied by two on each retry.</param>
     /// <param name="ct">Cancellation token used to cancel delays and the operation.</param>
     /// <returns>The operation result when successful.</returns>
-    /// <exception cref="RequestLimitExceededException">Thrown when the underlying operation indicates a rate-limit condition; not retried.</exception>
+    /// <exception cref="PriceProviderException">Thrown when the underlying operation indicates a classified non-transient provider error; not retried.</exception>
     /// <exception cref="HttpRequestException">Thrown when a non-transient HTTP error occurs or retries are exhausted.</exception>
     /// <exception cref="TaskCanceledException">Thrown when cancellation or timeouts occur and retries are exhausted.</exception>
     private static async Task<T?> ExecuteWithRetryAsync<T>(Func<Task<T?>> operation, int maxRetries, int initialDelayMs, CancellationToken ct)
@@ -98,9 +124,17 @@ public sealed class AlphaVantagePriceProvider : IPriceProvider
             {
                 return await operation();
             }
-            catch (RequestLimitExceededException)
+            catch (PriceProviderException ex) when (ex.ErrorClass == PriceProviderErrorClass.TransientNetwork)
             {
-                // AlphaVantage eigenes Rate-Limit-Signal -> kein Retry, sofort weiterwerfen
+                attempt++;
+                if (attempt > maxRetries) { throw; }
+                var jitter = Random.Shared.Next(0, 150);
+                await Task.Delay(delayMs + jitter, ct);
+                delayMs *= 2;
+                continue;
+            }
+            catch (PriceProviderException ex) when (ex.ErrorClass != PriceProviderErrorClass.TransientNetwork)
+            {
                 throw;
             }
             catch (HttpRequestException ex) when (IsTransient(ex))

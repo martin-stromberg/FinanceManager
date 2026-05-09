@@ -207,7 +207,10 @@ public sealed class SecurityService : ISecurityService
             CreatedUtc = s.CreatedUtc,
             ArchivedUtc = s.ArchivedUtc,
             SymbolAttachmentId = s.SymbolAttachmentId,
-            HasPriceError = s.HasPriceError
+            HasPriceError = s.HasPriceError,
+            PriceErrorClass = s.PriceErrorClass,
+            PriceErrorMessage = s.PriceErrorMessage,
+            PriceErrorSinceUtc = s.PriceErrorSinceUtc
         };
     }
 }

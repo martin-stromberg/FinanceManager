@@ -1649,14 +1649,16 @@
             <param name="ct">Cancellation token used to cancel the operation.</param>
             <returns>A task that returns the date of the latest stored price, or <c>null</c> when no price exists.</returns>
         </member>
-        <member name="M:FinanceManager.Application.Securities.ISecurityPriceService.SetPriceErrorAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Application.Securities.ISecurityPriceService.SetPriceErrorAsync(System.Guid,System.Guid,System.String,System.String,System.String,System.Threading.CancellationToken)">
             <summary>
             Sets a price error message on the specified security. This is used to mark a security
             as having an error when price lookups fail (for example invalid external symbol).
             </summary>
             <param name="ownerUserId">The owner of the security.</param>
             <param name="securityId">The security identifier.</param>
-            <param name="message">A short error message to record.</param>
+            <param name="message">A short safe user-facing message to record.</param>
+            <param name="errorClass">Stable provider error class code.</param>
+            <param name="providerRawMessage">Optional internal provider details for diagnostics.</param>
             <param name="ct">Cancellation token.</param>
             <returns>A task that completes when the operation has been applied.</returns>
         </member>

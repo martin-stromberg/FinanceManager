@@ -37,4 +37,19 @@ public sealed class SecurityDto
     /// A value indicating whether a pricing error has occurred for the current instance.
     /// </summary>
     public bool HasPriceError { get; set; }
+
+    /// <summary>
+    /// Stable provider error class code for the active price error (for example <c>INVALID_SYMBOL_OR_FUNCTION</c>).
+    /// </summary>
+    public string? PriceErrorClass { get; set; }
+
+    /// <summary>
+    /// Safe user-facing summary for the active price error.
+    /// </summary>
+    public string? PriceErrorMessage { get; set; }
+
+    /// <summary>
+    /// UTC timestamp since when the active price error exists.
+    /// </summary>
+    public DateTime? PriceErrorSinceUtc { get; set; }
 }

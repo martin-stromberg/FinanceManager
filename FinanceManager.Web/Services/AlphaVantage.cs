@@ -1,5 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Diagnostics;
+using System.Net;
+using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Web.Services;
 
@@ -9,8 +14,10 @@ namespace FinanceManager.Web.Services;
 /// </summary>
 public sealed class AlphaVantage
 {
+    private static readonly Regex ApiKeyRegex = new("(?i)(apikey=)[^&\\s]+", RegexOptions.Compiled);
     private readonly HttpClient _http;
     private readonly string _apiKey;
+    private readonly ILogger<AlphaVantage> _logger;
     private DateTime _skipRequestsUntilUtc = DateTime.MinValue;
 
     /// <summary>
@@ -19,10 +26,11 @@ public sealed class AlphaVantage
     /// <param name="http">An <see cref="HttpClient"/> used to perform requests. Must not be <c>null</c>.</param>
     /// <param name="apiKey">AlphaVantage API key. When empty or null some operations will throw <see cref="ArgumentException"/>.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="http"/> is <c>null</c>.</exception>
-    public AlphaVantage(HttpClient http, string apiKey)
+    public AlphaVantage(HttpClient http, string apiKey, ILogger<AlphaVantage>? logger = null)
     {
         _http = http ?? throw new ArgumentNullException(nameof(http));
         _apiKey = apiKey;
+        _logger = logger ?? NullLogger<AlphaVantage>.Instance;
         if (_http.BaseAddress is null)
         {
             _http.BaseAddress = new Uri("https://www.alphavantage.co/");
@@ -47,53 +55,268 @@ public sealed class AlphaVantage
     /// if the response did not contain a valid time series.
     /// </returns>
     /// <exception cref="ArgumentException">Thrown when the configured API key or <paramref name="symbol"/> is missing/invalid.</exception>
-    /// <exception cref="RequestLimitExceededException">Thrown when AlphaVantage returned a rate-limit notice and requests are blocked temporarily.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when AlphaVantage reports an error message for the request (for example invalid symbol).</exception>
-    /// <exception cref="HttpRequestException">Thrown when the underlying HTTP request failed.</exception>
-    /// <exception cref="JsonException">Thrown when the JSON response cannot be parsed into the expected model.</exception>
+    /// <exception cref="PriceProviderException">Thrown when AlphaVantage returns a classified provider error response.</exception>
     public async Task<TimeSeriesDaily?> GetTimeSeriesDailyAsync(string symbol, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(_apiKey)) { throw new ArgumentException("API key required", nameof(_apiKey)); }
         if (string.IsNullOrWhiteSpace(symbol)) { throw new ArgumentException("symbol required", nameof(symbol)); }
+
+        var providerCorrelationId = Guid.NewGuid().ToString("N");
+        var requestPath = $"query?function=TIME_SERIES_DAILY&symbol={Uri.EscapeDataString(symbol)}&outputsize=compact&apikey={_apiKey}";
+        var sanitizedRequestPath = SanitizeForLog(requestPath);
+        var traceId = Activity.Current?.TraceId.ToString();
+        var stopwatch = Stopwatch.StartNew();
+        _logger.LogInformation(
+            "AlphaVantage request started. Provider={Provider} Function={Function} Symbol={Symbol} CorrelationId={CorrelationId} TraceId={TraceId} Url={Url}",
+            "AlphaVantage",
+            "TIME_SERIES_DAILY",
+            symbol,
+            providerCorrelationId,
+            traceId,
+            sanitizedRequestPath);
+
         if (LimitExceeded)
         {
-            throw new RequestLimitExceededException($"AlphaVantage limit exceeded. Next attempt after {_skipRequestsUntilUtc:u}.");
+            _logger.LogWarning(
+                "AlphaVantage request skipped due to active rate limit. Symbol={Symbol} CorrelationId={CorrelationId} SkipUntilUtc={SkipUntilUtc}",
+                symbol,
+                providerCorrelationId,
+                _skipRequestsUntilUtc);
+            throw new PriceProviderException(
+                PriceProviderErrorClass.RateLimit,
+                $"AlphaVantage limit exceeded. Next attempt after {_skipRequestsUntilUtc:u}.",
+                "Price provider rate limit is currently active.");
         }
 
-        var url = $"query?function=TIME_SERIES_DAILY&symbol={Uri.EscapeDataString(symbol)}&outputsize=full&apikey={_apiKey}";
-        using var resp = await _http.GetAsync(url, ct);
-        resp.EnsureSuccessStatusCode();
-        await using var stream = await resp.Content.ReadAsStreamAsync(ct);
+        try
+        {
+            using var resp = await _http.GetAsync(requestPath, ct);
+            _logger.LogInformation(
+                "AlphaVantage response received. Symbol={Symbol} CorrelationId={CorrelationId} StatusCode={StatusCode} DurationMs={DurationMs}",
+                symbol,
+                providerCorrelationId,
+                (int)resp.StatusCode,
+                stopwatch.ElapsedMilliseconds);
+            var responseBody = await resp.Content.ReadAsStringAsync(ct);
 
-        using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
-        var root = doc.RootElement;
-        if (root.TryGetProperty("Note", out var noteEl))
-        {
-            var note = noteEl.GetString() ?? "Rate limit reached";
-            // Conservative: block until start of next UTC day
-            _skipRequestsUntilUtc = DateTime.UtcNow.Date.AddDays(1);
-            throw new RequestLimitExceededException(note);
+            if (!resp.IsSuccessStatusCode)
+            {
+                var (errorClass, responseKind, providerMessage) = ClassifyNonSuccessResponse(resp.StatusCode, responseBody);
+                if (errorClass == PriceProviderErrorClass.RateLimit)
+                {
+                    _skipRequestsUntilUtc = DateTime.UtcNow.Date.AddDays(1);
+                }
+
+                _logger.LogWarning(
+                    "AlphaVantage response classified as HTTP provider error. Symbol={Symbol} CorrelationId={CorrelationId} ErrorClass={ErrorClass} ResponseKind={ResponseKind} StatusCode={StatusCode} DurationMs={DurationMs} Detail={Detail}",
+                    symbol,
+                    providerCorrelationId,
+                    errorClass.ToCode(),
+                    responseKind,
+                    (int)resp.StatusCode,
+                    stopwatch.ElapsedMilliseconds,
+                    providerMessage);
+
+                throw new PriceProviderException(errorClass, providerMessage, "Price provider request failed.");
+            }
+
+            using var doc = JsonDocument.Parse(responseBody);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("Note", out var noteEl))
+            {
+                var note = noteEl.GetString() ?? "Rate limit reached";
+                // Conservative: block until start of next UTC day
+                _skipRequestsUntilUtc = DateTime.UtcNow.Date.AddDays(1);
+                _logger.LogWarning(
+                    "AlphaVantage response classified as rate limit. Symbol={Symbol} CorrelationId={CorrelationId} ErrorClass={ErrorClass} ResponseKind={ResponseKind} DurationMs={DurationMs} Detail={Detail}",
+                    symbol,
+                    providerCorrelationId,
+                    PriceProviderErrorClass.RateLimit.ToCode(),
+                    "Note",
+                     stopwatch.ElapsedMilliseconds,
+                     SanitizeForLog(note));
+                throw new PriceProviderException(PriceProviderErrorClass.RateLimit, SanitizeForLog(note), "Price provider returned a rate-limit response.");
+            }
+            if (root.TryGetProperty("Information", out var infoEl))
+            {
+                var info = infoEl.GetString() ?? "Request information";
+                _skipRequestsUntilUtc = DateTime.UtcNow.Date.AddDays(1);
+                _logger.LogWarning(
+                    "AlphaVantage response classified as rate limit. Symbol={Symbol} CorrelationId={CorrelationId} ErrorClass={ErrorClass} ResponseKind={ResponseKind} DurationMs={DurationMs} Detail={Detail}",
+                    symbol,
+                    providerCorrelationId,
+                    PriceProviderErrorClass.RateLimit.ToCode(),
+                    "Information",
+                     stopwatch.ElapsedMilliseconds,
+                     SanitizeForLog(info));
+                throw new PriceProviderException(PriceProviderErrorClass.RateLimit, SanitizeForLog(info), "Price provider returned an informational rate-limit response.");
+            }
+            if (root.TryGetProperty("Error Message", out var errEl))
+            {
+                var msg = errEl.GetString() ?? "Unknown AlphaVantage error";
+                var errorClass = IsInvalidSymbolOrFunction(msg)
+                    ? PriceProviderErrorClass.InvalidSymbolOrFunction
+                    : PriceProviderErrorClass.UnknownProviderError;
+                _logger.LogWarning(
+                    "AlphaVantage response classified as provider error. Symbol={Symbol} CorrelationId={CorrelationId} ErrorClass={ErrorClass} ResponseKind={ResponseKind} DurationMs={DurationMs} Detail={Detail}",
+                    symbol,
+                    providerCorrelationId,
+                    errorClass.ToCode(),
+                     "ErrorMessage",
+                     stopwatch.ElapsedMilliseconds,
+                     SanitizeForLog(msg));
+
+                throw new PriceProviderException(errorClass, SanitizeForLog(msg), "Price provider returned an error response.");
+            }
+
+            // Rewind by re-serializing to our model
+            var json = JsonSerializer.Deserialize<TimeSeriesDailyResponse>(root.GetRawText(), JsonOptions);
+            if (json is null || json.TimeSeries is null)
+            {
+                var payloadPreview = SanitizeForLog(root.GetRawText());
+                _logger.LogWarning(
+                    "AlphaVantage response classified as unexpected payload. Symbol={Symbol} CorrelationId={CorrelationId} ResponseKind={ResponseKind} DurationMs={DurationMs} PayloadPreview={PayloadPreview}",
+                    symbol,
+                    providerCorrelationId,
+                    "UnexpectedPayload",
+                    stopwatch.ElapsedMilliseconds,
+                    payloadPreview);
+                throw new PriceProviderException(
+                    PriceProviderErrorClass.UnknownProviderError,
+                    payloadPreview,
+                    "Price provider returned an unexpected payload.");
+            }
+
+            _logger.LogInformation(
+                "AlphaVantage request succeeded. Symbol={Symbol} CorrelationId={CorrelationId} Bars={Bars} DurationMs={DurationMs}",
+                symbol,
+                providerCorrelationId,
+                json.TimeSeries.Count,
+                stopwatch.ElapsedMilliseconds);
+            return new TimeSeriesDaily(json.TimeSeries);
         }
-        if (root.TryGetProperty("Information", out var infoEl))
+        catch (PriceProviderException)
         {
-            var info = infoEl.GetString() ?? "Request information";
-            _skipRequestsUntilUtc = DateTime.UtcNow.Date.AddDays(1);
-            throw new RequestLimitExceededException(info);
+            throw;
         }
-        if (root.TryGetProperty("Error Message", out var errEl))
+        catch (HttpRequestException ex)
         {
-            // Invalid symbol or other error
-            var msg = errEl.GetString() ?? "Unknown AlphaVantage error";
-            throw new InvalidOperationException(msg);
+            var errorClass = ClassifyHttpTransportError(ex.StatusCode);
+            if (errorClass == PriceProviderErrorClass.RateLimit)
+            {
+                _skipRequestsUntilUtc = DateTime.UtcNow.Date.AddDays(1);
+            }
+
+            _logger.LogWarning(
+                ex,
+                "AlphaVantage request failed with transport error. Symbol={Symbol} CorrelationId={CorrelationId} ErrorClass={ErrorClass} ResponseKind={ResponseKind} DurationMs={DurationMs} StatusCode={StatusCode} Error={Error}",
+                symbol,
+                providerCorrelationId,
+                errorClass.ToCode(),
+                "TransportException",
+                stopwatch.ElapsedMilliseconds,
+                ex.StatusCode,
+                SanitizeForLog(ex.Message));
+            throw new PriceProviderException(errorClass, SanitizeForLog(ex.Message), "Price provider request failed.", ex);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "AlphaVantage response parsing failed. Symbol={Symbol} CorrelationId={CorrelationId} ErrorClass={ErrorClass} ResponseKind={ResponseKind} DurationMs={DurationMs} Error={Error}",
+                symbol,
+                providerCorrelationId,
+                PriceProviderErrorClass.UnknownProviderError.ToCode(),
+                "MalformedJson",
+                stopwatch.ElapsedMilliseconds,
+                SanitizeForLog(ex.Message));
+            throw new PriceProviderException(
+                PriceProviderErrorClass.UnknownProviderError,
+                SanitizeForLog(ex.Message),
+                "Price provider returned an invalid JSON payload.",
+                ex);
+        }
+    }
+
+    private static bool IsInvalidSymbolOrFunction(string message)
+        => message.Contains("Invalid API call", StringComparison.OrdinalIgnoreCase)
+           && message.Contains("TIME_SERIES_DAILY", StringComparison.OrdinalIgnoreCase);
+
+    private static (PriceProviderErrorClass errorClass, string responseKind, string providerMessage) ClassifyNonSuccessResponse(HttpStatusCode statusCode, string responseBody)
+    {
+        var providerMessage = string.IsNullOrWhiteSpace(responseBody)
+            ? $"HTTP {(int)statusCode} {statusCode}"
+            : SanitizeForLog(responseBody);
+
+        if (statusCode == HttpStatusCode.TooManyRequests)
+        {
+            return (PriceProviderErrorClass.RateLimit, "Http429", providerMessage);
         }
 
-        // Rewind by re-serializing to our model
-        var json = JsonSerializer.Deserialize<TimeSeriesDailyResponse>(root.GetRawText(), JsonOptions);
-        if (json is null || json.TimeSeries is null)
+        if (!string.IsNullOrWhiteSpace(responseBody))
         {
-            return null;
+            try
+            {
+                using var doc = JsonDocument.Parse(responseBody);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("Note", out var noteEl))
+                {
+                    return (PriceProviderErrorClass.RateLimit, "Note", SanitizeForLog(noteEl.GetString() ?? providerMessage));
+                }
+
+                if (root.TryGetProperty("Information", out var infoEl))
+                {
+                    return (PriceProviderErrorClass.RateLimit, "Information", SanitizeForLog(infoEl.GetString() ?? providerMessage));
+                }
+
+                if (root.TryGetProperty("Error Message", out var errEl))
+                {
+                    var errorMessage = errEl.GetString() ?? providerMessage;
+                    var errorClass = IsInvalidSymbolOrFunction(errorMessage)
+                        ? PriceProviderErrorClass.InvalidSymbolOrFunction
+                        : PriceProviderErrorClass.UnknownProviderError;
+                    return (errorClass, "ErrorMessage", SanitizeForLog(errorMessage));
+                }
+            }
+            catch (JsonException)
+            {
+                // Keep status-code based fallback classification.
+            }
         }
-        return new TimeSeriesDaily(json.TimeSeries);
+
+        return IsTransientHttpStatus(statusCode)
+            ? (PriceProviderErrorClass.TransientNetwork, "HttpStatus", providerMessage)
+            : (PriceProviderErrorClass.UnknownProviderError, "HttpStatus", providerMessage);
+    }
+
+    private static PriceProviderErrorClass ClassifyHttpTransportError(HttpStatusCode? statusCode)
+        => statusCode switch
+        {
+            HttpStatusCode.TooManyRequests => PriceProviderErrorClass.RateLimit,
+            HttpStatusCode.RequestTimeout or HttpStatusCode.InternalServerError or HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout => PriceProviderErrorClass.TransientNetwork,
+            null => PriceProviderErrorClass.TransientNetwork,
+            _ when (int)statusCode.Value >= 500 => PriceProviderErrorClass.TransientNetwork,
+            _ => PriceProviderErrorClass.UnknownProviderError
+        };
+
+    private static bool IsTransientHttpStatus(HttpStatusCode statusCode)
+        => statusCode switch
+        {
+            HttpStatusCode.RequestTimeout or HttpStatusCode.InternalServerError or HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout => true,
+            _ when (int)statusCode >= 500 => true,
+            _ => false
+        };
+
+    private static string SanitizeForLog(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var sanitized = new string(value.Where(ch => !char.IsControl(ch) || ch is '\n' or '\r' or '\t').ToArray());
+        sanitized = ApiKeyRegex.Replace(sanitized, "$1***");
+        return sanitized.Length <= 500 ? sanitized : sanitized[..500];
     }
 
     /// <summary>
@@ -201,14 +424,3 @@ public sealed class AlphaVantage
     };
 }
 
-/// <summary>
-/// Exception thrown when AlphaVantage request limits were exceeded and the client is blocked from issuing further requests for a short period.
-/// </summary>
-public sealed class RequestLimitExceededException : ApplicationException
-{
-    /// <summary>
-    /// Initializes a new instance of <see cref="RequestLimitExceededException"/> with the specified message.
-    /// </summary>
-    /// <param name="message">Human readable description of the limit condition.</param>
-    public RequestLimitExceededException(string message) : base(message) { }
-}

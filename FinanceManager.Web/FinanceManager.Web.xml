@@ -2855,7 +2855,7 @@
             Encapsulates request throttling handling and returns strongly-typed time series data.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Services.AlphaVantage.#ctor(System.Net.Http.HttpClient,System.String)">
+        <member name="M:FinanceManager.Web.Services.AlphaVantage.#ctor(System.Net.Http.HttpClient,System.String,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Services.AlphaVantage})">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Services.AlphaVantage"/>.
             </summary>
@@ -2882,10 +2882,7 @@
             if the response did not contain a valid time series.
             </returns>
             <exception cref="T:System.ArgumentException">Thrown when the configured API key or <paramref name="symbol"/> is missing/invalid.</exception>
-            <exception cref="T:FinanceManager.Web.Services.RequestLimitExceededException">Thrown when AlphaVantage returned a rate-limit notice and requests are blocked temporarily.</exception>
-            <exception cref="T:System.InvalidOperationException">Thrown when AlphaVantage reports an error message for the request (for example invalid symbol).</exception>
-            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the underlying HTTP request failed.</exception>
-            <exception cref="T:System.Text.Json.JsonException">Thrown when the JSON response cannot be parsed into the expected model.</exception>
+            <exception cref="T:FinanceManager.Web.Services.PriceProviderException">Thrown when AlphaVantage returns a classified provider error response.</exception>
         </member>
         <member name="T:FinanceManager.Web.Services.AlphaVantage.TimeSeriesDaily">
             <summary>
@@ -2969,17 +2966,6 @@
             JSON serializer options used to parse AlphaVantage responses.
             </summary>
         </member>
-        <member name="T:FinanceManager.Web.Services.RequestLimitExceededException">
-            <summary>
-            Exception thrown when AlphaVantage request limits were exceeded and the client is blocked from issuing further requests for a short period.
-            </summary>
-        </member>
-        <member name="M:FinanceManager.Web.Services.RequestLimitExceededException.#ctor(System.String)">
-            <summary>
-            Initializes a new instance of <see cref="T:FinanceManager.Web.Services.RequestLimitExceededException"/> with the specified message.
-            </summary>
-            <param name="message">Human readable description of the limit condition.</param>
-        </member>
         <member name="T:FinanceManager.Web.Services.AlphaVantagePriceProvider">
             <summary>
             Price provider implementation that retrieves daily closing prices from the AlphaVantage API.
@@ -2987,13 +2973,14 @@
             queries the AlphaVantage time series endpoint and maps results to daily close values.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Services.AlphaVantagePriceProvider.#ctor(FinanceManager.Web.Services.IAlphaVantageKeyResolver,FinanceManager.Application.ICurrentUserService,System.Net.Http.IHttpClientFactory)">
+        <member name="M:FinanceManager.Web.Services.AlphaVantagePriceProvider.#ctor(FinanceManager.Web.Services.IAlphaVantageKeyResolver,FinanceManager.Application.ICurrentUserService,System.Net.Http.IHttpClientFactory,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Services.AlphaVantage})">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Services.AlphaVantagePriceProvider"/>.
             </summary>
             <param name="keys">Resolver used to obtain per-user or shared AlphaVantage API keys.</param>
             <param name="current">Service that provides current user context.</param>
             <param name="httpFactory">Http client factory used to create clients configured for AlphaVantage.</param>
+            <param name="alphaVantageLogger">Logger passed to the underlying <see cref="T:FinanceManager.Web.Services.AlphaVantage"/> client.</param>
         </member>
         <member name="M:FinanceManager.Web.Services.AlphaVantagePriceProvider.GetDailyPricesAsync(System.String,System.DateTime,System.DateTime,System.Threading.CancellationToken)">
             <summary>
@@ -3007,13 +2994,12 @@
             A read-only list of tuples containing the date and the closing price for that date, ordered by date ascending.
             </returns>
             <exception cref="T:System.InvalidOperationException">Thrown when no AlphaVantage API key is configured (neither per-user nor shared).</exception>
-            <exception cref="T:FinanceManager.Web.Services.RequestLimitExceededException">Thrown when AlphaVantage indicates the client should stop further requests due to rate limits.</exception>
-            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when underlying HTTP requests fail and are not considered transient (or after retries fail).</exception>
+            <exception cref="T:FinanceManager.Web.Services.PriceProviderException">Thrown when AlphaVantage returns a classified provider error.</exception>
         </member>
         <member name="M:FinanceManager.Web.Services.AlphaVantagePriceProvider.ExecuteWithRetryAsync``1(System.Func{System.Threading.Tasks.Task{``0}},System.Int32,System.Int32,System.Threading.CancellationToken)">
             <summary>
             Executes an asynchronous operation with simple retry semantics for transient network errors.
-            This helper will not retry when a <see cref="T:FinanceManager.Web.Services.RequestLimitExceededException"/> is thrown by the operation.
+            This helper will not retry when a classified non-transient provider error is thrown by the operation.
             </summary>
             <typeparam name="T">Return type of the operation.</typeparam>
             <param name="operation">Asynchronous operation to execute.</param>
@@ -3021,7 +3007,7 @@
             <param name="initialDelayMs">Initial backoff delay in milliseconds that will be multiplied by two on each retry.</param>
             <param name="ct">Cancellation token used to cancel delays and the operation.</param>
             <returns>The operation result when successful.</returns>
-            <exception cref="T:FinanceManager.Web.Services.RequestLimitExceededException">Thrown when the underlying operation indicates a rate-limit condition; not retried.</exception>
+            <exception cref="T:FinanceManager.Web.Services.PriceProviderException">Thrown when the underlying operation indicates a classified non-transient provider error; not retried.</exception>
             <exception cref="T:System.Net.Http.HttpRequestException">Thrown when a non-transient HTTP error occurs or retries are exhausted.</exception>
             <exception cref="T:System.Threading.Tasks.TaskCanceledException">Thrown when cancellation or timeouts occur and retries are exhausted.</exception>
         </member>
@@ -3365,8 +3351,11 @@
             </returns>
             <exception cref="T:System.OperationCanceledException">Thrown when the operation is cancelled via the provided <paramref name="ct"/>.</exception>
             <exception cref="T:System.InvalidOperationException">Thrown when the provider is not properly configured (for example missing API key).</exception>
-            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when underlying HTTP requests fail and are not considered transient (or after retries are exhausted).</exception>
-            <exception cref="T:FinanceManager.Web.Services.RequestLimitExceededException">Thrown when the upstream provider signals a rate-limit condition and further requests must be stopped.</exception>
+            <exception cref="T:FinanceManager.Web.Services.PriceProviderException">
+            Thrown when the upstream provider reports a classified error (for example invalid symbol/function, rate limit,
+            transient network exhaustion, or unknown provider response).
+            </exception>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when underlying HTTP requests fail unexpectedly.</exception>
         </member>
         <member name="T:FinanceManager.Web.Services.MonthlyReminderJob">
             <summary>
@@ -3546,6 +3535,72 @@
             <returns>A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> results. Returns an empty list when the context is not owned by the current user.</returns>
             <exception cref="T:System.OperationCanceledException">Thrown when the operation is cancelled via the provided <paramref name="ct"/>.</exception>
         </member>
+        <member name="T:FinanceManager.Web.Services.PriceProviderErrorClass">
+            <summary>
+            Stable classification for price-provider failures.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.Services.PriceProviderErrorClass.InvalidSymbolOrFunction">
+            <summary>
+            Provider reported an invalid symbol/function combination.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.Services.PriceProviderErrorClass.RateLimit">
+            <summary>
+            Provider rate limit was reached.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.Services.PriceProviderErrorClass.TransientNetwork">
+            <summary>
+            Network or timeout failures after retry exhaustion.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Web.Services.PriceProviderErrorClass.UnknownProviderError">
+            <summary>
+            Any provider failure that cannot be mapped to a more specific class.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Web.Services.PriceProviderErrorClassExtensions">
+            <summary>
+            Helpers for converting <see cref="T:FinanceManager.Web.Services.PriceProviderErrorClass"/> values to persisted API-safe codes.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Services.PriceProviderErrorClassExtensions.ToCode(FinanceManager.Web.Services.PriceProviderErrorClass)">
+            <summary>
+            Converts the error class to the required stable code representation.
+            </summary>
+            <param name="errorClass">Error class value.</param>
+            <returns>Stable uppercase code string.</returns>
+        </member>
+        <member name="T:FinanceManager.Web.Services.PriceProviderException">
+            <summary>
+            Exception used by price providers to expose a deterministic error classification and provider raw details.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Services.PriceProviderException.#ctor(FinanceManager.Web.Services.PriceProviderErrorClass,System.String,System.String,System.Exception)">
+            <summary>
+            Initializes a new instance of <see cref="T:FinanceManager.Web.Services.PriceProviderException"/>.
+            </summary>
+            <param name="errorClass">Deterministic provider error class.</param>
+            <param name="providerRawMessage">Raw provider detail (internal use only).</param>
+            <param name="message">Safe technical exception message.</param>
+            <param name="innerException">Optional inner exception.</param>
+        </member>
+        <member name="P:FinanceManager.Web.Services.PriceProviderException.ErrorClass">
+            <summary>
+            Classified provider error class.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.Services.PriceProviderException.ErrorClassCode">
+            <summary>
+            Stable uppercase representation of <see cref="P:FinanceManager.Web.Services.PriceProviderException.ErrorClass"/>.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.Services.PriceProviderException.ProviderRawMessage">
+            <summary>
+            Raw provider text for internal diagnostics; must not be shown directly in end-user notifications.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.Services.RebuildAggregatesTaskExecutor">
             <summary>
             Background task executor that rebuilds posting aggregates for a user.
@@ -3654,8 +3709,8 @@
             <param name="stoppingToken">Token used to indicate service shutdown.</param>
             <returns>A task that completes when the background service stops.</returns>
             <remarks>
-            Exceptions during a single run are logged. When a <see cref="T:FinanceManager.Web.Services.RequestLimitExceededException"/> occurs it is
-            logged as a warning; other exceptions are logged as errors. After each run the worker pauses for one hour.
+            Exceptions during a single run are logged. Classified provider failures are handled inside the run;
+            unhandled exceptions are logged as errors. After each run the worker pauses for one hour.
             </remarks>
         </member>
         <member name="M:FinanceManager.Web.Services.SecurityPriceWorker.RunOnceAsync(System.Threading.CancellationToken)">

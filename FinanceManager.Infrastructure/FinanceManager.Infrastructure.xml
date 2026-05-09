@@ -2355,6 +2355,18 @@
         <member name="M:FinanceManager.Infrastructure.Migrations.AddIbanUniqueConstraint.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddSecurityPriceErrorClassification">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurityPriceErrorClassification.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurityPriceErrorClassification.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddSecurityPriceErrorClassification.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Notifications.HolidayProviderResolver">
             <summary>
             Resolves an implementation of <see cref="T:FinanceManager.Application.Notifications.IHolidayProvider"/> for a requested <see cref="T:FinanceManager.Domain.Notifications.HolidayProviderKind"/>.
@@ -3330,7 +3342,7 @@
             Returns <c>null</c> if the security is not owned by the user or if there are no price records.
             </returns>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceService.SetPriceErrorAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceService.SetPriceErrorAsync(System.Guid,System.Guid,System.String,System.String,System.String,System.Threading.CancellationToken)">
             <summary>
             Sets a short price error message on the given security. This marks the security as having
             a price lookup error (for example invalid external symbol) so that automated backfills
@@ -3338,7 +3350,9 @@
             </summary>
             <param name="ownerUserId">The owner of the security.</param>
             <param name="securityId">The security identifier.</param>
-            <param name="message">A short error message to record. May be <c>null</c> or empty to clear the error.</param>
+            <param name="message">A short safe user-facing message to record. May be <c>null</c> or empty to clear the error.</param>
+            <param name="errorClass">Stable provider error class code.</param>
+            <param name="providerRawMessage">Optional internal provider details for diagnostics.</param>
             <param name="ct">Cancellation token.</param>
             <returns>A task that completes when the operation has been applied.</returns>
             <exception cref="T:System.ArgumentException">Thrown when the security does not exist or is not owned by <paramref name="ownerUserId"/>.</exception>

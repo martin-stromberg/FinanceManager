@@ -3090,6 +3090,16 @@
             </summary>
             <value>UTC time or <c>null</c>.</value>
         </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.PriceErrorClass">
+            <summary>
+            Stable error class code for the active price error (for example <c>INVALID_SYMBOL_OR_FUNCTION</c>).
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Securities.Security.PriceErrorProviderMessage">
+            <summary>
+            Optional internal provider raw message for diagnostics. Must not be displayed as-is to end users.
+            </summary>
+        </member>
         <member name="P:FinanceManager.Domain.Securities.Security.SymbolAttachmentId">
             <summary>
             Optional reference to a symbol attachment.
@@ -3118,6 +3128,14 @@
             Marks the security as having a price fetch error and records the message and timestamp.
             </summary>
             <param name="message">Error message to record. Whitespace-only strings are preserved as provided; if null or whitespace, a default message will be stored by the implementation.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Securities.Security.SetPriceError(System.String,System.String,System.String)">
+            <summary>
+            Marks the security as having a classified price-fetch error and records safe user message plus internal provider details.
+            </summary>
+            <param name="errorClass">Stable provider error class code.</param>
+            <param name="userMessage">Safe user-facing summary.</param>
+            <param name="providerRawMessage">Internal provider details for diagnostics.</param>
         </member>
         <member name="M:FinanceManager.Domain.Securities.Security.ClearPriceError">
             <summary>

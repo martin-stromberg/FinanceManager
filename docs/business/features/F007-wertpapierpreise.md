@@ -3,9 +3,10 @@
 ## Einleitung
 
 Diese Funktion aktualisiert Ihre Wertpapierkurse automatisch.  
-Wenn der Kursabruf scheitert, sehen Sie einen klaren Hinweis statt unverständlicher Fehltexte.  
-So erkennen Sie schnell, ob Sie warten oder etwas korrigieren müssen.  
-Ihre letzte bekannte Kurslage bleibt dabei erhalten.
+Ein behobener Fehlerfall betrifft AlphaVantage mit dem Hinweis `Invalid API call` bei `TIME_SERIES_DAILY`.  
+Sie sehen dazu klare Hinweise statt unverständlicher Rohtexte.  
+So erkennen Sie schnell, ob Sie warten oder das Symbol korrigieren müssen.  
+Ihre letzte bekannte Kurslage bleibt erhalten.
 
 ## Wer nutzt es?
 
@@ -21,7 +22,8 @@ Auch neue Mitarbeitende nutzen die Hinweise, um Fehler schnell einzuordnen.
 4. Sie öffnen das betroffene Wertpapier und korrigieren das Symbol.  
 5. Sie klicken **Speichern** und starten den Abruf erneut.  
 6. Sie sehen bei einem kurzfristigen Problem einen Hinweis zum späteren Neustart.  
-7. Sie warten in diesem Fall und starten den Abruf später erneut.
+7. Sie warten in diesem Fall und starten den Abruf später erneut.  
+8. Sie sehen dabei niemals einen eingeblendeten Schlüssel oder vertrauliche Zugangsdaten.
 
 ## Beispiel
 
@@ -33,32 +35,23 @@ Der Lauf macht trotzdem weiter und aktualisiert das dritte Wertpapier erfolgreic
 
 ## Was passiert im Hintergrund?
 
-Die Anwendung trennt Fehler in zwei Gruppen.  
-Kurzfristige Probleme beim Datenanbieter oder bei der Verbindung gelten als vorübergehend.  
+Die Anwendung trennt Fehler in klare Gruppen.  
+Kurzfristige Probleme bei Verbindung oder Anbieter gelten als vorübergehend.  
 Dauerhafte Probleme wie ein falsches Symbol gelten als zu korrigieren.  
-Bei vorübergehenden Problemen läuft der Abruf für andere Wertpapiere weiter.  
-Wenn das Tageslimit des Anbieters erreicht ist, stoppt der laufende Durchgang sofort.
+Bei vorübergehenden Problemen versucht der Abruf erneut und läuft mit anderen Wertpapieren weiter.  
+Wenn das Tageslimit erreicht ist, stoppt der laufende Durchgang sofort.
 
-Für die Diagnose speichert die Anwendung: Fehlerklasse, sichere Nutzernachricht, Zeitpunkt und bereinigte Anbieterdetails.  
-Rohe Anbietertexte werden nie direkt an Nutzer gezeigt.  
-So bleiben Hinweise verständlich und enthalten keine irreführenden Rohdaten.
-
-Technische Nachweise:
-- [FinanceManager.Web/Services/SecurityPriceWorker.cs](../../../FinanceManager.Web/Services/SecurityPriceWorker.cs)
-- [FinanceManager.Web/Services/AlphaVantage.cs](../../../FinanceManager.Web/Services/AlphaVantage.cs)
-- [FinanceManager.Web/Services/PriceProviderErrorClass.cs](../../../FinanceManager.Web/Services/PriceProviderErrorClass.cs)
-- [FinanceManager.Domain/Securities/Security.cs](../../../FinanceManager.Domain/Securities/Security.cs)
-- [FinanceManager.Tests/Web/Services/SecurityPriceWorkerErrorHandlingTests.cs](../../../FinanceManager.Tests/Web/Services/SecurityPriceWorkerErrorHandlingTests.cs)
-- [FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs](../../../FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs)
-- [FinanceManager.Tests/Web/Services/PriceProviderErrorClassExtensionsTests.cs](../../../FinanceManager.Tests/Web/Services/PriceProviderErrorClassExtensionsTests.cs)
+Für die Diagnose speichert die Anwendung Fehlerklasse, sichere Nutzernachricht, Zeitpunkt und bereinigte Details.  
+Rohe Anbietertexte werden nie direkt angezeigt.  
+Ein API-Schlüssel wird weder im Hinweis noch in gespeicherten Details offengelegt.
 
 ## Häufige Fragen (FAQ)
 
 **F: Was sehe ich bei einem Fehler?**  
 A: Sie sehen einen klaren Hinweis wie **Kursabruf fehlgeschlagen** mit kurzer Handlungsanweisung.
 
-**F: Warum sehe ich nicht den Originaltext des Anbieters?**  
-A: Originaltexte sind oft unklar. Die Anwendung zeigt deshalb kurze, sichere Hinweise.
+**F: Kann ein API-Schlüssel in einem Hinweis sichtbar werden?**  
+A: Nein. Hinweise und gespeicherte Details zeigen keinen API-Schlüssel.
 
 **F: Woran erkenne ich ein dauerhaftes Problem?**  
 A: Hinweise wie **Symbol prüfen** zeigen, dass eine Eingabe angepasst werden muss.
@@ -68,6 +61,21 @@ A: Hinweise zum späteren Neustart zeigen ein kurzfristiges Problem bei Anbieter
 
 **F: Was passiert beim Erreichen des Tageslimits?**  
 A: Der laufende Abruf stoppt sofort. Sie starten später einen neuen Lauf.
+
+## Nachweise und Testergebnis
+
+- API-Artefakt: [docs/api/SecuritiesController.md](../../api/SecuritiesController.md)
+- Flow-Artefakt: [docs/flows/security-price-worker.md](../../flows/security-price-worker.md)
+- Code-Artefakte:
+  - [FinanceManager.Web/Services/SecurityPriceWorker.cs](../../../FinanceManager.Web/Services/SecurityPriceWorker.cs)
+  - [FinanceManager.Web/Services/AlphaVantage.cs](../../../FinanceManager.Web/Services/AlphaVantage.cs)
+  - [FinanceManager.Web/Services/AlphaVantagePriceProvider.cs](../../../FinanceManager.Web/Services/AlphaVantagePriceProvider.cs)
+- Test-Artefakte:
+  - [FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs](../../../FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs)
+  - [FinanceManager.Tests/Web/Services/AlphaVantagePriceProviderRetryTests.cs](../../../FinanceManager.Tests/Web/Services/AlphaVantagePriceProviderRetryTests.cs)
+  - [FinanceManager.Tests/Web/Services/SecurityPriceWorkerErrorHandlingTests.cs](../../../FinanceManager.Tests/Web/Services/SecurityPriceWorkerErrorHandlingTests.cs)
+- Dokumentations-/Lifecycle-Artefakt: [docs/documentation-plan.md](../../documentation-plan.md)
+- Testergebnis: **Grün** – 39 von 39 relevanten Tests erfolgreich.
 
 ## Verwandte Funktionen
 

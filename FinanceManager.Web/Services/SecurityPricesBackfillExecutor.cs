@@ -188,26 +188,30 @@ public sealed class SecurityPricesBackfillExecutor : IBackgroundTaskExecutor
                 }
                 context.ReportProgress(++processed, total, s.Name, 0, 0);
             }
-            catch (RequestLimitExceededException ex)
+            catch (PriceProviderException ex) when (ex.ErrorClass == PriceProviderErrorClass.RateLimit)
             {
                 _logger.LogWarning(ex, "Rate limit reached during backfill for {Security}", s.Name);
                 context.ReportProgress(processed, total, _localizer["RateLimited"], 0, 1);
                 // Stop the whole backfill; user can rerun later
                 throw;
             }
-            catch (InvalidOperationException ex)
+            catch (PriceProviderException ex)
             {
-                _logger.LogWarning(ex, "Invalid symbol for {Security}", s.Name);
+                _logger.LogWarning(ex, "Classified provider error for {Security}: {ErrorClass}", s.Name, ex.ErrorClassCode);
                 // mark error via service and continue others
                 try
                 {
-                    await priceService.SetPriceErrorAsync(s.OwnerUserId, s.Id, ex.Message, ct);
+                    var userMessage = ex.ErrorClass == PriceProviderErrorClass.InvalidSymbolOrFunction
+                        ? "Das hinterlegte Symbol ist für den Kursabruf ungültig. Bitte Symbol prüfen und Abruf erneut starten."
+                        : "Der Kursabruf ist fehlgeschlagen. Bitte später erneut versuchen.";
+
+                    await priceService.SetPriceErrorAsync(s.OwnerUserId, s.Id, userMessage, ex.ErrorClassCode, ex.ProviderRawMessage, ct);
                 }
                 catch (Exception setEx)
                 {
                     _logger.LogWarning(setEx, "Failed to set price error flag for {Security}", s.Name);
                 }
-                context.ReportProgress(processed, total, s.Name + ": " + ex.Message, 0, 1);
+                context.ReportProgress(processed, total, s.Name + ": " + _localizer["BackfillSecurityError"], 0, 1);
             }
             catch (Exception ex)
             {

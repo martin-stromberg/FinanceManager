@@ -56,8 +56,10 @@ public interface ISecurityPriceService
     /// </summary>
     /// <param name="ownerUserId">The owner of the security.</param>
     /// <param name="securityId">The security identifier.</param>
-    /// <param name="message">A short error message to record.</param>
+    /// <param name="message">A short safe user-facing message to record.</param>
+    /// <param name="errorClass">Stable provider error class code.</param>
+    /// <param name="providerRawMessage">Optional internal provider details for diagnostics.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes when the operation has been applied.</returns>
-    Task SetPriceErrorAsync(Guid ownerUserId, Guid securityId, string message, CancellationToken ct);
+    Task SetPriceErrorAsync(Guid ownerUserId, Guid securityId, string message, string? errorClass, string? providerRawMessage, CancellationToken ct);
 }

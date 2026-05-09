@@ -20,7 +20,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 | F004 | Kontoauszug-Import | Import von Kontoauszügen aus verschiedenen Bankformaten | ✅ Dokumentiert |
 | F005 | Automatische Kategorisierung | Automatische Zuordnung von Ausgaben zu Kategorien | 🔄 In Bearbeitung |
 | F006 | Wertpapier-Verwaltung | Verwaltung von Aktien und Wertpapieren | ✅ Dokumentiert |
-| F007 | [Wertpapierpreise](./features/F007-wertpapierpreise.md) | Automatische Kursaktualisierung mit klarer Fehlerbehandlung und Nutzerhinweisen | ✅ Dokumentiert |
+| F007 | [Wertpapierpreise](./features/F007-wertpapierpreise.md) | Automatische Kursaktualisierung mit behobenem AlphaVantage-Fehlerfall, sicheren Hinweisen und robustem Retry-Verhalten | ✅ Dokumentiert |
 | F008 | Budgetplanung | Festlegung und Überwachung von Budgets | 🔄 In Bearbeitung |
 | F009 | Budgetberichte | Auswertung und Analyse von Budget-Abweichungen | 🔄 In Bearbeitung |
 | F010 | Ersparnispläne | Planung und Verfolgung von Sparziele | 🔄 In Bearbeitung |

@@ -13,6 +13,8 @@ Kurzbeschreibung und was die Anwendung bietet (nicht‑technisch):
 - Wertpapiertransaktionen (Kauf/Verkauf/Dividende) erfassen und Gebühren/Steuern berücksichtigen
 - Berichte und KPI‑Dashboard; Daten als CSV/XLSX exportieren
 - Anhänge pro Buchung verwalten und Backups erstellen
+- Robuster Kursabruf für Wertpapiere mit Fehlerklassifikation (z. B. Rate-Limit, temporäre Netzwerkfehler, ungültiges Symbol) und nutzerfreundlichen Hinweisen
+- **Neu (AlphaVantage-Fix):** Root-Cause-Fix für `PriceProviderException` bei `Invalid API call ... TIME_SERIES_DAILY`, strukturiertes sanitisiertes Logging ohne ApiKey-Leakage, verbesserte Error-Klassifikation inkl. Retry-Verhalten
 
 Schnelle Nutzung (Kurz):
 1. Registrieren / Anmelden
@@ -59,13 +61,20 @@ dotnet test
 ```
 - Formatierung: `dotnet format` vor PR
 - CI soll Build, Tests und Formatierung prüfen
+- Erweiterte Tests decken das Error-Handling im Security-Quote-Worker ab (Fehlerklassifikation, Weiterverarbeitung bei transienten Fehlern, Stopp bei Rate-Limit, Benachrichtigungsverhalten)
+- Erweiterte grüne Tests für den AlphaVantage-Fix u. a. in:
+  - `FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs`
+  - `FinanceManager.Tests/Web/Services/PriceProviderErrorClassExtensionsTests.cs`
+  - `FinanceManager.Tests/Web/Services/SecurityPriceWorkerErrorHandlingTests.cs`
 
 Dokumentation & API
 
-- Projektdokumentation unter `docs/` (Flows, Business Rules, API stubs)
+- Projektdokumentation unter `docs/`
+- API-Dokumentation: `docs/api/` (Index: `docs/api/INDEX.md`, Übersicht: `docs/api/README.md`, Security-Preisabruf: `docs/api/SecuritiesController.md`)
+- Flow-Dokumentation: `docs/flows/` (Übersicht: `docs/flows/README.md`, Security-Worker-Flow: `docs/flows/security-price-worker.md`)
+- Business-Dokumentation: `docs/business/` (Übersicht: `docs/business/overview.md`, Features: `docs/business/features.md`, F007: `docs/business/features/F007-wertpapierpreise.md`)
+- Dokumentations-/Lifecycle-Report zum Feature: `docs/documentation-plan.md`
 - Installationsanleitung: `docs/install.md`
-- Teil‑OpenAPI: `docs/api/openapi.yaml` (Accounts + models)
-- Detaillierte Controller‑Docs in `docs/api/`
 
 Entwicklungskonventionen
 
@@ -76,6 +85,7 @@ Security
 
 - Keine Secrets im Repo. Verwende Environment Variables oder Secret Manager.
 - JWTs werden via HttpOnly Cookie verwaltet; sichere Konfiguration in Produktion.
+- Security-Preisabrufe behandeln Provider-Fehler robust: klassifizierte Fehler, sanitisiertes Provider-Feedback, strukturiertes Logging ohne ApiKey-Leakage und gezielte Nutzerbenachrichtigungen bei nicht-transienten Problemen.
 
 Kontakt / Issues
 
