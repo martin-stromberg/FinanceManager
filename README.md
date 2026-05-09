@@ -1,39 +1,31 @@
-# Finance Manager
+# FinanceManager
 
-Kompakte Übersicht
+Blazor-Server-Webanwendung (.NET 10) zur Verwaltung persönlicher Finanzen: Kontoauszug-Import, Klassifikation, Buchungen, Wertpapierpreise, Reporting und KPI-Dashboard.
 
-`FinanceManager` ist eine Blazor Server Webanwendung (.NET 10) zur Verwaltung persönlicher Finanzen: Import und Klassifikation von Kontoauszügen, Buchungen (Bank / Kontakt / Sparplan / Wertpapier), Berichte und KPI‑Dashboard.
+## Projektname
+- **FinanceManager**
 
-Kurz: Import → Klassifikation → Validierung → Buchung → Reporting.
+## Features
+- Kontoauszüge (CSV/PDF) importieren, klassifizieren und buchen
+- Sparpläne und Wertpapiertransaktionen verwalten
+- Berichte/KPI-Dashboard sowie Exporte (CSV/XLSX)
+- Anhänge und Backups verwalten
+- Robustes Security-Price-Handling (Fehlerklassifikation, Retry, Logging ohne ApiKey-Leakage)
+- **Backfill-Fehlerbenachrichtigung (neu):** `SecurityPricesBackfillExecutor` erstellt bei `PriceProviderException` für alle **nicht** `RateLimit`/`TransientNetwork`-Fehler eine Benutzerbenachrichtigung (`Kursabruf fehlgeschlagen`, Trigger `security:error:{securityId}`), analog zum Worker-Verhalten
 
-## Für Nutzer
-Kurzbeschreibung und was die Anwendung bietet (nicht‑technisch):
-- Kontoauszüge (CSV/PDF) importieren und automatisch oder manuell kategorisieren
-- Sparpläne verwalten (einmalig oder wiederkehrend) und Zielerreichung verfolgen
-- Wertpapiertransaktionen (Kauf/Verkauf/Dividende) erfassen und Gebühren/Steuern berücksichtigen
-- Berichte und KPI‑Dashboard; Daten als CSV/XLSX exportieren
-- Anhänge pro Buchung verwalten und Backups erstellen
-- Robuster Kursabruf für Wertpapiere mit Fehlerklassifikation (z. B. Rate-Limit, temporäre Netzwerkfehler, ungültiges Symbol) und nutzerfreundlichen Hinweisen
-- **Neu (AlphaVantage-Fix):** Root-Cause-Fix für `PriceProviderException` bei `Invalid API call ... TIME_SERIES_DAILY`, strukturiertes sanitisiertes Logging ohne ApiKey-Leakage, verbesserte Error-Klassifikation inkl. Retry-Verhalten
+Weiterführende Doku:
+- [Docs/security-price-backfill-notification-planning-overview.md](./Docs/security-price-backfill-notification-planning-overview.md)
+- [Docs/requirements/security-price-backfill-notification-alignment.md](./Docs/requirements/security-price-backfill-notification-alignment.md)
+- [Docs/architecture/security-price-backfill-notification-alignment.md](./Docs/architecture/security-price-backfill-notification-alignment.md)
+- [Docs/architecture/security-price-backfill-notification-erm.md](./Docs/architecture/security-price-backfill-notification-erm.md)
+- [Docs/improvements/security-price-backfill-notification-review.md](./Docs/improvements/security-price-backfill-notification-review.md)
 
-Schnelle Nutzung (Kurz):
-1. Registrieren / Anmelden
-2. Konto anlegen (Bankkontakt zuordnen)
-3. Kontoauszug hochladen (Import) → Entwürfe prüfen
-4. Einträge klassifizieren / fehlende Angaben ergänzen
-5. Buchung durchführen → Postings werden erstellt
-
-Hinweis: Diese README beschreibt die Entwicklungs‑ und Installationsdetails. Für eine reine Nutzer‑Installation wird eine gehostete Instanz oder eine einfache Install‑Anleitung benötigt (siehe `docs/` oder Admin/Hilfe im Webinterface).
-
-## Für Entwickler
-Kurz: welche Informationen Entwickler brauchen, um das Projekt lokal zu betreiben und weiterzuentwickeln.
-
-Voraussetzungen
+## Installation
+Voraussetzungen:
 - .NET 10 SDK
-- (optional) SQLite oder SQL Server für Produktion
+- optional SQLite/SQL Server (produktive Umgebung)
 
-Schnellstart (lokal)
-
+Schnellstart lokal:
 ```bash
 git clone <repo-url>
 cd FinanceManager
@@ -43,54 +35,87 @@ cd FinanceManager.Web
 dotnet run
 ```
 
-Default URLs are printed when you run the application (see the console output from `dotnet run`). Do not rely on a hardcoded port — configure `ASPNETCORE_URLS`, `launchSettings.json` or use `dotnet run --urls "http://localhost:5002;https://localhost:5003"` to override the defaults.
+Details für Linux/IIS:
+- [Docs/install.md](./Docs/install.md)
 
-Datenbankmigrationen
+## Usage
+1. Registrieren / Anmelden
+2. Konto anlegen
+3. Kontoauszug importieren
+4. Entwürfe prüfen und klassifizieren
+5. Buchung durchführen und Reporting nutzen
 
-Änderungen am Domain‑Modell müssen gegen den korrekten DbContext migriert werden. Beispiel für `AppDbContext`:
+API und fachliche Nutzung:
+- [docs/api/README.md](./docs/api/README.md)
+- [docs/api/SecuritiesController.md](./docs/api/SecuritiesController.md)
+- [docs/business/overview.md](./docs/business/overview.md)
+- [docs/business/features/F007-wertpapierpreise.md](./docs/business/features/F007-wertpapierpreise.md)
+- [Docs/business/features/F017-backfill-fehlerbenachrichtigung.md](./Docs/business/features/F017-backfill-fehlerbenachrichtigung.md)
 
-```bash
-dotnet ef migrations add 20260329_AddSomething -p FinanceManager.Infrastructure -s FinanceManager.Web --context AppDbContext --output-dir Data/Migrations
-dotnet ef database update -p FinanceManager.Infrastructure -s FinanceManager.Web --context AppDbContext
-```
+## Konfiguration
+- Keine Secrets im Repo; verwende Umgebungsvariablen/Secret-Manager
+- Pflicht in Produktion: `Jwt__Key`
+- Optional für Kursabruf: AlphaVantage-Schlüssel (benutzer-/adminbasiert)
+- URL-Override über `ASPNETCORE_URLS` oder `dotnet run --urls "..."`
 
-Tests & Qualität
+Siehe:
+- [Docs/install.md](./Docs/install.md)
+- [CONTRIBUTING.md](./CONTRIBUTING.md)
 
+## Architektur
+Projektstruktur (Auszug):
+- `FinanceManager.Web` (UI, API, Background-Services)
+- `FinanceManager.Application`, `FinanceManager.Domain`, `FinanceManager.Infrastructure`
+- `FinanceManager.Tests*` (Unit-/Integrations-Tests)
+
+Architektur-/Flow-Doku:
+- [docs/api/INDEX.md](./docs/api/INDEX.md)
+- [docs/api/ARCHITECTURE_AND_INTEGRATION.md](./docs/api/ARCHITECTURE_AND_INTEGRATION.md)
+- [docs/flows/README.md](./docs/flows/README.md)
+- [docs/flows/security-price-worker.md](./docs/flows/security-price-worker.md)
+- [docs/Prozessbeschreibungen.md](./docs/Prozessbeschreibungen.md)
+
+## Contribution
+- Bitte Richtlinien aus [CONTRIBUTING.md](./CONTRIBUTING.md) beachten
+- Vor PR: Build, Tests und Formatierung ausführen (`dotnet format`)
+- Commit-Konvention: Conventional Commits (`feat:`, `fix:`, `docs:` …)
+
+## Tests
+Gesamte Testsuite:
 ```bash
 dotnet test
 ```
-- Formatierung: `dotnet format` vor PR
-- CI soll Build, Tests und Formatierung prüfen
-- Erweiterte Tests decken das Error-Handling im Security-Quote-Worker ab (Fehlerklassifikation, Weiterverarbeitung bei transienten Fehlern, Stopp bei Rate-Limit, Benachrichtigungsverhalten)
-- Erweiterte grüne Tests für den AlphaVantage-Fix u. a. in:
-  - `FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs`
-  - `FinanceManager.Tests/Web/Services/PriceProviderErrorClassExtensionsTests.cs`
-  - `FinanceManager.Tests/Web/Services/SecurityPriceWorkerErrorHandlingTests.cs`
 
-Dokumentation & API
+Relevante Tests zur Backfill-Fehlerbenachrichtigung:
+- [FinanceManager.Tests/Web/Services/SecurityPricesBackfillExecutorNotificationTests.cs](./FinanceManager.Tests/Web/Services/SecurityPricesBackfillExecutorNotificationTests.cs)
+- [FinanceManager.Tests/Web/Services/SecurityPriceWorkerErrorHandlingTests.cs](./FinanceManager.Tests/Web/Services/SecurityPriceWorkerErrorHandlingTests.cs)
+- [FinanceManager.Tests/Web/Services/PriceProviderErrorClassExtensionsTests.cs](./FinanceManager.Tests/Web/Services/PriceProviderErrorClassExtensionsTests.cs)
 
-- Projektdokumentation unter `docs/`
-- API-Dokumentation: `docs/api/` (Index: `docs/api/INDEX.md`, Übersicht: `docs/api/README.md`, Security-Preisabruf: `docs/api/SecuritiesController.md`)
-- Flow-Dokumentation: `docs/flows/` (Übersicht: `docs/flows/README.md`, Security-Worker-Flow: `docs/flows/security-price-worker.md`)
-- Business-Dokumentation: `docs/business/` (Übersicht: `docs/business/overview.md`, Features: `docs/business/features.md`, F007: `docs/business/features/F007-wertpapierpreise.md`)
-- Dokumentations-/Lifecycle-Report zum Feature: `docs/documentation-plan.md`
-- Installationsanleitung: `docs/install.md`
+Offene Testlücken:
+- [Docs/tests/backfill-fehlerbenachrichtigung-testluecken.md](./Docs/tests/backfill-fehlerbenachrichtigung-testluecken.md)
 
-Entwicklungskonventionen
+## Deployment
+- Kein separates Migrationspaket für das Backfill-Feature erforderlich (code-only)
+- Datenbankmigrationen bei Modelländerungen via `dotnet ef ...` ausführen
+- Produktive Installations-/Betriebshinweise:
+  - [Docs/install.md](./Docs/install.md)
+  - [docs/postings.md](./docs/postings.md)
 
-- Siehe `.github/copilot-instructions.md` für Coding‑Guidelines (Naming, Async, Logging, Tests).
-- Branching & Commits: Conventional Commits (`feat:`, `fix:`, `docs:` ...)
+## Lizenz
+- MIT, siehe [LICENSE](./LICENSE)
 
-Security
+## Kontakt
+- Issues/Feature-Requests über GitHub Issues
+- Für größere Änderungen bitte vorab Design-/Architektur-Diskussion starten
 
-- Keine Secrets im Repo. Verwende Environment Variables oder Secret Manager.
-- JWTs werden via HttpOnly Cookie verwaltet; sichere Konfiguration in Produktion.
-- Security-Preisabrufe behandeln Provider-Fehler robust: klassifizierte Fehler, sanitisiertes Provider-Feedback, strukturiertes Logging ohne ApiKey-Leakage und gezielte Nutzerbenachrichtigungen bei nicht-transienten Problemen.
+## Roadmap
+- Anforderungen/Status:
+  - [docs/Anforderungskatalog.md](./docs/Anforderungskatalog.md)
+  - [docs/Anforderungsstatus.md](./docs/Anforderungsstatus.md)
+- Verbesserungen:
+  - [Docs/improvements/security-price-backfill-notification-review.md](./Docs/improvements/security-price-backfill-notification-review.md)
 
-Kontakt / Issues
-
-- Öffne Issues für Bugs/Feature‑Requests. Für größere Änderungen bitte zuerst Design‑Discussion.
-
-Lizenz
-
-- MIT — siehe `LICENSE`.
+## Changelog
+- Aktuelle Feature-/Lifecycle-Dokumentation:
+  - [Docs/lifecycle-report-alphavantage-error-handling-and-logging.md](./Docs/lifecycle-report-alphavantage-error-handling-and-logging.md)
+  - [docs/documentation-plan.md](./docs/documentation-plan.md)

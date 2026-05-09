@@ -73,7 +73,7 @@ Technical guide for implementing API clients with best practices, error handling
 
 ### Controller-spezifische Detaildokumente
 
-- [SecuritiesController.md](./SecuritiesController.md) - Securities-Endpunkte inkl. Analyse/Fix der `PriceProviderException`, sanitisiertem Logging ohne ApiKey-Leakage, Fehlerklassifikation (`INVALID_SYMBOL_OR_FUNCTION`, `RATE_LIMIT`, `TRANSIENT_NETWORK`, `UNKNOWN_PROVIDER_ERROR`) und Retry-Verhalten
+- [SecuritiesController.md](./SecuritiesController.md) - Securities-Endpunkte inkl. Analyse/Fix der `PriceProviderException`, sanitisiertem Logging ohne ApiKey-Leakage, Fehlerklassifikation (`INVALID_SYMBOL_OR_FUNCTION`, `RATE_LIMIT`, `TRANSIENT_NETWORK`, `UNKNOWN_PROVIDER_ERROR`), Retry-Verhalten und Backfill-Fehlerbenachrichtigung
 - [StatementDraftEntriesController.md](./StatementDraftEntriesController.md) - QuickEdit-Batch-Update für Statement-Draft-Entries
 - [HelpController.md](./HelpController.md) - Öffentliche Help-Endpunkte für HTML, Markdown und Search-Index
 
@@ -85,6 +85,9 @@ Technical guide for implementing API clients with best practices, error handling
 - Flow: [../flows/security-price-worker.md](../flows/security-price-worker.md)
 - Business: [../business/features/F007-wertpapierpreise.md](../business/features/F007-wertpapierpreise.md)
 - Tests: [../../FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs](../../FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs)
+- Tests (Backfill-Notification): [../../FinanceManager.Tests/Web/Services/SecurityPricesBackfillExecutorNotificationTests.cs](../../FinanceManager.Tests/Web/Services/SecurityPricesBackfillExecutorNotificationTests.cs)
+- Tests (User-Message-Builder): [../../FinanceManager.Tests/Web/Services/SecurityPriceProviderErrorUserMessageBuilderTests.cs](../../FinanceManager.Tests/Web/Services/SecurityPriceProviderErrorUserMessageBuilderTests.cs)
+- Planung: [../security-price-backfill-notification-planning-overview.md](../security-price-backfill-notification-planning-overview.md)
 - Dokumentations-/Lifecycle-Report: [../documentation-plan.md](../documentation-plan.md)
 
 ---

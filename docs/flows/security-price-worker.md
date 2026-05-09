@@ -1,159 +1,178 @@
-# SecurityPriceWorker – AlphaVantage, Klassifikation, Retry & Sanitizing
+# Security-Preisabruf – Worker, Backfill & Fehlerbenachrichtigung
 
 ## Titel & Kontext
 
-Dieser Ablauf beschreibt den Kursabruf rund um `SecurityPriceWorker`, `AlphaVantagePriceProvider` und `AlphaVantage`. Dokumentiert werden die Fehlerklassifikation über `PriceProviderException`, das Retry-Verhalten für transiente Fehler, Logging-/Sanitizing-Regeln sowie das Worker-Verhalten bei `RATE_LIMIT` gegenüber allen anderen Fehlerklassen. Zusätzlich werden Persistenz und Benutzerbenachrichtigung für klassifizierte Providerfehler nachvollziehbar gemacht.
+Dieser Ablauf dokumentiert die konsistente Fehler- und Benachrichtigungslogik für den regulären Kurs-Worker (`SecurityPriceWorker`) und den manuellen Backfill (`SecurityPricesBackfillExecutor`). Fokus ist das Feature **Backfill-Fehlerbenachrichtigung**: Klassifizierte Providerfehler werden einheitlich in User-Meldungen übersetzt und als Security-Fehlerzustand/Notification persistiert. Unterschiede im Stop-Verhalten (`break` vs. `throw`) sind explizit dargestellt.
 
-## Diagramm 1 – Worker-Run mit Fehlerpfaden (`SecurityPriceWorker.RunOnceAsync`)
+## Diagramm 1 – Konsistenter Fehler-/Notification-Pfad (Worker + Backfill)
 
 ```mermaid
-flowchart TD
-  A[Run starten] --> B[Scope und Services laden]
-  B --> C{Shared Admin-Key vorhanden?}
-  C -->|Nein| D[Run überspringen und Info loggen]
-  C -->|Ja| E[Eligible Securities laden]
-  E --> F[Security verarbeiten]
-  F --> G[Fetch-Fenster bestimmen]
-  G --> H[GetDailyPricesAsync aufrufen]
-  H --> I{Preise vorhanden?}
-  I -->|Ja| J[SecurityPrices speichern]
-  I -->|Nein| R[Quota-Delay anwenden]
-  J --> R
-  H -.-> K[PriceProviderException]
-  K -.-> L{ErrorClass gleich RateLimit?}
-  L -.->|Ja| M[Run per break stoppen]
-  L -.->|Nein| N{ErrorClass gleich TransientNetwork?}
-  N -.->|Ja| O[Security per continue überspringen]
-  N -.->|Nein| P[SetPriceError und Notification]
-  H -.-> Q[Unerwarteten Fehler loggen]
-  O --> R
-  P --> R
-  Q --> R
-  R --> S{Weitere Security vorhanden?}
-  S -->|Ja| F
-  S -->|Nein| T[Run-Statistik loggen]
+sequenceDiagram
+  participant W as SecurityPriceWorker
+  participant B as SecurityPricesBackfillExecutor
+  participant P as IPriceProvider
+  participant M as SecurityPriceProviderErrorUserMessageBuilder
+  participant S as Security/ISecurityPriceService
+  participant N as INotificationWriter
+
+  W->>P: GetDailyPricesAsync(symbol, window)
+  B->>P: GetDailyPricesAsync(symbol, window)
+  P-->>W: PriceProviderException(errorClass)
+  P-->>B: PriceProviderException(errorClass)
+
+  alt Fehlerklasse = RATE_LIMIT
+    W-->>W: Run per break stoppen
+    B-->>B: Exception rethrow (Task stoppt)
+  else Fehlerklasse = TRANSIENT_NETWORK
+    W-->>W: continue ohne Persistenz
+    B->>M: Build(errorClass, name, identifier, utc)
+    M-->>B: UserMessage
+    B->>S: SetPriceErrorAsync(...)
+    B-->>B: continue ohne Notification
+  else Fehlerklasse = INVALID_SYMBOL_OR_FUNCTION / UNKNOWN_PROVIDER_ERROR
+    W->>M: Build(errorClass, name, identifier, utc)
+    B->>M: Build(errorClass, name, identifier, utc)
+    M-->>W: UserMessage
+    M-->>B: UserMessage
+    W->>S: SetPriceError(...)
+    B->>S: SetPriceErrorAsync(...)
+    W->>N: CreateForUserAsync(SystemAlert, HomePage)
+    B->>N: CreateForUserAsync(SystemAlert, HomePage)
+  end
 ```
 
-## Diagramm 2 – Klassifikation, Sanitizing und Retry (`AlphaVantage*`)
+## Diagramm 2 – Backfill-Ablauf mit Entscheidungslogik (`SecurityPricesBackfillExecutor.ExecuteAsync`)
 
 ```mermaid
 flowchart TD
-  A[TIME_SERIES_DAILY Request senden] --> B{LimitExceeded aktiv?}
-  B -.->|Ja| C[RateLimit Exception werfen]
-  B -->|Nein| D{HTTP Status success?}
-  D -.->|Nein| E[Non-2xx Antwort klassifizieren]
-  E -.-> F{RateLimit klassifiziert?}
-  F -.->|Ja| G[skipRequestsUntilUtc setzen]
-  F -.->|Nein| H[klassifizierte Exception werfen]
-  G -.-> H
-  D -->|Ja| I{Note oder Information vorhanden?}
-  I -.->|Ja| J[Antwort sanitizen und RateLimit werfen]
-  I -->|Nein| K{Error Message vorhanden?}
-  K -.->|Ja| L{Invalid API call und TIME_SERIES_DAILY?}
-  L -.->|Ja| M[InvalidSymbolOrFunction werfen]
-  L -.->|Nein| N[UnknownProviderError werfen]
-  K -->|Nein| O{Time Series Daily vorhanden?}
-  O -->|Ja| P[TimeSeriesDaily zurückgeben]
-  O -.->|Nein| N
+  A[Backfill starten] --> B[Payload parsen]
+  B --> C{Shared Key vorhanden?}
+  C -->|Nein| D[Progress NoSharedKey und InvalidOperationException]
+  C -->|Ja| E[Eligible Securities laden]
+  E --> F{Securities vorhanden?}
+  F -->|Nein| G[Progress NoSecurities und Ende]
+  F -->|Ja| H[Fenster je Security berechnen]
+  H --> I{toInclusive kleiner fromInclusive?}
+  I -->|Ja| J[Security überspringen]
+  I -->|Nein| K[GetDailyPricesAsync aufrufen]
+  K --> L{PriceProviderException?}
+  L -->|Nein| M[CreateAsync je Preis]
+  L -.->|Ja| N{ErrorClass gleich RateLimit?}
+  N -.->|Ja| O[Progress RateLimited und throw]
+  N -.->|Nein| P{ErrorClass gleich TransientNetwork?}
+  P -.->|Ja| Q[UserMessage bauen und SetPriceErrorAsync]
+  Q --> U1[continue ohne Notification]
+  P -.->|Nein| R[UserMessage bauen]
+  R --> S[SetPriceErrorAsync]
+  S --> T[CreateForUserAsync]
+  J --> U[Progress aktualisieren]
+  M --> U
+  U1 --> U
+  T --> U
+  U --> V{Weitere Security?}
+  V -->|Ja| H
+  V -->|Nein| W[Progress Completed]
 ```
 
 ## Schrittbeschreibung
 
-1. **Run vorbereiten und Scope aufbauen**  
-   - **Code:** `FinanceManager.Web/Services/SecurityPriceWorker.cs` (`RunOnceAsync`)  
-   - **Input:** `CancellationToken`, DI-Container  
-   - **Output:** `runId`, `AppDbContext`, `IPriceProvider`, `INotificationWriter`, `IAlphaVantageKeyResolver`  
-   - **Seiteneffekte:** noch keine Persistenz.
+1. **Backfill-Input einlesen**  
+   - **Code:** `FinanceManager.Web/Services/SecurityPricesBackfillExecutor.cs` (`ExecuteAsync`, Payload-Parsing)  
+   - **Input:** `BackgroundTaskContext.Payload` (JSON mit `SecurityId`, `FromDateUtc`, `ToDateUtc`)  
+   - **Output:** optionale Filter/Datumsgrenzen  
+   - **Seiteneffekte:** bei ungültigem JSON nur `LogWarning`, Ablauf läuft weiter.
 
-2. **Shared-Key-Check und Batch-Bildung**  
-   - **Code:** `SecurityPriceWorker.cs` (`resolver.GetSharedAsync`, `db.Securities...Where(s => ... && !s.HasPriceError)`)  
-   - **Input:** Shared-Key-Konfiguration, aktive Securities, bestehende Fehlerzustände  
-   - **Output:** begrenztes Run-Batch (`MaxSymbolsPerRun`)  
-   - **Seiteneffekte:** ohne Shared-Key wird der komplette Run nur geloggt und beendet.
+2. **Gemeinsame Voraussetzung: Shared Key**  
+   - **Code:** `SecurityPricesBackfillExecutor.cs` (`keyResolver.GetSharedAsync`), `SecurityPriceWorker.cs` (`resolver.GetSharedAsync`)  
+   - **Input:** Shared AlphaVantage-Konfiguration  
+   - **Output:** Freigabe oder Abbruch  
+   - **Seiteneffekte:** Backfill meldet `NoSharedKey` + `InvalidOperationException`; Worker loggt und skippt den Run.
 
-3. **Provider-Aufruf je Security**  
-   - **Code:** `SecurityPriceWorker.cs` (`prices.GetDailyPricesAsync`) → `FinanceManager.Web/Services/AlphaVantagePriceProvider.cs` (`GetDailyPricesAsync`)  
-   - **Input:** `symbol`, `startDateExclusive`, `endDateInclusive`  
-   - **Output:** Preisliste oder `PriceProviderException`  
-   - **Seiteneffekte:** HTTP-Requests an AlphaVantage.
+3. **Security-Selektion ohne bestehende Price-Errors**  
+   - **Code:** `SecurityPricesBackfillExecutor.cs` (`ListAsync(...).Where(... !HasPriceError)`), `SecurityPriceWorker.cs` (`db.Securities...Where(... && !s.HasPriceError)`)  
+   - **Input:** aktive Securities, Owner-Kontext  
+   - **Output:** verarbeitbare Liste/Batches  
+   - **Seiteneffekte:** bereits fehlerhafte Securities werden in beiden Flows nicht erneut gezogen.
 
-4. **Retry-Strategie für transiente Fehler**  
-   - **Code:** `AlphaVantagePriceProvider.cs` (`ExecuteWithRetryAsync`, `IsTransient`)  
-   - **Input:** Provider-Operation, `maxRetries`, `initialDelayMs`  
-   - **Output:** Erfolgsergebnis oder finaler Fehler  
-   - **Seiteneffekte:** exponentielles Backoff mit Jitter; Retry nur bei `TransientNetwork`, Timeout oder transientem `HttpRequestException`; kein Retry bei `RateLimit`/`InvalidSymbolOrFunction`.
+4. **Fensterermittlung pro Security**  
+   - **Code:** `SecurityPricesBackfillExecutor.cs` (Berechnung `fromInclusive`/`toInclusive`), `SecurityPriceWorker.cs` (`startExclusive` aus letzter Persistenz)  
+   - **Input:** letzte gespeicherte Kursdaten, optionales Backfill-Intervall  
+   - **Output:** Provider-Fenster (`startExclusive`, `endInclusive`)  
+   - **Seiteneffekte:** Wochenenden werden als Enddatum zurückgesetzt bzw. bei Insert übersprungen.
 
-5. **Fehlerklassifikation im AlphaVantage-Client**  
-   - **Code:** `FinanceManager.Web/Services/AlphaVantage.cs` (`GetTimeSeriesDailyAsync`, `ClassifyNonSuccessResponse`, `ClassifyHttpTransportError`, `IsInvalidSymbolOrFunction`)  
-   - **Input:** HTTP-Status, JSON-Felder (`Note`, `Information`, `Error Message`, `Time Series (Daily)`)  
-   - **Output:** `PriceProviderErrorClass` (`RATE_LIMIT`, `TRANSIENT_NETWORK`, `INVALID_SYMBOL_OR_FUNCTION`, `UNKNOWN_PROVIDER_ERROR`) in `PriceProviderException`  
-   - **Seiteneffekte:** `_skipRequestsUntilUtc` wird bei Rate-Limit gesetzt.
+5. **Provider-Aufruf und Klassifikation**  
+   - **Code:** `SecurityPricesBackfillExecutor.cs` / `SecurityPriceWorker.cs` (`GetDailyPricesAsync`), Klassifikation via `PriceProviderException`  
+   - **Input:** Symbol + Zeitfenster  
+   - **Output:** Preise oder klassifizierter Fehler (`RATE_LIMIT`, `TRANSIENT_NETWORK`, `INVALID_SYMBOL_OR_FUNCTION`, `UNKNOWN_PROVIDER_ERROR`)  
+   - **Seiteneffekte:** externe Requests gegen AlphaVantage.
 
-6. **Logging-Sanitizing für Provider-Daten**  
-   - **Code:** `AlphaVantage.cs` (`SanitizeForLog`) und `SecurityPriceWorker.cs` (`SanitizeProviderRawMessage`)  
-   - **Input:** Request-URL, Provider-Response, Exception-Text  
-   - **Output:** bereinigte Log-/Persistenztexte  
-   - **Seiteneffekte:** API-Key-Masking (`apikey=***`), Entfernen von Steuerzeichen, Längenbegrenzung (500 im Provider-Log, 2000 in Worker-Persistenz).
+6. **Konsistente User-Meldung auf Basis der Fehlerklasse**  
+   - **Code:** `FinanceManager.Web/Services/SecurityPriceProviderErrorUserMessageBuilder.cs` (`Build`)  
+   - **Input:** `errorClass`, `securityName`, `securityIdentifier`, `occurredUtc`  
+   - **Output:** deutschsprachige, user-sichere Nachricht mit UTC-Zeitstempel  
+   - **Seiteneffekte:** keine; reine Mapping-Logik.
 
-7. **Worker-Entscheidung pro Fehlerklasse**  
-   - **Code:** `SecurityPriceWorker.cs` (`catch (PriceProviderException ex)`)  
-   - **Input:** `ex.ErrorClass`, `ex.ErrorClassCode`, `ex.ProviderRawMessage`  
-   - **Output:** Control-Flow je Security  
-   - **Seiteneffekte:**  
-     - `RateLimit` → `break` (Run stoppt)  
-     - `TransientNetwork` → `continue` (kein persistenter Fehler)  
-     - sonstige Klassen → persistenter Fehler inkl. Notification.
+7. **Persistenz der Fehlerdetails**  
+   - **Code:** `SecurityPriceWorker.cs` (`entity.SetPriceError`), `SecurityPricesBackfillExecutor.cs` (`priceService.SetPriceErrorAsync`)  
+   - **Input:** `errorClassCode`, User-Message, Provider-Rohtext  
+   - **Output:** gesetzte Price-Error-Felder auf Security  
+   - **Seiteneffekte:** Security wird für weitere Läufe aus Eligible-Filter ausgeschlossen.
 
-8. **Persistenz und Notification bei nicht-transienten Providerfehlern**  
-   - **Code:** `SecurityPriceWorker.cs` (`BuildUserNotificationMessage`, `entity.SetPriceError`, `notifier.CreateForUserAsync`), `FinanceManager.Domain/Securities/Security.cs` (`SetPriceError`)  
-   - **Input:** Fehlerklasse, sichere User-Meldung, sanitizte Provider-Details  
-   - **Output:** `Security.HasPriceError`, `PriceErrorClass`, `PriceErrorMessage`, `PriceErrorProviderMessage`, `PriceErrorSinceUtc`  
-   - **Seiteneffekte:** HomePage-Systemmeldung (`NotificationType.SystemAlert`) für den Owner.
+8. **Benachrichtigung für nicht-transiente Fehler**  
+   - **Code:** `SecurityPriceWorker.cs` und `SecurityPricesBackfillExecutor.cs` (`notifier.CreateForUserAsync`)  
+   - **Input:** Titel *Kursabruf fehlgeschlagen*, Message aus Builder, Trigger `security:error:{SecurityId}`  
+   - **Output:** `NotificationType.SystemAlert` auf `NotificationTarget.HomePage`  
+   - **Seiteneffekte:** sichtbare User-Notification.
 
-9. **Erfolgsfall und Drosselung**  
-   - **Code:** `SecurityPriceWorker.cs` (`db.SecurityPrices.Add`, `db.SaveChangesAsync`, Delay aus `RequestsPerMinute`)  
-   - **Input:** valide `(date, close)`-Paare  
-   - **Output:** persistierte `SecurityPrice`-Einträge  
-   - **Seiteneffekte:** paced Verarbeitung zwischen Requests.
+9. **Unterschied im Stop-Verhalten bei `RATE_LIMIT`**  
+   - **Code:** `SecurityPriceWorker.cs` (`break`), `SecurityPricesBackfillExecutor.cs` (`throw`)  
+   - **Input:** `PriceProviderException` mit `RateLimit`  
+   - **Output:** Worker beendet nur den aktuellen Run; Backfill beendet den Task mit Exception  
+   - **Seiteneffekte:** keine Error-Persistenz/Notification bei Rate-Limit.
+
+10. **Testabdeckung für Konsistenz**  
+    - **Code:** `FinanceManager.Tests/Web/Services/SecurityPricesBackfillExecutorNotificationTests.cs`, `FinanceManager.Tests/Web/Services/SecurityPriceProviderErrorUserMessageBuilderTests.cs`, `FinanceManager.Tests/Web/Services/SecurityPriceWorkerErrorHandlingTests.cs`  
+    - **Input:** klassifizierte Providerfehler in Testdoubles  
+    - **Output:** verifizierte Erwartung pro Fehlerklasse (persistieren, notify, continue/stop)  
+    - **Seiteneffekte:** Regression-Schutz für Backfill-/Worker-Konsistenz.
 
 ## Fehlerbehandlung
 
-- **Kein Shared Admin-Key:** Run wird übersprungen (`LogInformation`), keine Verarbeitung.  
-- **Rate-Limit (`RATE_LIMIT`):** Worker stoppt den aktuellen Run sofort (`break`), restliche Securities bleiben für später offen.  
-- **Transientes Netzwerk (`TRANSIENT_NETWORK`):** Worker macht mit nächster Security weiter (`continue`), ohne `SetPriceError`.  
-- **Klassifizierte nicht-transiente Providerfehler (`INVALID_SYMBOL_OR_FUNCTION`, `UNKNOWN_PROVIDER_ERROR`):** Fehler wird persistiert, Providertext sanitizt, Nutzerhinweis wird erzeugt.  
-- **Unerwartete Exception pro Security:** Fehler wird geloggt; Run bleibt insgesamt aktiv.  
-- **Ungültige/unerwartete Provider-Payload:** wird als `UNKNOWN_PROVIDER_ERROR` klassifiziert und wie oben behandelt.
+- **Ungültiges Backfill-Payload:** wird geloggt; Default-Parameter werden weiterverwendet.  
+- **Kein Shared Key:** Worker skippt Run, Backfill wirft `InvalidOperationException`.  
+- **`RATE_LIMIT`:** Worker stoppt Batch (`break`), Backfill bricht Task via `throw` ab; keine Notification.  
+- **`TRANSIENT_NETWORK`:** Worker persistiert keinen Fehler und verarbeitet weitere Securities; Backfill persistiert den Fehlerstatus (`SetPriceErrorAsync`) ohne Notification und verarbeitet weitere Securities.  
+- **Nicht-transiente Providerfehler (`INVALID_SYMBOL_OR_FUNCTION`, `UNKNOWN_PROVIDER_ERROR`):** in beiden Flows `SetPriceError` + `SystemAlert` für HomePage.  
+- **Fehler in Backfill-Fehlerpersistenz (`SetPriceErrorAsync`/Notification):** werden intern abgefangen und geloggt, nächste Security wird weiter verarbeitet.  
+- **Unerwartete Exceptions je Security:** werden geloggt; Rest des Batches wird weiterhin abgearbeitet.
 
 ## Abhängigkeiten
 
 - **Interne Services/Komponenten:**  
   - `SecurityPriceWorker`  
-  - `IPriceProvider`, `AlphaVantagePriceProvider`, `AlphaVantage`  
-  - `IAlphaVantageKeyResolver`  
-  - `INotificationWriter`  
-  - `AppDbContext`
+  - `SecurityPricesBackfillExecutor`  
+  - `SecurityPriceProviderErrorUserMessageBuilder`  
+  - `IPriceProvider`, `IAlphaVantageKeyResolver`  
+  - `ISecurityService`, `ISecurityPriceService`, `INotificationWriter`
 - **Domäne/Persistenz:**  
-  - `Security`, `SecurityPrice`, `Notification`  
-  - Fehlerfelder in `Security` (`PriceErrorClass`, `PriceErrorProviderMessage`, `PriceErrorSinceUtc`)
+  - `Security` (Price-Error-Felder)  
+  - `SecurityPrice`  
+  - `Notification`
 - **Externe Systeme:**  
   - AlphaVantage API (`TIME_SERIES_DAILY`)
 
-## Verlinkte Artefakte (API, Business, Tests, Lifecycle)
+## Verlinkte Artefakte
 
-- **API:** [docs/api/SecuritiesController.md](../api/SecuritiesController.md)  
+- **Flow-Index:** [Docs/flows/README.md](./README.md)  
+- **API:** [Docs/api/SecuritiesController.md](../api/SecuritiesController.md)  
 - **Business:**  
-  - [docs/business/features/F007-wertpapierpreise.md](../business/features/F007-wertpapierpreise.md)  
-  - [docs/business/features/F007-wertpapierpreise-infrastructure.md](../business/features/F007-wertpapierpreise-infrastructure.md)
+  - [Docs/business/features/F007-wertpapierpreise.md](../business/features/F007-wertpapierpreise.md)  
+  - [Docs/business/features/F013-benachrichtigungen.md](../business/features/F013-benachrichtigungen.md)
 - **Tests (Code):**  
-  - [FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs](../../FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs)  
-  - [FinanceManager.Tests/Web/Services/AlphaVantagePriceProviderRetryTests.cs](../../FinanceManager.Tests/Web/Services/AlphaVantagePriceProviderRetryTests.cs)  
-  - [FinanceManager.Tests/Web/Services/SecurityPriceWorkerErrorHandlingTests.cs](../../FinanceManager.Tests/Web/Services/SecurityPriceWorkerErrorHandlingTests.cs)  
-  - [FinanceManager.Tests/Web/Services/PriceProviderErrorClassExtensionsTests.cs](../../FinanceManager.Tests/Web/Services/PriceProviderErrorClassExtensionsTests.cs)
-- **Dokumentations-/Lifecycle-Report:**  
-  - [docs/documentation-plan.md](../documentation-plan.md)
+  - [FinanceManager.Tests/Web/Services/SecurityPricesBackfillExecutorNotificationTests.cs](../../FinanceManager.Tests/Web/Services/SecurityPricesBackfillExecutorNotificationTests.cs)  
+  - [FinanceManager.Tests/Web/Services/SecurityPriceProviderErrorUserMessageBuilderTests.cs](../../FinanceManager.Tests/Web/Services/SecurityPriceProviderErrorUserMessageBuilderTests.cs)  
+  - [FinanceManager.Tests/Web/Services/SecurityPriceWorkerErrorHandlingTests.cs](../../FinanceManager.Tests/Web/Services/SecurityPriceWorkerErrorHandlingTests.cs)
 - **Code-Artefakte:**  
-  - [FinanceManager.Web/Services/AlphaVantage.cs](../../FinanceManager.Web/Services/AlphaVantage.cs)  
-  - [FinanceManager.Web/Services/AlphaVantagePriceProvider.cs](../../FinanceManager.Web/Services/AlphaVantagePriceProvider.cs)  
-  - [FinanceManager.Web/Services/PriceProviderErrorClass.cs](../../FinanceManager.Web/Services/PriceProviderErrorClass.cs)  
-  - [FinanceManager.Web/Services/SecurityPriceWorker.cs](../../FinanceManager.Web/Services/SecurityPriceWorker.cs)
+  - [FinanceManager.Web/Services/SecurityPricesBackfillExecutor.cs](../../FinanceManager.Web/Services/SecurityPricesBackfillExecutor.cs)  
+  - [FinanceManager.Web/Services/SecurityPriceWorker.cs](../../FinanceManager.Web/Services/SecurityPriceWorker.cs)  
+  - [FinanceManager.Web/Services/SecurityPriceProviderErrorUserMessageBuilder.cs](../../FinanceManager.Web/Services/SecurityPriceProviderErrorUserMessageBuilder.cs)

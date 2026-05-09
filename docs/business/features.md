@@ -21,6 +21,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 | F005 | Automatische Kategorisierung | Automatische Zuordnung von Ausgaben zu Kategorien | 🔄 In Bearbeitung |
 | F006 | Wertpapier-Verwaltung | Verwaltung von Aktien und Wertpapieren | ✅ Dokumentiert |
 | F007 | [Wertpapierpreise](./features/F007-wertpapierpreise.md) | Automatische Kursaktualisierung mit behobenem AlphaVantage-Fehlerfall, sicheren Hinweisen und robustem Retry-Verhalten | ✅ Dokumentiert |
+| F017 | [Backfill-Fehlerbenachrichtigung](../../Docs/business/features/F017-backfill-fehlerbenachrichtigung.md) | Benachrichtigt gezielt bei dauerhaften Kursabruf-Fehlern im Nachlade-Lauf und läuft bei anderen Wertpapieren weiter | ✅ Dokumentiert |
 | F008 | Budgetplanung | Festlegung und Überwachung von Budgets | 🔄 In Bearbeitung |
 | F009 | Budgetberichte | Auswertung und Analyse von Budget-Abweichungen | 🔄 In Bearbeitung |
 | F010 | Ersparnispläne | Planung und Verfolgung von Sparziele | 🔄 In Bearbeitung |
@@ -46,7 +47,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 - F014 – Benutzereinstellungen
 - F016 – Berichte & Dashboards
 
-**Application Layer (Agent 2):** ✅ 7 Features dokumentiert
+**Application Layer (Agent 2):** ✅ 8 Features dokumentiert
 - F005 – Automatische Kategorisierung
 - F007 – [Wertpapierpreise](./features/F007-wertpapierpreise.md) (Business-Perspektive)
 - F008 – Budgetplanung (Business-Perspektive)
@@ -54,6 +55,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 - F010 – Ersparnispläne
 - F013 – Benachrichtigungen (Business-Perspektive)
 - F015 – Datensicherung (Business-Perspektive)
+- F017 – [Backfill-Fehlerbenachrichtigung](../../Docs/business/features/F017-backfill-fehlerbenachrichtigung.md) (Business-Perspektive)
 
 **Infrastructure Layer (Agent 3):** ✅ 4 Features dokumentiert (technische Vertiefung)
 - F004 – Kontoauszug-Import (technische Details: Parser, Formate)
@@ -68,7 +70,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 - F008 – Budgetplanung (BudgetRule, BudgetCategory, BudgetOverride)
 - F012 – Kontakte (Contact-Entität, Self-Contact, Kontakt-Gruppen)
 
-**Gesamtfortschritt:** ✅ 100% – Alle 16 Features vollständig dokumentiert
+**Gesamtfortschritt:** ✅ 100% – Alle 17 Features vollständig dokumentiert
 
 **Dokumentations-Art:**
 - **Benutzer-Perspektive** (Web Layer): Schritt-für-Schritt für Endbenutzer
@@ -76,7 +78,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 - **Technische Perspektive** (Infrastructure Layer): Externe APIs, Datenformate, Integration
 - **Domain-Perspektive** (Domain Layer): Datenmodelle, Geschäftsregeln, Aggregates
 
-**Letzte Aktualisierung**: 15.01.2025
+**Letzte Aktualisierung**: 09.05.2026
 
 ---
 

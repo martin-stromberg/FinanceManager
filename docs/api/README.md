@@ -9,7 +9,7 @@ This directory contains the following documentation:
 1. **[PUBLIC_API.md](./PUBLIC_API.md)** - Complete REST API reference with all endpoints, request/response examples, and error codes
 2. **[ARCHITECTURE_AND_INTEGRATION.md](./ARCHITECTURE_AND_INTEGRATION.md)** - API architecture, authentication flows, integration examples, and client best practices
 3. **[README.md](./README.md)** - This file
-4. **[SecuritiesController.md](./SecuritiesController.md)** - Securities API inkl. Analyse/Fix der `PriceProviderException`, sanitisiertem Logging (ohne ApiKey-Leakage), Fehlerklassifikation, Retry- und Backfill-Verhalten
+4. **[SecuritiesController.md](./SecuritiesController.md)** - Securities API inkl. Analyse/Fix der `PriceProviderException`, sanitisiertem Logging (ohne ApiKey-Leakage), Fehlerklassifikation, Retry- sowie Backfill-Fehlerbenachrichtigung
 5. **[StatementDraftEntriesController.md](./StatementDraftEntriesController.md)** - Batch-Update API für Statement-Draft-Entries
 6. **[HelpController.md](./HelpController.md)** - Öffentliche Help-Content-Endpunkte (HTML/Markdown/Search-Index)
 
@@ -19,6 +19,9 @@ This directory contains the following documentation:
 - Flow: [../flows/security-price-worker.md](../flows/security-price-worker.md)
 - Business: [../business/features/F007-wertpapierpreise.md](../business/features/F007-wertpapierpreise.md)
 - Tests: [../../FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs](../../FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs)
+- Tests (Backfill-Notification): [../../FinanceManager.Tests/Web/Services/SecurityPricesBackfillExecutorNotificationTests.cs](../../FinanceManager.Tests/Web/Services/SecurityPricesBackfillExecutorNotificationTests.cs)
+- Tests (User-Message-Builder): [../../FinanceManager.Tests/Web/Services/SecurityPriceProviderErrorUserMessageBuilderTests.cs](../../FinanceManager.Tests/Web/Services/SecurityPriceProviderErrorUserMessageBuilderTests.cs)
+- Planung: [../security-price-backfill-notification-planning-overview.md](../security-price-backfill-notification-planning-overview.md)
 - Dokumentations-/Lifecycle-Report: [../documentation-plan.md](../documentation-plan.md)
 
 ## Table of Contents

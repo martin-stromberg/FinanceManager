@@ -74,3 +74,75 @@ Vollständiger Dokumentationslauf für das Feature:
 
 ### Offene Punkte
 - Keine offenen Punkte im Scope dieses Dokumentationslaufs.
+
+---
+
+# Documentation Plan – Backfill-Fehlerbenachrichtigung
+
+## Scope
+
+Vollständiger Dokumentationslauf für das Feature:
+- Benachrichtigungs-Parität zwischen `SecurityPricesBackfillExecutor` und `SecurityPriceWorker`
+- konsistente User-Meldung über `SecurityPriceProviderErrorUserMessageBuilder`
+- aktualisierte API-/Flow-/Business-/README-Dokumentation inkl. Testnachweise
+
+## Phase 1 – Analyse
+
+### API-Docs
+- `docs/api/` vorhanden.
+- Controller-Dokumentation ist vollständig vorhanden.
+- Lücke im Feature-Kontext: Semantik von `POST /api/securities/backfill` zu Notification/Fehlerklassen präzisieren.
+
+### Flow-Docs
+- `docs/flows/` vorhanden.
+- Lücke: Backfill-Fehlerpfad und Konsistenz zu Worker inkl. Message-Builder explizit machen.
+
+### Business-Docs
+- `docs/business/` vorhanden.
+- Lücke: Fachliche Sicht auf „Backfill-Fehlerbenachrichtigung“ als eigenes Feature fehlte.
+
+### README
+- README vorhanden, aber Feature-Hinweis und Querverweise zu Backfill-Artefakten unvollständig.
+
+## Prioritäten
+
+1. **Hoch:** `docs/api/SecuritiesController.md`, `docs/flows/security-price-worker.md`
+2. **Mittel:** `Docs/business/features/F017-backfill-fehlerbenachrichtigung.md`, `docs/business/features.md`
+3. **Mittel:** `README.md`, `docs/documentation-plan.md`, `Docs/tests/backfill-fehlerbenachrichtigung-testluecken.md`
+
+## Phase 2 – Durchgeführte Updates
+
+### API
+- `docs/api/SecuritiesController.md`
+- `docs/api/README.md`
+- `docs/api/INDEX.md`
+
+### Flow
+- `docs/flows/security-price-worker.md`
+- `docs/flows/README.md`
+
+### Business
+- `Docs/business/features/F017-backfill-fehlerbenachrichtigung.md` (neu)
+- `docs/business/features.md`
+- `docs/business/features/F007-wertpapierpreise.md`
+- `docs/business/features/F013-benachrichtigungen.md`
+
+### README
+- `README.md`
+
+### Tests/Lückenstatus
+- `Docs/tests/backfill-fehlerbenachrichtigung-testluecken.md` auf „geschlossen“ aktualisiert
+
+## Ergebnis (Phase 3)
+
+### Existenz-/Nicht-leer-Prüfung
+- Alle im Lauf erstellten/aktualisierten Dokumente sind vorhanden und nicht leer: **Ja**
+
+### Inhaltliche Abdeckung
+- Backfill-Notification-Verhalten nach Fehlerklasse dokumentiert: **Ja**
+- Unterschied Worker (`break`) vs. Backfill (`throw`) bei `RATE_LIMIT` dokumentiert: **Ja**
+- Gemeinsamer User-Message-Builder dokumentiert: **Ja**
+- Testnachweise inkl. neuer Tests und geschlossener Testlücken dokumentiert: **Ja**
+
+### Offene Punkte
+- Keine offenen Punkte im Scope dieses Dokumentationslaufs.

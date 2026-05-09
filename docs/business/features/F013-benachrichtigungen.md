@@ -136,6 +136,7 @@ A: Das hängt von der Geschäftslogik ab. Aktuell können sie manuell verworfen 
 
 ## Verwandte Funktionen
 
+- [F017 – Backfill-Fehlerbenachrichtigung](../../../Docs/business/features/F017-backfill-fehlerbenachrichtigung.md)
 - [F014 – Benutzereinstellungen](./F014-benutzereinstellungen.md) ← Benachrichtigungen KONFIGURIEREN
 - [F008 – Budgetplanung](./F008-budgetplanung.md)
 - [F010 – Ersparnispläne](./F010-ersparnisplaene.md)

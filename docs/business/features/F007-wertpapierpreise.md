@@ -80,5 +80,6 @@ A: Der laufende Abruf stoppt sofort. Sie starten später einen neuen Lauf.
 ## Verwandte Funktionen
 
 - [F006 – Wertpapier-Verwaltung](./F006-wertpapier-verwaltung.md)
+- [F017 – Backfill-Fehlerbenachrichtigung](../../../Docs/business/features/F017-backfill-fehlerbenachrichtigung.md)
 - [F007 – Wertpapierpreise (Infrastructure-Perspektive)](./F007-wertpapierpreise-infrastructure.md)
 - [F016 – Berichte & Dashboards](./F016-berichte-dashboards.md)

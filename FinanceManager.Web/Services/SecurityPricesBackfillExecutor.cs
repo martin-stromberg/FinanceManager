@@ -1,5 +1,7 @@
 using FinanceManager.Application;
+using FinanceManager.Application.Notifications;
 using FinanceManager.Application.Securities;
+using FinanceManager.Domain.Notifications;
 using FinanceManager.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
@@ -79,6 +81,7 @@ public sealed class SecurityPricesBackfillExecutor : IBackgroundTaskExecutor
         var priceProvider = scope.ServiceProvider.GetRequiredService<IPriceProvider>();
         var keyResolver = scope.ServiceProvider.GetRequiredService<IAlphaVantageKeyResolver>();
         var priceService = scope.ServiceProvider.GetRequiredService<ISecurityPriceService>();
+        var notifier = scope.ServiceProvider.GetRequiredService<INotificationWriter>();
 
         // Ensure shared key (worker context)
         var shared = await keyResolver.GetSharedAsync(ct);
@@ -201,11 +204,23 @@ public sealed class SecurityPricesBackfillExecutor : IBackgroundTaskExecutor
                 // mark error via service and continue others
                 try
                 {
-                    var userMessage = ex.ErrorClass == PriceProviderErrorClass.InvalidSymbolOrFunction
-                        ? "Das hinterlegte Symbol ist für den Kursabruf ungültig. Bitte Symbol prüfen und Abruf erneut starten."
-                        : "Der Kursabruf ist fehlgeschlagen. Bitte später erneut versuchen.";
+                    var userMessage = SecurityPriceProviderErrorUserMessageBuilder.Build(ex.ErrorClass, s.Name, s.Identifier, DateTime.UtcNow);
 
                     await priceService.SetPriceErrorAsync(s.OwnerUserId, s.Id, userMessage, ex.ErrorClassCode, ex.ProviderRawMessage, ct);
+
+                    if (ex.ErrorClass != PriceProviderErrorClass.RateLimit && ex.ErrorClass != PriceProviderErrorClass.TransientNetwork)
+                    {
+                        var trigger = $"security:error:{s.Id}";
+                        await notifier.CreateForUserAsync(
+                            s.OwnerUserId,
+                            "Kursabruf fehlgeschlagen",
+                            userMessage,
+                            NotificationType.SystemAlert,
+                            NotificationTarget.HomePage,
+                            DateTime.UtcNow.Date,
+                            trigger,
+                            ct);
+                    }
                 }
                 catch (Exception setEx)
                 {

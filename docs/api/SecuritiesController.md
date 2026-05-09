@@ -2,7 +2,7 @@
 
 Pfad: `FinanceManager.Web.Controllers.SecuritiesController`
 
-Diese Dokumentation fokussiert auf die API-relevanten Endpunkte für Kursabruf-Fehlerbehandlung, Backfill und die im DTO sichtbaren Fehlerfelder.
+Diese Dokumentation fokussiert auf die API-relevanten Endpunkte für Kursabruf-Fehlerbehandlung, Backfill und die im DTO sichtbaren Fehlerfelder – inklusive Feature **Backfill-Fehlerbenachrichtigung**.
 
 Verwandte Endpunkte:
 - [BackgroundTasksController](./BackgroundTasksController.md)
@@ -254,7 +254,13 @@ Beispiel-Response:
 ## Endpunkt: Kurs-Backfill als Background Task starten
 
 ### 1) Übersicht
-Startet den asynchronen Backfill für historische Kurse. Fortschritt und Fehlerzustand werden über [BackgroundTasksController](./BackgroundTasksController.md) abgefragt.
+Startet den asynchronen Backfill für historische Kurse. Der Endpunkt enqueued nur den Task; Fortschritt, Fehlerzustand und Abschluss werden über [BackgroundTasksController](./BackgroundTasksController.md) abgefragt.
+
+Notification-semantik des **ausgeführten** Backfill-Tasks:
+- Bei `PriceProviderException` mit Klassen **außer** `RATE_LIMIT` wird `SetPriceErrorAsync(...)` aufgerufen.
+- User-Notification wird nur für `INVALID_SYMBOL_OR_FUNCTION` und `UNKNOWN_PROVIDER_ERROR` erstellt.
+- Für `TRANSIENT_NETWORK` wird **keine** User-Notification erstellt.
+- Bei `RATE_LIMIT` wird der Task mit Exception abgebrochen (kein `SetPriceErrorAsync`, keine Notification).
 
 ### 2) HTTP-Methode & Pfad
 `POST /api/securities/backfill`
@@ -274,6 +280,10 @@ Bearer Token erforderlich.
 - `securityId` (`uuid`, optional) – nur dieses Wertpapier backfillen.
 - `fromDateUtc` (`string(date-time)`, optional) – Startdatum.
 - `toDateUtc` (`string(date-time)`, optional) – Enddatum.
+
+Hinweise zur Ausführung:
+- Alle Felder sind optional (Record `SecurityBackfillRequest(Guid? SecurityId, DateTime? FromDateUtc, DateTime? ToDateUtc)`).
+- Der Task wird mit `allowDuplicate: false` enqueued. Existiert für denselben User bereits ein `Queued`/`Running`-Backfill-Task, wird dieser bestehende Task zurückgegeben.
 
 Beispiel:
 ```json
@@ -324,15 +334,6 @@ Beispiel:
   "title": "Unauthorized",
   "status": 401,
   "detail": "Authentication required."
-}
-```
-- `404 Not Found`
-```json
-{
-  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.4",
-  "title": "Not Found",
-  "status": 404,
-  "detail": "Security not found."
 }
 ```
 - `500 Internal Server Error`
@@ -404,6 +405,17 @@ Worker-Verhalten:
 - Bei `TRANSIENT_NETWORK`: kein persistenter Fehler am Security-Objekt; Worker fährt mit nächster Security fort.
 - Bei `INVALID_SYMBOL_OR_FUNCTION` und `UNKNOWN_PROVIDER_ERROR`: Fehler wird persistiert, sichere User-Notification wird erstellt, Worker fährt mit nächster Security fort.
 
+Backfill-Verhalten (`SecurityPricesBackfillExecutor`):
+- Verarbeitet nur aktive Securities mit `AlphaVantageCode` und ohne aktiven Preisfehler (`HasPriceError == false`).
+- Bei `RATE_LIMIT`: Backfill bricht sofort mit `PriceProviderException` ab; keine Error-Persistenz, keine Notification.
+- Bei `TRANSIENT_NETWORK`: Fehlerstatus wird via `SetPriceErrorAsync(...)` persistiert; keine Notification; Verarbeitung läuft mit nächster Security weiter.
+- Bei `INVALID_SYMBOL_OR_FUNCTION` und `UNKNOWN_PROVIDER_ERROR`: Fehlerstatus wird persistiert **und** Notification wird erstellt:
+  - `title`: `Kursabruf fehlgeschlagen`
+  - `type`: `SystemAlert`
+  - `target`: `HomePage`
+  - `scheduledDateUtc`: `DateTime.UtcNow.Date`
+  - `trigger`: `security:error:{securityId}`
+
 User-sichere Hinweise:
 - `priceErrorMessage` enthält ausschließlich sichere, lokalisierte Hinweise.
 - Roher Provider-Text wird **nicht** in User-Notifications übernommen.
@@ -426,8 +438,10 @@ Persistierte Fehlerdetails:
 - `FinanceManager.Tests/Web/Services/AlphaVantagePriceProviderRetryTests.cs`
 - `FinanceManager.Tests/Web/Services/PriceProviderErrorClassExtensionsTests.cs`
 - `FinanceManager.Tests/Web/Services/SecurityPriceWorkerErrorHandlingTests.cs`
+- `FinanceManager.Tests/Web/Services/SecurityPricesBackfillExecutorNotificationTests.cs`
+- `FinanceManager.Tests/Web/Services/SecurityPriceProviderErrorUserMessageBuilderTests.cs`
 
-Die genannten Tests sind für das Feature erweitert und grün ausgeführt (Klassifikation, Sanitizing, Retry, Worker-Verhalten).
+Die genannten Tests sind für das Feature erweitert und grün ausgeführt (Klassifikation, Sanitizing, Retry, Worker-/Backfill-Verhalten, Notification- und User-Message-Semantik).
 
 ## Querverweise (Flows/Business/Tests/Lifecycle)
 
@@ -435,4 +449,6 @@ Die genannten Tests sind für das Feature erweitert und grün ausgeführt (Klass
 - Business: [F007 – Wertpapierpreise](../business/features/F007-wertpapierpreise.md)
 - Business (Infra): [F007 – Wertpapierpreise (Infrastructure-Perspektive)](../business/features/F007-wertpapierpreise-infrastructure.md)
 - Tests: [`FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs`](../../FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs)
+- Planung (Backfill-Notification): [../security-price-backfill-notification-planning-overview.md](../security-price-backfill-notification-planning-overview.md)
+- Requirement (Backfill-Notification): [../requirements/security-price-backfill-notification-alignment.md](../requirements/security-price-backfill-notification-alignment.md)
 - Dokumentations-/Lifecycle-Report: [Documentation Plan – AlphaVantage PriceProviderException Fix](../documentation-plan.md)

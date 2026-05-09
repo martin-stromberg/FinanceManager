@@ -6,4 +6,4 @@ Technische Ablaufdokumente mit Mermaid-Diagrammen und Verweisen auf konkreten Co
 - [Statement Draft Booking](./statement-draft-booking.md) – Validierung und Buchungsablauf von Draft-Entries.
 - [Split / UploadGroup](./split-uploadgroup.md) – Parent/Child-Verknüpfung bei Split-Drafts und Gruppierung.
 - [Posting Aggregates](./posting-aggregates.md) – Aktualisierung und Nutzung der Reporting-Aggregate.
-- [SecurityPriceWorker](./security-price-worker.md) – AlphaVantage-Klassifikation via `PriceProviderException`, Logging-/Sanitizing-Regeln, Retry-Strategie und Worker-Verhalten (Continue vs. Stop bei Rate-Limit).
+- [Security-Preisabruf (Worker + Backfill)](./security-price-worker.md) – Konsistente Fehlerklassifikation und Benachrichtigung für `SecurityPriceWorker` und `SecurityPricesBackfillExecutor` inkl. `SecurityPriceProviderErrorUserMessageBuilder` (RateLimit/Transient/Providerfehler).

@@ -190,7 +190,7 @@ public sealed class SecurityPriceWorker : BackgroundService
                 var entity = await db.Securities.FirstOrDefaultAsync(s => s.Id == sec.Id, ct);
                 if (entity != null)
                 {
-                    var userMessage = BuildUserNotificationMessage(ex.ErrorClass, sec.Name, sec.Identifier, DateTime.UtcNow);
+                    var userMessage = SecurityPriceProviderErrorUserMessageBuilder.Build(ex.ErrorClass, sec.Name, sec.Identifier, DateTime.UtcNow);
                     entity.SetPriceError(errorClassCode, userMessage, SanitizeProviderRawMessage(ex.ProviderRawMessage));
                     await db.SaveChangesAsync(ct);
 
@@ -214,20 +214,6 @@ public sealed class SecurityPriceWorker : BackgroundService
 
         _logger.LogInformation("SecurityPriceWorker: Processed {Processed} securities, inserted {Inserted} prices (limit {Limit}, rpm {Rpm}).",
             processed, inserted, maxSymbols, rpm);
-    }
-
-    private static string BuildUserNotificationMessage(PriceProviderErrorClass errorClass, string securityName, string securityIdentifier, DateTime occurredUtc)
-    {
-        var occurredText = occurredUtc.ToString("yyyy-MM-dd HH:mm 'UTC'");
-        return errorClass switch
-        {
-            PriceProviderErrorClass.InvalidSymbolOrFunction =>
-                $"Für '{securityName}' ({securityIdentifier}) konnte kein Kurs geladen werden ({occurredText}). Bitte Symbol prüfen, speichern und anschließend den Abruf erneut starten.",
-            PriceProviderErrorClass.UnknownProviderError =>
-                $"Für '{securityName}' ({securityIdentifier}) ist beim Kursabruf ein externer Fehler aufgetreten ({occurredText}). Bitte Hinweis bestätigen und den Abruf später erneut starten.",
-            _ =>
-                $"Für '{securityName}' ({securityIdentifier}) ist beim Kursabruf ein Fehler aufgetreten ({occurredText})."
-        };
     }
 
     private static string? SanitizeProviderRawMessage(string? value)
