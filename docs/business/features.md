@@ -20,7 +20,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 | F004 | Kontoauszug-Import | Import von Kontoauszügen aus verschiedenen Bankformaten | ✅ Dokumentiert |
 | F005 | Automatische Kategorisierung | Automatische Zuordnung von Ausgaben zu Kategorien | 🔄 In Bearbeitung |
 | F006 | Wertpapier-Verwaltung | Verwaltung von Aktien und Wertpapieren | ✅ Dokumentiert |
-| F007 | Wertpapierpreise | Automatische Abfrage aktueller Wertpapierpreise | 🔄 In Bearbeitung |
+| F007 | [Wertpapierpreise](./features/F007-wertpapierpreise.md) | Automatische Kursaktualisierung mit klarer Fehlerbehandlung und Nutzerhinweisen | ✅ Dokumentiert |
 | F008 | Budgetplanung | Festlegung und Überwachung von Budgets | 🔄 In Bearbeitung |
 | F009 | Budgetberichte | Auswertung und Analyse von Budget-Abweichungen | 🔄 In Bearbeitung |
 | F010 | Ersparnispläne | Planung und Verfolgung von Sparziele | 🔄 In Bearbeitung |
@@ -48,7 +48,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 
 **Application Layer (Agent 2):** ✅ 7 Features dokumentiert
 - F005 – Automatische Kategorisierung
-- F007 – Wertpapierpreise (Business-Perspektive)
+- F007 – [Wertpapierpreise](./features/F007-wertpapierpreise.md) (Business-Perspektive)
 - F008 – Budgetplanung (Business-Perspektive)
 - F009 – Budgetberichte
 - F010 – Ersparnispläne
@@ -57,7 +57,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 
 **Infrastructure Layer (Agent 3):** ✅ 4 Features dokumentiert (technische Vertiefung)
 - F004 – Kontoauszug-Import (technische Details: Parser, Formate)
-- F007 – Wertpapierpreise (technische Details: AlphaVantage API)
+- F007 – [Wertpapierpreise (Infrastructure-Perspektive)](./features/F007-wertpapierpreise-infrastructure.md)
 - F013 – Benachrichtigungen (technische Details: E-Mail, Holiday-API)
 - F015 – Datensicherung (technische Details: Backup-Format, Restore-Prozess)
 

@@ -1,109 +1,91 @@
 # F007 – Wertpapierpreise (Infrastructure-Perspektive)
 
-## Externe Datenquelle: AlphaVantage
+## Einleitung
 
-### API-Integration
+Diese Seite erklärt den Ablauf des Kursabrufs in einfacher Form.  
+Der Schwerpunkt liegt auf der neuen Fehlerbehandlung.  
+Nutzer erhalten klare Hinweise statt roher Anbietertexte.  
+So können Fachbereiche schnell entscheiden: warten oder Daten korrigieren.
 
-**Anbieter:** AlphaVantage (https://www.alphavantage.co)
-**Authentifizierung:** API-Key (kostenlos, erfordert Registrierung)
-**Rate Limit:** 5 Anfragen/Minute, 500 Anfragen/Tag (kostenlos)
+## Wer nutzt es?
 
-### Unterstützte Wertpapierdaten
+Diese Seite hilft Produktverantwortlichen und fachnahen Stakeholdern.  
+Sie brauchen eine klare Sicht auf Verhalten, Risiken und Diagnose.  
+Auch Support-Teams nutzen diese Übersicht für Rückfragen aus dem Alltag.
 
-AlphaVantage bietet folgende Daten:
+## Schritt-für-Schritt-Anleitung
 
-1. **Aktienpreise (Stock Data)**
-   - Tagespreise (Daily)
-   - Intraday-Preise (optional)
-   - Änderung + Prozentänderung
+1. Sie starten den Kursabruf für mehrere Wertpapiere.  
+2. Sie prüfen nach dem Lauf die Hinweise auf der Startseite.  
+3. Sie unterscheiden den Hinweistext:  
+   - **Symbol prüfen** steht für ein dauerhaftes Eingabeproblem.  
+   - **Später erneut starten** steht für ein vorübergehendes Problem.  
+4. Sie korrigieren bei dauerhaftem Problem das Symbol und speichern.  
+5. Sie starten den Abruf erneut.  
+6. Sie warten bei einem Tageslimit des Anbieters bis zum nächsten Lauf.
 
-2. **Unterstützte Märkte**
-   - US-Börsen (NYSE, NASDAQ)
-   - European exchanges (teilweise)
-   - Over-the-counter (OTC)
+## Beispiel
 
-3. **Datenformat**
-   - JSON oder CSV
-   - Pro Anfrage: Zeitreihe mit Öffnungs-, Schluss-, Höchst-, Tiefstwert
+Ein Lauf enthält fünf Wertpapiere.  
+Beim ersten Wertpapier ist das Symbol falsch.  
+Das System merkt sich den Fehler und zeigt einen klaren Nutzerhinweis.  
+Beim zweiten Wertpapier tritt ein kurzer Verbindungsfehler auf.  
+Der Lauf macht trotzdem mit den restlichen Wertpapieren weiter.
 
-### Datenfluss
+## Was passiert im Hintergrund?
 
-```
-[Benutzer konfiguriert API-Key]
-        ↓
-[AlphaVantage API-Schlüssel gespeichert]
-        ↓
-[Tägliche Scheduled Task startet]
-        ↓
-[Für jedes registrierte Wertpapier (ISIN)]
-        ↓
-[HTTP-Request an AlphaVantage API]
-        ↓
-[Aktueller Kurs wird abgerufen]
-        ↓
-[SecurityPrice-Entität erstellt/aktualisiert]
-        ↓
-[HistorischeKurse gespeichert]
-```
+Der Ablauf bewertet jeden Fehler mit einer festen Fehlerklasse.  
+Vorübergehende Verbindungsprobleme lösen keinen dauerhaften Fehlerstatus aus.  
+Dauerhafte Probleme am Symbol oder unklare Anbieterprobleme werden als Fehler am Wertpapier gespeichert.  
+Bei Tageslimit stoppt der Lauf sofort, damit unnötige weitere Abrufe ausbleiben.  
+Bei anderen Fehlern läuft der Durchgang mit dem nächsten Wertpapier weiter.
 
-## Technische Implementierung
+Gespeicherte Diagnosedaten:
+- Fehlerklasse, zum Beispiel `INVALID_SYMBOL_OR_FUNCTION` oder `UNKNOWN_PROVIDER_ERROR`
+- Sichere Nutzernachricht für die Oberfläche
+- Zeitpunkt seit dem der Fehler aktiv ist
+- Bereinigter Anbietertext, gekürzt und ohne Steuerzeichen
 
-### 1. Konfiguration
-- API-Key wird in User Settings gespeichert (verschlüsselt)
-- Update-Frequenz konfigurierbar (täglich, wöchentlich)
-- Update-Zeit festlegbar
+Warum keine rohen Anbietertexte im Nutzerhinweis:
+- Rohe Texte sind oft technisch und missverständlich.
+- Rohe Texte können uneinheitlich sein.
+- Klare Standardhinweise führen schneller zur richtigen Aktion.
 
-### 2. Scheduler
-- `SecurityPriceWorker.cs` führt periodisch Update aus
-- Läuft im Hintergrund ohne Benutzerinteraktion
-- Fehlerbehandlung: Bei Fehler wird alte Kurse beibehalten
+Absicherung durch Tests:
+- Fehlerklassen aus Anbieterantworten:  
+  [FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs](../../../FinanceManager.Tests/Web/Services/AlphaVantageErrorHandlingTests.cs)
+- Weiterlaufen bei nicht Tageslimit-Fehlern und Stopp bei Tageslimit:  
+  [FinanceManager.Tests/Web/Services/SecurityPriceWorkerErrorHandlingTests.cs](../../../FinanceManager.Tests/Web/Services/SecurityPriceWorkerErrorHandlingTests.cs)
+- Stabile Fehlercodes für Speicherung und Auswertung:  
+  [FinanceManager.Tests/Web/Services/PriceProviderErrorClassExtensionsTests.cs](../../../FinanceManager.Tests/Web/Services/PriceProviderErrorClassExtensionsTests.cs)
 
-### 3. API-Call
-- HTTP GET an `https://www.alphavantage.co/query`
-- Parameter: `symbol=DE0007236101&apikey=YOUR_KEY&function=GLOBAL_QUOTE`
-- Response: JSON mit aktuellem Kurs
-
-### 4. Datenspeicherung
-- `SecurityPrice`-Tabelle speichert:
-  - Wertpapier-ID
-  - Kurs
-  - Datum/Uhrzeit
-  - Quelle (AlphaVantage)
-- Historische Kurse werden beibehalten
-
-### 5. Fehlerbehandlung
-- Wenn API nicht erreichbar: Alte Kurse weiternutzen
-- Wenn Kurs nicht gefunden: Warnung an Benutzer
-- Rate Limit überschritten: Retry mit Backoff
-
-## Fehler-Szenarien
-
-| Szenario | Verhalten |
-|----------|-----------|
-| API-Key ungültig | Warnung: "API-Key nicht gültig" |
-| Rate Limit erreicht | Versuche Morgen erneut |
-| Wertpapier nicht gefunden | Warnung: "ISIN nicht in AlphaVantage" |
-| Netzwerkfehler | Verwende zuletzt bekannten Kurs |
-| Keine Kurse vorhanden | Zeige "Keine Daten verfügbar" |
+Technische Artefakte:
+- [FinanceManager.Web/Services/SecurityPriceWorker.cs](../../../FinanceManager.Web/Services/SecurityPriceWorker.cs)
+- [FinanceManager.Web/Services/AlphaVantagePriceProvider.cs](../../../FinanceManager.Web/Services/AlphaVantagePriceProvider.cs)
+- [FinanceManager.Web/Services/AlphaVantage.cs](../../../FinanceManager.Web/Services/AlphaVantage.cs)
+- [FinanceManager.Web/Services/PriceProviderErrorClass.cs](../../../FinanceManager.Web/Services/PriceProviderErrorClass.cs)
+- [FinanceManager.Domain/Securities/Security.cs](../../../FinanceManager.Domain/Securities/Security.cs)
+- [FinanceManager.Infrastructure/Migrations/20260509072751_AddSecurityPriceErrorClassification.cs](../../../FinanceManager.Infrastructure/Migrations/20260509072751_AddSecurityPriceErrorClassification.cs)
 
 ## Häufige Fragen (FAQ)
 
-**F: Wie real-time sind die Kurse?**  
-A: AlphaVantage verzögert Kurse um 15–20 Minuten (kostenlos).
+**F: Was ist ein vorübergehendes Problem?**  
+A: Kurzfristige Verbindungsprobleme. Sie starten den Abruf später erneut.
 
-**F: Was ist die maximale Anzahl Wertpapiere?**  
-A: Mit Rate Limit: ~100 Wertpapiere pro Tag.
+**F: Was ist ein dauerhaftes Problem?**  
+A: Ein falsches oder ungeeignetes Symbol. Sie müssen den Eintrag korrigieren.
 
-**F: Kann ich den API-Key ändern?**  
-A: Ja, in den Benutzereinstellungen.
+**F: Warum stoppt der Lauf beim Tageslimit sofort?**  
+A: Weitere Abrufe wären im selben Lauf nicht erfolgreich.
 
-**F: Werden Kurse gecacht?**  
-A: Ja, lokal für einen Tag, dann neuer API-Call.
+**F: Welche Infos werden für Diagnose gespeichert?**  
+A: Fehlerklasse, sichere Meldung, Zeitstempel und bereinigter Anbietertext.
 
-**F: Kann ich alternative Datenquellen nutzen?**  
-A: Momentan nur AlphaVantage, andere könnten implementiert werden.
+**F: Wie wird sichergestellt, dass das Verhalten stabil bleibt?**  
+A: Durch neue und aktualisierte Tests für Fehlerklassen und Laufsteuerung.
 
-## Verwandte Funktionen (Infrastructure)
+## Verwandte Funktionen
 
-- [F006 – Wertpapier-Verwaltung](./F006-wertpapier-verwaltung.md) (Datenmodell)
-- [F016 – Berichte & Dashboards](./F016-berichte-dashboards.md) (Nutzung der Daten)
+- [F007 – Wertpapierpreise](./F007-wertpapierpreise.md)
+- [F006 – Wertpapier-Verwaltung](./F006-wertpapier-verwaltung.md)
+- [F016 – Berichte & Dashboards](./F016-berichte-dashboards.md)
