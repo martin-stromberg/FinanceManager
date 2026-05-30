@@ -60,4 +60,13 @@ public interface ISecurityPriceService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes when the operation has been applied.</returns>
     Task SetPriceErrorAsync(Guid ownerUserId, Guid securityId, string message, CancellationToken ct);
+
+    /// <summary>
+    /// Clears the price error state for the specified security.
+    /// </summary>
+    /// <param name="ownerUserId">The owner of the security.</param>
+    /// <param name="securityId">The security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the operation has been applied.</returns>
+    Task ClearPriceErrorAsync(Guid ownerUserId, Guid securityId, CancellationToken ct);
 }

@@ -1,4 +1,5 @@
 ﻿using FinanceManager.Application.Notifications; // NEW
+using FinanceManager.Application.Securities;
 using FinanceManager.Domain.Notifications;    // NEW
 using FinanceManager.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -89,6 +90,7 @@ public sealed class SecurityPriceWorker : BackgroundService
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var prices = scope.ServiceProvider.GetRequiredService<IPriceProvider>();
+        var priceService = scope.ServiceProvider.GetRequiredService<ISecurityPriceService>();
         var notifier = scope.ServiceProvider.GetRequiredService<INotificationWriter>(); // NEW
         var resolver = scope.ServiceProvider.GetRequiredService<IAlphaVantageKeyResolver>();
 
@@ -109,7 +111,7 @@ public sealed class SecurityPriceWorker : BackgroundService
 
         var maxSymbols = Math.Max(1, _quota.Value.MaxSymbolsPerRun);
         var batch = await db.Securities.AsNoTracking()
-            .Where(s => s.IsActive && s.AlphaVantageCode != null && !s.HasPriceError)
+            .Where(s => s.IsActive && s.AlphaVantageCode != null)
             .Select(s => new
             {
                 Sec = s,
@@ -144,12 +146,15 @@ public sealed class SecurityPriceWorker : BackgroundService
                     .FirstOrDefaultAsync(ct);
 
                 var startExclusive = last == default ? endInclusive.AddYears(-2) : last;
-                if (endInclusive <= startExclusive)
+                var requiresValidation = sec.HasPriceError;
+                if (endInclusive <= startExclusive && !requiresValidation)
                 {
                     continue;
                 }
 
                 var pricesList = await prices.GetDailyPricesAsync(sec.AlphaVantageCode!, startExclusive, endInclusive, ct);
+                await priceService.ClearPriceErrorAsync(sec.OwnerUserId, sec.Id, ct);
+
                 if (pricesList.Count == 0)
                 {
                     continue;
@@ -175,18 +180,23 @@ public sealed class SecurityPriceWorker : BackgroundService
             catch (InvalidOperationException ex)
             {
                 // Domain error (e.g. invalid symbol): mark security as errored and notify user
-                _logger.LogWarning(ex, "Blocking further price fetches for security {SecurityId} ({Code}) due to error.", sec.Id, sec.AlphaVantageCode);
+                _logger.LogWarning(ex, "Price fetch error for security {SecurityId} ({Code}).", sec.Id, sec.AlphaVantageCode);
 
                 var entity = await db.Securities.FirstOrDefaultAsync(s => s.Id == sec.Id, ct);
                 if (entity != null)
                 {
+                    var previousMessage = entity.PriceErrorMessage;
+                    var wasAlreadyRaised = entity.HasPriceError && string.Equals(previousMessage, ex.Message, StringComparison.Ordinal);
                     entity.SetPriceError(ex.Message);
                     await db.SaveChangesAsync(ct);
 
-                    var title = "Kursabruf fehlgeschlagen";
-                    var msg = $"Für '{sec.Name}' ({sec.Identifier}) ist beim Kursabruf ein Fehler aufgetreten: {ex.Message}\nWeitere Abrufe wurden gestoppt, bis du den Hinweis bestätigst.";
-                    var trigger = $"security:error:{sec.Id}";
-                    await notifier.CreateForUserAsync(sec.OwnerUserId, title, msg, NotificationType.SystemAlert, NotificationTarget.HomePage, DateTime.UtcNow.Date, trigger, ct);
+                    if (!wasAlreadyRaised)
+                    {
+                        var title = "Kursabruf fehlgeschlagen";
+                        var msg = $"Für '{sec.Name}' ({sec.Identifier}) ist beim Kursabruf ein Fehler aufgetreten: {ex.Message}\nAndere Abrufe laufen weiter. Das Wertpapier bleibt als fehlerhaft markiert, bis ein Abruf erfolgreich ist.";
+                        var trigger = $"security:error:{sec.Id}";
+                        await notifier.CreateForUserAsync(sec.OwnerUserId, title, msg, NotificationType.SystemAlert, NotificationTarget.HomePage, DateTime.UtcNow.Date, trigger, ct);
+                    }
                 }
             }
             catch (Exception ex)

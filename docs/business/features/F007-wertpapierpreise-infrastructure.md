@@ -56,7 +56,7 @@ AlphaVantage bietet folgende Daten:
 ### 2. Scheduler
 - `SecurityPriceWorker.cs` führt periodisch Update aus
 - Läuft im Hintergrund ohne Benutzerinteraktion
-- Fehlerbehandlung: Bei Fehler wird alte Kurse beibehalten
+- Fehlerbehandlung: Bei Fehler bleibt der letzte bekannte Kurs bestehen; andere Wertpapiere werden weiter verarbeitet
 
 ### 3. API-Call
 - HTTP GET an `https://www.alphavantage.co/query`
@@ -73,7 +73,8 @@ AlphaVantage bietet folgende Daten:
 
 ### 5. Fehlerbehandlung
 - Wenn API nicht erreichbar: Alte Kurse weiternutzen
-- Wenn Kurs nicht gefunden: Warnung an Benutzer
+- Wenn Kurs nicht gefunden: Warnung an Benutzer, betroffene Wertpapiere markieren
+- Der Abruf anderer Wertpapiere läuft weiter
 - Rate Limit überschritten: Retry mit Backoff
 
 ## Fehler-Szenarien

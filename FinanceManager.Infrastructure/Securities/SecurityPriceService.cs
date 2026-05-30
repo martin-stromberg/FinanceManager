@@ -117,4 +117,26 @@ public class SecurityPriceService : ISecurityPriceService
         entity.SetPriceError(message ?? string.Empty);
         await _db.SaveChangesAsync(ct);
     }
+
+    /// <summary>
+    /// Clears the stored price error state for the given security.
+    /// </summary>
+    /// <param name="ownerUserId">The owner of the security.</param>
+    /// <param name="securityId">The security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the operation has been applied.</returns>
+    /// <exception cref="ArgumentException">Thrown when the security does not exist or is not owned by <paramref name="ownerUserId"/>.</exception>
+    public async Task ClearPriceErrorAsync(Guid ownerUserId, Guid securityId, CancellationToken ct)
+    {
+        var entity = await _db.Securities.FirstOrDefaultAsync(s => s.Id == securityId && s.OwnerUserId == ownerUserId, ct);
+        if (entity == null) throw new ArgumentException("Security not found or not owned by user");
+
+        if (!entity.HasPriceError)
+        {
+            return;
+        }
+
+        entity.ClearPriceError();
+        await _db.SaveChangesAsync(ct);
+    }
 }

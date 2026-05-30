@@ -396,3 +396,11 @@ FodyWeavers.xsd
 /FinanceManager.Tests/Infrastructure/Statements/Reader/Barclays_StatementFileReaderTests.cs
 /FinanceManager.Tests/Infrastructure/Statements/Reader/Wuestenrot_StatementFileReaderTests.cs
 
+*.copilot-task.md
+*.copilot-task.md.bak
+*.copilot.context.md
+*.copilot.context.md.bak
+/.github/agents/*
+/.github/tools/*
+/.github/workflows/*
+/.softwareschmiede/copilot-runtime/*

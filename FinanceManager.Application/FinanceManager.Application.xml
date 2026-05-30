@@ -1660,6 +1660,15 @@
             <param name="ct">Cancellation token.</param>
             <returns>A task that completes when the operation has been applied.</returns>
         </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityPriceService.ClearPriceErrorAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Clears the price error state for the specified security.
+            </summary>
+            <param name="ownerUserId">The owner of the security.</param>
+            <param name="securityId">The security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A task that completes when the operation has been applied.</returns>
+        </member>
         <member name="T:FinanceManager.Application.Securities.ISecurityReportService">
             <summary>
             Read-only reporting operations for securities.
