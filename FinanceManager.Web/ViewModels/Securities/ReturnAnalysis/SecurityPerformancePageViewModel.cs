@@ -144,7 +144,7 @@ public sealed class SecurityPerformancePageViewModel : BaseViewModel
         if (ActiveTabKey == "Overview")
         {
             tabs.Add(new UiRibbonTab(
-                "Zeitraum",
+                localizer["Ribbon_Group_Period"].Value,
                 OverviewTabVm.Ranges
                     .Select(range => new UiRibbonAction(
                         $"Range_{range}",
@@ -164,12 +164,12 @@ public sealed class SecurityPerformancePageViewModel : BaseViewModel
         if (ActiveTabKey == "Benchmark")
         {
             tabs.Add(new UiRibbonTab(
-                "Einstellungen",
+                localizer["Ribbon_Group_Settings"].Value,
                 new List<UiRibbonAction>
                 {
                     new UiRibbonAction(
                         "BenchmarkSetup",
-                        "Benchmark einrichten",
+                        localizer["Ribbon_BenchmarkSetup"].Value,
                         "<svg><use href='/icons/sprite.svg#settings'/></svg>",
                         UiRibbonItemSize.Large,
                         false,
@@ -187,3 +187,4 @@ public sealed class SecurityPerformancePageViewModel : BaseViewModel
         };
     }
 }
+

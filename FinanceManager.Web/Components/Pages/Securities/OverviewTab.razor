@@ -66,6 +66,7 @@
     [Parameter, EditorRequired] public SecurityPerformanceOverviewTabViewModel? ViewModel { get; set; }
 
     private SecurityPerformanceOverviewTabViewModel? _vm;
+    private Guid _loadedSecurityId;
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
@@ -83,10 +84,13 @@
             {
                 _vm.StateChanged += VmOnStateChanged;
             }
+
+            _loadedSecurityId = Guid.Empty;
         }
 
-        if (_vm != null)
+        if (_vm != null && _loadedSecurityId != SecurityId)
         {
+            _loadedSecurityId = SecurityId;
             await _vm.LoadAsync(SecurityId, CancellationToken.None);
         }
     }

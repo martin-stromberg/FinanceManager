@@ -1740,7 +1740,7 @@
             </summary>
             <param name="id">Security identifier.</param>
             <param name="ct">Cancellation token.</param>
-            <returns>200 OK with <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.SparklineDataDto"/>; 404 when not found or insufficient price data.</returns>
+            <returns>200 OK with <see cref="T:FinanceManager.Shared.Dtos.Securities.SparklineDataDto"/>; 404 when not found or insufficient price data.</returns>
         </member>
         <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetReturnMetricsAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>
@@ -8535,6 +8535,12 @@
             </summary>
             <param name="services">Service provider.</param>
         </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.OverviewTabVm">
+            <summary>
+            View model for the overview tab. Owned and lifecycle-managed by this page view model
+            so that its state (selected range, chart data) can be accessed for ribbon button rendering.
+            </summary>
+        </member>
         <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.SecurityId">
             <summary>
             Security identifier currently shown by the page.
@@ -8579,6 +8585,9 @@
             </summary>
             <param name="tabKey">Tab key.</param>
             <returns>Display label.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
+            <inheritdoc />
         </member>
         <member name="T:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceTimeSeriesTabViewModel">
             <summary>
@@ -9500,6 +9509,12 @@
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.SelectedBenchmarkSecurityId">
             <summary>Currently selected benchmark security id. Null means no benchmark.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.ShowSharpeRatio">
+            <summary>Whether the Sharpe Ratio should be shown in analyses.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.RiskFreeRate">
+            <summary>Risk-free rate used for return calculations (decimal, e.g. 0.04 = 4%). Must be >= 0.</summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.LoadAsync(System.Threading.CancellationToken)">
             <summary>
@@ -10703,26 +10718,30 @@
         <member name="M:FinanceManager.Web.Components.Pages.Securities.CashflowTab.OnParametersSetAsync">
             <inheritdoc />
         </member>
-        <member name="P:FinanceManager.Web.Components.Pages.Securities.MetricsTab.SecurityId">
-            <summary>Security identifier.</summary>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.CashflowTab.BuildDividendBars">
+            <summary>Builds SVG bar chart markup for dividends by year.</summary>
         </member>
-        <member name="M:FinanceManager.Web.Components.Pages.Securities.MetricsTab.OnInitializedAsync">
-            <inheritdoc />
-        </member>
-        <member name="M:FinanceManager.Web.Components.Pages.Securities.MetricsTab.OnParametersSetAsync">
-            <inheritdoc />
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.CashflowTab.BuildCostBars">
+            <summary>Builds SVG bar chart markup for taxes and fees by year including cumulative line.</summary>
         </member>
         <member name="P:FinanceManager.Web.Components.Pages.Securities.OverviewTab.SecurityId">
             <summary>Security identifier.</summary>
         </member>
-        <member name="M:FinanceManager.Web.Components.Pages.Securities.OverviewTab.OnInitializedAsync">
-            <inheritdoc />
+        <member name="P:FinanceManager.Web.Components.Pages.Securities.OverviewTab.ViewModel">
+            <summary>
+            Pre-created view model supplied by the parent page. When provided the component subscribes
+            to its <see cref="!:SecurityPerformanceOverviewTabViewModel.StateChanged"/> event and calls
+            <see cref="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.LoadAsync(System.Guid,System.Threading.CancellationToken)"/> on parameter changes.
+            </summary>
         </member>
         <member name="M:FinanceManager.Web.Components.Pages.Securities.OverviewTab.OnParametersSetAsync">
             <inheritdoc />
         </member>
         <member name="P:FinanceManager.Web.Components.Pages.Securities.SecurityPerformancePage.Id">
             <summary>Security identifier from the route.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Components.Pages.Securities.SecurityPerformancePage.InitialTab">
+            <summary>Optional tab key from the route, e.g. "Metrics".</summary>
         </member>
         <member name="M:FinanceManager.Web.Components.Pages.Securities.SecurityPerformancePage.OnInitializedAsync">
             <inheritdoc />
@@ -10738,6 +10757,12 @@
         </member>
         <member name="M:FinanceManager.Web.Components.Pages.Securities.TimeSeriesTab.OnParametersSetAsync">
             <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.TimeSeriesTab.DividendSvgWidth">
+            <summary>Calculates the SVG width for the dividend bar chart.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.TimeSeriesTab.BuildDividendSvg">
+            <summary>Builds the SVG markup for the dividend bar chart as a safe string.</summary>
         </member>
         <member name="P:FinanceManager.Web.Components.Shared.ReturnSummaryWidget.SecurityId">
             <summary>Security identifier to show return data for.</summary>

@@ -20,10 +20,12 @@
   <data name="Label_Invested" xml:space="preserve"><value>Invested</value></data>
   <data name="Label_Cagr" xml:space="preserve"><value>CAGR p.a.</value></data>
   <data name="Label_Irr" xml:space="preserve"><value>IRR (personal)</value></data>
+  <data name="Label_CostVsCurrentPrice" xml:space="preserve"><value>Cost Basis / Current Price</value></data>
 
   <!-- Aria / title attributes -->
   <data name="Aria_FormulaAndItems" xml:space="preserve"><value>Formula and items</value></data>
   <data name="Aria_InfoAbout" xml:space="preserve"><value>Info about {0}</value></data>
+  <data name="Aria_Sparkline" xml:space="preserve"><value>Price history: Invested capital vs. market value</value></data>
   <data name="Warning_MissingPrices" xml:space="preserve"><value>Missing price data</value></data>
 
   <!-- Actions -->

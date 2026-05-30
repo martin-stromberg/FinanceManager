@@ -1127,6 +1127,15 @@
         <member name="M:FinanceManager.Shared.ApiClient.Securities_UpdateReturnAnalysisSettingsAsync(FinanceManager.Shared.Dtos.Securities.ReturnAnalysisSettingsUpdateRequest,System.Threading.CancellationToken)">
             <summary>Updates return analysis settings for the current user.</summary>
         </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_GetSparklineAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns sparkline data for the security widget mini-chart.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>The <see cref="T:FinanceManager.Shared.Dtos.Securities.SparklineDataDto"/> when found; otherwise null when not found or insufficient data.</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+        </member>
         <member name="M:FinanceManager.Shared.ApiClient.SecurityCategories_ListAsync(System.Threading.CancellationToken)">
             <summary>
             Lists security categories for the current user.
@@ -4853,20 +4862,60 @@
             </summary>
             <param name="BenchmarkSecurityId">Id of the benchmark security.</param>
             <param name="BenchmarkName">Display name of the benchmark security.</param>
-            <param name="SecurityNormalizedValues">Normalized values for the target security (base 100).</param>
-            <param name="BenchmarkNormalizedValues">Normalized values for the benchmark (base 100).</param>
-            <param name="StartDate">Start date of the comparison period (first transaction date).</param>
+            <param name="SecurityNormalizedValues">
+            Normalized values for the target security over the full range from <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.StartDate"/> to
+            <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.EndDate"/>. Values are normalized to 100 at <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/>, so the
+            security's value before <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/> represents its performance relative to
+            that anchor point (context zone).
+            </param>
+            <param name="BenchmarkNormalizedValues">
+            Normalized values for the benchmark from <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/> to <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.EndDate"/>,
+            normalized to 100 at <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/>.
+            </param>
+            <param name="BenchmarkPreOverlapValues">
+            Benchmark values in the pre-overlap zone from <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.StartDate"/> to <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/>
+            (exclusive), normalized using the same base as <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.BenchmarkNormalizedValues"/>. The curve is
+            derived from actual benchmark price data (forward-filled) and connects seamlessly at
+            <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/> = 100. Empty when the benchmark has no price data before
+            <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/> (in that case the chart renders a flat reference line instead).
+            </param>
+            <param name="StartDate">Start date of the security's history (first transaction date).</param>
+            <param name="ComparisonStartDate">
+            The first date on which both the security and the benchmark have price data. Both series are
+            normalized to 100 at this date. Before this date only the security context line is shown.
+            Equals <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.StartDate"/> when both series start simultaneously.
+            </param>
             <param name="EndDate">End date of the comparison period (last sell date when fully sold, otherwise today).</param>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.#ctor(System.Guid,System.String,System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.ChartPoint},System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.ChartPoint},System.DateTime,System.DateTime)">
+        <member name="M:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.#ctor(System.Guid,System.String,System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.ChartPoint},System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.ChartPoint},System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.ChartPoint},System.DateTime,System.DateTime,System.DateTime)">
             <summary>
             Benchmark comparison data for the Benchmark tab (FR-7).
             </summary>
             <param name="BenchmarkSecurityId">Id of the benchmark security.</param>
             <param name="BenchmarkName">Display name of the benchmark security.</param>
-            <param name="SecurityNormalizedValues">Normalized values for the target security (base 100).</param>
-            <param name="BenchmarkNormalizedValues">Normalized values for the benchmark (base 100).</param>
-            <param name="StartDate">Start date of the comparison period (first transaction date).</param>
+            <param name="SecurityNormalizedValues">
+            Normalized values for the target security over the full range from <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.StartDate"/> to
+            <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.EndDate"/>. Values are normalized to 100 at <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/>, so the
+            security's value before <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/> represents its performance relative to
+            that anchor point (context zone).
+            </param>
+            <param name="BenchmarkNormalizedValues">
+            Normalized values for the benchmark from <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/> to <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.EndDate"/>,
+            normalized to 100 at <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/>.
+            </param>
+            <param name="BenchmarkPreOverlapValues">
+            Benchmark values in the pre-overlap zone from <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.StartDate"/> to <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/>
+            (exclusive), normalized using the same base as <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.BenchmarkNormalizedValues"/>. The curve is
+            derived from actual benchmark price data (forward-filled) and connects seamlessly at
+            <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/> = 100. Empty when the benchmark has no price data before
+            <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/> (in that case the chart renders a flat reference line instead).
+            </param>
+            <param name="StartDate">Start date of the security's history (first transaction date).</param>
+            <param name="ComparisonStartDate">
+            The first date on which both the security and the benchmark have price data. Both series are
+            normalized to 100 at this date. Before this date only the security context line is shown.
+            Equals <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.StartDate"/> when both series start simultaneously.
+            </param>
             <param name="EndDate">End date of the comparison period (last sell date when fully sold, otherwise today).</param>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.BenchmarkSecurityId">
@@ -4876,13 +4925,37 @@
             <summary>Display name of the benchmark security.</summary>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.SecurityNormalizedValues">
-            <summary>Normalized values for the target security (base 100).</summary>
+            <summary>
+            Normalized values for the target security over the full range from <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.StartDate"/> to
+            <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.EndDate"/>. Values are normalized to 100 at <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/>, so the
+            security's value before <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/> represents its performance relative to
+            that anchor point (context zone).
+            </summary>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.BenchmarkNormalizedValues">
-            <summary>Normalized values for the benchmark (base 100).</summary>
+            <summary>
+            Normalized values for the benchmark from <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/> to <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.EndDate"/>,
+            normalized to 100 at <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/>.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.BenchmarkPreOverlapValues">
+            <summary>
+            Benchmark values in the pre-overlap zone from <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.StartDate"/> to <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/>
+            (exclusive), normalized using the same base as <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.BenchmarkNormalizedValues"/>. The curve is
+            derived from actual benchmark price data (forward-filled) and connects seamlessly at
+            <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/> = 100. Empty when the benchmark has no price data before
+            <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate"/> (in that case the chart renders a flat reference line instead).
+            </summary>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.StartDate">
-            <summary>Start date of the comparison period (first transaction date).</summary>
+            <summary>Start date of the security's history (first transaction date).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.ComparisonStartDate">
+            <summary>
+            The first date on which both the security and the benchmark have price data. Both series are
+            normalized to 100 at this date. Before this date only the security context line is shown.
+            Equals <see cref="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.StartDate"/> when both series start simultaneously.
+            </summary>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto.EndDate">
             <summary>End date of the comparison period (last sell date when fully sold, otherwise today).</summary>
@@ -4933,6 +5006,42 @@
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Securities.ReturnAnalysisSettingsResponse.RiskFreeRate">
             <summary>Risk-free rate for Sharpe Ratio calculation.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Securities.SparklineDataDto">
+            <summary>
+            Sparkline data for the mini-chart (FR-1.1). Loaded separately to keep ReturnSummaryDto lean.
+            </summary>
+            <param name="Points">Time series of (date, value) pairs showing invested capital vs. market value.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Securities.SparklineDataDto.#ctor(System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.SparklinePoint})">
+            <summary>
+            Sparkline data for the mini-chart (FR-1.1). Loaded separately to keep ReturnSummaryDto lean.
+            </summary>
+            <param name="Points">Time series of (date, value) pairs showing invested capital vs. market value.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SparklineDataDto.Points">
+            <summary>Time series of (date, value) pairs showing invested capital vs. market value.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Securities.SparklinePoint">
+            <summary>A single point in the sparkline chart.</summary>
+            <param name="Date">Date of the data point.</param>
+            <param name="MarketValue">Portfolio market value on this date.</param>
+            <param name="InvestedCapital">Cumulative invested capital on this date.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Securities.SparklinePoint.#ctor(System.DateTime,System.Decimal,System.Decimal)">
+            <summary>A single point in the sparkline chart.</summary>
+            <param name="Date">Date of the data point.</param>
+            <param name="MarketValue">Portfolio market value on this date.</param>
+            <param name="InvestedCapital">Cumulative invested capital on this date.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SparklinePoint.Date">
+            <summary>Date of the data point.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SparklinePoint.MarketValue">
+            <summary>Portfolio market value on this date.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SparklinePoint.InvestedCapital">
+            <summary>Cumulative invested capital on this date.</summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Securities.SecurityBackfillRequest">
             <summary>
@@ -6689,6 +6798,9 @@
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.Securities_ResetReturnCacheAsync(System.Threading.CancellationToken)">
             <summary>Invalidates the return analysis cache for all securities of the current user.</summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Securities_GetSparklineAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>Returns sparkline data for the security widget mini-chart.</summary>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.StatementDrafts_ListOpenAsync(System.Int32,System.Int32,System.Threading.CancellationToken)">
             <summary>Lists open statement drafts for the current user.</summary>

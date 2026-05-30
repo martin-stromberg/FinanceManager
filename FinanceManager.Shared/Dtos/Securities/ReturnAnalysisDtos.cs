@@ -290,3 +290,15 @@ public sealed record ReturnAnalysisSettingsResponse(
     bool ShowSharpeRatio,
     decimal RiskFreeRate
 );
+
+/// <summary>
+/// Sparkline data for the mini-chart (FR-1.1). Loaded separately to keep ReturnSummaryDto lean.
+/// </summary>
+/// <param name="Points">Time series of (date, value) pairs showing invested capital vs. market value.</param>
+public sealed record SparklineDataDto(IReadOnlyList<SparklinePoint> Points);
+
+/// <summary>A single point in the sparkline chart.</summary>
+/// <param name="Date">Date of the data point.</param>
+/// <param name="MarketValue">Portfolio market value on this date.</param>
+/// <param name="InvestedCapital">Cumulative invested capital on this date.</param>
+public sealed record SparklinePoint(DateTime Date, decimal MarketValue, decimal InvestedCapital);

@@ -1,5 +1,6 @@
 @rendermode InteractiveServer
 @using FinanceManager.Shared
+@using FinanceManager.Shared.Dtos.Securities
 @inject IApiClient ApiClient
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Shared.ReturnSummaryWidget> Localizer
 
@@ -52,6 +53,10 @@ else
             </span>
             <span class="rsw-value">@FormatAmount(_summary.InvestedCapital, _summary.CurrencyCode)</span>
         </div>
+        <div class="rsw-row">
+            <span class="rsw-label">@Localizer["Label_CostVsCurrentPrice"]</span>
+            <span class="rsw-value">@FormatAmount(_summary.CostBasisPerShare, _summary.CurrencyCode) / @FormatAmount(_summary.CurrentPricePerShare, _summary.CurrencyCode)</span>
+        </div>
         @if (_summary.Cagr.HasValue)
         {
             <div class="rsw-row">
@@ -70,6 +75,15 @@ else
                     <button class="rsw-info-btn" @onclick='() => OpenPanel("Irr")' title="@Localizer["Aria_FormulaAndItems"]" aria-label="@string.Format(Localizer["Aria_InfoAbout"], Localizer["Label_Irr"])">ⓘ</button>
                 </span>
                 <span class="rsw-value">@FormatPercent(_summary.Irr.Value)</span>
+            </div>
+        }
+        @if (_sparkline != null && _sparkline.Points.Count >= 2)
+        {
+            <div class="rsw-sparkline-container" role="img" aria-label="@Localizer["Aria_Sparkline"]">
+                <svg class="rsw-sparkline" viewBox="0 0 100 48" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                    <polyline class="rsw-sparkline-invested" points="@BuildSparklinePoints(p => p.InvestedCapital)" fill="none" />
+                    <polyline class="rsw-sparkline-market @GetReturnClass()" points="@BuildSparklinePoints(p => p.MarketValue)" fill="none" />
+                </svg>
             </div>
         }
         @if (_summary.HasMissingPrices)
@@ -200,6 +214,7 @@ else
     [Parameter, EditorRequired] public Guid SecurityId { get; set; }
 
     private ReturnSummaryDto? _summary;
+    private SparklineDataDto? _sparkline;
     private bool _loading = true;
     private string? _error;
 
@@ -216,9 +231,14 @@ else
         _error = null;
         _openKpiKey = null;
         _breakdowns = null;
+        _sparkline = null;
         try
         {
-            _summary = await ApiClient.Securities_GetReturnSummaryAsync(SecurityId, CancellationToken.None);
+            var summaryTask = ApiClient.Securities_GetReturnSummaryAsync(SecurityId, CancellationToken.None);
+            var sparklineTask = ApiClient.Securities_GetSparklineAsync(SecurityId, CancellationToken.None);
+            await Task.WhenAll(summaryTask, sparklineTask);
+            _summary = summaryTask.Result;
+            _sparkline = sparklineTask.Result;
         }
         catch (Exception ex)
         {
@@ -252,6 +272,36 @@ else
 
     private KpiBreakdownDto? GetOpenBreakdown()
         => _breakdowns?.FirstOrDefault(b => b.KpiKey == _openKpiKey);
+
+    private string BuildSparklinePoints(Func<SparklinePoint, decimal> valueSelector)
+    {
+        if (_sparkline == null || _sparkline.Points.Count < 2)
+        {
+            return string.Empty;
+        }
+
+        var points = _sparkline.Points;
+        int count = points.Count;
+
+        // Compute global min/max across both series for consistent Y scaling
+        decimal allMin = points.Min(p => Math.Min(p.MarketValue, p.InvestedCapital));
+        decimal allMax = points.Max(p => Math.Max(p.MarketValue, p.InvestedCapital));
+        decimal range = allMax - allMin;
+        if (range == 0m) { range = 1m; }
+
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < count; i++)
+        {
+            double x = (count == 1) ? 50.0 : (100.0 * i / (count - 1));
+            double y = 48.0 - (double)((valueSelector(points[i]) - allMin) / range) * 44.0 - 2.0;
+            if (i > 0) { sb.Append(' '); }
+            sb.Append(x.ToString("F2", System.Globalization.CultureInfo.InvariantCulture));
+            sb.Append(',');
+            sb.Append(y.ToString("F2", System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        return sb.ToString();
+    }
 
     private static string FormatPercent(decimal value) => value.ToString("+0.00%;-0.00%;0.00%");
     private static string FormatAmount(decimal amount, string currency) => $"{amount:N2} {currency}";

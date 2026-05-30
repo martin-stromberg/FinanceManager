@@ -382,5 +382,21 @@ public partial class ApiClient
         return true;
     }
 
+
+
+    /// <summary>
+    /// Returns sparkline data for the security widget mini-chart.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The <see cref="SparklineDataDto"/> when found; otherwise null when not found or insufficient data.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<SparklineDataDto?> Securities_GetSparklineAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/return-sparkline", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<SparklineDataDto>(cancellationToken: ct);
+    }
     #endregion Securities
 }

@@ -578,7 +578,7 @@
         <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetSparklineDataAsync_Should_ReturnSparkline_When_Exactly30PricePoints">
             <summary>
             When there are at least 30 price points, the method must return a non-null
-            <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.SparklineDataDto"/> with data points.
+            <see cref="T:FinanceManager.Shared.Dtos.Securities.SparklineDataDto"/> with data points.
             </summary>
         </member>
         <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetCashflowTimelineAsync_Should_ReturnNull_When_SecurityNotFound">

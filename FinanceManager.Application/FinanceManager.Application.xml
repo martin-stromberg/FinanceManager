@@ -2107,42 +2107,6 @@
             <param name="grossReturn">Gross return before taxes. Must be != 0 for a valid result.</param>
             <returns>Tax rate as a fraction (0..1), or null when gross return is zero.</returns>
         </member>
-        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.SparklineDataDto">
-            <summary>
-            Sparkline data for the mini-chart (FR-1.1). Loaded separately to keep ReturnSummaryDto lean.
-            </summary>
-            <param name="Points">Time series of (date, value) pairs showing invested capital vs. market value.</param>
-        </member>
-        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.SparklineDataDto.#ctor(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SparklinePoint})">
-            <summary>
-            Sparkline data for the mini-chart (FR-1.1). Loaded separately to keep ReturnSummaryDto lean.
-            </summary>
-            <param name="Points">Time series of (date, value) pairs showing invested capital vs. market value.</param>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.SparklineDataDto.Points">
-            <summary>Time series of (date, value) pairs showing invested capital vs. market value.</summary>
-        </member>
-        <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.SparklinePoint">
-            <summary>A single point in the sparkline chart.</summary>
-            <param name="Date">Date of the data point.</param>
-            <param name="MarketValue">Portfolio market value on this date.</param>
-            <param name="InvestedCapital">Cumulative invested capital on this date.</param>
-        </member>
-        <member name="M:FinanceManager.Application.Securities.ReturnAnalysis.SparklinePoint.#ctor(System.DateTime,System.Decimal,System.Decimal)">
-            <summary>A single point in the sparkline chart.</summary>
-            <param name="Date">Date of the data point.</param>
-            <param name="MarketValue">Portfolio market value on this date.</param>
-            <param name="InvestedCapital">Cumulative invested capital on this date.</param>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.SparklinePoint.Date">
-            <summary>Date of the data point.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.SparklinePoint.MarketValue">
-            <summary>Portfolio market value on this date.</summary>
-        </member>
-        <member name="P:FinanceManager.Application.Securities.ReturnAnalysis.SparklinePoint.InvestedCapital">
-            <summary>Cumulative invested capital on this date.</summary>
-        </member>
         <member name="T:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisResult">
             <summary>FIFO cost basis calculation result.</summary>
             <param name="TotalCostBasis">

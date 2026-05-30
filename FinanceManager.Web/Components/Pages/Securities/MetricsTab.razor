@@ -1,52 +1,52 @@
 @using FinanceManager.Application
 @using FinanceManager.Web.ViewModels.Securities.ReturnAnalysis
+@using Microsoft.Extensions.Localization
 @inject IServiceProvider Services
+@inject IStringLocalizer<FinanceManager.Web.Pages> Localizer
 
 <div class="metrics-tab">
-    @if (_vm?.IsLoading == true) { <div role="status">Lade Kennzahlen...</div> }
-    else if (_vm?.Data == null) { <div class="no-data-msg">Keine Kennzahlen verfügbar.</div> }
+    @if (_vm?.IsLoading == true) { <div role="status">@Localizer["Metrics_Loading"]</div> }
+    else if (_vm?.Data == null) { <div class="no-data-msg">@Localizer["Metrics_NoData"]</div> }
     else
     {
         <div class="kpi-grid">
             <div class="kpi-section">
-                <h3>Rendite</h3>
-                @KpiRow("Bruttorendite", _vm.Data.GrossReturn.ToString("N2") + " €", "Gesamtrendite vor Steuern und Gebühren")
-                @KpiRow("Nettorendite", _vm.Data.NetReturn.ToString("N2") + " €", "Rendite nach Steuern")
-                @KpiRow("TWR (zeitgewichtet)", _vm.Data.Twr.HasValue ? _vm.Data.Twr.Value.ToString("+0.00%;-0.00%") : "–", "Time-Weighted Return (Modified Dietz, GIPS-konform)")
-                @KpiRow("IRR (persönlich)", _vm.Data.Irr.HasValue ? _vm.Data.Irr.Value.ToString("+0.00%;-0.00%") : "–", "Internal Rate of Return – Ihre persönliche Rendite")
+                <h3>@Localizer["Metrics_Section_Return"]</h3>
+                @KpiRow(Localizer["Metrics_GrossReturn"], _vm.Data.GrossReturn.ToString("N2") + " \u20ac", Localizer["Metrics_GrossReturn_Tooltip"])
+                @KpiRow(Localizer["Metrics_NetReturn"], _vm.Data.NetReturn.ToString("N2") + " \u20ac", Localizer["Metrics_NetReturn_Tooltip"])
+                @KpiRow(Localizer["Metrics_Twr"], _vm.Data.Twr.HasValue ? _vm.Data.Twr.Value.ToString("+0.00%;-0.00%") : "\u2013", Localizer["Metrics_Twr_Tooltip"])
+                @KpiRow(Localizer["Metrics_Irr"], _vm.Data.Irr.HasValue ? _vm.Data.Irr.Value.ToString("+0.00%;-0.00%") : "\u2013", Localizer["Metrics_Irr_Tooltip"])
                 @if (_vm.Data.SharpeRatio.HasValue)
                 {
-                    @KpiRow("Sharpe Ratio", _vm.Data.SharpeRatio.Value.ToString("F2"), "(Rendite – risikofreier Zinssatz) / Volatilität")
+                    @KpiRow(Localizer["Metrics_SharpeRatio"], _vm.Data.SharpeRatio.Value.ToString("F2"), Localizer["Metrics_SharpeRatio_Tooltip"])
                 }
             </div>
             <div class="kpi-section">
-                <h3>Risiko</h3>
-                @KpiRow("Volatilität (p.a.)", _vm.Data.Volatility.HasValue ? _vm.Data.Volatility.Value.ToString("P2") : "–", "Annualisierte Standardabweichung der Log-Tagesrenditen")
-                @KpiRow("Max. Drawdown", _vm.Data.MaxDrawdown.HasValue ? _vm.Data.MaxDrawdown.Value.ToString("P2") : "–", "Maximaler Verlust vom Höchststand")
+                <h3>@Localizer["Metrics_Section_Risk"]</h3>
+                @KpiRow(Localizer["Metrics_Volatility"], _vm.Data.Volatility.HasValue ? _vm.Data.Volatility.Value.ToString("P2") : "\u2013", Localizer["Metrics_Volatility_Tooltip"])
+                @KpiRow(Localizer["Metrics_MaxDrawdown"], _vm.Data.MaxDrawdown.HasValue ? _vm.Data.MaxDrawdown.Value.ToString("P2") : "\u2013", Localizer["Metrics_MaxDrawdown_Tooltip"])
             </div>
             <div class="kpi-section">
-                <h3>Steuern &amp; Gebühren</h3>
-                @KpiRow("Gezahlte Steuern", _vm.Data.TotalTaxes.ToString("N2") + " €")
-                @KpiRow("Gezahlte Gebühren", _vm.Data.TotalFees.ToString("N2") + " €")
-                @KpiRow("Steuerquote", _vm.Data.TaxRate.ToString("P1"))
+                <h3>@Localizer["Metrics_Section_TaxesFees"]</h3>
+                @KpiRow(Localizer["Metrics_TotalTaxes"], _vm.Data.TotalTaxes.ToString("N2") + " \u20ac")
+                @KpiRow(Localizer["Metrics_TotalFees"], _vm.Data.TotalFees.ToString("N2") + " \u20ac")
+                @KpiRow(Localizer["Metrics_TaxRate"], _vm.Data.TaxRate.ToString("P1"))
             </div>
             <div class="kpi-section">
-                <h3>Gewinne</h3>
-                @KpiRow("Realisierte Gewinne", _vm.Data.RealizedGains.ToString("N2") + " €", "Realisierte Kursgewinne (FIFO)")
-                @KpiRow("Nicht realisierte Gewinne", _vm.Data.UnrealizedGains.ToString("N2") + " €", "Buchgewinne auf aktuelle Positionen")
-                @KpiRow("Dividendenrendite akt. Jahr", _vm.Data.DividendYieldCurrentYear.ToString("P2"))
+                <h3>@Localizer["Metrics_Section_Gains"]</h3>
+                @KpiRow(Localizer["Metrics_RealizedGains"], _vm.Data.RealizedGains.ToString("N2") + " \u20ac", Localizer["Metrics_RealizedGains_Tooltip"])
+                @KpiRow(Localizer["Metrics_UnrealizedGains"], _vm.Data.UnrealizedGains.ToString("N2") + " \u20ac", Localizer["Metrics_UnrealizedGains_Tooltip"])
+                @KpiRow(Localizer["Metrics_DividendYield"], _vm.Data.DividendYieldCurrentYear.ToString("P2"))
             </div>
         </div>
     }
 </div>
 
 @code {
-    /// <summary>Security identifier.</summary>
     [Parameter, EditorRequired] public Guid SecurityId { get; set; }
 
     private SecurityPerformanceMetricsTabViewModel? _vm;
 
-    /// <inheritdoc />
     protected override Task OnInitializedAsync()
     {
         _vm = new SecurityPerformanceMetricsTabViewModel(Services);
@@ -54,29 +54,18 @@
         return Task.CompletedTask;
     }
 
-    /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
-        if (_vm == null)
-        {
-            return;
-        }
-
+        if (_vm == null) { return; }
         await _vm.LoadAsync(SecurityId, CancellationToken.None);
     }
 
     public void Dispose()
     {
-        if (_vm != null)
-        {
-            _vm.StateChanged -= VmOnStateChanged;
-        }
+        if (_vm != null) { _vm.StateChanged -= VmOnStateChanged; }
     }
 
-    private void VmOnStateChanged(object? sender, EventArgs e)
-    {
-        _ = InvokeAsync(StateHasChanged);
-    }
+    private void VmOnStateChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
 
     private RenderFragment KpiRow(string label, string value, string? tooltip = null) => __builder =>
     {
@@ -86,7 +75,7 @@
         __builder.OpenElement(3, "span");
         __builder.AddAttribute(4, "class", "kpi-label");
         __builder.AddContent(5, label);
-        if (!string.IsNullOrEmpty(tooltip)) { __builder.AddContent(6, " ⓘ"); }
+        if (!string.IsNullOrEmpty(tooltip)) { __builder.AddContent(6, " \u24d8"); }
         __builder.CloseElement();
         __builder.OpenElement(7, "span");
         __builder.AddAttribute(8, "class", "kpi-value");

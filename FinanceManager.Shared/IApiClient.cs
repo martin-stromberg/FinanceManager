@@ -551,6 +551,8 @@ public interface IApiClient
     Task<IReadOnlyList<KpiBreakdownDto>?> Securities_GetKpiBreakdownsAsync(Guid id, CancellationToken ct = default);
     /// <summary>Invalidates the return analysis cache for all securities of the current user.</summary>
     Task Securities_ResetReturnCacheAsync(CancellationToken ct = default);
+    /// <summary>Returns sparkline data for the security widget mini-chart.</summary>
+    Task<SparklineDataDto?> Securities_GetSparklineAsync(Guid id, CancellationToken ct = default);
 
     // Statement Drafts
 

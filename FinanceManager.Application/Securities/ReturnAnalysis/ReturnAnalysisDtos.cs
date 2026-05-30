@@ -3,21 +3,10 @@ namespace FinanceManager.Application.Securities.ReturnAnalysis;
 // ReturnSummaryDto, DetailedReturnMetricsDto, KpiBreakdownDto, KpiFormulaGroup, KpiBreakdownItem,
 // PeriodicReturnsDto, AnnualReturnPoint, MonthlyReturnPoint, AnnualDividendPoint,
 // CashflowTimelineDto, CashflowEntry, AnnualCashflowSummary,
-// PerformanceChartDataDto, BenchmarkComparisonDto, ChartPoint, ChartTimeRange
+// PerformanceChartDataDto, BenchmarkComparisonDto, ChartPoint, ChartTimeRange,
+// SparklineDataDto, SparklinePoint
 // have been moved to FinanceManager.Shared.Dtos.Securities.ReturnAnalysisDtos and are available
 // globally via the FinanceManager.Application.GlobalUsings (global using FinanceManager.Shared.Dtos.Securities).
-
-/// <summary>
-/// Sparkline data for the mini-chart (FR-1.1). Loaded separately to keep ReturnSummaryDto lean.
-/// </summary>
-/// <param name="Points">Time series of (date, value) pairs showing invested capital vs. market value.</param>
-public sealed record SparklineDataDto(IReadOnlyList<SparklinePoint> Points);
-
-/// <summary>A single point in the sparkline chart.</summary>
-/// <param name="Date">Date of the data point.</param>
-/// <param name="MarketValue">Portfolio market value on this date.</param>
-/// <param name="InvestedCapital">Cumulative invested capital on this date.</param>
-public sealed record SparklinePoint(DateTime Date, decimal MarketValue, decimal InvestedCapital);
 
 /// <summary>FIFO cost basis calculation result.</summary>
 /// <param name="TotalCostBasis">

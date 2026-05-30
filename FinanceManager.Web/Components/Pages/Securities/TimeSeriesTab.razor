@@ -1,17 +1,19 @@
 @using FinanceManager.Application
 @using FinanceManager.Web.ViewModels.Securities.ReturnAnalysis
+@using Microsoft.Extensions.Localization
 @inject IServiceProvider Services
+@inject IStringLocalizer<Pages> Localizer
 
 <div class="timeseries-tab">
     @if (_vm?.IsLoading == true) { <div role="status">Lade Daten...</div> }
-    else if (_vm?.Data == null) { <div class="no-data-msg">Keine Renditedaten verfügbar.</div> }
+    else if (_vm?.Data == null) { <div class="no-data-msg">Keine Renditedaten verf&#xFC;gbar.</div> }
     else
     {
         @if (_vm.Data.HasSimulatedPrices)
         {
             <div class="info-banner" role="alert">
-                <strong>Hinweis:</strong> Für dieses Wertpapier liegen keine Kursdaten vor.
-                Die Renditen wurden aus den Transaktionspreisen (lineare Interpolation zwischen Kauf und Verkauf) hochgerechnet
+                <strong>Hinweis:</strong> F&#xFC;r dieses Wertpapier liegen keine Kursdaten vor.
+                Die Renditen wurden aus den Transaktionspreisen (lineare Interpolation) hochgerechnet
                 und spiegeln <em>nicht</em> die reale Kursentwicklung wider.
             </div>
         }
@@ -23,16 +25,14 @@
             }
             else
             {
+                var maxAbsAnnual = _vm.Data.AnnualReturns.Select(r => Math.Abs(r.ReturnPercent)).DefaultIfEmpty(1m).Max();
+                if (maxAbsAnnual == 0) { maxAbsAnnual = 1m; }
                 <div class="annual-bars">
-                    @{
-                        var maxAbs = _vm.Data.AnnualReturns.Select(r => Math.Abs(r.ReturnPercent)).DefaultIfEmpty(1m).Max();
-                        if (maxAbs == 0) { maxAbs = 1m; }
-                    }
                     @foreach (var yr in _vm.Data.AnnualReturns)
                     {
-                        var height = Math.Abs(yr.ReturnPercent) / maxAbs * 100m;
+                        var height = Math.Abs(yr.ReturnPercent) / maxAbsAnnual * 100m;
                         var isPos = yr.ReturnPercent >= 0;
-                        <div class="bar-col" title="@yr.Year: @yr.ReturnPercent.ToString("+0.00%;-0.00%")">
+                        <div class="bar-col" title="@yr.Year">
                             <span class="bar-value @(isPos ? "pos" : "neg")">@yr.ReturnPercent.ToString("+0.0%;-0.0%")</span>
                             <div class="bar-wrap">
                                 <div class="bar @(isPos ? "pos" : "neg") @(yr.IsYtd ? "ytd" : "")"
@@ -42,7 +42,7 @@
                         </div>
                     }
                 </div>
-                    <p class="ytd-note">* Bis Ende Analysezeitraum</p>
+                <p class="ytd-note">* Bis Ende Analysezeitraum</p>
             }
         </section>
 
@@ -55,9 +55,9 @@
             else
             {
                 var years = _vm.Data.MonthlyReturns.Select(r => r.Year).Distinct().OrderBy(y => y).ToList();
-                var monthNames = new[] { "Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez" };
-                var maxAbs = _vm.Data.MonthlyReturns.Where(r => r.ReturnPercent.HasValue).Select(r => Math.Abs(r.ReturnPercent!.Value)).DefaultIfEmpty(0.05m).Max();
-                if (maxAbs == 0) { maxAbs = 0.05m; }
+                var monthNames = new[] { "Jan", "Feb", "M\u00e4r", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez" };
+                var maxAbsHeat = _vm.Data.MonthlyReturns.Where(r => r.ReturnPercent.HasValue).Select(r => Math.Abs(r.ReturnPercent!.Value)).DefaultIfEmpty(0.05m).Max();
+                if (maxAbsHeat == 0) { maxAbsHeat = 0.05m; }
 
                 <div class="heatmap" role="table" aria-label="Monatsrenditen">
                     <div class="heatmap-header" role="row">
@@ -72,9 +72,10 @@
                             {
                                 var cell = _vm.Data.MonthlyReturns.FirstOrDefault(r => r.Year == year && r.Month == m);
                                 var pct = cell?.ReturnPercent;
-                                var bg = pct.HasValue ? GetHeatColor(pct.Value, maxAbs) : "transparent";
+                                var bg = pct.HasValue ? GetHeatColor(pct.Value, maxAbsHeat) : "transparent";
                                 var label = pct.HasValue ? pct.Value.ToString("+0.00%;-0.00%") : "-";
-                                <span class="heatmap-cell" role="cell" style="background:@bg" title="@year/@m: @label" aria-label="@($"{monthNames[m - 1]} {year}: {label}")">
+                                <span class="heatmap-cell" role="cell" style="background:@bg" title="@year/@m: @label"
+                                      aria-label="@($"{monthNames[m - 1]} {year}: {label}")">
                                     @(pct.HasValue ? pct.Value.ToString("+0%;-0%") : "")
                                 </span>
                             }
@@ -82,9 +83,47 @@
                     }
                 </div>
                 <div class="heatmap-legend" aria-label="Farbskala">
-                    <span class="legend-neg">–@maxAbs.ToString("P0")</span>
+                    <span class="legend-neg">\u2013@maxAbsHeat.ToString("P0")</span>
                     <div class="legend-gradient"></div>
-                    <span class="legend-pos">+@maxAbs.ToString("P0")</span>
+                    <span class="legend-pos">+@maxAbsHeat.ToString("P0")</span>
+                </div>
+            }
+        </section>
+
+        <section aria-label="@Localizer["TimeSeries_Dividend_Title"]">
+            <h3>@Localizer["TimeSeries_Dividend_Title"]</h3>
+            @if (_vm.Data.AnnualDividends.Count == 0)
+            {
+                <p>@Localizer["TimeSeries_Dividend_NoData"]</p>
+            }
+            else
+            {
+                <div class="dividend-chart">
+                    <svg role="img" aria-label="@Localizer["TimeSeries_Dividend_Title"]"
+                         viewBox="0 0 @DividendSvgWidth() 140" width="100%" height="140">
+                        @((MarkupString)BuildDividendSvg())
+                    </svg>
+                    <table class="fm-table" aria-label="@Localizer["TimeSeries_Dividend_Title"]">
+                        <thead>
+                            <tr>
+                                <th scope="col">Jahr</th>
+                                <th scope="col" class="num">Brutto</th>
+                                <th scope="col" class="num">Netto</th>
+                                <th scope="col" class="num">Kum. Netto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var d in _vm.Data.AnnualDividends.OrderByDescending(x => x.Year))
+                            {
+                                <tr>
+                                    <td>@d.Year</td>
+                                    <td class="num">@d.GrossDividend.ToString("N2")</td>
+                                    <td class="num">@d.NetDividend.ToString("N2")</td>
+                                    <td class="num">@d.CumulativeNet.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
             }
         </section>
@@ -108,25 +147,52 @@
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
-        if (_vm == null)
-        {
-            return;
-        }
-
+        if (_vm == null) { return; }
         await _vm.LoadAsync(SecurityId, CancellationToken.None);
     }
 
     public void Dispose()
     {
-        if (_vm != null)
-        {
-            _vm.StateChanged -= VmOnStateChanged;
-        }
+        if (_vm != null) { _vm.StateChanged -= VmOnStateChanged; }
     }
 
-    private void VmOnStateChanged(object? sender, EventArgs e)
+    private void VmOnStateChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
+
+    /// <summary>Calculates the SVG width for the dividend bar chart.</summary>
+    private int DividendSvgWidth() =>
+        Math.Max((_vm?.Data?.AnnualDividends?.Count ?? 0) * 40, 40);
+
+    /// <summary>Builds the SVG markup for the dividend bar chart as a safe string.</summary>
+    private string BuildDividendSvg()
     {
-        _ = InvokeAsync(StateHasChanged);
+        var divs = _vm?.Data?.AnnualDividends?.OrderBy(d => d.Year).ToList();
+        if (divs == null || divs.Count == 0) { return string.Empty; }
+
+        var maxGross = divs.Max(d => d.GrossDividend);
+        if (maxGross == 0) { maxGross = 1; }
+        const int svgHeight = 140;
+        const int spacing = 40;
+        var cumMax = divs.Max(d => d.CumulativeNet);
+        if (cumMax == 0) { cumMax = maxGross; }
+
+        var points = string.Join(" ", divs.Select((d, i) =>
+            FormattableString.Invariant($"{i * spacing + 26},{svgHeight - 40 - (double)(d.CumulativeNet / cumMax) * 60.0:F2}")));
+
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < divs.Count; i++)
+        {
+            var d = divs[i];
+            var x = i * spacing + 20;
+            var grossH = (double)(d.GrossDividend / maxGross) * 60.0;
+            var netH   = (double)(d.NetDividend   / maxGross) * 60.0;
+            var yGross = svgHeight - 40 - grossH;
+            var yNet   = svgHeight - 40 - netH;
+            sb.Append(FormattableString.Invariant($"<rect x=\"{x}\" y=\"{yGross:F2}\" width=\"12\" height=\"{grossH:F2}\" fill=\"#d3d3d3\" />"));
+            sb.Append(FormattableString.Invariant($"<rect x=\"{x + 14}\" y=\"{yNet:F2}\" width=\"12\" height=\"{netH:F2}\" fill=\"#2e8b57\" />"));
+            sb.Append(FormattableString.Invariant($"<text x=\"{x + 6}\" y=\"{svgHeight - 15}\" font-size=\"10\" text-anchor=\"middle\">{d.Year}</text>"));
+        }
+        sb.Append(FormattableString.Invariant($"<polyline points=\"{points}\" fill=\"none\" stroke=\"#2b6fbf\" stroke-width=\"2\" />"));
+        return sb.ToString();
     }
 
     private static string GetHeatColor(decimal value, decimal maxAbs)

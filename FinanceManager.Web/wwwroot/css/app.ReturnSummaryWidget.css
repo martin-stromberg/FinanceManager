@@ -340,3 +340,35 @@
     margin-left: 0.3rem;
 }
 
+/* ── Sparkline ───────────────────────────────────────── */
+.rsw-sparkline-container {
+    margin-top: 0.5rem;
+    width: 100%;
+    height: 48px;
+    overflow: hidden;
+}
+
+.rsw-sparkline {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.rsw-sparkline-invested {
+    stroke: var(--text-muted, #bbb);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 3;
+}
+
+.rsw-sparkline-market {
+    stroke-width: 2;
+}
+
+.rsw-sparkline-market.positive {
+    stroke: #2a7d4f;
+}
+
+.rsw-sparkline-market.negative {
+    stroke: #c94040;
+}
+
