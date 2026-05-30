@@ -314,6 +314,877 @@
             For AllHistory, verify total across all returned periods equals the seeded total.
             </summary>
         </member>
+        <member name="T:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests">
+            <summary>
+            Tests for <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisCalculator"/> covering FIFO cost basis calculations.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_ReturnEmpty_For_NoTransactions">
+            <summary>
+            An empty transaction list must return a zeroed result with no lots and no warning.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_SetTotalCostBasis_For_SingleBuy">
+            <summary>
+            A single buy of 10 shares at €100 each sets TotalCostBasis=1000 and creates one lot.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_ApplyFifoCostBasis_After_PartialSell">
+            <summary>
+            Buy 10@100, Buy 5@120, Sell 8 → FIFO removes first 8 shares from lot1.
+            Remaining: 2@100 + 5@120.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_CalculateRealizedGain_On_Sell">
+            <summary>
+            Buy 10@100, Sell 10@120 → RealizedGains = (120−100)×10 = 200.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_AddFeeToLotCostBasis_When_SameGroupId">
+            <summary>
+            A Fee with the same GroupId as a Buy is added to that lot's cost basis.
+            Buy 10@100 (cost=1000) on day 1 + Fee 20 with same groupId on day 2 → lot cost = 1020, CostPerUnit = 102.
+            The fee is placed on a later date to guarantee it is processed after the buy (FIFO sort order).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_HandleOversell_WithWarning">
+            <summary>
+            Selling more shares than are held sets HasOversellWarning=true and clamps shares to 0.
+            Buy 5, Sell 10 → HasOversellWarning = true, TotalSharesHeld = 0.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_IgnoreDividendsAndTax_InCostBasis">
+            <summary>
+            Dividends and taxes must not change the cost basis or the lot count.
+            Buy 10@100, Dividend 50, Tax −10 → cost basis unchanged at 1000.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_SortByDate_ThenById">
+            <summary>
+            When two Buy transactions share the same date, the FIFO queue is filled
+            in ascending Id order (deterministic), and a subsequent Sell removes shares
+            from the correct first-in lot.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_Handle_MultipleFullSells">
+            <summary>
+            Buy 10@100, Sell 5@110, Sell 5@120 → realized gains = 5×10 + 5×20 = 150.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_ReturnZeroSharesHeld_After_FullSell">
+            <summary>
+            After a full sell, no shares are held and no lots remain.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_NotCreateLot_When_BuyQuantityIsNull">
+            <summary>
+            A buy transaction with a null quantity must not create a lot.
+            The result should have zero shares held and empty lots.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_NotCreateLot_When_BuyQuantityIsZero">
+            <summary>
+            A buy transaction with quantity zero must not create a lot.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_SkipSell_When_SellQuantityIsNull">
+            <summary>
+            A sell transaction with a null quantity must be silently skipped.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_NotCrash_When_FeeHasNoMatchingBuyLot">
+            <summary>
+            A standalone fee (GroupId does not match any Buy lot) must be included in TotalCostBasis.
+            This reflects Option-A: standalone fees always contribute to invested capital, regardless
+            of whether they were linked via GroupId.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_NotCrash_When_FeeLinkedToFullySoldLot">
+            <summary>
+            A fee linked to a fully-sold lot must not crash.
+            The lot is gone after the sell, but the fee arrives later.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_AccumulateFees_When_MultipleFeesShareSameGroupId">
+            <summary>
+            Multiple fees referencing the same buy lot via GroupId must accumulate on the lot's cost basis.
+            Buy 10 @ 100 = 1000 + fee1 (5) + fee2 (3) → TotalCostBasis = 1008.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_IncludeStandaloneFeesInTotalCostBasis">
+             <summary>
+             Regression test for the standalone-fee bug:
+             Fees without a matching GroupId (standalone) must be included in TotalCostBasis so that
+             invested capital is never under-reported when fees were recorded without a GroupId link.
+            
+             Scenario:
+               Buy1 (1 000 €, 10 shares, groupId=A) + Fee1 (20 €, same groupId=A) → lot cost = 1 020 (linked)
+               Buy2 (  600 €,  5 shares, groupId=B) + Fee2 (15 €, random groupId) → standalone fee
+               Expected TotalCostBasis = 1020 + 600 + 15 = 1635
+               Expected StandaloneFeeTotal = 15
+             </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_SetOversellWarning_When_SellExceedsAllLots">
+            <summary>
+            A sell that exceeds all available lots must set the oversell warning flag.
+            After an oversell, TotalSharesHeld must not go below zero.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_CreateNewLot_When_BuyAfterFullSell">
+            <summary>
+            After a complete sell-out (0 shares remaining), a new buy creates a fresh lot
+            as if starting from scratch.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.FifoCostBasisCalculatorTests.Calculate_Should_ProcessBuyBeforeSell_When_SameDateAndBuyIdIsSmaller">
+            <summary>
+            When a buy and a sell share the same date, the buy (lower Id) is processed
+            first due to the ThenBy(Id) sort — so the sell does not trigger an oversell warning.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests">
+            <summary>
+            Tests for <see cref="T:FinanceManager.Infrastructure.Securities.ReturnAnalysis.MemoryReturnAnalysisCache"/> covering cache miss, cache hit and invalidation behaviour.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests.#ctor">
+            <summary>Initializes a fresh cache instance for each test.</summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests.Dispose">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests.GetOrCreateAsync_Should_CallFactory_On_CacheMiss">
+            <summary>
+            On a cache miss the factory delegate is called and its result is returned.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests.GetOrCreateAsync_Should_ReturnCachedValue_On_CacheHit">
+            <summary>
+            On a cache hit the factory is NOT called a second time; the cached value is returned.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests.InvalidateAsync_Should_RemoveCachedEntries_WithMatchingPrefix">
+            <summary>
+            InvalidateAsync removes all cached entries whose key contains the given prefix substring.
+            After invalidation, the next call to GetOrCreateAsync triggers the factory again.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests.InvalidateAsync_Should_NotRemoveEntries_WithDifferentPrefix">
+            <summary>
+            InvalidateAsync must NOT remove entries whose key does not contain the given prefix.
+            Entries for a different security remain in the cache.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests.GetOrCreateAsync_Should_NotCacheResult_When_FactoryReturnsNull">
+            <summary>
+            When the factory returns null the result must NOT be cached.
+            A second call must invoke the factory again.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests.GetOrCreateAsync_Should_CallFactoryAgain_When_EntryHasExpired">
+            <summary>
+            An entry with a very short TTL must expire and trigger the factory again.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests.InvalidateAsync_Should_NotThrow_When_CacheIsEmpty">
+            <summary>
+            InvalidateAsync must not throw when the cache is empty.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisCacheTests.GetOrCreateAsync_Should_NotThrow_When_CalledConcurrently">
+            <summary>
+            Concurrent calls with the same key must not throw (race condition is a known limitation,
+            but no exception may be raised — BUG-3: factory may be called more than once).
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests">
+            <summary>
+            Integration tests for <see cref="T:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService"/> covering user-scoping,
+            security ownership, and orchestration of return calculations.
+            Uses EF Core InMemory database with a fresh instance per test.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.#ctor">
+            <summary>Initializes a fresh DB and SUT for each test.</summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.Dispose">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.SetupSecurityAndUser">
+            <summary>
+            Creates a security and its owning user, persists both and returns them.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.CreateBuyPosting(System.Guid,System.DateTime,System.Decimal,System.Decimal)">
+            <summary>
+            Creates a Buy-type <see cref="T:FinanceManager.Domain.Postings.Posting"/> for the given security without persisting it.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetReturnSummaryAsync_Should_ReturnNull_When_SecurityDoesNotBelongToUser">
+            <summary>
+            When the security does not belong to the requesting user,
+            the method must return null (user-scoping S-1 requirement).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetReturnSummaryAsync_Should_ReturnNull_When_NoTransactionsExist">
+            <summary>
+            When the security is found and owned by the user but has no transactions,
+            the method must return null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetReturnSummaryAsync_Should_SetHasMissingPrices_When_NoCurrentPriceAvailable">
+            <summary>
+            When there are transactions but no current price data available,
+            HasMissingPrices must be true and MissingPricesHint must be set.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetReturnSummaryAsync_Should_SetOversellHint_When_OversellWarningActive">
+            <summary>
+            When the FIFO result signals an oversell warning, HasMissingPrices must be true
+            and MissingPricesHint must be populated with the oversell warning message.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetReturnSummaryAsync_Should_IncludeSalesProceedsNetOfFees_When_FullSellCycleExists">
+             <summary>
+             Full buy–sell cycle using the real <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.FifoCostBasisCalculator"/>.
+             One buy with linked fee (GroupId A) is fully liquidated by a sell with linked fee (GroupId B).
+            
+             Transactions (exact values from production database, Fraport AG):
+               Buy  25 shares  −957,75 EUR  (GroupId A)
+               Fee             −7,29  EUR   (GroupId A – linked to buy, added to cost basis by FIFO)
+               Fee             −7,78  EUR   (GroupId B – linked to sell, deducted from sales proceeds)
+               Sell 25 shares  +1151,50 EUR (GroupId B, Quantity stored as −25 in domain model)
+            
+             Expected:
+               TotalSharesHeld        = 0        (all sold)
+               CurrentMarketValue     = 0        (no remaining shares × price)
+               InvestedCapital        = 0        (FIFO cost basis of CURRENTLY HELD shares; fully sold → 0)
+               historicalInvestedCap  = 965,04   (internal only; buy 957,75 + buy-fee 7,29 → used for return calc)
+               salesProceeds net      = 1143,72  (sell 1151,50 − sell-fee 7,78)
+               TotalReturnAbsolute    = 1143,72 − 965,04 = 178,68
+             </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetSparklineDataAsync_Should_ReturnNull_When_NoTransactionsExist">
+            <summary>
+            When there are no transactions for the security, the method must return null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetSparklineDataAsync_Should_ReturnNull_When_LessThan30PricePoints">
+            <summary>
+            When there are fewer than 30 price points available after the first transaction date,
+            the method must return null (not enough data for a meaningful sparkline).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetSparklineDataAsync_Should_ReturnSparkline_When_Exactly30PricePoints">
+            <summary>
+            When there are at least 30 price points, the method must return a non-null
+            <see cref="T:FinanceManager.Shared.Dtos.Securities.SparklineDataDto"/> with data points.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetCashflowTimelineAsync_Should_ReturnNull_When_SecurityNotFound">
+            <summary>
+            When the security does not exist or does not belong to the requesting user,
+            the method must return null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetCashflowTimelineAsync_Should_ReturnEmptyDto_When_NoTransactions">
+            <summary>
+            When the security exists and is owned by the user but there are no transactions,
+            the method must return an empty (non-null) DTO with empty collections.
+            This differs from other methods that return null for empty data.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetBenchmarkComparisonAsync_Should_ReturnNull_When_NoBenchmarkConfigured">
+            <summary>
+            When no benchmark security is configured for the user (BenchmarkSecurityId is null),
+            the method must return null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetBenchmarkComparisonAsync_Should_ReturnNull_When_BenchmarkSecurityNotOwnedByUser">
+            <summary>
+            When the configured benchmark security belongs to a different user,
+            the method must return null (ownership enforcement S-3).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.UpdateUserSettingsAsync_Should_ThrowArgumentException_When_BenchmarkSecurityNotOwnedByUser">
+            <summary>
+            When a benchmark security ID is provided but the security belongs to a different user,
+            the method must throw <see cref="T:System.ArgumentException"/> (S-3 ownership enforcement).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.UpdateUserSettingsAsync_Should_ClearBenchmark_When_BenchmarkIdIsNull">
+            <summary>
+            When benchmarkSecurityId is null, the existing benchmark setting is cleared without error.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.InvalidateCacheAsync_Should_InvalidateCorrectToken_When_CalledWithValidIds">
+            <summary>
+            InvalidateCacheAsync must pass a token that contains both the securityId and userId
+            to the cache's InvalidateAsync method, so all related entries are evicted.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetDetailedMetricsAsync_Should_ReturnNullSharpeRatio_When_ShowSharpeRatioIsFalse">
+            <summary>
+            When the user has ShowSharpeRatio = false, the Sharpe Ratio must not be computed
+            and the result must be null (opt-in guard FR-8).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetDetailedMetricsAsync_Should_ReturnNullSharpeRatio_When_VolatilityIsZero">
+            <summary>
+            When volatility is zero (flat price series), the Sharpe Ratio must remain null
+            to avoid division by zero, even when ShowSharpeRatio is enabled.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_Should_ReturnNull_When_SecurityNotFound">
+            <summary>
+            When the security does not exist or does not belong to the requesting user,
+            the method must return null (user-scoping S-1).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_Should_ReturnNull_When_NoTransactions">
+            <summary>
+            When the security is owned by the user but has no transactions,
+            the method must return null (no data to break down).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_Should_ReturnAllKpis_When_TransactionsExist">
+            <summary>
+            When there are transactions, the method must return a non-null list
+            containing breakdowns for all widget KPIs (TotalReturn, MarketValue, InvestedCapital, Cagr, Irr).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_Should_PopulateMetadata_For_EachKpi">
+            <summary>
+            Each returned breakdown must have a non-empty display name, formula text, and description.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_Should_IncludeBuyPostings_In_InvestedCapitalBreakdown">
+            <summary>
+            The InvestedCapital breakdown must contain a "Käufe" group with one item per buy posting
+            and the group total must equal the sum of all buy amounts.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_Should_IncludeDividends_In_TotalReturnBreakdown">
+            <summary>
+            The TotalReturn breakdown must include a "Dividenden (netto)" group (Group[2])
+            containing each dividend posting with the correct amount.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_Should_BreakDownTotalReturn_Into_FourGroups">
+            <summary>
+            The TotalReturn breakdown must use the new four-group structure:
+            [0] "Aktueller Marktwert" (positiv), [1] "Investiertes Kapital" (negativ),
+            [2] "Dividenden (netto)" (positiv), [3] "Gesamtrendite" (Ergebnis).
+            Group[0] must have one item with the current market value.
+            Group[1] must have the buy items negated (outflows).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_Should_PopulateItems_For_FeesGroup">
+            <summary>
+            Fees in TotalReturn must appear inside Group[1] "Investiertes Kapital" as negated items
+            (standalone fees with note "Gebühr (ohne Kaufzuordnung)"), not in a separate fees group.
+            This is a regression test ensuring individual fee rows are always visible in the info panel.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_Should_ListEachBuyAndFeeAsSeperateItem_In_InvestedCapitalBreakdown">
+            <summary>
+            The InvestedCapital and TotalReturn breakdowns must list each buy posting and each linked fee
+            (same GroupId) as separate items. Fees with a GroupId that does not match any buy (standalone)
+            must be appended at the end of the "Käufe" group with the note "Gebühr (ohne Kaufzuordnung)".
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Should_HaveExactlyFiveGroups_In_CorrectOrder">
+            <summary>
+            The CAGR breakdown must contain exactly 5 groups in the correct order:
+            Marktwert, Nettodividenden, Investiertes Kapital, Anlagedauer, CAGR (Ergebnis).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Group0_Should_ContainMarktwertItems">
+            <summary>
+            Group[0] "Marktwert" must contain exactly one item representing
+            total shares held × current price – identical to TotalReturn's Marktwert group.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Group1_Should_ContainNetDividendItems">
+            <summary>
+            Group[1] "Nettodividenden" must contain dividend items and tax items (negative).
+            The GroupTotal must equal gross dividends minus taxes.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Group2_Should_ContainInvestedCapitalItems">
+            <summary>
+            Group[2] "Investiertes Kapital" must contain the buy items (positive amounts) and their fees.
+            The GroupTotal must equal the total cost basis (investedCapital).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Group3_Should_HaveGroupNoteWithDuration">
+            <summary>
+            Group[3] "Anlagedauer" must have a non-null GroupNote with the holding period text
+            and must contain three text-only items (Erster Kauf, Heute, Zeitraum).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Group4_Should_HaveGroupTotalPercent">
+            <summary>
+            Group[4] "CAGR (Ergebnis)" must have GroupTotalPercent set to the computed CAGR value
+            and must have no items (result-only group).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Group4_Should_ReturnZero_When_YearsIsZero">
+            <summary>
+            Edge case: when the holding period in years is 0 (today is the first buy day),
+            the CAGR result group must have GroupTotalPercent = 0 (not null, not error).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Group4_Should_ReturnZero_When_InvestedCapitalIsZero">
+            <summary>
+            Edge case: when there are no buy transactions (historicalInvestedCapital = 0),
+            the CAGR result group must have GroupTotalPercent = 0 (no division by zero).
+            With no buys, firstBuyDate = Today → cagrYears = 0, which also triggers the guard.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_CagrBreakdown_Should_HaveCorrectFormulaText">
+            <summary>
+            The CAGR FormulaText must contain the complete formula as specified.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_Should_HaveExactlyTwoGroups">
+            <summary>
+            The IRR breakdown must contain exactly 2 groups:
+            [0] "Cashflows (Eingabe für IRR-Berechnung)" and [1] "IRR (Ergebnis)".
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_CashflowItems_ShouldBeChronologicallySorted">
+            <summary>
+            The cashflow timeline items must be sorted chronologically (oldest first),
+            with the terminal market-value entry last (today's date).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_BuysMustAppearAsNegativeAmounts">
+            <summary>
+            Each buy posting must appear as a negative cashflow item (Mittelabfluss) in the timeline.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_DividendsMustAppearAsNetPositiveAmounts">
+            <summary>
+            Each dividend must appear as a net-positive cashflow (gross minus linked taxes) in the timeline.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_LastItemMustBeCurrentMarketValue">
+            <summary>
+            The last item in the cashflow timeline must be the current market value with today's date.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_ResultGroup_ShouldHaveGroupTotalPercent">
+            <summary>
+            The IRR result group (Group[1]) must carry the computed IRR as GroupTotalPercent.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_FormulaText_ShouldContainKeyTerms">
+            <summary>
+            The IRR FormulaText must contain "IRR" and the summation symbol "Σ" or the key term "Cashflow".
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_TimelineGroupNote_ShouldContainIrrRate">
+            <summary>
+            When IRR is computable the GroupNote of the timeline group must contain the
+            formatted IRR rate so the user can read "r = X,XX %".
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_ItemsWithIrr_ShouldHaveDiscountFields">
+            <summary>
+            When IRR is computable each timeline item must have YearsSinceT0, DiscountFactor,
+            and OriginalCashflow populated.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_FirstItem_DiscountFactorShouldBeOne">
+            <summary>
+            The first cashflow item is at t₀, so its discount factor must equal 1.0 exactly.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_ItemAmount_ShouldEqualDiscountedCashflow">
+            <summary>
+            The Amount of each item must approximately equal OriginalCashflow / (1+r)^t.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_SumOfPresentValues_ShouldBeApproxZero">
+            <summary>
+            Group[1] "Summe der Barwerte (Probe)" must have GroupTotal approximately equal to 0
+            when a valid IRR is used (by definition of IRR the sum of present values = 0).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetPerformanceChartDataAsync_Should_ShowZeroMarketValue_AfterFullSell">
+            <summary>
+            After a full sell of all shares, all chart data points for dates on or after the
+            sell date must have a portfolio value of 0 (no shares held).
+            <para>
+            Regression guard for a sign-convention bug: domain sell quantities are stored as
+            negative values (e.g. −10). When <c>ComputeSharesHeldOnDate</c> subtracts a negative
+            quantity (<c>shares -= −10</c>), shares are incorrectly increased instead of decreased,
+            causing the market value to double rather than drop to zero.
+            </para>
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetPerformanceChartDataAsync_Should_SimulatePrices_WhenNoPriceHistoryExists">
+            <summary>
+            When no real price history exists for a security, ComputePerformanceChartDataAsync must
+            simulate prices from buy/sell transaction amounts. The implied unit price for each
+            transaction is |Amount| / |Quantity|. Between two anchor points (e.g., buy price and sell
+            price), the price is linearly interpolated for each calendar day.
+            <para>
+            Example: buy 10 shares for 100€ on 15.01 (price = 10€); sell 10 shares for 150€ on 20.01
+            (price = 15€). Expected simulated prices: 15.01→10€, 16.01→11€, 17.01→12€, 18.01→13€,
+            19.01→14€, 20.01→15€. Portfolio values are shares × price (0 after sell).
+            </para>
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetPerformanceChartDataAsync_Should_SimulatePrices_ForOwnershipPeriod_WhenRealPricesStartAfterSell">
+            <summary>
+            When real price history only exists AFTER the last sell (i.e., during the ownership
+            period there are no prices), the chart must still show simulated prices for the
+            ownership period. The post-sell data points must show portfolio value 0 because no
+            shares are held regardless of the real price.
+            <para>
+            Scenario: buy Jan 15 (10 shares, 100€ → 10€/share), sell Jan 20 (150€ → 15€/share),
+            first real price on Jan 25 (20€). The Jan 15-19 period must be simulated.
+            </para>
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetPerformanceChartDataAsync_Should_SimulatePrices_ForGapBeforeFirstRealPrice_WhenRealPricesStartMidOwnership">
+            <summary>
+            When real price history starts WITHIN the ownership period (after the buy but before
+            the sell), the chart must simulate prices for the gap before the first real price and
+            then use real prices for the remainder. This ensures a continuous chart from the first
+            buy onwards.
+            <para>
+            Scenario: buy Jan 1 (10 shares, 100€ → 10€/share), first real price Jan 11 (25€),
+            sell Jan 21 (300€ → 30€/share). The Jan 1-10 period must use simulated prices;
+            Jan 11+ must use the real price (25€, NOT the simulated ~15€).
+            </para>
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetPeriodicReturnsAsync_Should_StopAtLastTransactionYear_When_PositionFullyClosed">
+            <summary>
+            When a security was bought in year A and sold in year B (B &lt; current year),
+            the result must contain entries only for years A through B, not beyond.
+            A fully closed position must not produce empty years after the sale.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetPeriodicReturnsAsync_Should_ReturnPositiveAnnualReturn_When_StockAppreciatedInBuyYear">
+            <summary>
+            In the year of the first purchase (starting portfolio value = 0), the Modified Dietz
+            formula must return a meaningful return (positive when stock appreciated, negative when
+            it declined) instead of 0 as the old simple-HPR formula produced.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetPeriodicReturnsAsync_Should_ReturnPositiveAnnualReturn_When_SoldWithGainInSellYear">
+            <summary>
+            In the year of a full sale (ending portfolio value = 0), the Modified Dietz formula must
+            produce a positive return when the sell proceeds exceed the start-of-year market value
+            minus fees.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetPeriodicReturnsAsync_Should_ProduceMonthlyReturn_When_PositionOpenedMidMonth">
+            <summary>
+            Monthly returns must not be null for months where the position was held, even if the
+            position was opened with a buy in that same month (starting value = 0).
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.Securities.ReturnCalculationServiceTests">
+            <summary>
+            Tests for <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.ReturnCalculationService"/> covering all financial math methods.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTotalReturn_Should_ReturnPositive_When_MarketValueExceedsInvested">
+            <summary>
+            When the market value exceeds the invested capital (plus dividends), the return is positive.
+            Invested=1000, MarketValue=1200, Dividends=50 → (1200+50−1000)/1000 = 0.25 = 25 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTotalReturn_Should_ReturnNegative_When_MarketValueBelowInvested">
+            <summary>
+            When the market value is below the invested capital, the return is negative.
+            Invested=1000, MarketValue=800, Dividends=0 → −20 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTotalReturn_Should_ReturnNull_When_InvestedCapitalIsZero">
+            <summary>
+            When invested capital is zero the method must return null to avoid division by zero.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTotalReturn_Should_IncludeDividends_In_TotalReturn">
+            <summary>
+            Dividends are added to the numerator, increasing the total return.
+            Invested=1000, MarketValue=1000, Dividends=100 → 100/1000 = 10 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTwr_Should_ReturnNull_When_NoPeriods">
+            <summary>
+            An empty period list must return null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTwr_Should_ReturnNull_When_FirstPeriodHasZeroDenominator">
+            <summary>
+            When the only period has a zero denominator (StartValue=0, ExternalCashflow=0)
+            the period is skipped and the method returns null because no valid periods remain.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTwr_Should_Calculate_SinglePeriod_Correctly">
+            <summary>
+            Single period: StartValue=1000, EndValue=1100, ExternalCashflow=0 → TWR = 10 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTwr_Should_Compound_Multiple_Periods">
+            <summary>
+            Two periods each returning +10 % compound to ≈ 21 % (1.1 × 1.1 − 1).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTwr_Should_SkipPeriod_When_InitialValue_IsZero">
+            <summary>
+            When the first period has a zero denominator it is skipped;
+            only the valid second period is used in the compounding chain.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTwr_Should_Handle_ExternalCashflows_Correctly">
+            <summary>
+            Modified Dietz: StartValue=1000, EndValue=1150, ExternalCashflow=100.
+            Denominator = 1000 + 0.5×100 = 1050. PeriodReturn = (1150−1000−100)/1050 ≈ 4.76 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateIrr_Should_ReturnNull_When_NoSignChange">
+            <summary>
+            All cashflows with the same sign (no sign change) → IRR cannot be computed → null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateIrr_Should_Calculate_SimpleReturn">
+            <summary>
+            Simple buy-then-sell with 10 % gain over one year → IRR ≈ 10 %.
+            Buy −1000 on 2020-01-01, Sell +1100 on 2021-01-01.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateIrr_Should_Handle_DividendsInCashflows">
+            <summary>
+            Dividends received during the holding period increase the IRR above zero.
+            Buy −1000 on 2020-01-01, Dividend +50 after 6 months, Sell +1000 after 1 year → IRR > 0.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateIrr_Should_ReturnNull_When_NotConverged">
+            <summary>
+            A cashflow pattern that forces the bisection into a range with no sign change
+            (e.g., huge positive terminal value dwarfing initial outflow for extreme rates)
+            causes the algorithm to return null when it cannot converge.
+            Uses maxIterations=1 to guarantee non-convergence even for solvable problems.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateCagr_Should_Calculate_TwoYearGrowth">
+            <summary>
+            StartValue=1000, EndValue=1210, Years=2 → CAGR = √(1210/1000) − 1 = 10 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateCagr_Should_ReturnNull_When_StartValueIsZero">
+            <summary>
+            StartValue=0 is invalid → null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateCagr_Should_ReturnNull_When_YearsIsZero">
+            <summary>
+            Years=0 is invalid → null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateCagr_Should_Handle_NegativeReturn">
+            <summary>
+            StartValue=1000, EndValue=810, Years=1 → CAGR = 810/1000 − 1 = −19 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateVolatility_Should_ReturnNull_When_LessThanTwoPrices">
+            <summary>
+            Fewer than 2 price points → null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateVolatility_Should_Calculate_ConstantPrices_ReturnZero">
+            <summary>
+            Constant prices [100, 100, 100, 100] produce zero log returns → volatility = 0.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateVolatility_Should_Calculate_Positive_For_VariablePrices">
+            <summary>
+            Non-constant prices produce a positive annualised volatility.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateMaxDrawdown_Should_ReturnNull_When_LessThanTwoPoints">
+            <summary>
+            Fewer than 2 data points → null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateMaxDrawdown_Should_Return_Zero_For_Monotonic_Increase">
+            <summary>
+            A strictly monotonically increasing series has no drawdown → 0.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateMaxDrawdown_Should_Calculate_Negative_Value">
+            <summary>
+            [100, 120, 90, 110] → peak is 120; trough is 90 → max drawdown = (90−120)/120 = −25 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateMaxDrawdown_Should_ReturnNegative_Fraction">
+            <summary>
+            Any drawdown must be expressed as a negative fraction (not positive, not > 0).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateSharpeRatio_Should_Calculate_Positive_When_ReturnExceedsRiskFreeRate">
+            <summary>
+            Return=0.12, RiskFree=0.04, Volatility=0.16 → (0.12−0.04)/0.16 = 0.5.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateSharpeRatio_Should_ReturnNull_When_VolatilityIsZero">
+            <summary>
+            Volatility=0 → null (division by zero guard).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateSharpeRatio_Should_ReturnNegative_When_ReturnBelowRiskFreeRate">
+            <summary>
+            When the portfolio return is below the risk-free rate the Sharpe Ratio is negative.
+            Return=0.02, RiskFree=0.04, Volatility=0.10 → (0.02−0.04)/0.10 = −0.2.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateSharpeRatio_Should_ReturnZero_When_AnnualisedReturnEqualsRiskFreeRate">
+            <summary>
+            When annualised return equals the risk-free rate, excess return is 0 → Sharpe Ratio = 0.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateDividendYield_Should_ReturnCorrectYield_When_DividendsAndCapitalArePositive">
+            <summary>
+            Dividend yield = totalDividends / investedCapital.
+            50 / 1000 = 0.05 = 5 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateDividendYield_Should_ReturnNull_When_InvestedCapitalIsZero">
+            <summary>
+            When invested capital is zero the method must return null to avoid division by zero.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateDividendYield_Should_ReturnZero_When_TotalDividendsIsZero">
+            <summary>
+            When total dividends are zero the yield is exactly 0 (not null).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateDividendYield_Should_HandleNegativeDividends_When_DividendsAreNegative">
+            <summary>
+            Negative dividends (e.g. withholding tax refund reversal) produce a negative yield.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTaxRate_Should_ReturnCorrectRate_When_TaxesAndGrossReturnArePositive">
+            <summary>
+            Tax rate = totalTaxes / |grossReturn|. 20 / 100 = 20 %.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTaxRate_Should_ReturnNull_When_GrossReturnIsZero">
+            <summary>
+            When gross return is zero the method must return null to avoid division by zero.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTaxRate_Should_ReturnZero_When_TotalTaxesIsZero">
+            <summary>
+            When taxes are zero the tax rate is exactly 0 (not null).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTaxRate_Should_UseAbsoluteValue_When_GrossReturnIsNegative">
+            <summary>
+            When gross return is negative (loss) the denominator uses |grossReturn|,
+            so the tax rate is still a positive fraction.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTotalReturn_Should_ReduceReturn_When_NetDividendsAreNegative">
+            <summary>
+            Negative net dividends (high withholding taxes) reduce total return below
+            (MarketValue - InvestedCapital) / InvestedCapital.
+            Invested=1000, MarketValue=1100, NetDividends=−20 → (1100 − 20 − 1000) / 1000 = 0.08.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateIrr_Should_ReturnNull_When_ListHasExactlyOneCashflow">
+            <summary>
+            A list with fewer than 2 cashflows must return null immediately.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateIrr_Should_ReturnNull_When_ListIsEmpty">
+            <summary>
+            An empty cashflow list must return null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateIrr_Should_ReturnNull_When_InputIsNull">
+            <summary>
+            A null input must return null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateIrr_Should_ReturnNull_When_CashflowsHaveNoSignChange">
+            <summary>
+            When all cashflows have the same sign (no sign change), IRR is not computable → null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateCagr_Should_ReturnNull_When_YearsIsNegative">
+            <summary>
+            A negative time period is invalid → null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateCagr_Should_ReturnNull_When_EndValueIsNegativeAndYearsIsNonInteger">
+            <summary>
+            When endValue is negative and years is non-integer, Math.Pow returns NaN → null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateVolatility_Should_ReturnNull_When_InputIsNull">
+            <summary>
+            A null input must return null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateVolatility_Should_ReturnNull_When_AllPricesAreZeroOrNegative">
+            <summary>
+            When all prices are zero or negative, the log-return computation is skipped for every pair
+            (previous &lt;= 0 or current &lt;= 0). The underlying array stays at its default 0.0, which is
+            neither NaN nor Infinity, so those entries are counted as valid and the method returns 0
+            (annualised volatility of zero returns) rather than null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateVolatility_Should_ReturnNull_When_ExactlyTwoPricesProvided">
+            <summary>
+            BUG-2: The entry guard checks for fewer than 2 prices, but because only 2 prices produce
+            exactly 1 log return (validCount = 1), the internal guard "validCount &lt; 2" fires → null.
+            This test documents the actual (surprising) behavior: 2 prices are NOT enough.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateVolatility_Should_ReturnNonNull_When_ExactlyThreePricesProvided">
+            <summary>
+            Three prices produce 2 valid log returns (validCount == 2), which satisfies the
+            internal guard. This is the effective minimum for a non-null result.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTwr_Should_ReturnNull_When_InputIsNull">
+            <summary>
+            A null input must return null (guard before Count check).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateTwr_Should_ReturnNull_When_AllPeriodsHaveZeroDenominator">
+            <summary>
+            When all periods have denominator == 0 (empty portfolio for all periods),
+            no valid periods exist → null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateMaxDrawdown_Should_ReturnNull_When_InputIsNull">
+            <summary>
+            A null input must return null.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateMaxDrawdown_Should_ReturnZero_When_AllValuesAreIdentical">
+            <summary>
+            When all portfolio values are identical, the drawdown from peak to trough is 0.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Securities.ReturnCalculationServiceTests.CalculateMaxDrawdown_Should_ReturnZero_When_FirstValueIsZero">
+            <summary>
+            When the first value is zero, the peak starts at 0 and the guard (peak &gt; 0) prevents
+            any drawdown from being recorded until a positive peak is established.
+            With a monotonically non-decreasing series after the initial zero, no trough ever falls
+            below the peak → max drawdown stays at 0.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Tests.Statements.StatementDraftImportSplitTests">
             <summary>
             Tests the import split logic (CreateDraftAsync) for fixed, monthly and hybrid modes.
@@ -370,6 +1241,22 @@
              - Sum check compares parent entry amount with sum of ALL child draft entry amounts across the group.
              - Booking parent books all grouped child drafts (and commits them) while unrelated drafts remain untouched.
             </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.TestHelpers.TestReturnAnalysisLocalizer">
+            <summary>
+            Stub implementation of <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisLocalizer"/> for unit tests.
+            Returns the German (de) translation for every key so that existing string assertions
+            continue to work without modification. Unknown keys fall back to the key itself.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Tests.TestHelpers.TestReturnAnalysisLocalizer.Item(System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Tests.TestHelpers.TestReturnAnalysisLocalizer.Format(System.String,System.Object[])">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Tests.ViewModels.PostingsSecurityViewModelTests.GetQuantityCell(FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel,FinanceManager.Web.ViewModels.Common.ListRecord)">
+            <summary>Returns the Quantity cell from a record by looking up the column index.</summary>
         </member>
     </members>
 </doc>

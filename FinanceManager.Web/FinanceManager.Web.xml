@@ -1436,6 +1436,18 @@
             <returns>An <see cref="T:Microsoft.AspNetCore.Mvc.IActionResult"/> with 204 No Content when deleted, or 404 Not Found when not found.</returns>
             <exception cref="T:System.Exception">Unexpected errors are logged and result in a 500 Internal Server Error.</exception>
         </member>
+        <member name="T:FinanceManager.Web.Controllers.ReturnAnalysisSettingsRequest">
+            <summary>Request payload for updating return analysis settings.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Controllers.ReturnAnalysisSettingsRequest.BenchmarkSecurityId">
+            <summary>Optional benchmark security id. Null clears the benchmark.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Controllers.ReturnAnalysisSettingsRequest.ShowSharpeRatio">
+            <summary>Whether to show Sharpe Ratio in the UI.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Controllers.ReturnAnalysisSettingsRequest.RiskFreeRate">
+            <summary>Risk-free rate for Sharpe Ratio calculation (e.g. 0.04 = 4%). Must be >= 0.</summary>
+        </member>
         <member name="T:FinanceManager.Web.Controllers.SavingsPlansController">
             <summary>
             Provides CRUD, analysis, archiving and symbol management endpoints for savings plans owned by the current user.
@@ -1576,7 +1588,7 @@
             dividends aggregation and background price backfill tasks.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.#ctor(FinanceManager.Application.Securities.ISecurityService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.IBackgroundTaskManager,FinanceManager.Application.Reports.IPostingTimeSeriesService,FinanceManager.Application.Securities.ISecurityPriceService,FinanceManager.Application.Securities.ISecurityReportService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.SecuritiesController},FinanceManager.Application.Common.IParentAssignmentService,Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.#ctor(FinanceManager.Application.Securities.ISecurityService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.IBackgroundTaskManager,FinanceManager.Application.Reports.IPostingTimeSeriesService,FinanceManager.Application.Securities.ISecurityPriceService,FinanceManager.Application.Securities.ISecurityReportService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.SecuritiesController},FinanceManager.Application.Common.IParentAssignmentService,Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller},FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService)">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.SecuritiesController"/>.
             </summary>
@@ -1590,6 +1602,7 @@
             <param name="logger">Logger used for diagnostic messages.</param>
             <param name="parentAssign">Service that manages server-side create-and-assign operations.</param>
             <param name="localizer">Localizer for generating user-friendly error messages.</param>
+            <param name="returnAnalysis">Service providing return analysis calculations.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.SecuritiesController.ListAsync(System.Boolean,System.Threading.CancellationToken)">
             <summary>
@@ -1712,6 +1725,99 @@
             <param name="take">Optional take parameter (ignored; kept for compatibility).</param>
             <param name="ct">Cancellation token.</param>
             <returns>200 OK with a list of quarterly <see cref="T:FinanceManager.Shared.Dtos.Common.AggregatePointDto"/> objects.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetReturnSummaryAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the compact return summary for a security.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with <see cref="T:FinanceManager.Shared.Dtos.Securities.ReturnSummaryDto"/>; 404 when not found or not owned by user.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetSparklineDataAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns sparkline chart data for a security (separate from summary to keep cache lean).
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with <see cref="T:FinanceManager.Shared.Dtos.Securities.SparklineDataDto"/>; 404 when not found or insufficient price data.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetReturnMetricsAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns detailed return metrics for the Kennzahlen tab.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with <see cref="T:FinanceManager.Shared.Dtos.Securities.DetailedReturnMetricsDto"/>; 404 when not found or not owned by user.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetPeriodicReturnsAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns periodic returns (annual + monthly + dividends) for the Zeitliche Entwicklung tab.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with <see cref="T:FinanceManager.Shared.Dtos.Securities.PeriodicReturnsDto"/>; 404 when not found or not owned by user.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetCashflowTimelineAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns cashflow timeline for the Cashflows tab.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with <see cref="T:FinanceManager.Shared.Dtos.Securities.CashflowTimelineDto"/>; 404 when not found or not owned by user.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetPerformanceChartAsync(System.Guid,FinanceManager.Shared.Dtos.Securities.ChartTimeRange,System.Threading.CancellationToken)">
+            <summary>
+            Returns performance chart data.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="timeRange">Time range for the chart (default: All).</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with <see cref="T:FinanceManager.Shared.Dtos.Securities.PerformanceChartDataDto"/>; 404 when not found or not owned by user.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetBenchmarkComparisonAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns benchmark comparison data.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with <see cref="T:FinanceManager.Shared.Dtos.Securities.BenchmarkComparisonDto"/>; 404 when no benchmark is configured or data is insufficient.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetReturnAnalysisSettingsAsync(System.Threading.CancellationToken)">
+            <summary>
+            Returns return analysis settings for the current user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.ReturnAnalysisSettingsDto"/>.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.UpdateReturnAnalysisSettingsAsync(FinanceManager.Web.Controllers.ReturnAnalysisSettingsRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates return analysis settings for the current user.
+            </summary>
+            <param name="req">Settings request payload.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>204 NoContent on success; 400 BadRequest for invalid input.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.InvalidateReturnCacheAsync(System.Guid)">
+            <summary>
+            Invalidates the return analysis cache for a specific security.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <returns>204 NoContent on success.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.InvalidateAllReturnCacheAsync">
+            <summary>
+            Invalidates the return analysis cache for all securities of the current user.
+            </summary>
+            <returns>204 NoContent on success.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.GetKpiBreakdownsAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the KPI formula and cashflow breakdown for all widget KPIs of a security.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>200 OK with list of <see cref="T:FinanceManager.Shared.Dtos.Securities.KpiBreakdownDto"/>; 404 when not found or no data.</returns>
         </member>
         <member name="T:FinanceManager.Web.Controllers.SecurityCategoriesController">
             <summary>
@@ -2183,7 +2289,7 @@
             All endpoints operate on the currently authenticated user resolved via <see cref="T:FinanceManager.Application.ICurrentUserService"/>.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.UserSettingsController.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.UserSettingsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
+        <member name="M:FinanceManager.Web.Controllers.UserSettingsController.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.UserSettingsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller},FinanceManager.Infrastructure.Auth.IJwtTokenService,IAuthTokenProvider)">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.UserSettingsController"/>
             </summary>
@@ -2191,6 +2297,8 @@
             <param name="current">Service that exposes current user information.</param>
             <param name="logger">Logger instance for diagnostics and error reporting.</param>
             <param name="localizer">Localizer for accessing localized strings.</param>
+            <param name="jwt">Service used to issue new JWT tokens after profile changes.</param>
+            <param name="tokenProvider">Token provider whose cache is invalidated after the auth cookie is replaced.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.UserSettingsController.GetProfileAsync(System.Threading.CancellationToken)">
             <summary>
@@ -2399,6 +2507,9 @@
             Clears any internally cached token. Call this when the user logs out to ensure subsequent calls don't return a stale token.
             </summary>
         </member>
+        <member name="M:FinanceManager.Web.Infrastructure.Auth.JwtCookieAuthTokenProvider.InvalidateCache">
+            <inheritdoc/>
+        </member>
         <member name="M:FinanceManager.Web.Infrastructure.Auth.JwtCookieAuthTokenProvider.IssueToken(System.Collections.Generic.IEnumerable{System.Security.Claims.Claim},System.Int32)">
             <summary>
             Issues a new JWT for the supplied claims with the configured lifetime.
@@ -2419,11 +2530,6 @@
         <member name="M:FinanceManager.Web.Infrastructure.Auth.JwtCookieAuthTokenProvider.Cache(System.String,System.DateTimeOffset)">
             <summary>
             Caches the token and its expiry in-memory for quick subsequent access.
-            </summary>
-        </member>
-        <member name="M:FinanceManager.Web.Infrastructure.Auth.JwtCookieAuthTokenProvider.InvalidateCache">
-            <summary>
-            Invalidates any cached token.
             </summary>
         </member>
         <member name="T:FinanceManager.Web.Infrastructure.Auth.JwtRefreshMiddleware">
@@ -3420,19 +3526,21 @@
         </member>
         <member name="T:FinanceManager.Web.Services.PagesStringLocalizer">
             <summary>
-            Simple string localizer that reads localization values from the compiled resource set for the <c>Pages</c> resource class.
-            This implementation implements <see cref="T:Microsoft.Extensions.Localization.IStringLocalizer`1"/> and performs lookups in the current <see cref="P:System.Globalization.CultureInfo.CurrentUICulture"/>.
-            </summary>
-        </member>
-        <member name="M:FinanceManager.Web.Services.PagesStringLocalizer.#ctor">
-            <summary>
-            Initializes a new instance of the <see cref="T:FinanceManager.Web.Services.PagesStringLocalizer"/> class and loads the resource set
-            for the current UI culture.
+            String localizer that reads localization values from the compiled resource set for the <c>Pages</c> resource class.
+            This implementation implements <see cref="T:Microsoft.Extensions.Localization.IStringLocalizer`1"/> and resolves the resource set on every
+            lookup against <see cref="P:System.Globalization.CultureInfo.CurrentUICulture"/>, which is set per-request by the localization middleware.
             </summary>
             <remarks>
-            The constructor uses <see cref="M:System.Resources.ResourceManager.GetResourceSet(System.Globalization.CultureInfo,System.Boolean,System.Boolean)"/> to obtain the resources for <see cref="T:FinanceManager.Web.Pages"/>.
-            If the resource assembly is not available a <see cref="T:System.Resources.MissingManifestResourceException"/> may be thrown by <see cref="T:System.Resources.ResourceManager"/>.
+            The <see cref="T:System.Resources.ResourceManager"/> is shared as a singleton field because it is thread-safe and caches the
+            individual <see cref="T:System.Resources.ResourceSet"/> instances internally. The resource set is intentionally NOT cached at
+            construction time so that the correct culture is honoured on every request.
             </remarks>
+        </member>
+        <member name="M:FinanceManager.Web.Services.PagesStringLocalizer.GetCurrentResourceSet">
+            <summary>
+            Resolves the <see cref="T:System.Resources.ResourceSet"/> for the current request's UI culture.
+            Must be called per-lookup (not cached) so that culture changes between requests are respected.
+            </summary>
         </member>
         <member name="P:FinanceManager.Web.Services.PagesStringLocalizer.Item(System.String)">
             <summary>
@@ -3456,8 +3564,7 @@
             <summary>
             Returns all localized strings from the resource set for the current UI culture.
             </summary>
-            <param name="includeParentCultures">When true include values from parent cultures. This parameter is currently
-            forwarded to <see cref="M:System.Resources.ResourceManager.GetResourceSet(System.Globalization.CultureInfo,System.Boolean,System.Boolean)"/> when resources are resolved.</param>
+            <param name="includeParentCultures">When <c>true</c>, parent cultures are included via <see cref="T:System.Resources.ResourceManager"/> fallback.</param>
             <returns>An enumerable of <see cref="T:Microsoft.Extensions.Localization.LocalizedString"/> instances representing available localized values.</returns>
         </member>
         <member name="T:FinanceManager.Web.Services.PostingsQueryService">
@@ -3600,6 +3707,25 @@
             </summary>
             <param name="context">Context describing the background task, including TaskId and UserId. Must not be <c>null</c>.</param>
             <param name="ct">Cancellation token used to cancel the operation.</param>
+        </member>
+        <member name="T:FinanceManager.Web.Services.ReturnAnalysisLocalizer">
+            <summary>
+            Web-layer implementation of <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisLocalizer"/>.
+            Delegates all lookups to the standard ASP.NET Core <see cref="T:Microsoft.Extensions.Localization.IStringLocalizer`1"/>
+            so that resource files under <c>Resources/Services/ReturnAnalysisLocalizer.*.resx</c> are used.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Services.ReturnAnalysisLocalizer.#ctor(Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Services.ReturnAnalysisLocalizer})">
+            <summary>
+            Initializes a new instance of <see cref="T:FinanceManager.Web.Services.ReturnAnalysisLocalizer"/>.
+            </summary>
+            <param name="localizer">ASP.NET Core string localizer for this resource type.</param>
+        </member>
+        <member name="P:FinanceManager.Web.Services.ReturnAnalysisLocalizer.Item(System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Web.Services.ReturnAnalysisLocalizer.Format(System.String,System.Object[])">
+            <inheritdoc/>
         </member>
         <member name="T:FinanceManager.Web.Services.SecurityPricesBackfillExecutor">
             <summary>
@@ -6808,12 +6934,16 @@
         <member name="T:FinanceManager.Web.ViewModels.Postings.Common.BasePostingsListViewModel.PostingListItem">
             <summary>
             Small wrapper record used to provide a navigation URL for posting items displayed in the list.
+            Accessible to derived classes so they can reuse the same navigation logic when overriding
+            <see cref="M:FinanceManager.Web.ViewModels.Postings.Common.BasePostingsListViewModel.BuildRecords"/>.
             </summary>
             <param name="Posting">Posting DTO wrapped by this navigation item.</param>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Postings.Common.BasePostingsListViewModel.PostingListItem.#ctor(FinanceManager.Shared.Dtos.Postings.PostingServiceDto)">
             <summary>
             Small wrapper record used to provide a navigation URL for posting items displayed in the list.
+            Accessible to derived classes so they can reuse the same navigation logic when overriding
+            <see cref="M:FinanceManager.Web.ViewModels.Postings.Common.BasePostingsListViewModel.BuildRecords"/>.
             </summary>
             <param name="Posting">Posting DTO wrapped by this navigation item.</param>
         </member>
@@ -7025,6 +7155,7 @@
             <summary>
             List view model for postings related to a specific security. Provides paging and lookup
             of posting service DTOs filtered by the configured security id.
+            Overrides column layout to include the security-specific "Anzahl" (quantity) column.
             </summary>
         </member>
         <member name="F:FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel._securityId">
@@ -7035,6 +7166,7 @@
         <member name="M:FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel.#ctor(System.IServiceProvider,System.Guid)">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel"/> for the specified security.
+            Sets column layout: Date, Valuta, Kind, Quantity, Amount, Subject, Description.
             </summary>
             <param name="services">Service provider used by the base view model.</param>
             <param name="securityId">Identifier of the security whose postings should be listed.</param>
@@ -7053,10 +7185,14 @@
             A task that resolves to a read-only list of <see cref="T:FinanceManager.Shared.Dtos.Postings.PostingServiceDto"/> when the query succeeds,
             or <c>null</c> when an error occurs.
             </returns>
-            <remarks>
-            Exceptions thrown by the API client are caught and result in a <c>null</c> return value to
-            indicate that the page could not be loaded.
-            </remarks>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel.BuildRecords">
+            <summary>
+            Builds list records with the security-specific column order:
+            Date, Valuta, Kind, Quantity, Amount, Subject, Description.
+            The Quantity cell is left empty when the value is <c>null</c> or zero
+            (e.g. for dividends, taxes and fees that carry no share count).
+            </summary>
         </member>
         <member name="T:FinanceManager.Web.ViewModels.Reports.ReportDashboardViewModel">
             <summary>
@@ -8247,6 +8383,240 @@
             <param name="localizer">Localizer used to resolve UI labels.</param>
             <returns>Collection of ribbon registers describing available tabs and actions for the UI.</returns>
         </member>
+        <member name="T:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceBenchmarkTabViewModel">
+            <summary>
+            View model for the security performance benchmark tab.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceBenchmarkTabViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="services">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceBenchmarkTabViewModel.Data">
+            <summary>
+            Loaded benchmark comparison data.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceBenchmarkTabViewModel.IsLoading">
+            <summary>
+            Gets whether loading is in progress.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceBenchmarkTabViewModel.LoadAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Loads data for the given security.
+            </summary>
+            <param name="securityId">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceCashflowTabViewModel">
+            <summary>
+            View model for the security performance cashflow tab.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceCashflowTabViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="services">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceCashflowTabViewModel.Data">
+            <summary>
+            Loaded cashflow data.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceCashflowTabViewModel.IsLoading">
+            <summary>
+            Gets whether loading is in progress.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceCashflowTabViewModel.LoadAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Loads data for the given security.
+            </summary>
+            <param name="securityId">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceMetricsTabViewModel">
+            <summary>
+            View model for the security performance metrics tab.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceMetricsTabViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="services">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceMetricsTabViewModel.Data">
+            <summary>
+            Loaded metrics data.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceMetricsTabViewModel.IsLoading">
+            <summary>
+            Gets whether loading is in progress.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceMetricsTabViewModel.LoadAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Loads data for the given security.
+            </summary>
+            <param name="securityId">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel">
+            <summary>
+            View model for the security performance overview tab.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="services">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.SecurityId">
+            <summary>
+            Security identifier currently bound to this tab.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.SelectedRange">
+            <summary>
+            Selected chart time range.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.Ranges">
+            <summary>
+            Available time ranges.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.Data">
+            <summary>
+            Loaded chart data.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.IsLoading">
+            <summary>
+            Gets whether loading is in progress.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.LoadAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Loads chart data for the current selection.
+            </summary>
+            <param name="securityId">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.SelectRangeAsync(FinanceManager.Shared.Dtos.Securities.ChartTimeRange,System.Threading.CancellationToken)">
+            <summary>
+            Selects a new range and reloads chart data.
+            </summary>
+            <param name="range">Range to load.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.GetRangeLabel(FinanceManager.Shared.Dtos.Securities.ChartTimeRange)">
+            <summary>
+            Returns short label for a chart range.
+            </summary>
+            <param name="range">Chart range.</param>
+            <returns>Short display label.</returns>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel">
+            <summary>
+            View model for the security performance page shell.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="services">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.OverviewTabVm">
+            <summary>
+            View model for the overview tab. Owned and lifecycle-managed by this page view model
+            so that its state (selected range, chart data) can be accessed for ribbon button rendering.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.SecurityId">
+            <summary>
+            Security identifier currently shown by the page.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.SecurityName">
+            <summary>
+            Name of the selected security.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.NotFound">
+            <summary>
+            Gets whether the requested security could not be found.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.ActiveTabKey">
+            <summary>
+            Active tab key.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.Tabs">
+            <summary>
+            All available tab keys.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.LoadAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Loads page header data for the given security.
+            </summary>
+            <param name="securityId">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.SelectTab(System.String)">
+            <summary>
+            Sets the active tab key if valid.
+            </summary>
+            <param name="tabKey">Target tab key.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.GetTabLabel(System.String)">
+            <summary>
+            Returns a localized display label for a tab key.
+            </summary>
+            <param name="tabKey">Tab key.</param>
+            <returns>Display label.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformancePageViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceTimeSeriesTabViewModel">
+            <summary>
+            View model for the security performance time series tab.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceTimeSeriesTabViewModel.#ctor(System.IServiceProvider)">
+            <summary>
+            Creates a new instance.
+            </summary>
+            <param name="services">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceTimeSeriesTabViewModel.Data">
+            <summary>
+            Loaded periodic return data.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceTimeSeriesTabViewModel.IsLoading">
+            <summary>
+            Gets whether loading is in progress.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceTimeSeriesTabViewModel.LoadAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Loads data for the given security.
+            </summary>
+            <param name="securityId">Security identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
         <member name="T:FinanceManager.Web.ViewModels.Securities.SecuritiesListViewModel">
             <summary>
             List view model for securities. Responsible for loading securities, preparing display symbol mapping
@@ -8829,6 +9199,15 @@
             Gets the background task types that should be visible for this card.
             </summary>
         </member>
+        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.InitializeAsync(System.Guid)">
+            <summary>
+            Initializes the setup card. After loading, automatically selects the section specified by
+            <see cref="P:FinanceManager.Web.ViewModels.Common.BaseCardViewModel`1.InitPrefill"/> when a valid section key was provided via the
+            <c>?prefill=</c> query parameter.
+            </summary>
+            <param name="id">Identifier of the record. Ignored for the setup card.</param>
+            <returns>A task representing the asynchronous initialization operation.</returns>
+        </member>
         <member name="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.LoadAsync(System.Guid)">
             <summary>
             Loads the card record and initializes the embedded panel for the setup UI.
@@ -9099,6 +9478,55 @@
             </summary>
             <param name="localizer">Localizer used to resolve UI labels and hints.</param>
             <returns>Collection of ribbon registers describing available tabs and actions for the UI.</returns>
+        </member>
+        <member name="T:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel">
+            <summary>
+            View model for the return analysis / benchmark settings section inside the setup card.
+            Loads the list of available securities and the current benchmark selection, and persists changes.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.#ctor(System.IServiceProvider)">
+            <summary>Creates a new instance.</summary>
+            <param name="sp">Service provider.</param>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.Loading">
+            <summary>Whether a load operation is in progress.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.Saving">
+            <summary>Whether a save operation is in progress.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.SavedOk">
+            <summary>True after a successful save.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.Error">
+            <summary>Error message from the last load operation, if any.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.SaveError">
+            <summary>Error message from the last save operation, if any.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.AvailableSecurities">
+            <summary>All securities available for selection as benchmark.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.SelectedBenchmarkSecurityId">
+            <summary>Currently selected benchmark security id. Null means no benchmark.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.ShowSharpeRatio">
+            <summary>Whether the Sharpe Ratio should be shown in analyses.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.RiskFreeRate">
+            <summary>Risk-free rate used for return calculations (decimal, e.g. 0.04 = 4%). Must be >= 0.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.LoadAsync(System.Threading.CancellationToken)">
+            <summary>
+            Loads available securities and the current benchmark settings in parallel.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.SaveAsync(System.Threading.CancellationToken)">
+            <summary>
+            Saves the selected benchmark, preserving the existing Sharpe Ratio and risk-free rate values.
+            </summary>
+            <param name="ct">Cancellation token.</param>
         </member>
         <member name="T:FinanceManager.Web.ViewModels.Setup.SetupSecurityViewModel">
             <summary>
@@ -10272,6 +10700,76 @@
             </summary>
             <returns>A ValueTask representing the asynchronous dispose operation.</returns>
         </member>
+        <member name="P:FinanceManager.Web.Components.Pages.Securities.BenchmarkTab.SecurityId">
+            <summary>Security identifier.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.BenchmarkTab.OnInitializedAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.BenchmarkTab.OnParametersSetAsync">
+            <inheritdoc />
+        </member>
+        <member name="P:FinanceManager.Web.Components.Pages.Securities.CashflowTab.SecurityId">
+            <summary>Security identifier.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.CashflowTab.OnInitializedAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.CashflowTab.OnParametersSetAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.CashflowTab.BuildDividendBars">
+            <summary>Builds SVG bar chart markup for dividends by year.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.CashflowTab.BuildCostBars">
+            <summary>Builds SVG bar chart markup for taxes and fees by year including cumulative line.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Components.Pages.Securities.OverviewTab.SecurityId">
+            <summary>Security identifier.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Components.Pages.Securities.OverviewTab.ViewModel">
+            <summary>
+            Pre-created view model supplied by the parent page. When provided the component subscribes
+            to its <see cref="!:SecurityPerformanceOverviewTabViewModel.StateChanged"/> event and calls
+            <see cref="M:FinanceManager.Web.ViewModels.Securities.ReturnAnalysis.SecurityPerformanceOverviewTabViewModel.LoadAsync(System.Guid,System.Threading.CancellationToken)"/> on parameter changes.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.OverviewTab.OnParametersSetAsync">
+            <inheritdoc />
+        </member>
+        <member name="P:FinanceManager.Web.Components.Pages.Securities.SecurityPerformancePage.Id">
+            <summary>Security identifier from the route.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Components.Pages.Securities.SecurityPerformancePage.InitialTab">
+            <summary>Optional tab key from the route, e.g. "Metrics".</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.SecurityPerformancePage.OnInitializedAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.SecurityPerformancePage.OnParametersSetAsync">
+            <inheritdoc />
+        </member>
+        <member name="P:FinanceManager.Web.Components.Pages.Securities.TimeSeriesTab.SecurityId">
+            <summary>Security identifier.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.TimeSeriesTab.OnInitializedAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.TimeSeriesTab.OnParametersSetAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.TimeSeriesTab.DividendSvgWidth">
+            <summary>Calculates the SVG width for the dividend bar chart.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Pages.Securities.TimeSeriesTab.BuildDividendSvg">
+            <summary>Builds the SVG markup for the dividend bar chart as a safe string.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Components.Shared.ReturnSummaryWidget.SecurityId">
+            <summary>Security identifier to show return data for.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.Components.Shared.ReturnSummaryWidget.OnParametersSetAsync">
+            <inheritdoc />
+        </member>
         <member name="T:SavingsPlanCategoriesController">
             <summary>
             Manages savings plan categories for the current user (CRUD and symbol attachment operations).
@@ -10393,6 +10891,13 @@
             <exception cref="T:System.OperationCanceledException">Thrown when the operation is cancelled via the provided <paramref name="cancellationToken"/>.</exception>
             <exception cref="T:System.InvalidOperationException">May be thrown when the provider is not properly configured or cannot obtain a token due to configuration errors.</exception>
         </member>
+        <member name="M:IAuthTokenProvider.InvalidateCache">
+            <summary>
+            Invalidates any internally cached token, forcing the next call to <see cref="M:IAuthTokenProvider.GetAccessTokenAsync(System.Threading.CancellationToken)"/> to re-read the token source.
+            Call this after the auth cookie is replaced (e.g. after a profile language change) so that subsequent server-side
+            API calls pick up the updated token.
+            </summary>
+        </member>
         <member name="T:NoOpAuthTokenProvider">
             <summary>
             A no-op authentication token provider that does not supply any access token.
@@ -10409,6 +10914,9 @@
             A task that resolves to the access token string when available, or <c>null</c> when no token is provided.
             </returns>
             <exception cref="T:System.OperationCanceledException">May be thrown if the operation is cancelled via the provided <paramref name="cancellationToken"/>.</exception>
+        </member>
+        <member name="M:NoOpAuthTokenProvider.InvalidateCache">
+            <inheritdoc/>
         </member>
     </members>
 </doc>

@@ -1,0 +1,140 @@
+@page "/securities/{Id:guid}/performance"
+@page "/securities/{Id:guid}/performance/{InitialTab}"
+@rendermode InteractiveServer
+@using FinanceManager.Web.Components.Pages.Securities
+@using FinanceManager.Web.Components.Shared
+@using FinanceManager.Web.ViewModels.Securities.ReturnAnalysis
+@using Microsoft.Extensions.Localization
+@inject IServiceProvider Services
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject IStringLocalizer<FinanceManager.Web.Pages> Localizer
+
+<PageTitle>@Localizer["SecurityPerformancePage_Title"]</PageTitle>
+
+@if (_vm == null)
+{
+    <p>@Localizer["SecurityPerformancePage_Loading"]</p>
+    return;
+}
+
+@if (!_vm.IsAuthenticated)
+{
+    <p>@Localizer["SecurityPerformancePage_NotAuthenticated"]</p>
+    return;
+}
+
+@if (_vm.NotFound)
+{
+    <p>@Localizer["SecurityPerformancePage_NotFound"]</p>
+    <button @onclick='(() => Nav.NavigateTo("/list/securities"))'>@Localizer["SecurityPerformancePage_BackToList"]</button>
+    return;
+}
+
+<div class="perf-page">
+    <Ribbon TTabEnum="string" Provider="_vm" Localizer="Localizer" />
+
+    <div class="perf-header">
+        <h2>@(_vm.SecurityName ?? Localizer["SecurityPerformancePage_Title"]) – @Localizer["SecurityPerformancePage_HeadingSuffix"]</h2>
+    </div>
+
+    <div class="tab-bar" role="tablist">
+        @foreach (var tab in _vm.Tabs)
+        {
+            <button class="tab-btn @(tab == _vm.ActiveTabKey ? "active" : "")"
+                    role="tab"
+                    aria-selected="@(tab == _vm.ActiveTabKey)"
+                    @onclick="(() => SelectTab(tab))">
+                @GetTabLabel(tab)
+            </button>
+        }
+    </div>
+
+    <div class="tab-content" role="tabpanel">
+        @if (_vm.ActiveTabKey == "Overview")
+        {
+            <OverviewTab SecurityId="Id" ViewModel="_vm.OverviewTabVm" />
+        }
+        else if (_vm.ActiveTabKey == "TimeSeries")
+        {
+            <TimeSeriesTab SecurityId="Id" />
+        }
+        else if (_vm.ActiveTabKey == "Cashflows")
+        {
+            <CashflowTab SecurityId="Id" />
+        }
+        else if (_vm.ActiveTabKey == "Metrics")
+        {
+            <MetricsTab SecurityId="Id" />
+        }
+        else if (_vm.ActiveTabKey == "Benchmark")
+        {
+            <BenchmarkTab SecurityId="Id" />
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>Security identifier from the route.</summary>
+    [Parameter] public Guid Id { get; set; }
+
+    /// <summary>Optional tab key from the route, e.g. "Metrics".</summary>
+    [Parameter] public string? InitialTab { get; set; }
+
+    private SecurityPerformancePageViewModel? _vm;
+    private Guid _loadedSecurityId;
+
+    /// <inheritdoc />
+    protected override Task OnInitializedAsync()
+    {
+        _vm = new SecurityPerformancePageViewModel(Services);
+        _vm.StateChanged += VmOnStateChanged;
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_vm == null) { return; }
+
+        if (_loadedSecurityId != Id)
+        {
+            _loadedSecurityId = Id;
+            await _vm.LoadAsync(Id, CancellationToken.None);
+        }
+
+        // Apply deep-link tab if provided and valid
+        if (!string.IsNullOrWhiteSpace(InitialTab))
+        {
+            _vm.SelectTab(InitialTab);
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_vm != null) { _vm.StateChanged -= VmOnStateChanged; }
+    }
+
+    private void VmOnStateChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
+
+    private void SelectTab(string tab)
+    {
+        if (_vm == null || string.Equals(_vm.ActiveTabKey, tab, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _vm.SelectTab(tab);
+        Nav.NavigateTo($"/securities/{Id}/performance/{tab}", replace: true);
+    }
+
+    private string GetTabLabel(string tab) => tab switch
+    {
+        "Overview" => Localizer["Tab_Overview"],
+        "TimeSeries" => Localizer["Tab_TimeSeries"],
+        "Cashflows" => Localizer["Tab_Cashflows"],
+        "Metrics" => Localizer["Tab_Metrics"],
+        "Benchmark" => Localizer["Tab_Benchmark"],
+        _ => tab
+    };
+}

@@ -8,6 +8,7 @@ Diese Richtlinien definieren konsistente, wartbare und sichere Standards für di
 - KISS / DRY / YAGNI konsequent anwenden.
 - Defensive & intention‑revealing code (aussagekräftige Namen > Kommentare). Kommentare nur für Warum / Kontext / Randbedingungen.
 - TODO und Ziel Kommentare verwenden um Absichten zu verdeutlichen.
+- Führe eine Bestandsaufnahme der bestehenden Implementierung durch, bevor neue Dateien erstellt werden. Vermeide die Erstellung von doppelten Artefakten.
 
 ## 2. C# Konventionen
 ### 2.1 Naming
@@ -145,6 +146,7 @@ Folgend wrden projekttypische Strukturen und Konventionen für verschiedenste Ar
 - JS Interop getrennt in dateibenannte .js Dateien pro Funktionalitätsblock.
 - CSS: Shared styles in app.css, komponentenspezifisch in <Komponente>.css (Scoped CSS bevorzugen).
 - SignalR nur für tatsächliche Echtzeitbedarfe (Kursevents / KPI-Liveupdate).
+- **@rendermode InteractiveServer muss explizit in jeder Blazor-Seite angegeben werden, auch wenn AddInteractiveServerRenderMode() beim Startup aufgerufen wird. Dies ist erforderlich für die korrekte Render-Mode-Auflösung.**
 
 ### 4.2 Web API (integriert im Blazor Projekt oder separat)
 - Ordner: /Controllers, /Services, /Data, /Dtos (statt ServiceModels), /Mappings, /Infrastructure.

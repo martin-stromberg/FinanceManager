@@ -2355,6 +2355,18 @@
         <member name="M:FinanceManager.Infrastructure.Migrations.AddIbanUniqueConstraint.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddReturnAnalysisSettingsToUser">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddReturnAnalysisSettingsToUser.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddReturnAnalysisSettingsToUser.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddReturnAnalysisSettingsToUser.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Notifications.HolidayProviderResolver">
             <summary>
             Resolves an implementation of <see cref="T:FinanceManager.Application.Notifications.IHolidayProvider"/> for a requested <see cref="T:FinanceManager.Domain.Notifications.HolidayProviderKind"/>.
@@ -3201,6 +3213,272 @@
             <param name="ct">Cancellation token.</param>
             <returns>A task that completes when the change has been persisted.</returns>
             <exception cref="T:System.ArgumentException">Thrown when the savings plan is not found or not owned by the user.</exception>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Securities.ReturnAnalysis.MemoryReturnAnalysisCache">
+            <summary>
+            In-memory implementation of <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisCache"/> using <see cref="T:Microsoft.Extensions.Caching.Memory.IMemoryCache"/>.
+            Keys are tracked in a <see cref="T:System.Collections.Concurrent.ConcurrentDictionary`2"/> for token-based invalidation.
+            Cache entries have a configurable TTL (default: 1 hour).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.MemoryReturnAnalysisCache.#ctor(Microsoft.Extensions.Caching.Memory.IMemoryCache)">
+            <summary>
+            Initializes a new instance of <see cref="T:FinanceManager.Infrastructure.Securities.ReturnAnalysis.MemoryReturnAnalysisCache"/>.
+            </summary>
+            <param name="cache">The shared memory cache instance.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.MemoryReturnAnalysisCache.GetOrCreateAsync``1(System.String,System.Func{System.Threading.Tasks.Task{``0}},System.TimeSpan)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.MemoryReturnAnalysisCache.InvalidateAsync(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisCacheKeys">
+            <summary>Cache key helper for return analysis cache entries.</summary>
+            <remarks>
+            Key format: <c>ra:{type}:{securityId}:{userId}</c> (or with optional extra suffix).
+            This layout allows prefix-based invalidation of all entries for a security/user pair
+            via prefix <c>ra:{securityId}:{userId}:</c>.
+            </remarks>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisCacheKeys.Summary(System.Guid,System.Guid)">
+            <summary>Cache key for a return summary entry.</summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisCacheKeys.Sparkline(System.Guid,System.Guid)">
+            <summary>Cache key for sparkline data.</summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisCacheKeys.Metrics(System.Guid,System.Guid)">
+            <summary>Cache key for detailed metrics.</summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisCacheKeys.Periodic(System.Guid,System.Guid)">
+            <summary>Cache key for periodic returns.</summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisCacheKeys.Cashflow(System.Guid,System.Guid)">
+            <summary>Cache key for cashflow timeline.</summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisCacheKeys.Chart(System.Guid,System.Guid,System.String)">
+            <summary>Cache key for performance chart data with a given time range.</summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisCacheKeys.Benchmark(System.Guid,System.Guid)">
+            <summary>Cache key for benchmark comparison data.</summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisCacheKeys.KpiBreakdown(System.Guid,System.Guid)">
+            <summary>Cache key for KPI breakdown data (info panel).</summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisCacheKeys.SecurityUserToken(System.Guid,System.Guid)">
+            <summary>
+            Returns the prefix used to invalidate all cache entries for a specific security/user pair.
+            Matches keys of format <c>ra:*:{securityId}:{userId}*</c> by containing both IDs.
+            </summary>
+            <remarks>
+            Because all keys contain <c>{securityId}:{userId}</c> as a suffix after the type,
+            and the <see cref="T:FinanceManager.Infrastructure.Securities.ReturnAnalysis.MemoryReturnAnalysisCache"/> performs a substring search,
+            we use both IDs as the invalidation token.
+            </remarks>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService">
+            <summary>
+            Orchestrates return analysis for a single security. Implements <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService"/>.
+            All methods are user-scoped and cache results for <see cref="F:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.CacheTtl"/> (1 hour) by default.
+            Database ownership is enforced by joining postings and price data through the Security entity (Blocker S-1).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Securities.ReturnAnalysis.IReturnCalculationService,FinanceManager.Application.Securities.ReturnAnalysis.IFifoCostBasisCalculator,FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisCache,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService},FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisLocalizer)">
+            <summary>
+            Initializes a new instance of <see cref="T:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService"/>.
+            </summary>
+            <param name="db">Application database context.</param>
+            <param name="calc">Pure financial calculations service.</param>
+            <param name="fifo">FIFO cost basis calculator.</param>
+            <param name="cache">Return analysis cache abstraction.</param>
+            <param name="logger">Logger instance.</param>
+            <param name="localizer">Localizer for KPI labels, formula texts and item notes.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetReturnSummaryAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetSparklineDataAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetDetailedMetricsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetPeriodicReturnsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetCashflowTimelineAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetPerformanceChartDataAsync(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Securities.ChartTimeRange,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetBenchmarkComparisonAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetKpiBreakdownsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetUserSettingsAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.UpdateUserSettingsAsync(System.Guid,System.Nullable{System.Guid},System.Boolean,System.Decimal,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.InvalidateCacheAsync(System.Guid,System.Guid)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.InvalidateAllUserCachesAsync(System.Guid)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.ComputeModifiedDietz(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.IReadOnlyList{System.ValueTuple{System.DateTime,System.Decimal}},System.DateTime,System.DateTime)">
+            <summary>
+            Computes the Modified Dietz return for a given period, correctly accounting for
+            external cash flows (buys, sells, fees) that occur within the period.
+            <para>
+            Unlike simple HPR, Modified Dietz handles periods where the starting or ending
+            portfolio value is zero (e.g. the year of first purchase or the year of full sale).
+            </para>
+            </summary>
+            <param name="transactions">All transactions for the security.</param>
+            <param name="filledPrices">Forward-filled daily price series.</param>
+            <param name="periodStart">First day of the period (inclusive).</param>
+            <param name="periodEnd">Last day of the period (inclusive).</param>
+            <returns>
+            Return as a decimal fraction (e.g. 0.05 = 5%), or <c>null</c> when no capital
+            is deployed in the period (denominator is zero).
+            </returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.ComputeKpiBreakdownsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Computes per-KPI formula breakdowns for all widget KPIs (FR-1 side panel).
+            Enforces user-scoping via <see cref="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.LoadPostingsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)"/> (S-1).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.BuildCagrBreakdown(System.DateTime,System.DateTime,System.Decimal,System.Decimal,System.Collections.Generic.List{FinanceManager.Shared.Dtos.Securities.KpiBreakdownItem},System.Decimal,System.Collections.Generic.List{FinanceManager.Shared.Dtos.Securities.KpiBreakdownItem},System.Decimal,System.Decimal,System.Collections.Generic.List{FinanceManager.Shared.Dtos.Securities.KpiBreakdownItem},System.Decimal)">
+            <summary>
+            Builds the CAGR <see cref="T:FinanceManager.Shared.Dtos.Securities.KpiBreakdownDto"/> with formula groups:
+            Marktwert, (Verkaufserlöse), Nettodividenden, Investiertes Kapital, Anlagedauer, Ergebnis (CAGR).
+            </summary>
+            <param name="firstBuyDate">Date of the earliest buy transaction.</param>
+            <param name="cagrEndDate">
+            End date of the investment period: last sell date if position is fully sold, otherwise today.
+            </param>
+            <param name="buys">All buy transactions for the security.</param>
+            <param name="currentPrice">Current price per share.</param>
+            <param name="netDividendItems">Pre-built dividend + linked-tax item list (shared with TotalReturn).</param>
+            <param name="netDividends">Net dividends amount (gross dividends − taxes).</param>
+            <param name="buysGroupItemsList">Pre-built buy + linked-fee item list with positive amounts.</param>
+            <param name="historicalInvestedCapital">Total historical buy outflows + non-sell fees (denominator for CAGR).</param>
+            <param name="currentMarketValue">Current market value (shares held × current price).</param>
+            <param name="sellNetItems">Pre-built sell item list for the conditional sales proceeds group.</param>
+            <param name="totalSalesProceeds">Net sales proceeds (gross sell amounts minus sell-linked fees).</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.LoadPostingsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Loads all security transactions for the given security, enforcing ownership via JOIN on Security (Blocker S-1).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.LoadPriceHistoryAsync(System.Guid,System.Guid,System.DateTime,System.DateTime,System.Threading.CancellationToken)">
+            <summary>
+            Loads the price history for a security in the given date range, enforcing ownership via JOIN.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.ForwardFill(System.Collections.Generic.List{System.ValueTuple{System.DateTime,System.Decimal}},System.DateTime,System.DateTime)">
+            <summary>
+            Forward-fills price data to fill gaps (weekends, holidays). Returns only dates with prices.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.BuildIrrCashflows(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Decimal,System.DateTime)">
+            <summary>
+            Builds IRR cashflows from transactions. Buys are negative, sells and dividends (net of taxes) are positive.
+            The current market value is added as the terminal inflow on <paramref name="terminalDate"/>.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.BuildIrrTimelineItems(System.Collections.Generic.List{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.List{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.List{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.List{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.List{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Linq.ILookup{System.Guid,FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Linq.ILookup{System.Guid,FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Decimal,System.Nullable{System.Decimal})">
+            <summary>
+            Builds the chronologically-sorted cashflow timeline items for the IRR info-panel breakdown.
+            Each buy (plus its linked fees) becomes one negative item; each dividend minus linked taxes
+            becomes one positive item; each sell becomes one positive item.
+            The current market value is appended last as the terminal positive cashflow.
+            When <paramref name="irrValue"/> is provided the <see cref="P:FinanceManager.Shared.Dtos.Securities.KpiBreakdownItem.Amount"/> of each
+            item is the discounted present value (Cashflow / (1+r)^t); the original cashflow, the years
+            since t₀, and the discount factor are stored in the dedicated fields of
+            <see cref="T:FinanceManager.Shared.Dtos.Securities.KpiBreakdownItem"/>.
+            </summary>
+            <param name="buys">Buy transactions.</param>
+            <param name="dividends">Dividend transactions.</param>
+            <param name="sells">Sell transactions.</param>
+            <param name="taxes">Tax transactions.</param>
+            <param name="fees">Fee transactions.</param>
+            <param name="feesByGroupId">Lookup of fees keyed by GroupId (for linking to buys).</param>
+            <param name="taxesByGroupId">Lookup of taxes keyed by GroupId (for linking to dividends).</param>
+            <param name="currentMarketValue">Current market value of the holding (terminal inflow).</param>
+            <param name="irrValue">Computed IRR rate used to discount each cashflow. Null → no discounting.</param>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.BuildTwrPeriods(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.IReadOnlyList{System.ValueTuple{System.DateTime,System.Decimal}})" -->
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.BuildSparklinePoints(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.IReadOnlyList{System.ValueTuple{System.DateTime,System.Decimal}})">
+            <summary>
+            Builds sparkline data points from transactions and forward-filled prices.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.BuildPortfolioValueSeries(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.IReadOnlyList{System.ValueTuple{System.DateTime,System.Decimal}})">
+            <summary>
+            Builds a list of portfolio market values (for volatility / max-drawdown calculation).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.ComputeSharesHeldOnDate(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.DateTime)">
+            <summary>
+            Computes shares held on or before a given date from transaction history.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.ComputeInvestedCapitalOnDate(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.DateTime)">
+            <summary>
+            Computes invested capital (cost basis of remaining shares) on a given date using a simple running sum.
+            For a precise FIFO basis, use FifoCostBasisCalculator on filtered transactions.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetPortfolioValueOnDate(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Collections.Generic.IReadOnlyList{System.ValueTuple{System.DateTime,System.Decimal}},System.DateTime)">
+            <summary>
+            Returns the portfolio market value on a given date by interpolating from the filled price series.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.BuildAnnualDividends(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction},System.Int32,System.Int32)">
+            <summary>
+            Builds annual dividend summary list.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.MergeSimulatedAndRealPrices(System.Collections.Generic.List{System.ValueTuple{System.DateTime,System.Decimal}},System.Collections.Generic.List{System.ValueTuple{System.DateTime,System.Decimal}})">
+            <summary>
+            Merges simulated and real price series so that the chart always starts from the first
+            buy transaction. Simulated prices are used only for dates strictly before the first real
+            price entry; real prices take precedence for all overlapping or later dates.
+            </summary>
+            <param name="simulated">Prices derived from transaction implied prices.</param>
+            <param name="real">Actual price history loaded from the database.</param>
+            <returns>
+            A merged, chronologically ordered list: simulated entries up to (but not including) the
+            first real price date, followed by all real price entries. When no real prices exist, the
+            full simulated series is returned. When simulated is empty, the real series is returned.
+            </returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.SimulatePricesFromTransactions(System.Collections.Generic.IReadOnlyList{FinanceManager.Application.Securities.ReturnAnalysis.SecurityTransaction})">
+            <summary>
+            Simulates a daily price series from buy/sell transaction implied prices when no real
+            price history is available. The implied unit price for each transaction is
+            <c>|Amount| / |Quantity|</c>. Between consecutive anchor points the price is linearly
+            interpolated; the series covers exactly the period from the first to the last buy/sell
+            transaction date.
+            </summary>
+            <param name="transactions">Chronologically ordered security transactions.</param>
+            <returns>
+            List of <c>(Date, SimulatedClose)</c> tuples. Returns an empty list when no buy/sell
+            transactions with both a non-zero quantity and a non-zero amount exist.
+            </returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.ReturnAnalysis.ReturnAnalysisService.GetFromDateForTimeRange(FinanceManager.Shared.Dtos.Securities.ChartTimeRange)">
+            <summary>
+            Converts a <see cref="T:FinanceManager.Shared.Dtos.Securities.ChartTimeRange"/> to an absolute from-date.
+            </summary>
         </member>
         <member name="T:FinanceManager.Infrastructure.Securities.SecurityCategoryService">
             <summary>

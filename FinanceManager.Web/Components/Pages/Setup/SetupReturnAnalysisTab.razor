@@ -1,0 +1,112 @@
+@using FinanceManager.Shared.Dtos
+@using FinanceManager.Shared.Dtos.Securities
+@using FinanceManager.Web.ViewModels.Setup
+@inject Microsoft.Extensions.Localization.IStringLocalizer<Pages> Localizer
+
+<div>
+    <h4 style="margin-top:0;">@Localizer["SetupReturnAnalysis_Title"]</h4>
+
+    @if (_vm == null || _vm.Loading)
+    {
+        <div>@Localizer["Msg_Loading"]</div>
+    }
+    else if (!string.IsNullOrWhiteSpace(_vm.Error))
+    {
+        <div class="error">@_vm.Error</div>
+        <button class="icon-btn" @onclick="(() => _vm.LoadAsync())" title="@Localizer["Ribbon_Retry"]">
+            <svg class="icon"><use href="icons/sprite.svg#refresh" /></svg>
+        </button>
+    }
+    else
+    {
+        <p style="margin-top:0;opacity:.8;">@Localizer["SetupReturnAnalysis_Description"]</p>
+
+        <div class="form-grid">
+            <div class="form-row">
+                <label for="benchmark-select">@Localizer["SetupReturnAnalysis_Label_Benchmark"]</label>
+                <select id="benchmark-select" value="@_selectedValue" @onchange="OnBenchmarkChanged">
+                    <option value="">@Localizer["SetupReturnAnalysis_NoBenchmark"]</option>
+                    @foreach (var sec in _vm.AvailableSecurities)
+                    {
+                        <option value="@sec.Id">@sec.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="show-sharpe">@Localizer["SetupReturnAnalysis_Label_ShowSharpeRatio"]</label>
+                <input id="show-sharpe" type="checkbox" @bind="_vm.ShowSharpeRatio" />
+            </div>
+
+            <div class="form-row">
+                <label for="risk-free">@Localizer["SetupReturnAnalysis_Label_RiskFreeRate"]</label>
+                <input id="risk-free" type="number" step="0.01" min="0" @bind="_vm.RiskFreeRate" />
+                <div class="help-text">@Localizer["SetupReturnAnalysis_Help_RiskFreeRate"]</div>
+            </div>
+        </div>
+
+        <div style="margin-top:1rem;display:flex;gap:.5rem;align-items:center;">
+            <button @onclick="SaveAsync" disabled="@_vm.Saving">
+                @(_vm.Saving ? Localizer["Btn_Saving"].Value : Localizer["Btn_Save"].Value)
+            </button>
+
+            @if (_vm.SavedOk)
+            {
+                <span class="success-text">@Localizer["Msg_SavedSuccessfully"]</span>
+            }
+            else if (!string.IsNullOrWhiteSpace(_vm.SaveError))
+            {
+                <span class="error">@_vm.SaveError</span>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public SetupReturnAnalysisViewModel? ViewModel { get; set; }
+
+    private SetupReturnAnalysisViewModel? _vm;
+    private string _selectedValue = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _vm = ViewModel;
+        if (_vm != null)
+        {
+            _vm.StateChanged += OnVmStateChanged;
+            await _vm.LoadAsync();
+            _selectedValue = _vm.SelectedBenchmarkSecurityId?.ToString() ?? string.Empty;
+        }
+    }
+
+    private void OnVmStateChanged(object? s, EventArgs e)
+    {
+        _selectedValue = _vm?.SelectedBenchmarkSecurityId?.ToString() ?? string.Empty;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void OnBenchmarkChanged(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        _selectedValue = val ?? string.Empty;
+
+        if (string.IsNullOrEmpty(val) || !Guid.TryParse(val, out var guid))
+        {
+            _vm!.SelectedBenchmarkSecurityId = null;
+        }
+        else
+        {
+            _vm!.SelectedBenchmarkSecurityId = guid;
+        }
+    }
+
+    private Task SaveAsync() => _vm!.SaveAsync();
+
+    public void Dispose()
+    {
+        if (_vm != null)
+        {
+            _vm.StateChanged -= OnVmStateChanged;
+        }
+    }
+}

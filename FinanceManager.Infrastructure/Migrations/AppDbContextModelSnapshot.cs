@@ -15,7 +15,7 @@ namespace FinanceManager.Infrastructure.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.3");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.7");
 
             modelBuilder.Entity("FinanceManager.Domain.Accounts.Account", b =>
                 {
@@ -592,6 +592,8 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AccountId", "BookingDate");
+
+                    b.HasIndex("SecurityId", "BookingDate");
 
                     b.ToTable("Postings");
                 });
@@ -1336,6 +1338,9 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("BenchmarkSecurityId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("TEXT");
@@ -1410,10 +1415,21 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<string>("PreferredLanguage")
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("RiskFreeRate")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 6)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue(0m);
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("ShareAlphaVantageApiKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("ShowSharpeRatio")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(false);
@@ -1433,6 +1449,8 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BenchmarkSecurityId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -1682,6 +1700,14 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.HasOne("FinanceManager.Domain.Savings.SavingsPlan", null)
                         .WithMany()
                         .HasForeignKey("SavingsPlanId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Users.User", b =>
+                {
+                    b.HasOne("FinanceManager.Domain.Securities.Security", null)
+                        .WithMany()
+                        .HasForeignKey("BenchmarkSecurityId")
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 

@@ -531,6 +531,28 @@ public interface IApiClient
     Task<BackgroundTaskInfo> Securities_EnqueueBackfillAsync(Guid? securityId, DateTime? fromDateUtc, DateTime? toDateUtc, CancellationToken ct = default);
     /// <summary>Lists upcoming or past dividends for a security.</summary>
     Task<IReadOnlyList<AggregatePointDto>> Securities_GetDividendsAsync(string? period = null, int? take = null, CancellationToken ct = default);
+    /// <summary>Gets the compact return summary for a security. Returns null when not found.</summary>
+    Task<ReturnSummaryDto?> Securities_GetReturnSummaryAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Gets detailed return metrics for a security. Returns null when not found.</summary>
+    Task<DetailedReturnMetricsDto?> Securities_GetReturnMetricsAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Gets periodic return data (annual/monthly) for a security. Returns null when not found.</summary>
+    Task<PeriodicReturnsDto?> Securities_GetPeriodicReturnsAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Gets cashflow timeline data for a security. Returns null when not found.</summary>
+    Task<CashflowTimelineDto?> Securities_GetCashflowTimelineAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Gets performance chart data for a security and time range. Returns null when not found.</summary>
+    Task<PerformanceChartDataDto?> Securities_GetPerformanceChartAsync(Guid id, ChartTimeRange timeRange = ChartTimeRange.All, CancellationToken ct = default);
+    /// <summary>Gets benchmark comparison data for a security. Returns null when not found.</summary>
+    Task<BenchmarkComparisonDto?> Securities_GetBenchmarkComparisonAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Gets return analysis settings for the current user. Returns null when not found.</summary>
+    Task<ReturnAnalysisSettingsResponse?> Securities_GetReturnAnalysisSettingsAsync(CancellationToken ct = default);
+    /// <summary>Updates return analysis settings for the current user. Returns true on success.</summary>
+    Task<bool> Securities_UpdateReturnAnalysisSettingsAsync(ReturnAnalysisSettingsUpdateRequest request, CancellationToken ct = default);
+    /// <summary>Gets the KPI formula and cashflow breakdowns for a security (info side panel). Returns null when not found.</summary>
+    Task<IReadOnlyList<KpiBreakdownDto>?> Securities_GetKpiBreakdownsAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Invalidates the return analysis cache for all securities of the current user.</summary>
+    Task Securities_ResetReturnCacheAsync(CancellationToken ct = default);
+    /// <summary>Returns sparkline data for the security widget mini-chart.</summary>
+    Task<SparklineDataDto?> Securities_GetSparklineAsync(Guid id, CancellationToken ct = default);
 
     // Statement Drafts
 

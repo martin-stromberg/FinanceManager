@@ -18,4 +18,10 @@ public sealed class NoOpAuthTokenProvider : IAuthTokenProvider
         // Placeholder: returns no token. Replace with actual acquisition (e.g. from JWT issuer) when needed.
         return Task.FromResult<string?>(null);
     }
+
+    /// <inheritdoc/>
+    public void InvalidateCache()
+    {
+        // No cache to invalidate in this no-op implementation.
+    }
 }

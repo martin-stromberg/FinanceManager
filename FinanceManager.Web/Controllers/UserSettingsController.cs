@@ -3,9 +3,11 @@ using FinanceManager.Application.Common;
 using FinanceManager.Domain.Notifications;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
+using FinanceManager.Infrastructure.Auth;
 using FinanceManager.Shared.Dtos.Common;
 using FinanceManager.Shared.Dtos.Users;
 using FinanceManager.Web.Infrastructure.ApiErrors;
+using FinanceManager.Web.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,11 +28,14 @@ namespace FinanceManager.Web.Controllers;
 public sealed class UserSettingsController : ControllerBase
 {
     private const string Origin = "API_UserSettings";
+    private const string AuthCookieName = "FinanceManager.Auth";
 
     private readonly AppDbContext _db;
     private readonly ICurrentUserService _current;
     private readonly ILogger<UserSettingsController> _logger;
     private readonly IStringLocalizer<Controller> _localizer;
+    private readonly IJwtTokenService _jwt;
+    private readonly IAuthTokenProvider _tokenProvider;
 
     /// <summary>
     /// Initializes a new instance of <see cref="UserSettingsController"/>
@@ -39,12 +44,16 @@ public sealed class UserSettingsController : ControllerBase
     /// <param name="current">Service that exposes current user information.</param>
     /// <param name="logger">Logger instance for diagnostics and error reporting.</param>
     /// <param name="localizer">Localizer for accessing localized strings.</param>
-    public UserSettingsController(AppDbContext db, ICurrentUserService current, ILogger<UserSettingsController> logger, IStringLocalizer<Controller> localizer)
+    /// <param name="jwt">Service used to issue new JWT tokens after profile changes.</param>
+    /// <param name="tokenProvider">Token provider whose cache is invalidated after the auth cookie is replaced.</param>
+    public UserSettingsController(AppDbContext db, ICurrentUserService current, ILogger<UserSettingsController> logger, IStringLocalizer<Controller> localizer, IJwtTokenService jwt, IAuthTokenProvider tokenProvider)
     {
         _db = db;
         _current = current;
         _logger = logger;
         _localizer = localizer;
+        _jwt = jwt;
+        _tokenProvider = tokenProvider;
     }
 
     /// <summary>
@@ -92,6 +101,9 @@ public sealed class UserSettingsController : ControllerBase
         if (user == null) return NotFound();
         try
         {
+            var languageChanged = req.PreferredLanguage != user.PreferredLanguage;
+            var timezoneChanged = req.TimeZoneId != user.TimeZoneId;
+
             user.SetPreferredLanguage(req.PreferredLanguage);
             user.SetTimeZoneId(req.TimeZoneId);
 
@@ -117,6 +129,25 @@ public sealed class UserSettingsController : ControllerBase
             }
 
             await _db.SaveChangesAsync(ct);
+
+            // Re-issue the auth cookie whenever language or timezone changed so the new pref_lang/tz
+            // claims are picked up immediately by the request culture provider without requiring re-login.
+            if (languageChanged || timezoneChanged)
+            {
+                var newToken = _jwt.CreateToken(user.Id, user.UserName!, _current.IsAdmin, out var expiresUtc, user.PreferredLanguage, user.TimeZoneId);
+                Response.Cookies.Append(AuthCookieName, newToken, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = Request.IsHttps,
+                    SameSite = SameSiteMode.Lax,
+                    Path = "/",
+                    IsEssential = true,
+                    Expires = new DateTimeOffset(expiresUtc)
+                });
+                _tokenProvider.InvalidateCache();
+                _logger.LogInformation("Reissued auth cookie after profile language/timezone update for user {UserId}", user.Id);
+            }
+
             return NoContent();
         }
         catch (ArgumentOutOfRangeException ex)

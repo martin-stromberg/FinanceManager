@@ -40,6 +40,11 @@ else
     <GenericCardPage TKeyValue="(string, string)" Provider="_vm" Localizer="Localizer" LoadingText="@Localizer["General_Loading"]" />
     <EmbeddedPanelHost TKeyValue="(string,string)" Provider="_vm" Position="EmbeddedPanelPosition.AfterCard" />
 
+    @if ((Kind ?? string.Empty).Trim().ToLowerInvariant() == "securities" && string.IsNullOrWhiteSpace(SubKind) && Id != Guid.Empty)
+    {
+        <ReturnSummaryWidget SecurityId="Id" />
+    }
+
     @if (_vm.ChartViewModel != null)
     {
         <div style="margin-top:1.25rem;">
@@ -170,6 +175,9 @@ else
                     if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
                     break;
                 case "OpenPrices":
+                    if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
+                    break;
+                case "OpenPerformance":
                     if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
                     break;
                 case "OpenBankContact":
@@ -303,7 +311,7 @@ else
         });
     }
 
-    // NOTE: no fallback for OpenAttachments — viewmodels must send UiOverlaySpec via RaiseUiActionRequested
+    // NOTE: no fallback for OpenAttachments ï¿½ viewmodels must send UiOverlaySpec via RaiseUiActionRequested
 
     private string GetKindTitle() => (Kind ?? string.Empty).Trim().ToLowerInvariant() switch
     {

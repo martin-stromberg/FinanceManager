@@ -60,7 +60,7 @@ public sealed class AlphaVantage
             throw new RequestLimitExceededException($"AlphaVantage limit exceeded. Next attempt after {_skipRequestsUntilUtc:u}.");
         }
 
-        var url = $"query?function=TIME_SERIES_DAILY&symbol={Uri.EscapeDataString(symbol)}&outputsize=full&apikey={_apiKey}";
+        var url = $"query?function=TIME_SERIES_DAILY&symbol={Uri.EscapeDataString(symbol)}&outputsize=compact&apikey={_apiKey}";
         using var resp = await _http.GetAsync(url, ct);
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct);

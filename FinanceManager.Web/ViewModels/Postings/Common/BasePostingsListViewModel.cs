@@ -119,9 +119,11 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
         // navigation wrapper record for postings
         /// <summary>
         /// Small wrapper record used to provide a navigation URL for posting items displayed in the list.
+        /// Accessible to derived classes so they can reuse the same navigation logic when overriding
+        /// <see cref="BuildRecords"/>.
         /// </summary>
         /// <param name="Posting">Posting DTO wrapped by this navigation item.</param>
-        private sealed record PostingListItem(PostingServiceDto Posting) : IListItemNavigation
+        protected sealed record PostingListItem(PostingServiceDto Posting) : IListItemNavigation
          {
             /// <summary>
             /// Returns the target URL for navigating to the posting card.

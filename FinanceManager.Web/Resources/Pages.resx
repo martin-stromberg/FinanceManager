@@ -243,6 +243,9 @@
   <data name="List_Th_Postings_Kind" xml:space="preserve">
     <value>Kind</value>
   </data>
+  <data name="List_Th_Postings_Quantity" xml:space="preserve">
+    <value>Quantity</value>
+  </data>
   <data name="List_Th_Postings_Recipient" xml:space="preserve">
     <value>Recipient</value>
   </data>
@@ -642,6 +645,9 @@
   <data name="Ribbon_Prices" xml:space="preserve">
     <value>Prices</value>
   </data>
+  <data name="Ribbon_Performance" xml:space="preserve">
+    <value>Detailed analysis</value>
+  </data>
   <data name="Ribbon_ToggleActive" xml:space="preserve">
     <value>Only active</value>
   </data>
@@ -962,6 +968,27 @@
   </data>
   <data name="Setup_Section_Security" xml:space="preserve">
     <value>Security</value>
+  </data>
+  <data name="Setup_Section_ReturnAnalysis" xml:space="preserve">
+    <value>Return Analysis</value>
+  </data>
+  <data name="SetupReturnAnalysis_Title" xml:space="preserve">
+    <value>Return Analysis – Benchmark</value>
+  </data>
+  <data name="SetupReturnAnalysis_Description" xml:space="preserve">
+    <value>Select a security to use as a global benchmark for all return analyses.</value>
+  </data>
+  <data name="SetupReturnAnalysis_Label_Benchmark" xml:space="preserve">
+    <value>Benchmark security</value>
+  </data>
+  <data name="SetupReturnAnalysis_NoBenchmark" xml:space="preserve">
+    <value>– No benchmark –</value>
+  </data>
+  <data name="Btn_Saving" xml:space="preserve">
+    <value>Saving…</value>
+  </data>
+  <data name="Msg_SavedSuccessfully" xml:space="preserve">
+    <value>Saved successfully.</value>
   </data>
   <data name="SetupProfile_Title" xml:space="preserve">
     <value>Profile</value>

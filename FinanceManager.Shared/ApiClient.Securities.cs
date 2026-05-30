@@ -243,5 +243,160 @@ public partial class ApiClient
         return (await resp.Content.ReadFromJsonAsync<IReadOnlyList<AggregatePointDto>>(cancellationToken: ct))!;
     }
 
+    /// <summary>
+    /// Gets the compact return summary for a security.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The <see cref="ReturnSummaryDto"/> when found; otherwise null.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<ReturnSummaryDto?> Securities_GetReturnSummaryAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/return-summary", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<ReturnSummaryDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Gets detailed return metrics for a security.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The <see cref="DetailedReturnMetricsDto"/> when found; otherwise null.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<DetailedReturnMetricsDto?> Securities_GetReturnMetricsAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/return-metrics", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<DetailedReturnMetricsDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Gets periodic returns (annual/monthly/dividends) for a security.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The <see cref="PeriodicReturnsDto"/> when found; otherwise null.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<PeriodicReturnsDto?> Securities_GetPeriodicReturnsAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/return-periodic", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<PeriodicReturnsDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Gets cashflow timeline data for a security.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The <see cref="CashflowTimelineDto"/> when found; otherwise null.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<CashflowTimelineDto?> Securities_GetCashflowTimelineAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/return-cashflows", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<CashflowTimelineDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Gets performance chart data for a security and time range.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="timeRange">Chart time range filter.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The <see cref="PerformanceChartDataDto"/> when found; otherwise null.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<PerformanceChartDataDto?> Securities_GetPerformanceChartAsync(Guid id, ChartTimeRange timeRange = ChartTimeRange.All, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/return-chart?timeRange={timeRange}", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<PerformanceChartDataDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Gets benchmark comparison data for a security.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The <see cref="BenchmarkComparisonDto"/> when found; otherwise null.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<BenchmarkComparisonDto?> Securities_GetBenchmarkComparisonAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/return-benchmark", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<BenchmarkComparisonDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Gets the KPI formula and cashflow breakdowns for a security (for the info side panel).
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>A read-only list of <see cref="KpiBreakdownDto"/> when found; otherwise null.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<IReadOnlyList<KpiBreakdownDto>?> Securities_GetKpiBreakdownsAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/return-kpi-breakdowns", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<IReadOnlyList<KpiBreakdownDto>>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Invalidates the return analysis cache for all securities of the current user.
+    /// </summary>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>A task that completes when the cache has been invalidated.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
+    public async Task Securities_ResetReturnCacheAsync(CancellationToken ct = default)
+    {
+        var resp = await _http.DeleteAsync("/api/securities/return-cache", ct);
+        resp.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>Gets return analysis settings for the current user.</summary>
+    public async Task<ReturnAnalysisSettingsResponse?> Securities_GetReturnAnalysisSettingsAsync(CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync("/api/securities/return-analysis/settings", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<ReturnAnalysisSettingsResponse>(cancellationToken: ct);
+    }
+
+    /// <summary>Updates return analysis settings for the current user.</summary>
+    public async Task<bool> Securities_UpdateReturnAnalysisSettingsAsync(ReturnAnalysisSettingsUpdateRequest request, CancellationToken ct = default)
+    {
+        var resp = await _http.PutAsJsonAsync("/api/securities/return-analysis/settings", request, ct);
+        if (!resp.IsSuccessStatusCode)
+        {
+            await EnsureSuccessOrSetErrorAsync(resp);
+            return false;
+        }
+        return true;
+    }
+
+
+
+    /// <summary>
+    /// Returns sparkline data for the security widget mini-chart.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The <see cref="SparklineDataDto"/> when found; otherwise null when not found or insufficient data.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<SparklineDataDto?> Securities_GetSparklineAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/return-sparkline", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<SparklineDataDto>(cancellationToken: ct);
+    }
     #endregion Securities
 }

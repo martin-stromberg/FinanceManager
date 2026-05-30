@@ -376,6 +376,7 @@ MigrationBackup/
 FodyWeavers.xsd
 /FinanceManager.Web/financemanager.db
 
+/build_log.txt
 /TestResults/
 /coverage/
 /FinanceManager.Web/financemanager.db-shm
@@ -394,3 +395,4 @@ FodyWeavers.xsd
 /FinanceManager.Tests/Infrastructure/Statements/Reader/ING_StatementFileReaderTests.cs
 /FinanceManager.Tests/Infrastructure/Statements/Reader/Barclays_StatementFileReaderTests.cs
 /FinanceManager.Tests/Infrastructure/Statements/Reader/Wuestenrot_StatementFileReaderTests.cs
+

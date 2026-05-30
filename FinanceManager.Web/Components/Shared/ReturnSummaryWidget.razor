@@ -1,0 +1,310 @@
+@rendermode InteractiveServer
+@using FinanceManager.Shared
+@using FinanceManager.Shared.Dtos.Securities
+@inject IApiClient ApiClient
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Shared.ReturnSummaryWidget> Localizer
+
+@if (_loading)
+{
+    <div class="return-summary-widget skeleton" role="status" aria-live="polite">
+        <span class="visually-hidden">@Localizer["Loading"]</span>
+    </div>
+}
+else if (_error != null)
+{
+    <div class="return-summary-widget error-state">
+        <span>@_error</span>
+    </div>
+}
+else if (_summary == null)
+{
+    <div class="return-summary-widget no-data">
+        <span>@Localizer["NoTransactions"]</span>
+    </div>
+}
+else
+{
+    <div class="return-summary-widget @GetReturnClass()" title="@Localizer["Widget_Title"]">
+        <div class="rsw-row rsw-header">
+            <span class="rsw-label">
+                @Localizer["Label_TotalReturn"]
+                <button class="rsw-info-btn" @onclick='() => OpenPanel("TotalReturn")' title="@Localizer["Aria_FormulaAndItems"]" aria-label="@string.Format(Localizer["Aria_InfoAbout"], Localizer["Label_TotalReturn"])">ⓘ</button>
+            </span>
+            <span class="rsw-value @GetReturnClass()">
+                @((_summary.TotalReturnPercent >= 0 ? "▲" : "▼") + FormatPercent(_summary.TotalReturnPercent))
+                <span class="rsw-value-sub">@FormatAmount(_summary.TotalReturnAbsolute, _summary.CurrencyCode)</span>
+            </span>
+        </div>
+        <div class="rsw-row">
+            <span class="rsw-label">
+                @Localizer["Label_MarketValue"]
+                <button class="rsw-info-btn" @onclick='() => OpenPanel("MarketValue")' title="@Localizer["Aria_FormulaAndItems"]" aria-label="@string.Format(Localizer["Aria_InfoAbout"], Localizer["Label_MarketValue"])">ⓘ</button>
+            </span>
+            <span class="rsw-value">@FormatAmount(_summary.CurrentMarketValue, _summary.CurrencyCode)</span>
+        </div>
+        <div class="rsw-row">
+            <span class="rsw-label">@Localizer["Label_Shares"]</span>
+            <span class="rsw-value">@FormatShares(_summary.TotalSharesHeld)</span>
+        </div>
+        <div class="rsw-row">
+            <span class="rsw-label">
+                @Localizer["Label_Invested"]
+                <button class="rsw-info-btn" @onclick='() => OpenPanel("InvestedCapital")' title="@Localizer["Aria_FormulaAndItems"]" aria-label="@string.Format(Localizer["Aria_InfoAbout"], Localizer["Label_Invested"])">ⓘ</button>
+            </span>
+            <span class="rsw-value">@FormatAmount(_summary.InvestedCapital, _summary.CurrencyCode)</span>
+        </div>
+        <div class="rsw-row">
+            <span class="rsw-label">@Localizer["Label_CostVsCurrentPrice"]</span>
+            <span class="rsw-value">@FormatAmount(_summary.CostBasisPerShare, _summary.CurrencyCode) / @FormatAmount(_summary.CurrentPricePerShare, _summary.CurrencyCode)</span>
+        </div>
+        @if (_summary.Cagr.HasValue)
+        {
+            <div class="rsw-row">
+                <span class="rsw-label">
+                    @Localizer["Label_Cagr"]
+                    <button class="rsw-info-btn" @onclick='() => OpenPanel("Cagr")' title="@Localizer["Aria_FormulaAndItems"]" aria-label="@string.Format(Localizer["Aria_InfoAbout"], Localizer["Label_Cagr"])">ⓘ</button>
+                </span>
+                <span class="rsw-value">@FormatPercent(_summary.Cagr.Value)</span>
+            </div>
+        }
+        @if (_summary.Irr.HasValue)
+        {
+            <div class="rsw-row">
+                <span class="rsw-label">
+                    @Localizer["Label_Irr"]
+                    <button class="rsw-info-btn" @onclick='() => OpenPanel("Irr")' title="@Localizer["Aria_FormulaAndItems"]" aria-label="@string.Format(Localizer["Aria_InfoAbout"], Localizer["Label_Irr"])">ⓘ</button>
+                </span>
+                <span class="rsw-value">@FormatPercent(_summary.Irr.Value)</span>
+            </div>
+        }
+        @if (_sparkline != null && _sparkline.Points.Count >= 2)
+        {
+            <div class="rsw-sparkline-container" role="img" aria-label="@Localizer["Aria_Sparkline"]">
+                <svg class="rsw-sparkline" viewBox="0 0 100 48" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                    <polyline class="rsw-sparkline-invested" points="@BuildSparklinePoints(p => p.InvestedCapital)" fill="none" />
+                    <polyline class="rsw-sparkline-market @GetReturnClass()" points="@BuildSparklinePoints(p => p.MarketValue)" fill="none" />
+                </svg>
+            </div>
+        }
+        @if (_summary.HasMissingPrices)
+        {
+            <div class="rsw-row rsw-warning" role="alert">
+                <span>⚠ @(_summary.MissingPricesHint ?? Localizer["Warning_MissingPrices"])</span>
+            </div>
+        }
+    </div>
+
+    @* ── KPI Info Side Panel ───────────────────────────────── *@
+    @if (_openKpiKey != null)
+    {
+        <div class="rsw-backdrop" @onclick="ClosePanel" aria-hidden="true"></div>
+        <aside class="rsw-panel rsw-panel--open" role="dialog" aria-modal="true"
+               aria-label="@($"Info: {GetOpenBreakdown()?.DisplayName ?? _openKpiKey}")">
+            <div class="rsw-panel-header">
+                <span class="rsw-panel-title">@(GetOpenBreakdown()?.DisplayName ?? _openKpiKey)</span>
+                <button class="rsw-panel-close" @onclick="ClosePanel" title="@Localizer["Panel_Close"]" aria-label="@Localizer["Panel_CloseAria"]">✕</button>
+            </div>
+            <div class="rsw-panel-body">
+                @if (_loadingBreakdown)
+                {
+                    <p class="rsw-panel-loading">@Localizer["Panel_Loading"]</p>
+                }
+                else
+                {
+                    var bd = GetOpenBreakdown();
+                    if (bd != null)
+                    {
+                        <div class="rsw-formula-box">
+                            <div class="rsw-formula-label">@Localizer["Panel_Formula"]</div>
+                            <div class="rsw-formula-text">@bd.FormulaText</div>
+                        </div>
+                        <p class="rsw-panel-desc">@bd.Description</p>
+                        @foreach (var group in bd.Groups)
+                        {
+                            if (group.Items.Count > 0 || group.GroupTotalPercent.HasValue || !string.IsNullOrEmpty(group.GroupNote))
+                            {
+                                <div class="rsw-group">
+                                    <div class="rsw-group-header @(group.IsPositiveContribution ? "rsw-group--positive" : "rsw-group--negative")">
+                                        <span class="rsw-group-name">@group.GroupName</span>
+                                        @if (group.GroupTotalPercent.HasValue)
+                                        {
+                                            <span class="rsw-group-total">
+                                                @FormatPercent(group.GroupTotalPercent.Value)
+                                                @if (group.GroupTotal != 0m)
+                                                {
+                                                    <span class="rsw-group-total-secondary">(@FormatAmount(group.GroupTotal, _summary.CurrencyCode))</span>
+                                                }
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="rsw-group-total">@FormatAmount(group.GroupTotal, _summary.CurrencyCode)</span>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(group.GroupNote))
+                                    {
+                                        <div class="rsw-group-note-row">@group.GroupNote</div>
+                                    }
+                                    @if (group.Items.Count == 0 && group.GroupTotal != 0m && !group.GroupTotalPercent.HasValue && string.IsNullOrEmpty(group.GroupNote))
+                                    {
+                                        @* Group has no items but a meaningful total – show as single row *@
+                                        <div class="rsw-group-total-row">
+                                            <span class="rsw-group-total-row-label">@Localizer["Panel_Sum"]</span>
+                                            <span class="rsw-item-amount @(group.GroupTotal >= 0 ? "positive" : "negative")">
+                                                @FormatAmount(group.GroupTotal, _summary.CurrencyCode)
+                                            </span>
+                                        </div>
+                                    }
+                                    @if (group.Items.Count >= 1)
+                                    {
+                                        <table class="rsw-items-table">
+                                            <tbody>
+                                                @foreach (var item in group.Items)
+                                                {
+                                                    @if (!string.IsNullOrEmpty(group.GroupNote) && item.Amount == 0m && item.DiscountFactor == null)
+                                                    {
+                                                        @* Text-only group (e.g. Anlagedauer): show date + note, no EUR amount *@
+                                                        <tr>
+                                                            <td class="rsw-item-date">@item.Date.ToString("dd.MM.yyyy")</td>
+                                                            <td class="rsw-item-note" colspan="2">@(item.Note ?? "")</td>
+                                                        </tr>
+                                                    }
+                                                    else
+                                                    {
+                                                        <tr>
+                                                            <td class="rsw-item-date">@item.Date.ToString("dd.MM.yyyy")</td>
+                                                            <td class="rsw-item-note">@(item.Note ?? "")</td>
+                                                            <td class="rsw-item-amount @(item.Amount >= 0 ? "positive" : "negative")">
+                                                                @FormatAmount(item.Amount, _summary.CurrencyCode)
+                                                            </td>
+                                                        </tr>
+                                                        @if (item.DiscountFactor != null)
+                                                        {
+                                                            <tr class="rsw-item-detail-row">
+                                                                <td></td>
+                                                                <td colspan="2" class="rsw-item-detail">
+                                                                    <div>@Localizer["Panel_Cashflow"] <strong>@FormatAmount(item.OriginalCashflow!.Value, _summary.CurrencyCode)</strong></div>
+                                                                    <div>@Localizer["Panel_T"] <strong>@item.YearsSinceT0!.Value.ToString("N2") @Localizer["Panel_Years"]</strong></div>
+                                                                    <div>@Localizer["Panel_DiscountFactor"] <strong>@item.DiscountFactor.Value.ToString("N4")</strong></div>
+                                                                    <div>@Localizer["Panel_PresentValue"] <strong>@FormatAmount(item.Amount, _summary.CurrencyCode)</strong></div>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    }
+                                </div>
+                            }
+                        }
+                    }
+                    else
+                    {
+                        <p class="rsw-panel-no-data">@Localizer["Panel_NoData"]</p>
+                    }
+                }
+            </div>
+        </aside>
+    }
+}
+
+@code {
+    /// <summary>Security identifier to show return data for.</summary>
+    [Parameter, EditorRequired] public Guid SecurityId { get; set; }
+
+    private ReturnSummaryDto? _summary;
+    private SparklineDataDto? _sparkline;
+    private bool _loading = true;
+    private string? _error;
+
+    // Side-panel state
+    private string? _openKpiKey;
+    private bool _loadingBreakdown;
+    private IReadOnlyList<KpiBreakdownDto>? _breakdowns;
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (SecurityId == Guid.Empty) { _loading = false; return; }
+        _loading = true;
+        _error = null;
+        _openKpiKey = null;
+        _breakdowns = null;
+        _sparkline = null;
+        try
+        {
+            var summaryTask = ApiClient.Securities_GetReturnSummaryAsync(SecurityId, CancellationToken.None);
+            var sparklineTask = ApiClient.Securities_GetSparklineAsync(SecurityId, CancellationToken.None);
+            await Task.WhenAll(summaryTask, sparklineTask);
+            _summary = summaryTask.Result;
+            _sparkline = sparklineTask.Result;
+        }
+        catch (Exception ex)
+        {
+            _error = Localizer["ErrorPrefix"] + ex.Message;
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task OpenPanel(string kpiKey)
+    {
+        _openKpiKey = kpiKey;
+
+        // Load breakdowns lazily on first open
+        if (_breakdowns == null)
+        {
+            _loadingBreakdown = true;
+            StateHasChanged();
+            try
+            {
+                _breakdowns = await ApiClient.Securities_GetKpiBreakdownsAsync(SecurityId, CancellationToken.None);
+            }
+            catch
+            {
+                // Non-critical: panel shows "no data" fallback
+            }
+            finally { _loadingBreakdown = false; }
+        }
+    }
+
+    private void ClosePanel() => _openKpiKey = null;
+
+    private KpiBreakdownDto? GetOpenBreakdown()
+        => _breakdowns?.FirstOrDefault(b => b.KpiKey == _openKpiKey);
+
+    private string BuildSparklinePoints(Func<SparklinePoint, decimal> valueSelector)
+    {
+        if (_sparkline == null || _sparkline.Points.Count < 2)
+        {
+            return string.Empty;
+        }
+
+        var points = _sparkline.Points;
+        int count = points.Count;
+
+        // Compute global min/max across both series for consistent Y scaling
+        decimal allMin = points.Min(p => Math.Min(p.MarketValue, p.InvestedCapital));
+        decimal allMax = points.Max(p => Math.Max(p.MarketValue, p.InvestedCapital));
+        decimal range = allMax - allMin;
+        if (range == 0m) { range = 1m; }
+
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < count; i++)
+        {
+            double x = (count == 1) ? 50.0 : (100.0 * i / (count - 1));
+            double y = 48.0 - (double)((valueSelector(points[i]) - allMin) / range) * 44.0 - 2.0;
+            if (i > 0) { sb.Append(' '); }
+            sb.Append(x.ToString("F2", System.Globalization.CultureInfo.InvariantCulture));
+            sb.Append(',');
+            sb.Append(y.ToString("F2", System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        return sb.ToString();
+    }
+
+    private static string FormatPercent(decimal value) => value.ToString("+0.00%;-0.00%;0.00%");
+    private static string FormatAmount(decimal amount, string currency) => $"{amount:N2} {currency}";
+    private static string FormatShares(decimal shares) => shares.ToString("0.######");
+    private string GetReturnClass() => _summary?.TotalReturnPercent >= 0 ? "positive" : "negative";
+}

@@ -9,6 +9,7 @@ using FinanceManager.Application.Notifications; // new
 using FinanceManager.Application.Reports;
 using FinanceManager.Application.Savings;
 using FinanceManager.Application.Securities;
+using FinanceManager.Application.Securities.ReturnAnalysis;
 using FinanceManager.Application.Security; // new
 using FinanceManager.Application.Setup;
 using FinanceManager.Application.Statements;
@@ -23,6 +24,7 @@ using FinanceManager.Infrastructure.Notifications; // new
 using FinanceManager.Infrastructure.Reports;
 using FinanceManager.Infrastructure.Savings;
 using FinanceManager.Infrastructure.Securities;
+using FinanceManager.Infrastructure.Securities.ReturnAnalysis;
 using FinanceManager.Infrastructure.Security; // new
 using FinanceManager.Infrastructure.Setup;
 using FinanceManager.Infrastructure.Statements;
@@ -126,6 +128,13 @@ public static class ServiceCollectionExtensions
         // Register Identity RoleStore for Guid-based roles (RoleManager is registered by AddIdentity in Program.cs)
         services.AddScoped<IRoleStore<IdentityRole<Guid>>, RoleStore<IdentityRole<Guid>, AppDbContext, Guid>>();
         services.AddScoped<ISecurityReportService, SecurityReportService>();
+
+        // Return analysis services
+        services.AddMemoryCache(options => { options.SizeLimit = 10_000; });
+        services.AddScoped<IReturnAnalysisService, ReturnAnalysisService>();
+        services.AddSingleton<IReturnCalculationService, ReturnCalculationService>();
+        services.AddSingleton<IFifoCostBasisCalculator, FifoCostBasisCalculator>();
+        services.AddSingleton<IReturnAnalysisCache, MemoryReturnAnalysisCache>();
 
         return services;
     }

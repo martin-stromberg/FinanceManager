@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- Loading / error states -->
+  <data name="Loading" xml:space="preserve"><value>Loading return data...</value></data>
+  <data name="NoTransactions" xml:space="preserve"><value>No transaction data available.</value></data>
+  <data name="ErrorPrefix" xml:space="preserve"><value>Return analysis unavailable: </value></data>
+
+  <!-- Widget header / title -->
+  <data name="Widget_Title" xml:space="preserve"><value>Return Overview</value></data>
+
+  <!-- KPI row labels -->
+  <data name="Label_TotalReturn" xml:space="preserve"><value>Total Return</value></data>
+  <data name="Label_MarketValue" xml:space="preserve"><value>Market Value</value></data>
+  <data name="Label_Shares" xml:space="preserve"><value>Shares</value></data>
+  <data name="Label_Invested" xml:space="preserve"><value>Invested</value></data>
+  <data name="Label_Cagr" xml:space="preserve"><value>CAGR p.a.</value></data>
+  <data name="Label_Irr" xml:space="preserve"><value>IRR (personal)</value></data>
+  <data name="Label_CostVsCurrentPrice" xml:space="preserve"><value>Cost Basis / Current Price</value></data>
+
+  <!-- Aria / title attributes -->
+  <data name="Aria_FormulaAndItems" xml:space="preserve"><value>Formula and items</value></data>
+  <data name="Aria_InfoAbout" xml:space="preserve"><value>Info about {0}</value></data>
+  <data name="Aria_Sparkline" xml:space="preserve"><value>Price history: Invested capital vs. market value</value></data>
+  <data name="Warning_MissingPrices" xml:space="preserve"><value>Missing price data</value></data>
+
+  <!-- Actions -->
+  <data name="Btn_DetailedAnalysis" xml:space="preserve"><value>Detailed Analysis →</value></data>
+
+  <!-- Side panel -->
+  <data name="Panel_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Panel_CloseAria" xml:space="preserve"><value>Close panel</value></data>
+  <data name="Panel_Loading" xml:space="preserve"><value>Loading details…</value></data>
+  <data name="Panel_NoData" xml:space="preserve"><value>No detail data available.</value></data>
+  <data name="Panel_Formula" xml:space="preserve"><value>Formula</value></data>
+  <data name="Panel_Sum" xml:space="preserve"><value>Sum</value></data>
+
+  <!-- IRR detail rows -->
+  <data name="Panel_Cashflow" xml:space="preserve"><value>Cash flow:</value></data>
+  <data name="Panel_T" xml:space="preserve"><value>t =</value></data>
+  <data name="Panel_Years" xml:space="preserve"><value>years</value></data>
+  <data name="Panel_DiscountFactor" xml:space="preserve"><value>Discount factor:</value></data>
+  <data name="Panel_PresentValue" xml:space="preserve"><value>Present value:</value></data>
+</root>

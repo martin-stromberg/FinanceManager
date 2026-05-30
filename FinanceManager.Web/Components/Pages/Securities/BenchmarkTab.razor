@@ -1,0 +1,187 @@
+@using FinanceManager.Application
+@using FinanceManager.Web.ViewModels.Securities.ReturnAnalysis
+@inject IServiceProvider Services
+
+<div class="benchmark-tab">
+    @if (_vm?.IsLoading == true) { <div role="status">Lade Benchmark-Daten...</div> }
+    else if (_vm?.Data == null)
+    {
+        <div class="no-benchmark-hint">
+            <p>Kein Benchmark konfiguriert.</p>
+            <p>Sie können ein vorhandenes Wertpapier als Benchmark für alle Ihre Wertpapiere festlegen. Nutzen Sie dazu die Schaltfläche <strong>Benchmark einrichten</strong> in der Aktionsleiste.</p>
+        </div>
+    }
+    else
+    {
+        <div class="benchmark-chart-area">
+            <p class="benchmark-name">Benchmark: <strong>@_vm.Data.BenchmarkName</strong></p>
+            <div class="benchmark-legend">
+                <span class="legend-item security">Dieses Wertpapier</span>
+                <span class="legend-item benchmark">@_vm.Data.BenchmarkName</span>
+            </div>
+            @{
+                var startDate = _vm.Data.StartDate.Date;
+                var compDate  = _vm.Data.ComparisonStartDate.Date;
+                var endDate   = _vm.Data.EndDate.Date;
+                var totalDays = Math.Max(1, (int)(endDate - startDate).TotalDays);
+                var compDays  = (int)(compDate - startDate).TotalDays;
+                var hasPreOverlap = compDays > 0;
+                var hasBmPreCurve = hasPreOverlap && _vm.Data.BenchmarkPreOverlapValues.Count > 0;
+
+                var allValues = _vm.Data.SecurityNormalizedValues.Select(p => p.Value)
+                    .Concat(_vm.Data.BenchmarkNormalizedValues.Select(p => p.Value))
+                    .Concat(_vm.Data.BenchmarkPreOverlapValues.Select(p => p.Value));
+                var maxVal     = allValues.DefaultIfEmpty(100m).Max();
+                var minVal     = allValues.DefaultIfEmpty(0m).Min();
+                var valueRange = maxVal - minVal;
+                if (valueRange == 0) { valueRange = 1m; }
+
+                string ToPoint(ChartPoint p)
+                {
+                    var x = (int)(p.Date.Date - startDate).TotalDays;
+                    var y = 100m - (p.Value - minVal) / valueRange * 90m;
+                    return FormattableString.Invariant($"{x},{y:F1}");
+                }
+
+                var secPrePoints = string.Join(" ",
+                    _vm.Data.SecurityNormalizedValues
+                        .Where(p => p.Date.Date <= compDate)
+                        .Select(ToPoint));
+
+                var secPoints = string.Join(" ",
+                    _vm.Data.SecurityNormalizedValues
+                        .Where(p => p.Date.Date >= compDate)
+                        .Select(ToPoint));
+
+                var bmPoints = string.Join(" ",
+                    _vm.Data.BenchmarkNormalizedValues.Select(ToPoint));
+
+                // Real benchmark curve for the pre-overlap zone (actual prices, same normalization).
+                var bmPrePoints = hasBmPreCurve
+                    ? string.Join(" ", _vm.Data.BenchmarkPreOverlapValues.Select(ToPoint))
+                    : string.Empty;
+
+                // Flat-line fallback: only when no real benchmark prices exist in the pre-overlap zone.
+                // Computed as Y coordinate of value=100 (the comparison baseline).
+                var yBase100 = FormattableString.Invariant(
+                    $"{100m - (100m - minVal) / valueRange * 90m:F1}");
+
+                // X of the first real benchmark pre-overlap point (for the flat line from startDate to there)
+                var bmPreFirstX = hasBmPreCurve
+                    ? (int)(_vm.Data.BenchmarkPreOverlapValues[0].Date.Date - startDate).TotalDays
+                    : compDays;
+            }
+            <svg viewBox="0 0 @totalDays 115" preserveAspectRatio="none" class="benchmark-svg" role="img" aria-label="Benchmark-Vergleichschart">
+                <title>Benchmark-Vergleich</title>
+
+                @if (hasPreOverlap)
+                {
+                    @* Security context line (lighter) in pre-overlap zone *@
+                    @if (!string.IsNullOrEmpty(secPrePoints))
+                    {
+                        <polyline points="@secPrePoints" fill="none" stroke="#2d6cdf" stroke-width="0.6" opacity="0.35" />
+                    }
+
+                    @if (hasBmPreCurve)
+                    {
+                        @* Where prices exist before compDate: flat lead-in line from startDate to first real point *@
+                        @if (bmPreFirstX > 0)
+                        {
+                            @((MarkupString)FormattableString.Invariant(
+                                $"<line x1=\"0\" y1=\"{yBase100}\" x2=\"{bmPreFirstX}\" y2=\"{yBase100}\" stroke=\"#e07b20\" stroke-width=\"0.5\" stroke-dasharray=\"1,3\" opacity=\"0.55\" />"))
+                        }
+                        @* Real benchmark curve for the pre-overlap zone *@
+                        <polyline points="@bmPrePoints" fill="none" stroke="#e07b20" stroke-width="0.6" stroke-dasharray="3,2" opacity="0.6" />
+                    }
+                    else
+                    {
+                        @* No benchmark prices at all before compDate: flat reference line at baseline *@
+                        @((MarkupString)FormattableString.Invariant(
+                            $"<line x1=\"0\" y1=\"{yBase100}\" x2=\"{compDays}\" y2=\"{yBase100}\" stroke=\"#e07b20\" stroke-width=\"0.5\" stroke-dasharray=\"1,3\" opacity=\"0.55\" />"))
+                    }
+                }
+
+                @* Security comparison line *@
+                @if (!string.IsNullOrEmpty(secPoints))
+                {
+                    <polyline points="@secPoints" fill="none" stroke="#2d6cdf" stroke-width="0.8" />
+                }
+
+                @* Benchmark line (from comparisonStart onward) *@
+                @if (!string.IsNullOrEmpty(bmPoints))
+                {
+                    <polyline points="@bmPoints" fill="none" stroke="#e07b20" stroke-width="0.8" stroke-dasharray="3,2" />
+                }
+
+                @* X-axis baseline *@
+                <line x1="0" y1="100" x2="@totalDays" y2="100" stroke="#ccc" stroke-width="0.3" />
+
+                @if (hasPreOverlap)
+                {
+                    @* Vertical separator at comparison start *@
+                    <line x1="@compDays" y1="0" x2="@compDays" y2="100" stroke="#aaa" stroke-width="0.5" stroke-dasharray="2,2" />
+                    @* Comparison start date label *@
+                    @((MarkupString)FormattableString.Invariant($"<text x=\"{compDays + 2}\" y=\"110\" font-size=\"4\" fill=\"#888\" text-anchor=\"start\">{compDate:MM/yyyy}</text>"))
+                }
+
+                @* Start date *@
+                @((MarkupString)$"<text x=\"1\" y=\"110\" font-size=\"4\" fill=\"#888\" text-anchor=\"start\">{startDate:MM/yyyy}</text>")
+                @* End date *@
+                @((MarkupString)FormattableString.Invariant($"<text x=\"{totalDays - 1}\" y=\"110\" font-size=\"4\" fill=\"#888\" text-anchor=\"end\">{endDate:MM/yyyy}</text>"))
+            </svg>
+
+            @if (hasPreOverlap)
+            {
+                <p class="benchmark-context-hint">
+                    @if (hasBmPreCurve)
+                    {
+                        <em>Vorperiode (vor @compDate.ToString("MMMM yyyy")): Die gestrichelte Benchmark-Linie basiert auf realen Kursen aus diesem Zeitraum, normiert auf den Vergleichsbasiswert (100&thinsp;%) am @compDate.ToString("dd.MM.yyyy").</em>
+                    }
+                    else
+                    {
+                        <em>Vorperiode (vor @compDate.ToString("MMMM yyyy")): Für den Benchmark lagen in diesem Zeitraum keine Kursdaten vor. Die gepunktete Linie zeigt den fiktiven Vergleichsbasiskurs (100&thinsp;%).</em>
+                    }
+                </p>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>Security identifier.</summary>
+    [Parameter, EditorRequired] public Guid SecurityId { get; set; }
+
+    private SecurityPerformanceBenchmarkTabViewModel? _vm;
+
+    /// <inheritdoc />
+    protected override Task OnInitializedAsync()
+    {
+        _vm = new SecurityPerformanceBenchmarkTabViewModel(Services);
+        _vm.StateChanged += VmOnStateChanged;
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_vm == null)
+        {
+            return;
+        }
+
+        await _vm.LoadAsync(SecurityId, CancellationToken.None);
+    }
+
+    public void Dispose()
+    {
+        if (_vm != null)
+        {
+            _vm.StateChanged -= VmOnStateChanged;
+        }
+    }
+
+    private void VmOnStateChanged(object? sender, EventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+}

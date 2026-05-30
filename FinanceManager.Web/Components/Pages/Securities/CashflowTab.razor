@@ -1,0 +1,264 @@
+﻿@using FinanceManager.Application
+@using FinanceManager.Web.ViewModels.Securities.ReturnAnalysis
+@using Microsoft.Extensions.Localization
+@inject IServiceProvider Services
+@inject IStringLocalizer<FinanceManager.Web.Pages> Localizer
+
+<div class="cashflow-tab">
+    @if (_vm?.IsLoading == true) { <div role="status">@Localizer["Cashflow_Loading"]</div> }
+    else if (_vm?.Data == null) { <div class="no-data-msg">@Localizer["Cashflow_NoData"]</div> }
+    else
+    {
+        <section aria-label="@Localizer["Cashflow_Timeline_Title"]">
+            <h3>@Localizer["Cashflow_Timeline_Title"]</h3>
+            @if (_vm.Data.Entries.Count == 0)
+            {
+                <p>@Localizer["Cashflow_Timeline_NoEntries"]</p>
+            }
+            else
+            {
+                <div class="cf-timeline">
+                    <table class="fm-table" aria-label="@Localizer["Cashflow_Timeline_Title"]">
+                        <thead>
+                            <tr>
+                                <th scope="col">@Localizer["Cashflow_Col_Date"]</th>
+                                <th scope="col">@Localizer["Cashflow_Col_Type"]</th>
+                                <th scope="col" class="num">@Localizer["Cashflow_Col_Amount"]</th>
+                                <th scope="col">@Localizer["Cashflow_Col_Description"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var e in _vm.Data.Entries.OrderByDescending(x => x.Date))
+                            {
+                                <tr>
+                                    <td>@e.Date.ToString("dd.MM.yyyy")</td>
+                                    <td><span class="cf-badge @e.Type.ToLowerInvariant()">@e.Type</span></td>
+                                    <td class="num @(e.Amount >= 0 ? "pos" : "neg")">@e.Amount.ToString("N2")</td>
+                                    <td>@(e.Description ?? "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+
+        @* Dividendenverlauf *@
+        <section aria-label="@Localizer["Cashflow_Dividends_Title"]">
+            <h3>@Localizer["Cashflow_Dividends_Title"]</h3>
+            @if (!HasDividends())
+            {
+                <p>@Localizer["Cashflow_Dividends_NoData"]</p>
+            }
+            else
+            {
+                <div class="dividends-chart">
+                    <svg role="img" aria-label="@Localizer["Cashflow_Dividends_Title"]"
+                         viewBox="0 0 @DivSvgWidth() 140" width="100%" height="140">
+                        @((MarkupString)BuildDividendBars())
+                    </svg>
+                    <table class="fm-table" aria-label="@Localizer["Cashflow_Dividends_Title"]">
+                        <thead>
+                            <tr>
+                                <th scope="col">@Localizer["Cashflow_Col_Year"]</th>
+                                <th scope="col" class="num">@Localizer["Cashflow_Col_Dividends"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in DivSums().OrderByDescending(x => x.Year))
+                            {
+                                <tr>
+                                    <td>@s.Year</td>
+                                    <td class="num pos">@s.TotalDividends.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+
+        @* Jahres-Zusammenfassung *@
+        @if (_vm.Data.AnnualSummaries.Count > 0)
+        {
+            <section aria-label="@Localizer["Cashflow_Annual_AriaLabel"]">
+                <h3>@Localizer["Cashflow_Annual_Title"]</h3>
+                <table class="fm-table" aria-label="@Localizer["Cashflow_Annual_AriaLabel"]">
+                    <thead>
+                        <tr>
+                            <th scope="col">@Localizer["Cashflow_Col_Year"]</th>
+                            <th scope="col" class="num">@Localizer["Cashflow_Col_Buys"]</th>
+                            <th scope="col" class="num">@Localizer["Cashflow_Col_Sells"]</th>
+                            <th scope="col" class="num">@Localizer["Cashflow_Col_Dividends"]</th>
+                            <th scope="col" class="num">@Localizer["Cashflow_Col_Taxes"]</th>
+                            <th scope="col" class="num">@Localizer["Cashflow_Col_Fees"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in _vm.Data.AnnualSummaries.OrderByDescending(x => x.Year))
+                        {
+                            <tr>
+                                <td>@s.Year</td>
+                                <td class="num neg">@s.TotalBuys.ToString("N2")</td>
+                                <td class="num pos">@s.TotalSells.ToString("N2")</td>
+                                <td class="num pos">@s.TotalDividends.ToString("N2")</td>
+                                <td class="num neg">@s.TotalTaxes.ToString("N2")</td>
+                                <td class="num neg">@s.TotalFees.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </section>
+        }
+
+        @* Kosten und Steuern *@
+        <section aria-label="@Localizer["Cashflow_Costs_Title"]">
+            <h3>@Localizer["Cashflow_Costs_Title"]</h3>
+            @if (_vm.Data.AnnualSummaries == null || _vm.Data.AnnualSummaries.Count == 0)
+            {
+                <p>@Localizer["Cashflow_Costs_NoData"]</p>
+            }
+            else
+            {
+                <div class="costs-chart">
+                    <svg role="img" aria-label="@Localizer["Cashflow_Costs_Title"]"
+                         viewBox="0 0 @CostSvgWidth() 140" width="100%" height="140">
+                        @((MarkupString)BuildCostBars())
+                    </svg>
+                    <table class="fm-table" aria-label="@Localizer["Cashflow_Costs_Title"]">
+                        <thead>
+                            <tr>
+                                <th scope="col">@Localizer["Cashflow_Costs_Col_Year"]</th>
+                                <th scope="col" class="num">@Localizer["Cashflow_Costs_Col_Taxes"]</th>
+                                <th scope="col" class="num">@Localizer["Cashflow_Costs_Col_Fees"]</th>
+                                <th scope="col" class="num">@Localizer["Cashflow_Costs_Col_Cumulative"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in BuildCostTableRows())
+                            {
+                                <tr>
+                                    <td>@row.Year</td>
+                                    <td class="num">@row.Taxes.ToString("N2")</td>
+                                    <td class="num">@row.Fees.ToString("N2")</td>
+                                    <td class="num">@row.Cumulative.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    /// <summary>Security identifier.</summary>
+    [Parameter, EditorRequired] public Guid SecurityId { get; set; }
+
+    private SecurityPerformanceCashflowTabViewModel? _vm;
+    private const int ChartSpacing = 50;
+
+    /// <inheritdoc />
+    protected override Task OnInitializedAsync()
+    {
+        _vm = new SecurityPerformanceCashflowTabViewModel(Services);
+        _vm.StateChanged += VmOnStateChanged;
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_vm == null) { return; }
+        await _vm.LoadAsync(SecurityId, CancellationToken.None);
+    }
+
+    public void Dispose()
+    {
+        if (_vm != null) { _vm.StateChanged -= VmOnStateChanged; }
+    }
+
+    private void VmOnStateChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
+
+    private IReadOnlyList<(int Year, decimal TotalDividends)> DivSums() =>
+        (_vm?.Data?.AnnualSummaries ?? [])
+            .Where(s => s.TotalDividends > 0)
+            .OrderBy(s => s.Year)
+            .Select(s => (s.Year, s.TotalDividends))
+            .ToList();
+
+    private bool HasDividends() => DivSums().Count > 0;
+
+    private int DivSvgWidth() => Math.Max(DivSums().Count * ChartSpacing, 50);
+
+    /// <summary>Builds SVG bar chart markup for dividends by year.</summary>
+    private string BuildDividendBars()
+    {
+        var sums = DivSums();
+        if (sums.Count == 0) { return string.Empty; }
+
+        var divMax = sums.Max(s => s.TotalDividends);
+        if (divMax == 0) { divMax = 1; }
+        const int svgHeight = 140;
+
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < sums.Count; i++)
+        {
+            var s = sums[i];
+            var x = i * ChartSpacing + 15;
+            var barH = (double)(s.TotalDividends / divMax) * 60.0;
+            sb.Append(FormattableString.Invariant($"<rect x=\"{x}\" y=\"{svgHeight - 40 - barH:F2}\" width=\"20\" height=\"{barH:F2}\" fill=\"#3a9a5c\" />"));
+            sb.Append(FormattableString.Invariant($"<text x=\"{x + 10}\" y=\"{svgHeight - 15}\" font-size=\"10\" text-anchor=\"middle\">{s.Year}</text>"));
+        }
+        return sb.ToString();
+    }
+
+    private int CostSvgWidth() => Math.Max((_vm?.Data?.AnnualSummaries?.Count ?? 0) * ChartSpacing, 50);
+
+    /// <summary>Builds SVG bar chart markup for taxes and fees by year including cumulative line.</summary>
+    private string BuildCostBars()
+    {
+        var sums = (_vm?.Data?.AnnualSummaries ?? [])
+            .OrderBy(s => s.Year).ToList();
+        if (sums.Count == 0) { return string.Empty; }
+
+        var maxAbs = sums.Max(s => Math.Max(Math.Abs(s.TotalTaxes), Math.Abs(s.TotalFees)));
+        if (maxAbs == 0) { maxAbs = 1; }
+        const int svgHeight = 140;
+
+        var cum = 0m;
+        var cumList = new List<decimal>();
+        foreach (var s in sums) { cum += s.TotalTaxes + s.TotalFees; cumList.Add(cum); }
+        var cumMax = cumList.Max();
+        if (cumMax == 0) { cumMax = 1; }
+
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < sums.Count; i++)
+        {
+            var s = sums[i];
+            var x = i * ChartSpacing + 10;
+            var taxH = (double)(Math.Abs(s.TotalTaxes) / maxAbs) * 60.0;
+            var feeH = (double)(Math.Abs(s.TotalFees)  / maxAbs) * 60.0;
+            sb.Append(FormattableString.Invariant($"<rect x=\"{x}\" y=\"{svgHeight - 40 - taxH:F2}\" width=\"12\" height=\"{taxH:F2}\" fill=\"#c94b4b\" />"));
+            sb.Append(FormattableString.Invariant($"<rect x=\"{x + 16}\" y=\"{svgHeight - 40 - feeH:F2}\" width=\"12\" height=\"{feeH:F2}\" fill=\"#d99b5b\" />"));
+            sb.Append(FormattableString.Invariant($"<text x=\"{x + 8}\" y=\"{svgHeight - 15}\" font-size=\"10\" text-anchor=\"middle\">{s.Year}</text>"));
+        }
+        var polyPts = string.Join(" ", cumList.Select((v, i) =>
+            FormattableString.Invariant($"{i * ChartSpacing + 30},{svgHeight - 40 - (double)(v / cumMax) * 60.0:F2}")));
+        sb.Append(FormattableString.Invariant($"<polyline points=\"{polyPts}\" fill=\"none\" stroke=\"#2b6fbf\" stroke-width=\"2\" />"));
+        return sb.ToString();
+    }
+
+    private IReadOnlyList<(int Year, decimal Taxes, decimal Fees, decimal Cumulative)> BuildCostTableRows()
+    {
+        var sums = (_vm?.Data?.AnnualSummaries ?? [])
+            .OrderBy(s => s.Year).ToList();
+        var cum = 0m;
+        var cumList = new List<decimal>();
+        foreach (var s in sums) { cum += s.TotalTaxes + s.TotalFees; cumList.Add(cum); }
+        return sums.Select((s, i) => (s.Year, s.TotalTaxes, s.TotalFees, cumList[i]))
+                   .OrderByDescending(r => r.Year)
+                   .ToList();
+    }
+}

@@ -11,6 +11,7 @@ Kurzbeschreibung und was die Anwendung bietet (nicht‑technisch):
 - Kontoauszüge (CSV/PDF) importieren und automatisch oder manuell kategorisieren
 - Sparpläne verwalten (einmalig oder wiederkehrend) und Zielerreichung verfolgen
 - Wertpapiertransaktionen (Kauf/Verkauf/Dividende) erfassen und Gebühren/Steuern berücksichtigen
+- Wertpapier-Performance-Analyse: TWR, IRR, CAGR, Sharpe Ratio, Max. Drawdown – mit Benchmark-Vergleich
 - Berichte und KPI‑Dashboard; Daten als CSV/XLSX exportieren
 - Anhänge pro Buchung verwalten und Backups erstellen
 
@@ -60,12 +61,35 @@ dotnet test
 - Formatierung: `dotnet format` vor PR
 - CI soll Build, Tests und Formatierung prüfen
 
+Architektur
+
+Schichtenmodell: `Domain` → `Application` → `Infrastructure` → `Web`
+
+| Projekt | Inhalt |
+|---------|--------|
+| `FinanceManager.Domain` | Entitäten, Interfaces, Domain-Events |
+| `FinanceManager.Application` | Services, Use Cases, Business-Logik |
+| `FinanceManager.Infrastructure` | EF Core, Migrations, externe Integrationen |
+| `FinanceManager.Shared` | Gemeinsame DTOs, Utilities |
+| `FinanceManager.Shared.Dtos.Budget` | Budget-DTOs (separates Paket) |
+| `FinanceManager.Web` | Blazor Server App, Controller, Razor Components |
+| `FinanceManager.Analyzer` | Roslyn-Analyzer (Code-Qualitätsregeln) |
+| `FinanceManager.Tests` | Unit-Tests |
+| `FinanceManager.Tests.Integration` | Integrationstests |
+| `FinanceManager.Tests.Integration.ApiClient` | Typisierter API-Client für Integrationstests |
+
+Details: [`docs/architecture/`](docs/architecture/)
+
 Dokumentation & API
 
 - Projektdokumentation unter `docs/` (Flows, Business Rules, API stubs)
 - Installationsanleitung: `docs/install.md`
 - Teil‑OpenAPI: `docs/api/openapi.yaml` (Accounts + models)
 - Detaillierte Controller‑Docs in `docs/api/`
+- [Planungsübersicht Renditeanalyse](docs/planning-renditeanalyse.md)
+- [Anforderungen FA-WERT-REN-001](docs/requirements/FA-WERT-REN-001_Renditeanalyse.md)
+- [Architektur-Blueprint Renditeanalyse](docs/architecture/architecture-blueprint-renditeanalyse.md)
+- [Business-Dokumentation F017 Renditeanalyse](docs/business/features/F017-renditeanalyse.md)
 
 Entwicklungskonventionen
 
@@ -80,6 +104,11 @@ Security
 Kontakt / Issues
 
 - Öffne Issues für Bugs/Feature‑Requests. Für größere Änderungen bitte zuerst Design‑Discussion.
+
+Bekannte offene Punkte
+
+- **BUG-1:** `BuildTwrPeriods` verwendet `start` statt `end` als Periodenbeginn → TWR-Ergebnisse können verfälscht sein (Regressionstest vorhanden)
+- **Ausstehende Tests (Prio 2/3):** Periodische Renditen, Benchmark-Normalisierung, bUnit UI-Tests noch nicht implementiert
 
 Lizenz
 

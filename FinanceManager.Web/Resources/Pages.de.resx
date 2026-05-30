@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -630,6 +630,9 @@
   <data name="Ribbon_Prices" xml:space="preserve">
     <value>Kurse</value>
   </data>
+  <data name="Ribbon_Performance" xml:space="preserve">
+    <value>Detaillierte Analyse</value>
+  </data>
   <data name="Ribbon_ToggleActive" xml:space="preserve">
     <value>Nur aktive</value>
   </data>
@@ -950,6 +953,27 @@
   </data>
   <data name="Setup_Section_Security" xml:space="preserve">
     <value>Sicherheit</value>
+  </data>
+  <data name="Setup_Section_ReturnAnalysis" xml:space="preserve">
+    <value>Renditeanalyse</value>
+  </data>
+  <data name="SetupReturnAnalysis_Title" xml:space="preserve">
+    <value>Renditeanalyse – Benchmark</value>
+  </data>
+  <data name="SetupReturnAnalysis_Description" xml:space="preserve">
+    <value>Wählen Sie ein Wertpapier als globalen Benchmark für alle Renditeanalysen.</value>
+  </data>
+  <data name="SetupReturnAnalysis_Label_Benchmark" xml:space="preserve">
+    <value>Benchmark-Wertpapier</value>
+  </data>
+  <data name="SetupReturnAnalysis_NoBenchmark" xml:space="preserve">
+    <value>– Kein Benchmark –</value>
+  </data>
+  <data name="Btn_Saving" xml:space="preserve">
+    <value>Wird gespeichert…</value>
+  </data>
+  <data name="Msg_SavedSuccessfully" xml:space="preserve">
+    <value>Erfolgreich gespeichert.</value>
   </data>
   <data name="SetupProfile_Title" xml:space="preserve">
     <value>Profil</value>
@@ -1773,4 +1797,89 @@
   <data name="Kpi_MonthlyBudget_Label_Expected" xml:space="preserve">
     <value>Erwartet</value>
   </data>
+  <data name="SetupReturnAnalysis_Label_ShowSharpeRatio" xml:space="preserve">
+    <value>Sharpe Ratio anzeigen</value>
+  </data>
+  <data name="SetupReturnAnalysis_Label_RiskFreeRate" xml:space="preserve">
+    <value>Risikofreier Zinssatz (z.B. 0.04 = 4%)</value>
+  </data>
+  <data name="SetupReturnAnalysis_Help_RiskFreeRate" xml:space="preserve">
+    <value>Der risikofreie Zinssatz, der zur Berechnung der Sharpe Ratio verwendet wird. Als Dezimalzahl eingeben (z.B. 0.04 für 4%). Muss >= 0 sein.</value>
+  </data>
+  <data name="TimeSeries_Dividend_Title" xml:space="preserve">
+    <value>Dividendenverlauf</value>
+  </data>
+  <data name="TimeSeries_Dividend_NoData" xml:space="preserve">
+    <value>Keine Dividenden vorhanden.</value>
+  </data>
+  <data name="Cashflow_Costs_Title" xml:space="preserve">
+    <value>Kosten &amp; Steuern</value>
+  </data>
+  <data name="Cashflow_Costs_NoData" xml:space="preserve">
+    <value>Keine Kostendaten vorhanden.</value>
+  </data>
+  <data name="SecurityPerformancePage_Title" xml:space="preserve"><value>Renditeanalyse</value></data>
+  <data name="SecurityPerformancePage_Loading" xml:space="preserve"><value>Lade Seite...</value></data>
+  <data name="SecurityPerformancePage_NotAuthenticated" xml:space="preserve"><value>Bitte anmelden.</value></data>
+  <data name="SecurityPerformancePage_NotFound" xml:space="preserve"><value>Wertpapier nicht gefunden oder kein Zugriff.</value></data>
+  <data name="SecurityPerformancePage_BackToList" xml:space="preserve"><value>Zur Übersicht</value></data>
+  <data name="SecurityPerformancePage_HeadingSuffix" xml:space="preserve"><value>Renditeanalyse</value></data>
+  <data name="Tab_Overview" xml:space="preserve"><value>Übersicht</value></data>
+  <data name="Tab_TimeSeries" xml:space="preserve"><value>Zeitliche Entwicklung</value></data>
+  <data name="Tab_Cashflows" xml:space="preserve"><value>Cashflows</value></data>
+  <data name="Tab_Metrics" xml:space="preserve"><value>Kennzahlen</value></data>
+  <data name="Tab_Benchmark" xml:space="preserve"><value>Benchmark</value></data>
+  <data name="Ribbon_Group_Period" xml:space="preserve"><value>Zeitraum</value></data>
+  <data name="Ribbon_Group_Settings" xml:space="preserve"><value>Einstellungen</value></data>
+  <data name="Ribbon_BenchmarkSetup" xml:space="preserve"><value>Benchmark einrichten</value></data>
+  <data name="Metrics_Loading" xml:space="preserve"><value>Lade Kennzahlen...</value></data>
+  <data name="Metrics_NoData" xml:space="preserve"><value>Keine Kennzahlen verfügbar.</value></data>
+  <data name="Metrics_Section_Return" xml:space="preserve"><value>Rendite</value></data>
+  <data name="Metrics_Section_Risk" xml:space="preserve"><value>Risiko</value></data>
+  <data name="Metrics_Section_TaxesFees" xml:space="preserve"><value>Steuern &amp; Gebühren</value></data>
+  <data name="Metrics_Section_Gains" xml:space="preserve"><value>Gewinne</value></data>
+  <data name="Metrics_GrossReturn" xml:space="preserve"><value>Bruttorendite</value></data>
+  <data name="Metrics_GrossReturn_Tooltip" xml:space="preserve"><value>Gesamtrendite vor Steuern und Gebühren</value></data>
+  <data name="Metrics_NetReturn" xml:space="preserve"><value>Nettorendite</value></data>
+  <data name="Metrics_NetReturn_Tooltip" xml:space="preserve"><value>Rendite nach Steuern</value></data>
+  <data name="Metrics_Twr" xml:space="preserve"><value>TWR (zeitgewichtet)</value></data>
+  <data name="Metrics_Twr_Tooltip" xml:space="preserve"><value>Time-Weighted Return (Modified Dietz, GIPS-konform)</value></data>
+  <data name="Metrics_Irr" xml:space="preserve"><value>IRR (persönlich)</value></data>
+  <data name="Metrics_Irr_Tooltip" xml:space="preserve"><value>Internal Rate of Return – Ihre persönliche Rendite</value></data>
+  <data name="Metrics_SharpeRatio" xml:space="preserve"><value>Sharpe Ratio</value></data>
+  <data name="Metrics_SharpeRatio_Tooltip" xml:space="preserve"><value>(Rendite – risikofreier Zinssatz) / Volatilität</value></data>
+  <data name="Metrics_Volatility" xml:space="preserve"><value>Volatilität (p.a.)</value></data>
+  <data name="Metrics_Volatility_Tooltip" xml:space="preserve"><value>Annualisierte Standardabweichung der Log-Tagesrenditen</value></data>
+  <data name="Metrics_MaxDrawdown" xml:space="preserve"><value>Max. Drawdown</value></data>
+  <data name="Metrics_MaxDrawdown_Tooltip" xml:space="preserve"><value>Maximaler Verlust vom Höchststand</value></data>
+  <data name="Metrics_TotalTaxes" xml:space="preserve"><value>Gezahlte Steuern</value></data>
+  <data name="Metrics_TotalFees" xml:space="preserve"><value>Gezahlte Gebühren</value></data>
+  <data name="Metrics_TaxRate" xml:space="preserve"><value>Steuerquote</value></data>
+  <data name="Metrics_RealizedGains" xml:space="preserve"><value>Realisierte Gewinne</value></data>
+  <data name="Metrics_RealizedGains_Tooltip" xml:space="preserve"><value>Realisierte Kursgewinne (FIFO)</value></data>
+  <data name="Metrics_UnrealizedGains" xml:space="preserve"><value>Nicht realisierte Gewinne</value></data>
+  <data name="Metrics_UnrealizedGains_Tooltip" xml:space="preserve"><value>Buchgewinne auf aktuelle Positionen</value></data>
+  <data name="Metrics_DividendYield" xml:space="preserve"><value>Dividendenrendite akt. Jahr</value></data>
+  <data name="Cashflow_Loading" xml:space="preserve"><value>Lade Cashflows...</value></data>
+  <data name="Cashflow_NoData" xml:space="preserve"><value>Keine Cashflows vorhanden.</value></data>
+  <data name="Cashflow_Timeline_Title" xml:space="preserve"><value>Cashflow-Verlauf</value></data>
+  <data name="Cashflow_Timeline_NoEntries" xml:space="preserve"><value>Keine Einträge vorhanden.</value></data>
+  <data name="Cashflow_Col_Date" xml:space="preserve"><value>Datum</value></data>
+  <data name="Cashflow_Col_Type" xml:space="preserve"><value>Typ</value></data>
+  <data name="Cashflow_Col_Amount" xml:space="preserve"><value>Betrag</value></data>
+  <data name="Cashflow_Col_Description" xml:space="preserve"><value>Beschreibung</value></data>
+  <data name="Cashflow_Annual_Title" xml:space="preserve"><value>Jahres-Zusammenfassung</value></data>
+  <data name="Cashflow_Annual_AriaLabel" xml:space="preserve"><value>Jährliche Cashflow-Zusammenfassung</value></data>
+  <data name="Cashflow_Col_Year" xml:space="preserve"><value>Jahr</value></data>
+  <data name="Cashflow_Col_Buys" xml:space="preserve"><value>Käufe</value></data>
+  <data name="Cashflow_Col_Sells" xml:space="preserve"><value>Verkäufe</value></data>
+  <data name="Cashflow_Col_Dividends" xml:space="preserve"><value>Dividenden</value></data>
+  <data name="Cashflow_Col_Taxes" xml:space="preserve"><value>Steuern</value></data>
+  <data name="Cashflow_Col_Fees" xml:space="preserve"><value>Gebühren</value></data>
+  <data name="Cashflow_Dividends_Title" xml:space="preserve"><value>Dividendenverlauf</value></data>
+  <data name="Cashflow_Dividends_NoData" xml:space="preserve"><value>Keine Dividenden vorhanden.</value></data>
+  <data name="Cashflow_Costs_Col_Year" xml:space="preserve"><value>Jahr</value></data>
+  <data name="Cashflow_Costs_Col_Taxes" xml:space="preserve"><value>Steuern</value></data>
+  <data name="Cashflow_Costs_Col_Fees" xml:space="preserve"><value>Gebühren</value></data>
+  <data name="Cashflow_Costs_Col_Cumulative" xml:space="preserve"><value>Kumuliert</value></data>
 </root>

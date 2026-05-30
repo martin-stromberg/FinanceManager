@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- Loading / error states -->
+  <data name="Loading" xml:space="preserve"><value>Rendite wird geladen...</value></data>
+  <data name="NoTransactions" xml:space="preserve"><value>Keine Transaktionsdaten vorhanden.</value></data>
+  <data name="ErrorPrefix" xml:space="preserve"><value>Renditeanalyse nicht verfügbar: </value></data>
+
+  <!-- Widget header / title -->
+  <data name="Widget_Title" xml:space="preserve"><value>Renditeübersicht</value></data>
+
+  <!-- KPI row labels -->
+  <data name="Label_TotalReturn" xml:space="preserve"><value>Gesamtrendite</value></data>
+  <data name="Label_MarketValue" xml:space="preserve"><value>Marktwert</value></data>
+  <data name="Label_Shares" xml:space="preserve"><value>Anteile</value></data>
+  <data name="Label_Invested" xml:space="preserve"><value>Investiert</value></data>
+  <data name="Label_Cagr" xml:space="preserve"><value>CAGR p.a.</value></data>
+  <data name="Label_Irr" xml:space="preserve"><value>IRR (pers.)</value></data>
+  <data name="Label_CostVsCurrentPrice" xml:space="preserve"><value>Einstandskurs / Aktueller Kurs</value></data>
+
+  <!-- Aria / title attributes -->
+  <data name="Aria_FormulaAndItems" xml:space="preserve"><value>Formel und Posten</value></data>
+  <data name="Aria_InfoAbout" xml:space="preserve"><value>Info zu {0}</value></data>
+  <data name="Aria_Sparkline" xml:space="preserve"><value>Kursverlauf: Investiertes Kapital vs. Marktwert</value></data>
+  <data name="Warning_MissingPrices" xml:space="preserve"><value>Fehlende Kursdaten</value></data>
+
+  <!-- Actions -->
+  <data name="Btn_DetailedAnalysis" xml:space="preserve"><value>Detaillierte Analyse →</value></data>
+
+  <!-- Side panel -->
+  <data name="Panel_Close" xml:space="preserve"><value>Schließen</value></data>
+  <data name="Panel_CloseAria" xml:space="preserve"><value>Panel schließen</value></data>
+  <data name="Panel_Loading" xml:space="preserve"><value>Lade Detaildaten…</value></data>
+  <data name="Panel_NoData" xml:space="preserve"><value>Keine Detaildaten verfügbar.</value></data>
+  <data name="Panel_Formula" xml:space="preserve"><value>Formel</value></data>
+  <data name="Panel_Sum" xml:space="preserve"><value>Summe</value></data>
+
+  <!-- IRR detail rows -->
+  <data name="Panel_Cashflow" xml:space="preserve"><value>Cashflow:</value></data>
+  <data name="Panel_T" xml:space="preserve"><value>t =</value></data>
+  <data name="Panel_Years" xml:space="preserve"><value>Jahre</value></data>
+  <data name="Panel_DiscountFactor" xml:space="preserve"><value>Diskontfaktor:</value></data>
+  <data name="Panel_PresentValue" xml:space="preserve"><value>Barwert:</value></data>
+</root>

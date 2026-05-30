@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- KPI DisplayNames -->
+  <data name="Kpi_TotalReturn_DisplayName" xml:space="preserve"><value>Total Return</value></data>
+  <data name="Kpi_MarketValue_DisplayName" xml:space="preserve"><value>Market Value</value></data>
+  <data name="Kpi_InvestedCapital_DisplayName" xml:space="preserve"><value>Invested Capital</value></data>
+  <data name="Kpi_Cagr_DisplayName" xml:space="preserve"><value>CAGR p.a.</value></data>
+  <data name="Kpi_Irr_DisplayName" xml:space="preserve"><value>IRR (personal)</value></data>
+
+  <!-- KPI Formula texts -->
+  <data name="Kpi_TotalReturn_Formula" xml:space="preserve"><value>Total Return (%) = (Market Value + Net Sales Proceeds + Net Dividends − Invested Capital) / Invested Capital × 100</value></data>
+  <data name="Kpi_MarketValue_Formula" xml:space="preserve"><value>Market Value = Number of Shares × Current Price</value></data>
+  <data name="Kpi_InvestedCapital_Formula" xml:space="preserve"><value>Invested Capital = Σ Purchase Amounts + Fees (FIFO cost basis of currently held shares)</value></data>
+  <data name="Kpi_Cagr_Formula" xml:space="preserve"><value>CAGR = ((Market Value + Net Sales Proceeds + Net Dividends) / Invested Capital) ^ (1 / Years) − 1</value></data>
+  <data name="Kpi_Irr_Formula" xml:space="preserve"><value>Present Value = Cash Flow / Discount Factor   |   Discount Factor = (1 + r)^t   |   IRR = r, such that Σ Present Values = 0</value></data>
+
+  <!-- KPI Descriptions -->
+  <data name="Kpi_TotalReturn_Description" xml:space="preserve"><value>Shows the percentage total return of the security. The breakdown below shows how the absolute components add up.</value></data>
+  <data name="Kpi_MarketValue_Description" xml:space="preserve"><value>The current market value of the holding, calculated from the shares held and the most recently available price.</value></data>
+  <data name="Kpi_InvestedCapital_Description" xml:space="preserve"><value>The total amount paid for the currently held shares, including all fees. Calculated using the FIFO method: sales reduce the oldest purchase lots first.</value></data>
+  <data name="Kpi_Cagr_Description" xml:space="preserve"><value>Average annual growth rate assuming uniform growth. Years = period from the first purchase to today in full years.</value></data>
+  <data name="Kpi_Irr_Description" xml:space="preserve"><value>The Internal Rate of Return (IRR) is the personal annualised return, weighted by the actual timing of each cash inflow and outflow. &#xD;&#xA;It answers: if I had invested my money at a fixed interest rate instead, which rate would have produced exactly the same final result? The earlier a purchase and the later a dividend or sale, the more the return is affected. The calculated rate is the value r at which the sum of all discounted cash flows (present values) equals zero. The cash flows with their present values are listed chronologically below.</value></data>
+
+  <!-- Group names -->
+  <data name="Group_MarketValue" xml:space="preserve"><value>Market Value</value></data>
+  <data name="Group_CurrentMarketValue" xml:space="preserve"><value>Current Market Value</value></data>
+  <data name="Group_NetDividends" xml:space="preserve"><value>Net Dividends (Dividends − Taxes)</value></data>
+  <data name="Group_DividendsNet" xml:space="preserve"><value>Dividends (net)</value></data>
+  <data name="Group_InvestedCapital" xml:space="preserve"><value>Invested Capital</value></data>
+  <data name="Group_HoldingPeriod" xml:space="preserve"><value>Holding Period</value></data>
+  <data name="Group_TotalReturn_Result" xml:space="preserve"><value>Total Return</value></data>
+  <data name="Group_Cagr_Result" xml:space="preserve"><value>CAGR (Result)</value></data>
+  <data name="Group_IrrCashflows" xml:space="preserve"><value>Cash Flows &amp; Present Values (XIRR Calculation)</value></data>
+  <data name="Group_IrrProbe" xml:space="preserve"><value>Sum of Present Values (Verification)</value></data>
+  <data name="Group_Irr_Result" xml:space="preserve"><value>IRR (Result)</value></data>
+  <data name="Group_Buys_WithShares" xml:space="preserve"><value>Purchases (share additions)</value></data>
+  <data name="Group_Sells_WithShares" xml:space="preserve"><value>Sales (share reductions)</value></data>
+  <data name="Group_Buys" xml:space="preserve"><value>Purchases</value></data>
+  <data name="Group_Sells_Fifo" xml:space="preserve"><value>Sales (FIFO adjustment)</value></data>
+  <data name="Group_SalesProceeds_Net" xml:space="preserve"><value>Net Sales Proceeds</value></data>
+  <data name="Group_RemainingFifoCostBasis" xml:space="preserve"><value>FIFO Cost Basis (held shares)</value></data>
+
+  <!-- Group notes / dynamic texts -->
+  <data name="Group_Irr_RateNote" xml:space="preserve"><value>r = {0} %  –  The rate at which the sum of all present values equals 0</value></data>
+  <data name="Group_Irr_SignNote" xml:space="preserve"><value>Negative value = outflow (purchase), Positive value = inflow (dividend / market value)</value></data>
+  <data name="Group_IrrProbe_OK" xml:space="preserve"><value>Equals 0 – the IRR rate is correctly calculated</value></data>
+  <data name="Group_IrrProbe_Rounding" xml:space="preserve"><value>Rounding difference: The deviation of {0} EUR is caused by amounts rounded to 2 decimal places for display. The internal calculation yields exactly 0.</value></data>
+
+  <!-- Item labels / notes -->
+  <data name="Item_SharesTimesPrice" xml:space="preserve"><value>{0} shares × {1}</value></data>
+  <data name="Item_BuySharesAtPrice" xml:space="preserve"><value>{0} shares @ {1}</value></data>
+  <data name="Item_Buy" xml:space="preserve"><value>Buy: {0} units @ {1}</value></data>
+  <data name="Item_BuySimple" xml:space="preserve"><value>Buy</value></data>
+  <data name="Item_Fee" xml:space="preserve"><value>Fee</value></data>
+  <data name="Item_StandaloneFee" xml:space="preserve"><value>Fee (unlinked)</value></data>
+  <data name="Item_Dividend_Net" xml:space="preserve"><value>Dividend (net)</value></data>
+  <data name="Item_Tax" xml:space="preserve"><value>Tax</value></data>
+  <data name="Item_MarketValueTerminal" xml:space="preserve"><value>Current Market Value (terminal cash flow)</value></data>
+  <data name="Item_Sell" xml:space="preserve"><value>Sale</value></data>
+  <data name="Item_SellWithDetails" xml:space="preserve"><value>Sale: {0} units @ {1}</value></data>
+  <data name="Item_FirstBuy" xml:space="preserve"><value>First Purchase</value></data>
+  <data name="Item_Today" xml:space="preserve"><value>Today</value></data>
+  <data name="Item_LastSell" xml:space="preserve"><value>Last sell</value></data>
+  <data name="Item_Period" xml:space="preserve"><value>Period: {0}</value></data>
+  <data name="Item_HoldingPeriodYearsMonths" xml:space="preserve"><value>{0} year(s) {1} month(s)</value></data>
+  <data name="Item_AddShares" xml:space="preserve"><value>+{0} shares</value></data>
+  <data name="Item_SubtractShares" xml:space="preserve"><value>−{0} shares</value></data>
+  <data name="Item_Shares" xml:space="preserve"><value>{0} shares</value></data>
+  <data name="Item_TotalReturn_Note" xml:space="preserve"><value>= Market Value + Net Sales Proceeds − Invested Capital + Net Dividends</value></data>
+  <data name="Item_PositionFullySold" xml:space="preserve"><value>Position fully sold</value></data>
+
+  <!-- Warnings -->
+  <data name="Warning_NoPriceAvailable" xml:space="preserve"><value>No current price available.</value></data>
+  <data name="Warning_MissingPrices" xml:space="preserve"><value>Missing price data</value></data>
+</root>

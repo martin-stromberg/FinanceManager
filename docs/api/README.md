@@ -219,7 +219,7 @@ The FinanceManager API is organized into the following categories:
 | [Budget Overrides](./endpoints.md#budget-overrides) | Budget override management | 4 endpoints |
 | [Contacts](./endpoints.md#contacts) | Contact CRUD and relationships | 12+ endpoints |
 | [Contact Categories](./endpoints.md#contact-categories) | Contact category management | 5 endpoints |
-| [Securities](./endpoints.md#securities) | Security/investment management | 15+ endpoints |
+| [Securities](./SecuritiesController.md) | Security/investment management, Return Analysis (TWR, IRR, CAGR, Sharpe Ratio, Benchmark) | 25+ endpoints |
 | [Security Categories](./endpoints.md#security-categories) | Security category CRUD | 5 endpoints |
 | [Savings Plans](./endpoints.md#savings-plans) | Savings plan management | 10+ endpoints |
 | [Savings Plan Categories](./endpoints.md#savings-plan-categories) | Savings plan category CRUD | 5 endpoints |

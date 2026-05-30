@@ -1,0 +1,162 @@
+/* =====================================================
+   theme.Dark.ReturnAnalysis.css - Dark Theme Overrides for Return Analysis
+   ===================================================== */
+
+/* Widget */
+body.dark-mode .return-summary-widget.return-summary-widget,
+.app-shell.dark-mode .return-summary-widget.return-summary-widget {
+    background: #2b2b2b !important;
+    border-color: var(--border-color, #333) !important;
+    color: #e6e6e6 !important;
+}
+
+.dark-mode .return-summary-widget.skeleton {
+    background: linear-gradient(90deg, #2a2a3a 25%, #1e1e2e 50%, #2a2a3a 75%);
+    background-size: 200% 100%;
+}
+
+.dark-mode .rsw-row {
+    border-bottom-color: var(--border-color-subtle, #2a2a3a);
+}
+
+body.dark-mode .rsw-label,
+.app-shell.dark-mode .rsw-label { color: #cfcfcf !important; }
+body.dark-mode .rsw-value,
+.app-shell.dark-mode .rsw-value { color: #f0f0f0 !important; }
+
+body.dark-mode .return-summary-widget.error-state,
+body.dark-mode .return-summary-widget.no-data,
+.app-shell.dark-mode .return-summary-widget.error-state,
+.app-shell.dark-mode .return-summary-widget.no-data {
+    color: #cfcfcf;
+}
+
+.dark-mode .rsw-value.positive { color: #4ade80; }
+.dark-mode .rsw-value.negative { color: #f87171; }
+
+/* KPI info side panel */
+body.dark-mode .rsw-panel.rsw-panel,
+.app-shell.dark-mode .rsw-panel.rsw-panel {
+    background: #2b2b2b !important;
+    border-left-color: #3a3a3a !important;
+    color: #e6e6e6 !important;
+}
+
+body.dark-mode .rsw-panel-header.rsw-panel-header,
+.app-shell.dark-mode .rsw-panel-header.rsw-panel-header {
+    background: #2b2b2b !important;
+    border-bottom-color: #3a3a3a !important;
+}
+
+body.dark-mode .rsw-panel-title,
+.app-shell.dark-mode .rsw-panel-title { color: #f2f2f2 !important; }
+
+body.dark-mode .rsw-panel-close,
+.app-shell.dark-mode .rsw-panel-close {
+    color: #cfcfcf;
+}
+
+body.dark-mode .rsw-panel-close:hover,
+.app-shell.dark-mode .rsw-panel-close:hover {
+    background: #3a3a3a;
+    color: #ffffff;
+}
+
+body.dark-mode .rsw-panel-loading,
+body.dark-mode .rsw-panel-no-data,
+body.dark-mode .rsw-panel-desc,
+body.dark-mode .rsw-formula-label,
+body.dark-mode .rsw-item-date,
+body.dark-mode .rsw-item-note,
+body.dark-mode .rsw-item-detail,
+body.dark-mode .rsw-group-single,
+body.dark-mode .rsw-group-note-row,
+body.dark-mode .rsw-group-total-row-label,
+.app-shell.dark-mode .rsw-item-detail,
+.app-shell.dark-mode .rsw-panel-loading,
+.app-shell.dark-mode .rsw-panel-no-data,
+.app-shell.dark-mode .rsw-panel-desc,
+.app-shell.dark-mode .rsw-formula-label,
+.app-shell.dark-mode .rsw-item-date,
+.app-shell.dark-mode .rsw-item-note,
+.app-shell.dark-mode .rsw-group-single,
+.app-shell.dark-mode .rsw-group-note-row,
+.app-shell.dark-mode .rsw-group-total-row-label {
+    color: #cfcfcf;
+}
+
+.dark-mode .rsw-formula-box {
+    background: #333333;
+    border-color: #444444;
+}
+
+.dark-mode .rsw-group {
+    border-color: #3a3a3a;
+}
+
+.dark-mode .rsw-items-table td {
+    border-top-color: #3a3a3a;
+}
+
+body.dark-mode .rsw-group-note-row,
+body.dark-mode .rsw-group-total-row,
+.app-shell.dark-mode .rsw-group-note-row,
+.app-shell.dark-mode .rsw-group-total-row {
+    border-top-color: #3a3a3a;
+}
+
+.dark-mode .rsw-items-table tbody tr:hover {
+    background: #353535;
+}
+
+/* Chart */
+.dark-mode .perf-svg,
+.dark-mode .benchmark-svg {
+    background: var(--chart-bg, #1a1a2e);
+    border-color: var(--border-color, #333);
+}
+
+/* KPI sections */
+.dark-mode .kpi-section {
+    background: var(--card-bg, #1e1e2e);
+    border-color: var(--border-color, #333);
+}
+
+.dark-mode .kpi-section h3 {
+    border-bottom-color: var(--border-color-subtle, #2a2a3a);
+}
+
+.dark-mode .kpi-row {
+    border-bottom-color: var(--border-color-subtle, #2a2a3a);
+}
+
+.dark-mode .kpi-value { color: var(--text, #e0e0e0); }
+
+/* Tables */
+.dark-mode .fm-table th {
+    border-bottom-color: var(--border-color, #333);
+}
+
+.dark-mode .fm-table td {
+    border-bottom-color: var(--border-color-subtle, #2a2a3a);
+}
+
+.dark-mode .fm-table tr:hover td {
+    background: var(--hover-bg, #2a2a3a);
+}
+
+/* Tab bar */
+.dark-mode .tab-bar {
+    border-bottom-color: var(--border-color, #333);
+}
+
+/* CF Badges dark */
+.dark-mode .cf-badge.buy { background: #1e3a5f; color: #93c5fd; }
+.dark-mode .cf-badge.sell { background: #1a3a2a; color: #86efac; }
+.dark-mode .cf-badge.dividend { background: #3a2e00; color: #fde68a; }
+.dark-mode .cf-badge.tax { background: #3a1a1a; color: #fca5a5; }
+.dark-mode .cf-badge.fee { background: #2a1a3a; color: #d8b4fe; }
+
+/* Pos/neg in dark mode */
+.dark-mode .pos { color: #4ade80; }
+.dark-mode .neg { color: #f87171; }
