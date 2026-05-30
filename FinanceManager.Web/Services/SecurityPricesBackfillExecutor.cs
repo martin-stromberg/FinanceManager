@@ -1,7 +1,5 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Securities;
-using FinanceManager.Infrastructure;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using System.Text.Json;
 
@@ -97,15 +95,15 @@ public sealed class SecurityPricesBackfillExecutor : IBackgroundTaskExecutor
 
         var defaultFromInclusive = endInclusiveBase.AddYears(-2);
 
-        // Select securities (owned by user) via service and filter eligible ones for backfill
+        // Select securities (owned by user) via service; previously errored securities remain eligible for retry
         var allSecurities = await securityService.ListAsync(context.UserId, onlyActive: true, ct);
         var filtered = allSecurities
-            .Where(s => !string.IsNullOrWhiteSpace(s.AlphaVantageCode) && (s.HasPriceError == false))
+            .Where(s => !string.IsNullOrWhiteSpace(s.AlphaVantageCode))
             .OrderBy(s => s.Name)
             .ToList();
         if (onlySecurityId.HasValue) filtered = filtered.Where(s => s.Id == onlySecurityId.Value).ToList();
 
-        var list = filtered.Select(s => new { Id = s.Id, OwnerUserId = context.UserId, Name = s.Name, Identifier = s.Identifier, AlphaVantageCode = s.AlphaVantageCode }).ToList();
+        var list = filtered.Select(s => new { Id = s.Id, OwnerUserId = context.UserId, Name = s.Name, Identifier = s.Identifier, AlphaVantageCode = s.AlphaVantageCode, HasPriceError = s.HasPriceError }).ToList();
         var total = list.Count;
         if (total == 0)
         {
@@ -152,7 +150,7 @@ public sealed class SecurityPricesBackfillExecutor : IBackgroundTaskExecutor
                     toInclusive = endInclusiveBase;
                 }
 
-                if (toInclusive < fromInclusive)
+                if (toInclusive < fromInclusive && !s.HasPriceError)
                 {
                     processed++;
                     context.ReportProgress(processed, total, s.Name, 0, 0);
@@ -164,6 +162,8 @@ public sealed class SecurityPricesBackfillExecutor : IBackgroundTaskExecutor
                 var endInclusive = toInclusive;
 
                 var data = await priceProvider.GetDailyPricesAsync(s.AlphaVantageCode!, startExclusive, endInclusive, ct);
+                await priceService.ClearPriceErrorAsync(s.OwnerUserId, s.Id, ct);
+
                 int inserts = 0;
                 foreach ((DateTime date, decimal close) tuple in data)
                 {

@@ -56,7 +56,7 @@ A: Ja, es gibt einen kostenlosen Plan mit bis zu 5 Abfragen pro Minute.
 A: Sie können die Häufigkeit festlegen (täglich, wöchentlich). Dies hängt von Ihrem API-Kontingent ab.
 
 **F: Was passiert, wenn die Preisabfrage fehlschlägt?**  
-A: Die Software zeigt eine Warnung an. Die letzte bekannte Kurse werden angezeigt.
+A: Die Software markiert das betroffene Wertpapier, zeigt eine Warnung an und verarbeitet die übrigen Wertpapiere weiter. Die letzte bekannte Kurse werden angezeigt.
 
 **F: Welche Wertpapiere werden unterstützt?**  
 A: Alle Wertpapiere mit ISIN werden unterstützt, die von AlphaVantage gelistet sind.

@@ -2599,8 +2599,7 @@
         <member name="M:FinanceManager.Infrastructure.Notifications.NotificationService.DismissAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
             <summary>
             Dismisses a notification for the given owner (or a global notification). When dismissed, the notification's <c>IsDismissed</c>
-            flag is set and the modification timestamp is updated. If the notification encodes a security error in its <c>TriggerEventKey</c>
-            (prefix "security:error:"), this method will attempt to clear the corresponding security entity error state.
+            flag is set and the modification timestamp is updated.
             </summary>
             <param name="id">Identifier of the notification to dismiss.</param>
             <param name="ownerUserId">Owner user identifier performing the dismissal. Global notifications (OwnerUserId == null) can also be dismissed by this call.</param>
@@ -3617,6 +3616,16 @@
             <param name="ownerUserId">The owner of the security.</param>
             <param name="securityId">The security identifier.</param>
             <param name="message">A short error message to record. May be <c>null</c> or empty to clear the error.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A task that completes when the operation has been applied.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when the security does not exist or is not owned by <paramref name="ownerUserId"/>.</exception>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceService.ClearPriceErrorAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Clears the stored price error state for the given security.
+            </summary>
+            <param name="ownerUserId">The owner of the security.</param>
+            <param name="securityId">The security identifier.</param>
             <param name="ct">Cancellation token.</param>
             <returns>A task that completes when the operation has been applied.</returns>
             <exception cref="T:System.ArgumentException">Thrown when the security does not exist or is not owned by <paramref name="ownerUserId"/>.</exception>

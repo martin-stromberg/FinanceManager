@@ -46,8 +46,7 @@ public sealed class NotificationService : INotificationService
 
     /// <summary>
     /// Dismisses a notification for the given owner (or a global notification). When dismissed, the notification's <c>IsDismissed</c>
-    /// flag is set and the modification timestamp is updated. If the notification encodes a security error in its <c>TriggerEventKey</c>
-    /// (prefix "security:error:"), this method will attempt to clear the corresponding security entity error state.
+    /// flag is set and the modification timestamp is updated.
     /// </summary>
     /// <param name="id">Identifier of the notification to dismiss.</param>
     /// <param name="ownerUserId">Owner user identifier performing the dismissal. Global notifications (OwnerUserId == null) can also be dismissed by this call.</param>
@@ -64,20 +63,6 @@ public sealed class NotificationService : INotificationService
         }
         entity.IsDismissed = true;
         entity.ModifiedUtc = DateTime.UtcNow;
-
-        // NEW: Wenn die Notification einen Security-Error bestätigt, den Block aufheben
-        if (!string.IsNullOrWhiteSpace(entity.TriggerEventKey) && entity.TriggerEventKey.StartsWith("security:error:", StringComparison.OrdinalIgnoreCase))
-        {
-            var idStr = entity.TriggerEventKey["security:error:".Length..];
-            if (Guid.TryParse(idStr, out var securityId))
-            {
-                var sec = await _db.Securities.FirstOrDefaultAsync(s => s.Id == securityId && s.OwnerUserId == ownerUserId, ct);
-                if (sec != null)
-                {
-                    sec.ClearPriceError();
-                }
-            }
-        }
 
         await _db.SaveChangesAsync(ct);
         return true;
