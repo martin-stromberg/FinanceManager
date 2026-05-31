@@ -1440,6 +1440,9 @@
   <data name="Validation_Close" xml:space="preserve">
     <value>Close</value>
   </data>
+  <data name="Validation_OpenRelatedRecord" xml:space="preserve">
+    <value>Open record</value>
+  </data>
   <data name="Nav_BudgetPurposes" xml:space="preserve">
     <value>Budget planning</value>
   </data>

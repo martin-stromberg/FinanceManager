@@ -19,4 +19,5 @@ Key endpoints (summary):
 
 Notes:
 - Validation codes include `SECURITY_ACCOUNT_NOT_ALLOWED`, `SECURITY_INVALID_CONTACT`, `SAVINGSPLAN_*`.
+- Validation messages can optionally include `RelatedRecordKind` and `RelatedRecordId` so the UI can link from general hints directly to the related record card.
 - Booking flow is partial-aware and respects account settings like `SecurityProcessingEnabled`.

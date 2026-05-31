@@ -1437,6 +1437,9 @@
   <data name="Validation_Close" xml:space="preserve">
     <value>Schließen</value>
   </data>
+  <data name="Validation_OpenRelatedRecord" xml:space="preserve">
+    <value>Datensatz öffnen</value>
+  </data>
   <data name="Nav_BudgetPurposes" xml:space="preserve">
     <value>Budgetplanung</value>
   </data>

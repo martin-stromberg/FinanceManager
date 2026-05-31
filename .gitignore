@@ -404,3 +404,6 @@ FodyWeavers.xsd
 /.github/tools/*
 /.github/workflows/*
 /.softwareschmiede/copilot-runtime/*
+*.copilot.task.md
+*.copilot.task.md.bak
+copilot.context.md

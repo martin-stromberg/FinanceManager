@@ -8,4 +8,13 @@ namespace FinanceManager.Shared.Dtos.Statements;
 /// <param name="Message">Localized/user-readable message.</param>
 /// <param name="DraftId">Affected draft id.</param>
 /// <param name="EntryId">Optional affected entry id.</param>
-public sealed record DraftValidationMessageDto(string Code, string Severity, string Message, Guid DraftId, Guid? EntryId);
+/// <param name="RelatedRecordKind">Optional card route kind of a related record (for example <c>savings-plans</c>).</param>
+/// <param name="RelatedRecordId">Optional identifier of the related record card.</param>
+public sealed record DraftValidationMessageDto(
+    string Code,
+    string Severity,
+    string Message,
+    Guid DraftId,
+    Guid? EntryId,
+    string? RelatedRecordKind = null,
+    Guid? RelatedRecordId = null);

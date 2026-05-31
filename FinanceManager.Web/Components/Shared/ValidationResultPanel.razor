@@ -1,6 +1,7 @@
 @using FinanceManager.Shared.Dtos.Statements
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
 @using Microsoft.AspNetCore.Components
+@inject NavigationManager NavigationManager
 
 @inherits ComponentBase
 
@@ -21,7 +22,16 @@ else
         <ul style="margin:0;padding-left:1.25rem;">
             @foreach (var m in ValidationResult.Messages.Where(e => e.EntryId is null))
             {
-                <li style="margin:.25rem 0;">@($"[{m.Severity}] {m.Message}") @if (m.EntryId != null) { <span style="opacity:.7;">(@m.EntryId)</span> }</li>
+                <li style="margin:.25rem 0;">
+                    @($"[{m.Severity}] {m.Message}")
+                    @{
+                        var relatedRecordUrl = BuildRelatedRecordUrl(m);
+                    }
+                    @if (!string.IsNullOrWhiteSpace(relatedRecordUrl))
+                    {
+                        <a href="@relatedRecordUrl" style="margin-left:.5rem;">@(Localizer?["Validation_OpenRelatedRecord"] ?? "Open record")</a>
+                    }
+                </li>
             }
         </ul>
 
@@ -59,5 +69,23 @@ else
         {
             EmbeddedClose?.Invoke();
         }
+    }
+
+    private string? BuildRelatedRecordUrl(DraftValidationMessageDto message)
+    {
+        if (string.IsNullOrWhiteSpace(message.RelatedRecordKind) || message.RelatedRecordId is null || message.RelatedRecordId == Guid.Empty)
+        {
+            return null;
+        }
+
+        var kind = message.RelatedRecordKind.Trim().Trim('/');
+        if (string.IsNullOrWhiteSpace(kind))
+        {
+            return null;
+        }
+
+        var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        var currentUrl = "/" + currentPath;
+        return $"/card/{kind}/{message.RelatedRecordId}?back={Uri.EscapeDataString(currentUrl)}";
     }
 }
