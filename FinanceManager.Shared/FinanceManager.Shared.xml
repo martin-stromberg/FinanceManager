@@ -5415,8 +5415,10 @@
             <param name="Message">Localized/user-readable message.</param>
             <param name="DraftId">Affected draft id.</param>
             <param name="EntryId">Optional affected entry id.</param>
+            <param name="RelatedRecordKind">Optional card route kind of a related record (for example <c>savings-plans</c>).</param>
+            <param name="RelatedRecordId">Optional identifier of the related record card.</param>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Statements.DraftValidationMessageDto.#ctor(System.String,System.String,System.String,System.Guid,System.Nullable{System.Guid})">
+        <member name="M:FinanceManager.Shared.Dtos.Statements.DraftValidationMessageDto.#ctor(System.String,System.String,System.String,System.Guid,System.Nullable{System.Guid},System.String,System.Nullable{System.Guid})">
             <summary>
             A single validation message for a statement draft or one of its entries.
             </summary>
@@ -5425,6 +5427,8 @@
             <param name="Message">Localized/user-readable message.</param>
             <param name="DraftId">Affected draft id.</param>
             <param name="EntryId">Optional affected entry id.</param>
+            <param name="RelatedRecordKind">Optional card route kind of a related record (for example <c>savings-plans</c>).</param>
+            <param name="RelatedRecordId">Optional identifier of the related record card.</param>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Statements.DraftValidationMessageDto.Code">
             <summary>Stable validation code.</summary>
@@ -5440,6 +5444,12 @@
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Statements.DraftValidationMessageDto.EntryId">
             <summary>Optional affected entry id.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.DraftValidationMessageDto.RelatedRecordKind">
+            <summary>Optional card route kind of a related record (for example <c>savings-plans</c>).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.DraftValidationMessageDto.RelatedRecordId">
+            <summary>Optional identifier of the related record card.</summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Statements.DraftValidationResultDto">
             <summary>

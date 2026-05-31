@@ -928,6 +928,9 @@ public sealed class StatementDraftBookingTests
         Assert.False(res.Success);
         Assert.True(res.HasWarnings);
         Assert.True(res.Validation.Messages.Any(m => m.Code == "SAVINGSPLAN_GOAL_EXCEEDS"));
+        var savingsPlanGoalExceeds = Assert.Single(res.Validation.Messages.Where(m => m.Code == "SAVINGSPLAN_GOAL_EXCEEDS"));
+        Assert.Equal("savings-plans", savingsPlanGoalExceeds.RelatedRecordKind);
+        Assert.Equal(plan.Id, savingsPlanGoalExceeds.RelatedRecordId);
 
         // Now retry booking while ignoring warnings -> should succeed
         var beforeCount = db.Postings.Count();

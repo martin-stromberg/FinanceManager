@@ -49,38 +49,56 @@ namespace FinanceManager.Web.Infrastructure.Auth
         public Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken)
         {
             var ctx = _httpContextAccessor.HttpContext;
-            if (ctx == null)
-            {
-                return Task.FromResult<string?>(null);
-            }
-
             var now = DateTimeOffset.UtcNow;
 
             // Determine renewal window from configured lifetime (half of it)
             var lifetimeMinutes = int.TryParse(_configuration["Jwt:LifetimeMinutes"], out var lm) ? lm : 30;
             var renewalWindow = TimeSpan.FromMinutes(Math.Max(MinRenewalWindow.TotalMinutes, lm / 2.0));
 
-            // Cache noch g�ltig?
+            // Prefer request cookie over cache when a request context is available.
+            // This prevents serving stale tokens from a different browser tab/user session.
+            if (ctx != null)
+            {
+                var cookie = ctx.Request.Cookies[AuthCookieName];
+                if (string.IsNullOrEmpty(cookie))
+                {
+                    InvalidateCache();
+                    return Task.FromResult<string?>(null);
+                }
+
+                if (_cachedToken != null
+                    && string.Equals(_cachedToken, cookie, StringComparison.Ordinal)
+                    && _cachedExpiry - renewalWindow > now)
+                {
+                    return Task.FromResult<string?>(_cachedToken);
+                }
+
+                return Task.FromResult(ValidateAndRefreshToken(ctx, cookie, lifetimeMinutes, renewalWindow, now));
+            }
+
+            // When no request context is available (for example within a running Blazor circuit),
+            // fall back to a still-valid cached token.
             if (_cachedToken != null && _cachedExpiry - renewalWindow > now)
             {
                 return Task.FromResult<string?>(_cachedToken);
             }
 
-            // read cookie by new name
-            var cookie = ctx.Request.Cookies[AuthCookieName];
-            if (string.IsNullOrEmpty(cookie))
-            {
-                // Kein Token vorhanden
-                InvalidateCache();
-                return Task.FromResult<string?>(null);
-            }
+            return Task.FromResult<string?>(null);
+        }
 
+        private string? ValidateAndRefreshToken(
+            HttpContext ctx,
+            string cookie,
+            int lifetimeMinutes,
+            TimeSpan renewalWindow,
+            DateTimeOffset now)
+        {
             var handler = new JwtSecurityTokenHandler();
             var key = _configuration["Jwt:Key"];
             if (string.IsNullOrWhiteSpace(key))
             {
                 InvalidateCache();
-                return Task.FromResult<string?>(null);
+                return null;
             }
 
             try
@@ -105,16 +123,16 @@ namespace FinanceManager.Web.Infrastructure.Auth
                     var refreshed = IssueToken(principal.Claims, lifetimeMinutes);
                     SetCookie(ctx, refreshed.token, refreshed.expiry);
                     Cache(refreshed.token, refreshed.expiry);
-                    return Task.FromResult<string?>(refreshed.token);
+                    return refreshed.token;
                 }
 
                 Cache(cookie, exp);
-                return Task.FromResult<string?>(cookie);
+                return cookie;
             }
             catch
             {
                 InvalidateCache();
-                return Task.FromResult<string?>(null);
+                return null;
             }
         }
 
