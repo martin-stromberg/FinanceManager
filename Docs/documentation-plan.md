@@ -149,3 +149,99 @@
 | **BUG-1** | `BuildTwrPeriods` nutzt `start` statt `end` für SharesAtEnd → TWR-Ergebnisse fehlerhaft bei mehreren gleichzeitigen Transaktionen | `docs/flows/return-analysis-service.md`, `docs/api/SecuritiesController.md`, `docs/business/features/F017-renditeanalyse.md` |
 | **Prio-2** | Periodische Renditen & Benchmark-Normalisierung Tests fehlen | `docs/business/features/F017-renditeanalyse.md` |
 | **Prio-3** | bUnit UI-Tests für Tab-Komponenten fehlen | `docs/business/features/F017-renditeanalyse.md` |
+
+---
+
+# Dokumentationsplan: Budgetwirkung bei Buchung (2026-05-31)
+
+> Lauf: Vollständige Doku-Aktualisierung für vorhandene Code-Änderungen im Branch  
+> Status: ✅ Abgeschlossen
+
+## Phase 1 – Analyse-Ergebnisse
+
+### API-Dokumentation
+
+| Befund | Ergebnis |
+|---|---|
+| Vorhandene API-Doku | `Docs/api/` mit breiter Controller-Abdeckung vorhanden |
+| Lücken | `HelpController` und `StatementDraftEntriesController` ohne eigene Doku-Datei |
+| Veraltete Datei | `Docs/api/StatementDraftsController.md` zu knapp, ohne Budget-Impact-Erweiterung |
+| Priorität | 🔴 Hoch |
+
+### Flow-Dokumentation
+
+| Befund | Ergebnis |
+|---|---|
+| Vorhandene Flows | Import, Booking, Aggregates, Split, Renditeanalyse dokumentiert |
+| Lücke | Kein dedizierter Ablauf für `BudgetImpactEvaluationService` |
+| Veraltet | `Docs/flows/statement-draft-booking.md` ohne Budget-Impact-Schritt |
+| Priorität | 🔴 Hoch |
+
+### Business-Dokumentation
+
+| Befund | Ergebnis |
+|---|---|
+| Vorhandene Business-Doku | Features F001–F017 vorhanden |
+| Lücke | Kein eigenes Feature-Dokument zur Budgetwirkung während Buchung |
+| Veraltet | `Docs/business/features.md` und `Docs/business/overview.md` ohne neues Verhalten |
+| Priorität | 🔴 Hoch |
+
+### README-Analyse
+
+| Befund | Ergebnis |
+|---|---|
+| Bestand | Projektübersicht vorhanden, aber Struktur uneinheitlich |
+| Lücken | Kein expliziter Abschnitt „Konfiguration“, „Deployment“, „Changelog“ |
+| Veraltet | Budget-Impact-Verhalten in Featureliste fehlt |
+| Priorität | 🟡 Mittel |
+
+## Phase 2 – Umsetzungsplan
+
+### Neu zu erstellen
+
+- `Docs/api/HelpController.md`
+- `Docs/api/StatementDraftEntriesController.md`
+- `Docs/flows/budget-impact-evaluation.md`
+- `Docs/business/features/F018-budgetwirkung-buchung.md`
+
+### Zu aktualisieren
+
+- `Docs/api/StatementDraftsController.md`
+- `Docs/api/README.md`
+- `Docs/flows/statement-draft-booking.md`
+- `Docs/flows/README.md`
+- `Docs/business/features.md`
+- `Docs/business/overview.md`
+- `README.md`
+
+## Ergebnis (Anhang)
+
+### Geprüfte implementierte Änderungen (Code & Tests)
+
+- Neue Services/Verträge:
+  - `FinanceManager.Application/Statements/IBudgetImpactEvaluationService.cs`
+  - `FinanceManager.Infrastructure/Statements/BudgetImpactEvaluationService.cs`
+- Dependency Injection:
+  - Registrierung in `FinanceManager.Infrastructure/ServiceCollectionExtensions.cs`
+- DTO-Erweiterungen:
+  - `FinanceManager.Shared/Dtos/Statements/BudgetImpactDtos.cs`
+  - `FinanceManager.Shared/Dtos/Statements/BudgetImpactHintType.cs`
+  - `StatementDraftEntryDto.BudgetImpact`
+  - `BookingResult.BudgetImpactSummary`
+- API-Verhalten:
+  - `StatementDraftsController` liefert bei Kontakt-/Sparplan-/Save-All-Änderungen nun Entry-Impact
+  - `StatementDraftService.BookAsync(...)` liefert Abschluss-Summary in `BookingResult`
+- Tests:
+  - `FinanceManager.Tests/Statements/BudgetImpactEvaluationServiceTests.cs` deckt Überschreitung + Neutralfall ab
+
+### Dokumentationsstatus nach Umsetzung
+
+- ✅ API, Flow, Business und README für Budget-Impact-Funktion ergänzt/aktualisiert
+- ✅ Dokumentation auf tatsächlich implementiertes Verhalten beschränkt
+- ⚠️ Keine separaten automatischen Doku-Lint- oder Build-Checks im Repository gefunden
+
+### Abschlussprüfung (Orchestrator-Lauf)
+
+- ✅ Alle geplanten Ziel-Dateien existieren und sind nicht leer.
+- ✅ Code-Änderungen und Testklasse zur Budget-Impact-Funktion wurden in der Dokumentation referenziert.
+- ⚠️ `dotnet test` konnte in dieser Umgebung nicht bis zum Abschluss beobachtet werden (Restore/Warnungen sichtbar, danach kein finaler Exit im Tool-Stream).

@@ -1,3 +1,4 @@
+using FinanceManager.Shared.Dtos.Budget;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
@@ -197,5 +198,231 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
         open = await api.StatementDrafts_ListOpenAsync(0, 3);
         open.Should().NotBeNull();
         open.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="BookingResult.BudgetImpactSummary"/> is populated at the client after booking
+    /// a full draft when a matching budget purpose with a rule exists for the booked contact.
+    /// </summary>
+    [Fact]
+    public async Task StatementDrafts_Book_ShouldReturnBudgetImpactSummary_WhenBudgetPurposeExistsForContact()
+    {
+        var api = CreateClient();
+        await EnsureAuthenticatedAsync(api);
+
+        // Arrange: account
+        var acc = await api.CreateAccountAsync(new AccountCreateRequest(
+            Name: "Budget Impact Test Account",
+            Type: AccountType.Giro,
+            Iban: "DE50700500000007882992",
+            BankContactId: null,
+            NewBankContactName: "Test Bank",
+            SymbolAttachmentId: null,
+            SavingsPlanExpectation: SavingsPlanExpectation.Optional,
+            SecurityProcessingEnabled: false));
+
+        // Arrange: contact used as budget source and statement recipient
+        var contact = await api.Contacts_CreateAsync(new ContactCreateRequest(
+            Name: "Budget Contact",
+            Description: null,
+            Type: ContactType.Other,
+            CategoryId: null,
+            IsPaymentIntermediary: false));
+        contact.Should().NotBeNull();
+
+        // Arrange: budget purpose linked to the contact with a monthly rule
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var purpose = await api.Budgets_CreatePurposeAsync(new BudgetPurposeCreateRequest(
+            Name: "Budget Impact Test Purpose",
+            SourceType: BudgetSourceType.Contact,
+            SourceId: contact!.Id,
+            Description: null,
+            BudgetCategoryId: null));
+        purpose.Should().NotBeNull();
+
+        await api.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: purpose.Id,
+            BudgetCategoryId: null,
+            Amount: 500m,
+            Interval: BudgetIntervalType.Monthly,
+            CustomIntervalMonths: null,
+            StartDate: new DateOnly(today.Year, today.Month, 1),
+            EndDate: null));
+
+        // Arrange: upload a statement draft with one entry for that contact
+        var csvIban = acc.Iban;
+        var csv = "Umsatzanzeige;Datei erstellt am: 02.12.2025 19:04\r\n\r\n" +
+                  $"IBAN;{csvIban}\r\n" +
+                  "Kontoname;Girokonto\r\nBank;ING\r\nKunde;Admin\r\n" +
+                  "Zeitraum;02.11.2025 - 02.12.2025\r\nSaldo;2.776,45;EUR\r\n\r\n" +
+                  "Sortierung;Datum absteigend\r\n\r\n\r\n" +
+                  "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\r\n" +
+                  "02.12.2025;02.12.2025;Budget Contact;Überweisung;Einkauf;2.776,45;EUR;-50,00;EUR\r\n";
+        using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
+        var upload = await api.StatementDrafts_UploadAsync(ms, "budget_impact.csv");
+        upload.Should().NotBeNull();
+        var draft = upload!.FirstDraft;
+        draft.Should().NotBeNull();
+
+        // Assign the contact to the single entry
+        var detail = await api.StatementDrafts_GetAsync(draft!.DraftId);
+        detail.Should().NotBeNull();
+        var entryId = detail!.Entries.First().Id;
+        var assign = await api.StatementDrafts_SetEntryContactAsync(draft.DraftId, entryId, new StatementDraftSetContactRequest(contact.Id));
+        assign.Should().NotBeNull();
+
+        // Act: book the full draft
+        var result = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true);
+
+        // Assert: booking succeeded and BudgetImpactSummary is delivered to the client
+        result.Should().NotBeNull();
+        result!.Success.Should().BeTrue();
+        result.BudgetImpactSummary.Should().NotBeNull();
+        result.BudgetImpactSummary!.DraftId.Should().Be(draft.DraftId);
+        result.BudgetImpactSummary.Items.Should().NotBeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="BookingResult.BudgetImpactSummary"/> is populated at the client when booking
+    /// a single entry (partial booking) that has a matching budget purpose for its contact.
+    /// </summary>
+    [Fact]
+    public async Task StatementDrafts_BookEntry_ShouldReturnBudgetImpactSummary_WhenBudgetPurposeExistsForContact()
+    {
+        var api = CreateClient();
+        await EnsureAuthenticatedAsync(api);
+
+        // Arrange: account
+        var acc = await api.CreateAccountAsync(new AccountCreateRequest(
+            Name: "Budget Impact Entry Test Account",
+            Type: AccountType.Giro,
+            Iban: "DE50700500000007882993",
+            BankContactId: null,
+            NewBankContactName: "Test Bank",
+            SymbolAttachmentId: null,
+            SavingsPlanExpectation: SavingsPlanExpectation.Optional,
+            SecurityProcessingEnabled: false));
+
+        // Arrange: contact
+        var contact = await api.Contacts_CreateAsync(new ContactCreateRequest(
+            Name: "Budget Entry Contact",
+            Description: null,
+            Type: ContactType.Other,
+            CategoryId: null,
+            IsPaymentIntermediary: false));
+        contact.Should().NotBeNull();
+
+        // Arrange: budget purpose + rule
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var purpose = await api.Budgets_CreatePurposeAsync(new BudgetPurposeCreateRequest(
+            Name: "Budget Entry Test Purpose",
+            SourceType: BudgetSourceType.Contact,
+            SourceId: contact!.Id,
+            Description: null,
+            BudgetCategoryId: null));
+
+        await api.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: purpose.Id,
+            BudgetCategoryId: null,
+            Amount: 300m,
+            Interval: BudgetIntervalType.Monthly,
+            CustomIntervalMonths: null,
+            StartDate: new DateOnly(today.Year, today.Month, 1),
+            EndDate: null));
+
+        // Arrange: draft with two entries – only the first will be booked individually
+        var csvIban = acc.Iban;
+        var csv = "Umsatzanzeige;Datei erstellt am: 02.12.2025 19:04\r\n\r\n" +
+                  $"IBAN;{csvIban}\r\n" +
+                  "Kontoname;Girokonto\r\nBank;ING\r\nKunde;Admin\r\n" +
+                  "Zeitraum;02.11.2025 - 02.12.2025\r\nSaldo;2.776,45;EUR\r\n\r\n" +
+                  "Sortierung;Datum absteigend\r\n\r\n\r\n" +
+                  "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\r\n" +
+                  "02.12.2025;02.12.2025;Budget Entry Contact;Überweisung;Einkauf 1;2.776,45;EUR;-30,00;EUR\r\n" +
+                  "01.12.2025;01.12.2025;Budget Entry Contact;Überweisung;Einkauf 2;2.826,45;EUR;-20,00;EUR\r\n";
+        using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
+        var upload = await api.StatementDrafts_UploadAsync(ms, "budget_entry_impact.csv");
+        upload.Should().NotBeNull();
+        var draft = upload!.FirstDraft;
+        draft.Should().NotBeNull();
+
+        // Assign the contact to both entries
+        var detail = await api.StatementDrafts_GetAsync(draft!.DraftId);
+        detail.Should().NotBeNull();
+        foreach (var entry in detail!.Entries)
+        {
+            await api.StatementDrafts_SetEntryContactAsync(draft.DraftId, entry.Id, new StatementDraftSetContactRequest(contact.Id));
+        }
+
+        // Act: book only the first entry
+        var firstEntryId = detail.Entries.First().Id;
+        var result = await api.StatementDrafts_BookEntryAsync(draft.DraftId, firstEntryId, forceWarnings: true);
+
+        // Assert: partial booking succeeded and BudgetImpactSummary is delivered to the client
+        result.Should().NotBeNull();
+        result!.Success.Should().BeTrue();
+        result.BudgetImpactSummary.Should().NotBeNull();
+        result.BudgetImpactSummary!.DraftId.Should().Be(draft.DraftId);
+        result.BudgetImpactSummary.EntryId.Should().Be(firstEntryId);
+        result.BudgetImpactSummary.Items.Should().NotBeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="BookingResult.BudgetImpactSummary"/> is null when no budget purpose
+    /// exists for the booked contact.
+    /// </summary>
+    [Fact]
+    public async Task StatementDrafts_Book_ShouldReturnNullBudgetImpactSummary_WhenNoBudgetPurposeExists()
+    {
+        var api = CreateClient();
+        await EnsureAuthenticatedAsync(api);
+
+        // Arrange: account
+        var acc = await api.CreateAccountAsync(new AccountCreateRequest(
+            Name: "No Budget Account",
+            Type: AccountType.Giro,
+            Iban: "DE50700500000007882994",
+            BankContactId: null,
+            NewBankContactName: "Test Bank",
+            SymbolAttachmentId: null,
+            SavingsPlanExpectation: SavingsPlanExpectation.Optional,
+            SecurityProcessingEnabled: false));
+
+        // Arrange: contact without any budget purpose
+        var contact = await api.Contacts_CreateAsync(new ContactCreateRequest(
+            Name: "No Budget Contact",
+            Description: null,
+            Type: ContactType.Other,
+            CategoryId: null,
+            IsPaymentIntermediary: false));
+        contact.Should().NotBeNull();
+
+        // Arrange: upload draft
+        var csvIban = acc.Iban;
+        var csv = "Umsatzanzeige;Datei erstellt am: 02.12.2025 19:04\r\n\r\n" +
+                  $"IBAN;{csvIban}\r\n" +
+                  "Kontoname;Girokonto\r\nBank;ING\r\nKunde;Admin\r\n" +
+                  "Zeitraum;02.11.2025 - 02.12.2025\r\nSaldo;2.776,45;EUR\r\n\r\n" +
+                  "Sortierung;Datum absteigend\r\n\r\n\r\n" +
+                  "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\r\n" +
+                  "02.12.2025;02.12.2025;No Budget Contact;Überweisung;Zahlung;2.776,45;EUR;-10,00;EUR\r\n";
+        using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
+        var upload = await api.StatementDrafts_UploadAsync(ms, "no_budget.csv");
+        upload.Should().NotBeNull();
+        var draft = upload!.FirstDraft;
+        draft.Should().NotBeNull();
+
+        var detail = await api.StatementDrafts_GetAsync(draft!.DraftId);
+        detail.Should().NotBeNull();
+        var entryId = detail!.Entries.First().Id;
+        await api.StatementDrafts_SetEntryContactAsync(draft.DraftId, entryId, new StatementDraftSetContactRequest(contact!.Id));
+
+        // Act
+        var result = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true);
+
+        // Assert: booking succeeded but no budget impact summary
+        result.Should().NotBeNull();
+        result!.Success.Should().BeTrue();
+        result.BudgetImpactSummary.Should().BeNull();
     }
 }

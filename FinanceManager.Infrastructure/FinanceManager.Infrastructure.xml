@@ -3989,6 +3989,22 @@
             calling <c>db.Database.Migrate()</c>. It may enqueue background tasks to rebuild aggregates if needed.
             </summary>
         </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.BudgetImpactEvaluationService">
+            <summary>
+            Calculates real-time and final budget impact projections for statement draft booking flows.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.BudgetImpactEvaluationService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Budget.IBudgetPlanningService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.BudgetImpactEvaluationService})">
+            <summary>
+            Initializes a new instance of <see cref="T:FinanceManager.Infrastructure.Statements.BudgetImpactEvaluationService"/>.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.BudgetImpactEvaluationService.EvaluateEntryImpactAsync(System.Guid,System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.BudgetImpactEvaluationService.EvaluateDraftImpactAsync(System.Guid,System.Nullable{System.Guid},System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Files.Barclays_PDF_StatementFile">
             <summary>
             Represents a PDF statement file specific to Barclays bank, providing parsing logic tailored to Barclays
@@ -5093,7 +5109,7 @@
         <member name="P:FinanceManager.Infrastructure.Statements.StatementDraftService.ImportSplitInfo.MonthlyThreshold">
             <summary>Threshold used to decide monthly splitting.</summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Aggregates.IPostingAggregateService,FinanceManager.Application.Accounts.IAccountService,FinanceManager.Infrastructure.Statements.Files.IStatementFileFactory,System.Collections.Generic.IEnumerable{FinanceManager.Infrastructure.Statements.Parsers.IStatementFileParser},Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.StatementDraftService},FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.Budget.IReportCacheService)">
+        <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Aggregates.IPostingAggregateService,FinanceManager.Application.Accounts.IAccountService,FinanceManager.Infrastructure.Statements.Files.IStatementFileFactory,System.Collections.Generic.IEnumerable{FinanceManager.Infrastructure.Statements.Parsers.IStatementFileParser},Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.StatementDraftService},FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.Budget.IReportCacheService,FinanceManager.Application.Statements.IBudgetImpactEvaluationService)">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Statements.StatementDraftService"/> class.
             </summary>

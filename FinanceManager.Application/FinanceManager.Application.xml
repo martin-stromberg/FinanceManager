@@ -2535,6 +2535,21 @@
             Human-readable error message (may be localized by the caller).
             </summary>
         </member>
+        <member name="T:FinanceManager.Application.Statements.IBudgetImpactEvaluationService">
+            <summary>
+            Evaluates budget impact for statement draft interactions and booking completion.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IBudgetImpactEvaluationService.EvaluateEntryImpactAsync(System.Guid,System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Evaluates budget impact for a single draft entry.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IBudgetImpactEvaluationService.EvaluateDraftImpactAsync(System.Guid,System.Nullable{System.Guid},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Evaluates budget impact summary for final booking scope.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Application.Statements.IStatementDraftService">
             <summary>
             Service to create and manage statement import drafts and their entries.

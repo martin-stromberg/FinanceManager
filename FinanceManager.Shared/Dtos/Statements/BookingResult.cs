@@ -9,4 +9,10 @@ namespace FinanceManager.Shared.Dtos.Statements;
 /// <param name="StatementImportId">Identifier of created statement import, if any.</param>
 /// <param name="TotalEntries">Number of booked entries.</param>
 /// <param name="nextDraftId">Id of next draft to process (navigation helper).</param>
-public sealed record BookingResult(bool Success, bool HasWarnings, DraftValidationResultDto Validation, Guid? StatementImportId, int? TotalEntries, Guid? nextDraftId);
+public sealed record BookingResult(bool Success, bool HasWarnings, DraftValidationResultDto Validation, Guid? StatementImportId, int? TotalEntries, Guid? nextDraftId)
+{
+    /// <summary>
+    /// Optional booking summary containing final budget impact details.
+    /// </summary>
+    public BookingImpactSummaryDto? BudgetImpactSummary { get; init; }
+}

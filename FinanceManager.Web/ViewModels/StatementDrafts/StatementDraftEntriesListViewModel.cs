@@ -254,7 +254,8 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
                 RecipientName = d.RecipientName,
                     Subject = d.Subject,
                     BookingDescription = d.BookingDescription,
-                Status = d.Status
+                Status = d.Status,
+                BudgetImpact = d.BudgetImpact
             }).ToList();
 
             Items.AddRange(pageItems);

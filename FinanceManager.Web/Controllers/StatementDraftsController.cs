@@ -39,6 +39,7 @@ public sealed class StatementDraftsController : ControllerBase
     private readonly IStringLocalizer<Controller> _localizer;
     private readonly IBackgroundTaskManager _taskManager; // unified background task system
     private readonly IAttachmentService _attachments; // new
+    private readonly IBudgetImpactEvaluationService? _budgetImpact;
 
     /// <summary>
     /// Initializes a new instance of <see cref="StatementDraftsController"/>.
@@ -55,7 +56,8 @@ public sealed class StatementDraftsController : ControllerBase
         ILogger<StatementDraftsController> logger,
         IStringLocalizer<Controller> localizer,
         IBackgroundTaskManager taskManager,
-        IAttachmentService attachments)
+        IAttachmentService attachments,
+        IBudgetImpactEvaluationService? budgetImpact = null)
     {
         _drafts = drafts;
         _current = current;
@@ -63,6 +65,7 @@ public sealed class StatementDraftsController : ControllerBase
         _localizer = localizer;
         _taskManager = taskManager;
         _attachments = attachments;
+        _budgetImpact = budgetImpact;
     }
 
     /// <summary>
@@ -445,7 +448,8 @@ public sealed class StatementDraftsController : ControllerBase
         var draft = await _drafts.SetEntryContactAsync(draftId, entryId, body.ContactId, _current.UserId, ct);
         if (draft == null) { return NotFound(); }
         var entry = draft.Entries.First(e => e.Id == entryId);
-        return Ok(entry);
+        var impact = _budgetImpact == null ? null : await _budgetImpact.EvaluateEntryImpactAsync(draftId, entryId, _current.UserId, ct);
+        return Ok(entry with { BudgetImpact = impact });
     }
 
     /// <summary>
@@ -481,7 +485,8 @@ public sealed class StatementDraftsController : ControllerBase
         var draft = await _drafts.AssignSavingsPlanAsync(draftId, entryId, body.SavingsPlanId, _current.UserId, ct);
         if (draft == null) { return NotFound(); }
         var entry = draft.Entries.First(e => e.Id == entryId);
-        return Ok(entry);
+        var impact = _budgetImpact == null ? null : await _budgetImpact.EvaluateEntryImpactAsync(draftId, entryId, _current.UserId, ct);
+        return Ok(entry with { BudgetImpact = impact });
     }
 
     /// <summary>
@@ -744,7 +749,9 @@ public sealed class StatementDraftsController : ControllerBase
                 body.TaxAmount,
                 ct);
 
-            return dto == null ? NotFound() : Ok(dto);
+            if (dto == null) { return NotFound(); }
+            var impact = _budgetImpact == null ? null : await _budgetImpact.EvaluateEntryImpactAsync(draftId, entryId, _current.UserId, ct);
+            return Ok(dto with { BudgetImpact = impact });
         }
         catch (DomainValidationException dex)
         {

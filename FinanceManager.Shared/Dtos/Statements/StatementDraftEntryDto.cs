@@ -25,4 +25,10 @@ public sealed record StatementDraftEntryDto(
     decimal? SecurityQuantity,
     decimal? SecurityFeeAmount,
     decimal? SecurityTaxAmount
-);
+)
+{
+    /// <summary>
+    /// Optional real-time budget impact evaluation for this entry.
+    /// </summary>
+    public BudgetImpactEvaluationDto? BudgetImpact { get; init; }
+}

@@ -15,6 +15,26 @@
             uncategorized transactions.</remarks>
         </member>
         <!-- Badly formed XML comment ignored for member "M:FinanceManager.Tests.Budget.BudgetReportServiceTests.Test_GetRawData_ForEntireMonthAsync" -->
+        <member name="M:FinanceManager.Tests.Components.ValidationResultPanelTests.GeneralMessage_WithRelatedRecord_RendersCardLink">
+            <summary>
+            Ensures that a general validation message with related-record metadata renders a card link.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Components.ValidationResultPanelTests.EntrySpecificMessage_WithRelatedRecord_DoesNotRenderCardLink">
+            <summary>
+            Ensures that entry-specific messages are not treated as general hints in the panel.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Auth.JwtCookieAuthTokenProviderTests.GetAccessTokenAsync_ShouldPreferRequestCookie_WhenCacheContainsDifferentToken">
+            <summary>
+            Ensures that an available request cookie takes precedence over a still-valid cached token.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Auth.JwtCookieAuthTokenProviderTests.GetAccessTokenAsync_ShouldReturnCachedToken_WhenHttpContextIsUnavailable">
+            <summary>
+            Ensures that the provider can continue using a valid cached token when no HTTP context is available.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Tests.Infrastructure.Budget.ReportCacheServiceTests">
             <summary>
             Tests for <see cref="T:FinanceManager.Infrastructure.Budget.ReportCacheService"/> cache invalidation behaviors.

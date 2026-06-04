@@ -31,12 +31,13 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 | F015 | Datensicherung | Backup und Wiederherstellung von Daten | 🔄 In Bearbeitung |
 | F016 | Berichte & Dashboards | Finanzielle Übersichtsberichte und Auswertungen | ✅ Dokumentiert |
 | F017 | Wertpapier-Renditeanalyse | Performance-Analyse mit TWR, IRR, CAGR, Sharpe Ratio, Max. Drawdown | 🔄 In Bearbeitung |
+| F018 | Budgetwirkung bei Buchung | Sofort-Hinweise und Abschluss-Summary zur Budgetauswirkung beim Buchen von Draft-Entries | ✅ Dokumentiert |
 
 ---
 
 ## Status der Dokumentation
 
-**Web Layer (Agent 1):** ✅ 9 Features dokumentiert
+**Web Layer (Agent 1):** ✅ 10 Features dokumentiert
 - F001 – Kontenübersicht (Benutzer-Perspektive)
 - F002 – Kontenverwaltung
 - F003 – Ausgabenverwaltung (Benutzer-Perspektive)
@@ -46,6 +47,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 - F012 – Kontakte (Benutzer-Perspektive)
 - F014 – Benutzereinstellungen
 - F016 – Berichte & Dashboards
+- F018 – Budgetwirkung bei Buchung
 
 **Application Layer (Agent 2):** ✅ 7 Features dokumentiert
 - F005 – Automatische Kategorisierung
@@ -70,7 +72,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 - F012 – Kontakte (Contact-Entität, Self-Contact, Kontakt-Gruppen)
 - F017 – Wertpapier-Renditeanalyse (Kennzahlen, FIFO, Sicherheitsregeln) 🔄
 
-**Gesamtfortschritt:** 🔄 In Bearbeitung – 16 von 17 Features vollständig dokumentiert (F017 in Bearbeitung)
+**Gesamtfortschritt:** 🔄 In Bearbeitung – 17 von 18 Features vollständig dokumentiert (F017 in Bearbeitung)
 
 **Dokumentations-Art:**
 - **Benutzer-Perspektive** (Web Layer): Schritt-für-Schritt für Endbenutzer
@@ -78,7 +80,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 - **Technische Perspektive** (Infrastructure Layer): Externe APIs, Datenformate, Integration
 - **Domain-Perspektive** (Domain Layer): Datenmodelle, Geschäftsregeln, Aggregates
 
-**Letzte Aktualisierung**: 15.07.2025
+**Letzte Aktualisierung**: 31.05.2026
 
 ---
 

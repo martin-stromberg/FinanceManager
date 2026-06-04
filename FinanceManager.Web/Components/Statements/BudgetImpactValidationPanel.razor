@@ -1,0 +1,54 @@
+@using FinanceManager.Shared.Dtos.Statements
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
+
+@if (ValidationResult?.BudgetImpact == null || ValidationResult.BudgetImpact.Items == null || ValidationResult.BudgetImpact.Items.Count == 0)
+{
+}
+else
+{
+    <details style="margin-top:1rem;padding:.75rem;border:1px solid var(--border);border-radius:6px;background:var(--panel-bg);">
+        <summary style="cursor:pointer;font-weight:600;list-style:none;">
+            @(Localizer?["BudgetImpact_SummaryHeader"] ?? "Budget changes")
+            <span style="font-weight:400;opacity:.8;">(@ValidationResult.BudgetImpact.Items.Count)</span>
+        </summary>
+        <div style="margin-top:.75rem;display:flex;flex-direction:column;gap:.5rem;">
+            @foreach (var hint in ValidationResult.BudgetImpact.Items)
+            {
+                var iconName = hint.HintType switch
+                {
+                    BudgetImpactHintType.Exceeded => "alert-circle",
+                    BudgetImpactHintType.AlmostExhausted => "alert-triangle",
+                    BudgetImpactHintType.StronglyChanged => "info",
+                    _ => "info"
+                };
+                var colorClass = hint.HintType switch
+                {
+                    BudgetImpactHintType.Exceeded => "color:var(--error-color,#c0392b);",
+                    BudgetImpactHintType.AlmostExhausted => "color:var(--warning-color,#f39c12);",
+                    BudgetImpactHintType.StronglyChanged => "color:var(--info-color,#3498db);",
+                    _ => ""
+                };
+
+                <div style="display:flex;align-items:start;gap:.5rem;@colorClass">
+                    <svg style="width:1.25rem;height:1.25rem;flex-shrink:0;margin-top:.125rem;"><use href="/icons/sprite.svg#@iconName" /></svg>
+                    <div style="flex:1;">
+                        <div style="font-weight:600;">@hint.BudgetPurposeName (@hint.BudgetPeriod)</div>
+                        <div style="margin-top:.25rem;">
+                            <span>@(Localizer?["BudgetImpact_Before"] ?? "Before"): @hint.ActualBefore.ToString("C")</span>
+                            <span style="margin-left:.75rem;">@(Localizer?["BudgetImpact_After"] ?? "After"): @hint.ActualAfter.ToString("C")</span>
+                            <span style="margin-left:.75rem;">@(Localizer?["BudgetImpact_FulfillmentChange"] ?? "Change in target fulfillment"): @hint.Delta.ToString("P0")</span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(hint.Reason))
+                        {
+                            <div style="margin-top:.25rem;font-size:.9rem;opacity:.85;">@hint.Reason</div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </details>
+}
+
+@code {
+    [Parameter] public DraftValidationResultDto? ValidationResult { get; set; }
+}

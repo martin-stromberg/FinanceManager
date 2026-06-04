@@ -28,15 +28,21 @@ public sealed class ValidationResultPanelTests : BunitContext
 
         var result = new DraftValidationResultDto(
             draftId,
-            isValid: true,
+            true,
             new List<DraftValidationMessageDto>
             {
                 new("SAVINGSPLAN_DUE", "Information", "Sparplan ist faellig.", draftId, null, "savings-plans", relatedId)
             });
 
         // Act
-        var cut = RenderComponent<ValidationResultPanel>(parameters => parameters
-            .Add(p => p.ValidationResult, result));
+        RenderFragment fragment = builder =>
+        {
+            builder.OpenComponent(0, typeof(ValidationResultPanel));
+            builder.AddAttribute(1, nameof(ValidationResultPanel.ValidationResult), result);
+            builder.CloseComponent();
+        };
+
+        var cut = Render(fragment);
 
         // Assert
         var links = cut.FindAll("a");
@@ -60,15 +66,21 @@ public sealed class ValidationResultPanelTests : BunitContext
         var relatedId = Guid.NewGuid();
         var result = new DraftValidationResultDto(
             draftId,
-            isValid: false,
+            false,
             new List<DraftValidationMessageDto>
             {
                 new("ENTRY_HINT", "Information", "Entry-specific hint.", draftId, entryId, "savings-plans", relatedId)
             });
 
         // Act
-        var cut = RenderComponent<ValidationResultPanel>(parameters => parameters
-            .Add(p => p.ValidationResult, result));
+        RenderFragment fragment = builder =>
+        {
+            builder.OpenComponent(0, typeof(ValidationResultPanel));
+            builder.AddAttribute(1, nameof(ValidationResultPanel.ValidationResult), result);
+            builder.CloseComponent();
+        };
+
+        var cut = Render(fragment);
 
         // Assert
         Assert.Empty(cut.FindAll("a"));

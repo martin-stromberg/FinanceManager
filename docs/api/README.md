@@ -224,6 +224,8 @@ The FinanceManager API is organized into the following categories:
 | [Savings Plans](./endpoints.md#savings-plans) | Savings plan management | 10+ endpoints |
 | [Savings Plan Categories](./endpoints.md#savings-plan-categories) | Savings plan category CRUD | 5 endpoints |
 | [Statement Drafts](./endpoints.md#statement-drafts) | Import draft management | 8+ endpoints |
+| [Statement Draft Entries](./StatementDraftEntriesController.md) | Batch updates für Quick-Edit in Draft-Entries | 1 endpoint |
+| [Help](./HelpController.md) | Auslieferung von Hilfe-HTML/Markdown und Suchindex | 3 endpoints |
 | [Reports](./endpoints.md#reports) | Portfolio and financial reports | 5+ endpoints |
 | [Backups](./endpoints.md#backups) | Database backup/restore | 5 endpoints |
 | [Background Tasks](./endpoints.md#background-tasks) | Async task management | 4 endpoints |
