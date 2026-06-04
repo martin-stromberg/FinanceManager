@@ -155,7 +155,124 @@ For full request/response models used by `StatementDraftsController` see `docs/a
 
 ---
 
-If you want I can:
-- expand DTO schemas with formal property types and nullable annotations,
-- generate a machine-readable JSON Schema or OpenAPI components snippet for the models above,
-- or add the remaining domain DTOs (Postings, SavingsPlan, Security) to this file.
+## PostingServiceDto (response)
+Extended posting representation returned by all posting query endpoints.
+
+Properties
+- `id` (GUID) — unique posting identifier
+- `bookingDate` (string, ISO 8601) — booking date
+- `valutaDate` (string, ISO 8601) — valuta / value date
+- `amount` (decimal) — posting amount (negative = debit)
+- `kind` (int) — enum `PostingKind` (0 = Bank, 1 = Contact, 2 = SavingsPlan, 3 = Security)
+- `accountId` (GUID?) — bank account id, or `null`
+- `contactId` (GUID?) — contact id, or `null`
+- `savingsPlanId` (GUID?) — savings plan id, or `null`
+- `securityId` (GUID?) — security id, or `null`
+- `sourceId` (GUID) — original domain source id for traceability
+- `subject` (string?) — subject / title
+- `recipientName` (string?) — counterparty name
+- `description` (string?) — additional booking description
+- `securitySubType` (int?) — enum `SecurityPostingSubType`, only set for security postings
+- `quantity` (decimal?) — share quantity, only set for security postings
+- `groupId` (GUID) — group id connecting related postings (empty GUID when ungrouped)
+- `linkedPostingId` (GUID?) — counterpart posting id
+- `linkedPostingKind` (int?) — counterpart posting kind
+- `linkedPostingAccountId` (GUID?) — counterpart posting account id
+- `linkedPostingAccountSymbolAttachmentId` (GUID?) — counterpart account symbol
+- `linkedPostingAccountName` (string?) — counterpart account name
+- `bankPostingAccountId` (GUID?) — bank posting account id for the group
+- `bankPostingAccountSymbolAttachmentId` (GUID?) — bank posting account symbol
+- `bankPostingAccountName` (string?) — bank posting account name
+- `isReversed` (bool) — `true` when a reversal counter-posting exists for this posting *(added in feature 140)*
+- `isReversal` (bool) — `true` when this posting itself is a reversal / counter-posting *(added in feature 140)*
+- `reversedByPostingId` (GUID?) — ID of the reversal counter-posting; populated when `isReversed = true` *(added in feature 140)*
+- `reversalForPostingId` (GUID?) — ID of the original posting this reversal cancels; populated when `isReversal = true` *(added in feature 140)*
+
+Example
+```json
+{
+  "id": "a1b2c3d4-0000-0000-0000-000000000001",
+  "bookingDate": "2025-03-15T00:00:00Z",
+  "valutaDate": "2025-03-15T00:00:00Z",
+  "amount": -250.00,
+  "kind": 0,
+  "accountId": "550e8400-e29b-41d4-a716-446655440000",
+  "contactId": null,
+  "savingsPlanId": null,
+  "securityId": null,
+  "sourceId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+  "subject": "Monthly rent",
+  "recipientName": "Landlord GmbH",
+  "description": "SEPA direct debit",
+  "securitySubType": null,
+  "quantity": null,
+  "groupId": "00000000-0000-0000-0000-000000000000",
+  "linkedPostingId": null,
+  "linkedPostingKind": null,
+  "linkedPostingAccountId": null,
+  "linkedPostingAccountSymbolAttachmentId": null,
+  "linkedPostingAccountName": null,
+  "bankPostingAccountId": null,
+  "bankPostingAccountSymbolAttachmentId": null,
+  "bankPostingAccountName": null,
+  "isReversed": false,
+  "isReversal": false,
+  "reversedByPostingId": null,
+  "reversalForPostingId": null
+}
+```
+
+---
+
+## ReversalResultDto (response)
+Result of a successful `POST /api/postings/{id}/reverse` call.  
+See [PostingsController – Reverse a Posting](./PostingsController.md#2-reverse-a-posting).
+
+Properties
+- `reversedPostingIds` (GUID[]) — IDs of the original postings that were reversed *(required)*
+- `createdReversalIds` (GUID[]) — IDs of the newly created reversal / counter-postings *(required)*
+- `statementImportId` (GUID) — ID of the statement import created for reconciliation *(required)*
+
+Example
+```json
+{
+  "reversedPostingIds": [
+    "a1b2c3d4-0000-0000-0000-000000000001",
+    "a1b2c3d4-0000-0000-0000-000000000002"
+  ],
+  "createdReversalIds": [
+    "bbbbbbbb-0000-0000-0000-000000000001",
+    "bbbbbbbb-0000-0000-0000-000000000002"
+  ],
+  "statementImportId": "cccccccc-0000-0000-0000-000000000001"
+}
+```
+
+---
+
+## ReversalValidationDto (response)
+Validation result returned by `GET /api/postings/{id}/validate-reversal`.  
+See [PostingsController – Validate Posting Reversal](./PostingsController.md#3-validate-posting-reversal).
+
+Properties
+- `isValid` (bool) — `true` when the reversal can proceed without errors *(required)*
+- `errors` (string[]) — list of human-readable validation error messages; empty when `isValid = true` *(required)*
+
+Example – valid
+```json
+{
+  "isValid": true,
+  "errors": []
+}
+```
+
+Example – invalid
+```json
+{
+  "isValid": false,
+  "errors": [
+    "This posting has already been reversed.",
+    "A reversal posting cannot itself be reversed."
+  ]
+}
+```

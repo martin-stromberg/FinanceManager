@@ -25,6 +25,53 @@
             Ensures that entry-specific messages are not treated as general hints in the panel.
             </summary>
         </member>
+        <member name="T:FinanceManager.Tests.Postings.PostingBackupDtoReversalTests">
+            <summary>
+            Unit tests for the <see cref="!:PostingBackupDto"/> roundtrip via <c>ToBackupDto</c> and <c>AssignBackupDto</c>.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Postings.PostingBackupDtoReversalTests.ToBackupDto_AndAssignBackupDto_ShouldPreserveReversalFields">
+            <summary>
+            L36 – ToBackupDto captures reversal fields; AssignBackupDto restores them exactly.
+            A posting with reversal metadata must survive a full backup/restore roundtrip without data loss.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.Postings.PostingReversalDomainTests">
+            <summary>
+            Pure domain-layer unit tests for posting reversal state on the <see cref="T:FinanceManager.Domain.Postings.Posting"/> entity.
+            No infrastructure dependencies – all assertions operate on in-memory objects only.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Postings.PostingReversalDomainTests.SetReversedBy_ShouldSetReversedProperties">
+            <summary>
+            L22 – SetReversedBy marks the posting as reversed and stores the reversal posting id and user id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Postings.PostingReversalDomainTests.SetReversalFor_ShouldSetReversalProperties">
+            <summary>
+            L23 – SetReversalFor marks the posting as a reversal and links it to the original posting.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Postings.PostingReversalDomainTests.IsReversed_ShouldBeFalse_ForFreshPosting">
+            <summary>
+            L24 – IsReversed returns false on a fresh posting that has never been reversed.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Postings.PostingReversalDomainTests.IsReversal_ShouldBeFalse_ForFreshPosting">
+            <summary>
+            L25 – IsReversal returns false on a fresh posting that was not created as a reversal.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Postings.PostingReversalDomainTests.SetReversedBy_ShouldThrow_WhenAlreadyReversed">
+            <summary>
+            L26 – SetReversedBy throws InvalidOperationException when called on a posting that is already reversed.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Postings.PostingReversalDomainTests.SetReversalFor_ShouldThrow_WhenAlreadyAReversal">
+            <summary>
+            L27 – SetReversalFor throws InvalidOperationException when called on a posting that is already a reversal.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Tests.Infrastructure.Auth.JwtCookieAuthTokenProviderTests.GetAccessTokenAsync_ShouldPreferRequestCookie_WhenCacheContainsDifferentToken">
             <summary>
             Ensures that an available request cookie takes precedence over a still-valid cached token.
@@ -109,6 +156,85 @@
             <summary>
             GetRelatedPostingsAsync returns all group members except the queried posting itself.
             Postings in different groups must not be included.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Postings.PostingReversalServiceTests.CanReverseAsync_ShouldReturnInvalid_WhenPostingNotFound">
+            <summary>
+            L07 – CanReverseAsync returns invalid (not found) for a posting that does not exist.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Postings.PostingReversalServiceTests.CanReverseAsync_ShouldReturnInvalid_WhenUserIsNotOwner">
+            <summary>
+            L08 – CanReverseAsync returns invalid (not authorized) when the user does not own the posting's account.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Postings.PostingReversalServiceTests.CanReverseAsync_ShouldReturnInvalid_WhenAlreadyReversed">
+            <summary>
+            L09 – CanReverseAsync returns invalid (already reversed) when the posting has been reversed.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Postings.PostingReversalServiceTests.CanReverseAsync_ShouldReturnInvalid_WhenPostingIsReversal">
+            <summary>
+            L10 – CanReverseAsync returns invalid (is reversal) when the posting is itself a reversal.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Postings.PostingReversalServiceTests.CanReverseAsync_ShouldReturnInvalid_WhenGroupIsPartiallyReversed">
+            <summary>
+            L11 – CanReverseAsync returns invalid (partially reversed) when only some members of the group are reversed.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Postings.PostingReversalServiceTests.ReversePostingAsync_ShouldCreateReversalWithNegatedAmount">
+            <summary>
+            L12 – ReversePostingAsync creates a reversal posting with negated amount and correct subject prefix.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Postings.PostingReversalServiceTests.ReversePostingAsync_ShouldMarkOriginalPostingAsReversed">
+            <summary>
+            L13 – ReversePostingAsync marks the original posting with ReversedByPostingId and ReversedByUserId.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Postings.PostingReversalServiceTests.ReversePostingAsync_ShouldSetReversalForPostingId_OnReversalPosting">
+            <summary>
+            L14 – ReversePostingAsync links the new reversal posting back to the original via ReversalForPostingId.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Postings.PostingReversalServiceTests.ReversePostingAsync_ShouldCreateStatementImport">
+            <summary>
+            L15 – ReversePostingAsync creates a StatementImport record for the reversal.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Postings.PostingReversalServiceTests.ReversePostingAsync_ShouldReturnReversedPostingIds_InResult">
+            <summary>
+            L16 – ReversePostingAsync result contains the IDs of all reversed original postings.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Postings.PostingReversalServiceTests.CanReverseAsync_ShouldThrow_WhenPostingHasNoAccount">
+            <summary>
+            L17 – When the posting has no AccountId, ownership cannot be determined and
+            CanReverseAsync throws InvalidOperationException with a message referencing the missing account.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Postings.PostingReversalServiceTests.ReversePostingAsync_ShouldAssignSharedGroupId_ToAllReversalPostings">
+            <summary>
+            L18 – ReversePostingAsync for a group assigns a new shared GroupId to all reversal postings.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Postings.PostingReversalServiceTests.ReversePostingAsync_ShouldBookReversalIntoSameAccount">
+            <summary>
+            L19 – ReversePostingAsync books the reversal into a new StatementImport in the same account.
+            The created StatementImport must reference the account of the original posting.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Postings.PostingReversalServiceTests.ReversePostingAsync_ShouldReverseExactlyOnePosting_WhenPostingHasNoGroup">
+            <summary>
+            L20 – ReversePostingAsync on a solo posting (no GroupId) reverses exactly one posting.
+            A posting created without SetGroup() is treated as ungrouped.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Postings.PostingReversalServiceTests.GetRelatedPostingsAsync_ShouldReturnEmpty_WhenPostingHasGroupIdEmpty">
+            <summary>
+            L21 – BUG: GetRelatedPostingsAsync with GroupId == Guid.Empty returns all ungrouped postings
+            instead of an empty list. This test documents the known defect without causing CI failures.
             </summary>
         </member>
         <member name="T:FinanceManager.Tests.Infrastructure.Statements.Files.ING_PdfStatementFileTests">
@@ -1330,6 +1456,61 @@
         </member>
         <member name="M:FinanceManager.Tests.TestHelpers.TestReturnAnalysisLocalizer.Format(System.String,System.Object[])">
             <inheritdoc/>
+        </member>
+        <member name="T:FinanceManager.Tests.ViewModels.PostingsCardViewModelReversalTests">
+            <summary>
+            Unit tests for reversal-related behaviour in <see cref="T:FinanceManager.Web.ViewModels.Postings.Common.PostingsCardViewModel"/>.
+            Covers ribbon state, ReverseAsync navigation, and error propagation.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.ViewModels.PostingsCardViewModelReversalTests.GetRibbonRegisters_ReverseAction_ShouldBeEnabled_ForNormalPosting">
+            <summary>
+            L28 – Ribbon "Reverse" action is enabled (Disabled == false) when the posting is neither
+            reversed nor a reversal itself.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.ViewModels.PostingsCardViewModelReversalTests.GetRibbonRegisters_ReverseAction_ShouldBeDisabled_WhenPostingIsReversed">
+            <summary>
+            L29 – Ribbon "Reverse" action is disabled when the posting has already been reversed.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.ViewModels.PostingsCardViewModelReversalTests.GetRibbonRegisters_ReverseAction_ShouldBeDisabled_WhenPostingIsReversal">
+            <summary>
+            L30 – Ribbon "Reverse" action is disabled when the posting is itself a reversal posting.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.ViewModels.PostingsCardViewModelReversalTests.ReverseAsync_ShouldRaiseNavigateToPostingAction_OnSuccess">
+            <summary>
+            L31 – When the API reversal call succeeds, a NavigateToPosting UiAction is raised with the new reversal id.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.ViewModels.PostingsCardViewModelReversalTests.ReverseAsync_ShouldSetLastError_WhenApiFails">
+            <summary>
+            L32 – When the API reversal call fails (returns null), LastError is populated from the API client's
+            error properties and no navigation event is raised.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.ViewModels.PostingsListReversalColumnTests">
+            <summary>
+            Unit tests for the storno column rendered by <see cref="T:FinanceManager.Web.ViewModels.Postings.AccountPostingsListViewModel"/>
+            (via the shared <c>BuildRecords</c> logic in <c>BasePostingsListViewModel</c>).
+            Storno column is the last cell (index 7) in every <see cref="T:FinanceManager.Web.ViewModels.Common.ListRecord"/>.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.ViewModels.PostingsListReversalColumnTests.BuildRecords_StornoCell_ShouldShowCheckmark_ForReversalPosting">
+            <summary>
+            L33 – The storno cell displays "✓" for a posting that is itself a reversal.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.ViewModels.PostingsListReversalColumnTests.BuildRecords_StornoCell_ShouldShowDash_ForReversedPosting">
+            <summary>
+            L34 – The storno cell displays "—" for a posting that has been reversed (but is not itself a reversal).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.ViewModels.PostingsListReversalColumnTests.BuildRecords_StornoCell_ShouldBeEmpty_ForNormalPosting">
+            <summary>
+            L35 – The storno cell is empty for a normal posting (neither reversed nor a reversal).
+            </summary>
         </member>
         <member name="M:FinanceManager.Tests.ViewModels.PostingsSecurityViewModelTests.GetQuantityCell(FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel,FinanceManager.Web.ViewModels.Common.ListRecord)">
             <summary>Returns the Quantity cell from a record by looking up the column index.</summary>

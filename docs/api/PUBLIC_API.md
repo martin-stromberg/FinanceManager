@@ -428,7 +428,7 @@ Manage contacts (persons, companies, banks, etc.) for the current user.
 
 ### Postings
 
-Query, filter, and export financial postings across all accounts, contacts, and securities.
+Query, filter, export, and reverse financial postings across all accounts, contacts, and securities.
 
 #### Get Single Posting
 
@@ -442,24 +442,139 @@ Query, filter, and export financial postings across all accounts, contacts, and 
 **Response (200 OK):**
 ```json
 {
-  "id": "uuid",
-  "date": "date",
-  "amount": "decimal",
-  "description": "string",
-  "kind": "string (Bank|Manual|Security|SavingsPlan)",
-  "accountId": "uuid (optional)",
-  "contactId": "uuid (optional)",
-  "savingsPlanId": "uuid (optional)",
-  "securityId": "uuid (optional)",
-  "linkedPostingId": "uuid (optional)",
-  "groupId": "uuid (optional)",
-  "sourceId": "uuid (optional)"
+  "id": "a1b2c3d4-0000-0000-0000-000000000001",
+  "bookingDate": "2025-03-15T00:00:00Z",
+  "valutaDate": "2025-03-15T00:00:00Z",
+  "amount": -250.00,
+  "kind": 0,
+  "accountId": "550e8400-e29b-41d4-a716-446655440000",
+  "contactId": null,
+  "savingsPlanId": null,
+  "securityId": null,
+  "sourceId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+  "subject": "Monthly rent",
+  "recipientName": "Landlord GmbH",
+  "description": "SEPA direct debit",
+  "securitySubType": null,
+  "quantity": null,
+  "groupId": "00000000-0000-0000-0000-000000000000",
+  "linkedPostingId": null,
+  "linkedPostingKind": null,
+  "linkedPostingAccountId": null,
+  "linkedPostingAccountSymbolAttachmentId": null,
+  "linkedPostingAccountName": null,
+  "bankPostingAccountId": null,
+  "bankPostingAccountSymbolAttachmentId": null,
+  "bankPostingAccountName": null,
+  "isReversed": false,
+  "isReversal": false,
+  "reversedByPostingId": null,
+  "reversalForPostingId": null
 }
 ```
 
 **Status Codes:**
 - `200 OK` - Posting found
 - `404 Not Found` - Posting not found or not owned by current user
+
+---
+
+#### Validate Posting Reversal
+
+Checks whether a posting can be reversed. Call this before showing a confirmation UI.
+
+**Endpoint:** `GET /postings/{id}/validate-reversal`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `id` (uuid, required) - Posting identifier
+
+**Response (200 OK):**
+```json
+{
+  "isValid": true,
+  "errors": []
+}
+```
+
+**Response (200 OK) – when reversal is not possible:**
+```json
+{
+  "isValid": false,
+  "errors": [
+    "This posting has already been reversed."
+  ]
+}
+```
+
+**Status Codes:**
+- `200 OK` - Validation result returned (always; check `isValid` field)
+
+---
+
+#### Reverse a Posting
+
+Creates a counter-posting with a negated amount, effectively cancelling the original posting. All postings in the same booking group are reversed together. A new statement import is created for reconciliation.
+
+> ⚠️ **Irreversible operation.** Once reversed, neither the original nor the reversal posting can be reversed again.
+
+**Endpoint:** `POST /postings/{id}/reverse`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `id` (uuid, required) - ID of the posting to reverse
+
+**Request Body:** None
+
+**Response (200 OK):**
+```json
+{
+  "reversedPostingIds": [
+    "a1b2c3d4-0000-0000-0000-000000000001"
+  ],
+  "createdReversalIds": [
+    "bbbbbbbb-0000-0000-0000-000000000001"
+  ],
+  "statementImportId": "cccccccc-0000-0000-0000-000000000001"
+}
+```
+
+**Status Codes:**
+- `200 OK` - Reversal successful
+- `400 Bad Request` - Posting not found or cannot be reversed (e.g. it is already a reversal posting itself)
+- `403 Forbidden` - Current user is not authorized to reverse this posting
+- `409 Conflict` - Posting has already been reversed
+
+**Error Examples:**
+
+`403 Forbidden`:
+```json
+{
+  "title": "Forbidden",
+  "detail": "You are not authorized to reverse this posting.",
+  "status": 403
+}
+```
+
+`409 Conflict`:
+```json
+{
+  "title": "Conflict",
+  "detail": "This posting has already been reversed.",
+  "status": 409
+}
+```
+
+`400 Bad Request`:
+```json
+{
+  "title": "Bad Request",
+  "detail": "A reversal posting cannot itself be reversed.",
+  "status": 400
+}
+```
 
 ---
 
