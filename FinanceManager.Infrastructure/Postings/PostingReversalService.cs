@@ -180,6 +180,12 @@ public sealed class PostingReversalService : IPostingReversalService
             return Array.Empty<Posting>();
         }
 
+        // A posting with GroupId == Guid.Empty is ungrouped — no related postings exist
+        if (posting.GroupId == Guid.Empty)
+        {
+            return Array.Empty<Posting>();
+        }
+
         // Get all postings with the same GroupId (excluding the original posting itself)
         var relatedPostings = await _context.Postings
             .Where(p => p.GroupId == posting.GroupId && p.Id != postingId)

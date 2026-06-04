@@ -667,10 +667,10 @@ public sealed class PostingReversalServiceTests
     }
 
     /// <summary>
-    /// L21 – BUG: GetRelatedPostingsAsync with GroupId == Guid.Empty returns all ungrouped postings
-    /// instead of an empty list. This test documents the known defect without causing CI failures.
+    /// L21 – GetRelatedPostingsAsync with GroupId == Guid.Empty must return an empty list,
+    /// because a posting with no GroupId has no related postings.
     /// </summary>
-    [Fact(Skip = "BUG: GroupId.Empty query returns all ungrouped postings (all-or-nothing guard may incorrectly group them). Tracked for fix in a later iteration.")]
+    [Fact]
     public async Task GetRelatedPostingsAsync_ShouldReturnEmpty_WhenPostingHasGroupIdEmpty()
     {
         // Arrange
