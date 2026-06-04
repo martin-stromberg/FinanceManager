@@ -6,6 +6,7 @@ using FinanceManager.Application.Backups;
 using FinanceManager.Application.Contacts;
 using FinanceManager.Application.Demo;
 using FinanceManager.Application.Notifications; // new
+using FinanceManager.Application.Postings;
 using FinanceManager.Application.Reports;
 using FinanceManager.Application.Savings;
 using FinanceManager.Application.Securities;
@@ -21,6 +22,7 @@ using FinanceManager.Infrastructure.Auth;
 using FinanceManager.Infrastructure.Backups;
 using FinanceManager.Infrastructure.Contacts;
 using FinanceManager.Infrastructure.Notifications; // new
+using FinanceManager.Infrastructure.Postings;
 using FinanceManager.Infrastructure.Reports;
 using FinanceManager.Infrastructure.Savings;
 using FinanceManager.Infrastructure.Securities;
@@ -98,6 +100,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IBackupService, BackupService>();
         services.AddScoped<IPostingAggregateService, PostingAggregateService>();
         services.AddScoped<IPostingTimeSeriesService, PostingTimeSeriesService>();
+        services.AddScoped<IPostingReversalService, PostingReversalService>();
         services.AddScoped<IReportFavoriteService, ReportFavoriteService>();
         services.AddScoped<IReportAggregationService, ReportAggregationService>();
         services.AddScoped<IHomeKpiService, HomeKpiService>();

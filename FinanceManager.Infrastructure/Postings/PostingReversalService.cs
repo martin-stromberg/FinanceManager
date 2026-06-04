@@ -1,0 +1,290 @@
+using FinanceManager.Application.Aggregates;
+using FinanceManager.Application.Postings;
+using FinanceManager.Domain.Postings;
+using FinanceManager.Domain.Statements;
+using FinanceManager.Shared.Dtos.Postings;
+using FinanceManager.Shared.Dtos.Statements;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System.Data;
+
+namespace FinanceManager.Infrastructure.Postings;
+
+/// <summary>
+/// Implementation of posting reversal service that handles creation of reversal postings,
+/// validation, and transaction management.
+/// </summary>
+public sealed class PostingReversalService : IPostingReversalService
+{
+    private readonly AppDbContext _context;
+    private readonly IPostingAggregateService _aggregateService;
+    private readonly ILogger<PostingReversalService> _logger;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PostingReversalService"/> class.
+    /// </summary>
+    /// <param name="context">Database context.</param>
+    /// <param name="aggregateService">Posting aggregate service for updating aggregates.</param>
+    /// <param name="logger">Logger instance.</param>
+    public PostingReversalService(
+        AppDbContext context,
+        IPostingAggregateService aggregateService,
+        ILogger<PostingReversalService> logger)
+    {
+        _context = context;
+        _aggregateService = aggregateService;
+        _logger = logger;
+    }
+
+    /// <inheritdoc />
+    public async Task<ReversalResultDto> ReversePostingAsync(Guid postingId, Guid userId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("User {UserId} initiating reversal for posting {PostingId}", userId, postingId);
+
+        // Pre-transaction validation
+        var validation = await CanReverseAsync(postingId, userId, ct);
+        if (!validation.IsValid)
+        {
+            var errorMessage = string.Join("; ", validation.Errors);
+            _logger.LogWarning("Reversal validation failed for posting {PostingId}: {Errors}", postingId, errorMessage);
+            throw new InvalidOperationException(errorMessage);
+        }
+
+        // Begin transaction with ReadCommitted isolation level
+        using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct);
+        try
+        {
+            // Load original posting with lock (within transaction)
+            var original = await _context.Postings
+                .FirstOrDefaultAsync(p => p.Id == postingId, ct);
+
+            if (original == null || original.ReversedByPostingId.HasValue)
+            {
+                throw new InvalidOperationException($"Posting {postingId} not found or already reversed");
+            }
+
+            // Load all related postings by GroupId
+            var relatedPostings = await GetRelatedPostingsAsync(postingId, ct);
+
+            // Check for partially reversed group
+            var allPostings = relatedPostings.Prepend(original).ToList();
+            var anyAlreadyReversed = allPostings.Any(p => p.ReversedByPostingId.HasValue);
+            if (anyAlreadyReversed)
+            {
+                throw new InvalidOperationException("Cannot reverse posting: group is partially reversed. All-or-nothing policy enforced.");
+            }
+
+            // Create reversal postings
+            var reversals = new List<Posting>();
+            var newGroupId = Guid.NewGuid(); // All reversals share new GroupId
+
+            foreach (var posting in allPostings)
+            {
+                var reversal = CreateReversalPosting(posting, newGroupId);
+                _context.Postings.Add(reversal);
+                reversals.Add(reversal);
+
+                // Mark original as reversed
+                posting.SetReversedBy(reversal, userId);
+            }
+
+            await _context.SaveChangesAsync(ct);
+
+            // Create StatementImport for reconciliation
+            var statementImport = await CreateReversalStatementImportAsync(original, ct);
+
+            // Update aggregates (only for reversal postings)
+            foreach (var reversal in reversals)
+            {
+                await _aggregateService.UpsertForPostingAsync(reversal, ct);
+            }
+
+            await _context.SaveChangesAsync(ct);
+
+            // Commit transaction
+            await transaction.CommitAsync(ct);
+
+            _logger.LogInformation(
+                "Reversal completed: {ReversedCount} postings reversed, {CreatedCount} reversals created by user {UserId}",
+                allPostings.Count,
+                reversals.Count,
+                userId);
+
+            return new ReversalResultDto(
+                allPostings.Select(p => p.Id).ToList(),
+                reversals.Select(r => r.Id).ToList(),
+                statementImport.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Reversal transaction failed for posting {PostingId}, rolling back", postingId);
+            await transaction.RollbackAsync(ct);
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<ReversalValidationDto> CanReverseAsync(Guid postingId, Guid userId, CancellationToken ct = default)
+    {
+        var errors = new List<string>();
+
+        var posting = await _context.Postings.FirstOrDefaultAsync(p => p.Id == postingId, ct);
+
+        if (posting == null)
+        {
+            errors.Add($"Posting {postingId} not found");
+            return new ReversalValidationDto(false, errors);
+        }
+
+        // Check ownership
+        var ownerUserId = await GetPostingOwnerUserIdAsync(posting, ct);
+        if (ownerUserId != userId)
+        {
+            errors.Add($"User {userId} is not authorized to reverse posting {postingId}");
+            return new ReversalValidationDto(false, errors);
+        }
+
+        // Check if already reversed
+        if (posting.ReversedByPostingId.HasValue)
+        {
+            errors.Add($"Posting {postingId} has already been reversed by posting {posting.ReversedByPostingId.Value}");
+            return new ReversalValidationDto(false, errors);
+        }
+
+        // Check if this is itself a reversal
+        if (posting.ReversalForPostingId.HasValue)
+        {
+            errors.Add($"Posting {postingId} is itself a reversal and cannot be reversed");
+            return new ReversalValidationDto(false, errors);
+        }
+
+        // Check for partially reversed group
+        var relatedPostings = await GetRelatedPostingsAsync(postingId, ct);
+        var allPostings = relatedPostings.Prepend(posting).ToList();
+        var anyAlreadyReversed = allPostings.Any(p => p.ReversedByPostingId.HasValue);
+        if (anyAlreadyReversed)
+        {
+            errors.Add($"Cannot reverse posting {postingId}: group is partially reversed. All-or-nothing policy enforced.");
+            return new ReversalValidationDto(false, errors);
+        }
+
+        return new ReversalValidationDto(true, Array.Empty<string>());
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<Posting>> GetRelatedPostingsAsync(Guid postingId, CancellationToken ct = default)
+    {
+        var posting = await _context.Postings.FirstOrDefaultAsync(p => p.Id == postingId, ct);
+        if (posting == null)
+        {
+            return Array.Empty<Posting>();
+        }
+
+        // Get all postings with the same GroupId (excluding the original posting itself)
+        var relatedPostings = await _context.Postings
+            .Where(p => p.GroupId == posting.GroupId && p.Id != postingId)
+            .ToListAsync(ct);
+
+        return relatedPostings;
+    }
+
+    /// <summary>
+    /// Creates a reversal posting with negated amount and same dates/references.
+    /// </summary>
+    /// <param name="original">The original posting to reverse.</param>
+    /// <param name="newGroupId">The new group ID for the reversal posting.</param>
+    /// <returns>A new reversal posting.</returns>
+    private Posting CreateReversalPosting(Posting original, Guid newGroupId)
+    {
+        var reversalSourceId = Guid.NewGuid(); // New source for reversal
+
+        var reversal = new Posting(
+            sourceId: reversalSourceId,
+            kind: original.Kind,
+            accountId: original.AccountId,
+            contactId: original.ContactId,
+            savingsPlanId: original.SavingsPlanId,
+            securityId: original.SecurityId,
+            bookingDate: original.BookingDate,
+            valutaDate: original.ValutaDate,
+            amount: -original.Amount, // Negated amount
+            subject: original.Subject != null ? $"REVERSAL: {original.Subject}" : "REVERSAL",
+            recipientName: original.RecipientName,
+            description: original.Description,
+            securitySubType: original.SecuritySubType,
+            quantity: original.Quantity.HasValue ? -original.Quantity.Value : null // Negated quantity
+        );
+
+        reversal.SetGroup(newGroupId);
+        reversal.SetReversalFor(original);
+
+        return reversal;
+    }
+
+    /// <summary>
+    /// Creates a statement import for the reversal posting for reconciliation purposes.
+    /// </summary>
+    /// <param name="original">The original posting being reversed.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The created statement import.</returns>
+    private async Task<StatementImport> CreateReversalStatementImportAsync(Posting original, CancellationToken ct)
+    {
+        if (!original.AccountId.HasValue)
+        {
+            throw new InvalidOperationException("Cannot create statement import for posting without account");
+        }
+
+        var statementImport = new StatementImport(
+            accountId: original.AccountId.Value,
+            format: ImportFormat.Reversal,
+            originalFileName: $"REVERSAL_{original.Id}"
+        );
+
+        _context.StatementImports.Add(statementImport);
+        await _context.SaveChangesAsync(ct);
+
+        // Create statement entry with negated amount
+        var statementEntry = new StatementEntry(
+            statementImportId: statementImport.Id,
+            bookingDate: original.BookingDate,
+            amount: -original.Amount,
+            subject: original.Subject != null ? $"REVERSAL: {original.Subject}" : "REVERSAL",
+            rawHash: Guid.NewGuid().ToString(), // Unique hash for reversal
+            recipientName: original.RecipientName,
+            valutaDate: original.ValutaDate,
+            currencyCode: "EUR",
+            bookingDescription: original.Description,
+            isAnnounced: false,
+            isCostNeutral: false
+        );
+
+        _context.StatementEntries.Add(statementEntry);
+        await _context.SaveChangesAsync(ct);
+
+        return statementImport;
+    }
+
+    /// <summary>
+    /// Gets the owner user ID for a posting by looking up the account owner.
+    /// </summary>
+    /// <param name="posting">The posting to get the owner for.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The owner user ID.</returns>
+    private async Task<Guid> GetPostingOwnerUserIdAsync(Posting posting, CancellationToken ct)
+    {
+        if (posting.AccountId.HasValue)
+        {
+            var account = await _context.Accounts
+                .FirstOrDefaultAsync(a => a.Id == posting.AccountId.Value, ct);
+            if (account != null)
+            {
+                return account.OwnerUserId;
+            }
+        }
+
+        // Fallback: try to find owner via contact (no direct UserId property, need to query differently)
+        // For now, we require AccountId as the primary authorization source
+        
+        throw new InvalidOperationException($"Cannot determine owner for posting {posting.Id}: no account reference found");
+    }
+}

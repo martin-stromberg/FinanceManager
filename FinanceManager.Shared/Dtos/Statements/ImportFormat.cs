@@ -10,5 +10,7 @@ public enum ImportFormat
     /// <summary>Portable document format.</summary>
     Pdf = 1,
     /// <summary>Backup NDJSON format.</summary>
-    Backup = 2
+    Backup = 2,
+    /// <summary>Reversal/cancellation of a posting.</summary>
+    Reversal = 3
 }

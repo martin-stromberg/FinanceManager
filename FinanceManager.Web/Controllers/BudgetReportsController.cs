@@ -582,7 +582,11 @@ public sealed class BudgetReportsController : ControllerBase
                     null,
                     null,
                     null,
-                    null))
+                    null,
+                    p.IsReversed,
+                    p.IsReversal,
+                    p.ReversedByPostingId,
+                    p.ReversalForPostingId))
                 .ToList();
 
             return Ok(unbudgeted);

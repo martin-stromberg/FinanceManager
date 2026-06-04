@@ -51,7 +51,11 @@ public sealed class PostingsSecurityViewModelTests
                 LinkedPostingAccountName: null,
                 BankPostingAccountId: null,
                 BankPostingAccountSymbolAttachmentId: null,
-                BankPostingAccountName: null))
+                BankPostingAccountName: null,
+                IsReversed: false,
+                IsReversal: false,
+                ReversedByPostingId: null,
+                ReversalForPostingId: null))
             .ToList();
     }
 
@@ -217,7 +221,11 @@ public sealed class PostingsSecurityViewModelTests
             LinkedPostingAccountName: null,
             BankPostingAccountId: null,
             BankPostingAccountSymbolAttachmentId: null,
-            BankPostingAccountName: null);
+            BankPostingAccountName: null,
+            IsReversed: false,
+            IsReversal: false,
+            ReversedByPostingId: null,
+            ReversalForPostingId: null);
 
     /// <summary>Returns the Quantity cell from a record by looking up the column index.</summary>
     private static ListCell GetQuantityCell(

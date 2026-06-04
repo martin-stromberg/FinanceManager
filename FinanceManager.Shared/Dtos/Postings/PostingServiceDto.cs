@@ -51,5 +51,13 @@ namespace FinanceManager.Shared.Dtos.Postings
         /// <summary>Bank posting account symbol attachment id.</summary>
         Guid? BankPostingAccountSymbolAttachmentId,
         /// <summary>Bank posting account name.</summary>
-        string? BankPostingAccountName);
+        string? BankPostingAccountName,
+        /// <summary>Indicates whether this posting has been reversed by a counter-posting.</summary>
+        bool IsReversed,
+        /// <summary>Indicates whether this posting is itself a reversal (counter-posting).</summary>
+        bool IsReversal,
+        /// <summary>Id of the reversal posting that reversed this posting; populated when <see cref="IsReversed"/> is <c>true</c>.</summary>
+        Guid? ReversedByPostingId,
+        /// <summary>Id of the original posting that this posting reverses; populated when <see cref="IsReversal"/> is <c>true</c>.</summary>
+        Guid? ReversalForPostingId);
 }

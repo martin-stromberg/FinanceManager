@@ -88,5 +88,29 @@ public partial class ApiClient
         return await resp.Content.ReadFromJsonAsync<GroupLinksDto>(cancellationToken: ct);
     }
 
+    /// <summary>
+    /// Reverses a posting by creating a counter-posting with negated amount.
+    /// </summary>
+    public async Task<ReversalResultDto?> Postings_ReverseAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsync($"/api/postings/{id}/reverse", null, ct);
+        if (!resp.IsSuccessStatusCode)
+        {
+            try { await EnsureSuccessOrSetErrorAsync(resp); } catch { }
+            return null;
+        }
+        return await resp.Content.ReadFromJsonAsync<ReversalResultDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Validates whether a posting can be reversed.
+    /// </summary>
+    public async Task<ReversalValidationDto?> Postings_ValidateReversalAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/postings/{id}/validate-reversal", ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<ReversalValidationDto>(cancellationToken: ct);
+    }
+
     #endregion Postings
 }

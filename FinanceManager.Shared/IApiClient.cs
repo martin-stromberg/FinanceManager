@@ -384,6 +384,10 @@ public interface IApiClient
     Task<IReadOnlyList<PostingServiceDto>> Postings_GetSecurityAsync(Guid securityId, int skip = 0, int take = 50, DateTime? from = null, DateTime? to = null, CancellationToken ct = default);
     /// <summary>Returns first entity links for a posting group or null when not found or unauthorized.</summary>
     Task<GroupLinksDto?> Postings_GetGroupLinksAsync(Guid groupId, CancellationToken ct = default);
+    /// <summary>Reverses a posting by creating a counter-posting with negated amount.</summary>
+    Task<ReversalResultDto?> Postings_ReverseAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Validates whether a posting can be reversed.</summary>
+    Task<ReversalValidationDto?> Postings_ValidateReversalAsync(Guid id, CancellationToken ct = default);
 
     // Reports
 

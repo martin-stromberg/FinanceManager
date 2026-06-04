@@ -2,6 +2,7 @@ using FinanceManager.Application;
 using FinanceManager.Application.Reports; // export service + time series
 using FinanceManager.Domain.Postings; // PostingKind for export and aggregates
 using FinanceManager.Infrastructure;
+using FinanceManager.Shared.Dtos.Postings;
 using FinanceManager.Web.Infrastructure; // StreamCallbackResult
 using FinanceManager.Web.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using IPostingReversalService = FinanceManager.Application.Postings.IPostingReversalService;
 
 namespace FinanceManager.Web.Controllers;
 
@@ -27,6 +29,7 @@ public sealed class PostingsController : ControllerBase
     private readonly IPostingExportService _exportService;
     private readonly IConfiguration _config;
     private readonly IPostingTimeSeriesService _series;
+    private readonly IPostingReversalService _reversalService;
     private const int MaxTake = 250;
     private const int DefaultMaxRows = 50_000;
 
@@ -39,8 +42,9 @@ public sealed class PostingsController : ControllerBase
     /// <param name="exportService">Service used to export postings to CSV/XLSX formats.</param>
     /// <param name="config">Configuration used to read export limits and options.</param>
     /// <param name="series">Service providing aggregate time series data for postings.</param>
-    public PostingsController(AppDbContext db, ICurrentUserService current, IPostingsQueryService postingsQuery, IPostingExportService exportService, IConfiguration config, IPostingTimeSeriesService series)
-    { _db = db; _current = current; _postingsQuery = postingsQuery; _exportService = exportService; _config = config; _series = series; }
+    /// <param name="reversalService">Service used to reverse postings.</param>
+    public PostingsController(AppDbContext db, ICurrentUserService current, IPostingsQueryService postingsQuery, IPostingExportService exportService, IConfiguration config, IPostingTimeSeriesService series, IPostingReversalService reversalService)
+    { _db = db; _current = current; _postingsQuery = postingsQuery; _exportService = exportService; _config = config; _series = series; _reversalService = reversalService; }
 
     /// <summary>
     /// Gets a single posting by identifier including linked posting and group bank posting metadata.
@@ -134,8 +138,61 @@ public sealed class PostingsController : ControllerBase
             laccName,
             bankAccId,
             bankAccSym,
-            bankAccName);
+            bankAccName,
+            p.IsReversed,
+            p.IsReversal,
+            p.ReversedByPostingId,
+            p.ReversalForPostingId);
         return Ok(dto);
+    }
+
+    /// <summary>
+    /// Reverses a posting by creating a counter-posting with negated amount.
+    /// </summary>
+    /// <param name="id">Posting id to reverse.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <response code="200">Returns the reversal result.</response>
+    /// <response code="400">Posting not found or cannot be reversed.</response>
+    /// <response code="403">User is not authorized to reverse this posting.</response>
+    /// <response code="409">Posting is already reversed.</response>
+    [HttpPost("{id:guid}/reverse")]
+    [ProducesResponseType(typeof(ReversalResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ReversalResultDto>> ReversePosting(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _reversalService.ReversePostingAsync(id, _current.UserId, ct);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Problem(title: "Forbidden", detail: "You are not authorized to reverse this posting.", statusCode: StatusCodes.Status403Forbidden);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("already been reversed") || ex.Message.Contains("already reversed"))
+        {
+            return Problem(title: "Conflict", detail: ex.Message, statusCode: StatusCodes.Status409Conflict);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Problem(title: "Bad Request", detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
+        }
+    }
+
+    /// <summary>
+    /// Validates whether a posting can be reversed.
+    /// </summary>
+    /// <param name="id">Posting id to validate.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <response code="200">Returns the validation result.</response>
+    [HttpGet("{id:guid}/validate-reversal")]
+    [ProducesResponseType(typeof(ReversalValidationDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ReversalValidationDto>> ValidateReversal(Guid id, CancellationToken ct)
+    {
+        var result = await _reversalService.CanReverseAsync(id, _current.UserId, ct);
+        return Ok(result);
     }
 
     /// <summary>
@@ -173,7 +230,7 @@ public sealed class PostingsController : ControllerBase
 
     private static decimal? TryParseAmount(string input)
     {
-        var norm = input.Replace(" ", string.Empty).Replace("€", string.Empty);
+        var norm = input.Replace(" ", string.Empty).Replace("ï¿½", string.Empty);
         if (decimal.TryParse(norm, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, CultureInfo.CurrentCulture, out var dec)) { return Math.Abs(dec); }
         if (decimal.TryParse(norm, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, CultureInfo.InvariantCulture, out dec)) { return Math.Abs(dec); }
         return null;

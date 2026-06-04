@@ -1867,4 +1867,6 @@
   <data name="Cashflow_Costs_Col_Taxes" xml:space="preserve"><value>Taxes</value></data>
   <data name="Cashflow_Costs_Col_Fees" xml:space="preserve"><value>Fees</value></data>
   <data name="Cashflow_Costs_Col_Cumulative" xml:space="preserve"><value>Cumulative</value></data>
+  <data name="Ribbon_Reverse" xml:space="preserve"><value>Reverse</value></data>
+  <data name="List_Th_Postings_IsReversal" xml:space="preserve"><value>Reversal</value></data>
 </root>

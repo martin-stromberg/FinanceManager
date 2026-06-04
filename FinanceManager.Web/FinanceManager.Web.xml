@@ -1215,7 +1215,7 @@
             across accounts, contacts, savings plans and securities for the current user.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.PostingsController.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.ICurrentUserService,FinanceManager.Web.Services.IPostingsQueryService,FinanceManager.Application.Reports.IPostingExportService,Microsoft.Extensions.Configuration.IConfiguration,FinanceManager.Application.Reports.IPostingTimeSeriesService)">
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.ICurrentUserService,FinanceManager.Web.Services.IPostingsQueryService,FinanceManager.Application.Reports.IPostingExportService,Microsoft.Extensions.Configuration.IConfiguration,FinanceManager.Application.Reports.IPostingTimeSeriesService,FinanceManager.Application.Postings.IPostingReversalService)">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Web.Controllers.PostingsController"/>.
             </summary>
@@ -1225,6 +1225,7 @@
             <param name="exportService">Service used to export postings to CSV/XLSX formats.</param>
             <param name="config">Configuration used to read export limits and options.</param>
             <param name="series">Service providing aggregate time series data for postings.</param>
+            <param name="reversalService">Service used to reverse postings.</param>
         </member>
         <member name="M:FinanceManager.Web.Controllers.PostingsController.GetById(System.Guid,System.Threading.CancellationToken)">
             <summary>
@@ -1234,6 +1235,25 @@
             <param name="ct">Cancellation token.</param>
             <response code="200">Returns the posting details.</response>
             <response code="404">Posting not found.</response>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.ReversePosting(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Reverses a posting by creating a counter-posting with negated amount.
+            </summary>
+            <param name="id">Posting id to reverse.</param>
+            <param name="ct">Cancellation token.</param>
+            <response code="200">Returns the reversal result.</response>
+            <response code="400">Posting not found or cannot be reversed.</response>
+            <response code="403">User is not authorized to reverse this posting.</response>
+            <response code="409">Posting is already reversed.</response>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.PostingsController.ValidateReversal(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Validates whether a posting can be reversed.
+            </summary>
+            <param name="id">Posting id to validate.</param>
+            <param name="ct">Cancellation token.</param>
+            <response code="200">Returns the validation result.</response>
         </member>
         <member name="M:FinanceManager.Web.Controllers.PostingsController.GetAccountPostings(System.Guid,System.Int32,System.Int32,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
             <summary>
@@ -7074,6 +7094,11 @@
             Reloads the current posting by reloading the card for the current <see cref="P:FinanceManager.Web.ViewModels.Postings.Common.PostingsCardViewModel.Id"/>.
             </summary>
             <returns>A task that completes when reload has finished.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Postings.Common.PostingsCardViewModel.ReverseAsync">
+            <summary>
+            Reverses the current posting by calling the API and navigates to the created reversal posting on success.
+            </summary>
         </member>
         <member name="T:FinanceManager.Web.ViewModels.Postings.ContactPostingsListViewModel">
             <summary>

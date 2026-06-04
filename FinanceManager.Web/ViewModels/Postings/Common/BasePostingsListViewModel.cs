@@ -22,6 +22,7 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
             var recipientLabel = Localizer?["List_Th_Postings_Recipient"].Value ?? "Recipient";
             var subjectLabel = Localizer?["List_Th_Postings_Subject"].Value ?? "Subject";
             var descriptionLabel = Localizer?["List_Th_Postings_Description"].Value ?? "Description";
+            var stornoLabel = Localizer?["List_Th_Postings_IsReversal"].Value ?? "Storno";
 
             Columns = new[] {
                 new ListColumn("date", dateLabel, Align: ListColumnAlign.Left, Width: "8rem"),
@@ -30,7 +31,8 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
                 new ListColumn("kind", kindLabel, Align: ListColumnAlign.Left, Width: "9rem"),
                 new ListColumn("recipient", recipientLabel),
                 new ListColumn("subject", subjectLabel, Width: "22%"),
-                new ListColumn("description", descriptionLabel)
+                new ListColumn("description", descriptionLabel),
+                new ListColumn("storno", stornoLabel, Align: ListColumnAlign.Left, Width: "5rem")
             };
             _take = 50;
         }
@@ -111,7 +113,8 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
                     new ListCell(ListCellKind.Text, Text: (i.Kind == PostingKind.Security && i.SecuritySubType.HasValue) ? $"Security-{i.SecuritySubType}" : i.Kind.ToString()),
                     new ListCell(ListCellKind.Text, Text: i.RecipientName ?? string.Empty),
                     new ListCell(ListCellKind.Text, Text: i.Subject ?? string.Empty),
-                    new ListCell(ListCellKind.Text, Text: i.Description ?? string.Empty)
+                    new ListCell(ListCellKind.Text, Text: i.Description ?? string.Empty),
+                    new ListCell(ListCellKind.Text, Text: i.IsReversal ? "✓" : (i.IsReversed ? "—" : string.Empty))
                 }, navItem);
             }).ToList();
         }

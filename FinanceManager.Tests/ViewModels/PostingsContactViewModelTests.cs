@@ -53,7 +53,11 @@ public sealed class PostingsContactViewModelTests
                 LinkedPostingAccountName: null,
                 BankPostingAccountId: null,
                 BankPostingAccountSymbolAttachmentId: null,
-                BankPostingAccountName: null))
+                BankPostingAccountName: null,
+                IsReversed: false,
+                IsReversal: false,
+                ReversedByPostingId: null,
+                ReversalForPostingId: null))
             .ToList();
     }
 

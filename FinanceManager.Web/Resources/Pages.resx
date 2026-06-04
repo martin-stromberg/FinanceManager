@@ -1779,4 +1779,10 @@
   <data name="Ribbon_Group_QuickEdit" xml:space="preserve">
     <value>Quick edit</value>
   </data>
+  <data name="Ribbon_Reverse" xml:space="preserve">
+    <value>Reverse</value>
+  </data>
+  <data name="List_Th_Postings_IsReversal" xml:space="preserve">
+    <value>Reversal</value>
+  </data>
 </root>

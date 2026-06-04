@@ -1815,6 +1815,34 @@
             </summary>
             <value>The linked posting id or null.</value>
         </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.ReversedByPostingId">
+            <summary>
+            Optional reference to the reversal posting that cancels this posting.
+            Set when this posting is reversed.
+            </summary>
+            <value>The reversal posting id or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.ReversalForPostingId">
+            <summary>
+            Optional reference to the original posting that this posting reverses.
+            Set when this posting is a reversal of another posting.
+            </summary>
+            <value>The original posting id or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.ReversedByUserId">
+            <summary>
+            User ID who initiated the reversal.
+            Only set when this posting has been reversed (ReversedByPostingId is not null).
+            </summary>
+            <value>The user id who reversed this posting or null.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.ReversedAtUtc">
+            <summary>
+            Timestamp when the reversal was created.
+            Only set when this posting has been reversed (ReversedByPostingId is not null).
+            </summary>
+            <value>The reversal timestamp or null.</value>
+        </member>
         <member name="M:FinanceManager.Domain.Postings.Posting.SetGroup(System.Guid)">
             <summary>
             Sets the group identifier for the posting.
@@ -1846,6 +1874,35 @@
             <param name="valutaDate">The valuta date.</param>
             <returns>The updated <see cref="T:FinanceManager.Domain.Postings.Posting"/> instance (fluent API).</returns>
         </member>
+        <member name="M:FinanceManager.Domain.Postings.Posting.SetReversedBy(FinanceManager.Domain.Postings.Posting,System.Guid)">
+            <summary>
+            Marks this posting as reversed by a reversal posting.
+            </summary>
+            <param name="reversalPosting">The reversal posting that cancels this posting.</param>
+            <param name="userId">The user ID who initiated the reversal.</param>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="reversalPosting"/> is null.</exception>
+            <exception cref="T:System.InvalidOperationException">Thrown when this posting is already reversed.</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Postings.Posting.SetReversalFor(FinanceManager.Domain.Postings.Posting)">
+            <summary>
+            Marks this posting as a reversal of an original posting.
+            </summary>
+            <param name="originalPosting">The original posting that this posting reverses.</param>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="originalPosting"/> is null.</exception>
+            <exception cref="T:System.InvalidOperationException">Thrown when this posting is already marked as a reversal.</exception>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.IsReversed">
+            <summary>
+            Gets a value indicating whether this posting has been reversed.
+            </summary>
+            <value><c>true</c> if this posting has been reversed; otherwise, <c>false</c>.</value>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.IsReversal">
+            <summary>
+            Gets a value indicating whether this posting is a reversal of another posting.
+            </summary>
+            <value><c>true</c> if this posting is a reversal; otherwise, <c>false</c>.</value>
+        </member>
         <member name="M:FinanceManager.Domain.Postings.Posting.SetOriginalAmount(System.Nullable{System.Decimal})">
             <summary>
             Sets the original amount for informational purposes.
@@ -1876,8 +1933,12 @@
             <param name="GroupId">Optional group identifier for related postings.</param>
             <param name="ParentId">Optional parent posting reference.</param>
             <param name="LinkedPostingId">Optional linked posting reference (counterpart).</param>
+            <param name="ReversedByPostingId">Optional reference to the reversal posting.</param>
+            <param name="ReversalForPostingId">Optional reference to the original posting.</param>
+            <param name="ReversedByUserId">Optional user ID who reversed this posting.</param>
+            <param name="ReversedAtUtc">Optional timestamp when this posting was reversed.</param>
         </member>
-        <member name="M:FinanceManager.Domain.Postings.Posting.PostingBackupDto.#ctor(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.DateTime,System.DateTime,System.Decimal,System.Nullable{System.Decimal},System.String,System.String,System.String,System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType},System.Nullable{System.Decimal},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid})">
+        <member name="M:FinanceManager.Domain.Postings.Posting.PostingBackupDto.#ctor(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.DateTime,System.DateTime,System.Decimal,System.Nullable{System.Decimal},System.String,System.String,System.String,System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType},System.Nullable{System.Decimal},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.DateTime})">
             <summary>
             DTO carrying the serializable state of a <see cref="T:FinanceManager.Domain.Postings.Posting"/> for backup purposes.
             </summary>
@@ -1900,6 +1961,10 @@
             <param name="GroupId">Optional group identifier for related postings.</param>
             <param name="ParentId">Optional parent posting reference.</param>
             <param name="LinkedPostingId">Optional linked posting reference (counterpart).</param>
+            <param name="ReversedByPostingId">Optional reference to the reversal posting.</param>
+            <param name="ReversalForPostingId">Optional reference to the original posting.</param>
+            <param name="ReversedByUserId">Optional user ID who reversed this posting.</param>
+            <param name="ReversedAtUtc">Optional timestamp when this posting was reversed.</param>
         </member>
         <member name="P:FinanceManager.Domain.Postings.Posting.PostingBackupDto.Id">
             <summary>Identifier of the posting entity.</summary>
@@ -1957,6 +2022,18 @@
         </member>
         <member name="P:FinanceManager.Domain.Postings.Posting.PostingBackupDto.LinkedPostingId">
             <summary>Optional linked posting reference (counterpart).</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.PostingBackupDto.ReversedByPostingId">
+            <summary>Optional reference to the reversal posting.</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.PostingBackupDto.ReversalForPostingId">
+            <summary>Optional reference to the original posting.</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.PostingBackupDto.ReversedByUserId">
+            <summary>Optional user ID who reversed this posting.</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Postings.Posting.PostingBackupDto.ReversedAtUtc">
+            <summary>Optional timestamp when this posting was reversed.</summary>
         </member>
         <member name="M:FinanceManager.Domain.Postings.Posting.ToBackupDto">
             <summary>
