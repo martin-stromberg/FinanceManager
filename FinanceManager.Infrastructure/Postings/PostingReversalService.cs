@@ -249,13 +249,13 @@ public sealed class PostingReversalService : IPostingReversalService
         _context.StatementImports.Add(statementImport);
         await _context.SaveChangesAsync(ct);
 
-        // Create statement entry with negated amount
+        // Create statement entry mirroring the original posting (not the reversal)
         var statementEntry = new StatementEntry(
             statementImportId: statementImport.Id,
             bookingDate: original.BookingDate,
-            amount: -original.Amount,
-            subject: original.Subject != null ? $"REVERSAL: {original.Subject}" : "REVERSAL",
-            rawHash: Guid.NewGuid().ToString(), // Unique hash for reversal
+            amount: original.Amount,
+            subject: original.Subject ?? string.Empty,
+            rawHash: Guid.NewGuid().ToString(),
             recipientName: original.RecipientName,
             valutaDate: original.ValutaDate,
             currencyCode: "EUR",

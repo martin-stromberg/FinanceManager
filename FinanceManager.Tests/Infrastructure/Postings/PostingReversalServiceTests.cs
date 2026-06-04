@@ -514,6 +514,33 @@ public sealed class PostingReversalServiceTests
     }
 
     /// <summary>
+    /// L15b – The StatementEntry created during reversal reflects the original posting (same amount, same subject).
+    /// The entry must NOT be negated and must NOT carry the "REVERSAL:" prefix.
+    /// </summary>
+    [Fact]
+    public async Task ReversePostingAsync_StatementEntry_ShouldMirrorOriginalPosting()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var account = CreateAccount(OwnerId);
+        context.Accounts.Add(account);
+        var posting = CreatePosting(account.Id, 100m, "Gehalt Januar");
+        context.Postings.Add(posting);
+        await context.SaveChangesAsync();
+        var service = CreateService(context);
+
+        // Act
+        var result = await service.ReversePostingAsync(posting.Id, OwnerId);
+
+        // Assert – StatementEntry must mirror the original, not the counter-booking
+        var entry = await context.StatementEntries
+            .FirstOrDefaultAsync(e => e.StatementImportId == result.StatementImportId);
+        entry.Should().NotBeNull();
+        entry!.Amount.Should().Be(100m, "the entry amount must equal the original posting amount");
+        entry.Subject.Should().Be("Gehalt Januar", "the entry subject must equal the original posting subject without any prefix");
+    }
+
+    /// <summary>
     /// L16 – ReversePostingAsync result contains the IDs of all reversed original postings.
     /// </summary>
     [Fact]
