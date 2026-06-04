@@ -354,6 +354,133 @@ public sealed class BudgetReportServiceRawDataTests
             cacheService.Object);
     }
 
+    /// <summary>
+    /// Ensures a purpose without any rules still receives all matching postings (Bug #1).
+    /// </summary>
+    [Fact]
+    public async Task GetRawDataAsync_ShouldAssignPostingsToPurpose_WhenPurposeHasNoRules()
+    {
+        var ownerUserId = Guid.NewGuid();
+        var contactId = Guid.NewGuid();
+        var purposeId = Guid.NewGuid();
+        var from = new DateOnly(2026, 1, 1);
+        var to = new DateOnly(2026, 1, 31);
+        var postingId = Guid.NewGuid();
+
+        var purpose = new BudgetPurposeOverviewDto(
+            purposeId,
+            ownerUserId,
+            "Utilities",
+            null,
+            BudgetSourceType.Contact,
+            contactId,
+            1,
+            -60m,
+            0m,
+            0m,
+            "Utility Provider",
+            null,
+            null,
+            null);
+
+        var posting = CreateContactPosting(
+            postingId,
+            contactId,
+            new DateTime(2026, 1, 20),
+            -60m,
+            "Utility Payment");
+
+        var sut = CreateSut(
+            ownerUserId,
+            from,
+            to,
+            new[] { purpose },
+            Array.Empty<BudgetRuleDto>(),
+            new[] { posting },
+            new ContactDto(contactId, "Utility Provider", ContactType.Organization, null, null, false, null));
+
+        var result = await sut.GetRawDataAsync(ownerUserId, from, to, BudgetReportDateBasis.BookingDate, CancellationToken.None);
+
+        result.UncategorizedPurposes.Should().ContainSingle(x => x.PurposeId == purposeId);
+        result.UncategorizedPurposes.Single(x => x.PurposeId == purposeId).Postings.Should().ContainSingle(x => x.PostingId == postingId);
+        result.UnbudgetedPostings.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Ensures a purpose without rules still respects purpose pattern matching (Bug #1 + #2).
+    /// </summary>
+    [Fact]
+    public async Task GetRawDataAsync_ShouldRespectPatternWhenPurposeHasNoRules_ButPurposeHasPatternViaBudgetRule()
+    {
+        var ownerUserId = Guid.NewGuid();
+        var contactId = Guid.NewGuid();
+        var purposeId = Guid.NewGuid();
+        var from = new DateOnly(2026, 1, 1);
+        var to = new DateOnly(2026, 1, 31);
+        var matchingPostingId = Guid.NewGuid();
+        var nonMatchingPostingId = Guid.NewGuid();
+
+        var purpose = new BudgetPurposeOverviewDto(
+            purposeId,
+            ownerUserId,
+            "Utilities",
+            null,
+            BudgetSourceType.Contact,
+            contactId,
+            1,
+            -60m,
+            0m,
+            0m,
+            "Utility Provider",
+            null,
+            null,
+            null);
+
+        var rule = new BudgetRuleDto(
+            Guid.NewGuid(),
+            ownerUserId,
+            purposeId,
+            null,
+            -60m,
+            BudgetIntervalType.Monthly,
+            null,
+            from,
+            null,
+            "ST\\d{10}",
+            true);
+
+        var postings = new[]
+        {
+            CreateContactPosting(
+                matchingPostingId,
+                contactId,
+                new DateTime(2026, 1, 20),
+                -60m,
+                "Abrechnung ST6464646464 Januar"),
+            CreateContactPosting(
+                nonMatchingPostingId,
+                contactId,
+                new DateTime(2026, 1, 21),
+                -40m,
+                "Service ohne Vertragsnummer")
+        };
+
+        var sut = CreateSut(
+            ownerUserId,
+            from,
+            to,
+            new[] { purpose },
+            new[] { rule },
+            postings,
+            new ContactDto(contactId, "Utility Provider", ContactType.Organization, null, null, false, null));
+
+        var result = await sut.GetRawDataAsync(ownerUserId, from, to, BudgetReportDateBasis.BookingDate, CancellationToken.None);
+
+        var purposePostings = result.UncategorizedPurposes.Single(x => x.PurposeId == purposeId).Postings;
+        purposePostings.Should().ContainSingle(x => x.PostingId == matchingPostingId);
+        result.UnbudgetedPostings.Should().ContainSingle(x => x.PostingId == nonMatchingPostingId);
+    }
+
     private static PostingServiceDto CreateContactPosting(Guid postingId, Guid contactId, DateTime bookingDate, decimal amount, string? subject)
     {
         return new PostingServiceDto(

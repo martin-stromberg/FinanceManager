@@ -135,6 +135,16 @@
             Ensures problematic regex patterns do not throw and unmatched postings stay unbudgeted.
             </summary>
         </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Budget.BudgetReportServiceRawDataTests.GetRawDataAsync_ShouldAssignPostingsToPurpose_WhenPurposeHasNoRules">
+            <summary>
+            Ensures a purpose without any rules still receives all matching postings (Bug #1).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Budget.BudgetReportServiceRawDataTests.GetRawDataAsync_ShouldRespectPatternWhenPurposeHasNoRules_ButPurposeHasPatternViaBudgetRule">
+            <summary>
+            Ensures a purpose without rules still respects purpose pattern matching (Bug #1 + #2).
+            </summary>
+        </member>
         <member name="T:FinanceManager.Tests.Infrastructure.Budget.ReportCacheServiceTests">
             <summary>
             Tests for <see cref="T:FinanceManager.Infrastructure.Budget.ReportCacheService"/> cache invalidation behaviors.

@@ -247,107 +247,120 @@ public sealed class BudgetReportService : IBudgetReportService
 
             var matchedPostings = new List<BudgetReportPostingRawDataDto>();
 
-            // First: exact matches - ensure we remove them from global list
-            foreach (var rule in rules.ToList())
+            // If no rules exist, assign all postings to the purpose
+            if (rules.Count == 0)
             {
-                var expected = rule.Amount;
-                var candidate = postingsForPurpose.FirstOrDefault(p =>
-                    MatchesPurposePattern(p, rule)
-                    && Math.Sign(p.Amount) == Math.Sign(expected)
-                    && p.Amount == expected);
-                if (candidate != null)
+                matchedPostings.AddRange(postingsForPurpose);
+                foreach (var p in postingsForPurpose)
                 {
-                    matchedPostings.Add(candidate);
-                    rules.Remove(rule);
-                    postingsForPurpose.RemoveAll(x => x.PostingId == candidate.PostingId);
-                    postingDtos.RemoveAll(x => x.PostingId == candidate.PostingId);
+                    postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
                 }
+                postingsForPurpose.Clear();
             }
-
-            // Now process remaining rules: positives (desc) and negatives (asc)
-            var positiveRules = rules.Where(r => r.Amount > 0).OrderByDescending(r => r.Amount).ToList();
-            var negativeRules = rules.Where(r => r.Amount < 0).OrderBy(r => r.Amount).ToList();
-
-            // helper to allocate postings for a rule
-            void AllocateForRule(BudgetRuleDto rule)
+            else
             {
-                if (rule == null) return;
-                var expected = rule.Amount;
-                if (expected > 0)
+                // First: exact matches - ensure we remove them from global list
+                foreach (var rule in rules.ToList())
                 {
-                    var remaining = expected;
-                    for (int idx = 0; idx < postingsForPurpose.Count && remaining > 0; )
+                    var expected = rule.Amount;
+                    var candidate = postingsForPurpose.FirstOrDefault(p =>
+                        MatchesPurposePattern(p, rule)
+                        && Math.Sign(p.Amount) == Math.Sign(expected)
+                        && p.Amount == expected);
+                    if (candidate != null)
                     {
-                        var p = postingsForPurpose[idx];
-                        if (p.Amount <= 0 || !MatchesPurposePattern(p, rule)) { idx++; continue; }
-                        if (p.Amount <= remaining)
+                        matchedPostings.Add(candidate);
+                        rules.Remove(rule);
+                        postingsForPurpose.RemoveAll(x => x.PostingId == candidate.PostingId);
+                        postingDtos.RemoveAll(x => x.PostingId == candidate.PostingId);
+                    }
+                }
+
+                // Now process remaining rules: positives (desc) and negatives (asc)
+                var positiveRules = rules.Where(r => r.Amount > 0).OrderByDescending(r => r.Amount).ToList();
+                var negativeRules = rules.Where(r => r.Amount < 0).OrderBy(r => r.Amount).ToList();
+
+                // helper to allocate postings for a rule
+                void AllocateForRule(BudgetRuleDto rule)
+                {
+                    if (rule == null) return;
+                    var expected = rule.Amount;
+                    if (expected > 0)
+                    {
+                        var remaining = expected;
+                        for (int idx = 0; idx < postingsForPurpose.Count && remaining > 0; )
                         {
-                            // fully consume posting
-                            matchedPostings.Add(p);
-                            remaining -= p.Amount;
-                            // remove from working lists
-                            postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
-                            postingsForPurpose.RemoveAt(idx);
-                        }
-                        else
-                        {
-                            // split posting: allocate part and reduce original
-                            var allocated = p with { Amount = remaining };
-                            matchedPostings.Add(allocated);
-                            var remainingAmount = p.Amount - remaining;
-                            // update in postingDtos and postingsForPurpose
-                            for (int j = 0; j < postingDtos.Count; j++)
+                            var p = postingsForPurpose[idx];
+                            if (p.Amount <= 0 || !MatchesPurposePattern(p, rule)) { idx++; continue; }
+                            if (p.Amount <= remaining)
                             {
-                                if (postingDtos[j].PostingId == p.PostingId)
-                                {
-                                    postingDtos[j] = postingDtos[j] with { Amount = remainingAmount };
-                                    break;
-                                }
+                                // fully consume posting
+                                matchedPostings.Add(p);
+                                remaining -= p.Amount;
+                                // remove from working lists
+                                postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
+                                postingsForPurpose.RemoveAt(idx);
                             }
-                            postingsForPurpose[idx] = p with { Amount = remainingAmount };
-                            remaining = 0;
+                            else
+                            {
+                                // split posting: allocate part and reduce original
+                                var allocated = p with { Amount = remaining };
+                                matchedPostings.Add(allocated);
+                                var remainingAmount = p.Amount - remaining;
+                                // update in postingDtos and postingsForPurpose
+                                for (int j = 0; j < postingDtos.Count; j++)
+                                {
+                                    if (postingDtos[j].PostingId == p.PostingId)
+                                    {
+                                        postingDtos[j] = postingDtos[j] with { Amount = remainingAmount };
+                                        break;
+                                    }
+                                }
+                                postingsForPurpose[idx] = p with { Amount = remainingAmount };
+                                remaining = 0;
+                            }
+                        }
+                    }
+                    else if (expected < 0)
+                    {
+                        var remainingAbs = Math.Abs(expected);
+                        for (int idx = 0; idx < postingsForPurpose.Count && remainingAbs > 0; )
+                        {
+                            var p = postingsForPurpose[idx];
+                            if (p.Amount >= 0 || !MatchesPurposePattern(p, rule)) { idx++; continue; }
+                            var pAbs = Math.Abs(p.Amount);
+                            if (pAbs <= remainingAbs)
+                            {
+                                // fully consume posting
+                                matchedPostings.Add(p);
+                                remainingAbs -= pAbs;
+                                postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
+                                postingsForPurpose.RemoveAt(idx);
+                            }
+                            else
+                            {
+                                // split posting
+                                var allocated = p with { Amount = -remainingAbs };
+                                matchedPostings.Add(allocated);
+                                var remainingAmount = p.Amount + remainingAbs; // p.Amount is negative
+                                for (int j = 0; j < postingDtos.Count; j++)
+                                {
+                                    if (postingDtos[j].PostingId == p.PostingId)
+                                    {
+                                        postingDtos[j] = postingDtos[j] with { Amount = remainingAmount };
+                                        break;
+                                    }
+                                }
+                                postingsForPurpose[idx] = p with { Amount = remainingAmount };
+                                remainingAbs = 0;
+                            }
                         }
                     }
                 }
-                else if (expected < 0)
-                {
-                    var remainingAbs = Math.Abs(expected);
-                    for (int idx = 0; idx < postingsForPurpose.Count && remainingAbs > 0; )
-                    {
-                        var p = postingsForPurpose[idx];
-                        if (p.Amount >= 0 || !MatchesPurposePattern(p, rule)) { idx++; continue; }
-                        var pAbs = Math.Abs(p.Amount);
-                        if (pAbs <= remainingAbs)
-                        {
-                            // fully consume posting
-                            matchedPostings.Add(p);
-                            remainingAbs -= pAbs;
-                            postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
-                            postingsForPurpose.RemoveAt(idx);
-                        }
-                        else
-                        {
-                            // split posting
-                            var allocated = p with { Amount = -remainingAbs };
-                            matchedPostings.Add(allocated);
-                            var remainingAmount = p.Amount + remainingAbs; // p.Amount is negative
-                            for (int j = 0; j < postingDtos.Count; j++)
-                            {
-                                if (postingDtos[j].PostingId == p.PostingId)
-                                {
-                                    postingDtos[j] = postingDtos[j] with { Amount = remainingAmount };
-                                    break;
-                                }
-                            }
-                            postingsForPurpose[idx] = p with { Amount = remainingAmount };
-                            remainingAbs = 0;
-                        }
-                    }
-                }
-            }
 
-            foreach (var r in positiveRules) AllocateForRule(r);
-            foreach (var r in negativeRules) AllocateForRule(r);
+                foreach (var r in positiveRules) AllocateForRule(r);
+                foreach (var r in negativeRules) AllocateForRule(r);
+            }
 
             // any postings left in postingsForPurpose are unbudgeted for this purpose
             foreach (var left in postingsForPurpose)

@@ -5,6 +5,7 @@ using FinanceManager.Shared.Dtos.SavingsPlans;
 using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace FinanceManager.Web.ViewModels.Budget;
@@ -695,6 +696,13 @@ public sealed class BudgetReportViewModel : BaseViewModel
                     break;
             }
 
+            // Filter postings by purpose rules/patterns (Bug #2)
+            var rules = await _api.Budgets_ListRulesByPurposeAsync(purpose.Id, CancellationToken.None);
+            if (rules.Count > 0)
+            {
+                rows = rows.Where(posting => rules.Any(rule => MatchesPurposePattern(posting, rule))).ToList();
+            }
+
             PurposePostings = Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
                 ? rows.OrderByDescending(p => p.ValutaDate).ToList()
                 : rows.OrderByDescending(p => p.BookingDate).ToList();
@@ -726,6 +734,39 @@ public sealed class BudgetReportViewModel : BaseViewModel
         }
 
         return (intervalFrom.ToDateTime(TimeOnly.MinValue), intervalTo.ToDateTime(TimeOnly.MaxValue));
+    }
+
+    private static bool MatchesPurposePattern(PostingServiceDto posting, BudgetRuleDto rule)
+    {
+        if (string.IsNullOrWhiteSpace(rule.PurposePattern))
+        {
+            return true;
+        }
+
+        var input = posting.Description ?? posting.Subject ?? string.Empty;
+        var pattern = rule.PurposePattern.Trim();
+        if (pattern.Length == 0)
+        {
+            return true;
+        }
+
+        if (rule.UseRegex)
+        {
+            try
+            {
+                return Regex.IsMatch(
+                    input,
+                    pattern,
+                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+                    TimeSpan.FromSeconds(1));
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        return input.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0;
     }
 }
 
