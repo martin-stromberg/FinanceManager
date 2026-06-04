@@ -33,6 +33,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
     // private readonly Microsoft.Extensions.Localization.IStringLocalizer<StatementDraftService> _localizer; // optional localizer
     private readonly IAttachmentService? _attachments; // optional to keep compatibility with tests
     private readonly IReportCacheService? _reportCacheService;
+    private readonly IBudgetImpactEvaluationService? _budgetImpactEvaluationService;
     // no-op
     private List<StatementDraftDto>? allDrafts = null;
     private List<FinanceManager.Domain.Securities.Security>? allSecurities = null;
@@ -99,7 +100,8 @@ public sealed partial class StatementDraftService : IStatementDraftService
         IEnumerable<IStatementFileParser>? readers = null, 
         ILogger<StatementDraftService>? logger = null, 
         IAttachmentService? attachments = null,
-        IReportCacheService? reportCacheService = null)
+        IReportCacheService? reportCacheService = null,
+        IBudgetImpactEvaluationService? budgetImpactEvaluationService = null)
     {
         _db = db;
         _aggregateService = aggregateService;
@@ -108,6 +110,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
         _logger = logger ?? NullLogger<StatementDraftService>.Instance;
         _attachments = attachments;
         _reportCacheService = reportCacheService;
+        _budgetImpactEvaluationService = budgetImpactEvaluationService;
         // localization not required in constructor
         _statementFileParsers = (readers is not null && readers.ToList().Any()) ? readers.ToList() : new List<IStatementFileParser>
         {
@@ -1926,7 +1929,13 @@ public sealed partial class StatementDraftService : IStatementDraftService
             }
         }
         var isValid = messages.All(m => !string.Equals(m.Severity, "Error", StringComparison.OrdinalIgnoreCase));
-        return new DraftValidationResultDto(draft.Id, isValid, messages);
+        var budgetImpact = _budgetImpactEvaluationService != null
+            ? await _budgetImpactEvaluationService.EvaluateDraftImpactAsync(draft.Id, entryId, ownerUserId, ct)
+            : null;
+        return new DraftValidationResultDto(draft.Id, isValid, messages)
+        {
+            BudgetImpact = budgetImpact
+        };
     }
 
     /// <summary>
@@ -1973,6 +1982,10 @@ public sealed partial class StatementDraftService : IStatementDraftService
         var toBook = (entryId == null ? allEntriesScope : allEntriesScope.Where(e => e.Id == entryId.Value))
             .Where(e => e.Status != StatementDraftEntryStatus.AlreadyBooked && e.Status != StatementDraftEntryStatus.Announced)
             .ToList();
+
+        var budgetImpactSummary = _budgetImpactEvaluationService == null
+            ? null
+            : await _budgetImpactEvaluationService.EvaluateDraftImpactAsync(draftId, entryId, ownerUserId, ct);
 
         var updatedPlanIds = new HashSet<Guid>();
         async Task UpdateRecurringPlanIfDueAsync(Guid planId, DateTime bookingDate, CancellationToken token)
@@ -2170,7 +2183,10 @@ public sealed partial class StatementDraftService : IStatementDraftService
 
             _reportCacheService?.EnqueueBudgetReportCacheRefresh(ownerUserId);
 
-            return new BookingResult(true, false, validation, null, toBook.Count, await GetNextStatementDraftAsync(draft));
+            return new BookingResult(true, false, validation, null, toBook.Count, await GetNextStatementDraftAsync(draft))
+            {
+                BudgetImpactSummary = budgetImpactSummary
+            };
         }
 
         // FULL BOOKING: commit whole draft
@@ -2204,7 +2220,10 @@ public sealed partial class StatementDraftService : IStatementDraftService
             validation = new DraftValidationResultDto(validation.DraftId, validation.IsValid, msgs);
         }
 
-        return new BookingResult(true, false, validation, null, toBook.Count, await GetNextStatementDraftAsync(draft));
+        return new BookingResult(true, false, validation, null, toBook.Count, await GetNextStatementDraftAsync(draft))
+        {
+            BudgetImpactSummary = budgetImpactSummary
+        };
     }
 
     private static int GetMonthsToAdd(SavingsPlanInterval interval) => interval switch

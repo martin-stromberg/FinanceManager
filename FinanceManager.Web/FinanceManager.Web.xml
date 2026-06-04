@@ -1933,7 +1933,7 @@
             Provides background task endpoints for mass classification and mass booking operations.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.#ctor(FinanceManager.Application.Statements.IStatementDraftService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.StatementDraftsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller},FinanceManager.Application.IBackgroundTaskManager,FinanceManager.Application.Attachments.IAttachmentService)">
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.#ctor(FinanceManager.Application.Statements.IStatementDraftService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.StatementDraftsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller},FinanceManager.Application.IBackgroundTaskManager,FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.Statements.IBudgetImpactEvaluationService)">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.StatementDraftsController"/>.
             </summary>

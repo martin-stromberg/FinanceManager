@@ -237,6 +237,21 @@
   <data name="Budget_Report_Export_Row_Unbudgeted" xml:space="preserve">
     <value>Unbudgeted</value>
   </data>
+  <data name="BudgetImpact_Header" xml:space="preserve">
+    <value>Budget impact</value>
+  </data>
+  <data name="BudgetImpact_SummaryHeader" xml:space="preserve">
+    <value>Budget changes</value>
+  </data>
+  <data name="BudgetImpact_Before" xml:space="preserve">
+    <value>Before</value>
+  </data>
+  <data name="BudgetImpact_After" xml:space="preserve">
+    <value>After</value>
+  </data>
+  <data name="BudgetImpact_Delta" xml:space="preserve">
+    <value>Delta</value>
+  </data>
   <data name="List_Th_Postings_Amount" xml:space="preserve">
     <value>Amount</value>
   </data>

@@ -17,6 +17,7 @@ This document provides a high-level description of the main functional areas of 
 - Booking
   - Convert draft entries into postings (bank, contact, savings plan, security).
   - Supports partial booking and split-drafts grouping logic.
+  - **Budgetwirkung bei Buchung (neu):** Bei Kontakt-/Sparplanzuordnung sowie beim finalen Buchen können Budget-Hinweise und eine Abschluss-Summary mit Vorher/Nachher/Delta zurückgegeben werden.
 
 - Attachments & Symbols
   - Upload attachments and assign them to drafts, entries or postings.
@@ -46,6 +47,7 @@ This document provides a high-level description of the main functional areas of 
 - Posting aggregates & reporting: `docs/flows/posting-aggregates.md`
 - Split / UploadGroup handling: `docs/flows/split-uploadgroup.md`
 - Savings plans (detailed rules): `docs/business/savings-plans.md`
+- Budgetwirkung bei Buchung: `docs/business/features/F018-budgetwirkung-buchung.md`
 - Security processing rules: `docs/business/security-processing.md`
  - Budget planning: `docs/business/budget-planning.md`
  - Reporting & KPIs (start page tiles): `docs/business/reporting-kpis.md`
@@ -54,4 +56,3 @@ This document provides a high-level description of the main functional areas of 
 - API endpoints overview and controller docs: `docs/api/`
 
 For more details consult the linked documents. If a missing detailed doc is required, open an issue or request it here and it will be produced.
-

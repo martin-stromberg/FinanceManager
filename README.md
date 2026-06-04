@@ -6,12 +6,15 @@ Kompakte Übersicht
 
 Kurz: Import → Klassifikation → Validierung → Buchung → Reporting.
 
-## Für Nutzer
+## Features
+
+### Für Nutzer
 Kurzbeschreibung und was die Anwendung bietet (nicht‑technisch):
 - Kontoauszüge (CSV/PDF) importieren und automatisch oder manuell kategorisieren
 - Sparpläne verwalten (einmalig oder wiederkehrend) und Zielerreichung verfolgen
 - Wertpapiertransaktionen (Kauf/Verkauf/Dividende) erfassen und Gebühren/Steuern berücksichtigen
 - Wertpapier-Performance-Analyse: TWR, IRR, CAGR, Sharpe Ratio, Max. Drawdown – mit Benchmark-Vergleich
+- Budgetwirkung bei Buchung: Hinweise bei kritischen Budgets und Abschluss-Summary mit Vorher/Nachher/Delta
 - Berichte und KPI‑Dashboard; Daten als CSV/XLSX exportieren
 - Anhänge pro Buchung verwalten und Backups erstellen
 
@@ -24,14 +27,16 @@ Schnelle Nutzung (Kurz):
 
 Hinweis: Diese README beschreibt die Entwicklungs‑ und Installationsdetails. Für eine reine Nutzer‑Installation wird eine gehostete Instanz oder eine einfache Install‑Anleitung benötigt (siehe `docs/` oder Admin/Hilfe im Webinterface).
 
-## Für Entwickler
+### Für Entwickler
 Kurz: welche Informationen Entwickler brauchen, um das Projekt lokal zu betreiben und weiterzuentwickeln.
 
-Voraussetzungen
+## Installation
+
+### Voraussetzungen
 - .NET 10 SDK
 - (optional) SQLite oder SQL Server für Produktion
 
-Schnellstart (lokal)
+### Schnellstart (lokal)
 
 ```bash
 git clone <repo-url>
@@ -44,7 +49,15 @@ dotnet run
 
 Default URLs are printed when you run the application (see the console output from `dotnet run`). Do not rely on a hardcoded port — configure `ASPNETCORE_URLS`, `launchSettings.json` or use `dotnet run --urls "http://localhost:5002;https://localhost:5003"` to override the defaults.
 
-Datenbankmigrationen
+## Usage
+
+- Start der Anwendung über `dotnet run` im Projekt `FinanceManager.Web`.
+- Zugriff über die in der Konsole ausgegebenen URLs.
+- Primärer Nutzerfluss: Importieren → Draft klassifizieren → validieren → buchen → Reports prüfen.
+
+## Konfiguration
+
+### Datenbankmigrationen
 
 Änderungen am Domain‑Modell müssen gegen den korrekten DbContext migriert werden. Beispiel für `AppDbContext`:
 
@@ -53,7 +66,7 @@ dotnet ef migrations add 20260329_AddSomething -p FinanceManager.Infrastructure 
 dotnet ef database update -p FinanceManager.Infrastructure -s FinanceManager.Web --context AppDbContext
 ```
 
-Tests & Qualität
+### Tests & Qualität
 
 ```bash
 dotnet test
@@ -61,7 +74,7 @@ dotnet test
 - Formatierung: `dotnet format` vor PR
 - CI soll Build, Tests und Formatierung prüfen
 
-Architektur
+## Architektur
 
 Schichtenmodell: `Domain` → `Application` → `Infrastructure` → `Web`
 
@@ -80,7 +93,7 @@ Schichtenmodell: `Domain` → `Application` → `Infrastructure` → `Web`
 
 Details: [`docs/architecture/`](docs/architecture/)
 
-Dokumentation & API
+## Dokumentation & API
 
 - Projektdokumentation unter `docs/` (Flows, Business Rules, API stubs)
 - Installationsanleitung: `docs/install.md`
@@ -91,25 +104,35 @@ Dokumentation & API
 - [Architektur-Blueprint Renditeanalyse](docs/architecture/architecture-blueprint-renditeanalyse.md)
 - [Business-Dokumentation F017 Renditeanalyse](docs/business/features/F017-renditeanalyse.md)
 
-Entwicklungskonventionen
+## Entwicklungskonventionen
 
 - Siehe `.github/copilot-instructions.md` für Coding‑Guidelines (Naming, Async, Logging, Tests).
 - Branching & Commits: Conventional Commits (`feat:`, `fix:`, `docs:` ...)
 
-Security
+## Security
 
 - Keine Secrets im Repo. Verwende Environment Variables oder Secret Manager.
 - JWTs werden via HttpOnly Cookie verwaltet; sichere Konfiguration in Produktion.
 
-Kontakt / Issues
+## Deployment
+
+- Für produktiven Betrieb HTTPS erzwingen, Secret-Management aktivieren und eine persistente Datenbank (SQL Server oder SQLite mit Backup-Strategie) verwenden.
+- Reverse-Proxy (z. B. Nginx/IIS) für TLS-Terminierung und Header-Härtung.
+- Vor Deployment: `dotnet build` und `dotnet test` erfolgreich ausführen.
+
+## Kontakt / Issues
 
 - Öffne Issues für Bugs/Feature‑Requests. Für größere Änderungen bitte zuerst Design‑Discussion.
 
-Bekannte offene Punkte
+## Bekannte offene Punkte
 
 - **BUG-1:** `BuildTwrPeriods` verwendet `start` statt `end` als Periodenbeginn → TWR-Ergebnisse können verfälscht sein (Regressionstest vorhanden)
 - **Ausstehende Tests (Prio 2/3):** Periodische Renditen, Benchmark-Normalisierung, bUnit UI-Tests noch nicht implementiert
 
-Lizenz
+## Changelog
+
+- 2026-05: Budget-Impact-Auswertung für Statement-Buchung dokumentiert (Entry-Hinweise + Booking-Summary).
+
+## Lizenz
 
 - MIT — siehe `LICENSE`.

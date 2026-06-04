@@ -2,6 +2,7 @@
 @using FinanceManager.Web.ViewModels.Common
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
+@using FinanceManager.Shared.Dtos.Statements
 @inject IServiceProvider ServiceProvider
 @inject IJSRuntime JS
 
@@ -87,6 +88,32 @@
             }
             catch { }
         }
+    }
+
+    private BudgetImpactHintType? GetHighestSeverity(BudgetImpactEvaluationDto? impact)
+    {
+        if (impact == null || impact.Hints == null || impact.Hints.Count == 0)
+        {
+            return null;
+        }
+
+        return impact.Hints.Max(h => h.HintType);
+    }
+
+    private string? GetBudgetTooltip(BudgetImpactEvaluationDto? impact)
+    {
+        if (impact == null || impact.Hints == null || impact.Hints.Count == 0)
+        {
+            return null;
+        }
+
+        var highest = impact.Hints.OrderByDescending(h => h.HintType).FirstOrDefault();
+        if (highest == null)
+        {
+            return null;
+        }
+
+        return $"{highest.BudgetPurposeName} ({highest.BudgetPeriod}): {highest.Reason}";
     }
 }
 
@@ -248,6 +275,7 @@ else
                         else
                         {
                             <span>@(string.IsNullOrWhiteSpace(item.Subject) ? string.Empty : item.Subject)</span>
+                            <BudgetImpactBadge HintType="@GetHighestSeverity(item.BudgetImpact)" TooltipText="@GetBudgetTooltip(item.BudgetImpact)" />
                         }
                     </td>
 

@@ -29,6 +29,24 @@
             und nur tatsächlich ungeplante Self-Postings zurückgeben (hier: +12,34 €).
             </summary>
         </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientStatementDraftsTests.StatementDrafts_Book_ShouldReturnBudgetImpactSummary_WhenBudgetPurposeExistsForContact">
+            <summary>
+            Verifies that <see cref="P:FinanceManager.Shared.Dtos.Statements.BookingResult.BudgetImpactSummary"/> is populated at the client after booking
+            a full draft when a matching budget purpose with a rule exists for the booked contact.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientStatementDraftsTests.StatementDrafts_BookEntry_ShouldReturnBudgetImpactSummary_WhenBudgetPurposeExistsForContact">
+            <summary>
+            Verifies that <see cref="P:FinanceManager.Shared.Dtos.Statements.BookingResult.BudgetImpactSummary"/> is populated at the client when booking
+            a single entry (partial booking) that has a matching budget purpose for its contact.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientStatementDraftsTests.StatementDrafts_Book_ShouldReturnNullBudgetImpactSummary_WhenNoBudgetPurposeExists">
+            <summary>
+            Verifies that <see cref="P:FinanceManager.Shared.Dtos.Statements.BookingResult.BudgetImpactSummary"/> is null when no budget purpose
+            exists for the booked contact.
+            </summary>
+        </member>
         <member name="P:FinanceManager.Tests.Integration.TestWebApplicationFactory.FixedUtcNow">
             <summary>
             When set, the factory will register a <see cref="T:System.TimeProvider"/> that returns this fixed UTC time.

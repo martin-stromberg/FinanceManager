@@ -1,23 +1,92 @@
 # StatementDraftsController
 
-Path: `FinanceManager.Web.Controllers.StatementDraftsController`
+Pfad: `FinanceManager.Web/Controllers/StatementDraftsController.cs`  
+Route-Basis: `/api/statement-drafts`
 
-Purpose:
-- Upload and manage statement drafts, classification, validation, booking, attachments, split/assign operations.
+## Zweck
 
-Key endpoints (summary):
-- `POST /api/statement-drafts/upload` - Upload statement file to create draft(s)
-- `GET /api/statement-drafts` - list drafts
-- `GET /api/statement-drafts/{id}` - get draft with entries
-- `GET /api/statement-drafts/{draftId}/entries/{entryId}` - get entry detail
-- `POST /api/statement-drafts/{draftId}/entries` - add entry
-- `PUT /api/statement-drafts/{draftId}/entries/{entryId}` - update entry core
-- `POST /api/statement-drafts/{draftId}/entries/{entryId}/save-all` - save all advanced fields (savings/security)
-- `POST /api/statement-drafts/{draftId}/book` - book draft or entry
-- `POST /api/statement-drafts/{draftId}/validate` - validate draft or entry
-- `POST /api/statement-drafts/{draftId}/set-account` - set detected account for draft
+Verwaltet den gesamten Draft-Lebenszyklus beim Kontoauszug-Import:
+- Upload und Draft-Erzeugung
+- Klassifizierung und Entry-Zuordnung
+- Validierung/Buchung (vollständig oder je Entry)
+- Split- und Detailbearbeitung
+- Rückgabe von Budgetauswirkungs-Hinweisen
 
-Notes:
-- Validation codes include `SECURITY_ACCOUNT_NOT_ALLOWED`, `SECURITY_INVALID_CONTACT`, `SAVINGSPLAN_*`.
-- Validation messages can optionally include `RelatedRecordKind` and `RelatedRecordId` so the UI can link from general hints directly to the related record card.
-- Booking flow is partial-aware and respects account settings like `SecurityProcessingEnabled`.
+## Wichtige Endpunkte
+
+### Draft-Verwaltung
+- `GET /api/statement-drafts`
+- `GET /api/statement-drafts/count`
+- `DELETE /api/statement-drafts/all`
+- `POST /api/statement-drafts/upload`
+- `POST /api/statement-drafts` (leeren Draft anlegen)
+- `DELETE /api/statement-drafts/{draftId}`
+- `GET /api/statement-drafts/{draftId}/file`
+
+### Klassifizierung und Bearbeitung
+- `POST /api/statement-drafts/{draftId}/classify`
+- `POST /api/statement-drafts/{draftId}/account/{accountId}`
+- `POST /api/statement-drafts/{draftId}/commit`
+- `GET /api/statement-drafts/{draftId}/entries/{entryId}`
+- `POST /api/statement-drafts/{draftId}/entries`
+- `POST /api/statement-drafts/{draftId}/entries/{entryId}/edit-core`
+- `POST /api/statement-drafts/{draftId}/entries/{entryId}/save-all`
+- `DELETE /api/statement-drafts/{draftId}/entries/{entryId}`
+
+### Entry-Zuordnungen
+- `POST /api/statement-drafts/{draftId}/entries/{entryId}/contact`
+- `POST /api/statement-drafts/{draftId}/entries/{entryId}/costneutral`
+- `POST /api/statement-drafts/{draftId}/entries/{entryId}/savingsplan`
+- `POST /api/statement-drafts/{draftId}/entries/{entryId}/savingsplan/archive-on-booking`
+- `POST /api/statement-drafts/{draftId}/entries/{entryId}/security`
+- `POST /api/statement-drafts/{draftId}/entries/{entryId}/split`
+- `POST /api/statement-drafts/{draftId}/entries/{entryId}/classify-entry`
+- `POST /api/statement-drafts/{draftId}/entries/{entryId}/reset-duplicate`
+
+### Validierung und Buchung
+- `GET /api/statement-drafts/{draftId}/validate`
+- `GET /api/statement-drafts/{draftId}/entries/{entryId}/validate`
+- `POST /api/statement-drafts/{draftId}/book?forceWarnings={bool}`
+- `POST /api/statement-drafts/{draftId}/entries/{entryId}/book?forceWarnings={bool}`
+
+## Budget-Impact-Erweiterung (neu)
+
+### 1) Echtzeit-Hinweise auf Entry-Ebene
+Bei folgenden Endpunkten enthält die Antwort nun optional `budgetImpact` im `StatementDraftEntryDto`:
+- `.../contact`
+- `.../savingsplan`
+- `.../save-all`
+
+Struktur (gekürzt):
+- `entryId`
+- `evaluatedAtUtc`
+- `evaluationFingerprint`
+- `hints[]` mit:
+  - `budgetPurposeId`, `budgetPurposeName`, `budgetPeriod`
+  - `hintType` (`Neutral`, `StronglyChanged`, `AlmostExhausted`, `Exceeded`)
+  - `targetValue`, `actualBefore`, `actualAfter`
+  - `fulfillmentRateBefore`, `fulfillmentRateAfter`, `delta`
+  - `reason`
+
+### 2) Abschluss-Summary bei Buchung
+`BookingResult` enthält optional `budgetImpactSummary` für:
+- `POST /{draftId}/book`
+- `POST /{draftId}/entries/{entryId}/book`
+
+Struktur (gekürzt):
+- `draftId`, `entryId`, `evaluatedAtUtc`, `evaluationFingerprint`
+- `highestSeverity`
+- `items[]` (je betroffenem Budgetzweck) mit Vorher/Nachher/Delta und Begründung
+
+## Fehler- und Rückgabeverhalten
+
+- `400 BadRequest`: Validierungsfehler (z. B. fachliche Verletzungen)
+- `428 Precondition Required`: Warnungen vorhanden, `forceWarnings=false`
+- `404 NotFound`: Draft/Entry nicht vorhanden oder nicht sichtbar
+- `200 OK`: erfolgreiche Verarbeitung inkl. Dto/Result mit optionalen Budget-Impact-Daten
+
+## Referenzen
+
+- Service-Logik: `FinanceManager.Infrastructure/Statements/StatementDraftService.cs`
+- Budgetbewertung: `FinanceManager.Infrastructure/Statements/BudgetImpactEvaluationService.cs`
+- DTOs: `FinanceManager.Shared/Dtos/Statements/BudgetImpactDtos.cs`

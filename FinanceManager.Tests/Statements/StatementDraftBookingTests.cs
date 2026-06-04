@@ -6,6 +6,8 @@ using FinanceManager.Domain.Statements;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Aggregates;
 using FinanceManager.Infrastructure.Statements;
+using FinanceManager.Application.Statements;
+using FinanceManager.Shared.Dtos.Statements;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using FinanceManager.Application.Accounts;
@@ -37,6 +39,27 @@ public sealed class StatementDraftBookingTests
 
         public Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct)
             => throw new NotImplementedException();
+    }
+
+    private sealed class TestBudgetImpactEvaluationService : IBudgetImpactEvaluationService
+    {
+        private readonly BookingImpactSummaryDto? _summary;
+
+        public TestBudgetImpactEvaluationService(BookingImpactSummaryDto? summary)
+        {
+            _summary = summary;
+        }
+
+        public List<(Guid DraftId, Guid? EntryId, Guid OwnerUserId)> DraftCalls { get; } = [];
+
+        public Task<BudgetImpactEvaluationDto?> EvaluateEntryImpactAsync(Guid draftId, Guid entryId, Guid ownerUserId, CancellationToken ct)
+            => Task.FromResult<BudgetImpactEvaluationDto?>(null);
+
+        public Task<BookingImpactSummaryDto?> EvaluateDraftImpactAsync(Guid draftId, Guid? entryId, Guid ownerUserId, CancellationToken ct)
+        {
+            DraftCalls.Add((draftId, entryId, ownerUserId));
+            return Task.FromResult(_summary);
+        }
     }
 
     private static (StatementDraftService sut, AppDbContext db, SqliteConnection conn, Guid owner) Create()
@@ -129,6 +152,62 @@ public sealed class StatementDraftBookingTests
     }
 
     [Fact]
+    public async Task Booking_SingleEntry_ShouldAttachBudgetImpactSummary_WhenBookingIsPartial()
+    {
+        var (_, db, conn, owner) = Create();
+        var (acc, _) = await AddAccountAsync(db, owner);
+        var draft = await CreateDraftAsync(db, owner, acc.Id);
+
+        var shop = new Contact(owner, "Shop GmbH", ContactType.Organization, null, null, false);
+        db.Contacts.Add(shop);
+        await db.SaveChangesAsync();
+
+        var e1 = draft.AddEntry(DateTime.Today, 10m, "A", shop.Name, DateTime.Today, "EUR", null, false);
+        var e2 = draft.AddEntry(DateTime.Today, 20m, "B", shop.Name, DateTime.Today, "EUR", null, false);
+        db.Entry(e1).State = EntityState.Added;
+        db.Entry(e2).State = EntityState.Added;
+        e1.MarkAccounted(shop.Id);
+        e2.MarkAccounted(shop.Id);
+        await db.SaveChangesAsync();
+
+        var summary = new BookingImpactSummaryDto(
+            draft.Id,
+            e1.Id,
+            DateTime.UtcNow,
+            "fingerprint-partial",
+            BudgetImpactHintType.StronglyChanged,
+            [
+                new BookingImpactSummaryItemDto(
+                    Guid.NewGuid(),
+                    "Groceries",
+                    "2026-05",
+                    BudgetImpactHintType.StronglyChanged,
+                    100m,
+                    80m,
+                    90m,
+                    0.8m,
+                    0.9m,
+                    0.1m,
+                    "Changed")
+            ]);
+        var budgetImpact = new TestBudgetImpactEvaluationService(summary);
+        var bookingSut = new StatementDraftService(db, new PostingAggregateService(db), new TestAccountService(), null, null, NullLogger<StatementDraftService>.Instance, null, null, budgetImpact);
+
+        var res = await bookingSut.BookAsync(draft.Id, e1.Id, owner, false, CancellationToken.None);
+
+        Assert.True(res.Success);
+        Assert.NotNull(res.BudgetImpactSummary);
+        Assert.Equal(summary.EvaluationFingerprint, res.BudgetImpactSummary!.EvaluationFingerprint);
+        Assert.Equal(summary.HighestSeverity, res.BudgetImpactSummary.HighestSeverity);
+        Assert.Single(budgetImpact.DraftCalls);
+        Assert.Equal(draft.Id, budgetImpact.DraftCalls[0].DraftId);
+        Assert.Equal(e1.Id, budgetImpact.DraftCalls[0].EntryId);
+        Assert.Equal(owner, budgetImpact.DraftCalls[0].OwnerUserId);
+
+        conn.Dispose();
+    }
+
+    [Fact]
     public async Task Booking_ShouldFail_WhenNoAccountAssigned()
     {
         var (sut, db, conn, owner) = Create();
@@ -164,7 +243,7 @@ public sealed class StatementDraftBookingTests
     [Fact]
     public async Task Booking_SelfContact_ShouldRequireConfirmation_AndCreateBankAndContactPostings()
     {
-        var (sut, db, conn, owner) = Create();
+        var (_, db, conn, owner) = Create();
         var (acc, _) = await AddAccountAsync(db, owner);
         var draft = await CreateDraftAsync(db, owner, acc.Id);
         var self = await db.Contacts.FirstAsync(c => c.OwnerUserId == owner && c.Type == ContactType.Self);
@@ -173,13 +252,41 @@ public sealed class StatementDraftBookingTests
         entry.MarkAccounted(self.Id);
         await db.SaveChangesAsync();
 
-        var res1 = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
+        var summary = new BookingImpactSummaryDto(
+            draft.Id,
+            null,
+            DateTime.UtcNow,
+            "fingerprint-full",
+            BudgetImpactHintType.AlmostExhausted,
+            [
+                new BookingImpactSummaryItemDto(
+                    Guid.NewGuid(),
+                    "Savings",
+                    "2026-05",
+                    BudgetImpactHintType.AlmostExhausted,
+                    50m,
+                    40m,
+                    65.5m,
+                    0.8m,
+                    1.31m,
+                    0.51m,
+                    "Almost exhausted")
+            ]);
+        var budgetImpact = new TestBudgetImpactEvaluationService(summary);
+        var bookingSut = new StatementDraftService(db, new PostingAggregateService(db), new TestAccountService(), null, null, NullLogger<StatementDraftService>.Instance, null, null, budgetImpact);
+
+        var res1 = await bookingSut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
         Assert.False(res1.Success);
         Assert.True(res1.HasWarnings);
         Assert.True(res1.Validation.Messages.Any(m => m.Code == "SAVINGSPLAN_MISSING_FOR_SELF"));
 
-        var res2 = await sut.BookAsync(draft.Id, null, owner, true, CancellationToken.None);
+        var res2 = await bookingSut.BookAsync(draft.Id, null, owner, true, CancellationToken.None);
         Assert.True(res2.Success);
+        Assert.NotNull(res2.BudgetImpactSummary);
+        Assert.Equal(summary.EvaluationFingerprint, res2.BudgetImpactSummary!.EvaluationFingerprint);
+        Assert.Equal(summary.HighestSeverity, res2.BudgetImpactSummary.HighestSeverity);
+        Assert.Single(budgetImpact.DraftCalls);
+        Assert.Null(budgetImpact.DraftCalls[0].EntryId);
         Assert.Equal(2, db.Postings.Count());
         Assert.Equal(1, db.Postings.Count(p => p.Kind == PostingKind.Bank));
         Assert.Equal(1, db.Postings.Count(p => p.Kind == PostingKind.Contact));

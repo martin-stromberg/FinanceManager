@@ -831,6 +831,18 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
              // refresh card
              CardRecord = new CardRecord(BuildFields(), Entry);
 
+             // If BudgetImpact is present after save, show a budget impact hint panel
+             if (Entry?.BudgetImpact != null && Entry.BudgetImpact.Hints != null && Entry.BudgetImpact.Hints.Count > 0)
+             {
+                 try
+                 {
+                     var parameters = new Dictionary<string, object?> { ["BudgetImpact"] = Entry.BudgetImpact };
+                     var spec = new BaseViewModel.EmbeddedPanelSpec(typeof(FinanceManager.Web.Components.Statements.BudgetImpactSummaryPanel), parameters, EmbeddedPanelPosition.AfterRibbon, true);
+                     RaiseUiEmbeddedPanelRequested(spec);
+                 }
+                 catch { /* best-effort hint display */ }
+             }
+
              return true;
         }
         catch (Exception ex)

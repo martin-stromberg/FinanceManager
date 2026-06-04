@@ -1,5 +1,6 @@
 @using FinanceManager.Shared.Dtos.Statements
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
+@using FinanceManager.Web.Components.Statements
 @using Microsoft.AspNetCore.Components
 @inject NavigationManager NavigationManager
 
@@ -43,6 +44,9 @@ else
                 <button class="btn btn-primary" @onclick="ProceedIgnoreWarnings">@Localizer?["Validation_Proceed"]</button>
             </div>
         }
+
+        @* Budget Impact Panel - shows budget changes discovered during validation *@
+        <BudgetImpactValidationPanel ValidationResult="@ValidationResult" />
     </div>
 }
 

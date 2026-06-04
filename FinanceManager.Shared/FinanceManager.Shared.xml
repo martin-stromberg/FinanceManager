@@ -5386,6 +5386,76 @@
         <member name="P:FinanceManager.Shared.Dtos.Statements.BookingResult.nextDraftId">
             <summary>Id of next draft to process (navigation helper).</summary>
         </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.BookingResult.BudgetImpactSummary">
+            <summary>
+            Optional booking summary containing final budget impact details.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.BudgetImpactHintDto">
+            <summary>
+            Per-purpose budget impact hint for statement draft entry updates.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Statements.BudgetImpactHintDto.#ctor(System.Nullable{System.Guid},System.String,System.String,FinanceManager.Shared.Dtos.Statements.BudgetImpactHintType,System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.String)">
+            <summary>
+            Per-purpose budget impact hint for statement draft entry updates.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.BudgetImpactEvaluationDto">
+            <summary>
+            Budget impact result for a single entry interaction.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Statements.BudgetImpactEvaluationDto.#ctor(System.Guid,System.DateTime,System.String,System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Statements.BudgetImpactHintDto})">
+            <summary>
+            Budget impact result for a single entry interaction.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.BookingImpactSummaryItemDto">
+            <summary>
+            Single summary row for final booking impact output.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Statements.BookingImpactSummaryItemDto.#ctor(System.Nullable{System.Guid},System.String,System.String,FinanceManager.Shared.Dtos.Statements.BudgetImpactHintType,System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.Decimal,System.String)">
+            <summary>
+            Single summary row for final booking impact output.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.BookingImpactSummaryDto">
+            <summary>
+            Final summary of budget impact for entry or full draft booking.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Statements.BookingImpactSummaryDto.#ctor(System.Guid,System.Nullable{System.Guid},System.DateTime,System.String,FinanceManager.Shared.Dtos.Statements.BudgetImpactHintType,System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Statements.BookingImpactSummaryItemDto})">
+            <summary>
+            Final summary of budget impact for entry or full draft booking.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.BudgetImpactHintType">
+            <summary>
+            Categorized budget impact hint type for statement booking flows.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Statements.BudgetImpactHintType.Neutral">
+            <summary>
+            No critical budget effect detected or no mapping available.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Statements.BudgetImpactHintType.StronglyChanged">
+            <summary>
+            Fulfillment changed significantly based on configured delta thresholds.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Statements.BudgetImpactHintType.AlmostExhausted">
+            <summary>
+            Budget is close to the configured exhaustion threshold.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Statements.BudgetImpactHintType.Exceeded">
+            <summary>
+            Budget target is exceeded.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Statements.CommitResult">
             <summary>
             Result information after committing a draft into a statement import.
@@ -5453,7 +5523,7 @@
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Statements.DraftValidationResultDto">
             <summary>
-            Result object returned from validation containing all messages.
+            Result object returned from validation containing all messages and optional budget impact evaluation.
             </summary>
             <param name="DraftId">Validated draft id.</param>
             <param name="IsValid">True when no errors were found.</param>
@@ -5461,7 +5531,7 @@
         </member>
         <member name="M:FinanceManager.Shared.Dtos.Statements.DraftValidationResultDto.#ctor(System.Guid,System.Boolean,System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Statements.DraftValidationMessageDto})">
             <summary>
-            Result object returned from validation containing all messages.
+            Result object returned from validation containing all messages and optional budget impact evaluation.
             </summary>
             <param name="DraftId">Validated draft id.</param>
             <param name="IsValid">True when no errors were found.</param>
@@ -5475,6 +5545,11 @@
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Statements.DraftValidationResultDto.Messages">
             <summary>List of validation messages.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.DraftValidationResultDto.BudgetImpact">
+            <summary>
+            Budget impact summary for this draft, populated during validation.
+            </summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Statements.ImportFormat">
             <summary>
@@ -5674,6 +5749,11 @@
         <member name="M:FinanceManager.Shared.Dtos.Statements.StatementDraftEntryDto.#ctor(System.Guid,System.Int32,System.DateTime,System.Nullable{System.DateTime},System.Decimal,System.String,System.String,System.String,System.String,System.Boolean,System.Boolean,FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Boolean,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityTransactionType},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal})">
             <summary>
             DTO representing an entry within a statement draft.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.StatementDraftEntryDto.BudgetImpact">
+            <summary>
+            Optional real-time budget impact evaluation for this entry.
             </summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus">

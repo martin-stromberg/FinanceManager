@@ -1,6 +1,6 @@
 # Statement Draft Booking Flow
 
-This document describes the booking flow for a statement draft entry (from validation to postings). It contains a Mermaid flowchart and a short explanation.
+Dieses Dokument beschreibt den Buchungsfluss eines Statement-Drafts (Validierung → Buchung → Rückgabe) inkl. Budget-Impact-Summary.
 
 ## Mermaid diagram
 
@@ -9,24 +9,49 @@ flowchart TD
   A[Start: Book Request] --> B[Validate Draft & Entries]
   B --> |Errors| C[Return Errors, Stop]
   B --> |Warnings & not forced| D[Return Warnings]
-  B --> |OK| E[Create Postings per Entry]
-  E --> F{Is Split Parent?}
-  F --> |Yes| G[Create zero-amount parent postings]
-  G --> H[Book child drafts, create child postings, set parents]
-  F --> |No| I[Create bank + contact postings]
-  I --> J[Optional savings posting]
-  I --> K[Optional security postings]
-  J --> L[Update aggregates]
-  K --> L
-  H --> L
-  L --> M[Commit draft / Remove booked entries]
-  M --> N[Propagate attachments]
-  N --> O[Refresh reports cache]
-  O --> P[Return success]
+  B --> |OK| E[Evaluate Budget Impact Summary]
+  E --> F[Create Postings per Entry]
+  F --> G{Is Split Parent?}
+  G --> |Yes| H[Create zero-amount parent postings]
+  H --> I[Book child drafts, create child postings, set parents]
+  G --> |No| J[Create bank + contact postings]
+  J --> K[Optional savings posting]
+  J --> L[Optional security postings]
+  K --> M[Update aggregates]
+  L --> M
+  I --> M
+  M --> N[Commit draft / Remove booked entries]
+  N --> O[Propagate attachments]
+  O --> P[Refresh reports cache]
+  P --> Q[Return success with BookingResult.BudgetImpactSummary]
 ```
 
-## Notes
-- Validation ensures account and contact constraints, savings plan and security rules.
-- Security postings are only created when the detected account allows security processing and the contact equals the bank contact of the account.
-- Partial booking (single entry) keeps draft open and removes only processed entry.
-- Split booking creates parent zero postings and books grouped child drafts.
+## Kurzablauf
+
+1. **Validierung** prüft Fehler/Warnungen.
+2. Bei erfolgreicher Validierung wird vor dem eigentlichen Buchen eine **Budget-Impact-Summary** berechnet.
+3. Danach laufen die bestehenden Buchungswege:
+   - normales Posting
+   - Split-Parent/-Child-Logik
+   - optionale Savings/Security-Postings
+4. Ergebnis enthält `BookingResult` inkl. optionalem `BudgetImpactSummary`.
+
+## Budget-Impact-Einbindung
+
+- Einstiegspunkt: `StatementDraftService.BookAsync(...)`
+- Aufruf: `IBudgetImpactEvaluationService.EvaluateDraftImpactAsync(...)`
+- Rückgabe:
+  - bei Full-Booking und Partial-Booking jeweils im `BookingResult`
+  - Felder: `highestSeverity`, `items[]` mit Vorher/Nachher/Delta je Budgetzweck
+
+## Hinweise
+
+- Bewertung erfolgt auf Basis von `BudgetPurpose.SourceType`, geplanten Sollwerten (`IBudgetPlanningService`) und Istwerten + simuliertem Draft-Delta.
+- Nicht zuordenbare Kontexte werden als neutraler Hinweis geliefert.
+- Die Budget-Impact-Berechnung blockiert das Booking nicht; fehlende Evaluation liefert `null`.
+
+## Referenzen
+
+- `FinanceManager.Infrastructure/Statements/StatementDraftService.cs`
+- `FinanceManager.Infrastructure/Statements/BudgetImpactEvaluationService.cs`
+- `FinanceManager.Shared/Dtos/Statements/BudgetImpactDtos.cs`
