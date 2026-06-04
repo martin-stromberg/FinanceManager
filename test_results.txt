@@ -1,0 +1,42 @@
+Testlauf f├╝r "C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Tests.Integration\bin\Debug\net10.0\FinanceManager.Tests.Integration.dll" (.NETCoreApp,Version=v10.0)
+Testlauf f├╝r "C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Tests\bin\Debug\net10.0\FinanceManager.Tests.dll" (.NETCoreApp,Version=v10.0)
+Insgesamt 1 Testdateien stimmten mit dem angegebenen Muster ├╝berein.Insgesamt 1 Testdateien stimmten mit dem angegebenen Muster ├╝berein.
+
+[xUnit.net 00:00:02.43]     FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_TimelineGroupNote_ShouldContainIrrRate [FAIL]
+  Fehler FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_TimelineGroupNote_ShouldContainIrrRate [176 ms]
+  Fehlermeldung:
+   Expected timelineGroup.GroupNote "r = 3.95 %  ÔÇô  Die Rate, bei der die Summe aller Barwerte = 0 ergibt" to contain "3,95" because GroupNote must include the IRR rate formatted as a percentage.
+  Stapelverfolgung:
+     at FluentAssertions.Primitives.StringAssertions`1.Contain(String expected, String because, Object[] becauseArgs)
+   at FinanceManager.Tests.Securities.ReturnAnalysisServiceTests.GetKpiBreakdownsAsync_IrrBreakdown_TimelineGroupNote_ShouldContainIrrRate() in C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Tests\Securities\ReturnAnalysisServiceTests.cs:line 1574
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:02.74]     FinanceManager.Tests.Web.SecurityPriceErrorRecoveryTests.SecurityPriceWorker_ShouldProcessSecurityWhenPriceErrorExists_WhenRunExecutes [FAIL]
+  Fehler FinanceManager.Tests.Web.SecurityPriceErrorRecoveryTests.SecurityPriceWorker_ShouldProcessSecurityWhenPriceErrorExists_WhenRunExecutes [439 ms]
+  Fehlermeldung:
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Stapelverfolgung:
+     at FinanceManager.Tests.Web.SecurityPriceErrorRecoveryTests.SecurityPriceWorker_ShouldProcessSecurityWhenPriceErrorExists_WhenRunExecutes() in C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Tests\Web\SecurityPriceErrorRecoveryTests.cs:line 50
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:02.93]     FinanceManager.Tests.Web.SecurityPriceErrorRecoveryTests.SecurityPricesBackfillExecutor_ShouldIncludeSecurityWhenPriceErrorExists_WhenBackfillRuns [FAIL]
+  Fehler FinanceManager.Tests.Web.SecurityPriceErrorRecoveryTests.SecurityPricesBackfillExecutor_ShouldIncludeSecurityWhenPriceErrorExists_WhenBackfillRuns [185 ms]
+  Fehlermeldung:
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Stapelverfolgung:
+     at FinanceManager.Tests.Web.SecurityPriceErrorRecoveryTests.SecurityPricesBackfillExecutor_ShouldIncludeSecurityWhenPriceErrorExists_WhenBackfillRuns() in C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Tests\Web\SecurityPriceErrorRecoveryTests.cs:line 103
+--- End of stack trace from previous location ---
+
+Fehler!      : Fehler:     3, erfolgreich:   546, ├╝bersprungen:     0, gesamt:   549, Dauer: 8 s - FinanceManager.Tests.dll (net10.0)
+[xUnit.net 00:00:12.32]     FinanceManager.Tests.Integration.ApiClient.ApiClientAuthTests.Register_ShouldSetAuthCookie_AndReturnResponse [FAIL]
+  Fehler FinanceManager.Tests.Integration.ApiClient.ApiClientAuthTests.Register_ShouldSetAuthCookie_AndReturnResponse [11 s]
+  Fehlermeldung:
+   Expected resp.isAdmin to be False, but found True.
+  Stapelverfolgung:
+     at FluentAssertions.Primitives.BooleanAssertions`1.BeFalse(String because, Object[] becauseArgs)
+   at FinanceManager.Tests.Integration.ApiClient.ApiClientAuthTests.Register_ShouldSetAuthCookie_AndReturnResponse() in C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Tests.Integration\ApiClient\ApiClientAuthTests.cs:line 32
+--- End of stack trace from previous location ---
+
+Fehler!      : Fehler:     1, erfolgreich:    45, ├╝bersprungen:     0, gesamt:    46, Dauer: 22 s - FinanceManager.Tests.Integration.dll (net10.0)

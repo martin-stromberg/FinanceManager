@@ -15,6 +15,7 @@ Kurzbeschreibung und was die Anwendung bietet (nicht‑technisch):
 - Wertpapiertransaktionen (Kauf/Verkauf/Dividende) erfassen und Gebühren/Steuern berücksichtigen
 - Wertpapier-Performance-Analyse: TWR, IRR, CAGR, Sharpe Ratio, Max. Drawdown – mit Benchmark-Vergleich
 - Budgetwirkung bei Buchung: Hinweise bei kritischen Budgets und Abschluss-Summary mit Vorher/Nachher/Delta
+- Budget-Regeln mit Verwendungszweck-Pattern: optionales PurposePattern pro Regel (contains, case-insensitive) oder Regex-Matching inkl. Validierung
 - Berichte und KPI‑Dashboard; Daten als CSV/XLSX exportieren
 - Anhänge pro Buchung verwalten und Backups erstellen
 
@@ -102,6 +103,8 @@ Details: [`docs/architecture/`](docs/architecture/)
 - [Planungsübersicht Renditeanalyse](docs/planning-renditeanalyse.md)
 - [Anforderungen FA-WERT-REN-001](docs/requirements/FA-WERT-REN-001_Renditeanalyse.md)
 - [Architektur-Blueprint Renditeanalyse](docs/architecture/architecture-blueprint-renditeanalyse.md)
+- [Requirements: Budget-Verwendungszweck-Pattern inkl. Regex](Docs/requirements/budget-verwendungszweck.md)
+- [Architektur: Budget-Verwendungszweck-Pattern inkl. Regex](Docs/architecture/budget-verwendungszweck.md)
 - [Business-Dokumentation F017 Renditeanalyse](docs/business/features/F017-renditeanalyse.md)
 
 ## Entwicklungskonventionen
@@ -126,11 +129,13 @@ Details: [`docs/architecture/`](docs/architecture/)
 
 ## Bekannte offene Punkte
 
+- Hinweis: Die folgenden bekannten Testprobleme sind fachfremd und **nicht** durch das Feature „Budget-Verwendungszweck-Pattern“ verursacht.
 - **BUG-1:** `BuildTwrPeriods` verwendet `start` statt `end` als Periodenbeginn → TWR-Ergebnisse können verfälscht sein (Regressionstest vorhanden)
 - **Ausstehende Tests (Prio 2/3):** Periodische Renditen, Benchmark-Normalisierung, bUnit UI-Tests noch nicht implementiert
 
 ## Changelog
 
+- 2026-06: Budget-Verwendungszweck-Pattern inkl. Regex ergänzt (Migration `20260604172812_202606041500_AddBudgetRulePurposePattern`, API/Matching/Tests aktualisiert).
 - 2026-05: Budget-Impact-Auswertung für Statement-Buchung dokumentiert (Entry-Hinweise + Booking-Summary).
 
 ## Lizenz

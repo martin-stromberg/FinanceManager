@@ -12,4 +12,6 @@ public sealed record BudgetRuleDto(
     BudgetIntervalType Interval,
     int? CustomIntervalMonths,
     DateOnly StartDate,
-    DateOnly? EndDate);
+    DateOnly? EndDate,
+    string? PurposePattern = null,
+    bool UseRegex = false);

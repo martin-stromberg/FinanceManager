@@ -6,6 +6,7 @@ using FinanceManager.Shared.Dtos.Budget;
 using FinanceManager.Shared.Dtos.Postings;
 using FinanceManager.Shared.Dtos.Contacts;
 using FinanceManager.Application.Securities;
+using System.Text.RegularExpressions;
 
 namespace FinanceManager.Infrastructure.Budget;
 
@@ -22,6 +23,8 @@ namespace FinanceManager.Infrastructure.Budget;
 /// </summary>
 public sealed class BudgetReportService : IBudgetReportService
 {
+    private static readonly TimeSpan RegexMatchTimeout = TimeSpan.FromMilliseconds(200);
+
     private readonly IBudgetPurposeService _purposes;
     private readonly IBudgetCategoryService _categories;
     private readonly IBudgetRuleService _rules;
@@ -58,6 +61,43 @@ public sealed class BudgetReportService : IBudgetReportService
         _savingsPlans = savingsPlans;
         _securities = securities;
         _cacheService = cacheService;
+    }
+
+    private static bool MatchesPurposePattern(BudgetReportPostingRawDataDto posting, BudgetRuleDto rule)
+    {
+        if (string.IsNullOrWhiteSpace(rule.PurposePattern))
+        {
+            return true;
+        }
+
+        var input = posting.Description ?? string.Empty;
+        var pattern = rule.PurposePattern.Trim();
+        if (pattern.Length == 0)
+        {
+            return true;
+        }
+
+        if (rule.UseRegex)
+        {
+            try
+            {
+                return Regex.IsMatch(
+                    input,
+                    pattern,
+                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+                    RegexMatchTimeout);
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                return false;
+            }
+        }
+
+        return input.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
     private async Task<List<BudgetReportPostingRawDataDto>> BuildPostingDtosAsync(
@@ -127,7 +167,7 @@ public sealed class BudgetReportService : IBudgetReportService
                 ValutaDate = p.ValutaDate,
                 Amount = p.Amount,
                 PostingKind = p.Kind,
-                Description = p.Description ?? p.Subject ?? string.Empty,
+                Description = string.Join(" ", new[] { p.Subject, p.Description }.Where(x => !string.IsNullOrWhiteSpace(x))),
                 AccountId = p.AccountId,
                 AccountName = p.LinkedPostingAccountName ?? p.BankPostingAccountName,
                 ContactId = p.ContactId,
@@ -211,7 +251,10 @@ public sealed class BudgetReportService : IBudgetReportService
             foreach (var rule in rules.ToList())
             {
                 var expected = rule.Amount;
-                var candidate = postingsForPurpose.FirstOrDefault(p => Math.Sign(p.Amount) == Math.Sign(expected) && p.Amount == expected);
+                var candidate = postingsForPurpose.FirstOrDefault(p =>
+                    MatchesPurposePattern(p, rule)
+                    && Math.Sign(p.Amount) == Math.Sign(expected)
+                    && p.Amount == expected);
                 if (candidate != null)
                 {
                     matchedPostings.Add(candidate);
@@ -236,7 +279,7 @@ public sealed class BudgetReportService : IBudgetReportService
                     for (int idx = 0; idx < postingsForPurpose.Count && remaining > 0; )
                     {
                         var p = postingsForPurpose[idx];
-                        if (p.Amount <= 0) { idx++; continue; }
+                        if (p.Amount <= 0 || !MatchesPurposePattern(p, rule)) { idx++; continue; }
                         if (p.Amount <= remaining)
                         {
                             // fully consume posting
@@ -272,7 +315,7 @@ public sealed class BudgetReportService : IBudgetReportService
                     for (int idx = 0; idx < postingsForPurpose.Count && remainingAbs > 0; )
                     {
                         var p = postingsForPurpose[idx];
-                        if (p.Amount >= 0) { idx++; continue; }
+                        if (p.Amount >= 0 || !MatchesPurposePattern(p, rule)) { idx++; continue; }
                         var pAbs = Math.Abs(p.Amount);
                         if (pAbs <= remainingAbs)
                         {
@@ -309,7 +352,11 @@ public sealed class BudgetReportService : IBudgetReportService
             // any postings left in postingsForPurpose are unbudgeted for this purpose
             foreach (var left in postingsForPurpose)
             {
-                unbudgetedList.Add(left);
+                unbudgetedList.Add(left with
+                {
+                    BudgetCategoryId = null,
+                    BudgetPurposeId = null
+                });
                 postingDtos.RemoveAll(x => x.PostingId == left.PostingId);
             }
 
@@ -439,7 +486,10 @@ public sealed class BudgetReportService : IBudgetReportService
                 foreach (var rule in rulesForCategory.ToList())
                 {
                     var expected = rule.Amount;
-                    var candidate = postingsForCategory.FirstOrDefault(p => Math.Sign(p.Amount) == Math.Sign(expected) && p.Amount == expected);
+                    var candidate = postingsForCategory.FirstOrDefault(p =>
+                        MatchesPurposePattern(p, rule)
+                        && Math.Sign(p.Amount) == Math.Sign(expected)
+                        && p.Amount == expected);
                     if (candidate != null)
                     {
                         if (candidate.BudgetPurposeId.HasValue)
@@ -472,7 +522,7 @@ public sealed class BudgetReportService : IBudgetReportService
                         for (int idx = 0; idx < postingsForCategory.Count && remaining > 0; )
                         {
                             var p = postingsForCategory[idx];
-                            if (p.Amount <= 0) { idx++; continue; }
+                            if (p.Amount <= 0 || !MatchesPurposePattern(p, rule)) { idx++; continue; }
                             var targetPurposeId = p.BudgetPurposeId ?? Guid.Empty;
                             if (p.Amount <= remaining)
                             {
@@ -523,7 +573,7 @@ public sealed class BudgetReportService : IBudgetReportService
                         for (int idx = 0; idx < postingsForCategory.Count && remainingAbs > 0; )
                         {
                             var p = postingsForCategory[idx];
-                            if (p.Amount >= 0) { idx++; continue; }
+                            if (p.Amount >= 0 || !MatchesPurposePattern(p, rule)) { idx++; continue; }
                             var pAbs = Math.Abs(p.Amount);
                             var targetPurposeId = p.BudgetPurposeId ?? Guid.Empty;
                             if (pAbs <= remainingAbs)
@@ -577,7 +627,11 @@ public sealed class BudgetReportService : IBudgetReportService
                 // remaining postings become unbudgeted within this category
                 foreach (var left in postingsForCategory)
                 {
-                    unbudgetedList.Add(left);
+                    unbudgetedList.Add(left with
+                    {
+                        BudgetCategoryId = null,
+                        BudgetPurposeId = null
+                    });
                     postingDtos.RemoveAll(x => x.PostingId == left.PostingId);
                 }
 
@@ -942,7 +996,7 @@ public sealed class BudgetReportService : IBudgetReportService
                 ValutaDate = p.ValutaDate,
                 Amount = p.Amount,
                 PostingKind = p.Kind,
-                Description = p.Description ?? string.Empty,
+                Description = string.Join(" ", new[] { p.Subject, p.Description }.Where(x => !string.IsNullOrWhiteSpace(x))),
                 AccountId = p.AccountId,
                 AccountName = p.LinkedPostingAccountName ?? p.BankPostingAccountName,
                 ContactId = p.ContactId,
@@ -1026,9 +1080,9 @@ public sealed class BudgetReportService : IBudgetReportService
             ActualIncome = actualIncome,
             ActualExpenseAbs = actualExpenseAbs,
             ActualResult = actualIncome - actualExpenseAbs,
-            // ExpectedIncome = aktuelle Einnahmen + noch nicht erfüllte, budgetierte Einnahmen
+            // ExpectedIncome = aktuelle Einnahmen + noch nicht erfï¿½llte, budgetierte Einnahmen
             ExpectedIncome = actualIncome + Math.Max(0, plannedIncome - budgetedRealizedIncome),
-            // ExpectedExpenseAbs = aktuelle Ausgaben + noch nicht erfüllte, budgetierte Ausgaben
+            // ExpectedExpenseAbs = aktuelle Ausgaben + noch nicht erfï¿½llte, budgetierte Ausgaben
             ExpectedExpenseAbs = actualExpenseAbs + Math.Max(0, plannedExpenseAbs - budgetedRealizedExpenseAbs),
             // Remaining planned expenses = planned expenses minus budgeted realized expenses
             RemainingPlannedExpenseAbs = Math.Max(0, plannedExpenseAbs - budgetedRealizedExpenseAbs),

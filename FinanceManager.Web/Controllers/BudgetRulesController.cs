@@ -111,11 +111,11 @@ public sealed class BudgetRulesController : ControllerBase
 
             if (hasPurpose)
             {
-                created = await _svc.CreateAsync(_current.UserId, req.BudgetPurposeId!.Value, req.Amount, req.Interval, req.CustomIntervalMonths, req.StartDate, req.EndDate, ct);
+                created = await _svc.CreateAsync(_current.UserId, req.BudgetPurposeId!.Value, req.Amount, req.Interval, req.CustomIntervalMonths, req.StartDate, req.EndDate, req.PurposePattern, req.UseRegex, ct);
             }
             else
             {
-                created = await _svc.CreateForCategoryAsync(_current.UserId, req.BudgetCategoryId!.Value, req.Amount, req.Interval, req.CustomIntervalMonths, req.StartDate, req.EndDate, ct);
+                created = await _svc.CreateForCategoryAsync(_current.UserId, req.BudgetCategoryId!.Value, req.Amount, req.Interval, req.CustomIntervalMonths, req.StartDate, req.EndDate, req.PurposePattern, req.UseRegex, ct);
             }
 
             return Created($"/api/budget/rules/{created.Id}", created);
@@ -134,6 +134,15 @@ public sealed class BudgetRulesController : ControllerBase
         }
         catch (ArgumentException ex)
         {
+            // If the exception originates from PurposePattern regex validation, return a ModelState validation error
+            if (string.Equals(ex.ParamName, "pattern", StringComparison.OrdinalIgnoreCase) || string.Equals(ex.ParamName, "PurposePattern", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError(
+                    nameof(BudgetRuleCreateRequest.PurposePattern),
+                    _localizer["Budget_PurposePattern_InvalidRegex", ex.InnerException?.Message ?? ex.Message]);
+                return ValidationProblem(ModelState);
+            }
+
             return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
         }
         catch (DomainValidationException ex)
@@ -163,7 +172,7 @@ public sealed class BudgetRulesController : ControllerBase
 
         try
         {
-            var updated = await _svc.UpdateAsync(id, _current.UserId, req.Amount, req.Interval, req.CustomIntervalMonths, req.StartDate, req.EndDate, ct);
+            var updated = await _svc.UpdateAsync(id, _current.UserId, req.Amount, req.Interval, req.CustomIntervalMonths, req.StartDate, req.EndDate, req.PurposePattern, req.UseRegex, ct);
             return updated == null ? NotFound() : NoContent();
         }
         catch (AggregateException ex)
@@ -180,6 +189,15 @@ public sealed class BudgetRulesController : ControllerBase
         }
         catch (ArgumentException ex)
         {
+            // If the exception originates from PurposePattern regex validation, return a ModelState validation error
+            if (string.Equals(ex.ParamName, "pattern", StringComparison.OrdinalIgnoreCase) || string.Equals(ex.ParamName, "PurposePattern", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError(
+                    nameof(BudgetRuleUpdateRequest.PurposePattern),
+                    _localizer["Budget_PurposePattern_InvalidRegex", ex.InnerException?.Message ?? ex.Message]);
+                return ValidationProblem(ModelState);
+            }
+
             return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
         }
         catch (DomainValidationException ex)

@@ -15,6 +15,61 @@
             uncategorized transactions.</remarks>
         </member>
         <!-- Badly formed XML comment ignored for member "M:FinanceManager.Tests.Budget.BudgetReportServiceTests.Test_GetRawData_ForEntireMonthAsync" -->
+        <member name="T:FinanceManager.Tests.Budget.BudgetRulePurposePatternClearingTests">
+            <summary>
+            Verifies that purpose patterns can be cleared/deleted from budget rules.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Budget.BudgetRulePurposePatternClearingTests.CreateAsync_ShouldSetPurposePattern_WhenPatternIsProvided">
+            <summary>
+            Tests that a purpose pattern can be added to a budget rule on creation.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Budget.BudgetRulePurposePatternClearingTests.UpdateAsync_ShouldClearPurposePattern_WhenPatternIsSetToNull">
+            <summary>
+            Tests that a purpose pattern can be cleared (set to null) via update.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Budget.BudgetRulePurposePatternClearingTests.UpdateAsync_ShouldClearPurposePattern_WhenPatternIsSetToEmptyString">
+            <summary>
+            Tests that a purpose pattern can be cleared with an empty string.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Budget.BudgetRulePurposePatternClearingTests.UpdateAsync_ShouldResetUseRegex_WhenPatternIsCleared">
+            <summary>
+            Tests that UseRegex is also reset when pattern is cleared.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Budget.BudgetRulePurposePatternClearingTests.GetAsync_ShouldReturnClearedRule_WhenPatternWasCleared">
+            <summary>
+            Tests that a cleared purpose pattern allows rules to match all bookings again.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.Budget.BudgetRuleServiceCacheInvalidationTests">
+            <summary>
+            Verifies cache invalidation behavior for budget rule write operations.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Budget.BudgetRuleServiceCacheInvalidationTests.CreateAsync_ShouldInvalidateAllReportCacheEntries_WhenRuleIsCreated">
+            <summary>
+            Ensures create operations trigger report cache invalidation.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Budget.BudgetRuleServiceCacheInvalidationTests.UpdateAsync_ShouldInvalidateAllReportCacheEntries_WhenRuleIsUpdated">
+            <summary>
+            Ensures update operations trigger report cache invalidation.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Budget.BudgetRuleServiceCacheInvalidationTests.DeleteAsync_ShouldInvalidateAllReportCacheEntries_WhenRuleIsDeleted">
+            <summary>
+            Ensures delete operations trigger report cache invalidation when a rule was removed.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Budget.BudgetRuleServiceCacheInvalidationTests.DeleteAsync_ShouldNotInvalidateCache_WhenRuleDoesNotExist">
+            <summary>
+            Ensures deleting a non-existing rule does not trigger cache invalidation.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Tests.Components.ValidationResultPanelTests.GeneralMessage_WithRelatedRecord_RendersCardLink">
             <summary>
             Ensures that a general validation message with related-record metadata renders a card link.
@@ -25,6 +80,26 @@
             Ensures that entry-specific messages are not treated as general hints in the panel.
             </summary>
         </member>
+        <member name="T:FinanceManager.Tests.Controllers.BudgetRulesControllerTests">
+            <summary>
+            Verifies BudgetRulesController validation behavior around regex patterns.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Controllers.BudgetRulesControllerTests.CreateAsync_ShouldReturnValidationProblem_WhenRegexPatternIsInvalid">
+            <summary>
+            Ensures create maps invalid regex errors to a validation problem response.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Controllers.BudgetRulesControllerTests.UpdateAsync_ShouldReturnValidationProblem_WhenRegexPatternIsInvalid">
+            <summary>
+            Ensures update maps invalid regex errors to a validation problem response.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Controllers.BudgetRulesControllerTests.UpdateAsync_ShouldAcceptNullPattern_WhenPatternIsCleared">
+            <summary>
+            Ensures update accepts null pattern (clearing the pattern is allowed).
+            </summary>
+        </member>
         <member name="M:FinanceManager.Tests.Infrastructure.Auth.JwtCookieAuthTokenProviderTests.GetAccessTokenAsync_ShouldPreferRequestCookie_WhenCacheContainsDifferentToken">
             <summary>
             Ensures that an available request cookie takes precedence over a still-valid cached token.
@@ -33,6 +108,31 @@
         <member name="M:FinanceManager.Tests.Infrastructure.Auth.JwtCookieAuthTokenProviderTests.GetAccessTokenAsync_ShouldReturnCachedToken_WhenHttpContextIsUnavailable">
             <summary>
             Ensures that the provider can continue using a valid cached token when no HTTP context is available.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.Infrastructure.Budget.BudgetReportServiceRawDataTests">
+            <summary>
+            Verifies purpose-pattern handling in budget report raw data generation.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Budget.BudgetReportServiceRawDataTests.GetRawDataAsync_ShouldMatchPurposePattern_WhenContainsIsCaseInsensitive">
+            <summary>
+            Ensures case-insensitive contains matching allocates postings to the matching purpose.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Budget.BudgetReportServiceRawDataTests.GetRawDataAsync_ShouldSplitMatchingAndUnbudgetedPostings_WhenRegexPatternIsUsed">
+            <summary>
+            Ensures regex matching allocates only matching postings and keeps non-matching postings unbudgeted.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Budget.BudgetReportServiceRawDataTests.GetRawDataAsync_ShouldTreatEmptyPurposeTextAsNonMatch_WhenPatternExists">
+            <summary>
+            Ensures empty posting descriptions do not match non-empty patterns.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Budget.BudgetReportServiceRawDataTests.GetRawDataAsync_ShouldKeepPostingUnbudgeted_WhenRegexMatchTimesOutOrFails">
+            <summary>
+            Ensures problematic regex patterns do not throw and unmatched postings stay unbudgeted.
             </summary>
         </member>
         <member name="T:FinanceManager.Tests.Infrastructure.Budget.ReportCacheServiceTests">
@@ -955,6 +1055,21 @@
             any drawdown from being recorded until a positive peak is established.
             With a monotonically non-decreasing series after the initial zero, no trough ever falls
             below the peak → max drawdown stays at 0.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Statements.BudgetImpactEvaluationServiceTests.EvaluateDraftImpactAsync_ShouldReturnImpactItem_WhenRegexPurposePatternMatches">
+            <summary>
+            Verifies that regex purpose patterns are respected for statement draft budget impact checks.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Statements.BudgetImpactEvaluationServiceTests.EvaluateDraftImpactAsync_ShouldReturnNeutral_WhenPurposeTextIsEmptyAndPatternIsDefined">
+            <summary>
+            Verifies that empty purpose text does not match non-empty patterns and stays neutral.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Statements.BudgetImpactEvaluationServiceTests.EvaluateDraftImpactAsync_ShouldRemainNeutral_WhenRegexIsPotentiallyCatastrophic">
+            <summary>
+            Verifies timeout-safe regex handling by ensuring no exception escapes and non-matching entries stay neutral.
             </summary>
         </member>
         <member name="T:FinanceManager.Tests.Statements.StatementDraftImportSplitTests">

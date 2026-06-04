@@ -91,7 +91,8 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
                     r.Interval.ToString(),
                     r.Amount.ToString("C", CultureInfo.CurrentUICulture),
                     r.StartDate.ToString("d", CultureInfo.CurrentUICulture),
-                    r.EndDate?.ToString("d", CultureInfo.CurrentUICulture) ?? string.Empty));
+                    r.EndDate?.ToString("d", CultureInfo.CurrentUICulture) ?? string.Empty,
+                    r.PurposePattern));
             }
         }
         catch (Exception ex)
@@ -115,14 +116,16 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
         {
             new ListColumn("interval", L["List_Th_Interval"], "20%", ListColumnAlign.Left),
             new ListColumn("amount", L["List_Th_Amount"], "20%", ListColumnAlign.Right),
-            new ListColumn("start", L["List_Th_Start"], "30%", ListColumnAlign.Left),
-            new ListColumn("end", L["List_Th_End"], "30%", ListColumnAlign.Left)
+            new ListColumn("purpose", L["List_Th_BudgetRule_Purpose"], "30%", ListColumnAlign.Left),
+            new ListColumn("start", L["List_Th_Start"], "15%", ListColumnAlign.Left),
+            new ListColumn("end", L["List_Th_End"], "15%", ListColumnAlign.Left),
         };
 
         Records = Items.Select(i => new ListRecord(new List<ListCell>
         {
             new ListCell(ListCellKind.Text, Text: i.Interval),
             new ListCell(ListCellKind.Text, Text: i.Amount),
+            new ListCell(ListCellKind.Text, Text: string.IsNullOrWhiteSpace(i.PurposePattern) ? "—" : i.PurposePattern),
             new ListCell(ListCellKind.Text, Text: i.Start),
             new ListCell(ListCellKind.Text, Text: i.End)
         }, i)).ToList();

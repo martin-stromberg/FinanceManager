@@ -198,6 +198,18 @@
   <data name="List_Th_Postings_Date" xml:space="preserve">
     <value>Date</value>
   </data>
+  <data name="Ribbon_QuickEdit" xml:space="preserve">
+    <value>Quick edit</value>
+  </data>
+  <data name="Ribbon_SaveQuickEdit" xml:space="preserve">
+    <value>Save edits</value>
+  </data>
+  <data name="Ribbon_CancelQuickEdit" xml:space="preserve">
+    <value>Cancel edits</value>
+  </data>
+  <data name="Ribbon_Group_QuickEdit" xml:space="preserve">
+    <value>Quick edit</value>
+  </data>
   <data name="List_Th_Postings_Valuta" xml:space="preserve">
     <value>Valuta</value>
   </data>
@@ -237,8 +249,8 @@
   <data name="BudgetImpact_After" xml:space="preserve">
     <value>After</value>
   </data>
-  <data name="BudgetImpact_FulfillmentChange" xml:space="preserve">
-    <value>Change in target fulfillment</value>
+  <data name="BudgetImpact_Delta" xml:space="preserve">
+    <value>Delta</value>
   </data>
   <data name="List_Th_Postings_Amount" xml:space="preserve">
     <value>Amount</value>
@@ -1404,18 +1416,6 @@
   <data name="StatementDrafts_SuggestedDescription" xml:space="preserve">
     <value>Postings of {0}</value>
   </data>
-  <data name="StatementDrafts_SaveQuickEdit_RowsFailedValidation" xml:space="preserve">
-    <value>Some rows have validation errors. Please review and correct the highlighted entries.</value>
-  </data>
-  <data name="Validation_Severity_Error" xml:space="preserve">
-    <value>Error</value>
-  </data>
-  <data name="Validation_Severity_Warning" xml:space="preserve">
-    <value>Warning</value>
-  </data>
-  <data name="Validation_Message_InvalidDateFormat" xml:space="preserve">
-    <value>Invalid date format</value>
-  </data>
   <data name="Ribbon_NewEntry" xml:space="preserve">
     <value>New entry</value>
   </data>
@@ -1496,6 +1496,9 @@
   </data>
   <data name="List_Th_End" xml:space="preserve">
     <value>End date</value>
+  </data>
+  <data name="List_Th_BudgetRule_Purpose" xml:space="preserve">
+    <value>Purpose / Contract number</value>
   </data>
   <data name="Ribbon_Group_Rules" xml:space="preserve">
     <value>Rules</value>
@@ -1740,6 +1743,39 @@
   <data name="Kpi_MonthlyBudget_LabelExpected" xml:space="preserve">
     <value>Expected</value>
   </data>
+  <data name="Validation_Valid" xml:space="preserve">
+    <value>Alle entries are valid.</value>
+  </data>
+  <data name="List_Th_BookingDate" xml:space="preserve">
+    <value>Booking date</value>
+  </data>
+  <data name="List_Th_Valuta" xml:space="preserve">
+    <value>Valuta</value>
+  </data>
+  <data name="List_Th_BookingDescription" xml:space="preserve">
+    <value>Booking description</value>
+  </data>
+  <data name="List_Th_Purpose" xml:space="preserve">
+    <value>Purpose</value>
+  </data>
+  <data name="List_Th_Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="BudgetImpact_FulfillmentChange" xml:space="preserve">
+    <value>Change in target fulfillment</value>
+  </data>
+  <data name="StatementDrafts_SaveQuickEdit_RowsFailedValidation" xml:space="preserve">
+    <value>Some rows have validation errors. Please review and correct the highlighted entries.</value>
+  </data>
+  <data name="Validation_Severity_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Validation_Severity_Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="Validation_Message_InvalidDateFormat" xml:space="preserve">
+    <value>Invalid date format</value>
+  </data>
   <data name="Kpi_MonthlyBudget_Income" xml:space="preserve">
     <value>Income</value>
   </data>
@@ -1779,9 +1815,6 @@
   <data name="Kpi_MonthlyBudget_Label_Expected" xml:space="preserve">
     <value>Expected</value>
   </data>
-  <data name="Validation_Valid" xml:space="preserve">
-    <value>Alle entries are valid.</value>
-  </data>
   <data name="SetupReturnAnalysis_Label_ShowSharpeRatio" xml:space="preserve">
     <value>Show Sharpe Ratio</value>
   </data>
@@ -1789,7 +1822,7 @@
     <value>Risk-free rate (e.g. 0.04 = 4%)</value>
   </data>
   <data name="SetupReturnAnalysis_Help_RiskFreeRate" xml:space="preserve">
-    <value>The risk-free rate used when calculating the Sharpe Ratio. Enter as decimal (e.g. 0.04 for 4%). Must be >= 0.</value>
+    <value>The risk-free rate used when calculating the Sharpe Ratio. Enter as decimal (e.g. 0.04 for 4%). Must be &gt;= 0.</value>
   </data>
   <data name="TimeSeries_Dividend_Title" xml:space="preserve">
     <value>Dividend history</value>
@@ -1803,68 +1836,205 @@
   <data name="Cashflow_Costs_NoData" xml:space="preserve">
     <value>No cost data available.</value>
   </data>
-  <data name="SecurityPerformancePage_Title" xml:space="preserve"><value>Return Analysis</value></data>
-  <data name="SecurityPerformancePage_Loading" xml:space="preserve"><value>Loading page...</value></data>
-  <data name="SecurityPerformancePage_NotAuthenticated" xml:space="preserve"><value>Please sign in.</value></data>
-  <data name="SecurityPerformancePage_NotFound" xml:space="preserve"><value>Security not found or access denied.</value></data>
-  <data name="SecurityPerformancePage_BackToList" xml:space="preserve"><value>Back to list</value></data>
-  <data name="SecurityPerformancePage_HeadingSuffix" xml:space="preserve"><value>Return Analysis</value></data>
-  <data name="Tab_Overview" xml:space="preserve"><value>Overview</value></data>
-  <data name="Tab_TimeSeries" xml:space="preserve"><value>Time Series</value></data>
-  <data name="Tab_Cashflows" xml:space="preserve"><value>Cashflows</value></data>
-  <data name="Tab_Metrics" xml:space="preserve"><value>Metrics</value></data>
-  <data name="Tab_Benchmark" xml:space="preserve"><value>Benchmark</value></data>
-  <data name="Ribbon_Group_Period" xml:space="preserve"><value>Period</value></data>
-  <data name="Ribbon_Group_Settings" xml:space="preserve"><value>Settings</value></data>
-  <data name="Ribbon_BenchmarkSetup" xml:space="preserve"><value>Configure benchmark</value></data>
-  <data name="Metrics_Loading" xml:space="preserve"><value>Loading metrics...</value></data>
-  <data name="Metrics_NoData" xml:space="preserve"><value>No metrics available.</value></data>
-  <data name="Metrics_Section_Return" xml:space="preserve"><value>Return</value></data>
-  <data name="Metrics_Section_Risk" xml:space="preserve"><value>Risk</value></data>
-  <data name="Metrics_Section_TaxesFees" xml:space="preserve"><value>Taxes &amp; fees</value></data>
-  <data name="Metrics_Section_Gains" xml:space="preserve"><value>Gains</value></data>
-  <data name="Metrics_GrossReturn" xml:space="preserve"><value>Gross return</value></data>
-  <data name="Metrics_GrossReturn_Tooltip" xml:space="preserve"><value>Total return before taxes and fees</value></data>
-  <data name="Metrics_NetReturn" xml:space="preserve"><value>Net return</value></data>
-  <data name="Metrics_NetReturn_Tooltip" xml:space="preserve"><value>Return after taxes</value></data>
-  <data name="Metrics_Twr" xml:space="preserve"><value>TWR (time-weighted)</value></data>
-  <data name="Metrics_Twr_Tooltip" xml:space="preserve"><value>Time-Weighted Return (Modified Dietz, GIPS-compliant)</value></data>
-  <data name="Metrics_Irr" xml:space="preserve"><value>IRR (personal)</value></data>
-  <data name="Metrics_Irr_Tooltip" xml:space="preserve"><value>Internal Rate of Return – your personal return</value></data>
-  <data name="Metrics_SharpeRatio" xml:space="preserve"><value>Sharpe Ratio</value></data>
-  <data name="Metrics_SharpeRatio_Tooltip" xml:space="preserve"><value>(Return – risk-free rate) / Volatility</value></data>
-  <data name="Metrics_Volatility" xml:space="preserve"><value>Volatility (p.a.)</value></data>
-  <data name="Metrics_Volatility_Tooltip" xml:space="preserve"><value>Annualised standard deviation of log daily returns</value></data>
-  <data name="Metrics_MaxDrawdown" xml:space="preserve"><value>Max. drawdown</value></data>
-  <data name="Metrics_MaxDrawdown_Tooltip" xml:space="preserve"><value>Maximum loss from peak</value></data>
-  <data name="Metrics_TotalTaxes" xml:space="preserve"><value>Taxes paid</value></data>
-  <data name="Metrics_TotalFees" xml:space="preserve"><value>Fees paid</value></data>
-  <data name="Metrics_TaxRate" xml:space="preserve"><value>Effective tax rate</value></data>
-  <data name="Metrics_RealizedGains" xml:space="preserve"><value>Realised gains</value></data>
-  <data name="Metrics_RealizedGains_Tooltip" xml:space="preserve"><value>Realised capital gains (FIFO)</value></data>
-  <data name="Metrics_UnrealizedGains" xml:space="preserve"><value>Unrealised gains</value></data>
-  <data name="Metrics_UnrealizedGains_Tooltip" xml:space="preserve"><value>Book gains on current positions</value></data>
-  <data name="Metrics_DividendYield" xml:space="preserve"><value>Dividend yield curr. year</value></data>
-  <data name="Cashflow_Loading" xml:space="preserve"><value>Loading cashflows...</value></data>
-  <data name="Cashflow_NoData" xml:space="preserve"><value>No cashflows available.</value></data>
-  <data name="Cashflow_Timeline_Title" xml:space="preserve"><value>Cashflow timeline</value></data>
-  <data name="Cashflow_Timeline_NoEntries" xml:space="preserve"><value>No entries available.</value></data>
-  <data name="Cashflow_Col_Date" xml:space="preserve"><value>Date</value></data>
-  <data name="Cashflow_Col_Type" xml:space="preserve"><value>Type</value></data>
-  <data name="Cashflow_Col_Amount" xml:space="preserve"><value>Amount</value></data>
-  <data name="Cashflow_Col_Description" xml:space="preserve"><value>Description</value></data>
-  <data name="Cashflow_Annual_Title" xml:space="preserve"><value>Annual summary</value></data>
-  <data name="Cashflow_Annual_AriaLabel" xml:space="preserve"><value>Annual cashflow summary</value></data>
-  <data name="Cashflow_Col_Year" xml:space="preserve"><value>Year</value></data>
-  <data name="Cashflow_Col_Buys" xml:space="preserve"><value>Buys</value></data>
-  <data name="Cashflow_Col_Sells" xml:space="preserve"><value>Sells</value></data>
-  <data name="Cashflow_Col_Dividends" xml:space="preserve"><value>Dividends</value></data>
-  <data name="Cashflow_Col_Taxes" xml:space="preserve"><value>Taxes</value></data>
-  <data name="Cashflow_Col_Fees" xml:space="preserve"><value>Fees</value></data>
-  <data name="Cashflow_Dividends_Title" xml:space="preserve"><value>Dividend history</value></data>
-  <data name="Cashflow_Dividends_NoData" xml:space="preserve"><value>No dividends available.</value></data>
-  <data name="Cashflow_Costs_Col_Year" xml:space="preserve"><value>Year</value></data>
-  <data name="Cashflow_Costs_Col_Taxes" xml:space="preserve"><value>Taxes</value></data>
-  <data name="Cashflow_Costs_Col_Fees" xml:space="preserve"><value>Fees</value></data>
-  <data name="Cashflow_Costs_Col_Cumulative" xml:space="preserve"><value>Cumulative</value></data>
+  <data name="SecurityPerformancePage_Title" xml:space="preserve">
+    <value>Return Analysis</value>
+  </data>
+  <data name="SecurityPerformancePage_Loading" xml:space="preserve">
+    <value>Loading page...</value>
+  </data>
+  <data name="SecurityPerformancePage_NotAuthenticated" xml:space="preserve">
+    <value>Please sign in.</value>
+  </data>
+  <data name="SecurityPerformancePage_NotFound" xml:space="preserve">
+    <value>Security not found or access denied.</value>
+  </data>
+  <data name="SecurityPerformancePage_BackToList" xml:space="preserve">
+    <value>Back to list</value>
+  </data>
+  <data name="SecurityPerformancePage_HeadingSuffix" xml:space="preserve">
+    <value>Return Analysis</value>
+  </data>
+  <data name="Tab_Overview" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Tab_TimeSeries" xml:space="preserve">
+    <value>Time Series</value>
+  </data>
+  <data name="Tab_Cashflows" xml:space="preserve">
+    <value>Cashflows</value>
+  </data>
+  <data name="Tab_Metrics" xml:space="preserve">
+    <value>Metrics</value>
+  </data>
+  <data name="Tab_Benchmark" xml:space="preserve">
+    <value>Benchmark</value>
+  </data>
+  <data name="Ribbon_Group_Period" xml:space="preserve">
+    <value>Period</value>
+  </data>
+  <data name="Ribbon_Group_Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Ribbon_BenchmarkSetup" xml:space="preserve">
+    <value>Configure benchmark</value>
+  </data>
+  <data name="Metrics_Loading" xml:space="preserve">
+    <value>Loading metrics...</value>
+  </data>
+  <data name="Metrics_NoData" xml:space="preserve">
+    <value>No metrics available.</value>
+  </data>
+  <data name="Metrics_Section_Return" xml:space="preserve">
+    <value>Return</value>
+  </data>
+  <data name="Metrics_Section_Risk" xml:space="preserve">
+    <value>Risk</value>
+  </data>
+  <data name="Metrics_Section_TaxesFees" xml:space="preserve">
+    <value>Taxes &amp; fees</value>
+  </data>
+  <data name="Metrics_Section_Gains" xml:space="preserve">
+    <value>Gains</value>
+  </data>
+  <data name="Metrics_GrossReturn" xml:space="preserve">
+    <value>Gross return</value>
+  </data>
+  <data name="Metrics_GrossReturn_Tooltip" xml:space="preserve">
+    <value>Total return before taxes and fees</value>
+  </data>
+  <data name="Metrics_NetReturn" xml:space="preserve">
+    <value>Net return</value>
+  </data>
+  <data name="Metrics_NetReturn_Tooltip" xml:space="preserve">
+    <value>Return after taxes</value>
+  </data>
+  <data name="Metrics_Twr" xml:space="preserve">
+    <value>TWR (time-weighted)</value>
+  </data>
+  <data name="Metrics_Twr_Tooltip" xml:space="preserve">
+    <value>Time-Weighted Return (Modified Dietz, GIPS-compliant)</value>
+  </data>
+  <data name="Metrics_Irr" xml:space="preserve">
+    <value>IRR (personal)</value>
+  </data>
+  <data name="Metrics_Irr_Tooltip" xml:space="preserve">
+    <value>Internal Rate of Return – your personal return</value>
+  </data>
+  <data name="Metrics_SharpeRatio" xml:space="preserve">
+    <value>Sharpe Ratio</value>
+  </data>
+  <data name="Metrics_SharpeRatio_Tooltip" xml:space="preserve">
+    <value>(Return – risk-free rate) / Volatility</value>
+  </data>
+  <data name="Metrics_Volatility" xml:space="preserve">
+    <value>Volatility (p.a.)</value>
+  </data>
+  <data name="Metrics_Volatility_Tooltip" xml:space="preserve">
+    <value>Annualised standard deviation of log daily returns</value>
+  </data>
+  <data name="Metrics_MaxDrawdown" xml:space="preserve">
+    <value>Max. drawdown</value>
+  </data>
+  <data name="Metrics_MaxDrawdown_Tooltip" xml:space="preserve">
+    <value>Maximum loss from peak</value>
+  </data>
+  <data name="Metrics_TotalTaxes" xml:space="preserve">
+    <value>Taxes paid</value>
+  </data>
+  <data name="Metrics_TotalFees" xml:space="preserve">
+    <value>Fees paid</value>
+  </data>
+  <data name="Metrics_TaxRate" xml:space="preserve">
+    <value>Effective tax rate</value>
+  </data>
+  <data name="Metrics_RealizedGains" xml:space="preserve">
+    <value>Realised gains</value>
+  </data>
+  <data name="Metrics_RealizedGains_Tooltip" xml:space="preserve">
+    <value>Realised capital gains (FIFO)</value>
+  </data>
+  <data name="Metrics_UnrealizedGains" xml:space="preserve">
+    <value>Unrealised gains</value>
+  </data>
+  <data name="Metrics_UnrealizedGains_Tooltip" xml:space="preserve">
+    <value>Book gains on current positions</value>
+  </data>
+  <data name="Metrics_DividendYield" xml:space="preserve">
+    <value>Dividend yield curr. year</value>
+  </data>
+  <data name="Cashflow_Loading" xml:space="preserve">
+    <value>Loading cashflows...</value>
+  </data>
+  <data name="Cashflow_NoData" xml:space="preserve">
+    <value>No cashflows available.</value>
+  </data>
+  <data name="Cashflow_Timeline_Title" xml:space="preserve">
+    <value>Cashflow timeline</value>
+  </data>
+  <data name="Cashflow_Timeline_NoEntries" xml:space="preserve">
+    <value>No entries available.</value>
+  </data>
+  <data name="Cashflow_Col_Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Cashflow_Col_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Cashflow_Col_Amount" xml:space="preserve">
+    <value>Amount</value>
+  </data>
+  <data name="Cashflow_Col_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Cashflow_Annual_Title" xml:space="preserve">
+    <value>Annual summary</value>
+  </data>
+  <data name="Cashflow_Annual_AriaLabel" xml:space="preserve">
+    <value>Annual cashflow summary</value>
+  </data>
+  <data name="Cashflow_Col_Year" xml:space="preserve">
+    <value>Year</value>
+  </data>
+  <data name="Cashflow_Col_Buys" xml:space="preserve">
+    <value>Buys</value>
+  </data>
+  <data name="Cashflow_Col_Sells" xml:space="preserve">
+    <value>Sells</value>
+  </data>
+  <data name="Cashflow_Col_Dividends" xml:space="preserve">
+    <value>Dividends</value>
+  </data>
+  <data name="Cashflow_Col_Taxes" xml:space="preserve">
+    <value>Taxes</value>
+  </data>
+  <data name="Cashflow_Col_Fees" xml:space="preserve">
+    <value>Fees</value>
+  </data>
+  <data name="Cashflow_Dividends_Title" xml:space="preserve">
+    <value>Dividend history</value>
+  </data>
+  <data name="Cashflow_Dividends_NoData" xml:space="preserve">
+    <value>No dividends available.</value>
+  </data>
+  <data name="Cashflow_Costs_Col_Year" xml:space="preserve">
+    <value>Year</value>
+  </data>
+  <data name="Cashflow_Costs_Col_Taxes" xml:space="preserve">
+    <value>Taxes</value>
+  </data>
+  <data name="Cashflow_Costs_Col_Fees" xml:space="preserve">
+    <value>Fees</value>
+  </data>
+  <data name="Cashflow_Costs_Col_Cumulative" xml:space="preserve">
+    <value>Cumulative</value>
+  </data>
+  <data name="Card_Caption_BudgetRule_PurposePattern" xml:space="preserve">
+    <value>Purpose Pattern</value>
+  </data>
+  <data name="Card_Caption_BudgetRule_UseRegex" xml:space="preserve">
+    <value>Use Regex</value>
+  </data>
+  <data name="Card_Help_BudgetRule_PurposePattern" xml:space="preserve">
+    <value>Enter text or a regular expression to filter bookings by purpose. Examples: 'ST6464646464' or 'SM\d{4}' (Regex). Max. 500 characters.</value>
+  </data>
 </root>

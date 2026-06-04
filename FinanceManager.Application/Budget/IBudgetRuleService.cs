@@ -10,17 +10,38 @@ public interface IBudgetRuleService
     /// <summary>
     /// Creates a new rule for a purpose.
     /// </summary>
+    /// <summary>
+    /// Backwards-compatible overload: Creates a new rule for a purpose without purpose pattern.
+    /// Delegates to the full CreateAsync overload with purposePattern=null and useRegex=false.
+    /// </summary>
     Task<BudgetRuleDto> CreateAsync(Guid ownerUserId, Guid budgetPurposeId, decimal amount, BudgetIntervalType interval, int? customIntervalMonths, DateOnly startDate, DateOnly? endDate, CancellationToken ct);
 
     /// <summary>
-    /// Creates a new rule for a category.
+    /// Creates a new rule for a purpose.
+    /// </summary>
+    Task<BudgetRuleDto> CreateAsync(Guid ownerUserId, Guid budgetPurposeId, decimal amount, BudgetIntervalType interval, int? customIntervalMonths, DateOnly startDate, DateOnly? endDate, string? purposePattern, bool useRegex, CancellationToken ct);
+
+    /// <summary>
+    /// Backwards-compatible overload: Creates a new rule for a category without purpose pattern.
+    /// Delegates to the full CreateForCategoryAsync overload with purposePattern=null and useRegex=false.
     /// </summary>
     Task<BudgetRuleDto> CreateForCategoryAsync(Guid ownerUserId, Guid budgetCategoryId, decimal amount, BudgetIntervalType interval, int? customIntervalMonths, DateOnly startDate, DateOnly? endDate, CancellationToken ct);
 
     /// <summary>
-    /// Updates an existing rule.
+    /// Creates a new rule for a category.
+    /// </summary>
+    Task<BudgetRuleDto> CreateForCategoryAsync(Guid ownerUserId, Guid budgetCategoryId, decimal amount, BudgetIntervalType interval, int? customIntervalMonths, DateOnly startDate, DateOnly? endDate, string? purposePattern, bool useRegex, CancellationToken ct);
+
+    /// <summary>
+    /// Backwards-compatible overload: Updates an existing rule without purpose pattern.
+    /// Delegates to the full UpdateAsync overload with purposePattern=null and useRegex=false.
     /// </summary>
     Task<BudgetRuleDto?> UpdateAsync(Guid id, Guid ownerUserId, decimal amount, BudgetIntervalType interval, int? customIntervalMonths, DateOnly startDate, DateOnly? endDate, CancellationToken ct);
+
+    /// <summary>
+    /// Updates an existing rule.
+    /// </summary>
+    Task<BudgetRuleDto?> UpdateAsync(Guid id, Guid ownerUserId, decimal amount, BudgetIntervalType interval, int? customIntervalMonths, DateOnly startDate, DateOnly? endDate, string? purposePattern, bool useRegex, CancellationToken ct);
 
     /// <summary>
     /// Deletes an existing rule.

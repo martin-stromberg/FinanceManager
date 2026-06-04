@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace FinanceManager.Shared.Dtos.Budget;
 
 /// <summary>
@@ -9,4 +11,8 @@ public sealed record BudgetRuleUpdateRequest(
     BudgetIntervalType Interval,
     int? CustomIntervalMonths,
     DateOnly StartDate,
-    DateOnly? EndDate);
+    DateOnly? EndDate,
+    [MaxLength(500)] string? PurposePattern = null,
+    bool UseRegex = false)
+{
+}
