@@ -404,122 +404,32 @@ public sealed class BudgetReportsController : ControllerBase
             var toDt = (to ?? DateTime.MaxValue);
 
             var ownerUserId = _current.UserId;
+            var fromDate = DateOnly.FromDateTime(fromDt);
+            var toDate = DateOnly.FromDateTime(toDt);
 
-            // Load all purposes in date range to identify covered sources.
-            var purposes = await _purposes.ListOverviewAsync(
-                ownerUserId,
-                skip: 0,
-                take: 5000,
-                sourceType: null,
-                nameFilter: null,
-                from: DateOnly.FromDateTime(fromDt),
-                to: DateOnly.FromDateTime(toDt),
-                budgetCategoryId: null,
-                ct: ct,
-                dateBasis: dateBasis);
+            // Use GetRawDataAsync to get properly filtered posting IDs that respect pattern matching
+            var raw = await _reports.GetRawDataAsync(ownerUserId, fromDate, toDate, dateBasis, ct, ignoreCache: false);
 
-            // Build a set of covered posting ids.
-            var coveredPostingIds = new HashSet<Guid>();
+            var unbudgetedPostingIds = (raw.UnbudgetedPostings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                .Select(p => p.PostingId)
+                .ToHashSet();
 
-            // Contact purposes: direct covered contacts
-            var coveredContacts = purposes
-                .Where(p => p.SourceType == BudgetSourceType.Contact)
-                .Select(p => p.SourceId)
-                .Distinct()
-                .ToList();
-
-            // SavingsPlan purposes: covered by savings plan postings
-            var coveredSavingsPlans = purposes
-                .Where(p => p.SourceType == BudgetSourceType.SavingsPlan)
-                .Select(p => p.SourceId)
-                .Distinct()
-                .ToList();
-
-            // ContactGroup purposes: covered contacts are contacts that belong to those groups
-            var groupIds = purposes
-                .Where(p => p.SourceType == BudgetSourceType.ContactGroup)
-                .Select(p => p.SourceId)
-                .Distinct()
-                .ToList();
-
-            if (groupIds.Count > 0)
+            if (unbudgetedPostingIds.Count == 0)
             {
-                var groupContactIds = await _db.Contacts.AsNoTracking()
-                    .Where(c => c.OwnerUserId == ownerUserId && c.CategoryId != null && groupIds.Contains(c.CategoryId.Value))
-                    .Select(c => c.Id)
-                    .Distinct()
-                    .ToListAsync(ct);
-                coveredContacts.AddRange(groupContactIds);
-                coveredContacts = coveredContacts.Distinct().ToList();
+                return Ok(new List<PostingServiceDto>());
             }
 
-            // Overlap rule: if there is a self-contact purpose, savings plan postings are covered by self contact.
-            var selfContactId = await _db.Contacts.AsNoTracking()
-                .Where(c => c.OwnerUserId == ownerUserId && c.Type == FinanceManager.Shared.Dtos.Contacts.ContactType.Self)
-                .Select(c => (Guid?)c.Id)
-                .FirstOrDefaultAsync(ct);
-            if (selfContactId.HasValue && coveredContacts.Contains(selfContactId.Value))
-            {
-                coveredSavingsPlans.Clear();
-            }
+            // Load full posting details for mapping
+            var allPostingsQuery = _db.Postings.AsNoTracking();
+            allPostingsQuery = dateBasis == BudgetReportDateBasis.ValutaDate
+                ? allPostingsQuery.Where(p => p.ValutaDate != null && p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
+                : allPostingsQuery.Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt);
 
-            // Query covered posting ids.
-            var coveredQuery = _db.Postings.AsNoTracking().Where(p => true);
-            coveredQuery = dateBasis == BudgetReportDateBasis.ValutaDate
-                ? coveredQuery.Where(p => p.ValutaDate != null && p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
-                : coveredQuery.Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt);
-
-            if (coveredContacts.Count > 0)
-            {
-                var ids = await coveredQuery
-                    .Where(p => p.ContactId != null && coveredContacts.Contains(p.ContactId.Value))
-                    .Select(p => p.Id)
-                    .ToListAsync(ct);
-                foreach (var id in ids)
-                {
-                    coveredPostingIds.Add(id);
-                }
-            }
-
-            if (coveredSavingsPlans.Count > 0)
-            {
-                var ids = await coveredQuery
-                    .Where(p => p.SavingsPlanId != null && coveredSavingsPlans.Contains(p.SavingsPlanId.Value))
-                    .Select(p => p.Id)
-                    .ToListAsync(ct);
-                foreach (var id in ids)
-                {
-                    coveredPostingIds.Add(id);
-                }
-
-                // Also mark mirrored contact postings as covered.
-                // Savings plan postings are often duplicated as contact postings within the same group.
-                // If a savings plan posting is covered, the corresponding contact posting in the same group must be treated as covered as well.
-                var coveredSavingsGroupIds = await coveredQuery
-                    .Where(p => p.SavingsPlanId != null && coveredSavingsPlans.Contains(p.SavingsPlanId.Value) && p.GroupId != Guid.Empty)
-                    .Select(p => p.GroupId)
-                    .Distinct()
-                    .ToListAsync(ct);
-
-                if (coveredSavingsGroupIds.Count > 0)
-                {
-                    var mirroredContactPostingIds = await coveredQuery
-                        .Where(p => p.ContactId != null && p.SavingsPlanId == null && coveredSavingsGroupIds.Contains(p.GroupId))
-                        .Select(p => p.Id)
-                        .ToListAsync(ct);
-
-                    foreach (var id in mirroredContactPostingIds)
-                    {
-                        coveredPostingIds.Add(id);
-                    }
-                }
-            }
-
-            // Load all contact postings in range and filter out covered ids.
-            var allContactQuery = _db.Postings.AsNoTracking().Where(p => p.ContactId != null && p.SavingsPlanId == null);
-            allContactQuery = dateBasis == BudgetReportDateBasis.ValutaDate
-                ? allContactQuery.Where(p => p.ValutaDate != null && p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
-                : allContactQuery.Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt);
+            var postings = await allPostingsQuery
+                .Where(p => unbudgetedPostingIds.Contains(p.Id))
+                .OrderByDescending(p => dateBasis == BudgetReportDateBasis.ValutaDate ? p.ValutaDate : p.BookingDate)
+                .Take(5000)
+                .ToListAsync(ct);
 
             // Optional split for UI: cost-neutral self-contact mirror postings vs remaining.
             // "selfCostNeutral": self-contact, grouped postings (GroupId != empty)
@@ -535,33 +445,31 @@ public sealed class BudgetReportsController : ControllerBase
                 {
                     if (selfId.HasValue)
                     {
-                        allContactQuery = allContactQuery.Where(p => p.ContactId == selfId.Value && p.GroupId != Guid.Empty);
+                        postings = postings
+                            .Where(p => p.ContactId == selfId.Value && p.GroupId != Guid.Empty)
+                            .ToList();
                     }
                     else
                     {
-                        allContactQuery = allContactQuery.Where(_ => false);
+                        postings.Clear();
                     }
                 }
                 else if (kind.Equals("remaining", StringComparison.OrdinalIgnoreCase))
                 {
                     if (selfId.HasValue)
                     {
-                        allContactQuery = allContactQuery.Where(p => p.ContactId != selfId.Value || p.GroupId == Guid.Empty);
+                        postings = postings
+                            .Where(p => p.ContactId != selfId.Value || p.GroupId == Guid.Empty)
+                            .ToList();
                     }
                 }
             }
 
-            var unbudgetedPostings = await allContactQuery
-                .Where(p => !coveredPostingIds.Contains(p.Id))
-                .OrderByDescending(p => dateBasis == BudgetReportDateBasis.ValutaDate ? p.ValutaDate : p.BookingDate)
-                .Take(5000)
-                .ToListAsync(ct);
-
-            var unbudgeted = unbudgetedPostings
+            var unbudgeted = postings
                 .Select(p => new PostingServiceDto(
                     p.Id,
                     p.BookingDate,
-                    p.ValutaDate,
+                    p.ValutaDate ?? p.BookingDate,
                     p.Amount,
                     p.Kind,
                     p.AccountId,
