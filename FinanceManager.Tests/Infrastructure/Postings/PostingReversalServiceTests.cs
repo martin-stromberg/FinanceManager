@@ -490,10 +490,10 @@ public sealed class PostingReversalServiceTests
     }
 
     /// <summary>
-    /// L15 – ReversePostingAsync creates a StatementImport record for the reversal.
+    /// L15 – ReversePostingAsync creates a StatementDraft record for the reversal.
     /// </summary>
     [Fact]
-    public async Task ReversePostingAsync_ShouldCreateStatementImport()
+    public async Task ReversePostingAsync_ShouldCreateStatementDraft()
     {
         // Arrange
         await using var context = CreateContext();
@@ -508,17 +508,17 @@ public sealed class PostingReversalServiceTests
         var result = await service.ReversePostingAsync(posting.Id, OwnerId);
 
         // Assert
-        result.StatementImportId.Should().NotBe(Guid.Empty);
-        var import = await context.StatementImports.FindAsync(result.StatementImportId);
-        import.Should().NotBeNull();
+        result.StatementDraftId.Should().NotBe(Guid.Empty);
+        var draft = await context.StatementDrafts.FindAsync(result.StatementDraftId);
+        draft.Should().NotBeNull();
     }
 
     /// <summary>
-    /// L15b – The StatementEntry created during reversal reflects the original posting (same amount, same subject).
+    /// L15b – The StatementDraftEntry created during reversal reflects the original posting (same amount, same subject).
     /// The entry must NOT be negated and must NOT carry the "REVERSAL:" prefix.
     /// </summary>
     [Fact]
-    public async Task ReversePostingAsync_StatementEntry_ShouldMirrorOriginalPosting()
+    public async Task ReversePostingAsync_StatementDraftEntry_ShouldMirrorOriginalPosting()
     {
         // Arrange
         await using var context = CreateContext();
@@ -532,11 +532,13 @@ public sealed class PostingReversalServiceTests
         // Act
         var result = await service.ReversePostingAsync(posting.Id, OwnerId);
 
-        // Assert – StatementEntry must mirror the original, not the counter-booking
-        var entry = await context.StatementEntries
-            .FirstOrDefaultAsync(e => e.StatementImportId == result.StatementImportId);
-        entry.Should().NotBeNull();
-        entry!.Amount.Should().Be(100m, "the entry amount must equal the original posting amount");
+        // Assert – StatementDraftEntry must mirror the original, not the counter-booking
+        var draft = await context.StatementDrafts
+            .Include(d => d.Entries)
+            .FirstOrDefaultAsync(d => d.Id == result.StatementDraftId);
+        draft.Should().NotBeNull();
+        var entry = draft!.Entries.Single();
+        entry.Amount.Should().Be(100m, "the entry amount must equal the original posting amount");
         entry.Subject.Should().Be("Gehalt Januar", "the entry subject must equal the original posting subject without any prefix");
     }
 

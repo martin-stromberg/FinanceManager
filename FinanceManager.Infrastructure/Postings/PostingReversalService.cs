@@ -3,7 +3,6 @@ using FinanceManager.Application.Postings;
 using FinanceManager.Domain.Postings;
 using FinanceManager.Domain.Statements;
 using FinanceManager.Shared.Dtos.Postings;
-using FinanceManager.Shared.Dtos.Statements;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Data;
@@ -90,8 +89,8 @@ public sealed class PostingReversalService : IPostingReversalService
 
             await _context.SaveChangesAsync(ct);
 
-            // Create StatementImport for reconciliation
-            var statementImport = await CreateReversalStatementImportAsync(original, ct);
+            // Create StatementDraft with the original posting for reconciliation
+            var statementDraft = await CreateReversalStatementDraftAsync(original, userId, ct);
 
             // Update aggregates (only for reversal postings)
             foreach (var reversal in reversals)
@@ -113,7 +112,7 @@ public sealed class PostingReversalService : IPostingReversalService
             return new ReversalResultDto(
                 allPostings.Select(p => p.Id).ToList(),
                 reversals.Select(r => r.Id).ToList(),
-                statementImport.Id);
+                statementDraft.Id);
         }
         catch (Exception ex)
         {
@@ -228,46 +227,45 @@ public sealed class PostingReversalService : IPostingReversalService
     }
 
     /// <summary>
-    /// Creates a statement import for the reversal posting for reconciliation purposes.
+    /// Creates a statement draft mirroring the original posting for reconciliation purposes.
+    /// The draft entry reflects the original booking (same amount, same subject) so it can
+    /// be matched and reviewed like any other imported statement.
     /// </summary>
     /// <param name="original">The original posting being reversed.</param>
+    /// <param name="userId">The user initiating the reversal (becomes draft owner).</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The created statement import.</returns>
-    private async Task<StatementImport> CreateReversalStatementImportAsync(Posting original, CancellationToken ct)
+    /// <returns>The created statement draft.</returns>
+    private async Task<StatementDraft> CreateReversalStatementDraftAsync(Posting original, Guid userId, CancellationToken ct)
     {
         if (!original.AccountId.HasValue)
         {
-            throw new InvalidOperationException("Cannot create statement import for posting without account");
+            throw new InvalidOperationException("Cannot create statement draft for posting without account");
         }
 
-        var statementImport = new StatementImport(
-            accountId: original.AccountId.Value,
-            format: ImportFormat.Reversal,
-            originalFileName: $"REVERSAL_{original.Id}"
-        );
+        var draft = new StatementDraft(
+            ownerUserId: userId,
+            originalFileName: $"REVERSAL_{original.Id}",
+            accountNumber: null,
+            description: original.Subject ?? $"Stornierung {original.Id}");
 
-        _context.StatementImports.Add(statementImport);
-        await _context.SaveChangesAsync(ct);
+        draft.SetDetectedAccount(original.AccountId.Value);
 
-        // Create statement entry mirroring the original posting (not the reversal)
-        var statementEntry = new StatementEntry(
-            statementImportId: statementImport.Id,
+        // Add entry mirroring the original posting (not the counter-booking)
+        draft.AddEntry(
             bookingDate: original.BookingDate,
             amount: original.Amount,
             subject: original.Subject ?? string.Empty,
-            rawHash: Guid.NewGuid().ToString(),
             recipientName: original.RecipientName,
             valutaDate: original.ValutaDate,
-            currencyCode: "EUR",
+            currencyCode: null,
             bookingDescription: original.Description,
             isAnnounced: false,
-            isCostNeutral: false
-        );
+            isCostNeutral: false);
 
-        _context.StatementEntries.Add(statementEntry);
+        _context.StatementDrafts.Add(draft);
         await _context.SaveChangesAsync(ct);
 
-        return statementImport;
+        return draft;
     }
 
     /// <summary>

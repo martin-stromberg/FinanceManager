@@ -184,7 +184,7 @@ public sealed class PostingsCardViewModelReversalTests
                .ReturnsAsync(new ReversalResultDto(
                    ReversedPostingIds: new[] { postingId },
                    CreatedReversalIds: new[] { reversalId },
-                   StatementImportId: Guid.NewGuid()));
+                   StatementDraftId: Guid.NewGuid()));
 
         string? capturedAction = null;
         string? capturedPayload = null;

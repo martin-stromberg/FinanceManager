@@ -152,7 +152,7 @@ public sealed class ApiClientPostingsReversalTests : IClassFixture<TestWebApplic
         result.Should().NotBeNull("reverse must succeed for the posting owner");
         result!.ReversedPostingIds.Should().Contain(postingId);
         result.CreatedReversalIds.Should().NotBeEmpty();
-        result.StatementImportId.Should().NotBe(Guid.Empty);
+        result.StatementDraftId.Should().NotBe(Guid.Empty);
     }
 
     /// <summary>
