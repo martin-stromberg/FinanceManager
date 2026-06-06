@@ -2706,13 +2706,17 @@
             <param name="newGroupId">The new group ID for the reversal posting.</param>
             <returns>A new reversal posting.</returns>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Postings.PostingReversalService.CreateReversalStatementImportAsync(FinanceManager.Domain.Postings.Posting,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Infrastructure.Postings.PostingReversalService.CreateReversalStatementDraftAsync(FinanceManager.Domain.Postings.Posting,System.Collections.Generic.IReadOnlyList{FinanceManager.Domain.Postings.Posting},System.Guid,System.Threading.CancellationToken)">
             <summary>
-            Creates a statement import for the reversal posting for reconciliation purposes.
+            Creates a statement draft mirroring the original posting for reconciliation purposes.
+            The draft entry reflects the original booking (same amount, same subject) and carries
+            all related assignments (contact, savings plan, security) derived from the posting group.
             </summary>
-            <param name="original">The original posting being reversed.</param>
+            <param name="original">The bank posting being reversed (must have an AccountId).</param>
+            <param name="allPostings">All postings in the reversal group (including contact, savings plan, security postings).</param>
+            <param name="userId">The user initiating the reversal (becomes draft owner).</param>
             <param name="ct">Cancellation token.</param>
-            <returns>The created statement import.</returns>
+            <returns>The created statement draft with a fully assigned entry.</returns>
         </member>
         <member name="M:FinanceManager.Infrastructure.Postings.PostingReversalService.GetPostingOwnerUserIdAsync(FinanceManager.Domain.Postings.Posting,System.Threading.CancellationToken)">
             <summary>

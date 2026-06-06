@@ -4,6 +4,7 @@ using FinanceManager.Domain.Postings;
 using FinanceManager.Domain.Statements;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Postings;
+using FinanceManager.Shared.Dtos.Securities;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -720,5 +721,134 @@ public sealed class PostingReversalServiceTests
 
         // Assert – currently fails because the query returns `unrelated`
         related.Should().BeEmpty("a posting with no GroupId should have no related postings");
+    }
+
+    /// <summary>
+    /// L22 – When a bank posting is reversed together with a contact posting in the same group,
+    /// the created StatementDraftEntry is assigned to the contact from the contact posting.
+    /// </summary>
+    [Fact]
+    public async Task ReversePostingAsync_StatementDraftEntry_ShouldAssignContact_FromContactPosting()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var account = CreateAccount(OwnerId);
+        context.Accounts.Add(account);
+
+        var groupId = Guid.NewGuid();
+        var contactId = Guid.NewGuid();
+
+        var bankPosting = new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null,
+            new DateTime(2025, 3, 1), 200m, "Payment", null, null, null);
+        bankPosting.SetGroup(groupId);
+
+        var contactPosting = new Posting(Guid.NewGuid(), PostingKind.Contact, account.Id, contactId, null, null,
+            new DateTime(2025, 3, 1), -200m, "Payment", null, null, null);
+        contactPosting.SetGroup(groupId);
+
+        context.Postings.AddRange(bankPosting, contactPosting);
+        await context.SaveChangesAsync();
+        var service = CreateService(context);
+
+        // Act
+        var result = await service.ReversePostingAsync(bankPosting.Id, OwnerId);
+
+        // Assert – draft entry must carry the contact assignment
+        var draft = await context.StatementDrafts
+            .Include(d => d.Entries)
+            .FirstOrDefaultAsync(d => d.Id == result.StatementDraftId);
+        draft.Should().NotBeNull();
+        var entry = draft!.Entries.Single();
+        entry.ContactId.Should().Be(contactId, "contact must be derived from the related contact posting");
+    }
+
+    /// <summary>
+    /// L23 – When a bank posting is reversed together with a savings plan posting in the same group,
+    /// the created StatementDraftEntry is assigned to the savings plan.
+    /// </summary>
+    [Fact]
+    public async Task ReversePostingAsync_StatementDraftEntry_ShouldAssignSavingsPlan_FromSavingsPlanPosting()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var account = CreateAccount(OwnerId);
+        context.Accounts.Add(account);
+
+        var groupId = Guid.NewGuid();
+        var savingsPlanId = Guid.NewGuid();
+
+        var bankPosting = new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null,
+            new DateTime(2025, 4, 1), 150m, "Sparrate", null, null, null);
+        bankPosting.SetGroup(groupId);
+
+        var spPosting = new Posting(Guid.NewGuid(), PostingKind.SavingsPlan, account.Id, null, savingsPlanId, null,
+            new DateTime(2025, 4, 1), -150m, "Sparrate", null, null, null);
+        spPosting.SetGroup(groupId);
+
+        context.Postings.AddRange(bankPosting, spPosting);
+        await context.SaveChangesAsync();
+        var service = CreateService(context);
+
+        // Act
+        var result = await service.ReversePostingAsync(bankPosting.Id, OwnerId);
+
+        // Assert
+        var draft = await context.StatementDrafts
+            .Include(d => d.Entries)
+            .FirstOrDefaultAsync(d => d.Id == result.StatementDraftId);
+        draft.Should().NotBeNull();
+        var entry = draft!.Entries.Single();
+        entry.SavingsPlanId.Should().Be(savingsPlanId, "savings plan must be derived from the related savings plan posting");
+    }
+
+    /// <summary>
+    /// L24 – When a bank posting is reversed together with a security buy posting (with fees/taxes)
+    /// in the same group, the created StatementDraftEntry carries the full security assignment.
+    /// </summary>
+    [Fact]
+    public async Task ReversePostingAsync_StatementDraftEntry_ShouldAssignSecurity_WithFeesAndTaxes()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var account = CreateAccount(OwnerId);
+        context.Accounts.Add(account);
+
+        var groupId = Guid.NewGuid();
+        var securityId = Guid.NewGuid();
+
+        var bankPosting = new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null,
+            new DateTime(2025, 5, 1), -1050m, "ETF Kauf", null, null, null);
+        bankPosting.SetGroup(groupId);
+
+        var securityPosting = new Posting(Guid.NewGuid(), PostingKind.Security, account.Id, null, null, securityId,
+            new DateTime(2025, 5, 1), -1000m, "ETF Kauf", null, null, SecurityPostingSubType.Buy, 10m);
+        securityPosting.SetGroup(groupId);
+
+        var feePosting = new Posting(Guid.NewGuid(), PostingKind.Security, account.Id, null, null, securityId,
+            new DateTime(2025, 5, 1), -30m, "Ordergebühr", null, null, SecurityPostingSubType.Fee);
+        feePosting.SetGroup(groupId);
+
+        var taxPosting = new Posting(Guid.NewGuid(), PostingKind.Security, account.Id, null, null, securityId,
+            new DateTime(2025, 5, 1), -20m, "Kapitalertragsteuer", null, null, SecurityPostingSubType.Tax);
+        taxPosting.SetGroup(groupId);
+
+        context.Postings.AddRange(bankPosting, securityPosting, feePosting, taxPosting);
+        await context.SaveChangesAsync();
+        var service = CreateService(context);
+
+        // Act
+        var result = await service.ReversePostingAsync(bankPosting.Id, OwnerId);
+
+        // Assert
+        var draft = await context.StatementDrafts
+            .Include(d => d.Entries)
+            .FirstOrDefaultAsync(d => d.Id == result.StatementDraftId);
+        draft.Should().NotBeNull();
+        var entry = draft!.Entries.Single();
+        entry.SecurityId.Should().Be(securityId, "security must be derived from the security posting");
+        entry.SecurityTransactionType.Should().Be(SecurityTransactionType.Buy);
+        entry.SecurityQuantity.Should().Be(10m);
+        entry.SecurityFeeAmount.Should().Be(30m, "fee amount must be the absolute value of the fee posting");
+        entry.SecurityTaxAmount.Should().Be(20m, "tax amount must be the absolute value of the tax posting");
     }
 }

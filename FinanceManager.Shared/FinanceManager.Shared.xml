@@ -3558,7 +3558,7 @@
             </summary>
             <param name="ReversedPostingIds">List of posting IDs that were reversed (original postings).</param>
             <param name="CreatedReversalIds">List of posting IDs that were created as reversals (new cancellation postings).</param>
-            <param name="StatementImportId">ID of the statement import created for reconciliation purposes.</param>
+            <param name="StatementDraftId">ID of the statement draft created for reconciliation purposes.</param>
         </member>
         <member name="M:FinanceManager.Shared.Dtos.Postings.ReversalResultDto.#ctor(System.Collections.Generic.IReadOnlyList{System.Guid},System.Collections.Generic.IReadOnlyList{System.Guid},System.Guid)">
             <summary>
@@ -3566,7 +3566,7 @@
             </summary>
             <param name="ReversedPostingIds">List of posting IDs that were reversed (original postings).</param>
             <param name="CreatedReversalIds">List of posting IDs that were created as reversals (new cancellation postings).</param>
-            <param name="StatementImportId">ID of the statement import created for reconciliation purposes.</param>
+            <param name="StatementDraftId">ID of the statement draft created for reconciliation purposes.</param>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Postings.ReversalResultDto.ReversedPostingIds">
             <summary>List of posting IDs that were reversed (original postings).</summary>
@@ -3574,8 +3574,8 @@
         <member name="P:FinanceManager.Shared.Dtos.Postings.ReversalResultDto.CreatedReversalIds">
             <summary>List of posting IDs that were created as reversals (new cancellation postings).</summary>
         </member>
-        <member name="P:FinanceManager.Shared.Dtos.Postings.ReversalResultDto.StatementImportId">
-            <summary>ID of the statement import created for reconciliation purposes.</summary>
+        <member name="P:FinanceManager.Shared.Dtos.Postings.ReversalResultDto.StatementDraftId">
+            <summary>ID of the statement draft created for reconciliation purposes.</summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Postings.ReversalValidationDto">
             <summary>

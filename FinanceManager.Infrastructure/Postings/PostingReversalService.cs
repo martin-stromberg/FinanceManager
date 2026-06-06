@@ -3,6 +3,7 @@ using FinanceManager.Application.Postings;
 using FinanceManager.Domain.Postings;
 using FinanceManager.Domain.Statements;
 using FinanceManager.Shared.Dtos.Postings;
+using FinanceManager.Shared.Dtos.Securities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Data;
@@ -90,7 +91,7 @@ public sealed class PostingReversalService : IPostingReversalService
             await _context.SaveChangesAsync(ct);
 
             // Create StatementDraft with the original posting for reconciliation
-            var statementDraft = await CreateReversalStatementDraftAsync(original, userId, ct);
+            var statementDraft = await CreateReversalStatementDraftAsync(original, allPostings, userId, ct);
 
             // Update aggregates (only for reversal postings)
             foreach (var reversal in reversals)
@@ -228,14 +229,15 @@ public sealed class PostingReversalService : IPostingReversalService
 
     /// <summary>
     /// Creates a statement draft mirroring the original posting for reconciliation purposes.
-    /// The draft entry reflects the original booking (same amount, same subject) so it can
-    /// be matched and reviewed like any other imported statement.
+    /// The draft entry reflects the original booking (same amount, same subject) and carries
+    /// all related assignments (contact, savings plan, security) derived from the posting group.
     /// </summary>
-    /// <param name="original">The original posting being reversed.</param>
+    /// <param name="original">The bank posting being reversed (must have an AccountId).</param>
+    /// <param name="allPostings">All postings in the reversal group (including contact, savings plan, security postings).</param>
     /// <param name="userId">The user initiating the reversal (becomes draft owner).</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The created statement draft.</returns>
-    private async Task<StatementDraft> CreateReversalStatementDraftAsync(Posting original, Guid userId, CancellationToken ct)
+    /// <returns>The created statement draft with a fully assigned entry.</returns>
+    private async Task<StatementDraft> CreateReversalStatementDraftAsync(Posting original, IReadOnlyList<Posting> allPostings, Guid userId, CancellationToken ct)
     {
         if (!original.AccountId.HasValue)
         {
@@ -250,8 +252,8 @@ public sealed class PostingReversalService : IPostingReversalService
 
         draft.SetDetectedAccount(original.AccountId.Value);
 
-        // Add entry mirroring the original posting (not the counter-booking)
-        draft.AddEntry(
+        // Add entry mirroring the original bank posting (not the counter-booking)
+        var entry = draft.AddEntry(
             bookingDate: original.BookingDate,
             amount: original.Amount,
             subject: original.Subject ?? string.Empty,
@@ -261,6 +263,52 @@ public sealed class PostingReversalService : IPostingReversalService
             bookingDescription: original.Description,
             isAnnounced: false,
             isCostNeutral: false);
+
+        // Derive contact assignment from related contact postings
+        var contactPosting = allPostings.FirstOrDefault(p => p.Kind == PostingKind.Contact && p.ContactId.HasValue);
+        if (contactPosting != null)
+        {
+            entry.AssignContactWithoutAccounting(contactPosting.ContactId!.Value);
+        }
+
+        // Derive savings plan assignment from related savings plan postings
+        var savingsPlanPosting = allPostings.FirstOrDefault(p => p.Kind == PostingKind.SavingsPlan && p.SavingsPlanId.HasValue);
+        if (savingsPlanPosting != null)
+        {
+            entry.AssignSavingsPlan(savingsPlanPosting.SavingsPlanId!.Value);
+        }
+
+        // Derive security assignment from related security postings
+        var securityPosting = allPostings.FirstOrDefault(p =>
+            p.Kind == PostingKind.Security
+            && p.SecurityId.HasValue
+            && p.SecuritySubType is SecurityPostingSubType.Buy or SecurityPostingSubType.Sell or SecurityPostingSubType.Dividend);
+
+        if (securityPosting != null)
+        {
+            var txType = securityPosting.SecuritySubType switch
+            {
+                SecurityPostingSubType.Buy => SecurityTransactionType.Buy,
+                SecurityPostingSubType.Sell => SecurityTransactionType.Sell,
+                SecurityPostingSubType.Dividend => SecurityTransactionType.Dividend,
+                _ => (SecurityTransactionType?)null
+            };
+
+            var feeAmount = allPostings
+                .Where(p => p.Kind == PostingKind.Security && p.SecuritySubType == SecurityPostingSubType.Fee)
+                .Sum(p => Math.Abs(p.Amount));
+
+            var taxAmount = allPostings
+                .Where(p => p.Kind == PostingKind.Security && p.SecuritySubType == SecurityPostingSubType.Tax)
+                .Sum(p => Math.Abs(p.Amount));
+
+            entry.SetSecurity(
+                securityId: securityPosting.SecurityId!.Value,
+                txType: txType,
+                quantity: securityPosting.Quantity,
+                fee: feeAmount == 0 ? null : feeAmount,
+                tax: taxAmount == 0 ? null : taxAmount);
+        }
 
         _context.StatementDrafts.Add(draft);
         await _context.SaveChangesAsync(ct);
