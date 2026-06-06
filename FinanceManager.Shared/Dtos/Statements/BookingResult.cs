@@ -15,4 +15,14 @@ public sealed record BookingResult(bool Success, bool HasWarnings, DraftValidati
     /// Optional booking summary containing final budget impact details.
     /// </summary>
     public BookingImpactSummaryDto? BudgetImpactSummary { get; init; }
+
+    /// <summary>
+    /// Optional machine-readable booking error code for deterministic client handling.
+    /// </summary>
+    public string? ErrorCode { get; init; }
+
+    /// <summary>
+    /// Optional retry hint for the associated <see cref="ErrorCode"/>.
+    /// </summary>
+    public bool? Retryable { get; init; }
 }

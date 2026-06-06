@@ -7,6 +7,8 @@ using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Aggregates;
 using FinanceManager.Infrastructure.Statements;
 using FinanceManager.Application.Statements;
+using FinanceManager.Application.Attachments;
+using FinanceManager.Domain.Attachments;
 using FinanceManager.Shared.Dtos.Statements;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -60,6 +62,54 @@ public sealed class StatementDraftBookingTests
             DraftCalls.Add((draftId, entryId, ownerUserId));
             return Task.FromResult(_summary);
         }
+    }
+
+    private sealed class ControlledAttachmentService : IAttachmentService
+    {
+        private readonly Func<CancellationToken, Task> _reassignHandler;
+
+        public ControlledAttachmentService(Func<CancellationToken, Task>? reassignHandler = null)
+        {
+            _reassignHandler = reassignHandler ?? (_ => Task.CompletedTask);
+        }
+
+        public int ReassignCallCount { get; private set; }
+
+        public Task<AttachmentDto> UploadAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, Stream content, string fileName, string contentType, Guid? categoryId, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<AttachmentDto> UploadAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, Stream content, string fileName, string contentType, Guid? categoryId, AttachmentRole role, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<AttachmentDto> CreateUrlAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, string url, string? fileName, Guid? categoryId, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<IReadOnlyList<AttachmentDto>> ListAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, int skip, int take, Guid? categoryId, bool? isUrl, string? q, CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<AttachmentDto>>([]);
+
+        public Task<int> CountAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, Guid? categoryId, bool? isUrl, string? q, CancellationToken ct)
+            => Task.FromResult(0);
+
+        public Task<(Stream Content, string FileName, string ContentType)?> DownloadAsync(Guid ownerUserId, Guid attachmentId, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<bool> DeleteAsync(Guid ownerUserId, Guid attachmentId, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<bool> UpdateCategoryAsync(Guid ownerUserId, Guid attachmentId, Guid? categoryId, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task<bool> UpdateCoreAsync(Guid ownerUserId, Guid attachmentId, string? fileName, Guid? categoryId, CancellationToken ct)
+            => throw new NotImplementedException();
+
+        public Task ReassignAsync(AttachmentEntityKind fromKind, Guid fromId, AttachmentEntityKind toKind, Guid toId, Guid ownerUserId, CancellationToken ct)
+        {
+            ReassignCallCount++;
+            return _reassignHandler(ct);
+        }
+
+        public Task<AttachmentDto> CreateReferenceAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, Guid masterAttachmentId, CancellationToken ct)
+            => throw new NotImplementedException();
     }
 
     private static (StatementDraftService sut, AppDbContext db, SqliteConnection conn, Guid owner) Create()
@@ -1051,6 +1101,234 @@ public sealed class StatementDraftBookingTests
         Assert.Equal(1, newPosts.Count(p => p.Kind == PostingKind.Bank));
         Assert.Equal(1, newPosts.Count(p => p.Kind == PostingKind.Contact));
         Assert.Equal(1, newPosts.Count(p => p.Kind == PostingKind.SavingsPlan));
+
+        conn.Dispose();
+    }
+
+    [Fact]
+    public async Task Booking_ShouldRejectAsAlreadyProcessed_WhenDraftWasAlreadyBooked()
+    {
+        var (sut, db, conn, owner) = Create();
+        var (acc, _) = await AddAccountAsync(db, owner);
+        var draft = await CreateDraftAsync(db, owner, acc.Id);
+        var shop = new Contact(owner, "Shop GmbH", ContactType.Organization, null, null, false);
+        db.Contacts.Add(shop);
+        await db.SaveChangesAsync();
+
+        var entry = draft.AddEntry(DateTime.Today, 15m, "Booked once", shop.Name, DateTime.Today, "EUR", null, false);
+        entry.MarkAccounted(shop.Id);
+        db.Entry(entry).State = EntityState.Added;
+        await db.SaveChangesAsync();
+
+        var first = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
+        Assert.True(first.Success);
+
+        var second = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
+        Assert.False(second.Success);
+        Assert.Equal("BOOKING_ALREADY_PROCESSED", second.ErrorCode);
+        Assert.False(second.Retryable);
+
+        conn.Dispose();
+    }
+
+    [Fact]
+    public async Task Booking_ShouldRejectWithInProgress_WhenDraftGuardIsAlreadyActive()
+    {
+        var (sut, db, conn, owner) = Create();
+        var (acc, _) = await AddAccountAsync(db, owner);
+        var draft = await CreateDraftAsync(db, owner, acc.Id);
+
+        db.StatementDraftBookingGuards.Add(new StatementDraftBookingGuard(
+            owner,
+            draft.Id,
+            Guid.NewGuid(),
+            DateTime.UtcNow,
+            DateTime.UtcNow.AddMinutes(2)));
+        await db.SaveChangesAsync();
+
+        var result = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
+        Assert.False(result.Success);
+        Assert.Equal("BOOKING_IN_PROGRESS", result.ErrorCode);
+        Assert.True(result.Retryable);
+
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// Ensures booking changes are rolled back when a late-stage exception occurs.
+    /// </summary>
+    [Fact]
+    public async Task BookAsync_ShouldRollbackAllChanges_WhenReassignThrowsDuringCommit()
+    {
+        var (_, db, conn, owner) = Create();
+        var (account, _) = await AddAccountAsync(db, owner);
+        var draft = await CreateDraftAsync(db, owner, account.Id);
+        var recipient = new Contact(owner, "Rollback Recipient", ContactType.Organization, null, null, false);
+        db.Contacts.Add(recipient);
+        await db.SaveChangesAsync();
+
+        var entry = draft.AddEntry(DateTime.Today, 45m, "Rollback Booking", recipient.Name, DateTime.Today, "EUR", null, false);
+        entry.MarkAccounted(recipient.Id);
+        db.Entry(entry).State = EntityState.Added;
+        await db.SaveChangesAsync();
+
+        var attachments = new ControlledAttachmentService(_ => throw new InvalidOperationException("reassign failed"));
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), new TestAccountService(), null, null, NullLogger<StatementDraftService>.Instance, attachments);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None));
+
+        var verifyOptions = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite(conn)
+            .Options;
+        using var verifyDb = new AppDbContext(verifyOptions);
+
+        var persistedDraft = await verifyDb.StatementDrafts.FirstAsync(d => d.Id == draft.Id);
+        var persistedAccount = await verifyDb.Accounts.FirstAsync(a => a.Id == account.Id);
+        var postingCount = await verifyDb.Postings.CountAsync(p => p.SourceId == entry.Id);
+        var aggregateCount = await verifyDb.PostingAggregates.CountAsync();
+        var guardCount = await verifyDb.StatementDraftBookingGuards.CountAsync(g => g.OwnerUserId == owner && g.DraftId == draft.Id);
+
+        Assert.Equal(StatementDraftStatus.Draft, persistedDraft.Status);
+        Assert.Equal(0m, persistedAccount.CurrentBalance);
+        Assert.Equal(0, postingCount);
+        Assert.Equal(0, aggregateCount);
+        Assert.Equal(0, guardCount);
+
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// Ensures a concurrent second booking attempt is rejected while the first booking still holds the guard.
+    /// </summary>
+    [Fact]
+    public async Task BookAsync_ShouldReturnInProgress_ForSecondConcurrentAttemptOnSameDraft()
+    {
+        var dbName = $"statement-booking-{Guid.NewGuid()}";
+        var connectionString = $"Data Source={dbName};Mode=Memory;Cache=Shared";
+        await using var keepAlive = new SqliteConnection(connectionString);
+        await keepAlive.OpenAsync();
+
+        var initOptions = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite(connectionString)
+            .Options;
+
+        Guid ownerId;
+        Guid draftId;
+        Guid entryId;
+        await using (var initDb = new AppDbContext(initOptions))
+        {
+            await initDb.Database.EnsureCreatedAsync();
+            var ownerUser = new FinanceManager.Domain.Users.User("parallel-owner", "hash", true);
+            initDb.Users.Add(ownerUser);
+            await initDb.SaveChangesAsync();
+
+            initDb.Contacts.Add(new Contact(ownerUser.Id, "Ich", ContactType.Self, null, null));
+            var bank = new Contact(ownerUser.Id, "Bank", ContactType.Bank, null, null);
+            initDb.Contacts.Add(bank);
+            await initDb.SaveChangesAsync();
+
+            var account = new Account(ownerUser.Id, AccountType.Giro, "Parallel Account", "DE11", bank.Id);
+            initDb.Accounts.Add(account);
+            await initDb.SaveChangesAsync();
+
+            var draft = new StatementDraft(ownerUser.Id, "parallel.csv", "", "");
+            draft.SetDetectedAccount(account.Id);
+            initDb.StatementDrafts.Add(draft);
+            await initDb.SaveChangesAsync();
+
+            var contact = new Contact(ownerUser.Id, "Parallel Recipient", ContactType.Organization, null, null, false);
+            initDb.Contacts.Add(contact);
+            await initDb.SaveChangesAsync();
+
+            var entry = draft.AddEntry(DateTime.Today, 30m, "Parallel Booking", contact.Name, DateTime.Today, "EUR", null, false);
+            entry.MarkAccounted(contact.Id);
+            initDb.Entry(entry).State = EntityState.Added;
+            await initDb.SaveChangesAsync();
+
+            ownerId = ownerUser.Id;
+            draftId = draft.Id;
+            entryId = entry.Id;
+        }
+
+        var gateEntered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var gateRelease = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        await using var db1 = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseSqlite(connectionString).Options);
+        await using var db2 = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseSqlite(connectionString).Options);
+
+        var blockingAttachments = new ControlledAttachmentService(async ct =>
+        {
+            gateEntered.TrySetResult(true);
+            await gateRelease.Task.WaitAsync(ct);
+        });
+        var sut1 = new StatementDraftService(db1, new PostingAggregateService(db1), new TestAccountService(), null, null, NullLogger<StatementDraftService>.Instance, blockingAttachments);
+        var sut2 = new StatementDraftService(db2, new PostingAggregateService(db2), new TestAccountService(), null, null, NullLogger<StatementDraftService>.Instance, null);
+
+        var firstTask = sut1.BookAsync(draftId, null, ownerId, false, CancellationToken.None);
+        await Task.WhenAny(gateEntered.Task, Task.Delay(TimeSpan.FromSeconds(10)));
+        Assert.True(gateEntered.Task.IsCompleted);
+
+        BookingResult? secondResult = null;
+        var secondAttemptHitSqliteLock = false;
+        try
+        {
+            secondResult = await sut2.BookAsync(draftId, null, ownerId, false, CancellationToken.None);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is SqliteException sqliteException && sqliteException.SqliteErrorCode == 6)
+        {
+            secondAttemptHitSqliteLock = true;
+        }
+
+        gateRelease.TrySetResult(true);
+        var firstResult = await firstTask;
+        Assert.True(firstResult.Success);
+        Assert.True(
+            secondAttemptHitSqliteLock ||
+            (secondResult is not null &&
+             !secondResult.Success &&
+             string.Equals(secondResult.ErrorCode, "BOOKING_IN_PROGRESS", StringComparison.Ordinal) &&
+             secondResult.Retryable == true));
+
+        await using var verifyDb = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseSqlite(connectionString).Options);
+        var persistedPostings = await verifyDb.Postings.CountAsync(p => p.SourceId == entryId);
+        var persistedGuardCount = await verifyDb.StatementDraftBookingGuards.CountAsync(g => g.OwnerUserId == ownerId && g.DraftId == draftId);
+
+        Assert.Equal(2, persistedPostings);
+        Assert.Equal(0, persistedGuardCount);
+    }
+
+    /// <summary>
+    /// Ensures re-booking a previously booked single entry returns already-processed and creates no duplicates.
+    /// </summary>
+    [Fact]
+    public async Task BookAsync_ShouldReturnAlreadyProcessed_WhenSpecificEntryWasPreviouslyBooked()
+    {
+        var (sut, db, conn, owner) = Create();
+        var (account, _) = await AddAccountAsync(db, owner);
+        var draft = await CreateDraftAsync(db, owner, account.Id);
+        var recipient = new Contact(owner, "Entry Recipient", ContactType.Organization, null, null, false);
+        db.Contacts.Add(recipient);
+        await db.SaveChangesAsync();
+
+        var firstEntry = draft.AddEntry(DateTime.Today, 12m, "First Entry", recipient.Name, DateTime.Today, "EUR", null, false);
+        var secondEntry = draft.AddEntry(DateTime.Today, 18m, "Second Entry", recipient.Name, DateTime.Today, "EUR", null, false);
+        firstEntry.MarkAccounted(recipient.Id);
+        secondEntry.MarkAccounted(recipient.Id);
+        db.Entry(firstEntry).State = EntityState.Added;
+        db.Entry(secondEntry).State = EntityState.Added;
+        await db.SaveChangesAsync();
+
+        var firstResult = await sut.BookAsync(draft.Id, firstEntry.Id, owner, false, CancellationToken.None);
+        Assert.True(firstResult.Success);
+        var postingCountAfterFirstBooking = await db.Postings.CountAsync(p => p.SourceId == firstEntry.Id);
+
+        var secondResult = await sut.BookAsync(draft.Id, firstEntry.Id, owner, false, CancellationToken.None);
+
+        Assert.False(secondResult.Success);
+        Assert.Equal("BOOKING_ALREADY_PROCESSED", secondResult.ErrorCode);
+        Assert.False(secondResult.Retryable);
+        Assert.True(secondResult.Validation.Messages.Any(m => m.Code == "BOOKING_ALREADY_PROCESSED"));
+        Assert.Equal(postingCountAfterFirstBooking, await db.Postings.CountAsync(p => p.SourceId == firstEntry.Id));
 
         conn.Dispose();
     }

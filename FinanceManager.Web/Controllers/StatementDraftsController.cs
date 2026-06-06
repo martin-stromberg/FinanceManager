@@ -667,9 +667,12 @@ public sealed class StatementDraftsController : ControllerBase
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status428PreconditionRequired)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> BookAsync(Guid draftId, [FromQuery] bool forceWarnings = false, CancellationToken ct = default)
     {
         var result = await _drafts.BookAsync(draftId, null, _current.UserId, forceWarnings, ct);
+        var conflict = TryCreateBookingConflictProblem(result);
+        if (conflict != null) { return conflict; }
         if (!result.Success && result.Validation.Messages.Any(m => m.Severity == "Error")) { return BadRequest(result); }
         if (!result.Success && result.HasWarnings) { return StatusCode(StatusCodes.Status428PreconditionRequired, result); }
         return Ok(result);
@@ -687,12 +690,48 @@ public sealed class StatementDraftsController : ControllerBase
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status428PreconditionRequired)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> BookEntryAsync(Guid draftId, Guid entryId, [FromQuery] bool forceWarnings = false, CancellationToken ct = default)
     {
         var result = await _drafts.BookAsync(draftId, entryId, _current.UserId, forceWarnings, ct);
+        var conflict = TryCreateBookingConflictProblem(result);
+        if (conflict != null) { return conflict; }
         if (!result.Success && result.Validation.Messages.Any(m => m.Severity == "Error")) { return BadRequest(result); }
         if (!result.Success && result.HasWarnings) { return StatusCode(StatusCodes.Status428PreconditionRequired, result); }
         return Ok(result);
+    }
+
+    private ObjectResult? TryCreateBookingConflictProblem(BookingResult result)
+    {
+        if (result.Success || string.IsNullOrWhiteSpace(result.ErrorCode))
+        {
+            return null;
+        }
+
+        if (!string.Equals(result.ErrorCode, "BOOKING_IN_PROGRESS", StringComparison.Ordinal) &&
+            !string.Equals(result.ErrorCode, "BOOKING_ALREADY_PROCESSED", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var detail = result.Validation.Messages.FirstOrDefault(m => string.Equals(m.Code, result.ErrorCode, StringComparison.Ordinal))?.Message
+            ?? "Booking request rejected.";
+
+        var problem = new ProblemDetails
+        {
+            Type = $"https://financemanager/errors/{result.ErrorCode.ToLowerInvariant().Replace('_', '-')}",
+            Title = string.Equals(result.ErrorCode, "BOOKING_IN_PROGRESS", StringComparison.Ordinal)
+                ? "Booking is already running"
+                : "Booking already processed",
+            Status = StatusCodes.Status409Conflict,
+            Detail = detail
+        };
+
+        problem.Extensions["code"] = result.ErrorCode;
+        problem.Extensions["retryable"] = result.Retryable ?? false;
+        problem.Extensions["traceId"] = HttpContext.TraceIdentifier;
+
+        return StatusCode(StatusCodes.Status409Conflict, problem);
     }
 
     /// <summary>

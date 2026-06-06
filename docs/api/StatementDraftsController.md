@@ -44,10 +44,27 @@ Verwaltet den gesamten Draft-Lebenszyklus beim Kontoauszug-Import:
 - `POST /api/statement-drafts/{draftId}/entries/{entryId}/reset-duplicate`
 
 ### Validierung und Buchung
+
 - `GET /api/statement-drafts/{draftId}/validate`
 - `GET /api/statement-drafts/{draftId}/entries/{entryId}/validate`
 - `POST /api/statement-drafts/{draftId}/book?forceWarnings={bool}`
 - `POST /api/statement-drafts/{draftId}/entries/{entryId}/book?forceWarnings={bool}`
+
+### Transaktionssichere Buchung
+
+Die beiden Buchungsendpunkte schützen sich gegen parallele Doppelverarbeitung über einen persistierten Guard:
+
+- Guard-Entität: `FinanceManager.Infrastructure/Statements/StatementDraftBookingGuard.cs`
+- DB-Mapping: `FinanceManager.Infrastructure/AppDbContext.cs`
+- Service: `FinanceManager.Infrastructure/Statements/StatementDraftService.cs`
+
+Verhalten:
+
+- `409 Conflict` mit `code=BOOKING_IN_PROGRESS` und `retryable=true`, wenn bereits eine Buchung für denselben Draft läuft
+- `409 Conflict` mit `code=BOOKING_ALREADY_PROCESSED` und `retryable=false`, wenn Draft oder Entry bereits verbucht sind
+- `traceId` wird immer im ProblemDetails-Response mitgegeben
+- Erfolgsfälle bleiben `200 OK`
+- Fachliche Validierungsfehler bleiben `400 Bad Request` bzw. `428 Precondition Required`
 
 ## Budget-Impact-Erweiterung (neu)
 
@@ -82,8 +99,22 @@ Struktur (gekürzt):
 
 - `400 BadRequest`: Validierungsfehler (z. B. fachliche Verletzungen)
 - `428 Precondition Required`: Warnungen vorhanden, `forceWarnings=false`
+- `409 Conflict`: Aktive Guard-Kollision oder bereits verarbeiteter Draft/Entry
 - `404 NotFound`: Draft/Entry nicht vorhanden oder nicht sichtbar
 - `200 OK`: erfolgreiche Verarbeitung inkl. Dto/Result mit optionalen Budget-Impact-Daten
+
+### Konflikt-ProblemDetails
+
+Bei Konflikten liefert der Controller ein `ProblemDetails`-Objekt mit folgenden Erweiterungen:
+
+- `code`
+- `retryable`
+- `traceId`
+
+Beispielcodes:
+
+- `BOOKING_IN_PROGRESS` → laufende Buchung, retryable
+- `BOOKING_ALREADY_PROCESSED` → bereits verbucht, nicht retryable
 
 ## Referenzen
 

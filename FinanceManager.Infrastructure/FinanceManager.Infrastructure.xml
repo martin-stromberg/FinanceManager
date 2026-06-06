@@ -190,6 +190,9 @@
         <member name="P:FinanceManager.Infrastructure.AppDbContext.StatementDraftEntries">
             <summary>Entries inside statement drafts.</summary>
         </member>
+        <member name="P:FinanceManager.Infrastructure.AppDbContext.StatementDraftBookingGuards">
+            <summary>Durable booking guards preventing concurrent booking of one draft.</summary>
+        </member>
         <member name="P:FinanceManager.Infrastructure.AppDbContext.SavingsPlans">
             <summary>Savings plans.</summary>
         </member>
@@ -2365,6 +2368,18 @@
             <inheritdoc />
         </member>
         <member name="M:FinanceManager.Infrastructure.Migrations.AddReturnAnalysisSettingsToUser.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202606061300_AddStatementDraftBookingGuard">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202606061300_AddStatementDraftBookingGuard.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202606061300_AddStatementDraftBookingGuard.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202606061300_AddStatementDraftBookingGuard.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
         <member name="T:FinanceManager.Infrastructure.Notifications.HolidayProviderResolver">
@@ -4969,6 +4984,51 @@
             this parser. Only files of type Wuestenrot_PDF_StatementFile are supported.</remarks>
             <param name="statementFile">The statement file to evaluate for compatibility. Cannot be null.</param>
             <returns>true if the statement file is of a supported type and can be parsed; otherwise, false.</returns>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard">
+            <summary>
+            Represents a durable processing guard used to prevent concurrent booking of the same statement draft.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard.#ctor(System.Guid,System.Guid,System.Guid,System.DateTime,System.DateTime)">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard"/> class.
+            </summary>
+            <param name="ownerUserId">Identifier of the draft owner.</param>
+            <param name="draftId">Identifier of the guarded draft.</param>
+            <param name="lockToken">Unique token identifying the active lock owner.</param>
+            <param name="acquiredUtc">UTC timestamp when the guard was acquired.</param>
+            <param name="expiresUtc">UTC timestamp when the guard expires.</param>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard.Id">
+            <summary>
+            Gets or sets the unique identifier of the guard row.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard.OwnerUserId">
+            <summary>
+            Gets or sets the owner user identifier.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard.DraftId">
+            <summary>
+            Gets or sets the identifier of the guarded statement draft.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard.LockToken">
+            <summary>
+            Gets or sets the unique token for the active guard holder.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard.AcquiredUtc">
+            <summary>
+            Gets or sets the UTC timestamp when the guard was acquired.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard.ExpiresUtc">
+            <summary>
+            Gets or sets the UTC timestamp when the guard expires.
+            </summary>
         </member>
         <member name="T:FinanceManager.Infrastructure.Statements.StatementDraftService">
             <summary>

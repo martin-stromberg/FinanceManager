@@ -73,8 +73,8 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             "Sortierung;Datum absteigend\r\n" +
             "\r\n" +
             "\r\n" +
-            "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\r\n" +
-            "02.12.2025;02.12.2025;Testempfänger;Überweisung;Ihr Einkauf;2.776,45;EUR;-206,44;EUR\r\n";
+            "Buchung;Wertstellungsdatum;Auftraggeber/Empfï¿½nger;Buchungstext;Verwendungszweck;Saldo;Wï¿½hrung;Betrag;Wï¿½hrung\r\n" +
+            "02.12.2025;02.12.2025;Testempfï¿½nger;ï¿½berweisung;Ihr Einkauf;2.776,45;EUR;-206,44;EUR\r\n";
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
         var upload = await api.StatementDrafts_UploadAsync(ms, "statement.csv");
         upload.Should().NotBeNull();
@@ -180,8 +180,8 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                   "Kontoname;Girokonto\r\nBank;ING\r\nKunde;Admin\r\n" +
                   "Zeitraum;02.11.2025 - 02.12.2025\r\nSaldo;2.776,45;EUR\r\n\r\n" +
                   "Sortierung;Datum absteigend\r\n\r\n\r\n" +
-                  "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\r\n" +
-                  "02.12.2025;02.12.2025;Testempfänger;Überweisung;Ihr Einkauf;2.776,45;EUR;-206,44;EUR\r\n";
+                  "Buchung;Wertstellungsdatum;Auftraggeber/Empfï¿½nger;Buchungstext;Verwendungszweck;Saldo;Wï¿½hrung;Betrag;Wï¿½hrung\r\n" +
+                  "02.12.2025;02.12.2025;Testempfï¿½nger;ï¿½berweisung;Ihr Einkauf;2.776,45;EUR;-206,44;EUR\r\n";
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
         var upload = await api.StatementDrafts_UploadAsync(ms, "statement2.csv");
         upload.Should().NotBeNull();
@@ -256,8 +256,8 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                   "Kontoname;Girokonto\r\nBank;ING\r\nKunde;Admin\r\n" +
                   "Zeitraum;02.11.2025 - 02.12.2025\r\nSaldo;2.776,45;EUR\r\n\r\n" +
                   "Sortierung;Datum absteigend\r\n\r\n\r\n" +
-                  "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\r\n" +
-                  "02.12.2025;02.12.2025;Budget Contact;Überweisung;Einkauf;2.776,45;EUR;-50,00;EUR\r\n";
+                  "Buchung;Wertstellungsdatum;Auftraggeber/Empfï¿½nger;Buchungstext;Verwendungszweck;Saldo;Wï¿½hrung;Betrag;Wï¿½hrung\r\n" +
+                  "02.12.2025;02.12.2025;Budget Contact;ï¿½berweisung;Einkauf;2.776,45;EUR;-50,00;EUR\r\n";
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
         var upload = await api.StatementDrafts_UploadAsync(ms, "budget_impact.csv");
         upload.Should().NotBeNull();
@@ -330,16 +330,16 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             StartDate: new DateOnly(today.Year, today.Month, 1),
             EndDate: null));
 
-        // Arrange: draft with two entries – only the first will be booked individually
+        // Arrange: draft with two entries ï¿½ only the first will be booked individually
         var csvIban = acc.Iban;
         var csv = "Umsatzanzeige;Datei erstellt am: 02.12.2025 19:04\r\n\r\n" +
                   $"IBAN;{csvIban}\r\n" +
                   "Kontoname;Girokonto\r\nBank;ING\r\nKunde;Admin\r\n" +
                   "Zeitraum;02.11.2025 - 02.12.2025\r\nSaldo;2.776,45;EUR\r\n\r\n" +
                   "Sortierung;Datum absteigend\r\n\r\n\r\n" +
-                  "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\r\n" +
-                  "02.12.2025;02.12.2025;Budget Entry Contact;Überweisung;Einkauf 1;2.776,45;EUR;-30,00;EUR\r\n" +
-                  "01.12.2025;01.12.2025;Budget Entry Contact;Überweisung;Einkauf 2;2.826,45;EUR;-20,00;EUR\r\n";
+                  "Buchung;Wertstellungsdatum;Auftraggeber/Empfï¿½nger;Buchungstext;Verwendungszweck;Saldo;Wï¿½hrung;Betrag;Wï¿½hrung\r\n" +
+                  "02.12.2025;02.12.2025;Budget Entry Contact;ï¿½berweisung;Einkauf 1;2.776,45;EUR;-30,00;EUR\r\n" +
+                  "01.12.2025;01.12.2025;Budget Entry Contact;ï¿½berweisung;Einkauf 2;2.826,45;EUR;-20,00;EUR\r\n";
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
         var upload = await api.StatementDrafts_UploadAsync(ms, "budget_entry_impact.csv");
         upload.Should().NotBeNull();
@@ -368,8 +368,8 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
     }
 
     /// <summary>
-    /// Verifies that <see cref="BookingResult.BudgetImpactSummary"/> is null when no budget purpose
-    /// exists for the booked contact.
+    /// Verifies that <see cref="BookingResult.BudgetImpactSummary"/> returns a neutral summary when no
+    /// budget purpose exists for the booked contact.
     /// </summary>
     [Fact]
     public async Task StatementDrafts_Book_ShouldReturnNullBudgetImpactSummary_WhenNoBudgetPurposeExists()
@@ -404,8 +404,8 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                   "Kontoname;Girokonto\r\nBank;ING\r\nKunde;Admin\r\n" +
                   "Zeitraum;02.11.2025 - 02.12.2025\r\nSaldo;2.776,45;EUR\r\n\r\n" +
                   "Sortierung;Datum absteigend\r\n\r\n\r\n" +
-                  "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\r\n" +
-                  "02.12.2025;02.12.2025;No Budget Contact;Überweisung;Zahlung;2.776,45;EUR;-10,00;EUR\r\n";
+                  "Buchung;Wertstellungsdatum;Auftraggeber/Empfï¿½nger;Buchungstext;Verwendungszweck;Saldo;Wï¿½hrung;Betrag;Wï¿½hrung\r\n" +
+                  "02.12.2025;02.12.2025;No Budget Contact;ï¿½berweisung;Zahlung;2.776,45;EUR;-10,00;EUR\r\n";
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
         var upload = await api.StatementDrafts_UploadAsync(ms, "no_budget.csv");
         upload.Should().NotBeNull();
@@ -420,9 +420,11 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
         // Act
         var result = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true);
 
-        // Assert: booking succeeded but no budget impact summary
+        // Assert: booking succeeded and returned a neutral budget impact summary
         result.Should().NotBeNull();
         result!.Success.Should().BeTrue();
-        result.BudgetImpactSummary.Should().BeNull();
+        result.BudgetImpactSummary.Should().NotBeNull();
+        result.BudgetImpactSummary!.HighestSeverity.Should().Be(BudgetImpactHintType.Neutral);
+        result.BudgetImpactSummary.Items.Should().HaveCount(1);
     }
 }

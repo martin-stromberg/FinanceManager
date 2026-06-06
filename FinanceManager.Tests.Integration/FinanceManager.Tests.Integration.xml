@@ -43,8 +43,8 @@
         </member>
         <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientStatementDraftsTests.StatementDrafts_Book_ShouldReturnNullBudgetImpactSummary_WhenNoBudgetPurposeExists">
             <summary>
-            Verifies that <see cref="P:FinanceManager.Shared.Dtos.Statements.BookingResult.BudgetImpactSummary"/> is null when no budget purpose
-            exists for the booked contact.
+            Verifies that <see cref="P:FinanceManager.Shared.Dtos.Statements.BookingResult.BudgetImpactSummary"/> returns a neutral summary when no
+            budget purpose exists for the booked contact.
             </summary>
         </member>
         <member name="P:FinanceManager.Tests.Integration.TestWebApplicationFactory.FixedUtcNow">
