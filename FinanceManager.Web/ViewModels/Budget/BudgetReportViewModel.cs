@@ -5,7 +5,6 @@ using FinanceManager.Shared.Dtos.SavingsPlans;
 using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
-using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace FinanceManager.Web.ViewModels.Budget;
@@ -660,13 +659,16 @@ public sealed class BudgetReportViewModel : BaseViewModel
             var (fromDt, toDt) = GetOverlayDateRange();
 
             IReadOnlyList<PostingServiceDto> rows;
+            var applicableRules = new List<BudgetRuleDto>();
             switch (purpose.SourceType)
             {
                 case BudgetSourceType.Contact:
                     rows = await _api.Postings_GetContactAsync(purpose.SourceId, skip: 0, take: 250, q: null, from: fromDt, to: toDt, ct: CancellationToken.None);
+                    applicableRules.AddRange(await _api.Budgets_ListRulesByPurposeAsync(purpose.Id, CancellationToken.None));
                     break;
                 case BudgetSourceType.SavingsPlan:
                     rows = await _api.Postings_GetSavingsPlanAsync(purpose.SourceId, skip: 0, take: 250, from: fromDt, to: toDt, q: null, ct: CancellationToken.None);
+                    applicableRules.AddRange(await _api.Budgets_ListRulesByPurposeAsync(purpose.Id, CancellationToken.None));
                     break;
                 case BudgetSourceType.ContactGroup:
                     // Load postings for all contacts assigned to this contact group.
@@ -690,17 +692,29 @@ public sealed class BudgetReportViewModel : BaseViewModel
                         .GroupBy(p => p.Id)
                         .Select(g => g.First())
                         .ToList();
+                    applicableRules.AddRange(await _api.Budgets_ListRulesByPurposeAsync(purpose.Id, CancellationToken.None));
                     break;
                 default:
                     rows = Array.Empty<PostingServiceDto>();
                     break;
             }
 
-            // Filter postings by purpose rules/patterns (Bug #2)
-            var rules = await _api.Budgets_ListRulesByPurposeAsync(purpose.Id, CancellationToken.None);
+            var category = Categories.FirstOrDefault(c => c.Purposes.Any(p => p.Id == purpose.Id));
+            if (category != null)
+            {
+                var categoryRules = await _api.Budgets_ListRulesByCategoryAsync(category.Id, CancellationToken.None);
+                applicableRules.AddRange(categoryRules);
+            }
+
+            // Filter postings by all matching budget rules for this purpose and its category.
+            var rules = applicableRules
+                .GroupBy(r => r.Id)
+                .Select(g => g.First())
+                .ToList();
+
             if (rules.Count > 0)
             {
-                rows = rows.Where(posting => rules.Any(rule => MatchesPurposePattern(posting, rule))).ToList();
+                rows = rows.Where(posting => rules.Any(rule => BudgetRulePatternMatcher.MatchesPosting(posting.Subject, posting.Description, rule.PurposePattern, rule.UseRegex))).ToList();
             }
 
             PurposePostings = Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
@@ -736,38 +750,6 @@ public sealed class BudgetReportViewModel : BaseViewModel
         return (intervalFrom.ToDateTime(TimeOnly.MinValue), intervalTo.ToDateTime(TimeOnly.MaxValue));
     }
 
-    private static bool MatchesPurposePattern(PostingServiceDto posting, BudgetRuleDto rule)
-    {
-        if (string.IsNullOrWhiteSpace(rule.PurposePattern))
-        {
-            return true;
-        }
-
-        var input = posting.Description ?? posting.Subject ?? string.Empty;
-        var pattern = rule.PurposePattern.Trim();
-        if (pattern.Length == 0)
-        {
-            return true;
-        }
-
-        if (rule.UseRegex)
-        {
-            try
-            {
-                return Regex.IsMatch(
-                    input,
-                    pattern,
-                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
-                    TimeSpan.FromSeconds(1));
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        return input.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0;
-    }
 }
 
 /// <summary>

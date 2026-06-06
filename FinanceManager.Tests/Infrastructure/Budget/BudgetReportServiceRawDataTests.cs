@@ -288,6 +288,87 @@ public sealed class BudgetReportServiceRawDataTests
         result.Subject.UnbudgetedPostings.Should().ContainSingle(x => x.PostingId == postingId);
     }
 
+    /// <summary>
+    /// Ensures category rules with purpose patterns allocate matching postings and leave the rest unbudgeted.
+    /// </summary>
+    [Fact]
+    public async Task GetRawDataAsync_ShouldAllocateCategoryRulePostings_WhenPurposePatternMatches()
+    {
+        var ownerUserId = Guid.NewGuid();
+        var contactId = Guid.NewGuid();
+        var categoryId = Guid.NewGuid();
+        var purposeId = Guid.NewGuid();
+        var from = new DateOnly(2026, 1, 1);
+        var to = new DateOnly(2026, 1, 31);
+        var matchingPostingId = Guid.NewGuid();
+        var nonMatchingPostingId = Guid.NewGuid();
+
+        var purpose = new BudgetPurposeOverviewDto(
+            purposeId,
+            ownerUserId,
+            "Stadtwerke Musterstadt",
+            null,
+            BudgetSourceType.Contact,
+            contactId,
+            1,
+            -50m,
+            0m,
+            0m,
+            "Stadtwerke Musterstadt",
+            null,
+            categoryId,
+            "Wohnen");
+
+        var category = new BudgetCategoryOverviewDto(categoryId, "Wohnen", -75m, 0m, 0m, 1);
+
+        var categoryRule = new BudgetRuleDto(
+            Guid.NewGuid(),
+            ownerUserId,
+            null,
+            categoryId,
+            -75m,
+            BudgetIntervalType.Monthly,
+            null,
+            from,
+            null,
+            "ST0001",
+            false);
+
+        var postings = new[]
+        {
+            CreateContactPosting(
+                matchingPostingId,
+                contactId,
+                new DateTime(2026, 1, 20),
+                -50m,
+                "Abschlag Energie ST0001"),
+            CreateContactPosting(
+                nonMatchingPostingId,
+                contactId,
+                new DateTime(2026, 1, 21),
+                -10m,
+                "Verkehr/S0056")
+        };
+
+        var sut = CreateSut(
+            ownerUserId,
+            from,
+            to,
+            new[] { purpose },
+            new[] { categoryRule },
+            postings,
+            new ContactDto(contactId, "Stadtwerke Musterstadt", ContactType.Organization, null, null, false, null),
+            new[] { category });
+
+        var result = await sut.GetRawDataAsync(ownerUserId, from, to, BudgetReportDateBasis.BookingDate, CancellationToken.None);
+
+        result.Categories.Should().ContainSingle(x => x.CategoryId == categoryId);
+        var rawCategory = result.Categories.Single(x => x.CategoryId == categoryId);
+        rawCategory.Purposes.Should().ContainSingle(x => x.PurposeId == purposeId);
+        rawCategory.Purposes.Single(x => x.PurposeId == purposeId).Postings.Should().ContainSingle(x => x.PostingId == matchingPostingId);
+        result.UnbudgetedPostings.Should().ContainSingle(x => x.PostingId == nonMatchingPostingId);
+    }
+
     private static BudgetReportService CreateSut(
         Guid ownerUserId,
         DateOnly from,
@@ -295,7 +376,8 @@ public sealed class BudgetReportServiceRawDataTests
         IReadOnlyList<BudgetPurposeOverviewDto> purposes,
         IReadOnlyList<BudgetRuleDto> rules,
         IReadOnlyList<PostingServiceDto> postings,
-        ContactDto contact)
+        ContactDto contact,
+        IReadOnlyList<BudgetCategoryOverviewDto>? categories = null)
     {
         var purposeService = new Mock<IBudgetPurposeService>();
         purposeService
@@ -305,7 +387,7 @@ public sealed class BudgetReportServiceRawDataTests
         var categoryService = new Mock<IBudgetCategoryService>();
         categoryService
             .Setup(x => x.ListOverviewAsync(ownerUserId, from, to, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<BudgetCategoryOverviewDto>());
+            .ReturnsAsync(categories ?? Array.Empty<BudgetCategoryOverviewDto>());
 
         var ruleService = new Mock<IBudgetRuleService>();
         ruleService

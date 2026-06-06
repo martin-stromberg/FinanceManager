@@ -15,6 +15,12 @@
             uncategorized transactions.</remarks>
         </member>
         <!-- Badly formed XML comment ignored for member "M:FinanceManager.Tests.Budget.BudgetReportServiceTests.Test_GetRawData_ForEntireMonthAsync" -->
+        <member name="M:FinanceManager.Tests.Budget.BudgetReportServiceTests.Test_GetRawData_ForHousingPurposesWithContractPatternAsync">
+            <summary>
+            Verifies that housing purposes with contract-based matching keep regular bookings budgeted and
+            leave the mismatched mobility booking unbudgeted.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Tests.Budget.BudgetRulePurposePatternClearingTests">
             <summary>
             Verifies that purpose patterns can be cleared/deleted from budget rules.
@@ -133,6 +139,11 @@
         <member name="M:FinanceManager.Tests.Infrastructure.Budget.BudgetReportServiceRawDataTests.GetRawDataAsync_ShouldKeepPostingUnbudgeted_WhenRegexMatchTimesOutOrFails">
             <summary>
             Ensures problematic regex patterns do not throw and unmatched postings stay unbudgeted.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Infrastructure.Budget.BudgetReportServiceRawDataTests.GetRawDataAsync_ShouldAllocateCategoryRulePostings_WhenPurposePatternMatches">
+            <summary>
+            Ensures category rules with purpose patterns allocate matching postings and leave the rest unbudgeted.
             </summary>
         </member>
         <member name="M:FinanceManager.Tests.Infrastructure.Budget.BudgetReportServiceRawDataTests.GetRawDataAsync_ShouldAssignPostingsToPurpose_WhenPurposeHasNoRules">

@@ -9,7 +9,6 @@ using FinanceManager.Shared.Dtos.Statements;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using System.Text.RegularExpressions;
 
 namespace FinanceManager.Infrastructure.Statements;
 
@@ -255,7 +254,7 @@ public sealed class BudgetImpactEvaluationService : IBudgetImpactEvaluationServi
             .ToListAsync(ct);
 
         var actual = postings
-            .Where(x => MatchesPurposePattern(x.Subject, x.Description, applicableRules))
+            .Where(x => applicableRules.Any(rule => BudgetRulePatternMatcher.MatchesPosting(x.Subject, x.Description, rule.PurposePattern, rule.PurposePatternIsRegex, RegexMatchTimeout)))
             .Sum(x => x.Amount);
         _logger.LogDebug("Budget impact actual before. Owner={OwnerUserId} SourceType={SourceType} SourceId={SourceId} Period={Period} Amount={Amount}",
             ownerUserId, sourceType, sourceId, period.ToString(), actual);
@@ -283,7 +282,7 @@ public sealed class BudgetImpactEvaluationService : IBudgetImpactEvaluationServi
             return false;
         }
 
-        return MatchesPurposePattern(entry.Subject, entry.BookingDescription, applicableRules);
+        return applicableRules.Any(rule => BudgetRulePatternMatcher.MatchesPosting(entry.Subject, entry.BookingDescription, rule.PurposePattern, rule.PurposePatternIsRegex, RegexMatchTimeout));
     }
 
     private static decimal SumEntryDeltaForPurpose(
@@ -292,9 +291,7 @@ public sealed class BudgetImpactEvaluationService : IBudgetImpactEvaluationServi
         IReadOnlyDictionary<Guid, Guid?> entryContactCategories,
         IReadOnlyList<BudgetRulePatternInfo> applicableRules)
     {
-        return entries
-            .Where(e => MatchesPurpose(e, purpose, entryContactCategories, applicableRules))
-            .Sum(e => e.Amount);
+        return entries.Where(e => MatchesPurpose(e, purpose, entryContactCategories, applicableRules)).Sum(e => e.Amount);
     }
 
     private static IReadOnlyList<BudgetRulePatternInfo> GetApplicableRulesForPurpose(
@@ -304,57 +301,6 @@ public sealed class BudgetImpactEvaluationService : IBudgetImpactEvaluationServi
         return rules
             .Where(x => x.BudgetPurposeId == purpose.Id || (purpose.BudgetCategoryId.HasValue && x.BudgetCategoryId == purpose.BudgetCategoryId))
             .ToArray();
-    }
-
-    private static bool MatchesPurposePattern(
-        string? subject,
-        string? bookingDescription,
-        IReadOnlyList<BudgetRulePatternInfo> applicableRules)
-    {
-        if (applicableRules.Count == 0)
-        {
-            return true;
-        }
-
-        var input = string.Join(" ", new[] { subject, bookingDescription }.Where(x => !string.IsNullOrWhiteSpace(x)));
-        foreach (var rule in applicableRules)
-        {
-            if (string.IsNullOrWhiteSpace(rule.PurposePattern))
-            {
-                return true;
-            }
-
-            var pattern = rule.PurposePattern.Trim();
-            if (pattern.Length == 0)
-            {
-                continue;
-            }
-
-            if (rule.PurposePatternIsRegex)
-            {
-                try
-                {
-                    if (Regex.IsMatch(input, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, RegexMatchTimeout))
-                    {
-                        return true;
-                    }
-                }
-                catch (ArgumentException)
-                {
-                    continue;
-                }
-                catch (RegexMatchTimeoutException)
-                {
-                    continue;
-                }
-            }
-            else if (input.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static decimal CalculateRate(decimal actual, decimal target)

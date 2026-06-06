@@ -45,27 +45,37 @@
   - `Docs/business/features/F018-budgetwirkung-buchung.md`
 - `README.md` und `Docs/documentation-plan.md` wurden ebenfalls angepasst.
 
-## Verifizierung & Abschluss
-- **End-to-End-Verifikation durchgeführt:**
-  - Migration korrekt (Spalten: PurposePattern NVARCHAR(500) NULL, PurposePatternIsRegex BIT DEFAULT 0)
-  - Domain/DTOs/API vollständig mit Regex-Validierung
-  - UI-Komponenten implementiert (Textfeld + Regex-Checkbox + Ressourcen DE/EN + Clear-Button)
-  - Matching-Logik robust (Contains/Regex mit 200ms Timeout gegen ReDoS, Exception-Handling)
-  - 32/32 Feature-spezifische Tests bestanden
-  - **Final Integration Test — Alle 6 Szenarien erfolgreich:**
-    - Szenario 1 ✅: Budget ohne Pattern matched alle Buchungen
-    - Szenario 2 ✅: Budget mit Contains-Pattern "ST6464646464" matched case-insensitive
-    - Szenario 3 ✅: Budget mit Regex "SM\d{4}" matched nur passende Buchungen
-    - Szenario 4 ✅: Ungültiger Regex wird rejiziert (HTTP 400 + lokalisierte Fehlermeldung)
-    - Szenario 5 ✅: Pattern kann gelöscht werden (Clear-Button funktioniert)
-    - Szenario 6 ✅: Pattern kann gewechselt werden (Update-Validierung funktioniert)
-  - Build erfolgreich (0 Fehler, 5 NuGet-Warnungen)
-  - Ressourcen-Bindung verifiziert und korrekt
-  - Alle Szenarien verifiziert
+## Verifizierung, Bugfixes & Abschluss
+
+**Initial Verification (Phase 5):**
+- ✅ End-to-End-Verifikation durchgeführt (DB, API, UI, Matching, Tests)
+- ✅ Final Integration Test: 6 Szenarien bestanden
+- ✅ Final ListView Validation: 5 Kategorien bestanden
+
+**Nachbesserungen nach initialem Launch:**
+- **Kundenfeedback:** Budgetbericht zeigt keine Ist-Werte, Postenauflistung filtert nicht nach Verwendungszweck
+- **Bug #1 — Ist-Werte fehlten:** Root-Cause in BudgetReportService.GetRawDataAsync() — Matching-Logik war broken
+  - Fix: Logik korrigiert, um PurposePattern-Matching korrekt anzuwenden
+- **Bug #2 — Postenauflistung filtert nicht:** Root-Cause in ShowPurposePostingsAsync() — Pattern-Filterung fehlte
+  - Fix: Pattern-Filterung implementiert (Regex + Contains-Matching)
+- **Regression nach Bugfixes:** Alle Posten wurden als "nicht budgetiert" angezeigt, Ist-Werte fehlten
+  - Root-Cause: GetUnbudgetedAsync() respektierte Pattern-Filterung nicht
+  - Fix: GetUnbudgetedAsync() umgeschrieben, um GetRawDataAsync() mit vollständiger Pattern-Filterungs-Logik zu verwenden
+- ✅ **Smoke Test nach Regression-Fix:** Alle 4 kritischen Szenarien bestanden
+  - Szenario 1 ✅: Budget ohne Pattern — Ist-Wert sichtbar
+  - Szenario 2 ✅: Budget mit Pattern — nur gefilterte Posten im Ist-Wert
+  - Szenario 3 ✅: Unbudgetierte Posten sichtbar
+  - Szenario 4 ✅: Multiple Budgets funktionieren korrekt
+
+**Finale Verifikation:**
+- Build erfolgreich (0 Fehler)
+- 53 Budget-Unit-Tests bestanden
+- 9 Integration-Tests bestanden
+- Alle Regressions-Bugs behoben
+- Kein neues Fehlverhalten eingeführt
 
 ## Offene Punkte / Hinweise
+
 - 4 bestehende, nicht feature-bezogene Testfehler sind weiterhin offen und separat zu behandeln (SecurityPrice, ReturnAnalysis, ApiClientAuth).
 - Für Produktion empfohlen: Monitoring der Matching-Latenz und Regex-Fehlerraten sowie reguläre Prüfung auf ReDoS-resistente Muster.
-
-## Status: ✅ PRODUKTIONSREIF & VOLLSTÄNDIG
-Das Feature ist vollständig implementiert, getestet, verifiziert und einsatzbereit. Alle 6 Integrations-Szenarien erfolgreich bestanden.
+- **Feature-Status:** Alle bekannten Bugs behoben, alle kritischen Szenarien validiert. Weitere Änderungen sollten von Stakeholder bewertet werden.

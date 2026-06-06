@@ -196,7 +196,7 @@ public sealed class BudgetReportsController : ControllerBase
             var from = new DateOnly(to.Year, to.Month, 1).AddMonths(-(req.Months - 1));
 
             // Retrieve raw data for the requested range and date basis
-            var raw = await _reports.GetRawDataAsync(_current.UserId, from, to, req.DateBasis, ct);
+            var raw = await _reports.GetRawDataAsync(_current.UserId, from, to, req.DateBasis, ct, ignoreCache: true);
 
             // Helper: choose date field according to request date basis
             static DateTime GetDate(BudgetReportPostingRawDataDto p, BudgetReportDateBasis basis)
@@ -408,7 +408,7 @@ public sealed class BudgetReportsController : ControllerBase
             var toDate = DateOnly.FromDateTime(toDt);
 
             // Use GetRawDataAsync to get properly filtered posting IDs that respect pattern matching
-            var raw = await _reports.GetRawDataAsync(ownerUserId, fromDate, toDate, dateBasis, ct, ignoreCache: false);
+            var raw = await _reports.GetRawDataAsync(ownerUserId, fromDate, toDate, dateBasis, ct, ignoreCache: true);
 
             var unbudgetedPostingIds = (raw.UnbudgetedPostings ?? Array.Empty<BudgetReportPostingRawDataDto>())
                 .Select(p => p.PostingId)
@@ -469,7 +469,7 @@ public sealed class BudgetReportsController : ControllerBase
                 .Select(p => new PostingServiceDto(
                     p.Id,
                     p.BookingDate,
-                    p.ValutaDate ?? p.BookingDate,
+                    p.ValutaDate,
                     p.Amount,
                     p.Kind,
                     p.AccountId,
