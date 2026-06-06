@@ -245,3 +245,102 @@
 - ✅ Alle geplanten Ziel-Dateien existieren und sind nicht leer.
 - ✅ Code-Änderungen und Testklasse zur Budget-Impact-Funktion wurden in der Dokumentation referenziert.
 - ⚠️ `dotnet test` konnte in dieser Umgebung nicht bis zum Abschluss beobachtet werden (Restore/Warnungen sichtbar, danach kein finaler Exit im Tool-Stream).
+
+---
+
+# Dokumentationsplan: Budget-Verwendungszweck-Pattern inkl. Regex (2026-06-04)
+
+> Lauf: Phase-4-Dokumentationsupdate für implementiertes Feature  
+> Status: ✅ Abgeschlossen
+
+## Phase 1 – Analyse-Ergebnisse
+
+### API-Dokumentation
+
+| Befund | Ergebnis |
+|---|---|
+| Vorhandene API-Doku | `Docs/api/BudgetRulesController.md`, `Docs/api/BudgetReportsController.md`, `Docs/api/StatementDraftsController.md` vorhanden |
+| Lücken | BudgetRules/Reports zu knapp, ohne präzise PurposePattern-/Regex-Spezifikation |
+| Priorität | 🔴 Hoch |
+
+### Flow-Dokumentation
+
+| Befund | Ergebnis |
+|---|---|
+| Vorhandene Flows | `Docs/flows/budget-impact-evaluation.md`, `Docs/flows/statement-draft-booking.md` vorhanden |
+| Lücken | Pattern-Matching-Regeln (contains vs regex), Timeout-Verhalten und Regex-Validierungsbezug fehlen bzw. sind unpräzise |
+| Priorität | 🔴 Hoch |
+
+### Business-Dokumentation
+
+| Befund | Ergebnis |
+|---|---|
+| Vorhandene Business-Doku | `Docs/business/features/F008-budgetplanung.md`, `F009-budgetberichte.md`, `F018-budgetwirkung-buchung.md` vorhanden |
+| Lücken | Nutzerführung für PurposePattern/Regex und Auswirkungen auf Bericht/Buchung fehlen |
+| Priorität | 🔴 Hoch |
+
+### README-Analyse
+
+| Befund | Ergebnis |
+|---|---|
+| Bestand | Feature nicht explizit in Changelog/Bekannte Punkte dokumentiert |
+| Lücken | Kein klarer Hinweis auf Migration + bekannte fachfremde Testfailures |
+| Priorität | 🟡 Mittel |
+
+## Phase 2 – Umsetzungsplan
+
+### Zu aktualisieren
+
+- `Docs/api/BudgetRulesController.md`
+- `Docs/api/BudgetReportsController.md`
+- `Docs/api/StatementDraftsController.md`
+- `Docs/flows/budget-impact-evaluation.md`
+- `Docs/flows/statement-draft-booking.md`
+- `Docs/business/features/F008-budgetplanung.md`
+- `Docs/business/features/F009-budgetberichte.md`
+- `Docs/business/features/F018-budgetwirkung-buchung.md`
+- `Docs/requirements/budget-verwendungszweck.md`
+- `Docs/architecture/budget-verwendungszweck.md`
+- `README.md`
+
+### Muss-Inhalte
+
+- Implementierungsstand inkl. Regex-Verhalten (nur syntaktische Compile-Validierung)
+- Validierungsregeln und Matching-Verhalten (contains case-insensitive + regex mit Timeout)
+- API/DTO/UI-Änderungen
+- Migration `20260604172812_202606041500_AddBudgetRulePurposePattern`
+- Ergänzte Tests (Unit/Controller/Integration)
+- Bekannte fachfremde Testfailures klar als nicht Feature-bezogen markieren
+
+## Ergebnis (Anhang)
+
+### Aktualisierte Dateien
+
+- `docs/api/BudgetRulesController.md`
+- `docs/api/BudgetReportsController.md`
+- `docs/api/StatementDraftsController.md`
+- `Docs/flows/budget-impact-evaluation.md`
+- `docs/flows/statement-draft-booking.md`
+- `docs/business/features/F008-budgetplanung.md`
+- `docs/business/features/F009-budgetberichte.md`
+- `Docs/business/features/F018-budgetwirkung-buchung.md`
+- `Docs/requirements/budget-verwendungszweck.md`
+- `Docs/architecture/budget-verwendungszweck.md`
+- `README.md`
+
+### Inhaltlich dokumentiert
+
+- Implementierte Regex-Regeln inkl. **nur syntaktischer** Validierung bei Create/Update.
+- Matching-Verhalten in Budgetbericht und Kontoauszug/BudgetImpact.
+- API-/DTO-/UI-relevante Änderungen für `PurposePattern` und `UseRegex`.
+- Migration `20260604172812_202606041500_AddBudgetRulePurposePattern`.
+- Ergänzte Unit-/Controller-/Integrationstests zum Feature.
+
+### Teststatus / bekannte fachfremde Failures
+
+- `dotnet test FinanceManager.sln` wurde ausgeführt.
+- Failures sind als fachfremd zum Feature markiert:
+  - `FinanceManager.Tests/Web/SecurityPriceErrorRecoveryTests.cs` (2 Tests)
+  - `FinanceManager.Tests/Securities/ReturnAnalysisServiceTests.cs` (1 Test)
+  - `FinanceManager.Tests.Integration/ApiClient/ApiClientAuthTests.cs` (1 Test)
+- Diese Fehler sind nicht durch die PurposePattern-/Regex-Änderung verursacht.

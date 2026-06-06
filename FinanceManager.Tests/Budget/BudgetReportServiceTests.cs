@@ -1,4 +1,9 @@
 ﻿using FinanceManager.Domain.Contacts;
+using FinanceManager.Application.Budget;
+using FinanceManager.Application.Contacts;
+using FinanceManager.Application.Postings;
+using FinanceManager.Application.Savings;
+using FinanceManager.Application.Securities;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Accounts;
 using FinanceManager.Infrastructure.Aggregates;
@@ -18,6 +23,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using System;
 using System.Globalization;
 using System.Threading;
@@ -191,6 +197,8 @@ public class BudgetReportServiceTests
 
         // additional contacts
         var landlordContact = await contactService.CreateAsync(ownerUserId, "Landlord", ContactType.Organization, null, null, null, ct);
+        var vermieterContact = await contactService.CreateAsync(ownerUserId, "Vermieter", ContactType.Organization, null, null, null, ct);
+        var stadtwerkeContact = await contactService.CreateAsync(ownerUserId, "Stadtwerke Musterstadt", ContactType.Organization, null, null, null, ct);
 
         var canteenContact = await contactService.CreateAsync(ownerUserId, "Canteen 1", ContactType.Organization, null, null, null, ct);
 
@@ -361,6 +369,45 @@ public class BudgetReportServiceTests
             null,
             new DateOnly(2026, 1, 1),
             null,
+            ct);
+
+        var wohnenCategory = await categoryService.CreateAsync(ownerUserId, "Wohnen", ct);
+        var vermieterPurpose = await purposeService.CreateAsync(
+            ownerUserId,
+            "Vermieter",
+            BudgetSourceType.Contact,
+            vermieterContact.Id,
+            null,
+            wohnenCategory.Id,
+            ct);
+        _ = await ruleService.CreateAsync(
+            ownerUserId,
+            vermieterPurpose.Id,
+            -500m,
+            BudgetIntervalType.Monthly,
+            null,
+            new DateOnly(2026, 1, 1),
+            null,
+            ct);
+
+        var stadtwerkePurpose = await purposeService.CreateAsync(
+            ownerUserId,
+            "Stadtwerke Musterstadt",
+            BudgetSourceType.Contact,
+            stadtwerkeContact.Id,
+            null,
+            wohnenCategory.Id,
+            ct);
+        _ = await ruleService.CreateAsync(
+            ownerUserId,
+            stadtwerkePurpose.Id,
+            -50m,
+            BudgetIntervalType.Monthly,
+            null,
+            new DateOnly(2026, 1, 1),
+            null,
+            "ST0001",
+            false,
             ct);
 
         var lotteryCategory = await categoryService.CreateAsync(ownerUserId, "Lottery Company", ct);
@@ -769,6 +816,39 @@ public class BudgetReportServiceTests
             ct);
         var rentEntryId = draftWithRentEntry!.Entries[^1].Id;
         await statementDraftService.SetEntryContactAsync(draft.DraftId, rentEntryId, landlordContact.Id, ownerUserId, ct);
+
+        // additional: Wohnen / Vermieter booking on 02.01.2026 (monthly -500)
+        var draftWithVermieterEntry = await statementDraftService.AddEntryAsync(
+            draft.DraftId,
+            ownerUserId,
+            new DateTime(2026, 1, 2),
+            -500.00m,
+            "Vermieter Januar",
+            ct);
+        var vermieterEntryId = draftWithVermieterEntry!.Entries[^1].Id;
+        await statementDraftService.SetEntryContactAsync(draft.DraftId, vermieterEntryId, vermieterContact.Id, ownerUserId, ct);
+
+        // additional: Wohnen / Stadtwerke matching contract reference ST0001 (budgeted)
+        var draftWithStadtwerkeBudgetedEntry = await statementDraftService.AddEntryAsync(
+            draft.DraftId,
+            ownerUserId,
+            new DateTime(2026, 1, 10),
+            -50.00m,
+            "Abschlag Energie ST0001",
+            ct);
+        var stadtwerkeBudgetedEntryId = draftWithStadtwerkeBudgetedEntry!.Entries[^1].Id;
+        await statementDraftService.SetEntryContactAsync(draft.DraftId, stadtwerkeBudgetedEntryId, stadtwerkeContact.Id, ownerUserId, ct);
+
+        // additional: Stadtwerke booking with non-matching purpose text (unbudgeted)
+        var draftWithStadtwerkeUnbudgetedEntry = await statementDraftService.AddEntryAsync(
+            draft.DraftId,
+            ownerUserId,
+            new DateTime(2026, 1, 11),
+            -10.00m,
+            "Verkehr/S0056",
+            ct);
+        var stadtwerkeUnbudgetedEntryId = draftWithStadtwerkeUnbudgetedEntry!.Entries[^1].Id;
+        await statementDraftService.SetEntryContactAsync(draft.DraftId, stadtwerkeUnbudgetedEntryId, stadtwerkeContact.Id, ownerUserId, ct);
 
         // additional: Insurance 7 payment on 02.01.2026 (monthly -11.46)
         var draftWithInsurance7Entry = await statementDraftService.AddEntryAsync(
@@ -1306,6 +1386,80 @@ public class BudgetReportServiceTests
                                     SecurityName = null
                                 }
                                 
+                            }
+                        }
+                    }
+                },
+                new BudgetReportCategoryRawDataDto
+                {
+                    CategoryId = wohnenCategory.Id,
+                    CategoryName = "Wohnen",
+                    BudgetedExpense = 0m,
+                    BudgetedTarget = 0m,
+                    Purposes = new[]
+                    {
+                        new BudgetReportPurposeRawDataDto
+                        {
+                            PurposeId = stadtwerkePurpose.Id,
+                            PurposeName = "Stadtwerke Musterstadt",
+                            BudgetedExpense = -50m,
+                            BudgetedTarget = -50m,
+                            BudgetSourceType = BudgetSourceType.Contact,
+                            SourceId = stadtwerkeContact.Id,
+                            SourceName = stadtwerkeContact.Name,
+                            Postings = new[]
+                            {
+                                new BudgetReportPostingRawDataDto
+                                {
+                                    Amount = -50m,
+                                    BookingDate = new DateTime(2026, 1, 10),
+                                    ValutaDate = new DateTime(2026, 1, 10),
+                                    PostingId = Guid.Empty,
+                                    PostingKind = PostingKind.Contact,
+                                    Description = "Abschlag Energie ST0001",
+                                    BudgetCategoryName = "Wohnen",
+                                    BudgetPurposeName = "Stadtwerke Musterstadt",
+                                    AccountId = null,
+                                    AccountName = bankAccount.Name,
+                                    ContactId = stadtwerkeContact.Id,
+                                    ContactName = stadtwerkeContact.Name,
+                                    SavingsPlanId = null,
+                                    SavingsPlanName = null,
+                                    SecurityId = null,
+                                    SecurityName = null
+                                }
+                            }
+                        },
+                        new BudgetReportPurposeRawDataDto
+                        {
+                            PurposeId = vermieterPurpose.Id,
+                            PurposeName = "Vermieter",
+                            BudgetedExpense = -500m,
+                            BudgetedTarget = -500m,
+                            BudgetSourceType = BudgetSourceType.Contact,
+                            SourceId = vermieterContact.Id,
+                            SourceName = vermieterContact.Name,
+                            Postings = new[]
+                            {
+                                new BudgetReportPostingRawDataDto
+                                {
+                                    Amount = -500m,
+                                    BookingDate = new DateTime(2026, 1, 2),
+                                    ValutaDate = new DateTime(2026, 1, 2),
+                                    PostingId = Guid.Empty,
+                                    PostingKind = PostingKind.Contact,
+                                    Description = "Vermieter Januar",
+                                    BudgetCategoryName = "Wohnen",
+                                    BudgetPurposeName = "Vermieter",
+                                    AccountId = null,
+                                    AccountName = bankAccount.Name,
+                                    ContactId = vermieterContact.Id,
+                                    ContactName = vermieterContact.Name,
+                                    SavingsPlanId = null,
+                                    SavingsPlanName = null,
+                                    SecurityId = null,
+                                    SecurityName = null
+                                }
                             }
                         }
                     }
@@ -2566,6 +2720,25 @@ public class BudgetReportServiceTests
                 // Aggregated unbudgeted streaming charges
                 new BudgetReportPostingRawDataDto()
                 {
+                    Amount = -10.00m,
+                    BookingDate = new DateTime(2026, 1, 11),
+                    ValutaDate = new DateTime(2026, 1, 11),
+                    PostingId = Guid.Empty,
+                    PostingKind = PostingKind.Contact,
+                    Description = "Verkehr/S0056",
+                    BudgetCategoryName = "Wohnen",
+                    BudgetPurposeName = "Stadtwerke Musterstadt",
+                    AccountId = null,
+                    AccountName = bankAccount.Name,
+                    ContactId = stadtwerkeContact.Id,
+                    ContactName = stadtwerkeContact.Name,
+                    SavingsPlanId = null,
+                    SavingsPlanName = null,
+                    SecurityId = null,
+                    SecurityName = null
+                },
+                new BudgetReportPostingRawDataDto()
+                {
                     Amount = -5.98m,
                     BookingDate = new DateTime(2026, 1, 15),
                     ValutaDate = new DateTime(2026, 1, 15),
@@ -2714,8 +2887,10 @@ public class BudgetReportServiceTests
             + 20.64m /* Insurance 4 (monthly) */
             + 31.8m /* Recurring Expense 3 (monthly negative component) */
             + 500m /* Shopping & Food category-level budget */
+            + 500m /* Wohnen / Vermieter */
+            + 50m /* Wohnen / Stadtwerke Musterstadt (ST0001) */
             ;
-        // Summe (PlannedExpenseAbs) = 2250.79m
+        // Summe (PlannedExpenseAbs) = 2800.79m
 
         decimal unbudgetedExpense =
             3.81m /* Anlage 1 (unbudgeted outflow) */
@@ -2729,8 +2904,9 @@ public class BudgetReportServiceTests
             + 4.00m /* Dienstleister 10 (unbudgeted outflow) */
             + 5.25m /* Kantine 1 (unbudgeted outflow) */
             + 5.59m /* Gas Station 1 (unbudgeted remainder after budget allocation of 50) */
+            + 10.00m /* Stadtwerke Musterstadt mit nicht passendem Verwendungszweck */
             ;
-        // Summe (UnbudgetedExpenseAbs) = 918.13m
+        // Summe (UnbudgetedExpenseAbs) = 928.13m
 
         decimal budgetedRealizedExpense =
             15m /* Category budget Lottery is realized */
@@ -2758,8 +2934,10 @@ public class BudgetReportServiceTests
             + 10.37m /* Supermarket 8 (06.01) */
             + 75m /* Utilities (realized) */
             + 10m /* Streaming Provider realized (two -4.99 + -0.02 to match monthly budget) */
+            + 500m /* Wohnen / Vermieter */
+            + 50m /* Wohnen / Stadtwerke Musterstadt (ST0001) */
             ;
-        // Summe (BudgetedRealizedExpenseAbs) = 1654.02m
+        // Summe (BudgetedRealizedExpenseAbs) = 2204.02m
 
         decimal unbudgetedIncome =
             5.90m /* Dividend (20.01) */
@@ -2799,7 +2977,7 @@ public class BudgetReportServiceTests
         // Summe (PlannedIncome) = 3848.85m
 
         decimal actualExpense = unbudgetedExpense + budgetedRealizedExpense;
-        // Summe (ActualExpenseAbs) = 2571.15m
+        // Summe (ActualExpenseAbs) = 3132.15m
         decimal actualIncome = unbudgetedIncome + budgetedRealizedIncome;
         // Summe (ActualIncome) = 6736.60m
 
@@ -2848,5 +3026,234 @@ public class BudgetReportServiceTests
         actualKPIBooking.Should().BeEquivalentTo(expectedKPIBooking);
         #endregion
     }
-}
 
+    /// <summary>
+    /// Verifies that housing purposes with contract-based matching keep regular bookings budgeted and
+    /// leave the mismatched mobility booking unbudgeted.
+    /// </summary>
+    [Fact]
+    public async Task Test_GetRawData_ForHousingPurposesWithContractPatternAsync()
+    {
+        var ownerUserId = Guid.NewGuid();
+        var from = new DateOnly(2025, 1, 1);
+        var to = new DateOnly(2026, 12, 31);
+        var ct = CancellationToken.None;
+
+        var wohnenCategoryId = Guid.NewGuid();
+        var mieteContact = new ContactDto(Guid.NewGuid(), "Stadtwerke Vermieter", ContactType.Organization, null, null, false, null);
+        var stromContact = new ContactDto(Guid.NewGuid(), "Stadtwerke Energie", ContactType.Organization, null, null, false, null);
+
+        var mietePurposeId = Guid.NewGuid();
+        var stromPurposeId = Guid.NewGuid();
+
+        var mietePurpose = new BudgetPurposeOverviewDto(
+            mietePurposeId,
+            ownerUserId,
+            "Miete",
+            null,
+            BudgetSourceType.Contact,
+            mieteContact.Id,
+            1,
+            -21600m,
+            0m,
+            0m,
+            mieteContact.Name,
+            null,
+            wohnenCategoryId,
+            "Wohnen");
+
+        var stromPurpose = new BudgetPurposeOverviewDto(
+            stromPurposeId,
+            ownerUserId,
+            "Strom",
+            null,
+            BudgetSourceType.Contact,
+            stromContact.Id,
+            1,
+            -1920m,
+            0m,
+            0m,
+            stromContact.Name,
+            null,
+            wohnenCategoryId,
+            "Wohnen");
+
+        var wohnenCategoryOverview = new BudgetCategoryOverviewDto(wohnenCategoryId, "Wohnen", -23520m, 0m, 0m, 2);
+
+        var mieteRule = new BudgetRuleDto(
+            Guid.NewGuid(),
+            ownerUserId,
+            mietePurposeId,
+            null,
+            -21600m,
+            BudgetIntervalType.Monthly,
+            null,
+            from,
+            null,
+            null,
+            false);
+
+        var stromRule = new BudgetRuleDto(
+            Guid.NewGuid(),
+            ownerUserId,
+            stromPurposeId,
+            null,
+            -1920m,
+            BudgetIntervalType.Monthly,
+            null,
+            from,
+            null,
+            "KNR-4711",
+            false);
+
+        var postingsByContact = new System.Collections.Generic.Dictionary<Guid, System.Collections.Generic.List<FinanceManager.Shared.Dtos.Postings.PostingServiceDto>>();
+        postingsByContact[mieteContact.Id] = new System.Collections.Generic.List<FinanceManager.Shared.Dtos.Postings.PostingServiceDto>();
+        postingsByContact[stromContact.Id] = new System.Collections.Generic.List<FinanceManager.Shared.Dtos.Postings.PostingServiceDto>();
+
+        for (var monthOffset = 0; monthOffset < 24; monthOffset++)
+        {
+            var month = from.AddMonths(monthOffset);
+
+            postingsByContact[mieteContact.Id].Add(CreateContactPosting(
+                Guid.NewGuid(),
+                month.ToDateTime(TimeOnly.MinValue),
+                -900m,
+                mieteContact.Id,
+                $"Miete {month:yyyy-MM}"));
+
+            postingsByContact[stromContact.Id].Add(CreateContactPosting(
+                Guid.NewGuid(),
+                month.ToDateTime(TimeOnly.MinValue).AddDays(1),
+                -80m,
+                stromContact.Id,
+                $"Abrechnung KNR-4711 {month:yyyy-MM}"));
+        }
+
+        postingsByContact[stromContact.Id].Add(CreateContactPosting(
+            Guid.NewGuid(),
+            new DateTime(2026, 1, 15),
+            -49.90m,
+            stromContact.Id,
+            "Verkehrsabo VABO-9000"));
+
+        var cacheService = new Mock<IReportCacheService>(MockBehavior.Loose);
+
+        var purposeService = new Mock<IBudgetPurposeService>();
+        purposeService
+            .Setup(x => x.ListOverviewAsync(ownerUserId, 0, 5000, null, null, from, to, null, It.IsAny<CancellationToken>(), BudgetReportDateBasis.BookingDate))
+            .ReturnsAsync(new[] { mietePurpose, stromPurpose });
+
+        var categoryService = new Mock<IBudgetCategoryService>();
+        categoryService
+            .Setup(x => x.ListOverviewAsync(ownerUserId, from, to, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { wohnenCategoryOverview });
+
+        var ruleService = new Mock<IBudgetRuleService>();
+        ruleService
+            .Setup(x => x.ListByPurposeAsync(ownerUserId, mietePurposeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { mieteRule });
+        ruleService
+            .Setup(x => x.ListByPurposeAsync(ownerUserId, stromPurposeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { stromRule });
+        ruleService
+            .Setup(x => x.ListByCategoryAsync(ownerUserId, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<BudgetRuleDto>());
+
+        var postingsService = new Mock<FinanceManager.Application.Postings.IPostingsQueryService>();
+        postingsService
+            .Setup(x => x.GetContactPostingsAsync(
+                mieteContact.Id,
+                0,
+                5000,
+                null,
+                from.ToDateTime(TimeOnly.MinValue),
+                to.ToDateTime(TimeOnly.MaxValue),
+                ownerUserId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(postingsByContact[mieteContact.Id]);
+        postingsService
+            .Setup(x => x.GetContactPostingsAsync(
+                stromContact.Id,
+                0,
+                5000,
+                null,
+                from.ToDateTime(TimeOnly.MinValue),
+                to.ToDateTime(TimeOnly.MaxValue),
+                ownerUserId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(postingsByContact[stromContact.Id]);
+
+        var contactService = new Mock<IContactService>();
+        contactService
+            .Setup(x => x.ListAsync(ownerUserId, 0, 5000, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { mieteContact, stromContact });
+
+        var savingsPlanService = new Mock<ISavingsPlanService>();
+        savingsPlanService
+            .Setup(x => x.ListAsync(ownerUserId, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<SavingsPlanDto>());
+
+        var securityService = new Mock<ISecurityService>();
+        securityService
+            .Setup(x => x.ListAsync(ownerUserId, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<SecurityDto>());
+
+        var sut = new BudgetReportService(
+            purposeService.Object,
+            categoryService.Object,
+            ruleService.Object,
+            postingsService.Object,
+            contactService.Object,
+            savingsPlanService.Object,
+            securityService.Object,
+            cacheService.Object);
+
+        var result = await sut.GetRawDataAsync(ownerUserId, from, to, BudgetReportDateBasis.BookingDate, ct);
+
+        var wohnenRawCategory = result.Categories.Should().ContainSingle(x => x.CategoryName == "Wohnen").Subject;
+        var miete = wohnenRawCategory.Purposes.Should().ContainSingle(x => x.PurposeName == "Miete").Subject;
+        miete.Postings.Should().HaveCount(24);
+        miete.Postings.Should().OnlyContain(x => x.Description.StartsWith("Miete"));
+
+        var strom = wohnenRawCategory.Purposes.Should().ContainSingle(x => x.PurposeName == "Strom").Subject;
+        strom.Postings.Should().HaveCount(24);
+        strom.Postings.Should().OnlyContain(x => x.Description.Contains("KNR-4711"));
+
+        result.UnbudgetedPostings.Should().ContainSingle(x => x.Description == "Verkehrsabo VABO-9000");
+        result.UnbudgetedPostings.Single().ContactId.Should().Be(stromContact.Id);
+    }
+
+    private static FinanceManager.Shared.Dtos.Postings.PostingServiceDto CreateContactPosting(
+        Guid postingId,
+        DateTime bookingDate,
+        decimal amount,
+        Guid contactId,
+        string description)
+    {
+        return new FinanceManager.Shared.Dtos.Postings.PostingServiceDto(
+            postingId,
+            bookingDate,
+            bookingDate,
+            amount,
+            PostingKind.Contact,
+            null,
+            contactId,
+            null,
+            null,
+            postingId,
+            description,
+            null,
+            null,
+            null,
+            null,
+            Guid.Empty,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null);
+    }
+}

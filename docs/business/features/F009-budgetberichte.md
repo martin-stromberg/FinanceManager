@@ -2,78 +2,58 @@
 
 ## Einleitung
 
-Die Budgetberichte zeigen detailliert, wie Ihre Budgets eingehalten oder überschritten wurden. Sie sehen Abweichungen, Trends und können analysieren, wo Kostenüberschreitungen aufgetreten sind. Dies hilft Ihnen, finanzielle Kontrolle zu behalten.
+Budgetberichte zeigen, welche Buchungen in ein Budget eingerechnet wurden.  
+Neu beeinflusst ein optionales Verwendungszweck-Muster die Zuordnung.  
+So sehen Sie genauer, welche Buchungen wirklich zu einer Regel gehören.  
+Nicht passende Buchungen bleiben im Bericht außerhalb der Budgetsumme.
 
 ## Wer nutzt es?
 
-**Manager und Finanzcontroller** nutzen diese Funktion, um die Budget-Einhaltung zu überwachen und Abweichungen zu analysieren. Dies ist wichtig für Geschäftsaudits und Entscheidungsfindung.
+Diese Funktion nutzen Fachanwender aus Controlling und Sachbearbeitung.  
+Sie prüfen Monatswerte und klären Abweichungen.
 
 ## Schritt-für-Schritt-Anleitung
 
-### Budget-Bericht anzeigen
-
-1. Sie navigieren zu **Berichte** → **Budgetberichte**.
-2. Sie wählen den **Zeitraum** (z.B. Januar 2024).
-3. Sie sehen eine Tabelle mit allen Budgets:
-   - Kategorie
-   - Budgetierter Betrag
-   - Tatsächliche Ausgaben
-   - Abweichung (Differenz)
-   - Prozentuale Auslastung
-
-### Abweichungen analysieren
-
-1. Sie öffnen einen Budgetbericht.
-2. Sie identifizieren Kategorien mit hohen Abweichungen (z.B. rot markiert).
-3. Sie klicken auf eine Kategorie, um die einzelnen Transaktionen zu sehen.
-4. Sie prüfen, ob die Abweichungen gerechtfertigt sind oder Kosteneinsparungen möglich sind.
-
-### Trend-Analyse
-
-1. Sie navigieren zu **Budget-Trend-Analyse**.
-2. Sie wählen einen **Zeitbereich** (z.B. Januar–Dezember 2024).
-3. Sie sehen ein Diagramm, das zeigt:
-   - Budget vs. Ausgaben für jeden Monat
-   - Trend (steigend/fallend)
-   - Prognose für zukünftige Monate
+1. Sie öffnen **Berichte** und danach **Budgetberichte**.
+2. Sie wählen den gewünschten Zeitraum.
+3. Sie öffnen die Details eines Budgetzwecks.
+4. Sie vergleichen den Wert **Ist** mit den einzelnen Buchungen.
+5. Sie prüfen bei Abweichungen den Verwendungszweck der Buchungen.
+6. Sie kontrollieren, ob das hinterlegte Muster zur Regel passt.
 
 ## Beispiel
 
-Sie haben für Q1 2024 folgende Budgets:
+**Textmuster in der Regel:** `ST6464646464`  
+- Buchung `Abrechnung ST6464646464 Januar` wird eingerechnet.  
+- Buchung `Service ohne Vertragsnummer` wird nicht eingerechnet.
 
-**Januar:**
-- Budget Bürokosten: 5.000 EUR | Tatsächlich: 4.800 EUR | ✅ Im Plan
-- Budget Reisen: 2.000 EUR | Tatsächlich: 2.500 EUR | ⚠️ +500 EUR Überschreitung
-
-**Februar:**
-- Budget Bürokosten: 5.000 EUR | Tatsächlich: 5.300 EUR | ⚠️ +300 EUR
-- Budget Reisen: 2.000 EUR | Tatsächlich: 1.800 EUR | ✅ Im Plan
-
-Der Bericht zeigt, dass die Reisekosten in Januar und Bürokosten in Februar problematisch waren.
+**Regex-Muster in der Regel:** `ST\d{10}`  
+- Buchung mit `ST` plus zehn Ziffern wird eingerechnet.  
+- Andere Texte bleiben außerhalb der Budgetsumme.
 
 ## Was passiert im Hintergrund?
 
-Die Software aggregiert die tatsächlichen Ausgaben pro Kategorie und Zeitraum, vergleicht sie mit den Budgets und berechnet die Abweichungen. Trendanalysen benutzen historische Daten, um Muster zu erkennen.
+Das System kombiniert die Textteile der Buchung und prüft das Muster.  
+Bei Textmuster nutzt es eine Suche ohne Groß-/Kleinschreibung.  
+Bei **Regex** nutzt es das hinterlegte Muster.  
+Wenn kein Muster hinterlegt ist, zählt die Buchung wie bisher mit.
 
 ## Häufige Fragen (FAQ)
 
-**F: Was ist eine Abweichung?**  
-A: Abweichung = Tatsächliche Ausgaben − Budgetierter Betrag. Positiv bedeutet Überschreitung, Negativ bedeutet Unterschreitung.
+**F: Warum erscheint eine Buchung nicht im Budgetzweck?**  
+A: Meist passt der Verwendungszweck nicht zum hinterlegten Muster.
 
-**F: Kann ich Budgetberichte exportieren?**  
-A: Ja, Sie können Berichte als PDF oder Excel exportieren.
+**F: Wo sehe ich nicht passende Buchungen?**  
+A: Diese bleiben im Bericht als nicht budgetiert sichtbar.
 
-**F: Wie hilft mir die Trend-Analyse?**  
-A: Sie können sehen, ob Ihre Ausgaben steigen oder fallen und Budget anpassen.
+**F: Was passiert bei sehr schwierigen Regex-Mustern?**  
+A: Wenn kein Treffer sicher ermittelt wird, bleibt die Buchung unbudgetiert.
 
-**F: Kann ich mehrere Abteilungen vergleichen?**  
-A: Dies hängt von der Systemkonfiguration ab. Multi-Abteilungs-Berichte sind optional.
-
-**F: Werden die Berichte automatisch generiert?**  
-A: Sie können automatische Berichte in den Einstellungen aktivieren.
+**F: Wird bei Regex auch inhaltlich geprüft, ob die Regel sinnvoll ist?**  
+A: Nein. Geprüft wird nur die korrekte Schreibweise.
 
 ## Verwandte Funktionen
 
 - [F008 – Budgetplanung](./F008-budgetplanung.md)
+- [F018 – Budgetwirkung während Buchung](./F018-budgetwirkung-buchung.md)
 - [F016 – Berichte & Dashboards](./F016-berichte-dashboards.md)
-- [F003 – Ausgabenverwaltung](./F003-ausgabenverwaltung.md)

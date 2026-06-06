@@ -1,8 +1,10 @@
 using FinanceManager.Application; // BackgroundTaskRunner
+using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
 using FinanceManager.Web;
 using FinanceManager.Web.Services; // SecurityPriceWorker
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -11,13 +13,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting; // for IHostedService
 using System.Data.Common;
 using System.Diagnostics;
-using FinanceManager.Application;
 
 namespace FinanceManager.Tests.Integration;
 
 // Custom factory that wires AppDbContext to a fresh SQLite in-memory database per factory instance
 public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
+    public const string BootstrapAdminUsername = "bootstrap.admin";
+    public const string BootstrapAdminPassword = "Bootstr4pAdmin!";
+
     private DbConnection? _connection;
     /// <summary>
     /// When set, the factory will register a <see cref="TimeProvider"/> that returns this fixed UTC time.
@@ -95,6 +99,33 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Database.EnsureDeleted();
             db.Database.Migrate();
+
+            // Seed a bootstrap admin user so that test registrations are never treated as the first user.
+            // Without this, the first registered user in each test run would automatically receive Admin rights.
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            const string adminRole = "Admin";
+            if (!roleManager.RoleExistsAsync(adminRole).GetAwaiter().GetResult())
+            {
+                roleManager.CreateAsync(new IdentityRole<Guid> { Name = adminRole, NormalizedName = adminRole.ToUpperInvariant() }).GetAwaiter().GetResult();
+            }
+            var bootstrapAdmin = new User(BootstrapAdminUsername, isAdmin: true)
+            {
+                SecurityStamp = Guid.NewGuid().ToString("N"),
+                ConcurrencyStamp = Guid.NewGuid().ToString("N"),
+                LockoutEnabled = false,
+            };
+            var createBootstrapResult = userManager.CreateAsync(bootstrapAdmin, BootstrapAdminPassword).GetAwaiter().GetResult();
+            if (!createBootstrapResult.Succeeded)
+            {
+                throw new InvalidOperationException($"Failed to seed bootstrap admin user: {string.Join("; ", createBootstrapResult.Errors.Select(e => e.Description))}");
+            }
+
+            var addToRoleResult = userManager.AddToRoleAsync(bootstrapAdmin, adminRole).GetAwaiter().GetResult();
+            if (!addToRoleResult.Succeeded)
+            {
+                throw new InvalidOperationException($"Failed to assign bootstrap admin role: {string.Join("; ", addToRoleResult.Errors.Select(e => e.Description))}");
+            }
         });
     }
 

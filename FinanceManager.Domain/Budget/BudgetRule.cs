@@ -30,7 +30,9 @@ public sealed class BudgetRule : Entity, IAggregateRoot
         BudgetIntervalType interval,
         DateOnly startDate,
         DateOnly? endDate = null,
-        int? customIntervalMonths = null)
+        int? customIntervalMonths = null,
+        string? purposePattern = null,
+        bool purposePatternIsRegex = false)
     {
         OwnerUserId = Guards.NotEmpty(ownerUserId, nameof(ownerUserId));
 
@@ -44,6 +46,7 @@ public sealed class BudgetRule : Entity, IAggregateRoot
 
         SetAmount(amount);
         SetSchedule(interval, startDate, endDate, customIntervalMonths);
+        SetPurposePattern(purposePattern, purposePatternIsRegex);
     }
 
     /// <summary>
@@ -65,6 +68,16 @@ public sealed class BudgetRule : Entity, IAggregateRoot
     /// Expected amount.
     /// </summary>
     public decimal Amount { get; private set; }
+
+    /// <summary>
+    /// Optional pattern to match booking purpose / contract number.
+    /// </summary>
+    public string? PurposePattern { get; private set; }
+
+    /// <summary>
+    /// When true, PurposePattern is treated as a regular expression.
+    /// </summary>
+    public bool PurposePatternIsRegex { get; private set; } = false;
 
     /// <summary>
     /// Interval definition.
@@ -132,6 +145,47 @@ public sealed class BudgetRule : Entity, IAggregateRoot
 
         StartDate = startDate;
         EndDate = endDate;
+        Touch();
+    }
+
+    /// <summary>
+    /// Sets or clears the purpose pattern and whether it is a regex.
+    /// </summary>
+    /// <param name="pattern">Pattern text or null to clear.</param>
+    /// <param name="isRegex">True if <paramref name="pattern"/> should be treated as a regular expression.</param>
+    public void SetPurposePattern(string? pattern, bool isRegex)
+    {
+        if (string.IsNullOrWhiteSpace(pattern))
+        {
+            PurposePattern = null;
+            PurposePatternIsRegex = false;
+            Touch();
+            return;
+        }
+
+        var trimmed = pattern.Trim();
+        if (trimmed.Length > 500)
+        {
+            throw new ArgumentOutOfRangeException(nameof(pattern), "Purpose pattern must be at most 500 characters");
+        }
+
+        if (isRegex)
+        {
+            // Validate that the provided pattern is a valid regular expression. Compilation is used only for validation
+            // (do not enable RegexOptions.Compiled here to avoid JIT/assembly overhead at runtime). If invalid, throw an
+            // ArgumentException so callers (controllers) can translate this into a ModelState validation error.
+            try
+            {
+                _ = new System.Text.RegularExpressions.Regex(trimmed);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new ArgumentException("Invalid regular expression", nameof(pattern), ex);
+            }
+        }
+
+        PurposePattern = trimmed;
+        PurposePatternIsRegex = isRegex;
         Touch();
     }
 

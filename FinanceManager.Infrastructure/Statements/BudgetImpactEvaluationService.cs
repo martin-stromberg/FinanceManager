@@ -18,9 +18,12 @@ namespace FinanceManager.Infrastructure.Statements;
 public sealed class BudgetImpactEvaluationService : IBudgetImpactEvaluationService
 {
     private sealed record ContactCategoryInfo(Guid Id, Guid? CategoryId);
+    private sealed record BudgetPurposeInfo(Guid Id, string Name, BudgetSourceType SourceType, Guid SourceId, Guid? BudgetCategoryId);
+    private sealed record BudgetRulePatternInfo(Guid? BudgetPurposeId, Guid? BudgetCategoryId, string? PurposePattern, bool PurposePatternIsRegex);
 
     private const decimal AlmostExhaustedThreshold = 0.90m;
     private const decimal StrongChangeThreshold = 0.20m;
+    private static readonly TimeSpan RegexMatchTimeout = TimeSpan.FromMilliseconds(200);
 
     private readonly AppDbContext _db;
     private readonly IBudgetPlanningService _planning;
@@ -128,7 +131,7 @@ public sealed class BudgetImpactEvaluationService : IBudgetImpactEvaluationServi
         var purposes = await _db.BudgetPurposes
             .AsNoTracking()
             .Where(x => x.OwnerUserId == ownerUserId)
-            .Select(x => new { x.Id, x.Name, x.SourceType, x.SourceId })
+            .Select(x => new BudgetPurposeInfo(x.Id, x.Name, x.SourceType, x.SourceId, x.BudgetCategoryId))
             .ToListAsync(ct);
 
         var entryContactCategories = entries
@@ -145,23 +148,25 @@ public sealed class BudgetImpactEvaluationService : IBudgetImpactEvaluationServi
                     && catId == p.SourceId)))
             .ToArray();
 
+        var affectedPurposeIds = affectedPurposes.Select(x => x.Id).Distinct().ToArray();
+        var affectedCategoryIds = affectedPurposes
+            .Where(x => x.BudgetCategoryId.HasValue && x.BudgetCategoryId.Value != Guid.Empty)
+            .Select(x => x.BudgetCategoryId!.Value)
+            .Distinct()
+            .ToArray();
+
+        var relevantRules = await _db.BudgetRules
+            .AsNoTracking()
+            .Where(x => x.OwnerUserId == ownerUserId)
+            .Where(x =>
+                (x.BudgetPurposeId.HasValue && affectedPurposeIds.Contains(x.BudgetPurposeId.Value))
+                || (x.BudgetCategoryId.HasValue && affectedCategoryIds.Contains(x.BudgetCategoryId.Value)))
+            .Select(x => new BudgetRulePatternInfo(x.BudgetPurposeId, x.BudgetCategoryId, x.PurposePattern, x.PurposePatternIsRegex))
+            .ToListAsync(ct);
+
         if (affectedPurposes.Length == 0)
         {
-            return new[]
-            {
-                new BudgetImpactHintDto(
-                    null,
-                    null,
-                    BudgetPeriodKey.FromDate(DateOnly.FromDateTime(entries.First().BookingDate)).ToString(),
-                    BudgetImpactHintType.Neutral,
-                    0m,
-                    0m,
-                    0m,
-                    0m,
-                    0m,
-                    0m,
-                    "Keine zuordenbaren Budgetzwecke für den aktuellen Buchungskontext gefunden.")
-            };
+            return Array.Empty<BudgetImpactHintDto>();
         }
 
         var groupedByPeriod = entries
@@ -178,13 +183,14 @@ public sealed class BudgetImpactEvaluationService : IBudgetImpactEvaluationServi
 
             foreach (var purpose in affectedPurposes)
             {
-                var simulatedDelta = SumEntryDeltaForPurpose(periodEntries, purpose.SourceType, purpose.SourceId, entryContactCategories);
-                if (simulatedDelta == 0m && !periodEntries.Any(x => MatchesPurpose(x, purpose.SourceType, purpose.SourceId, entryContactCategories)))
+                var applicableRules = GetApplicableRulesForPurpose(relevantRules, purpose);
+                var simulatedDelta = SumEntryDeltaForPurpose(periodEntries, purpose, entryContactCategories, applicableRules);
+                if (simulatedDelta == 0m && !periodEntries.Any(x => MatchesPurpose(x, purpose, entryContactCategories, applicableRules)))
                 {
                     continue;
                 }
 
-                var actualBefore = await GetActualBeforeAsync(ownerUserId, purpose.SourceType, purpose.SourceId, period, contacts, ct);
+                var actualBefore = await GetActualBeforeAsync(ownerUserId, purpose.SourceType, purpose.SourceId, period, contacts, applicableRules, ct);
                 var target = planned.GetPlanned(purpose.Id, period);
                 var actualAfter = actualBefore + simulatedDelta;
 
@@ -218,6 +224,7 @@ public sealed class BudgetImpactEvaluationService : IBudgetImpactEvaluationServi
         Guid sourceId,
         BudgetPeriodKey period,
         IReadOnlyCollection<ContactCategoryInfo> contacts,
+        IReadOnlyList<BudgetRulePatternInfo> applicableRules,
         CancellationToken ct)
     {
         var periodStart = period.StartDate.ToDateTime(TimeOnly.MinValue);
@@ -242,7 +249,13 @@ public sealed class BudgetImpactEvaluationService : IBudgetImpactEvaluationServi
             query = query.Where(x => x.ContactId != null && contactIds.Contains(x.ContactId.Value));
         }
 
-        var actual = await query.SumAsync(x => (decimal?)x.Amount, ct) ?? 0m;
+        var postings = await query
+            .Select(x => new { x.Amount, x.Subject, x.Description })
+            .ToListAsync(ct);
+
+        var actual = postings
+            .Where(x => applicableRules.Any(rule => BudgetRulePatternMatcher.MatchesPosting(x.Subject, x.Description, rule.PurposePattern, rule.PurposePatternIsRegex, RegexMatchTimeout)))
+            .Sum(x => x.Amount);
         _logger.LogDebug("Budget impact actual before. Owner={OwnerUserId} SourceType={SourceType} SourceId={SourceId} Period={Period} Amount={Amount}",
             ownerUserId, sourceType, sourceId, period.ToString(), actual);
         return actual;
@@ -250,30 +263,44 @@ public sealed class BudgetImpactEvaluationService : IBudgetImpactEvaluationServi
 
     private static bool MatchesPurpose(
         StatementDraftEntry entry,
-        BudgetSourceType sourceType,
-        Guid sourceId,
-        IReadOnlyDictionary<Guid, Guid?> entryContactCategories)
+        BudgetPurposeInfo purpose,
+        IReadOnlyDictionary<Guid, Guid?> entryContactCategories,
+        IReadOnlyList<BudgetRulePatternInfo> applicableRules)
     {
-        return sourceType switch
+        var matchesSource = purpose.SourceType switch
         {
-            BudgetSourceType.Contact => entry.ContactId == sourceId,
-            BudgetSourceType.SavingsPlan => entry.SavingsPlanId == sourceId,
+            BudgetSourceType.Contact => entry.ContactId == purpose.SourceId,
+            BudgetSourceType.SavingsPlan => entry.SavingsPlanId == purpose.SourceId,
             BudgetSourceType.ContactGroup => entry.ContactId.HasValue
                 && entryContactCategories.TryGetValue(entry.Id, out var categoryId)
-                && categoryId == sourceId,
+                && categoryId == purpose.SourceId,
             _ => false
         };
+
+        if (!matchesSource)
+        {
+            return false;
+        }
+
+        return applicableRules.Any(rule => BudgetRulePatternMatcher.MatchesPosting(entry.Subject, entry.BookingDescription, rule.PurposePattern, rule.PurposePatternIsRegex, RegexMatchTimeout));
     }
 
     private static decimal SumEntryDeltaForPurpose(
         IReadOnlyCollection<StatementDraftEntry> entries,
-        BudgetSourceType sourceType,
-        Guid sourceId,
-        IReadOnlyDictionary<Guid, Guid?> entryContactCategories)
+        BudgetPurposeInfo purpose,
+        IReadOnlyDictionary<Guid, Guid?> entryContactCategories,
+        IReadOnlyList<BudgetRulePatternInfo> applicableRules)
     {
-        return entries
-            .Where(e => MatchesPurpose(e, sourceType, sourceId, entryContactCategories))
-            .Sum(e => e.Amount);
+        return entries.Where(e => MatchesPurpose(e, purpose, entryContactCategories, applicableRules)).Sum(e => e.Amount);
+    }
+
+    private static IReadOnlyList<BudgetRulePatternInfo> GetApplicableRulesForPurpose(
+        IReadOnlyList<BudgetRulePatternInfo> rules,
+        BudgetPurposeInfo purpose)
+    {
+        return rules
+            .Where(x => x.BudgetPurposeId == purpose.Id || (purpose.BudgetCategoryId.HasValue && x.BudgetCategoryId == purpose.BudgetCategoryId))
+            .ToArray();
     }
 
     private static decimal CalculateRate(decimal actual, decimal target)

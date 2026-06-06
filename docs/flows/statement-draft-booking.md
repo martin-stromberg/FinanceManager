@@ -1,57 +1,82 @@
-# Statement Draft Booking Flow
+# Statement Draft Booking mit Budget-Impact und PurposePattern
 
-Dieses Dokument beschreibt den Buchungsfluss eines Statement-Drafts (Validierung → Buchung → Rückgabe) inkl. Budget-Impact-Summary.
+## Titel & Kontext
 
-## Mermaid diagram
+Dieser Ablauf dokumentiert den Buchungspfad in `StatementDraftService.BookAsync(...)` inklusive vorgelagerter Budget-Impact-Summary. Die PurposePattern-Regeln wirken hier indirekt über `BudgetImpactEvaluationService` auf die Zusammenfassung vor der eigentlichen Buchung. Der eigentliche Posting-Write-Pfad bleibt unverändert und wird nicht durch Pattern blockiert.
+
+## Diagramm
 
 ```mermaid
 flowchart TD
-  A[Start: Book Request] --> B[Validate Draft & Entries]
-  B --> |Errors| C[Return Errors, Stop]
-  B --> |Warnings & not forced| D[Return Warnings]
-  B --> |OK| E[Evaluate Budget Impact Summary]
-  E --> F[Create Postings per Entry]
-  F --> G{Is Split Parent?}
-  G --> |Yes| H[Create zero-amount parent postings]
-  H --> I[Book child drafts, create child postings, set parents]
-  G --> |No| J[Create bank + contact postings]
-  J --> K[Optional savings posting]
-  J --> L[Optional security postings]
-  K --> M[Update aggregates]
-  L --> M
-  I --> M
-  M --> N[Commit draft / Remove booked entries]
-  N --> O[Propagate attachments]
-  O --> P[Refresh reports cache]
-  P --> Q[Return success with BookingResult.BudgetImpactSummary]
+  A[Start BookAsync] --> B[ValidateAsync ausführen]
+  B --> C{Fehler vorhanden?}
+  C -- Ja --> R[Return BookingResult Fehler]
+  C -- Nein --> D{Warnings und forceWarnings=false?}
+  D -- Ja --> S[Return BookingResult Warning]
+  D -- Nein --> E[Draft, Account, Entries laden]
+  E --> F[BudgetImpactSummary berechnen]
+  F --> G{Entry buchbar?}
+  G -- Nein --> H[Entry überspringen]
+  G -- Ja --> I{Split-Parent?}
+  I -- Ja --> J[Parent 0-Betrag buchen + Child-Drafts buchen]
+  I -- Nein --> K[Bank/Contact Posting + optional Savings/Security]
+  J --> L[Aggregates, Attachments, Cache]
+  K --> L
+  L --> M{Partial Booking?}
+  M -- Ja --> N[Gebuchte Entries entfernen, ggf. Draft commit]
+  M -- Nein --> O[Draft commit]
+  N --> P[Return Erfolg inkl. BudgetImpactSummary]
+  O --> P
+  F -. BudgetImpact-Service fehlt .-> G
 ```
 
-## Kurzablauf
+## Schrittbeschreibung
 
-1. **Validierung** prüft Fehler/Warnungen.
-2. Bei erfolgreicher Validierung wird vor dem eigentlichen Buchen eine **Budget-Impact-Summary** berechnet.
-3. Danach laufen die bestehenden Buchungswege:
-   - normales Posting
-   - Split-Parent/-Child-Logik
-   - optionale Savings/Security-Postings
-4. Ergebnis enthält `BookingResult` inkl. optionalem `BudgetImpactSummary`.
+1. **Validierung vor Buchung**
+   - Referenz: `FinanceManager.Infrastructure/Statements/StatementDraftService.cs` (`BookAsync`, `ValidateAsync`)
+   - Eingabe: `draftId`, optional `entryId`, `ownerUserId`, `forceWarnings`.
+   - Ausgabe: früher `BookingResult` bei Error/Warning.
+   - Seiteneffekte: keine Persistenz bei frühem Return.
 
-## Budget-Impact-Einbindung
+2. **Budget-Impact-Summary vor Write-Pfad**
+   - Referenz: `.../StatementDraftService.cs` (Aufruf `EvaluateDraftImpactAsync`), `.../BudgetImpactEvaluationService.cs`
+   - Eingabe: aktuelle Draft-Entries.
+   - Ausgabe: `BookingImpactSummaryDto?` für `BookingResult.BudgetImpactSummary`.
+   - Seiteneffekte: keine Datenänderung; nur Berechnung.
+   - PurposePattern-Wirkung:
+     - Keine Regeln oder leeres Pattern ⇒ kein Filter.
+     - Contains: case-insensitive via `IndexOf(..., OrdinalIgnoreCase)`.
+     - Regex: `IgnoreCase | CultureInvariant` mit 200ms Timeout.
+     - Regex-Fehler/Timeout im Match ⇒ Regel wird ignoriert, kein Abbruch der Buchung.
 
-- Einstiegspunkt: `StatementDraftService.BookAsync(...)`
-- Aufruf: `IBudgetImpactEvaluationService.EvaluateDraftImpactAsync(...)`
-- Rückgabe:
-  - bei Full-Booking und Partial-Booking jeweils im `BookingResult`
-  - Felder: `highestSeverity`, `items[]` mit Vorher/Nachher/Delta je Budgetzweck
+3. **Buchungspfade**
+   - Referenz: `.../StatementDraftService.cs` (`CreateBankAndContactPostingAsync`, `BookSplitDraftGroupAsync`, `CreateSecurityPostingsAsync`)
+   - Eingabe: buchbare Entries (`AlreadyBooked`/`Announced` ausgeschlossen).
+   - Ausgabe: erzeugte `Postings`, aktualisierte Aggregates, optional verlinkte Transfers.
+   - Seiteneffekte: DB-Writes (`Postings`, Draft-Status, Attachments, ggf. SavingsPlan-Status), Cache-Refresh.
 
-## Hinweise
+4. **Partial/Full Commit und Rückgabe**
+   - Referenz: `.../StatementDraftService.cs` (Teilbuchung/Commit-Blöcke)
+   - Eingabe: gebuchte Entries.
+   - Ausgabe: `BookingResult` inkl. `BudgetImpactSummary`.
+   - Seiteneffekte: Entfernen einzelner Entries bei Partial Booking oder Commit des gesamten Drafts.
 
-- Bewertung erfolgt auf Basis von `BudgetPurpose.SourceType`, geplanten Sollwerten (`IBudgetPlanningService`) und Istwerten + simuliertem Draft-Delta.
-- Nicht zuordenbare Kontexte werden als neutraler Hinweis geliefert.
-- Die Budget-Impact-Berechnung blockiert das Booking nicht; fehlende Evaluation liefert `null`.
+5. **Validierungsbezug Regex beim Speichern von Regeln**
+   - Referenz: `FinanceManager.Domain/Budget/BudgetRule.cs` (`SetPurposePattern`), `FinanceManager.Web/Controllers/BudgetRulesController.cs`
+   - Bedeutung für diesen Flow: Der Buchungspfad erhält nur bereits persistierte Regeln; Regex-Syntaxfehler werden vorher bei Create/Update mit HTTP 400 abgefangen.
 
-## Referenzen
+## Fehlerbehandlung
+
+- Validation-Errors ⇒ Buchung wird abgebrochen.
+- Warnings ohne `forceWarnings` ⇒ keine Buchung, nur Rückgabe.
+- Child-Draft direkt buchen ⇒ abgebrochen (`false`-Result).
+- Budget-Impact-Service `null` ⇒ Buchung läuft weiter, `BudgetImpactSummary = null`.
+- Regex-Timeout/ungültiges Regex im Matching ⇒ kein Throw bis zum Caller; Regel greift nicht.
+
+## Abhängigkeiten
 
 - `FinanceManager.Infrastructure/Statements/StatementDraftService.cs`
 - `FinanceManager.Infrastructure/Statements/BudgetImpactEvaluationService.cs`
-- `FinanceManager.Shared/Dtos/Statements/BudgetImpactDtos.cs`
+- `FinanceManager.Infrastructure/Budget/BudgetReportService.cs` (gleiche Pattern-Logik im Reporting-Kontext)
+- `FinanceManager.Domain/Budget/BudgetRule.cs` und `FinanceManager.Web/Controllers/BudgetRulesController.cs` (Compile-Validierung beim Speichern)
+- `FinanceManager.Shared/Dtos/Statements/*` (Rückgabeobjekte)

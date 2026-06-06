@@ -23,10 +23,7 @@ public class ApiClientIpBlocksTests : IClassFixture<TestWebApplicationFactory>
     public async Task IpBlocks_List_Create_Block_Unblock_Delete()
     {
         var api = CreateClient();
-        // Ensure admin context by registering first user
-        var adminUser = $"admin_{Guid.NewGuid():N}";
-        var password = "Secret123"; // satisfies uppercase + digit + length
-        await api.Auth_RegisterAsync(new Shared.Dtos.Users.RegisterRequest(adminUser, password, null, null));
+        await api.Auth_LoginAsync(new LoginRequest(TestWebApplicationFactory.BootstrapAdminUsername, TestWebApplicationFactory.BootstrapAdminPassword, null, null));
 
         var list = await api.Admin_ListIpBlocksAsync();
         list.Should().NotBeNull();

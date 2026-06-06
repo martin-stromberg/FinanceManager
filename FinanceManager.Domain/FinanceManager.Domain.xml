@@ -894,7 +894,7 @@
             Rules are deterministic and do not create persisted planned postings.
             </summary>
         </member>
-        <member name="M:FinanceManager.Domain.Budget.BudgetRule.#ctor(System.Guid,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.DateOnly,System.Nullable{System.DateOnly},System.Nullable{System.Int32})">
+        <member name="M:FinanceManager.Domain.Budget.BudgetRule.#ctor(System.Guid,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.DateOnly,System.Nullable{System.DateOnly},System.Nullable{System.Int32},System.String,System.Boolean)">
             <summary>
             Creates a new budget rule.
             Exactly one of <paramref name="budgetPurposeId"/> or <paramref name="budgetCategoryId"/> must be provided.
@@ -926,6 +926,16 @@
         <member name="P:FinanceManager.Domain.Budget.BudgetRule.Amount">
             <summary>
             Expected amount.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetRule.PurposePattern">
+            <summary>
+            Optional pattern to match booking purpose / contract number.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Budget.BudgetRule.PurposePatternIsRegex">
+            <summary>
+            When true, PurposePattern is treated as a regular expression.
             </summary>
         </member>
         <member name="P:FinanceManager.Domain.Budget.BudgetRule.Interval">
@@ -964,6 +974,13 @@
             <param name="customIntervalMonths">Custom interval months if applicable.</param>
             <exception cref="T:System.ArgumentOutOfRangeException">Thrown when custom interval months are invalid.</exception>
             <exception cref="T:System.ArgumentException">Thrown when end date is before start date.</exception>
+        </member>
+        <member name="M:FinanceManager.Domain.Budget.BudgetRule.SetPurposePattern(System.String,System.Boolean)">
+            <summary>
+            Sets or clears the purpose pattern and whether it is a regex.
+            </summary>
+            <param name="pattern">Pattern text or null to clear.</param>
+            <param name="isRegex">True if <paramref name="pattern"/> should be treated as a regular expression.</param>
         </member>
         <member name="M:FinanceManager.Domain.Budget.BudgetRule.GetIntervalStepMonths">
             <summary>

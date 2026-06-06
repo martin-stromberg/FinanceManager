@@ -110,7 +110,7 @@ public sealed class DemoDataService : IDemoDataService
             var banksCat = await _contactCategoryService.CreateAsync(userId, "Banken", ct);
             var insurancesCat = await _contactCategoryService.CreateAsync(userId, "Versicherungen", ct);
             var providersCat = await _contactCategoryService.CreateAsync(userId, "Dienstleister", ct);
-            var retailCat = await _contactCategoryService.CreateAsync(userId, "Supermärkte & Einzelhandel", ct);
+            var retailCat = await _contactCategoryService.CreateAsync(userId, "Supermï¿½rkte & Einzelhandel", ct);
 
             var attachmentId = await CreateSvgSymbolAsync(userId, AttachmentEntityKind.ContactCategory, banksCat.Id, "bank-symbol.svg", banksCat.Name, symbolsAttachmentCategory.Id, ct);
             await _contactCategoryService.SetSymbolAttachmentAsync(banksCat.Id, userId, attachmentId, ct);
@@ -123,7 +123,7 @@ public sealed class DemoDataService : IDemoDataService
             // create savings plan categories
             var spInsurances = await _savingsPlanCategoryService.CreateAsync(userId, "Versicherungen", ct);
             var spSparen = await _savingsPlanCategoryService.CreateAsync(userId, "Sparen", ct);
-            var spRuckstellungen = await _savingsPlanCategoryService.CreateAsync(userId, "Rückstellungen", ct);
+            var spRuckstellungen = await _savingsPlanCategoryService.CreateAsync(userId, "Rï¿½ckstellungen", ct);
 
             // create security categories
             var secAktien = await _securityCategoryService.CreateAsync(userId, "Aktien", ct);
@@ -202,9 +202,9 @@ public sealed class DemoDataService : IDemoDataService
                 // credit side on Savings account: positive amounts, do NOT assign to savings plan
                 await CreateDemoPostingsForInsurance(userId, kfz, savingsAccountId, positive: true, assignSavingsPlan: false, ct);
 
-                // also create vacation savings postings: 15 months of 100€ each
+                // also create vacation savings postings: 15 months of 100ï¿½ each
                 await CreateDemoPostingsForSavingsPlan(userId, sp1, giroAccountId, savingsAccountId2, 100m, 15, ct);
-                // create car savings postings: 12 months of 150€ each
+                // create car savings postings: 12 months of 150ï¿½ each
                 await CreateDemoPostingsForSavingsPlan(userId, sp3, giroAccountId, savingsAccountId2, 150m, 12, ct);
 
                 // create unbooked monthly account statements for the current month
@@ -233,7 +233,7 @@ public sealed class DemoDataService : IDemoDataService
         for (int monthsAgo = 24; monthsAgo >= 1; monthsAgo--)
         {
             var priceDate = DateTime.UtcNow.Date.AddMonths(-monthsAgo);
-            // simulate small monthly change within ±5%
+            // simulate small monthly change within ï¿½5%
             var change = (decimal)(rnd.NextDouble() * 0.10 - 0.05);
             basePrice = Math.Max(0.01m, Math.Round(basePrice * (1 + change), 2));
             await _securityPriceService.CreateAsync(userId, msci.Id, priceDate, basePrice, ct);
@@ -512,23 +512,23 @@ public sealed class DemoDataService : IDemoDataService
 
         // SavingsPlan: Urlaubskasse -> -100 monthly
         var vacationPurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Urlaubskasse", BudgetSourceType.SavingsPlan, vacationPlan.Id, null, null, ct);
-        await _budgetRuleService.CreateAsync(ownerUserId, vacationPurpose.Id, -100m, BudgetIntervalType.Monthly, null, monthStart, null, ct);
+        await _budgetRuleService.CreateAsync(ownerUserId, vacationPurpose.Id, -100m, BudgetIntervalType.Monthly, null, monthStart, null, null, false, ct);
 
         // SavingsPlan: Auto -> -150 monthly
         var carPurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Auto", BudgetSourceType.SavingsPlan, carPlan.Id, null, null, ct);
-        await _budgetRuleService.CreateAsync(ownerUserId, carPurpose.Id, -150m, BudgetIntervalType.Monthly, null, monthStart, null, ct);
+        await _budgetRuleService.CreateAsync(ownerUserId, carPurpose.Id, -150m, BudgetIntervalType.Monthly, null, monthStart, null, null, false, ct);
 
-        // SavingsPlan: Versicherung-Rückstellung: +432 yearly in three months and -1/12 monthly
-        var reservePurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Rückstellung Versicherung", BudgetSourceType.SavingsPlan, insurancePlan.Id, null, null, ct);
+        // SavingsPlan: Versicherung-Rï¿½ckstellung: +432 yearly in three months and -1/12 monthly
+        var reservePurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Rï¿½ckstellung Versicherung", BudgetSourceType.SavingsPlan, insurancePlan.Id, null, null, ct);
 
         var payoutDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddMonths(3));
         payoutDate = new DateOnly(payoutDate.Year, payoutDate.Month, 1);
 
-        await _budgetRuleService.CreateAsync(ownerUserId, reservePurpose.Id, 432m, BudgetIntervalType.Yearly, null, payoutDate, null, ct);
-        await _budgetRuleService.CreateAsync(ownerUserId, reservePurpose.Id, -(432m / 12m), BudgetIntervalType.Monthly, null, monthStart, null, ct);
+        await _budgetRuleService.CreateAsync(ownerUserId, reservePurpose.Id, 432m, BudgetIntervalType.Yearly, null, payoutDate, null, null, false, ct);
+        await _budgetRuleService.CreateAsync(ownerUserId, reservePurpose.Id, -(432m / 12m), BudgetIntervalType.Monthly, null, monthStart, null, null, false, ct);
 
         // Contact: Versicherung-Zahlung: -432 yearly in three months
         var paymentPurpose = await _budgetPurposeService.CreateAsync(ownerUserId, "Budget Versicherungszahlung", BudgetSourceType.Contact, insuranceContact.Id, null, null, ct);
-        await _budgetRuleService.CreateAsync(ownerUserId, paymentPurpose.Id, -432m, BudgetIntervalType.Yearly, null, payoutDate, null, ct);
+        await _budgetRuleService.CreateAsync(ownerUserId, paymentPurpose.Id, -432m, BudgetIntervalType.Yearly, null, payoutDate, null, null, false, ct);
     }
 }

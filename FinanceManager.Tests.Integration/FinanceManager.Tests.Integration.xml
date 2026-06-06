@@ -25,14 +25,39 @@
         <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientBudgetReportUnbudgetedMirrorTests.BudgetReport_UnbudgetedPostings_ShouldOnlyContainNonMirroredSelfContactPostings_WhenSavingsPlanPostingsMirrorSelfContact">
             <summary>
             Integrationstest: Wenn Sparplan-Buchungen auf das Self-Konto gespiegelt werden,
-            müssen die Unbudgeted-Endpunkte die gespiegelten Self-Buchungen herausfiltern
-            und nur tatsächlich ungeplante Self-Postings zurückgeben (hier: +12,34 €).
+            m�ssen die Unbudgeted-Endpunkte die gespiegelten Self-Buchungen herausfiltern
+            und nur tats�chlich ungeplante Self-Postings zur�ckgeben (hier: +12,34 �).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientBudgetReportUnbudgetedMirrorTests.BudgetReport_ShouldRespectPurposePattern_ForActualAndUnbudgetedPostings">
+            <summary>
+            Verifies that budget report and unbudgeted postings respect purpose patterns.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientBudgetReportUnbudgetedMirrorTests.BudgetReport_ShouldRespectRegexPurposePattern_ForActualAndUnbudgetedPostings">
+            <summary>
+            Verifies that regex purpose patterns split matching and non-matching postings in report and unbudgeted results.
             </summary>
         </member>
         <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientStatementDraftsTests.StatementDrafts_Book_ShouldReturnBudgetImpactSummary_WhenBudgetPurposeExistsForContact">
             <summary>
             Verifies that <see cref="P:FinanceManager.Shared.Dtos.Statements.BookingResult.BudgetImpactSummary"/> is populated at the client after booking
             a full draft when a matching budget purpose with a rule exists for the booked contact.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientStatementDraftsTests.StatementDrafts_Book_ShouldNotReturnImpactItems_WhenPurposePatternDoesNotMatch">
+            <summary>
+            Verifies that budget impact checks respect purpose patterns on matching budget rules.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientStatementDraftsTests.StatementDrafts_Book_ShouldReturnImpactItems_WhenPurposePatternRegexMatches">
+            <summary>
+            Verifies that booking returns budget impact items when a regex purpose pattern matches.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientStatementDraftsTests.StatementDrafts_Book_ShouldReturnImpactItems_WhenPurposePatternContainsMatchesCaseInsensitive">
+            <summary>
+            Verifies case-insensitive contains purpose pattern matching in statement budget impact checks.
             </summary>
         </member>
         <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientStatementDraftsTests.StatementDrafts_BookEntry_ShouldReturnBudgetImpactSummary_WhenBudgetPurposeExistsForContact">
@@ -51,6 +76,23 @@
             <summary>
             When set, the factory will register a <see cref="T:System.TimeProvider"/> that returns this fixed UTC time.
             Set this property in tests before calling CreateClient() to force server-side "now".
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Tests.Integration.ViewModels.BudgetReportViewModelIntegrationTests">
+            <summary>
+            Integration tests for the budget report view model.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ViewModels.BudgetReportViewModelIntegrationTests.InitializeAsync_TotalRange_ShouldShowHousingBookingsBudgeted_AndTrafficBookingUnbudgeted_WhenLoadedForCurrentYear">
+            <summary>
+            Verifies that a one-year budget report keeps the regular housing bookings budgeted
+            and leaves the traffic booking unbudgeted.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ViewModels.BudgetReportViewModelIntegrationTests.InitializeAsync_LastInterval_ShouldShowHousingBookingsBudgeted_AndTrafficBookingUnbudgeted_WhenLoadedForCurrentYear">
+            <summary>
+            Verifies that a one-year budget report keeps the regular housing bookings budgeted
+            and leaves the traffic booking unbudgeted.
             </summary>
         </member>
     </members>

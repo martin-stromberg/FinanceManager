@@ -23,9 +23,7 @@ public class ApiClientUsersAdminTests : IClassFixture<TestWebApplicationFactory>
     public async Task Admin_CreateListUpdateDelete_User()
     {
         var api = CreateClient();
-        // Create a bootstrap admin via registration
-        var adminUser = $"admin_{Guid.NewGuid():N}";
-        await api.Auth_RegisterAsync(new RegisterRequest(adminUser, "Secret123", null, null));
+        await api.Auth_LoginAsync(new LoginRequest(TestWebApplicationFactory.BootstrapAdminUsername, TestWebApplicationFactory.BootstrapAdminPassword, null, null));
 
         // Create user (min length >= 3)
         var created = await api.Admin_CreateUserAsync(new CreateUserRequest("user1", "Secret123", IsAdmin: false));

@@ -1103,7 +1103,7 @@
             EF Core based implementation of <see cref="T:FinanceManager.Application.Budget.IBudgetRuleService"/>.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.#ctor(FinanceManager.Infrastructure.AppDbContext)">
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Budget.IReportCacheService)">
             <summary>
             Creates a new instance.
             </summary>
@@ -1112,8 +1112,16 @@
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.CreateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.CreateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.String,System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.CreateForCategoryAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.CreateForCategoryAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.String,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new rule for a category. Validates the category and invariants and persists the rule.
+            </summary>
         </member>
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
             <inheritdoc />
@@ -1129,6 +1137,11 @@
         </member>
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.UpdateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.UpdateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.String,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing rule identified by id. Applies new schedule, amount and purpose pattern.
+            </summary>
         </member>
         <member name="T:FinanceManager.Infrastructure.Budget.ReportCacheService">
             <summary>
@@ -2365,6 +2378,18 @@
             <inheritdoc />
         </member>
         <member name="M:FinanceManager.Infrastructure.Migrations.AddReturnAnalysisSettingsToUser.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202606041500_AddBudgetRulePurposePattern">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202606041500_AddBudgetRulePurposePattern.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202606041500_AddBudgetRulePurposePattern.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202606041500_AddBudgetRulePurposePattern.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
         <member name="T:FinanceManager.Infrastructure.Notifications.HolidayProviderResolver">

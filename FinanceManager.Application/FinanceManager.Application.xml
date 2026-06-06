@@ -661,13 +661,34 @@
             <summary>
             Creates a new rule for a purpose.
             </summary>
+            <summary>
+            Backwards-compatible overload: Creates a new rule for a purpose without purpose pattern.
+            Delegates to the full CreateAsync overload with purposePattern=null and useRegex=false.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.CreateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.String,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new rule for a purpose.
+            </summary>
         </member>
         <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.CreateForCategoryAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <summary>
+            Backwards-compatible overload: Creates a new rule for a category without purpose pattern.
+            Delegates to the full CreateForCategoryAsync overload with purposePattern=null and useRegex=false.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.CreateForCategoryAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.String,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Creates a new rule for a category.
             </summary>
         </member>
         <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.UpdateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
+            <summary>
+            Backwards-compatible overload: Updates an existing rule without purpose pattern.
+            Delegates to the full UpdateAsync overload with purposePattern=null and useRegex=false.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Budget.IBudgetRuleService.UpdateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.String,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Updates an existing rule.
             </summary>

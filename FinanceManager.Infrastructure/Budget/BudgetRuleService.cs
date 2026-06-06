@@ -11,18 +11,24 @@ namespace FinanceManager.Infrastructure.Budget;
 public sealed class BudgetRuleService : IBudgetRuleService
 {
     private readonly AppDbContext _db;
+    private readonly IReportCacheService? _reportCacheService;
 
     /// <summary>
     /// Creates a new instance.
     /// </summary>
     /// <param name="db">App database context.</param>
-    public BudgetRuleService(AppDbContext db)
+    public BudgetRuleService(AppDbContext db, IReportCacheService? reportCacheService = null)
     {
         _db = db;
+        _reportCacheService = reportCacheService;
     }
 
     /// <inheritdoc />
-    public async Task<BudgetRuleDto> CreateAsync(Guid ownerUserId, Guid budgetPurposeId, decimal amount, FinanceManager.Shared.Dtos.Budget.BudgetIntervalType interval, int? customIntervalMonths, DateOnly startDate, DateOnly? endDate, CancellationToken ct)
+    public Task<BudgetRuleDto> CreateAsync(Guid ownerUserId, Guid budgetPurposeId, decimal amount, BudgetIntervalType interval, int? customIntervalMonths, DateOnly startDate, DateOnly? endDate, CancellationToken ct)
+        => CreateAsync(ownerUserId, budgetPurposeId, amount, interval, customIntervalMonths, startDate, endDate, null, false, ct);
+
+    /// <inheritdoc />
+    public async Task<BudgetRuleDto> CreateAsync(Guid ownerUserId, Guid budgetPurposeId, decimal amount, FinanceManager.Shared.Dtos.Budget.BudgetIntervalType interval, int? customIntervalMonths, DateOnly startDate, DateOnly? endDate, string? purposePattern, bool useRegex, CancellationToken ct)
     {
         if (ownerUserId == Guid.Empty)
         {
@@ -55,15 +61,22 @@ public sealed class BudgetRuleService : IBudgetRuleService
             }
         }
 
-        var entity = new BudgetRule(ownerUserId, budgetPurposeId, budgetCategoryId: null, amount, (FinanceManager.Shared.Dtos.Budget.BudgetIntervalType)interval, startDate, endDate, customIntervalMonths);
+        var entity = new BudgetRule(ownerUserId, budgetPurposeId, budgetCategoryId: null, amount, (FinanceManager.Shared.Dtos.Budget.BudgetIntervalType)interval, startDate, endDate, customIntervalMonths, purposePattern, useRegex);
         _db.BudgetRules.Add(entity);
         await _db.SaveChangesAsync(ct);
+        await MarkReportCacheForUpdateAsync(ownerUserId, ct);
 
         return Map(entity);
     }
 
     /// <inheritdoc />
-    public async Task<BudgetRuleDto> CreateForCategoryAsync(Guid ownerUserId, Guid budgetCategoryId, decimal amount, BudgetIntervalType interval, int? customIntervalMonths, DateOnly startDate, DateOnly? endDate, CancellationToken ct)
+    public Task<BudgetRuleDto> CreateForCategoryAsync(Guid ownerUserId, Guid budgetCategoryId, decimal amount, BudgetIntervalType interval, int? customIntervalMonths, DateOnly startDate, DateOnly? endDate, CancellationToken ct)
+        => CreateForCategoryAsync(ownerUserId, budgetCategoryId, amount, interval, customIntervalMonths, startDate, endDate, null, false, ct);
+
+    /// <summary>
+    /// Creates a new rule for a category. Validates the category and invariants and persists the rule.
+    /// </summary>
+    public async Task<BudgetRuleDto> CreateForCategoryAsync(Guid ownerUserId, Guid budgetCategoryId, decimal amount, BudgetIntervalType interval, int? customIntervalMonths, DateOnly startDate, DateOnly? endDate, string? purposePattern, bool useRegex, CancellationToken ct)
     {
         if (ownerUserId == Guid.Empty)
         {
@@ -98,9 +111,10 @@ public sealed class BudgetRuleService : IBudgetRuleService
             }
         }
 
-        var entity = new BudgetRule(ownerUserId, budgetPurposeId: null, budgetCategoryId, amount, interval, startDate, endDate, customIntervalMonths);
+        var entity = new BudgetRule(ownerUserId, budgetPurposeId: null, budgetCategoryId, amount, interval, startDate, endDate, customIntervalMonths, purposePattern, useRegex);
         _db.BudgetRules.Add(entity);
         await _db.SaveChangesAsync(ct);
+        await MarkReportCacheForUpdateAsync(ownerUserId, ct);
         return Map(entity);
     }
 
@@ -115,6 +129,7 @@ public sealed class BudgetRuleService : IBudgetRuleService
 
         _db.BudgetRules.Remove(entity);
         await _db.SaveChangesAsync(ct);
+        await MarkReportCacheForUpdateAsync(ownerUserId, ct);
         return true;
     }
 
@@ -123,7 +138,7 @@ public sealed class BudgetRuleService : IBudgetRuleService
     {
         return await _db.BudgetRules.AsNoTracking()
             .Where(r => r.Id == id && r.OwnerUserId == ownerUserId)
-            .Select(r => new BudgetRuleDto(r.Id, r.OwnerUserId, r.BudgetPurposeId, r.BudgetCategoryId, r.Amount, (FinanceManager.Shared.Dtos.Budget.BudgetIntervalType)r.Interval, r.CustomIntervalMonths, r.StartDate, r.EndDate))
+            .Select(r => new BudgetRuleDto(r.Id, r.OwnerUserId, r.BudgetPurposeId, r.BudgetCategoryId, r.Amount, (FinanceManager.Shared.Dtos.Budget.BudgetIntervalType)r.Interval, r.CustomIntervalMonths, r.StartDate, r.EndDate, r.PurposePattern, r.PurposePatternIsRegex))
             .FirstOrDefaultAsync(ct);
     }
 
@@ -134,7 +149,7 @@ public sealed class BudgetRuleService : IBudgetRuleService
             .Where(r => r.OwnerUserId == ownerUserId && r.BudgetPurposeId == budgetPurposeId)
             .OrderBy(r => r.StartDate)
             .ThenBy(r => r.Interval)
-            .Select(r => new BudgetRuleDto(r.Id, r.OwnerUserId, r.BudgetPurposeId, r.BudgetCategoryId, r.Amount, (FinanceManager.Shared.Dtos.Budget.BudgetIntervalType)r.Interval, r.CustomIntervalMonths, r.StartDate, r.EndDate))
+            .Select(r => new BudgetRuleDto(r.Id, r.OwnerUserId, r.BudgetPurposeId, r.BudgetCategoryId, r.Amount, (FinanceManager.Shared.Dtos.Budget.BudgetIntervalType)r.Interval, r.CustomIntervalMonths, r.StartDate, r.EndDate, r.PurposePattern, r.PurposePatternIsRegex))
             .ToListAsync(ct);
     }
 
@@ -145,12 +160,18 @@ public sealed class BudgetRuleService : IBudgetRuleService
             .Where(r => r.OwnerUserId == ownerUserId && r.BudgetCategoryId == budgetCategoryId)
             .OrderBy(r => r.StartDate)
             .ThenBy(r => r.Interval)
-            .Select(r => new BudgetRuleDto(r.Id, r.OwnerUserId, r.BudgetPurposeId, r.BudgetCategoryId, r.Amount, (FinanceManager.Shared.Dtos.Budget.BudgetIntervalType)r.Interval, r.CustomIntervalMonths, r.StartDate, r.EndDate))
+            .Select(r => new BudgetRuleDto(r.Id, r.OwnerUserId, r.BudgetPurposeId, r.BudgetCategoryId, r.Amount, (FinanceManager.Shared.Dtos.Budget.BudgetIntervalType)r.Interval, r.CustomIntervalMonths, r.StartDate, r.EndDate, r.PurposePattern, r.PurposePatternIsRegex))
             .ToListAsync(ct);
     }
 
     /// <inheritdoc />
-    public async Task<BudgetRuleDto?> UpdateAsync(Guid id, Guid ownerUserId, decimal amount, BudgetIntervalType interval, int? customIntervalMonths, DateOnly startDate, DateOnly? endDate, CancellationToken ct)
+    public Task<BudgetRuleDto?> UpdateAsync(Guid id, Guid ownerUserId, decimal amount, BudgetIntervalType interval, int? customIntervalMonths, DateOnly startDate, DateOnly? endDate, CancellationToken ct)
+        => UpdateAsync(id, ownerUserId, amount, interval, customIntervalMonths, startDate, endDate, null, false, ct);
+
+    /// <summary>
+    /// Updates an existing rule identified by id. Applies new schedule, amount and purpose pattern.
+    /// </summary>
+    public async Task<BudgetRuleDto?> UpdateAsync(Guid id, Guid ownerUserId, decimal amount, BudgetIntervalType interval, int? customIntervalMonths, DateOnly startDate, DateOnly? endDate, string? purposePattern, bool useRegex, CancellationToken ct)
     {
         var entity = await _db.BudgetRules.FirstOrDefaultAsync(r => r.Id == id && r.OwnerUserId == ownerUserId, ct);
         if (entity == null)
@@ -160,11 +181,23 @@ public sealed class BudgetRuleService : IBudgetRuleService
 
         entity.SetAmount(amount);
         entity.SetSchedule(interval, startDate, endDate, customIntervalMonths);
+        entity.SetPurposePattern(purposePattern, useRegex);
 
         await _db.SaveChangesAsync(ct);
+        await MarkReportCacheForUpdateAsync(ownerUserId, ct);
         return Map(entity);
     }
 
+    private async Task MarkReportCacheForUpdateAsync(Guid ownerUserId, CancellationToken ct)
+    {
+        if (_reportCacheService == null)
+        {
+            return;
+        }
+
+        await _reportCacheService.MarkAllReportCacheEntriesForUpdateAsync(ownerUserId, ct);
+    }
+
     private static BudgetRuleDto Map(BudgetRule r)
-        => new(r.Id, r.OwnerUserId, r.BudgetPurposeId, r.BudgetCategoryId, r.Amount, (FinanceManager.Shared.Dtos.Budget.BudgetIntervalType)r.Interval, r.CustomIntervalMonths, r.StartDate, r.EndDate);
+        => new(r.Id, r.OwnerUserId, r.BudgetPurposeId, r.BudgetCategoryId, r.Amount, (FinanceManager.Shared.Dtos.Budget.BudgetIntervalType)r.Interval, r.CustomIntervalMonths, r.StartDate, r.EndDate, r.PurposePattern, r.PurposePatternIsRegex);
 }
