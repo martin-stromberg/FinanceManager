@@ -5412,6 +5412,16 @@
             Optional booking summary containing final budget impact details.
             </summary>
         </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.BookingResult.ErrorCode">
+            <summary>
+            Optional machine-readable booking error code for deterministic client handling.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.BookingResult.Retryable">
+            <summary>
+            Optional retry hint for the associated <see cref="P:FinanceManager.Shared.Dtos.Statements.BookingResult.ErrorCode"/>.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Statements.BudgetImpactHintDto">
             <summary>
             Per-purpose budget impact hint for statement draft entry updates.

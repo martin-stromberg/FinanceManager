@@ -248,99 +248,29 @@
 
 ---
 
-# Dokumentationsplan: Budget-Verwendungszweck-Pattern inkl. Regex (2026-06-04)
+# Dokumentationsplan: Transaktionssichere Kontoauszug-Buchung
 
-> Lauf: Phase-4-Dokumentationsupdate für implementiertes Feature  
-> Status: ✅ Abgeschlossen
+> Status: ✅ Aktualisiert
+> Feature: Transaktionssichere Buchung von Statement-Drafts mit Guard, Wiederholungsstrategie und 409-Fehlervertrag
 
-## Phase 1 – Analyse-Ergebnisse
+## Aktualisierte Dokumente
 
-### API-Dokumentation
-
-| Befund | Ergebnis |
-|---|---|
-| Vorhandene API-Doku | `Docs/api/BudgetRulesController.md`, `Docs/api/BudgetReportsController.md`, `Docs/api/StatementDraftsController.md` vorhanden |
-| Lücken | BudgetRules/Reports zu knapp, ohne präzise PurposePattern-/Regex-Spezifikation |
-| Priorität | 🔴 Hoch |
-
-### Flow-Dokumentation
-
-| Befund | Ergebnis |
-|---|---|
-| Vorhandene Flows | `Docs/flows/budget-impact-evaluation.md`, `Docs/flows/statement-draft-booking.md` vorhanden |
-| Lücken | Pattern-Matching-Regeln (contains vs regex), Timeout-Verhalten und Regex-Validierungsbezug fehlen bzw. sind unpräzise |
-| Priorität | 🔴 Hoch |
-
-### Business-Dokumentation
-
-| Befund | Ergebnis |
-|---|---|
-| Vorhandene Business-Doku | `Docs/business/features/F008-budgetplanung.md`, `F009-budgetberichte.md`, `F018-budgetwirkung-buchung.md` vorhanden |
-| Lücken | Nutzerführung für PurposePattern/Regex und Auswirkungen auf Bericht/Buchung fehlen |
-| Priorität | 🔴 Hoch |
-
-### README-Analyse
-
-| Befund | Ergebnis |
-|---|---|
-| Bestand | Feature nicht explizit in Changelog/Bekannte Punkte dokumentiert |
-| Lücken | Kein klarer Hinweis auf Migration + bekannte fachfremde Testfailures |
-| Priorität | 🟡 Mittel |
-
-## Phase 2 – Umsetzungsplan
-
-### Zu aktualisieren
-
-- `Docs/api/BudgetRulesController.md`
-- `Docs/api/BudgetReportsController.md`
-- `Docs/api/StatementDraftsController.md`
-- `Docs/flows/budget-impact-evaluation.md`
 - `Docs/flows/statement-draft-booking.md`
-- `Docs/business/features/F008-budgetplanung.md`
-- `Docs/business/features/F009-budgetberichte.md`
-- `Docs/business/features/F018-budgetwirkung-buchung.md`
-- `Docs/requirements/budget-verwendungszweck.md`
-- `Docs/architecture/budget-verwendungszweck.md`
+- `Docs/api/StatementDraftsController.md`
+- `Docs/business/features/F004b-kontoauszug-verwaltung.md`
+- `Docs/business/overview.md`
+- `Docs/api/README.md`
 - `README.md`
 
-### Muss-Inhalte
+## Abgedeckte Inhalte
 
-- Implementierungsstand inkl. Regex-Verhalten (nur syntaktische Compile-Validierung)
-- Validierungsregeln und Matching-Verhalten (contains case-insensitive + regex mit Timeout)
-- API/DTO/UI-Änderungen
-- Migration `20260604172812_202606041500_AddBudgetRulePurposePattern`
-- Ergänzte Tests (Unit/Controller/Integration)
-- Bekannte fachfremde Testfailures klar als nicht Feature-bezogen markieren
+- transaktionssichere Buchung mit vollständigem Rollback
+- Single-Flight-/Locking-Guard gegen parallele Buchungen
+- Idempotenz bei wiederholten Buchungsversuchen
+- 409-ProblemDetails mit `code`, `retryable` und `traceId`
+- Benutzerhinweise zur sicheren Wiederholung der Buchung
 
-## Ergebnis (Anhang)
+## Ergebnis
 
-### Aktualisierte Dateien
-
-- `docs/api/BudgetRulesController.md`
-- `docs/api/BudgetReportsController.md`
-- `docs/api/StatementDraftsController.md`
-- `Docs/flows/budget-impact-evaluation.md`
-- `docs/flows/statement-draft-booking.md`
-- `docs/business/features/F008-budgetplanung.md`
-- `docs/business/features/F009-budgetberichte.md`
-- `Docs/business/features/F018-budgetwirkung-buchung.md`
-- `Docs/requirements/budget-verwendungszweck.md`
-- `Docs/architecture/budget-verwendungszweck.md`
-- `README.md`
-
-### Inhaltlich dokumentiert
-
-- Implementierte Regex-Regeln inkl. **nur syntaktischer** Validierung bei Create/Update.
-- Matching-Verhalten in Budgetbericht und Kontoauszug/BudgetImpact.
-- API-/DTO-/UI-relevante Änderungen für `PurposePattern` und `UseRegex`.
-- Migration `20260604172812_202606041500_AddBudgetRulePurposePattern`.
-- Ergänzte Unit-/Controller-/Integrationstests zum Feature.
-
-### Teststatus / bekannte fachfremde Failures
-
-- `dotnet test FinanceManager.sln` wurde ausgeführt.
-- Failures sind als fachfremd zum Feature markiert:
-  - `FinanceManager.Tests/Web/SecurityPriceErrorRecoveryTests.cs` (2 Tests)
-  - `FinanceManager.Tests/Securities/ReturnAnalysisServiceTests.cs` (1 Test)
-  - `FinanceManager.Tests.Integration/ApiClient/ApiClientAuthTests.cs` (1 Test)
-- Diese Fehler sind nicht durch die PurposePattern-/Regex-Änderung verursacht.
+- Die technische und fachliche Dokumentation spiegelt jetzt den implementierten Stand der Statement-Buchung wider.
+- Offene Doku-Lücken für dieses Feature sind nicht bekannt.

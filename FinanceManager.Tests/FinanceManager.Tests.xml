@@ -86,24 +86,14 @@
             Ensures that entry-specific messages are not treated as general hints in the panel.
             </summary>
         </member>
-        <member name="T:FinanceManager.Tests.Controllers.BudgetRulesControllerTests">
+        <member name="M:FinanceManager.Tests.Controllers.StatementDraftsControllerTests.BookAsync_ShouldReturn409ProblemDetails_WithCodeRetryableAndTraceId_WhenBookingIsInProgress">
             <summary>
-            Verifies BudgetRulesController validation behavior around regex patterns.
+            Verifies the conflict problem contract for in-progress draft booking requests.
             </summary>
         </member>
-        <member name="M:FinanceManager.Tests.Controllers.BudgetRulesControllerTests.CreateAsync_ShouldReturnValidationProblem_WhenRegexPatternIsInvalid">
+        <member name="M:FinanceManager.Tests.Controllers.StatementDraftsControllerTests.BookEntryAsync_ShouldReturn409ProblemDetails_WithCodeRetryableAndTraceId_WhenEntryWasAlreadyBooked">
             <summary>
-            Ensures create maps invalid regex errors to a validation problem response.
-            </summary>
-        </member>
-        <member name="M:FinanceManager.Tests.Controllers.BudgetRulesControllerTests.UpdateAsync_ShouldReturnValidationProblem_WhenRegexPatternIsInvalid">
-            <summary>
-            Ensures update maps invalid regex errors to a validation problem response.
-            </summary>
-        </member>
-        <member name="M:FinanceManager.Tests.Controllers.BudgetRulesControllerTests.UpdateAsync_ShouldAcceptNullPattern_WhenPatternIsCleared">
-            <summary>
-            Ensures update accepts null pattern (clearing the pattern is allowed).
+            Verifies the conflict problem contract for re-triggering an already booked entry.
             </summary>
         </member>
         <member name="M:FinanceManager.Tests.Infrastructure.Auth.JwtCookieAuthTokenProviderTests.GetAccessTokenAsync_ShouldPreferRequestCookie_WhenCacheContainsDifferentToken">
@@ -1326,19 +1316,19 @@
             below the peak → max drawdown stays at 0.
             </summary>
         </member>
-        <member name="M:FinanceManager.Tests.Statements.BudgetImpactEvaluationServiceTests.EvaluateDraftImpactAsync_ShouldReturnImpactItem_WhenRegexPurposePatternMatches">
+        <member name="M:FinanceManager.Tests.Statements.StatementDraftBookingTests.BookAsync_ShouldRollbackAllChanges_WhenReassignThrowsDuringCommit">
             <summary>
-            Verifies that regex purpose patterns are respected for statement draft budget impact checks.
+            Ensures booking changes are rolled back when a late-stage exception occurs.
             </summary>
         </member>
-        <member name="M:FinanceManager.Tests.Statements.BudgetImpactEvaluationServiceTests.EvaluateDraftImpactAsync_ShouldReturnNeutral_WhenPurposeTextIsEmptyAndPatternIsDefined">
+        <member name="M:FinanceManager.Tests.Statements.StatementDraftBookingTests.BookAsync_ShouldReturnInProgress_ForSecondConcurrentAttemptOnSameDraft">
             <summary>
-            Verifies that empty purpose text does not match non-empty patterns and stays neutral.
+            Ensures a concurrent second booking attempt is rejected while the first booking still holds the guard.
             </summary>
         </member>
-        <member name="M:FinanceManager.Tests.Statements.BudgetImpactEvaluationServiceTests.EvaluateDraftImpactAsync_ShouldRemainNeutral_WhenRegexIsPotentiallyCatastrophic">
+        <member name="M:FinanceManager.Tests.Statements.StatementDraftBookingTests.BookAsync_ShouldReturnAlreadyProcessed_WhenSpecificEntryWasPreviouslyBooked">
             <summary>
-            Verifies timeout-safe regex handling by ensuring no exception escapes and non-matching entries stay neutral.
+            Ensures re-booking a previously booked single entry returns already-processed and creates no duplicates.
             </summary>
         </member>
         <member name="T:FinanceManager.Tests.Statements.StatementDraftImportSplitTests">

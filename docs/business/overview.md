@@ -17,6 +17,7 @@ This document provides a high-level description of the main functional areas of 
 - Booking
   - Convert draft entries into postings (bank, contact, savings plan, security).
   - Supports partial booking and split-drafts grouping logic.
+  - Booking is transaction-safe: a draft-level guard prevents parallel double processing, and repeated bookings return deterministic conflict/processed responses instead of creating duplicates.
   - **Budgetwirkung bei Buchung (neu):** Bei Kontakt-/Sparplanzuordnung sowie beim finalen Buchen können Budget-Hinweise und eine Abschluss-Summary mit Vorher/Nachher/Delta zurückgegeben werden.
 
 - Attachments & Symbols

@@ -114,6 +114,8 @@ All other endpoints require JWT authentication. Access is scoped to the current 
 }
 ```
 
+Some domain-specific conflict responses, such as transaction-safe statement booking, extend `ProblemDetails` with `code`, `retryable`, and `traceId` so clients can decide whether a retry is safe.
+
 ### Validation Error Response
 
 ```json

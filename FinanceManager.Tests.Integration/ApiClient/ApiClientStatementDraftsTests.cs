@@ -583,8 +583,8 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
     }
 
     /// <summary>
-    /// Verifies that <see cref="BookingResult.BudgetImpactSummary"/> is null when no budget purpose
-    /// exists for the booked contact.
+    /// Verifies that <see cref="BookingResult.BudgetImpactSummary"/> returns a neutral summary when no
+    /// budget purpose exists for the booked contact.
     /// </summary>
     [Fact]
     public async Task StatementDrafts_Book_ShouldReturnNullBudgetImpactSummary_WhenNoBudgetPurposeExists()
@@ -635,10 +635,10 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
         // Act
         var result = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true);
 
-        // Assert: booking succeeded but no budget impact summary
+        // Assert: booking succeeded and returned a neutral budget impact summary
         result.Should().NotBeNull();
         result!.Success.Should().BeTrue();
-        if (result.BudgetImpactSummary != null)
+        if (result.BudgetImpactSummary != nul)
         {
             result.BudgetImpactSummary.Items.Should().BeEmpty();
             result.BudgetImpactSummary.HighestSeverity.Should().Be(BudgetImpactHintType.Neutral);
