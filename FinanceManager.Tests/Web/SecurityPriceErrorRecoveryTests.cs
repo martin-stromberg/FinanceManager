@@ -48,30 +48,6 @@ public sealed class SecurityPriceErrorRecoveryTests
         public Task<IReadOnlyList<SecurityPriceDto>> ListAsync(Guid ownerUserId, Guid securityId, int skip, int take, CancellationToken ct)
             => _inner.ListAsync(ownerUserId, securityId, skip, take, ct);
 
-public sealed class SecurityPriceErrorRecoveryTests
-{
-    private sealed class SpySecurityPriceService : ISecurityPriceService
-    {
-        private readonly SecurityPriceService _inner;
-
-        public SpySecurityPriceService(SecurityPriceService inner)
-        {
-            _inner = inner;
-        }
-
-        public int CreateCallCount { get; private set; }
-
-        public int ClearPriceErrorCallCount { get; private set; }
-
-        public Task CreateAsync(Guid ownerUserId, Guid securityId, DateTime date, decimal close, CancellationToken ct)
-        {
-            CreateCallCount++;
-            return _inner.CreateAsync(ownerUserId, securityId, date, close, ct);
-        }
-
-        public Task<IReadOnlyList<SecurityPriceDto>> ListAsync(Guid ownerUserId, Guid securityId, int skip, int take, CancellationToken ct)
-            => _inner.ListAsync(ownerUserId, securityId, skip, take, ct);
-
         public Task<DateTime?> GetLatestDateAsync(Guid ownerUserId, Guid securityId, CancellationToken ct)
             => _inner.GetLatestDateAsync(ownerUserId, securityId, ct);
 
