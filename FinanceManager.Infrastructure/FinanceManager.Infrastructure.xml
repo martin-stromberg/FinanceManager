@@ -190,6 +190,9 @@
         <member name="P:FinanceManager.Infrastructure.AppDbContext.StatementDraftEntries">
             <summary>Entries inside statement drafts.</summary>
         </member>
+        <member name="P:FinanceManager.Infrastructure.AppDbContext.StatementDraftBookingGuards">
+            <summary>Durable booking guards preventing concurrent booking of one draft.</summary>
+        </member>
         <member name="P:FinanceManager.Infrastructure.AppDbContext.SavingsPlans">
             <summary>Savings plans.</summary>
         </member>
@@ -1103,7 +1106,7 @@
             EF Core based implementation of <see cref="T:FinanceManager.Application.Budget.IBudgetRuleService"/>.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.#ctor(FinanceManager.Infrastructure.AppDbContext)">
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Budget.IReportCacheService)">
             <summary>
             Creates a new instance.
             </summary>
@@ -1112,8 +1115,16 @@
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.CreateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.CreateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.String,System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.CreateForCategoryAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.CreateForCategoryAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.String,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new rule for a category. Validates the category and invariants and persists the rule.
+            </summary>
         </member>
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.DeleteAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
             <inheritdoc />
@@ -1129,6 +1140,11 @@
         </member>
         <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.UpdateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.Threading.CancellationToken)">
             <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Budget.BudgetRuleService.UpdateAsync(System.Guid,System.Guid,System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.String,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing rule identified by id. Applies new schedule, amount and purpose pattern.
+            </summary>
         </member>
         <member name="T:FinanceManager.Infrastructure.Budget.ReportCacheService">
             <summary>
@@ -5032,6 +5048,51 @@
             this parser. Only files of type Wuestenrot_PDF_StatementFile are supported.</remarks>
             <param name="statementFile">The statement file to evaluate for compatibility. Cannot be null.</param>
             <returns>true if the statement file is of a supported type and can be parsed; otherwise, false.</returns>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard">
+            <summary>
+            Represents a durable processing guard used to prevent concurrent booking of the same statement draft.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard.#ctor(System.Guid,System.Guid,System.Guid,System.DateTime,System.DateTime)">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard"/> class.
+            </summary>
+            <param name="ownerUserId">Identifier of the draft owner.</param>
+            <param name="draftId">Identifier of the guarded draft.</param>
+            <param name="lockToken">Unique token identifying the active lock owner.</param>
+            <param name="acquiredUtc">UTC timestamp when the guard was acquired.</param>
+            <param name="expiresUtc">UTC timestamp when the guard expires.</param>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard.Id">
+            <summary>
+            Gets or sets the unique identifier of the guard row.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard.OwnerUserId">
+            <summary>
+            Gets or sets the owner user identifier.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard.DraftId">
+            <summary>
+            Gets or sets the identifier of the guarded statement draft.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard.LockToken">
+            <summary>
+            Gets or sets the unique token for the active guard holder.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard.AcquiredUtc">
+            <summary>
+            Gets or sets the UTC timestamp when the guard was acquired.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard.ExpiresUtc">
+            <summary>
+            Gets or sets the UTC timestamp when the guard expires.
+            </summary>
         </member>
         <member name="T:FinanceManager.Infrastructure.Statements.StatementDraftService">
             <summary>

@@ -2769,6 +2769,11 @@
             Gets the posting description.
             </summary>
         </member>
+        <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.Subject">
+            <summary>
+            Gets the posting subject.
+            </summary>
+        </member>
         <member name="P:FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto.AccountId">
             <summary>
             Gets the related account id.
@@ -2835,7 +2840,7 @@
             Exactly one of <see cref="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest.BudgetPurposeId"/> or <see cref="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest.BudgetCategoryId"/> must be provided.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest.#ctor(System.Nullable{System.Guid},System.Nullable{System.Guid},System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly})">
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest.#ctor(System.Nullable{System.Guid},System.Nullable{System.Guid},System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.String,System.Boolean)">
             <summary>
             Request payload for creating a budget rule.
             Exactly one of <see cref="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest.BudgetPurposeId"/> or <see cref="P:FinanceManager.Shared.Dtos.Budget.BudgetRuleCreateRequest.BudgetCategoryId"/> must be provided.
@@ -2846,10 +2851,26 @@
             Represents a budget rule which can apply either to a specific budget purpose or to a whole budget category.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.#ctor(System.Guid,System.Guid,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly})">
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetRuleDto.#ctor(System.Guid,System.Guid,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.String,System.Boolean)">
             <summary>
             Represents a budget rule which can apply either to a specific budget purpose or to a whole budget category.
             </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetRulePatternMatcher">
+            <summary>
+            Matches a budget rule pattern against posting text.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetRulePatternMatcher.MatchesPosting(System.String,System.String,System.String,System.Boolean,System.Nullable{System.TimeSpan})">
+            <summary>
+            Determines whether the given pattern matches the combined posting subject and description.
+            </summary>
+            <param name="subject">The posting subject.</param>
+            <param name="description">The posting description.</param>
+            <param name="pattern">The rule pattern.</param>
+            <param name="useRegex">Whether the pattern should be interpreted as a regular expression.</param>
+            <param name="regexTimeout">Optional timeout used for regex matching.</param>
+            <returns>True when the pattern matches the posting text; otherwise false.</returns>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Budget.BudgetRuleUpdateRequest">
             <summary>
@@ -2857,7 +2878,7 @@
             Target association (purpose/category) is not updatable.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetRuleUpdateRequest.#ctor(System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly})">
+        <member name="M:FinanceManager.Shared.Dtos.Budget.BudgetRuleUpdateRequest.#ctor(System.Decimal,FinanceManager.Shared.Dtos.Budget.BudgetIntervalType,System.Nullable{System.Int32},System.DateOnly,System.Nullable{System.DateOnly},System.String,System.Boolean)">
             <summary>
             Request payload for updating a budget rule.
             Target association (purpose/category) is not updatable.
@@ -5446,6 +5467,16 @@
             Optional booking summary containing final budget impact details.
             </summary>
         </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.BookingResult.ErrorCode">
+            <summary>
+            Optional machine-readable booking error code for deterministic client handling.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.BookingResult.Retryable">
+            <summary>
+            Optional retry hint for the associated <see cref="P:FinanceManager.Shared.Dtos.Statements.BookingResult.ErrorCode"/>.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Statements.BudgetImpactHintDto">
             <summary>
             Per-purpose budget impact hint for statement draft entry updates.
@@ -6311,6 +6342,22 @@
             Returns a new DateTime representing the last day of the month of the given date.
             </summary>
             <param name="date"></param>
+            <returns></returns>
+        </member>
+        <member name="M:FinanceManager.Shared.Extensions.DateExt.ToPreviousWorkday(System.DateTime)">
+            <summary>
+            Returns a new DateTime representing the previous workday (Monday-Friday) of the given date.
+            If the given date is a workday, it is returned unchanged. If the given date is a Saturday, the previous Friday is returned.
+            </summary>
+            <param name="date">The date to evaluate.</param>
+            <returns></returns>
+        </member>
+        <member name="M:FinanceManager.Shared.Extensions.DateExt.ToNextWorkday(System.DateTime)">
+            <summary>
+            Returns a new DateTime representing the next workday (Monday-Friday) of the given date.
+            If the given date is a workday, it is returned unchanged. If the given date is a Saturday, the next Monday is returned.
+            </summary>
+            <param name="date">The date to evaluate.</param>
             <returns></returns>
         </member>
         <member name="T:FinanceManager.Shared.Extensions.ExceptionExt">

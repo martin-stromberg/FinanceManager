@@ -245,3 +245,32 @@
 - ✅ Alle geplanten Ziel-Dateien existieren und sind nicht leer.
 - ✅ Code-Änderungen und Testklasse zur Budget-Impact-Funktion wurden in der Dokumentation referenziert.
 - ⚠️ `dotnet test` konnte in dieser Umgebung nicht bis zum Abschluss beobachtet werden (Restore/Warnungen sichtbar, danach kein finaler Exit im Tool-Stream).
+
+---
+
+# Dokumentationsplan: Transaktionssichere Kontoauszug-Buchung
+
+> Status: ✅ Aktualisiert
+> Feature: Transaktionssichere Buchung von Statement-Drafts mit Guard, Wiederholungsstrategie und 409-Fehlervertrag
+
+## Aktualisierte Dokumente
+
+- `Docs/flows/statement-draft-booking.md`
+- `Docs/api/StatementDraftsController.md`
+- `Docs/business/features/F004b-kontoauszug-verwaltung.md`
+- `Docs/business/overview.md`
+- `Docs/api/README.md`
+- `README.md`
+
+## Abgedeckte Inhalte
+
+- transaktionssichere Buchung mit vollständigem Rollback
+- Single-Flight-/Locking-Guard gegen parallele Buchungen
+- Idempotenz bei wiederholten Buchungsversuchen
+- 409-ProblemDetails mit `code`, `retryable` und `traceId`
+- Benutzerhinweise zur sicheren Wiederholung der Buchung
+
+## Ergebnis
+
+- Die technische und fachliche Dokumentation spiegelt jetzt den implementierten Stand der Statement-Buchung wider.
+- Offene Doku-Lücken für dieses Feature sind nicht bekannt.

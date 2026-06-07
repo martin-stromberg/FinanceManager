@@ -87,6 +87,94 @@ public sealed class BudgetCrudServicesTests
     }
 
     [Fact]
+    public async Task BudgetRuleService_Create_ShouldAcceptCompilableRegexPattern_WithoutMatchingValidation()
+    {
+        var ownerId = Guid.NewGuid();
+        await using var db = await CreateDbAsync(ownerId);
+
+        var purposeSvc = new BudgetPurposeService(db);
+        var purpose = await purposeSvc.CreateAsync(ownerId, "Electricity", BudgetSourceType.ContactGroup, Guid.NewGuid(), null, null, CancellationToken.None);
+
+        var svc = new BudgetRuleService(db);
+
+        var created = await svc.CreateAsync(
+            ownerId,
+            purpose.Id,
+            120m,
+            BudgetIntervalType.Monthly,
+            null,
+            new DateOnly(2026, 1, 1),
+            null,
+            "^ST\\d{10}$",
+            true,
+            CancellationToken.None);
+
+        Assert.Equal("^ST\\d{10}$", created.PurposePattern);
+        Assert.True(created.UseRegex);
+    }
+
+    [Fact]
+    public async Task BudgetRuleService_Create_ShouldRejectInvalidRegexPattern()
+    {
+        var ownerId = Guid.NewGuid();
+        await using var db = await CreateDbAsync(ownerId);
+
+        var purposeSvc = new BudgetPurposeService(db);
+        var purpose = await purposeSvc.CreateAsync(ownerId, "Electricity", BudgetSourceType.ContactGroup, Guid.NewGuid(), null, null, CancellationToken.None);
+
+        var svc = new BudgetRuleService(db);
+
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await svc.CreateAsync(
+                ownerId,
+                purpose.Id,
+                120m,
+                BudgetIntervalType.Monthly,
+                null,
+                new DateOnly(2026, 1, 1),
+                null,
+                "(",
+                true,
+                CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task BudgetRuleService_Update_ShouldRejectInvalidRegexPattern()
+    {
+        var ownerId = Guid.NewGuid();
+        await using var db = await CreateDbAsync(ownerId);
+
+        var purposeSvc = new BudgetPurposeService(db);
+        var purpose = await purposeSvc.CreateAsync(ownerId, "Electricity", BudgetSourceType.ContactGroup, Guid.NewGuid(), null, null, CancellationToken.None);
+
+        var svc = new BudgetRuleService(db);
+        var created = await svc.CreateAsync(
+            ownerId,
+            purpose.Id,
+            120m,
+            BudgetIntervalType.Monthly,
+            null,
+            new DateOnly(2026, 1, 1),
+            null,
+            "ST\\d{10}",
+            true,
+            CancellationToken.None);
+
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await svc.UpdateAsync(
+                created.Id,
+                ownerId,
+                120m,
+                BudgetIntervalType.Monthly,
+                null,
+                new DateOnly(2026, 1, 1),
+                null,
+                "(",
+                true,
+                CancellationToken.None));
+    }
+
+    [Fact]
     public async Task BudgetOverrideService_CRUD_ShouldWork()
     {
         var ownerId = Guid.NewGuid();

@@ -258,6 +258,9 @@
   <data name="List_Th_Postings_Kind" xml:space="preserve">
     <value>Art</value>
   </data>
+  <data name="List_Th_Postings_Quantity" xml:space="preserve">
+    <value>Menge</value>
+  </data>
   <data name="List_Th_Postings_Recipient" xml:space="preserve">
     <value>Empfänger</value>
   </data>
@@ -1494,6 +1497,9 @@
   <data name="List_Th_End" xml:space="preserve">
     <value>Enddatum</value>
   </data>
+  <data name="List_Th_BudgetRule_Purpose" xml:space="preserve">
+    <value>Verwendungszweck / Vertragsnummer</value>
+  </data>
   <data name="Ribbon_Group_Rules" xml:space="preserve">
     <value>Regeln</value>
   </data>
@@ -2030,5 +2036,14 @@
   </data>
   <data name="Ribbon_OpenAccount" xml:space="preserve">
     <value>Konto</value>
+  </data>
+  <data name="Card_Caption_BudgetRule_PurposePattern" xml:space="preserve">
+    <value>Verwendungszweck</value>
+  </data>
+  <data name="Card_Caption_BudgetRule_UseRegex" xml:space="preserve">
+    <value>Regex verwenden</value>
+  </data>
+  <data name="Card_Help_BudgetRule_PurposePattern" xml:space="preserve">
+    <value>Geben Sie einen Text oder regulären Ausdruck ein, um Buchungen anhand des Verwendungszwecks zu filtern. Beispiele: 'ST6464646464' oder 'SM\d{4}' (Regex). Max. 500 Zeichen.</value>
   </data>
 </root>

@@ -8,6 +8,7 @@ using FinanceManager.Infrastructure;
 using FinanceManager.Shared.Dtos.Securities;
 using FinanceManager.Web.Services;
 using FinanceManager.Web;
+using FinanceManager.Infrastructure.Securities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,11 +18,49 @@ using Microsoft.Extensions.Options;
 using Moq;
 using System.Reflection;
 using FinanceManager.Infrastructure.Notifications;
+using FinanceManager.Shared.Extensions;
 
 namespace FinanceManager.Tests.Web;
-
+/// <summary>
+/// Tests for verifying that the security price retrieval worker and backfill executor correctly handle securities with price errors, including clearing the error state and creating new price entries, and that dismissing notifications does not clear the price error. These tests use an in-memory SQLite database to simulate the application data store and Moq to create test doubles for dependencies. The tests ensure that when a security has a price error, the worker and backfill executor attempt to retrieve prices, clear the error state, and create price entries as expected. Additionally, they verify that dismissing a notification related to a security price error does not inadvertently clear the error state on the security.
+/// </summary>
 public sealed class SecurityPriceErrorRecoveryTests
 {
+    private sealed class SpySecurityPriceService : ISecurityPriceService
+    {
+        private readonly ISecurityPriceService _inner;
+
+        public SpySecurityPriceService(ISecurityPriceService inner)
+        {
+            _inner = inner;
+        }
+
+        public int CreateCallCount { get; private set; }
+
+        public int ClearPriceErrorCallCount { get; private set; }
+
+        public Task CreateAsync(Guid ownerUserId, Guid securityId, DateTime date, decimal close, CancellationToken ct)
+        {
+            CreateCallCount++;
+            return _inner.CreateAsync(ownerUserId, securityId, date, close, ct);
+        }
+
+        public Task<IReadOnlyList<SecurityPriceDto>> ListAsync(Guid ownerUserId, Guid securityId, int skip, int take, CancellationToken ct)
+            => _inner.ListAsync(ownerUserId, securityId, skip, take, ct);
+
+        public Task<DateTime?> GetLatestDateAsync(Guid ownerUserId, Guid securityId, CancellationToken ct)
+            => _inner.GetLatestDateAsync(ownerUserId, securityId, ct);
+
+        public Task SetPriceErrorAsync(Guid ownerUserId, Guid securityId, string message, CancellationToken ct)
+            => _inner.SetPriceErrorAsync(ownerUserId, securityId, message, ct);
+
+        public Task ClearPriceErrorAsync(Guid ownerUserId, Guid securityId, CancellationToken ct)
+        {
+            ClearPriceErrorCallCount++;
+            return _inner.ClearPriceErrorAsync(ownerUserId, securityId, ct);
+        }
+    }
+
     [Fact]
     public async Task SecurityPriceWorker_ShouldProcessSecurityWhenPriceErrorExists_WhenRunExecutes()
     {
@@ -29,11 +68,14 @@ public sealed class SecurityPriceErrorRecoveryTests
         connection.Open();
 
         var db = CreateDatabase(connection, out _, out var securityId);
+        var priceService = CreatePriceService(db);
+        var spyPriceService = new SpySecurityPriceService(priceService.Object);
         var provider = CreateServiceProvider(
             db,
-            CreatePriceProvider(new[] { (DateTime.UtcNow.Date.AddDays(-1), 123.45m) }),
+            CreatePriceProvider(new[] { (DateTime.UtcNow.Date.ToPreviousWorkday(), 123.45m) }),
             CreateNotificationWriter(),
-            CreateKeyResolver());
+            CreateKeyResolver(),
+            priceService: spyPriceService);
 
         var worker = new SecurityPriceWorker(
             new TestScopeFactory(provider),
@@ -47,6 +89,7 @@ public sealed class SecurityPriceErrorRecoveryTests
         await task;
 
         var security = db.Securities.Single(x => x.Id == securityId);
+        Assert.Equal(1, spyPriceService.ClearPriceErrorCallCount);
         Assert.False(security.HasPriceError);
         Assert.Single(db.SecurityPrices.Where(x => x.SecurityId == securityId));
     }
@@ -76,7 +119,7 @@ public sealed class SecurityPriceErrorRecoveryTests
                 }
             });
 
-        var priceProvider = CreatePriceProvider(new[] { (DateTime.UtcNow.Date.AddDays(-1), 99.99m) });
+        var priceProvider = CreatePriceProvider(new[] { (DateTime.UtcNow.Date.ToPreviousWorkday(), 99.99m) });
         var priceService = new Mock<ISecurityPriceService>();
         priceService
             .Setup(x => x.GetLatestDateAsync(ownerId, securityId, It.IsAny<CancellationToken>()))
@@ -84,9 +127,19 @@ public sealed class SecurityPriceErrorRecoveryTests
         priceService
             .Setup(x => x.CreateAsync(ownerId, securityId, It.IsAny<DateTime>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
+        priceService
+            .Setup(x => x.ClearPriceErrorAsync(ownerId, securityId, It.IsAny<CancellationToken>()))
+            .Returns(() =>
+            {
+                var security = db.Securities.Single(x => x.Id == securityId);
+                security.ClearPriceError();
+                db.SaveChanges();
+                return Task.CompletedTask;
+            });
+        var spyPriceService = new SpySecurityPriceService(priceService.Object);
 
         var localizer = CreateLocalizer();
-        var provider = CreateServiceProvider(db, priceProvider, CreateNotificationWriter(), CreateKeyResolver(), securityService.Object, priceService.Object, localizer);
+        var provider = CreateServiceProvider(db, priceProvider, CreateNotificationWriter(), CreateKeyResolver(), securityService.Object, spyPriceService, localizer);
 
         var executor = new SecurityPricesBackfillExecutor(
             new TestScopeFactory(provider),
@@ -97,7 +150,8 @@ public sealed class SecurityPriceErrorRecoveryTests
 
         await executor.ExecuteAsync(context, CancellationToken.None);
 
-        priceService.Verify(x => x.CreateAsync(ownerId, securityId, It.IsAny<DateTime>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal(1, spyPriceService.ClearPriceErrorCallCount);
+        Assert.Equal(1, spyPriceService.CreateCallCount);
 
         var security = db.Securities.Single(x => x.Id == securityId);
         Assert.False(security.HasPriceError);
@@ -189,6 +243,21 @@ public sealed class SecurityPriceErrorRecoveryTests
 
     private static Mock<INotificationWriter> CreateNotificationWriter()
         => new Mock<INotificationWriter>();
+
+    private static Mock<ISecurityPriceService> CreatePriceService(AppDbContext db)
+    {
+        var mock = new Mock<ISecurityPriceService>();
+        mock
+            .Setup(x => x.ClearPriceErrorAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Returns((Guid ownerUserId, Guid securityId, CancellationToken _) =>
+            {
+                var security = db.Securities.Single(x => x.Id == securityId && x.OwnerUserId == ownerUserId);
+                security.ClearPriceError();
+                db.SaveChanges();
+                return Task.CompletedTask;
+            });
+        return mock;
+    }
 
     private static Mock<IAlphaVantageKeyResolver> CreateKeyResolver()
     {

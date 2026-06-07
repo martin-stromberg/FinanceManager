@@ -14,6 +14,7 @@ using FinanceManager.Domain.Statements;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure.Backups;
 using FinanceManager.Infrastructure.Notifications; // new
+using FinanceManager.Infrastructure.Statements;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -57,6 +58,8 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<StatementDraft> StatementDrafts => Set<StatementDraft>();
     /// <summary>Entries inside statement drafts.</summary>
     public DbSet<StatementDraftEntry> StatementDraftEntries => Set<StatementDraftEntry>();
+    /// <summary>Durable booking guards preventing concurrent booking of one draft.</summary>
+    public DbSet<StatementDraftBookingGuard> StatementDraftBookingGuards => Set<StatementDraftBookingGuard>();
     /// <summary>Savings plans.</summary>
     public DbSet<SavingsPlan> SavingsPlans => Set<SavingsPlan>();
     /// <summary>Savings plan categories.</summary>
@@ -309,6 +312,22 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.HasIndex("SecurityId");
         });
 
+        modelBuilder.Entity<StatementDraftBookingGuard>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => new { x.OwnerUserId, x.DraftId }).IsUnique();
+            b.HasIndex(x => x.ExpiresUtc);
+            b.Property(x => x.OwnerUserId).IsRequired();
+            b.Property(x => x.DraftId).IsRequired();
+            b.Property(x => x.LockToken).IsRequired();
+            b.Property(x => x.AcquiredUtc).IsRequired();
+            b.Property(x => x.ExpiresUtc).IsRequired();
+            b.HasOne<StatementDraft>()
+                .WithMany()
+                .HasForeignKey(x => x.DraftId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<SecurityPrice>(b =>
         {
             b.HasKey(x => x.Id);
@@ -444,6 +463,8 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.EndDate);
             b.Property(x => x.BudgetPurposeId);
             b.Property(x => x.BudgetCategoryId);
+            b.Property(x => x.PurposePattern).HasMaxLength(500);
+            b.Property(x => x.PurposePatternIsRegex).HasDefaultValue(false).IsRequired();
 
             b.HasIndex(x => new { x.OwnerUserId, x.BudgetPurposeId });
             b.HasIndex(x => new { x.OwnerUserId, x.BudgetCategoryId });

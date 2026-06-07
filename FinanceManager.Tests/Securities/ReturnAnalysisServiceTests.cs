@@ -1,3 +1,4 @@
+using System.Globalization;
 using FinanceManager.Application.Securities.ReturnAnalysis;
 using FinanceManager.Domain.Postings;
 using FinanceManager.Domain.Securities;
@@ -1553,26 +1554,47 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
     [Fact]
     public async Task GetKpiBreakdownsAsync_IrrBreakdown_TimelineGroupNote_ShouldContainIrrRate()
     {
-        // Arrange – IRR mock returns 3.95 %
-        _calcMock.Setup(c => c.CalculateIrr(It.IsAny<IReadOnlyList<CashflowPoint>>()))
-            .Returns(0.0395m);
+        var originalCulture = CultureInfo.CurrentCulture;
+        var originalUiCulture = CultureInfo.CurrentUICulture;
+        var originalDefaultCulture = CultureInfo.DefaultThreadCurrentCulture;
+        var originalDefaultUiCulture = CultureInfo.DefaultThreadCurrentUICulture;
 
-        var (security, user) = SetupSecurityAndUser();
-        var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
-        _db.Postings.Add(buy);
-        _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
-        await _db.SaveChangesAsync();
+        try
+        {
+            var culture = CultureInfo.GetCultureInfo("de-DE");
+            CultureInfo.CurrentCulture = culture;
+            CultureInfo.CurrentUICulture = culture;
+            CultureInfo.DefaultThreadCurrentCulture = culture;
+            CultureInfo.DefaultThreadCurrentUICulture = culture;
 
-        // Act
-        IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+            // Arrange – IRR mock returns 3.95 %
+            _calcMock.Setup(c => c.CalculateIrr(It.IsAny<IReadOnlyList<CashflowPoint>>()))
+                .Returns(0.0395m);
 
-        // Assert
-        result.Should().NotBeNull();
-        var timelineGroup = result!.First(b => b.KpiKey == "Irr").Groups[0];
+            var (security, user) = SetupSecurityAndUser();
+            var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
+            _db.Postings.Add(buy);
+            _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
+            await _db.SaveChangesAsync();
 
-        timelineGroup.GroupNote.Should().NotBeNullOrEmpty("timeline group must carry a GroupNote when IRR is available");
-        timelineGroup.GroupNote.Should().Contain("3,95", "GroupNote must include the IRR rate formatted as a percentage");
-        timelineGroup.GroupNote.Should().Contain("%", "GroupNote must include the % sign");
+            // Act
+            IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
+
+            // Assert
+            result.Should().NotBeNull();
+            var timelineGroup = result!.First(b => b.KpiKey == "Irr").Groups[0];
+
+            timelineGroup.GroupNote.Should().NotBeNullOrEmpty("timeline group must carry a GroupNote when IRR is available");
+            timelineGroup.GroupNote.Should().Contain("3,95", "GroupNote must include the IRR rate formatted as a percentage");
+            timelineGroup.GroupNote.Should().Contain("%", "GroupNote must include the % sign");
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+            CultureInfo.CurrentUICulture = originalUiCulture;
+            CultureInfo.DefaultThreadCurrentCulture = originalDefaultCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = originalDefaultUiCulture;
+        }
     }
 
     /// <summary>
@@ -2135,4 +2157,3 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
             "stock gained 10 % from the buy day to month-end");
     }
 }
-

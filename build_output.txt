@@ -1,0 +1,24 @@
+C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.AspNetCore.Cryptography.KeyDerivation wird nicht gek├╝rzt. Erw├ñgen Sie, dieses Paket aus Ihren Abh├ñngigkeiten zu entfernen, da es wahrscheinlich nicht erforderlich ist.
+C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.Extensions.Caching.Memory wird nicht gek├╝rzt. Erw├ñgen Sie, dieses Paket aus Ihren Abh├ñngigkeiten zu entfernen, da es wahrscheinlich nicht erforderlich ist.
+C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.Extensions.Hosting.Abstractions wird nicht gek├╝rzt. Erw├ñgen Sie, dieses Paket aus Ihren Abh├ñngigkeiten zu entfernen, da es wahrscheinlich nicht erforderlich ist.
+C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.Extensions.Http wird nicht gek├╝rzt. Erw├ñgen Sie, dieses Paket aus Ihren Abh├ñngigkeiten zu entfernen, da es wahrscheinlich nicht erforderlich ist.
+C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.Extensions.Identity.Core wird nicht gek├╝rzt. Erw├ñgen Sie, dieses Paket aus Ihren Abh├ñngigkeiten zu entfernen, da es wahrscheinlich nicht erforderlich ist.
+  FinanceManager.Shared -> C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Shared\bin\Debug\net10.0\FinanceManager.Shared.dll
+  FinanceManager.Domain -> C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Domain\bin\Debug\net10.0\FinanceManager.Domain.dll
+  FinanceManager.Application -> C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Application\bin\Debug\net10.0\FinanceManager.Application.dll
+  FinanceManager.Infrastructure -> C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Infrastructure\bin\Debug\net10.0\FinanceManager.Infrastructure.dll
+  FinanceManager.Web -> C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Web\bin\Debug\net10.0\FinanceManager.Web.dll
+  FinanceManager.Tests.Integration -> C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Tests.Integration\bin\Debug\net10.0\FinanceManager.Tests.Integration.dll
+  FinanceManager.Tests -> C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Tests\bin\Debug\net10.0\FinanceManager.Tests.dll
+
+Der Buildvorgang wurde erfolgreich ausgef├╝hrt.
+
+C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.AspNetCore.Cryptography.KeyDerivation wird nicht gek├╝rzt. Erw├ñgen Sie, dieses Paket aus Ihren Abh├ñngigkeiten zu entfernen, da es wahrscheinlich nicht erforderlich ist.
+C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.Extensions.Caching.Memory wird nicht gek├╝rzt. Erw├ñgen Sie, dieses Paket aus Ihren Abh├ñngigkeiten zu entfernen, da es wahrscheinlich nicht erforderlich ist.
+C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.Extensions.Hosting.Abstractions wird nicht gek├╝rzt. Erw├ñgen Sie, dieses Paket aus Ihren Abh├ñngigkeiten zu entfernen, da es wahrscheinlich nicht erforderlich ist.
+C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.Extensions.Http wird nicht gek├╝rzt. Erw├ñgen Sie, dieses Paket aus Ihren Abh├ñngigkeiten zu entfernen, da es wahrscheinlich nicht erforderlich ist.
+C:\Users\Martin\Documents\Repositories\KI\FinanceManager\139-budgets-mit-verwendungszweck\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.Extensions.Identity.Core wird nicht gek├╝rzt. Erw├ñgen Sie, dieses Paket aus Ihren Abh├ñngigkeiten zu entfernen, da es wahrscheinlich nicht erforderlich ist.
+    5 Warnung(en)
+    0 Fehler
+
+Verstrichene Zeit 00:00:03.52

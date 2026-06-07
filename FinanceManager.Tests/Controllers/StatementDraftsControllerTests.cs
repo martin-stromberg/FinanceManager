@@ -213,4 +213,102 @@ public sealed class StatementDraftsControllerTests
         Assert.Equal(300m, Convert.ToDecimal(splitSumGet));
         Assert.Equal(0m, Convert.ToDecimal(diffGet));
     }
+
+    /// <summary>
+    /// Verifies the conflict problem contract for in-progress draft booking requests.
+    /// </summary>
+    [Fact]
+    public async Task BookAsync_ShouldReturn409ProblemDetails_WithCodeRetryableAndTraceId_WhenBookingIsInProgress()
+    {
+        var (controller, db, user) = Create();
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                TraceIdentifier = "trace-book-in-progress"
+            }
+        };
+
+        var bank = new Contact(user, "Bank", ContactType.Bank, null, null);
+        db.Contacts.Add(bank);
+        await db.SaveChangesAsync();
+        var account = new Account(user, AccountType.Giro, "A", "DE00", bank.Id);
+        db.Accounts.Add(account);
+        await db.SaveChangesAsync();
+        var draft = new FinanceManager.Domain.Statements.StatementDraft(user, "in-progress.csv", null, null);
+        draft.SetDetectedAccount(account.Id);
+        db.StatementDrafts.Add(draft);
+        await db.SaveChangesAsync();
+
+        db.StatementDraftBookingGuards.Add(new StatementDraftBookingGuard(
+            user,
+            draft.Id,
+            Guid.NewGuid(),
+            DateTime.UtcNow,
+            DateTime.UtcNow.AddMinutes(2)));
+        await db.SaveChangesAsync();
+
+        var actionResult = await controller.BookAsync(draft.Id, false, CancellationToken.None);
+
+        var objectResult = Assert.IsType<ObjectResult>(actionResult);
+        Assert.Equal(StatusCodes.Status409Conflict, objectResult.StatusCode);
+        var problem = Assert.IsType<ProblemDetails>(objectResult.Value);
+        Assert.Equal(StatusCodes.Status409Conflict, problem.Status);
+        Assert.Equal("BOOKING_IN_PROGRESS", problem.Extensions["code"]);
+        Assert.Equal(true, problem.Extensions["retryable"]);
+        Assert.Equal("trace-book-in-progress", problem.Extensions["traceId"]);
+    }
+
+    /// <summary>
+    /// Verifies the conflict problem contract for re-triggering an already booked entry.
+    /// </summary>
+    [Fact]
+    public async Task BookEntryAsync_ShouldReturn409ProblemDetails_WithCodeRetryableAndTraceId_WhenEntryWasAlreadyBooked()
+    {
+        var (controller, db, user) = Create();
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                TraceIdentifier = "trace-entry-already-booked"
+            }
+        };
+
+        var bank = new Contact(user, "Bank", ContactType.Bank, null, null);
+        db.Contacts.Add(bank);
+        await db.SaveChangesAsync();
+        var account = new Account(user, AccountType.Giro, "A", "DE01", bank.Id);
+        db.Accounts.Add(account);
+        await db.SaveChangesAsync();
+
+        var draft = new FinanceManager.Domain.Statements.StatementDraft(user, "entry-booking.csv", null, null);
+        draft.SetDetectedAccount(account.Id);
+        db.StatementDrafts.Add(draft);
+        await db.SaveChangesAsync();
+
+        var recipient = new Contact(user, "Recipient", ContactType.Organization, null, null, false);
+        db.Contacts.Add(recipient);
+        await db.SaveChangesAsync();
+
+        var entryToBook = draft.AddEntry(DateTime.Today, 15m, "Entry A", recipient.Name, DateTime.Today, "EUR", null, false);
+        var remainingEntry = draft.AddEntry(DateTime.Today, 5m, "Entry B", recipient.Name, DateTime.Today, "EUR", null, false);
+        entryToBook.MarkAccounted(recipient.Id);
+        remainingEntry.MarkAccounted(recipient.Id);
+        db.Entry(entryToBook).State = EntityState.Added;
+        db.Entry(remainingEntry).State = EntityState.Added;
+        await db.SaveChangesAsync();
+
+        var firstResult = await controller.BookEntryAsync(draft.Id, entryToBook.Id, false, CancellationToken.None);
+        Assert.IsType<OkObjectResult>(firstResult);
+
+        var secondResult = await controller.BookEntryAsync(draft.Id, entryToBook.Id, false, CancellationToken.None);
+
+        var objectResult = Assert.IsType<ObjectResult>(secondResult);
+        Assert.Equal(StatusCodes.Status409Conflict, objectResult.StatusCode);
+        var problem = Assert.IsType<ProblemDetails>(objectResult.Value);
+        Assert.Equal(StatusCodes.Status409Conflict, problem.Status);
+        Assert.Equal("BOOKING_ALREADY_PROCESSED", problem.Extensions["code"]);
+        Assert.Equal(false, problem.Extensions["retryable"]);
+        Assert.Equal("trace-entry-already-booked", problem.Extensions["traceId"]);
+    }
 }

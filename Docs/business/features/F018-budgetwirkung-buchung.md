@@ -1,54 +1,58 @@
 # F018 – Budgetwirkung während Buchung
 
-## Kurzbeschreibung
+## Einleitung
 
-Beim Bearbeiten und Buchen von Kontoauszug-Entwürfen zeigt FinanceManager jetzt direkt die Budgetwirkung:
-- **während der Zuordnung** (Kontakt/Sparplan/Save-All)
-- **nach Abschluss der Buchung** als Zusammenfassung
+Beim Buchen von Kontoauszügen sehen Sie die erwartete Budgetwirkung direkt mit.  
+Neu fließt dabei auch das optionale Verwendungszweck-Muster aus der Budgetregel ein.  
+So erhalten Sie Hinweise nur für Buchungen, die wirklich zum Muster passen.  
+Das hilft bei schnellen und sicheren Buchungsentscheidungen.
 
-So sehen Nutzer sofort, ob ein Budget überschritten wird oder sich die Zielerreichung stark verändert.
+## Wer nutzt es?
 
-## Nutzen für Fachanwender
+Diese Funktion nutzen Sachbearbeiter in der täglichen Buchung.  
+Sie prüfen während der Zuordnung sofort die Auswirkungen auf Budgets.
 
-- Frühzeitige Warnung vor Budgetüberschreitung
-- Transparenz über betroffene Budgetzwecke
-- Verständliche Vorher/Nachher-Sicht je betroffenem Zweck
+## Schritt-für-Schritt-Anleitung
 
-## Was sieht der Nutzer konkret?
+1. Sie öffnen einen Kontoauszug-Entwurf.
+2. Sie ordnen Buchungen zu und prüfen den Verwendungszweck.
+3. Sie buchen den Entwurf.
+4. Sie lesen die Hinweise zur Budgetwirkung.
+5. Sie prüfen bei Bedarf die Regel in der **Budgetplanung**.
 
-## 1) Sofort-Hinweis in der Entry-Bearbeitung
+## Beispiel
 
-Bei Änderungen an Kontakt, Sparplan oder erweiterten Feldern kann die Antwort des Systems ein `budgetImpact`-Objekt enthalten:
-- Budgetzweck
-- Periode
-- Hinweisstufe (`Neutral`, `StronglyChanged`, `AlmostExhausted`, `Exceeded`)
-- Soll-/Istwerte und Veränderung
-- kurze Begründung
+**Textmuster:**  
+Regel enthält `ST6464646464`.  
+Eine Buchung mit `Abrechnung ST6464646464 Juni` erzeugt eine Budgetwirkung.
 
-## 2) Abschluss-Summary nach Buchung
+**Regex-Muster:**  
+Regel enthält `ST\d{10}` mit aktivierter **Regex**-Nutzung.  
+Eine Buchung ohne passende Nummer bleibt ohne Budgetwirkung.
 
-Nach `Book` (ganz oder je Entry) enthält `BookingResult` optional `budgetImpactSummary`:
-- höchste Kritikalität
-- Liste aller betroffenen Budgetzwecke
-- Zielerreichung vorher/nachher + Delta
+## Was passiert im Hintergrund?
 
-## Fachliche Regeln (vereinfacht)
+Die Budgetwirkung wird nur für passende Budgetzwecke berechnet.  
+Dazu prüft das System zuerst die normale Zuordnung der Buchung.  
+Danach prüft es das optionale Muster im Verwendungszweck.  
+Nur bei Treffer erscheint die Buchung in der Wirkung des Budgetzwecks.
 
-- Zuordnung der Buchung zu Budgetzwecken erfolgt über `BudgetPurpose.SourceType`:
-  - Kontakt
-  - Sparplan
-  - Kontaktgruppe
-- Sollwerte kommen aus der Budgetplanung.
-- Istwerte basieren auf bereits gebuchten Postings.
-- Die neue Buchung wird für die Bewertung simuliert hinzugerechnet.
+## Häufige Fragen (FAQ)
 
-## Grenzen / Hinweise
+**F: Warum ist die Budgetwirkung bei einer Buchung neutral?**  
+A: Meist passt kein Budgetzweck oder das Muster trifft nicht zu.
 
-- Wenn keine Budgetzuordnung möglich ist, wird ein neutraler Hinweis geliefert.
-- Die Budgetwirkung ist eine Entscheidungsunterstützung und blockiert Buchungen nicht automatisch.
+**F: Wird bei Regex fachlich geprüft, ob das Muster sinnvoll ist?**  
+A: Nein. Es wird nur die korrekte Schreibweise geprüft.
 
-## Referenzen
+**F: Was passiert bei einem ungültigen Regex-Muster?**  
+A: Die Regel lässt sich erst nach Korrektur speichern.
 
-- Flow: `Docs/flows/budget-impact-evaluation.md`
-- Booking-Flow: `Docs/flows/statement-draft-booking.md`
-- API: `Docs/api/StatementDraftsController.md`
+**F: Stoppt eine Warnung die Buchung automatisch?**  
+A: Nein. Die Hinweise unterstützen Ihre Entscheidung.
+
+## Verwandte Funktionen
+
+- [F008 – Budgetplanung](./F008-budgetplanung.md)
+- [F009 – Budgetberichte](./F009-budgetberichte.md)
+- [F003 – Ausgabenverwaltung](./F003-ausgabenverwaltung.md)

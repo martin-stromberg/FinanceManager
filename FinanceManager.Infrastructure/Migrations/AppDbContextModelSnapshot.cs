@@ -348,6 +348,15 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<Guid>("OwnerUserId")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("PurposePattern")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("PurposePatternIsRegex")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("TEXT");
 
@@ -1514,6 +1523,39 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.ToTable("Backups");
                 });
 
+            modelBuilder.Entity("FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("AcquiredUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DraftId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("LockToken")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DraftId");
+
+                    b.HasIndex("ExpiresUtc");
+
+                    b.HasIndex("OwnerUserId", "DraftId")
+                        .IsUnique();
+
+                    b.ToTable("StatementDraftBookingGuards");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1721,6 +1763,15 @@ namespace FinanceManager.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("BenchmarkSecurityId")
                         .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard", b =>
+                {
+                    b.HasOne("FinanceManager.Domain.Statements.StatementDraft", null)
+                        .WithMany()
+                        .HasForeignKey("DraftId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
