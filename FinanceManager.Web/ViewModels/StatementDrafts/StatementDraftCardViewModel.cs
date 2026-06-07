@@ -299,6 +299,8 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         try
         {
             var ok = await ApiClient.StatementDrafts_DeleteAsync(DraftId, CancellationToken.None);
+            if (ok)
+                RaiseUiActionRequested("Back");
             return ok;
         }
         catch
