@@ -2395,6 +2395,30 @@
         <member name="M:FinanceManager.Infrastructure.Migrations.AddPostingReversalFields.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202606041500_AddBudgetRulePurposePattern">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202606041500_AddBudgetRulePurposePattern.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202606041500_AddBudgetRulePurposePattern.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202606041500_AddBudgetRulePurposePattern.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202606061300_AddStatementDraftBookingGuard">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202606061300_AddStatementDraftBookingGuard.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202606061300_AddStatementDraftBookingGuard.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202606061300_AddStatementDraftBookingGuard.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Notifications.HolidayProviderResolver">
             <summary>
             Resolves an implementation of <see cref="T:FinanceManager.Application.Notifications.IHolidayProvider"/> for a requested <see cref="T:FinanceManager.Domain.Notifications.HolidayProviderKind"/>.
