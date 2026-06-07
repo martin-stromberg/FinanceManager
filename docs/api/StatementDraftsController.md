@@ -74,26 +74,84 @@ Bei folgenden Endpunkten enthält die Antwort nun optional `budgetImpact` im `St
 - `.../savingsplan`
 - `.../save-all`
 
-Struktur (gekürzt):
-- `entryId`
-- `evaluatedAtUtc`
-- `evaluationFingerprint`
-- `hints[]` mit:
-  - `budgetPurposeId`, `budgetPurposeName`, `budgetPeriod`
-  - `hintType` (`Neutral`, `StronglyChanged`, `AlmostExhausted`, `Exceeded`)
-  - `targetValue`, `actualBefore`, `actualAfter`
-  - `fulfillmentRateBefore`, `fulfillmentRateAfter`, `delta`
-  - `reason`
+Beispiel:
+
+```json
+{
+  "id": "11111111-1111-1111-1111-111111111111",
+  "amount": -50.0,
+  "subject": "Vertrag XX12",
+  "budgetImpact": {
+    "entryId": "11111111-1111-1111-1111-111111111111",
+    "evaluatedAtUtc": "2026-06-04T17:30:00Z",
+    "evaluationFingerprint": "draft:abc",
+    "hints": [
+      {
+        "budgetPurposeId": "22222222-2222-2222-2222-222222222222",
+        "budgetPurposeName": "Utility Budget",
+        "budgetPeriod": "2026-06",
+        "hintType": "StronglyChanged",
+        "targetValue": 100.0,
+        "actualBefore": 0.0,
+        "actualAfter": 50.0,
+        "fulfillmentRateBefore": 0.0,
+        "fulfillmentRateAfter": 0.5,
+        "delta": 0.5,
+        "reason": "Zielerreichung stark verändert (Δ Quote: 50%)."
+      }
+    ]
+  }
+}
+```
 
 ### 2) Abschluss-Summary bei Buchung
 `BookingResult` enthält optional `budgetImpactSummary` für:
 - `POST /{draftId}/book`
 - `POST /{draftId}/entries/{entryId}/book`
 
-Struktur (gekürzt):
-- `draftId`, `entryId`, `evaluatedAtUtc`, `evaluationFingerprint`
-- `highestSeverity`
-- `items[]` (je betroffenem Budgetzweck) mit Vorher/Nachher/Delta und Begründung
+Beispiel:
+
+```json
+{
+  "success": true,
+  "hasWarnings": false,
+  "budgetImpactSummary": {
+    "draftId": "33333333-3333-3333-3333-333333333333",
+    "entryId": null,
+    "evaluatedAtUtc": "2026-06-04T17:30:05Z",
+    "evaluationFingerprint": "draft:abc",
+    "highestSeverity": "AlmostExhausted",
+    "items": [
+      {
+        "budgetPurposeId": "22222222-2222-2222-2222-222222222222",
+        "budgetPurposeName": "Utility Budget",
+        "budgetPeriod": "2026-06",
+        "hintType": "AlmostExhausted",
+        "targetValue": 100.0,
+        "actualBefore": 80.0,
+        "actualAfter": 95.0,
+        "fulfillmentRateBefore": 0.8,
+        "fulfillmentRateAfter": 0.95,
+        "delta": 0.15,
+        "reason": "Budget fast ausgeschöpft (Soll: 100, Ist nachher: 95)."
+      }
+    ]
+  }
+}
+```
+
+## Matching-Verhalten für BudgetImpact (API-Ebene)
+
+Die BudgetImpact-Berechnung berücksichtigt `PurposePattern`/`UseRegex` aus Budget-Regeln:
+
+- Bewertungsinput: kombinierter Text aus `subject` + `bookingDescription`.
+- Kein Pattern ⇒ Match.
+- `UseRegex=false` ⇒ case-insensitive `contains`.
+- `UseRegex=true` ⇒ Regex-Match mit  
+  `RegexOptions.IgnoreCase | RegexOptions.CultureInvariant` und `200ms` Timeout.
+- Regex-Fehler oder Timeout führen zu **kein Match** (kein API-Fehler).
+
+Damit gilt dasselbe Pattern-Verhalten wie in [BudgetReportsController](./BudgetReportsController.md), aber auf Entwurfs-/Buchungsebene.
 
 ## Fehler- und Rückgabeverhalten
 
@@ -118,6 +176,11 @@ Beispielcodes:
 
 ## Referenzen
 
+- Budget-Regel-API inkl. Pattern-Validierung: [BudgetRulesController](./BudgetRulesController.md)
+- Migration: `FinanceManager.Infrastructure/Migrations/20260604172812_202606041500_AddBudgetRulePurposePattern.cs`
 - Service-Logik: `FinanceManager.Infrastructure/Statements/StatementDraftService.cs`
 - Budgetbewertung: `FinanceManager.Infrastructure/Statements/BudgetImpactEvaluationService.cs`
 - DTOs: `FinanceManager.Shared/Dtos/Statements/BudgetImpactDtos.cs`
+- Tests:
+  - `FinanceManager.Tests/Statements/BudgetImpactEvaluationServiceTests.cs`
+  - `FinanceManager.Tests.Integration/ApiClient/ApiClientStatementDraftsTests.cs`

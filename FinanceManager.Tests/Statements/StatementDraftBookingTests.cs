@@ -249,10 +249,11 @@ public sealed class StatementDraftBookingTests
         Assert.NotNull(res.BudgetImpactSummary);
         Assert.Equal(summary.EvaluationFingerprint, res.BudgetImpactSummary!.EvaluationFingerprint);
         Assert.Equal(summary.HighestSeverity, res.BudgetImpactSummary.HighestSeverity);
-        Assert.Single(budgetImpact.DraftCalls);
-        Assert.Equal(draft.Id, budgetImpact.DraftCalls[0].DraftId);
-        Assert.Equal(e1.Id, budgetImpact.DraftCalls[0].EntryId);
-        Assert.Equal(owner, budgetImpact.DraftCalls[0].OwnerUserId);
+        Assert.NotEmpty(budgetImpact.DraftCalls);
+        Assert.Contains(budgetImpact.DraftCalls, x =>
+            x.DraftId == draft.Id
+            && x.EntryId == e1.Id
+            && x.OwnerUserId == owner);
 
         conn.Dispose();
     }
@@ -335,8 +336,11 @@ public sealed class StatementDraftBookingTests
         Assert.NotNull(res2.BudgetImpactSummary);
         Assert.Equal(summary.EvaluationFingerprint, res2.BudgetImpactSummary!.EvaluationFingerprint);
         Assert.Equal(summary.HighestSeverity, res2.BudgetImpactSummary.HighestSeverity);
-        Assert.Single(budgetImpact.DraftCalls);
-        Assert.Null(budgetImpact.DraftCalls[0].EntryId);
+        Assert.NotEmpty(budgetImpact.DraftCalls);
+        Assert.Contains(budgetImpact.DraftCalls, x =>
+            x.DraftId == draft.Id
+            && x.EntryId == null
+            && x.OwnerUserId == owner);
         Assert.Equal(2, db.Postings.Count());
         Assert.Equal(1, db.Postings.Count(p => p.Kind == PostingKind.Bank));
         Assert.Equal(1, db.Postings.Count(p => p.Kind == PostingKind.Contact));

@@ -74,7 +74,7 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
                     BudgetPurposeId = Guid.TryParse(prefill, out var legacyPid) ? legacyPid : Guid.Empty;
                 }
 
-                var dto = new BudgetRuleDto(Guid.Empty, Guid.Empty, BudgetPurposeId == Guid.Empty ? null : BudgetPurposeId, BudgetCategoryId == Guid.Empty ? null : BudgetCategoryId, 0m, BudgetIntervalType.Monthly, null, DateOnly.FromDateTime(DateTime.Today), null);
+                var dto = new BudgetRuleDto(Guid.Empty, Guid.Empty, BudgetPurposeId == Guid.Empty ? null : BudgetPurposeId, BudgetCategoryId == Guid.Empty ? null : BudgetCategoryId, 0m, BudgetIntervalType.Monthly, null, DateOnly.FromDateTime(DateTime.Today), null, null, false);
                 Rule = dto;
                 CardRecord = BuildCardRecord(dto);
                 return;
@@ -133,7 +133,9 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
             new CardField("Card_Caption_BudgetRule_Interval", CardFieldKind.Text, text: dto.Interval.ToString(), editable: true, lookupType: "Enum:BudgetIntervalType"),
             new CardField("Card_Caption_BudgetRule_CustomIntervalMonths", CardFieldKind.Text, text: dto.CustomIntervalMonths?.ToString() ?? string.Empty, editable: dto.Interval == BudgetIntervalType.CustomMonths),
             new CardField("Card_Caption_BudgetRule_Start", CardFieldKind.Date, text: dto.StartDate.ToString("yyyy-MM-dd"), editable: true),
-            new CardField("Card_Caption_BudgetRule_End", CardFieldKind.Date, text: dto.EndDate?.ToString("yyyy-MM-dd") ?? string.Empty, editable: true)
+            new CardField("Card_Caption_BudgetRule_End", CardFieldKind.Date, text: dto.EndDate?.ToString("yyyy-MM-dd") ?? string.Empty, editable: true),
+            new CardField("Card_Caption_BudgetRule_PurposePattern", CardFieldKind.Text, text: dto.PurposePattern ?? string.Empty, editable: true, hint: "Card_Help_BudgetRule_PurposePattern"),
+            new CardField("Card_Caption_BudgetRule_UseRegex", CardFieldKind.Boolean, boolValue: dto.UseRegex, editable: true)
         };
 
         var record = new CardRecord(fields, dto);
@@ -174,6 +176,17 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
             end = parsedEnd;
         }
 
+        var purposePatternField = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_BudgetRule_PurposePattern");
+        var purposePattern = purposePatternField?.Text ?? string.Empty;
+        // Allow clearing the pattern (empty string → null). Don't fall back to existing value.
+        if (string.IsNullOrWhiteSpace(purposePattern))
+        {
+            purposePattern = null;
+        }
+
+        var useRegexField = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_BudgetRule_UseRegex");
+        var useRegex = useRegexField?.BoolValue ?? Rule?.UseRegex ?? false;
+
         Guid? purposeId = null;
         if (BudgetPurposeId != Guid.Empty)
         {
@@ -194,7 +207,7 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
             categoryId = Rule.BudgetCategoryId.Value;
         }
 
-        return new BudgetRuleDto(Id, Guid.Empty, purposeId, categoryId, amount, interval, customMonths, start, end);
+        return new BudgetRuleDto(Id, Guid.Empty, purposeId, categoryId, amount, interval, customMonths, start, end, purposePattern, useRegex);
     }
 
     /// <inheritdoc />
@@ -218,7 +231,7 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
             {
                 if (dto.BudgetPurposeId.HasValue && dto.BudgetPurposeId.Value != Guid.Empty)
                 {
-                    var created = await ApiClient.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(dto.BudgetPurposeId, null, dto.Amount, dto.Interval, dto.CustomIntervalMonths, dto.StartDate, dto.EndDate));
+                    var created = await ApiClient.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(dto.BudgetPurposeId, null, dto.Amount, dto.Interval, dto.CustomIntervalMonths, dto.StartDate, dto.EndDate, dto.PurposePattern, dto.UseRegex));
                     Id = created.Id;
                     Rule = created;
                     BudgetPurposeId = created.BudgetPurposeId ?? Guid.Empty;
@@ -232,7 +245,7 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
 
                 if (dto.BudgetCategoryId.HasValue && dto.BudgetCategoryId.Value != Guid.Empty)
                 {
-                    var created = await ApiClient.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(null, dto.BudgetCategoryId, dto.Amount, dto.Interval, dto.CustomIntervalMonths, dto.StartDate, dto.EndDate));
+                    var created = await ApiClient.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(null, dto.BudgetCategoryId, dto.Amount, dto.Interval, dto.CustomIntervalMonths, dto.StartDate, dto.EndDate, dto.PurposePattern, dto.UseRegex));
                     Id = created.Id;
                     Rule = created;
                     BudgetPurposeId = created.BudgetPurposeId ?? Guid.Empty;
@@ -248,7 +261,7 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
                 return false;
             }
 
-            var updated = await ApiClient.Budgets_UpdateRuleAsync(Id, new BudgetRuleUpdateRequest(dto.Amount, dto.Interval, dto.CustomIntervalMonths, dto.StartDate, dto.EndDate));
+            var updated = await ApiClient.Budgets_UpdateRuleAsync(Id, new BudgetRuleUpdateRequest(dto.Amount, dto.Interval, dto.CustomIntervalMonths, dto.StartDate, dto.EndDate, dto.PurposePattern, dto.UseRegex));
             if (updated == null)
             {
                 SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Update failed");
@@ -373,7 +386,22 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
             new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Id == Guid.Empty, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
         });
 
-        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, manage }) };
+        var clearPurposePattern = new UiRibbonAction(
+            "ClearPurposePattern",
+            localizer["Ribbon_ClearPurposePattern"].Value ?? "Clear Pattern",
+            "<svg><use href='/icons/sprite.svg#delete'/></svg>",
+            UiRibbonItemSize.Small,
+            Rule?.PurposePattern == null,
+            null,
+            () =>
+            {
+                ClearPurposePattern();
+                return Task.CompletedTask;
+            });
+
+        var pattern = new UiRibbonTab(localizer["Ribbon_Group_Fields"], new List<UiRibbonAction> { clearPurposePattern });
+
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, manage, pattern }) };
     }
 
     private BudgetIntervalType ParseIntervalType(string? value, BudgetIntervalType fallback)
@@ -489,5 +517,28 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
             customField.Text = string.Empty;
             _pendingFieldValues.Remove(customField.LabelKey);
         }
+    }
+
+    /// <summary>
+    /// Clears the purpose pattern and regex flag, then marks changes as pending.
+    /// </summary>
+    private void ClearPurposePattern()
+    {
+        var patternField = CardRecord?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_BudgetRule_PurposePattern");
+        var regexField = CardRecord?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_BudgetRule_UseRegex");
+
+        if (patternField != null)
+        {
+            patternField.Text = string.Empty;
+            _pendingFieldValues[patternField.LabelKey] = string.Empty;
+        }
+
+        if (regexField != null)
+        {
+            regexField.BoolValue = false;
+            _pendingFieldValues[regexField.LabelKey] = false;
+        }
+
+        RaiseStateChanged();
     }
 }

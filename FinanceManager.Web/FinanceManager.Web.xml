@@ -4481,6 +4481,11 @@
         <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.ValidateFieldValue(FinanceManager.Web.ViewModels.Common.CardField,System.Object)">
             <inheritdoc />
         </member>
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleCardViewModel.ClearPurposePattern">
+            <summary>
+            Clears the purpose pattern and regex flag, then marks changes as pending.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem">
             <summary>
             Lightweight list item for budget rule rows.
@@ -4490,8 +4495,9 @@
             <param name="Amount">Amount formatted for display.</param>
             <param name="Start">Start date formatted for display.</param>
             <param name="End">End date formatted for display.</param>
+            <param name="PurposePattern">Purpose pattern (regex or literal string), if defined.</param>
         </member>
-        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.#ctor(System.Guid,System.String,System.String,System.String,System.String)">
+        <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.#ctor(System.Guid,System.String,System.String,System.String,System.String,System.String)">
             <summary>
             Lightweight list item for budget rule rows.
             </summary>
@@ -4500,6 +4506,7 @@
             <param name="Amount">Amount formatted for display.</param>
             <param name="Start">Start date formatted for display.</param>
             <param name="End">End date formatted for display.</param>
+            <param name="PurposePattern">Purpose pattern (regex or literal string), if defined.</param>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.Id">
             <summary>Rule id.</summary>
@@ -4515,6 +4522,9 @@
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.End">
             <summary>End date formatted for display.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.PurposePattern">
+            <summary>Purpose pattern (regex or literal string), if defined.</summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Budget.BudgetRuleListItem.GetNavigateUrl">
             <inheritdoc />

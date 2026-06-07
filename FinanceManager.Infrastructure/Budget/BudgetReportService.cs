@@ -22,6 +22,8 @@ namespace FinanceManager.Infrastructure.Budget;
 /// </summary>
 public sealed class BudgetReportService : IBudgetReportService
 {
+    private static readonly TimeSpan RegexMatchTimeout = TimeSpan.FromMilliseconds(200);
+
     private readonly IBudgetPurposeService _purposes;
     private readonly IBudgetCategoryService _categories;
     private readonly IBudgetRuleService _rules;
@@ -127,7 +129,7 @@ public sealed class BudgetReportService : IBudgetReportService
                 ValutaDate = p.ValutaDate,
                 Amount = p.Amount,
                 PostingKind = p.Kind,
-                Description = p.Description ?? p.Subject ?? string.Empty,
+                Description = string.Join(" ", new[] { p.Subject, p.Description }.Where(x => !string.IsNullOrWhiteSpace(x))),
                 AccountId = p.AccountId,
                 AccountName = p.LinkedPostingAccountName ?? p.BankPostingAccountName,
                 ContactId = p.ContactId,
@@ -185,20 +187,20 @@ public sealed class BudgetReportService : IBudgetReportService
         IReadOnlyList<ContactDto> contacts,
         DateOnly from,
         DateOnly to,
+        BudgetReportDateBasis dateBasis,
         CancellationToken ct)
     {
         var result = new List<BudgetReportPurposeRawDataDto>();
 
         foreach (var pur in uncategorizedPurposes)
         {
-            // collect postings that belong to this uncategorized purpose and sort by booking, valuta, amount
+            // collect postings that belong to this uncategorized purpose and sort by the selected date basis
             var postingsForPurpose = postingDtos.Where(d =>
                 (pur.SourceType == BudgetSourceType.Contact && d.ContactId == pur.SourceId)
                 || (pur.SourceType == BudgetSourceType.SavingsPlan && d.SavingsPlanId == pur.SourceId)
                 || (pur.SourceType == BudgetSourceType.ContactGroup && contacts.FirstOrDefault(c => c.Id == d.ContactId)?.CategoryId == pur.SourceId)
             )
-            .OrderBy(p => p.BookingDate)
-            .ThenBy(p => p.ValutaDate ?? DateTime.MinValue)
+            .OrderBy(p => GetPostingDate(p, dateBasis))
             .ThenBy(p => p.Amount)
             .ToList();
 
@@ -207,109 +209,166 @@ public sealed class BudgetReportService : IBudgetReportService
 
             var matchedPostings = new List<BudgetReportPostingRawDataDto>();
 
-            // First: exact matches - ensure we remove them from global list
-            foreach (var rule in rules.ToList())
+            // If no rules exist, assign all postings to the purpose
+            if (rules.Count == 0)
             {
-                var expected = rule.Amount;
-                var candidate = postingsForPurpose.FirstOrDefault(p => Math.Sign(p.Amount) == Math.Sign(expected) && p.Amount == expected);
-                if (candidate != null)
+                matchedPostings.AddRange(postingsForPurpose);
+                foreach (var p in postingsForPurpose)
                 {
-                    matchedPostings.Add(candidate);
-                    rules.Remove(rule);
-                    postingsForPurpose.RemoveAll(x => x.PostingId == candidate.PostingId);
-                    postingDtos.RemoveAll(x => x.PostingId == candidate.PostingId);
+                    postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
                 }
+                postingsForPurpose.Clear();
             }
-
-            // Now process remaining rules: positives (desc) and negatives (asc)
-            var positiveRules = rules.Where(r => r.Amount > 0).OrderByDescending(r => r.Amount).ToList();
-            var negativeRules = rules.Where(r => r.Amount < 0).OrderBy(r => r.Amount).ToList();
-
-            // helper to allocate postings for a rule
-            void AllocateForRule(BudgetRuleDto rule)
+            else
             {
-                if (rule == null) return;
-                var expected = rule.Amount;
-                if (expected > 0)
+                void AllocateForRule(BudgetRuleDto rule)
                 {
-                    var remaining = expected;
-                    for (int idx = 0; idx < postingsForPurpose.Count && remaining > 0; )
+                    if (rule == null) return;
+                    foreach (var (bucketStart, bucketEnd) in EnumerateRulePeriods(rule, from, to))
                     {
-                        var p = postingsForPurpose[idx];
-                        if (p.Amount <= 0) { idx++; continue; }
-                        if (p.Amount <= remaining)
-                        {
-                            // fully consume posting
-                            matchedPostings.Add(p);
-                            remaining -= p.Amount;
-                            // remove from working lists
-                            postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
-                            postingsForPurpose.RemoveAt(idx);
-                        }
-                        else
-                        {
-                            // split posting: allocate part and reduce original
-                            var allocated = p with { Amount = remaining };
-                            matchedPostings.Add(allocated);
-                            var remainingAmount = p.Amount - remaining;
-                            // update in postingDtos and postingsForPurpose
-                            for (int j = 0; j < postingDtos.Count; j++)
+                        var bucketPostings = postingsForPurpose
+                            .Where(p => BudgetRulePatternMatcher.MatchesPosting(p.Subject, p.Description, rule.PurposePattern, rule.UseRegex))
+                            .Where(p =>
                             {
-                                if (postingDtos[j].PostingId == p.PostingId)
+                                var postingDate = GetPostingDate(p, dateBasis);
+                                return postingDate >= bucketStart && postingDate <= bucketEnd;
+                            })
+                            .OrderBy(p => GetPostingDate(p, dateBasis))
+                            .ThenBy(p => p.Amount)
+                            .ToList();
+
+                        if (bucketPostings.Count == 0)
+                        {
+                            continue;
+                        }
+
+                        var expected = rule.Amount;
+                        var exactCandidate = bucketPostings.FirstOrDefault(p =>
+                            Math.Sign(p.Amount) == Math.Sign(expected)
+                            && p.Amount == expected);
+                        if (exactCandidate != null)
+                        {
+                            matchedPostings.Add(exactCandidate);
+                            postingsForPurpose.RemoveAll(x => x.PostingId == exactCandidate.PostingId);
+                            postingDtos.RemoveAll(x => x.PostingId == exactCandidate.PostingId);
+                            bucketPostings.RemoveAll(x => x.PostingId == exactCandidate.PostingId);
+                        }
+
+                        if (exactCandidate == null && expected > 0)
+                        {
+                            var remaining = expected;
+                            foreach (var p in bucketPostings)
+                            {
+                                if (remaining <= 0)
                                 {
-                                    postingDtos[j] = postingDtos[j] with { Amount = remainingAmount };
                                     break;
                                 }
-                            }
-                            postingsForPurpose[idx] = p with { Amount = remainingAmount };
-                            remaining = 0;
-                        }
-                    }
-                }
-                else if (expected < 0)
-                {
-                    var remainingAbs = Math.Abs(expected);
-                    for (int idx = 0; idx < postingsForPurpose.Count && remainingAbs > 0; )
-                    {
-                        var p = postingsForPurpose[idx];
-                        if (p.Amount >= 0) { idx++; continue; }
-                        var pAbs = Math.Abs(p.Amount);
-                        if (pAbs <= remainingAbs)
-                        {
-                            // fully consume posting
-                            matchedPostings.Add(p);
-                            remainingAbs -= pAbs;
-                            postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
-                            postingsForPurpose.RemoveAt(idx);
-                        }
-                        else
-                        {
-                            // split posting
-                            var allocated = p with { Amount = -remainingAbs };
-                            matchedPostings.Add(allocated);
-                            var remainingAmount = p.Amount + remainingAbs; // p.Amount is negative
-                            for (int j = 0; j < postingDtos.Count; j++)
-                            {
-                                if (postingDtos[j].PostingId == p.PostingId)
+
+                                if (p.Amount <= 0)
                                 {
-                                    postingDtos[j] = postingDtos[j] with { Amount = remainingAmount };
+                                    continue;
+                                }
+
+                                if (p.Amount <= remaining)
+                                {
+                                    matchedPostings.Add(p);
+                                    remaining -= p.Amount;
+                                    postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
+                                    postingsForPurpose.RemoveAll(x => x.PostingId == p.PostingId);
+                                    continue;
+                                }
+
+                                var allocated = p with { Amount = remaining };
+                                matchedPostings.Add(allocated);
+                                var remainingAmount = p.Amount - remaining;
+                                for (int j = 0; j < postingDtos.Count; j++)
+                                {
+                                    if (postingDtos[j].PostingId == p.PostingId)
+                                    {
+                                        postingDtos[j] = postingDtos[j] with { Amount = remainingAmount };
+                                        break;
+                                    }
+                                }
+
+                                for (int j = 0; j < postingsForPurpose.Count; j++)
+                                {
+                                    if (postingsForPurpose[j].PostingId == p.PostingId)
+                                    {
+                                        postingsForPurpose[j] = postingsForPurpose[j] with { Amount = remainingAmount };
+                                        break;
+                                    }
+                                }
+
+                                remaining = 0;
+                            }
+                        }
+                        else if (exactCandidate == null && expected < 0)
+                        {
+                            var remainingAbs = Math.Abs(expected);
+                            foreach (var p in bucketPostings)
+                            {
+                                if (remainingAbs <= 0)
+                                {
                                     break;
                                 }
+
+                                if (p.Amount >= 0)
+                                {
+                                    continue;
+                                }
+
+                                var pAbs = Math.Abs(p.Amount);
+                                if (pAbs <= remainingAbs)
+                                {
+                                    matchedPostings.Add(p);
+                                    remainingAbs -= pAbs;
+                                    postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
+                                    postingsForPurpose.RemoveAll(x => x.PostingId == p.PostingId);
+                                    continue;
+                                }
+
+                                var allocated = p with { Amount = -remainingAbs };
+                                matchedPostings.Add(allocated);
+                                var remainingAmount = p.Amount + remainingAbs; // p.Amount is negative
+                                for (int j = 0; j < postingDtos.Count; j++)
+                                {
+                                    if (postingDtos[j].PostingId == p.PostingId)
+                                    {
+                                        postingDtos[j] = postingDtos[j] with { Amount = remainingAmount };
+                                        break;
+                                    }
+                                }
+
+                                for (int j = 0; j < postingsForPurpose.Count; j++)
+                                {
+                                    if (postingsForPurpose[j].PostingId == p.PostingId)
+                                    {
+                                        postingsForPurpose[j] = postingsForPurpose[j] with { Amount = remainingAmount };
+                                        break;
+                                    }
+                                }
+
+                                remainingAbs = 0;
                             }
-                            postingsForPurpose[idx] = p with { Amount = remainingAmount };
-                            remainingAbs = 0;
                         }
+
                     }
                 }
-            }
 
-            foreach (var r in positiveRules) AllocateForRule(r);
-            foreach (var r in negativeRules) AllocateForRule(r);
+                foreach (var r in rules)
+                {
+                    AllocateForRule(r);
+                }
+            }
 
             // any postings left in postingsForPurpose are unbudgeted for this purpose
             foreach (var left in postingsForPurpose)
             {
-                unbudgetedList.Add(left);
+                unbudgetedList.Add(left with
+                {
+                    BudgetCategoryId = null,
+                    BudgetPurposeId = null
+                });
                 postingDtos.RemoveAll(x => x.PostingId == left.PostingId);
             }
 
@@ -416,6 +475,7 @@ public sealed class BudgetReportService : IBudgetReportService
                     contacts,
                     from,
                     to,
+                    dateBasis,
                     ct);
 
                 rawPurposes = list.ToArray();
@@ -439,7 +499,10 @@ public sealed class BudgetReportService : IBudgetReportService
                 foreach (var rule in rulesForCategory.ToList())
                 {
                     var expected = rule.Amount;
-                    var candidate = postingsForCategory.FirstOrDefault(p => Math.Sign(p.Amount) == Math.Sign(expected) && p.Amount == expected);
+                    var candidate = postingsForCategory.FirstOrDefault(p =>
+                        BudgetRulePatternMatcher.MatchesPosting(p.Subject, p.Description, rule.PurposePattern, rule.UseRegex)
+                        && Math.Sign(p.Amount) == Math.Sign(expected)
+                        && p.Amount == expected);
                     if (candidate != null)
                     {
                         if (candidate.BudgetPurposeId.HasValue)
@@ -472,7 +535,7 @@ public sealed class BudgetReportService : IBudgetReportService
                         for (int idx = 0; idx < postingsForCategory.Count && remaining > 0; )
                         {
                             var p = postingsForCategory[idx];
-                            if (p.Amount <= 0) { idx++; continue; }
+                            if (p.Amount <= 0 || !BudgetRulePatternMatcher.MatchesPosting(p.Subject, p.Description, rule.PurposePattern, rule.UseRegex)) { idx++; continue; }
                             var targetPurposeId = p.BudgetPurposeId ?? Guid.Empty;
                             if (p.Amount <= remaining)
                             {
@@ -523,7 +586,7 @@ public sealed class BudgetReportService : IBudgetReportService
                         for (int idx = 0; idx < postingsForCategory.Count && remainingAbs > 0; )
                         {
                             var p = postingsForCategory[idx];
-                            if (p.Amount >= 0) { idx++; continue; }
+                            if (p.Amount >= 0 || !BudgetRulePatternMatcher.MatchesPosting(p.Subject, p.Description, rule.PurposePattern, rule.UseRegex)) { idx++; continue; }
                             var pAbs = Math.Abs(p.Amount);
                             var targetPurposeId = p.BudgetPurposeId ?? Guid.Empty;
                             if (pAbs <= remainingAbs)
@@ -577,7 +640,11 @@ public sealed class BudgetReportService : IBudgetReportService
                 // remaining postings become unbudgeted within this category
                 foreach (var left in postingsForCategory)
                 {
-                    unbudgetedList.Add(left);
+                    unbudgetedList.Add(left with
+                    {
+                        BudgetCategoryId = null,
+                        BudgetPurposeId = null
+                    });
                     postingDtos.RemoveAll(x => x.PostingId == left.PostingId);
                 }
 
@@ -623,6 +690,7 @@ public sealed class BudgetReportService : IBudgetReportService
             contacts,
             from,
             to,
+            dateBasis,
             ct);
 
         var result = new BudgetReportRawDataDto
@@ -864,6 +932,68 @@ public sealed class BudgetReportService : IBudgetReportService
         return occurrences;
     }
 
+    private static int CountOccurrencesInRange(
+        BudgetIntervalType interval,
+        int? customIntervalMonths,
+        DateOnly start,
+        DateOnly? end,
+        DateOnly from,
+        DateOnly to)
+    {
+        var actualEnd = end ?? DateOnly.MaxValue;
+        if (start > to || actualEnd < from)
+        {
+            return 0;
+        }
+
+        var effectiveStart = start > from ? start : from;
+        var effectiveEnd = actualEnd < to ? actualEnd : to;
+
+        static DateOnly AddMonthsSafe(DateOnly d, int months)
+        {
+            var dt = d.ToDateTime(TimeOnly.MinValue);
+            var next = dt.AddMonths(months);
+            return DateOnly.FromDateTime(next);
+        }
+
+        static int CountByMonthStep(DateOnly ruleStart, DateOnly rangeStart, DateOnly rangeEnd, int stepMonths)
+        {
+            var occ = ruleStart;
+            if (occ < rangeStart)
+            {
+                var monthsDiff = (rangeStart.Year - occ.Year) * 12 + (rangeStart.Month - occ.Month);
+                var stepsToAdvance = monthsDiff / stepMonths;
+                if (stepsToAdvance > 0)
+                {
+                    occ = AddMonthsSafe(occ, stepsToAdvance * stepMonths);
+                }
+
+                while (occ < rangeStart)
+                {
+                    occ = AddMonthsSafe(occ, stepMonths);
+                }
+            }
+
+            var count = 0;
+            while (occ <= rangeEnd)
+            {
+                count++;
+                occ = AddMonthsSafe(occ, stepMonths);
+            }
+
+            return count;
+        }
+
+        return interval switch
+        {
+            BudgetIntervalType.Monthly => CountByMonthStep(start, effectiveStart, effectiveEnd, 1),
+            BudgetIntervalType.Quarterly => CountByMonthStep(start, effectiveStart, effectiveEnd, 3),
+            BudgetIntervalType.Yearly => CountByMonthStep(start, effectiveStart, effectiveEnd, 12),
+            BudgetIntervalType.CustomMonths => CountByMonthStep(start, effectiveStart, effectiveEnd, Math.Max(1, customIntervalMonths ?? 1)),
+            _ => CountByMonthStep(start, effectiveStart, effectiveEnd, 1)
+        };
+    }
+
     private async Task<decimal> GetBudgetedIncomeForPurposeAsync(Guid ownerUserId, Guid purposeId, DateOnly from, DateOnly to, CancellationToken ct)
     {
         var rules = await _rules.ListByPurposeAsync(ownerUserId, purposeId, ct);
@@ -886,6 +1016,58 @@ public sealed class BudgetReportService : IBudgetReportService
     {
         var rules = await _rules.ListByCategoryAsync(ownerUserId, categoryId, ct);
         return ComputeBudgetedOccurrences(rules, from, to).Where(x => x < 0).Sum();
+    }
+
+    private static IEnumerable<(DateOnly Start, DateOnly End)> EnumerateRulePeriods(BudgetRuleDto rule, DateOnly from, DateOnly to)
+    {
+        var stepMonths = rule.Interval switch
+        {
+            BudgetIntervalType.Monthly => 1,
+            BudgetIntervalType.Quarterly => 3,
+            BudgetIntervalType.Yearly => 12,
+            BudgetIntervalType.CustomMonths => Math.Max(1, rule.CustomIntervalMonths ?? 1),
+            _ => 1
+        };
+
+        var current = rule.StartDate;
+        var ruleEnd = rule.EndDate ?? to;
+
+        while (current < from)
+        {
+            current = current.AddMonths(stepMonths);
+            if (current > ruleEnd)
+            {
+                yield break;
+            }
+        }
+
+        while (current <= to && current <= ruleEnd)
+        {
+            var next = current.AddMonths(stepMonths);
+            var periodEnd = next.AddDays(-1);
+            if (periodEnd > ruleEnd)
+            {
+                periodEnd = ruleEnd;
+            }
+
+            if (periodEnd > to)
+            {
+                periodEnd = to;
+            }
+
+            yield return (current, periodEnd);
+            current = next;
+        }
+    }
+
+    private static DateOnly GetPostingDate(BudgetReportPostingRawDataDto posting, BudgetReportDateBasis dateBasis)
+    {
+        if (dateBasis == BudgetReportDateBasis.ValutaDate && posting.ValutaDate.HasValue)
+        {
+            return DateOnly.FromDateTime(posting.ValutaDate.Value);
+        }
+
+        return DateOnly.FromDateTime(posting.BookingDate);
     }
 
     private async Task<BudgetReportPostingRawDataDto[]> GetActualPostingsAsync(
@@ -942,7 +1124,8 @@ public sealed class BudgetReportService : IBudgetReportService
                 ValutaDate = p.ValutaDate,
                 Amount = p.Amount,
                 PostingKind = p.Kind,
-                Description = p.Description ?? string.Empty,
+                Description = p.Description ?? p.Subject ?? string.Empty,
+                Subject = p.Subject ?? string.Empty,
                 AccountId = p.AccountId,
                 AccountName = p.LinkedPostingAccountName ?? p.BankPostingAccountName,
                 ContactId = p.ContactId,
@@ -1026,9 +1209,9 @@ public sealed class BudgetReportService : IBudgetReportService
             ActualIncome = actualIncome,
             ActualExpenseAbs = actualExpenseAbs,
             ActualResult = actualIncome - actualExpenseAbs,
-            // ExpectedIncome = aktuelle Einnahmen + noch nicht erfüllte, budgetierte Einnahmen
+            // ExpectedIncome = aktuelle Einnahmen + noch nicht erfï¿½llte, budgetierte Einnahmen
             ExpectedIncome = actualIncome + Math.Max(0, plannedIncome - budgetedRealizedIncome),
-            // ExpectedExpenseAbs = aktuelle Ausgaben + noch nicht erfüllte, budgetierte Ausgaben
+            // ExpectedExpenseAbs = aktuelle Ausgaben + noch nicht erfï¿½llte, budgetierte Ausgaben
             ExpectedExpenseAbs = actualExpenseAbs + Math.Max(0, plannedExpenseAbs - budgetedRealizedExpenseAbs),
             // Remaining planned expenses = planned expenses minus budgeted realized expenses
             RemainingPlannedExpenseAbs = Math.Max(0, plannedExpenseAbs - budgetedRealizedExpenseAbs),

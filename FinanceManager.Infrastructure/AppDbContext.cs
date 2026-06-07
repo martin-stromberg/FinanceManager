@@ -463,6 +463,8 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.EndDate);
             b.Property(x => x.BudgetPurposeId);
             b.Property(x => x.BudgetCategoryId);
+            b.Property(x => x.PurposePattern).HasMaxLength(500);
+            b.Property(x => x.PurposePatternIsRegex).HasDefaultValue(false).IsRequired();
 
             b.HasIndex(x => new { x.OwnerUserId, x.BudgetPurposeId });
             b.HasIndex(x => new { x.OwnerUserId, x.BudgetCategoryId });

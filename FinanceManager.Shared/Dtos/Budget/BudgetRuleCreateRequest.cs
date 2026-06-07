@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
 namespace FinanceManager.Shared.Dtos.Budget;
 
@@ -14,4 +13,8 @@ public sealed record BudgetRuleCreateRequest(
     BudgetIntervalType Interval,
     int? CustomIntervalMonths,
     DateOnly StartDate,
-    DateOnly? EndDate);
+    DateOnly? EndDate,
+    [MaxLength(500)] string? PurposePattern = null,
+    bool UseRegex = false)
+{
+}

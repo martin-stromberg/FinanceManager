@@ -165,6 +165,11 @@ public sealed record BudgetReportPostingRawDataDto
     public string Description { get; init; } = string.Empty;
 
     /// <summary>
+    /// Gets the posting subject.
+    /// </summary>
+    public string Subject { get; init; } = string.Empty;
+
+    /// <summary>
     /// Gets the related account id.
     /// </summary>
     public Guid? AccountId { get; init; }

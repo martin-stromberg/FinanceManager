@@ -3,6 +3,7 @@ using System;
 using FinanceManager.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FinanceManager.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260604172812_202606041500_AddBudgetRulePurposePattern")]
+    partial class _202606041500_AddBudgetRulePurposePattern
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.7");
@@ -1511,39 +1514,6 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.ToTable("Backups");
                 });
 
-            modelBuilder.Entity("FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("AcquiredUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("DraftId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("ExpiresUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("LockToken")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("OwnerUserId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DraftId");
-
-                    b.HasIndex("ExpiresUtc");
-
-                    b.HasIndex("OwnerUserId", "DraftId")
-                        .IsUnique();
-
-                    b.ToTable("StatementDraftBookingGuards");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1751,15 +1721,6 @@ namespace FinanceManager.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("BenchmarkSecurityId")
                         .OnDelete(DeleteBehavior.SetNull);
-                });
-
-            modelBuilder.Entity("FinanceManager.Infrastructure.Statements.StatementDraftBookingGuard", b =>
-                {
-                    b.HasOne("FinanceManager.Domain.Statements.StatementDraft", null)
-                        .WithMany()
-                        .HasForeignKey("DraftId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

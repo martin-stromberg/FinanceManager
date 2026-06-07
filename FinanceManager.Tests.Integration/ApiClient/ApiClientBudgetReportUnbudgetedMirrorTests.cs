@@ -41,8 +41,8 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
     }
     /// <summary>
     /// Integrationstest: Wenn Sparplan-Buchungen auf das Self-Konto gespiegelt werden,
-    /// müssen die Unbudgeted-Endpunkte die gespiegelten Self-Buchungen herausfiltern
-    /// und nur tatsächlich ungeplante Self-Postings zurückgeben (hier: +12,34 €).
+    /// mï¿½ssen die Unbudgeted-Endpunkte die gespiegelten Self-Buchungen herausfiltern
+    /// und nur tatsï¿½chlich ungeplante Self-Postings zurï¿½ckgeben (hier: +12,34 ï¿½).
     /// </summary>
     [Fact]
     public async Task BudgetReport_UnbudgetedPostings_ShouldOnlyContainNonMirroredSelfContactPostings_WhenSavingsPlanPostingsMirrorSelfContact()
@@ -86,7 +86,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         });
 
         var spPurpose = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
-            Name: "Rückstellung Versicherung",
+            Name: "Rï¿½ckstellung Versicherung",
             SourceType: BudgetSourceType.SavingsPlan,
             SourceId: savingsPlan.Id,
             Description: null,
@@ -144,11 +144,11 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
                   "Zeitraum;01.01.2026 - 31.01.2026\r\n" +
                   "Saldo;0,00;EUR\r\n\r\n" +
                   "Sortierung;Datum absteigend\r\n\r\n\r\n" +
-                  "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\r\n" +
-                  "27.01.2026;27.01.2026;Self;Überweisung;Extra;0,00;EUR;12,34;EUR\r\n" +
-                  "25.01.2026;25.01.2026;Insurance;Überweisung;Jahresbeitrag;0,00;EUR;-60,00;EUR\r\n" +
-                  "20.01.2026;20.01.2026;Self;Überweisung;Mirror +60;0,00;EUR;60,00;EUR\r\n" +
-                  "10.01.2026;10.01.2026;Self;Überweisung;Mirror -5;0,00;EUR;-5,00;EUR\r\n";
+                  "Buchung;Wertstellungsdatum;Auftraggeber/Empfï¿½nger;Buchungstext;Verwendungszweck;Saldo;Wï¿½hrung;Betrag;Wï¿½hrung\r\n" +
+                  "27.01.2026;27.01.2026;Self;ï¿½berweisung;Extra;0,00;EUR;12,34;EUR\r\n" +
+                  "25.01.2026;25.01.2026;Insurance;ï¿½berweisung;Jahresbeitrag;0,00;EUR;-60,00;EUR\r\n" +
+                  "20.01.2026;20.01.2026;Self;ï¿½berweisung;Mirror +60;0,00;EUR;60,00;EUR\r\n" +
+                  "10.01.2026;10.01.2026;Self;ï¿½berweisung;Mirror -5;0,00;EUR;-5,00;EUR\r\n";
 
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
         var upload = await api.StatementDrafts_UploadAsync(ms, "statement_budget_mirror.csv");
@@ -212,5 +212,187 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         unbudgeted.Should().ContainSingle();
         unbudgeted[0].ContactId.Should().Be(selfContact.Id);
         unbudgeted[0].Amount.Should().Be(12.34m);
+    }
+
+    /// <summary>
+    /// Verifies that budget report and unbudgeted postings respect purpose patterns.
+    /// </summary>
+    [Fact]
+    public async Task BudgetReport_ShouldRespectPurposePattern_ForActualAndUnbudgetedPostings()
+    {
+        var api = CreateClient();
+        await EnsureAuthenticatedAsync(api);
+
+        var account = await api.CreateAccountAsync(new AccountCreateRequest(
+            Name: "Pattern Account",
+            Type: AccountType.Giro,
+            Iban: "DE50700500000007882990",
+            BankContactId: null,
+            NewBankContactName: "Test Bank",
+            SymbolAttachmentId: null,
+            SavingsPlanExpectation: SavingsPlanExpectation.Optional,
+            SecurityProcessingEnabled: false));
+
+        var contact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
+            Name: "Utility Provider",
+            Type: ContactType.Person,
+            CategoryId: null,
+            Description: null,
+            IsPaymentIntermediary: null,
+            Parent: null));
+
+        var category = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Utilities Category"));
+        var purpose = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Utilities",
+            SourceType: BudgetSourceType.Contact,
+            SourceId: contact.Id,
+            Description: null,
+            BudgetCategoryId: category.Id));
+
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: purpose.Id,
+            BudgetCategoryId: null,
+            Amount: -60m,
+            Interval: BudgetIntervalType.Monthly,
+            CustomIntervalMonths: null,
+            StartDate: new DateOnly(2026, 1, 1),
+            EndDate: null,
+            PurposePattern: "ST6464646464",
+            UseRegex: false));
+
+        var csv = "Umsatzanzeige;Datei erstellt am: 31.01.2026 10:00\r\n\r\n" +
+                  $"IBAN;{account.Iban}\r\n" +
+                  "Kontoname;Girokonto\r\n" +
+                  "Bank;ING\r\n" +
+                  "Kunde;Admin\r\n" +
+                  "Zeitraum;01.01.2026 - 31.01.2026\r\n" +
+                  "Saldo;0,00;EUR\r\n\r\n" +
+                  "Sortierung;Datum absteigend\r\n\r\n\r\n" +
+                  "Buchung;Wertstellungsdatum;Auftraggeber/EmpfÃ¤nger;Buchungstext;Verwendungszweck;Saldo;WÃ¤hrung;Betrag;WÃ¤hrung\r\n" +
+                  "25.01.2026;25.01.2026;Utility Provider;Ãœberweisung;Abrechnung ST6464646464 Januar;0,00;EUR;-60,00;EUR\r\n" +
+                  "20.01.2026;20.01.2026;Utility Provider;Ãœberweisung;Service ohne Vertragsnummer;0,00;EUR;-40,00;EUR\r\n";
+
+        using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
+        var upload = await api.StatementDrafts_UploadAsync(ms, "statement_budget_pattern.csv");
+        upload.Should().NotBeNull();
+        var draftId = upload!.FirstDraft!.DraftId;
+
+        var draft = await api.StatementDrafts_GetAsync(draftId);
+        draft.Should().NotBeNull();
+        foreach (var entry in draft!.Entries)
+        {
+            await api.StatementDrafts_SetEntryContactAsync(draftId, entry.Id, new StatementDraftSetContactRequest(contact.Id));
+        }
+
+        var book = await api.StatementDrafts_BookAsync(draftId, forceWarnings: true);
+        book.Should().NotBeNull();
+        book!.Success.Should().BeTrue();
+
+        var report = await api.Budgets_GetReportAsync(new BudgetReportRequest(
+            AsOfDate: new DateOnly(2026, 1, 31),
+            Months: 1,
+            Interval: BudgetReportInterval.Month,
+            ShowTitle: false,
+            ShowLineChart: false,
+            ShowMonthlyTable: false,
+            ShowDetailsTable: true,
+            CategoryValueScope: BudgetReportValueScope.TotalRange,
+            IncludePurposeRows: true,
+            DateBasis: BudgetReportDateBasis.BookingDate));
+        report.Should().NotBeNull();
+        var categoryRow = report.Categories.Single(x => x.Id == category.Id);
+        var purposeRow = categoryRow.Purposes.Single(x => x.Id == purpose.Id);
+        purposeRow.Actual.Should().Be(-60m);
+    }
+
+    /// <summary>
+    /// Verifies that regex purpose patterns split matching and non-matching postings in report and unbudgeted results.
+    /// </summary>
+    [Fact]
+    public async Task BudgetReport_ShouldRespectRegexPurposePattern_ForActualAndUnbudgetedPostings()
+    {
+        var api = CreateClient();
+        await EnsureAuthenticatedAsync(api);
+
+        var account = await api.CreateAccountAsync(new AccountCreateRequest(
+            Name: "Regex Pattern Account",
+            Type: AccountType.Giro,
+            Iban: "DE50700500000007882996",
+            BankContactId: null,
+            NewBankContactName: "Test Bank",
+            SymbolAttachmentId: null,
+            SavingsPlanExpectation: SavingsPlanExpectation.Optional,
+            SecurityProcessingEnabled: false));
+
+        var contact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
+            Name: "Utility Provider Regex",
+            Type: ContactType.Person,
+            CategoryId: null,
+            Description: null,
+            IsPaymentIntermediary: null,
+            Parent: null));
+
+        var category = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Utilities Regex Category"));
+        var purpose = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Utilities Regex",
+            SourceType: BudgetSourceType.Contact,
+            SourceId: contact.Id,
+            Description: null,
+            BudgetCategoryId: category.Id));
+
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: purpose.Id,
+            BudgetCategoryId: null,
+            Amount: -60m,
+            Interval: BudgetIntervalType.Monthly,
+            CustomIntervalMonths: null,
+            StartDate: new DateOnly(2026, 1, 1),
+            EndDate: null,
+            PurposePattern: "ST\\d{10}",
+            UseRegex: true));
+
+        var csv = "Umsatzanzeige;Datei erstellt am: 31.01.2026 10:00\r\n\r\n" +
+                  $"IBAN;{account.Iban}\r\n" +
+                  "Kontoname;Girokonto\r\n" +
+                  "Bank;ING\r\n" +
+                  "Kunde;Admin\r\n" +
+                  "Zeitraum;01.01.2026 - 31.01.2026\r\n" +
+                  "Saldo;0,00;EUR\r\n\r\n" +
+                  "Sortierung;Datum absteigend\r\n\r\n\r\n" +
+                  "Buchung;Wertstellungsdatum;Auftraggeber/EmpfÃ¤nger;Buchungstext;Verwendungszweck;Saldo;WÃ¤hrung;Betrag;WÃ¤hrung\r\n" +
+                  "25.01.2026;25.01.2026;Utility Provider Regex;Ãœberweisung;Abrechnung ST6464646464 Januar;0,00;EUR;-60,00;EUR\r\n" +
+                  "20.01.2026;20.01.2026;Utility Provider Regex;Ãœberweisung;Service ohne Vertragsnummer;0,00;EUR;-40,00;EUR\r\n";
+
+        using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
+        var upload = await api.StatementDrafts_UploadAsync(ms, "statement_budget_pattern_regex.csv");
+        upload.Should().NotBeNull();
+        var draftId = upload!.FirstDraft!.DraftId;
+
+        var draft = await api.StatementDrafts_GetAsync(draftId);
+        draft.Should().NotBeNull();
+        foreach (var entry in draft!.Entries)
+        {
+            await api.StatementDrafts_SetEntryContactAsync(draftId, entry.Id, new StatementDraftSetContactRequest(contact.Id));
+        }
+
+        var book = await api.StatementDrafts_BookAsync(draftId, forceWarnings: true);
+        book.Should().NotBeNull();
+        book!.Success.Should().BeTrue();
+
+        var report = await api.Budgets_GetReportAsync(new BudgetReportRequest(
+            AsOfDate: new DateOnly(2026, 1, 31),
+            Months: 1,
+            Interval: BudgetReportInterval.Month,
+            ShowTitle: false,
+            ShowLineChart: false,
+            ShowMonthlyTable: false,
+            ShowDetailsTable: true,
+            CategoryValueScope: BudgetReportValueScope.TotalRange,
+            IncludePurposeRows: true,
+            DateBasis: BudgetReportDateBasis.BookingDate));
+        report.Should().NotBeNull();
+        var categoryRow = report.Categories.Single(x => x.Id == category.Id);
+        var purposeRow = categoryRow.Purposes.Single(x => x.Id == purpose.Id);
+        purposeRow.Actual.Should().Be(-60m);
     }
 }
