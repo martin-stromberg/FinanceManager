@@ -24,37 +24,13 @@ namespace FinanceManager.Tests.Web;
 /// <summary>
 /// Tests for verifying that the security price retrieval worker and backfill executor correctly handle securities with price errors, including clearing the error state and creating new price entries, and that dismissing notifications does not clear the price error. These tests use an in-memory SQLite database to simulate the application data store and Moq to create test doubles for dependencies. The tests ensure that when a security has a price error, the worker and backfill executor attempt to retrieve prices, clear the error state, and create price entries as expected. Additionally, they verify that dismissing a notification related to a security price error does not inadvertently clear the error state on the security.
 /// </summary>
-public sealed class SecurityPriceErrorRecoveryTests
+public class SecurityPriceErrorRecoveryTests
 {
     private sealed class SpySecurityPriceService : ISecurityPriceService
     {
         private readonly ISecurityPriceService _inner;
 
         public SpySecurityPriceService(ISecurityPriceService inner)
-        {
-            _inner = inner;
-        }
-
-        public int CreateCallCount { get; private set; }
-
-        public int ClearPriceErrorCallCount { get; private set; }
-
-        public Task CreateAsync(Guid ownerUserId, Guid securityId, DateTime date, decimal close, CancellationToken ct)
-        {
-            CreateCallCount++;
-            return _inner.CreateAsync(ownerUserId, securityId, date, close, ct);
-        }
-
-        public Task<IReadOnlyList<SecurityPriceDto>> ListAsync(Guid ownerUserId, Guid securityId, int skip, int take, CancellationToken ct)
-            => _inner.ListAsync(ownerUserId, securityId, skip, take, ct);
-
-public sealed class SecurityPriceErrorRecoveryTests
-{
-    private sealed class SpySecurityPriceService : ISecurityPriceService
-    {
-        private readonly SecurityPriceService _inner;
-
-        public SpySecurityPriceService(SecurityPriceService inner)
         {
             _inner = inner;
         }

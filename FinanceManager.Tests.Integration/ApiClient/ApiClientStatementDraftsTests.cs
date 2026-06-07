@@ -638,7 +638,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
         // Assert: booking succeeded and returned a neutral budget impact summary
         result.Should().NotBeNull();
         result!.Success.Should().BeTrue();
-        if (result.BudgetImpactSummary != nul)
+        if (result.BudgetImpactSummary != null)
         {
             result.BudgetImpactSummary.Items.Should().BeEmpty();
             result.BudgetImpactSummary.HighestSeverity.Should().Be(BudgetImpactHintType.Neutral);
