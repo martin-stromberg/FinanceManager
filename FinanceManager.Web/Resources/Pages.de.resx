@@ -1761,6 +1761,12 @@
   <data name="List_Th_Actions" xml:space="preserve">
     <value>Aktionen</value>
   </data>
+  <data name="Ribbon_Reverse" xml:space="preserve">
+    <value>Stornieren</value>
+  </data>
+  <data name="List_Th_Postings_IsReversal" xml:space="preserve">
+    <value>Storno</value>
+  </data>
   <data name="BudgetImpact_FulfillmentChange" xml:space="preserve">
     <value>Änderung der Zielerreichung</value>
   </data>
@@ -2027,6 +2033,9 @@
   </data>
   <data name="Cashflow_Costs_Col_Cumulative" xml:space="preserve">
     <value>Kumuliert</value>
+  </data>
+  <data name="Ribbon_OpenAccount" xml:space="preserve">
+    <value>Konto</value>
   </data>
   <data name="Card_Caption_BudgetRule_PurposePattern" xml:space="preserve">
     <value>Verwendungszweck</value>

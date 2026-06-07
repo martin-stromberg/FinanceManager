@@ -22,7 +22,7 @@ Comprehensive endpoint documentation with all resources, query parameters, reque
 - **Authentication** - Login, Register, Logout endpoints
 - **Accounts** - Create, Read, Update, Delete bank accounts
 - **Contacts** - Manage persons, companies, and banks
-- **Postings** - Query financial transactions
+- **Postings** - Query financial transactions, export postings, reverse erroneous postings
 - **Budget Management** - Categories, purposes, rules, reports, overrides
 - **Securities** - Stocks, bonds, and investment management
 - **Savings Plans** - Savings goal management
@@ -119,7 +119,7 @@ Technical guide for implementing API clients with best practices, error handling
 | Authentication | POST | [PUBLIC_API.md#authentication](./PUBLIC_API.md#authentication) |
 | Accounts | GET, POST, PUT, DELETE | [PUBLIC_API.md#accounts](./PUBLIC_API.md#accounts) |
 | Contacts | GET, POST, PUT, DELETE | [PUBLIC_API.md#contacts](./PUBLIC_API.md#contacts) |
-| Postings | GET | [PUBLIC_API.md#postings](./PUBLIC_API.md#postings) |
+| Postings | GET, POST | [PUBLIC_API.md#postings](./PUBLIC_API.md#postings) |
 | Budget | GET, POST, PUT, DELETE | [PUBLIC_API.md#budget-management](./PUBLIC_API.md#budget-management) |
 | Securities | GET, POST, PUT, DELETE | [PUBLIC_API.md#securities](./PUBLIC_API.md#securities) |
 | Savings Plans | GET, POST, PUT, DELETE | [PUBLIC_API.md#savings-plans](./PUBLIC_API.md#savings-plans) |

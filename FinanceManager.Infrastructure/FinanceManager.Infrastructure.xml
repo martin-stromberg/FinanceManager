@@ -2383,28 +2383,16 @@
         <member name="M:FinanceManager.Infrastructure.Migrations.AddReturnAnalysisSettingsToUser.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
-        <member name="T:FinanceManager.Infrastructure.Migrations._202606041500_AddBudgetRulePurposePattern">
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddPostingReversalFields">
             <inheritdoc />
         </member>
-        <member name="M:FinanceManager.Infrastructure.Migrations._202606041500_AddBudgetRulePurposePattern.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddPostingReversalFields.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
             <inheritdoc />
         </member>
-        <member name="M:FinanceManager.Infrastructure.Migrations._202606041500_AddBudgetRulePurposePattern.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddPostingReversalFields.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
             <inheritdoc />
         </member>
-        <member name="M:FinanceManager.Infrastructure.Migrations._202606041500_AddBudgetRulePurposePattern.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
-            <inheritdoc />
-        </member>
-        <member name="T:FinanceManager.Infrastructure.Migrations._202606061300_AddStatementDraftBookingGuard">
-            <inheritdoc />
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Migrations._202606061300_AddStatementDraftBookingGuard.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
-            <inheritdoc />
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Migrations._202606061300_AddStatementDraftBookingGuard.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
-            <inheritdoc />
-        </member>
-        <member name="M:FinanceManager.Infrastructure.Migrations._202606061300_AddStatementDraftBookingGuard.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddPostingReversalFields.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
         <member name="T:FinanceManager.Infrastructure.Notifications.HolidayProviderResolver">
@@ -2702,6 +2690,57 @@
             <param name="scheduledDateUtc">Date (UTC) when the notification becomes active.</param>
             <param name="ct">Cancellation token.</param>
             <returns>A task that completes when the global notification has been persisted or an error has been logged.</returns>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Postings.PostingReversalService">
+            <summary>
+            Implementation of posting reversal service that handles creation of reversal postings,
+            validation, and transaction management.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Postings.PostingReversalService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Aggregates.IPostingAggregateService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Postings.PostingReversalService})">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Postings.PostingReversalService"/> class.
+            </summary>
+            <param name="context">Database context.</param>
+            <param name="aggregateService">Posting aggregate service for updating aggregates.</param>
+            <param name="logger">Logger instance.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Postings.PostingReversalService.ReversePostingAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Postings.PostingReversalService.CanReverseAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Postings.PostingReversalService.GetRelatedPostingsAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Postings.PostingReversalService.CreateReversalPosting(FinanceManager.Domain.Postings.Posting,System.Guid)">
+            <summary>
+            Creates a reversal posting with negated amount and same dates/references.
+            </summary>
+            <param name="original">The original posting to reverse.</param>
+            <param name="newGroupId">The new group ID for the reversal posting.</param>
+            <returns>A new reversal posting.</returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Postings.PostingReversalService.CreateReversalStatementDraftAsync(FinanceManager.Domain.Postings.Posting,System.Collections.Generic.IReadOnlyList{FinanceManager.Domain.Postings.Posting},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Creates a statement draft mirroring the original posting for reconciliation purposes.
+            The draft entry reflects the original booking (same amount, same subject) and carries
+            all related assignments (contact, savings plan, security) derived from the posting group.
+            </summary>
+            <param name="original">The bank posting being reversed (must have an AccountId).</param>
+            <param name="allPostings">All postings in the reversal group (including contact, savings plan, security postings).</param>
+            <param name="userId">The user initiating the reversal (becomes draft owner).</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The created statement draft with a fully assigned entry.</returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Postings.PostingReversalService.GetPostingOwnerUserIdAsync(FinanceManager.Domain.Postings.Posting,System.Threading.CancellationToken)">
+            <summary>
+            Gets the owner user ID for a posting by looking up the account owner.
+            </summary>
+            <param name="posting">The posting to get the owner for.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The owner user ID.</returns>
         </member>
         <member name="T:FinanceManager.Infrastructure.Reports.HomeKpiService">
             <summary>

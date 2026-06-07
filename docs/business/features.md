@@ -32,6 +32,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 | F016 | Berichte & Dashboards | Finanzielle Übersichtsberichte und Auswertungen | ✅ Dokumentiert |
 | F017 | Wertpapier-Renditeanalyse | Performance-Analyse mit TWR, IRR, CAGR, Sharpe Ratio, Max. Drawdown | 🔄 In Bearbeitung |
 | F018 | Budgetwirkung bei Buchung | Sofort-Hinweise und Abschluss-Summary zur Budgetauswirkung beim Buchen von Draft-Entries | ✅ Dokumentiert |
+| [F019](./features/F019-buchungsstornierung.md) | Buchungsstornierung | Stornierung einer Buchung durch automatische Gegenbuchung mit umgekehrtem Betrag | ✅ Dokumentiert |
 
 ---
 
@@ -48,6 +49,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 - F014 – Benutzereinstellungen
 - F016 – Berichte & Dashboards
 - F018 – Budgetwirkung bei Buchung
+- F019 – Buchungsstornierung
 
 **Application Layer (Agent 2):** ✅ 7 Features dokumentiert
 - F005 – Automatische Kategorisierung
@@ -72,7 +74,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 - F012 – Kontakte (Contact-Entität, Self-Contact, Kontakt-Gruppen)
 - F017 – Wertpapier-Renditeanalyse (Kennzahlen, FIFO, Sicherheitsregeln) 🔄
 
-**Gesamtfortschritt:** 🔄 In Bearbeitung – 17 von 18 Features vollständig dokumentiert (F017 in Bearbeitung)
+**Gesamtfortschritt:** 🔄 In Bearbeitung – 18 von 19 Features vollständig dokumentiert (F017 in Bearbeitung)
 
 **Dokumentations-Art:**
 - **Benutzer-Perspektive** (Web Layer): Schritt-für-Schritt für Endbenutzer

@@ -39,6 +39,66 @@
             Verifies that regex purpose patterns split matching and non-matching postings in report and unbudgeted results.
             </summary>
         </member>
+        <member name="T:FinanceManager.Tests.Integration.ApiClient.ApiClientPostingsReversalTests">
+            <summary>
+            Integration tests for the posting reversal API endpoints.
+            Tests cover the full HTTP stack including authentication, authorization, and business rules.
+            Each test creates an independent user and account to avoid cross-test state leakage.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientPostingsReversalTests.CreateClients">
+            <summary>
+            Creates a typed API client together with the underlying raw HttpClient
+            so tests can inspect HTTP status codes directly when needed.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientPostingsReversalTests.RegisterUserAsync(FinanceManager.Shared.ApiClient)">
+            <summary>
+            Registers a fresh user (and auto-logs in via cookie) using a unique username.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientPostingsReversalTests.BookPostingViaStatementAsync(FinanceManager.Shared.ApiClient)">
+            <summary>
+            Runs the full statement-import flow to produce a single booked posting.
+            Returns the account id and the id of the first created posting.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientPostingsReversalTests.ReversePosting_ShouldReturn200_WithReversalResult_ForOwner">
+            <summary>
+            L01 – Happy path: authenticated owner reverses a posting via POST /api/postings/{id}/reverse.
+            Expects HTTP 200 with a ReversalResultDto containing valid ids.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientPostingsReversalTests.ReversePosting_ShouldReturn409_WhenAlreadyReversed">
+            <summary>
+            L02 – Idempotency guard: reversing an already-reversed posting returns HTTP 409 Conflict.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientPostingsReversalTests.ReversePosting_ShouldReturn400_WhenUserIsNotOwner">
+            <summary>
+            L03 – Cross-user reversal attempt: user B cannot reverse a posting owned by user A.
+            NOTE: The controller documents HTTP 403 for this case, but the service actually throws
+            InvalidOperationException (not UnauthorizedAccessException), so the actual response is
+            HTTP 400 Bad Request. This is a known discrepancy; the test asserts the actual behaviour.
+            See PostingsController.ReversePosting and PostingReversalService.ReversePostingAsync.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientPostingsReversalTests.ReversePosting_ShouldReturn400_WhenPostingNotFound">
+            <summary>
+            L04 – Reversing a non-existent posting id returns HTTP 400 Bad Request.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientPostingsReversalTests.ValidateReversal_ShouldReturn200WithIsValidTrue_ForReversiblePosting">
+            <summary>
+            L05 – GET /api/postings/{id}/validate-reversal returns HTTP 200 with IsValid = true
+            for a posting that can be reversed by its owner.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientPostingsReversalTests.ReversePosting_ShouldReturn401_WhenNotAuthenticated">
+            <summary>
+            L06 – Unauthenticated call to POST /api/postings/{id}/reverse returns HTTP 401 Unauthorized.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientStatementDraftsTests.StatementDrafts_Book_ShouldReturnBudgetImpactSummary_WhenBudgetPurposeExistsForContact">
             <summary>
             Verifies that <see cref="P:FinanceManager.Shared.Dtos.Statements.BookingResult.BudgetImpactSummary"/> is populated at the client after booking

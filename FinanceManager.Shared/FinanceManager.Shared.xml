@@ -722,6 +722,16 @@
             Gets the first entity links for a posting group or null when not found.
             </summary>
         </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Postings_ReverseAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Reverses a posting by creating a counter-posting with negated amount.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Postings_ValidateReversalAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Validates whether a posting can be reversed.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Shared.ApiClient.Reports_QueryAggregatesAsync(FinanceManager.Shared.Dtos.Reports.ReportAggregatesQueryRequest,System.Threading.CancellationToken)">
             <summary>
             Executes an aggregates report query and returns the aggregated result.
@@ -3558,10 +3568,55 @@
             DTO representing a posting with extended metadata used by service endpoints and client view models.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Postings.PostingServiceDto.#ctor(System.Guid,System.DateTime,System.DateTime,System.Decimal,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Guid,System.String,System.String,System.String,System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType},System.Nullable{System.Decimal},System.Guid,System.Nullable{System.Guid},System.Nullable{FinanceManager.Shared.Dtos.Postings.PostingKind},System.Nullable{System.Guid},System.Nullable{System.Guid},System.String,System.Nullable{System.Guid},System.Nullable{System.Guid},System.String)">
+        <member name="M:FinanceManager.Shared.Dtos.Postings.PostingServiceDto.#ctor(System.Guid,System.DateTime,System.DateTime,System.Decimal,FinanceManager.Shared.Dtos.Postings.PostingKind,System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Guid,System.String,System.String,System.String,System.Nullable{FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType},System.Nullable{System.Decimal},System.Guid,System.Nullable{System.Guid},System.Nullable{FinanceManager.Shared.Dtos.Postings.PostingKind},System.Nullable{System.Guid},System.Nullable{System.Guid},System.String,System.Nullable{System.Guid},System.Nullable{System.Guid},System.String,System.Boolean,System.Boolean,System.Nullable{System.Guid},System.Nullable{System.Guid})">
             <summary>
             DTO representing a posting with extended metadata used by service endpoints and client view models.
             </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Postings.ReversalResultDto">
+            <summary>
+            Result of a posting reversal operation containing information about reversed and created postings.
+            </summary>
+            <param name="ReversedPostingIds">List of posting IDs that were reversed (original postings).</param>
+            <param name="CreatedReversalIds">List of posting IDs that were created as reversals (new cancellation postings).</param>
+            <param name="StatementDraftId">ID of the statement draft created for reconciliation purposes.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Postings.ReversalResultDto.#ctor(System.Collections.Generic.IReadOnlyList{System.Guid},System.Collections.Generic.IReadOnlyList{System.Guid},System.Guid)">
+            <summary>
+            Result of a posting reversal operation containing information about reversed and created postings.
+            </summary>
+            <param name="ReversedPostingIds">List of posting IDs that were reversed (original postings).</param>
+            <param name="CreatedReversalIds">List of posting IDs that were created as reversals (new cancellation postings).</param>
+            <param name="StatementDraftId">ID of the statement draft created for reconciliation purposes.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Postings.ReversalResultDto.ReversedPostingIds">
+            <summary>List of posting IDs that were reversed (original postings).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Postings.ReversalResultDto.CreatedReversalIds">
+            <summary>List of posting IDs that were created as reversals (new cancellation postings).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Postings.ReversalResultDto.StatementDraftId">
+            <summary>ID of the statement draft created for reconciliation purposes.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Postings.ReversalValidationDto">
+            <summary>
+            Validation result for a posting reversal request.
+            </summary>
+            <param name="IsValid">Indicates whether the reversal can proceed.</param>
+            <param name="Errors">List of validation errors if the reversal cannot proceed.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Postings.ReversalValidationDto.#ctor(System.Boolean,System.Collections.Generic.IReadOnlyList{System.String})">
+            <summary>
+            Validation result for a posting reversal request.
+            </summary>
+            <param name="IsValid">Indicates whether the reversal can proceed.</param>
+            <param name="Errors">List of validation errors if the reversal cannot proceed.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Postings.ReversalValidationDto.IsValid">
+            <summary>Indicates whether the reversal can proceed.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Postings.ReversalValidationDto.Errors">
+            <summary>List of validation errors if the reversal cannot proceed.</summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Reports.ReportAggregatePointDto">
             <summary>
@@ -5596,6 +5651,9 @@
         <member name="F:FinanceManager.Shared.Dtos.Statements.ImportFormat.Backup">
             <summary>Backup NDJSON format.</summary>
         </member>
+        <member name="F:FinanceManager.Shared.Dtos.Statements.ImportFormat.Reversal">
+            <summary>Reversal/cancellation of a posting.</summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Statements.ImportSplitInfoDto">
             <summary>
             Summary about how an uploaded statement file was split into drafts.
@@ -6742,6 +6800,12 @@
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.Postings_GetGroupLinksAsync(System.Guid,System.Threading.CancellationToken)">
             <summary>Returns first entity links for a posting group or null when not found or unauthorized.</summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Postings_ReverseAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>Reverses a posting by creating a counter-posting with negated amount.</summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Postings_ValidateReversalAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>Validates whether a posting can be reversed.</summary>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.Reports_QueryAggregatesAsync(FinanceManager.Shared.Dtos.Reports.ReportAggregatesQueryRequest,System.Threading.CancellationToken)">
             <summary>Executes a report aggregation query.</summary>

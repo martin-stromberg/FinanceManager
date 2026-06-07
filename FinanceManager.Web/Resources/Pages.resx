@@ -1761,6 +1761,22 @@
   <data name="List_Th_Actions" xml:space="preserve">
     <value>Actions</value>
   </data>
+  <data name="Ribbon_Reverse" xml:space="preserve">
+    <value>Reverse</value>
+  </data>
+  <data name="List_Th_Postings_IsReversal" xml:space="preserve">
+    <value>Reversal</value>
+  </data>
+  <data name="BudgetImpact_FulfillmentChange" xml:space="preserve">
+    <value>Change in target fulfillment</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="Ribbon_Group_Period" type="System.Resources.ResXNullRef, System.Windows.Forms">
+    <value />
+  </data>
+  <data name="Ribbon_OpenAccount" xml:space="preserve">
+    <value>Account</value>
+  </data>
   <data name="BudgetImpact_FulfillmentChange" xml:space="preserve">
     <value>Change in target fulfillment</value>
   </data>

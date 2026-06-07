@@ -1746,6 +1746,12 @@
   <data name="Validation_Valid" xml:space="preserve">
     <value>Alle entries are valid.</value>
   </data>
+  <data name="Ribbon_Reverse" xml:space="preserve">
+    <value>Reverse</value>
+  </data>
+  <data name="List_Th_Postings_IsReversal" xml:space="preserve">
+    <value>Reversal</value>
+  </data>
   <data name="List_Th_BookingDate" xml:space="preserve">
     <value>Booking date</value>
   </data>
@@ -2027,6 +2033,9 @@
   </data>
   <data name="Cashflow_Costs_Col_Cumulative" xml:space="preserve">
     <value>Cumulative</value>
+  </data>
+  <data name="Ribbon_OpenAccount" xml:space="preserve">
+    <value>Account</value>
   </data>
   <data name="Card_Caption_BudgetRule_PurposePattern" xml:space="preserve">
     <value>Purpose Pattern</value>

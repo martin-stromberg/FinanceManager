@@ -58,7 +58,11 @@ public sealed class PostingDetailViewModelTests
             LinkedPostingAccountName: null,
             BankPostingAccountId: null,
             BankPostingAccountSymbolAttachmentId: null,
-            BankPostingAccountName: null);
+            BankPostingAccountName: null,
+            IsReversed: false,
+            IsReversal: false,
+            ReversedByPostingId: null,
+            ReversalForPostingId: null);
 
         var links = new GroupLinksDto(linkedAccountId, null, null, null);
 

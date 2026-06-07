@@ -19,6 +19,7 @@ Kurzbeschreibung und was die Anwendung bietet (nicht‑technisch):
 - Budget-Regeln mit Verwendungszweck-Pattern: optionales PurposePattern pro Regel (contains, case-insensitive) oder Regex-Matching inkl. Validierung
 - Berichte und KPI‑Dashboard; Daten als CSV/XLSX exportieren
 - Anhänge pro Buchung verwalten und Backups erstellen
+- Buchungen stornieren: Fehlerhafte oder versehentlich erfasste Postings einfach rückgängig machen – mit automatischer Gegenbuchung und vollständiger Nachvollziehbarkeit
 
 Schnelle Nutzung (Kurz):
 1. Registrieren / Anmelden
@@ -101,6 +102,7 @@ Details: [`docs/architecture/`](docs/architecture/)
 - Installationsanleitung: `docs/install.md`
 - Teil‑OpenAPI: `docs/api/openapi.yaml` (Accounts + models)
 - Detaillierte Controller‑Docs in `docs/api/`
+- Posting-Reversal-API: `POST /api/postings/{id}/reverse`, `GET /api/postings/{id}/validate-reversal` (Details: `docs/api/PostingsController.md`)
 - [Planungsübersicht Renditeanalyse](docs/planning-renditeanalyse.md)
 - [Anforderungen FA-WERT-REN-001](docs/requirements/FA-WERT-REN-001_Renditeanalyse.md)
 - [Architektur-Blueprint Renditeanalyse](docs/architecture/architecture-blueprint-renditeanalyse.md)
@@ -133,12 +135,14 @@ Details: [`docs/architecture/`](docs/architecture/)
 - Hinweis: Die folgenden bekannten Testprobleme sind fachfremd und **nicht** durch das Feature „Budget-Verwendungszweck-Pattern“ verursacht.
 - **BUG-1:** `BuildTwrPeriods` verwendet `start` statt `end` als Periodenbeginn → TWR-Ergebnisse können verfälscht sein (Regressionstest vorhanden)
 - **Ausstehende Tests (Prio 2/3):** Periodische Renditen, Benchmark-Normalisierung, bUnit UI-Tests noch nicht implementiert
+- **Posting-Reversal:** Kein Bestätigungsdialog vor der Stornierung – Buchung wird direkt rückgängig gemacht; Bug: `GetRelatedPostingsAsync` mit `GroupId == Guid.Empty` (Test mit `Skip` versehen)
 
 ## Changelog
 
 - 2026-06: Transaktionssichere Kontoauszug-Buchung mit Guard, Retry-Semantik und 409 ProblemDetails dokumentiert.
 - 2026-06: Budget-Verwendungszweck-Pattern inkl. Regex ergänzt (Migration `20260604172812_202606041500_AddBudgetRulePurposePattern`, API/Matching/Tests aktualisiert).
 - 2026-05: Budget-Impact-Auswertung für Statement-Buchung dokumentiert (Entry-Hinweise + Booking-Summary).
+- 2025-07: Posting-Stornierung (Reversal) implementiert – Gegenbuchung mit negativem Betrag, Gruppen-Stornierung (All-or-Nothing), Statusanzeige in Posting-Listen, REST-API `POST /api/postings/{id}/reverse`.
 
 ## Lizenz
 

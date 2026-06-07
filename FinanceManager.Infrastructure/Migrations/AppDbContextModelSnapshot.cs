@@ -580,6 +580,18 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<string>("RecipientName")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("ReversalForPostingId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ReversedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ReversedByPostingId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ReversedByUserId")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid?>("SavingsPlanId")
                         .HasColumnType("TEXT");
 

@@ -128,7 +128,15 @@ public sealed class PostingsCardViewModel : BaseCardViewModel<(string Key, strin
             new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("OpenAttachments"); return Task.CompletedTask; })
         });
 
-        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, linked }) };
+        var actionsDisabled = Posting?.IsReversed == true || Posting?.IsReversal == true;
+        var actions = new UiRibbonTab(localizer["Ribbon_Group_Actions"].Value, new List<UiRibbonAction>
+        {
+            new UiRibbonAction("Reverse", localizer["Ribbon_Reverse"].Value, "<svg><use href='/icons/sprite.svg#undo'/></svg>", UiRibbonItemSize.Large, actionsDisabled, null, async () =>
+            {
+                await ReverseAsync();
+            })
+        });
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, linked, actions }) };
     }
 
     // Postings do not support symbol assignment via the card UI; provide no-op implementations for abstract hooks
@@ -165,4 +173,41 @@ public sealed class PostingsCardViewModel : BaseCardViewModel<(string Key, strin
     /// </summary>
     /// <returns>A task that completes when reload has finished.</returns>
     public override Task ReloadAsync() => LoadAsync(Id);
+
+    /// <summary>
+    /// Reverses the current posting by calling the API and navigates to the created reversal posting on success.
+    /// </summary>
+    private async Task ReverseAsync()
+    {
+        if (Posting == null) return;
+        var api = ServiceProvider.GetRequiredService<IApiClient>();
+        Loading = true; SetError(null, null); RaiseStateChanged();
+        try
+        {
+            var result = await api.Postings_ReverseAsync(Id);
+            if (result == null)
+            {
+                SetError(api.LastErrorCode, api.LastError ?? "Reversal failed");
+                return;
+            }
+            // Navigate to the first created reversal posting
+            var reversalId = result.CreatedReversalIds.FirstOrDefault();
+            if (reversalId != Guid.Empty)
+            {
+                RaiseUiActionRequested("NavigateToPosting", reversalId.ToString());
+            }
+            else
+            {
+                await ReloadAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            SetError(null, ex.Message);
+        }
+        finally
+        {
+            Loading = false; RaiseStateChanged();
+        }
+    }
 }

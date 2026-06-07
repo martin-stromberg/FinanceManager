@@ -39,7 +39,7 @@ namespace FinanceManager.Web.Services
         /// <returns>The parsed absolute decimal value when parsing succeeded; otherwise <c>null</c>.</returns>
         private static decimal? TryParseAmount(string input)
         {
-            var norm = input.Replace(" ", string.Empty).Replace("€", string.Empty);
+            var norm = input.Replace(" ", string.Empty).Replace("ï¿½", string.Empty);
             if (decimal.TryParse(norm, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, CultureInfo.CurrentCulture, out var dec)) { return Math.Abs(dec); }
             if (decimal.TryParse(norm, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, CultureInfo.InvariantCulture, out dec)) { return Math.Abs(dec); }
             return null;
@@ -150,7 +150,11 @@ namespace FinanceManager.Web.Services
                                      BankPostingAccountId = bpOpt != null ? bpOpt.AccountId : (Guid?)null,
                                      BankPostingAccountSymbolFromAccount = bpAccOpt != null ? bpAccOpt.SymbolAttachmentId : (Guid?)null,
                                      BankPostingAccountSymbolFromContact = contOpt != null ? contOpt.SymbolAttachmentId : (Guid?)null,
-                                     BankPostingAccountName = bpAccOpt != null ? bpAccOpt.Name : null
+                                     BankPostingAccountName = bpAccOpt != null ? bpAccOpt.Name : null,
+                                     IsReversed = x.P.IsReversed,
+                                     IsReversal = x.P.IsReversal,
+                                     ReversedByPostingId = x.P.ReversedByPostingId,
+                                     ReversalForPostingId = x.P.ReversalForPostingId
                                  };
 
             var rows = await queryProjected.ToListAsync(ct);
@@ -185,7 +189,11 @@ namespace FinanceManager.Web.Services
                     r.LinkedPostingAccountName,
                     r.BankPostingAccountId,
                     bankSymbol,
-                    r.BankPostingAccountName)
+                    r.BankPostingAccountName,
+                    r.IsReversed,
+                    r.IsReversal,
+                    r.ReversedByPostingId,
+                    r.ReversalForPostingId)
                 {                    
                 };
             }).ToList();
@@ -288,7 +296,11 @@ namespace FinanceManager.Web.Services
                     (string?)null,
                     r.P.AccountId,
                     bankSymbol,
-                    r.AccountName);
+                    r.AccountName,
+                    r.P.IsReversed,
+                    r.P.IsReversal,
+                    r.P.ReversedByPostingId,
+                    r.P.ReversalForPostingId);
             }).ToList();
 
             return result;
@@ -379,7 +391,11 @@ namespace FinanceManager.Web.Services
                 (string?)null,
                 (Guid?)null,
                 (Guid?)null,
-                (string?)null)).ToList();
+                (string?)null,
+                r.P.IsReversed,
+                r.P.IsReversal,
+                r.P.ReversedByPostingId,
+                r.P.ReversalForPostingId)).ToList();
 
             return result;
         }
@@ -452,7 +468,11 @@ namespace FinanceManager.Web.Services
                 (string?)null,
                 (Guid?)null,
                 (Guid?)null,
-                (string?)null)).ToList();
+                (string?)null,
+                r.P.IsReversed,
+                r.P.IsReversal,
+                r.P.ReversedByPostingId,
+                r.P.ReversalForPostingId)).ToList();
 
             return result;
         }

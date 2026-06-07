@@ -241,7 +241,7 @@ public sealed class Posting : Entity, IAggregateRoot
     /// <value>The security posting subtype or null.</value>
     public SecurityPostingSubType? SecuritySubType { get; private set; }
 
-    // Neu: Menge (nur für Wertpapier-Postings belegt)
+    // Neu: Menge (nur fï¿½r Wertpapier-Postings belegt)
     /// <summary>
     /// Optional quantity, primarily used for securities postings.
     /// </summary>
@@ -261,6 +261,35 @@ public sealed class Posting : Entity, IAggregateRoot
     /// </summary>
     /// <value>The linked posting id or null.</value>
     public Guid? LinkedPostingId { get; private set; }
+
+    // Reversal tracking fields
+    /// <summary>
+    /// Optional reference to the reversal posting that cancels this posting.
+    /// Set when this posting is reversed.
+    /// </summary>
+    /// <value>The reversal posting id or null.</value>
+    public Guid? ReversedByPostingId { get; private set; }
+
+    /// <summary>
+    /// Optional reference to the original posting that this posting reverses.
+    /// Set when this posting is a reversal of another posting.
+    /// </summary>
+    /// <value>The original posting id or null.</value>
+    public Guid? ReversalForPostingId { get; private set; }
+
+    /// <summary>
+    /// User ID who initiated the reversal.
+    /// Only set when this posting has been reversed (ReversedByPostingId is not null).
+    /// </summary>
+    /// <value>The user id who reversed this posting or null.</value>
+    public Guid? ReversedByUserId { get; private set; }
+
+    /// <summary>
+    /// Timestamp when the reversal was created.
+    /// Only set when this posting has been reversed (ReversedByPostingId is not null).
+    /// </summary>
+    /// <value>The reversal timestamp or null.</value>
+    public DateTime? ReversedAtUtc { get; private set; }
 
     /// <summary>
     /// Sets the group identifier for the posting.
@@ -323,6 +352,65 @@ public sealed class Posting : Entity, IAggregateRoot
     }
 
     /// <summary>
+    /// Marks this posting as reversed by a reversal posting.
+    /// </summary>
+    /// <param name="reversalPosting">The reversal posting that cancels this posting.</param>
+    /// <param name="userId">The user ID who initiated the reversal.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="reversalPosting"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when this posting is already reversed.</exception>
+    public void SetReversedBy(Posting reversalPosting, Guid userId)
+    {
+        if (reversalPosting == null)
+        {
+            throw new ArgumentNullException(nameof(reversalPosting));
+        }
+        
+        if (ReversedByPostingId.HasValue)
+        {
+            throw new InvalidOperationException($"Posting {Id} is already reversed by posting {ReversedByPostingId.Value}");
+        }
+
+        ReversedByPostingId = reversalPosting.Id;
+        ReversedByUserId = userId;
+        ReversedAtUtc = DateTime.UtcNow;
+        Touch();
+    }
+
+    /// <summary>
+    /// Marks this posting as a reversal of an original posting.
+    /// </summary>
+    /// <param name="originalPosting">The original posting that this posting reverses.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="originalPosting"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when this posting is already marked as a reversal.</exception>
+    public void SetReversalFor(Posting originalPosting)
+    {
+        if (originalPosting == null)
+        {
+            throw new ArgumentNullException(nameof(originalPosting));
+        }
+        
+        if (ReversalForPostingId.HasValue)
+        {
+            throw new InvalidOperationException($"Posting {Id} is already a reversal for posting {ReversalForPostingId.Value}");
+        }
+
+        ReversalForPostingId = originalPosting.Id;
+        Touch();
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether this posting has been reversed.
+    /// </summary>
+    /// <value><c>true</c> if this posting has been reversed; otherwise, <c>false</c>.</value>
+    public bool IsReversed => ReversedByPostingId.HasValue;
+
+    /// <summary>
+    /// Gets a value indicating whether this posting is a reversal of another posting.
+    /// </summary>
+    /// <value><c>true</c> if this posting is a reversal; otherwise, <c>false</c>.</value>
+    public bool IsReversal => ReversalForPostingId.HasValue;
+
+    /// <summary>
     /// Sets the original amount for informational purposes.
     /// </summary>
     /// <param name="amount">Original amount or null to clear.</param>
@@ -357,13 +445,17 @@ public sealed class Posting : Entity, IAggregateRoot
     /// <param name="GroupId">Optional group identifier for related postings.</param>
     /// <param name="ParentId">Optional parent posting reference.</param>
     /// <param name="LinkedPostingId">Optional linked posting reference (counterpart).</param>
-    public sealed record PostingBackupDto(Guid Id, Guid SourceId, PostingKind Kind, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, DateTime BookingDate, DateTime ValutaDate, decimal Amount, decimal? OriginalAmount, string? Subject, string? RecipientName, string? Description, SecurityPostingSubType? SecuritySubType, decimal? Quantity, Guid? GroupId, Guid? ParentId, Guid? LinkedPostingId);
+    /// <param name="ReversedByPostingId">Optional reference to the reversal posting.</param>
+    /// <param name="ReversalForPostingId">Optional reference to the original posting.</param>
+    /// <param name="ReversedByUserId">Optional user ID who reversed this posting.</param>
+    /// <param name="ReversedAtUtc">Optional timestamp when this posting was reversed.</param>
+    public sealed record PostingBackupDto(Guid Id, Guid SourceId, PostingKind Kind, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, DateTime BookingDate, DateTime ValutaDate, decimal Amount, decimal? OriginalAmount, string? Subject, string? RecipientName, string? Description, SecurityPostingSubType? SecuritySubType, decimal? Quantity, Guid? GroupId, Guid? ParentId, Guid? LinkedPostingId, Guid? ReversedByPostingId, Guid? ReversalForPostingId, Guid? ReversedByUserId, DateTime? ReversedAtUtc);
 
     /// <summary>
     /// Creates a backup DTO representing the serializable state of this posting.
     /// </summary>
     /// <returns>A <see cref="PostingBackupDto"/> containing values required to restore this posting.</returns>
-    public PostingBackupDto ToBackupDto() => new PostingBackupDto(Id, SourceId, Kind, AccountId, ContactId, SavingsPlanId, SecurityId, BookingDate, ValutaDate, Amount, OriginalAmount, Subject, RecipientName, Description, SecuritySubType, Quantity, GroupId, ParentId, LinkedPostingId);
+    public PostingBackupDto ToBackupDto() => new PostingBackupDto(Id, SourceId, Kind, AccountId, ContactId, SavingsPlanId, SecurityId, BookingDate, ValutaDate, Amount, OriginalAmount, Subject, RecipientName, Description, SecuritySubType, Quantity, GroupId, ParentId, LinkedPostingId, ReversedByPostingId, ReversalForPostingId, ReversedByUserId, ReversedAtUtc);
 
     /// <summary>
     /// Applies values from the provided backup DTO to this posting instance.
@@ -391,5 +483,9 @@ public sealed class Posting : Entity, IAggregateRoot
         GroupId = dto.GroupId ?? Guid.Empty;
         ParentId = dto.ParentId;
         LinkedPostingId = dto.LinkedPostingId;
+        ReversedByPostingId = dto.ReversedByPostingId;
+        ReversalForPostingId = dto.ReversalForPostingId;
+        ReversedByUserId = dto.ReversedByUserId;
+        ReversedAtUtc = dto.ReversedAtUtc;
     }
 }
