@@ -6276,6 +6276,22 @@
             <param name="date"></param>
             <returns></returns>
         </member>
+        <member name="M:FinanceManager.Shared.Extensions.DateExt.ToPreviousWorkday(System.DateTime)">
+            <summary>
+            Returns a new DateTime representing the previous workday (Monday-Friday) of the given date.
+            If the given date is a workday, it is returned unchanged. If the given date is a Saturday, the previous Friday is returned.
+            </summary>
+            <param name="date">The date to evaluate.</param>
+            <returns></returns>
+        </member>
+        <member name="M:FinanceManager.Shared.Extensions.DateExt.ToNextWorkday(System.DateTime)">
+            <summary>
+            Returns a new DateTime representing the next workday (Monday-Friday) of the given date.
+            If the given date is a workday, it is returned unchanged. If the given date is a Saturday, the next Monday is returned.
+            </summary>
+            <param name="date">The date to evaluate.</param>
+            <returns></returns>
+        </member>
         <member name="T:FinanceManager.Shared.Extensions.ExceptionExt">
             <summary>
             Extension methods for <see cref="T:System.Exception"/>.
