@@ -10,6 +10,7 @@ using FinanceManager.Domain.Statements;
 using FinanceManager.Infrastructure.Statements.Files;
 using FinanceManager.Infrastructure.Statements.Parsers;
 using FinanceManager.Shared.Extensions;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging; // added
 using Microsoft.Extensions.Logging.Abstractions; // added
@@ -1592,6 +1593,11 @@ public sealed partial class StatementDraftService : IStatementDraftService
     /// </remarks>
     public async Task<DraftValidationResultDto> ValidateAsync(Guid draftId, Guid? entryId, Guid ownerUserId, CancellationToken ct)
     {
+        return await ValidateCoreAsync(draftId, entryId, ownerUserId, includeBudgetImpact: true, ct);
+    }
+
+    private async Task<DraftValidationResultDto> ValidateCoreAsync(Guid draftId, Guid? entryId, Guid ownerUserId, bool includeBudgetImpact, CancellationToken ct)
+    {
         var draft = await _db.StatementDrafts
             .FirstOrDefaultAsync(d => d.Id == draftId && d.OwnerUserId == ownerUserId, ct);
         var messages = new List<DraftValidationMessageDto>();
@@ -1929,7 +1935,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
             }
         }
         var isValid = messages.All(m => !string.Equals(m.Severity, "Error", StringComparison.OrdinalIgnoreCase));
-        var budgetImpact = _budgetImpactEvaluationService != null
+        var budgetImpact = includeBudgetImpact && _budgetImpactEvaluationService != null
             ? await _budgetImpactEvaluationService.EvaluateDraftImpactAsync(draft.Id, entryId, ownerUserId, ct)
             : null;
         return new DraftValidationResultDto(draft.Id, isValid, messages)
@@ -1949,7 +1955,117 @@ public sealed partial class StatementDraftService : IStatementDraftService
     /// <returns>A <see cref="BookingResult"/> indicating success or failure, and providing next steps if partial booking occurred.</returns>
     public async Task<BookingResult> BookAsync(Guid draftId, Guid? entryId, Guid ownerUserId, bool forceWarnings, CancellationToken ct)
     {
-        var validation = await ValidateAsync(draftId, entryId, ownerUserId, ct);
+        _logger.LogInformation("Starting statement booking for draft {DraftId}, entry {EntryId}, owner {OwnerUserId}, forceWarnings {ForceWarnings}", draftId, entryId, ownerUserId, forceWarnings);
+
+        var lockToken = await TryAcquireBookingGuardAsync(ownerUserId, draftId, ct);
+        if (!lockToken.HasValue)
+        {
+            return CreateBookingFailureResult(
+                draftId,
+                entryId,
+                "BOOKING_IN_PROGRESS",
+                "A booking operation is already running for this draft.",
+                retryable: true);
+        }
+
+        try
+        {
+            if (string.Equals(_db.Database.ProviderName, "Microsoft.EntityFrameworkCore.InMemory", StringComparison.Ordinal))
+            {
+                return await BookCoreAsync(draftId, entryId, ownerUserId, forceWarnings, ct);
+            }
+
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+            try
+            {
+                var result = await BookCoreAsync(draftId, entryId, ownerUserId, forceWarnings, ct);
+                await transaction.CommitAsync(ct);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(ct);
+                _logger.LogError(ex, "Statement booking failed and was rolled back for draft {DraftId}, entry {EntryId}", draftId, entryId);
+                throw;
+            }
+        }
+        finally
+        {
+            await ReleaseBookingGuardAsync(ownerUserId, draftId, lockToken.Value, ct);
+        }
+    }
+
+    private static BookingResult CreateBookingFailureResult(Guid draftId, Guid? entryId, string errorCode, string message, bool retryable)
+    {
+        var validation = new DraftValidationResultDto(
+            draftId,
+            false,
+            [
+                new DraftValidationMessageDto(errorCode, "Error", message, draftId, entryId)
+            ]);
+
+        return new BookingResult(false, false, validation, null, null, null)
+        {
+            ErrorCode = errorCode,
+            Retryable = retryable
+        };
+    }
+
+    private async Task<Guid?> TryAcquireBookingGuardAsync(Guid ownerUserId, Guid draftId, CancellationToken ct)
+    {
+        var nowUtc = DateTime.UtcNow;
+        var lockToken = Guid.NewGuid();
+        var expiresUtc = nowUtc.AddMinutes(2);
+
+        var guard = new StatementDraftBookingGuard(ownerUserId, draftId, lockToken, nowUtc, expiresUtc);
+        _db.StatementDraftBookingGuards.Add(guard);
+
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+            return lockToken;
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            _db.Entry(guard).State = EntityState.Detached;
+        }
+
+        var existingGuard = await _db.StatementDraftBookingGuards
+            .FirstOrDefaultAsync(g => g.OwnerUserId == ownerUserId && g.DraftId == draftId, ct);
+        if (existingGuard == null || existingGuard.ExpiresUtc > nowUtc)
+        {
+            return null;
+        }
+
+        existingGuard.LockToken = lockToken;
+        existingGuard.AcquiredUtc = nowUtc;
+        existingGuard.ExpiresUtc = expiresUtc;
+        await _db.SaveChangesAsync(ct);
+        return lockToken;
+    }
+
+    private static bool IsUniqueConstraintViolation(DbUpdateException ex)
+    {
+        return ex.InnerException is SqliteException sqliteException && sqliteException.SqliteErrorCode == 19;
+    }
+
+    private async Task ReleaseBookingGuardAsync(Guid ownerUserId, Guid draftId, Guid lockToken, CancellationToken ct)
+    {
+        var guards = await _db.StatementDraftBookingGuards
+            .Where(g => g.OwnerUserId == ownerUserId && g.DraftId == draftId && g.LockToken == lockToken)
+            .ToListAsync(ct);
+        if (guards.Count == 0)
+        {
+            return;
+        }
+
+        _db.StatementDraftBookingGuards.RemoveRange(guards);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    private async Task<BookingResult> BookCoreAsync(Guid draftId, Guid? entryId, Guid ownerUserId, bool forceWarnings, CancellationToken ct)
+    {
+        var validation = await ValidateCoreAsync(draftId, entryId, ownerUserId, includeBudgetImpact: false, ct);
         var hasErrors = validation.Messages.Any(m => m.Severity.Equals("Error", StringComparison.OrdinalIgnoreCase));
         var hasWarnings = validation.Messages.Any(m => m.Severity.Equals("Warning", StringComparison.OrdinalIgnoreCase));
         if (hasErrors)
@@ -1961,10 +2077,19 @@ public sealed partial class StatementDraftService : IStatementDraftService
             return new BookingResult(false, true, validation, null, null, null);
         }
 
-        var draft = await _db.StatementDrafts.FirstAsync(d => d.Id == draftId && d.OwnerUserId == ownerUserId, ct);
+        var draft = await _db.StatementDrafts.FirstOrDefaultAsync(d => d.Id == draftId && d.OwnerUserId == ownerUserId, ct);
         if (draft == null || draft.DetectedAccountId == null)
         {
             return new BookingResult(false, false, validation, null, null, null);
+        }
+        if (draft.Status == StatementDraftStatus.Committed)
+        {
+            return CreateBookingFailureResult(
+                draftId,
+                entryId,
+                "BOOKING_ALREADY_PROCESSED",
+                "The statement draft has already been booked.",
+                retryable: false);
         }
 
         // Disallow booking a child draft directly
@@ -1977,6 +2102,19 @@ public sealed partial class StatementDraftService : IStatementDraftService
         var account = await _db.Accounts.FirstAsync(a => a.Id == draft.DetectedAccountId, ct);
         var self = await _db.Contacts.FirstAsync(c => c.OwnerUserId == ownerUserId && c.Type == ContactType.Self, ct);
         var allEntriesScope = await _db.StatementDraftEntries.Where(e => e.DraftId == draft.Id && (entryId == null || e.Id == entryId)).ToListAsync(ct);
+        if (entryId.HasValue && allEntriesScope.Count == 0)
+        {
+            var entryAlreadyBooked = await _db.Postings.AsNoTracking().AnyAsync(p => p.SourceId == entryId.Value, ct);
+            if (entryAlreadyBooked)
+            {
+                return CreateBookingFailureResult(
+                    draftId,
+                    entryId,
+                    "BOOKING_ALREADY_PROCESSED",
+                    "The statement draft entry has already been booked.",
+                    retryable: false);
+            }
+        }
 
         // ignore entries already booked
         var toBook = (entryId == null ? allEntriesScope : allEntriesScope.Where(e => e.Id == entryId.Value))

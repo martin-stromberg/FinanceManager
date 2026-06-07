@@ -14,6 +14,7 @@ Kurzbeschreibung und was die Anwendung bietet (nicht‑technisch):
 - Sparpläne verwalten (einmalig oder wiederkehrend) und Zielerreichung verfolgen
 - Wertpapiertransaktionen (Kauf/Verkauf/Dividende) erfassen und Gebühren/Steuern berücksichtigen
 - Wertpapier-Performance-Analyse: TWR, IRR, CAGR, Sharpe Ratio, Max. Drawdown – mit Benchmark-Vergleich
+- Transaktionssichere Kontoauszug-Buchung mit Single-Flight-Guard, idempotenten Wiederholungen und 409-Fehlervertrag
 - Budgetwirkung bei Buchung: Hinweise bei kritischen Budgets und Abschluss-Summary mit Vorher/Nachher/Delta
 - Budget-Regeln mit Verwendungszweck-Pattern: optionales PurposePattern pro Regel (contains, case-insensitive) oder Regex-Matching inkl. Validierung
 - Berichte und KPI‑Dashboard; Daten als CSV/XLSX exportieren
@@ -135,6 +136,7 @@ Details: [`docs/architecture/`](docs/architecture/)
 
 ## Changelog
 
+- 2026-06: Transaktionssichere Kontoauszug-Buchung mit Guard, Retry-Semantik und 409 ProblemDetails dokumentiert.
 - 2026-06: Budget-Verwendungszweck-Pattern inkl. Regex ergänzt (Migration `20260604172812_202606041500_AddBudgetRulePurposePattern`, API/Matching/Tests aktualisiert).
 - 2026-05: Budget-Impact-Auswertung für Statement-Buchung dokumentiert (Entry-Hinweise + Booking-Summary).
 

@@ -95,6 +95,13 @@ Diese Funktion ist zentral für die **Qualitätskontrolle** vor der endgültigen
 4. Der Draft-Status ändert sich zu "Verbucht"
 5. Die Original-Datei bleibt abrufbar
 
+#### Technisches Sicherheitsverhalten
+
+- Die Buchung ist transaktionssicher: Entweder werden alle nötigen Buchungen gemeinsam gespeichert oder gar keine.
+- Wenn zwei Personen oder zwei Browser gleichzeitig denselben Draft buchen, blockiert das System den zweiten Versuch mit einer Konfliktmeldung.
+- Ein bereits verbuchter Draft oder Eintrag wird nicht doppelt gebucht.
+- Ein erneuter Versuch nach einer laufenden Buchung ist sicher möglich, sobald der erste Versuch abgeschlossen ist.
+
 #### Massenbuchung mehrerer Kontoauszüge
 
 1. Sie wählen mehrere Drafts in der Übersicht an
@@ -161,6 +168,8 @@ Die Original-PDF können Sie später immer noch abrufen, falls Sie eine Transakt
   - **Wertpapier-Posten**: Bei Depot-Transaktionen
 - **Originalität**: Die Upload-Originaldatei bleibt dauerhaft erhalten
 - **Idempotenz**: Nochmaliges Verbuchen desselben Drafts ist nicht möglich (verhindert Duplikate)
+- **Parallelitätsschutz**: Ein persistenter Guard verhindert die gleichzeitige doppelte Verarbeitung desselben Drafts
+- **Fehlervertrag**: Konflikte liefern einen standardisierten 409-Fehler mit technischem Code und Wiederholungshinweis
 
 ## Häufige Fragen (FAQ)
 
@@ -186,6 +195,9 @@ A: Die Software markiert verdächtige Duplikate. Sie können sie:
 - Löschen (wenn wirklich Duplikat)
 - Behalten (wenn zwei separate Transaktionen)
 - Manuell korrigieren (unterschiedliche Kategorien zuweisen)
+
+**F: Was passiert, wenn ich zweimal auf „Verbuchen“ klicke?**
+A: Der zweite Versuch wird als Konflikt abgewiesen, solange die erste Buchung noch läuft. Nach erfolgreichem Abschluss ist ein erneuter Versuch nicht nötig und erzeugt keine doppelten Buchungen.
 
 **F: Kann ich eine Excel-Datei statt PDF importieren?**  
 A: Ja, das System unterstützt mehrere Formate:
