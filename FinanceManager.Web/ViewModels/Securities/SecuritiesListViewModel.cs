@@ -128,9 +128,9 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
         {
             new ListColumn("symbol", string.Empty, "56px", ListColumnAlign.Left),
             new ListColumn("name", L["List_Th_Name"], "", ListColumnAlign.Left),
-            new ListColumn("identifier", L["List_Th_AlphaVantage"], "", ListColumnAlign.Left),
-            new ListColumn("alphavantage", L["List_Th_Category"], "", ListColumnAlign.Left),
-            new ListColumn("category", L["List_Th_Status"], "120px", ListColumnAlign.Left),
+            new ListColumn("identifier", L["List_Th_Identifier"], "", ListColumnAlign.Left),
+            new ListColumn("alphavantage", L["List_Th_AlphaVantage"], "", ListColumnAlign.Left),
+            new ListColumn("category", L["List_Th_Category"], "120px", ListColumnAlign.Left),
             new ListColumn("status", L["List_Th_Status"], "120px", ListColumnAlign.Left)
         };
 
