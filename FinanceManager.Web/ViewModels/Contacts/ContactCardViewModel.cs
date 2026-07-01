@@ -89,6 +89,7 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
                 var name = !string.IsNullOrWhiteSpace(InitPrefill) ? InitPrefill : string.Empty;
                 Contact = new ContactDto(Guid.Empty, name, ContactType.Organization, null, null, false, null);
                 CardRecord = await BuildCardRecordAsync(Contact);
+                RaiseUiActionRequested("ClearEmbeddedPanel", EmbeddedPanelPosition.AfterCard);
                 return;
             }
 
@@ -97,13 +98,21 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
             {
                 SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Contact not found");
                 CardRecord = new CardRecord(new List<CardField>());
+                RaiseUiActionRequested("ClearEmbeddedPanel", EmbeddedPanelPosition.AfterCard);
                 return;
             }
             CardRecord = await BuildCardRecordAsync(Contact);
+            RaiseUiActionRequested("ClearEmbeddedPanel", EmbeddedPanelPosition.AfterCard);
+            var panelParameters = new Dictionary<string, object?>
+            {
+                ["ContactId"] = Contact.Id
+            };
+            RaiseUiEmbeddedPanelRequested(new BaseViewModel.EmbeddedPanelSpec(typeof(FinanceManager.Web.Components.Pages.ContactDetail), panelParameters, EmbeddedPanelPosition.AfterCard, true));
         }
         catch (Exception ex)
         {
             CardRecord = new CardRecord(new List<CardField>());
+            RaiseUiActionRequested("ClearEmbeddedPanel", EmbeddedPanelPosition.AfterCard);
             SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
         }
         finally { Loading = false; RaiseStateChanged(); }

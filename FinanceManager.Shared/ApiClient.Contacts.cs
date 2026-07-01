@@ -70,7 +70,7 @@ public partial class ApiClient
     public async Task<IReadOnlyList<AliasNameDto>> Contacts_GetAliasesAsync(Guid id, CancellationToken ct = default)
     {
         var resp = await _http.GetAsync($"/api/contacts/{id}/aliases", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<AliasNameDto>>(cancellationToken: ct) ?? Array.Empty<AliasNameDto>();
     }
 
@@ -80,7 +80,7 @@ public partial class ApiClient
     public async Task<bool> Contacts_AddAliasAsync(Guid id, AliasCreateRequest request, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync($"/api/contacts/{id}/aliases", request, ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
@@ -90,7 +90,7 @@ public partial class ApiClient
     public async Task<bool> Contacts_DeleteAliasAsync(Guid id, Guid aliasId, CancellationToken ct = default)
     {
         var resp = await _http.DeleteAsync($"/api/contacts/{id}/aliases/{aliasId}", ct);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 
