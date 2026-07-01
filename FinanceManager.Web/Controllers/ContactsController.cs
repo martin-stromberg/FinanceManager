@@ -2,6 +2,7 @@ using FinanceManager.Application;
 using FinanceManager.Application.Common;
 using FinanceManager.Application.Contacts;
 using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Shared.Dtos.Contacts;
 using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -213,13 +214,17 @@ public sealed class ContactsController : ControllerBase
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 OK with the list of alias patterns.</returns>
     [HttpGet("{id:guid}/aliases")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(IReadOnlyList<AliasNameDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAliasAsync(Guid id, CancellationToken ct)
     {
         try
         {
             var aliases = await _contacts.ListAliases(id, _current.UserId, ct);
             return Ok(aliases);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
         }
         catch (Exception ex) { _logger.LogError(ex, "Get contact {ContactId} aliases failed", id); return Problem("Unexpected error", statusCode: 500); }
     }
@@ -240,6 +245,10 @@ public sealed class ContactsController : ControllerBase
             await _contacts.AddAliasAsync(id, _current.UserId, req.Pattern, ct);
             return NoContent();
         }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
         catch (Exception ex) { _logger.LogError(ex, "Add contact {ContactId} alias failed", id); return Problem("Unexpected error", statusCode: 500); }
     }
 
@@ -258,6 +267,10 @@ public sealed class ContactsController : ControllerBase
         {
             await _contacts.DeleteAliasAsync(id, _current.UserId, aliasId, ct);
             return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
         }
         catch (Exception ex) { _logger.LogError(ex, "Delete contact {ContactId} alias failed", id); return Problem("Unexpected error", statusCode: 500); }
     }

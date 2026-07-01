@@ -61,6 +61,7 @@ public class ApiClientContactsTests : IClassFixture<TestWebApplicationFactory>
         addOk.Should().BeTrue();
         var aliases = await api.Contacts_GetAliasesAsync(created.Id);
         aliases.Should().NotBeNull();
+        aliases.Should().ContainSingle(a => a.Pattern == "PATTERN");
 
         // count should be at least initialCount
         var count = await api.Contacts_CountAsync();

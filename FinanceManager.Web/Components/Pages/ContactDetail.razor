@@ -1,0 +1,154 @@
+@using FinanceManager.Shared.Dtos.Contacts
+@using Microsoft.AspNetCore.Components
+@using Microsoft.Extensions.Localization
+@inject FinanceManager.Shared.IApiClient Api
+@inject IStringLocalizer<ContactDetail> Localizer
+
+<div class="contact-aliases" style="padding:1rem;border:1px solid var(--border);border-radius:.5rem;background:var(--panel-bg);margin-top:.75rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.75rem;">
+        <div style="font-weight:600;">@Localizer["LabelAliases"]</div>
+    </div>
+
+    <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;">
+        <input value="@_newAlias" @oninput="OnAliasInput" placeholder="@Localizer["PlaceholderNewAlias"]" style="flex:1;min-width:12rem;padding:.45rem;border:1px solid var(--border);background:transparent;color:inherit;" />
+        <button class="btn" @onclick="AddAliasAsync" disabled="@(_busy || ContactId == Guid.Empty)">@Localizer["BtnAddAlias"]</button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <div class="error" style="margin-bottom:.75rem;">@_error</div>
+    }
+
+    @if (_loading)
+    {
+        <div>@Localizer["Loading"]</div>
+    }
+    else if (_aliases.Count == 0)
+    {
+        <div style="opacity:.7;">@Localizer["None"]</div>
+    }
+    else
+    {
+        <div style="display:flex;flex-direction:column;gap:.35rem;">
+            @foreach (var alias in _aliases)
+            {
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;padding:.4rem .5rem;border:1px solid var(--border);border-radius:.4rem;">
+                    <span>@alias.Pattern</span>
+                    <button class="icon-btn" title="@Localizer["BtnDeleteAlias"]" @onclick="() => DeleteAliasAsync(alias.Id)" disabled="@_busy">
+                        <svg><use href="/icons/sprite.svg#delete" /></svg>
+                    </button>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid ContactId { get; set; }
+
+    private readonly List<AliasNameDto> _aliases = new();
+    private string _newAlias = string.Empty;
+    private bool _busy;
+    private bool _loading;
+    private string? _error;
+    private Guid _loadedContactId = Guid.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ContactId == Guid.Empty)
+        {
+            _aliases.Clear();
+            _loadedContactId = Guid.Empty;
+            _error = null;
+            return;
+        }
+
+        if (ContactId != _loadedContactId)
+        {
+            await LoadAliasesAsync();
+        }
+    }
+
+    private async Task LoadAliasesAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            var aliases = await Api.Contacts_GetAliasesAsync(ContactId);
+            _aliases.Clear();
+            _aliases.AddRange(aliases.OrderBy(a => a.Pattern, StringComparer.OrdinalIgnoreCase));
+            _loadedContactId = ContactId;
+        }
+        catch (Exception ex)
+        {
+            _aliases.Clear();
+            _error = Api.LastError ?? ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void OnAliasInput(ChangeEventArgs e)
+    {
+        _newAlias = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private async Task AddAliasAsync()
+    {
+        if (_busy || ContactId == Guid.Empty)
+        {
+            return;
+        }
+
+        var pattern = _newAlias.Trim();
+        if (string.IsNullOrWhiteSpace(pattern))
+        {
+            _error = Localizer["ErrorAliasEmpty"];
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        try
+        {
+            await Api.Contacts_AddAliasAsync(ContactId, new AliasCreateRequest(pattern));
+            _newAlias = string.Empty;
+            await LoadAliasesAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = Api.LastError ?? ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DeleteAliasAsync(Guid aliasId)
+    {
+        if (_busy || ContactId == Guid.Empty)
+        {
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        try
+        {
+            await Api.Contacts_DeleteAliasAsync(ContactId, aliasId);
+            await LoadAliasesAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = Api.LastError ?? ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

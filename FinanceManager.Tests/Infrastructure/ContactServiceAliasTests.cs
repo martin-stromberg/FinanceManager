@@ -36,6 +36,22 @@ public sealed class ContactServiceAliasTests
     }
 
     [Fact]
+    public async Task ListAliases_ShouldReject_WhenContactDoesNotBelongToOwner()
+    {
+        var db = CreateDb();
+        var owner = Guid.NewGuid();
+        var otherOwner = Guid.NewGuid();
+        var contact = new FinanceManager.Domain.Contacts.Contact(owner, "SourceName", ContactType.Person, null, null, false);
+        db.Contacts.Add(contact);
+        db.AliasNames.Add(new FinanceManager.Domain.Contacts.AliasName(contact.Id, "Alias"));
+        await db.SaveChangesAsync();
+
+        var svc = new ContactService(db);
+
+        await Assert.ThrowsAsync<ArgumentException>(async () => await svc.ListAliases(contact.Id, otherOwner, CancellationToken.None));
+    }
+
+    [Fact]
     public async Task MergeAsync_ShouldNotCreateDuplicateAliases_AndReassign()
     {
         var db = CreateDb();

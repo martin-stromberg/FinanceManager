@@ -253,6 +253,13 @@ public sealed class ContactService : IContactService
     /// <returns>List of <see cref="AliasNameDto"/> for the contact.</returns>
     public async Task<IReadOnlyList<AliasNameDto>> ListAliases(Guid id, Guid userId, CancellationToken ct)
     {
+        var contactExists = await _db.Contacts.AsNoTracking()
+            .AnyAsync(c => c.Id == id && c.OwnerUserId == userId, ct);
+        if (!contactExists)
+        {
+            throw new ArgumentException("Contact not found.");
+        }
+
         return await _db.AliasNames.AsNoTracking()
             .Where(c => c.ContactId == id)
             .OrderBy(c => c.Pattern)
