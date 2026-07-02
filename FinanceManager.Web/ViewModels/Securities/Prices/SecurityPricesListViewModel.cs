@@ -1,5 +1,6 @@
 using DocumentFormat.OpenXml.Office2010.Excel;
 using FinanceManager.Shared.Dtos.Securities;
+using FinanceManager.Web.Components.Shared;
 using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
@@ -128,7 +129,21 @@ public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPric
     public void RequestOpenBackfill()
     {
         var parameters = new Dictionary<string, object?> { ["SecurityId"] = SecurityId };
-        var spec = new BaseViewModel.UiOverlaySpec(typeof(Components.Shared.SecurityPricesBackfillPanel), parameters);
+        var spec = new BaseViewModel.UiOverlaySpec(typeof(SecurityPricesBackfillPanel), parameters);
+        RaiseUiActionRequested("OpenOverlay", spec);
+    }
+
+    /// <summary>
+    /// Requests opening of the ING CSV import overlay for this security.
+    /// </summary>
+    public void RequestOpenImport()
+    {
+        var parameters = new Dictionary<string, object?>
+        {
+            ["SecurityId"] = SecurityId,
+            ["OverlayTitle"] = _L["SecurityPricesImport_Title"].Value
+        };
+        var spec = new BaseViewModel.UiOverlaySpec(typeof(SecurityPriceImportPanel), parameters);
         RaiseUiActionRequested("OpenOverlay", spec);
     }
 
@@ -156,6 +171,15 @@ public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPric
 
             new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, new List<UiRibbonAction>
             {
+                new UiRibbonAction(
+                    "ImportPrices",
+                    localizer["Ribbon_Import"].Value,
+                    "<svg><use href='/icons/sprite.svg#upload'/></svg>",
+                    UiRibbonItemSize.Small,
+                    SecurityId == Guid.Empty,
+                    null,
+                    () => { RequestOpenImport(); return Task.CompletedTask; }
+                ),
                 new UiRibbonAction(
                     "BackfillPrices",
                     localizer["Ribbon_Backfill"].Value,

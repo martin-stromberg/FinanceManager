@@ -1,0 +1,116 @@
+@using FinanceManager.Shared.Dtos.Securities
+@using Microsoft.AspNetCore.Components.Forms
+@inject FinanceManager.Shared.IApiClient Api
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
+
+<div style="display:flex;flex-direction:column;gap:.75rem;">
+    <div style="font-size:.9rem;opacity:.85;">
+        @Localizer["SecurityPricesImport_Hint"]
+    </div>
+
+    <label class="icon-btn" style="align-self:flex-start;cursor:pointer;">
+        <InputFile OnChange="OnFileSelected" accept=".csv,text/csv" style="display:none;" />
+        <svg><use href="/icons/sprite.svg#upload" /></svg>
+        <span style="margin-left:.4rem;">@Localizer["SecurityPricesImport_SelectFile"]</span>
+    </label>
+
+    @if (!string.IsNullOrWhiteSpace(_fileName))
+    {
+        <div style="font-size:.85rem;">@_fileName</div>
+    }
+
+    <div style="display:flex;gap:.5rem;">
+        <button class="btn" @onclick="ImportAsync" disabled="@(_busy || _selectedFile is null)">@Localizer["Ribbon_Import"]</button>
+        <button class="btn secondary" @onclick="CloseAsync" disabled="_busy">@Localizer["Btn_Close"]</button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <div class="error">@_error</div>
+    }
+
+    @if (_result != null)
+    {
+        <div style="border:1px solid var(--border);border-radius:6px;padding:.65rem;">
+            <div><strong>@Localizer["SecurityPricesImport_Result"]</strong></div>
+            <div>@Localizer["SecurityPricesImport_Inserted"]: @_result.Inserted</div>
+            <div>@Localizer["SecurityPricesImport_Updated"]: @_result.Updated</div>
+            <div>@Localizer["SecurityPricesImport_Unchanged"]: @_result.Unchanged</div>
+            <div>@Localizer["SecurityPricesImport_Skipped"]: @_result.Skipped</div>
+            @if (_result.Errors.Count > 0)
+            {
+                <ul style="margin:.4rem 0 0 1rem;">
+                    @foreach (var error in _result.Errors)
+                    {
+                        <li>@Localizer["SecurityPricesImport_LineError", error.LineNumber, error.Message]</li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private const long MaxFileSizeBytes = 10 * 1024 * 1024;
+
+    [Parameter] public Guid SecurityId { get; set; }
+
+    [CascadingParameter(Name = "OverlayClose")] public Action? OverlayClose { get; set; }
+
+    private IBrowserFile? _selectedFile;
+    private string? _fileName;
+    private bool _busy;
+    private string? _error;
+    private SecurityPriceImportResultDto? _result;
+
+    private void OnFileSelected(InputFileChangeEventArgs args)
+    {
+        _result = null;
+        _error = null;
+        _selectedFile = args.File;
+        _fileName = _selectedFile?.Name;
+    }
+
+    private async Task ImportAsync()
+    {
+        if (_selectedFile is null)
+        {
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        _result = null;
+        try
+        {
+            await using var stream = _selectedFile.OpenReadStream(MaxFileSizeBytes);
+            _result = await Api.Securities_ImportPricesAsync(
+                SecurityId,
+                stream,
+                _selectedFile.Name,
+                provider: "ing",
+                contentType: _selectedFile.ContentType);
+        }
+        catch (Exception ex)
+        {
+            _error = Api.LastError ?? ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private Task CloseAsync()
+    {
+        try
+        {
+            OverlayClose?.Invoke();
+        }
+        catch
+        {
+        }
+
+        return Task.CompletedTask;
+    }
+}

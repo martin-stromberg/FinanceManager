@@ -69,6 +69,10 @@ public static class ServiceCollectionExtensions
         {
             options.UseSqlite(connectionString ?? "Data Source=financemanager.db");
         });
+        services.AddDbContextFactory<AppDbContext>(options =>
+        {
+            options.UseSqlite(connectionString ?? "Data Source=financemanager.db");
+        }, ServiceLifetime.Scoped);
 
         services.AddSingleton<TimeProvider>(TimeProvider.System);
         // Register identity-compatible password hasher that delegates to legacy implementation
@@ -111,6 +115,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPostingExportService, PostingExportService>(); 
         services.AddScoped<IDemoDataService, FinanceManager.Infrastructure.Demo.DemoDataService>();
         services.AddScoped<ISecurityPriceService, SecurityPriceService>();
+        services.AddScoped<ISecurityPriceImportService, IngSecurityPriceImportService>();
+        services.AddScoped<ISecurityPriceImportServiceFactory, SecurityPriceImportServiceFactory>();
         services.AddScoped<IStatementFile, Barclays_PDF_StatementFile>();
         services.AddScoped<IStatementFile, Sparkasse_PDF_StatementFile>();
         services.AddScoped<IStatementFile, ING_PDF_StatementFile>();

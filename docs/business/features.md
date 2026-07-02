@@ -20,7 +20,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 | F004 | Kontoauszug-Import | Import von Kontoauszügen aus verschiedenen Bankformaten | ✅ Dokumentiert |
 | F005 | Automatische Kategorisierung | Automatische Zuordnung von Ausgaben zu Kategorien | 🔄 In Bearbeitung |
 | F006 | Wertpapier-Verwaltung | Verwaltung von Aktien und Wertpapieren | ✅ Dokumentiert |
-| F007 | Wertpapierpreise | Automatische Abfrage aktueller Wertpapierpreise | 🔄 In Bearbeitung |
+| [F007](./features/F007-wertpapierpreise-ing-csv-import.md) | Wertpapierpreise (ING-CSV-Import) | Import von ING-Kursdateien auf der Wertpapier-Kursseite mit klarer Ergebnisübersicht | ✅ Dokumentiert |
 | F008 | Budgetplanung | Festlegung und Überwachung von Budgets | 🔄 In Bearbeitung |
 | F009 | Budgetberichte | Auswertung und Analyse von Budget-Abweichungen | 🔄 In Bearbeitung |
 | F010 | Ersparnispläne | Planung und Verfolgung von Sparziele | 🔄 In Bearbeitung |
@@ -82,7 +82,7 @@ Dies ist die zentrale Übersicht aller Features der FinanceManager-Anwendung. Je
 - **Technische Perspektive** (Infrastructure Layer): Externe APIs, Datenformate, Integration
 - **Domain-Perspektive** (Domain Layer): Datenmodelle, Geschäftsregeln, Aggregates
 
-**Letzte Aktualisierung**: 31.05.2026
+**Letzte Aktualisierung**: 02.07.2026
 
 ---
 

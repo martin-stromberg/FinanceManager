@@ -841,12 +841,13 @@
             merging and symbol assignment.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.ContactsController.#ctor(FinanceManager.Application.Contacts.IContactService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.ContactsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
+        <member name="M:FinanceManager.Web.Controllers.ContactsController.#ctor(FinanceManager.Application.Contacts.IContactService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.Common.IParentAssignmentService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.ContactsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller})">
             <summary>
             Creates a new instance of <see cref="T:FinanceManager.Web.Controllers.ContactsController"/>.
             </summary>
             <param name="contacts">Contact service.</param>
             <param name="current">Current user context.</param>
+            <param name="parentAssign">Parent assignment service.</param>
             <param name="logger">Logger.</param>
             <param name="localizer">Shared controller string localizer.</param>
         </member>
@@ -1608,7 +1609,7 @@
             dividends aggregation and background price backfill tasks.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.#ctor(FinanceManager.Application.Securities.ISecurityService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.IBackgroundTaskManager,FinanceManager.Application.Reports.IPostingTimeSeriesService,FinanceManager.Application.Securities.ISecurityPriceService,FinanceManager.Application.Securities.ISecurityReportService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.SecuritiesController},FinanceManager.Application.Common.IParentAssignmentService,Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller},FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService)">
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.#ctor(FinanceManager.Application.Securities.ISecurityService,FinanceManager.Application.ICurrentUserService,FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.IBackgroundTaskManager,FinanceManager.Application.Reports.IPostingTimeSeriesService,FinanceManager.Application.Securities.ISecurityPriceService,FinanceManager.Application.Securities.ISecurityPriceImportServiceFactory,FinanceManager.Application.Securities.ISecurityReportService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.SecuritiesController},FinanceManager.Application.Common.IParentAssignmentService,Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller},FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisService)">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.SecuritiesController"/>.
             </summary>
@@ -1617,6 +1618,7 @@
             <param name="attachments">Service managing attachments (upload, storage).</param>
             <param name="series">Service to compute posting time series and aggregates.</param>
             <param name="priceService">Service to retrieve security price history.</param>
+            <param name="priceImportFactory">Factory resolving provider-specific security price import services.</param>
             <param name="reports">Service providing security reports and aggregations.</param>
             <param name="tasks">Background task manager used to enqueue asynchronous background jobs.</param>
             <param name="logger">Logger used for diagnostic messages.</param>
@@ -1729,6 +1731,19 @@
             <param name="take">Number of records to take (page size). Clamped to a maximum for safety.</param>
             <param name="ct">Cancellation token.</param>
             <returns>200 OK with a list of <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityPriceDto"/>, or 404 NotFound when the security is not owned by the current user.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.SecuritiesController.ImportPricesAsync(System.Guid,Microsoft.AspNetCore.Http.IFormFile,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Imports security prices from an uploaded provider CSV file.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="file">Uploaded CSV file.</param>
+            <param name="provider">Optional provider hint (defaults to "ing").</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>
+            200 OK with <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportResultDto"/> when at least one valid row was processed;
+            400 BadRequest when no valid rows exist or provider is unsupported.
+            </returns>
         </member>
         <member name="M:FinanceManager.Web.Controllers.SecuritiesController.EnqueueBackfill(FinanceManager.Shared.Dtos.Securities.SecurityBackfillRequest)">
             <summary>
@@ -8409,6 +8424,11 @@
         <member name="M:FinanceManager.Web.ViewModels.Securities.Prices.SecurityPricesListViewModel.RequestOpenBackfill">
             <summary>
             Requests opening of the backfill overlay for this security. The overlay parameters include the <see cref="P:FinanceManager.Web.ViewModels.Securities.Prices.SecurityPricesListViewModel.SecurityId"/>.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Securities.Prices.SecurityPricesListViewModel.RequestOpenImport">
+            <summary>
+            Requests opening of the ING CSV import overlay for this security.
             </summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Securities.Prices.SecurityPricesListViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">

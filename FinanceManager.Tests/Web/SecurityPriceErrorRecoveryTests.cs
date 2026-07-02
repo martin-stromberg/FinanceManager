@@ -51,6 +51,9 @@ public sealed class SecurityPriceErrorRecoveryTests
         public Task<DateTime?> GetLatestDateAsync(Guid ownerUserId, Guid securityId, CancellationToken ct)
             => _inner.GetLatestDateAsync(ownerUserId, securityId, ct);
 
+        public Task<SecurityPriceImportResultDto> UpsertDailyPricesAsync(Guid ownerUserId, Guid securityId, IReadOnlyList<SecurityPriceImportItem> items, CancellationToken ct)
+            => _inner.UpsertDailyPricesAsync(ownerUserId, securityId, items, ct);
+
         public Task SetPriceErrorAsync(Guid ownerUserId, Guid securityId, string message, CancellationToken ct)
             => _inner.SetPriceErrorAsync(ownerUserId, securityId, message, ct);
 

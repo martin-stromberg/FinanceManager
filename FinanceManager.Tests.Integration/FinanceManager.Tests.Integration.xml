@@ -39,6 +39,11 @@
             Verifies that regex purpose patterns split matching and non-matching postings in report and unbudgeted results.
             </summary>
         </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientContactsTests.CreateDraftWithSingleEntryAsync(FinanceManager.Shared.ApiClient,System.String)">
+            <summary>
+            Creates one account, uploads a statement draft and returns the draft/entry identifiers.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Tests.Integration.ApiClient.ApiClientPostingsReversalTests">
             <summary>
             Integration tests for the posting reversal API endpoints.
@@ -97,6 +102,21 @@
         <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientPostingsReversalTests.ReversePosting_ShouldReturn401_WhenNotAuthenticated">
             <summary>
             L06 – Unauthenticated call to POST /api/postings/{id}/reverse returns HTTP 401 Unauthorized.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientSecuritiesTests.Securities_ImportPrices_ShouldReturnExpectedCounters_AndPersistData">
+            <summary>
+            Verifies that importing valid ING CSV data returns expected counters and persists values.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientSecuritiesTests.Securities_ImportPrices_ShouldReturnNotFound_ForUnknownAndForeignSecurity">
+            <summary>
+            Verifies that importing to unknown or foreign securities returns NotFound behavior.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientSecuritiesTests.Securities_ImportPrices_ShouldReturnBadRequest_ForInvalidInputScenarios">
+            <summary>
+            Verifies that import endpoint returns bad request for invalid file, provider, and data-only-invalid rows.
             </summary>
         </member>
         <member name="M:FinanceManager.Tests.Integration.ApiClient.ApiClientStatementDraftsTests.StatementDrafts_Book_ShouldReturnBudgetImpactSummary_WhenBudgetPurposeExistsForContact">

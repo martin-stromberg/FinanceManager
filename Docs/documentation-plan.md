@@ -1,7 +1,7 @@
 # Dokumentationsplan: Renditeanalyse (FA-WERT-REN-001)
 
 > Erstellt: 2025-07  
-> Status: 🟡 In Bearbeitung  
+> Status: ✅ Abgeschlossen  
 > Feature: Renditeanalyse – TWR, IRR, CAGR, Volatilität, MaxDrawdown, Sharpe Ratio
 
 ---
@@ -323,3 +323,65 @@
 - Verlinkung auf bestehende Planungs- und Testartefakte ergänzt:
   - Requirements, Planning, Architecture, Architecture Review
   - Testplan und Coverage-Gap-Dokumente.
+
+---
+
+# Dokumentationsplan: Wertpapierkurse ING-CSV-Import (2026-07-02)
+
+> Status: ✅ Abgeschlossen  
+> Fokus: Konsistente technische + fachliche Dokumentation für ING-CSV-Import mit Upsert, API und UI
+
+## Phase 1 – Analyse-Ergebnisse
+
+### API-Dokumentation
+- `Docs/api/SecuritiesController.md` existiert und enthält den Import-Endpunkt.
+- Dokumentationslücken: Upsert-Semantik und Fehlerfälle für `POST /api/securities/{id}/prices/import` sind nicht konsistent und vollständig beschrieben.
+- Querverweise zu Feature-Dokumenten (Requirements/Architecture/Tests) fehlen.
+
+### Flow-Dokumentation
+- `Docs/flows/` existiert, aber es gibt keinen dedizierten Ablauf für den ING-CSV-Import inkl. Upsert-Entscheidung.
+- Benötigt wird ein Feature-Flow (Mermaid) für Upload → Parser → Upsert → Ergebnis.
+
+### Business-Dokumentation
+- Bestehende Feature-Dokumente `F006`/`F007` sind vorhanden.
+- Eine eigenständige fachliche Beschreibung für den ING-CSV-Import (Zielgruppe: nicht-technische Stakeholder) fehlt.
+
+### README-Analyse
+- README ist strukturell vollständig.
+- Das Feature „Wertpapierkurse ING-CSV-Import“ ist nicht explizit mit Doku-Verlinkungen sichtbar.
+
+## Phase 2 – Ausführungsplan
+
+### Neu zu erstellen
+- `Docs/flows/security-price-import-ing.md`
+- `Docs/business/features/F007-wertpapierpreise-ing-csv-import.md`
+
+### Zu aktualisieren
+- `Docs/api/SecuritiesController.md`
+- `Docs/requirements/wertpapierkurse-ing-requirements.md`
+- `Docs/architecture/architecture-blueprint-wertpapierkurse-ing.md`
+- `Docs/tests/wertpapierkurse-ing-testplan.md`
+- `Docs/planning/planning-wertpapierkurse-ing.md`
+- `README.md`
+
+## Ergebnis (Anhang)
+
+### Erstellt
+- `Docs/flows/security-price-import-ing.md`
+- `Docs/business/features/F007-wertpapierpreise-ing-csv-import.md`
+
+### Aktualisiert
+- `Docs/api/SecuritiesController.md`
+- `Docs/flows/README.md`
+- `Docs/business/features.md`
+- `Docs/requirements/wertpapierkurse-ing-requirements.md`
+- `Docs/architecture/architecture-blueprint-wertpapierkurse-ing.md`
+- `Docs/tests/wertpapierkurse-ing-testplan.md`
+- `Docs/planning/planning-wertpapierkurse-ing.md`
+- `README.md`
+- `Docs/documentation-plan.md`
+
+### Abschlussprüfung
+- ✅ Alle erzeugten Ziel-Dateien existieren und sind nicht leer.
+- ✅ Anforderungen, Architektur, Tests, API, Flow und Business-Doku sind wechselseitig verlinkt und inhaltlich auf den ING-CSV-Import mit Upsert abgestimmt.
+- ⚠️ Keine zusätzlich offenen Dokumentationslücken für dieses Feature festgestellt.

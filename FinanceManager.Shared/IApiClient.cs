@@ -531,6 +531,14 @@ public interface IApiClient
     Task<IReadOnlyList<AggregatePointDto>?> Securities_GetAggregatesAsync(Guid securityId, string period = "Month", int take = 36, int? maxYearsBack = null, CancellationToken ct = default);
     /// <summary>Gets historical price data for a security.</summary>
     Task<IReadOnlyList<SecurityPriceDto>?> Securities_GetPricesAsync(Guid id, int skip = 0, int take = 50, CancellationToken ct = default);
+    /// <summary>Imports security prices from an uploaded provider file.</summary>
+    Task<SecurityPriceImportResultDto> Securities_ImportPricesAsync(
+        Guid id,
+        Stream fileStream,
+        string fileName,
+        string provider = "ing",
+        string? contentType = null,
+        CancellationToken ct = default);
     /// <summary>Enqueues a background task to backfill missing security data.</summary>
     Task<BackgroundTaskInfo> Securities_EnqueueBackfillAsync(Guid? securityId, DateTime? fromDateUtc, DateTime? toDateUtc, CancellationToken ct = default);
     /// <summary>Lists upcoming or past dividends for a security.</summary>

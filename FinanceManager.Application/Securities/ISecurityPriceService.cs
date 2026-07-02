@@ -51,6 +51,20 @@ public interface ISecurityPriceService
     Task<DateTime?> GetLatestDateAsync(Guid ownerUserId, Guid securityId, CancellationToken ct);
 
     /// <summary>
+    /// Upserts daily prices for the given security.
+    /// </summary>
+    /// <param name="ownerUserId">The owner of the security.</param>
+    /// <param name="securityId">Target security identifier.</param>
+    /// <param name="items">Daily prices to upsert. Duplicate dates are resolved as last item wins.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Counts for inserted, updated and unchanged records.</returns>
+    Task<SecurityPriceImportResultDto> UpsertDailyPricesAsync(
+        Guid ownerUserId,
+        Guid securityId,
+        IReadOnlyList<SecurityPriceImportItem> items,
+        CancellationToken ct);
+
+    /// <summary>
     /// Sets a price error message on the specified security. This is used to mark a security
     /// as having an error when price lookups fail (for example invalid external symbol).
     /// </summary>

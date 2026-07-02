@@ -38,6 +38,7 @@ public sealed class SecuritiesController : ControllerBase
     private readonly IBackgroundTaskManager _tasks;
     private readonly IPostingTimeSeriesService _series;
     private readonly ISecurityPriceService _priceService;
+    private readonly ISecurityPriceImportServiceFactory _priceImportFactory;
     private readonly ISecurityReportService _reports;
     private readonly ILogger<SecuritiesController> _logger;
     private readonly IParentAssignmentService _parentAssign;
@@ -52,6 +53,7 @@ public sealed class SecuritiesController : ControllerBase
     /// <param name="attachments">Service managing attachments (upload, storage).</param>
     /// <param name="series">Service to compute posting time series and aggregates.</param>
     /// <param name="priceService">Service to retrieve security price history.</param>
+    /// <param name="priceImportFactory">Factory resolving provider-specific security price import services.</param>
     /// <param name="reports">Service providing security reports and aggregations.</param>
     /// <param name="tasks">Background task manager used to enqueue asynchronous background jobs.</param>
     /// <param name="logger">Logger used for diagnostic messages.</param>
@@ -65,6 +67,7 @@ public sealed class SecuritiesController : ControllerBase
         IBackgroundTaskManager tasks,
         IPostingTimeSeriesService series,
         ISecurityPriceService priceService,
+        ISecurityPriceImportServiceFactory priceImportFactory,
         ISecurityReportService reports,
         ILogger<SecuritiesController> logger,
         IParentAssignmentService parentAssign,
@@ -77,6 +80,7 @@ public sealed class SecuritiesController : ControllerBase
         _tasks = tasks;
         _series = series;
         _priceService = priceService;
+        _priceImportFactory = priceImportFactory;
         _reports = reports;
         _logger = logger;
         _parentAssign = parentAssign;
@@ -368,6 +372,71 @@ public sealed class SecuritiesController : ControllerBase
         take = Math.Clamp(take, 1, MaxTake);
         var list = await _priceService.ListAsync(_current.UserId, id, skip, take, ct);
         return Ok(list);
+    }
+
+    /// <summary>
+    /// Imports security prices from an uploaded provider CSV file.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="file">Uploaded CSV file.</param>
+    /// <param name="provider">Optional provider hint (defaults to "ing").</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 OK with <see cref="SecurityPriceImportResultDto"/> when at least one valid row was processed;
+    /// 400 BadRequest when no valid rows exist or provider is unsupported.
+    /// </returns>
+    [HttpPost("{id:guid}/prices/import")]
+    [RequestSizeLimit(long.MaxValue)]
+    [ProducesResponseType(typeof(SecurityPriceImportResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ImportPricesAsync(
+        Guid id,
+        [FromForm] IFormFile? file,
+        [FromForm] string? provider,
+        CancellationToken ct)
+    {
+        _logger.LogInformation("Importing prices for security {SecurityId} with provider {Provider}", id, provider ?? "ing");
+
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid_File", "A non-empty file is required."));
+        }
+
+        try
+        {
+            var security = await _service.GetAsync(id, _current.UserId, ct);
+            if (security == null)
+            {
+                return NotFound();
+            }
+
+            var context = new SecurityPriceImportContext(provider ?? "ing", file.FileName, file.ContentType);
+            var importService = _priceImportFactory.Resolve(context);
+
+            await using var stream = file.OpenReadStream();
+            var result = await importService.ImportAsync(_current.UserId, id, stream, context, ct);
+            if (result.Inserted + result.Updated + result.Unchanged == 0)
+            {
+                return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid_Import", "No valid price rows were found in the uploaded file."));
+            }
+
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, new ArgumentException(ex.Message, nameof(provider)), _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Import prices failed for security {SecurityId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
     }
 
     /// <summary>

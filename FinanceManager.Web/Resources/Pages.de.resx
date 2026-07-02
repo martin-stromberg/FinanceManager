@@ -2046,4 +2046,30 @@
   <data name="Card_Help_BudgetRule_PurposePattern" xml:space="preserve">
     <value>Geben Sie einen Text oder regulären Ausdruck ein, um Buchungen anhand des Verwendungszwecks zu filtern. Beispiele: 'ST6464646464' oder 'SM\d{4}' (Regex). Max. 500 Zeichen.</value>
   </data>
-</root>
+  <data name="SecurityPricesImport_Title" xml:space="preserve">
+    <value>Wertpapierkurse importieren</value>
+  </data>
+  <data name="SecurityPricesImport_Hint" xml:space="preserve">
+    <value>Wähle eine ING-CSV-Datei aus und importiere Tages-Schlusskurse.</value>
+  </data>
+  <data name="SecurityPricesImport_SelectFile" xml:space="preserve">
+    <value>Datei auswählen</value>
+  </data>
+  <data name="SecurityPricesImport_Result" xml:space="preserve">
+    <value>Importergebnis</value>
+  </data>
+  <data name="SecurityPricesImport_Inserted" xml:space="preserve">
+    <value>Neu angelegt</value>
+  </data>
+  <data name="SecurityPricesImport_Updated" xml:space="preserve">
+    <value>Aktualisiert</value>
+  </data>
+  <data name="SecurityPricesImport_Unchanged" xml:space="preserve">
+    <value>Unverändert</value>
+  </data>
+  <data name="SecurityPricesImport_Skipped" xml:space="preserve">
+    <value>Übersprungen</value>
+  </data>
+  <data name="SecurityPricesImport_LineError" xml:space="preserve">
+    <value>Zeile {0}: {1}</value>
+  </data></root>

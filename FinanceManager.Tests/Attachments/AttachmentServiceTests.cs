@@ -4,6 +4,7 @@ using FinanceManager.Infrastructure.Attachments;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using System.Text;
 
 namespace FinanceManager.Tests.Attachments;
@@ -175,5 +176,81 @@ public sealed class AttachmentServiceTests
         Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == ref2.Id));
 
         conn.Dispose();
+    }
+
+    [Fact]
+    public async Task DownloadAsync_ShouldUseDbContextFactory_WhenFactoryIsProvided()
+    {
+        var conn = new SqliteConnection("DataSource=:memory:");
+        await conn.OpenAsync();
+
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite(conn)
+            .Options;
+
+        await using var seedDb = new AppDbContext(options);
+        await seedDb.Database.EnsureCreatedAsync();
+        var owner = new FinanceManager.Domain.Users.User("owner", "hash", true);
+        seedDb.Users.Add(owner);
+        await seedDb.SaveChangesAsync();
+
+        var factoryMock = new Mock<IDbContextFactory<AppDbContext>>();
+        factoryMock
+            .Setup(x => x.CreateDbContextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => new AppDbContext(options));
+
+        await using var scopedDb = new AppDbContext(options);
+        var svc = new AttachmentService(scopedDb, NullLogger<AttachmentService>.Instance, factoryMock.Object);
+
+        await using var content = new MemoryStream(Encoding.UTF8.GetBytes("factory-download"));
+        var dto = await svc.UploadAsync(owner.Id, AttachmentEntityKind.StatementDraft, Guid.NewGuid(), content, "factory.txt", "text/plain", null, CancellationToken.None);
+
+        var payload = await svc.DownloadAsync(owner.Id, dto.Id, CancellationToken.None);
+
+        Assert.NotNull(payload);
+        using var reader = new StreamReader(payload!.Value.Content, Encoding.UTF8);
+        Assert.Equal("factory-download", await reader.ReadToEndAsync());
+        factoryMock.Verify(x => x.CreateDbContextAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+
+        await conn.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task DownloadAsync_ShouldResolveReference_WhenFactoryIsProvided()
+    {
+        var conn = new SqliteConnection("DataSource=:memory:");
+        await conn.OpenAsync();
+
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite(conn)
+            .Options;
+
+        await using var seedDb = new AppDbContext(options);
+        await seedDb.Database.EnsureCreatedAsync();
+        var owner = new FinanceManager.Domain.Users.User("owner", "hash", true);
+        seedDb.Users.Add(owner);
+        await seedDb.SaveChangesAsync();
+
+        var factoryMock = new Mock<IDbContextFactory<AppDbContext>>();
+        factoryMock
+            .Setup(x => x.CreateDbContextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => new AppDbContext(options));
+
+        await using var scopedDb = new AppDbContext(options);
+        var svc = new AttachmentService(scopedDb, NullLogger<AttachmentService>.Instance, factoryMock.Object);
+
+        await using var content = new MemoryStream(Encoding.UTF8.GetBytes("master-factory-content"));
+        var master = await svc.UploadAsync(owner.Id, AttachmentEntityKind.StatementDraft, Guid.NewGuid(), content, "master.txt", "text/plain", null, CancellationToken.None);
+        var reference = await svc.CreateReferenceAsync(owner.Id, AttachmentEntityKind.StatementEntry, Guid.NewGuid(), master.Id, CancellationToken.None);
+
+        var payload = await svc.DownloadAsync(owner.Id, reference.Id, CancellationToken.None);
+
+        Assert.NotNull(payload);
+        Assert.Equal("master.txt", payload!.Value.FileName);
+        using var reader = new StreamReader(payload.Value.Content, Encoding.UTF8);
+        Assert.Equal("master-factory-content", await reader.ReadToEndAsync());
+        factoryMock.Verify(x => x.CreateDbContextAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+
+        await conn.DisposeAsync();
     }
 }
