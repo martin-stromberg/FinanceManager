@@ -15,3 +15,4 @@ Dieser Ordner enthält Programmablaufpläne und technische Beschreibungen der ze
 | [return-calculation.md](return-calculation.md) | Renditeanalyse | Stateless-Berechnungen: TWR (Modified Dietz), IRR (Newton-Raphson + Bisection), CAGR, Volatilität, MaxDrawdown, Sharpe Ratio, DividendYield, TaxRate |
 | [fifo-cost-basis.md](fifo-cost-basis.md) | Renditeanalyse | FIFO-Kostenbasisberechnung: Lot-Verwaltung, Fee-Verknüpfung via GroupId, Oversell-Handling |
 | [posting-reversal-flow.md](posting-reversal-flow.md) | Buchhaltung | Stornierung eines Postings: Pre-Validation, DB-Transaktion, All-or-Nothing-Gruppe, StatementImport für Rekonziliation |
+| [contact-create-auto-assign.md](contact-create-auto-assign.md) | Kontakte / Kontoauszug | Inline-Kontakterstellung im Statement-Draft-Entry mit Parent-Assignment, 409-Fehlervertrag, Rollback und Idempotenzverhalten |

@@ -23,9 +23,11 @@ namespace FinanceManager.Web.Controllers;
 public sealed class ContactsController : ControllerBase
 {
     private const string Origin = "API_Contacts";
+    private const string ParentAssignmentConflictCode = "Err_Conflict_ParentAssignment";
 
     private readonly IContactService _contacts;
     private readonly ICurrentUserService _current;
+    private readonly IParentAssignmentService _parentAssign;
     private readonly ILogger<ContactsController> _logger;
     private readonly IStringLocalizer<Controller> _localizer;
 
@@ -34,16 +36,19 @@ public sealed class ContactsController : ControllerBase
     /// </summary>
     /// <param name="contacts">Contact service.</param>
     /// <param name="current">Current user context.</param>
+    /// <param name="parentAssign">Parent assignment service.</param>
     /// <param name="logger">Logger.</param>
     /// <param name="localizer">Shared controller string localizer.</param>
     public ContactsController(
         IContactService contacts,
         ICurrentUserService current,
+        IParentAssignmentService parentAssign,
         ILogger<ContactsController> logger,
         IStringLocalizer<Controller> localizer)
     {
         _contacts = contacts;
         _current = current;
+        _parentAssign = parentAssign;
         _logger = logger;
         _localizer = localizer;
     }
@@ -129,6 +134,46 @@ public sealed class ContactsController : ControllerBase
         try
         {
             var created = await _contacts.CreateAsync(_current.UserId, req.Name, req.Type, req.CategoryId, req.Description, req.IsPaymentIntermediary, ct);
+
+            if (req.Parent != null)
+            {
+                var assignmentSucceeded = await _parentAssign.TryAssignAsync(
+                    _current.UserId,
+                    req.Parent,
+                    createdKind: "contacts",
+                    createdId: created.Id,
+                    ct);
+
+                _logger.LogInformation(
+                    "Contact parent assignment result: OwnerUserId={OwnerUserId}, ParentKind={ParentKind}, ParentId={ParentId}, ParentField={ParentField}, ContactId={ContactId}, AssignmentResult={AssignmentResult}, TraceId={TraceId}",
+                    _current.UserId,
+                    req.Parent.ParentKind,
+                    req.Parent.ParentId,
+                    req.Parent.Field,
+                    created.Id,
+                    assignmentSucceeded ? "assigned" : "failed",
+                    HttpContext.TraceIdentifier);
+
+                if (!assignmentSucceeded)
+                {
+                    var rollbackSucceeded = await _contacts.DeleteAsync(created.Id, _current.UserId, ct);
+                    _logger.LogWarning(
+                        "Rolling back contact create after failed parent assignment: OwnerUserId={OwnerUserId}, ParentKind={ParentKind}, ParentId={ParentId}, ContactId={ContactId}, RollbackSucceeded={RollbackSucceeded}, TraceId={TraceId}",
+                        _current.UserId,
+                        req.Parent.ParentKind,
+                        req.Parent.ParentId,
+                        created.Id,
+                        rollbackSucceeded,
+                        HttpContext.TraceIdentifier);
+
+                    var localized = _localizer[$"{Origin}_{ParentAssignmentConflictCode}"];
+                    var message = localized.ResourceNotFound
+                        ? "Contact creation could not be completed because assignment to the requested entry failed."
+                        : localized.Value;
+
+                    return Conflict(ApiErrorDto.Create(Origin, ParentAssignmentConflictCode, message));
+                }
+            }
 
             return CreatedAtRoute("GetContact", new { id = created.Id }, created);
         }

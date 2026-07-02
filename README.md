@@ -15,6 +15,7 @@ Kurzbeschreibung und was die Anwendung bietet (nicht‑technisch):
 - Wertpapiertransaktionen (Kauf/Verkauf/Dividende) erfassen und Gebühren/Steuern berücksichtigen
 - Wertpapier-Performance-Analyse: TWR, IRR, CAGR, Sharpe Ratio, Max. Drawdown – mit Benchmark-Vergleich
 - Transaktionssichere Kontoauszug-Buchung mit Single-Flight-Guard, idempotenten Wiederholungen und 409-Fehlervertrag
+- Inline-Kontakterstellung aus Kontoauszugseinträgen mit automatischer Parent-Zuordnung, 409-Fehlervertrag bei Zuordnungskonflikten und Rollback-Versuch
 - Budgetwirkung bei Buchung: Hinweise bei kritischen Budgets und Abschluss-Summary mit Vorher/Nachher/Delta
 - Budget-Regeln mit Verwendungszweck-Pattern: optionales PurposePattern pro Regel (contains, case-insensitive) oder Regex-Matching inkl. Validierung
 - Berichte und KPI‑Dashboard; Daten als CSV/XLSX exportieren
@@ -102,6 +103,7 @@ Details: [`docs/architecture/`](docs/architecture/)
 - Installationsanleitung: `docs/install.md`
 - Teil‑OpenAPI: `docs/api/openapi.yaml` (Accounts + models)
 - Detaillierte Controller‑Docs in `docs/api/`
+- Kontakt-Create/Assign-Vertrag: `docs/api/ContactsController.md` und `docs/flows/contact-create-auto-assign.md`
 - Posting-Reversal-API: `POST /api/postings/{id}/reverse`, `GET /api/postings/{id}/validate-reversal` (Details: `docs/api/PostingsController.md`)
 - [Planungsübersicht Renditeanalyse](docs/planning-renditeanalyse.md)
 - [Anforderungen FA-WERT-REN-001](docs/requirements/FA-WERT-REN-001_Renditeanalyse.md)
@@ -139,6 +141,7 @@ Details: [`docs/architecture/`](docs/architecture/)
 
 ## Changelog
 
+- 2026-07: Statement Contact Auto Assignment dokumentiert (Create + Parent-Assignment, 409 Conflict `Err_Conflict_ParentAssignment`, Rollback- und Idempotenzverhalten).
 - 2026-06: Transaktionssichere Kontoauszug-Buchung mit Guard, Retry-Semantik und 409 ProblemDetails dokumentiert.
 - 2026-06: Budget-Verwendungszweck-Pattern inkl. Regex ergänzt (Migration `20260604172812_202606041500_AddBudgetRulePurposePattern`, API/Matching/Tests aktualisiert).
 - 2026-05: Budget-Impact-Auswertung für Statement-Buchung dokumentiert (Entry-Hinweise + Booking-Summary).

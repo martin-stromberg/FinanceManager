@@ -274,3 +274,52 @@
 
 - Die technische und fachliche Dokumentation spiegelt jetzt den implementierten Stand der Statement-Buchung wider.
 - Offene Doku-Lücken für dieses Feature sind nicht bekannt.
+
+---
+
+# Dokumentationsplan: Statement Contact Auto Assignment (2026-07-01)
+
+> Status: ✅ Abgeschlossen  
+> Fokus: Technische + fachliche Dokumentation für Kontaktanlage mit Parent-Zuordnung aus Statement-Draft-Entries
+
+## Phase 1 – Analyse-Ergebnisse
+
+### API-Dokumentation
+- `docs/api/ContactsController.md` war zu knapp und enthielt keinen Fehlervertrag für `Err_Conflict_ParentAssignment`.
+- `docs/api/PUBLIC_API.md` enthielt im Abschnitt `Create Contact` veraltete Request-Felder und keine Beschreibung von `parent`, `409 Conflict`, Rollback oder Idempotenz.
+
+### Flow-Dokumentation
+- Es gab keinen dedizierten Ablauf für „Create Contact + Assign to StatementDraftEntry“.
+- `docs/flows/README.md` hatte keinen Eintrag für dieses Verhalten.
+
+### Business-Dokumentation
+- `docs/business/features/F012-kontakte.md` beschrieb die allgemeine Kontaktfunktion, aber nicht den Inline-Entry-Kontext mit Konflikt-/Rollback-Verhalten.
+
+### README
+- Feature und Fehlervertrag waren nicht explizit in der Projektübersicht enthalten.
+
+## Phase 2 – Ausführung
+
+### Neu erstellt
+- `docs/flows/contact-create-auto-assign.md`
+
+### Aktualisiert
+- `docs/api/ContactsController.md`
+- `docs/api/PUBLIC_API.md`
+- `docs/flows/README.md`
+- `docs/business/features/F012-kontakte.md`
+- `README.md`
+
+## Ergebnis (Anhang)
+
+- API-Vertrag für `POST /api/contacts` dokumentiert:
+  - Parent-Kontext (`ParentLinkRequest`)
+  - `409 Conflict` mit `Err_Conflict_ParentAssignment`
+  - lokalisierte/fallback Fehlermeldung
+- Rollback-Verhalten nachvollziehbar dokumentiert (Rollback-Delete wird versucht, Konfliktantwort bleibt konsistent).
+- Idempotenzverhalten dokumentiert:
+  - Endpoint selbst nicht idempotent
+  - Assignment-Ebene idempotent bei bereits identischer Verknüpfung.
+- Verlinkung auf bestehende Planungs- und Testartefakte ergänzt:
+  - Requirements, Planning, Architecture, Architecture Review
+  - Testplan und Coverage-Gap-Dokumente.

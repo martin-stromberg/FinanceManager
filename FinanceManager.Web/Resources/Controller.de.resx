@@ -122,6 +122,9 @@
 	<data name="API_Backup_Err_Conflict_DuplicateFileName" xml:space="preserve">
 		<value>Ein Backup mit diesem Dateinamen existiert bereits.</value>
 	</data>
+	<data name="API_Contacts_Err_Conflict_ParentAssignment" xml:space="preserve">
+		<value>Der Kontakt konnte nicht abgeschlossen erstellt werden, da die Zuordnung zum ausgewählten Kontoauszugseintrag fehlgeschlagen ist.</value>
+	</data>
 	<data name="API_Attachment_Err_Conflict" xml:space="preserve">
 		<value>Die Aktion konnte nicht ausgeführt werden.</value>
 	</data>

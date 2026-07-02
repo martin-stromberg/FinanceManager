@@ -126,6 +126,9 @@
 	<data name="API_Backup_Err_Conflict_DuplicateFileName" xml:space="preserve">
 		<value>A backup with that filename already exists.</value>
 	</data>
+	<data name="API_Contacts_Err_Conflict_ParentAssignment" xml:space="preserve">
+		<value>Contact creation could not be completed because assignment to the selected statement entry failed.</value>
+	</data>
 
 	<data name="API_Attachment_Err_Conflict" xml:space="preserve">
 		<value>The operation could not be performed.</value>

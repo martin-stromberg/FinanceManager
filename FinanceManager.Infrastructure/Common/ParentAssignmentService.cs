@@ -121,8 +121,27 @@ public sealed class ParentAssignmentService : IParentAssignmentService
             return false;
         }
 
+        if (entry.ContactId == createdId)
+        {
+            _logger.LogInformation(
+                "Contact assignment is idempotent no-op: OwnerUserId={OwnerUserId}, DraftId={DraftId}, EntryId={EntryId}, ContactId={ContactId}, AssignmentResult={AssignmentResult}",
+                ownerUserId,
+                entry.DraftId,
+                entry.Id,
+                createdId,
+                "already-assigned");
+            return true;
+        }
+
         entry.AssignContactWithoutAccounting(createdId);
         await _db.SaveChangesAsync(ct);
+        _logger.LogInformation(
+            "Contact assigned to statement draft entry: OwnerUserId={OwnerUserId}, DraftId={DraftId}, EntryId={EntryId}, ContactId={ContactId}, AssignmentResult={AssignmentResult}",
+            ownerUserId,
+            entry.DraftId,
+            entry.Id,
+            createdId,
+            "assigned");
         return true;
     }
 
