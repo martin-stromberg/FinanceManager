@@ -71,6 +71,23 @@ Dies unterstützt die Dokumentation von Geschäftsbeziehungen und macht Transakt
    - **Nach Typ filtern**: Nur "Personen" oder "Firmen" anzeigen
    - **Alle anzeigen**: Komplette Liste ohne Pagination laden
 
+### Inline-Kontakterstellung im Kontoauszugseintrag (neu)
+
+Wenn Sie einen Kontakt direkt aus einem Kontoauszugseintrag heraus anlegen (Lookup mit „+“), versucht das System nach dem Speichern sofort die Zuordnung zum auslösenden Eintrag.
+
+Erwartetes Verhalten:
+1. Kontakt wird erstellt.
+2. Kontakt wird automatisch dem gewählten Eintrag zugewiesen.
+3. Bei Rückkehr zur Eintragsansicht ist der Kontakt sichtbar.
+
+Fehlerfall:
+- Schlägt die Zuordnung fehl, antwortet die API mit **409 Conflict** (`Err_Conflict_ParentAssignment`).
+- Das System versucht in diesem Fall, die gerade erstellte Kontaktanlage zurückzurollen (Löschversuch), damit kein ungewollter Zwischenzustand bleibt.
+
+Wichtig für Anwender:
+- Die Aktion gilt als nicht erfolgreich, solange die Zuordnung nicht abgeschlossen werden konnte.
+- Eine erneute Ausführung ist möglich; die Zuordnung selbst ist bei bereits identischer Verknüpfung stabil (kein doppelter Link).
+
 ## Datenfelder
 
 ### Erforderlich:
@@ -136,7 +153,7 @@ Das Bank-Logo wird dann überall wo dieser Kontakt verwendet wird angezeigt.
 ### API-Endpoints
 - `GET /api/contacts` - Kontakte listen (mit Paging & Filtern)
 - `GET /api/contacts/{id}` - Einzelnen Kontakt abrufen
-- `POST /api/contacts` - Neuen Kontakt erstellen
+- `POST /api/contacts` - Neuen Kontakt erstellen (optional mit Parent-Kontext für Inline-Zuordnung)
 - `PUT /api/contacts/{id}` - Kontakt aktualisieren
 - `DELETE /api/contacts/{id}` - Kontakt löschen
 - `POST /api/contacts/{id}/merge` - Mit anderem Kontakt verschmelzen
@@ -177,4 +194,6 @@ A: Ja, laden Sie eine Bilddatei als Anhang mit der Rolle "Symbol" hoch.
 
 - [F003 – Ausgabenverwaltung / Postings](./F003-ausgabenverwaltung.md)
 - [F011 – Belege & Anhänge](./F011-belege-anhaenge.md)
-
+- [Flow: Contact Create Auto Assign](../../flows/contact-create-auto-assign.md)
+- [API: ContactsController](../../api/ContactsController.md)
+- [Requirements: Statement Contact Auto Assignment](../../requirements/statement-contact-auto-assignment-requirements.md)

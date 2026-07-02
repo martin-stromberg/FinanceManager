@@ -376,9 +376,14 @@ Manage contacts (persons, companies, banks, etc.) for the current user.
 {
   "name": "string (required)",
   "type": "string (required: Person|Company|Bank|Other)",
-  "email": "string (optional)",
-  "phone": "string (optional)",
-  "symbolAttachmentId": "uuid (optional)"
+  "categoryId": "uuid (optional)",
+  "description": "string (optional)",
+  "isPaymentIntermediary": "boolean (optional)",
+  "parent": {
+    "parentKind": "string (optional, e.g. statement-drafts/entries)",
+    "parentId": "uuid (required when parent is provided)",
+    "field": "string (optional, e.g. ContactId)"
+  }
 }
 ```
 
@@ -387,6 +392,24 @@ Manage contacts (persons, companies, banks, etc.) for the current user.
 **Status Codes:**
 - `201 Created` - Contact created
 - `400 Bad Request` - Invalid input
+- `409 Conflict` - Parent assignment failed (`Err_Conflict_ParentAssignment`)
+
+**Parent assignment contract (when `parent` is provided):**
+- The server creates the contact and then tries to assign it to the requested parent context.
+- For `parentKind=statement-drafts/entries` and `field=ContactId`, the created contact is assigned to the target statement draft entry.
+- If assignment fails, the server attempts a rollback delete of the just-created contact and returns `409 Conflict`.
+
+**Conflict payload example:**
+```json
+{
+  "code": "Err_Conflict_ParentAssignment",
+  "message": "Contact creation could not be completed because assignment to the selected statement entry failed."
+}
+```
+
+**Idempotency note:**
+- `POST /contacts` itself is not idempotent.
+- Internal parent assignment is idempotent for already assigned `(parentId, contactId)` combinations.
 
 ---
 

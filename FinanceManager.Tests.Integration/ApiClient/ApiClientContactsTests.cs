@@ -72,4 +72,97 @@ public class ApiClientContactsTests : IClassFixture<TestWebApplicationFactory>
         var gone = await api.Contacts_GetAsync(created.Id);
         gone.Should().BeNull();
     }
+
+    [Fact]
+    public async Task Contacts_Create_WithStatementEntryParent_ShouldAssignCreatedContactToEntry()
+    {
+        var api = CreateClient();
+        await EnsureAuthenticatedAsync(api);
+
+        var (draftId, entryId) = await CreateDraftWithSingleEntryAsync(api, "contact_auto_assign.csv");
+        var request = new ContactCreateRequest(
+            Name: $"Inline Contact {Guid.NewGuid():N}",
+            Type: ContactType.Other,
+            CategoryId: null,
+            Description: "Created from statement entry context",
+            IsPaymentIntermediary: false,
+            Parent: new FinanceManager.Shared.Dtos.Common.ParentLinkRequest("statement-drafts/entries", entryId, "ContactId"));
+
+        var created = await api.Contacts_CreateAsync(request);
+        created.Should().NotBeNull();
+
+        var draft = await api.StatementDrafts_GetAsync(draftId);
+        draft.Should().NotBeNull();
+        draft!.Entries.Should().ContainSingle(e => e.Id == entryId && e.ContactId == created.Id);
+    }
+
+    [Fact]
+    public async Task Contacts_Create_WithInvalidParent_ShouldReturnConflictAndRollbackContactCreate()
+    {
+        var api = CreateClient();
+        await EnsureAuthenticatedAsync(api);
+        var countBefore = (await api.Contacts_ListAsync(all: true)).Count;
+
+        Func<Task> act = async () => await api.Contacts_CreateAsync(new ContactCreateRequest(
+            Name: $"Inline Contact Invalid Parent {Guid.NewGuid():N}",
+            Type: ContactType.Other,
+            CategoryId: null,
+            Description: "Should fail",
+            IsPaymentIntermediary: false,
+            Parent: new FinanceManager.Shared.Dtos.Common.ParentLinkRequest("statement-drafts/entries", Guid.NewGuid(), "ContactId")));
+
+        await act.Should().ThrowAsync<HttpRequestException>();
+        api.LastErrorCode.Should().Be("Err_Conflict_ParentAssignment");
+        api.LastError.Should().NotBeNullOrWhiteSpace();
+        var lastError = api.LastError!;
+        (lastError.Contains("assignment to the selected statement entry failed", StringComparison.OrdinalIgnoreCase) ||
+         lastError.Contains("assignment to the requested entry failed", StringComparison.OrdinalIgnoreCase) ||
+         lastError.Contains("Zuordnung zum ausgewählten Kontoauszugseintrag fehlgeschlagen", StringComparison.OrdinalIgnoreCase))
+            .Should().BeTrue();
+
+        var countAfter = (await api.Contacts_ListAsync(all: true)).Count;
+        countAfter.Should().Be(countBefore);
+    }
+
+    /// <summary>
+    /// Creates one account, uploads a statement draft and returns the draft/entry identifiers.
+    /// </summary>
+    private static async Task<(Guid DraftId, Guid EntryId)> CreateDraftWithSingleEntryAsync(FinanceManager.Shared.ApiClient api, string fileName)
+    {
+        var account = await api.CreateAccountAsync(new AccountCreateRequest(
+            Name: $"Statement Account {Guid.NewGuid():N}",
+            Type: AccountType.Giro,
+            Iban: "DE50700500000007882995",
+            BankContactId: null,
+            NewBankContactName: "Test Bank",
+            SymbolAttachmentId: null,
+            SavingsPlanExpectation: SavingsPlanExpectation.Optional,
+            SecurityProcessingEnabled: false));
+
+        var csv = "Umsatzanzeige;Datei erstellt am: 02.12.2025 19:04\r\n" +
+                  "\r\n" +
+                  $"IBAN;{account.Iban}\r\n" +
+                  "Kontoname;Girokonto\r\n" +
+                  "Bank;ING\r\n" +
+                  "Kunde;Admin\r\n" +
+                  "Zeitraum;02.11.2025 - 02.12.2025\r\n" +
+                  "Saldo;2.776,45;EUR\r\n" +
+                  "\r\n" +
+                  "Sortierung;Datum absteigend\r\n" +
+                  "\r\n" +
+                  "\r\n" +
+                  "Buchung;Wertstellungsdatum;Auftraggeber/Empf�nger;Buchungstext;Verwendungszweck;Saldo;W�hrung;Betrag;W�hrung\r\n" +
+                  "02.12.2025;02.12.2025;Inline Contact;�berweisung;Ihr Einkauf;2.776,45;EUR;-206,44;EUR\r\n";
+
+        using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
+        var upload = await api.StatementDrafts_UploadAsync(ms, fileName);
+        upload.Should().NotBeNull();
+        var draftId = upload!.FirstDraft!.DraftId;
+
+        var detail = await api.StatementDrafts_GetAsync(draftId);
+        detail.Should().NotBeNull();
+        var entryId = detail!.Entries.First().Id;
+
+        return (draftId, entryId);
+    }
 }
