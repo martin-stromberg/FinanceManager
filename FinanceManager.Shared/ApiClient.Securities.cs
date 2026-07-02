@@ -209,6 +209,35 @@ public partial class ApiClient
     }
 
     /// <summary>
+    /// Imports security prices from an uploaded provider file.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="fileStream">Uploaded file content stream.</param>
+    /// <param name="fileName">Uploaded file name.</param>
+    /// <param name="provider">Provider hint (defaults to "ing").</param>
+    /// <param name="contentType">Optional MIME type.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>Import result containing counters and parsing errors.</returns>
+    public async Task<SecurityPriceImportResultDto> Securities_ImportPricesAsync(
+        Guid id,
+        Stream fileStream,
+        string fileName,
+        string provider = "ing",
+        string? contentType = null,
+        CancellationToken ct = default)
+    {
+        using var content = new MultipartFormDataContent();
+        var filePart = new StreamContent(fileStream);
+        filePart.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(string.IsNullOrWhiteSpace(contentType) ? "text/csv" : contentType);
+        content.Add(filePart, "file", fileName);
+        content.Add(new StringContent(string.IsNullOrWhiteSpace(provider) ? "ing" : provider), "provider");
+
+        var resp = await _http.PostAsync($"/api/securities/{id}/prices/import", content, ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return (await resp.Content.ReadFromJsonAsync<SecurityPriceImportResultDto>(cancellationToken: ct))!;
+    }
+
+    /// <summary>
     /// Enqueues a background task to backfill security data.
     /// </summary>
     /// <param name="securityId">Optional security id to backfill; when null, backfills all securities.</param>

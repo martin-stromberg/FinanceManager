@@ -1,6 +1,8 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
+using FinanceManager.Web.Components.Shared;
 using FinanceManager.Web;
+using FinanceManager.Web.ViewModels.Common;
 using FinanceManager.Web.Services;
 using FinanceManager.Web.ViewModels.Securities.Prices;
 using Microsoft.AspNetCore.Components;
@@ -86,7 +88,7 @@ public sealed class SecurityPricesViewModelTests
     public void RequestOpenBackfill_RaisesUiAction()
     {
         var (vm, _) = CreateVm();
-        FinanceManager.Web.ViewModels.Common.BaseViewModel.UiActionEventArgs? received = null;
+        BaseViewModel.UiActionEventArgs? received = null;
         vm.UiActionRequested += (_, e) => received = e;
 
         vm.RequestOpenBackfill();
@@ -95,6 +97,66 @@ public sealed class SecurityPricesViewModelTests
         Assert.Equal("OpenOverlay", received!.Action);
         Assert.Null(received.Payload);
         Assert.NotNull(received.PayloadObject);
+    }
+
+    [Fact]
+    public async Task RibbonImportPricesAction_ShouldOpenImportOverlay()
+    {
+        var (vm, _) = CreateVm();
+        await vm.InitializeAsync();
+
+        var action = vm.GetRibbon(new TestLocalizer<Pages>())!
+            .SelectMany(x => x.Tabs ?? new List<UiRibbonTab>())
+            .SelectMany(x => x.Items ?? new List<UiRibbonAction>())
+            .Single(x => x.Action == "ImportPrices");
+
+        BaseViewModel.UiActionEventArgs? received = null;
+        vm.UiActionRequested += (_, e) => received = e;
+
+        await action.Callback!();
+
+        Assert.NotNull(received);
+        var overlay = Assert.IsType<BaseViewModel.UiOverlaySpec>(received!.PayloadObject);
+        Assert.Equal(typeof(SecurityPriceImportPanel), overlay.ComponentType);
+    }
+
+    [Fact]
+    public void RequestOpenImport_RaisesOverlayWithImportPanelAndSecurityId()
+    {
+        var (vm, _) = CreateVm();
+        BaseViewModel.UiActionEventArgs? received = null;
+        vm.UiActionRequested += (_, e) => received = e;
+
+        vm.RequestOpenImport();
+
+        Assert.NotNull(received);
+        Assert.Equal("OpenOverlay", received!.Action);
+        var overlay = Assert.IsType<BaseViewModel.UiOverlaySpec>(received.PayloadObject);
+        Assert.Equal(typeof(SecurityPriceImportPanel), overlay.ComponentType);
+        Assert.NotNull(overlay.Parameters);
+        Assert.Equal(vm.SecurityId, Assert.IsType<Guid>(overlay.Parameters!["SecurityId"]));
+        Assert.True(overlay.Parameters.ContainsKey("OverlayTitle"));
+    }
+
+    [Fact]
+    public async Task RibbonImportPricesAction_ShouldBeDisabled_WhenSecurityIdIsEmpty()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<ICurrentUserService>(new TestCurrentUserService());
+        services.AddSingleton(new Mock<IApiClient>().Object);
+        services.AddLocalization(options => options.ResourcesPath = "Resources");
+        services.AddSingleton(typeof(IStringLocalizer<Pages>), new PagesStringLocalizer());
+        services.AddSingleton<NavigationManager>(new TestNavigationManager());
+        var vm = new SecurityPricesListViewModel(services.BuildServiceProvider(), Guid.Empty);
+
+        await vm.InitializeAsync();
+
+        var action = vm.GetRibbon(new TestLocalizer<Pages>())!
+            .SelectMany(x => x.Tabs ?? new List<UiRibbonTab>())
+            .SelectMany(x => x.Items ?? new List<UiRibbonAction>())
+            .Single(x => x.Action == "ImportPrices");
+
+        Assert.True(action.Disabled);
     }
 
     private sealed class TestLocalizer<T> : Microsoft.Extensions.Localization.IStringLocalizer<T>

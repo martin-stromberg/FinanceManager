@@ -1040,6 +1040,18 @@
             <param name="ct">Cancellation token used to cancel the HTTP request.</param>
             <returns>List of <see cref="T:FinanceManager.Shared.Dtos.Securities.SecurityPriceDto"/> or null when the security is not found.</returns>
         </member>
+        <member name="M:FinanceManager.Shared.ApiClient.Securities_ImportPricesAsync(System.Guid,System.IO.Stream,System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Imports security prices from an uploaded provider file.
+            </summary>
+            <param name="id">Security identifier.</param>
+            <param name="fileStream">Uploaded file content stream.</param>
+            <param name="fileName">Uploaded file name.</param>
+            <param name="provider">Provider hint (defaults to "ing").</param>
+            <param name="contentType">Optional MIME type.</param>
+            <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+            <returns>Import result containing counters and parsing errors.</returns>
+        </member>
         <member name="M:FinanceManager.Shared.ApiClient.Securities_EnqueueBackfillAsync(System.Nullable{System.Guid},System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
             <summary>
             Enqueues a background task to backfill security data.
@@ -5252,6 +5264,111 @@
         <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceDto.Close">
             <summary>Closing price amount.</summary>
         </member>
+        <member name="T:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext">
+            <summary>
+            Context used to select a provider-specific import service.
+            </summary>
+            <param name="Provider">Optional provider hint (for example "ing").</param>
+            <param name="FileName">Uploaded file name.</param>
+            <param name="ContentType">Optional content type of the uploaded file.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext.#ctor(System.String,System.String,System.String)">
+            <summary>
+            Context used to select a provider-specific import service.
+            </summary>
+            <param name="Provider">Optional provider hint (for example "ing").</param>
+            <param name="FileName">Uploaded file name.</param>
+            <param name="ContentType">Optional content type of the uploaded file.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext.Provider">
+            <summary>Optional provider hint (for example "ing").</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext.FileName">
+            <summary>Uploaded file name.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext.ContentType">
+            <summary>Optional content type of the uploaded file.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportItem">
+            <summary>
+            Represents a single importable price row normalized to a trading day.
+            </summary>
+            <param name="Date">Trading day (date component only).</param>
+            <param name="Close">Close price for the trading day.</param>
+            <param name="SourceLine">Original CSV line number.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportItem.#ctor(System.DateTime,System.Decimal,System.Int32)">
+            <summary>
+            Represents a single importable price row normalized to a trading day.
+            </summary>
+            <param name="Date">Trading day (date component only).</param>
+            <param name="Close">Close price for the trading day.</param>
+            <param name="SourceLine">Original CSV line number.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportItem.Date">
+            <summary>Trading day (date component only).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportItem.Close">
+            <summary>Close price for the trading day.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportItem.SourceLine">
+            <summary>Original CSV line number.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportErrorDto">
+            <summary>
+            Represents one validation or parsing error from an import file.
+            </summary>
+            <param name="LineNumber">CSV line number where the error occurred.</param>
+            <param name="Message">Human-readable error message.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportErrorDto.#ctor(System.Int32,System.String)">
+            <summary>
+            Represents one validation or parsing error from an import file.
+            </summary>
+            <param name="LineNumber">CSV line number where the error occurred.</param>
+            <param name="Message">Human-readable error message.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportErrorDto.LineNumber">
+            <summary>CSV line number where the error occurred.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportErrorDto.Message">
+            <summary>Human-readable error message.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportResultDto">
+            <summary>
+            Result of a security price import.
+            </summary>
+            <param name="Inserted">Number of newly created daily prices.</param>
+            <param name="Updated">Number of existing daily prices updated with a new close value.</param>
+            <param name="Unchanged">Number of existing daily prices that already had the same close value.</param>
+            <param name="Skipped">Number of skipped input lines (for example empty or invalid lines).</param>
+            <param name="Errors">Collection of row-level errors encountered while parsing.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportResultDto.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.SecurityPriceImportErrorDto})">
+            <summary>
+            Result of a security price import.
+            </summary>
+            <param name="Inserted">Number of newly created daily prices.</param>
+            <param name="Updated">Number of existing daily prices updated with a new close value.</param>
+            <param name="Unchanged">Number of existing daily prices that already had the same close value.</param>
+            <param name="Skipped">Number of skipped input lines (for example empty or invalid lines).</param>
+            <param name="Errors">Collection of row-level errors encountered while parsing.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportResultDto.Inserted">
+            <summary>Number of newly created daily prices.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportResultDto.Updated">
+            <summary>Number of existing daily prices updated with a new close value.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportResultDto.Unchanged">
+            <summary>Number of existing daily prices that already had the same close value.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportResultDto.Skipped">
+            <summary>Number of skipped input lines (for example empty or invalid lines).</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportResultDto.Errors">
+            <summary>Collection of row-level errors encountered while parsing.</summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Securities.SecurityRequest">
             <summary>
             Request payload to create or update a security.
@@ -6963,6 +7080,9 @@
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.Securities_GetPricesAsync(System.Guid,System.Int32,System.Int32,System.Threading.CancellationToken)">
             <summary>Gets historical price data for a security.</summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.Securities_ImportPricesAsync(System.Guid,System.IO.Stream,System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>Imports security prices from an uploaded provider file.</summary>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.Securities_EnqueueBackfillAsync(System.Nullable{System.Guid},System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
             <summary>Enqueues a background task to backfill missing security data.</summary>

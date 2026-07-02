@@ -13,6 +13,7 @@ Kurzbeschreibung und was die Anwendung bietet (nicht‑technisch):
 - Kontoauszüge (CSV/PDF) importieren und automatisch oder manuell kategorisieren
 - Sparpläne verwalten (einmalig oder wiederkehrend) und Zielerreichung verfolgen
 - Wertpapiertransaktionen (Kauf/Verkauf/Dividende) erfassen und Gebühren/Steuern berücksichtigen
+- Wertpapierkurse per ING-CSV importieren (inkl. Upsert für neue/geänderte/unveränderte Tageskurse) über die Wertpapier-Kursseite und API
 - Wertpapier-Performance-Analyse: TWR, IRR, CAGR, Sharpe Ratio, Max. Drawdown – mit Benchmark-Vergleich
 - Transaktionssichere Kontoauszug-Buchung mit Single-Flight-Guard, idempotenten Wiederholungen und 409-Fehlervertrag
 - Inline-Kontakterstellung aus Kontoauszugseinträgen mit automatischer Parent-Zuordnung, 409-Fehlervertrag bei Zuordnungskonflikten und Rollback-Versuch
@@ -111,6 +112,13 @@ Details: [`docs/architecture/`](docs/architecture/)
 - [Requirements: Budget-Verwendungszweck-Pattern inkl. Regex](Docs/requirements/budget-verwendungszweck.md)
 - [Architektur: Budget-Verwendungszweck-Pattern inkl. Regex](Docs/architecture/budget-verwendungszweck.md)
 - [Business-Dokumentation F017 Renditeanalyse](docs/business/features/F017-renditeanalyse.md)
+- [Requirements: Wertpapierkurse ING-CSV-Import](Docs/requirements/wertpapierkurse-ing-requirements.md)
+- [Architektur: Wertpapierkurse ING-CSV-Import](Docs/architecture/architecture-blueprint-wertpapierkurse-ing.md)
+- [Tests: Wertpapierkurse ING-CSV-Import](Docs/tests/wertpapierkurse-ing-testplan.md)
+- [API: SecuritiesController (`POST /api/securities/{id}/prices/import`)](Docs/api/SecuritiesController.md)
+- [Business: F007 Wertpapierpreise ING-CSV-Import](Docs/business/features/F007-wertpapierpreise-ing-csv-import.md)
+- [Flow: Wertpapierkurse ING-CSV-Import inkl. Upsert/API/UI](Docs/flows/security-price-import-ing.md)
+- [API: AttachmentsController (inkl. Download-Stabilisierung für SQLite)](Docs/api/AttachmentsController.md)
 
 ## Entwicklungskonventionen
 
@@ -142,6 +150,7 @@ Details: [`docs/architecture/`](docs/architecture/)
 ## Changelog
 
 - 2026-07: Statement Contact Auto Assignment dokumentiert (Create + Parent-Assignment, 409 Conflict `Err_Conflict_ParentAssignment`, Rollback- und Idempotenzverhalten).
+- 2026-07: Wertpapierkurs-Import UI-Platzierung auf die Kursseite (`/list/securities/prices/{id}`) präzisiert; Attachment-Download stabilisiert (isolierter Read-Path via `IDbContextFactory`, Retry bei SQLite-Collation-Konflikt).
 - 2026-06: Transaktionssichere Kontoauszug-Buchung mit Guard, Retry-Semantik und 409 ProblemDetails dokumentiert.
 - 2026-06: Budget-Verwendungszweck-Pattern inkl. Regex ergänzt (Migration `20260604172812_202606041500_AddBudgetRulePurposePattern`, API/Matching/Tests aktualisiert).
 - 2026-05: Budget-Impact-Auswertung für Statement-Buchung dokumentiert (Entry-Hinweise + Booking-Summary).

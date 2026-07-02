@@ -1,5 +1,6 @@
 using FinanceManager.Application.Attachments;
 using FinanceManager.Domain.Attachments;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
@@ -13,6 +14,7 @@ namespace FinanceManager.Infrastructure.Attachments;
 public sealed class AttachmentService : IAttachmentService
 {
     private readonly AppDbContext _db;
+    private readonly IDbContextFactory<AppDbContext>? _dbContextFactory;
     private readonly ILogger<AttachmentService> _logger;
     private const int MaxTake = 200;
 
@@ -21,9 +23,12 @@ public sealed class AttachmentService : IAttachmentService
     /// </summary>
     /// <param name="db">The application database context.</param>
     /// <param name="logger">Logger instance for diagnostic output.</param>
-    public AttachmentService(AppDbContext db, ILogger<AttachmentService> logger)
+    /// <param name="dbContextFactory">Optional context factory used for isolated read operations.</param>
+    public AttachmentService(AppDbContext db, ILogger<AttachmentService> logger, IDbContextFactory<AppDbContext>? dbContextFactory = null)
     {
-        _db = db; _logger = logger;
+        _db = db;
+        _logger = logger;
+        _dbContextFactory = dbContextFactory;
     }
 
     /// <summary>
@@ -181,17 +186,41 @@ public sealed class AttachmentService : IAttachmentService
     /// </returns>
     public async Task<(Stream Content, string FileName, string ContentType)?> DownloadAsync(Guid ownerUserId, Guid attachmentId, CancellationToken ct)
     {
-        var a = await _db.Attachments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == attachmentId && a.OwnerUserId == ownerUserId, ct);
+        try
+        {
+            return await ExecuteReadAsync(db => DownloadInternalAsync(db, ownerUserId, attachmentId, ct), ct);
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode == 5 && ex.Message.Contains("collation sequence", StringComparison.OrdinalIgnoreCase) && _dbContextFactory is not null)
+        {
+            _logger.LogWarning(ex, "SQLite collation conflict during attachment download for attachment {AttachmentId}. Retrying with isolated context.", attachmentId);
+            return await ExecuteReadAsync(db => DownloadInternalAsync(db, ownerUserId, attachmentId, ct), ct);
+        }
+    }
+
+    private async Task<(Stream Content, string FileName, string ContentType)?> DownloadInternalAsync(AppDbContext db, Guid ownerUserId, Guid attachmentId, CancellationToken ct)
+    {
+        var a = await db.Attachments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == attachmentId && x.OwnerUserId == ownerUserId, ct);
         if (a == null) { return null; }
         // If this is a reference-only attachment, resolve master
         if (a.Content == null && string.IsNullOrWhiteSpace(a.Url) && a.ReferenceAttachmentId.HasValue)
         {
-            var master = await _db.Attachments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == a.ReferenceAttachmentId.Value && x.OwnerUserId == ownerUserId, ct);
+            var master = await db.Attachments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == a.ReferenceAttachmentId.Value && x.OwnerUserId == ownerUserId, ct);
             if (master == null || master.Content == null) { return null; }
             return (new MemoryStream(master.Content, writable: false), master.FileName, master.ContentType);
         }
         if (a.Content == null) { return null; }
         return (new MemoryStream(a.Content, writable: false), a.FileName, a.ContentType);
+    }
+
+    private async Task<T> ExecuteReadAsync<T>(Func<AppDbContext, Task<T>> action, CancellationToken ct)
+    {
+        if (_dbContextFactory is null)
+        {
+            return await action(_db);
+        }
+
+        await using var db = await _dbContextFactory.CreateDbContextAsync(ct);
+        return await action(db);
     }
 
     /// <summary>

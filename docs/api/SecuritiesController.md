@@ -24,6 +24,7 @@ Verwaltet Wertpapiere (Instrumente): CRUD-Operationen, Symbol-Attachments, Kursa
   - [POST /api/securities/{id}/symbol (Upload)](#post-apisecuritiesidsymbol-upload)
 - [Preis- und Zeitreihen-Endpunkte](#preis--und-zeitreihen-endpunkte)
   - [GET /api/securities/{id}/prices](#get-apisecuritiesidprices)
+  - [POST /api/securities/{id}/prices/import](#post-apisecuritiesidpricesimport)
   - [GET /api/securities/{securityId}/aggregates](#get-apisecuritiesidsecurityidaggregates)
   - [GET /api/securities/dividends](#get-apisecuritiesdividends)
   - [POST /api/securities/backfill](#post-apisecuritiesbackfill)
@@ -361,6 +362,124 @@ Gibt historische Kurse (neueste zuerst, seitenweise) für ein Wertpapier zurück
 |------------|--------------|
 | `200 OK` | Liste der Kursdaten. |
 | `404 Not Found` | Wertpapier nicht im Besitz des Benutzers. |
+
+---
+
+### POST /api/securities/{id}/prices/import
+
+Importiert Tageskurse aus einer hochgeladenen CSV-Datei für ein bestehendes Wertpapier.  
+Der Endpunkt verarbeitet ING-kompatible Dateien und führt ein Upsert pro Kalendertag aus.
+
+**UI-Kontext:** Die Importaktion wird in der Kursliste des Wertpapiers ausgelöst (`/list/securities/prices/{id}`), nicht mehr auf der Wertpapier-Detailseite.
+
+**Authentifizierung:** ****** *(required)*
+
+**Verwandte Feature-Dokumente:**  
+- [Requirements: Wertpapierkurse ING](../requirements/wertpapierkurse-ing-requirements.md)  
+- [Architecture Blueprint: Wertpapierkurse ING](../architecture/architecture-blueprint-wertpapierkurse-ing.md)  
+- [Testplan: Wertpapierkurse ING](../tests/wertpapierkurse-ing-testplan.md)
+
+#### Path-Parameter
+
+| Name | Typ | Pflicht | Beschreibung |
+|------|-----|---------|--------------|
+| `id` | `guid` | *(required)* | Bezeichner des Wertpapiers. |
+
+#### Request (`multipart/form-data`)
+
+| Feld | Typ | Pflicht | Beschreibung |
+|------|-----|---------|--------------|
+| `file` | Datei | *(required)* | CSV-Datei mit Kursdaten (ING-Format). |
+| `provider` | `string` | Optional | Provider-Hinweis. Wenn nicht gesetzt, verwendet der Controller `ing` als Default. |
+
+**Provider-Default und Auswahlverhalten**
+- Bei fehlendem `provider` wird serverseitig `"ing"` verwendet.
+- Die Service-Auswahl nutzt zusätzlich die Dateiendung (`.csv`) als Fallback.
+- Ein `400` wegen nicht unterstütztem Provider tritt auf, wenn kein Import-Service passt (z. B. ungeeigneter Provider + nicht unterstützte Datei).
+
+#### Upsert-Semantik
+
+- `inserted`: Neuer Kurs für ein Datum wurde angelegt.
+- `updated`: Bestehender Kurs wurde bei abweichendem `close` aktualisiert.
+- `unchanged`: Bestehender Kurs hatte bereits denselben `close`-Wert.
+- `skipped`: Zeilen wurden nicht verarbeitet (z. B. leer oder Parsing-/Validierungsfehler).
+- Doppelte Datumszeilen werden auf Tagesebene dedupliziert (`last row wins`).
+
+#### Response
+
+**200 OK**
+```json
+{
+  "inserted": 10,
+  "updated": 2,
+  "unchanged": 5,
+  "skipped": 1,
+  "errors": [
+    { "lineNumber": 17, "message": "Invalid close value format." }
+  ]
+}
+```
+
+**Response-Felder**
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `inserted` | `int` | Anzahl neu angelegter Tageskurse. |
+| `updated` | `int` | Anzahl aktualisierter Tageskurse. |
+| `unchanged` | `int` | Anzahl unveränderter Tageskurse. |
+| `skipped` | `int` | Anzahl übersprungener CSV-Zeilen. |
+| `errors` | `array` | Zeilenbezogene Parse-/Validierungsfehler. |
+
+**`errors[]`-Element**
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `lineNumber` | `int` | Zeilennummer in der CSV-Datei. |
+| `message` | `string` | Fehlerbeschreibung für diese Zeile. |
+
+| Statuscode | Beschreibung |
+|------------|--------------|
+| `200 OK` | Import erfolgreich ausgeführt (auch bei Teilfehlern mit Fehlerliste). |
+| `400 Bad Request` | Datei fehlt/leer (`Err_Invalid_File`), kein passender Import-Service (`Err_Invalid_provider`) oder keine validen Kurszeilen (`Err_Invalid_Import`). |
+| `401 Unauthorized` | Kein gültiger Bearer Token. |
+| `404 Not Found` | Wertpapier nicht gefunden oder nicht im Besitz des Benutzers. |
+| `500 Internal Server Error` | Unerwarteter Serverfehler (`Err_Unexpected`). |
+
+**Fehler-Payload (ApiErrorDto)**
+```json
+{
+  "origin": "API_Securities",
+  "code": "Err_Invalid_File",
+  "message": "A non-empty file is required.",
+  "error": "Err_Invalid_File"
+}
+```
+
+#### Beispiel (curl)
+
+```bash
+curl -X POST "https://localhost:5001/api/securities/3fa85f64-5717-4562-b3fc-2c963f66afa6/prices/import" \
+  -H "Authorization: Bearer <token>" \
+  -H "Accept: application/json" \
+  -F "provider=ing" \
+  -F "file=@sample.csv;type=text/csv"
+```
+
+**Beispiel-Response (200 OK)**
+```json
+{
+  "inserted": 10,
+  "updated": 2,
+  "unchanged": 5,
+  "skipped": 1,
+  "errors": [
+    {
+      "lineNumber": 17,
+      "message": "Invalid close value format."
+    }
+  ]
+}
+```
 
 ---
 

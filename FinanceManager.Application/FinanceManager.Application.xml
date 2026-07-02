@@ -1660,6 +1660,42 @@
             <returns>A task that completes when the operation has finished.</returns>
             <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> or <paramref name="ownerUserId"/> is <see cref="F:System.Guid.Empty"/>.</exception>
         </member>
+        <member name="T:FinanceManager.Application.Securities.ISecurityPriceImportService">
+            <summary>
+            Defines a provider-specific service that imports security prices from an uploaded file.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityPriceImportService.CanHandle(FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext)">
+            <summary>
+            Determines whether the service supports the provided import context.
+            </summary>
+            <param name="context">Import context containing provider hint and file metadata.</param>
+            <returns><c>true</c> when this service can process the input; otherwise <c>false</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityPriceImportService.ImportAsync(System.Guid,System.Guid,System.IO.Stream,FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext,System.Threading.CancellationToken)">
+            <summary>
+            Imports prices from the given stream into the target security for the given owner.
+            </summary>
+            <param name="ownerUserId">Owner user id used for tenant-scoped persistence.</param>
+            <param name="securityId">Security id that receives imported prices.</param>
+            <param name="stream">Input stream containing the uploaded price file.</param>
+            <param name="context">Provider and file metadata context.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Import statistics including counts and parsing errors.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Securities.ISecurityPriceImportServiceFactory">
+            <summary>
+            Resolves the matching provider-specific security price import service for a given file context.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityPriceImportServiceFactory.Resolve(FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext)">
+            <summary>
+            Resolves an import service for the given context.
+            </summary>
+            <param name="context">Provider and file metadata context.</param>
+            <returns>A matching import service implementation.</returns>
+            <exception cref="T:System.InvalidOperationException">Thrown when no service can handle the context.</exception>
+        </member>
         <member name="T:FinanceManager.Application.Securities.ISecurityPriceService">
             <summary>
             Service responsible for managing security price records (historical close prices).
@@ -1707,6 +1743,16 @@
             <param name="securityId">The identifier of the security.</param>
             <param name="ct">Cancellation token used to cancel the operation.</param>
             <returns>A task that returns the date of the latest stored price, or <c>null</c> when no price exists.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityPriceService.UpsertDailyPricesAsync(System.Guid,System.Guid,System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.SecurityPriceImportItem},System.Threading.CancellationToken)">
+            <summary>
+            Upserts daily prices for the given security.
+            </summary>
+            <param name="ownerUserId">The owner of the security.</param>
+            <param name="securityId">Target security identifier.</param>
+            <param name="items">Daily prices to upsert. Duplicate dates are resolved as last item wins.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Counts for inserted, updated and unchanged records.</returns>
         </member>
         <member name="M:FinanceManager.Application.Securities.ISecurityPriceService.SetPriceErrorAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
             <summary>

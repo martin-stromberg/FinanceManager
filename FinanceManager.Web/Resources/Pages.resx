@@ -2053,4 +2053,30 @@
   <data name="Card_Help_BudgetRule_PurposePattern" xml:space="preserve">
     <value>Enter text or a regular expression to filter bookings by purpose. Examples: 'ST6464646464' or 'SM\d{4}' (Regex). Max. 500 characters.</value>
   </data>
-</root>
+  <data name="SecurityPricesImport_Title" xml:space="preserve">
+    <value>Import security prices</value>
+  </data>
+  <data name="SecurityPricesImport_Hint" xml:space="preserve">
+    <value>Select an ING CSV file and import daily close prices.</value>
+  </data>
+  <data name="SecurityPricesImport_SelectFile" xml:space="preserve">
+    <value>Select file</value>
+  </data>
+  <data name="SecurityPricesImport_Result" xml:space="preserve">
+    <value>Import result</value>
+  </data>
+  <data name="SecurityPricesImport_Inserted" xml:space="preserve">
+    <value>Inserted</value>
+  </data>
+  <data name="SecurityPricesImport_Updated" xml:space="preserve">
+    <value>Updated</value>
+  </data>
+  <data name="SecurityPricesImport_Unchanged" xml:space="preserve">
+    <value>Unchanged</value>
+  </data>
+  <data name="SecurityPricesImport_Skipped" xml:space="preserve">
+    <value>Skipped</value>
+  </data>
+  <data name="SecurityPricesImport_LineError" xml:space="preserve">
+    <value>Line {0}: {1}</value>
+  </data></root>

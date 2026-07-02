@@ -340,12 +340,13 @@
             Provides upload, listing, download, deletion and metadata operations.
             </summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Attachments.AttachmentService.#ctor(FinanceManager.Infrastructure.AppDbContext,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Attachments.AttachmentService})">
+        <member name="M:FinanceManager.Infrastructure.Attachments.AttachmentService.#ctor(FinanceManager.Infrastructure.AppDbContext,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Attachments.AttachmentService},Microsoft.EntityFrameworkCore.IDbContextFactory{FinanceManager.Infrastructure.AppDbContext})">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Attachments.AttachmentService"/> class.
             </summary>
             <param name="db">The application database context.</param>
             <param name="logger">Logger instance for diagnostic output.</param>
+            <param name="dbContextFactory">Optional context factory used for isolated read operations.</param>
         </member>
         <member name="M:FinanceManager.Infrastructure.Attachments.AttachmentService.UploadAsync(System.Guid,FinanceManager.Domain.Attachments.AttachmentEntityKind,System.Guid,System.IO.Stream,System.String,System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)">
             <summary>
@@ -3316,6 +3317,24 @@
             <returns>A task that completes when the change has been persisted.</returns>
             <exception cref="T:System.ArgumentException">Thrown when the savings plan is not found or not owned by the user.</exception>
         </member>
+        <member name="T:FinanceManager.Infrastructure.Securities.IngSecurityPriceImportService">
+            <summary>
+            Imports security daily close prices from ING CSV files.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.IngSecurityPriceImportService.#ctor(FinanceManager.Application.Securities.ISecurityPriceService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Securities.IngSecurityPriceImportService})">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Securities.IngSecurityPriceImportService"/> class.
+            </summary>
+            <param name="priceService">Service used to upsert parsed daily prices.</param>
+            <param name="logger">Logger used for diagnostic messages.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.IngSecurityPriceImportService.CanHandle(FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.IngSecurityPriceImportService.ImportAsync(System.Guid,System.Guid,System.IO.Stream,FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Securities.ReturnAnalysis.MemoryReturnAnalysisCache">
             <summary>
             In-memory implementation of <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisCache"/> using <see cref="T:Microsoft.Extensions.Caching.Memory.IMemoryCache"/>.
@@ -3652,6 +3671,21 @@
             <returns>A task that completes when the change has been persisted.</returns>
             <exception cref="T:System.ArgumentException">Thrown when the category or the referenced attachment is not found or not owned by the user.</exception>
         </member>
+        <member name="T:FinanceManager.Infrastructure.Securities.SecurityPriceImportServiceFactory">
+            <summary>
+            Resolves a provider-specific <see cref="T:FinanceManager.Application.Securities.ISecurityPriceImportService"/> implementation.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceImportServiceFactory.#ctor(System.Collections.Generic.IEnumerable{FinanceManager.Application.Securities.ISecurityPriceImportService},Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Securities.SecurityPriceImportServiceFactory})">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Securities.SecurityPriceImportServiceFactory"/> class.
+            </summary>
+            <param name="services">Registered import services.</param>
+            <param name="logger">Logger used for diagnostic messages.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceImportServiceFactory.Resolve(FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Securities.SecurityPriceService">
             <summary>
             Implementation of <see cref="T:FinanceManager.Application.Securities.ISecurityPriceService"/> that persists and queries
@@ -3662,11 +3696,12 @@
             All methods are asynchronous and honour the provided <see cref="T:System.Threading.CancellationToken"/>.
             </remarks>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceService.#ctor(FinanceManager.Infrastructure.AppDbContext)">
+        <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceService.#ctor(FinanceManager.Infrastructure.AppDbContext,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Securities.SecurityPriceService})">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Securities.SecurityPriceService"/> class.
             </summary>
             <param name="db">The application's database context used to persist and query security prices.</param>
+            <param name="logger">Logger used for diagnostic messages.</param>
             <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="db"/> is <c>null</c>.</exception>
         </member>
         <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceService.CreateAsync(System.Guid,System.Guid,System.DateTime,System.Decimal,System.Threading.CancellationToken)">
@@ -3709,6 +3744,16 @@
             A task that returns the latest date as a nullable <see cref="T:System.DateTime"/>.
             Returns <c>null</c> if the security is not owned by the user or if there are no price records.
             </returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceService.UpsertDailyPricesAsync(System.Guid,System.Guid,System.Collections.Generic.IReadOnlyList{FinanceManager.Shared.Dtos.Securities.SecurityPriceImportItem},System.Threading.CancellationToken)">
+            <summary>
+            Upserts a batch of daily prices for one security.
+            </summary>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="securityId">Target security identifier.</param>
+            <param name="items">Daily price items to upsert. Duplicate days are resolved as last item wins.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Import-like counters for inserted, updated and unchanged prices.</returns>
         </member>
         <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceService.SetPriceErrorAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
             <summary>
