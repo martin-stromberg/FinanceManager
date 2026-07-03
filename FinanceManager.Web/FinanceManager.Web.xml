@@ -1968,7 +1968,7 @@
             Provides background task endpoints for mass classification and mass booking operations.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.#ctor(FinanceManager.Application.Statements.IStatementDraftService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.StatementDraftsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller},FinanceManager.Application.IBackgroundTaskManager,FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.Statements.IBudgetImpactEvaluationService)">
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.#ctor(FinanceManager.Application.Statements.IStatementDraftService,FinanceManager.Application.ICurrentUserService,Microsoft.Extensions.Logging.ILogger{FinanceManager.Web.Controllers.StatementDraftsController},Microsoft.Extensions.Localization.IStringLocalizer{FinanceManager.Web.Controllers.Controller},FinanceManager.Application.IBackgroundTaskManager,FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.Statements.IBudgetImpactEvaluationService,FinanceManager.Application.Statements.IMassImportOrchestrator)">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.Controllers.StatementDraftsController"/>.
             </summary>
@@ -2010,6 +2010,14 @@
             <param name="file">Uploaded file.</param>
             <param name="ct">Cancellation token.</param>
             <returns>200 OK with <see cref="T:FinanceManager.Shared.Dtos.Statements.StatementDraftUploadResult"/>, or 400 Bad Request when file is missing.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.ProcessMassImportAsync(FinanceManager.Shared.Dtos.Statements.MassImportBatchRequestDto,System.Threading.CancellationToken)">
+            <summary>
+            Analyzes or executes a mixed mass import batch from the start page.
+            </summary>
+            <param name="request">Batch request with files, dialog policy and optional user decisions.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Batch analysis or execution result.</returns>
         </member>
         <member name="M:FinanceManager.Web.Controllers.StatementDraftsController.GetClassifyStatus">
             <summary>
@@ -6737,15 +6745,13 @@
         </member>
         <member name="T:FinanceManager.Web.ViewModels.Home.HomeViewModel">
             <summary>
-            View model for the home/dashboard page. Exposes import/upload state, KPI edit mode toggle
-            and provides ribbon actions for import and KPI editing.
+            View model for the home/dashboard page.
             </summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Home.HomeViewModel.#ctor(System.IServiceProvider)">
             <summary>
             Initializes a new instance of <see cref="T:FinanceManager.Web.ViewModels.Home.HomeViewModel"/>.
             </summary>
-            <param name="sp">Service provider used to resolve required services such as the API client.</param>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Home.HomeViewModel.UploadInProgress">
             <summary>
@@ -6764,65 +6770,83 @@
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Home.HomeViewModel.CurrentFileName">
             <summary>
-            Name of the file currently being uploaded, or <c>null</c> when none.
+            Name of the file currently being uploaded.
             </summary>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Home.HomeViewModel.ImportSuccess">
             <summary>
-            Indicates whether the last import produced at least one successfully created draft.
+            Indicates whether the last import produced at least one successful result.
             </summary>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Home.HomeViewModel.FirstDraftId">
             <summary>
-            When the import created new drafts, this contains the first draft id produced by the import; otherwise <c>null</c>.
+            First created statement draft id of the last successful import.
             </summary>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Home.HomeViewModel.SplitInfo">
             <summary>
-            Optional split information returned by the import service (when the uploaded file contained multiple segments).
+            Optional split information returned by legacy statement upload.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Home.HomeViewModel.MassImportDialogPolicy">
+            <summary>
+            Currently selected mass import dialog policy.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Home.HomeViewModel.PendingMassImport">
+            <summary>
+            Pending confirmation model for mixed mass import.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Home.HomeViewModel.ActiveSecurities">
+            <summary>
+            Active securities for manual assignment in the mass import dialog.
             </summary>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Home.HomeViewModel.KpiEditMode">
             <summary>
-            When true the KPI edit mode is active in the UI allowing KPI adjustments.
+            KPI edit mode state.
             </summary>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Home.HomeViewModel.UploadPercent">
             <summary>
-            Calculates the upload progress as a percentage (0-100). Returns 0 when <see cref="P:FinanceManager.Web.ViewModels.Home.HomeViewModel.UploadTotal"/> is zero.
+            Upload progress in percent.
             </summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Home.HomeViewModel.ToggleKpiEditMode">
             <summary>
-            Toggles the KPI edit mode state and raises a state change notification so the UI updates.
+            Toggles KPI edit mode.
             </summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Home.HomeViewModel.StartUpload(System.Int32)">
             <summary>
-            Begins a new upload batch and resets upload-related state.
+            Starts upload state tracking for a new batch.
             </summary>
-            <param name="total">Number of files expected in the batch. Must be greater or equal to zero.</param>
         </member>
-        <member name="M:FinanceManager.Web.ViewModels.Home.HomeViewModel.UploadFileAsync(System.IO.Stream,System.String,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Web.ViewModels.Home.HomeViewModel.ConfirmMassImportAsync(System.Threading.CancellationToken)">
             <summary>
-            Uploads a single file stream to the import endpoint. This method updates upload progress state and
-            will not throw on errors (component behavior intentionally swallows exceptions).
+            Confirms and executes a pending mass import batch.
             </summary>
-            <param name="stream">Stream containing the file content to upload.</param>
-            <param name="fileName">Original file name.</param>
-            <param name="ct">Optional cancellation token used to cancel the upload.</param>
-            <returns>A task that completes when the upload attempt has finished.</returns>
-            <remarks>
-            Errors from the API are intentionally caught and ignored to preserve the per-component behavior.
-            The method still updates progress counters and ImportSuccess/FirstDraftId when the API response indicates success.
-            </remarks>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Home.HomeViewModel.CancelMassImportDialog">
+            <summary>
+            Cancels the pending mass import dialog.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Home.HomeViewModel.SetPendingFileExcluded(System.Guid,System.Boolean)">
+            <summary>
+            Updates exclusion state for one pending file.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Home.HomeViewModel.SetPendingFileSecurity(System.Guid,System.Nullable{System.Guid})">
+            <summary>
+            Updates selected security for one pending file.
+            </summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Home.HomeViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
             <summary>
-            Builds ribbon register definitions for the Home view including import and KPI actions.
+            Builds ribbon actions for home view.
             </summary>
-            <param name="localizer">Localizer used to resolve UI labels shown on the ribbon.</param>
-            <returns>A list of <see cref="T:FinanceManager.Web.ViewModels.Common.UiRibbonRegister"/> instances describing available actions.</returns>
         </member>
         <member name="T:FinanceManager.Web.ViewModels.IListItemNavigation">
             <summary>

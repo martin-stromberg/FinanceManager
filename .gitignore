@@ -408,3 +408,4 @@ FodyWeavers.xsd
 *.copilot.task.md.bak
 copilot.context.md
 copilot.context*.md
+issue.md

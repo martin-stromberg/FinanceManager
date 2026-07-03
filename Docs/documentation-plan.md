@@ -385,3 +385,76 @@
 - ✅ Alle erzeugten Ziel-Dateien existieren und sind nicht leer.
 - ✅ Anforderungen, Architektur, Tests, API, Flow und Business-Doku sind wechselseitig verlinkt und inhaltlich auf den ING-CSV-Import mit Upsert abgestimmt.
 - ⚠️ Keine zusätzlich offenen Dokumentationslücken für dieses Feature festgestellt.
+
+---
+
+# Dokumentationsplan: Massenimport ING Wertpapierkurse (2026-07-03)
+
+> Status: ✅ Abgeschlossen  
+> Fokus: Konsistente technische und fachliche Dokumentation für den bereits implementierten Massenimport-Flow (Analyse + Confirm) inkl. Skip-Matrix, Re-Validierung, Audit-Logging, User-Settings-Policy und Testabdeckung.
+
+## Phase 1 – Analyse-Ergebnisse
+
+### API-Dokumentation
+- `Docs/api/StatementDraftsController.md` enthält den Endpunkt `POST /api/statement-drafts/mass-import` noch nicht.
+- `Docs/api/UserSettingsController.md` ist stark veraltet und dokumentiert den Import-Split-Settings-Flow inkl. `MassImportDialogPolicy` nicht.
+
+### Flow-Dokumentation
+- `Docs/flows/security-price-import-ing.md` beschreibt den Einzelimport über die Wertpapier-Kursseite, aber nicht den neuen Startseiten-Massenimport mit Analyse-/Bestätigungsphase.
+- In `Docs/flows/README.md` fehlt ein eigener Flow-Eintrag für die Orchestrierung über `MassImportOrchestrator`.
+
+### Business-Dokumentation
+- `Docs/business/features/F014-benutzereinstellungen.md` beschreibt die neue Confirm-Dialog-Policy in den Setup-Einstellungen noch nicht.
+- `Docs/business/features/F007-wertpapierpreise-ing-csv-import.md` bildet den neuen Home-/Setup-Massenimport nicht ab.
+
+### README
+- README enthält den ING-CSV-Einzelimport, aber nicht den Startseiten-Massenimport mit Analyse-/Confirm-Flow und Policy-Steuerung.
+
+## Phase 2 – Ausführungsplan
+
+### Zu aktualisieren
+- `Docs/api/StatementDraftsController.md`
+- `Docs/api/UserSettingsController.md`
+- `Docs/flows/security-price-import-ing.md`
+- `Docs/flows/README.md`
+- `Docs/business/features/F007-wertpapierpreise-ing-csv-import.md`
+- `Docs/business/features/F014-benutzereinstellungen.md`
+- `Docs/requirements/massenimport-ing-wertpapierkurse-requirements.md`
+- `Docs/architecture/architecture-blueprint-massenimport-ing-wertpapierkurse.md`
+- `Docs/architecture/entity-relationship-model-massenimport-ing-wertpapierkurse.md`
+- `Docs/improvements/review-architecture-massenimport-ing-wertpapierkurse.md`
+- `Docs/planning/planning-massenimport-ing-wertpapierkurse.md`
+- `Docs/tests/wertpapierkurse-ing-testplan.md`
+- `README.md`
+
+### In der Umsetzung zu verifizieren
+- Skip-Matrix im Dialogverhalten (`AlwaysConfirm` vs. `OnMissingInformation`)
+- Re-Validierung der Wertpapierzuordnung vor Persistierung
+- Auditierbares File-Logging (`MassImportAudit ... traceId`)
+- API/DTO/Client-Flow für Analyse (`ConfirmExecution=false`) und Confirm (`ConfirmExecution=true`)
+- UI-Integration in Home (`PendingMassImport`) und Setup (`MassImportDialogPolicy`)
+- Unit-/Integration-Tests für Orchestrator, Controller, ApiClient und ViewModels
+
+## Ergebnis (Anhang)
+
+### Aktualisiert
+- `docs/api/StatementDraftsController.md`
+- `docs/api/UserSettingsController.md`
+- `Docs/flows/security-price-import-ing.md`
+- `Docs/flows/README.md`
+- `Docs/business/features/F007-wertpapierpreise-ing-csv-import.md`
+- `docs/business/features/F014-benutzereinstellungen.md`
+- `docs/business/features.md`
+- `Docs/requirements/massenimport-ing-wertpapierkurse-requirements.md`
+- `Docs/architecture/architecture-blueprint-massenimport-ing-wertpapierkurse.md`
+- `Docs/architecture/entity-relationship-model-massenimport-ing-wertpapierkurse.md`
+- `Docs/improvements/review-architecture-massenimport-ing-wertpapierkurse.md`
+- `Docs/planning/planning-massenimport-ing-wertpapierkurse.md`
+- `Docs/tests/wertpapierkurse-ing-testplan.md`
+- `README.md`
+- `Docs/documentation-plan.md`
+
+### Abschlussprüfung
+- ✅ Alle aktualisierten Dokumente existieren und sind nicht leer.
+- ✅ Skip-Matrix, Re-Validierung, Audit-Logging, Analyze/Confirm-Flow, Home/Setup-Integration und Testnachweise sind dokumentiert.
+- ⚠️ Keine offenen Dokumentationslücken im Feature-Scope identifiziert.

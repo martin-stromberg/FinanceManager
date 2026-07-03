@@ -1,4 +1,5 @@
 @using FinanceManager.Shared.Dtos
+@using FinanceManager.Shared.Dtos.Statements
 @using FinanceManager.Web.ViewModels.Setup
 @inject Microsoft.Extensions.Localization.IStringLocalizer<Pages> Localizer
 @using Microsoft.Extensions.DependencyInjection
@@ -45,6 +46,13 @@
                 <div class="form-row" hidden="@(_vm.Model.Mode == ImportSplitMode.FixedSize)">
                     <label>@Localizer["ImportSplit_MinEntries"]</label>
                     <input type="number" min="1" @bind="_vm.Model.MinEntriesPerDraft" @bind:after="(()=> _vm.Validate())" />
+                </div>
+                <div class="form-row">
+                    <label>@Localizer["MassImport_DialogPolicy_Label"]</label>
+                    <select @bind="_vm.Model.MassImportDialogPolicy">
+                        <option value="@MassImportDialogPolicy.AlwaysConfirm">@Localizer["MassImport_DialogPolicy_AlwaysConfirm"]</option>
+                        <option value="@MassImportDialogPolicy.OnMissingInformation">@Localizer["MassImport_DialogPolicy_OnMissingInformation"]</option>
+                    </select>
                 </div>
             </div>
 

@@ -2420,6 +2420,18 @@
         <member name="M:FinanceManager.Infrastructure.Migrations._202606061300_AddStatementDraftBookingGuard.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations._202607030850_AddMassImportDialogPolicy">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202607030850_AddMassImportDialogPolicy.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202607030850_AddMassImportDialogPolicy.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations._202607030850_AddMassImportDialogPolicy.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Notifications.HolidayProviderResolver">
             <summary>
             Resolves an implementation of <see cref="T:FinanceManager.Application.Notifications.IHolidayProvider"/> for a requested <see cref="T:FinanceManager.Domain.Notifications.HolidayProviderKind"/>.
@@ -3335,6 +3347,9 @@
         <member name="M:FinanceManager.Infrastructure.Securities.IngSecurityPriceImportService.ImportAsync(System.Guid,System.Guid,System.IO.Stream,FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.IngSecurityPriceImportService.TryInspect(FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext,System.Byte[],FinanceManager.Shared.Dtos.Securities.SecurityPriceImportInspectionResult@)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Securities.ReturnAnalysis.MemoryReturnAnalysisCache">
             <summary>
             In-memory implementation of <see cref="T:FinanceManager.Application.Securities.ReturnAnalysis.IReturnAnalysisCache"/> using <see cref="T:Microsoft.Extensions.Caching.Memory.IMemoryCache"/>.
@@ -3684,6 +3699,9 @@
             <param name="logger">Logger used for diagnostic messages.</param>
         </member>
         <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceImportServiceFactory.Resolve(FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Securities.SecurityPriceImportServiceFactory.TryResolveByContent(FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext,System.Byte[],FinanceManager.Application.Securities.ISecurityPriceImportService@,FinanceManager.Shared.Dtos.Securities.SecurityPriceImportInspectionResult@)">
             <inheritdoc />
         </member>
         <member name="T:FinanceManager.Infrastructure.Securities.SecurityPriceService">
@@ -4547,6 +4565,19 @@
             <param name="fileBytes">The contents of the file as a byte array. Cannot be null.</param>
             <returns>true if the file is successfully loaded and identified as related to Wüstenrot Bausparkasse AG; otherwise,
             false.</returns>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.MassImportOrchestrator">
+            <summary>
+            Orchestrates mixed start-page imports (account statements and security prices).
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.MassImportOrchestrator.#ctor(FinanceManager.Application.Statements.IStatementDraftService,FinanceManager.Infrastructure.Statements.Files.IStatementFileFactory,System.Collections.Generic.IEnumerable{FinanceManager.Infrastructure.Statements.Parsers.IStatementFileParser},FinanceManager.Application.Securities.ISecurityService,FinanceManager.Application.Securities.ISecurityPriceImportServiceFactory,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.MassImportOrchestrator})">
+            <summary>
+            Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Statements.MassImportOrchestrator"/> class.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.MassImportOrchestrator.ProcessAsync(System.Guid,FinanceManager.Shared.Dtos.Statements.MassImportBatchRequestDto,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
         </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Parsers.Backup_JSON_StatementFileParser">
             <summary>

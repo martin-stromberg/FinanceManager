@@ -26,7 +26,7 @@ public sealed class ApiClientSecuritiesImportPricesTests
             };
         });
 
-        await using var stream = new MemoryStream(Encoding.UTF8.GetBytes("sep=;\nZeit;Kurs\n01.07.2026 02:00:00;42,61\n"));
+        await using var stream = new MemoryStream(Encoding.UTF8.GetBytes("sep=;\nZeit;Test Security\n01.07.2026 02:00:00;42,61\n"));
         await api.Securities_ImportPricesAsync(Guid.NewGuid(), stream, "ing-prices.csv", provider: "ing", contentType: "text/csv");
 
         Assert.NotNull(capturedRequest);

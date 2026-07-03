@@ -9,5 +9,6 @@ public sealed record ImportSplitSettingsUpdateRequest(
     [param: Required] ImportSplitMode Mode,
     [param: Range(20, 10000)] int MaxEntriesPerDraft,
     int? MonthlySplitThreshold,
-    [param: Range(1, 10000)] int MinEntriesPerDraft
+    [param: Range(1, 10000)] int MinEntriesPerDraft,
+    [param: Required] MassImportDialogPolicy MassImportDialogPolicy
 );

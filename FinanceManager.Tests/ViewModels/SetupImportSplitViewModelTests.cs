@@ -87,4 +87,26 @@ public sealed class SetupImportSplitViewModelTests
         Assert.True(vm.SavedOk);
         Assert.False(vm.Dirty);
     }
+
+    [Fact]
+    public async Task Save_ShouldPersistMassImportDialogPolicy()
+    {
+        var dto = new ImportSplitSettingsDto { MassImportDialogPolicy = MassImportDialogPolicy.OnMissingInformation };
+        var apiMock = new Mock<IApiClient>();
+        apiMock.Setup(a => a.UserSettings_GetImportSplitAsync(It.IsAny<CancellationToken>())).ReturnsAsync(dto);
+        ImportSplitSettingsUpdateRequest? captured = null;
+        apiMock
+            .Setup(a => a.UserSettings_UpdateImportSplitAsync(It.IsAny<ImportSplitSettingsUpdateRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<ImportSplitSettingsUpdateRequest, CancellationToken>((request, _) => captured = request)
+            .ReturnsAsync(true);
+
+        var vm = new SetupStatementsViewModel(CreateSp(apiMock.Object));
+        await vm.LoadAsync();
+        vm.Model!.MassImportDialogPolicy = MassImportDialogPolicy.AlwaysConfirm;
+
+        await vm.SaveAsync();
+
+        Assert.NotNull(captured);
+        Assert.Equal(MassImportDialogPolicy.AlwaysConfirm, captured!.MassImportDialogPolicy);
+    }
 }

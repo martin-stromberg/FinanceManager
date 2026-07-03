@@ -9,6 +9,7 @@
 @using FinanceManager.Web.Components.Shared
 @using Microsoft.AspNetCore.Components.Web
 @using FinanceManager.Shared.Dtos.Statements
+@using FinanceManager.Shared.Dtos.Securities
 @using Microsoft.Extensions.DependencyInjection
 @inject IServiceProvider ServiceProvider
 <PageTitle>@Localizer["PageTitle"]</PageTitle>
@@ -58,6 +59,75 @@
         </div>
     }
 
+    @if (_vm?.PendingMassImport != null)
+    {
+        <div class="split-center" @onclick="CancelPendingMassImport">
+            <div class="split-dialog mass-import-dialog" @onclick:stopPropagation="true">
+                <h3>@Localizer["MassImport_Dialog_Title"]</h3>
+                <p>@Localizer["MassImport_Dialog_Hint"]</p>
+                <div class="mass-import-list">
+                    @foreach (var file in _vm.PendingMassImport.Files.Where(x => !x.Excluded))
+                    {
+                        var selectable = IsPendingFileSelectable(file);
+                        <article class="mass-import-entry @(!selectable ? "muted-row" : null)">
+                            <div class="mass-import-entry-header">
+                                <div class="mass-import-entry-title-wrap">
+                                    @if (HasMissingSecurityAssignmentWarning(file))
+                                    {
+                                        <span class="mass-import-warning" title="@Localizer["MassImport_Warning_MissingSecurityAssignment"]" aria-label="@Localizer["MassImport_Warning_MissingSecurityAssignment"]">
+                                            <svg><use href="/icons/sprite.svg#info" /></svg>
+                                        </span>
+                                    }
+                                    <div class="mass-import-entry-title" title="@file.FileName">@file.FileName</div>
+                                </div>
+                                <button class="icon-btn danger" title="@Localizer["Ribbon_Delete"]" @onclick="@(() => RemovePendingEntry(file.FileId))">
+                                    <svg><use href="/icons/sprite.svg#delete" /></svg>
+                                </button>
+                            </div>
+
+                            <div class="mass-import-row">
+                                <span class="mass-import-label">@Localizer["MassImport_Th_FileType"]</span>
+                                <span class="mass-import-value">@GetFileTypeLabel(file.FileType)</span>
+                            </div>
+                            <div class="mass-import-row">
+                                <span class="mass-import-label">@Localizer["MassImport_Th_Service"]</span>
+                                <span class="mass-import-value">@file.ServiceDisplayName</span>
+                            </div>
+                            <div class="mass-import-row">
+                                <span class="mass-import-label">@Localizer["MassImport_Th_Security"]</span>
+                                <span class="mass-import-value">
+                                    @if (file.FileType == MassImportFileType.SecurityPrices)
+                                    {
+                                        <select class="mass-import-security-select" value="@file.SelectedSecurityId" disabled="@(!selectable)" @onchange="e => OnPendingSecurityChanged(file.FileId, e.Value?.ToString())">
+                                            <option value="">@Localizer["MassImport_SelectSecurity"]</option>
+                                            @foreach (var security in _vm.ActiveSecurities)
+                                            {
+                                                <option value="@security.Id">@security.Name (@security.Identifier)</option>
+                                            }
+                                        </select>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </span>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(file.ValidationMessage) && !HasMissingSecurityAssignmentWarning(file))
+                            {
+                                <div class="error">@file.ValidationMessage</div>
+                            }
+                        </article>
+                    }
+                </div>
+                <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:.75rem;">
+                    <button class="btn" @onclick="ConfirmPendingMassImportAsync" disabled="@(!CanSavePendingMassImport())">@Localizer["Btn_Save"]</button>
+                    <button class="btn secondary" @onclick="CancelPendingMassImport">@Localizer["Btn_Cancel"]</button>
+                </div>
+            </div>
+        </div>
+    }
+
     <div class="kpi-grid">
         <HomeKpiGrid EditMode="@(_vm?.KpiEditMode == true)" />
     </div>
@@ -94,6 +164,79 @@ else
     {
         _ = InvokeAsync(StateHasChanged);
     }
+
+    private void OnPendingSecurityChanged(Guid fileId, string? securityId)
+    {
+        Guid? parsed = null;
+        if (Guid.TryParse(securityId, out var id))
+        {
+            parsed = id;
+        }
+
+        _vm?.SetPendingFileSecurity(fileId, parsed);
+    }
+
+    private void RemovePendingEntry(Guid fileId)
+    {
+        _vm?.SetPendingFileExcluded(fileId, true);
+    }
+
+    private async Task ConfirmPendingMassImportAsync()
+    {
+        if (_vm == null)
+        {
+            return;
+        }
+
+        await _vm.ConfirmMassImportAsync();
+    }
+
+    private void CancelPendingMassImport()
+    {
+        _vm?.CancelMassImportDialog();
+    }
+
+    private static bool IsPendingFileSelectable(MassImportBatchFileResultDto file)
+        => file.FileType != MassImportFileType.Unknown && !string.IsNullOrWhiteSpace(file.ServiceKey);
+
+    private static bool HasMissingSecurityAssignmentWarning(MassImportBatchFileResultDto file)
+        => file.FileType == MassImportFileType.SecurityPrices &&
+           !file.SelectedSecurityId.HasValue &&
+           string.Equals(file.ValidationMessage, "Missing security assignment.", StringComparison.Ordinal);
+
+    private bool CanSavePendingMassImport()
+    {
+        if (_vm?.PendingMassImport == null)
+        {
+            return false;
+        }
+
+        var activeFiles = _vm.PendingMassImport.Files.Where(file => !file.Excluded).ToList();
+        return activeFiles.All(IsPendingEntryComplete);
+    }
+
+    private static bool IsPendingEntryComplete(MassImportBatchFileResultDto file)
+    {
+        if (!IsPendingFileSelectable(file))
+        {
+            return false;
+        }
+
+        if (file.FileType == MassImportFileType.SecurityPrices)
+        {
+            return file.SelectedSecurityId.HasValue;
+        }
+
+        return true;
+    }
+
+    private string GetFileTypeLabel(MassImportFileType fileType)
+        => fileType switch
+        {
+            MassImportFileType.AccountStatement => Localizer["MassImport_FileType_AccountStatement"],
+            MassImportFileType.SecurityPrices => Localizer["MassImport_FileType_SecurityPrices"],
+            _ => Localizer["MassImport_FileType_Unknown"]
+        };
 
     public void Dispose()
     {

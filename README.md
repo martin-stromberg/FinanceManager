@@ -13,7 +13,8 @@ Kurzbeschreibung und was die Anwendung bietet (nicht‑technisch):
 - Kontoauszüge (CSV/PDF) importieren und automatisch oder manuell kategorisieren
 - Sparpläne verwalten (einmalig oder wiederkehrend) und Zielerreichung verfolgen
 - Wertpapiertransaktionen (Kauf/Verkauf/Dividende) erfassen und Gebühren/Steuern berücksichtigen
-- Wertpapierkurse per ING-CSV importieren (inkl. Upsert für neue/geänderte/unveränderte Tageskurse) über die Wertpapier-Kursseite und API
+- Wertpapierkurse per ING-CSV importieren: als Einzelimport auf der Wertpapier-Kursseite und als Startseiten-Massenimport mit gemischten Dateien (Kontoauszüge + Kursdateien)
+- Startseiten-Massenimport als Zwei-Phasen-Flow (Analyze/Confirm) mit Re-Validierung vor Persistenz, Dateiebene-Audit-Logging und konfigurierbarer Dialog-Skip-Policy (`AlwaysConfirm` / `OnMissingInformation`)
 - Wertpapier-Performance-Analyse: TWR, IRR, CAGR, Sharpe Ratio, Max. Drawdown – mit Benchmark-Vergleich
 - Transaktionssichere Kontoauszug-Buchung mit Single-Flight-Guard, idempotenten Wiederholungen und 409-Fehlervertrag
 - Inline-Kontakterstellung aus Kontoauszugseinträgen mit automatischer Parent-Zuordnung, 409-Fehlervertrag bei Zuordnungskonflikten und Rollback-Versuch
@@ -59,6 +60,7 @@ Default URLs are printed when you run the application (see the console output fr
 - Start der Anwendung über `dotnet run` im Projekt `FinanceManager.Web`.
 - Zugriff über die in der Konsole ausgegebenen URLs.
 - Primärer Nutzerfluss: Importieren → Draft klassifizieren → validieren → buchen → Reports prüfen.
+- Startseiten-Massenimport: gemischte Uploads (Kontoauszug + ING-Kursdateien) werden zuerst analysiert und danach – je nach Dialog-Policy – bestätigt und ausgeführt.
 
 ## Konfiguration
 
@@ -70,6 +72,12 @@ Default URLs are printed when you run the application (see the console output fr
 dotnet ef migrations add 20260329_AddSomething -p FinanceManager.Infrastructure -s FinanceManager.Web --context AppDbContext --output-dir Data/Migrations
 dotnet ef database update -p FinanceManager.Infrastructure -s FinanceManager.Web --context AppDbContext
 ```
+
+### Import-Dialog-Policy (Setup)
+
+- In `Setup` → `Import-Aufteilung` kann die Dialog-Policy für Startseiten-Massenimporte gesetzt werden.
+- `AlwaysConfirm`: Prüf-Dialog immer vor Ausführung.
+- `OnMissingInformation`: Prüf-Dialog nur bei unklaren/fehlenden Informationen.
 
 ### Tests & Qualität
 
@@ -117,7 +125,16 @@ Details: [`docs/architecture/`](docs/architecture/)
 - [Tests: Wertpapierkurse ING-CSV-Import](Docs/tests/wertpapierkurse-ing-testplan.md)
 - [API: SecuritiesController (`POST /api/securities/{id}/prices/import`)](Docs/api/SecuritiesController.md)
 - [Business: F007 Wertpapierpreise ING-CSV-Import](Docs/business/features/F007-wertpapierpreise-ing-csv-import.md)
-- [Flow: Wertpapierkurse ING-CSV-Import inkl. Upsert/API/UI](Docs/flows/security-price-import-ing.md)
+- [Flow: Startseiten-Massenimport ING Wertpapierkurse (Analyse + Bestätigung)](Docs/flows/security-price-import-ing.md)
+- [Requirements: Startseiten-Massenimport ING Wertpapierkurse](Docs/requirements/massenimport-ing-wertpapierkurse-requirements.md)
+- [Planung: Startseiten-Massenimport ING Wertpapierkurse](Docs/planning/planning-massenimport-ing-wertpapierkurse.md)
+- [Architektur-Blueprint: Startseiten-Massenimport ING Wertpapierkurse](Docs/architecture/architecture-blueprint-massenimport-ing-wertpapierkurse.md)
+- [ERM: Startseiten-Massenimport ING Wertpapierkurse](Docs/architecture/entity-relationship-model-massenimport-ing-wertpapierkurse.md)
+- [Architektur-Review: Startseiten-Massenimport ING Wertpapierkurse](Docs/improvements/review-architecture-massenimport-ing-wertpapierkurse.md)
+- [API: StatementDraftsController (`POST /api/statement-drafts/mass-import`)](Docs/api/StatementDraftsController.md)
+- [API: UserSettingsController (Import-Split + `massImportDialogPolicy`)](Docs/api/UserSettingsController.md)
+- [Business: F014 Benutzereinstellungen (Dialog-Policy)](Docs/business/features/F014-benutzereinstellungen.md)
+- [Tests: ING-Import Testlücken/Abdeckung](Docs/tests/wertpapierkurse-ing-testluecken.md)
 - [API: AttachmentsController (inkl. Download-Stabilisierung für SQLite)](Docs/api/AttachmentsController.md)
 
 ## Entwicklungskonventionen
@@ -150,6 +167,7 @@ Details: [`docs/architecture/`](docs/architecture/)
 ## Changelog
 
 - 2026-07: Statement Contact Auto Assignment dokumentiert (Create + Parent-Assignment, 409 Conflict `Err_Conflict_ParentAssignment`, Rollback- und Idempotenzverhalten).
+- 2026-07: Startseiten-Massenimport für gemischte Dateien (Kontoauszug + ING-Wertpapierkurse) ergänzt: Analyze/Confirm-Flow, Setup-Policy (`AlwaysConfirm`/`OnMissingInformation`), Re-Validierung vor Persistenz und auditable Dateiebene-Logs dokumentiert.
 - 2026-07: Wertpapierkurs-Import UI-Platzierung auf die Kursseite (`/list/securities/prices/{id}`) präzisiert; Attachment-Download stabilisiert (isolierter Read-Path via `IDbContextFactory`, Retry bei SQLite-Collation-Konflikt).
 - 2026-06: Transaktionssichere Kontoauszug-Buchung mit Guard, Retry-Semantik und 409 ProblemDetails dokumentiert.
 - 2026-06: Budget-Verwendungszweck-Pattern inkl. Regex ergänzt (Migration `20260604172812_202606041500_AddBudgetRulePurposePattern`, API/Matching/Tests aktualisiert).

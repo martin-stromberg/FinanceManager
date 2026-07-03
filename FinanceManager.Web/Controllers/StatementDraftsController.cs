@@ -40,6 +40,7 @@ public sealed class StatementDraftsController : ControllerBase
     private readonly IBackgroundTaskManager _taskManager; // unified background task system
     private readonly IAttachmentService _attachments; // new
     private readonly IBudgetImpactEvaluationService? _budgetImpact;
+    private readonly IMassImportOrchestrator? _massImportOrchestrator;
 
     /// <summary>
     /// Initializes a new instance of <see cref="StatementDraftsController"/>.
@@ -57,7 +58,8 @@ public sealed class StatementDraftsController : ControllerBase
         IStringLocalizer<Controller> localizer,
         IBackgroundTaskManager taskManager,
         IAttachmentService attachments,
-        IBudgetImpactEvaluationService? budgetImpact = null)
+        IBudgetImpactEvaluationService? budgetImpact = null,
+        IMassImportOrchestrator? massImportOrchestrator = null)
     {
         _drafts = drafts;
         _current = current;
@@ -65,6 +67,7 @@ public sealed class StatementDraftsController : ControllerBase
         _localizer = localizer;
         _taskManager = taskManager;
         _attachments = attachments;
+        _massImportOrchestrator = massImportOrchestrator;
         _budgetImpact = budgetImpact;
     }
 
@@ -145,6 +148,32 @@ public sealed class StatementDraftsController : ControllerBase
         //     splitInfo = new ImportSplitInfoDto(info.ConfiguredMode.ToString(), info.EffectiveMonthly, info.DraftCount, info.TotalMovements, info.MaxEntriesPerDraft, info.LargestDraftSize, info.MonthlyThreshold);
         // }
         return Ok(new StatementDraftUploadResult(firstDraft, splitInfo));
+    }
+
+    /// <summary>
+    /// Analyzes or executes a mixed mass import batch from the start page.
+    /// </summary>
+    /// <param name="request">Batch request with files, dialog policy and optional user decisions.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Batch analysis or execution result.</returns>
+    [HttpPost("mass-import")]
+    [RequestSizeLimit(long.MaxValue)]
+    [ProducesResponseType(typeof(MassImportBatchResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ProcessMassImportAsync([FromBody] MassImportBatchRequestDto? request, CancellationToken ct)
+    {
+        if (request == null || request.Files == null || request.Files.Count == 0)
+        {
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid_File", "At least one file is required."));
+        }
+        if (_massImportOrchestrator == null)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
+
+        var traceId = HttpContext.TraceIdentifier;
+        var result = await _massImportOrchestrator.ProcessAsync(_current.UserId, request, traceId, ct);
+        return Ok(result);
     }
 
     /// <summary>

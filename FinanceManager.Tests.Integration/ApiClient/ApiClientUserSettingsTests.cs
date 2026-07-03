@@ -104,6 +104,7 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         split.Should().NotBeNull();
         split!.Mode.Should().Be(ImportSplitMode.MonthlyOrFixed);
         split.MaxEntriesPerDraft.Should().Be(250);
+        split.MassImportDialogPolicy.Should().Be(MassImportDialogPolicy.OnMissingInformation);
     }
 
     [Fact]
@@ -116,7 +117,8 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
             Mode: ImportSplitMode.FixedSize,
             MaxEntriesPerDraft: 100,
             MonthlySplitThreshold: null,
-            MinEntriesPerDraft: 5));
+            MinEntriesPerDraft: 5,
+            MassImportDialogPolicy: MassImportDialogPolicy.AlwaysConfirm));
         ok.Should().BeTrue();
 
         var split = await api.UserSettings_GetImportSplitAsync();
@@ -124,5 +126,6 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         split!.Mode.Should().Be(ImportSplitMode.FixedSize);
         split.MaxEntriesPerDraft.Should().Be(100);
         split.MinEntriesPerDraft.Should().Be(5);
+        split.MassImportDialogPolicy.Should().Be(MassImportDialogPolicy.AlwaysConfirm);
     }
 }

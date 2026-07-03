@@ -241,7 +241,8 @@ public sealed class UserSettingsController : ControllerBase
                 Mode = u.ImportSplitMode,
                 MaxEntriesPerDraft = u.ImportMaxEntriesPerDraft,
                 MonthlySplitThreshold = u.ImportMonthlySplitThreshold,
-                MinEntriesPerDraft = u.ImportMinEntriesPerDraft
+                MinEntriesPerDraft = u.ImportMinEntriesPerDraft,
+                MassImportDialogPolicy = u.MassImportDialogPolicy
             })
             .SingleOrDefaultAsync(ct) ?? new ImportSplitSettingsDto();
         return Ok(dto);
@@ -287,6 +288,7 @@ public sealed class UserSettingsController : ControllerBase
         try
         {
             user.SetImportSplitSettings(req.Mode, req.MaxEntriesPerDraft, req.MonthlySplitThreshold, req.MinEntriesPerDraft);
+            user.SetMassImportDialogPolicy(req.MassImportDialogPolicy);
             await _db.SaveChangesAsync(ct);
             return NoContent();
         }

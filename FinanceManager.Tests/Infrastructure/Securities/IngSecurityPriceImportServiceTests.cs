@@ -27,17 +27,17 @@ public sealed class IngSecurityPriceImportServiceTests
     }
 
     /// <summary>
-    /// Verifies that csv extension is accepted when provider hint is not supplied.
+    /// Verifies that missing provider hint is rejected.
     /// </summary>
     [Fact]
-    public void CanHandle_ShouldReturnTrue_WhenProviderMissingAndFileExtensionIsCsv()
+    public void CanHandle_ShouldReturnFalse_WhenProviderMissing()
     {
         var sut = new IngSecurityPriceImportService(Mock.Of<ISecurityPriceService>(), Mock.Of<ILogger<IngSecurityPriceImportService>>());
         var context = new SecurityPriceImportContext(null, "prices.csv", "text/csv");
 
         var canHandle = sut.CanHandle(context);
 
-        Assert.True(canHandle);
+        Assert.False(canHandle);
     }
 
     /// <summary>
@@ -70,13 +70,13 @@ public sealed class IngSecurityPriceImportServiceTests
 
         var sut = new IngSecurityPriceImportService(priceService.Object, Mock.Of<ILogger<IngSecurityPriceImportService>>());
         var context = new SecurityPriceImportContext("ing", "prices.csv", "text/csv");
-        var content = "sep=;\nZeit;Kurs\n01.07.2026 02:00:00;42,61\n02.07.2026 02:00:00;42,48\n";
+        var content = "sep=;\nZeit;Test Security\n01.07.2026 02:00:00;42,61\n02.07.2026 02:00:00;42,48\n";
         await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
 
         var result = await sut.ImportAsync(ownerUserId, securityId, stream, context, CancellationToken.None);
 
         Assert.Equal(2, result.Inserted);
-        Assert.Equal(0, result.Errors.Count);
+        Assert.Empty(result.Errors);
         priceService.Verify(x => x.UpsertDailyPricesAsync(
             ownerUserId,
             securityId,
@@ -90,10 +90,10 @@ public sealed class IngSecurityPriceImportServiceTests
     }
 
     /// <summary>
-    /// Verifies that invalid rows are reported as line errors and counted as skipped.
+    /// Verifies that invalid rows reject the full file import.
     /// </summary>
     [Fact]
-    public async Task ImportAsync_ShouldCollectRowErrors_WhenCsvContainsInvalidLines()
+    public async Task ImportAsync_ShouldRejectImport_WhenCsvContainsInvalidLines()
     {
         var ownerUserId = Guid.NewGuid();
         var securityId = Guid.NewGuid();
@@ -105,48 +105,26 @@ public sealed class IngSecurityPriceImportServiceTests
 
         var sut = new IngSecurityPriceImportService(priceService.Object, Mock.Of<ILogger<IngSecurityPriceImportService>>());
         var context = new SecurityPriceImportContext("ing", "prices.csv", "text/csv");
-        var content = "sep=;\nZeit;Kurs\n01.07.2026 02:00:00;42,61\nnot-a-date;42,22\n02.07.2026 02:00:00;invalid\n";
+        var content = "sep=;\nZeit;Test Security\n01.07.2026 02:00:00;42,61\nnot-a-date;42,22\n02.07.2026 02:00:00;invalid\n";
         await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
 
         var result = await sut.ImportAsync(ownerUserId, securityId, stream, context, CancellationToken.None);
 
-        Assert.Equal(1, result.Inserted);
-        Assert.Equal(2, result.Skipped);
-        Assert.Equal(2, result.Errors.Count);
-    }
-
-    /// <summary>
-    /// Verifies that rows with missing columns are skipped and reported as line errors.
-    /// </summary>
-    [Fact]
-    public async Task ImportAsync_ShouldSkipRowAndAddError_WhenColumnsAreMissing()
-    {
-        var ownerUserId = Guid.NewGuid();
-        var securityId = Guid.NewGuid();
-
-        var priceService = new Mock<ISecurityPriceService>();
-        priceService
-            .Setup(x => x.UpsertDailyPricesAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new SecurityPriceImportResultDto(1, 0, 0, 0, Array.Empty<SecurityPriceImportErrorDto>()));
-
-        var sut = new IngSecurityPriceImportService(priceService.Object, Mock.Of<ILogger<IngSecurityPriceImportService>>());
-        var context = new SecurityPriceImportContext("ing", "prices.csv", "text/csv");
-        var content = "sep=;\nZeit;Kurs\n01.07.2026 02:00:00;42,61\n02.07.2026 02:00:00\n";
-        await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
-
-        var result = await sut.ImportAsync(ownerUserId, securityId, stream, context, CancellationToken.None);
-
-        Assert.Equal(1, result.Inserted);
-        Assert.Equal(1, result.Skipped);
+        Assert.Equal(0, result.Inserted);
+        Assert.Equal(0, result.Skipped);
         Assert.Single(result.Errors);
-        Assert.Equal("Missing required columns.", result.Errors[0].Message);
+        priceService.Verify(x => x.UpsertDailyPricesAsync(
+            ownerUserId,
+            securityId,
+            It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>
-    /// Verifies that rows with negative close values are skipped and reported as line errors.
+    /// Verifies that rows with missing columns reject the full file import.
     /// </summary>
     [Fact]
-    public async Task ImportAsync_ShouldSkipRowAndAddError_WhenCloseIsNegative()
+    public async Task ImportAsync_ShouldRejectImport_WhenColumnsAreMissing()
     {
         var ownerUserId = Guid.NewGuid();
         var securityId = Guid.NewGuid();
@@ -158,22 +136,59 @@ public sealed class IngSecurityPriceImportServiceTests
 
         var sut = new IngSecurityPriceImportService(priceService.Object, Mock.Of<ILogger<IngSecurityPriceImportService>>());
         var context = new SecurityPriceImportContext("ing", "prices.csv", "text/csv");
-        var content = "sep=;\nZeit;Kurs\n01.07.2026 02:00:00;42,61\n02.07.2026 02:00:00;-10,00\n";
+        var content = "sep=;\nZeit;Test Security\n01.07.2026 02:00:00;42,61\n02.07.2026 02:00:00\n";
         await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
 
         var result = await sut.ImportAsync(ownerUserId, securityId, stream, context, CancellationToken.None);
 
-        Assert.Equal(1, result.Inserted);
-        Assert.Equal(1, result.Skipped);
+        Assert.Equal(0, result.Inserted);
+        Assert.Equal(0, result.Skipped);
+        Assert.Single(result.Errors);
+        Assert.Equal("Invalid data row. Expected exactly two columns.", result.Errors[0].Message);
+        priceService.Verify(x => x.UpsertDailyPricesAsync(
+            ownerUserId,
+            securityId,
+            It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Verifies that rows with negative close values reject the full file import.
+    /// </summary>
+    [Fact]
+    public async Task ImportAsync_ShouldRejectImport_WhenCloseIsNegative()
+    {
+        var ownerUserId = Guid.NewGuid();
+        var securityId = Guid.NewGuid();
+
+        var priceService = new Mock<ISecurityPriceService>();
+        priceService
+            .Setup(x => x.UpsertDailyPricesAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SecurityPriceImportResultDto(1, 0, 0, 0, Array.Empty<SecurityPriceImportErrorDto>()));
+
+        var sut = new IngSecurityPriceImportService(priceService.Object, Mock.Of<ILogger<IngSecurityPriceImportService>>());
+        var context = new SecurityPriceImportContext("ing", "prices.csv", "text/csv");
+        var content = "sep=;\nZeit;Test Security\n01.07.2026 02:00:00;42,61\n02.07.2026 02:00:00;-10,00\n";
+        await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
+
+        var result = await sut.ImportAsync(ownerUserId, securityId, stream, context, CancellationToken.None);
+
+        Assert.Equal(0, result.Inserted);
+        Assert.Equal(0, result.Skipped);
         Assert.Single(result.Errors);
         Assert.Equal("Close value must not be negative.", result.Errors[0].Message);
+        priceService.Verify(x => x.UpsertDailyPricesAsync(
+            ownerUserId,
+            securityId,
+            It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>
-    /// Verifies that mixed valid and invalid rows still import valid rows and report invalid ones.
+    /// Verifies that files with mixed valid and invalid rows are rejected.
     /// </summary>
     [Fact]
-    public async Task ImportAsync_ShouldContinueWithValidRows_WhenMixedValidAndInvalidRowsExist()
+    public async Task ImportAsync_ShouldRejectImport_WhenMixedValidAndInvalidRowsExist()
     {
         var ownerUserId = Guid.NewGuid();
         var securityId = Guid.NewGuid();
@@ -185,21 +200,18 @@ public sealed class IngSecurityPriceImportServiceTests
 
         var sut = new IngSecurityPriceImportService(priceService.Object, Mock.Of<ILogger<IngSecurityPriceImportService>>());
         var context = new SecurityPriceImportContext("ing", "prices.csv", "text/csv");
-        var content = "sep=;\nZeit;Kurs\n01.07.2026 02:00:00;42,61\nmissing-column\n02.07.2026 02:00:00;-10,00\n03.07.2026 02:00:00;44,00\n";
+        var content = "sep=;\nZeit;Test Security\n01.07.2026 02:00:00;42,61\nmissing-column\n02.07.2026 02:00:00;-10,00\n03.07.2026 02:00:00;44,00\n";
         await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
 
         var result = await sut.ImportAsync(ownerUserId, securityId, stream, context, CancellationToken.None);
 
-        Assert.Equal(2, result.Inserted);
-        Assert.Equal(2, result.Skipped);
-        Assert.Equal(2, result.Errors.Count);
+        Assert.Equal(0, result.Inserted);
+        Assert.Equal(0, result.Skipped);
+        Assert.Single(result.Errors);
         priceService.Verify(x => x.UpsertDailyPricesAsync(
             ownerUserId,
             securityId,
-            It.Is<IReadOnlyList<SecurityPriceImportItem>>(items =>
-                items.Count == 2 &&
-                items.Any(i => i.Date == new DateTime(2026, 7, 1) && i.Close == 42.61m) &&
-                items.Any(i => i.Date == new DateTime(2026, 7, 3) && i.Close == 44.00m)),
-            It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 }

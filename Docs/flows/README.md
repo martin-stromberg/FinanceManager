@@ -16,4 +16,4 @@ Dieser Ordner enthält Programmablaufpläne und technische Beschreibungen der ze
 | [fifo-cost-basis.md](fifo-cost-basis.md) | Renditeanalyse | FIFO-Kostenbasisberechnung: Lot-Verwaltung, Fee-Verknüpfung via GroupId, Oversell-Handling |
 | [posting-reversal-flow.md](posting-reversal-flow.md) | Buchhaltung | Stornierung eines Postings: Pre-Validation, DB-Transaktion, All-or-Nothing-Gruppe, StatementImport für Rekonziliation |
 | [contact-create-auto-assign.md](contact-create-auto-assign.md) | Kontakte / Kontoauszug | Inline-Kontakterstellung im Statement-Draft-Entry mit Parent-Assignment, 409-Fehlervertrag, Rollback und Idempotenzverhalten |
-| [security-price-import-ing.md](security-price-import-ing.md) | Wertpapierkurse | ING-CSV-Import von der Wertpapier-Kursseite (`/list/securities/prices/{id}`) über Controller/Factory/Parser bis zum Upsert inkl. Fehlerpfade |
+| [security-price-import-ing.md](security-price-import-ing.md) | Wertpapierkurse | Startseiten-Massenimport für ING-Kursdateien als Zwei-Phasen-Flow (Analyse+Bestätigung) inkl. Skip-Policy, Security-Re-Validierung und `MassImportAudit` |

@@ -28,6 +28,7 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
         ImportMaxEntriesPerDraft = 250;
         ImportMonthlySplitThreshold = 250; // equals Max by default
         ImportMinEntriesPerDraft = 8; // new default (FA-AUSZ-016-12)
+        MassImportDialogPolicy = MassImportDialogPolicy.OnMissingInformation;
     }
 
     /// <summary>
@@ -53,6 +54,7 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
         ImportMaxEntriesPerDraft = 250;
         ImportMonthlySplitThreshold = 250;
         ImportMinEntriesPerDraft = 8;
+        MassImportDialogPolicy = MassImportDialogPolicy.OnMissingInformation;
     }
 
     /// <summary>
@@ -136,6 +138,11 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
     public int ImportMinEntriesPerDraft { get; private set; } = 1; // new minimum entries preference
 
     /// <summary>
+    /// Dialog behavior policy for mixed start-page mass imports.
+    /// </summary>
+    public MassImportDialogPolicy MassImportDialogPolicy { get; private set; } = MassImportDialogPolicy.OnMissingInformation;
+
+    /// <summary>
     /// Admin flag persisted in the database.
     /// </summary>
     /// <value><c>true</c> for administrators.</value>
@@ -147,7 +154,7 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
     /// <value>Attachment GUID or <c>null</c>.</value>
     public Guid? SymbolAttachmentId { get; private set; }
 
-    private void Touch() { /* marker for state change — intentionally no-op for now */ }
+    private void Touch() { /* marker for state change ï¿½ intentionally no-op for now */ }
 
     /// <summary>
     /// Sets or clears the administrator flag for the user.
@@ -210,6 +217,16 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
 
         ImportSplitMode = mode;
         ImportMaxEntriesPerDraft = maxEntriesPerDraft;
+        Touch();
+    }
+
+    /// <summary>
+    /// Sets the dialog behavior policy for start-page mass imports.
+    /// </summary>
+    /// <param name="policy">Dialog policy to persist for the user.</param>
+    public void SetMassImportDialogPolicy(MassImportDialogPolicy policy)
+    {
+        MassImportDialogPolicy = policy;
         Touch();
     }
 
