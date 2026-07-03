@@ -19,7 +19,7 @@ public sealed class SecurityPriceImportPanelTests
     {
         var apiMock = new Mock<IApiClient>();
         var securityId = Guid.NewGuid();
-        var file = new TestBrowserFile("prices.csv", "text/csv", "sep=;\nZeit;Kurs\n01.07.2026 02:00:00;42,61\n");
+        var file = new TestBrowserFile("prices.csv", "text/csv", "sep=;\nZeit;Test Security\n01.07.2026 02:00:00;42,61\n");
         var expected = new SecurityPriceImportResultDto(1, 2, 3, 4, Array.Empty<SecurityPriceImportErrorDto>());
 
         apiMock.Setup(x => x.Securities_ImportPricesAsync(
@@ -56,7 +56,7 @@ public sealed class SecurityPriceImportPanelTests
     {
         var apiMock = new Mock<IApiClient>();
         var securityId = Guid.NewGuid();
-        var file = new TestBrowserFile("prices.csv", "text/csv", "sep=;\nZeit;Kurs\nnot-a-date;invalid\n");
+        var file = new TestBrowserFile("prices.csv", "text/csv", "sep=;\nZeit;Test Security\nnot-a-date;invalid\n");
         var expected = new SecurityPriceImportResultDto(
             0,
             0,
@@ -93,7 +93,7 @@ public sealed class SecurityPriceImportPanelTests
     {
         var apiMock = new Mock<IApiClient>();
         var securityId = Guid.NewGuid();
-        var file = new TestBrowserFile("prices.csv", "text/csv", "sep=;\nZeit;Kurs\n01.07.2026 02:00:00;42,61\n");
+        var file = new TestBrowserFile("prices.csv", "text/csv", "sep=;\nZeit;Test Security\n01.07.2026 02:00:00;42,61\n");
         apiMock.SetupGet(x => x.LastError).Returns("Import failed");
         apiMock.Setup(x => x.Securities_ImportPricesAsync(
                 securityId,

@@ -39,4 +39,56 @@ public sealed class SecurityPriceImportServiceFactoryTests
 
         Assert.Throws<InvalidOperationException>(() => sut.Resolve(context));
     }
+
+    [Fact]
+    public void TryResolveByContent_ShouldReturnService_WhenInspectorMatches()
+    {
+        var context = new SecurityPriceImportContext(null, "prices.csv", "text/csv");
+        var service = new InspectingService(true, new SecurityPriceImportInspectionResult("ing", "ing", "ING", "Test Security"));
+        var sut = new SecurityPriceImportServiceFactory([service], Mock.Of<ILogger<SecurityPriceImportServiceFactory>>());
+
+        var ok = sut.TryResolveByContent(context, "sep=;\nZeit;Test Security\n01.07.2026 00:00:00;10,00\n"u8.ToArray(), out var resolved, out var inspection);
+
+        Assert.True(ok);
+        Assert.Same(service, resolved);
+        Assert.NotNull(inspection);
+        Assert.Equal("ing", inspection!.ServiceKey);
+    }
+
+    [Fact]
+    public void TryResolveByContent_ShouldReturnFalse_WhenNoInspectorMatches()
+    {
+        var context = new SecurityPriceImportContext(null, "prices.csv", "text/csv");
+        var service = new InspectingService(false, new SecurityPriceImportInspectionResult("ing", "ing", "ING", "Test Security"));
+        var sut = new SecurityPriceImportServiceFactory([service], Mock.Of<ILogger<SecurityPriceImportServiceFactory>>());
+
+        var ok = sut.TryResolveByContent(context, "invalid".u8.ToArray(), out var resolved, out var inspection);
+
+        Assert.False(ok);
+        Assert.Null(resolved);
+        Assert.Null(inspection);
+    }
+
+    private sealed class InspectingService : ISecurityPriceImportService, ISecurityPriceImportInspector
+    {
+        private readonly bool _inspectResult;
+        private readonly SecurityPriceImportInspectionResult _inspectionResult;
+
+        public InspectingService(bool inspectResult, SecurityPriceImportInspectionResult inspectionResult)
+        {
+            _inspectResult = inspectResult;
+            _inspectionResult = inspectionResult;
+        }
+
+        public bool CanHandle(SecurityPriceImportContext context) => true;
+
+        public Task<SecurityPriceImportResultDto> ImportAsync(Guid ownerUserId, Guid securityId, Stream stream, SecurityPriceImportContext context, CancellationToken ct)
+            => Task.FromResult(new SecurityPriceImportResultDto(0, 0, 0, 0, Array.Empty<SecurityPriceImportErrorDto>()));
+
+        public bool TryInspect(SecurityPriceImportContext context, byte[] content, out SecurityPriceImportInspectionResult result)
+        {
+            result = _inspectionResult;
+            return _inspectResult;
+        }
+    }
 }

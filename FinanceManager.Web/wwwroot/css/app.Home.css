@@ -1,5 +1,5 @@
 /* =====================================================
-   app.Home.css - Allgemeingültige Home Page Styles
+   app.Home.css - Allgemeingï¿½ltige Home Page Styles
    ===================================================== */
 
 /* Upload progress */
@@ -67,6 +67,83 @@
     opacity: .75;
     display: block;
     margin-top: .25rem;
+}
+
+/* Mass import dialog */
+.mass-import-dialog {
+    max-width: min(1200px, 96vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.mass-import-list {
+    display: grid;
+    gap: 0.7rem;
+}
+
+.mass-import-entry {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.8rem;
+}
+
+.mass-import-entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin-bottom: 0.55rem;
+}
+
+.mass-import-entry-title-wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.mass-import-entry-title {
+    font-weight: 600;
+    line-height: 1.25;
+    word-break: break-word;
+}
+
+.mass-import-warning {
+    display: inline-flex;
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.1rem;
+    flex: 0 0 auto;
+    opacity: 0.9;
+}
+
+.mass-import-warning svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.mass-import-row {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    gap: 0.6rem;
+    align-items: center;
+    margin-top: 0.35rem;
+}
+
+.mass-import-label {
+    font-size: 0.78rem;
+    opacity: 0.75;
+}
+
+.mass-import-value {
+    min-width: 0;
+    word-break: break-word;
+}
+
+.mass-import-security-select {
+    min-width: 0;
+    max-width: 100%;
 }
 
 /* Signed out state */

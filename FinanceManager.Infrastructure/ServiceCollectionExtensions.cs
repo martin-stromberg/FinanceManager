@@ -88,6 +88,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IContactCategoryService, ContactCategoryService>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IStatementDraftService, StatementDraftService>();
+        services.AddScoped<IMassImportOrchestrator, MassImportOrchestrator>();
         services.AddScoped<IBudgetImpactEvaluationService, BudgetImpactEvaluationService>();
         services.AddScoped<IStatementFileParser, ING_CSV_StatementFileParser>();
         services.AddScoped<IStatementFileParser, ING_PDF_StatementFileParser>();

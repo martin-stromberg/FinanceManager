@@ -1,4 +1,5 @@
 using FinanceManager.Shared.Dtos.Budget;
+using FinanceManager.Shared.Dtos.Statements;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
@@ -27,6 +28,63 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
     {
         var username = $"user_{Guid.NewGuid():N}";
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
+    }
+
+    [Fact]
+    public async Task StatementDrafts_ProcessMassImport_ShouldSupportAnalysisAndConfirmationFlow()
+    {
+        var api = CreateClient();
+        await EnsureAuthenticatedAsync(api);
+
+        var fileId = Guid.NewGuid();
+        var analyzeRequest = new MassImportBatchRequestDto
+        {
+            DialogPolicy = MassImportDialogPolicy.OnMissingInformation,
+            ConfirmExecution = false,
+            Files = new[]
+            {
+                new MassImportFileUploadDto
+                {
+                    FileId = fileId,
+                    FileName = "unknown.bin",
+                    ContentType = "application/octet-stream",
+                    Content = [1, 2, 3, 4]
+                }
+            }
+        };
+
+        var analysis = await api.StatementDrafts_ProcessMassImportAsync(analyzeRequest);
+
+        analysis.Should().NotBeNull();
+        analysis!.RequiresConfirmation.Should().BeTrue();
+        analysis.DialogRequired.Should().BeTrue();
+        analysis.Files.Should().ContainSingle();
+        analysis.Files[0].FileId.Should().Be(fileId);
+        analysis.Files[0].FileType.Should().Be(MassImportFileType.Unknown);
+        analysis.Files[0].ExecutionStatus.Should().Be(MassImportFileExecutionStatus.Pending);
+
+        var confirmRequest = new MassImportBatchRequestDto
+        {
+            DialogPolicy = MassImportDialogPolicy.OnMissingInformation,
+            ConfirmExecution = true,
+            Files = analyzeRequest.Files,
+            Decisions = new[]
+            {
+                new MassImportFileDecisionDto
+                {
+                    FileId = fileId,
+                    Excluded = true
+                }
+            }
+        };
+
+        var execution = await api.StatementDrafts_ProcessMassImportAsync(confirmRequest);
+
+        execution.Should().NotBeNull();
+        execution!.RequiresConfirmation.Should().BeFalse();
+        execution.Files.Should().ContainSingle();
+        execution.Files[0].ExecutionStatus.Should().Be(MassImportFileExecutionStatus.Skipped);
+        execution.Files[0].DecisionSource.Should().Be(MassImportDecisionSource.UserConfirmed);
     }
 
     [Fact]

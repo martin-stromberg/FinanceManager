@@ -43,4 +43,36 @@ public sealed class SecurityPriceImportServiceFactory : ISecurityPriceImportServ
 
         return service;
     }
+
+    /// <inheritdoc />
+    public bool TryResolveByContent(
+        SecurityPriceImportContext context,
+        byte[] content,
+        out ISecurityPriceImportService? service,
+        out SecurityPriceImportInspectionResult? inspection)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(content);
+
+        foreach (var candidate in _services)
+        {
+            if (candidate is not ISecurityPriceImportInspector inspector)
+            {
+                continue;
+            }
+
+            if (!inspector.TryInspect(context, content, out var detected))
+            {
+                continue;
+            }
+
+            service = candidate;
+            inspection = detected;
+            return true;
+        }
+
+        service = null;
+        inspection = null;
+        return false;
+    }
 }

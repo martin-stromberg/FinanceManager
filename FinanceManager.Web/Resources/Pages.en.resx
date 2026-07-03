@@ -813,6 +813,45 @@
   <data name="Btn_Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="Btn_Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="MassImport_Dialog_Title" xml:space="preserve">
+    <value>Review mass import</value>
+  </data>
+  <data name="MassImport_Dialog_Hint" xml:space="preserve">
+    <value>Please review and confirm file processing for the current import batch.</value>
+  </data>
+  <data name="MassImport_Th_FileName" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="MassImport_Th_FileType" xml:space="preserve">
+    <value>File type</value>
+  </data>
+  <data name="MassImport_Th_Service" xml:space="preserve">
+    <value>Import service</value>
+  </data>
+  <data name="MassImport_Th_Security" xml:space="preserve">
+    <value>Security</value>
+  </data>
+  <data name="MassImport_Th_Exclude" xml:space="preserve">
+    <value>Exclude</value>
+  </data>
+  <data name="MassImport_SelectSecurity" xml:space="preserve">
+    <value>Select security</value>
+  </data>
+  <data name="MassImport_FileType_Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="MassImport_FileType_AccountStatement" xml:space="preserve">
+    <value>Account statement</value>
+  </data>
+  <data name="MassImport_FileType_SecurityPrices" xml:space="preserve">
+    <value>Security prices</value>
+  </data>
+  <data name="MassImport_Warning_MissingSecurityAssignment" xml:space="preserve">
+    <value>This file cannot be saved yet because the security assignment is missing.</value>
+  </data>
   <data name="Card_Caption_StatementDrafts_Date" xml:space="preserve">
     <value>Booking date</value>
   </data>

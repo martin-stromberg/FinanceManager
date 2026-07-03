@@ -13,4 +13,7 @@ public sealed class ImportSplitSettingsDto
     public int? MonthlySplitThreshold { get; set; } = 250;
     /// <summary>Minimum entries per monthly draft.</summary>
     public int MinEntriesPerDraft { get; set; } = 8;
+
+    /// <summary>Dialog policy for start page mass imports.</summary>
+    public MassImportDialogPolicy MassImportDialogPolicy { get; set; } = MassImportDialogPolicy.OnMissingInformation;
 }

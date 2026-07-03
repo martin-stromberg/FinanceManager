@@ -1229,6 +1229,14 @@
             <returns>Upload result information or null on failure.</returns>
             <exception cref="T:System.ArgumentNullException">When <paramref name="stream"/> or <paramref name="fileName"/> is null.</exception>
         </member>
+        <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_ProcessMassImportAsync(FinanceManager.Shared.Dtos.Statements.MassImportBatchRequestDto,System.Threading.CancellationToken)">
+            <summary>
+            Analyzes or executes a mixed start-page mass import batch.
+            </summary>
+            <param name="request">Mass import batch request.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Batch result or null when the request failed.</returns>
+        </member>
         <member name="M:FinanceManager.Shared.ApiClient.StatementDrafts_CreateAsync(System.String,System.Threading.CancellationToken)">
             <summary>
             Creates an empty statement draft (no file) for the current user.
@@ -5289,6 +5297,36 @@
         <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext.ContentType">
             <summary>Optional content type of the uploaded file.</summary>
         </member>
+        <member name="T:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportInspectionResult">
+            <summary>
+            Metadata extracted by a provider-specific content inspection.
+            </summary>
+            <param name="Provider">Resolved provider key (for example "ing").</param>
+            <param name="ServiceKey">Service key used for execution routing.</param>
+            <param name="ServiceDisplayName">Human-readable service name.</param>
+            <param name="DetectedSecurityName">Security name extracted from the file header when available.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportInspectionResult.#ctor(System.String,System.String,System.String,System.String)">
+            <summary>
+            Metadata extracted by a provider-specific content inspection.
+            </summary>
+            <param name="Provider">Resolved provider key (for example "ing").</param>
+            <param name="ServiceKey">Service key used for execution routing.</param>
+            <param name="ServiceDisplayName">Human-readable service name.</param>
+            <param name="DetectedSecurityName">Security name extracted from the file header when available.</param>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportInspectionResult.Provider">
+            <summary>Resolved provider key (for example "ing").</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportInspectionResult.ServiceKey">
+            <summary>Service key used for execution routing.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportInspectionResult.ServiceDisplayName">
+            <summary>Human-readable service name.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportInspectionResult.DetectedSecurityName">
+            <summary>Security name extracted from the file header when available.</summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Securities.SecurityPriceImportItem">
             <summary>
             Represents a single importable price row normalized to a trading day.
@@ -5847,14 +5885,267 @@
         <member name="P:FinanceManager.Shared.Dtos.Statements.ImportSplitSettingsDto.MinEntriesPerDraft">
             <summary>Minimum entries per monthly draft.</summary>
         </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.ImportSplitSettingsDto.MassImportDialogPolicy">
+            <summary>Dialog policy for start page mass imports.</summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Statements.ImportSplitSettingsUpdateRequest">
             <summary>
             Request payload to update a user's import split settings used during statement draft creation.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Statements.ImportSplitSettingsUpdateRequest.#ctor(FinanceManager.Shared.Dtos.Statements.ImportSplitMode,System.Int32,System.Nullable{System.Int32},System.Int32)">
+        <member name="M:FinanceManager.Shared.Dtos.Statements.ImportSplitSettingsUpdateRequest.#ctor(FinanceManager.Shared.Dtos.Statements.ImportSplitMode,System.Int32,System.Nullable{System.Int32},System.Int32,FinanceManager.Shared.Dtos.Statements.MassImportDialogPolicy)">
             <summary>
             Request payload to update a user's import split settings used during statement draft creation.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.MassImportDialogPolicy">
+            <summary>
+            Controls when the mass import confirmation dialog is required.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Statements.MassImportDialogPolicy.AlwaysConfirm">
+            <summary>
+            Always show the dialog before import execution.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Statements.MassImportDialogPolicy.OnMissingInformation">
+            <summary>
+            Show the dialog only when required information is missing.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.MassImportFileType">
+            <summary>
+            Recognized type of an uploaded mass import file.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Statements.MassImportFileType.Unknown">
+            <summary>
+            File type could not be recognized.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Statements.MassImportFileType.AccountStatement">
+            <summary>
+            Account statement file.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Statements.MassImportFileType.SecurityPrices">
+            <summary>
+            Security prices file.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.MassImportFileExecutionStatus">
+            <summary>
+            Execution status of a single file in a mass import batch.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Statements.MassImportFileExecutionStatus.Pending">
+            <summary>
+            File is waiting for a confirmation decision.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Statements.MassImportFileExecutionStatus.Skipped">
+            <summary>
+            File was skipped (excluded or not importable).
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Statements.MassImportFileExecutionStatus.Imported">
+            <summary>
+            File was imported successfully.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Statements.MassImportFileExecutionStatus.Failed">
+            <summary>
+            File import failed.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.MassImportDecisionSource">
+            <summary>
+            Decision source for a selected file configuration.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Statements.MassImportDecisionSource.AutoDetected">
+            <summary>
+            Values were auto-detected by the system.
+            </summary>
+        </member>
+        <member name="F:FinanceManager.Shared.Dtos.Statements.MassImportDecisionSource.UserConfirmed">
+            <summary>
+            Values were explicitly set by the user.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.MassImportFileUploadDto">
+            <summary>
+            Upload payload for one file in a mass import batch.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportFileUploadDto.FileId">
+            <summary>
+            Stable file identifier across analysis and confirmation calls.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportFileUploadDto.FileName">
+            <summary>
+            Original file name.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportFileUploadDto.ContentType">
+            <summary>
+            Optional content type.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportFileUploadDto.Content">
+            <summary>
+            Raw file bytes.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.MassImportFileDecisionDto">
+            <summary>
+            User decision for one file in the confirmation dialog.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportFileDecisionDto.FileId">
+            <summary>
+            File identifier this decision belongs to.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportFileDecisionDto.Excluded">
+            <summary>
+            True when the file should be excluded.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportFileDecisionDto.SelectedSecurityId">
+            <summary>
+            Selected security id for security price files.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.MassImportBatchRequestDto">
+            <summary>
+            Request to analyze or execute a mass import batch.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchRequestDto.DialogPolicy">
+            <summary>
+            Dialog policy used for this batch.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchRequestDto.ConfirmExecution">
+            <summary>
+            True when the user confirms execution.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchRequestDto.Files">
+            <summary>
+            Uploaded files.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchRequestDto.Decisions">
+            <summary>
+            Optional per-file dialog decisions.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto">
+            <summary>
+            File-level result for a mass import batch.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto.FileId">
+            <summary>
+            File identifier.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto.FileName">
+            <summary>
+            File name.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto.FileType">
+            <summary>
+            Detected file type.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto.ServiceKey">
+            <summary>
+            Technical key of the import service.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto.ServiceDisplayName">
+            <summary>
+            Display name of the import service.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto.CanImport">
+            <summary>
+            Whether the file can be imported.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto.Excluded">
+            <summary>
+            Whether this file is excluded from import.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto.SelectedSecurityId">
+            <summary>
+            Selected security id for security price files.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto.SecurityAutoGuessed">
+            <summary>
+            True when the selected security was auto-guessed.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto.DecisionSource">
+            <summary>
+            Decision source.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto.ExecutionStatus">
+            <summary>
+            Execution status for this file.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto.ValidationMessage">
+            <summary>
+            Optional validation or failure message.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto.StatementDraftId">
+            <summary>
+            First created statement draft id for statement imports.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto.PriceImportResult">
+            <summary>
+            Price import counters for security files.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.MassImportBatchResultDto">
+            <summary>
+            Result of mass import analysis and optional execution.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchResultDto.BatchId">
+            <summary>
+            Batch identifier.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchResultDto.DialogRequired">
+            <summary>
+            True when dialog is required.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchResultDto.DialogSkipped">
+            <summary>
+            True when dialog was skipped by policy.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchResultDto.RequiresConfirmation">
+            <summary>
+            True when the response is analysis-only and waits for confirmation.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchResultDto.Files">
+            <summary>
+            Per-file results.
             </summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Statements.StatementDraftAddEntryRequest">
@@ -7134,6 +7425,9 @@
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.StatementDrafts_UploadAsync(System.IO.Stream,System.String,System.Threading.CancellationToken)">
             <summary>Uploads a statement file for processing.</summary>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.StatementDrafts_ProcessMassImportAsync(FinanceManager.Shared.Dtos.Statements.MassImportBatchRequestDto,System.Threading.CancellationToken)">
+            <summary>Analyzes or executes a start page mass import batch.</summary>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.StatementDrafts_CreateAsync(System.String,System.Threading.CancellationToken)">
             <summary>Creates an empty statement draft (no file) for the current user and returns its detail.</summary>

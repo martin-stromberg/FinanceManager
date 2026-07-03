@@ -1,167 +1,187 @@
-# Wertpapierkurse ING-CSV-Import inkl. Upsert/API/UI
+# Massenimport ING Wertpapierkurse (Startseite, Analyse + Bestätigung)
 
 ## Titel & Kontext
 
-Dieser Ablauf dokumentiert den implementierten End-to-End-Import von ING-Kursdateien über UI und API bis zur Upsert-Persistenz. Der Flow startet auf der Kursseite eines Wertpapiers (`SecurityPricesListViewModel` + `SecurityPriceImportPanel`) und endet im `SecurityPriceService.UpsertDailyPricesAsync(...)` mit den Zählern `Inserted`, `Updated`, `Unchanged`, `Skipped` und `Errors`. Ziel ist ein mandantengetrennter, wiederholbarer CSV-Import mit transparenter Fehlerdiagnose pro Zeile.
+Dieser Ablauf dokumentiert den implementierten Zwei-Phasen-Import für ING-Wertpapierkurse über die Startseite. Phase 1 analysiert alle hochgeladenen Dateien (`ConfirmExecution=false`) und liefert pro Datei Entscheidungen/Validierungen zurück; Phase 2 führt den Import nach Nutzerbestätigung (`ConfirmExecution=true`) aus. Der Flow verbindet Home-UI, User-Settings (Dialogpolicy), API-Orchestrierung, Re-Validierung des gewählten Wertpapiers und Audit-Logging.
 
-## Diagramm A – End-to-End-Sequenz (UI → API → Importservice → Upsert)
+## Diagramm A – Zwei-Phasen-Sequenz (Analyse + Ausführung)
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant UI as SecurityPriceImportPanel
-    participant API as SecuritiesController.ImportPricesAsync
-    participant FAC as SecurityPriceImportServiceFactory.Resolve
-    participant ING as IngSecurityPriceImportService.ImportAsync
-    participant UPS as SecurityPriceService.UpsertDailyPricesAsync
-    participant DB as AppDbContext.SecurityPrices
+    participant UI as Home.razor
+    participant VM as HomeViewModel
+    participant US as UserSettingsController
+    participant SD as StatementDraftsController
+    participant OR as MassImportOrchestrator
+    participant SEC as ISecurityService
+    participant FAC as ISecurityPriceImportServiceFactory
+    participant IMP as ISecurityPriceImportService
+    participant LOG as ILogger
 
-    UI->>API: POST /api/securities/{id}/prices/import (file, provider=ing)
-    API->>API: _service.GetAsync(id, userId)
-    API->>FAC: Resolve(SecurityPriceImportContext)
-    FAC-->>API: ISecurityPriceImportService
-    API->>ING: ImportAsync(userId, securityId, stream, context)
-    ING->>ING: CSV lesen + Zeilen validieren
-    ING->>UPS: UpsertDailyPricesAsync(userId, securityId, items)
-    UPS->>DB: Select bestehende Tage + Insert/Update
-    DB-->>UPS: Persistierte Änderungen
-    UPS-->>ING: SecurityPriceImportResultDto
-    ING-->>API: Result mit Skipped + Errors
-    API-->>UI: 200 OK + SecurityPriceImportResultDto
+    UI->>VM: Ribbon-Upload (mehrere Dateien)
+    VM->>US: GET /api/user/settings/import-split
+    US-->>VM: MassImportDialogPolicy
+    VM->>SD: POST /api/statement-drafts/mass-import (ConfirmExecution=false)
+    SD->>OR: ProcessAsync(userId, request, traceId)
+    OR->>OR: AnalyzeFile + IsDialogRequired
+    OR->>LOG: LogAudit(..., executionStatus=Pending, traceId)
+    OR-->>SD: RequiresConfirmation=true/false
+    SD-->>VM: MassImportBatchResultDto
+    VM-->>UI: Dialog mit Security-Auswahl/Exclude
+
+    UI->>VM: Bestätigen (Decisions)
+    VM->>SD: POST /api/statement-drafts/mass-import (ConfirmExecution=true)
+    SD->>OR: ProcessAsync(..., decisions, traceId)
+    OR->>SEC: GetAsync(selectedSecurityId, ownerUserId)
+    SEC-->>OR: SecurityDto (active/inactive/null)
+    OR->>FAC: Resolve(SecurityPriceImportContext)
+    FAC-->>OR: ISecurityPriceImportService
+    OR->>IMP: ImportAsync(ownerUserId, security.Id, stream, context)
+    OR->>LOG: LogAudit(..., executionStatus=Imported/Failed/Skipped, traceId)
+    OR-->>SD: Ausführungsresultat
+    SD-->>VM: MassImportBatchResultDto
 ```
 
-## Diagramm B – Upsert- und Parser-Entscheidungen
+## Diagramm B – Skip-Matrix und Policy-Entscheidung
 
 ```mermaid
 flowchart TD
-    A[CSV-Zeile lesen] --> B{Leerzeile oder Header?}
-    B -- Ja --> C[Zeile als Skipped zählen]
-    B -- Nein --> D{Datum und Kurs gültig?}
-    D -- Nein --> E[Line Error erfassen + Skipped]
-    D -- Ja --> F[ImportItem je Datum sammeln]
-    F --> G{Datum bereits in Datei vorhanden?}
-    G -- Ja --> H[Last value wins überschreibt Datum]
-    G -- Nein --> I[ImportItem übernehmen]
-    H --> J[Upsert je Datum]
-    I --> J
-    J --> K{Datensatz in DB vorhanden?}
-    K -- Nein --> L[Insert + Inserted++]
-    K -- Ja --> M{Close unterschiedlich?}
-    M -- Ja --> N[Update + Updated++]
-    M -- Nein --> O[Unchanged++]
-    C -.-> P[Importergebnis aufbauen]
-    E -.-> P
-    L --> P
+    A[Datei analysieren] --> B{DialogPolicy = AlwaysConfirm?}
+    B -- Ja --> C[DialogRequired = true]
+    B -- Nein --> D{Unknown oder !CanImport oder Security fehlt?}
+    D -- Ja --> C
+    D -- Nein --> E[DialogSkipped = true]
+    C --> F{ConfirmExecution = false?}
+    E --> F
+    F -- Ja --> G[ExecutionStatus = Pending]
+    F -- Nein --> H{Excluded oder !CanImport?}
+    H -- Ja --> I[ExecutionStatus = Skipped]
+    H -- Nein --> J{Security aktiv vorhanden?}
+    J -- Nein --> K[ExecutionStatus = Failed]
+    J -- Ja --> L[ImportAsync ausführen]
+    L --> M{Rows importiert?}
+    M -- Ja --> N[ExecutionStatus = Imported]
+    M -- Nein --> K
+    K -.-> O[ValidationMessage setzen]
+    I --> P[MassImportAudit loggen]
     N --> P
-    O --> P
+    O -.-> P
+    G --> P
 ```
 
 ## Schrittbeschreibung
 
-1. **UI-Aktion öffnet Import-Overlay**
-   - Referenz: `FinanceManager.Web/ViewModels/Securities/Prices/SecurityPricesListViewModel.cs` (`GetRibbonRegisterDefinition`, `RequestOpenImport`)
-   - Eingaben: `Id` des geladenen Wertpapiers.
-   - Ausgaben: `UiOverlaySpec` mit `SecurityPriceImportPanel` und `SecurityId`.
-   - Seiteneffekte: UI-Event `OpenOverlay`.
+1. **Upload-Start auf der Home-Seite**
+   - Referenz: `FinanceManager.Web/Components/Pages/Home.razor`, `FinanceManager.Web/ViewModels/Home/HomeViewModel.cs` (`GetRibbonRegisterDefinition`, `ProcessMassImportSelectionAsync`)
+   - Eingaben: `IBrowserFile[]` vom Ribbon-Upload.
+   - Ausgaben: `MassImportFileUploadDto[]` mit `FileId`, `FileName`, `ContentType`, `Content`.
+   - Seiteneffekte: Fortschrittszustand (`UploadInProgress`, `UploadDone`, `CurrentFileName`), ggf. Pending-Dialogstatus.
 
-2. **Dateiauswahl und Upload-Aufruf**
-   - Referenz: `FinanceManager.Web/Components/Shared/SecurityPriceImportPanel.razor` (`OnFileSelected`, `ImportAsync`)
-   - Eingaben: `IBrowserFile`, `SecurityId`, fixer Provider `ing`.
-   - Ausgaben: API-Aufruf `Api.Securities_ImportPricesAsync(...)`.
-   - Seiteneffekte: `_busy`/`_result`/`_error` State-Änderungen im Panel.
+2. **Dialogpolicy laden (Setup-Einfluss)**
+   - Referenz: `FinanceManager.Web/ViewModels/Home/HomeViewModel.cs` (`_api.UserSettings_GetImportSplitAsync`), `FinanceManager.Web/Components/Pages/Setup/SetupStatementTab.razor`, `FinanceManager.Web/Controllers/UserSettingsController.cs` (`GetImportSplitAsync`, `UpdateImportSplitAsync`)
+   - Eingaben: aktueller Benutzerkontext.
+   - Ausgaben: `MassImportDialogPolicy` (`AlwaysConfirm` oder `OnMissingInformation`) in `ImportSplitSettingsDto`.
+   - Seiteneffekte: Setup-Änderungen beeinflussen direkt, ob die Home-Seite immer bestätigt oder nur bei fehlenden Informationen.
 
-3. **Multipart-Aufbau im API-Client**
-   - Referenz: `FinanceManager.Shared/ApiClient.Securities.cs` (`Securities_ImportPricesAsync`)
-   - Eingaben: Stream, Dateiname, `provider`, optional `contentType`.
-   - Ausgaben: `POST /api/securities/{id}/prices/import` mit `file` + `provider`.
-   - Seiteneffekte: `LastError` wird bei Nicht-Erfolg gesetzt (`EnsureSuccessOrSetErrorAsync`).
+3. **Phase 1 – Analyse ohne Ausführung**
+   - Referenz: `FinanceManager.Web/Controllers/StatementDraftsController.cs` (`ProcessMassImportAsync`), `FinanceManager.Infrastructure/Statements/MassImportOrchestrator.cs` (`ProcessAsync`, `AnalyzeFile`, `IsDialogRequired`)
+   - Eingaben: Request mit `ConfirmExecution=false`, `DialogPolicy`, `Files`.
+   - Ausgaben: `MassImportBatchResultDto` mit `DialogRequired`, `DialogSkipped`, `RequiresConfirmation`, Datei-Metadaten (`CanImport`, `ValidationMessage`, `SelectedSecurityId`, `DecisionSource=AutoDetected`).
+   - Seiteneffekte: Audit-Logeintrag pro Datei im Pending-Zustand.
 
-4. **Controller-Validierung und Provider-Auflösung**
-   - Referenz: `FinanceManager.Web/Controllers/SecuritiesController.cs` (`ImportPricesAsync`)
-   - Eingaben: `id`, `file`, `provider`, `Current.UserId`.
-   - Ausgaben: `404` bei fehlendem/foreign Security-Owner, sonst Aufruf Importservice.
-   - Seiteneffekte: strukturierte Logs; `SecurityPriceImportContext` Erstellung.
+4. **Nutzerentscheidung auf der Home-Seite**
+   - Referenz: `FinanceManager.Web/Components/Pages/Home.razor`, `FinanceManager.Web/ViewModels/Home/HomeViewModel.cs` (`SetPendingFileSecurity`, `SetPendingFileExcluded`, `ConfirmMassImportAsync`)
+   - Eingaben: manuelle Security-Zuordnung und Exclude-Flags.
+   - Ausgaben: `MassImportFileDecisionDto[]` mit `FileId`, `Excluded`, `SelectedSecurityId`.
+   - Seiteneffekte: `DecisionSource` wird auf `UserConfirmed` gesetzt.
 
-5. **Factory selektiert Importservice**
-   - Referenz: `FinanceManager.Infrastructure/Securities/SecurityPriceImportServiceFactory.cs` (`Resolve`)
-   - Eingaben: `SecurityPriceImportContext`.
-   - Ausgaben: passender `ISecurityPriceImportService` (aktuell `IngSecurityPriceImportService`).
-   - Seiteneffekte: `InvalidOperationException`, wenn kein Service `CanHandle(...)` erfüllt.
+5. **Phase 2 – Ausführung nach Bestätigung**
+   - Referenz: `FinanceManager.Infrastructure/Statements/MassImportOrchestrator.cs` (`ProcessAsync`, `ImportSecurityPricesAsync`)
+   - Eingaben: Request mit `ConfirmExecution=true` und `Decisions`.
+   - Ausgaben: pro Datei `ExecutionStatus` (`Imported`, `Skipped`, `Failed`) sowie ggf. `PriceImportResult`.
+   - Seiteneffekte: Datei wird übersprungen, wenn `Excluded=true` oder `CanImport=false`.
 
-6. **ING-Parser validiert und normalisiert CSV**
-   - Referenz: `FinanceManager.Infrastructure/Securities/IngSecurityPriceImportService.cs` (`CanHandle`, `ImportAsync`)
-   - Eingaben: CSV-Stream, deutsches Format `dd.MM.yyyy HH:mm:ss` + Dezimal-Komma.
-   - Ausgaben: `SecurityPriceImportItem` je Datum, plus `Skipped`/`Errors`.
-   - Seiteneffekte: Ungültige Zeilen werden nicht persistiert; gleiche Tage in Datei werden überschrieben (`parsedByDate[date]`).
+6. **Re-Validierung vor Persistenz**
+   - Referenz: `FinanceManager.Infrastructure/Statements/MassImportOrchestrator.cs` (`ImportSecurityPricesAsync`)
+   - Eingaben: `SelectedSecurityId` aus Nutzerentscheidung.
+   - Ausgaben: nur bei gültigem Treffer in `_securityService.GetAsync(...)` und `security.IsActive==true` wird `ImportAsync(...)` ausgeführt.
+   - Seiteneffekte: bei `null`/inaktivem Wertpapier `ExecutionStatus=Failed` und `ValidationMessage="Assigned security is not available or inactive."`.
 
-7. **Upsert-Entscheidung pro Tag**
-   - Referenz: `FinanceManager.Infrastructure/Securities/SecurityPriceService.cs` (`UpsertDailyPricesAsync`)
-   - Eingaben: `ownerUserId`, `securityId`, deduplizierte Items.
-   - Ausgaben: Zähler für `Inserted`, `Updated`, `Unchanged`.
-   - Seiteneffekte: DB-Insert/Update auf `SecurityPrices`; `SaveChangesAsync` nur bei echten Änderungen.
+7. **Audit-Logging**
+   - Referenz: `FinanceManager.Infrastructure/Statements/MassImportOrchestrator.cs` (`LogAudit`), `FinanceManager.Web/Controllers/StatementDraftsController.cs` (`HttpContext.TraceIdentifier`)
+   - Eingaben: `batchId`, `traceId`, Datei-Resultat.
+   - Ausgaben: strukturierter Logeintrag im Format  
+     `MassImportAudit batchId={BatchId} fileId={FileId} fileName={FileName} fileType={FileType} serviceDisplayName={ServiceDisplayName} excluded={Excluded} selectedSecurityId={SelectedSecurityId} decisionSource={DecisionSource} executionStatus={ExecutionStatus} traceId={TraceId}`
+   - Seiteneffekte: Nachvollziehbarkeit über Analyse- und Ausführungsphase hinweg.
 
-8. **Response-Mapping und UI-Anzeige**
-   - Referenz: `FinanceManager.Web/Controllers/SecuritiesController.cs` (`ImportPricesAsync`), `FinanceManager.Web/Components/Shared/SecurityPriceImportPanel.razor`
-   - Eingaben: aggregiertes `SecurityPriceImportResultDto`.
-   - Ausgaben: `200 OK` bei mindestens einem validen Upsert-Kandidaten; andernfalls `400 Err_Invalid_Import`.
-   - Seiteneffekte: UI zeigt Zähler und pro Zeile Fehlerliste.
+## Skip-Policy-Regeln (AlwaysConfirm vs OnMissingInformation)
+
+- **AlwaysConfirm**
+  - `IsDialogRequired(...)` gibt immer `true` zurück.
+  - Bei `ConfirmExecution=false` endet die Anfrage immer in `RequiresConfirmation=true`, auch bei vollständig erkannten Dateien.
+
+- **OnMissingInformation**
+  - `IsDialogRequired(...)` gibt nur dann `true` zurück, wenn mindestens eine Datei:
+    - `FileType == Unknown` ist, oder
+    - `CanImport == false` hat, oder
+    - `FileType == SecurityPrices` und `SelectedSecurityId` fehlt.
+  - Sind alle Dateien vollständig, wird ohne zusätzlichen Dialog ausgeführt (`DialogSkipped=true`).
 
 ## Fehlerbehandlung
 
-- **Datei fehlt oder leer**  
-  - Pfad: `SecuritiesController.ImportPricesAsync`  
-  - Verhalten: `400 BadRequest` mit `Err_Invalid_File`.
+- **Ungültiger Batch-Request (keine Dateien)**
+  - Pfad: `StatementDraftsController.ProcessMassImportAsync`
+  - Verhalten: `400 BadRequest` (`Err_Invalid_File`).
 
-- **Wertpapier nicht gefunden oder nicht owner-scoped**  
-  - Pfad: `SecuritiesController.ImportPricesAsync` (`_service.GetAsync`)  
-  - Verhalten: `404 NotFound`.
+- **Orchestrator nicht registriert**
+  - Pfad: `StatementDraftsController.ProcessMassImportAsync`
+  - Verhalten: `500 InternalServerError` (`ApiErrorFactory.Unexpected`).
 
-- **Provider nicht auflösbar**  
-  - Pfad: `SecurityPriceImportServiceFactory.Resolve` wirft `InvalidOperationException`  
-  - Verhalten: Controller mapped auf `400 BadRequest` (`ApiErrorFactory.FromArgumentException`).
+- **Datei nicht importierbar oder explizit ausgeschlossen**
+  - Pfad: `MassImportOrchestrator.ProcessAsync`
+  - Verhalten: `ExecutionStatus=Skipped` (kein Persistenzversuch).
 
-- **CSV ohne valide Kurszeilen**  
-  - Pfad: `IngSecurityPriceImportService.ImportAsync` liefert `Inserted=Updated=Unchanged=0`  
-  - Verhalten: Controller liefert `400 BadRequest` mit `Err_Invalid_Import`.
+- **Security fehlt/inaktiv trotz Nutzerauswahl**
+  - Pfad: `MassImportOrchestrator.ImportSecurityPricesAsync` via `_securityService.GetAsync`
+  - Verhalten: `ExecutionStatus=Failed`, verständliche `ValidationMessage`, kein Aufruf von `ImportAsync`.
 
-- **Zeilenfehler (Datum/Kurs/Spalten/negativ)**  
-  - Pfad: `IngSecurityPriceImportService.ImportAsync`  
-  - Verhalten: Zeile wird als `Skipped` gezählt, Fehler in `Errors` gesammelt; valide Zeilen laufen weiter.
+- **ING-Import ohne verwertbare Zeilen**
+  - Pfad: `MassImportOrchestrator.ImportSecurityPricesAsync`
+  - Verhalten: `ExecutionStatus=Failed` mit `ValidationMessage="No valid security price rows found."`.
 
-- **Unerwartete Laufzeitfehler**  
-  - Pfad: globaler `catch (Exception)` im Controller  
-  - Verhalten: `500 InternalServerError` mit `ApiErrorFactory.Unexpected`, Fehler wird geloggt.
+- **Laufzeitfehler während Dateiausführung**
+  - Pfad: `MassImportOrchestrator.ProcessAsync` (`catch (Exception)`)
+  - Verhalten: `ExecutionStatus=Failed`, Fehler wird geloggt.
 
 ## Abhängigkeiten
 
-- Web/UI:
-  - `FinanceManager.Web/ViewModels/Securities/Prices/SecurityPricesListViewModel.cs`
-  - `FinanceManager.Web/Components/Shared/SecurityPriceImportPanel.razor`
+- UI / ViewModels:
+  - `FinanceManager.Web/Components/Pages/Home.razor`
+  - `FinanceManager.Web/ViewModels/Home/HomeViewModel.cs`
+  - `FinanceManager.Web/Components/Pages/Setup/SetupStatementTab.razor`
 - API:
-  - `FinanceManager.Web/Controllers/SecuritiesController.cs`
-  - `FinanceManager.Shared/ApiClient.Securities.cs`
-- Application Contracts:
-  - `FinanceManager.Application/Securities/ISecurityPriceImportService.cs`
+  - `FinanceManager.Web/Controllers/StatementDraftsController.cs`
+  - `FinanceManager.Web/Controllers/UserSettingsController.cs`
+- Orchestrierung / Services:
+  - `FinanceManager.Infrastructure/Statements/MassImportOrchestrator.cs`
+  - `FinanceManager.Application/Securities/ISecurityService.cs`
   - `FinanceManager.Application/Securities/ISecurityPriceImportServiceFactory.cs`
-  - `FinanceManager.Application/Securities/ISecurityPriceService.cs`
-- Infrastructure:
-  - `FinanceManager.Infrastructure/Securities/SecurityPriceImportServiceFactory.cs`
-  - `FinanceManager.Infrastructure/Securities/IngSecurityPriceImportService.cs`
-  - `FinanceManager.Infrastructure/Securities/SecurityPriceService.cs`
-  - `FinanceManager.Infrastructure/ServiceCollectionExtensions.cs`
 - DTOs:
+  - `FinanceManager.Shared/Dtos/Statements/MassImportDtos.cs`
   - `FinanceManager.Shared/Dtos/Securities/SecurityPriceImportDtos.cs`
 - Tests:
-  - `FinanceManager.Tests/Infrastructure/Securities/IngSecurityPriceImportServiceTests.cs`
-  - `FinanceManager.Tests/Infrastructure/Securities/SecurityPriceServiceUpsertTests.cs`
-  - `FinanceManager.Tests/Infrastructure/Securities/SecurityPriceImportServiceFactoryTests.cs`
-  - `FinanceManager.Tests/ViewModels/SecurityPricesViewModelTests.cs`
-  - `FinanceManager.Tests/Components/SecurityPriceImportPanelTests.cs`
+  - `FinanceManager.Tests/Statements/MassImportOrchestratorTests.cs`
+  - `FinanceManager.Tests/ViewModels/HomeViewModelTests.cs`
+  - `FinanceManager.Tests.Integration/ApiClient/ApiClientStatementDraftsTests.cs`
+
+## Relevante Testabdeckung
+
+- `MassImportOrchestratorTests`: validiert Skip-Matrix, Policy-Verhalten, Re-Validierung (`GetAsync` + active check) und Exclude-Pfade.
+- `HomeViewModelTests`: validiert Zwei-Phasen-UI-Fluss inkl. Laden der `MassImportDialogPolicy`, Pending-Dialog und Confirm-Request mit Decisions.
+- `ApiClientStatementDraftsTests`: validiert API-Vertrag für Analyze- und Confirm-Call über `StatementDrafts_ProcessMassImportAsync`.
 
 ## Querverweise
 
-- API-Dokumentation: [`../api/SecuritiesController.md`](../api/SecuritiesController.md#post-apisecuritiesidpricesimport)
-- Architektur-Blueprint: [`../architecture/architecture-blueprint-wertpapierkurse-ing.md`](../architecture/architecture-blueprint-wertpapierkurse-ing.md)
-- Anforderungen: [`../requirements/wertpapierkurse-ing-requirements.md`](../requirements/wertpapierkurse-ing-requirements.md)
-- Planung: [`../planning/planning-wertpapierkurse-ing.md`](../planning/planning-wertpapierkurse-ing.md)
-- Testplan: [`../tests/wertpapierkurse-ing-testplan.md`](../tests/wertpapierkurse-ing-testplan.md)
+- API-Dokumentation: [`../api/StatementDraftsController.md`](../api/StatementDraftsController.md)
+- Verwandter Import-Flow: [`import-classification.md`](import-classification.md)

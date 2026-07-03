@@ -1660,6 +1660,20 @@
             <returns>A task that completes when the operation has finished.</returns>
             <exception cref="T:System.ArgumentException">Thrown when <paramref name="id"/> or <paramref name="ownerUserId"/> is <see cref="F:System.Guid.Empty"/>.</exception>
         </member>
+        <member name="T:FinanceManager.Application.Securities.ISecurityPriceImportInspector">
+            <summary>
+            Performs provider-specific content inspection for security price import files.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityPriceImportInspector.TryInspect(FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext,System.Byte[],FinanceManager.Shared.Dtos.Securities.SecurityPriceImportInspectionResult@)">
+            <summary>
+            Inspects raw file content and returns import metadata when the format matches.
+            </summary>
+            <param name="context">Import context containing file metadata and optional provider hint.</param>
+            <param name="content">Raw file bytes.</param>
+            <param name="result">Detected provider and service metadata.</param>
+            <returns><c>true</c> when this inspector recognizes the file format; otherwise <c>false</c>.</returns>
+        </member>
         <member name="T:FinanceManager.Application.Securities.ISecurityPriceImportService">
             <summary>
             Defines a provider-specific service that imports security prices from an uploaded file.
@@ -1695,6 +1709,16 @@
             <param name="context">Provider and file metadata context.</param>
             <returns>A matching import service implementation.</returns>
             <exception cref="T:System.InvalidOperationException">Thrown when no service can handle the context.</exception>
+        </member>
+        <member name="M:FinanceManager.Application.Securities.ISecurityPriceImportServiceFactory.TryResolveByContent(FinanceManager.Shared.Dtos.Securities.SecurityPriceImportContext,System.Byte[],FinanceManager.Application.Securities.ISecurityPriceImportService@,FinanceManager.Shared.Dtos.Securities.SecurityPriceImportInspectionResult@)">
+            <summary>
+            Attempts to resolve an import service by inspecting raw file content.
+            </summary>
+            <param name="context">Import context containing file metadata and optional provider hint.</param>
+            <param name="content">Raw file bytes.</param>
+            <param name="service">Resolved import service when inspection succeeds.</param>
+            <param name="inspection">Detected provider metadata from content inspection.</param>
+            <returns><c>true</c> when a matching service was found; otherwise <c>false</c>.</returns>
         </member>
         <member name="T:FinanceManager.Application.Securities.ISecurityPriceService">
             <summary>
@@ -2654,6 +2678,21 @@
             <summary>
             Evaluates budget impact summary for final booking scope.
             </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Statements.IMassImportOrchestrator">
+            <summary>
+            Coordinates analysis and execution for mixed start-page mass imports.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Statements.IMassImportOrchestrator.ProcessAsync(System.Guid,FinanceManager.Shared.Dtos.Statements.MassImportBatchRequestDto,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Analyzes uploaded files and optionally executes import operations.
+            </summary>
+            <param name="ownerUserId">Current user id.</param>
+            <param name="request">Batch request containing files and optional decisions.</param>
+            <param name="traceId">Current request trace id for audit logs.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Batch result with per-file status.</returns>
         </member>
         <member name="T:FinanceManager.Application.Statements.IStatementDraftService">
             <summary>

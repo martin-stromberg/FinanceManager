@@ -576,6 +576,8 @@ public interface IApiClient
     Task<bool> StatementDrafts_DeleteAllAsync(CancellationToken ct = default);
     /// <summary>Uploads a statement file for processing.</summary>
     Task<StatementDraftUploadResult?> StatementDrafts_UploadAsync(Stream stream, string fileName, CancellationToken ct = default);
+    /// <summary>Analyzes or executes a start page mass import batch.</summary>
+    Task<MassImportBatchResultDto?> StatementDrafts_ProcessMassImportAsync(MassImportBatchRequestDto request, CancellationToken ct = default);
     /// <summary>Creates an empty statement draft (no file) for the current user and returns its detail.</summary>
     Task<StatementDraftDetailDto?> StatementDrafts_CreateAsync(string? fileName = null, CancellationToken ct = default);
     /// <summary>Gets the detail of a statement draft by id.</summary>

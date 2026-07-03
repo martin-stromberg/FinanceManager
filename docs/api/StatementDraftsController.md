@@ -3,184 +3,173 @@
 Pfad: `FinanceManager.Web/Controllers/StatementDraftsController.cs`  
 Route-Basis: `/api/statement-drafts`
 
-## Zweck
+Diese Dokumentation beschreibt den Endpunkt für den Massenimport von Kontoauszügen und ING-Wertpapierkursen.
 
-Verwaltet den gesamten Draft-Lebenszyklus beim Kontoauszug-Import:
-- Upload und Draft-Erzeugung
-- Klassifizierung und Entry-Zuordnung
-- Validierung/Buchung (vollständig oder je Entry)
-- Split- und Detailbearbeitung
-- Rückgabe von Budgetauswirkungs-Hinweisen
+## Endpunkt: Mass Import
 
-## Wichtige Endpunkte
+### Übersicht
+`POST /api/statement-drafts/mass-import` analysiert mehrere Dateien in einem Batch und führt – je nach Dialog-Policy und `ConfirmExecution` – direkt den Import aus oder liefert einen bestätigungspflichtigen Analysezustand zurück.
 
-### Draft-Verwaltung
-- `GET /api/statement-drafts`
-- `GET /api/statement-drafts/count`
-- `DELETE /api/statement-drafts/all`
-- `POST /api/statement-drafts/upload`
-- `POST /api/statement-drafts` (leeren Draft anlegen)
-- `DELETE /api/statement-drafts/{draftId}`
-- `GET /api/statement-drafts/{draftId}/file`
+### HTTP-Methode & Pfad
+`POST /api/statement-drafts/mass-import`
 
-### Klassifizierung und Bearbeitung
-- `POST /api/statement-drafts/{draftId}/classify`
-- `POST /api/statement-drafts/{draftId}/account/{accountId}`
-- `POST /api/statement-drafts/{draftId}/commit`
-- `GET /api/statement-drafts/{draftId}/entries/{entryId}`
-- `POST /api/statement-drafts/{draftId}/entries`
-- `POST /api/statement-drafts/{draftId}/entries/{entryId}/edit-core`
-- `POST /api/statement-drafts/{draftId}/entries/{entryId}/save-all`
-- `DELETE /api/statement-drafts/{draftId}/entries/{entryId}`
+### Authentifizierung
+`Authorization: Bearer <token>` (JWT, geschützter Endpunkt).
 
-### Entry-Zuordnungen
-- `POST /api/statement-drafts/{draftId}/entries/{entryId}/contact`
-- `POST /api/statement-drafts/{draftId}/entries/{entryId}/costneutral`
-- `POST /api/statement-drafts/{draftId}/entries/{entryId}/savingsplan`
-- `POST /api/statement-drafts/{draftId}/entries/{entryId}/savingsplan/archive-on-booking`
-- `POST /api/statement-drafts/{draftId}/entries/{entryId}/security`
-- `POST /api/statement-drafts/{draftId}/entries/{entryId}/split`
-- `POST /api/statement-drafts/{draftId}/entries/{entryId}/classify-entry`
-- `POST /api/statement-drafts/{draftId}/entries/{entryId}/reset-duplicate`
+### Request
 
-### Validierung und Buchung
+#### Header
+- `Content-Type: application/json` *(required)*
+- `Authorization: Bearer <token>` *(required)*
 
-- `GET /api/statement-drafts/{draftId}/validate`
-- `GET /api/statement-drafts/{draftId}/entries/{entryId}/validate`
-- `POST /api/statement-drafts/{draftId}/book?forceWarnings={bool}`
-- `POST /api/statement-drafts/{draftId}/entries/{entryId}/book?forceWarnings={bool}`
+#### Body (`MassImportBatchRequestDto`)
+- `dialogPolicy` (`AlwaysConfirm` | `OnMissingInformation`) *(required)*
+- `confirmExecution` (`boolean`) *(required)*
+- `files` (`MassImportFileUploadDto[]`) *(required, mind. 1 Element)*
+  - `fileId` (`uuid`) *(required, stabil zwischen Analyze und Confirm)*
+  - `fileName` (`string`) *(required)*
+  - `contentType` (`string | null`) *(optional)*
+  - `content` (`string`, Base64 für `byte[]`) *(required)*
+- `decisions` (`MassImportFileDecisionDto[]`) *(optional; bei Confirm empfohlen)*
+  - `fileId` (`uuid`) *(required)*
+  - `excluded` (`boolean`) *(required)*
+  - `selectedSecurityId` (`uuid | null`) *(optional, relevant für `SecurityPrices`)*
 
-### Transaktionssichere Buchung
-
-Die beiden Buchungsendpunkte schützen sich gegen parallele Doppelverarbeitung über einen persistierten Guard:
-
-- Guard-Entität: `FinanceManager.Infrastructure/Statements/StatementDraftBookingGuard.cs`
-- DB-Mapping: `FinanceManager.Infrastructure/AppDbContext.cs`
-- Service: `FinanceManager.Infrastructure/Statements/StatementDraftService.cs`
-
-Verhalten:
-
-- `409 Conflict` mit `code=BOOKING_IN_PROGRESS` und `retryable=true`, wenn bereits eine Buchung für denselben Draft läuft
-- `409 Conflict` mit `code=BOOKING_ALREADY_PROCESSED` und `retryable=false`, wenn Draft oder Entry bereits verbucht sind
-- `traceId` wird immer im ProblemDetails-Response mitgegeben
-- Erfolgsfälle bleiben `200 OK`
-- Fachliche Validierungsfehler bleiben `400 Bad Request` bzw. `428 Precondition Required`
-
-## Budget-Impact-Erweiterung (neu)
-
-### 1) Echtzeit-Hinweise auf Entry-Ebene
-Bei folgenden Endpunkten enthält die Antwort nun optional `budgetImpact` im `StatementDraftEntryDto`:
-- `.../contact`
-- `.../savingsplan`
-- `.../save-all`
-
-Beispiel:
-
+Beispiel (Analyze):
 ```json
 {
-  "id": "11111111-1111-1111-1111-111111111111",
-  "amount": -50.0,
-  "subject": "Vertrag XX12",
-  "budgetImpact": {
-    "entryId": "11111111-1111-1111-1111-111111111111",
-    "evaluatedAtUtc": "2026-06-04T17:30:00Z",
-    "evaluationFingerprint": "draft:abc",
-    "hints": [
-      {
-        "budgetPurposeId": "22222222-2222-2222-2222-222222222222",
-        "budgetPurposeName": "Utility Budget",
-        "budgetPeriod": "2026-06",
-        "hintType": "StronglyChanged",
-        "targetValue": 100.0,
-        "actualBefore": 0.0,
-        "actualAfter": 50.0,
-        "fulfillmentRateBefore": 0.0,
-        "fulfillmentRateAfter": 0.5,
-        "delta": 0.5,
-        "reason": "Zielerreichung stark verändert (Δ Quote: 50%)."
-      }
-    ]
-  }
+  "dialogPolicy": "OnMissingInformation",
+  "confirmExecution": false,
+  "files": [
+    {
+      "fileId": "11111111-1111-1111-1111-111111111111",
+      "fileName": "ing_unmapped_prices.csv",
+      "contentType": "text/csv",
+      "content": "WmVpdDtLdXJzCjAxLjA3LjIwMjYgMDA6MDA6MDA7MTAsMDAK"
+    }
+  ],
+  "decisions": []
 }
 ```
 
-### 2) Abschluss-Summary bei Buchung
-`BookingResult` enthält optional `budgetImpactSummary` für:
-- `POST /{draftId}/book`
-- `POST /{draftId}/entries/{entryId}/book`
+### Response
 
-Beispiel:
+#### Erfolgsfall: `200 OK` (`MassImportBatchResultDto`)
+- `batchId` (`uuid`)
+- `dialogRequired` (`boolean`)
+- `dialogSkipped` (`boolean`)
+- `requiresConfirmation` (`boolean`)
+- `files` (`MassImportBatchFileResultDto[]`) mit u. a.:
+  - `fileType` (`Unknown` | `AccountStatement` | `SecurityPrices`)
+  - `canImport`, `excluded`, `selectedSecurityId`, `securityAutoGuessed`
+  - `decisionSource` (`AutoDetected` | `UserConfirmed`)
+  - `executionStatus` (`Pending` | `Skipped` | `Imported` | `Failed`)
+  - `validationMessage` (`string | null`)
+  - `statementDraftId` (`uuid | null`)
+  - `priceImportResult` (`SecurityPriceImportResultDto | null`)
 
+Beispiel (Analyze mit Bestätigung erforderlich):
 ```json
 {
-  "success": true,
-  "hasWarnings": false,
-  "budgetImpactSummary": {
-    "draftId": "33333333-3333-3333-3333-333333333333",
-    "entryId": null,
-    "evaluatedAtUtc": "2026-06-04T17:30:05Z",
-    "evaluationFingerprint": "draft:abc",
-    "highestSeverity": "AlmostExhausted",
-    "items": [
-      {
-        "budgetPurposeId": "22222222-2222-2222-2222-222222222222",
-        "budgetPurposeName": "Utility Budget",
-        "budgetPeriod": "2026-06",
-        "hintType": "AlmostExhausted",
-        "targetValue": 100.0,
-        "actualBefore": 80.0,
-        "actualAfter": 95.0,
-        "fulfillmentRateBefore": 0.8,
-        "fulfillmentRateAfter": 0.95,
-        "delta": 0.15,
-        "reason": "Budget fast ausgeschöpft (Soll: 100, Ist nachher: 95)."
-      }
-    ]
-  }
+  "batchId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "dialogRequired": true,
+  "dialogSkipped": false,
+  "requiresConfirmation": true,
+  "files": [
+    {
+      "fileId": "11111111-1111-1111-1111-111111111111",
+      "fileName": "ing_unmapped_prices.csv",
+      "fileType": "SecurityPrices",
+      "serviceKey": "ing",
+      "serviceDisplayName": "ING",
+      "canImport": false,
+      "excluded": false,
+      "selectedSecurityId": null,
+      "securityAutoGuessed": false,
+      "decisionSource": "AutoDetected",
+      "executionStatus": "Pending",
+      "validationMessage": "Missing security assignment.",
+      "statementDraftId": null,
+      "priceImportResult": null
+    }
+  ]
 }
 ```
 
-## Matching-Verhalten für BudgetImpact (API-Ebene)
+#### Fehlerfälle
+- `400 Bad Request`: Request fehlt/ungültig (z. B. keine Dateien)
+  ```json
+  {
+    "errorCode": "API_StatementDraft_Err_Invalid_File",
+    "message": "At least one file is required."
+  }
+  ```
+- `401 Unauthorized`: kein/ungültiges Token
+- `500 Internal Server Error`: unerwarteter Fehler (z. B. Orchestrator nicht verfügbar)
 
-Die BudgetImpact-Berechnung berücksichtigt `PurposePattern`/`UseRegex` aus Budget-Regeln:
+### Beispiel (curl)
 
-- Bewertungsinput: kombinierter Text aus `subject` + `bookingDescription`.
-- Kein Pattern ⇒ Match.
-- `UseRegex=false` ⇒ case-insensitive `contains`.
-- `UseRegex=true` ⇒ Regex-Match mit  
-  `RegexOptions.IgnoreCase | RegexOptions.CultureInvariant` und `200ms` Timeout.
-- Regex-Fehler oder Timeout führen zu **kein Match** (kein API-Fehler).
+Analyze:
+```bash
+curl -X POST "https://your-domain/api/statement-drafts/mass-import" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dialogPolicy":"OnMissingInformation",
+    "confirmExecution":false,
+    "files":[
+      {
+        "fileId":"11111111-1111-1111-1111-111111111111",
+        "fileName":"unknown.bin",
+        "contentType":"application/octet-stream",
+        "content":"AQIDBA=="
+      }
+    ],
+    "decisions":[]
+  }'
+```
 
-Damit gilt dasselbe Pattern-Verhalten wie in [BudgetReportsController](./BudgetReportsController.md), aber auf Entwurfs-/Buchungsebene.
+Confirm + Execute:
+```bash
+curl -X POST "https://your-domain/api/statement-drafts/mass-import" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dialogPolicy":"OnMissingInformation",
+    "confirmExecution":true,
+    "files":[
+      {
+        "fileId":"11111111-1111-1111-1111-111111111111",
+        "fileName":"unknown.bin",
+        "contentType":"application/octet-stream",
+        "content":"AQIDBA=="
+      }
+    ],
+    "decisions":[
+      {
+        "fileId":"11111111-1111-1111-1111-111111111111",
+        "excluded":true,
+        "selectedSecurityId":null
+      }
+    ]
+  }'
+```
 
-## Fehler- und Rückgabeverhalten
+## Confirm-Dialog-Policy-Integration (Client Flow)
 
-- `400 BadRequest`: Validierungsfehler (z. B. fachliche Verletzungen)
-- `428 Precondition Required`: Warnungen vorhanden, `forceWarnings=false`
-- `409 Conflict`: Aktive Guard-Kollision oder bereits verarbeiteter Draft/Entry
-- `404 NotFound`: Draft/Entry nicht vorhanden oder nicht sichtbar
-- `200 OK`: erfolgreiche Verarbeitung inkl. Dto/Result mit optionalen Budget-Impact-Daten
+1. **Einstellung laden**: `GET /api/user/settings/import-split` und `massImportDialogPolicy` verwenden.  
+2. **Analyze Call**: `confirmExecution=false` senden.  
+3. **Wenn `requiresConfirmation=true`**: Benutzerentscheidungen sammeln (`excluded`, `selectedSecurityId`).  
+4. **Confirm Call**: denselben File-Batch mit identischen `fileId` + `confirmExecution=true` + `decisions` senden.  
+5. **Ergebnis pro Datei auswerten**: `executionStatus`, `decisionSource`, `validationMessage`, `statementDraftId`, `priceImportResult`.
 
-### Konflikt-ProblemDetails
+## Verwandte Endpunkte
 
-Bei Konflikten liefert der Controller ein `ProblemDetails`-Objekt mit folgenden Erweiterungen:
+- User-Policy lesen/schreiben: [UserSettingsController](./UserSettingsController.md)
+- Draft-Entry-Bearbeitung: [StatementDraftEntriesController](./StatementDraftEntriesController.md)
 
-- `code`
-- `retryable`
-- `traceId`
+## Tests / Verifikation
 
-Beispielcodes:
+- `FinanceManager.Tests.Integration/ApiClient/ApiClientStatementDraftsTests.cs`
+- `FinanceManager.Tests/Statements/MassImportOrchestratorTests.cs`
 
-- `BOOKING_IN_PROGRESS` → laufende Buchung, retryable
-- `BOOKING_ALREADY_PROCESSED` → bereits verbucht, nicht retryable
-
-## Referenzen
-
-- Budget-Regel-API inkl. Pattern-Validierung: [BudgetRulesController](./BudgetRulesController.md)
-- Migration: `FinanceManager.Infrastructure/Migrations/20260604172812_202606041500_AddBudgetRulePurposePattern.cs`
-- Service-Logik: `FinanceManager.Infrastructure/Statements/StatementDraftService.cs`
-- Budgetbewertung: `FinanceManager.Infrastructure/Statements/BudgetImpactEvaluationService.cs`
-- DTOs: `FinanceManager.Shared/Dtos/Statements/BudgetImpactDtos.cs`
-- Tests:
-  - `FinanceManager.Tests/Statements/BudgetImpactEvaluationServiceTests.cs`
-  - `FinanceManager.Tests.Integration/ApiClient/ApiClientStatementDraftsTests.cs`

@@ -1,7 +1,7 @@
 # Testplan: Wertpapierkurse (ING)
 
 > **Basis:** `Docs/tests/wertpapierkurse-ing-testluecken.md`  
-> **Stand:** 2026-07-02  
+> **Stand:** 2026-07-03  
 > **Ziel:** Alle WPK-Lücken mit direkt umsetzbaren Tests schließen (P1 zuerst).
 
 ---
@@ -16,6 +16,10 @@ Die identifizierten Kernlücken wurden implementiert und liegen in folgenden Tes
 - `FinanceManager.Tests/Components/SecurityPriceImportPanelTests.cs` (UI-Importinteraktion)
 - `FinanceManager.Tests/Infrastructure/Securities/IngSecurityPriceImportServiceTests.cs` (Parser/CanHandle)
 - `FinanceManager.Tests/Infrastructure/Securities/SecurityPriceServiceUpsertTests.cs` (Upsert-Guard- und Randfälle)
+- `FinanceManager.Tests/Statements/MassImportOrchestratorTests.cs` (Skip-Matrix, Re-Validierung, Exclude-Pfade)
+- `FinanceManager.Tests/ViewModels/HomeViewModelTests.cs` (Analyze/Confirm-UI-Flow)
+- `FinanceManager.Tests.Integration/ApiClient/ApiClientStatementDraftsTests.cs` (Mass-Import Analyze + Confirm API-Flow)
+- `FinanceManager.Tests.Integration/ApiClient/ApiClientUserSettingsTests.cs` (MassImportDialogPolicy in User-Settings)
 
 Damit ist der Plan weiterhin als Referenz nutzbar, der aktuelle Umsetzungsstand ist jedoch bereits im Testcode abgebildet.
 
@@ -49,7 +53,7 @@ Damit ist der Plan weiterhin als Referenz nutzbar, der aktuelle Umsetzungsstand 
 ### Testdoubles / Fixtures / Datenaufbau
 - `TestWebApplicationFactory` als Fixture.
 - Seed über API (Register + Security Create), keine direkten DB-Manipulationen nötig.
-- CSV als `MemoryStream` (Header `Zeit;Kurs`, Datum `dd.MM.yyyy HH:mm:ss`, Dezimal mit Komma).
+- CSV als `MemoryStream` (Header `Zeit;<Wertpapiername>`, Datum `dd.MM.yyyy HH:mm:ss`, Dezimal mit Komma).
 
 ### Definition of Done
 - Test läuft stabil grün im Integration-Projekt.

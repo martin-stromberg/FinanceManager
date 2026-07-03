@@ -109,7 +109,8 @@ public sealed class SetupStatementsViewModel : BaseViewModel
                 Mode: Model.Mode,
                 MaxEntriesPerDraft: Model.MaxEntriesPerDraft,
                 MonthlySplitThreshold: Model.MonthlySplitThreshold,
-                MinEntriesPerDraft: Model.MinEntriesPerDraft
+                MinEntriesPerDraft: Model.MinEntriesPerDraft,
+                MassImportDialogPolicy: Model.MassImportDialogPolicy
             );
 
             var ok = await ApiClient.UserSettings_UpdateImportSplitAsync(request, ct);
@@ -141,6 +142,7 @@ public sealed class SetupStatementsViewModel : BaseViewModel
         Model.MaxEntriesPerDraft = _original.MaxEntriesPerDraft;
         Model.MonthlySplitThreshold = _original.MonthlySplitThreshold;
         Model.MinEntriesPerDraft = _original.MinEntriesPerDraft;
+        Model.MassImportDialogPolicy = _original.MassImportDialogPolicy;
         SavedOk = false; SaveError = null;
         Validate();
         RecomputeDirty();
@@ -203,7 +205,8 @@ public sealed class SetupStatementsViewModel : BaseViewModel
         Dirty = Model.Mode != _original.Mode
              || Model.MaxEntriesPerDraft != _original.MaxEntriesPerDraft
              || (Model.MonthlySplitThreshold ?? 0) != (_original.MonthlySplitThreshold ?? 0)
-             || Model.MinEntriesPerDraft != _original.MinEntriesPerDraft;
+             || Model.MinEntriesPerDraft != _original.MinEntriesPerDraft
+             || Model.MassImportDialogPolicy != _original.MassImportDialogPolicy;
     }
 
     private static ImportSplitSettingsDto Clone(ImportSplitSettingsDto src) => new()
@@ -211,7 +214,8 @@ public sealed class SetupStatementsViewModel : BaseViewModel
         Mode = src.Mode,
         MaxEntriesPerDraft = src.MaxEntriesPerDraft,
         MonthlySplitThreshold = src.MonthlySplitThreshold,
-        MinEntriesPerDraft = src.MinEntriesPerDraft
+        MinEntriesPerDraft = src.MinEntriesPerDraft,
+        MassImportDialogPolicy = src.MassImportDialogPolicy
     };
 
     // Provide ribbon actions for this child ViewModel; parent/host will merge them automatically

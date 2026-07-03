@@ -89,6 +89,24 @@ public partial class ApiClient
     }
 
     /// <summary>
+    /// Analyzes or executes a mixed start-page mass import batch.
+    /// </summary>
+    /// <param name="request">Mass import batch request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Batch result or null when the request failed.</returns>
+    public async Task<MassImportBatchResultDto?> StatementDrafts_ProcessMassImportAsync(MassImportBatchRequestDto request, CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsJsonAsync("/api/statement-drafts/mass-import", request, ct);
+        if (!resp.IsSuccessStatusCode)
+        {
+            await EnsureSuccessOrSetErrorAsync(resp);
+            return null;
+        }
+
+        return await resp.Content.ReadFromJsonAsync<MassImportBatchResultDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
     /// Creates an empty statement draft (no file) for the current user.
     /// </summary>
     /// <param name="fileName">Optional name for the draft's original file.</param>

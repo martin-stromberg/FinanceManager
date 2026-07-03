@@ -813,6 +813,45 @@
   <data name="Btn_Cancel" xml:space="preserve">
     <value>Abbrechen</value>
   </data>
+  <data name="Btn_Confirm" xml:space="preserve">
+    <value>Bestätigen</value>
+  </data>
+  <data name="MassImport_Dialog_Title" xml:space="preserve">
+    <value>Massenimport prüfen</value>
+  </data>
+  <data name="MassImport_Dialog_Hint" xml:space="preserve">
+    <value>Bitte prüfen und bestätigen Sie die Dateiverarbeitung für den aktuellen Importdurchlauf.</value>
+  </data>
+  <data name="MassImport_Th_FileName" xml:space="preserve">
+    <value>Datei</value>
+  </data>
+  <data name="MassImport_Th_FileType" xml:space="preserve">
+    <value>Dateityp</value>
+  </data>
+  <data name="MassImport_Th_Service" xml:space="preserve">
+    <value>Importservice</value>
+  </data>
+  <data name="MassImport_Th_Security" xml:space="preserve">
+    <value>Wertpapier</value>
+  </data>
+  <data name="MassImport_Th_Exclude" xml:space="preserve">
+    <value>Ausschließen</value>
+  </data>
+  <data name="MassImport_SelectSecurity" xml:space="preserve">
+    <value>Wertpapier auswählen</value>
+  </data>
+  <data name="MassImport_FileType_Unknown" xml:space="preserve">
+    <value>Unbekannt</value>
+  </data>
+  <data name="MassImport_FileType_AccountStatement" xml:space="preserve">
+    <value>Kontoauszug</value>
+  </data>
+  <data name="MassImport_FileType_SecurityPrices" xml:space="preserve">
+    <value>Wertpapierkurse</value>
+  </data>
+  <data name="MassImport_Warning_MissingSecurityAssignment" xml:space="preserve">
+    <value>Diese Datei kann noch nicht gespeichert werden, weil die Wertpapierzuordnung fehlt.</value>
+  </data>
   <data name="Card_Caption_StatementDrafts_Date" xml:space="preserve">
     <value>Buchungsdatum</value>
   </data>

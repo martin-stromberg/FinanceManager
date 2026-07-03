@@ -70,6 +70,7 @@ public sealed class UserImportSplitSettingsControllerTests
         Assert.Equal(250, dto.MaxEntriesPerDraft);
         Assert.Equal(250, dto.MonthlySplitThreshold);
         Assert.Equal(8, dto.MinEntriesPerDraft); // new default
+        Assert.Equal(MassImportDialogPolicy.OnMissingInformation, dto.MassImportDialogPolicy);
     }
 
     [Fact]
@@ -80,7 +81,8 @@ public sealed class UserImportSplitSettingsControllerTests
             Mode: ImportSplitMode.MonthlyOrFixed,
             MaxEntriesPerDraft: 300,
             MonthlySplitThreshold: 350,
-            MinEntriesPerDraft: 5);
+            MinEntriesPerDraft: 5,
+            MassImportDialogPolicy: MassImportDialogPolicy.AlwaysConfirm);
         var resp = await controller.UpdateImportSplitAsync(req, CancellationToken.None);
         Assert.IsType<NoContentResult>(resp);
 
@@ -88,6 +90,7 @@ public sealed class UserImportSplitSettingsControllerTests
         Assert.Equal(ImportSplitMode.MonthlyOrFixed, user.ImportSplitMode);
         Assert.Equal(300, user.ImportMaxEntriesPerDraft);
         Assert.Equal(5, user.ImportMinEntriesPerDraft);
+        Assert.Equal(MassImportDialogPolicy.AlwaysConfirm, user.MassImportDialogPolicy);
     }
 
     [Fact]
@@ -98,7 +101,8 @@ public sealed class UserImportSplitSettingsControllerTests
             Mode: ImportSplitMode.MonthlyOrFixed,
             MaxEntriesPerDraft: 300,
             MonthlySplitThreshold: 100,
-            MinEntriesPerDraft: 8);
+            MinEntriesPerDraft: 8,
+            MassImportDialogPolicy: MassImportDialogPolicy.OnMissingInformation);
         var resp = await controller.UpdateImportSplitAsync(req, CancellationToken.None);
         var obj = Assert.IsType<ObjectResult>(resp);
         var details = Assert.IsType<ValidationProblemDetails>(obj.Value);
@@ -117,7 +121,8 @@ public sealed class UserImportSplitSettingsControllerTests
             Mode: ImportSplitMode.FixedSize,
             MaxEntriesPerDraft: 400,
             MonthlySplitThreshold: null,
-            MinEntriesPerDraft: 3);
+            MinEntriesPerDraft: 3,
+            MassImportDialogPolicy: MassImportDialogPolicy.AlwaysConfirm);
         var resp = await controller.UpdateImportSplitAsync(req, CancellationToken.None);
         Assert.IsType<NoContentResult>(resp);
 
@@ -125,6 +130,7 @@ public sealed class UserImportSplitSettingsControllerTests
         Assert.Equal(ImportSplitMode.FixedSize, user.ImportSplitMode);
         Assert.Equal(400, user.ImportMaxEntriesPerDraft);
         Assert.Equal(3, user.ImportMinEntriesPerDraft);
+        Assert.Equal(MassImportDialogPolicy.AlwaysConfirm, user.MassImportDialogPolicy);
     }
 
     [Fact]
@@ -135,7 +141,8 @@ public sealed class UserImportSplitSettingsControllerTests
             Mode: ImportSplitMode.Monthly,
             MaxEntriesPerDraft: 50,
             MonthlySplitThreshold: null,
-            MinEntriesPerDraft: 60);
+            MinEntriesPerDraft: 60,
+            MassImportDialogPolicy: MassImportDialogPolicy.OnMissingInformation);
         var resp = await controller.UpdateImportSplitAsync(req, CancellationToken.None);
         var obj = Assert.IsType<ObjectResult>(resp);
         var details = Assert.IsType<ValidationProblemDetails>(obj.Value);

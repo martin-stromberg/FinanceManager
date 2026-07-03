@@ -1,6 +1,7 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Attachments;
+using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Infrastructure;
@@ -9,6 +10,8 @@ using FinanceManager.Infrastructure.Attachments;
 using FinanceManager.Infrastructure.Statements;
 using FinanceManager.Infrastructure.Statements.Files;
 using FinanceManager.Infrastructure.Statements.Parsers;
+using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Shared.Dtos.Statements;
 using FinanceManager.Web.Controllers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,13 +21,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using System.Text;
 
 namespace FinanceManager.Tests.Controllers;
 
 public sealed class StatementDraftsControllerTests
 {
-    private static (StatementDraftsController controller, AppDbContext db, Guid userId) Create()
+    private static (StatementDraftsController controller, AppDbContext db, Guid userId) Create(IMassImportOrchestrator? massImportOrchestrator = null)
     {
         var conn = new SqliteConnection("DataSource=:memory:");
         conn.Open();
@@ -67,7 +71,7 @@ public sealed class StatementDraftsControllerTests
         var attachment = sp.GetRequiredService<IAttachmentService>();
         var localizer = sp.GetRequiredService<IStringLocalizer<FinanceManager.Web.Controllers.Controller>>();
 
-        var controller = new StatementDraftsController(draftService, current, logger, localizer, taskManager, attachment);
+        var controller = new StatementDraftsController(draftService, current, logger, localizer, taskManager, attachment, null, massImportOrchestrator);
         return (controller, db, current.UserId);
     }
 
@@ -310,5 +314,86 @@ public sealed class StatementDraftsControllerTests
         Assert.Equal("BOOKING_ALREADY_PROCESSED", problem.Extensions["code"]);
         Assert.Equal(false, problem.Extensions["retryable"]);
         Assert.Equal("trace-entry-already-booked", problem.Extensions["traceId"]);
+    }
+
+    [Fact]
+    public async Task ProcessMassImportAsync_ShouldReturnBadRequest_WhenRequestHasNoFiles()
+    {
+        var (controller, _, _) = Create();
+
+        var action = await controller.ProcessMassImportAsync(new MassImportBatchRequestDto(), CancellationToken.None);
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(action);
+        var error = Assert.IsType<ApiErrorDto>(badRequest.Value);
+        Assert.Equal("Err_Invalid_File", error.code);
+    }
+
+    [Fact]
+    public async Task ProcessMassImportAsync_ShouldReturnInternalServerError_WhenOrchestratorIsMissing()
+    {
+        var (controller, _, _) = Create();
+        var request = new MassImportBatchRequestDto
+        {
+            Files = new[]
+            {
+                new MassImportFileUploadDto
+                {
+                    FileId = Guid.NewGuid(),
+                    FileName = "prices.csv",
+                    Content = [1, 2, 3]
+                }
+            }
+        };
+
+        var action = await controller.ProcessMassImportAsync(request, CancellationToken.None);
+
+        var error = Assert.IsType<ObjectResult>(action);
+        Assert.Equal(StatusCodes.Status500InternalServerError, error.StatusCode);
+    }
+
+    [Fact]
+    public async Task ProcessMassImportAsync_ShouldDelegateToOrchestrator_WithCurrentUserAndTraceId()
+    {
+        var expected = new MassImportBatchResultDto
+        {
+            BatchId = Guid.NewGuid(),
+            DialogRequired = true,
+            RequiresConfirmation = true,
+            Files = []
+        };
+        var orchestrator = new Mock<IMassImportOrchestrator>();
+        var request = new MassImportBatchRequestDto
+        {
+            DialogPolicy = MassImportDialogPolicy.AlwaysConfirm,
+            Files = new[]
+            {
+                new MassImportFileUploadDto
+                {
+                    FileId = Guid.NewGuid(),
+                    FileName = "prices.csv",
+                    Content = "sep=;\nZeit;Test Security\n01.07.2026 00:00:00;10,00\n"u8.ToArray()
+                }
+            }
+        };
+        var (controller, _, userId) = Create(orchestrator.Object);
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                TraceIdentifier = "trace-mass-import"
+            }
+        };
+
+        orchestrator
+            .Setup(x => x.ProcessAsync(userId, request, "trace-mass-import", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expected);
+
+        var action = await controller.ProcessMassImportAsync(request, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(action);
+        Assert.Same(expected, ok.Value);
+        orchestrator.Verify(
+            x => x.ProcessAsync(userId, request, "trace-mass-import", It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }

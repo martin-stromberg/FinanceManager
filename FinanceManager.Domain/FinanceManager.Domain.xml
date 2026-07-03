@@ -4607,6 +4607,11 @@
             </summary>
             <value>Minimum entries per draft.</value>
         </member>
+        <member name="P:FinanceManager.Domain.Users.User.MassImportDialogPolicy">
+            <summary>
+            Dialog behavior policy for mixed start-page mass imports.
+            </summary>
+        </member>
         <member name="P:FinanceManager.Domain.Users.User.IsAdmin">
             <summary>
             Admin flag persisted in the database.
@@ -4626,6 +4631,12 @@
             <param name="isAdmin">True to mark as admin; false to revoke admin rights.</param>
         </member>
         <!-- Badly formed XML comment ignored for member "M:FinanceManager.Domain.Users.User.SetImportSplitSettings(FinanceManager.Shared.Dtos.Statements.ImportSplitMode,System.Int32,System.Nullable{System.Int32},System.Nullable{System.Int32})" -->
+        <member name="M:FinanceManager.Domain.Users.User.SetMassImportDialogPolicy(FinanceManager.Shared.Dtos.Statements.MassImportDialogPolicy)">
+            <summary>
+            Sets the dialog behavior policy for start-page mass imports.
+            </summary>
+            <param name="policy">Dialog policy to persist for the user.</param>
+        </member>
         <member name="M:FinanceManager.Domain.Users.User.MarkLogin(System.DateTime)">
             <summary>
             Records the last login time for the user.

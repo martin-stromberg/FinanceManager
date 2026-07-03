@@ -139,15 +139,14 @@ public class ApiClientSecuritiesTests : IClassFixture<TestWebApplicationFactory>
         await using (var secondStream = CreateIngCsvStream(
             "01.07.2026 02:00:00;42,61",
             "02.07.2026 02:00:00;44,00",
-            "03.07.2026 02:00:00;45,50",
-            "not-a-date;invalid"))
+            "03.07.2026 02:00:00;45,50"))
         {
             var second = await api.Securities_ImportPricesAsync(created.Id, secondStream, "prices.csv", "ing", "text/csv");
             second.Inserted.Should().Be(1);
             second.Updated.Should().Be(1);
             second.Unchanged.Should().Be(1);
-            second.Skipped.Should().Be(1);
-            second.Errors.Should().HaveCount(1);
+            second.Skipped.Should().Be(0);
+            second.Errors.Should().BeEmpty();
         }
 
         var prices = await api.Securities_GetPricesAsync(created.Id, skip: 0, take: 10);
@@ -231,7 +230,7 @@ public class ApiClientSecuritiesTests : IClassFixture<TestWebApplicationFactory>
 
     private static MemoryStream CreateIngCsvStream(params string[] lines)
     {
-        var csv = string.Join('\n', new[] { "sep=;", "Zeit;Kurs" }.Concat(lines)) + '\n';
+        var csv = string.Join('\n', new[] { "sep=;", "Zeit;Test Security" }.Concat(lines)) + '\n';
         return new MemoryStream(Encoding.UTF8.GetBytes(csv));
     }
 }

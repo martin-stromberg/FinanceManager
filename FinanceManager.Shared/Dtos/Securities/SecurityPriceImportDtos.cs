@@ -9,6 +9,19 @@ namespace FinanceManager.Shared.Dtos.Securities;
 public sealed record SecurityPriceImportContext(string? Provider, string FileName, string? ContentType);
 
 /// <summary>
+/// Metadata extracted by a provider-specific content inspection.
+/// </summary>
+/// <param name="Provider">Resolved provider key (for example "ing").</param>
+/// <param name="ServiceKey">Service key used for execution routing.</param>
+/// <param name="ServiceDisplayName">Human-readable service name.</param>
+/// <param name="DetectedSecurityName">Security name extracted from the file header when available.</param>
+public sealed record SecurityPriceImportInspectionResult(
+    string Provider,
+    string ServiceKey,
+    string ServiceDisplayName,
+    string? DetectedSecurityName);
+
+/// <summary>
 /// Represents a single importable price row normalized to a trading day.
 /// </summary>
 /// <param name="Date">Trading day (date component only).</param>
