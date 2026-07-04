@@ -16,9 +16,24 @@ public sealed class ApiClientSecuritiesImportPricesTests
     public async Task Securities_ImportPricesAsync_ShouldSendMultipartWithFileAndProvider_WhenCalled()
     {
         HttpRequestMessage? capturedRequest = null;
+        int? partCount = null;
+        string? uploadedFileName = null;
+        string? uploadedContentType = null;
+        string? uploadedProvider = null;
         var api = CreateApiClient(request =>
         {
             capturedRequest = request;
+            var multipart = Assert.IsType<MultipartFormDataContent>(request.Content);
+            var parts = multipart.ToList();
+            partCount = parts.Count;
+
+            var filePart = parts.Single(x => string.Equals(x.Headers.ContentDisposition?.Name?.Trim('"'), "file", StringComparison.Ordinal));
+            uploadedFileName = filePart.Headers.ContentDisposition?.FileName?.Trim('"');
+            uploadedContentType = filePart.Headers.ContentType?.MediaType;
+
+            var providerPart = parts.Single(x => string.Equals(x.Headers.ContentDisposition?.Name?.Trim('"'), "provider", StringComparison.Ordinal));
+            uploadedProvider = providerPart.ReadAsStringAsync().GetAwaiter().GetResult();
+
             var ok = new SecurityPriceImportResultDto(1, 0, 0, 0, Array.Empty<SecurityPriceImportErrorDto>());
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -33,17 +48,10 @@ public sealed class ApiClientSecuritiesImportPricesTests
         Assert.Equal(HttpMethod.Post, capturedRequest!.Method);
         Assert.Contains("/api/securities/", capturedRequest.RequestUri!.AbsolutePath);
         Assert.EndsWith("/prices/import", capturedRequest.RequestUri!.AbsolutePath);
-
-        var multipart = Assert.IsType<MultipartFormDataContent>(capturedRequest.Content);
-        var parts = multipart.ToList();
-        Assert.Equal(2, parts.Count);
-
-        var filePart = parts.Single(x => string.Equals(x.Headers.ContentDisposition?.Name?.Trim('"'), "file", StringComparison.Ordinal));
-        Assert.Equal("ing-prices.csv", filePart.Headers.ContentDisposition?.FileName?.Trim('"'));
-        Assert.Equal("text/csv", filePart.Headers.ContentType?.MediaType);
-
-        var providerPart = parts.Single(x => string.Equals(x.Headers.ContentDisposition?.Name?.Trim('"'), "provider", StringComparison.Ordinal));
-        Assert.Equal("ing", await providerPart.ReadAsStringAsync());
+        Assert.Equal(2, partCount);
+        Assert.Equal("ing-prices.csv", uploadedFileName);
+        Assert.Equal("text/csv", uploadedContentType);
+        Assert.Equal("ing", uploadedProvider);
     }
 
     /// <summary>

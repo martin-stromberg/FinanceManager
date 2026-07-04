@@ -3254,6 +3254,10 @@ public class BudgetReportServiceTests
             null,
             null,
             null,
+            null,
+            false,
+            false,
+            null,
             null);
     }
 }

@@ -3,6 +3,7 @@ using FinanceManager.Infrastructure.Securities;
 using FinanceManager.Shared.Dtos.Securities;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Text;
 
 namespace FinanceManager.Tests.Infrastructure.Securities;
 
@@ -47,7 +48,7 @@ public sealed class SecurityPriceImportServiceFactoryTests
         var service = new InspectingService(true, new SecurityPriceImportInspectionResult("ing", "ing", "ING", "Test Security"));
         var sut = new SecurityPriceImportServiceFactory([service], Mock.Of<ILogger<SecurityPriceImportServiceFactory>>());
 
-        var ok = sut.TryResolveByContent(context, "sep=;\nZeit;Test Security\n01.07.2026 00:00:00;10,00\n"u8.ToArray(), out var resolved, out var inspection);
+        var ok = sut.TryResolveByContent(context, Encoding.UTF8.GetBytes("sep=;\nZeit;Test Security\n01.07.2026 00:00:00;10,00\n"), out var resolved, out var inspection);
 
         Assert.True(ok);
         Assert.Same(service, resolved);
@@ -62,7 +63,7 @@ public sealed class SecurityPriceImportServiceFactoryTests
         var service = new InspectingService(false, new SecurityPriceImportInspectionResult("ing", "ing", "ING", "Test Security"));
         var sut = new SecurityPriceImportServiceFactory([service], Mock.Of<ILogger<SecurityPriceImportServiceFactory>>());
 
-        var ok = sut.TryResolveByContent(context, "invalid".u8.ToArray(), out var resolved, out var inspection);
+        var ok = sut.TryResolveByContent(context, Encoding.UTF8.GetBytes("invalid"), out var resolved, out var inspection);
 
         Assert.False(ok);
         Assert.Null(resolved);

@@ -51,6 +51,8 @@ public sealed class HomeViewModelTests
                         FileId = file.FileId,
                         FileName = file.FileName,
                         FileType = MassImportFileType.SecurityPrices,
+                        ServiceKey = "ing",
+                        ServiceDisplayName = "ING",
                         CanImport = false,
                         ExecutionStatus = MassImportFileExecutionStatus.Pending
                     })
@@ -96,6 +98,8 @@ public sealed class HomeViewModelTests
                                 FileId = file.FileId,
                                 FileName = file.FileName,
                                 FileType = MassImportFileType.SecurityPrices,
+                                ServiceKey = "ing",
+                                ServiceDisplayName = "ING",
                                 CanImport = false,
                                 ExecutionStatus = MassImportFileExecutionStatus.Pending,
                                 ValidationMessage = "Missing security assignment."
@@ -115,6 +119,8 @@ public sealed class HomeViewModelTests
                             FileId = file.FileId,
                             FileName = file.FileName,
                             FileType = MassImportFileType.SecurityPrices,
+                            ServiceKey = "ing",
+                            ServiceDisplayName = "ING",
                             CanImport = true,
                             ExecutionStatus = MassImportFileExecutionStatus.Imported,
                             StatementDraftId = Guid.NewGuid()
@@ -190,7 +196,7 @@ public sealed class HomeViewModelTests
     {
         var method = typeof(HomeViewModel).GetMethod("ProcessMassImportSelectionAsync", BindingFlags.NonPublic | BindingFlags.Instance);
         Assert.NotNull(method);
-        var task = Assert.IsType<Task>(method!.Invoke(vm, [files]));
+        var task = Assert.IsAssignableFrom<Task>(method!.Invoke(vm, [files]));
         await task;
     }
 

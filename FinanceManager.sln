@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.1.11312.151 d18.0
+VisualStudioVersion = 18.1.11312.151
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceManager.Web", "FinanceManager.Web\FinanceManager.Web.csproj", "{54D631F8-AD9D-4FAF-B21E-E96F73FE1CA9}"
 EndProject
@@ -16,6 +16,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceManager.Tests", "FinanceManager.Tests\FinanceManager.Tests.csproj", "{86F53428-AB2E-4086-32AF-900F5B1D5ACA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceManager.Tests.Integration", "FinanceManager.Tests.Integration\FinanceManager.Tests.Integration.csproj", "{D9A12265-A901-45EC-B763-A18A43E7E08A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceManager.Tests.E2E", "FinanceManager.Tests.E2E\FinanceManager.Tests.E2E.csproj", "{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -111,6 +113,18 @@ Global
 		{D9A12265-A901-45EC-B763-A18A43E7E08A}.Release|x64.Build.0 = Release|Any CPU
 		{D9A12265-A901-45EC-B763-A18A43E7E08A}.Release|x86.ActiveCfg = Release|Any CPU
 		{D9A12265-A901-45EC-B763-A18A43E7E08A}.Release|x86.Build.0 = Release|Any CPU
+		{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}.Debug|x64.Build.0 = Debug|Any CPU
+		{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}.Debug|x86.Build.0 = Debug|Any CPU
+		{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}.Release|x64.ActiveCfg = Release|Any CPU
+		{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}.Release|x64.Build.0 = Release|Any CPU
+		{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}.Release|x86.ActiveCfg = Release|Any CPU
+		{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

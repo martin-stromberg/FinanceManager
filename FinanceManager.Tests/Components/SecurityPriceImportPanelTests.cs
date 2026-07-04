@@ -137,7 +137,7 @@ public sealed class SecurityPriceImportPanelTests
     {
         var method = instance.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
         Assert.NotNull(method);
-        var task = Assert.IsType<Task>(method!.Invoke(instance, null));
+        var task = Assert.IsAssignableFrom<Task>(method!.Invoke(instance, null));
         await task;
     }
 

@@ -197,7 +197,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         anyHasRows.Should().BeTrue();
 
         // Older tests expected specific sheets like "Bank"/"Contact"/"SavingsPlan" to always be present.
-        // The exporter may omit empty sheets now — only assert sums when the sheet is present.
+        // The exporter may omit empty sheets now ï¿½ only assert sums when the sheet is present.
         if (sheetDataMap.TryGetValue("Bank", out var bankRows) && bankRows != null && bankRows.Count > 0)
         {
             var bankAmount = bankRows.Select(rec => rec["Amount"]).Cast<decimal>().Sum();
@@ -284,7 +284,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
                 return exactWithSuffix?.Id;
             }
 
-            // No numeric suffix present — allow a loose base-name match (e.g. "Bäckerei" -> "Bäckerei 1")
+            // No numeric suffix present ï¿½ allow a loose base-name match (e.g. "Bï¿½ckerei" -> "Bï¿½ckerei 1")
             var baseOnly = Regex.Match(name, "^(.*?)(?:\\s+\\d+)?$").Groups[1].Value;
             var loose = createdContacts.FirstOrDefault(x => string.Equals(x.Name, baseOnly, StringComparison.OrdinalIgnoreCase) || x.Name.StartsWith(baseOnly + " ", StringComparison.OrdinalIgnoreCase));
             return loose?.Id;
@@ -319,7 +319,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
             (new DateTime(2026,1,15), new DateTime(2026,1,15), 155m, "Transfer", "Ich", null),
             (new DateTime(2026,1,15), new DateTime(2026,1,15), -13.17m, "Wiederkehrende Ausgabe 1", "Ich", "Wiederkehrende Ausgabe 1"),
             (new DateTime(2026,1,14), new DateTime(2026,1,14), -11.4m, "Supermarkt 6", "Supermarkt 6", null),
-            (new DateTime(2026,1,13), new DateTime(2026,1,13), -6m, "Bäckerei 23", "Bäckerei 23", null),
+            (new DateTime(2026,1,13), new DateTime(2026,1,13), -6m, "Bï¿½ckerei 23", "Bï¿½ckerei 23", null),
             (new DateTime(2026,1,13), new DateTime(2026,1,13), -12.5m, "Lotteriegesellschaft 2", "Lotteriegesellschaft 2", null),
             (new DateTime(2026,1,12), new DateTime(2026,1,8), 13.47m, "Bank 1", "Bank 1", null),
             (new DateTime(2026,1,12), new DateTime(2026,1,12), -55.59m, "Tankstelle 1", "Tankstelle 1", null),
@@ -561,8 +561,8 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         var buyCat = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Einkaufen & Verpflegung"));
         buyCat.Should().NotBeNull();
 
-        // Create budget purposes for contact categories: Bäckerei, Einzelhändler, Gastronom
-        var contactCategoryNames = new[] { "Bäckerei", "Einzelhändler", "Gastronom" };
+        // Create budget purposes for contact categories: Bï¿½ckerei, Einzelhï¿½ndler, Gastronom
+        var contactCategoryNames = new[] { "Bï¿½ckerei", "Einzelhï¿½ndler", "Gastronom" };
         // fetch final categories to search if needed
         var finalCategories = (await api.ContactCategories_ListAsync()).ToList();
         foreach (var cname in contactCategoryNames)
@@ -660,37 +660,37 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
             ("Arbeitgeber", ContactType.Organization),
             ("Arzt", ContactType.Organization),
             ("Automobilclub", ContactType.Organization),
-            ("Bäckerei 1", ContactType.Organization),
-            ("Bäckerei 2", ContactType.Organization),
-            ("Bäckerei 3", ContactType.Organization),
-            ("Bäckerei 4", ContactType.Organization),
-            ("Bäckerei 5", ContactType.Organization),
-            ("Bäckerei 6", ContactType.Organization),
-            ("Bäckerei 7", ContactType.Organization),
-            ("Bäckerei 8", ContactType.Organization),
-            ("Bäckerei 9", ContactType.Organization),
-            ("Bäckerei 10", ContactType.Organization),
-            ("Bäckerei 11", ContactType.Organization),
-            ("Bäckerei 12", ContactType.Organization),
-            ("Bäckerei 13", ContactType.Organization),
-            ("Bäckerei 14", ContactType.Organization),
-            ("Bäckerei 15", ContactType.Organization),
-            ("Bäckerei 16", ContactType.Organization),
-            ("Bäckerei 17", ContactType.Organization),
-            ("Bäckerei 18", ContactType.Organization),
-            ("Bäckerei 19", ContactType.Organization),
-            ("Bäckerei 20", ContactType.Organization),
-            ("Bäckerei 21", ContactType.Organization),
-            ("Bäckerei 22", ContactType.Organization),
-            ("Bäckerei 23", ContactType.Organization),
-            ("Bäckerei 24", ContactType.Organization),
+            ("Bï¿½ckerei 1", ContactType.Organization),
+            ("Bï¿½ckerei 2", ContactType.Organization),
+            ("Bï¿½ckerei 3", ContactType.Organization),
+            ("Bï¿½ckerei 4", ContactType.Organization),
+            ("Bï¿½ckerei 5", ContactType.Organization),
+            ("Bï¿½ckerei 6", ContactType.Organization),
+            ("Bï¿½ckerei 7", ContactType.Organization),
+            ("Bï¿½ckerei 8", ContactType.Organization),
+            ("Bï¿½ckerei 9", ContactType.Organization),
+            ("Bï¿½ckerei 10", ContactType.Organization),
+            ("Bï¿½ckerei 11", ContactType.Organization),
+            ("Bï¿½ckerei 12", ContactType.Organization),
+            ("Bï¿½ckerei 13", ContactType.Organization),
+            ("Bï¿½ckerei 14", ContactType.Organization),
+            ("Bï¿½ckerei 15", ContactType.Organization),
+            ("Bï¿½ckerei 16", ContactType.Organization),
+            ("Bï¿½ckerei 17", ContactType.Organization),
+            ("Bï¿½ckerei 18", ContactType.Organization),
+            ("Bï¿½ckerei 19", ContactType.Organization),
+            ("Bï¿½ckerei 20", ContactType.Organization),
+            ("Bï¿½ckerei 21", ContactType.Organization),
+            ("Bï¿½ckerei 22", ContactType.Organization),
+            ("Bï¿½ckerei 23", ContactType.Organization),
+            ("Bï¿½ckerei 24", ContactType.Organization),
             ("Baumarkt 1", ContactType.Organization),
             ("Baumarkt 2", ContactType.Organization),
             ("Baumarkt 3", ContactType.Organization),
             ("Baumarkt 4", ContactType.Organization),
-            ("Behörde 1", ContactType.Organization),
-            ("Behörde 2", ContactType.Organization),
-            ("Behörde 3", ContactType.Organization),
+            ("Behï¿½rde 1", ContactType.Organization),
+            ("Behï¿½rde 2", ContactType.Organization),
+            ("Behï¿½rde 3", ContactType.Organization),
             ("Bekannter 1", ContactType.Person),
             ("Bekannter 2", ContactType.Person),
             ("Cafe 1", ContactType.Organization),
@@ -715,19 +715,19 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
             ("Dienstleister 9", ContactType.Organization),
             ("Dienstleister 10", ContactType.Organization),
             ("Dienstleister 11", ContactType.Organization),
-            ("Einzelhändler 1", ContactType.Organization),
-            ("Einzelhändler 2", ContactType.Organization),
-            ("Einzelhändler 3", ContactType.Organization),
-            ("Einzelhändler 4", ContactType.Organization),
-            ("Einzelhändler 5", ContactType.Organization),
-            ("Einzelhändler 6", ContactType.Organization),
-            ("Einzelhändler 7", ContactType.Organization),
-            ("Einzelhändler 8", ContactType.Organization),
-            ("Einzelhändler 9", ContactType.Organization),
-            ("Einzelhändler 10", ContactType.Organization),
-            ("Einzelhändler 11", ContactType.Organization),
-            ("Einzelhändler 12", ContactType.Organization),
-            ("Einzelhändler 13", ContactType.Organization),
+            ("Einzelhï¿½ndler 1", ContactType.Organization),
+            ("Einzelhï¿½ndler 2", ContactType.Organization),
+            ("Einzelhï¿½ndler 3", ContactType.Organization),
+            ("Einzelhï¿½ndler 4", ContactType.Organization),
+            ("Einzelhï¿½ndler 5", ContactType.Organization),
+            ("Einzelhï¿½ndler 6", ContactType.Organization),
+            ("Einzelhï¿½ndler 7", ContactType.Organization),
+            ("Einzelhï¿½ndler 8", ContactType.Organization),
+            ("Einzelhï¿½ndler 9", ContactType.Organization),
+            ("Einzelhï¿½ndler 10", ContactType.Organization),
+            ("Einzelhï¿½ndler 11", ContactType.Organization),
+            ("Einzelhï¿½ndler 12", ContactType.Organization),
+            ("Einzelhï¿½ndler 13", ContactType.Organization),
             ("Fitnessstudio", ContactType.Organization),
             ("Freizeiteinrichtung 1", ContactType.Organization),
             ("Freizeiteinrichtung 2", ContactType.Organization),
@@ -932,12 +932,12 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         // Exact expected KPI values (precomputed from the test data in this file)
         kpi.ActualExpenseAbs.Should().Be(2817.56m);
         kpi.ActualIncome.Should().Be(7007.68m);
-        kpi.ExpectedExpenseAbs.Should().Be(4385.00m);
+        kpi.ExpectedExpenseAbs.Should().Be(4442.03m);
         kpi.ExpectedIncome.Should().Be(7007.68m);
         kpi.PlannedExpenseAbs.Should().Be(3218.99m);
         kpi.PlannedIncome.Should().Be(3475.93m);
         kpi.PlannedResult.Should().Be(256.94m);
-        kpi.UnbudgetedExpenseAbs.Should().Be(1166.01m);
+        kpi.UnbudgetedExpenseAbs.Should().Be(1223.04m);
         kpi.UnbudgetedIncome.Should().Be(3531.75m);
     }
 

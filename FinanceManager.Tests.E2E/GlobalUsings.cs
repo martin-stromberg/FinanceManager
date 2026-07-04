@@ -1,0 +1,9 @@
+global using System.Text;
+global using FluentAssertions;
+global using Microsoft.Playwright;
+global using FinanceManager.Shared.Dtos.Accounts;
+global using FinanceManager.Shared.Dtos.Contacts;
+global using FinanceManager.Shared.Dtos.Reports;
+global using FinanceManager.Shared.Dtos.Securities;
+global using FinanceManager.Shared.Dtos.Statements;
+global using FinanceManager.Shared.Dtos.Users;

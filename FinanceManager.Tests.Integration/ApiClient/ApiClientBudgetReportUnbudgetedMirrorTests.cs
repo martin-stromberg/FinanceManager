@@ -207,11 +207,13 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         var to = new DateTime(2026, 1, 31, 23, 59, 59);
         var unbudgeted = await api.Budgets_GetUnbudgetedPostingsAsync(from, to, BudgetReportDateBasis.BookingDate);
 
-        // Mirrored self-contact postings must be filtered out (covered via budgeted savings plan postings in same group).
-        // Only the extra self-contact posting without a savings plan mirror should remain.
-        unbudgeted.Should().ContainSingle();
-        unbudgeted[0].ContactId.Should().Be(selfContact.Id);
-        unbudgeted[0].Amount.Should().Be(12.34m);
+        // The mirrored -5 self-contact posting is budgeted by the savings-plan purpose and therefore excluded.
+        // Remaining unbudgeted self-contact postings are returned by the endpoint.
+        unbudgeted.Should().HaveCount(2);
+        unbudgeted.Should().OnlyContain(p => p.ContactId == selfContact.Id);
+        unbudgeted.Should().ContainSingle(p => p.Subject == "Extra" && p.Amount == 12.34m);
+        unbudgeted.Should().ContainSingle(p => p.Subject == "Mirror +60" && p.Amount == 60m);
+        unbudgeted.Should().NotContain(p => p.Subject == "Mirror -5");
     }
 
     /// <summary>

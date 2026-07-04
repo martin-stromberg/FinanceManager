@@ -589,6 +589,10 @@ public sealed class BudgetReportServiceRawDataTests
             null,
             null,
             null,
+            null,
+            false,
+            false,
+            null,
             null);
     }
 }
