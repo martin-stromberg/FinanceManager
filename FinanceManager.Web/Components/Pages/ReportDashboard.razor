@@ -24,14 +24,15 @@
 
 <Ribbon TTabEnum="ReportDashboard.TabId" Provider="_vm" Localizer="Localizer" />
 
-<h2 style="margin-top:0;">@(string.IsNullOrWhiteSpace(_vm?.FavoriteName) ? Localizer["Heading"] : _vm!.FavoriteName.Trim())</h2>
+<div class="report-dashboard-page">
+    <h2 class="report-dashboard-heading">@(string.IsNullOrWhiteSpace(_vm?.FavoriteName) ? Localizer["Heading"] : _vm!.FavoriteName.Trim())</h2>
 
-@if(!_loaded)
-{
-    <p>@Localizer["Loading"]</p>
-}
-else
-{
+    @if(!_loaded)
+    {
+        <p>@Localizer["Loading"]</p>
+    }
+    else
+    {
     @if(_editMode)
     {
         <div class="filters-panel">
@@ -118,24 +119,25 @@ else
                     </div>
                 </div>
             }
-            <table class="fm-table report-table expandable">
-                <thead>
-                    <tr>
-                        <th style="width:24px;"></th>
-                        <th>@Localizer["Th_Group"]</th>
-                        @if(ShowCategoryColumn){<th>@Localizer["Th_Category"]</th>}
-                        @if(ShowPreviousColumns){<th class="th-prev" style="text-align:right;">@PreviousHeaderLabel</th><th class="th-prev" style="text-align:right;">@Localizer["Th_DeltaPrev"]</th>}
-                        @if(_compareYear){<th class="th-year" style="text-align:right;">@YearHeaderLabel</th><th class="th-year" style="text-align:right;">@Localizer["Th_DeltaYear"]</th>}
-                        <th class="th-current" style="text-align:right;">@Localizer["Th_Amount"]</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var top in _vm!.GetTopLevelRows())
-                    {
-                        var rowClass = ReportDashboardViewModel.IsNegative(top) ? "neg" : string.Empty;
-                        var hasChildren = _vm!.HasChildren(top.GroupKey);
-                        var expanded = hasChildren && _vm!.IsExpanded(top.GroupKey);
-                        <tr class="@rowClass @(top.GroupKey.StartsWith("Type:")?"type-row": (top.GroupKey.StartsWith("Category:")?"category-row":"entity-row"))">
+            <div class="report-table-wrap table-responsive">
+                <table class="fm-table report-table expandable">
+                    <thead>
+                        <tr>
+                            <th style="width:24px;"></th>
+                            <th>@Localizer["Th_Group"]</th>
+                            @if(ShowCategoryColumn){<th>@Localizer["Th_Category"]</th>}
+                            @if(ShowPreviousColumns){<th class="th-prev" style="text-align:right;">@PreviousHeaderLabel</th><th class="th-prev" style="text-align:right;">@Localizer["Th_DeltaPrev"]</th>}
+                            @if(_compareYear){<th class="th-year" style="text-align:right;">@YearHeaderLabel</th><th class="th-year" style="text-align:right;">@Localizer["Th_DeltaYear"]</th>}
+                            <th class="th-current" style="text-align:right;">@Localizer["Th_Amount"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var top in _vm!.GetTopLevelRows())
+                        {
+                            var rowClass = ReportDashboardViewModel.IsNegative(top) ? "neg" : string.Empty;
+                            var hasChildren = _vm!.HasChildren(top.GroupKey);
+                            var expanded = hasChildren && _vm!.IsExpanded(top.GroupKey);
+                            <tr class="@rowClass @(top.GroupKey.StartsWith("Type:")?"type-row": (top.GroupKey.StartsWith("Category:")?"category-row":"entity-row"))">
                             <td>
                                 @if(hasChildren)
                                 {
@@ -240,24 +242,26 @@ else
                                 }
                             }
                         }
-                    }
-                    @if(_vm!.GetTopLevelRows().Any())
-                    {
-                        var totals = _vm!.GetTotals();
-                         <tr class="total-row">
-                            <td></td>
-                            <td>@Localizer["Total_Label"]</td>
-                            @if(_vm!.ShowCategoryColumn){<td></td>}
-                            @if(_vm!.ShowPreviousColumns){<td class="amt-prev" style="text-align:right;">@(totals.Prev.HasValue ? totals.Prev.Value.ToString("N2") : "-")</td><td class="delta amt-prev" style="text-align:right;">@(totals.Prev.HasValue ? FormatDelta(totals.Amount, totals.Prev) : "-")</td>}
-                            @if(_compareYear){<td class="amt-year" style="text-align:right;">@(totals.Year.HasValue ? totals.Year.Value.ToString("N2") : "-")</td><td class="delta amt-year" style="text-align:right;">@(totals.Year.HasValue ? FormatDelta(totals.Amount, totals.Year) : "-")</td>}
-                            <td class="amt-current" style="text-align:right;">@totals.Amount.ToString("N2")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+                        }
+                        @if(_vm!.GetTopLevelRows().Any())
+                        {
+                            var totals = _vm!.GetTotals();
+                             <tr class="total-row">
+                                <td></td>
+                                <td>@Localizer["Total_Label"]</td>
+                                @if(_vm!.ShowCategoryColumn){<td></td>}
+                                @if(_vm!.ShowPreviousColumns){<td class="amt-prev" style="text-align:right;">@(totals.Prev.HasValue ? totals.Prev.Value.ToString("N2") : "-")</td><td class="delta amt-prev" style="text-align:right;">@(totals.Prev.HasValue ? FormatDelta(totals.Amount, totals.Prev) : "-")</td>}
+                                @if(_compareYear){<td class="amt-year" style="text-align:right;">@(totals.Year.HasValue ? totals.Year.Value.ToString("N2") : "-")</td><td class="delta amt-year" style="text-align:right;">@(totals.Year.HasValue ? FormatDelta(totals.Amount, totals.Year) : "-")</td>}
+                                <td class="amt-current" style="text-align:right;">@totals.Amount.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         }
     </div>
 }
+</div>
 
 @if(_vm?.ShowFavoriteDialog == true)
 {
@@ -283,7 +287,7 @@ else
 @if(_vm?.ShowFilterDialog == true)
 {
     <div class="modal-overlay" @onclick="(()=> _vm!.CloseFilterDialog())">
-        <div class="modal" style="min-width:540px;" @onclick:stopPropagation="true">
+        <div class="modal filter-modal" @onclick:stopPropagation="true">
             <h3>@Localizer["FilterDialog_Title"]</h3>
             @if (_vm!.FilterOptionsLoading)
             {

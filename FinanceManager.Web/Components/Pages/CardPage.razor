@@ -31,29 +31,31 @@
 }
 else
 {
-    <Ribbon TTabEnum="TabId" Provider="_vm" Localizer="Localizer" />
-    <PageTitle>@($"{GetKindTitle()}: {_vm.Title}")</PageTitle>
+    <div class="card-page-content">
+        <Ribbon TTabEnum="TabId" Provider="_vm" Localizer="Localizer" />
+        <PageTitle>@($"{GetKindTitle()}: {_vm.Title}")</PageTitle>
 
-    <BackgroundTaskStatusPanel AllowedTypes="@((_vm as BaseViewModel)?.VisibleBackgroundTaskTypes)" />
+        <BackgroundTaskStatusPanel AllowedTypes="@((_vm as BaseViewModel)?.VisibleBackgroundTaskTypes)" />
 
-    <EmbeddedPanelHost TKeyValue="(string,string)" Provider="_vm" Position="EmbeddedPanelPosition.AfterRibbon" />
-    <GenericCardPage TKeyValue="(string, string)" Provider="_vm" Localizer="Localizer" LoadingText="@Localizer["General_Loading"]" />
-    <EmbeddedPanelHost TKeyValue="(string,string)" Provider="_vm" Position="EmbeddedPanelPosition.AfterCard" />
+        <EmbeddedPanelHost TKeyValue="(string,string)" Provider="_vm" Position="EmbeddedPanelPosition.AfterRibbon" />
+        <GenericCardPage TKeyValue="(string, string)" Provider="_vm" Localizer="Localizer" LoadingText="@Localizer["General_Loading"]" />
+        <EmbeddedPanelHost TKeyValue="(string,string)" Provider="_vm" Position="EmbeddedPanelPosition.AfterCard" />
 
-    @if ((Kind ?? string.Empty).Trim().ToLowerInvariant() == "securities" && string.IsNullOrWhiteSpace(SubKind) && Id != Guid.Empty)
-    {
-        <ReturnSummaryWidget SecurityId="Id" />
-    }
+        @if ((Kind ?? string.Empty).Trim().ToLowerInvariant() == "securities" && string.IsNullOrWhiteSpace(SubKind) && Id != Guid.Empty)
+        {
+            <ReturnSummaryWidget SecurityId="Id" />
+        }
 
-    @if (_vm.ChartViewModel != null)
-    {
-        <div style="margin-top:1.25rem;">
-            <AggregateBarChart ViewModel="_vm.ChartViewModel" />
-        </div>
-    }
+        @if (_vm.ChartViewModel != null)
+        {
+            <div style="margin-top:1.25rem;">
+                <AggregateBarChart ViewModel="_vm.ChartViewModel" />
+            </div>
+        }
 
-    @* Overlay host: delegates rendering of overlay components requested by ViewModels *@
-    <OverlayHost TKeyValue="(string,string)" Provider="_vm" Localizer="Localizer" />
+        @* Overlay host: delegates rendering of overlay components requested by ViewModels *@
+        <OverlayHost TKeyValue="(string,string)" Provider="_vm" Localizer="Localizer" />
+    </div>
 }
 
 @code {

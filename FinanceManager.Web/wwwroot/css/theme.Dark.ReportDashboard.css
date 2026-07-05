@@ -1,5 +1,5 @@
 /* =====================================================
-   theme.Dark.ReportDashboard.css - Dark Theme für ReportDashboard
+   theme.Dark.ReportDashboard.css - Dark Theme fï¿½r ReportDashboard
    ===================================================== */
 
 .modal-overlay {
@@ -60,4 +60,10 @@
 
 .mini-chart .bar-inner.neg {
     background: #ff6b6b;
+}
+
+@media (max-width: 900px) {
+    .modal {
+        background: #17191d;
+    }
 }

@@ -103,27 +103,29 @@
                          viewBox="0 0 @DividendSvgWidth() 140" width="100%" height="140">
                         @((MarkupString)BuildDividendSvg())
                     </svg>
-                    <table class="fm-table" aria-label="@Localizer["TimeSeries_Dividend_Title"]">
-                        <thead>
-                            <tr>
-                                <th scope="col">Jahr</th>
-                                <th scope="col" class="num">Brutto</th>
-                                <th scope="col" class="num">Netto</th>
-                                <th scope="col" class="num">Kum. Netto</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var d in _vm.Data.AnnualDividends.OrderByDescending(x => x.Year))
-                            {
+                    <div class="table-responsive">
+                        <table class="fm-table" aria-label="@Localizer["TimeSeries_Dividend_Title"]">
+                            <thead>
                                 <tr>
-                                    <td>@d.Year</td>
-                                    <td class="num">@d.GrossDividend.ToString("N2")</td>
-                                    <td class="num">@d.NetDividend.ToString("N2")</td>
-                                    <td class="num">@d.CumulativeNet.ToString("N2")</td>
+                                    <th scope="col">Jahr</th>
+                                    <th scope="col" class="num">Brutto</th>
+                                    <th scope="col" class="num">Netto</th>
+                                    <th scope="col" class="num">Kum. Netto</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach (var d in _vm.Data.AnnualDividends.OrderByDescending(x => x.Year))
+                                {
+                                    <tr>
+                                        <td>@d.Year</td>
+                                        <td class="num">@d.GrossDividend.ToString("N2")</td>
+                                        <td class="num">@d.NetDividend.ToString("N2")</td>
+                                        <td class="num">@d.CumulativeNet.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             }
         </section>

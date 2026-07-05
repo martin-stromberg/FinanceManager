@@ -1,6 +1,25 @@
 /* =====================================================
-   app.ReportDashboard.css - Allgemeingültige ReportDashboard Styles
+   app.ReportDashboard.css - Allgemeingï¿½ltige ReportDashboard Styles
    ===================================================== */
+
+.report-dashboard-page {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+}
+
+.report-dashboard-heading {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.report-table-wrap {
+    width: 100%;
+}
+
+.filter-modal {
+    min-width: 540px;
+}
 
 /* Modal overlay + dialog */
 .modal-overlay {
@@ -201,4 +220,49 @@
 
 .report-table .delta {
     opacity: .9;
+}
+
+@media (max-width: 900px) {
+    .filters-panel {
+        grid-template-columns: 1fr;
+        gap: .6rem;
+    }
+
+    .filter-group.wide {
+        grid-column: span 1;
+    }
+
+    .filters-panel .row.inline {
+        flex-wrap: wrap;
+        align-items: stretch;
+    }
+
+    .filters-panel .row.inline > * {
+        margin-left: 0 !important;
+    }
+
+    .report-table.expandable {
+        display: block;
+        overflow-x: auto;
+        width: 100%;
+        white-space: nowrap;
+    }
+
+    .modal {
+        max-height: 92vh;
+        overflow-y: auto;
+    }
+
+    .filter-modal {
+        min-width: 0;
+    }
+
+    .dialog-actions {
+        flex-direction: column-reverse;
+    }
+
+    .dialog-actions .btn,
+    .dialog-actions button {
+        width: 100%;
+    }
 }

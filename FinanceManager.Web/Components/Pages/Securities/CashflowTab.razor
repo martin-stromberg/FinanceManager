@@ -18,27 +18,29 @@
             else
             {
                 <div class="cf-timeline">
-                    <table class="fm-table" aria-label="@Localizer["Cashflow_Timeline_Title"]">
-                        <thead>
-                            <tr>
-                                <th scope="col">@Localizer["Cashflow_Col_Date"]</th>
-                                <th scope="col">@Localizer["Cashflow_Col_Type"]</th>
-                                <th scope="col" class="num">@Localizer["Cashflow_Col_Amount"]</th>
-                                <th scope="col">@Localizer["Cashflow_Col_Description"]</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var e in _vm.Data.Entries.OrderByDescending(x => x.Date))
-                            {
+                    <div class="table-responsive">
+                        <table class="fm-table" aria-label="@Localizer["Cashflow_Timeline_Title"]">
+                            <thead>
                                 <tr>
-                                    <td>@e.Date.ToString("dd.MM.yyyy")</td>
-                                    <td><span class="cf-badge @e.Type.ToLowerInvariant()">@e.Type</span></td>
-                                    <td class="num @(e.Amount >= 0 ? "pos" : "neg")">@e.Amount.ToString("N2")</td>
-                                    <td>@(e.Description ?? "-")</td>
+                                    <th scope="col">@Localizer["Cashflow_Col_Date"]</th>
+                                    <th scope="col">@Localizer["Cashflow_Col_Type"]</th>
+                                    <th scope="col" class="num">@Localizer["Cashflow_Col_Amount"]</th>
+                                    <th scope="col">@Localizer["Cashflow_Col_Description"]</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach (var e in _vm.Data.Entries.OrderByDescending(x => x.Date))
+                                {
+                                    <tr>
+                                        <td>@e.Date.ToString("dd.MM.yyyy")</td>
+                                        <td><span class="cf-badge @e.Type.ToLowerInvariant()">@e.Type</span></td>
+                                        <td class="num @(e.Amount >= 0 ? "pos" : "neg")">@e.Amount.ToString("N2")</td>
+                                        <td>@(e.Description ?? "-")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             }
         </section>
@@ -57,23 +59,25 @@
                          viewBox="0 0 @DivSvgWidth() 140" width="100%" height="140">
                         @((MarkupString)BuildDividendBars())
                     </svg>
-                    <table class="fm-table" aria-label="@Localizer["Cashflow_Dividends_Title"]">
-                        <thead>
-                            <tr>
-                                <th scope="col">@Localizer["Cashflow_Col_Year"]</th>
-                                <th scope="col" class="num">@Localizer["Cashflow_Col_Dividends"]</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var s in DivSums().OrderByDescending(x => x.Year))
-                            {
+                    <div class="table-responsive">
+                        <table class="fm-table" aria-label="@Localizer["Cashflow_Dividends_Title"]">
+                            <thead>
                                 <tr>
-                                    <td>@s.Year</td>
-                                    <td class="num pos">@s.TotalDividends.ToString("N2")</td>
+                                    <th scope="col">@Localizer["Cashflow_Col_Year"]</th>
+                                    <th scope="col" class="num">@Localizer["Cashflow_Col_Dividends"]</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach (var s in DivSums().OrderByDescending(x => x.Year))
+                                {
+                                    <tr>
+                                        <td>@s.Year</td>
+                                        <td class="num pos">@s.TotalDividends.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             }
         </section>
@@ -83,31 +87,33 @@
         {
             <section aria-label="@Localizer["Cashflow_Annual_AriaLabel"]">
                 <h3>@Localizer["Cashflow_Annual_Title"]</h3>
-                <table class="fm-table" aria-label="@Localizer["Cashflow_Annual_AriaLabel"]">
-                    <thead>
-                        <tr>
-                            <th scope="col">@Localizer["Cashflow_Col_Year"]</th>
-                            <th scope="col" class="num">@Localizer["Cashflow_Col_Buys"]</th>
-                            <th scope="col" class="num">@Localizer["Cashflow_Col_Sells"]</th>
-                            <th scope="col" class="num">@Localizer["Cashflow_Col_Dividends"]</th>
-                            <th scope="col" class="num">@Localizer["Cashflow_Col_Taxes"]</th>
-                            <th scope="col" class="num">@Localizer["Cashflow_Col_Fees"]</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var s in _vm.Data.AnnualSummaries.OrderByDescending(x => x.Year))
-                        {
+                <div class="table-responsive">
+                    <table class="fm-table" aria-label="@Localizer["Cashflow_Annual_AriaLabel"]">
+                        <thead>
                             <tr>
-                                <td>@s.Year</td>
-                                <td class="num neg">@s.TotalBuys.ToString("N2")</td>
-                                <td class="num pos">@s.TotalSells.ToString("N2")</td>
-                                <td class="num pos">@s.TotalDividends.ToString("N2")</td>
-                                <td class="num neg">@s.TotalTaxes.ToString("N2")</td>
-                                <td class="num neg">@s.TotalFees.ToString("N2")</td>
+                                <th scope="col">@Localizer["Cashflow_Col_Year"]</th>
+                                <th scope="col" class="num">@Localizer["Cashflow_Col_Buys"]</th>
+                                <th scope="col" class="num">@Localizer["Cashflow_Col_Sells"]</th>
+                                <th scope="col" class="num">@Localizer["Cashflow_Col_Dividends"]</th>
+                                <th scope="col" class="num">@Localizer["Cashflow_Col_Taxes"]</th>
+                                <th scope="col" class="num">@Localizer["Cashflow_Col_Fees"]</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in _vm.Data.AnnualSummaries.OrderByDescending(x => x.Year))
+                            {
+                                <tr>
+                                    <td>@s.Year</td>
+                                    <td class="num neg">@s.TotalBuys.ToString("N2")</td>
+                                    <td class="num pos">@s.TotalSells.ToString("N2")</td>
+                                    <td class="num pos">@s.TotalDividends.ToString("N2")</td>
+                                    <td class="num neg">@s.TotalTaxes.ToString("N2")</td>
+                                    <td class="num neg">@s.TotalFees.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </section>
         }
 
@@ -125,27 +131,29 @@
                          viewBox="0 0 @CostSvgWidth() 140" width="100%" height="140">
                         @((MarkupString)BuildCostBars())
                     </svg>
-                    <table class="fm-table" aria-label="@Localizer["Cashflow_Costs_Title"]">
-                        <thead>
-                            <tr>
-                                <th scope="col">@Localizer["Cashflow_Costs_Col_Year"]</th>
-                                <th scope="col" class="num">@Localizer["Cashflow_Costs_Col_Taxes"]</th>
-                                <th scope="col" class="num">@Localizer["Cashflow_Costs_Col_Fees"]</th>
-                                <th scope="col" class="num">@Localizer["Cashflow_Costs_Col_Cumulative"]</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var row in BuildCostTableRows())
-                            {
+                    <div class="table-responsive">
+                        <table class="fm-table" aria-label="@Localizer["Cashflow_Costs_Title"]">
+                            <thead>
                                 <tr>
-                                    <td>@row.Year</td>
-                                    <td class="num">@row.Taxes.ToString("N2")</td>
-                                    <td class="num">@row.Fees.ToString("N2")</td>
-                                    <td class="num">@row.Cumulative.ToString("N2")</td>
+                                    <th scope="col">@Localizer["Cashflow_Costs_Col_Year"]</th>
+                                    <th scope="col" class="num">@Localizer["Cashflow_Costs_Col_Taxes"]</th>
+                                    <th scope="col" class="num">@Localizer["Cashflow_Costs_Col_Fees"]</th>
+                                    <th scope="col" class="num">@Localizer["Cashflow_Costs_Col_Cumulative"]</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in BuildCostTableRows())
+                                {
+                                    <tr>
+                                        <td>@row.Year</td>
+                                        <td class="num">@row.Taxes.ToString("N2")</td>
+                                        <td class="num">@row.Fees.ToString("N2")</td>
+                                        <td class="num">@row.Cumulative.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             }
         </section>

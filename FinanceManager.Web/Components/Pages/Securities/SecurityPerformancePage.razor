@@ -31,23 +31,25 @@
     return;
 }
 
-<div class="perf-page">
+<div class="perf-page perf-page-responsive">
     <Ribbon TTabEnum="string" Provider="_vm" Localizer="Localizer" />
 
     <div class="perf-header">
-        <h2>@(_vm.SecurityName ?? Localizer["SecurityPerformancePage_Title"]) – @Localizer["SecurityPerformancePage_HeadingSuffix"]</h2>
+        <h2 class="perf-title">@(_vm.SecurityName ?? Localizer["SecurityPerformancePage_Title"]) – @Localizer["SecurityPerformancePage_HeadingSuffix"]</h2>
     </div>
 
-    <div class="tab-bar" role="tablist">
-        @foreach (var tab in _vm.Tabs)
-        {
-            <button class="tab-btn @(tab == _vm.ActiveTabKey ? "active" : "")"
-                    role="tab"
-                    aria-selected="@(tab == _vm.ActiveTabKey)"
-                    @onclick="(() => SelectTab(tab))">
-                @GetTabLabel(tab)
-            </button>
-        }
+    <div class="tab-bar-wrap">
+        <div class="tab-bar" role="tablist">
+            @foreach (var tab in _vm.Tabs)
+            {
+                <button class="tab-btn @(tab == _vm.ActiveTabKey ? "active" : "")"
+                        role="tab"
+                        aria-selected="@(tab == _vm.ActiveTabKey)"
+                        @onclick="(() => SelectTab(tab))">
+                    @GetTabLabel(tab)
+                </button>
+            }
+        </div>
     </div>
 
     <div class="tab-content" role="tabpanel">

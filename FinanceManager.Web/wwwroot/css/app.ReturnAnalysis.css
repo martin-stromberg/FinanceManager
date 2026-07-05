@@ -4,6 +4,7 @@
 
 /* ---- Performance Page ---- */
 .perf-page { max-width: 1000px; }
+.perf-page-responsive { width: 100%; }
 
 .perf-header {
     display: flex;
@@ -33,6 +34,11 @@
     flex-wrap: wrap;
 }
 
+.tab-bar-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
 .tab-btn {
     background: none;
     border: none;
@@ -57,6 +63,11 @@
 
 /* ---- Overview Tab ---- */
 .overview-tab { }
+
+.overview-chart-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
 
 .time-range-selector {
     display: flex;
@@ -326,6 +337,10 @@
     gap: 1.25rem;
 }
 
+.metrics-tab-responsive {
+    width: 100%;
+}
+
 .kpi-section {
     border: 1px solid var(--border-color, #ddd);
     border-radius: 6px;
@@ -436,4 +451,56 @@
     border: 1px solid var(--border-color-subtle, #eee);
     border-radius: 4px;
     background: var(--chart-bg, #fafafa);
+}
+
+.benchmark-svg-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+@media (max-width: 900px) {
+    .perf-page {
+        max-width: 100%;
+    }
+
+    .perf-header {
+        margin-bottom: .6rem;
+    }
+
+    .tab-content {
+        min-height: 0;
+    }
+
+    .tab-bar {
+        flex-wrap: nowrap;
+        width: max-content;
+        min-width: 100%;
+    }
+
+    .chart-legend,
+    .benchmark-legend {
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+
+    .overview-chart-wrap .perf-svg,
+    .benchmark-svg-wrap .benchmark-svg {
+        min-width: 560px;
+    }
+
+    .heatmap-header,
+    .heatmap-row {
+        min-width: 560px;
+    }
+
+    .cashflow-tab .fm-table,
+    .timeseries-tab .fm-table,
+    .benchmark-tab .fm-table {
+        min-width: 560px;
+    }
+
+    .metrics-tab .kpi-grid {
+        grid-template-columns: 1fr;
+        gap: .8rem;
+    }
 }

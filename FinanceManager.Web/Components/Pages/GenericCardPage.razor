@@ -28,8 +28,8 @@ else
     }
     else if (Provider.CardRecord is not null)
     {
-        <div class="card-view" style="margin-top:1.25rem;width:100%;">
-            <table class="fm-table card" style="width:100%;">
+        <div class="card-view card-view-responsive" style="margin-top:1.25rem;width:100%;">
+            <table class="fm-table card card-table" style="width:100%;">
                 <tbody>
                     @foreach (var f in Provider.CardRecord.Fields)
                     {
@@ -54,7 +54,7 @@ else
        of the normal paged list so the inline editor becomes visible. *@
     @if (Provider?.EmbeddedList is FinanceManager.Web.ViewModels.Common.BaseListViewModel emb)
     {
-        <div style="margin-top:1.25rem;">
+        <div class="card-embedded-list" style="margin-top:1.25rem;">
             @if (emb is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel sd && sd.IsQuickEditActive)
             {
                 <QuickEditTable ViewModel="sd" />
@@ -753,4 +753,3 @@ else
         return Task.CompletedTask;
     }
 }
-

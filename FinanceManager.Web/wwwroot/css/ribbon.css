@@ -1,5 +1,5 @@
 /* =====================================================
-   ribbon.css - Allgemeingültige Ribbon Styles
+   ribbon.css - Allgemeingï¿½ltige Ribbon Styles
    ===================================================== */
 
 .fm-ribbon {
@@ -152,4 +152,39 @@
 /* Small Variant (defaults mostly) */
 .fm-ribbon-btn.small {
     --rb-icon-size: 14px;
+}
+
+@media (max-width: 900px) {
+    .fm-ribbon-tabs {
+        padding: .25rem .35rem;
+    }
+
+    .fm-ribbon-groups {
+        gap: .5rem;
+    }
+
+    .fm-ribbon-group {
+        min-width: min(100%, 220px);
+        padding: .35rem .4rem .45rem;
+    }
+
+    .ribbon-items-grid {
+        grid-auto-flow: row;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        grid-template-rows: none;
+    }
+
+    .fm-ribbon-btn.large {
+        --rb-flex-dir: row;
+        --rb-width: auto;
+        --rb-min-h: 44px;
+        --rb-text-wrap: nowrap;
+        --rb-align: center;
+        --rb-justify: flex-start;
+        --rb-text-align: left;
+        --rb-grid-row: auto;
+        --rb-icon-size: 16px;
+        --rb-pad-y: .35rem;
+        --rb-pad-x: .5rem;
+    }
 }

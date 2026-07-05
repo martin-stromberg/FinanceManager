@@ -1,179 +1,158 @@
 # Finance Manager
 
-Kompakte Übersicht
+[![License](https://img.shields.io/github/license/martin-stromberg/FinanceManager)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 
-`FinanceManager` ist eine Blazor Server Webanwendung (.NET 10) zur Verwaltung persönlicher Finanzen: Import und Klassifikation von Kontoauszügen, Buchungen (Bank / Kontakt / Sparplan / Wertpapier), Berichte und KPI‑Dashboard.
+`FinanceManager` ist eine Blazor-Server-Anwendung zur Verwaltung persönlicher Finanzen.  
+Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Reporting, Budgetplanung, Sparpläne, Wertpapiermanagement und Setup-/Admin-Funktionen ab.
 
-Kurz: Import → Klassifikation → Validierung → Buchung → Reporting.
+## Features / Highlights
 
-## Features
+- Kontoauszüge importieren, klassifizieren und verbuchen (`StatementDraftsController`)
+- Konten, Kontakte, Sparpläne und Wertpapiere verwalten
+- Berichte, KPI-Dashboards und Budgetauswertungen nutzen
+- Anhänge und Sicherungen (Backup/Restore) verwalten
+- Responsive Web-UI für kleine Viewports (mobile Topbar, responsive Container, mobile E2E-Abdeckung)
 
-### Für Nutzer
-Kurzbeschreibung und was die Anwendung bietet (nicht‑technisch):
-- Kontoauszüge (CSV/PDF) importieren und automatisch oder manuell kategorisieren
-- Sparpläne verwalten (einmalig oder wiederkehrend) und Zielerreichung verfolgen
-- Wertpapiertransaktionen (Kauf/Verkauf/Dividende) erfassen und Gebühren/Steuern berücksichtigen
-- Wertpapierkurse per ING-CSV importieren: als Einzelimport auf der Wertpapier-Kursseite und als Startseiten-Massenimport mit gemischten Dateien (Kontoauszüge + Kursdateien)
-- Startseiten-Massenimport als Zwei-Phasen-Flow (Analyze/Confirm) mit Re-Validierung vor Persistenz, Dateiebene-Audit-Logging und konfigurierbarer Dialog-Skip-Policy (`AlwaysConfirm` / `OnMissingInformation`)
-- Wertpapier-Performance-Analyse: TWR, IRR, CAGR, Sharpe Ratio, Max. Drawdown – mit Benchmark-Vergleich
-- Transaktionssichere Kontoauszug-Buchung mit Single-Flight-Guard, idempotenten Wiederholungen und 409-Fehlervertrag
-- Inline-Kontakterstellung aus Kontoauszugseinträgen mit automatischer Parent-Zuordnung, 409-Fehlervertrag bei Zuordnungskonflikten und Rollback-Versuch
-- Budgetwirkung bei Buchung: Hinweise bei kritischen Budgets und Abschluss-Summary mit Vorher/Nachher/Delta
-- Budget-Regeln mit Verwendungszweck-Pattern: optionales PurposePattern pro Regel (contains, case-insensitive) oder Regex-Matching inkl. Validierung
-- Berichte und KPI‑Dashboard; Daten als CSV/XLSX exportieren
-- Anhänge pro Buchung verwalten und Backups erstellen
-- Buchungen stornieren: Fehlerhafte oder versehentlich erfasste Postings einfach rückgängig machen – mit automatischer Gegenbuchung und vollständiger Nachvollziehbarkeit
-
-Schnelle Nutzung (Kurz):
-1. Registrieren / Anmelden
-2. Konto anlegen (Bankkontakt zuordnen)
-3. Kontoauszug hochladen (Import) → Entwürfe prüfen
-4. Einträge klassifizieren / fehlende Angaben ergänzen
-5. Buchung durchführen → Postings werden erstellt
-
-Hinweis: Diese README beschreibt die Entwicklungs‑ und Installationsdetails. Für eine reine Nutzer‑Installation wird eine gehostete Instanz oder eine einfache Install‑Anleitung benötigt (siehe `docs/` oder Admin/Hilfe im Webinterface).
-
-### Für Entwickler
-Kurz: welche Informationen Entwickler brauchen, um das Projekt lokal zu betreiben und weiterzuentwickeln.
-
-## Installation
+## Installation / Setup
 
 ### Voraussetzungen
-- .NET 10 SDK
-- (optional) SQLite oder SQL Server für Produktion
 
-### Schnellstart (lokal)
+- .NET SDK 10.0
+
+### Lokal starten
 
 ```bash
-git clone <repo-url>
-cd FinanceManager
 dotnet restore
-dotnet build
-cd FinanceManager.Web
-dotnet run
+dotnet build FinanceManager.sln
+dotnet run --project FinanceManager.Web
 ```
 
-Default URLs are printed when you run the application (see the console output from `dotnet run`). Do not rely on a hardcoded port — configure `ASPNETCORE_URLS`, `launchSettings.json` or use `dotnet run --urls "http://localhost:5002;https://localhost:5003"` to override the defaults.
+Hinweise:
+- In Development sind laut `launchSettings.json` u. a. `https://localhost:7013` und `http://localhost:5208` hinterlegt.
+- Beim Start werden Migrationen/Initialisierung ausgeführt (`ApplyMigrationsAndSeed()` in `ProgramExtensions`).
 
 ## Usage
 
-- Start der Anwendung über `dotnet run` im Projekt `FinanceManager.Web`.
-- Zugriff über die in der Konsole ausgegebenen URLs.
-- Primärer Nutzerfluss: Importieren → Draft klassifizieren → validieren → buchen → Reports prüfen.
-- Startseiten-Massenimport: gemischte Uploads (Kontoauszug + ING-Kursdateien) werden zuerst analysiert und danach – je nach Dialog-Policy – bestätigt und ausgeführt.
+- Web-App starten: `dotnet run --project FinanceManager.Web`
+- Anmelden/Registrieren über die UI
+- Typischer Flow: Import (`/api/statement-drafts/upload` oder `mass-import`) → Klassifizieren → Buchen → Reporting
 
 ## Konfiguration
 
-### Datenbankmigrationen
+Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 
-Änderungen am Domain‑Modell müssen gegen den korrekten DbContext migriert werden. Beispiel für `AppDbContext`:
+| Parameter | Typ | Standardwert | Beschreibung |
+|---|---|---|---|
+| `ConnectionStrings:Default` | string | `Data Source=financemanager.db` (Fallback) | Standard-SQLite-Datenbank (Fallback in `AddInfrastructure`) |
+| `Jwt:Key` | string | `""` (appsettings.json) | Signaturschlüssel für JWT |
+| `Jwt:LifetimeMinutes` | int | `43200` | JWT-/Cookie-Lebensdauer in Minuten |
+| `BackgroundTasks:Enabled` | bool | `true` | Aktiviert den `BackgroundTaskRunner` |
+| `Workers:SecurityPriceWorker:Enabled` | bool | `true` | Aktiviert den Security-Price-Worker |
+| `AlphaVantage:Quota:MaxSymbolsPerRun` | int | `8` | Begrenzung pro Abruflauf |
+| `AlphaVantage:Quota:RequestsPerMinute` | int | `4` | API-Rate-Limit pro Minute |
+| `FileLogging:Enabled` | bool | `false` (appsettings.json) | Aktiviert Dateilogging |
+| `Identity:Lockout:MaxFailedAccessAttempts` | int | `3` | Max. Fehlversuche bis Lockout |
+| `Identity:Password:RequiredLength` | int | `8` | Mindestlänge Passwort |
 
-```bash
-dotnet ef migrations add 20260329_AddSomething -p FinanceManager.Infrastructure -s FinanceManager.Web --context AppDbContext --output-dir Data/Migrations
-dotnet ef database update -p FinanceManager.Infrastructure -s FinanceManager.Web --context AppDbContext
+```json
+{
+  "ConnectionStrings": {
+    "Default": "Data Source=financemanager.db"
+  },
+  "Jwt": {
+    "Key": "PLEASE_SET_A_LONG_RANDOM_SECRET",
+    "LifetimeMinutes": 43200
+  },
+  "BackgroundTasks": {
+    "Enabled": true
+  },
+  "Workers": {
+    "SecurityPriceWorker": {
+      "Enabled": true
+    }
+  }
+}
 ```
 
-### Import-Dialog-Policy (Setup)
+## Architektur / Projektstruktur
 
-- In `Setup` → `Import-Aufteilung` kann die Dialog-Policy für Startseiten-Massenimporte gesetzt werden.
-- `AlwaysConfirm`: Prüf-Dialog immer vor Ausführung.
-- `OnMissingInformation`: Prüf-Dialog nur bei unklaren/fehlenden Informationen.
+Schichten und Projekte laut Solution:
 
-### Tests & Qualität
+```text
+FinanceManager.Web                      # Blazor Server UI + API Controller
+FinanceManager.Application              # Anwendungslogik / Services
+FinanceManager.Domain                   # Domain-Modelle
+FinanceManager.Infrastructure           # EF Core, Persistenz, Integrationen
+FinanceManager.Shared                   # Gemeinsame DTOs / Client
+FinanceManager.Shared.Dtos.Budget       # Budget-DTO-Paket
+FinanceManager.Tests                    # Unit- und Komponenten-Tests (xUnit/bUnit)
+FinanceManager.Tests.Integration        # Integrationstests
+FinanceManager.Tests.E2E                # Playwright-End-to-End-Tests
+```
+
+Technologien: .NET 10, ASP.NET Core, Blazor Server, EF Core (SQLite), ASP.NET Identity/JWT, xUnit, bUnit, Playwright.
+
+## API-Dokumentation
+
+Einstiegspunkte:
+
+- `POST /api/auth/login` – Anmeldung
+- `POST /api/statement-drafts/upload` – Einzeldatei als Entwurf importieren
+- `POST /api/statement-drafts/mass-import` – Massenimport analysieren/ausführen
+- `POST /api/securities/{id}/prices/import` – Wertpapierkurse importieren
+- `POST /api/postings/{id}/reverse` – Buchung stornieren (Reversal)
+
+Weitere API-Dokumentation:
+- `Docs/help/*/api.md`
+- Controller unter `FinanceManager.Web/Controllers`
+
+## Tests
+
+Testprojekte und Frameworks:
+- Unit/Komponente: xUnit v3, FluentAssertions, bUnit
+- Integration: xUnit v3, `Microsoft.AspNetCore.Mvc.Testing`
+- E2E: Playwright (`Microsoft.Playwright`) mit mobilen Sessions (`390x844`, Touch)
 
 ```bash
-dotnet test
+dotnet test FinanceManager.sln
 ```
-- Formatierung: `dotnet format` vor PR
-- CI soll Build, Tests und Formatierung prüfen
 
-## Architektur
+## Deployment / CI/CD
 
-Schichtenmodell: `Domain` → `Application` → `Infrastructure` → `Web`
+- Produktionsnahe Konfiguration liegt in `FinanceManager.Web/appsettings.Production.json` (u. a. Kestrel-Endpoint `http://*:5003`, FileLogging aktivierbar).
+- Im Repository sind aktuell keine GitHub-Workflow-Dateien unter `.github/workflows/` und kein `Dockerfile` vorhanden.
 
-| Projekt | Inhalt |
-|---------|--------|
-| `FinanceManager.Domain` | Entitäten, Interfaces, Domain-Events |
-| `FinanceManager.Application` | Services, Use Cases, Business-Logik |
-| `FinanceManager.Infrastructure` | EF Core, Migrations, externe Integrationen |
-| `FinanceManager.Shared` | Gemeinsame DTOs, Utilities |
-| `FinanceManager.Shared.Dtos.Budget` | Budget-DTOs (separates Paket) |
-| `FinanceManager.Web` | Blazor Server App, Controller, Razor Components |
-| `FinanceManager.Analyzer` | Roslyn-Analyzer (Code-Qualitätsregeln) |
-| `FinanceManager.Tests` | Unit-Tests |
-| `FinanceManager.Tests.Integration` | Integrationstests |
-| `FinanceManager.Tests.Integration.ApiClient` | Typisierter API-Client für Integrationstests |
+## Contribution Guide
 
-Details: [`docs/architecture/`](docs/architecture/)
+Siehe [CONTRIBUTING.md](CONTRIBUTING.md), insbesondere:
+- API-Fehlerbehandlung (`ValidationProblem` vs. standardisierte `origin/code/message`-Antworten)
+- Lokalisierungskonventionen für `.resx` unter `Resources/...`
+- PR-Hinweise zu Ressourcenpfaden und CI-Checks
 
-## Dokumentation & API
+## Roadmap
 
-- Projektdokumentation unter `docs/` (Flows, Business Rules, API stubs)
-- Installationsanleitung: `docs/install.md`
-- Teil‑OpenAPI: `docs/api/openapi.yaml` (Accounts + models)
-- Detaillierte Controller‑Docs in `docs/api/`
-- Kontakt-Create/Assign-Vertrag: `docs/api/ContactsController.md` und `docs/flows/contact-create-auto-assign.md`
-- Posting-Reversal-API: `POST /api/postings/{id}/reverse`, `GET /api/postings/{id}/validate-reversal` (Details: `docs/api/PostingsController.md`)
-- [Planungsübersicht Renditeanalyse](docs/planning-renditeanalyse.md)
-- [Anforderungen FA-WERT-REN-001](docs/requirements/FA-WERT-REN-001_Renditeanalyse.md)
-- [Architektur-Blueprint Renditeanalyse](docs/architecture/architecture-blueprint-renditeanalyse.md)
-- [Requirements: Budget-Verwendungszweck-Pattern inkl. Regex](Docs/requirements/budget-verwendungszweck.md)
-- [Architektur: Budget-Verwendungszweck-Pattern inkl. Regex](Docs/architecture/budget-verwendungszweck.md)
-- [Business-Dokumentation F017 Renditeanalyse](docs/business/features/F017-renditeanalyse.md)
-- [Requirements: Wertpapierkurse ING-CSV-Import](Docs/requirements/wertpapierkurse-ing-requirements.md)
-- [Architektur: Wertpapierkurse ING-CSV-Import](Docs/architecture/architecture-blueprint-wertpapierkurse-ing.md)
-- [Tests: Wertpapierkurse ING-CSV-Import](Docs/tests/wertpapierkurse-ing-testplan.md)
-- [API: SecuritiesController (`POST /api/securities/{id}/prices/import`)](Docs/api/SecuritiesController.md)
-- [Business: F007 Wertpapierpreise ING-CSV-Import](Docs/business/features/F007-wertpapierpreise-ing-csv-import.md)
-- [Flow: Startseiten-Massenimport ING Wertpapierkurse (Analyse + Bestätigung)](Docs/flows/security-price-import-ing.md)
-- [Requirements: Startseiten-Massenimport ING Wertpapierkurse](Docs/requirements/massenimport-ing-wertpapierkurse-requirements.md)
-- [Planung: Startseiten-Massenimport ING Wertpapierkurse](Docs/planning/planning-massenimport-ing-wertpapierkurse.md)
-- [Architektur-Blueprint: Startseiten-Massenimport ING Wertpapierkurse](Docs/architecture/architecture-blueprint-massenimport-ing-wertpapierkurse.md)
-- [ERM: Startseiten-Massenimport ING Wertpapierkurse](Docs/architecture/entity-relationship-model-massenimport-ing-wertpapierkurse.md)
-- [Architektur-Review: Startseiten-Massenimport ING Wertpapierkurse](Docs/improvements/review-architecture-massenimport-ing-wertpapierkurse.md)
-- [API: StatementDraftsController (`POST /api/statement-drafts/mass-import`)](Docs/api/StatementDraftsController.md)
-- [API: UserSettingsController (Import-Split + `massImportDialogPolicy`)](Docs/api/UserSettingsController.md)
-- [Business: F014 Benutzereinstellungen (Dialog-Policy)](Docs/business/features/F014-benutzereinstellungen.md)
-- [Tests: ING-Import Testlücken/Abdeckung](Docs/tests/wertpapierkurse-ing-testluecken.md)
-- [API: AttachmentsController (inkl. Download-Stabilisierung für SQLite)](Docs/api/AttachmentsController.md)
+Aus `Docs/features/task/issue-90-fb7b291b995c45f3b35a0bf86c8ae321-mobile-ansicht/plan.md` (Mobile Ansicht):
 
-## Entwicklungskonventionen
-
-- Siehe `.github/copilot-instructions.md` für Coding‑Guidelines (Naming, Async, Logging, Tests).
-- Branching & Commits: Conventional Commits (`feat:`, `fix:`, `docs:` ...)
-
-## Security
-
-- Keine Secrets im Repo. Verwende Environment Variables oder Secret Manager.
-- JWTs werden via HttpOnly Cookie verwaltet; sichere Konfiguration in Produktion.
-
-## Deployment
-
-- Für produktiven Betrieb HTTPS erzwingen, Secret-Management aktivieren und eine persistente Datenbank (SQL Server oder SQLite mit Backup-Strategie) verwenden.
-- Reverse-Proxy (z. B. Nginx/IIS) für TLS-Terminierung und Header-Härtung.
-- Vor Deployment: `dotnet build` und `dotnet test` erfolgreich ausführen.
-
-## Kontakt / Issues
-
-- Öffne Issues für Bugs/Feature‑Requests. Für größere Änderungen bitte zuerst Design‑Discussion.
-
-## Bekannte offene Punkte
-
-- Hinweis: Die folgenden bekannten Testprobleme sind fachfremd und **nicht** durch das Feature „Budget-Verwendungszweck-Pattern“ verursacht.
-- **BUG-1:** `BuildTwrPeriods` verwendet `start` statt `end` als Periodenbeginn → TWR-Ergebnisse können verfälscht sein (Regressionstest vorhanden)
-- **Ausstehende Tests (Prio 2/3):** Periodische Renditen, Benchmark-Normalisierung, bUnit UI-Tests noch nicht implementiert
-- **Posting-Reversal:** Kein Bestätigungsdialog vor der Stornierung – Buchung wird direkt rückgängig gemacht; Bug: `GetRelatedPostingsAsync` mit `GroupId == Guid.Empty` (Test mit `Skip` versehen)
+1. Responsive Basis/Breakpoints vereinheitlichen
+2. Layout/Navigationscontainer mobilfähig machen
+3. Generische Listen-/Kartenbausteine standardisieren
+4. Kernseiten (Home/Reports/Budget/Setup) anpassen
+5. Setup- und Securities-Tabs harmonisieren
+6. Playwright-Fixture für Mobile Sessions erweitern
+7. Mobile E2E-Flows ergänzen
+8. Regression/Stabilisierung
 
 ## Changelog
 
-- 2026-07: Statement Contact Auto Assignment dokumentiert (Create + Parent-Assignment, 409 Conflict `Err_Conflict_ParentAssignment`, Rollback- und Idempotenzverhalten).
-- 2026-07: Startseiten-Massenimport für gemischte Dateien (Kontoauszug + ING-Wertpapierkurse) ergänzt: Analyze/Confirm-Flow, Setup-Policy (`AlwaysConfirm`/`OnMissingInformation`), Re-Validierung vor Persistenz und auditable Dateiebene-Logs dokumentiert.
-- 2026-07: Wertpapierkurs-Import UI-Platzierung auf die Kursseite (`/list/securities/prices/{id}`) präzisiert; Attachment-Download stabilisiert (isolierter Read-Path via `IDbContextFactory`, Retry bei SQLite-Collation-Konflikt).
-- 2026-06: Transaktionssichere Kontoauszug-Buchung mit Guard, Retry-Semantik und 409 ProblemDetails dokumentiert.
-- 2026-06: Budget-Verwendungszweck-Pattern inkl. Regex ergänzt (Migration `20260604172812_202606041500_AddBudgetRulePurposePattern`, API/Matching/Tests aktualisiert).
-- 2026-05: Budget-Impact-Auswertung für Statement-Buchung dokumentiert (Entry-Hinweise + Booking-Summary).
-- 2025-07: Posting-Stornierung (Reversal) implementiert – Gegenbuchung mit negativem Betrag, Gruppen-Stornierung (All-or-Nothing), Statusanzeige in Posting-Listen, REST-API `POST /api/postings/{id}/reverse`.
+- Laufender Änderungsverlauf: [changes.log](changes.log)
+- Zusätzlich vorhanden: [CHANGELOG.md](CHANGELOG.md)
 
 ## Lizenz
 
-- MIT — siehe `LICENSE`.
+MIT – siehe [LICENSE](LICENSE).
+
+## Kontakt / Maintainer
+
+- Repository: `martin-stromberg/FinanceManager`
+- Rückfragen/Fehler: GitHub Issues im Repository verwenden.

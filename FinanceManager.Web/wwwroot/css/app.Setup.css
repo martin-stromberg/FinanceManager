@@ -1,5 +1,5 @@
 /* =====================================================
-   app.Setup.css - Allgemeingültige Setup Page Styles
+   app.Setup.css - Allgemeingï¿½ltige Setup Page Styles
    ===================================================== */
 
 /* Tabs */
@@ -111,4 +111,31 @@
 
 .error-margin {
     margin-top: .5rem;
+}
+
+@media (max-width: 900px) {
+    .fm-tab-panel {
+        padding: .75rem;
+    }
+
+    .setup-tab .form-row {
+        display: flex;
+        flex-direction: column;
+        gap: .35rem;
+    }
+
+    .setup-tab .form-row input,
+    .setup-tab .form-row select,
+    .setup-tab .form-row button {
+        width: 100%;
+        min-width: 0 !important;
+    }
+
+    .setup-tab .table-responsive {
+        overflow-x: auto;
+    }
+
+    .setup-tab table.fm-table {
+        min-width: 560px;
+    }
 }

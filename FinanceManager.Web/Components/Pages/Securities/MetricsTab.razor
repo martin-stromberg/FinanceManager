@@ -4,7 +4,7 @@
 @inject IServiceProvider Services
 @inject IStringLocalizer<FinanceManager.Web.Pages> Localizer
 
-<div class="metrics-tab">
+<div class="metrics-tab metrics-tab-responsive">
     @if (_vm?.IsLoading == true) { <div role="status">@Localizer["Metrics_Loading"]</div> }
     else if (_vm?.Data == null) { <div class="no-data-msg">@Localizer["Metrics_NoData"]</div> }
     else

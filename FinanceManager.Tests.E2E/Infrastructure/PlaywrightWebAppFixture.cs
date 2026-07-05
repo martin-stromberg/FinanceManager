@@ -7,6 +7,20 @@ namespace FinanceManager.Tests.E2E;
 
 public sealed class PlaywrightWebAppFixture : IAsyncLifetime
 {
+    public sealed class PlaywrightSessionOptions
+    {
+        public ViewportSize? ViewportSize { get; init; }
+        public bool? IsMobile { get; init; }
+        public bool? HasTouch { get; init; }
+    }
+
+    private static readonly PlaywrightSessionOptions MobileSessionOptions = new()
+    {
+        ViewportSize = new ViewportSize { Width = 390, Height = 844 },
+        IsMobile = true,
+        HasTouch = true
+    };
+
     private readonly PlaywrightTestOptions _options = new();
     private IPlaywright? _playwright;
     private IBrowser? _browser;
@@ -93,7 +107,7 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         }
     }
 
-    public async Task<PlaywrightBrowserSession> CreateSessionAsync()
+    public async Task<PlaywrightBrowserSession> CreateSessionAsync(PlaywrightSessionOptions? options = null)
     {
         if (_browser == null)
         {
@@ -104,6 +118,9 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         {
             BaseURL = BaseUrl,
             IgnoreHTTPSErrors = true,
+            ViewportSize = options?.ViewportSize,
+            IsMobile = options?.IsMobile,
+            HasTouch = options?.HasTouch,
         });
         context.SetDefaultTimeout(_options.ActionTimeoutSeconds * 1000);
         context.SetDefaultNavigationTimeout(_options.NavigationTimeoutSeconds * 1000);
@@ -113,6 +130,9 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         page.SetDefaultNavigationTimeout(_options.NavigationTimeoutSeconds * 1000);
         return new PlaywrightBrowserSession(context, page);
     }
+
+    public Task<PlaywrightBrowserSession> CreateMobileSessionAsync()
+        => CreateSessionAsync(MobileSessionOptions);
 
     private async Task<IBrowser> LaunchBrowserAsync(IPlaywright playwright)
     {

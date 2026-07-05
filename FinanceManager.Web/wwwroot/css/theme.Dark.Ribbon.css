@@ -1,5 +1,5 @@
 /* =====================================================
-   theme.Dark.Ribbon.css - Dark Theme für Ribbon
+   theme.Dark.Ribbon.css - Dark Theme fï¿½r Ribbon
    ===================================================== */
 
 .fm-ribbon {
@@ -60,5 +60,15 @@
     }
     .fm-ribbon-tabs li button:focus-visible {
         outline: 2px solid #fff;
+    }
+}
+
+@media (max-width: 900px) {
+    .fm-ribbon-group {
+        background: #151515;
+    }
+
+    .fm-ribbon-btn.large {
+        border-color: #3a3a3a;
     }
 }

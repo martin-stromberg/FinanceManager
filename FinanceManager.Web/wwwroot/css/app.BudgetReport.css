@@ -6,6 +6,10 @@
     padding: 0 0.75rem;
 }
 
+.budget-report-page {
+    width: 100%;
+}
+
 .budget-report-sheet {
     background: #ffffff;
     border: 1px solid #ddd;
@@ -34,6 +38,10 @@
 }
 
 .budget-report-table {
+    width: 100%;
+}
+
+.budget-table-wrap {
     width: 100%;
 }
 
@@ -79,5 +87,23 @@
 @keyframes budget-report-spin {
     to {
         transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 900px) {
+    .budget-report {
+        padding: 0;
+    }
+
+    .budget-report-sheet {
+        padding: .85rem;
+    }
+
+    .budget-table-wrap {
+        overflow-x: auto;
+    }
+
+    .budget-report-table {
+        min-width: 540px;
     }
 }

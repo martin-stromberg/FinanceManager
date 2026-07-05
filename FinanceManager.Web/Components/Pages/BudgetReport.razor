@@ -72,7 +72,7 @@ else
 {
     <Ribbon TTabEnum="int" Provider="_vm" Localizer="Localizer" />
 
-    <div class="budget-report" style="margin:1rem auto;max-width:900px;">
+    <div class="budget-report budget-report-page" style="margin:1rem auto;max-width:900px;">
         <div class="budget-report-sheet">
             @if (_vm.Loading)
             {
@@ -85,7 +85,7 @@ else
                             <span class="budget-report-loading-range">
                                 @(Localizer?["Budget_Report_Th_Period"].Value ?? "Period"):
                                 @(_vm.LoadingFrom.Value.ToDateTime(TimeOnly.MinValue).ToString("d", CultureInfo.CurrentCulture))
-                                –
+                                ï¿½
                                 @(_vm.LoadingTo.Value.ToDateTime(TimeOnly.MinValue).ToString("d", CultureInfo.CurrentCulture))
                             </span>
                         }
@@ -103,7 +103,7 @@ else
                         var fromText = from.ToDateTime(TimeOnly.MinValue).ToString("d", CultureInfo.CurrentCulture);
                         var toText = to.ToDateTime(TimeOnly.MinValue).ToString("d", CultureInfo.CurrentCulture);
                     }
-                    @fromText – @toText
+                    @fromText ï¿½ @toText
                 </div>
             }
 
@@ -119,51 +119,54 @@ else
             @if (_vm.Settings.ShowMonthlyTable)
             {
                 <h3 class="budget-report-section-title">@(Localizer?["Budget_Report_MonthlyTable"].Value ?? "Monthly totals")</h3>
-                <table class="table budget-report-table" style="width:100%;">
-                    <thead>
-                        <tr>
-                            <th style="text-align:left;">@(Localizer?["Budget_Report_Th_Period"].Value ?? "Period")</th>
-                            <th style="text-align:right;">@(Localizer?["List_Th_Budget"].Value ?? "Budget")</th>
-                            <th style="text-align:right;">@(Localizer?["List_Th_Actual"].Value ?? "Actual")</th>
-                            <th style="text-align:right;">@(Localizer?["List_Th_Delta"].Value ?? "Delta")</th>
-                            <th style="text-align:right;">@(Localizer?["Budget_Report_Th_DeltaPct"].Value ?? "Delta %")</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var row in _vm.Periods)
-                        {
+                <div class="budget-table-wrap table-responsive">
+                    <table class="table budget-report-table" style="width:100%;">
+                        <thead>
                             <tr>
-                                <td>@row.PeriodStart.ToDateTime(TimeOnly.MinValue).ToString("d", CultureInfo.CurrentCulture)</td>
-                                <td style="text-align:right;">@row.Budget.ToString("N2")</td>
-                                <td style="text-align:right;">@row.Actual.ToString("N2")</td>
-                                <td style="text-align:right;">@(row.Delta == 0 ? string.Empty : row.Delta.ToString("N2"))</td>
-                                <td style="text-align:right;">@(row.DeltaPct == 0 ? string.Empty : row.DeltaPct.ToString("P0"))</td>
+                                <th style="text-align:left;">@(Localizer?["Budget_Report_Th_Period"].Value ?? "Period")</th>
+                                <th style="text-align:right;">@(Localizer?["List_Th_Budget"].Value ?? "Budget")</th>
+                                <th style="text-align:right;">@(Localizer?["List_Th_Actual"].Value ?? "Actual")</th>
+                                <th style="text-align:right;">@(Localizer?["List_Th_Delta"].Value ?? "Delta")</th>
+                                <th style="text-align:right;">@(Localizer?["Budget_Report_Th_DeltaPct"].Value ?? "Delta %")</th>
                             </tr>
-                        }
+                        </thead>
+                        <tbody>
+                            @foreach (var row in _vm.Periods)
+                            {
+                                <tr>
+                                    <td>@row.PeriodStart.ToDateTime(TimeOnly.MinValue).ToString("d", CultureInfo.CurrentCulture)</td>
+                                    <td style="text-align:right;">@row.Budget.ToString("N2")</td>
+                                    <td style="text-align:right;">@row.Actual.ToString("N2")</td>
+                                    <td style="text-align:right;">@(row.Delta == 0 ? string.Empty : row.Delta.ToString("N2"))</td>
+                                    <td style="text-align:right;">@(row.DeltaPct == 0 ? string.Empty : row.DeltaPct.ToString("P0"))</td>
+                                </tr>
+                            }
 
-                        @if (_vm.Settings.ShowPeriodSumRow && _vm.Periods.Count > 0)
-                        {
-                            var sumBudget = _vm.Periods.Sum(p => p.Budget);
-                            var sumActual = _vm.Periods.Sum(p => p.Actual);
-                            var sumDelta = sumActual - sumBudget;
-                            var sumPct = sumBudget == 0m ? 0m : sumDelta / sumBudget;
+                            @if (_vm.Settings.ShowPeriodSumRow && _vm.Periods.Count > 0)
+                            {
+                                var sumBudget = _vm.Periods.Sum(p => p.Budget);
+                                var sumActual = _vm.Periods.Sum(p => p.Actual);
+                                var sumDelta = sumActual - sumBudget;
+                                var sumPct = sumBudget == 0m ? 0m : sumDelta / sumBudget;
 
-                            <tr style="font-weight:600;">
-                                <td>@(Localizer?["List_Sum"].Value ?? "Sum")</td>
-                                <td style="text-align:right;">@sumBudget.ToString("N2")</td>
-                                <td style="text-align:right;">@sumActual.ToString("N2")</td>
-                                <td style="text-align:right;">@(sumDelta == 0 ? string.Empty : sumDelta.ToString("N2"))</td>
-                                <td style="text-align:right;">@(sumPct == 0 ? string.Empty : sumPct.ToString("P0"))</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                                <tr style="font-weight:600;">
+                                    <td>@(Localizer?["List_Sum"].Value ?? "Sum")</td>
+                                    <td style="text-align:right;">@sumBudget.ToString("N2")</td>
+                                    <td style="text-align:right;">@sumActual.ToString("N2")</td>
+                                    <td style="text-align:right;">@(sumDelta == 0 ? string.Empty : sumDelta.ToString("N2"))</td>
+                                    <td style="text-align:right;">@(sumPct == 0 ? string.Empty : sumPct.ToString("P0"))</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             }
 
             @if (_vm.Settings.ShowDetailsTable)
             {
                 <h3 class="budget-report-section-title">@(Localizer?["Budget_Report_DetailsTable"].Value ?? "Categories & purposes")</h3>
 
+                <div class="budget-table-wrap table-responsive">
                 <table class="table budget-report-table" style="width:100%;margin-bottom:1rem;">
                     <thead>
                         <tr>
@@ -283,6 +286,7 @@ else
                         }
                     </tbody>
                 </table>
+                </div>
             }
         </div>
     </div>
@@ -306,7 +310,7 @@ else
                 }
                 else
                 {
-                    <div style="max-height:60vh;overflow:auto;border:1px solid var(--border-color,#ddd);border-radius:.25rem;">
+                    <div class="budget-table-wrap table-responsive" style="max-height:60vh;overflow:auto;border:1px solid var(--border-color,#ddd);border-radius:.25rem;">
                         <table class="table" style="width:100%;margin:0;">
                             <thead style="position:sticky;top:0;background:var(--surface,#fff);z-index:1;">
                                 <tr>

@@ -12,32 +12,34 @@
 
 <PageTitle>@Localizer["PageTitle"]</PageTitle>
 
-<Ribbon TTabEnum="ReportsHome.TabId" Provider="_vm" Localizer="Localizer" />
+<div class="reports-home-page">
+    <Ribbon TTabEnum="ReportsHome.TabId" Provider="_vm" Localizer="Localizer" />
 
-<h2 class="page-heading">@Localizer["Heading"]</h2>
+    <h2 class="page-heading reports-home-heading">@Localizer["Heading"]</h2>
 
-@if(_vm?.Loading ?? true)
-{
-    <p>@Localizer["Loading"]</p>
-}
-else if(_vm!.Favorites.Count == 0)
-{
-    <div class="empty-info">@Localizer["NoFavorites"]</div>
-}
-else
-{
-    <ul class="fav-grid">
-        @foreach(var f in _vm!.Favorites)
-        {
-            <li>
-                <button class="fav-card" @onclick="(()=>OpenFavorite(f.Id))" title="@Localizer["OpenFavorite"]">
-                    <div class="fav-name">@f.Name</div>
-                    <div class="fav-meta">@Localizer[$"PostingKind_{((PostingKind)f.PostingKind).ToString()}"] • @Localizer[$"Interval_{f.Interval}"]</div>
-                </button>
-            </li>
-        }
-    </ul>
-}
+    @if(_vm?.Loading ?? true)
+    {
+        <p>@Localizer["Loading"]</p>
+    }
+    else if(_vm!.Favorites.Count == 0)
+    {
+        <div class="empty-info">@Localizer["NoFavorites"]</div>
+    }
+    else
+    {
+        <ul class="fav-grid reports-home-grid">
+            @foreach(var f in _vm!.Favorites)
+            {
+                <li>
+                    <button class="fav-card" @onclick="(()=>OpenFavorite(f.Id))" title="@Localizer["OpenFavorite"]">
+                        <div class="fav-name">@f.Name</div>
+                        <div class="fav-meta">@Localizer[$"PostingKind_{((PostingKind)f.PostingKind).ToString()}"] ï¿½ @Localizer[$"Interval_{f.Interval}"]</div>
+                    </button>
+                </li>
+            }
+        </ul>
+    }
+</div>
 
 @code {
     // Ribbon Tab enum required by Ribbon generic parameter

@@ -7,13 +7,13 @@
 }
 else
 {
-    <div class="setup-sections" style="display:flex;flex-direction:row;gap:.5rem;flex-wrap:wrap;margin-top:.5rem;">
+    <div class="setup-sections setup-sections-nav" style="display:flex;flex-direction:row;gap:.5rem;flex-wrap:wrap;margin-top:.5rem;">
         @foreach (var kv in Provider.SettingSections)
         {
             var key = kv.Key;
             var label = kv.Value;
             var isActive = string.Equals(Provider.SelectedSection, key, StringComparison.OrdinalIgnoreCase);
-            <button class="btn" style="padding:.375rem .75rem;border:1px solid var(--fm-border,#ccc);background:@(isActive?"var(--fm-primary,#007bff)":"transparent");color:@(isActive?"white":"inherit");border-radius:.25rem;" @onclick="() => OnClick(key)">
+            <button class="btn setup-section-btn" style="padding:.375rem .75rem;border:1px solid var(--fm-border,#ccc);background:@(isActive?"var(--fm-primary,#007bff)":"transparent");color:@(isActive?"white":"inherit");border-radius:.25rem;" @onclick="() => OnClick(key)">
                 @label
             </button>
         }

@@ -1,5 +1,5 @@
 /* =====================================================
-   app.css - Allgemeingültige Styles (Layout, Struktur)
+   app.css - Allgemeingï¿½ltige Styles (Layout, Struktur)
    ===================================================== */
 
 :root {
@@ -314,8 +314,84 @@ form {
         z-index: 450; 
         width: calc(var(--sidebar-width) - 20px); 
     }
-    .content { padding: 0; }
+    .content { padding: 0 .5rem .75rem .5rem; }
+    .inner,
+    .app-inner {
+        max-width: none;
+        margin: 0;
+        padding: 0 .25rem .75rem .25rem;
+    }
     .mobile-topbar { display: flex; }
+    .list-filters {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    .list-filters input,
+    .list-filters select {
+        width: 100%;
+        min-width: 0 !important;
+    }
+    .generic-list-table-wrap {
+        overflow-x: auto;
+    }
+    .card-view-responsive .card-table th {
+        width: 100% !important;
+        display: block;
+        padding-bottom: .15rem;
+    }
+    .card-view-responsive .card-table td {
+        display: block;
+        padding-top: .1rem;
+    }
+    .card-embedded-list {
+        overflow-x: auto;
+    }
+    .split-center {
+        padding: .5rem;
+    }
+    .split-dialog {
+        max-height: 92vh;
+        overflow-y: auto;
+        padding: .9rem;
+    }
+    .setup-sections-nav {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        width: 100%;
+        gap: .4rem !important;
+    }
+    .setup-section-btn {
+        width: 100%;
+        text-align: center;
+    }
+    .setup-tab .form-row {
+        align-items: stretch !important;
+    }
+    .setup-tab .form-row label {
+        min-width: 0 !important;
+    }
+    .setup-tab .table-responsive {
+        overflow-x: auto;
+    }
+    .perf-header h2 {
+        font-size: 1.15rem;
+        line-height: 1.3;
+    }
+    .tab-bar {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+    .tab-btn {
+        white-space: nowrap;
+    }
+    .timeseries-tab table,
+    .cashflow-tab table,
+    .benchmark-tab table {
+        min-width: 540px;
+    }
+    .kpi-grid {
+        grid-template-columns: 1fr;
+    }
     /* when checkbox checked, slide in sidebar */
     .nav-toggle:checked ~ .sidebar { transform: translateX(0); }
     .nav-toggle:checked ~ .mobile-overlay { display: block; }

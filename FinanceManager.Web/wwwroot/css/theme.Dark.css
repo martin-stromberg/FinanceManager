@@ -180,6 +180,10 @@ input {
     .sidebar { 
         box-shadow: 2px 0 12px #0006; 
     }
+
+    .app-inner {
+        background: transparent;
+    }
 }
 
 
