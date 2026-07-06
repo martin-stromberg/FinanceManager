@@ -1,5 +1,5 @@
 /* =====================================================
-   app.AggregateBarChart.css - Allgemeingültige AggregateBarChart Styles
+   app.AggregateBarChart.css - Allgemeingï¿½ltige AggregateBarChart Styles
    ===================================================== */
 
 .aggregate-chart-wrapper select {
@@ -55,6 +55,19 @@
     height: 180px;
     gap: 0;
     min-width: 0;
+}
+
+.bars-scroll {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-width: 100%;
+    min-width: 0;
+    -webkit-overflow-scrolling: touch;
+}
+
+.bars-track {
+    width: 100%;
 }
 
 .bar-row {

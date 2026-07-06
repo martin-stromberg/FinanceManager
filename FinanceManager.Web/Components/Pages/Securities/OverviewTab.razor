@@ -13,41 +13,43 @@
     }
     else
     {
-        <div class="perf-chart-area">
+        <div class="perf-chart-area overview-chart-area">
             <div class="chart-legend">
                 <span class="legend-item portfolio">Marktwert</span>
                 <span class="legend-item invested">Investiert</span>
             </div>
-            <div class="simple-line-chart" aria-label="Performance-Chart">
-                @{
-                    var allValues = _vm.Data.PortfolioValues.Select(p => p.Value)
-                        .Concat(_vm.Data.InvestedCapitalValues.Select(p => p.Value));
-                    var maxVal = allValues.DefaultIfEmpty(1m).Max();
-                    var minVal = allValues.DefaultIfEmpty(0m).Min();
-                    var valueRange = maxVal - minVal;
-                    if (valueRange == 0) { valueRange = 1m; }
-                    var total = _vm.Data.PortfolioValues.Count;
-                }
-                <svg viewBox="0 0 @total 100" preserveAspectRatio="none" class="perf-svg" role="img">
-                    <title>Portfolio-Wertentwicklung</title>
+            <div class="overview-chart-wrap">
+                <div class="simple-line-chart" aria-label="Performance-Chart">
                     @{
-                        var portfolioPoints = string.Join(" ", _vm.Data.PortfolioValues.Select((p, i) =>
-                            FormattableString.Invariant($"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}")));
-                        var investedPoints = string.Join(" ", _vm.Data.InvestedCapitalValues.Select((p, i) =>
-                            FormattableString.Invariant($"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}")));
+                        var allValues = _vm.Data.PortfolioValues.Select(p => p.Value)
+                            .Concat(_vm.Data.InvestedCapitalValues.Select(p => p.Value));
+                        var maxVal = allValues.DefaultIfEmpty(1m).Max();
+                        var minVal = allValues.DefaultIfEmpty(0m).Min();
+                        var valueRange = maxVal - minVal;
+                        if (valueRange == 0) { valueRange = 1m; }
+                        var total = _vm.Data.PortfolioValues.Count;
                     }
-                    @if (!string.IsNullOrEmpty(portfolioPoints))
-                    {
-                        <polyline points="@portfolioPoints" fill="none" stroke="#2d6cdf" stroke-width="0.8" />
-                    }
-                    @if (!string.IsNullOrEmpty(investedPoints))
-                    {
-                        <polyline points="@investedPoints" fill="none" stroke="#999" stroke-width="0.6" stroke-dasharray="2,2" />
-                    }
-                </svg>
-                <div class="chart-dates">
-                    <span>@(_vm.Data.PortfolioValues.FirstOrDefault()?.Date.ToString("dd.MM.yy"))</span>
-                    <span>@(_vm.Data.PortfolioValues.LastOrDefault()?.Date.ToString("dd.MM.yy"))</span>
+                    <svg viewBox="0 0 @total 100" preserveAspectRatio="none" class="perf-svg" role="img">
+                        <title>Portfolio-Wertentwicklung</title>
+                        @{
+                            var portfolioPoints = string.Join(" ", _vm.Data.PortfolioValues.Select((p, i) =>
+                                FormattableString.Invariant($"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}")));
+                            var investedPoints = string.Join(" ", _vm.Data.InvestedCapitalValues.Select((p, i) =>
+                                FormattableString.Invariant($"{i},{100m - (p.Value - minVal) / valueRange * 95m:F1}")));
+                        }
+                        @if (!string.IsNullOrEmpty(portfolioPoints))
+                        {
+                            <polyline points="@portfolioPoints" fill="none" stroke="#2d6cdf" stroke-width="0.8" />
+                        }
+                        @if (!string.IsNullOrEmpty(investedPoints))
+                        {
+                            <polyline points="@investedPoints" fill="none" stroke="#999" stroke-width="0.6" stroke-dasharray="2,2" />
+                        }
+                    </svg>
+                    <div class="chart-dates">
+                        <span>@(_vm.Data.PortfolioValues.FirstOrDefault()?.Date.ToString("dd.MM.yy"))</span>
+                        <span>@(_vm.Data.PortfolioValues.LastOrDefault()?.Date.ToString("dd.MM.yy"))</span>
+                    </div>
                 </div>
             </div>
         </div>

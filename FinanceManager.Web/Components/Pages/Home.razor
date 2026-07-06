@@ -120,7 +120,7 @@
                         </article>
                     }
                 </div>
-                <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:.75rem;">
+                <div class="mass-import-actions" style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:.75rem;">
                     <button class="btn" @onclick="ConfirmPendingMassImportAsync" disabled="@(!CanSavePendingMassImport())">@Localizer["Btn_Save"]</button>
                     <button class="btn secondary" @onclick="CancelPendingMassImport">@Localizer["Btn_Cancel"]</button>
                 </div>

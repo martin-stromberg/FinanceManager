@@ -62,42 +62,28 @@ namespace FinanceManager.Tests.ViewModels
         }
 
         [Fact]
-        public void ChangeView_Profile_Clears_AfterCard_And_Opens_ProfilePanel()
+        public void TryGetSectionComponentType_Profile_ReturnsExpectedComponent()
         {
             var sp = BuildServices();
             var vm = new SetupCardViewModel(sp);
 
-            var events = new List<BaseViewModel.UiActionEventArgs?>();
-            BaseViewModel baseVm = vm;
-            baseVm.UiActionRequested += (_, e) => events.Add(e);
+            var found = vm.TryGetSectionComponentType("profile", out var componentType);
 
-            vm.ChangeView("profile");
+            Assert.True(found);
+            Assert.NotNull(componentType);
+            Assert.Equal(typeof(FinanceManager.Web.Components.Pages.Setup.SetupProfileTab), componentType);
+        }
 
-            // Expect ClearEmbeddedPanel then EmbeddedPanel
-            Assert.True(events.Count >= 1);
+        [Fact]
+        public void CreateSectionViewModel_Profile_CreatesExpectedViewModel()
+        {
+            var sp = BuildServices();
+            var vm = new SetupCardViewModel(sp);
 
-            // First event should be ClearEmbeddedPanel
-            var first = events[0];
-            Assert.Equal("ClearEmbeddedPanel", first!.Action);
-            Assert.IsType<EmbeddedPanelPosition>(first.PayloadObject);
-            Assert.Equal(EmbeddedPanelPosition.AfterCard, (EmbeddedPanelPosition)first.PayloadObject!);
+            var sectionVm = vm.CreateSectionViewModel("profile", sp);
 
-            // There should be a second event for the embedded panel
-            var embedded = events.Find(e => e != null && e.Action == "EmbeddedPanel");
-            Assert.NotNull(embedded);
-            var spec = Assert.IsType<BaseViewModel.EmbeddedPanelSpec>(embedded!.PayloadObject);
-            Assert.Equal(typeof(FinanceManager.Web.Components.Shared.SetupPanel), spec.ComponentType);
-
-            var outerParms = spec.Parameters as IDictionary<string, object>;
-            Assert.NotNull(outerParms);
-            Assert.True(outerParms!.ContainsKey("InnerComponentType"));
-            Assert.Equal(typeof(FinanceManager.Web.Components.Pages.Setup.SetupProfileTab), outerParms["InnerComponentType"]);
-
-            Assert.True(outerParms.ContainsKey("InnerParameters"));
-            var innerParms = outerParms["InnerParameters"] as IDictionary<string, object>;
-            Assert.NotNull(innerParms);
-            Assert.True(innerParms!.ContainsKey("ViewModel"));
-            Assert.IsType<SetupProfileViewModel>(innerParms["ViewModel"]);
+            Assert.NotNull(sectionVm);
+            Assert.IsType<SetupProfileViewModel>(sectionVm);
         }
     }
 }

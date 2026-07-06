@@ -31,3 +31,9 @@
 .budget-report-table tbody td {
     border-top: 1px solid var(--border);
 }
+
+@media (max-width: 900px) {
+    .budget-report-sheet {
+        box-shadow: 0 4px 16px #0008, 0 0 0 1px #000 inset;
+    }
+}

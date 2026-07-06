@@ -3,7 +3,7 @@
 @using FinanceManager.Web.ViewModels.Setup
 @inject Microsoft.Extensions.Localization.IStringLocalizer<Pages> Localizer
 
-<div>
+<div class="setup-tab setup-return-analysis-tab">
     <h4 style="margin-top:0;">@Localizer["SetupReturnAnalysis_Title"]</h4>
 
     @if (_vm == null || _vm.Loading)

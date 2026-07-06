@@ -1,6 +1,27 @@
 /* =====================================================
-   app.ReportDashboard.css - Allgemeingültige ReportDashboard Styles
+   app.ReportDashboard.css - Allgemeingï¿½ltige ReportDashboard Styles
    ===================================================== */
+
+.report-dashboard-page {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.report-dashboard-heading {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.report-table-wrap {
+    width: 100%;
+}
+
+.filter-modal {
+    min-width: 540px;
+}
 
 /* Modal overlay + dialog */
 .modal-overlay {
@@ -172,6 +193,9 @@
     border-radius: var(--radius);
     padding: .35rem .5rem;
     margin: 0 0 .6rem 0;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .mini-chart .bars {
@@ -180,6 +204,8 @@
     gap: 4px;
     height: 70px;
     overflow: hidden;
+    width: max-content;
+    min-width: 100%;
 }
 
 .mini-chart .bar-wrap {
@@ -201,4 +227,54 @@
 
 .report-table .delta {
     opacity: .9;
+}
+
+@media (max-width: 900px) {
+    .filters-panel {
+        grid-template-columns: 1fr;
+        gap: .6rem;
+    }
+
+    .filter-group.wide {
+        grid-column: span 1;
+    }
+
+    .filters-panel .row.inline {
+        flex-wrap: wrap;
+        align-items: stretch;
+    }
+
+    .filters-panel .row.inline > * {
+        margin-left: 0 !important;
+    }
+
+    .report-table.expandable {
+        display: table;
+        width: max-content;
+        min-width: 100%;
+        white-space: nowrap;
+    }
+
+    .report-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .modal {
+        max-height: 92vh;
+        overflow-y: auto;
+    }
+
+    .filter-modal {
+        min-width: 0;
+    }
+
+    .dialog-actions {
+        flex-direction: column-reverse;
+    }
+
+    .dialog-actions .btn,
+    .dialog-actions button {
+        width: 100%;
+    }
 }

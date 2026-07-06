@@ -151,3 +151,30 @@
     margin-top: 1rem;
     opacity: .8;
 }
+
+@media (max-width: 900px) {
+    .upload-progress,
+    .split-info {
+        max-width: 100%;
+    }
+
+    .mass-import-dialog {
+        max-width: 100%;
+        max-height: 92vh;
+    }
+
+    .mass-import-row {
+        grid-template-columns: 1fr;
+        gap: .2rem;
+    }
+
+    .mass-import-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .mass-import-actions .btn,
+    .mass-import-actions button {
+        width: 100%;
+    }
+}

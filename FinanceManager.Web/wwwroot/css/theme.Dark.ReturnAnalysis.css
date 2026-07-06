@@ -160,3 +160,10 @@ body.dark-mode .rsw-group-total-row,
 /* Pos/neg in dark mode */
 .dark-mode .pos { color: #4ade80; }
 .dark-mode .neg { color: #f87171; }
+
+@media (max-width: 900px) {
+    .dark-mode .perf-svg,
+    .dark-mode .benchmark-svg {
+        background: #171b22;
+    }
+}

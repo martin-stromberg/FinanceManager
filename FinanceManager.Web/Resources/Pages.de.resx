@@ -1134,6 +1134,15 @@
   <data name="ImportSplit_SaveSuccess" xml:space="preserve">
     <value>Einstellungen gespeichert</value>
   </data>
+  <data name="MassImport_DialogPolicy_Label" xml:space="preserve">
+    <value>Massenimport-Dialog</value>
+  </data>
+  <data name="MassImport_DialogPolicy_AlwaysConfirm" xml:space="preserve">
+    <value>Immer bestätigen</value>
+  </data>
+  <data name="MassImport_DialogPolicy_OnMissingInformation" xml:space="preserve">
+    <value>Nur bei fehlenden Angaben anzeigen</value>
+  </data>
   <data name="Notifications_TabTitle" xml:space="preserve">
     <value>Benachrichtigungen</value>
   </data>

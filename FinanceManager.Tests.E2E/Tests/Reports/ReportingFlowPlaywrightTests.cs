@@ -22,17 +22,37 @@ public sealed class ReportingFlowPlaywrightTests
     [Fact]
     public async Task SaveFavorite_ShouldPersistAndReload()
     {
-        await using var session = await _fixture.CreateSessionAsync();
+        await SaveFavoriteShouldPersistAndReloadAsync(
+            () => _fixture.CreateSessionAsync(),
+            "report-user",
+            "Playwright Favorite");
+    }
+
+    [Fact]
+    public async Task SaveFavorite_ShouldPersistAndReload_OnMobileViewport()
+    {
+        await SaveFavoriteShouldPersistAndReloadAsync(
+            () => _fixture.CreateMobileSessionAsync(),
+            "report-mobile-user",
+            "Mobile Favorite");
+    }
+
+    private async Task SaveFavoriteShouldPersistAndReloadAsync(
+        Func<Task<PlaywrightBrowserSession>> createSessionAsync,
+        string userPrefix,
+        string favoritePrefix)
+    {
+        await using var session = await createSessionAsync();
         var page = session.Page;
         var auth = new AuthGateway(page, _fixture.BaseUrl);
         var seed = new TestUserSeeder(_fixture.DatabasePath);
 
-        var username = $"report-user-{Guid.NewGuid():N}";
+        var username = $"{userPrefix}-{Guid.NewGuid():N}";
         const string password = "Secret123";
         await seed.EnsureUserAsync(username, password);
         await auth.LoginAsync(username, password);
 
-        var favoriteName = $"Playwright Favorite {Guid.NewGuid():N}";
+        var favoriteName = $"{favoritePrefix} {Guid.NewGuid():N}";
         var created = await BrowserApiHelper.PostJsonAsync<ReportFavoriteCreateApiRequest, ReportFavoriteDto>(page, "/api/report-favorites", new ReportFavoriteCreateApiRequest
         {
             Name = favoriteName,

@@ -12,12 +12,13 @@
 }
 else
 {
+    <div class="setup-tab setup-security-tab">
     <h4 style="margin-top:0;">@L["SetupSecurity_Title"]</h4>
 
-    <div class="create-ip-form" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin:.5rem 0 1rem 0;">
-        <input placeholder="@L["SetupSecurity_Ip_Placeholder"]" @bind="_vm!.Ip" style="min-width:14rem;" />
-        <input placeholder="@L["SetupSecurity_Reason_Placeholder"]" @bind="_vm!.Reason" style="min-width:18rem;" />
-        <label style="display:inline-flex;align-items:center;gap:.4rem;">
+    <div class="create-ip-form">
+        <input class="create-ip-input" placeholder="@L["SetupSecurity_Ip_Placeholder"]" @bind="_vm!.Ip" />
+        <input class="create-ip-input" placeholder="@L["SetupSecurity_Reason_Placeholder"]" @bind="_vm!.Reason" />
+        <label class="create-ip-checkbox">
             <input type="checkbox" @bind="_vm!.BlockOnCreate" /> @L["SetupSecurity_BlockOnCreate"]
         </label>
         <button @onclick="(() => _vm!.CreateAsync())" disabled="@_vm!.Busy">@L["SetupSecurit_Action_Add"]</button>
@@ -67,6 +68,50 @@ else
                 }
             </tbody>
         </table>
+    </div>
+    <div class="setup-mobile-cards">
+        @foreach (var b in _vm!.Items)
+        {
+            <div class="setup-mobile-card">
+                <div class="setup-mobile-row">
+                    <div class="setup-mobile-label">@L["SetupSecurity_Th_IpAddress"]</div>
+                    <div class="setup-mobile-value">@b.IpAddress</div>
+                </div>
+                <div class="setup-mobile-row">
+                    <div class="setup-mobile-label">@L["SetupSecurity_Th_Blocked"]</div>
+                    <div class="setup-mobile-value">@(b.IsBlocked?"✓":"-")</div>
+                </div>
+                <div class="setup-mobile-row">
+                    <div class="setup-mobile-label">@L["SetupSecurity_Th_BlockedAt"]</div>
+                    <div class="setup-mobile-value">@(b.BlockedAtUtc?.ToString("u") ?? "-")</div>
+                </div>
+                <div class="setup-mobile-row">
+                    <div class="setup-mobile-label">@L["SetupSecurity_Th_Reason"]</div>
+                    <div class="setup-mobile-value">@(b.BlockReason ?? "-")</div>
+                </div>
+                <div class="setup-mobile-row">
+                    <div class="setup-mobile-label">@L["SetupSecurity_Th_UnknownFails"]</div>
+                    <div class="setup-mobile-value">@b.UnknownUserFailedAttempts</div>
+                </div>
+                <div class="setup-mobile-row">
+                    <div class="setup-mobile-label">@L["SetupSecurity_Th_LastFail"]</div>
+                    <div class="setup-mobile-value">@(b.UnknownUserLastFailedUtc?.ToString("u") ?? "-")</div>
+                </div>
+                <div class="setup-mobile-actions">
+                    @if (!b.IsBlocked)
+                    {
+                        <button @onclick="(() => _vm!.BlockAsync(b.Id))">@L["SetupSecurity_Action_Block"]</button>
+                    }
+                    else
+                    {
+                        <button @onclick="(() => _vm!.UnblockAsync(b.Id))">@L["SetupSecurity_Action_Unblock"]</button>
+                    }
+                    <button @onclick="(() => _vm!.ResetCountersAsync(b.Id))">@L["SetupSecurity_Action_Reset"]</button>
+                    <button class="danger" @onclick="(()=>_vm!.DeleteAsync(b.Id))">@L["SetupSecurity_Action_Delete"]</button>
+                </div>
+            </div>
+        }
+    </div>
     </div>
 }
 

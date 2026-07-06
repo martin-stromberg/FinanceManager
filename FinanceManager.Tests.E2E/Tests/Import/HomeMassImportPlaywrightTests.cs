@@ -20,18 +20,41 @@ public sealed class HomeMassImportPlaywrightTests
     [Fact]
     public async Task UploadStatementFile_ShouldShowSuccess_WhenImportCompletes()
     {
-        await using var session = await _fixture.CreateSessionAsync();
+        await UploadStatementFileShouldShowSuccessWhenImportCompletesAsync(
+            () => _fixture.CreateSessionAsync(),
+            "import-user",
+            "Import Account",
+            "statement.csv");
+    }
+
+    [Fact]
+    public async Task UploadStatementFile_ShouldShowSuccess_WhenImportCompletes_OnMobileViewport()
+    {
+        await UploadStatementFileShouldShowSuccessWhenImportCompletesAsync(
+            () => _fixture.CreateMobileSessionAsync(),
+            "import-mobile-user",
+            "Import Mobile Account",
+            "statement-mobile.csv");
+    }
+
+    private async Task UploadStatementFileShouldShowSuccessWhenImportCompletesAsync(
+        Func<Task<PlaywrightBrowserSession>> createSessionAsync,
+        string userPrefix,
+        string accountPrefix,
+        string fileName)
+    {
+        await using var session = await createSessionAsync();
         var page = session.Page;
         var auth = new AuthGateway(page, _fixture.BaseUrl);
         var userSeed = new TestUserSeeder(_fixture.DatabasePath);
         var accountSeed = new AccountsApiSeedHelper(page);
 
-        var username = $"import-user-{Guid.NewGuid():N}";
+        var username = $"{userPrefix}-{Guid.NewGuid():N}";
         const string password = "Secret123";
         var user = await userSeed.EnsureUserAsync(username, password);
         await auth.LoginAsync(username, password);
 
-        var account = await accountSeed.CreateAccountAsync($"Import Account {Guid.NewGuid():N}", "DE50700500000007882995");
+        var account = await accountSeed.CreateAccountAsync($"{accountPrefix} {Guid.NewGuid():N}", "DE50700500000007882995");
         account.Should().NotBeNull();
         await userSeed.EnsureSelfContactAsync(user.Id, $"Self {username}");
 
@@ -47,10 +70,10 @@ public sealed class HomeMassImportPlaywrightTests
                   "Sortierung;Datum absteigend\r\n" +
                   "\r\n" +
                   "\r\n" +
-                  "Buchung;Valuta;Auftraggeber/Empf�nger;Buchungstext;Verwendungszweck;Saldo;W�hrung;Betrag;W�hrung\r\n" +
-                  "02.12.2025;02.12.2025;Testempf�nger;�berweisung;Ihr Einkauf;2.776,45;EUR;-206,44;EUR\r\n";
+                  "Buchung;Valuta;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\r\n" +
+                  "02.12.2025;02.12.2025;Testempfänger;Überweisung;Ihr Einkauf;2.776,45;EUR;-206,44;EUR\r\n";
 
-        var uploaded = await BrowserApiHelper.PostMultipartAsync<StatementDraftUploadResult>(page, "/api/statement-drafts/upload", "statement.csv", "text/csv", System.Text.Encoding.UTF8.GetBytes(csv));
+        var uploaded = await BrowserApiHelper.PostMultipartAsync<StatementDraftUploadResult>(page, "/api/statement-drafts/upload", fileName, "text/csv", System.Text.Encoding.UTF8.GetBytes(csv));
         uploaded.Should().NotBeNull();
         uploaded!.FirstDraft.Should().NotBeNull();
         var draftId = uploaded.FirstDraft!.DraftId;

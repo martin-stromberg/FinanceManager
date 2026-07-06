@@ -40,7 +40,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
                     .Where(a => string.IsNullOrWhiteSpace(Search)
                         || (a.Name?.Contains(Search, StringComparison.OrdinalIgnoreCase) ?? false)
                         || (a.Iban?.Contains(Search, StringComparison.OrdinalIgnoreCase) ?? false))
-                    .Select(a => new AccountListItem(a.Id, a.Name ?? string.Empty, a.Type.ToString(), a.Iban, a.CurrentBalance, a.SymbolAttachmentId));
+                    .Select(a => new AccountListItem(a.Id, a.Name ?? string.Empty, a.Type, a.Iban, a.CurrentBalance, a.SymbolAttachmentId));
                 if (resetPaging) Items.Clear();
                 Items.AddRange(items);
                 _skip += PageSize;
@@ -72,7 +72,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
             {
                 new ListCell(ListCellKind.Symbol, SymbolId: i.SymbolId),
                 new ListCell(ListCellKind.Text, Text: i.Name),
-                new ListCell(ListCellKind.Text, Text: i.Type),
+                new ListCell(ListCellKind.Text, Text: L[$"EnumType_AccountType_{i.Type}"].Value),
                 new ListCell(ListCellKind.Text, Text: string.IsNullOrWhiteSpace(i.Iban) ? "-" : i.Iban ?? string.Empty),
                 new ListCell(ListCellKind.Currency, Amount: i.CurrentBalance),
                 new ListCell(ListCellKind.Text),

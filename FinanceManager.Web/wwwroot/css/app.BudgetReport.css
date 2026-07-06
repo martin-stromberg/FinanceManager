@@ -6,6 +6,12 @@
     padding: 0 0.75rem;
 }
 
+.budget-report-page {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
 .budget-report-sheet {
     background: #ffffff;
     border: 1px solid #ddd;
@@ -35,6 +41,11 @@
 
 .budget-report-table {
     width: 100%;
+}
+
+.budget-table-wrap {
+    width: 100%;
+    max-width: 100%;
 }
 
 .budget-report-loading {
@@ -79,5 +90,26 @@
 @keyframes budget-report-spin {
     to {
         transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 900px) {
+    .budget-report {
+        padding: 0;
+    }
+
+    .budget-report-sheet {
+        padding: .85rem;
+    }
+
+    .budget-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: var(--radius);
+    }
+
+    .budget-report-table {
+        width: max-content;
+        min-width: 100%;
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using FinanceManager.Shared.Dtos;
 using Microsoft.Extensions.Localization;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FinanceManager.Web.ViewModels.Setup;
 
@@ -26,66 +27,63 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     /// </summary>
     public override string Title => Localizer?["Setup_Title"] ?? "Setup";
 
-    /// <summary>
-    /// Currently selected settings section key. <c>null</c> when no section is selected.
-    /// </summary>
-    public string? SelectedSection { get; private set; }
+    private static readonly SetupSectionDefinition[] SectionDefinitions =
+    {
+        new SetupSectionDefinition("profile", "Setup_Section_Profile", "Profil", typeof(SetupProfileViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupProfileTab)),
+        new SetupSectionDefinition("notifications", "Setup_Section_Notifications", "Benachrichtigungen", typeof(SetupNotificationsViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupNotificationsTab)),
+        new SetupSectionDefinition("statements", "Setup_Section_Statements", "Kontoauszüge", typeof(SetupStatementsViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupStatementTab)),
+        new SetupSectionDefinition("attachments", "Setup_Section_Attachments", "Anhänge", typeof(SetupAttachmentCategoriesViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupAttachmentCategoriesTab)),
+        new SetupSectionDefinition("backup", "Setup_Section_Backup", "Backup", typeof(SetupBackupsViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupBackupTab)),
+        new SetupSectionDefinition("security", "Setup_Section_Security", "Sicherheit", typeof(SetupSecurityViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupSecurityTab)),
+        new SetupSectionDefinition("returnanalysis", "Setup_Section_ReturnAnalysis", "Renditeanalyse", typeof(SetupReturnAnalysisViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupReturnAnalysisTab)),
+    };
 
     /// <summary>
     /// Exposes the available setting sections as (key, localized display name) pairs.
     /// The list is static and should be used to render the setup navigation.
     /// </summary>
-    public IReadOnlyList<KeyValuePair<string, string>> SettingSections => new List<KeyValuePair<string, string>>
+    public IReadOnlyList<KeyValuePair<string, string>> SettingSections
     {
-        new KeyValuePair<string, string>("profile", Localizer?["Setup_Section_Profile"].Value ?? "Profil"),
-        new KeyValuePair<string, string>("notifications", Localizer?["Setup_Section_Notifications"].Value ?? "Benachrichtigungen"),
-        new KeyValuePair<string, string>("statements", Localizer?["Setup_Section_Statements"].Value ?? "Kontoausz�ge"),
-        new KeyValuePair<string, string>("attachments", Localizer?["Setup_Section_Attachments"].Value ?? "Anh�nge"),
-        new KeyValuePair<string, string>("backup", Localizer?["Setup_Section_Backup"].Value ?? "Backup"),
-        new KeyValuePair<string, string>("security", Localizer?["Setup_Section_Security"].Value ?? "Sicherheit"),
-        new KeyValuePair<string, string>("returnanalysis", Localizer?["Setup_Section_ReturnAnalysis"].Value ?? "Renditeanalyse"),
-    };
+        get
+        {
+            return SectionDefinitions
+                .Select(section => new KeyValuePair<string, string>(section.Key, Localizer?[section.LocalizationKey].Value ?? section.FallbackTitle))
+                .ToList();
+        }
+    }
 
     /// <summary>
-    /// Changes the active setup view to the specified section key. If the key is invalid or blank the call is ignored.
-    /// The method raises the necessary UI actions to render the embedded panel for the selected section.
+    /// Resolves the component type for a setup section key.
     /// </summary>
-    /// <param name="key">The section key to switch to (case-insensitive).</param>
-    public void ChangeView(string key)
+    /// <param name="key">Section key to resolve.</param>
+    /// <param name="componentType">Resolved component type when found; otherwise <c>null</c>.</param>
+    /// <returns><c>true</c> when the section exists; otherwise <c>false</c>.</returns>
+    public bool TryGetSectionComponentType(string key, out Type? componentType)
     {
-        if (string.IsNullOrWhiteSpace(key)) return;
-        SelectedSection = key;
-        RaiseStateChanged();
+        if (!TryGetSectionDefinition(key, out var sectionDefinition) || sectionDefinition is null)
+        {
+            componentType = null;
+            return false;
+        }
 
-        RaiseUiActionRequested("ClearEmbeddedPanel", EmbeddedPanelPosition.AfterCard);
-        if (string.Equals(key, "profile", StringComparison.OrdinalIgnoreCase))
+        componentType = sectionDefinition.ComponentType;
+        return true;
+    }
+
+    /// <summary>
+    /// Creates the setup section view model instance for a section key.
+    /// </summary>
+    /// <param name="key">Section key to resolve.</param>
+    /// <param name="services">Service provider used for creating the view model instance.</param>
+    /// <returns>The created view model instance, or <c>null</c> when the section key is unknown.</returns>
+    public object? CreateSectionViewModel(string key, IServiceProvider services)
+    {
+        if (!TryGetSectionDefinition(key, out var sectionDefinition) || sectionDefinition is null)
         {
-            RaisePanelUiAction<SetupProfileViewModel>(typeof(FinanceManager.Web.Components.Pages.Setup.SetupProfileTab));
+            return null;
         }
-        else if (string.Equals(key, "notifications", StringComparison.OrdinalIgnoreCase))
-        {
-            RaisePanelUiAction<SetupNotificationsViewModel>(typeof(FinanceManager.Web.Components.Pages.Setup.SetupNotificationsTab));
-        }
-        else if (string.Equals(key, "statements", StringComparison.OrdinalIgnoreCase))
-        {
-            RaisePanelUiAction<SetupStatementsViewModel>(typeof(FinanceManager.Web.Components.Pages.Setup.SetupStatementTab));
-        }
-        else if (string.Equals(key, "attachments", StringComparison.OrdinalIgnoreCase))
-        {
-            RaisePanelUiAction<SetupAttachmentCategoriesViewModel>(typeof(FinanceManager.Web.Components.Pages.Setup.SetupAttachmentCategoriesTab));
-        }
-        else if (string.Equals(key, "backup", StringComparison.OrdinalIgnoreCase))
-        {
-            RaisePanelUiAction<SetupBackupsViewModel>(typeof(FinanceManager.Web.Components.Pages.Setup.SetupBackupTab));
-        }
-        else if (string.Equals(key, "security", StringComparison.OrdinalIgnoreCase))
-        {
-            RaisePanelUiAction<SetupSecurityViewModel>(typeof(FinanceManager.Web.Components.Pages.Setup.SetupSecurityTab));
-        }
-        else if (string.Equals(key, "returnanalysis", StringComparison.OrdinalIgnoreCase))
-        {
-            RaisePanelUiAction<SetupReturnAnalysisViewModel>(typeof(FinanceManager.Web.Components.Pages.Setup.SetupReturnAnalysisTab));
-        }
+
+        return ActivatorUtilities.CreateInstance(services, sectionDefinition.ViewModelType);
     }
 
     /// <summary>
@@ -103,10 +101,6 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     public override async Task InitializeAsync(Guid id)
     {
         await LoadAsync(id);
-        if (!string.IsNullOrWhiteSpace(InitPrefill))
-        {
-            ChangeView(InitPrefill);
-        }
     }
 
     /// <summary>
@@ -153,38 +147,28 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
         }
         catch { }
     }
-    private void RaisePanelUiAction<T>(Type innerComponentType) where T :BaseViewModel
+    private static bool TryGetSectionDefinition(string key, out SetupSectionDefinition? sectionDefinition)
     {
-        try
-        {
-            var profileVm = CreateSubViewModel<T>(true);
-            var innerParms = new Dictionary<string, object> { ["ViewModel"] = profileVm } as IDictionary<string, object>;
-
-            var outerParms = new Dictionary<string, object>
-            {
-                ["InnerComponentType"] = innerComponentType,
-                ["InnerParameters"] = innerParms
-            };
-            var spec = new BaseViewModel.EmbeddedPanelSpec(typeof(FinanceManager.Web.Components.Shared.SetupPanel), outerParms, EmbeddedPanelPosition.AfterCard, true);
-            RaiseUiActionRequested("EmbeddedPanel", spec);
-        }
-        catch { }
+        sectionDefinition = SectionDefinitions.FirstOrDefault(section => string.Equals(section.Key, key, StringComparison.OrdinalIgnoreCase));
+        return sectionDefinition is not null;
     }
 
-    /// <summary>
-    /// Determines whether a child view model is considered active for this card.
-    /// Override used by the base card logic to control lifecycle of sub view models.
-    /// </summary>
-    /// <param name="vm">The child view model to check.</param>
-    /// <returns><c>true</c> when the provided view model is active for the currently selected section; otherwise <c>false</c>.</returns>
-    protected override bool IsChildViewModelActive(BaseViewModel vm)
+    private sealed class SetupSectionDefinition
     {
-        return ((vm is SetupStatementsViewModel) && SelectedSection == "statements")
-            || ((vm is SetupNotificationsViewModel) && SelectedSection == "notifications")
-            || ((vm is SetupProfileViewModel) && SelectedSection == "profile")
-            || ((vm is SetupBackupsViewModel) && SelectedSection == "backup")
-            || ((vm is SetupSecurityViewModel) && SelectedSection == "security")
-            || ((vm is SetupReturnAnalysisViewModel) && SelectedSection == "returnanalysis");
+        public SetupSectionDefinition(string key, string localizationKey, string fallbackTitle, Type viewModelType, Type componentType)
+        {
+            Key = key;
+            LocalizationKey = localizationKey;
+            FallbackTitle = fallbackTitle;
+            ViewModelType = viewModelType;
+            ComponentType = componentType;
+        }
+
+        public string Key { get; }
+        public string LocalizationKey { get; }
+        public string FallbackTitle { get; }
+        public Type ViewModelType { get; }
+        public Type ComponentType { get; }
     }
 
     /// <summary>

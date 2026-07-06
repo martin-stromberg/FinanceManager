@@ -11,17 +11,17 @@
 else
 {
 
-    <div style="margin-bottom:.75rem;display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;">
+    <div class="list-filters">
         @if (ShowSearch && Provider.AllowSearchFiltering)
         {
-            <input placeholder="@SearchPlaceholder" value="@Provider.Search" @oninput="OnSearchInput" style="min-width:220px;" />
+            <input class="list-filter-search" placeholder="@SearchPlaceholder" value="@Provider.Search" @oninput="OnSearchInput" />
         }
         @if (ShowRange && Provider.AllowRangeFiltering)
         {
-            <div style="display:flex;align-items:center;gap:.25rem;font-size:.7rem;">
-                <label>@RangeFromLabel</label>
+            <div class="list-filter-range">
+                <label class="list-filter-range-label">@RangeFromLabel</label>
                 <InputDate @bind-Value="_from" @bind-Value:after="(()=>OnRangeChanged())" />
-                <label>@RangeToLabel</label>
+                <label class="list-filter-range-label">@RangeToLabel</label>
                 <InputDate @bind-Value="_to" @bind-Value:after="(()=>OnRangeChanged())" />
             </div>
         }
@@ -35,38 +35,114 @@ else
     {
         @* If any column uses pixel widths, enable fixed table layout so px widths are honored *@
         var hasPixelWidths = Provider.Columns?.Any(c => !string.IsNullOrWhiteSpace(c.Width) && c.Width.Trim().EndsWith("px", StringComparison.OrdinalIgnoreCase)) ?? false;
-        <table class="fm-table wide @(hasPixelWidths ? "fixed-layout" : null)">
-            @if (Provider.Columns?.Count > 0)
-            {
-                <thead>
-                    <tr>
-                        @foreach (var col in Provider.Columns)
-                        {
-                            var alignStyle = col.Align == ListColumnAlign.Right ? "text-align:right;" : col.Align == ListColumnAlign.Center ? "text-align:center;" : null;
-                            <th style="@(string.IsNullOrWhiteSpace(col.Width) ? alignStyle : (alignStyle + $"width:{col.Width}"))">@col.Title</th>
-                        }
-                    </tr>
-                </thead>
-            }
-            <tbody>
-                @foreach (var rec in Provider.Records)
+        <div class="table-responsive generic-list-table-wrap">
+            <table class="fm-table wide @(hasPixelWidths ? "fixed-layout" : null)">
+                @if (Provider.Columns?.Count > 0)
                 {
-                    // row is muted if any cell has Muted == true
-                    var isMuted = rec.Cells.Any(c => c.Muted);
-                    var rowStyle = isMuted ? "cursor:pointer;opacity:.6;" : "cursor:pointer;";
-                    <tr class="@(isMuted ? "muted-row" : null)" style="@rowStyle" @onclick="(()=> OnItemClicked(rec.Item))">
-                        @for (int ci = 0; ci < rec.Cells.Count; ci++)
-                        {
-                            var cell = rec.Cells[ci];
-                            var col = (Provider.Columns?.Count > ci) ? Provider.Columns[ci] : null;
-                            var alignStyle = col != null && col.Align == ListColumnAlign.Right ? "text-align:right;vertical-align:middle;" : null;
-                            var cellStyle = alignStyle + $"width:{col.Width}";
-                            if (cell.Muted)
+                    <thead>
+                        <tr>
+                            @foreach (var col in Provider.Columns)
                             {
-                                // emphasize muted cells slightly by using less contrast
-                                cellStyle += ";opacity:.7;color:var(--muted);";
+                                var alignStyle = col.Align == ListColumnAlign.Right ? "text-align:right;" : col.Align == ListColumnAlign.Center ? "text-align:center;" : null;
+                                <th style="@(string.IsNullOrWhiteSpace(col.Width) ? alignStyle : (alignStyle + $"width:{col.Width}"))">@col.Title</th>
                             }
-                            <td style="@cellStyle">
+                        </tr>
+                    </thead>
+                }
+                <tbody>
+                    @foreach (var rec in Provider.Records)
+                    {
+                        // row is muted if any cell has Muted == true
+                        var isMuted = rec.Cells.Any(c => c.Muted);
+                        var rowStyle = isMuted ? "cursor:pointer;opacity:.6;" : "cursor:pointer;";
+                        <tr class="@(isMuted ? "muted-row" : null)" style="@rowStyle" @onclick="(()=> OnItemClicked(rec.Item))">
+                            @for (int ci = 0; ci < rec.Cells.Count; ci++)
+                            {
+                                var cell = rec.Cells[ci];
+                                var col = (Provider.Columns?.Count > ci) ? Provider.Columns[ci] : null;
+                                var alignStyle = col != null && col.Align == ListColumnAlign.Right ? "text-align:right;vertical-align:middle;" : null;
+                                var cellStyle = alignStyle + $"width:{col.Width}";
+                                if (cell.Muted)
+                                {
+                                    // emphasize muted cells slightly by using less contrast
+                                    cellStyle += ";opacity:.7;color:var(--muted);";
+                                }
+                                <td style="@cellStyle">
+                                    @switch(cell.Kind)
+                                    {
+                                        case ListCellKind.Text:
+                                            {
+                                                var txt = cell.Text ?? string.Empty;
+                                                if (txt.Contains("<svg", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    @((MarkupString)txt)
+                                                }
+                                                else
+                                                {
+                                                    @txt
+                                                }
+                                            }
+                                            break;
+                                        case ListCellKind.Symbol:
+                                            if (cell.SymbolId.HasValue)
+                                            {
+                                                <div style="display:flex;align-items:center;gap:.5rem;">
+                                                    <img src="@($"/api/attachments/{cell.SymbolId}/download")" alt="symbol" style="width:28px;height:28px;object-fit:contain;border-radius:6px;border:1px solid var(--border);" />
+                                                    @if (!string.IsNullOrWhiteSpace(cell.Text))
+                                                    {
+                                                        <span>@cell.Text</span>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div style="display:flex;align-items:center;gap:.5rem;">
+                                                    <div style="width:28px;height:28px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);">
+                                                        <svg style="width:16px;height:16px;opacity:.6;"><use href="/icons/sprite.svg#image" /></svg>
+                                                    </div>
+                                                    @if (!string.IsNullOrWhiteSpace(cell.Text))
+                                                    {
+                                                        <span>@cell.Text</span>
+                                                    }
+                                                </div>
+                                            }
+                                            break;
+                                        case ListCellKind.Currency:
+                                            @((cell.Amount ?? 0m).ToString("C", System.Globalization.CultureInfo.CurrentCulture))
+                                            break;
+                                    }
+                                </td>
+                            }
+                        </tr>
+                        @if (!string.IsNullOrWhiteSpace(rec.Hint))
+                        {
+                            <tr>
+                                <td colspan="@rec.Cells.Count" style="padding:.25rem .6rem .75rem .6rem;color:var(--muted);font-size:.9rem;">@((Localizer != null) ? LocalizeInline(Localizer?[rec.Hint] ?? rec.Hint) : LocalizeInline(rec.Hint))</td>
+                            </tr>
+                        }
+                    }
+                    @if (Provider.Loading)
+                    {
+                        <tr><td colspan="99" style="opacity:.6;">@LoadingText</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="generic-list-mobile-cards">
+            @foreach (var rec in Provider.Records)
+            {
+                var isMuted = rec.Cells.Any(c => c.Muted);
+                <div class="generic-list-mobile-card @(isMuted ? "muted-row" : null)" @onclick="(()=> OnItemClicked(rec.Item))">
+                    @foreach (var mobileCell in GetMobileCells(rec))
+                    {
+                        var col = mobileCell.Column;
+                        var cell = mobileCell.Cell;
+                        <div class="generic-list-mobile-row">
+                            @if (!string.IsNullOrWhiteSpace(col?.Title))
+                            {
+                                <div class="generic-list-mobile-label">@col!.Title</div>
+                            }
+                            <div class="generic-list-mobile-value">
                                 @switch(cell.Kind)
                                 {
                                     case ListCellKind.Text:
@@ -85,24 +161,12 @@ else
                                     case ListCellKind.Symbol:
                                         if (cell.SymbolId.HasValue)
                                         {
-                                            <div style="display:flex;align-items:center;gap:.5rem;">
-                                                <img src="@($"/api/attachments/{cell.SymbolId}/download")" alt="symbol" style="width:28px;height:28px;object-fit:contain;border-radius:6px;border:1px solid var(--border);" />
-                                                @if (!string.IsNullOrWhiteSpace(cell.Text))
-                                                {
-                                                    <span>@cell.Text</span>
-                                                }
-                                            </div>
+                                            <img src="@($"/api/attachments/{cell.SymbolId}/download")" alt="symbol" style="width:32px;height:32px;object-fit:contain;border-radius:6px;border:1px solid var(--border);" />
                                         }
                                         else
                                         {
-                                            <div style="display:flex;align-items:center;gap:.5rem;">
-                                                <div style="width:28px;height:28px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);">
-                                                    <svg style="width:16px;height:16px;opacity:.6;"><use href="/icons/sprite.svg#image" /></svg>
-                                                </div>
-                                                @if (!string.IsNullOrWhiteSpace(cell.Text))
-                                                {
-                                                    <span>@cell.Text</span>
-                                                }
+                                            <div style="width:32px;height:32px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);">
+                                                <svg style="width:16px;height:16px;opacity:.6;"><use href="/icons/sprite.svg#image" /></svg>
                                             </div>
                                         }
                                         break;
@@ -110,22 +174,16 @@ else
                                         @((cell.Amount ?? 0m).ToString("C", System.Globalization.CultureInfo.CurrentCulture))
                                         break;
                                 }
-                            </td>
-                        }
-                    </tr>
+                            </div>
+                        </div>
+                    }
                     @if (!string.IsNullOrWhiteSpace(rec.Hint))
                     {
-                        <tr>
-                            <td colspan="@rec.Cells.Count" style="padding:.25rem .6rem .75rem .6rem;color:var(--muted);font-size:.9rem;">@((Localizer != null) ? LocalizeInline(Localizer?[rec.Hint] ?? rec.Hint) : LocalizeInline(rec.Hint))</td>
-                        </tr>
+                        <div class="generic-list-mobile-hint">@((Localizer != null) ? LocalizeInline(Localizer?[rec.Hint] ?? rec.Hint) : LocalizeInline(rec.Hint))</div>
                     }
-                }
-                @if (Provider.Loading)
-                {
-                    <tr><td colspan="99" style="opacity:.6;">@LoadingText</td></tr>
-                }
-            </tbody>
-        </table>
+                </div>
+            }
+        </div>
         <div style="margin-top:.5rem;">
             @if(Provider.CanLoadMore)
             {
@@ -240,6 +298,49 @@ else
     {
         if (ItemClick.HasDelegate)
             await ItemClick.InvokeAsync(item);
+    }
+
+    private IEnumerable<(ListColumn? Column, ListCell Cell)> GetMobileCells(ListRecord record)
+    {
+        if (Provider?.Columns == null || record.Cells.Count == 0)
+        {
+            return Array.Empty<(ListColumn? Column, ListCell Cell)>();
+        }
+
+        var cells = new List<(ListColumn? Column, ListCell Cell)>();
+        for (var index = 0; index < record.Cells.Count; index++)
+        {
+            var cell = record.Cells[index];
+            var column = Provider.Columns.Count > index ? Provider.Columns[index] : null;
+            if (!ShouldShowCellOnMobile(column, cell))
+            {
+                continue;
+            }
+
+            cells.Add((column, cell));
+            if (cells.Count >= 4)
+            {
+                break;
+            }
+        }
+
+        return cells;
+    }
+
+    private static bool ShouldShowCellOnMobile(ListColumn? column, ListCell cell)
+    {
+        if (column != null && string.Equals(column.Key, "placeholder", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return cell.Kind switch
+        {
+            ListCellKind.Symbol => true,
+            ListCellKind.Currency => cell.Amount.HasValue,
+            ListCellKind.Text => !string.IsNullOrWhiteSpace(cell.Text),
+            _ => false
+        };
     }
 
     private string LocalizeInline(string input)

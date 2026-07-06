@@ -104,4 +104,20 @@ public sealed class AccountsViewModelTests
         var groups = vm.GetRibbon(loc);
         Assert.Contains(groups, g => g.Items.Any(i => i.Action == "New"));
     }
+
+    [Fact]
+    public async Task Initialize_UsesLocalizedAccountTypeInRecords()
+    {
+        var (vm, apiMock) = CreateVm(isAuthenticated: true);
+        var accounts = new List<AccountDto>
+        {
+            new AccountDto(Guid.NewGuid(), "A", AccountType.Giro, "DE00", 10m, Guid.NewGuid(), null, SavingsPlanExpectation.Optional, true)
+        };
+        apiMock.Setup(a => a.GetAccountsAsync(0, 50, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(accounts);
+
+        await vm.InitializeAsync();
+
+        Assert.Contains(vm.Records, r => r.Cells.Any(c => string.Equals(c.Text, "EnumType_AccountType_Giro", StringComparison.Ordinal)));
+    }
 }

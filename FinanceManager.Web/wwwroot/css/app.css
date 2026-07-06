@@ -1,5 +1,5 @@
 /* =====================================================
-   app.css - Allgemeingültige Styles (Layout, Struktur)
+   app.css - Allgemeingï¿½ltige Styles (Layout, Struktur)
    ===================================================== */
 
 :root {
@@ -302,6 +302,70 @@ form {
     pointer-events: none; 
 }
 
+.list-filters {
+    margin-bottom: .75rem;
+    display: flex;
+    gap: .6rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.list-filter-search {
+    min-width: 220px;
+}
+
+.list-filter-range {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    font-size: .7rem;
+    flex-wrap: wrap;
+}
+
+.list-filter-range-label {
+    white-space: nowrap;
+}
+
+.generic-list-mobile-cards {
+    display: none;
+}
+
+.generic-list-mobile-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: .7rem .75rem;
+    margin-bottom: .55rem;
+    background: var(--panel);
+    cursor: pointer;
+}
+
+.generic-list-mobile-row {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    margin-top: .45rem;
+}
+
+.generic-list-mobile-row:first-child {
+    margin-top: 0;
+}
+
+.generic-list-mobile-label {
+    font-size: .72rem;
+    opacity: .72;
+}
+
+.generic-list-mobile-value {
+    font-size: .92rem;
+    word-break: break-word;
+}
+
+.generic-list-mobile-hint {
+    margin-top: .5rem;
+    color: var(--muted);
+    font-size: .85rem;
+}
+
 @media (max-width: 900px) {
     .app-shell { position: relative; }
     .sidebar { 
@@ -314,8 +378,102 @@ form {
         z-index: 450; 
         width: calc(var(--sidebar-width) - 20px); 
     }
-    .content { padding: 0; }
+    .content { padding: 0 .5rem .75rem .5rem; }
+    .inner,
+    .app-inner {
+        max-width: none;
+        margin: 0;
+        padding: 0 .25rem .75rem .25rem;
+    }
     .mobile-topbar { display: flex; }
+    .list-filters {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    .list-filters input,
+    .list-filters select {
+        width: 100%;
+        min-width: 0 !important;
+    }
+    .list-filter-range {
+        width: 100%;
+        row-gap: .35rem;
+    }
+    .list-filter-range .list-filter-range-label {
+        min-width: 0;
+    }
+    .list-filter-range input[type="date"] {
+        flex: 1 1 10rem;
+        min-width: 0;
+    }
+    .generic-list-table-wrap {
+        overflow-x: auto;
+    }
+    .generic-list-table-wrap table {
+        display: none;
+    }
+    .generic-list-mobile-cards {
+        display: block;
+    }
+    .card-view-responsive .card-table th {
+        width: auto !important;
+        display: inline-block;
+        max-width: 100%;
+        padding-bottom: .15rem;
+    }
+    .card-view-responsive .card-table td {
+        display: block;
+        padding-top: .1rem;
+    }
+    .card-embedded-list {
+        overflow-x: auto;
+    }
+    .split-center {
+        padding: .5rem;
+    }
+    .split-dialog {
+        max-height: 92vh;
+        overflow-y: auto;
+        padding: .9rem;
+    }
+    .setup-sections-nav {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        width: 100%;
+        gap: .4rem !important;
+    }
+    .setup-section-btn {
+        width: 100%;
+        text-align: center;
+    }
+    .setup-tab .form-row {
+        align-items: stretch !important;
+    }
+    .setup-tab .form-row label {
+        min-width: 0 !important;
+    }
+    .setup-tab .table-responsive {
+        overflow-x: auto;
+    }
+    .perf-header h2 {
+        font-size: 1.15rem;
+        line-height: 1.3;
+    }
+    .tab-bar {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+    .tab-btn {
+        white-space: nowrap;
+    }
+    .timeseries-tab table,
+    .cashflow-tab table,
+    .benchmark-tab table {
+        min-width: 540px;
+    }
+    .kpi-grid {
+        grid-template-columns: 1fr;
+    }
     /* when checkbox checked, slide in sidebar */
     .nav-toggle:checked ~ .sidebar { transform: translateX(0); }
     .nav-toggle:checked ~ .mobile-overlay { display: block; }

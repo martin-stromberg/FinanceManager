@@ -16,12 +16,29 @@ public sealed class AuthenticationFlowPlaywrightTests
     [Fact]
     public async Task Register_Login_Logout_Flow_ShouldWork()
     {
-        await using var session = await _fixture.CreateSessionAsync();
+        await RegisterLoginLogoutFlowShouldWorkAsync(
+            () => _fixture.CreateSessionAsync(),
+            "ui-user");
+    }
+
+    [Fact]
+    public async Task Register_Login_Logout_Flow_ShouldWork_OnMobileViewport()
+    {
+        await RegisterLoginLogoutFlowShouldWorkAsync(
+            () => _fixture.CreateMobileSessionAsync(),
+            "ui-mobile-user");
+    }
+
+    private async Task RegisterLoginLogoutFlowShouldWorkAsync(
+        Func<Task<PlaywrightBrowserSession>> createSessionAsync,
+        string userPrefix)
+    {
+        await using var session = await createSessionAsync();
         var page = session.Page;
         var auth = new AuthGateway(page, _fixture.BaseUrl);
         var seed = new TestUserSeeder(_fixture.DatabasePath);
 
-        var username = $"ui-user-{Guid.NewGuid():N}";
+        var username = $"{userPrefix}-{Guid.NewGuid():N}";
         const string password = "Secret123";
 
         await seed.EnsureUserAsync(username, password);

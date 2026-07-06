@@ -1,5 +1,5 @@
 /* =====================================================
-   app.Setup.css - Allgemeingültige Setup Page Styles
+   app.Setup.css - Allgemeingï¿½ltige Setup Page Styles
    ===================================================== */
 
 /* Tabs */
@@ -111,4 +111,201 @@
 
 .error-margin {
     margin-top: .5rem;
+}
+
+.setup-sections-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    margin-top: .5rem;
+}
+
+.setup-section-accordion-item {
+    border: 1px solid var(--fm-border, #3a3d45);
+    border-radius: .4rem;
+    overflow: hidden;
+}
+
+.setup-section-toggle {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    padding: .65rem .8rem;
+    font: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.setup-section-toggle-title {
+    min-width: 0;
+}
+
+.setup-section-toggle-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+    flex: 0 0 auto;
+}
+
+.setup-section-content {
+    padding: .5rem .8rem .8rem .8rem;
+}
+
+.setup-checkbox-row {
+    align-items: flex-start !important;
+}
+
+.setup-checkbox-row-title {
+    min-width: 10rem;
+}
+
+.setup-checkbox-control {
+    display: inline-flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: .5rem;
+    min-width: 0;
+}
+
+.setup-checkbox-control input[type="checkbox"] {
+    margin-top: .2rem;
+    flex: 0 0 auto;
+}
+
+.setup-checkbox-label {
+    margin: 0;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.create-ip-form {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: .5rem 0 1rem 0;
+}
+
+.create-ip-input {
+    min-width: 14rem;
+}
+
+.create-ip-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.setup-mobile-cards {
+    display: none;
+}
+
+.setup-mobile-card {
+    border: 1px solid var(--fm-border, #3a3d45);
+    border-radius: .5rem;
+    padding: .7rem .75rem;
+    background: var(--fm-panel, var(--panel, transparent));
+    margin-top: .5rem;
+}
+
+.setup-mobile-row {
+    display: grid;
+    grid-template-columns: minmax(7rem, 40%) 1fr;
+    gap: .5rem;
+    margin-top: .35rem;
+}
+
+.setup-mobile-row:first-child {
+    margin-top: 0;
+}
+
+.setup-mobile-label {
+    font-size: .72rem;
+    opacity: .72;
+}
+
+.setup-mobile-value {
+    min-width: 0;
+    word-break: break-word;
+}
+
+.setup-mobile-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin-top: .55rem;
+}
+
+.setup-mobile-empty {
+    margin-top: .5rem;
+    opacity: .7;
+}
+
+@media (max-width: 900px) {
+    .fm-tab-panel {
+        padding: .75rem;
+    }
+
+    .setup-tab .form-row {
+        display: flex;
+        flex-direction: column;
+        gap: .35rem;
+    }
+
+    .setup-tab .form-row input,
+    .setup-tab .form-row select,
+    .setup-tab .form-row button {
+        width: 100%;
+        min-width: 0 !important;
+    }
+
+    .setup-tab .table-responsive {
+        overflow-x: auto;
+    }
+
+    .setup-tab table.fm-table {
+        min-width: 560px;
+    }
+
+    .create-ip-form {
+        align-items: stretch;
+    }
+
+    .create-ip-input {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .create-ip-checkbox {
+        width: 100%;
+    }
+
+    .setup-attachment-categories-tab .table-responsive table.fm-table,
+    .setup-backup-tab .table-responsive table.fm-table,
+    .setup-security-tab .table-responsive table.fm-table {
+        display: none;
+    }
+
+    .setup-attachment-categories-tab .setup-mobile-cards,
+    .setup-backup-tab .setup-mobile-cards,
+    .setup-security-tab .setup-mobile-cards {
+        display: block;
+    }
+
+    .setup-section-content {
+        padding: .5rem .6rem .75rem .6rem;
+    }
+
+    .setup-checkbox-row-title {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .setup-checkbox-control {
+        width: 100%;
+    }
 }

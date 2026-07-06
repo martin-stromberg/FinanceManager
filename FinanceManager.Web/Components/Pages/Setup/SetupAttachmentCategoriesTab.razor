@@ -6,7 +6,7 @@
 @using FinanceManager.Web.ViewModels
 @using Microsoft.Extensions.DependencyInjection
 
-<div>
+<div class="setup-tab setup-attachment-categories-tab">
     <h4 style="margin-top:0;">@Localizer["AttachmentCategories_TabTitle"]</h4>
 
     @if (_vm!.Loading)
@@ -90,6 +90,58 @@
                     }
                 </tbody>
             </table>
+        </div>
+        <div class="setup-mobile-cards">
+            @if (_vm!.Items.Count == 0)
+            {
+                <div class="setup-mobile-empty">@Localizer["AttachmentCategories_NoEntries"]</div>
+            }
+            else
+            {
+                @foreach (var c in _vm!.Items)
+                {
+                    var isEditing = _vm!.EditId == c.Id;
+                    <div class="setup-mobile-card">
+                        <div class="setup-mobile-row">
+                            <div class="setup-mobile-label">@Localizer["AttachmentCategories_Th_Name"]</div>
+                            <div class="setup-mobile-value">
+                                @if (isEditing)
+                                {
+                                    <input type="text" @bind="_vm!.EditName" @bind:after="(()=> _vm!.OnChanged())" maxlength="100" disabled="@_vm!.Busy" />
+                                }
+                                else
+                                {
+                                    @c.Name
+                                }
+                            </div>
+                        </div>
+                        <div class="setup-mobile-row">
+                            <div class="setup-mobile-label">@Localizer["AttachmentCategories_Th_IsSystem"]</div>
+                            <div class="setup-mobile-value">@(c.IsSystem ? "✔" : "")</div>
+                        </div>
+                        <div class="setup-mobile-actions">
+                            @if (isEditing)
+                            {
+                                <button class="icon-btn" title="@Localizer["Btn_Save"]" disabled="@(!_vm!.CanSaveEdit || _vm!.Busy)" @onclick="(()=> _vm!.SaveEditAsync())">
+                                    <svg class="icon"><use href="icons/sprite.svg#save" /></svg>
+                                </button>
+                                <button class="icon-btn" title="@Localizer["Btn_Cancel"]" disabled="@_vm!.Busy" @onclick="(()=> _vm!.CancelEdit())">
+                                    <svg class="icon"><use href="icons/sprite.svg#clear" /></svg>
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="icon-btn" title="@Localizer["Btn_Edit"]" disabled="@_vm!.Busy" @onclick="(()=> _vm!.BeginEdit(c.Id, c.Name))">
+                                    <svg class="icon"><use href="icons/sprite.svg#edit" /></svg>
+                                </button>
+                                <button class="icon-btn danger" title="@Localizer["Btn_Delete"]" disabled="@(c.IsSystem || _vm!.Busy)" @onclick="async () => await _vm!.DeleteAsync(c.Id)">
+                                    <svg class="icon"><use href="icons/sprite.svg#delete" /></svg>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            }
         </div>
     }
 </div>

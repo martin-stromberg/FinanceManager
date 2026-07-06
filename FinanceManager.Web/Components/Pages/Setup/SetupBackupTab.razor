@@ -5,7 +5,7 @@
 @using FinanceManager.Web.ViewModels
 @using Microsoft.Extensions.DependencyInjection
 
-<div>
+<div class="setup-tab setup-backup-tab">
     <h4 style="margin-top:0;">@Localizer["SetupBackup_Titel"]</h4>
 
     @* Ribbon supplies actions; keep a hidden fallback input for upload *@
@@ -64,6 +64,51 @@
                 }
             </tbody>
         </table>
+    </div>
+    <div class="setup-mobile-cards">
+        @if (_vm!.Backups == null)
+        {
+            <div class="setup-mobile-empty">@Localizer["Msg_Loading"]</div>
+        }
+        else if (_vm!.Backups.Count == 0)
+        {
+            <div class="setup-mobile-empty">@Localizer["Msg_NoBackups"]</div>
+        }
+        else
+        {
+            @foreach (var b in _vm!.Backups)
+            {
+                <div class="setup-mobile-card">
+                    <div class="setup-mobile-row">
+                        <div class="setup-mobile-label">@Localizer["SetupBackup_Th_Created"]</div>
+                        <div class="setup-mobile-value">@b.CreatedUtc.ToLocalTime().ToString("g")</div>
+                    </div>
+                    <div class="setup-mobile-row">
+                        <div class="setup-mobile-label">@Localizer["SetupBackup_Th_File"]</div>
+                        <div class="setup-mobile-value">@b.FileName</div>
+                    </div>
+                    <div class="setup-mobile-row">
+                        <div class="setup-mobile-label">@Localizer["SetupBackup_Th_Size"]</div>
+                        <div class="setup-mobile-value">@FormatSize(b.SizeBytes)</div>
+                    </div>
+                    <div class="setup-mobile-row">
+                        <div class="setup-mobile-label">@Localizer["SetupBackup_Th_Source"]</div>
+                        <div class="setup-mobile-value">@b.Source</div>
+                    </div>
+                    <div class="setup-mobile-actions">
+                        <button class="icon-btn" title="@Localizer["Ribbon_Restore"]" disabled="@(_vm!.Busy || _vm!.HasActiveRestore)" @onclick="() => StartApplyBackgroundAsync(b.Id)">
+                            <svg class="icon"><use href="icons/sprite.svg#restore" /></svg>
+                        </button>
+                        <a class="icon-btn" title="@Localizer["Ribbon_Download"]" href="@($"/api/setup/backups/{b.Id}/download")" download>
+                            <svg class="icon"><use href="icons/sprite.svg#download" /></svg>
+                        </a>
+                        <button class="icon-btn danger" title="@Localizer["Ribbon_Delete"]" @onclick="() => DeleteBackupAsync(b.Id)" disabled="@_vm!.Busy">
+                            <svg class="icon"><use href="icons/sprite.svg#delete" /></svg>
+                        </button>
+                    </div>
+                </div>
+            }
+        }
     </div>
 </div>
 

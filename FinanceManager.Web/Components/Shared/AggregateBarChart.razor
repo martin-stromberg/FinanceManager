@@ -49,34 +49,39 @@
             var halfHeight = (decimal)barsHeight / 2m;
             var scale = maxAbs == 0 ? 0 : halfHeight / maxAbs;
 
-            <div class="bars-wrapper" style="height:@(barsHeight)px;">
-                <div class="bar-row pos">
-                    @foreach (var p in _data)
-                    {
-                        var h = p.Amount > 0 ? (int)Math.Round((double)(p.Amount * scale)) : 0;
-                        <div class="bar bar-pos"
-                             role="img"
-                             aria-label="@BuildAria(p)"
-                             title="@BuildTooltip(p)"
-                             style="height:@(h)px;"></div>
-                    }
-                </div>
-                <div class="zero-line"></div>
-                <div class="bar-row neg">
-                    @foreach (var p in _data)
-                    {
-                        var h = p.Amount < 0 ? (int)Math.Round((double)(-p.Amount * scale)) : 0;
-                        <div class="bar bar-neg"
-                             role="img"
-                             aria-label="@BuildAria(p)"
-                             title="@BuildTooltip(p)"
-                             style="height:@(h)px;"></div>
-                    }
-                </div>
-            </div>
+            var barTrackMinWidth = GetBarTrackMinWidth();
+            <div class="bars-scroll">
+                <div class="bars-track" style="min-width:@($"{barTrackMinWidth}px");">
+                    <div class="bars-wrapper" style="height:@(barsHeight)px;">
+                        <div class="bar-row pos">
+                            @foreach (var p in _data)
+                            {
+                                var h = p.Amount > 0 ? (int)Math.Round((double)(p.Amount * scale)) : 0;
+                                <div class="bar bar-pos"
+                                     role="img"
+                                     aria-label="@BuildAria(p)"
+                                     title="@BuildTooltip(p)"
+                                     style="height:@(h)px;"></div>
+                            }
+                        </div>
+                        <div class="zero-line"></div>
+                        <div class="bar-row neg">
+                            @foreach (var p in _data)
+                            {
+                                var h = p.Amount < 0 ? (int)Math.Round((double)(-p.Amount * scale)) : 0;
+                                <div class="bar bar-neg"
+                                     role="img"
+                                     aria-label="@BuildAria(p)"
+                                     title="@BuildTooltip(p)"
+                                     style="height:@(h)px;"></div>
+                            }
+                        </div>
+                    </div>
 
-            <div class="labels-row">
-                @{ int idx=0; foreach (var p in _data) { bool show = ShouldShowLabel(idx, _data.Count); <div class="lbl @(show?string.Empty:"skip")" aria-hidden="@(show? "false":"true")">@FormatLabel(p.PeriodStart)</div>; idx++; } }
+                    <div class="labels-row">
+                        @{ int idx=0; foreach (var p in _data) { bool show = ShouldShowLabel(idx, _data.Count); <div class="lbl @(show?string.Empty:"skip")" aria-hidden="@(show? "false":"true")">@FormatLabel(p.PeriodStart)</div>; idx++; } }
+                    </div>
+                </div>
             </div>
 
             @if (_loading)
@@ -132,6 +137,12 @@
         if (total <= maxLabels) { return true; }
         int step = (int)Math.Ceiling(total / (double)maxLabels);
         return index % step == 0;
+    }
+
+    private int GetBarTrackMinWidth()
+    {
+        var pointCount = Math.Max(1, _data.Count);
+        return Math.Max(260, pointCount * 28);
     }
 
     private void MapFromViewModel()

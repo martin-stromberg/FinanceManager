@@ -1,6 +1,20 @@
 /* =====================================================
-   app.ReportsHome.css - Allgemeingültige ReportsHome Styles
+   app.ReportsHome.css - Allgemeingï¿½ltige ReportsHome Styles
    ===================================================== */
+
+.reports-home-page {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+}
+
+.reports-home-heading {
+    margin: 0;
+}
+
+.reports-home-grid {
+    width: 100%;
+}
 
 .fav-grid {
     list-style: none;
@@ -46,4 +60,10 @@
 .empty-info {
     opacity: .7;
     font-size: .8rem;
+}
+
+@media (max-width: 900px) {
+    .fav-grid {
+        grid-template-columns: 1fr;
+    }
 }

@@ -1,3 +1,5 @@
+using FinanceManager.Shared.Dtos;
+
 namespace FinanceManager.Web.ViewModels.Accounts
 {
     /// <summary>
@@ -5,11 +7,11 @@ namespace FinanceManager.Web.ViewModels.Accounts
     /// </summary>
     /// <param name="Id">Unique identifier of the account.</param>
     /// <param name="Name">Human readable account name.</param>
-    /// <param name="Type">Account type description (e.g. "Checking", "Savings").</param>
+    /// <param name="Type">Account type.</param>
     /// <param name="Iban">Optional IBAN for the account.</param>
     /// <param name="CurrentBalance">Current account balance.</param>
     /// <param name="SymbolId">Optional attachment id used as symbol/icon for the account.</param>
-    public sealed record AccountListItem(Guid Id, string Name, string Type, string? Iban, decimal CurrentBalance, Guid? SymbolId) : IListItemNavigation
+    public sealed record AccountListItem(Guid Id, string Name, AccountType Type, string? Iban, decimal CurrentBalance, Guid? SymbolId) : IListItemNavigation
     {
         /// <summary>
         /// Returns the relative navigation URL for this account list item used by the UI.

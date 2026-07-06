@@ -24,23 +24,43 @@ public sealed class ListNavigationPlaywrightTests
     [Fact]
     public async Task ClickAccountRow_ShouldNavigateToDetailPage()
     {
-        await using var session = await _fixture.CreateSessionAsync();
+        await ClickAccountRowShouldNavigateToDetailPageAsync(
+            () => _fixture.CreateSessionAsync(),
+            "list-user",
+            "Navigated Account");
+    }
+
+    [Fact]
+    public async Task ClickAccountRow_ShouldNavigateToDetailPage_OnMobileViewport()
+    {
+        await ClickAccountRowShouldNavigateToDetailPageAsync(
+            () => _fixture.CreateMobileSessionAsync(),
+            "list-mobile-user",
+            "Navigated Mobile Account");
+    }
+
+    private async Task ClickAccountRowShouldNavigateToDetailPageAsync(
+        Func<Task<PlaywrightBrowserSession>> createSessionAsync,
+        string userPrefix,
+        string accountPrefix)
+    {
+        await using var session = await createSessionAsync();
         var page = session.Page;
         var auth = new AuthGateway(page, _fixture.BaseUrl);
         var userSeed = new TestUserSeeder(_fixture.DatabasePath);
         var accountSeed = new AccountsApiSeedHelper(page);
         var list = new ListPageGateway(page);
 
-        var username = $"list-user-{Guid.NewGuid():N}";
+        var username = $"{userPrefix}-{Guid.NewGuid():N}";
         const string password = "Secret123";
         await userSeed.EnsureUserAsync(username, password);
         await auth.LoginAsync(username, password);
 
-        var accountName = $"Navigated Account {Guid.NewGuid():N}";
+        var accountName = $"{accountPrefix} {Guid.NewGuid():N}";
         var account = await accountSeed.CreateAccountAsync(accountName, "DE50700500000007882996");
 
         await list.OpenAccountsAsync();
-        await page.Locator("tbody tr").Filter(new() { HasText = accountName }).First.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 30000 });
+        await list.WaitForAccountVisibleAsync(accountName);
         await list.OpenRowAsync(accountName);
 
         await page.WaitForURLAsync($"**/card/accounts/{account.Id}");
@@ -116,9 +136,35 @@ public sealed class ListNavigationPlaywrightTests
     [Fact]
     public async Task Create_Edit_Delete_BankAccount_ShouldWork()
     {
-        await using var session = await _fixture.CreateSessionAsync();
+        await CreateEditDeleteBankAccountShouldWorkAsync(
+            () => _fixture.CreateSessionAsync(),
+            "account-user",
+            "Konto",
+            "Bank A",
+            "Konto Bearbeitet");
+    }
+
+    [Fact]
+    public async Task Create_Edit_Delete_BankAccount_ShouldWork_OnMobileViewport()
+    {
+        await CreateEditDeleteBankAccountShouldWorkAsync(
+            () => _fixture.CreateMobileSessionAsync(),
+            "account-mobile-user",
+            "Mobiles Konto",
+            "Mobile Bank A",
+            "Mobiles Konto Bearbeitet");
+    }
+
+    private async Task CreateEditDeleteBankAccountShouldWorkAsync(
+        Func<Task<PlaywrightBrowserSession>> createSessionAsync,
+        string userPrefix,
+        string accountPrefix,
+        string bankName,
+        string updatedName)
+    {
+        await using var session = await createSessionAsync();
         var page = session.Page;
-        await EnsureAuthenticatedAsync(page, "account-user");
+        await EnsureAuthenticatedAsync(page, userPrefix);
 
         await page.GotoAsync("/list/accounts");
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -127,11 +173,11 @@ public sealed class ListNavigationPlaywrightTests
             page,
             "/api/accounts",
             new AccountCreateRequest(
-                Name: $"Konto {Guid.NewGuid():N}",
+                Name: $"{accountPrefix} {Guid.NewGuid():N}",
                 Type: AccountType.Giro,
                 Iban: "DE50700500000007882996",
                 BankContactId: null,
-                NewBankContactName: "Bank A",
+                NewBankContactName: bankName,
                 SymbolAttachmentId: null,
                 SavingsPlanExpectation: SavingsPlanExpectation.Optional,
                 SecurityProcessingEnabled: true));
@@ -143,7 +189,7 @@ public sealed class ListNavigationPlaywrightTests
             page,
             $"/api/accounts/{created.Id}",
             new AccountUpdateRequest(
-                Name: "Konto Bearbeitet",
+                Name: updatedName,
                 Type: created.Type,
                 Iban: created.Iban,
                 BankContactId: created.BankContactId,
@@ -152,7 +198,7 @@ public sealed class ListNavigationPlaywrightTests
                 SavingsPlanExpectation: created.SavingsPlanExpectation,
                 SecurityProcessingEnabled: created.SecurityProcessingEnabled,
                 Archived: false));
-        updated.Name.Should().Be("Konto Bearbeitet");
+        updated.Name.Should().Be(updatedName);
 
         var deleteStatus = await BrowserApiHelper.DeleteAsync(page, $"/api/accounts/{created.Id}");
         deleteStatus.Should().BeOneOf(200, 204);

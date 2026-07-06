@@ -4,6 +4,10 @@
 
 - [Bestandsaufnahme der Anwendung](bestandsaufnahme.md)
 
+## Benutzerführung
+
+- [Benutzeroberfläche](benutzeroberflaeche/index.md) — Dieser Bereich beschreibt die responsive Bedienung der Web-Oberfläche auf kleinen Viewports.
+
 ## Prozesse
 
 - [Kontoauszüge und Import](kontoauszuege-und-import/index.md) — Dieser Bereich verarbeitet Kontoauszüge von der Datei bis zur verbuchten Buchung.

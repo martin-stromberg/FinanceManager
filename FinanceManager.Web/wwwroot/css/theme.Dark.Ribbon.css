@@ -1,5 +1,5 @@
 /* =====================================================
-   theme.Dark.Ribbon.css - Dark Theme für Ribbon
+   theme.Dark.Ribbon.css - Dark Theme fï¿½r Ribbon
    ===================================================== */
 
 .fm-ribbon {
@@ -60,5 +60,41 @@
     }
     .fm-ribbon-tabs li button:focus-visible {
         outline: 2px solid #fff;
+    }
+}
+
+@media (max-width: 900px) {
+    .fm-ribbon-mobile-group-panel {
+        border: 1px solid var(--border);
+        background: #151515;
+    }
+
+    .fm-ribbon-mobile-group-header {
+        color: #f0f0f0;
+    }
+
+    .fm-ribbon-mobile-group-header:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
+    }
+
+    .fm-ribbon-mobile-menu-item {
+        border-color: #3a3a3a;
+        background: #1e1e1e;
+        color: #ddd;
+    }
+
+    .fm-ribbon-mobile-menu-item:hover:not(:disabled) {
+        background: #2a2a2a;
+        color: #fff;
+        border-color: #444;
+    }
+
+    .fm-ribbon-mobile-menu-item:disabled {
+        opacity: .45;
+    }
+
+    .fm-ribbon-btn.large {
+        border-color: #3a3a3a;
     }
 }

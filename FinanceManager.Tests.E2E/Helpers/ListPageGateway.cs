@@ -12,11 +12,21 @@ public sealed class ListPageGateway
     public async Task OpenAccountsAsync()
     {
         await _page.GotoAsync("/list/accounts");
-        await _page.Locator("tbody tr").First.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 30000 });
+        await _page.Locator(".generic-list-mobile-card:visible, tbody tr:visible").First.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 30000 });
+    }
+
+    public async Task WaitForAccountVisibleAsync(string text)
+    {
+        await GetAccountRowLocator(text).WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 30000 });
     }
 
     public async Task OpenRowAsync(string text)
     {
-        await _page.Locator("tbody tr").Filter(new() { HasText = text }).First.ClickAsync();
+        var row = GetAccountRowLocator(text);
+        await row.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 30000 });
+        await row.ClickAsync();
     }
+
+    private ILocator GetAccountRowLocator(string text)
+        => _page.Locator(".generic-list-mobile-card:visible, tbody tr:visible").Filter(new() { HasText = text }).First;
 }
