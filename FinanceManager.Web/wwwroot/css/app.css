@@ -302,6 +302,30 @@ form {
     pointer-events: none; 
 }
 
+.list-filters {
+    margin-bottom: .75rem;
+    display: flex;
+    gap: .6rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.list-filter-search {
+    min-width: 220px;
+}
+
+.list-filter-range {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    font-size: .7rem;
+    flex-wrap: wrap;
+}
+
+.list-filter-range-label {
+    white-space: nowrap;
+}
+
 .generic-list-mobile-cards {
     display: none;
 }
@@ -370,6 +394,17 @@ form {
     .list-filters select {
         width: 100%;
         min-width: 0 !important;
+    }
+    .list-filter-range {
+        width: 100%;
+        row-gap: .35rem;
+    }
+    .list-filter-range .list-filter-range-label {
+        min-width: 0;
+    }
+    .list-filter-range input[type="date"] {
+        flex: 1 1 10rem;
+        min-width: 0;
     }
     .generic-list-table-wrap {
         overflow-x: auto;
