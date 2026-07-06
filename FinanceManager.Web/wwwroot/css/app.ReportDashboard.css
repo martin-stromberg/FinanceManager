@@ -6,6 +6,8 @@
     display: flex;
     flex-direction: column;
     gap: .75rem;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 .report-dashboard-heading {
@@ -191,6 +193,9 @@
     border-radius: var(--radius);
     padding: .35rem .5rem;
     margin: 0 0 .6rem 0;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .mini-chart .bars {
@@ -199,6 +204,8 @@
     gap: 4px;
     height: 70px;
     overflow: hidden;
+    width: max-content;
+    min-width: 100%;
 }
 
 .mini-chart .bar-wrap {
@@ -242,10 +249,15 @@
     }
 
     .report-table.expandable {
-        display: block;
-        overflow-x: auto;
-        width: 100%;
+        display: table;
+        width: max-content;
+        min-width: 100%;
         white-space: nowrap;
+    }
+
+    .report-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .modal {

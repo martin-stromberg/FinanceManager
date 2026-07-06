@@ -8,6 +8,8 @@
 
 .budget-report-page {
     width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 .budget-report-sheet {
@@ -43,6 +45,7 @@
 
 .budget-table-wrap {
     width: 100%;
+    max-width: 100%;
 }
 
 .budget-report-loading {
@@ -101,9 +104,12 @@
 
     .budget-table-wrap {
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: var(--radius);
     }
 
     .budget-report-table {
-        min-width: 540px;
+        width: max-content;
+        min-width: 100%;
     }
 }

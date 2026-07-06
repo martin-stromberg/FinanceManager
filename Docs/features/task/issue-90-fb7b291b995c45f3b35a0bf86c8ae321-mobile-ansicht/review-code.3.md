@@ -2,9 +2,33 @@
 
 ## Ergebnis
 
-**Status:** Keine Befunde
+**Status:** Befunde vorhanden
 
 ## Befunde
+
+### FinanceManager.Web/Components/Pages/CardPage.razor (CardPage)
+
+- **God-Methode** — `OnUiActionRequested` (ca. Zeile 104–320) ist sehr lang und behandelt viele fachlich getrennte Navigations- und UI-Aktionen in einer einzigen Methode.
+
+  Empfehlung: In mehrere klar abgegrenzte Handler aufteilen (z. B. Navigation, Download/View, Delete, Save, Budget-Regel), und Dispatching über eine Action-Map kapseln.
+
+### FinanceManager.Web/Components/Pages/GenericListPage.razor (GenericListPage)
+
+- **Doppelter Code / Fehlende Kapselung** — Die Zell-Rendering-Logik (`switch` auf `ListCellKind`) ist für Desktop-Tabelle und Mobile-Cards nahezu identisch dupliziert (u. a. ca. Zeile 71–113 und 146–176).
+
+  Empfehlung: Gemeinsames Rendering in eine wiederverwendbare RenderFragment-/Hilfsmethode auslagern, damit Änderungen nur an einer Stelle erfolgen.
+
+### FinanceManager.Web/ViewModels/Setup/SetupCardViewModel.cs (SetupCardViewModel)
+
+- **Fehlerbehandlung** — Mehrere Exceptions werden still geschluckt (`catch { }`), u. a. in `RaiseEmbeddedPanelUiAction` und in den Ribbon-Callbacks (u. a. ca. Zeile 148, 199, 217). Dadurch gehen Fehlerursachen und Kontext verloren.
+
+  Empfehlung: Exceptions mindestens loggen und dem Benutzer/State als aussagekräftige Fehlermeldung bereitstellen; leere Catch-Blöcke entfernen.
+
+### FinanceManager.Web/ViewModels/Budget/MonthlyBudgetKpiViewModel.cs (MonthlyBudgetKpiViewModel)
+
+- **Fehlerbehandlung** — Im `catch (HttpRequestException)` wird nur `api.LastError` übernommen. Ist dieser Wert leer, bleibt der Fehler ohne verwertbaren Kontext und die UI kann einen Fehlschlag nicht klar kommunizieren.
+
+  Empfehlung: Fallback auf eine sichere Standardmeldung (oder Exception-Message) ergänzen, z. B. `ErrorMessage = api.LastError ?? "..."`.
 
 ## Geprüfte Dateien
 
@@ -14,8 +38,6 @@
 - `FinanceManager.Tests.E2E/Tests/Import/HomeMassImportPlaywrightTests.cs`
 - `FinanceManager.Tests.E2E/Tests/Navigation/ListNavigationPlaywrightTests.cs`
 - `FinanceManager.Tests.E2E/Tests/Reports/ReportingFlowPlaywrightTests.cs`
-- `FinanceManager.Tests/Components/AggregateBarChartTests_MobileScroll.cs`
-- `FinanceManager.Tests/Components/GenericListPageTests_MobileFilters.cs`
 - `FinanceManager.Tests/Components/RibbonTests.cs`
 - `FinanceManager.Tests/ViewModels/AccountsViewModelTests.cs`
 - `FinanceManager.Tests/ViewModels/MonthlyBudgetKpiViewModelTests.cs`
@@ -46,9 +68,6 @@
 - `FinanceManager.Web/Components/Shared/AggregateBarChart.razor`
 - `FinanceManager.Web/Components/Shared/MonthlyBudgetKpi.razor`
 - `FinanceManager.Web/Components/Shared/Ribbon.razor`
-- `FinanceManager.Web/FinanceManager.Web.xml`
-- `FinanceManager.Web/Resources/Pages.de.resx`
-- `FinanceManager.Web/Resources/Pages.en.resx`
 - `FinanceManager.Web/ViewModels/Accounts/AccountListItem.cs`
 - `FinanceManager.Web/ViewModels/Accounts/BankAccountListViewModels.cs`
 - `FinanceManager.Web/ViewModels/Budget/MonthlyBudgetKpiViewModel.cs`
