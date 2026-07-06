@@ -113,6 +113,75 @@
     margin-top: .5rem;
 }
 
+.setup-sections-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    margin-top: .5rem;
+}
+
+.setup-section-accordion-item {
+    border: 1px solid var(--fm-border, #3a3d45);
+    border-radius: .4rem;
+    overflow: hidden;
+}
+
+.setup-section-toggle {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    padding: .65rem .8rem;
+    font: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.setup-section-toggle-title {
+    min-width: 0;
+}
+
+.setup-section-toggle-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+    flex: 0 0 auto;
+}
+
+.setup-section-content {
+    padding: .5rem .8rem .8rem .8rem;
+}
+
+.setup-checkbox-row {
+    align-items: flex-start !important;
+}
+
+.setup-checkbox-row-title {
+    min-width: 10rem;
+}
+
+.setup-checkbox-control {
+    display: inline-flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: .5rem;
+    min-width: 0;
+}
+
+.setup-checkbox-control input[type="checkbox"] {
+    margin-top: .2rem;
+    flex: 0 0 auto;
+}
+
+.setup-checkbox-label {
+    margin: 0;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
 @media (max-width: 900px) {
     .fm-tab-panel {
         padding: .75rem;
@@ -137,5 +206,18 @@
 
     .setup-tab table.fm-table {
         min-width: 560px;
+    }
+
+    .setup-section-content {
+        padding: .5rem .6rem .75rem .6rem;
+    }
+
+    .setup-checkbox-row-title {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .setup-checkbox-control {
+        width: 100%;
     }
 }

@@ -302,6 +302,46 @@ form {
     pointer-events: none; 
 }
 
+.generic-list-mobile-cards {
+    display: none;
+}
+
+.generic-list-mobile-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: .7rem .75rem;
+    margin-bottom: .55rem;
+    background: var(--panel);
+    cursor: pointer;
+}
+
+.generic-list-mobile-row {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    margin-top: .45rem;
+}
+
+.generic-list-mobile-row:first-child {
+    margin-top: 0;
+}
+
+.generic-list-mobile-label {
+    font-size: .72rem;
+    opacity: .72;
+}
+
+.generic-list-mobile-value {
+    font-size: .92rem;
+    word-break: break-word;
+}
+
+.generic-list-mobile-hint {
+    margin-top: .5rem;
+    color: var(--muted);
+    font-size: .85rem;
+}
+
 @media (max-width: 900px) {
     .app-shell { position: relative; }
     .sidebar { 
@@ -333,6 +373,12 @@ form {
     }
     .generic-list-table-wrap {
         overflow-x: auto;
+    }
+    .generic-list-table-wrap table {
+        display: none;
+    }
+    .generic-list-mobile-cards {
+        display: block;
     }
     .card-view-responsive .card-table th {
         width: 100% !important;

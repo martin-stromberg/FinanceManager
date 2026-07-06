@@ -13,6 +13,7 @@
     [Parameter] public MonthlyBudgetKpiViewModel? ViewModel { get; set; }
 
     private bool DataLoaded => ViewModel?.DataLoaded ?? false;
+    private bool HasLoadError => !string.IsNullOrWhiteSpace(ViewModel?.ErrorMessage);
 
     private decimal PlannedIncome => ViewModel?.PlannedIncome ?? 0m;
     private decimal PlannedExpenseAbs => ViewModel?.PlannedExpenseAbs ?? 0m;
@@ -71,14 +72,17 @@
     protected override async Task OnParametersSetAsync()
     {
         if (ViewModel != null)
-        {            
-            await ViewModel.LoadAsync(Api);            
-            StateHasChanged();
+        {
+            await ViewModel.LoadAsync(Api);
         }
     }
 }
 
 <div class="budget-kpi" @onclick="OnClick" @onkeydown="OnKeyDown" tabindex="0" role="link" style="@(EditMode ? string.Empty : "cursor:pointer;")">
+    @if (HasLoadError)
+    {
+        <div class="error" style="margin-bottom:0;">@Localizer["Error_Unhandled"]</div>
+    }
     <div class="budget-mid">
         <div class="budget-mid-inner">
             <div class="budget-head">
@@ -115,26 +119,26 @@
                 {
                     <div class="kpi-tooltip kpi-tooltip-income">
                         <div class="kpi-tooltip-title">@Localizer["Kpi_MonthlyBudget_Income"]</div>
-                        <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Planned"]</div><div>@(PlannedIncome.ToString("N2", CultureInfo.CurrentCulture))€</div></div>
-                        <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Actual"]</div><div>@(ActualIncome.ToString("N2", CultureInfo.CurrentCulture))€</div></div>
+                        <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Planned"]</div><div>@(PlannedIncome.ToString("N2", CultureInfo.CurrentCulture))ï¿½</div></div>
+                        <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Actual"]</div><div>@(ActualIncome.ToString("N2", CultureInfo.CurrentCulture))ï¿½</div></div>
                         @if (ViewModel != null && ViewModel.UnbudgetedIncome > 0)
                         {
-                            <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Unbudgeted_Short"]</div><div>@(ViewModel.UnbudgetedIncome.ToString("N2", CultureInfo.CurrentCulture))€</div></div>
+                            <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Unbudgeted_Short"]</div><div>@(ViewModel.UnbudgetedIncome.ToString("N2", CultureInfo.CurrentCulture))ï¿½</div></div>
                         }
-                        <div class="kpi-tooltip-row kpi-tooltip-row-strong"><div>@Localizer["Kpi_MonthlyBudget_Label_Expected"]</div><div>@(ViewModel?.ExpectedIncome.ToString("N2", CultureInfo.CurrentCulture) ?? "0.00")€</div></div>
+                        <div class="kpi-tooltip-row kpi-tooltip-row-strong"><div>@Localizer["Kpi_MonthlyBudget_Label_Expected"]</div><div>@(ViewModel?.ExpectedIncome.ToString("N2", CultureInfo.CurrentCulture) ?? "0.00")ï¿½</div></div>
                     </div>
                 }
                 @if (_showExpenseTooltip)
                 {
                     <div class="kpi-tooltip kpi-tooltip-expense">
                         <div class="kpi-tooltip-title">@Localizer["Kpi_MonthlyBudget_Expenses"]</div>
-                        <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Planned"]</div><div>@(PlannedExpenseAbs.ToString("N2", CultureInfo.CurrentCulture))€</div></div>
-                        <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Actual"]</div><div>@(ActualExpenseAbs.ToString("N2", CultureInfo.CurrentCulture))€</div></div>
+                        <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Planned"]</div><div>@(PlannedExpenseAbs.ToString("N2", CultureInfo.CurrentCulture))ï¿½</div></div>
+                        <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Actual"]</div><div>@(ActualExpenseAbs.ToString("N2", CultureInfo.CurrentCulture))ï¿½</div></div>
                         @if (ViewModel != null && ViewModel.UnbudgetedExpenseAbs > 0)
                         {
-                            <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Unbudgeted_Short"]</div><div>@(ViewModel.UnbudgetedExpenseAbs.ToString("N2", CultureInfo.CurrentCulture))€</div></div>
+                            <div class="kpi-tooltip-row"><div>@Localizer["Kpi_MonthlyBudget_Label_Unbudgeted_Short"]</div><div>@(ViewModel.UnbudgetedExpenseAbs.ToString("N2", CultureInfo.CurrentCulture))ï¿½</div></div>
                         }
-                        <div class="kpi-tooltip-row kpi-tooltip-row-strong"><div>@Localizer["Kpi_MonthlyBudget_Label_Expected"]</div><div>@(ViewModel?.ExpectedExpenseAbs.ToString("N2", CultureInfo.CurrentCulture) ?? "0.00")€</div></div>
+                        <div class="kpi-tooltip-row kpi-tooltip-row-strong"><div>@Localizer["Kpi_MonthlyBudget_Label_Expected"]</div><div>@(ViewModel?.ExpectedExpenseAbs.ToString("N2", CultureInfo.CurrentCulture) ?? "0.00")ï¿½</div></div>
                     </div>
                 }
                 <div class="budget-side expense" style=@($"width:{(ExpensePct * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}%") @onmouseenter="OnExpenseEnter" @onmouseleave="OnExpenseLeave">
@@ -149,7 +153,7 @@
                 {
                 <div class="@SaldoMarkerClass" style="left:@((MarkerPos * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
                 <div class="@SollMarkerClass" style="left:@((SollMarkerPos * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
-                <label class="@SollMarkerLabelClass" style="left:@((SollMarkerLabelPos * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;">@SollErgebnisText€ (@Localizer["Kpi_MonthlyBudget_LabelExpected"])</label>
+                <label class="@SollMarkerLabelClass" style="left:@((SollMarkerLabelPos * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;">@SollErgebnisTextï¿½ (@Localizer["Kpi_MonthlyBudget_LabelExpected"])</label>
                 }
             </div>
         </div>
@@ -157,7 +161,7 @@
     @if (DataLoaded)
     {
         <div class="kpi-amount budget-result @ResultTextClass" style="left:@((ResultLabelLeft * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;">
-            @ResultText€
+            @ResultTextï¿½
         </div>
     }
 </div>

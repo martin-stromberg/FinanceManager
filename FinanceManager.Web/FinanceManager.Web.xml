@@ -3849,18 +3849,18 @@
             </summary>
             <param name="Id">Unique identifier of the account.</param>
             <param name="Name">Human readable account name.</param>
-            <param name="Type">Account type description (e.g. "Checking", "Savings").</param>
+            <param name="Type">Account type.</param>
             <param name="Iban">Optional IBAN for the account.</param>
             <param name="CurrentBalance">Current account balance.</param>
             <param name="SymbolId">Optional attachment id used as symbol/icon for the account.</param>
         </member>
-        <member name="M:FinanceManager.Web.ViewModels.Accounts.AccountListItem.#ctor(System.Guid,System.String,System.String,System.String,System.Decimal,System.Nullable{System.Guid})">
+        <member name="M:FinanceManager.Web.ViewModels.Accounts.AccountListItem.#ctor(System.Guid,System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Decimal,System.Nullable{System.Guid})">
             <summary>
             View model used to render an account in a list view.
             </summary>
             <param name="Id">Unique identifier of the account.</param>
             <param name="Name">Human readable account name.</param>
-            <param name="Type">Account type description (e.g. "Checking", "Savings").</param>
+            <param name="Type">Account type.</param>
             <param name="Iban">Optional IBAN for the account.</param>
             <param name="CurrentBalance">Current account balance.</param>
             <param name="SymbolId">Optional attachment id used as symbol/icon for the account.</param>
@@ -3872,7 +3872,7 @@
             <summary>Human readable account name.</summary>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Accounts.AccountListItem.Type">
-            <summary>Account type description (e.g. "Checking", "Savings").</summary>
+            <summary>Account type.</summary>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Accounts.AccountListItem.Iban">
             <summary>Optional IBAN for the account.</summary>
@@ -4624,6 +4624,11 @@
         <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.DataLoaded">
             <summary>
             Gets or sets a value indicating whether the data has been loaded.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.ErrorMessage">
+            <summary>
+            Gets the last user-visible error message when loading KPI data failed.
             </summary>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Budget.MonthlyBudgetKpiViewModel.PlannedIncome">
@@ -9255,23 +9260,27 @@
             Gets the localized title of the card.
             </summary>
         </member>
-        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.SelectedSection">
-            <summary>
-            Currently selected settings section key. <c>null</c> when no section is selected.
-            </summary>
-        </member>
         <member name="P:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.SettingSections">
             <summary>
             Exposes the available setting sections as (key, localized display name) pairs.
             The list is static and should be used to render the setup navigation.
             </summary>
         </member>
-        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.ChangeView(System.String)">
+        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.TryGetSectionComponentType(System.String,System.Type@)">
             <summary>
-            Changes the active setup view to the specified section key. If the key is invalid or blank the call is ignored.
-            The method raises the necessary UI actions to render the embedded panel for the selected section.
+            Resolves the component type for a setup section key.
             </summary>
-            <param name="key">The section key to switch to (case-insensitive).</param>
+            <param name="key">Section key to resolve.</param>
+            <param name="componentType">Resolved component type when found; otherwise <c>null</c>.</param>
+            <returns><c>true</c> when the section exists; otherwise <c>false</c>.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.CreateSectionViewModel(System.String,System.IServiceProvider)">
+            <summary>
+            Creates the setup section view model instance for a section key.
+            </summary>
+            <param name="key">Section key to resolve.</param>
+            <param name="services">Service provider used for creating the view model instance.</param>
+            <returns>The created view model instance, or <c>null</c> when the section key is unknown.</returns>
         </member>
         <member name="P:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.VisibleBackgroundTaskTypes">
             <summary>
@@ -9294,14 +9303,6 @@
             </summary>
             <param name="id">Identifier of the record to load. For the setup card this value is ignored.</param>
             <returns>A task representing the asynchronous load operation.</returns>
-        </member>
-        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.IsChildViewModelActive(FinanceManager.Web.ViewModels.Common.BaseViewModel)">
-            <summary>
-            Determines whether a child view model is considered active for this card.
-            Override used by the base card logic to control lifecycle of sub view models.
-            </summary>
-            <param name="vm">The child view model to check.</param>
-            <returns><c>true</c> when the provided view model is active for the currently selected section; otherwise <c>false</c>.</returns>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
             <summary>

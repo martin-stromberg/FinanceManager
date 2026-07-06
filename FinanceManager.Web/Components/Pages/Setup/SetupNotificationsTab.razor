@@ -4,7 +4,7 @@
 @inject Microsoft.Extensions.Localization.IStringLocalizer<Pages> Localizer
 @using FinanceManager.Web.ViewModels
 
-<div class="setup-tab setup-notifications-tab" style="text-align:left;">
+<div class="setup-tab setup-notifications-tab">
   <h4 style="margin-top:0;">@Localizer["Notifications_TabTitle"]</h4>
 
   @if (_vm == null)
@@ -24,12 +24,14 @@
   }
   else
   {
-      <div class="form-grid" style="text-align:left;display:flex;flex-direction:column;gap:0.75rem;align-items:stretch;">
+      <div class="form-grid">
 
-          <div class="form-row" style="display:flex;align-items:center;gap:.5rem;justify-content:flex-start;">
-              <label for="notif-monthly" style="min-width:10rem;">@Localizer["Notifications_MonthlyReminder"]</label>
-              <input id="notif-monthly" type="checkbox" @bind="_vm.Model.MonthlyReminderEnabled" @bind:after="(()=> _vm.OnChanged())" />
-              <span style="opacity:.8;">@Localizer["Notifications_MonthlyReminder_Help"]</span>
+          <div class="form-row setup-checkbox-row">
+              <label class="setup-checkbox-row-title" for="notif-monthly">@Localizer["Notifications_MonthlyReminder"]</label>
+              <div class="setup-checkbox-control">
+                  <input id="notif-monthly" type="checkbox" @bind="_vm.Model.MonthlyReminderEnabled" @bind:after="(()=> _vm.OnChanged())" />
+                  <label class="setup-checkbox-label" for="notif-monthly">@Localizer["Notifications_MonthlyReminder_Help"]</label>
+              </div>
           </div>
 
           <div class="form-row" style="display:flex;align-items:center;gap:.4rem;justify-content:flex-start;">

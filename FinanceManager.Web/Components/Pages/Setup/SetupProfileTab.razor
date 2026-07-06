@@ -47,11 +47,11 @@
                     <small style="opacity:.8;">@(_vm.HasKey? Localizer["SetupProfile_Msg_KeyPresent"] : Localizer["SetupProfile_Msg_KeyMissing"])</small>
               </div>
           </div>
-          <div class="form-row">
-                <label>@Localizer["SetupProfile_Label_ShareKey"]</label>
-              <div style="display:flex;gap:.5rem;align-items:center;">
+          <div class="form-row setup-checkbox-row">
+              <label class="setup-checkbox-row-title" for="share-key">@Localizer["SetupProfile_Label_ShareKey"]</label>
+              <div class="setup-checkbox-control">
                   <input id="share-key" type="checkbox" @bind="_vm.ShareKey" @bind:after="(()=> _vm.OnChanged())" />
-                    <label for="share-key" style="opacity:.8;">@Localizer["SetupProfile_Help_ShareKey"]</label>
+                  <label class="setup-checkbox-label" for="share-key">@Localizer["SetupProfile_Help_ShareKey"]</label>
               </div>
           </div>
       </div>

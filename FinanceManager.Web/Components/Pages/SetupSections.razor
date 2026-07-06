@@ -1,5 +1,6 @@
 @using FinanceManager.Web.ViewModels.Setup
 @using Microsoft.AspNetCore.Components
+@inject IServiceProvider Services
 
 @if (Provider == null)
 {
@@ -7,15 +8,28 @@
 }
 else
 {
-    <div class="setup-sections setup-sections-nav" style="display:flex;flex-direction:row;gap:.5rem;flex-wrap:wrap;margin-top:.5rem;">
+    <div class="setup-sections setup-sections-accordion">
         @foreach (var kv in Provider.SettingSections)
         {
             var key = kv.Key;
-            var label = kv.Value;
-            var isActive = string.Equals(Provider.SelectedSection, key, StringComparison.OrdinalIgnoreCase);
-            <button class="btn setup-section-btn" style="padding:.375rem .75rem;border:1px solid var(--fm-border,#ccc);background:@(isActive?"var(--fm-primary,#007bff)":"transparent");color:@(isActive?"white":"inherit");border-radius:.25rem;" @onclick="() => OnClick(key)">
-                @label
-            </button>
+            var isExpanded = _expandedSections.Contains(key);
+            <section class="setup-section-accordion-item">
+                <button type="button" class="setup-section-toggle" @onclick="() => ToggleSection(key)" aria-expanded="@isExpanded">
+                    <span class="setup-section-toggle-title">@kv.Value</span>
+                    <span class="setup-section-toggle-icon" aria-hidden="true">@(isExpanded ? "−" : "+")</span>
+                </button>
+
+                @if (isExpanded)
+                {
+                    var spec = BuildSectionSpec(key);
+                    if (spec.ComponentType != null)
+                    {
+                        <div class="setup-section-content">
+                            <DynamicComponent Type="spec.ComponentType" Parameters="spec.Parameters" />
+                        </div>
+                    }
+                }
+            </section>
         }
     </div>
 }
@@ -23,30 +37,57 @@ else
 @code {
     [Parameter] public SetupCardViewModel? Provider { get; set; }
 
-    protected override void OnParametersSet()
+    private readonly HashSet<string> _expandedSections = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, object> _viewModels = new(StringComparer.OrdinalIgnoreCase);
+
+    private void ToggleSection(string key)
     {
-        base.OnParametersSet();
-        if (Provider != null)
+        if (string.IsNullOrWhiteSpace(key))
         {
-            Provider.StateChanged -= Provider_StateChanged;
-            Provider.StateChanged += Provider_StateChanged;
+            return;
+        }
+
+        if (!_expandedSections.Add(key))
+        {
+            _expandedSections.Remove(key);
         }
     }
 
-    private void Provider_StateChanged(object? sender, EventArgs e)
+    private (Type? ComponentType, IDictionary<string, object>? Parameters) BuildSectionSpec(string key)
     {
-        _ = InvokeAsync(StateHasChanged);
+        if (Provider == null || !Provider.TryGetSectionComponentType(key, out var componentType) || componentType == null)
+        {
+            return (null, null);
+        }
+
+        var vm = ResolveViewModel(key);
+        if (vm == null)
+        {
+            return (null, null);
+        }
+
+        return (componentType, new Dictionary<string, object> { ["ViewModel"] = vm });
     }
 
-    private void OnClick(string key)
+    private object? ResolveViewModel(string key)
     {
-        if (Provider == null) return;
-        Provider.ChangeView(key);
-    }
+        if (_viewModels.TryGetValue(key, out var existing))
+        {
+            return existing;
+        }
 
-    public void Dispose()
-    {
-        if (Provider != null)
-            Provider.StateChanged -= Provider_StateChanged;
+        if (Provider == null)
+        {
+            return null;
+        }
+
+        var vm = Provider.CreateSectionViewModel(key, Services);
+
+        if (vm != null)
+        {
+            _viewModels[key] = vm;
+        }
+
+        return vm;
     }
 }

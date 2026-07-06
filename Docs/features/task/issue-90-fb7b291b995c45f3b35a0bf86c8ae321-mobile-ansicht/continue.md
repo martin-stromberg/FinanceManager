@@ -7,14 +7,14 @@
   - Rechts im Panel steht ein Hamburger-Menü-Button.
   - Das zugehörige Aufklappmenü zeigt die Aktionen der Gruppe jeweils mit Symbol und Namen.
 
-- [ ] Die Seite der Einstellungen mus verbessert werden. Jeder Inhaltsbereich soll sofort sichtbar sein. Es soll kein Auswahlpanel für die Anzeige der Bereiche mehr geben. Stattdessen soll jeder Inhaltsblock als zuklappbare registerkarte gezeigt werden, welche standardmäßig zugeklappt sind. Jede Registerkarte hat eine Titelleiste mit dem Namen linksbündig und dem Button für das Auf- und Zuklappen rechtsbündig.
-- [ ] Im Profil bei den Einstellungen ist die Checkbox für die Schklüsselfreigabe mobil nicht richtig dargestellt. Die Checkbox ist mittig, das Label dazu verschwindet am rechten Rand. Insgesamt scheinen mit dort die Checkboxen nicht gut platziert zu sein. Bei den Benachrichtigungen ist auch die Checkbox für den Monatsabschlusshinweis mittig. Der Text dazu passt zwar, aber insgesamt sollten diese Checkboxen eher linksbündig sein.
-- [ ] Bei den Einstellungen der Kontoauszüge fehlen die Übersetzungen für die Massenimportdialogeinstellungen.
+- [x] Die Seite der Einstellungen mus verbessert werden. Jeder Inhaltsbereich soll sofort sichtbar sein. Es soll kein Auswahlpanel für die Anzeige der Bereiche mehr geben. Stattdessen soll jeder Inhaltsblock als zuklappbare registerkarte gezeigt werden, welche standardmäßig zugeklappt sind. Jede Registerkarte hat eine Titelleiste mit dem Namen linksbündig und dem Button für das Auf- und Zuklappen rechtsbündig.
+- [x] Im Profil bei den Einstellungen ist die Checkbox für die Schklüsselfreigabe mobil nicht richtig dargestellt. Die Checkbox ist mittig, das Label dazu verschwindet am rechten Rand. Insgesamt scheinen mit dort die Checkboxen nicht gut platziert zu sein. Bei den Benachrichtigungen ist auch die Checkbox für den Monatsabschlusshinweis mittig. Der Text dazu passt zwar, aber insgesamt sollten diese Checkboxen eher linksbündig sein.
+- [x] Bei den Einstellungen der Kontoauszüge fehlen die Übersetzungen für die Massenimportdialogeinstellungen.
 
-- [ ] Die Seite der Bankkontoübersicht ist nicht für mobile Ansichten optimiert. Das gilt grundsätzlich für alle Tabellenübersichten (Kontakte, Sparpläne, etc.) Bei der Desktopansicht ist das so in Ordnung, bei der mobilen Ansicht müssen wir "Stacked Cards" darstellen. Auch sollte stets überlegt, werden, ob eventuell Informationen in der mobilen Ansicht wegfallen können.
-- [ ] In der Tabell der Bankkonten sind die Werte für den "Typ" nicht übersetzt.
+- [x] Die Seite der Bankkontoübersicht ist nicht für mobile Ansichten optimiert. Das gilt grundsätzlich für alle Tabellenübersichten (Kontakte, Sparpläne, etc.) Bei der Desktopansicht ist das so in Ordnung, bei der mobilen Ansicht müssen wir "Stacked Cards" darstellen. Auch sollte stets überlegt, werden, ob eventuell Informationen in der mobilen Ansicht wegfallen können.
+- [x] In der Tabell der Bankkonten sind die Werte für den "Typ" nicht übersetzt.
 
-- [ ] Gelegentlich tritt folgender Fehler auf, der dem Anwender mit voller Detailstärke präsentiert wird. System.Net.Http.HttpRequestException: Response status code does not indicate success: 500 (Internal Server Error).
+- [x] Gelegentlich tritt folgender Fehler auf, der dem Anwender mit voller Detailstärke präsentiert wird. System.Net.Http.HttpRequestException: Response status code does not indicate success: 500 (Internal Server Error).
    at System.Net.Http.HttpResponseMessage.EnsureSuccessStatusCode()
    at FinanceManager.Shared.ApiClient.EnsureSuccessOrSetErrorAsync(HttpResponseMessage resp) in D:\Repositories\softwareschmiede\fb7b291b-995c-45f3-b35a-0bf86c8ae321\FinanceManager.Shared\ApiClient.cs:line 107
    at FinanceManager.Shared.ApiClient.Budgets_GetMonthlyKpiAsync(Nullable`1 date, BudgetReportDateBasis dateBasis, CancellationToken ct) in D:\Repositories\softwareschmiede\fb7b291b-995c-45f3-b35a-0bf86c8ae321\FinanceManager.Shared\ApiClient.BudgetReport.cs:line 64

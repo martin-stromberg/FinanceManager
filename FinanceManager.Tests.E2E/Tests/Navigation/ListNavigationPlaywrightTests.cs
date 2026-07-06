@@ -60,7 +60,7 @@ public sealed class ListNavigationPlaywrightTests
         var account = await accountSeed.CreateAccountAsync(accountName, "DE50700500000007882996");
 
         await list.OpenAccountsAsync();
-        await page.Locator("tbody tr").Filter(new() { HasText = accountName }).First.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 30000 });
+        await list.WaitForAccountVisibleAsync(accountName);
         await list.OpenRowAsync(accountName);
 
         await page.WaitForURLAsync($"**/card/accounts/{account.Id}");

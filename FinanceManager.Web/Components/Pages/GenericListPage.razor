@@ -128,6 +128,62 @@ else
                 </tbody>
             </table>
         </div>
+        <div class="generic-list-mobile-cards">
+            @foreach (var rec in Provider.Records)
+            {
+                var isMuted = rec.Cells.Any(c => c.Muted);
+                <div class="generic-list-mobile-card @(isMuted ? "muted-row" : null)" @onclick="(()=> OnItemClicked(rec.Item))">
+                    @foreach (var mobileCell in GetMobileCells(rec))
+                    {
+                        var col = mobileCell.Column;
+                        var cell = mobileCell.Cell;
+                        <div class="generic-list-mobile-row">
+                            @if (!string.IsNullOrWhiteSpace(col?.Title))
+                            {
+                                <div class="generic-list-mobile-label">@col!.Title</div>
+                            }
+                            <div class="generic-list-mobile-value">
+                                @switch(cell.Kind)
+                                {
+                                    case ListCellKind.Text:
+                                        {
+                                            var txt = cell.Text ?? string.Empty;
+                                            if (txt.Contains("<svg", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                @((MarkupString)txt)
+                                            }
+                                            else
+                                            {
+                                                @txt
+                                            }
+                                        }
+                                        break;
+                                    case ListCellKind.Symbol:
+                                        if (cell.SymbolId.HasValue)
+                                        {
+                                            <img src="@($"/api/attachments/{cell.SymbolId}/download")" alt="symbol" style="width:32px;height:32px;object-fit:contain;border-radius:6px;border:1px solid var(--border);" />
+                                        }
+                                        else
+                                        {
+                                            <div style="width:32px;height:32px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);">
+                                                <svg style="width:16px;height:16px;opacity:.6;"><use href="/icons/sprite.svg#image" /></svg>
+                                            </div>
+                                        }
+                                        break;
+                                    case ListCellKind.Currency:
+                                        @((cell.Amount ?? 0m).ToString("C", System.Globalization.CultureInfo.CurrentCulture))
+                                        break;
+                                }
+                            </div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(rec.Hint))
+                    {
+                        <div class="generic-list-mobile-hint">@((Localizer != null) ? LocalizeInline(Localizer?[rec.Hint] ?? rec.Hint) : LocalizeInline(rec.Hint))</div>
+                    }
+                </div>
+            }
+        </div>
         <div style="margin-top:.5rem;">
             @if(Provider.CanLoadMore)
             {
@@ -242,6 +298,49 @@ else
     {
         if (ItemClick.HasDelegate)
             await ItemClick.InvokeAsync(item);
+    }
+
+    private IEnumerable<(ListColumn? Column, ListCell Cell)> GetMobileCells(ListRecord record)
+    {
+        if (Provider?.Columns == null || record.Cells.Count == 0)
+        {
+            return Array.Empty<(ListColumn? Column, ListCell Cell)>();
+        }
+
+        var cells = new List<(ListColumn? Column, ListCell Cell)>();
+        for (var index = 0; index < record.Cells.Count; index++)
+        {
+            var cell = record.Cells[index];
+            var column = Provider.Columns.Count > index ? Provider.Columns[index] : null;
+            if (!ShouldShowCellOnMobile(column, cell))
+            {
+                continue;
+            }
+
+            cells.Add((column, cell));
+            if (cells.Count >= 4)
+            {
+                break;
+            }
+        }
+
+        return cells;
+    }
+
+    private static bool ShouldShowCellOnMobile(ListColumn? column, ListCell cell)
+    {
+        if (column != null && string.Equals(column.Key, "placeholder", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return cell.Kind switch
+        {
+            ListCellKind.Symbol => true,
+            ListCellKind.Currency => cell.Amount.HasValue,
+            ListCellKind.Text => !string.IsNullOrWhiteSpace(cell.Text),
+            _ => false
+        };
     }
 
     private string LocalizeInline(string input)

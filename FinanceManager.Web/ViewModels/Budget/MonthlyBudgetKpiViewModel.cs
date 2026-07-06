@@ -1,4 +1,5 @@
 using System;
+using System.Net.Http;
 using System.Threading;
 
 namespace FinanceManager.Web.ViewModels.Budget
@@ -12,6 +13,11 @@ namespace FinanceManager.Web.ViewModels.Budget
         /// Gets or sets a value indicating whether the data has been loaded.
         /// </summary>
         public bool DataLoaded { get; set; } = false;
+
+        /// <summary>
+        /// Gets the last user-visible error message when loading KPI data failed.
+        /// </summary>
+        public string? ErrorMessage { get; private set; }
         /// <summary>
         /// Planned income for the current month.
         /// </summary>
@@ -69,18 +75,32 @@ namespace FinanceManager.Web.ViewModels.Budget
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task LoadAsync(FinanceManager.Shared.IApiClient api, CancellationToken ct = default)
         {
-            var kpiDto = await api.Budgets_GetMonthlyKpiAsync(date: null, dateBasis: FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.BookingDate, ct);
-            PlannedIncome = kpiDto.PlannedIncome;
-            PlannedExpenseAbs = kpiDto.PlannedExpenseAbs;
-            ActualIncome = kpiDto.ActualIncome;
-            ActualExpenseAbs = kpiDto.ActualExpenseAbs;
-            SollErgebnis = kpiDto.PlannedResult;
-            ExpectedIncome = kpiDto.ExpectedIncome;
-            ExpectedExpenseAbs = kpiDto.ExpectedExpenseAbs;
-            UnbudgetedIncome = kpiDto.UnbudgetedIncome;
-            UnbudgetedExpenseAbs = kpiDto.UnbudgetedExpenseAbs;
-            Month = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-            DataLoaded = true;
+            DataLoaded = false;
+            ErrorMessage = null;
+
+            try
+            {
+                var kpiDto = await api.Budgets_GetMonthlyKpiAsync(date: null, dateBasis: FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.BookingDate, ct);
+                PlannedIncome = kpiDto.PlannedIncome;
+                PlannedExpenseAbs = kpiDto.PlannedExpenseAbs;
+                ActualIncome = kpiDto.ActualIncome;
+                ActualExpenseAbs = kpiDto.ActualExpenseAbs;
+                SollErgebnis = kpiDto.PlannedResult;
+                ExpectedIncome = kpiDto.ExpectedIncome;
+                ExpectedExpenseAbs = kpiDto.ExpectedExpenseAbs;
+                UnbudgetedIncome = kpiDto.UnbudgetedIncome;
+                UnbudgetedExpenseAbs = kpiDto.UnbudgetedExpenseAbs;
+                Month = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                DataLoaded = true;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (HttpRequestException)
+            {
+                ErrorMessage = api.LastError;
+            }
         }
     }
 }
