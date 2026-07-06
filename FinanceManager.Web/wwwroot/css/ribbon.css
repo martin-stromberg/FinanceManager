@@ -47,6 +47,10 @@
     padding: .4rem .5rem .5rem;
 }
 
+.fm-ribbon-mobile-group-panel {
+    display: none;
+}
+
 .fm-ribbon-group-body {
     flex: 1;
     display: flex;
@@ -160,12 +164,67 @@
     }
 
     .fm-ribbon-groups {
+        flex-direction: column;
         gap: .5rem;
     }
 
-    .fm-ribbon-group {
-        min-width: min(100%, 220px);
-        padding: .35rem .4rem .45rem;
+    .fm-ribbon-group-desktop {
+        display: none;
+    }
+
+    .fm-ribbon-mobile-group-panel {
+        display: block;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .fm-ribbon-mobile-group-header {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        padding: .55rem .7rem;
+        cursor: pointer;
+        font: inherit;
+        text-align: left;
+    }
+
+    .fm-ribbon-mobile-group-title {
+        font-weight: 600;
+    }
+
+    .fm-ribbon-mobile-group-hamburger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .fm-ribbon-mobile-menu {
+        display: none;
+        flex-direction: column;
+        gap: .35rem;
+        padding: 0 .55rem .55rem;
+    }
+
+    .fm-ribbon-mobile-menu.open {
+        display: flex;
+    }
+
+    .fm-ribbon-mobile-menu-item {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        width: 100%;
+        border-radius: 6px;
+        cursor: pointer;
+        font: inherit;
+        text-align: left;
+        padding: .45rem .6rem;
+        border: 1px solid transparent;
+        background: transparent;
     }
 
     .ribbon-items-grid {
@@ -186,5 +245,10 @@
         --rb-icon-size: 16px;
         --rb-pad-y: .35rem;
         --rb-pad-x: .5rem;
+    }
+
+    .fm-ribbon-mobile-menu-item .icon svg {
+        width: 16px;
+        height: 16px;
     }
 }

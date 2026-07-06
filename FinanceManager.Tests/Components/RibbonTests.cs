@@ -87,4 +87,114 @@ public class RibbonTests : Bunit.BunitContext
         // Assert
         Assert.True(clicked);
     }
+
+    [Fact]
+    public void MobileGroupPanel_RendersGroupTitleAndHamburgerButton()
+    {
+        var registers = new List<UiRibbonRegister>
+        {
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>
+            {
+                new UiRibbonTab("Aktionen", new List<UiRibbonAction>
+                {
+                    new UiRibbonAction("save","Speichern","<svg></svg>", UiRibbonItemSize.Small, false, null, null)
+                })
+            })
+        };
+
+        var provMock = new Mock<IRibbonProvider>();
+        provMock.Setup(p => p.GetRibbonRegisters(It.IsAny<IStringLocalizer>())).Returns(registers);
+        var localMock = new Mock<IStringLocalizer>();
+
+        RenderFragment frag = builder =>
+        {
+            builder.OpenComponent(0, typeof(Ribbon<TabId>));
+            builder.AddAttribute(1, "Provider", provMock.Object);
+            builder.AddAttribute(2, "Localizer", localMock.Object);
+            builder.CloseComponent();
+        };
+
+        var cut = Render(frag);
+
+        Assert.Single(cut.FindAll(".fm-ribbon-mobile-group-panel"));
+        Assert.Equal("Aktionen", cut.Find(".fm-ribbon-mobile-group-title").TextContent.Trim());
+        Assert.Single(cut.FindAll(".fm-ribbon-mobile-group-hamburger"));
+    }
+
+    [Fact]
+    public void MobileGroupMenu_TogglesOnHamburgerClick()
+    {
+        var registers = new List<UiRibbonRegister>
+        {
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>
+            {
+                new UiRibbonTab("Aktionen", new List<UiRibbonAction>
+                {
+                    new UiRibbonAction("save","Speichern","<svg></svg>", UiRibbonItemSize.Small, false, null, null)
+                })
+            })
+        };
+
+        var provMock = new Mock<IRibbonProvider>();
+        provMock.Setup(p => p.GetRibbonRegisters(It.IsAny<IStringLocalizer>())).Returns(registers);
+        var localMock = new Mock<IStringLocalizer>();
+
+        RenderFragment frag = builder =>
+        {
+            builder.OpenComponent(0, typeof(Ribbon<TabId>));
+            builder.AddAttribute(1, "Provider", provMock.Object);
+            builder.AddAttribute(2, "Localizer", localMock.Object);
+            builder.CloseComponent();
+        };
+
+        var cut = Render(frag);
+
+        var menu = cut.Find(".fm-ribbon-mobile-menu");
+        Assert.DoesNotContain("open", menu.ClassList);
+
+        cut.Find(".fm-ribbon-mobile-group-header").Click();
+
+        menu = cut.Find(".fm-ribbon-mobile-menu");
+        Assert.Contains("open", menu.ClassList);
+    }
+
+    [Fact]
+    public void MobileGroupMenu_ItemsRenderIconAndName()
+    {
+        var registers = new List<UiRibbonRegister>
+        {
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>
+            {
+                new UiRibbonTab("Aktionen", new List<UiRibbonAction>
+                {
+                    new UiRibbonAction("save", "Speichern", "<svg><path d='M0 0'></path></svg>", UiRibbonItemSize.Small, false, null, null),
+                    new UiRibbonAction("delete", "Löschen", "<svg><circle cx='4' cy='4' r='2'></circle></svg>", UiRibbonItemSize.Small, false, null, null)
+                })
+            })
+        };
+
+        var provMock = new Mock<IRibbonProvider>();
+        provMock.Setup(p => p.GetRibbonRegisters(It.IsAny<IStringLocalizer>())).Returns(registers);
+        var localMock = new Mock<IStringLocalizer>();
+
+        RenderFragment frag = builder =>
+        {
+            builder.OpenComponent(0, typeof(Ribbon<TabId>));
+            builder.AddAttribute(1, "Provider", provMock.Object);
+            builder.AddAttribute(2, "Localizer", localMock.Object);
+            builder.CloseComponent();
+        };
+
+        var cut = Render(frag);
+        cut.Find(".fm-ribbon-mobile-group-header").Click();
+
+        var menuItems = cut.FindAll(".fm-ribbon-mobile-menu.open .fm-ribbon-mobile-menu-item");
+        Assert.Equal(2, menuItems.Count);
+
+        Assert.Equal("Speichern", menuItems[0].QuerySelector(".text-inline")?.TextContent.Trim());
+        Assert.NotNull(menuItems[0].QuerySelector(".icon svg"));
+
+        Assert.Equal("Löschen", menuItems[1].QuerySelector(".text-inline")?.TextContent.Trim());
+        Assert.NotNull(menuItems[1].QuerySelector(".icon svg"));
+    }
 }
