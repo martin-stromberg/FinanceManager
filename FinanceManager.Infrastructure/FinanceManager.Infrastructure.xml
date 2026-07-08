@@ -5596,6 +5596,12 @@
             <param name="ct">The cancellation token.</param>
             <returns>A <see cref="T:FinanceManager.Shared.Dtos.Statements.BookingResult"/> indicating success or failure, and providing next steps if partial booking occurred.</returns>
         </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftService.TryAutoLinkIbanToCollectionAccountAsync(FinanceManager.Domain.Accounts.Account,System.String,System.Threading.CancellationToken)">
+            <summary>
+            If the account is a collection account and the IBAN from the statement draft is not yet
+            in the linked IBANs list, adds it automatically. Errors are swallowed to avoid disrupting booking.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftService.DeleteEntryAsync(System.Guid,System.Guid,System.Guid,System.Threading.CancellationToken)">
             <summary>
             Deletes an entry from a draft.

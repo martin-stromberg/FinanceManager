@@ -306,6 +306,10 @@ public sealed class AccountsController : ControllerBase
             await _accounts.AddLinkedIbanAsync(id, _current.UserId, req.Iban, ct);
             return NoContent();
         }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = "Err_Iban_Duplicate", message = ex.Message });
+        }
         catch (ArgumentException ex) when (ex.ParamName == nameof(req.Iban))
         {
             return BadRequest(new { error = "Err_Invalid_Iban", message = ex.Message });

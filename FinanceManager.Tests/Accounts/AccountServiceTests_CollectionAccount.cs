@@ -83,7 +83,7 @@ public sealed class AccountServiceTests_CollectionAccount
 
         Func<Task> act = () => sut.AddLinkedIbanAsync(acc.Id, owner, "DE12345678901234567890", CancellationToken.None);
 
-        var ex = await Assert.ThrowsAsync<ArgumentException>(act);
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(act);
         Assert.Contains("IBAN", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 

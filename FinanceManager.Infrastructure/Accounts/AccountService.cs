@@ -376,7 +376,7 @@ public sealed class AccountService : IAccountService
         bool exists = await _db.AccountLinkedIbans
             .AsNoTracking()
             .AnyAsync(li => li.AccountId == accountId && li.Iban == iban, ct);
-        if (exists) throw new ArgumentException("IBAN already linked to this account", nameof(iban));
+        if (exists) throw new InvalidOperationException("IBAN already linked to this account");
 
         var entry = new Domain.Accounts.AccountLinkedIban(accountId, iban);
         _db.AccountLinkedIbans.Add(entry);

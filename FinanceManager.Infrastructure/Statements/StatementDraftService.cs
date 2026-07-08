@@ -2345,6 +2345,8 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 {
                     await _attachments.ReassignAsync(AttachmentEntityKind.StatementDraft, draft.Id, AttachmentEntityKind.Account, account.Id, ownerUserId, ct);
                 }
+
+                await TryAutoLinkIbanToCollectionAccountAsync(account, draft.AccountName, ct);
             }
 
             _reportCacheService?.EnqueueBudgetReportCacheRefresh(ownerUserId);
@@ -2362,6 +2364,8 @@ public sealed partial class StatementDraftService : IStatementDraftService
         {
             await _attachments.ReassignAsync(AttachmentEntityKind.StatementDraft, draft.Id, AttachmentEntityKind.Account, account.Id, ownerUserId, ct);
         }
+
+        await TryAutoLinkIbanToCollectionAccountAsync(account, draft.AccountName, ct);
 
         _reportCacheService?.EnqueueBudgetReportCacheRefresh(ownerUserId);
 
@@ -2390,6 +2394,42 @@ public sealed partial class StatementDraftService : IStatementDraftService
         {
             BudgetImpactSummary = budgetImpactSummary
         };
+    }
+
+    /// <summary>
+    /// If the account is a collection account and the IBAN from the statement draft is not yet
+    /// in the linked IBANs list, adds it automatically. Errors are swallowed to avoid disrupting booking.
+    /// </summary>
+    private async Task TryAutoLinkIbanToCollectionAccountAsync(Account account, string? statementIban, CancellationToken ct)
+    {
+        if (!account.IsCollectionAccount) return;
+        if (string.IsNullOrWhiteSpace(statementIban)) return;
+
+        var iban = statementIban.Replace(" ", "").Trim();
+        if (string.IsNullOrWhiteSpace(iban)) return;
+
+        // Do not add if it is the account's own IBAN
+        if (string.Equals(account.Iban, iban, StringComparison.OrdinalIgnoreCase)) return;
+
+        try
+        {
+            bool alreadyLinked = await _db.AccountLinkedIbans
+                .AsNoTracking()
+                .AnyAsync(li => li.AccountId == account.Id && li.Iban == iban, ct);
+
+            if (!alreadyLinked)
+            {
+                _db.AccountLinkedIbans.Add(new AccountLinkedIban(account.Id, iban));
+                await _db.SaveChangesAsync(ct);
+                _logger.LogInformation(
+                    "Auto-linked IBAN {Iban} to collection account {AccountId} after booking.",
+                    iban, account.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to auto-link IBAN {Iban} to collection account {AccountId}.", iban, account.Id);
+        }
     }
 
     private static int GetMonthsToAdd(SavingsPlanInterval interval) => interval switch

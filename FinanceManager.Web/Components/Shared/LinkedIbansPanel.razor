@@ -72,7 +72,7 @@
     private void OnIbanInput(ChangeEventArgs e)
     {
         if (Vm != null)
-            Vm.NewLinkedIban = e.Value?.ToString() ?? string.Empty;
+            Vm.NewLinkedIban = (e.Value?.ToString() ?? string.Empty).Replace(" ", "");
     }
 
     private async Task OnKeyDownAsync(KeyboardEventArgs e)

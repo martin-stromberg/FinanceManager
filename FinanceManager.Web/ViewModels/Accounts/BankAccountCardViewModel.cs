@@ -479,7 +479,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
             try
             {
                 var api = ServiceProvider.GetRequiredService<IApiClient>();
-                await api.AddLinkedIbanAsync(Id, new AccountLinkedIbanUpsertRequest(NewLinkedIban.Trim()));
+                await api.AddLinkedIbanAsync(Id, new AccountLinkedIbanUpsertRequest(NewLinkedIban.Replace(" ", "")));
                 NewLinkedIban = string.Empty;
                 LinkedIbans = await api.GetLinkedIbansAsync(Id);
                 RaiseStateChanged();
@@ -487,7 +487,20 @@ namespace FinanceManager.Web.ViewModels.Accounts
             }
             catch (Exception ex)
             {
-                SetError(null, ex.Message);
+                var api2 = ServiceProvider.GetRequiredService<IApiClient>();
+                var errorCode = api2.LastErrorCode;
+                string? errorMsg;
+                if (errorCode == "Err_Iban_Duplicate")
+                {
+                    errorMsg = Localizer?["LinkedIbans_Error_AlreadyLinked"]?.Value
+                        ?? api2.LastError
+                        ?? ex.Message;
+                }
+                else
+                {
+                    errorMsg = api2.LastError ?? ex.Message;
+                }
+                SetError(errorCode, errorMsg);
                 RaiseStateChanged();
                 return false;
             }
