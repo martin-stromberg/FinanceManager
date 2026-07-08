@@ -48,6 +48,9 @@ public sealed class SetupReturnAnalysisViewModel : BaseViewModel
     /// <summary>Risk-free rate used for return calculations (decimal, e.g. 0.04 = 4%). Must be >= 0.</summary>
     public decimal RiskFreeRate { get; set; }
 
+    /// <summary>Indicates whether the current settings differ from the last loaded or saved snapshot.</summary>
+    public bool Dirty { get; private set; }
+
     /// <summary>
     /// Loads available securities and the current benchmark settings in parallel.
     /// </summary>
@@ -73,6 +76,7 @@ public sealed class SetupReturnAnalysisViewModel : BaseViewModel
             SelectedBenchmarkSecurityId = _currentSettings?.BenchmarkSecurityId;
             ShowSharpeRatio = _currentSettings?.ShowSharpeRatio ?? false;
             RiskFreeRate = _currentSettings?.RiskFreeRate ?? 0m;
+            RecomputeDirty();
         }
         catch (Exception ex)
         {
@@ -124,6 +128,7 @@ public sealed class SetupReturnAnalysisViewModel : BaseViewModel
                     ShowSharpeRatio,
                     RiskFreeRate);
                 SavedOk = true;
+                RecomputeDirty();
             }
             else
             {
@@ -139,5 +144,39 @@ public sealed class SetupReturnAnalysisViewModel : BaseViewModel
             Saving = false;
             RaiseStateChanged();
         }
+    }
+
+    /// <summary>Restores the last loaded or saved benchmark settings.</summary>
+    public void Reset()
+    {
+        if (_currentSettings is null)
+        {
+            return;
+        }
+
+        SelectedBenchmarkSecurityId = _currentSettings.BenchmarkSecurityId;
+        ShowSharpeRatio = _currentSettings.ShowSharpeRatio;
+        RiskFreeRate = _currentSettings.RiskFreeRate;
+        SavedOk = false;
+        SaveError = null;
+        RecomputeDirty();
+        RaiseStateChanged();
+    }
+
+    /// <summary>Marks the settings as changed and recomputes the dirty state.</summary>
+    public void OnChanged()
+    {
+        SavedOk = false;
+        SaveError = null;
+        RecomputeDirty();
+        RaiseStateChanged();
+    }
+
+    private void RecomputeDirty()
+    {
+        Dirty = _currentSettings is not null
+            && (SelectedBenchmarkSecurityId != _currentSettings.BenchmarkSecurityId
+                || ShowSharpeRatio != _currentSettings.ShowSharpeRatio
+                || RiskFreeRate != _currentSettings.RiskFreeRate);
     }
 }

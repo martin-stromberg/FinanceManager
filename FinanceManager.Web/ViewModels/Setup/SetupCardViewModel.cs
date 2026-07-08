@@ -1,5 +1,6 @@
 using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using FinanceManager.Shared.Dtos;
 using Microsoft.Extensions.Localization;
 using System.Collections.Generic;
@@ -20,6 +21,39 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     /// <param name="sp">The service provider used to resolve services required by the view model.</param>
     public SetupCardViewModel(IServiceProvider sp) : base(sp)
     {
+        _logger = sp.GetService<ILogger<SetupCardViewModel>>();
+    }
+
+    private readonly ILogger<SetupCardViewModel>? _logger;
+
+    private readonly Dictionary<string, BaseViewModel> _sectionViewModels = new(StringComparer.OrdinalIgnoreCase);
+    private bool _coreSectionViewModelsInitialized;
+    private bool _saving;
+
+    private IReadOnlyList<KeyValuePair<string, string>>? _settingSections;
+
+    /// <summary>
+    /// Raised when a section should be expanded programmatically. The event argument contains the section key.
+    /// Subscribed by <c>SetupSections.razor</c> to expand the section before processing a pending action.
+    /// </summary>
+    public event EventHandler<string>? ExpandSectionRequested;
+
+    /// <summary>
+    /// Indicates whether a global save operation is currently running.
+    /// </summary>
+    public bool Saving
+    {
+        get => _saving;
+        private set
+        {
+            if (_saving == value)
+            {
+                return;
+            }
+
+            _saving = value;
+            RaiseStateChanged();
+        }
     }
 
     /// <summary>
@@ -40,15 +74,21 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
 
     /// <summary>
     /// Exposes the available setting sections as (key, localized display name) pairs.
-    /// The list is static and should be used to render the setup navigation.
+    /// The list is materialized once in <see cref="LoadAsync"/> and cached for the lifetime of the view model.
     /// </summary>
-    public IReadOnlyList<KeyValuePair<string, string>> SettingSections
+    public IReadOnlyList<KeyValuePair<string, string>> SettingSections => _settingSections ?? Array.Empty<KeyValuePair<string, string>>();
+
+    /// <summary>
+    /// Indicates whether any setup section currently has unsaved changes.
+    /// </summary>
+    public bool HasPendingChanges
     {
         get
         {
-            return SectionDefinitions
-                .Select(section => new KeyValuePair<string, string>(section.Key, Localizer?[section.LocalizationKey].Value ?? section.FallbackTitle))
-                .ToList();
+            return GetSectionViewModel<SetupProfileViewModel>("profile")?.Dirty == true
+                || GetSectionViewModel<SetupNotificationsViewModel>("notifications")?.Dirty == true
+                || GetSectionViewModel<SetupStatementsViewModel>("statements")?.Dirty == true
+                || GetSectionViewModel<SetupReturnAnalysisViewModel>("returnanalysis")?.Dirty == true;
         }
     }
 
@@ -72,18 +112,36 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
 
     /// <summary>
     /// Creates the setup section view model instance for a section key.
+    /// Returns a pre-created, ribbon-contributing instance from the internal cache when available;
+    /// otherwise creates a new instance via the service provider.
     /// </summary>
     /// <param name="key">Section key to resolve.</param>
     /// <param name="services">Service provider used for creating the view model instance.</param>
     /// <returns>The created view model instance, or <c>null</c> when the section key is unknown.</returns>
-    public object? CreateSectionViewModel(string key, IServiceProvider services)
+    public BaseViewModel? CreateSectionViewModel(string key, IServiceProvider services)
     {
         if (!TryGetSectionDefinition(key, out var sectionDefinition) || sectionDefinition is null)
         {
             return null;
         }
 
-        return ActivatorUtilities.CreateInstance(services, sectionDefinition.ViewModelType);
+        if (_sectionViewModels.TryGetValue(key, out var cached))
+        {
+            return cached;
+        }
+
+        var newVm = ActivatorUtilities.CreateInstance(services, sectionDefinition.ViewModelType);
+        if (newVm is BaseViewModel baseVm)
+        {
+            // Intentionally not registered as a child view model via CreateSubViewModel<T>:
+            // The sections resolved here at runtime (attachments, security, returnanalysis) do not
+            // contribute ribbon actions, so omitting them from _childViewModels is by design.
+            // Sections that do contribute ribbon actions (profile, notifications, backup, statements)
+            // are pre-created in LoadAsync using CreateSubViewModel<T> which registers them properly.
+            _sectionViewModels[key] = baseVm;
+            return baseVm;
+        }
+        return null;
     }
 
     /// <summary>
@@ -115,10 +173,34 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
         try
         {
             CardRecord = null;
+
+            if (!_coreSectionViewModelsInitialized)
+            {
+                var profileVm = CreateSubViewModel<SetupProfileViewModel>();
+                _sectionViewModels["profile"] = profileVm;
+
+                var notificationsVm = CreateSubViewModel<SetupNotificationsViewModel>();
+                _sectionViewModels["notifications"] = notificationsVm;
+
+                var backupVm = CreateSubViewModel<SetupBackupsViewModel>(configure: vm =>
+                    vm.BeforeUploadCallback = () => ExpandSectionRequested?.Invoke(this, "backup"));
+                _sectionViewModels["backup"] = backupVm;
+
+                var statementsVm = CreateSubViewModel<SetupStatementsViewModel>();
+                _sectionViewModels["statements"] = statementsVm;
+
+                _coreSectionViewModelsInitialized = true;
+            }
+
+            _settingSections = SectionDefinitions
+                .Select(section => new KeyValuePair<string, string>(section.Key, Localizer?[section.LocalizationKey].Value ?? section.FallbackTitle))
+                .ToList();
+
             RaiseEmbeddedPanelUiAction();
         }
         catch (Exception ex)
         {
+            _logger?.LogError(ex, "LoadAsync failed");
             SetError(null, ex.Message);
             CardRecord = null;
         }
@@ -126,6 +208,58 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
         {
             Loading = false; RaiseStateChanged();
         }
+    }
+
+    /// <summary>
+    /// Saves all dirty setup sections that expose a save operation.
+    /// </summary>
+    /// <param name="ct">Cancellation token used to cancel the save operations.</param>
+    /// <returns>A task that completes when all save operations have finished.</returns>
+    public async Task SaveAllAsync(CancellationToken ct = default)
+    {
+        Saving = true;
+        try
+        {
+            var profileVm = GetSectionViewModel<SetupProfileViewModel>("profile");
+            if (profileVm?.Dirty == true)
+            {
+                await profileVm.SaveAsync(ct);
+            }
+
+            var notificationsVm = GetSectionViewModel<SetupNotificationsViewModel>("notifications");
+            if (notificationsVm?.Dirty == true)
+            {
+                await notificationsVm.SaveAsync(ct);
+            }
+
+            var statementsVm = GetSectionViewModel<SetupStatementsViewModel>("statements");
+            if (statementsVm?.Dirty == true)
+            {
+                await statementsVm.SaveAsync(ct);
+            }
+
+            var returnAnalysisVm = GetSectionViewModel<SetupReturnAnalysisViewModel>("returnanalysis");
+            if (returnAnalysisVm?.Dirty == true)
+            {
+                await returnAnalysisVm.SaveAsync(ct);
+            }
+        }
+        finally
+        {
+            Saving = false;
+        }
+    }
+
+    /// <summary>
+    /// Resets all setup sections that expose a reset operation.
+    /// </summary>
+    public void ResetAll()
+    {
+        GetSectionViewModel<SetupProfileViewModel>("profile")?.Reset();
+        GetSectionViewModel<SetupNotificationsViewModel>("notifications")?.Reset();
+        GetSectionViewModel<SetupStatementsViewModel>("statements")?.Reset();
+        GetSectionViewModel<SetupReturnAnalysisViewModel>("returnanalysis")?.Reset();
+        RaiseStateChanged();
     }
 
     private void RaiseEmbeddedPanelUiAction()
@@ -145,7 +279,10 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
             var spec = new BaseViewModel.EmbeddedPanelSpec(typeof(FinanceManager.Web.Components.Shared.SetupPanel), outerParms, EmbeddedPanelPosition.AfterRibbon, true);
             RaiseUiActionRequested("EmbeddedPanel", spec);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to raise embedded panel UI action");
+        }
     }
     private static bool TryGetSectionDefinition(string key, out SetupSectionDefinition? sectionDefinition)
     {
@@ -178,11 +315,27 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     /// <returns>A list of <see cref="UiRibbonRegister"/> instances describing the ribbon layout, or <c>null</c> when no ribbon is needed.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
-        // Provide a single Actions register with a tab containing the RebuildAggregates action
+        var groupTitle = localizer["Ribbon_Group_Manage"].Value;
         var tabs = new List<UiRibbonTab>
         {
-            new UiRibbonTab(localizer["Ribbon_Group_Actions"].Value, new List<UiRibbonAction>
+            new UiRibbonTab(groupTitle, new List<UiRibbonAction>
             {
+                new UiRibbonAction(
+                    "Save",
+                    localizer["Ribbon_Save"].Value,
+                    "<svg><use href='/icons/sprite.svg#save'/></svg>",
+                    UiRibbonItemSize.Small,
+                    Saving || !HasPendingChanges,
+                    null,
+                    new Func<Task>(async () => await SaveAllAsync())),
+                new UiRibbonAction(
+                    "Reset",
+                    localizer["Ribbon_Reset"].Value,
+                    "<svg><use href='/icons/sprite.svg#undo'/></svg>",
+                    UiRibbonItemSize.Small,
+                    Saving || !HasPendingChanges,
+                    null,
+                    new Func<Task>(() => { ResetAll(); return Task.CompletedTask; })),
                 new UiRibbonAction(
                     "RebuildAggregates",
                     localizer["Ribbon_RebuildAggregates"].Value,
@@ -196,7 +349,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                         {
                             await ApiClient.Aggregates_RebuildAsync(allowDuplicate: false);
                         }
-                        catch { }
+                        catch (Exception ex) { _logger?.LogError(ex, "RebuildAggregates ribbon action failed"); }
                     })),
                 new UiRibbonAction(
                     "ResetReportCache",
@@ -214,7 +367,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                             SetError(null, localizer["Info_ResetReportCache"].Value ?? "Report cache reset.");
                             RaiseStateChanged();
                         }
-                        catch { }
+                        catch (Exception ex) { _logger?.LogError(ex, "ResetReportCache ribbon action failed"); }
                     }))
             }, int.MaxValue)
         };
@@ -244,4 +397,15 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     /// <param name="attachmentId">The id of the newly uploaded attachment, or <c>null</c> if none.</param>
     /// <returns>A completed task. No action is performed for the setup card.</returns>
     protected override Task AssignNewSymbolAsync(Guid? attachmentId) => Task.CompletedTask;
+
+    private TViewModel? GetSectionViewModel<TViewModel>(string key)
+        where TViewModel : BaseViewModel
+    {
+        if (_sectionViewModels.TryGetValue(key, out var viewModel) && viewModel is TViewModel typedViewModel)
+        {
+            return typedViewModel;
+        }
+
+        return null;
+    }
 }
