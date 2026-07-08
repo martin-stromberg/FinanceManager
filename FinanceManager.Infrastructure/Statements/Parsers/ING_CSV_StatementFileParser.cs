@@ -74,26 +74,33 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
 
             var allLines = statementFile.ReadContent().ToList();
 
-            // Detect block starts: each ING account block starts with a line containing "Bank;ING"
+            // Detect block starts: each ING sub-account block begins with a line starting with "IBAN;"
+            // (e.g. "IBAN;DE50700500000007882990"). Multiple such lines indicate a Sammelkonto CSV.
             var blockStartIndices = allLines
                 .Select((line, idx) => (line, idx))
-                .Where(x => x.line.Contains("Bank;ING", StringComparison.OrdinalIgnoreCase))
+                .Where(x => x.line.StartsWith("IBAN;", StringComparison.OrdinalIgnoreCase))
                 .Select(x => x.idx)
                 .ToList();
 
             if (blockStartIndices.Count <= 1)
             {
-                // Single block or no marker: delegate to base template parsing
+                // Single block or no IBAN marker: delegate to base template parsing
                 return base.Parse(statementFile);
             }
 
-            // Multiple blocks: parse each one separately
+            // Multiple blocks: parse each one separately.
+            // Each block starts at its "IBAN;" line. A leading empty line is prepended so that the
+            // template's first section ("Title", type=ignore) ends immediately without consuming the
+            // IBAN line — this allows the "AccountInfo" section to read it correctly.
             var results = new List<StatementParseResult>();
             for (int i = 0; i < blockStartIndices.Count; i++)
             {
                 var start = blockStartIndices[i];
                 var end = i + 1 < blockStartIndices.Count ? blockStartIndices[i + 1] : allLines.Count;
-                var blockLines = allLines.GetRange(start, end - start);
+
+                // Prepend one empty line to satisfy the "Title" (ignore) section of the template.
+                var blockLines = new List<string>(end - start + 1) { string.Empty };
+                blockLines.AddRange(allLines.GetRange(start, end - start));
 
                 var blockFile = new InlineING_CsvStatementFile(statementFile.FileName, blockLines);
                 var blockResults = base.Parse(blockFile);

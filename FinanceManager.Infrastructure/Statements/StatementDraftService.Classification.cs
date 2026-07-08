@@ -382,6 +382,7 @@ public sealed partial class StatementDraftService
 
     /// <summary>
     /// Classifies the draft header to detect the account id when possible (IBAN or single account scenarios).
+    /// Also checks <see cref="AccountLinkedIbans"/> for collection-account assignment when no direct match is found.
     /// </summary>
     /// <param name="draft">The draft to classify.</param>
     /// <param name="ownerUserId">Owner user identifier used to scope account lookups.</param>
@@ -406,6 +407,23 @@ public sealed partial class StatementDraftService
             if (account != null)
             {
                 draft.SetDetectedAccount(account.Id);
+            }
+
+            // No direct IBAN match found — check AccountLinkedIbans so that collection-account
+            // sub-account CSVs are automatically assigned to the owning collection account.
+            if (draft.DetectedAccountId == null)
+            {
+                var linkedMatch = await (
+                    from li in _db.AccountLinkedIbans
+                    join a in _db.Accounts on li.AccountId equals a.Id
+                    where li.Iban == draft.AccountName && a.OwnerUserId == ownerUserId
+                    select new { a.Id }
+                ).FirstOrDefaultAsync(ct);
+
+                if (linkedMatch != null)
+                {
+                    draft.SetDetectedAccount(linkedMatch.Id);
+                }
             }
         }
         if (draft.DetectedAccountId == null && string.IsNullOrWhiteSpace(draft.AccountName))
