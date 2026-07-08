@@ -14,11 +14,23 @@ Die API für diesen Bereich wird primär über `AccountsController` und `Posting
 
 ### `POST /api/accounts`
 
-**Beschreibung:** Legt ein Konto an.
+**Beschreibung:** Legt ein Konto an. Sammelkonten können dabei direkt markiert werden.
 
 ### `PUT /api/accounts/{id}`
 
-**Beschreibung:** Aktualisiert ein Konto.
+**Beschreibung:** Aktualisiert ein Konto inklusive Sammelkonto-Flag.
+
+### `GET /api/accounts/{id}/linked-ibans`
+
+**Beschreibung:** Liefert die verknüpften IBANs eines Sammelkontos.
+
+### `POST /api/accounts/{id}/linked-ibans`
+
+**Beschreibung:** Fügt eine verknüpfte IBAN hinzu.
+
+### `DELETE /api/accounts/{id}/linked-ibans/{iban}`
+
+**Beschreibung:** Entfernt eine verknüpfte IBAN.
 
 ### `GET /api/postings/account/{accountId}`
 

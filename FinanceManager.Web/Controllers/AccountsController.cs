@@ -112,25 +112,9 @@ public sealed class AccountsController : ControllerBase
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
         try
         {
-            Guid bankContactId;
-            if (!string.IsNullOrWhiteSpace(req.NewBankContactName))
-            {
-                var createdContact = await _contacts.CreateAsync(_current.UserId, req.NewBankContactName.Trim(), ContactType.Bank, null, null, null, ct);
-                bankContactId = createdContact.Id;
-            }
-            else if (req.BankContactId.HasValue)
-            {
-                bankContactId = req.BankContactId.Value;
-            }
-            else
-            {
-                // Auto-create a bank contact based on the account name or IBAN if none provided
-                var contactName = !string.IsNullOrWhiteSpace(req.Name) ? req.Name.Trim() : (string.IsNullOrWhiteSpace(req.Iban) ? "Bankkonto" : req.Iban!.Trim());
-                var createdContact = await _contacts.CreateAsync(_current.UserId, contactName, ContactType.Bank, null, null, null, ct);
-                bankContactId = createdContact.Id;
-            }
+            var bankContactId = await ResolveBankContactAsync(req.NewBankContactName, req.BankContactId, req.Name, req.Iban, allowAutoCreate: true, ct);
 
-            var account = await _accounts.CreateAsync(_current.UserId, req.Name.Trim(), req.Type, req.Iban?.Trim(), bankContactId, req.SavingsPlanExpectation, req.SecurityProcessingEnabled, ct);
+            var account = await _accounts.CreateAsync(_current.UserId, req.Name.Trim(), req.Type, req.Iban?.Trim(), bankContactId!.Value, req.SavingsPlanExpectation, req.SecurityProcessingEnabled, req.IsCollectionAccount, ct);
             if (req.SymbolAttachmentId.HasValue)
             {
                 await _accounts.SetSymbolAttachmentAsync(account.Id, _current.UserId, req.SymbolAttachmentId.Value, ct);
@@ -169,21 +153,11 @@ public sealed class AccountsController : ControllerBase
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
         try
         {
-            Guid bankContactId;
-            if (!string.IsNullOrWhiteSpace(req.NewBankContactName))
-            {
-                var createdContact = await _contacts.CreateAsync(_current.UserId, req.NewBankContactName.Trim(), ContactType.Bank, null, null, null, ct);
-                bankContactId = createdContact.Id;
-            }
-            else if (req.BankContactId.HasValue)
-            {
-                bankContactId = req.BankContactId.Value;
-            }
-            else
-            {
+            var bankContactId = await ResolveBankContactAsync(req.NewBankContactName, req.BankContactId, req.Name, null, allowAutoCreate: false, ct);
+            if (bankContactId is null)
                 return BadRequest(new { error = "Bank contact required (existing or new)" });
-            }
-            var updated = await _accounts.UpdateAsync(id, _current.UserId, req.Name.Trim(), req.Iban?.Trim(), bankContactId, req.SavingsPlanExpectation, req.SecurityProcessingEnabled, ct);
+
+            var updated = await _accounts.UpdateAsync(id, _current.UserId, req.Name.Trim(), req.Iban?.Trim(), bankContactId.Value, req.SavingsPlanExpectation, req.SecurityProcessingEnabled, req.IsCollectionAccount, ct);
             if (updated is null) return NotFound();
             if (req.SymbolAttachmentId.HasValue)
             {
@@ -287,5 +261,113 @@ public sealed class AccountsController : ControllerBase
             _logger.LogError(ex, "ClearSymbol failed for account {AccountId}", id);
             return Problem("Unexpected error", statusCode: 500);
         }
+    }
+
+    /// <summary>
+    /// Returns the list of linked sub-IBANs for a collection account.
+    /// </summary>
+    /// <param name="id">Account identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>HTTP 200 with a list of IBAN strings; HTTP 404 when account not found.</returns>
+    [HttpGet("{id:guid}/linked-ibans")]
+    [ProducesResponseType(typeof(IReadOnlyList<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetLinkedIbansAsync(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var ibans = await _accounts.GetLinkedIbansAsync(id, _current.UserId, ct);
+            if (ibans is null) return NotFound();
+            return Ok(ibans);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetLinkedIbans failed for account {AccountId}", id);
+            return Problem("Unexpected error", statusCode: 500);
+        }
+    }
+
+    /// <summary>
+    /// Adds a linked sub-IBAN to a collection account.
+    /// </summary>
+    /// <param name="id">Account identifier.</param>
+    /// <param name="req">Request payload containing the IBAN to add.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>HTTP 204 when added; HTTP 400 when invalid; HTTP 404 when account not found.</returns>
+    [HttpPost("{id:guid}/linked-ibans")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AddLinkedIbanAsync(Guid id, [FromBody] AccountLinkedIbanUpsertRequest req, CancellationToken ct)
+    {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        try
+        {
+            await _accounts.AddLinkedIbanAsync(id, _current.UserId, req.Iban, ct);
+            return NoContent();
+        }
+        catch (ArgumentException ex) when (ex.ParamName == nameof(req.Iban))
+        {
+            return BadRequest(new { error = "Err_Invalid_Iban", message = ex.Message });
+        }
+        catch (ArgumentException ex) when (ex.ParamName == "accountId")
+        {
+            return NotFound(new { error = "Err_NotFound", message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = "Err_InvalidArgument", message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AddLinkedIban failed for account {AccountId}", id);
+            return Problem("Unexpected error", statusCode: 500);
+        }
+    }
+
+    /// <summary>
+    /// Removes a linked sub-IBAN from a collection account.
+    /// </summary>
+    /// <param name="id">Account identifier.</param>
+    /// <param name="iban">The IBAN to remove.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>HTTP 204 when removed; HTTP 404 when not found.</returns>
+    [HttpDelete("{id:guid}/linked-ibans/{iban}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RemoveLinkedIbanAsync(Guid id, string iban, CancellationToken ct)
+    {
+        try
+        {
+            var ok = await _accounts.RemoveLinkedIbanAsync(id, _current.UserId, iban, ct);
+            return ok ? NoContent() : NotFound();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "RemoveLinkedIban failed for account {AccountId}", id);
+            return Problem("Unexpected error", statusCode: 500);
+        }
+    }
+
+    private async Task<Guid?> ResolveBankContactAsync(string? newBankContactName, Guid? bankContactId, string? accountName, string? iban, bool allowAutoCreate, CancellationToken ct)
+    {
+        if (!string.IsNullOrWhiteSpace(newBankContactName))
+        {
+            var created = await _contacts.CreateAsync(_current.UserId, newBankContactName.Trim(), ContactType.Bank, null, null, null, ct);
+            return created.Id;
+        }
+
+        if (bankContactId.HasValue)
+            return bankContactId.Value;
+
+        if (allowAutoCreate)
+        {
+            var contactName = !string.IsNullOrWhiteSpace(accountName) ? accountName.Trim()
+                : (!string.IsNullOrWhiteSpace(iban) ? iban!.Trim() : "Bankkonto");
+            var created = await _contacts.CreateAsync(_current.UserId, contactName, ContactType.Bank, null, null, null, ct);
+            return created.Id;
+        }
+
+        return null;
     }
 }

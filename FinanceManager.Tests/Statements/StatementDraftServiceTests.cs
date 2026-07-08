@@ -1,4 +1,4 @@
-using FinanceManager.Application.Accounts;
+﻿using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Attachments;
 using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Text;
+using FinanceManager.Tests.TestHelpers;
 
 namespace FinanceManager.Tests.Statements;
 
@@ -26,29 +27,6 @@ public sealed class StatementDraftServiceTests
         public string? PreferredLanguage => null;
     }
 
-    private sealed class TestAccountService : IAccountService
-    {
-        public Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public Task<bool> DeleteAsync(Guid id, Guid ownerUserId, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public Task<IReadOnlyList<AccountDto>> ListAsync(Guid ownerUserId, int skip, int take, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public Task<AccountDto?> GetAsync(Guid id, Guid ownerUserId, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public AccountDto? Get(Guid id, Guid ownerUserId)
-            => throw new NotImplementedException();
-
-        public Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct)
-            => throw new NotImplementedException();
-    }
 
     private static (StatementDraftService sut, AppDbContext db, Guid ownerId) Create()
     {
@@ -88,7 +66,7 @@ public sealed class StatementDraftServiceTests
         services.AddScoped<IStatementFileFactory>(sp => new StatementFileFactory(sp));
         var sp = services.BuildServiceProvider();
 
-        var accountService = new TestAccountService();
+        var accountService = new StubAccountService();
         var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, sp.GetService<IStatementFileFactory>(), sp.GetServices<IStatementFileParser>(), NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, owner.Id);
     }
@@ -128,7 +106,7 @@ public sealed class StatementDraftServiceTests
 
         var agg = new PostingAggregateService(db);
         var attachments = new AttachmentService(db, NullLogger<AttachmentService>.Instance);
-        var accountService = new TestAccountService();
+        var accountService = new StubAccountService();
         var sut = new StatementDraftService(db, agg, accountService, sp.GetService<IStatementFileFactory>(), sp.GetServices<IStatementFileParser>(), NullLogger<StatementDraftService>.Instance, attachments);
         return (sut, db, owner.Id);
     }

@@ -60,7 +60,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// A <see cref="StatementParseResult"/> containing a header and a single movement with parsed details when successful;
         /// otherwise <c>null</c> when parsing could not extract a valid amount or the format is not recognized.
         /// </returns>
-        public override StatementParseResult? ParseDetails(IStatementFile statementFile)
+        public override IReadOnlyList<StatementParseResult>? ParseDetails(IStatementFile statementFile)
         {
             try
             {
@@ -313,7 +313,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                     movement.PostingDescription = $"{txType.Value}";
                 }
 
-                return new StatementParseResult(header, new List<StatementMovement> { movement });
+                return new List<StatementParseResult> { new StatementParseResult(header, new List<StatementMovement> { movement }) };
             }
             catch
             {

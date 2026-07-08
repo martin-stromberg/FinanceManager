@@ -29,3 +29,17 @@
 - Sonst: Zugriff wird abgelehnt.
 
 **Umsetzung:** `AccountsController` und `PostingsController` mit benutzerbezogenen Serviceabfragen.
+
+## Sammelkonten verwalten mehrere IBANs
+
+**Beschreibung:** Ein Sammelkonto kann mehrere verknüpfte IBANs für Unterkonten, Sparbriefe oder Sparpläne führen.
+
+**Bedingungen:**
+- Das Konto gehört dem angemeldeten Benutzer.
+- Die verknüpfte IBAN ist für dieses Konto noch nicht vorhanden.
+
+**Verhalten:**
+- Wenn die IBAN neu ist: Sie wird dem Sammelkonto zugeordnet.
+- Wenn die IBAN bereits existiert: Die Änderung wird abgelehnt.
+
+**Umsetzung:** `AccountsController.GetLinkedIbansAsync`, `AccountsController.AddLinkedIbanAsync`, `AccountsController.RemoveLinkedIbanAsync` und `AccountService`.

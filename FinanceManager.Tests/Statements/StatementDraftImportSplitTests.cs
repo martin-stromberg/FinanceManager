@@ -1,4 +1,4 @@
-using Bunit; // added for Self contact
+ï»¿using Bunit; // added for Self contact
 using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Attachments;
 using FinanceManager.Domain.Contacts;
@@ -15,12 +15,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Linq.Expressions;
 using System.Text;
+using FinanceManager.Tests.TestHelpers;
 
 namespace FinanceManager.Tests.Statements;
 
 /// <summary>
 /// Tests the import split logic (CreateDraftAsync) for fixed, monthly and hybrid modes.
-/// NOTE: MinEntriesPerDraft (new feature) is NOT yet applied by the implementation – tests document current behaviour (TDD baseline).
+/// NOTE: MinEntriesPerDraft (new feature) is NOT yet applied by the implementation ï¿½ tests document current behaviour (TDD baseline).
 /// </summary>
 public sealed class StatementDraftImportSplitTests
 {
@@ -56,35 +57,12 @@ public sealed class StatementDraftImportSplitTests
         services.AddScoped<IStatementFileFactory>(sp => new StatementFileFactory(sp));
         var sp = services.BuildServiceProvider();
 
-        var accountService = new TestAccountService();
+        var accountService = new StubAccountService();
         var fileFactory = new StatementFileFactory(sp);
         var svc = new StatementDraftService(db, new PostingAggregateService(db), accountService, fileFactory, sp.GetServices<IStatementFileParser>(), NullLogger<StatementDraftService>.Instance, null);
         return (svc, db, conn, user.Id);
     }
 
-    private sealed class TestAccountService : IAccountService
-    {
-        public Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public Task<bool> DeleteAsync(Guid id, Guid ownerUserId, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public Task<IReadOnlyList<AccountDto>> ListAsync(Guid ownerUserId, int skip, int take, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public Task<AccountDto?> GetAsync(Guid id, Guid ownerUserId, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public AccountDto? Get(Guid id, Guid ownerUserId)
-            => throw new NotImplementedException();
-
-        public Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct)
-            => throw new NotImplementedException();
-    }
 
     private static string BuildBackupPayload(IEnumerable<(DateTime date, decimal amount, string subject)> lines, string? iban = "DE00", string? description = "Test")
     {
@@ -262,7 +240,7 @@ public sealed class StatementDraftImportSplitTests
         var payload = BuildBackupPayload(all);
         var u = await db.Users.SingleAsync();
 
-        // Max groß genug wählen, damit kein Split wegen Max greift
+        // Max groï¿½ genug wï¿½hlen, damit kein Split wegen Max greift
         u.SetImportSplitSettings(ImportSplitMode.Monthly, maxEntriesPerDraft: 500, monthlySplitThreshold: null, minEntriesPerDraft: minEntriesPerDraft);
         await db.SaveChangesAsync();
 

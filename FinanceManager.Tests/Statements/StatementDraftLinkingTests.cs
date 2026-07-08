@@ -1,4 +1,4 @@
-using FinanceManager.Domain.Accounts;
+ï»¿using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Statements;
 using FinanceManager.Infrastructure;
@@ -8,6 +8,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using FinanceManager.Application.Accounts;
 using Microsoft.Extensions.Logging.Abstractions;
+using FinanceManager.Tests.TestHelpers;
 
 namespace FinanceManager.Tests.Statements;
 
@@ -29,34 +30,11 @@ public sealed class StatementDraftLinkingTests
         db.Contacts.Add(ownerContact);
         db.SaveChanges();
 
-        var accountService = new TestAccountService();
+        var accountService = new StubAccountService();
         var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, owner.Id);
     }
 
-    private sealed class TestAccountService : IAccountService
-    {
-        public Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public Task<bool> DeleteAsync(Guid id, Guid ownerUserId, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public Task<IReadOnlyList<AccountDto>> ListAsync(Guid ownerUserId, int skip, int take, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public Task<AccountDto?> GetAsync(Guid id, Guid ownerUserId, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public AccountDto? Get(Guid id, Guid ownerUserId)
-            => throw new NotImplementedException();
-
-        public Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct)
-            => throw new NotImplementedException();
-    }
 
     [Fact]
     public async Task Book_TwoMatchingSelfTransfers_ShouldLinkContactPostings()
@@ -210,7 +188,7 @@ public sealed class StatementDraftLinkingTests
         db.StatementDrafts.Add(draftB);
 
         var selfContactId = db.Contacts.First(c => c.OwnerUserId == owner && c.Type == ContactType.Self).Id;
-        // assign savings plan to entry A (giro side) — savings-account entries must not carry a savings-plan
+        // assign savings plan to entry A (giro side) ï¿½ savings-account entries must not carry a savings-plan
         entryA.AssignSavingsPlan(plan.Id);
         entryA.MarkAccounted(selfContactId);
         eB.MarkAccounted(selfContactId);
@@ -557,7 +535,7 @@ public sealed class StatementDraftLinkingTests
             var linked = db.Postings.FirstOrDefault(p => p.Id == contactP_G.LinkedPostingId.Value && p.Kind == PostingKind.Contact);
             Assert.NotNull(linked);
 
-            // The matching should consider the usage/purpose (Subject) — currently the service ignores Subject, so this assertion
+            // The matching should consider the usage/purpose (Subject) ï¿½ currently the service ignores Subject, so this assertion
             // is expected to fail until matching is improved to include Subject in the selection criteria.
             Assert.Equal(contactP_G.Subject, linked.Subject);
         }

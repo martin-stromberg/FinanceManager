@@ -165,6 +165,7 @@ public sealed class DemoDataService : IDemoDataService
                 bankContactId: giroBank.Id,
                 expectation: SavingsPlanExpectation.Optional,
                 securityProcessingEnabled: true,
+                isCollectionAccount: false,
                 ct: ct);
 
             // Create two savings accounts
@@ -176,6 +177,7 @@ public sealed class DemoDataService : IDemoDataService
                 bankContactId: savingsBank.Id,
                 expectation: SavingsPlanExpectation.None,
                 securityProcessingEnabled: true,
+                isCollectionAccount: false,
                 ct: ct);
 
             var accSave2 = await _accountService.CreateAsync(
@@ -186,6 +188,7 @@ public sealed class DemoDataService : IDemoDataService
                 bankContactId: savingsBank.Id,
                 expectation: SavingsPlanExpectation.None,
                 securityProcessingEnabled: true,
+                isCollectionAccount: false,
                 ct: ct);
 
             // if requested, create statement draft and entries for KFZ Versicherung

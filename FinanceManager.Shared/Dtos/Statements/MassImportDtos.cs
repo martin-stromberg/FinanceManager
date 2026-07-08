@@ -225,6 +225,11 @@ public sealed class MassImportBatchFileResultDto
     public Guid? StatementDraftId { get; set; }
 
     /// <summary>
+    /// All created statement draft ids for statement imports (including collection statement imports with multiple drafts).
+    /// </summary>
+    public IReadOnlyList<Guid> StatementDraftIds { get; set; } = Array.Empty<Guid>();
+
+    /// <summary>
     /// Price import counters for security files.
     /// </summary>
     public SecurityPriceImportResultDto? PriceImportResult { get; set; }

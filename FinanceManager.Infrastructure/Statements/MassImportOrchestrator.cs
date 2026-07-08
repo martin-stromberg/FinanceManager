@@ -170,20 +170,21 @@ public sealed class MassImportOrchestrator : IMassImportOrchestrator
 
     private async Task ImportStatementAsync(Guid ownerUserId, MassImportFileUploadDto upload, MassImportBatchFileResultDto result, CancellationToken ct)
     {
-        StatementDraftDto? firstDraft = null;
+        var draftIds = new List<Guid>();
         await foreach (var draft in _statementDraftService.CreateDraftAsync(ownerUserId, upload.FileName, upload.Content, ct))
         {
-            firstDraft ??= draft;
+            draftIds.Add(draft.DraftId);
         }
 
-        if (firstDraft == null)
+        if (draftIds.Count == 0)
         {
             result.ExecutionStatus = MassImportFileExecutionStatus.Failed;
             result.ValidationMessage = "No statement draft created.";
             return;
         }
 
-        result.StatementDraftId = firstDraft.DraftId;
+        result.StatementDraftId = draftIds[0];
+        result.StatementDraftIds = draftIds;
         result.ExecutionStatus = MassImportFileExecutionStatus.Imported;
     }
 
@@ -232,7 +233,9 @@ public sealed class MassImportOrchestrator : IMassImportOrchestrator
         {
             var parsed = _statementParsers
                 .Select(parser => parser.Parse(statementFile))
-                .FirstOrDefault(result => result is not null && result.Movements.Any());
+                .Where(results => results is not null)
+                .SelectMany(results => results!)
+                .FirstOrDefault(result => result.Movements.Any());
 
             if (parsed != null)
             {

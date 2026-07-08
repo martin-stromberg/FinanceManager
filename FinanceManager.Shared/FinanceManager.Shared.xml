@@ -45,6 +45,21 @@
             Clears the symbol attachment from an account.
             </summary>
         </member>
+        <member name="M:FinanceManager.Shared.ApiClient.GetLinkedIbansAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the list of linked sub-IBANs for a collection account.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.AddLinkedIbanAsync(System.Guid,FinanceManager.Shared.Dtos.Accounts.AccountLinkedIbanUpsertRequest,System.Threading.CancellationToken)">
+            <summary>
+            Adds a linked sub-IBAN to a collection account.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.ApiClient.RemoveLinkedIbanAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Removes a linked sub-IBAN from a collection account.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Shared.ApiClient.Admin_ListUsersAsync(System.Threading.CancellationToken)">
             <summary>Lists users (admin only).</summary>
             <param name="ct">Cancellation token.</param>
@@ -1643,7 +1658,7 @@
             Request payload to create a new bank account.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Accounts.AccountCreateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Nullable{System.Guid},System.String,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean)">
+        <member name="M:FinanceManager.Shared.Dtos.Accounts.AccountCreateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Nullable{System.Guid},System.String,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.Boolean)">
             <summary>
             Request payload to create a new bank account.
             </summary>
@@ -1656,6 +1671,26 @@
         <member name="M:FinanceManager.Shared.Dtos.Accounts.AccountDto.#ctor(System.Guid,System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Decimal,System.Guid,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean)">
             <summary>
             DTO representing a bank account and its core properties used by the client UI.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Accounts.AccountDto.IsCollectionAccount">
+            <summary>
+            Indicates whether this account is a collection account grouping multiple sub-IBANs.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Accounts.AccountDto.LinkedIbans">
+            <summary>
+            List of linked sub-IBANs; empty for non-collection accounts.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Accounts.AccountLinkedIbanUpsertRequest">
+            <summary>
+            Request payload for adding a linked sub-IBAN to a collection account.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Shared.Dtos.Accounts.AccountLinkedIbanUpsertRequest.#ctor(System.String)">
+            <summary>
+            Request payload for adding a linked sub-IBAN to a collection account.
             </summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Accounts.AccountType">
@@ -1674,7 +1709,7 @@
             Request payload to update an existing bank account.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Accounts.AccountUpdateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Nullable{System.Guid},System.String,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.Boolean)">
+        <member name="M:FinanceManager.Shared.Dtos.Accounts.AccountUpdateRequest.#ctor(System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Nullable{System.Guid},System.String,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.Boolean,System.Boolean)">
             <summary>
             Request payload to update an existing bank account.
             </summary>
@@ -6113,6 +6148,11 @@
             First created statement draft id for statement imports.
             </summary>
         </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto.StatementDraftIds">
+            <summary>
+            All created statement draft ids for statement imports (including collection statement imports with multiple drafts).
+            </summary>
+        </member>
         <member name="P:FinanceManager.Shared.Dtos.Statements.MassImportBatchFileResultDto.PriceImportResult">
             <summary>
             Price import counters for security files.
@@ -6867,6 +6907,30 @@
             Clears the symbol attachment from an account.
             </summary>
             <param name="id">Account identifier.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.GetLinkedIbansAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the list of linked sub-IBANs for a collection account.
+            </summary>
+            <param name="accountId">Account identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Read-only list of IBAN strings.</returns>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.AddLinkedIbanAsync(System.Guid,FinanceManager.Shared.Dtos.Accounts.AccountLinkedIbanUpsertRequest,System.Threading.CancellationToken)">
+            <summary>
+            Adds a linked sub-IBAN to a collection account.
+            </summary>
+            <param name="accountId">Account identifier.</param>
+            <param name="request">Request payload containing the IBAN to add.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Shared.IApiClient.RemoveLinkedIbanAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Removes a linked sub-IBAN from a collection account.
+            </summary>
+            <param name="accountId">Account identifier.</param>
+            <param name="iban">The IBAN to remove.</param>
             <param name="ct">Cancellation token.</param>
         </member>
         <member name="M:FinanceManager.Shared.IApiClient.Auth_LoginAsync(FinanceManager.Shared.Dtos.Users.LoginRequest,System.Threading.CancellationToken)">

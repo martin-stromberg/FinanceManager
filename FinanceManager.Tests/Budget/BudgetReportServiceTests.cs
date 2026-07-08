@@ -172,7 +172,7 @@ public class BudgetReportServiceTests
 
         #region Bank Accounts
         var bankContact = await contactService.CreateAsync(ownerUserId, "Bank 1", ContactType.Bank, null, null, null, ct);
-        var bankAccount = await accountService.CreateAsync(ownerUserId, "Checking Account", AccountType.Giro, "DE00123456780000000000", bankContact.Id, SavingsPlanExpectation.Optional, true, ct);
+        var bankAccount = await accountService.CreateAsync(ownerUserId, "Checking Account", AccountType.Giro, "DE00123456780000000000", bankContact.Id, SavingsPlanExpectation.Optional, true, false, ct);
         var bankContact3 = await contactService.CreateAsync(ownerUserId, "Bank 3", ContactType.Bank, null, null, null, ct);
         #endregion
 

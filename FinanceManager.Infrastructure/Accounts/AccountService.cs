@@ -29,10 +29,10 @@ public sealed class AccountService : IAccountService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The created <see cref="AccountDto"/> representing the persisted account.</returns>
     /// <exception cref="ArgumentException">Thrown when the bank contact is invalid, the name is missing or already exists, or the IBAN already exists for the user.</exception>
-    public async Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, CancellationToken ct)
+    private async Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, CancellationToken ct)
     {
         // default expectation for older callers
-        return await CreateAsync(ownerUserId, name, type, iban, bankContactId, SavingsPlanExpectation.Optional, securityProcessingEnabled: true, ct);
+        return await CreateAsync(ownerUserId, name, type, iban, bankContactId, SavingsPlanExpectation.Optional, securityProcessingEnabled: true, isCollectionAccount: false, ct);
     }
 
     /// <summary>
@@ -47,7 +47,7 @@ public sealed class AccountService : IAccountService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The created <see cref="AccountDto"/> representing the persisted account.</returns>
     /// <exception cref="ArgumentException">Thrown when the bank contact is invalid, the name is missing or already exists, or the IBAN already exists for the user.</exception>
-    public async Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct)
+    public async Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, bool isCollectionAccount, CancellationToken ct)
     {
         if (!await _db.Contacts.AsNoTracking().AnyAsync(c => c.Id == bankContactId && c.OwnerUserId == ownerUserId && c.Type == ContactType.Bank, ct))
         {
@@ -76,9 +76,14 @@ public sealed class AccountService : IAccountService
         var account = new Domain.Accounts.Account(ownerUserId, type, name, iban, bankContactId);
         account.SetSavingsPlanExpectation(expectation);
         account.SetSecurityProcessingEnabled(securityProcessingEnabled);
+        account.SetIsCollectionAccount(isCollectionAccount);
         _db.Accounts.Add(account);
         await _db.SaveChangesAsync(ct);
-        return new AccountDto(account.Id, account.Name, account.Type, account.Iban, account.CurrentBalance, account.BankContactId, account.SymbolAttachmentId, account.SavingsPlanExpectation, account.SecurityProcessingEnabled);
+        return new AccountDto(account.Id, account.Name, account.Type, account.Iban, account.CurrentBalance, account.BankContactId, account.SymbolAttachmentId, account.SavingsPlanExpectation, account.SecurityProcessingEnabled)
+        {
+            IsCollectionAccount = account.IsCollectionAccount,
+            LinkedIbans = Array.Empty<string>()
+        };
     }
 
     /// <summary>
@@ -93,7 +98,7 @@ public sealed class AccountService : IAccountService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The updated <see cref="AccountDto"/>, or <c>null</c> when the account was not found.</returns>
     /// <exception cref="ArgumentException">Thrown when the bank contact is invalid, the name is missing or already exists, or the IBAN already exists for the user.</exception>
-    public async Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct)
+    public async Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, bool isCollectionAccount, CancellationToken ct)
     {
         var account = await _db.Accounts.FirstOrDefaultAsync(a => a.Id == id && a.OwnerUserId == ownerUserId, ct);
         if (account == null) return null;
@@ -122,8 +127,20 @@ public sealed class AccountService : IAccountService
         account.SetBankContact(bankContactId);
         account.SetSavingsPlanExpectation(expectation);
         account.SetSecurityProcessingEnabled(securityProcessingEnabled);
+        account.SetIsCollectionAccount(isCollectionAccount);
         await _db.SaveChangesAsync(ct);
-        return new AccountDto(account.Id, account.Name, account.Type, account.Iban, account.CurrentBalance, account.BankContactId, account.SymbolAttachmentId, account.SavingsPlanExpectation, account.SecurityProcessingEnabled);
+
+        var linkedIbans = await _db.AccountLinkedIbans
+            .AsNoTracking()
+            .Where(li => li.AccountId == id)
+            .Select(li => li.Iban)
+            .ToListAsync(ct);
+
+        return new AccountDto(account.Id, account.Name, account.Type, account.Iban, account.CurrentBalance, account.BankContactId, account.SymbolAttachmentId, account.SavingsPlanExpectation, account.SecurityProcessingEnabled)
+        {
+            IsCollectionAccount = account.IsCollectionAccount,
+            LinkedIbans = linkedIbans
+        };
     }
 
     /// <summary>
@@ -212,9 +229,33 @@ public sealed class AccountService : IAccountService
                             : cat.SymbolAttachmentId,
                         a.SavingsPlanExpectation,
                         a.SecurityProcessingEnabled
-                    );
+                    )
+                    {
+                        IsCollectionAccount = a.IsCollectionAccount
+                    };
 
-        return await query.Skip(skip).Take(take).ToListAsync(ct);
+        var dtos = await query.Skip(skip).Take(take).ToListAsync(ct);
+
+        // Load linked IBANs for all returned accounts in a single query
+        var accountIds = dtos.Select(d => d.Id).ToList();
+        if (accountIds.Count > 0)
+        {
+            var allLinkedIbans = await _db.AccountLinkedIbans
+                .AsNoTracking()
+                .Where(li => accountIds.Contains(li.AccountId))
+                .Select(li => new { li.AccountId, li.Iban })
+                .ToListAsync(ct);
+
+            var ibansByAccount = allLinkedIbans
+                .GroupBy(li => li.AccountId)
+                .ToDictionary(g => g.Key, g => (IReadOnlyList<string>)g.Select(li => li.Iban).ToList());
+
+            return dtos.Select(d => ibansByAccount.TryGetValue(d.Id, out var ibans)
+                ? d with { LinkedIbans = ibans }
+                : d).ToList();
+        }
+
+        return dtos;
     }
 
     /// <summary>
@@ -245,9 +286,21 @@ public sealed class AccountService : IAccountService
                             : cat.SymbolAttachmentId,
                         a.SavingsPlanExpectation,
                         a.SecurityProcessingEnabled
-                    );
+                    )
+                    {
+                        IsCollectionAccount = a.IsCollectionAccount
+                    };
 
-        return await query.FirstOrDefaultAsync(ct);
+        var dto = await query.FirstOrDefaultAsync(ct);
+        if (dto == null) return null;
+
+        var linkedIbans = await _db.AccountLinkedIbans
+            .AsNoTracking()
+            .Where(li => li.AccountId == id)
+            .Select(li => li.Iban)
+            .ToListAsync(ct);
+
+        return dto with { LinkedIbans = linkedIbans };
     }
 
     /// <summary>
@@ -277,9 +330,21 @@ public sealed class AccountService : IAccountService
                             : cat.SymbolAttachmentId,
                         a.SavingsPlanExpectation,
                         a.SecurityProcessingEnabled
-                    );
+                    )
+                    {
+                        IsCollectionAccount = a.IsCollectionAccount
+                    };
 
-        return query.FirstOrDefault();
+        var dto = query.FirstOrDefault();
+        if (dto == null) return null;
+
+        var linkedIbans = _db.AccountLinkedIbans
+            .AsNoTracking()
+            .Where(li => li.AccountId == id)
+            .Select(li => li.Iban)
+            .ToList();
+
+        return dto with { LinkedIbans = linkedIbans };
     }
 
     /// <summary>
@@ -297,5 +362,52 @@ public sealed class AccountService : IAccountService
         if (account == null) throw new ArgumentException("Account not found", nameof(id));
         account.SetSymbolAttachment(attachmentId);
         await _db.SaveChangesAsync(ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task AddLinkedIbanAsync(Guid accountId, Guid ownerUserId, string iban, CancellationToken ct)
+    {
+        var account = await _db.Accounts.FirstOrDefaultAsync(a => a.Id == accountId && a.OwnerUserId == ownerUserId, ct);
+        if (account == null) throw new ArgumentException("Account not found", nameof(accountId));
+
+        if (string.IsNullOrWhiteSpace(iban)) throw new ArgumentException("IBAN required", nameof(iban));
+        iban = iban.Trim();
+
+        bool exists = await _db.AccountLinkedIbans
+            .AsNoTracking()
+            .AnyAsync(li => li.AccountId == accountId && li.Iban == iban, ct);
+        if (exists) throw new ArgumentException("IBAN already linked to this account", nameof(iban));
+
+        var entry = new Domain.Accounts.AccountLinkedIban(accountId, iban);
+        _db.AccountLinkedIbans.Add(entry);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> RemoveLinkedIbanAsync(Guid accountId, Guid ownerUserId, string iban, CancellationToken ct)
+    {
+        var account = await _db.Accounts.AsNoTracking().FirstOrDefaultAsync(a => a.Id == accountId && a.OwnerUserId == ownerUserId, ct);
+        if (account == null) return false;
+
+        var entry = await _db.AccountLinkedIbans
+            .FirstOrDefaultAsync(li => li.AccountId == accountId && li.Iban == iban, ct);
+        if (entry == null) return false;
+
+        _db.AccountLinkedIbans.Remove(entry);
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<string>?> GetLinkedIbansAsync(Guid accountId, Guid ownerUserId, CancellationToken ct)
+    {
+        var exists = await _db.Accounts.AsNoTracking().AnyAsync(a => a.Id == accountId && a.OwnerUserId == ownerUserId, ct);
+        if (!exists) return null;
+
+        return await _db.AccountLinkedIbans
+            .AsNoTracking()
+            .Where(li => li.AccountId == accountId)
+            .Select(li => li.Iban)
+            .ToListAsync(ct);
     }
 }

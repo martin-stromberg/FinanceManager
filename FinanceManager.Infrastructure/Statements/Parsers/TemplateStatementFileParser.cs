@@ -39,11 +39,11 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// </summary>
         /// <remarks>This method tries multiple parsing templates in sequence until one successfully
         /// parses the file. If none of the templates match the file format, the method returns null. The returned
-        /// StatementParseResult includes all successfully parsed statement movements and header information.</remarks>
+        /// list contains a single <see cref="StatementParseResult"/> for normal statements.</remarks>
         /// <param name="statementFile">The statement file to parse. Must provide access to the file's content in a supported format.</param>
-        /// <returns>A StatementParseResult containing the parsed statement header and movements if parsing succeeds; otherwise,
+        /// <returns>A list containing the parsed statement result if parsing succeeds; otherwise,
         /// null if the file could not be parsed with any available template.</returns>
-        public override StatementParseResult? Parse(IStatementFile statementFile)
+        public override IReadOnlyList<StatementParseResult>? Parse(IStatementFile statementFile)
         {
             if (!CanParse(statementFile))
                 return null;
@@ -82,7 +82,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                     CurrentMode = ParseMode.None;
                     ErrorList.Clear();
                     if (resultList.Any())
-                        return new StatementParseResult(GlobalDraftData, resultList);
+                        return new List<StatementParseResult> { new StatementParseResult(GlobalDraftData, resultList) };
                     LogInformation($"Template #{idx + 1} did not yield any records.");
                 }
                 catch (Exception ex)
@@ -110,9 +110,9 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// Parses the specified statement file and returns detailed parsing results.
         /// </summary>
         /// <param name="statementFile">The statement file to be parsed. Cannot be null.</param>
-        /// <returns>A <see cref="StatementParseResult"/> containing the details of the parsed statement, or <see
+        /// <returns>A list of <see cref="StatementParseResult"/> containing the details of the parsed statement, or <see
         /// langword="null"/> if parsing fails or the file is not supported.</returns>
-        public override StatementParseResult? ParseDetails(IStatementFile statementFile)
+        public override IReadOnlyList<StatementParseResult>? ParseDetails(IStatementFile statementFile)
         {
             return Parse(statementFile);
         }

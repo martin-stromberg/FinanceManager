@@ -29,7 +29,7 @@
             <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Accounts.AccountDto"/> representing the persisted account.</returns>
             <exception cref="T:System.ArgumentException">Thrown when the bank contact is invalid, the name is missing or already exists, or the IBAN already exists for the user.</exception>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Accounts.AccountService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Infrastructure.Accounts.AccountService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Creates a new account for the specified owner.
             </summary>
@@ -43,7 +43,7 @@
             <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Accounts.AccountDto"/> representing the persisted account.</returns>
             <exception cref="T:System.ArgumentException">Thrown when the bank contact is invalid, the name is missing or already exists, or the IBAN already exists for the user.</exception>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Accounts.AccountService.UpdateAsync(System.Guid,System.Guid,System.String,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Infrastructure.Accounts.AccountService.UpdateAsync(System.Guid,System.Guid,System.String,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Updates an existing account.
             </summary>
@@ -104,6 +104,15 @@
             <returns>A task that completes when the operation has finished.</returns>
             <exception cref="T:System.ArgumentException">Thrown when the account was not found for the specified id and owner.</exception>
         </member>
+        <member name="M:FinanceManager.Infrastructure.Accounts.AccountService.AddLinkedIbanAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Accounts.AccountService.RemoveLinkedIbanAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Accounts.AccountService.GetLinkedIbansAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
         <member name="T:FinanceManager.Infrastructure.Aggregates.PostingAggregateService">
             <summary>
             Service responsible for maintaining posting aggregates (pre-computed sums) used by reporting and KPI features.
@@ -162,6 +171,9 @@
         </member>
         <member name="P:FinanceManager.Infrastructure.AppDbContext.Accounts">
             <summary>Bank accounts.</summary>
+        </member>
+        <member name="P:FinanceManager.Infrastructure.AppDbContext.AccountLinkedIbans">
+            <summary>Linked sub-IBANs for collection accounts.</summary>
         </member>
         <member name="P:FinanceManager.Infrastructure.AppDbContext.AccountShares">
             <summary>Account sharing links.</summary>
@@ -2432,6 +2444,18 @@
         <member name="M:FinanceManager.Infrastructure.Migrations._202607030850_AddMassImportDialogPolicy.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddCollectionAccountAndLinkedIbans">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddCollectionAccountAndLinkedIbans.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddCollectionAccountAndLinkedIbans.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddCollectionAccountAndLinkedIbans.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Notifications.HolidayProviderResolver">
             <summary>
             Resolves an implementation of <see cref="T:FinanceManager.Application.Notifications.IHolidayProvider"/> for a requested <see cref="T:FinanceManager.Domain.Notifications.HolidayProviderKind"/>.
@@ -4620,7 +4644,7 @@
             Parses the specified statement file and returns the result if parsing is successful.
             </summary>
             <param name="statementFile">The statement file to parse. Cannot be null.</param>
-            <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the parsed data if parsing succeeds; otherwise, <see
+            <returns>A list containing a single <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> if parsing succeeds; otherwise, <see
             langword="null"/>.</returns>
         </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Parsers.Backup_JSON_StatementFileParser.ParseDetails(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
@@ -4630,7 +4654,7 @@
             <remarks>If an error occurs during parsing, the method returns <see langword="null"/> instead
             of throwing an exception.</remarks>
             <param name="statementFile">The statement file to parse. Cannot be null.</param>
-            <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the parsed header and data if parsing succeeds; otherwise,
+            <returns>A list containing a single <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> if parsing succeeds; otherwise,
             <see langword="null"/>.</returns>
         </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Parsers.Barclays_PDF_StatementFileParser">
@@ -4686,7 +4710,7 @@
             Parses the specified statement file and returns the result of the parsing operation.
             </summary>
             <param name="statementFile">The statement file to be parsed. Cannot be null.</param>
-            <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the results of the parse operation, or <see
+            <returns>A list of <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> instances, or <see
             langword="null"/> if the file could not be parsed.</returns>
         </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Parsers.BaseStatementFileParser.ParseDetails(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
@@ -4694,7 +4718,7 @@
             Parses the specified statement file and extracts detailed statement information.
             </summary>
             <param name="statementFile">The statement file to be parsed. Cannot be null.</param>
-            <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the parsed statement details if parsing is successful;
+            <returns>A list of <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> instances if parsing is successful;
             otherwise, <see langword="null"/> if the file could not be parsed.</returns>
         </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Parsers.BaseStatementFileParser.LogWarning(System.Exception,System.String)">
@@ -4778,6 +4802,8 @@
             Provides templates used by the base <see cref="!:TemplateStatementFileReader"/> to detect account
             information and table columns. The reader exposes a UTF-8 content reader suitable for PDF-to-text
             conversions that produce UTF-8 encoded bytes.
+            Supports multi-result parsing for ING collection statements (Sammelauszüge) that contain
+            multiple IBAN blocks in a single file.
             </summary>
         </member>
         <member name="F:FinanceManager.Infrastructure.Statements.Parsers.ING_CSV_StatementFileParser._Templates">
@@ -4798,6 +4824,24 @@
             </summary>
             <param name="statementFile">The statement file to evaluate for compatibility with this parser. Cannot be null.</param>
             <returns>true if the statement file is of a supported type and can be parsed; otherwise, false.</returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.ING_CSV_StatementFileParser.Parse(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
+            <summary>
+            Parses the specified statement file. For ING collection statements (Sammelauszüge) containing
+            multiple IBAN blocks, returns one <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> per IBAN block.
+            For normal single-account statements, returns a single-element list.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.ING_CSV_StatementFileParser.ParseDetails(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
+            <summary>
+            Parses detailed information from the statement file. Delegates to <see cref="M:FinanceManager.Infrastructure.Statements.Parsers.ING_CSV_StatementFileParser.Parse(FinanceManager.Infrastructure.Statements.Files.IStatementFile)"/>.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Statements.Parsers.ING_CSV_StatementFileParser.InlineING_CsvStatementFile">
+            <summary>
+            Lightweight <see cref="T:FinanceManager.Infrastructure.Statements.Files.IStatementFile"/> wrapper used to parse a pre-split block of lines
+            as if it were an ING CSV file, bypassing the byte-level load and encoding detection.
+            </summary>
         </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser">
             <summary>
@@ -4857,15 +4901,15 @@
             Parses the specified statement file and returns the result of the parsing operation.
             </summary>
             <param name="statementFile">The statement file to be parsed. Cannot be null.</param>
-            <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the results of the parsing operation, or <see
-            langword="null"/> if the file could not be parsed.</returns>
+            <returns>A list of <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> instances (one per IBAN block for collection statements),
+            or <see langword="null"/> if the file could not be parsed.</returns>
         </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Parsers.IStatementFileParser.ParseDetails(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
             <summary>
             Parses the specified statement file and extracts detailed information about its contents.
             </summary>
             <param name="statementFile">The statement file to parse. Cannot be null.</param>
-            <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the parsed details if parsing is successful; otherwise, <see
+            <returns>A list of <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> instances if parsing is successful; otherwise, <see
             langword="null"/> if the file could not be parsed.</returns>
         </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Parsers.Sparkasse_PDF_StatementFileParser">
@@ -4931,9 +4975,9 @@
             </summary>
             <remarks>This method tries multiple parsing templates in sequence until one successfully
             parses the file. If none of the templates match the file format, the method returns null. The returned
-            StatementParseResult includes all successfully parsed statement movements and header information.</remarks>
+            list contains a single <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> for normal statements.</remarks>
             <param name="statementFile">The statement file to parse. Must provide access to the file's content in a supported format.</param>
-            <returns>A StatementParseResult containing the parsed statement header and movements if parsing succeeds; otherwise,
+            <returns>A list containing the parsed statement result if parsing succeeds; otherwise,
             null if the file could not be parsed with any available template.</returns>
         </member>
         <member name="M:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.ProcessFoundRecord(FinanceManager.Application.Statements.StatementMovement)">
@@ -4951,7 +4995,7 @@
             Parses the specified statement file and returns detailed parsing results.
             </summary>
             <param name="statementFile">The statement file to be parsed. Cannot be null.</param>
-            <returns>A <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the details of the parsed statement, or <see
+            <returns>A list of <see cref="T:FinanceManager.Application.Statements.StatementParseResult"/> containing the details of the parsed statement, or <see
             langword="null"/> if parsing fails or the file is not supported.</returns>
         </member>
         <member name="P:FinanceManager.Infrastructure.Statements.Parsers.TemplateStatementFileParser.Templates">

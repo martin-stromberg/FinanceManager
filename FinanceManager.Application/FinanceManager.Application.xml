@@ -9,7 +9,7 @@
             Service interface for managing accounts (create, update, delete, list and symbol assignment).
             </summary>
         </member>
-        <member name="M:FinanceManager.Application.Accounts.IAccountService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Application.Accounts.IAccountService.CreateAsync(System.Guid,System.String,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Creates a new account for the specified owner.
             </summary>
@@ -19,10 +19,12 @@
             <param name="iban">Optional IBAN string.</param>
             <param name="bankContactId">Bank contact identifier associated with the account.</param>
             <param name="expectation">Savings plan expectation for the account.</param>
+            <param name="securityProcessingEnabled">Whether security processing is enabled.</param>
+            <param name="isCollectionAccount">Whether the account is a collection account.</param>
             <param name="ct">Cancellation token.</param>
             <returns>The created <see cref="T:FinanceManager.Shared.Dtos.Accounts.AccountDto"/>.</returns>
         </member>
-        <member name="M:FinanceManager.Application.Accounts.IAccountService.UpdateAsync(System.Guid,System.Guid,System.String,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.Threading.CancellationToken)">
+        <member name="M:FinanceManager.Application.Accounts.IAccountService.UpdateAsync(System.Guid,System.Guid,System.String,System.String,System.Guid,FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.Boolean,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Updates an existing account. Returns null when not found.
             </summary>
@@ -32,6 +34,8 @@
             <param name="iban">New IBAN or null to clear.</param>
             <param name="bankContactId">Bank contact identifier.</param>
             <param name="expectation">Savings plan expectation.</param>
+            <param name="securityProcessingEnabled">Whether security processing is enabled.</param>
+            <param name="isCollectionAccount">Whether the account is a collection account.</param>
             <param name="ct">Cancellation token.</param>
             <returns>Updated <see cref="T:FinanceManager.Shared.Dtos.Accounts.AccountDto"/> or null when not found.</returns>
         </member>
@@ -79,6 +83,34 @@
             <param name="ownerUserId">Owner user id.</param>
             <param name="attachmentId">Attachment id to set as symbol or null to clear.</param>
             <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Accounts.IAccountService.AddLinkedIbanAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Adds a linked sub-IBAN to a collection account.
+            </summary>
+            <param name="accountId">Account identifier.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="iban">IBAN to add.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Accounts.IAccountService.RemoveLinkedIbanAsync(System.Guid,System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Removes a linked sub-IBAN from a collection account.
+            </summary>
+            <param name="accountId">Account identifier.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="iban">IBAN to remove.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>True when removed; false when not found.</returns>
+        </member>
+        <member name="M:FinanceManager.Application.Accounts.IAccountService.GetLinkedIbansAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the list of linked sub-IBANs for the specified collection account.
+            </summary>
+            <param name="accountId">Account identifier.</param>
+            <param name="ownerUserId">Owner user identifier.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>Read-only list of IBAN strings, or <see langword="null"/> when the account was not found.</returns>
         </member>
         <member name="T:FinanceManager.Application.Aggregates.IPostingAggregateService">
             <summary>

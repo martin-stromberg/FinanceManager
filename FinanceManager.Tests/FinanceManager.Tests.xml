@@ -1477,7 +1477,7 @@
         <member name="T:FinanceManager.Tests.Statements.StatementDraftImportSplitTests">
             <summary>
             Tests the import split logic (CreateDraftAsync) for fixed, monthly and hybrid modes.
-            NOTE: MinEntriesPerDraft (new feature) is NOT yet applied by the implementation – tests document current behaviour (TDD baseline).
+            NOTE: MinEntriesPerDraft (new feature) is NOT yet applied by the implementation � tests document current behaviour (TDD baseline).
             </summary>
         </member>
         <member name="M:FinanceManager.Tests.Statements.StatementDraftSecurityClassificationTests.CreateSecurityAccountAsync(FinanceManager.Infrastructure.AppDbContext,System.Guid)">

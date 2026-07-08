@@ -40,6 +40,8 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<User> Users => Set<User>();
     /// <summary>Bank accounts.</summary>
     public DbSet<Account> Accounts => Set<Account>();
+    /// <summary>Linked sub-IBANs for collection accounts.</summary>
+    public DbSet<AccountLinkedIban> AccountLinkedIbans => Set<AccountLinkedIban>();
     /// <summary>Account sharing links.</summary>
     public DbSet<AccountShare> AccountShares => Set<AccountShare>();
     /// <summary>Contacts (counterparties, banks, self).</summary>
@@ -146,6 +148,19 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             // SavingsPlanExpectation mapping
             b.Property(x => x.SavingsPlanExpectation).HasConversion<short>().IsRequired();
             b.Property(x => x.SecurityProcessingEnabled).HasDefaultValue(true).IsRequired();
+            b.Property(x => x.IsCollectionAccount).HasDefaultValue(false).IsRequired();
+        });
+
+        modelBuilder.Entity<AccountLinkedIban>(b =>
+        {
+            b.ToTable("AccountLinkedIbans");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Iban).HasMaxLength(34).IsRequired();
+            b.HasIndex(x => new { x.AccountId, x.Iban }).IsUnique();
+            b.HasOne(x => x.Account)
+             .WithMany()
+             .HasForeignKey(x => x.AccountId)
+             .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Contact>(b =>

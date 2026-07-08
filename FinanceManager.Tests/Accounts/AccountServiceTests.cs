@@ -1,3 +1,4 @@
+﻿using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Accounts;
@@ -27,7 +28,7 @@ public sealed class AccountServiceTests
         db.Contacts.Add(bankContact);
         await db.SaveChangesAsync();
 
-        var dto = await sut.CreateAsync(owner, "Konto 1", AccountType.Giro, "DE123", bankContact.Id, CancellationToken.None);
+        var dto = await sut.CreateAsync(owner, "Konto 1", AccountType.Giro, "DE123", bankContact.Id, SavingsPlanExpectation.Optional, true, false, CancellationToken.None);
 
         Assert.Equal("Konto 1", dto.Name);
         Assert.Equal("DE123", dto.Iban);
@@ -43,8 +44,8 @@ public sealed class AccountServiceTests
         db.Contacts.Add(bankContact);
         await db.SaveChangesAsync();
 
-        await sut.CreateAsync(owner, "A", AccountType.Giro, "DE999", bankContact.Id, CancellationToken.None);
-        Func<Task> act = () => sut.CreateAsync(owner, "B", AccountType.Giro, "DE999", bankContact.Id, CancellationToken.None);
+        await sut.CreateAsync(owner, "A", AccountType.Giro, "DE999", bankContact.Id, SavingsPlanExpectation.Optional, true, false, CancellationToken.None);
+        Func<Task> act = () => sut.CreateAsync(owner, "B", AccountType.Giro, "DE999", bankContact.Id, SavingsPlanExpectation.Optional, true, false, CancellationToken.None);
 
         var ex = await Assert.ThrowsAsync<ArgumentException>(act);
         Assert.Contains("IBAN", ex.Message, StringComparison.OrdinalIgnoreCase);
@@ -58,7 +59,7 @@ public sealed class AccountServiceTests
         var bankContact = new Contact(owner, "Bank B", ContactType.Bank, null);
         db.Contacts.Add(bankContact);
         await db.SaveChangesAsync();
-        var acc = await sut.CreateAsync(owner, "Main", AccountType.Giro, null, bankContact.Id, CancellationToken.None);
+        var acc = await sut.CreateAsync(owner, "Main", AccountType.Giro, null, bankContact.Id, SavingsPlanExpectation.Optional, true, false, CancellationToken.None);
 
         var ok = await sut.DeleteAsync(acc.Id, owner, CancellationToken.None);
 
@@ -75,8 +76,8 @@ public sealed class AccountServiceTests
         var bankContact = new Contact(owner, "Bank C", ContactType.Bank, null);
         db.Contacts.Add(bankContact);
         await db.SaveChangesAsync();
-        var a1 = await sut.CreateAsync(owner, "A1", AccountType.Giro, null, bankContact.Id, CancellationToken.None);
-        var a2 = await sut.CreateAsync(owner, "A2", AccountType.Giro, null, bankContact.Id, CancellationToken.None);
+        var a1 = await sut.CreateAsync(owner, "A1", AccountType.Giro, null, bankContact.Id, SavingsPlanExpectation.Optional, true, false, CancellationToken.None);
+        var a2 = await sut.CreateAsync(owner, "A2", AccountType.Giro, null, bankContact.Id, SavingsPlanExpectation.Optional, true, false, CancellationToken.None);
 
         var ok = await sut.DeleteAsync(a1.Id, owner, CancellationToken.None);
 

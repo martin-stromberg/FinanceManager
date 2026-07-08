@@ -14,9 +14,11 @@ public interface IAccountService
     /// <param name="iban">Optional IBAN string.</param>
     /// <param name="bankContactId">Bank contact identifier associated with the account.</param>
     /// <param name="expectation">Savings plan expectation for the account.</param>
+    /// <param name="securityProcessingEnabled">Whether security processing is enabled.</param>
+    /// <param name="isCollectionAccount">Whether the account is a collection account.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The created <see cref="AccountDto"/>.</returns>
-    Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct);
+    Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, bool isCollectionAccount, CancellationToken ct);
 
     /// <summary>
     /// Updates an existing account. Returns null when not found.
@@ -27,9 +29,11 @@ public interface IAccountService
     /// <param name="iban">New IBAN or null to clear.</param>
     /// <param name="bankContactId">Bank contact identifier.</param>
     /// <param name="expectation">Savings plan expectation.</param>
+    /// <param name="securityProcessingEnabled">Whether security processing is enabled.</param>
+    /// <param name="isCollectionAccount">Whether the account is a collection account.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Updated <see cref="AccountDto"/> or null when not found.</returns>
-    Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct);
+    Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, bool isCollectionAccount, CancellationToken ct);
 
     /// <summary>
     /// Deletes an account. Returns true when deleted.
@@ -75,4 +79,32 @@ public interface IAccountService
     /// <param name="attachmentId">Attachment id to set as symbol or null to clear.</param>
     /// <param name="ct">Cancellation token.</param>
     Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct);
+
+    /// <summary>
+    /// Adds a linked sub-IBAN to a collection account.
+    /// </summary>
+    /// <param name="accountId">Account identifier.</param>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="iban">IBAN to add.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task AddLinkedIbanAsync(Guid accountId, Guid ownerUserId, string iban, CancellationToken ct);
+
+    /// <summary>
+    /// Removes a linked sub-IBAN from a collection account.
+    /// </summary>
+    /// <param name="accountId">Account identifier.</param>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="iban">IBAN to remove.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when removed; false when not found.</returns>
+    Task<bool> RemoveLinkedIbanAsync(Guid accountId, Guid ownerUserId, string iban, CancellationToken ct);
+
+    /// <summary>
+    /// Returns the list of linked sub-IBANs for the specified collection account.
+    /// </summary>
+    /// <param name="accountId">Account identifier.</param>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Read-only list of IBAN strings, or <see langword="null"/> when the account was not found.</returns>
+    Task<IReadOnlyList<string>?> GetLinkedIbansAsync(Guid accountId, Guid ownerUserId, CancellationToken ct);
 }

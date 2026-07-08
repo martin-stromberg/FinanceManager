@@ -35,6 +35,16 @@ namespace FinanceManager.Web.ViewModels.Accounts
         public AccountDto? Account { get; private set; }
 
         /// <summary>
+        /// Current list of linked sub-IBANs for the collection account.
+        /// </summary>
+        public IReadOnlyList<string> LinkedIbans { get; private set; } = Array.Empty<string>();
+
+        /// <summary>
+        /// Input value for the new IBAN to add to the collection account.
+        /// </summary>
+        public string NewLinkedIban { get; set; } = string.Empty;
+
+        /// <summary>
         /// Card title shown in the UI. Falls back to the base title when no account is loaded.
         /// </summary>
         public override string Title => Account?.Name ?? base.Title;
@@ -66,6 +76,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
                     CardRecord = new CardRecord(new List<CardField>());
                     return;
                 }
+                LinkedIbans = Account.LinkedIbans;
                 CardRecord = await BuildCardRecordsAsync(Account);
             }
             catch (Exception ex)
@@ -137,7 +148,8 @@ namespace FinanceManager.Web.ViewModels.Accounts
                 new CardField("Card_Caption_Account_Symbol", CardFieldKind.Symbol, symbolId: a.SymbolAttachmentId, editable: a.Id != Guid.Empty),
                 new CardField("Card_Caption_Account_Contact", CardFieldKind.Text, text: bankContactName ?? "-", editable: true, lookupType: "Contact", lookupField: "Name", valueId: a.BankContactId, lookupFilter: "Type=Bank"),
                 new CardField("Card_Caption_Account_SavingsPlanExpectation", CardFieldKind.Text, text: a.SavingsPlanExpectation.ToString(), editable: true, lookupType: "Enum:SavingsPlanExpectation"),
-                new CardField("Card_Caption_Account_SecurityProcessing", CardFieldKind.Boolean, boolValue: a.SecurityProcessingEnabled, editable: true)
+                new CardField("Card_Caption_Account_SecurityProcessing", CardFieldKind.Boolean, boolValue: a.SecurityProcessingEnabled, editable: true),
+                new CardField("Card_Caption_Account_IsCollectionAccount", CardFieldKind.Boolean, boolValue: a.IsCollectionAccount, editable: true)
             };
 
             var record = new CardRecord(fields, a);
@@ -187,6 +199,10 @@ namespace FinanceManager.Web.ViewModels.Accounts
                 ?? Account?.SecurityProcessingEnabled
                 ?? true;
 
+            var isCollectionAccount = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_IsCollectionAccount")?.BoolValue
+                ?? Account?.IsCollectionAccount
+                ?? false;
+
             return new AccountDto(Account?.Id ?? Guid.Empty, name, type, string.IsNullOrWhiteSpace(iban) ? null : iban, Account?.CurrentBalance ?? 0m, bankContactId, symbolId, spExpectation, securityProcessing)
             {
                 Name = name,
@@ -196,6 +212,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
                 BankContactId = bankContactId,
                 SavingsPlanExpectation = spExpectation,
                 SecurityProcessingEnabled = securityProcessing,
+                IsCollectionAccount = isCollectionAccount,
                 CurrentBalance = Account?.CurrentBalance ?? 0m,
                 Id = Account?.Id ?? Guid.Empty
             };
@@ -222,7 +239,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
                 new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#trash'/></svg>", UiRibbonItemSize.Small, Account == null || Account.Id == Guid.Empty, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
             };
 
-            // Group: Verknüpfte Informationen (OpenPostings, OpenBankContact, OpenAttachments)
+            // Group: Verknï¿½pfte Informationen (OpenPostings, OpenBankContact, OpenAttachments)
             var linkedActions = new List<UiRibbonAction>
             {
                 new UiRibbonAction("OpenPostings", localizer["Ribbon_OpenPostings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Account == null, null, () => {
@@ -301,7 +318,8 @@ namespace FinanceManager.Web.ViewModels.Accounts
                         null,
                         newDto.SymbolAttachmentId,
                         newDto.SavingsPlanExpectation,
-                        newDto.SecurityProcessingEnabled);
+                        newDto.SecurityProcessingEnabled,
+                        newDto.IsCollectionAccount);
 
                     var created = await api.CreateAccountAsync(createReq);
                     if (created == null)
@@ -332,7 +350,8 @@ namespace FinanceManager.Web.ViewModels.Accounts
                     newDto.SymbolAttachmentId,
                     newDto.SavingsPlanExpectation,
                     newDto.SecurityProcessingEnabled,
-                    false);
+                    false,
+                    newDto.IsCollectionAccount);
 
                 var updated = await api.UpdateAccountAsync(Id, req);
 
@@ -437,6 +456,53 @@ namespace FinanceManager.Web.ViewModels.Accounts
             catch
             {
                 // ignore
+            }
+        }
+
+        /// <summary>
+        /// Adds the IBAN entered in <see cref="NewLinkedIban"/> to the collection account and refreshes the IBAN list.
+        /// </summary>
+        /// <returns>A task that completes when the operation has finished. Returns true on success.</returns>
+        public async Task<bool> AddLinkedIbanAsync()
+        {
+            if (string.IsNullOrWhiteSpace(NewLinkedIban)) return false;
+            SetError(null, null);
+            try
+            {
+                var api = ServiceProvider.GetRequiredService<IApiClient>();
+                await api.AddLinkedIbanAsync(Id, new AccountLinkedIbanUpsertRequest(NewLinkedIban.Trim()));
+                NewLinkedIban = string.Empty;
+                LinkedIbans = await api.GetLinkedIbansAsync(Id);
+                RaiseStateChanged();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                SetError(null, ex.Message);
+                RaiseStateChanged();
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Removes the specified IBAN from the collection account and refreshes the IBAN list.
+        /// </summary>
+        /// <param name="iban">The IBAN to remove.</param>
+        /// <returns>A task that completes when the operation has finished.</returns>
+        public async Task RemoveLinkedIbanAsync(string iban)
+        {
+            SetError(null, null);
+            try
+            {
+                var api = ServiceProvider.GetRequiredService<IApiClient>();
+                await api.RemoveLinkedIbanAsync(Id, iban);
+                LinkedIbans = await api.GetLinkedIbansAsync(Id);
+                RaiseStateChanged();
+            }
+            catch (Exception ex)
+            {
+                SetError(null, ex.Message);
+                RaiseStateChanged();
             }
         }
     }
