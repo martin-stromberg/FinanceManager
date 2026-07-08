@@ -135,6 +135,9 @@
   <data name="Card_Caption_Account_SecurityProcessing" xml:space="preserve">
     <value>Security processing</value>
   </data>
+  <data name="Card_Caption_Account_IsCollectionAccount" xml:space="preserve">
+    <value>Collection account</value>
+  </data>
   <data name="Card_Caption_Account_Symbol" xml:space="preserve">
     <value>Symbol</value>
   </data>
@@ -2120,4 +2123,19 @@
   </data>
   <data name="SecurityPricesImport_LineError" xml:space="preserve">
     <value>Line {0}: {1}</value>
+  </data>
+  <data name="LinkedIbans_Section_Title" xml:space="preserve">
+    <value>Linked IBANs</value>
+  </data>
+  <data name="LinkedIbans_Add_Placeholder" xml:space="preserve">
+    <value>Enter new IBAN...</value>
+  </data>
+  <data name="LinkedIbans_Add_Button" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="LinkedIbans_Remove_Button" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="LinkedIbans_Empty" xml:space="preserve">
+    <value>No linked IBANs configured.</value>
   </data></root>

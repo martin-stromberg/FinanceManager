@@ -45,6 +45,15 @@ namespace FinanceManager.Web.ViewModels.Accounts
         public string NewLinkedIban { get; set; } = string.Empty;
 
         /// <summary>
+        /// Effective value of the IsCollectionAccount flag, taking pending edits into account.
+        /// Returns the pending value if the user has toggled the checkbox without saving, otherwise the saved value.
+        /// </summary>
+        public bool EffectiveIsCollectionAccount =>
+            _pendingFieldValues.TryGetValue("Card_Caption_Account_IsCollectionAccount", out var pv) && pv is bool b
+                ? b
+                : Account?.IsCollectionAccount ?? false;
+
+        /// <summary>
         /// Card title shown in the UI. Falls back to the base title when no account is loaded.
         /// </summary>
         public override string Title => Account?.Name ?? base.Title;

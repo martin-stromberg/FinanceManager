@@ -3947,6 +3947,12 @@
             Input value for the new IBAN to add to the collection account.
             </summary>
         </member>
+        <member name="P:FinanceManager.Web.ViewModels.Accounts.BankAccountCardViewModel.EffectiveIsCollectionAccount">
+            <summary>
+            Effective value of the IsCollectionAccount flag, taking pending edits into account.
+            Returns the pending value if the user has toggled the checkbox without saving, otherwise the saved value.
+            </summary>
+        </member>
         <member name="P:FinanceManager.Web.ViewModels.Accounts.BankAccountCardViewModel.Title">
             <summary>
             Card title shown in the UI. Falls back to the base title when no account is loaded.
@@ -9315,6 +9321,11 @@
             Subscribed by <c>SetupSections.razor</c> to expand the section before processing a pending action.
             </summary>
         </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.Saving">
+            <summary>
+            Indicates whether a global save operation is currently running.
+            </summary>
+        </member>
         <member name="P:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.Title">
             <summary>
             Gets the localized title of the card.
@@ -9324,6 +9335,11 @@
             <summary>
             Exposes the available setting sections as (key, localized display name) pairs.
             The list is materialized once in <see cref="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.LoadAsync(System.Guid)"/> and cached for the lifetime of the view model.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.HasPendingChanges">
+            <summary>
+            Indicates whether any setup section currently has unsaved changes.
             </summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.TryGetSectionComponentType(System.String,System.Type@)">
@@ -9365,6 +9381,18 @@
             </summary>
             <param name="id">Identifier of the record to load. For the setup card this value is ignored.</param>
             <returns>A task representing the asynchronous load operation.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.SaveAllAsync(System.Threading.CancellationToken)">
+            <summary>
+            Saves all dirty setup sections that expose a save operation.
+            </summary>
+            <param name="ct">Cancellation token used to cancel the save operations.</param>
+            <returns>A task that completes when all save operations have finished.</returns>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.ResetAll">
+            <summary>
+            Resets all setup sections that expose a reset operation.
+            </summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
             <summary>
@@ -9658,6 +9686,9 @@
         <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.RiskFreeRate">
             <summary>Risk-free rate used for return calculations (decimal, e.g. 0.04 = 4%). Must be >= 0.</summary>
         </member>
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.Dirty">
+            <summary>Indicates whether the current settings differ from the last loaded or saved snapshot.</summary>
+        </member>
         <member name="M:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.LoadAsync(System.Threading.CancellationToken)">
             <summary>
             Loads available securities and the current benchmark settings in parallel.
@@ -9669,6 +9700,12 @@
             Saves the selected benchmark, preserving the existing Sharpe Ratio and risk-free rate values.
             </summary>
             <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.Reset">
+            <summary>Restores the last loaded or saved benchmark settings.</summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupReturnAnalysisViewModel.OnChanged">
+            <summary>Marks the settings as changed and recomputes the dirty state.</summary>
         </member>
         <member name="T:FinanceManager.Web.ViewModels.Setup.SetupSecurityViewModel">
             <summary>
@@ -10905,6 +10942,12 @@
         </member>
         <member name="M:FinanceManager.Web.Components.Pages.Securities.TimeSeriesTab.BuildDividendSvg">
             <summary>Builds the SVG markup for the dividend bar chart as a safe string.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Components.Shared.LinkedIbansPanel.Vm">
+            <summary>The account view model providing the IBAN list and actions.</summary>
+        </member>
+        <member name="P:FinanceManager.Web.Components.Shared.LinkedIbansPanel.Localizer">
+            <summary>Localizer for translating UI labels.</summary>
         </member>
         <member name="P:FinanceManager.Web.Components.Shared.ReturnSummaryWidget.SecurityId">
             <summary>Security identifier to show return data for.</summary>
