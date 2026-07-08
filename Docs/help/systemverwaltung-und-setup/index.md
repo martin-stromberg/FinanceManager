@@ -5,6 +5,7 @@ Dieser Bereich bündelt Benutzerverwaltung, Sicherheit, Benachrichtigungen und S
 ## Inhalt
 
 - [Beschreibung](beschreibung.md)
+- [Technischer Ablauf](ablauf-technisch.md)
 - [API](api.md)
 - [Installation & Konfiguration](installation.md)
 - [Datenmodell](datenmodell.md)

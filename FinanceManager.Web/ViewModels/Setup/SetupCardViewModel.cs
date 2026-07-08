@@ -1,5 +1,6 @@
 using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using FinanceManager.Shared.Dtos;
 using Microsoft.Extensions.Localization;
 using System.Collections.Generic;
@@ -20,7 +21,18 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     /// <param name="sp">The service provider used to resolve services required by the view model.</param>
     public SetupCardViewModel(IServiceProvider sp) : base(sp)
     {
+        _logger = sp.GetService<ILogger<SetupCardViewModel>>();
     }
+
+    private readonly ILogger<SetupCardViewModel>? _logger;
+
+    private readonly Dictionary<string, BaseViewModel> _sectionViewModels = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Raised when a section should be expanded programmatically. The event argument contains the section key.
+    /// Subscribed by <c>SetupSections.razor</c> to expand the section before processing a pending action.
+    /// </summary>
+    public event EventHandler<string>? ExpandSectionRequested;
 
     /// <summary>
     /// Gets the localized title of the card.
@@ -72,6 +84,8 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
 
     /// <summary>
     /// Creates the setup section view model instance for a section key.
+    /// Returns a pre-created, ribbon-contributing instance from the internal cache when available;
+    /// otherwise creates a new instance via the service provider.
     /// </summary>
     /// <param name="key">Section key to resolve.</param>
     /// <param name="services">Service provider used for creating the view model instance.</param>
@@ -83,7 +97,22 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
             return null;
         }
 
-        return ActivatorUtilities.CreateInstance(services, sectionDefinition.ViewModelType);
+        if (_sectionViewModels.TryGetValue(key, out var cached))
+        {
+            return cached;
+        }
+
+        var newVm = ActivatorUtilities.CreateInstance(services, sectionDefinition.ViewModelType);
+        if (newVm is BaseViewModel baseVm)
+        {
+            // Intentionally not registered as a child view model via CreateSubViewModel<T>:
+            // The sections resolved here at runtime (attachments, security, returnanalysis) do not
+            // contribute ribbon actions, so omitting them from _childViewModels is by design.
+            // Sections that do contribute ribbon actions (profile, notifications, backup, statements)
+            // are pre-created in LoadAsync using CreateSubViewModel<T> which registers them properly.
+            _sectionViewModels[key] = baseVm;
+        }
+        return newVm;
     }
 
     /// <summary>
@@ -115,6 +144,23 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
         try
         {
             CardRecord = null;
+
+            if (_sectionViewModels.Count == 0)
+            {
+                var profileVm = CreateSubViewModel<SetupProfileViewModel>();
+                _sectionViewModels["profile"] = profileVm;
+
+                var notificationsVm = CreateSubViewModel<SetupNotificationsViewModel>();
+                _sectionViewModels["notifications"] = notificationsVm;
+
+                var backupVm = CreateSubViewModel<SetupBackupsViewModel>(configure: vm =>
+                    vm.BeforeUploadCallback = () => ExpandSectionRequested?.Invoke(this, "backup"));
+                _sectionViewModels["backup"] = backupVm;
+
+                var statementsVm = CreateSubViewModel<SetupStatementsViewModel>();
+                _sectionViewModels["statements"] = statementsVm;
+            }
+
             RaiseEmbeddedPanelUiAction();
         }
         catch (Exception ex)
@@ -145,7 +191,10 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
             var spec = new BaseViewModel.EmbeddedPanelSpec(typeof(FinanceManager.Web.Components.Shared.SetupPanel), outerParms, EmbeddedPanelPosition.AfterRibbon, true);
             RaiseUiActionRequested("EmbeddedPanel", spec);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to raise embedded panel UI action");
+        }
     }
     private static bool TryGetSectionDefinition(string key, out SetupSectionDefinition? sectionDefinition)
     {
@@ -196,7 +245,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                         {
                             await ApiClient.Aggregates_RebuildAsync(allowDuplicate: false);
                         }
-                        catch { }
+                        catch (Exception ex) { _logger?.LogError(ex, "RebuildAggregates ribbon action failed"); }
                     })),
                 new UiRibbonAction(
                     "ResetReportCache",
@@ -214,7 +263,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                             SetError(null, localizer["Info_ResetReportCache"].Value ?? "Report cache reset.");
                             RaiseStateChanged();
                         }
-                        catch { }
+                        catch (Exception ex) { _logger?.LogError(ex, "ResetReportCache ribbon action failed"); }
                     }))
             }, int.MaxValue)
         };

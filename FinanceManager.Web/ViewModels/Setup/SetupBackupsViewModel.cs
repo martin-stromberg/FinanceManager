@@ -1,5 +1,8 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
+using FinanceManager.Shared.Dtos.Backups;
 
 namespace FinanceManager.Web.ViewModels.Setup;
 
@@ -15,7 +18,10 @@ public sealed class SetupBackupsViewModel : BaseViewModel
     /// <param name="sp">Service provider used to resolve dependencies (API client, localization, etc.).</param>
     public SetupBackupsViewModel(IServiceProvider sp) : base(sp)
     {
+        _logger = sp.GetService<ILogger<SetupBackupsViewModel>>();
     }
+
+    private readonly ILogger<SetupBackupsViewModel>? _logger;
 
     /// <summary>
     /// Represents a single backup item returned by the API and displayed in the UI.
@@ -81,11 +87,11 @@ public sealed class SetupBackupsViewModel : BaseViewModel
         {
             SetError(null, null);
             var list = await ApiClient.Backups_ListAsync(ct);
-            Backups = list?.Select(b => new BackupItem { Id = b.Id, CreatedUtc = b.CreatedUtc, FileName = b.FileName, SizeBytes = b.SizeBytes, Source = b.Source }).ToList() ?? new List<BackupItem>();
+            Backups = list?.Select(MapToBackupItem).ToList() ?? new List<BackupItem>();
         }
         catch (Exception ex)
         {
-            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
+            HandleApiException(ex);
             Backups = new List<BackupItem>();
         }
         finally { RaiseStateChanged(); }
@@ -98,19 +104,19 @@ public sealed class SetupBackupsViewModel : BaseViewModel
     /// <returns>A task that completes when the create operation has finished.</returns>
     public async Task CreateAsync(CancellationToken ct = default)
     {
-        Busy = true; SetError(null, null); RaiseStateChanged();
+        BeginBusyOperation();
         try
         {
             var created = await ApiClient.Backups_CreateAsync(ct);
             if (created is not null)
             {
                 Backups ??= new List<BackupItem>();
-                Backups.Insert(0, new BackupItem { Id = created.Id, CreatedUtc = created.CreatedUtc, FileName = created.FileName, SizeBytes = created.SizeBytes, Source = created.Source });
+                Backups.Insert(0, MapToBackupItem(created));
             }
         }
         catch (Exception ex)
         {
-            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
+            HandleApiException(ex);
         }
         finally { Busy = false; RaiseStateChanged(); }
     }
@@ -128,11 +134,14 @@ public sealed class SetupBackupsViewModel : BaseViewModel
         try
         {
             var status = await ApiClient.Backups_StartApplyAsync(id, ct);
-            HasActiveRestore = status.Running;
+            if (status is not null)
+            {
+                HasActiveRestore = status.Running;
+            }
         }
         catch (Exception ex)
         {
-            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
+            HandleApiException(ex);
         }
         finally { RaiseStateChanged(); }
     }
@@ -145,7 +154,7 @@ public sealed class SetupBackupsViewModel : BaseViewModel
     /// <returns>A task that completes when deletion has finished.</returns>
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        Busy = true; SetError(null, null); RaiseStateChanged();
+        BeginBusyOperation();
         try
         {
             var ok = await ApiClient.Backups_DeleteAsync(id, ct);
@@ -159,7 +168,7 @@ public sealed class SetupBackupsViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
+            HandleApiException(ex);
         }
         finally { Busy = false; RaiseStateChanged(); }
     }
@@ -175,18 +184,18 @@ public sealed class SetupBackupsViewModel : BaseViewModel
     public async Task UploadAsync(Stream stream, string fileName, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(stream);
-        Busy = true; SetError(null, null); RaiseStateChanged();
+        BeginBusyOperation();
         try
         {
             var created = await ApiClient.Backups_UploadAsync(stream, fileName, ct);
             if (created is not null)
             {
-                AddBackup(new BackupItem { Id = created.Id, CreatedUtc = created.CreatedUtc, FileName = created.FileName, SizeBytes = created.SizeBytes, Source = created.Source });
+                AddBackup(MapToBackupItem(created));
             }
         }
         catch (Exception ex)
         {
-            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
+            HandleApiException(ex);
         }
         finally { Busy = false; RaiseStateChanged(); }
     }
@@ -203,19 +212,17 @@ public sealed class SetupBackupsViewModel : BaseViewModel
     }
 
     /// <summary>
+    /// Optional callback invoked before <see cref="TriggerUploadRequest"/> is called via the ribbon action.
+    /// Used by <see cref="SetupCardViewModel"/> to expand the backup section before the upload dialog opens.
+    /// </summary>
+    internal Action? BeforeUploadCallback { get; set; }
+
+    /// <summary>
     /// Triggers the <see cref="UploadRequested"/> event to instruct the UI to open a file picker.
     /// </summary>
     public void TriggerUploadRequest()
     {
         UploadRequested?.Invoke(this, EventArgs.Empty);
-    }
-
-    /// <summary>
-    /// Clears any pending upload request. This method is kept for compatibility and is currently a no-op.
-    /// </summary>
-    public void ClearUploadRequest()
-    {
-        // kept for compatibility if something relied on clearing, no-op
     }
 
     /// <summary>
@@ -236,7 +243,8 @@ public sealed class SetupBackupsViewModel : BaseViewModel
                 localizer["Hint_CreateBackup"].Value ?? string.Empty,
                 new Func<Task>(async () =>
                 {
-                    try { await CreateAsync(); } catch { }
+                    try { await CreateAsync(); }
+                    catch (Exception ex) { _logger?.LogError(ex, "CreateBackup ribbon action failed"); }
                 })),
 
             new UiRibbonAction(
@@ -248,7 +256,8 @@ public sealed class SetupBackupsViewModel : BaseViewModel
                 localizer["Hint_UploadBackup"].Value ?? string.Empty,
                 new Func<Task>(() =>
                 {
-                    try { TriggerUploadRequest(); } catch { }
+                    try { BeforeUploadCallback?.Invoke(); }
+                    catch (Exception ex) { _logger?.LogError(ex, "UploadBackup ribbon action failed"); }
                     return Task.CompletedTask;
                 }))
         };
@@ -259,5 +268,20 @@ public sealed class SetupBackupsViewModel : BaseViewModel
         };
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
+    }
+
+    private static BackupItem MapToBackupItem(BackupDto dto)
+        => new BackupItem { Id = dto.Id, CreatedUtc = dto.CreatedUtc, FileName = dto.FileName, SizeBytes = dto.SizeBytes, Source = dto.Source };
+
+    private void BeginBusyOperation()
+    {
+        Busy = true;
+        SetError(null, null);
+        RaiseStateChanged();
+    }
+
+    private void HandleApiException(Exception ex)
+    {
+        SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
     }
 }
