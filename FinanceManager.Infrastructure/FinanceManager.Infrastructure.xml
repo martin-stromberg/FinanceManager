@@ -5321,6 +5321,7 @@
         <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftService.ClassifyHeader(FinanceManager.Domain.Statements.StatementDraft,System.Guid,System.Threading.CancellationToken)">
             <summary>
             Classifies the draft header to detect the account id when possible (IBAN or single account scenarios).
+            Also checks <see cref="!:AccountLinkedIbans"/> for collection-account assignment when no direct match is found.
             </summary>
             <param name="draft">The draft to classify.</param>
             <param name="ownerUserId">Owner user identifier used to scope account lookups.</param>

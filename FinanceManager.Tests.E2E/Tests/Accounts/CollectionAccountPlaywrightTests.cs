@@ -1,4 +1,4 @@
-namespace FinanceManager.Tests.E2E;
+﻿namespace FinanceManager.Tests.E2E;
 
 [Collection(PlaywrightCollection.CollectionName)]
 public sealed class CollectionAccountPlaywrightTests
@@ -52,26 +52,21 @@ public sealed class CollectionAccountPlaywrightTests
             .Locator("input.card-input")
             .FillAsync("DE50700500000007882999");
 
-        // Select the bank contact via the lookup field: type the name → wait for dropdown → click the item
-        var contactInput = page.Locator("tr")
-            .Filter(new() { Has = page.Locator("th").Filter(new() { HasText = "Bank contact" }) })
-            .Locator("input.card-input");
+        // Select the bank contact via the lookup field on the fixed account-card row order.
+        var contactInput = page.Locator("table.fm-table tbody tr").Nth(5).Locator("input.card-input");
         await contactInput.FillAsync("UI Spar Bank");
         var lookupItem = page.Locator(".lookup-item").Filter(new() { HasText = "UI Spar Bank" }).First;
         await lookupItem.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10_000 });
         await lookupItem.ClickAsync();
 
         // Enable the "Collection account" checkbox
-        await page.Locator("tr")
-            .Filter(new() { Has = page.Locator("th").Filter(new() { HasText = "Collection account" }) })
-            .Locator("input.card-input-checkbox")
-            .CheckAsync();
+        await page.Locator("table.fm-table tbody tr").Nth(8).Locator("input.card-input-checkbox").CheckAsync();
 
         // Click the Save ribbon button
         await page.Locator("button#Save").ClickAsync();
 
-        // After a successful save the page navigates to the new account's detail URL
-        await page.WaitForURLAsync("**/card/accounts/**", new() { Timeout = 15_000 });
+        // After a successful save the page must leave the create route and land on the detail page.
+        await page.WaitForURLAsync(url => url.Contains("/card/accounts/") && !url.Contains("/new"), new() { Timeout = 15_000 });
         page.Url.Should().Contain("/card/accounts/");
         page.Url.Should().NotContain("/new");
     }

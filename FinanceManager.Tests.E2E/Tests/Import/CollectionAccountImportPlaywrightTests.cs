@@ -1,4 +1,4 @@
-using FinanceManager.Shared.Dtos.Postings;
+﻿using FinanceManager.Shared.Dtos.Postings;
 
 namespace FinanceManager.Tests.E2E;
 
@@ -145,13 +145,12 @@ public sealed class CollectionAccountImportPlaywrightTests
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await page.WaitForURLAsync($"**/card/statement-drafts/{draftId}");
 
-        // The "Bank account" row in the card form should display the collection account's name
-        var assignedAccountField = page.Locator("tr")
-            .Filter(new() { Has = page.Locator("th").Filter(new() { HasText = "Bank account" }) });
+        // The first card row is the assigned bank-account lookup.
+        var assignedAccountField = page.Locator("table.fm-table tbody tr").Nth(0);
         await assignedAccountField.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
 
-        var fieldText = await assignedAccountField.InnerTextAsync();
-        fieldText.Should().Contain(accountName,
+        var fieldValue = await assignedAccountField.Locator("input.card-input").InputValueAsync();
+        fieldValue.Should().Contain(accountName,
             because: "the draft IBAN matches a pre-linked IBAN of the collection account, so it should be auto-assigned");
     }
 
@@ -205,10 +204,8 @@ public sealed class CollectionAccountImportPlaywrightTests
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await page.WaitForURLAsync($"**/card/statement-drafts/{draftId}");
 
-        // Find the "Bank account" lookup field, type the collection account name and select it
-        var bankAccountInput = page.Locator("tr")
-            .Filter(new() { Has = page.Locator("th").Filter(new() { HasText = "Bank account" }) })
-            .Locator("input.card-input");
+        // The first card row is the assigned bank-account lookup field.
+        var bankAccountInput = page.Locator("table.fm-table tbody tr").Nth(0).Locator("input.card-input");
         await bankAccountInput.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
         await bankAccountInput.FillAsync(accountName);
 
@@ -222,10 +219,9 @@ public sealed class CollectionAccountImportPlaywrightTests
         // After save the draft card reloads; the Bank account row should now display the account name
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        var assignedRow = page.Locator("tr")
-            .Filter(new() { Has = page.Locator("th").Filter(new() { HasText = "Bank account" }) });
-        var rowText = await assignedRow.InnerTextAsync();
-        rowText.Should().Contain(accountName,
+        var assignedRow = page.Locator("table.fm-table tbody tr").Nth(0);
+        var rowValue = await assignedRow.Locator("input.card-input").InputValueAsync();
+        rowValue.Should().Contain(accountName,
             because: "we manually assigned the collection account and saved the draft");
     }
 
@@ -309,17 +305,16 @@ public sealed class CollectionAccountImportPlaywrightTests
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await page.WaitForURLAsync($"**/card/statement-drafts/{draftId}");
 
-        // Assert the "Bank account" row shows the collection account
-        var bankAccountRow = page.Locator("tr")
-            .Filter(new() { Has = page.Locator("th").Filter(new() { HasText = "Bank account" }) });
+        // The first card row is the assigned bank-account lookup.
+        var bankAccountRow = page.Locator("table.fm-table tbody tr").Nth(0);
         await bankAccountRow.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
-        (await bankAccountRow.InnerTextAsync()).Should().Contain(accountName);
+        (await bankAccountRow.Locator("input.card-input").InputValueAsync()).Should().Contain(accountName);
 
         // Click the "Book" ribbon button
         await page.Locator("button#Book").ClickAsync();
 
         // If a validation panel appears with warnings, click "Proceed" to confirm booking
-        var proceedButton = page.Locator("button.btn-primary").Filter(new() { HasText = "Proceed" });
+        var proceedButton = page.Locator("button.btn-primary").Filter(new() { HasText = "Fortfahren" });
         try
         {
             await proceedButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 5_000 });
