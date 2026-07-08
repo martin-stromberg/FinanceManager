@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using FluentAssertions.Execution;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
@@ -75,9 +74,9 @@ namespace FinanceManager.Tests.ViewModels
 
             var found = vm.TryGetSectionComponentType("profile", out var componentType);
 
-            Assert.True(found);
-            Assert.NotNull(componentType);
-            Assert.Equal(typeof(FinanceManager.Web.Components.Pages.Setup.SetupProfileTab), componentType);
+            found.Should().BeTrue();
+            componentType.Should().NotBeNull();
+            componentType.Should().Be(typeof(FinanceManager.Web.Components.Pages.Setup.SetupProfileTab));
         }
 
         [Fact]
@@ -88,12 +87,48 @@ namespace FinanceManager.Tests.ViewModels
 
             var sectionVm = vm.CreateSectionViewModel("profile", sp);
 
-            Assert.NotNull(sectionVm);
-            Assert.IsType<SetupProfileViewModel>(sectionVm);
+            sectionVm.Should().NotBeNull();
+            sectionVm.Should().BeOfType<SetupProfileViewModel>();
         }
 
         [Fact]
-        public async Task GetRibbonRegisters_AfterLoad_IncludesAllSectionRibbonActions()
+        public async Task GetRibbonRegisters_AfterLoad_IncludesBackupSectionActions()
+        {
+            var allActionIds = await GetAllActionIdsAfterLoad();
+
+            allActionIds.Should().Contain("CreateBackup");
+            allActionIds.Should().Contain("UploadBackup");
+        }
+
+        [Fact]
+        public async Task GetRibbonRegisters_AfterLoad_IncludesNotificationsSectionActions()
+        {
+            var allActionIds = await GetAllActionIdsAfterLoad();
+
+            allActionIds.Should().Contain("SaveNotifications");
+            allActionIds.Should().Contain("ResetNotifications");
+        }
+
+        [Fact]
+        public async Task GetRibbonRegisters_AfterLoad_IncludesProfileSectionActions()
+        {
+            var allActionIds = await GetAllActionIdsAfterLoad();
+
+            allActionIds.Should().Contain("Save");
+            allActionIds.Should().Contain("Reset");
+            allActionIds.Should().Contain("DetectTimezone");
+        }
+
+        [Fact]
+        public async Task GetRibbonRegisters_AfterLoad_IncludesStatementsSectionActions()
+        {
+            var allActionIds = await GetAllActionIdsAfterLoad();
+
+            allActionIds.Should().Contain("SaveImportSplit");
+            allActionIds.Should().Contain("ResetImportSplit");
+        }
+
+        private static async Task<List<string>> GetAllActionIdsAfterLoad()
         {
             var sp = BuildServices();
             var vm = new SetupCardViewModel(sp);
@@ -105,25 +140,12 @@ namespace FinanceManager.Tests.ViewModels
 
             var registers = vm.GetRibbonRegisters(localizerMock.Object);
 
-            Assert.NotNull(registers);
-            var allActionIds = registers!
-                .SelectMany(r => r.Tabs ?? new System.Collections.Generic.List<UiRibbonTab>())
+            registers.Should().NotBeNull();
+            return registers!
+                .SelectMany(r => r.Tabs ?? new List<UiRibbonTab>())
                 .SelectMany(t => t.Items)
                 .Select(a => a.Id)
                 .ToList();
-
-            using (var scope = new AssertionScope())
-            {
-                allActionIds.Should().Contain("CreateBackup");
-                allActionIds.Should().Contain("UploadBackup");
-                allActionIds.Should().Contain("SaveNotifications");
-                allActionIds.Should().Contain("ResetNotifications");
-                allActionIds.Should().Contain("Save");
-                allActionIds.Should().Contain("Reset");
-                allActionIds.Should().Contain("DetectTimezone");
-                allActionIds.Should().Contain("SaveImportSplit");
-                allActionIds.Should().Contain("ResetImportSplit");
-            }
         }
 
         [Fact]
@@ -134,11 +156,11 @@ namespace FinanceManager.Tests.ViewModels
             await vm.LoadAsync(Guid.Empty);
 
             var sectionVm = vm.CreateSectionViewModel("backup", sp);
-            Assert.NotNull(sectionVm);
-            Assert.IsType<SetupBackupsViewModel>(sectionVm);
+            sectionVm.Should().NotBeNull();
+            sectionVm.Should().BeOfType<SetupBackupsViewModel>();
 
             var sectionVm2 = vm.CreateSectionViewModel("backup", sp);
-            Assert.Same(sectionVm, sectionVm2);
+            sectionVm2.Should().BeSameAs(sectionVm);
         }
     }
 }

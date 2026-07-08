@@ -39,7 +39,7 @@ else
     [Parameter] public SetupCardViewModel? Provider { get; set; }
 
     private readonly HashSet<string> _expandedSections = new(StringComparer.OrdinalIgnoreCase);
-    private string? _pendingUploadRequestKey;
+    private string? _pendingExpandSectionKey;
     private SetupCardViewModel? _subscribedProvider;
 
     protected override void OnParametersSet()
@@ -70,19 +70,19 @@ else
     private void OnExpandSectionRequested(object? sender, string key)
     {
         _expandedSections.Add(key);
-        _pendingUploadRequestKey = key;
+        _pendingExpandSectionKey = key;
         _ = InvokeAsync(StateHasChanged);
     }
 
     protected override Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_pendingUploadRequestKey != null)
+        if (_pendingExpandSectionKey != null)
         {
-            var key = _pendingUploadRequestKey;
-            _pendingUploadRequestKey = null;
-            if (Provider?.CreateSectionViewModel(key, Services) is SetupBackupsViewModel backupVm)
+            var key = _pendingExpandSectionKey;
+            _pendingExpandSectionKey = null;
+            if (Provider?.CreateSectionViewModel(key, Services) is IUploadTrigger uploadTrigger)
             {
-                backupVm.TriggerUploadRequest();
+                    uploadTrigger.TriggerUploadRequest();
             }
         }
         return Task.CompletedTask;

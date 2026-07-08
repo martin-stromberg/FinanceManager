@@ -28,6 +28,8 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
 
     private readonly Dictionary<string, BaseViewModel> _sectionViewModels = new(StringComparer.OrdinalIgnoreCase);
 
+    private IReadOnlyList<KeyValuePair<string, string>>? _settingSections;
+
     /// <summary>
     /// Raised when a section should be expanded programmatically. The event argument contains the section key.
     /// Subscribed by <c>SetupSections.razor</c> to expand the section before processing a pending action.
@@ -52,17 +54,9 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
 
     /// <summary>
     /// Exposes the available setting sections as (key, localized display name) pairs.
-    /// The list is static and should be used to render the setup navigation.
+    /// The list is materialized once in <see cref="LoadAsync"/> and cached for the lifetime of the view model.
     /// </summary>
-    public IReadOnlyList<KeyValuePair<string, string>> SettingSections
-    {
-        get
-        {
-            return SectionDefinitions
-                .Select(section => new KeyValuePair<string, string>(section.Key, Localizer?[section.LocalizationKey].Value ?? section.FallbackTitle))
-                .ToList();
-        }
-    }
+    public IReadOnlyList<KeyValuePair<string, string>> SettingSections => _settingSections ?? Array.Empty<KeyValuePair<string, string>>();
 
     /// <summary>
     /// Resolves the component type for a setup section key.
@@ -90,7 +84,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     /// <param name="key">Section key to resolve.</param>
     /// <param name="services">Service provider used for creating the view model instance.</param>
     /// <returns>The created view model instance, or <c>null</c> when the section key is unknown.</returns>
-    public object? CreateSectionViewModel(string key, IServiceProvider services)
+    public BaseViewModel? CreateSectionViewModel(string key, IServiceProvider services)
     {
         if (!TryGetSectionDefinition(key, out var sectionDefinition) || sectionDefinition is null)
         {
@@ -111,8 +105,9 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
             // Sections that do contribute ribbon actions (profile, notifications, backup, statements)
             // are pre-created in LoadAsync using CreateSubViewModel<T> which registers them properly.
             _sectionViewModels[key] = baseVm;
+            return baseVm;
         }
-        return newVm;
+        return null;
     }
 
     /// <summary>
@@ -160,6 +155,10 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                 var statementsVm = CreateSubViewModel<SetupStatementsViewModel>();
                 _sectionViewModels["statements"] = statementsVm;
             }
+
+            _settingSections = SectionDefinitions
+                .Select(section => new KeyValuePair<string, string>(section.Key, Localizer?[section.LocalizationKey].Value ?? section.FallbackTitle))
+                .ToList();
 
             RaiseEmbeddedPanelUiAction();
         }

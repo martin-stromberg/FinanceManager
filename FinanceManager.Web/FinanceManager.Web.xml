@@ -9004,6 +9004,16 @@
             </summary>
             <returns>Relative URL string to navigate to the security detail card.</returns>
         </member>
+        <member name="T:FinanceManager.Web.ViewModels.Setup.IUploadTrigger">
+            <summary>
+            Implemented by view models that can trigger a file upload request towards the UI.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Setup.IUploadTrigger.TriggerUploadRequest">
+            <summary>
+            Triggers the upload request, instructing the UI to open a file picker.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.ViewModels.Setup.SetupAttachmentCategoriesViewModel">
             <summary>
             View model for managing attachment categories in the setup UI.
@@ -9220,12 +9230,6 @@
             <returns>A task that completes when the upload has finished.</returns>
             <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="stream"/> is <c>null</c>.</exception>
         </member>
-        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupBackupsViewModel.AddBackup(FinanceManager.Web.ViewModels.Setup.SetupBackupsViewModel.BackupItem)">
-            <summary>
-            Inserts a backup item at the top of the local list and notifies subscribers about the change.
-            </summary>
-            <param name="item">Backup item to add.</param>
-        </member>
         <member name="P:FinanceManager.Web.ViewModels.Setup.SetupBackupsViewModel.BeforeUploadCallback">
             <summary>
             Optional callback invoked before <see cref="M:FinanceManager.Web.ViewModels.Setup.SetupBackupsViewModel.TriggerUploadRequest"/> is called via the ribbon action.
@@ -9270,7 +9274,7 @@
         <member name="P:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.SettingSections">
             <summary>
             Exposes the available setting sections as (key, localized display name) pairs.
-            The list is static and should be used to render the setup navigation.
+            The list is materialized once in <see cref="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.LoadAsync(System.Guid)"/> and cached for the lifetime of the view model.
             </summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.TryGetSectionComponentType(System.String,System.Type@)">

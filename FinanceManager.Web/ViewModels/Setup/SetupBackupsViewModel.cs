@@ -10,7 +10,7 @@ namespace FinanceManager.Web.ViewModels.Setup;
 /// View model responsible for managing backups in the setup area.
 /// Provides operations to list, create, upload, delete and trigger restore of backups.
 /// </summary>
-public sealed class SetupBackupsViewModel : BaseViewModel
+public sealed class SetupBackupsViewModel : BaseViewModel, IUploadTrigger
 {
     /// <summary>
     /// Initializes a new instance of <see cref="SetupBackupsViewModel"/>.
@@ -131,6 +131,7 @@ public sealed class SetupBackupsViewModel : BaseViewModel
     public async Task StartApplyAsync(Guid id, CancellationToken ct = default)
     {
         if (id == Guid.Empty) { return; }
+        BeginBusyOperation();
         try
         {
             var status = await ApiClient.Backups_StartApplyAsync(id, ct);
@@ -143,7 +144,7 @@ public sealed class SetupBackupsViewModel : BaseViewModel
         {
             HandleApiException(ex);
         }
-        finally { RaiseStateChanged(); }
+        finally { Busy = false; RaiseStateChanged(); }
     }
 
     /// <summary>
@@ -200,15 +201,10 @@ public sealed class SetupBackupsViewModel : BaseViewModel
         finally { Busy = false; RaiseStateChanged(); }
     }
 
-    /// <summary>
-    /// Inserts a backup item at the top of the local list and notifies subscribers about the change.
-    /// </summary>
-    /// <param name="item">Backup item to add.</param>
-    public void AddBackup(BackupItem item)
+    private void AddBackup(BackupItem item)
     {
         Backups ??= new List<BackupItem>();
         Backups.Insert(0, item);
-        RaiseStateChanged();
     }
 
     /// <summary>

@@ -18,7 +18,7 @@ Branch: `task/issue-162-b97878c0c51f4c4c80982a01a030faf8-fehler-verloren-gegange
 | [x] | 8b | Tests ausführen (Unteragent) | `test-results.md` |
 | [x] | – | Iteration oder Abschluss entscheiden | – |
 | [x] | 8a | Folgeaufgaben dokumentieren (bei Schleifenabbruch) | `continue.md` |
-| [ ] | 10 | Nacharbeiten abschließen (offene Punkte aus `continue.md`) | `continue-done.md` |
+| [x] | 10 | Nacharbeiten abschließen (offene Punkte aus `continue.md`) | `continue-done.md` |
 | [x] | 9 | Dokumentation erstellen (Unteragent) | `docs/help/` |
 | [x] | 9b | README aktualisieren (Unteragent) | `README.md` |
 | [ ] | – | Feature-Verzeichnis löschen | – |
