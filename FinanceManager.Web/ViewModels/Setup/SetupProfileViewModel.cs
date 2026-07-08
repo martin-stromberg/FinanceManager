@@ -218,31 +218,8 @@ public sealed class SetupProfileViewModel : BaseViewModel
     /// <returns>Collection of ribbon registers describing available tabs and actions for the UI.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
-        var lblGroup = Localizer?["Ribbon_Group_Manage"].Value;
-        var lblSave = Localizer?["Ribbon_Save"].Value;
-        var lblReset = Localizer?["Ribbon_Reset"].Value;
-        var lblActionsGroup = Localizer?["Ribbon_Group_Actions"].Value;
-        var lblDetect = Localizer?["Ribbon_Detect_Timezone"].Value;
-
-        var saveAction = new UiRibbonAction(
-            "Save",
-            lblSave,
-            "<svg><use href='/icons/sprite.svg#save'/></svg>",
-            UiRibbonItemSize.Small,
-            !Dirty || Saving,
-            null,
-            new Func<Task>(async () => await SaveAsync())
-        );
-
-        var resetAction = new UiRibbonAction(
-            "Reset",
-            lblReset,
-            "<svg><use href='/icons/sprite.svg#undo'/></svg>",
-            UiRibbonItemSize.Small,
-            !Dirty || Saving,
-            null,
-            new Func<Task>(() => { Reset(); return Task.CompletedTask; })
-        );
+        var lblProfileGroup = localizer["SetupProfile_Title"].Value;
+        var lblDetect = localizer["Ribbon_Detect_Timezone"].Value;
 
         var detectAction = new UiRibbonAction(
             "DetectTimezone",
@@ -253,11 +230,9 @@ public sealed class SetupProfileViewModel : BaseViewModel
             null,
             new Func<Task>(() => { RaiseUiActionRequested("DetectTimezone"); return Task.CompletedTask; })
         );
-
         var tabs = new List<UiRibbonTab>
         {
-            new UiRibbonTab(lblGroup, new List<UiRibbonAction> { saveAction, resetAction }),
-            new UiRibbonTab(lblActionsGroup, new List<UiRibbonAction> { detectAction })
+            new UiRibbonTab(lblProfileGroup, new List<UiRibbonAction> { detectAction })
         };
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

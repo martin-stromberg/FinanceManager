@@ -226,36 +226,6 @@ public sealed class SetupStatementsViewModel : BaseViewModel
     /// <returns>A collection of <see cref="UiRibbonRegister"/> entries describing available ribbon tabs/actions.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
-        var actions = new List<UiRibbonAction>();
-
-        // Save action
-        actions.Add(new UiRibbonAction(
-            "SaveImportSplit",
-            localizer["Ribbon_Save"].Value,
-            "<svg><use href='/icons/sprite.svg#save'/></svg>",
-            UiRibbonItemSize.Large,
-            false,
-            localizer["Hint_Save"].Value ?? string.Empty,
-            new Func<Task>(async () =>
-            {
-                try { await SaveAsync(); } catch { }
-            })));
-
-        // Reset action
-        actions.Add(new UiRibbonAction(
-            "ResetImportSplit",
-            localizer["Ribbon_Reset"].Value,
-            "<svg><use href='/icons/sprite.svg#undo'/></svg>",
-            UiRibbonItemSize.Large,
-            false,
-            localizer["Hint_Reset"].Value ?? string.Empty,
-            new Func<Task>(() => { Reset(); return Task.CompletedTask; })));
-
-        var tabs = new List<UiRibbonTab>
-        {
-            new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, actions)
-        };
-
-        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
+        return null;
     }
 }

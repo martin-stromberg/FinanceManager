@@ -1,5 +1,6 @@
 @using FinanceManager.Web.ViewModels.Setup
 @using Microsoft.AspNetCore.Components
+@implements IDisposable
 @inject IServiceProvider Services
 
 @if (Provider == null)
@@ -38,7 +39,54 @@ else
     [Parameter] public SetupCardViewModel? Provider { get; set; }
 
     private readonly HashSet<string> _expandedSections = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, object> _viewModels = new(StringComparer.OrdinalIgnoreCase);
+    private string? _pendingExpandSectionKey;
+    private SetupCardViewModel? _subscribedProvider;
+
+    protected override void OnParametersSet()
+    {
+        if (_subscribedProvider != Provider)
+        {
+            if (_subscribedProvider != null)
+            {
+                _subscribedProvider.ExpandSectionRequested -= OnExpandSectionRequested;
+            }
+            _subscribedProvider = Provider;
+            if (_subscribedProvider != null)
+            {
+                _subscribedProvider.ExpandSectionRequested += OnExpandSectionRequested;
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_subscribedProvider != null)
+        {
+            _subscribedProvider.ExpandSectionRequested -= OnExpandSectionRequested;
+            _subscribedProvider = null;
+        }
+    }
+
+    private void OnExpandSectionRequested(object? sender, string key)
+    {
+        _expandedSections.Add(key);
+        _pendingExpandSectionKey = key;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_pendingExpandSectionKey != null)
+        {
+            var key = _pendingExpandSectionKey;
+            _pendingExpandSectionKey = null;
+            if (Provider?.CreateSectionViewModel(key, Services) is IUploadTrigger uploadTrigger)
+            {
+                uploadTrigger.TriggerUploadRequest();
+            }
+        }
+        return Task.CompletedTask;
+    }
 
     private void ToggleSection(string key)
     {
@@ -60,34 +108,12 @@ else
             return (null, null);
         }
 
-        var vm = ResolveViewModel(key);
+        var vm = Provider.CreateSectionViewModel(key, Services);
         if (vm == null)
         {
             return (null, null);
         }
 
         return (componentType, new Dictionary<string, object> { ["ViewModel"] = vm });
-    }
-
-    private object? ResolveViewModel(string key)
-    {
-        if (_viewModels.TryGetValue(key, out var existing))
-        {
-            return existing;
-        }
-
-        if (Provider == null)
-        {
-            return null;
-        }
-
-        var vm = Provider.CreateSectionViewModel(key, Services);
-
-        if (vm != null)
-        {
-            _viewModels[key] = vm;
-        }
-
-        return vm;
     }
 }

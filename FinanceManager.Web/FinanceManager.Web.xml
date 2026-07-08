@@ -9053,6 +9053,16 @@
             </summary>
             <returns>Relative URL string to navigate to the security detail card.</returns>
         </member>
+        <member name="T:FinanceManager.Web.ViewModels.Setup.IUploadTrigger">
+            <summary>
+            Implemented by view models that can trigger a file upload request towards the UI.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Web.ViewModels.Setup.IUploadTrigger.TriggerUploadRequest">
+            <summary>
+            Triggers the upload request, instructing the UI to open a file picker.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Web.ViewModels.Setup.SetupAttachmentCategoriesViewModel">
             <summary>
             View model for managing attachment categories in the setup UI.
@@ -9269,20 +9279,15 @@
             <returns>A task that completes when the upload has finished.</returns>
             <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="stream"/> is <c>null</c>.</exception>
         </member>
-        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupBackupsViewModel.AddBackup(FinanceManager.Web.ViewModels.Setup.SetupBackupsViewModel.BackupItem)">
+        <member name="P:FinanceManager.Web.ViewModels.Setup.SetupBackupsViewModel.BeforeUploadCallback">
             <summary>
-            Inserts a backup item at the top of the local list and notifies subscribers about the change.
+            Optional callback invoked before <see cref="M:FinanceManager.Web.ViewModels.Setup.SetupBackupsViewModel.TriggerUploadRequest"/> is called via the ribbon action.
+            Used by <see cref="T:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel"/> to expand the backup section before the upload dialog opens.
             </summary>
-            <param name="item">Backup item to add.</param>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Setup.SetupBackupsViewModel.TriggerUploadRequest">
             <summary>
             Triggers the <see cref="E:FinanceManager.Web.ViewModels.Setup.SetupBackupsViewModel.UploadRequested"/> event to instruct the UI to open a file picker.
-            </summary>
-        </member>
-        <member name="M:FinanceManager.Web.ViewModels.Setup.SetupBackupsViewModel.ClearUploadRequest">
-            <summary>
-            Clears any pending upload request. This method is kept for compatibility and is currently a no-op.
             </summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Setup.SetupBackupsViewModel.GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer)">
@@ -9304,6 +9309,12 @@
             </summary>
             <param name="sp">The service provider used to resolve services required by the view model.</param>
         </member>
+        <member name="E:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.ExpandSectionRequested">
+            <summary>
+            Raised when a section should be expanded programmatically. The event argument contains the section key.
+            Subscribed by <c>SetupSections.razor</c> to expand the section before processing a pending action.
+            </summary>
+        </member>
         <member name="P:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.Title">
             <summary>
             Gets the localized title of the card.
@@ -9312,7 +9323,7 @@
         <member name="P:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.SettingSections">
             <summary>
             Exposes the available setting sections as (key, localized display name) pairs.
-            The list is static and should be used to render the setup navigation.
+            The list is materialized once in <see cref="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.LoadAsync(System.Guid)"/> and cached for the lifetime of the view model.
             </summary>
         </member>
         <member name="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.TryGetSectionComponentType(System.String,System.Type@)">
@@ -9326,6 +9337,8 @@
         <member name="M:FinanceManager.Web.ViewModels.Setup.SetupCardViewModel.CreateSectionViewModel(System.String,System.IServiceProvider)">
             <summary>
             Creates the setup section view model instance for a section key.
+            Returns a pre-created, ribbon-contributing instance from the internal cache when available;
+            otherwise creates a new instance via the service provider.
             </summary>
             <param name="key">Section key to resolve.</param>
             <param name="services">Service provider used for creating the view model instance.</param>
