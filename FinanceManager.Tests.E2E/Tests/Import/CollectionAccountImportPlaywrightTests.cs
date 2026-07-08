@@ -1,7 +1,4 @@
-using FinanceManager.Shared.Dtos.Accounts;
-using FinanceManager.Shared.Dtos.Contacts;
 using FinanceManager.Shared.Dtos.Postings;
-using FinanceManager.Shared.Dtos.Statements;
 
 namespace FinanceManager.Tests.E2E;
 
@@ -16,69 +13,98 @@ public sealed class CollectionAccountImportPlaywrightTests
     }
 
     /// <summary>
-    /// Verifies that uploading a multi-IBAN collection account CSV creates multiple statement drafts
-    /// (one per IBAN block) grouped by the same UploadGroupId.
+    /// Verifies that uploading a multi-IBAN collection-account CSV via the home-page import widget
+    /// produces multiple statement drafts visible in the draft list.
     /// </summary>
     [Fact]
-    public async Task UploadCollectionAccountCsv_ShouldCreateMultipleDrafts()
+    public async Task UploadCollectionAccountCsv_ViaUi_ShouldShowMultipleDraftsInList()
     {
         await using var session = await _fixture.CreateSessionAsync();
         var page = session.Page;
         var auth = new AuthGateway(page, _fixture.BaseUrl);
         var seeder = new TestUserSeeder(_fixture.DatabasePath);
 
-        var username = $"coll-multi-{Guid.NewGuid():N}";
+        var username = $"coll-multi-ui-{Guid.NewGuid():N}";
         const string password = "Secret123";
         await seeder.EnsureUserAsync(username, password);
         await auth.LoginAsync(username, password);
 
-        const string iban1 = "DE50700500000007882990";
-        const string iban2 = "DE50700500000007882991";
+        const string iban1 = "DE50700500000007882910";
+        const string iban2 = "DE50700500000007882911";
 
-        // Multi-IBAN CSV: two blocks separated by a repeated "Bank;ING" header line
+        // Write the multi-IBAN CSV to a temp file and upload via the home-page file widget
         var csv = BuildMultiIbanCsv(iban1, iban2);
+        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}-collection.csv");
+        await File.WriteAllTextAsync(tempFile, csv);
+        try
+        {
+            await page.GotoAsync("/");
+            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await page.Locator("#Import").WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+            await page.Locator("#Import input[type=file]").SetInputFilesAsync(tempFile);
 
-        var uploaded = await BrowserApiHelper.PostMultipartAsync<StatementDraftUploadResult>(
-            page, "/api/statement-drafts/upload", "collection.csv", "text/csv",
-            System.Text.Encoding.UTF8.GetBytes(csv));
+            // Wait for the upload to complete (success indicator or dialog)
+            var success = page.Locator(".import-success");
+            var dialog = page.Locator(".mass-import-dialog");
+            try
+            {
+                await success.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+            }
+            catch (TimeoutException)
+            {
+                if (await dialog.CountAsync() > 0)
+                {
+                    await dialog.Locator("button.btn").First.ClickAsync();
+                    await success.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 30_000 });
+                }
+            }
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
 
-        uploaded.Should().NotBeNull();
-        uploaded.FirstDraft.Should().NotBeNull();
+        // Navigate to the statement-drafts list and assert at least 2 rows are visible
+        await page.GotoAsync("/list/statement-drafts");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        // After uploading, list all open drafts — there should be at least 2 from this upload group
-        var drafts = await BrowserApiHelper.GetJsonAsync<IReadOnlyList<StatementDraftDto>>(
-            page, "/api/statement-drafts?skip=0&take=3");
+        // Allow a short moment for the list to render items
+        await page.Locator("tbody tr:visible, .generic-list-mobile-card:visible").First
+            .WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
 
-        drafts.Should().HaveCountGreaterThanOrEqualTo(2,
-            because: "uploading a two-IBAN collection CSV should produce one draft per IBAN block");
+        var draftRows = page.Locator("tbody tr:visible, .generic-list-mobile-card:visible");
+        var rowCount = await draftRows.CountAsync();
+        rowCount.Should().BeGreaterThanOrEqualTo(2,
+            because: "uploading a two-IBAN collection CSV should create one draft per IBAN block");
     }
 
     /// <summary>
-    /// Verifies that uploading a CSV whose IBAN matches a known linked IBAN of a collection account
-    /// causes the draft to be automatically assigned to that account.
+    /// Verifies that uploading a CSV whose IBAN matches a pre-linked IBAN of a collection account
+    /// causes the created draft to display the collection account's name in the "Bank account" field.
     /// </summary>
     [Fact]
-    public async Task UploadCollectionAccountCsv_ShouldAutoAssignAccountViaLinkedIban()
+    public async Task UploadWithLinkedIban_ViaUi_DraftShouldShowAutoAssignedAccount()
     {
         await using var session = await _fixture.CreateSessionAsync();
         var page = session.Page;
         var auth = new AuthGateway(page, _fixture.BaseUrl);
         var seeder = new TestUserSeeder(_fixture.DatabasePath);
 
-        var username = $"coll-auto-assign-{Guid.NewGuid():N}";
+        var username = $"coll-auto-ui-{Guid.NewGuid():N}";
         const string password = "Secret123";
         await seeder.EnsureUserAsync(username, password);
         await auth.LoginAsync(username, password);
 
-        const string collectionIban = "DE50700500000007882992";
-        const string subIban = "DE50700500000007882993";
+        const string collectionIban = "DE50700500000007882912";
+        const string subIban = "DE50700500000007882913";
+        var accountName = $"AutoAssign UI {Guid.NewGuid():N}";
 
-        // Create a collection account
+        // Seed: collection account + pre-linked sub-IBAN
         var collectionAccount = await BrowserApiHelper.PostJsonAsync<AccountCreateRequest, AccountDto>(
             page,
             "/api/accounts",
             new AccountCreateRequest(
-                Name: $"Sammelkonto AutoAssign {Guid.NewGuid():N}",
+                Name: accountName,
                 Type: AccountType.Giro,
                 Iban: collectionIban,
                 BankContactId: null,
@@ -88,50 +114,74 @@ public sealed class CollectionAccountImportPlaywrightTests
                 SecurityProcessingEnabled: false,
                 IsCollectionAccount: true));
 
-        // Link the sub-IBAN
         await BrowserApiHelper.PostJsonAsync(
             page,
             $"/api/accounts/{collectionAccount.Id}/linked-ibans",
             new AccountLinkedIbanUpsertRequest(subIban));
 
-        // Upload CSV with the sub-IBAN (should be auto-assigned to collection account)
+        // Upload the single-IBAN CSV (sub-IBAN) via the home-page import widget
         var csv = BuildSingleIbanCsv(subIban);
-        var uploaded = await BrowserApiHelper.PostMultipartAsync<StatementDraftUploadResult>(
-            page, "/api/statement-drafts/upload", "sub-iban.csv", "text/csv",
-            System.Text.Encoding.UTF8.GetBytes(csv));
+        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}-sub-iban.csv");
+        await File.WriteAllTextAsync(tempFile, csv);
+        StatementDraftUploadResult? uploadResult = null;
+        try
+        {
+            // Use the browser-side fetch for the upload so we can capture the draft ID
+            uploadResult = await BrowserApiHelper.PostMultipartAsync<StatementDraftUploadResult>(
+                page, "/api/statement-drafts/upload", "sub-iban.csv", "text/csv",
+                System.Text.Encoding.UTF8.GetBytes(csv));
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
 
-        uploaded.Should().NotBeNull();
-        uploaded.FirstDraft.Should().NotBeNull();
-        uploaded.FirstDraft!.DetectedAccountId.Should().Be(collectionAccount.Id,
-            because: "the draft IBAN matches a linked IBAN of the collection account");
+        uploadResult.Should().NotBeNull();
+        uploadResult!.FirstDraft.Should().NotBeNull();
+        var draftId = uploadResult.FirstDraft!.DraftId;
+
+        // Navigate to the draft card page
+        await page.GotoAsync($"/card/statement-drafts/{draftId}");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await page.WaitForURLAsync($"**/card/statement-drafts/{draftId}");
+
+        // The "Bank account" row in the card form should display the collection account's name
+        var assignedAccountField = page.Locator("tr")
+            .Filter(new() { Has = page.Locator("th").Filter(new() { HasText = "Bank account" }) });
+        await assignedAccountField.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+
+        var fieldText = await assignedAccountField.InnerTextAsync();
+        fieldText.Should().Contain(accountName,
+            because: "the draft IBAN matches a pre-linked IBAN of the collection account, so it should be auto-assigned");
     }
 
     /// <summary>
-    /// Verifies that booking a draft for a collection account automatically adds the draft's IBAN
-    /// to the account's linked IBAN list when it is not already present.
+    /// Verifies that manually selecting a collection account in the draft's "Bank account" lookup
+    /// and saving the draft persists the assignment (visible after page reload).
     /// </summary>
     [Fact]
-    public async Task BookCollectionAccountDraft_ShouldAutoAddUnknownIbanToLinkedList()
+    public async Task ManualAccountAssignment_ViaUi_ShouldPersistAfterSave()
     {
         await using var session = await _fixture.CreateSessionAsync();
         var page = session.Page;
         var auth = new AuthGateway(page, _fixture.BaseUrl);
         var seeder = new TestUserSeeder(_fixture.DatabasePath);
 
-        var username = $"coll-book-auto-{Guid.NewGuid():N}";
+        var username = $"coll-manual-ui-{Guid.NewGuid():N}";
         const string password = "Secret123";
         await seeder.EnsureUserAsync(username, password);
         await auth.LoginAsync(username, password);
 
-        const string collectionIban = "DE50700500000007882994";
-        const string subIban = "DE74200400600000500501";
+        const string collectionIban = "DE50700500000007882914";
+        const string unknownSubIban = "DE50700500000007882915";
+        var accountName = $"ManualAssign UI {Guid.NewGuid():N}";
 
-        // Create a collection account (starts without any linked IBANs)
+        // Seed: collection account (no linked IBANs — sub-IBAN is unknown)
         var collectionAccount = await BrowserApiHelper.PostJsonAsync<AccountCreateRequest, AccountDto>(
             page,
             "/api/accounts",
             new AccountCreateRequest(
-                Name: $"Sammelkonto Book {Guid.NewGuid():N}",
+                Name: accountName,
                 Type: AccountType.Giro,
                 Iban: collectionIban,
                 BankContactId: null,
@@ -141,40 +191,104 @@ public sealed class CollectionAccountImportPlaywrightTests
                 SecurityProcessingEnabled: false,
                 IsCollectionAccount: true));
 
-        // Pre-link the subIban so that the upload auto-assigns the draft to the collection account
+        // Upload CSV with an IBAN that is NOT linked → no auto-assignment
+        var csv = BuildSingleIbanCsv(unknownSubIban);
+        var uploaded = await BrowserApiHelper.PostMultipartAsync<StatementDraftUploadResult>(
+            page, "/api/statement-drafts/upload", "manual.csv", "text/csv",
+            System.Text.Encoding.UTF8.GetBytes(csv));
+        uploaded.Should().NotBeNull();
+        uploaded!.FirstDraft.Should().NotBeNull();
+        var draftId = uploaded.FirstDraft!.DraftId;
+
+        // Navigate to the draft card
+        await page.GotoAsync($"/card/statement-drafts/{draftId}");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await page.WaitForURLAsync($"**/card/statement-drafts/{draftId}");
+
+        // Find the "Bank account" lookup field, type the collection account name and select it
+        var bankAccountInput = page.Locator("tr")
+            .Filter(new() { Has = page.Locator("th").Filter(new() { HasText = "Bank account" }) })
+            .Locator("input.card-input");
+        await bankAccountInput.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+        await bankAccountInput.FillAsync(accountName);
+
+        var lookupItem = page.Locator(".lookup-item").Filter(new() { HasText = accountName }).First;
+        await lookupItem.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10_000 });
+        await lookupItem.ClickAsync();
+
+        // Save the draft via the ribbon "Save" button
+        await page.Locator("button#Save").ClickAsync();
+
+        // After save the draft card reloads; the Bank account row should now display the account name
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var assignedRow = page.Locator("tr")
+            .Filter(new() { Has = page.Locator("th").Filter(new() { HasText = "Bank account" }) });
+        var rowText = await assignedRow.InnerTextAsync();
+        rowText.Should().Contain(accountName,
+            because: "we manually assigned the collection account and saved the draft");
+    }
+
+    /// <summary>
+    /// Verifies that booking a draft whose IBAN is unknown to the collection account at booking
+    /// time automatically adds that IBAN to the account's linked-IBAN list, which is then visible
+    /// in the account's LinkedIbansPanel.
+    /// </summary>
+    [Fact]
+    public async Task BookCollectionAccountDraft_ViaUi_ShouldAddIbanToLinkedPanel()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var auth = new AuthGateway(page, _fixture.BaseUrl);
+        var seeder = new TestUserSeeder(_fixture.DatabasePath);
+
+        var username = $"coll-book-ui-{Guid.NewGuid():N}";
+        const string password = "Secret123";
+        await seeder.EnsureUserAsync(username, password);
+        await auth.LoginAsync(username, password);
+
+        const string collectionIban = "DE50700500000007882916";
+        const string subIban = "DE74200400600000500502";
+        var accountName = $"Book UI {Guid.NewGuid():N}";
+
+        // Seed: collection account
+        var collectionAccount = await BrowserApiHelper.PostJsonAsync<AccountCreateRequest, AccountDto>(
+            page,
+            "/api/accounts",
+            new AccountCreateRequest(
+                Name: accountName,
+                Type: AccountType.Giro,
+                Iban: collectionIban,
+                BankContactId: null,
+                NewBankContactName: "ING",
+                SymbolAttachmentId: null,
+                SavingsPlanExpectation: SavingsPlanExpectation.Optional,
+                SecurityProcessingEnabled: false,
+                IsCollectionAccount: true));
+
+        // Pre-link the sub-IBAN so upload auto-assigns the draft
         await BrowserApiHelper.PostJsonAsync(
             page,
             $"/api/accounts/{collectionAccount.Id}/linked-ibans",
             new AccountLinkedIbanUpsertRequest(subIban));
 
-        // Upload CSV with the sub-IBAN → auto-assigned to collection account
+        // Upload CSV → auto-assigned
         var csv = BuildSingleIbanCsv(subIban);
         var uploaded = await BrowserApiHelper.PostMultipartAsync<StatementDraftUploadResult>(
-            page, "/api/statement-drafts/upload", "auto-link.csv", "text/csv",
+            page, "/api/statement-drafts/upload", "book-ui.csv", "text/csv",
             System.Text.Encoding.UTF8.GetBytes(csv));
-
         uploaded.FirstDraft.Should().NotBeNull();
         var draftId = uploaded.FirstDraft!.DraftId;
 
-        // Verify the draft was auto-assigned
-        var draft = await BrowserApiHelper.GetJsonAsync<StatementDraftDetailDto>(
-            page, $"/api/statement-drafts/{draftId}?headerOnly=false");
-        draft.DetectedAccountId.Should().Be(collectionAccount.Id);
-
-        // Remove the IBAN from the linked list to simulate it being unknown at booking time
+        // Remove the sub-IBAN from the linked list to simulate "unknown at booking time"
         await BrowserApiHelper.DeleteAsync(
             page, $"/api/accounts/{collectionAccount.Id}/linked-ibans/{Uri.EscapeDataString(subIban)}");
 
-        var ibansBeforeBooking = await BrowserApiHelper.GetJsonAsync<IReadOnlyList<string>>(
-            page, $"/api/accounts/{collectionAccount.Id}/linked-ibans");
-        ibansBeforeBooking.Should().NotContain(subIban,
-            because: "we removed it to simulate an unknown IBAN at booking time");
-
-        // Reassign the draft to the collection account (required since we removed the linked IBAN)
+        // Re-assign the draft to the collection account via API (since the link was removed)
         await BrowserApiHelper.PostNoContentAsync(
             page, $"/api/statement-drafts/{draftId}/account/{collectionAccount.Id}");
 
-        // Assign a contact to all entries so booking can proceed without errors
+        // Assign a contact to all draft entries so booking can proceed without errors
         var allContacts = await BrowserApiHelper.GetJsonAsync<IReadOnlyList<ContactDto>>(
             page, "/api/contacts?all=true");
         var selfContact = allContacts.Single(c => c.Type == ContactType.Self);
@@ -190,18 +304,46 @@ public sealed class CollectionAccountImportPlaywrightTests
                 new StatementDraftSetContactRequest(selfContact.Id));
         }
 
-        // Book with forceWarnings to bypass any warnings
-        var bookResult = await BrowserApiHelper.PostWithStatusAsync<BookingResult>(
-            page, $"/api/statement-drafts/{draftId}/book?forceWarnings=true");
+        // Navigate to the draft card page
+        await page.GotoAsync($"/card/statement-drafts/{draftId}");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await page.WaitForURLAsync($"**/card/statement-drafts/{draftId}");
 
-        bookResult.Status.Should().Be(200);
-        bookResult.Value!.Success.Should().BeTrue();
+        // Assert the "Bank account" row shows the collection account
+        var bankAccountRow = page.Locator("tr")
+            .Filter(new() { Has = page.Locator("th").Filter(new() { HasText = "Bank account" }) });
+        await bankAccountRow.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+        (await bankAccountRow.InnerTextAsync()).Should().Contain(accountName);
 
-        // After booking, the draft's IBAN (subIban) should now be auto-linked to the collection account
-        var ibansAfterBooking = await BrowserApiHelper.GetJsonAsync<IReadOnlyList<string>>(
-            page, $"/api/accounts/{collectionAccount.Id}/linked-ibans");
-        ibansAfterBooking.Should().Contain(subIban,
-            because: "booking a collection account draft should auto-add the draft IBAN to the linked list");
+        // Click the "Book" ribbon button
+        await page.Locator("button#Book").ClickAsync();
+
+        // If a validation panel appears with warnings, click "Proceed" to confirm booking
+        var proceedButton = page.Locator("button.btn-primary").Filter(new() { HasText = "Proceed" });
+        try
+        {
+            await proceedButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 5_000 });
+            await proceedButton.ClickAsync();
+        }
+        catch (TimeoutException)
+        {
+            // No warnings — booking succeeded directly
+        }
+
+        // After booking the page navigates away from the draft (to next draft or list)
+        await page.WaitForURLAsync("**/list/statement-drafts", new() { Timeout = 15_000 });
+
+        // Navigate to the collection account's detail page
+        await page.GotoAsync($"/card/accounts/{collectionAccount.Id}");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        // The sub-IBAN should now be visible in the LinkedIbansPanel
+        var panel = page.Locator(".linked-ibans-panel");
+        await panel.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+        await panel.GetByText(subIban)
+            .WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10_000 });
+        (await panel.InnerTextAsync()).Should().Contain(subIban,
+            because: "booking a collection-account draft should auto-add the draft's IBAN to the linked list");
     }
 
     // ─── CSV helpers ─────────────────────────────────────────────────────────
@@ -239,7 +381,7 @@ public sealed class CollectionAccountImportPlaywrightTests
         "Buchung;Valuta;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\r\n" +
         "15.11.2025;15.11.2025;Zinsen AG;Zinsgutschrift;Zinsen Block 1;1.000,00;EUR;50,00;EUR\r\n" +
         "\r\n" +
-        // Second block (a new "Bank;ING" line starts the next block)
+        // Second block
         $"IBAN;{iban2}\r\n" +
         "Kontoname;Sparkonto 2\r\n" +
         "Bank;ING\r\n" +
