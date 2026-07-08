@@ -35,30 +35,24 @@
 
             <div class="form-row">
                 <label for="show-sharpe">@Localizer["SetupReturnAnalysis_Label_ShowSharpeRatio"]</label>
-                <input id="show-sharpe" type="checkbox" @bind="_vm.ShowSharpeRatio" />
+                <input id="show-sharpe" type="checkbox" @bind="_vm.ShowSharpeRatio" @bind:after="(()=> _vm.OnChanged())" />
             </div>
 
             <div class="form-row">
                 <label for="risk-free">@Localizer["SetupReturnAnalysis_Label_RiskFreeRate"]</label>
-                <input id="risk-free" type="number" step="0.01" min="0" @bind="_vm.RiskFreeRate" />
+                <input id="risk-free" type="number" step="0.01" min="0" @bind="_vm.RiskFreeRate" @bind:after="(()=> _vm.OnChanged())" />
                 <div class="help-text">@Localizer["SetupReturnAnalysis_Help_RiskFreeRate"]</div>
             </div>
         </div>
 
-        <div style="margin-top:1rem;display:flex;gap:.5rem;align-items:center;">
-            <button @onclick="SaveAsync" disabled="@_vm.Saving">
-                @(_vm.Saving ? Localizer["Btn_Saving"].Value : Localizer["Btn_Save"].Value)
-            </button>
-
-            @if (_vm.SavedOk)
-            {
-                <span class="success-text">@Localizer["Msg_SavedSuccessfully"]</span>
-            }
-            else if (!string.IsNullOrWhiteSpace(_vm.SaveError))
-            {
-                <span class="error">@_vm.SaveError</span>
-            }
-        </div>
+        @if (_vm.SavedOk)
+        {
+            <div class="success-text" style="margin-top:1rem;">@Localizer["Msg_SavedSuccessfully"]</div>
+        }
+        else if (!string.IsNullOrWhiteSpace(_vm.SaveError))
+        {
+            <div class="error" style="margin-top:1rem;">@_vm.SaveError</div>
+        }
     }
 </div>
 
@@ -98,9 +92,9 @@
         {
             _vm!.SelectedBenchmarkSecurityId = guid;
         }
-    }
 
-    private Task SaveAsync() => _vm!.SaveAsync();
+        _vm!.OnChanged();
+    }
 
     public void Dispose()
     {

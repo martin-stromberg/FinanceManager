@@ -27,6 +27,8 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     private readonly ILogger<SetupCardViewModel>? _logger;
 
     private readonly Dictionary<string, BaseViewModel> _sectionViewModels = new(StringComparer.OrdinalIgnoreCase);
+    private bool _coreSectionViewModelsInitialized;
+    private bool _saving;
 
     private IReadOnlyList<KeyValuePair<string, string>>? _settingSections;
 
@@ -35,6 +37,24 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     /// Subscribed by <c>SetupSections.razor</c> to expand the section before processing a pending action.
     /// </summary>
     public event EventHandler<string>? ExpandSectionRequested;
+
+    /// <summary>
+    /// Indicates whether a global save operation is currently running.
+    /// </summary>
+    public bool Saving
+    {
+        get => _saving;
+        private set
+        {
+            if (_saving == value)
+            {
+                return;
+            }
+
+            _saving = value;
+            RaiseStateChanged();
+        }
+    }
 
     /// <summary>
     /// Gets the localized title of the card.
@@ -57,6 +77,20 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     /// The list is materialized once in <see cref="LoadAsync"/> and cached for the lifetime of the view model.
     /// </summary>
     public IReadOnlyList<KeyValuePair<string, string>> SettingSections => _settingSections ?? Array.Empty<KeyValuePair<string, string>>();
+
+    /// <summary>
+    /// Indicates whether any setup section currently has unsaved changes.
+    /// </summary>
+    public bool HasPendingChanges
+    {
+        get
+        {
+            return GetSectionViewModel<SetupProfileViewModel>("profile")?.Dirty == true
+                || GetSectionViewModel<SetupNotificationsViewModel>("notifications")?.Dirty == true
+                || GetSectionViewModel<SetupStatementsViewModel>("statements")?.Dirty == true
+                || GetSectionViewModel<SetupReturnAnalysisViewModel>("returnanalysis")?.Dirty == true;
+        }
+    }
 
     /// <summary>
     /// Resolves the component type for a setup section key.
@@ -140,7 +174,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
         {
             CardRecord = null;
 
-            if (_sectionViewModels.Count == 0)
+            if (!_coreSectionViewModelsInitialized)
             {
                 var profileVm = CreateSubViewModel<SetupProfileViewModel>();
                 _sectionViewModels["profile"] = profileVm;
@@ -154,6 +188,8 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
 
                 var statementsVm = CreateSubViewModel<SetupStatementsViewModel>();
                 _sectionViewModels["statements"] = statementsVm;
+
+                _coreSectionViewModelsInitialized = true;
             }
 
             _settingSections = SectionDefinitions
@@ -164,6 +200,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
         }
         catch (Exception ex)
         {
+            _logger?.LogError(ex, "LoadAsync failed");
             SetError(null, ex.Message);
             CardRecord = null;
         }
@@ -171,6 +208,58 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
         {
             Loading = false; RaiseStateChanged();
         }
+    }
+
+    /// <summary>
+    /// Saves all dirty setup sections that expose a save operation.
+    /// </summary>
+    /// <param name="ct">Cancellation token used to cancel the save operations.</param>
+    /// <returns>A task that completes when all save operations have finished.</returns>
+    public async Task SaveAllAsync(CancellationToken ct = default)
+    {
+        Saving = true;
+        try
+        {
+            var profileVm = GetSectionViewModel<SetupProfileViewModel>("profile");
+            if (profileVm?.Dirty == true)
+            {
+                await profileVm.SaveAsync(ct);
+            }
+
+            var notificationsVm = GetSectionViewModel<SetupNotificationsViewModel>("notifications");
+            if (notificationsVm?.Dirty == true)
+            {
+                await notificationsVm.SaveAsync(ct);
+            }
+
+            var statementsVm = GetSectionViewModel<SetupStatementsViewModel>("statements");
+            if (statementsVm?.Dirty == true)
+            {
+                await statementsVm.SaveAsync(ct);
+            }
+
+            var returnAnalysisVm = GetSectionViewModel<SetupReturnAnalysisViewModel>("returnanalysis");
+            if (returnAnalysisVm?.Dirty == true)
+            {
+                await returnAnalysisVm.SaveAsync(ct);
+            }
+        }
+        finally
+        {
+            Saving = false;
+        }
+    }
+
+    /// <summary>
+    /// Resets all setup sections that expose a reset operation.
+    /// </summary>
+    public void ResetAll()
+    {
+        GetSectionViewModel<SetupProfileViewModel>("profile")?.Reset();
+        GetSectionViewModel<SetupNotificationsViewModel>("notifications")?.Reset();
+        GetSectionViewModel<SetupStatementsViewModel>("statements")?.Reset();
+        GetSectionViewModel<SetupReturnAnalysisViewModel>("returnanalysis")?.Reset();
+        RaiseStateChanged();
     }
 
     private void RaiseEmbeddedPanelUiAction()
@@ -226,11 +315,27 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     /// <returns>A list of <see cref="UiRibbonRegister"/> instances describing the ribbon layout, or <c>null</c> when no ribbon is needed.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
-        // Provide a single Actions register with a tab containing the RebuildAggregates action
+        var groupTitle = localizer["Ribbon_Group_Manage"].Value;
         var tabs = new List<UiRibbonTab>
         {
-            new UiRibbonTab(localizer["Ribbon_Group_Actions"].Value, new List<UiRibbonAction>
+            new UiRibbonTab(groupTitle, new List<UiRibbonAction>
             {
+                new UiRibbonAction(
+                    "Save",
+                    localizer["Ribbon_Save"].Value,
+                    "<svg><use href='/icons/sprite.svg#save'/></svg>",
+                    UiRibbonItemSize.Small,
+                    Saving || !HasPendingChanges,
+                    null,
+                    new Func<Task>(async () => await SaveAllAsync())),
+                new UiRibbonAction(
+                    "Reset",
+                    localizer["Ribbon_Reset"].Value,
+                    "<svg><use href='/icons/sprite.svg#undo'/></svg>",
+                    UiRibbonItemSize.Small,
+                    Saving || !HasPendingChanges,
+                    null,
+                    new Func<Task>(() => { ResetAll(); return Task.CompletedTask; })),
                 new UiRibbonAction(
                     "RebuildAggregates",
                     localizer["Ribbon_RebuildAggregates"].Value,
@@ -292,4 +397,15 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     /// <param name="attachmentId">The id of the newly uploaded attachment, or <c>null</c> if none.</param>
     /// <returns>A completed task. No action is performed for the setup card.</returns>
     protected override Task AssignNewSymbolAsync(Guid? attachmentId) => Task.CompletedTask;
+
+    private TViewModel? GetSectionViewModel<TViewModel>(string key)
+        where TViewModel : BaseViewModel
+    {
+        if (_sectionViewModels.TryGetValue(key, out var viewModel) && viewModel is TViewModel typedViewModel)
+        {
+            return typedViewModel;
+        }
+
+        return null;
+    }
 }

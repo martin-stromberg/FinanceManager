@@ -110,8 +110,7 @@ public sealed class SetupBackupsViewModel : BaseViewModel, IUploadTrigger
             var created = await ApiClient.Backups_CreateAsync(ct);
             if (created is not null)
             {
-                Backups ??= new List<BackupItem>();
-                Backups.Insert(0, MapToBackupItem(created));
+                AddBackup(MapToBackupItem(created));
             }
         }
         catch (Exception ex)
@@ -228,6 +227,7 @@ public sealed class SetupBackupsViewModel : BaseViewModel, IUploadTrigger
     /// <returns>Collection of ribbon register definitions or <c>null</c> when none are provided.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
+        var groupTitle = localizer["SetupBackup_Titel"].Value;
         var actions = new List<UiRibbonAction>
         {
             new UiRibbonAction(
@@ -260,7 +260,7 @@ public sealed class SetupBackupsViewModel : BaseViewModel, IUploadTrigger
 
         var tabs = new List<UiRibbonTab>
         {
-            new UiRibbonTab(localizer["Ribbon_Group_Actions"].Value, actions, int.MaxValue)
+            new UiRibbonTab(groupTitle, actions, int.MaxValue)
         };
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

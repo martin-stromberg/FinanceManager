@@ -82,7 +82,7 @@ else
             _pendingExpandSectionKey = null;
             if (Provider?.CreateSectionViewModel(key, Services) is IUploadTrigger uploadTrigger)
             {
-                    uploadTrigger.TriggerUploadRequest();
+                uploadTrigger.TriggerUploadRequest();
             }
         }
         return Task.CompletedTask;
