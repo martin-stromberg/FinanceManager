@@ -4856,6 +4856,13 @@
             </summary>
             <param name="logger">Logger instance for logging parser operations and errors.</param>
         </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser.Parse(FinanceManager.Infrastructure.Statements.Files.IStatementFile)">
+            <summary>
+            Parst einen ING-PDF-Auszug und ergänzt bei Bedarf die Header-IBAN aus der Kontoangabe.
+            </summary>
+            <param name="statementFile">Zu parsende Auszugsdatei.</param>
+            <returns>Liste mit Parse-Ergebnissen oder <c>null</c>.</returns>
+        </member>
         <member name="F:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser._Templates">
             <summary>
             XML templates used by the base PDF parsing engine to detect fields and table patterns.
@@ -4889,6 +4896,12 @@
             enumerable contains the updated record.</remarks>
             <param name="rec">The statement record to process. Must not be null.</param>
             <returns>An enumerable containing the processed statement record with sanitized field values.</returns>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Statements.Parsers.ING_PDF_StatementFileParser.OnBeforeParseLine(System.String@)">
+            <summary>
+            Normalisiert ING-Sparbrief-IBAN-Zeilen in das Template-KeyValue-Format.
+            </summary>
+            <param name="line">Aktuelle PDF-Zeile.</param>
         </member>
         <member name="T:FinanceManager.Infrastructure.Statements.Parsers.IStatementFileParser">
             <summary>

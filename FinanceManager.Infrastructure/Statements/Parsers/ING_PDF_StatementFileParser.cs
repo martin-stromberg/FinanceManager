@@ -82,7 +82,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
   <section name='table' type='table' containsheader='false' fieldSeparator='#None#' endKeyword='Wichtige Informationen für Sie:|Bitte beachten|Sie die nachstehenden|Hinweise:|Rechnungsabschluss (Kontoübersicht)|Einlagensicherung'>
     <ignore keyword='alter Saldo'/>
     <ignore keyword='neuer Saldo'/>
-    <regExp pattern='^(?&lt;PostingDate&gt;\d{2}\.\d{2}\.\d{4})\|(?&lt;SourceName&gt;[^|]+)\|(?&lt;Amount&gt;[+-]?\d{1,3}(?:\.\d{3})*,\d{2})$' multiplier='1'/>
+    <regExp pattern='^(?&lt;PostingDate&gt;\d{2}\.\d{2}\.\d{4})\|(?&lt;PostingDescription&gt;[^|]+)\|(?&lt;Amount&gt;[+-]?\d{1,3}(?:\.\d{3})*,\d{2})$' multiplier='1'/>
   </section>
   <section name='BlockEnd' type='ignore'/>
 </template>"

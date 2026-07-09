@@ -179,11 +179,11 @@ public sealed class StatementParserAdapterTests
         Assert.Single(result);
         Assert.Equal("DE11111111111111111111", result![0].Header.IBAN);
         Assert.Equal(2, result[0].Movements.Count);
-        var zinsgutschrift = Assert.Single(result[0].Movements.Where(m => m.Counterparty == "Zinsgutschrift"));
+        var zinsgutschrift = Assert.Single(result[0].Movements.Where(m => m.PostingDescription == "Zinsgutschrift"));
         Assert.Equal(new DateTime(2026, 4, 29), zinsgutschrift.BookingDate);
         Assert.Equal(83.45m, zinsgutschrift.Amount);
 
-        var kontoloeschung = Assert.Single(result[0].Movements.Where(m => m.Counterparty == "Kontolöschung"));
+        var kontoloeschung = Assert.Single(result[0].Movements.Where(m => m.PostingDescription == "Kontolöschung"));
         Assert.Equal(new DateTime(2026, 4, 29), kontoloeschung.BookingDate);
         Assert.Equal(-12706.67m, kontoloeschung.Amount);
     }
