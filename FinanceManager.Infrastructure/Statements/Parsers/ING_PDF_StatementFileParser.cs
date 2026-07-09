@@ -24,6 +24,32 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         }
 
         /// <summary>
+        /// Parst einen ING-PDF-Auszug und ergänzt bei Bedarf die Header-IBAN aus der Kontoangabe.
+        /// </summary>
+        /// <param name="statementFile">Zu parsende Auszugsdatei.</param>
+        /// <returns>Liste mit Parse-Ergebnissen oder <c>null</c>.</returns>
+        public override IReadOnlyList<StatementParseResult>? Parse(IStatementFile statementFile)
+        {
+            var parsed = base.Parse(statementFile);
+            if (parsed is null)
+            {
+                return null;
+            }
+
+            foreach (var result in parsed)
+            {
+                if (string.IsNullOrWhiteSpace(result.Header.IBAN)
+                    && !string.IsNullOrWhiteSpace(result.Header.AccountNumber)
+                    && result.Header.AccountNumber.StartsWith("DE", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Header.IBAN = result.Header.AccountNumber.Replace(" ", string.Empty);
+                }
+            }
+
+            return parsed;
+        }
+
+        /// <summary>
         /// XML templates used by the base PDF parsing engine to detect fields and table patterns.
         /// </summary>
         private static readonly string[] _Templates = new string[]
@@ -47,6 +73,18 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
     <replace from='Ueberweisung' to='Überweisung'/>
     <replace from='Terminueberw.' to='Terminüberweisung'/>
   </replacements>
+</template>",
+            @"
+<template>
+  <section name='AccountInfo' type='keyvalue' separator='|' endKeyword='alter Saldo'>
+    <key name='IBAN' variable='BankAccountNo' mode='always'/>
+  </section>
+  <section name='table' type='table' containsheader='false' fieldSeparator='#None#' endKeyword='Wichtige Informationen für Sie:|Bitte beachten|Sie die nachstehenden|Hinweise:|Rechnungsabschluss (Kontoübersicht)|Einlagensicherung'>
+    <ignore keyword='alter Saldo'/>
+    <ignore keyword='neuer Saldo'/>
+    <regExp pattern='^(?&lt;PostingDate&gt;\d{2}\.\d{2}\.\d{4})\|(?&lt;SourceName&gt;[^|]+)\|(?&lt;Amount&gt;[+-]?\d{1,3}(?:\.\d{3})*,\d{2})$' multiplier='1'/>
+  </section>
+  <section name='BlockEnd' type='ignore'/>
 </template>"
         };
 
@@ -345,6 +383,26 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
             rec.Counterparty = ClearPDFTableValue(rec.Counterparty);
             ExtractPostingdescriptionFromCounterparty(rec);
             return base.ProcessFoundRecord(rec);
+        }
+
+        /// <summary>
+        /// Normalisiert ING-Sparbrief-IBAN-Zeilen in das Template-KeyValue-Format.
+        /// </summary>
+        /// <param name="line">Aktuelle PDF-Zeile.</param>
+        protected override void OnBeforeParseLine(ref string line)
+        {
+            var ibanLine = Regex.Match(
+                line,
+                @"^IBAN\s+(?<iban>[A-Z0-9 ]+?)\s*/\s*Kontonummer\|(?<konto>.+)$",
+                RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+            if (ibanLine.Success)
+            {
+                var normalizedIban = new string(ibanLine.Groups["iban"].Value.Where(char.IsLetterOrDigit).ToArray());
+                if (!string.IsNullOrWhiteSpace(normalizedIban))
+                {
+                    line = $"IBAN|{normalizedIban}";
+                }
+            }
         }
 
         private static readonly string[] PostingDescriptions = {

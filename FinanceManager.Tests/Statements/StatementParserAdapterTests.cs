@@ -8,6 +8,13 @@ namespace FinanceManager.Tests.Statements;
 
 public sealed class StatementParserAdapterTests
 {
+    private sealed class FakeIngPdfStatementFile : ING_PDF_StatementFile
+    {
+        private readonly IReadOnlyList<string> _lines;
+        public FakeIngPdfStatementFile(IReadOnlyList<string> lines) => _lines = lines;
+        public override IEnumerable<string> ReadContent() => _lines;
+    }
+
     private sealed class FakeLineStatementFile : IStatementFile
     {
         private readonly IReadOnlyList<string> _lines;
@@ -147,5 +154,60 @@ public sealed class StatementParserAdapterTests
         Assert.IsAssignableFrom<IReadOnlyList<StatementParseResult>>(result);
         Assert.True(result!.Count > 1, "Collection account CSV should produce multiple StatementParseResult instances");
     }
-}
 
+    [Fact]
+    public void Parse_IngPdfSparbriefTemplate_ShouldReturnExpectedIbanAndMovements()
+    {
+        var file = new FakeIngPdfStatementFile(new[]
+        {
+            "ING-DiBa AG · 60628 Frankfurt am Main",
+            "Kontoauszug|2026",
+            "Valuta|Vorgang|Euro",
+            "Sparbrief (Laufzeit bis 29.04.2026)",
+            "IBAN DE11 1111 1111 1111 1111 11 / Kontonummer|1111111111",
+            "30.12.2025|alter Saldo|12.623,22",
+            "29.04.2026|Zinsgutschrift|83,45",
+            "29.04.2026|Kontolöschung|-12.706,67",
+            "29.04.2026|neuer Saldo|0,00",
+            "Wichtige Informationen für Sie:"
+        });
+        var parser = new ING_PDF_StatementFileParser(NullLogger<ING_PDF_StatementFileParser>.Instance);
+
+        var result = parser.Parse(file);
+
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("DE11111111111111111111", result![0].Header.IBAN);
+        Assert.Equal(2, result[0].Movements.Count);
+        var zinsgutschrift = Assert.Single(result[0].Movements.Where(m => m.Counterparty == "Zinsgutschrift"));
+        Assert.Equal(new DateTime(2026, 4, 29), zinsgutschrift.BookingDate);
+        Assert.Equal(83.45m, zinsgutschrift.Amount);
+
+        var kontoloeschung = Assert.Single(result[0].Movements.Where(m => m.Counterparty == "Kontolöschung"));
+        Assert.Equal(new DateTime(2026, 4, 29), kontoloeschung.BookingDate);
+        Assert.Equal(-12706.67m, kontoloeschung.Amount);
+    }
+
+    [Fact]
+    public void Parse_IngPdfLegacyTemplate_ShouldStillParse()
+    {
+        var file = new FakeIngPdfStatementFile(new[]
+        {
+            "ING-DiBa AG · 60628 Frankfurt am Main",
+            "IBAN|DE12123412341234123412",
+            "Buchung|Buchung",
+            "29.04.2026|Zinsgutschrift|83,45",
+            "Abschluss für Konto"
+        });
+        var parser = new ING_PDF_StatementFileParser(NullLogger<ING_PDF_StatementFileParser>.Instance);
+
+        var result = parser.Parse(file);
+
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("DE12123412341234123412", result![0].Header.IBAN);
+        Assert.Single(result[0].Movements);
+        Assert.Equal("Zinsgutschrift", result[0].Movements.First().Counterparty);
+        Assert.Equal(83.45m, result[0].Movements.First().Amount);
+    }
+}
