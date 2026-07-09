@@ -155,11 +155,12 @@ public sealed class CollectionAccountImportPlaywrightTests
     }
 
     /// <summary>
-    /// Verifies that manually selecting a collection account in the draft's "Bank account" lookup
-    /// and saving the draft persists the assignment (visible after page reload).
+    /// Verifies that manually assigning a collection account in the draft's "Bank account" lookup,
+    /// saving and then booking the draft causes the unknown sub-IBAN to appear in the
+    /// account's LinkedIbansPanel afterwards.
     /// </summary>
     [Fact]
-    public async Task ManualAccountAssignment_ViaUi_ShouldPersistAfterSave()
+    public async Task ManualAccountAssignment_ViaUi_ShouldAddIbanToLinkedPanelAfterBooking()
     {
         await using var session = await _fixture.CreateSessionAsync();
         var page = session.Page;
@@ -199,6 +200,10 @@ public sealed class CollectionAccountImportPlaywrightTests
         uploaded!.FirstDraft.Should().NotBeNull();
         var draftId = uploaded.FirstDraft!.DraftId;
 
+        // Fetch entry IDs now (IDs are stable; contact assignment happens after UI save)
+        var fullDraft = await BrowserApiHelper.GetJsonAsync<StatementDraftDetailDto>(
+            page, $"/api/statement-drafts/{draftId}?headerOnly=false");
+
         // Navigate to the draft card
         await page.GotoAsync($"/card/statement-drafts/{draftId}");
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -213,7 +218,9 @@ public sealed class CollectionAccountImportPlaywrightTests
         await lookupItem.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10_000 });
         await lookupItem.ClickAsync();
 
-        // Save the draft via the ribbon "Save" button
+        // Save the draft via the ribbon "Save" button.
+        // SetAccountAsync calls ClassifyInternalAsync which resets all entry statuses to Open.
+        // Therefore contacts must be assigned AFTER the save.
         await page.Locator("button#Save").ClickAsync();
 
         // After save the draft card reloads; the Bank account row should now display the account name
@@ -223,15 +230,61 @@ public sealed class CollectionAccountImportPlaywrightTests
         var rowValue = await assignedRow.Locator("input.card-input").InputValueAsync();
         rowValue.Should().Contain(accountName,
             because: "we manually assigned the collection account and saved the draft");
+
+        // Assign a contact to all draft entries NOW (after save) so booking can proceed.
+        // Assigning before the save would be undone by ClassifyInternalAsync.
+        var allContacts = await BrowserApiHelper.GetJsonAsync<IReadOnlyList<ContactDto>>(
+            page, "/api/contacts?all=true");
+        var selfContact = allContacts.Single(c => c.Type == ContactType.Self);
+
+        foreach (var entry in fullDraft.Entries)
+        {
+            await BrowserApiHelper.PostJsonAsync(
+                page,
+                $"/api/statement-drafts/{draftId}/entries/{entry.Id}/contact",
+                new StatementDraftSetContactRequest(selfContact.Id));
+        }
+
+        // Book the draft — wait for the button to be enabled after the save-reload
+        var bookButton = page.Locator("button#Book");
+        await bookButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10_000 });
+        await bookButton.ClickAsync();
+
+        // If a confirmation dialog appears, click "Fortfahren"
+        var proceedButton = page.Locator("button.btn-primary").Filter(new() { HasText = "Fortfahren" });
+        try
+        {
+            await proceedButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10_000 });
+            await proceedButton.ClickAsync();
+        }
+        catch (TimeoutException)
+        {
+            // No warnings — booking succeeded directly
+        }
+
+        // After booking the page navigates to the draft list
+        await page.WaitForURLAsync("**/list/statement-drafts", new() { Timeout = 30_000 });
+
+        // Navigate to the collection account's detail page
+        await page.GotoAsync($"/card/accounts/{collectionAccount.Id}");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        // The sub-IBAN should now be visible in the LinkedIbansPanel
+        var panel = page.Locator(".linked-ibans-panel");
+        await panel.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+        await panel.GetByText(unknownSubIban)
+            .WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10_000 });
+        (await panel.InnerTextAsync()).Should().Contain(unknownSubIban,
+            because: "booking a collection-account draft should auto-add the draft's sub-IBAN to the linked list");
     }
 
     /// <summary>
-    /// Verifies that booking a draft whose IBAN is unknown to the collection account at booking
-    /// time automatically adds that IBAN to the account's linked-IBAN list, which is then visible
-    /// in the account's LinkedIbansPanel.
+    /// Verifies that when a sub-IBAN is pre-linked to a collection account, uploading a CSV with
+    /// that sub-IBAN auto-assigns the draft, booking succeeds, and the IBAN remains in the
+    /// LinkedIbansPanel afterwards.
     /// </summary>
     [Fact]
-    public async Task BookCollectionAccountDraft_ViaUi_ShouldAddIbanToLinkedPanel()
+    public async Task BookCollectionAccountDraft_WithKnownLinkedIban_ViaUi_ShouldAutoAssignAndBook()
     {
         await using var session = await _fixture.CreateSessionAsync();
         var page = session.Page;
@@ -268,21 +321,13 @@ public sealed class CollectionAccountImportPlaywrightTests
             $"/api/accounts/{collectionAccount.Id}/linked-ibans",
             new AccountLinkedIbanUpsertRequest(subIban));
 
-        // Upload CSV → auto-assigned
+        // Upload CSV → auto-assigned via linked IBAN
         var csv = BuildSingleIbanCsv(subIban);
         var uploaded = await BrowserApiHelper.PostMultipartAsync<StatementDraftUploadResult>(
             page, "/api/statement-drafts/upload", "book-ui.csv", "text/csv",
             System.Text.Encoding.UTF8.GetBytes(csv));
         uploaded.FirstDraft.Should().NotBeNull();
         var draftId = uploaded.FirstDraft!.DraftId;
-
-        // Remove the sub-IBAN from the linked list to simulate "unknown at booking time"
-        await BrowserApiHelper.DeleteAsync(
-            page, $"/api/accounts/{collectionAccount.Id}/linked-ibans/{Uri.EscapeDataString(subIban)}");
-
-        // Re-assign the draft to the collection account via API (since the link was removed)
-        await BrowserApiHelper.PostNoContentAsync(
-            page, $"/api/statement-drafts/{draftId}/account/{collectionAccount.Id}");
 
         // Assign a contact to all draft entries so booking can proceed without errors
         var allContacts = await BrowserApiHelper.GetJsonAsync<IReadOnlyList<ContactDto>>(
@@ -305,15 +350,16 @@ public sealed class CollectionAccountImportPlaywrightTests
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await page.WaitForURLAsync($"**/card/statement-drafts/{draftId}");
 
-        // The first card row is the assigned bank-account lookup.
+        // The first card row is the assigned bank-account lookup — auto-assignment should be visible
         var bankAccountRow = page.Locator("table.fm-table tbody tr").Nth(0);
         await bankAccountRow.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
-        (await bankAccountRow.Locator("input.card-input").InputValueAsync()).Should().Contain(accountName);
+        (await bankAccountRow.Locator("input.card-input").InputValueAsync()).Should().Contain(accountName,
+            because: "the draft IBAN matches the pre-linked sub-IBAN so auto-assignment should have occurred");
 
         // Click the "Book" ribbon button
         await page.Locator("button#Book").ClickAsync();
 
-        // If a validation panel appears with warnings, click "Proceed" to confirm booking
+        // If a confirmation dialog appears, click "Fortfahren"
         var proceedButton = page.Locator("button.btn-primary").Filter(new() { HasText = "Fortfahren" });
         try
         {
@@ -325,20 +371,20 @@ public sealed class CollectionAccountImportPlaywrightTests
             // No warnings — booking succeeded directly
         }
 
-        // After booking the page navigates away from the draft (to next draft or list)
+        // After booking the page navigates to the draft list
         await page.WaitForURLAsync("**/list/statement-drafts", new() { Timeout = 15_000 });
 
         // Navigate to the collection account's detail page
         await page.GotoAsync($"/card/accounts/{collectionAccount.Id}");
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        // The sub-IBAN should now be visible in the LinkedIbansPanel
+        // The sub-IBAN should still be visible in the LinkedIbansPanel
         var panel = page.Locator(".linked-ibans-panel");
         await panel.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
         await panel.GetByText(subIban)
             .WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10_000 });
         (await panel.InnerTextAsync()).Should().Contain(subIban,
-            because: "booking a collection-account draft should auto-add the draft's IBAN to the linked list");
+            because: "the pre-linked sub-IBAN should remain listed in the collection account's linked-IBAN panel after booking");
     }
 
     // ─── CSV helpers ─────────────────────────────────────────────────────────
