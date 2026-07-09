@@ -36,6 +36,11 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasMaxLength(34)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsCollectionAccount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTime?>("ModifiedUtc")
                         .HasColumnType("TEXT");
 
@@ -73,6 +78,34 @@ namespace FinanceManager.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Accounts");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Accounts.AccountLinkedIban", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Iban")
+                        .IsRequired()
+                        .HasMaxLength(34)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId", "Iban")
+                        .IsUnique();
+
+                    b.ToTable("AccountLinkedIbans", (string)null);
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Accounts.AccountShare", b =>
@@ -1685,6 +1718,17 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Accounts.AccountLinkedIban", b =>
+                {
+                    b.HasOne("FinanceManager.Domain.Accounts.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Attachments.Attachment", b =>

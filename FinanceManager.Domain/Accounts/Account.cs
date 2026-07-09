@@ -71,6 +71,11 @@ public sealed class Account : Entity, IAggregateRoot
     public bool SecurityProcessingEnabled { get; private set; }
 
     /// <summary>
+    /// Indicates whether this account is a collection account grouping multiple sub-IBANs.
+    /// </summary>
+    public bool IsCollectionAccount { get; private set; }
+
+    /// <summary>
     /// Renames the account.
     /// </summary>
     /// <param name="name">New display name.</param>
@@ -159,6 +164,19 @@ public sealed class Account : Entity, IAggregateRoot
         }
     }
 
+    /// <summary>
+    /// Marks or unmarks this account as a collection account.
+    /// </summary>
+    /// <param name="value">True to mark as collection account; otherwise false.</param>
+    public void SetIsCollectionAccount(bool value)
+    {
+        if (IsCollectionAccount != value)
+        {
+            IsCollectionAccount = value;
+            Touch();
+        }
+    }
+
     // Backup DTO
     /// <summary>
     /// DTO carrying the serializable state of an <see cref="Account"/> for backup purposes.
@@ -175,13 +193,14 @@ public sealed class Account : Entity, IAggregateRoot
     /// <param name="CreatedUtc">Entity creation timestamp UTC.</param>
     /// <param name="ModifiedUtc">Entity last modified timestamp UTC, if any.</param>
     /// <param name="SecurityProcessingEnabled">Indicates whether security processing is allowed.</param>
-    public sealed record AccountBackupDto(Guid Id, Guid OwnerUserId, AccountType Type, string Name, string? Iban, decimal CurrentBalance, Guid BankContactId, Guid? SymbolAttachmentId, SavingsPlanExpectation SavingsPlanExpectation, DateTime CreatedUtc, DateTime? ModifiedUtc, bool SecurityProcessingEnabled = true);
+    /// <param name="IsCollectionAccount">Indicates whether this is a collection account.</param>
+    public sealed record AccountBackupDto(Guid Id, Guid OwnerUserId, AccountType Type, string Name, string? Iban, decimal CurrentBalance, Guid BankContactId, Guid? SymbolAttachmentId, SavingsPlanExpectation SavingsPlanExpectation, DateTime CreatedUtc, DateTime? ModifiedUtc, bool SecurityProcessingEnabled = true, bool IsCollectionAccount = false);
 
     /// <summary>
     /// Creates a backup DTO representing the serializable state of this account.
     /// </summary>
     /// <returns>A <see cref="AccountBackupDto"/> containing values needed to restore the account.</returns>
-    public AccountBackupDto ToBackupDto() => new AccountBackupDto(Id, OwnerUserId, Type, Name, Iban, CurrentBalance, BankContactId, SymbolAttachmentId, SavingsPlanExpectation, CreatedUtc, ModifiedUtc, SecurityProcessingEnabled);
+    public AccountBackupDto ToBackupDto() => new AccountBackupDto(Id, OwnerUserId, Type, Name, Iban, CurrentBalance, BankContactId, SymbolAttachmentId, SavingsPlanExpectation, CreatedUtc, ModifiedUtc, SecurityProcessingEnabled, IsCollectionAccount);
 
     /// <summary>
     /// Applies values from a backup DTO to this account instance.
@@ -200,6 +219,7 @@ public sealed class Account : Entity, IAggregateRoot
         SetSymbolAttachment(dto.SymbolAttachmentId);
         SetSavingsPlanExpectation(dto.SavingsPlanExpectation);
         SetSecurityProcessingEnabled(dto.SecurityProcessingEnabled);
+        SetIsCollectionAccount(dto.IsCollectionAccount);
         SetDates(dto.CreatedUtc, dto.ModifiedUtc);
     }
 }

@@ -16,6 +16,15 @@
 | `CurrentBalance` | `decimal` | Aktueller Kontostand |
 | `BankContactId` | `Guid` | Referenz auf Bankkontakt |
 | `SecurityProcessingEnabled` | `bool` | Aktiviert Wertpapierverarbeitung |
+| `IsCollectionAccount` | `bool` | Markiert ein Konto als Sammelkonto |
+
+### `AccountLinkedIban`
+
+| Eigenschaft | Typ | Beschreibung |
+|-------------|-----|--------------|
+| `Id` | `Guid` | Verknüpfungs-ID |
+| `AccountId` | `Guid` | Zugehöriges Sammelkonto |
+| `Iban` | `string` | Verknüpfte Unter-IBAN |
 
 ### `Posting`
 
@@ -35,6 +44,7 @@
 ## Beziehungen
 
 - Ein `Account` hat viele `Posting`-Einträge.
+- Ein `Account` kann mehrere `AccountLinkedIban`-Einträge besitzen.
 - Eine `Posting`-Zeile kann optional auf Kontakt, Sparplan oder Wertpapier verweisen.
 
 ## Diagramm
@@ -42,6 +52,7 @@
 ```mermaid
 erDiagram
     ACCOUNT ||--o{ POSTING : "enthaelt"
+    ACCOUNT ||--o{ ACCOUNT_LINKED_IBAN : "verknuepft"
     CONTACT ||--o{ POSTING : "optional"
     SAVINGS_PLAN ||--o{ POSTING : "optional"
     SECURITY ||--o{ POSTING : "optional"

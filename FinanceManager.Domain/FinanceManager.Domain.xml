@@ -65,6 +65,11 @@
             Indicates whether this account allows security processing on statement entries.
             </summary>
         </member>
+        <member name="P:FinanceManager.Domain.Accounts.Account.IsCollectionAccount">
+            <summary>
+            Indicates whether this account is a collection account grouping multiple sub-IBANs.
+            </summary>
+        </member>
         <member name="M:FinanceManager.Domain.Accounts.Account.Rename(System.String)">
             <summary>
             Renames the account.
@@ -113,6 +118,12 @@
             </summary>
             <param name="enabled">True to allow security processing; otherwise false.</param>
         </member>
+        <member name="M:FinanceManager.Domain.Accounts.Account.SetIsCollectionAccount(System.Boolean)">
+            <summary>
+            Marks or unmarks this account as a collection account.
+            </summary>
+            <param name="value">True to mark as collection account; otherwise false.</param>
+        </member>
         <member name="T:FinanceManager.Domain.Accounts.Account.AccountBackupDto">
             <summary>
             DTO carrying the serializable state of an <see cref="T:FinanceManager.Domain.Accounts.Account"/> for backup purposes.
@@ -129,8 +140,9 @@
             <param name="CreatedUtc">Entity creation timestamp UTC.</param>
             <param name="ModifiedUtc">Entity last modified timestamp UTC, if any.</param>
             <param name="SecurityProcessingEnabled">Indicates whether security processing is allowed.</param>
+            <param name="IsCollectionAccount">Indicates whether this is a collection account.</param>
         </member>
-        <member name="M:FinanceManager.Domain.Accounts.Account.AccountBackupDto.#ctor(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.String,System.Decimal,System.Guid,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.DateTime,System.Nullable{System.DateTime},System.Boolean)">
+        <member name="M:FinanceManager.Domain.Accounts.Account.AccountBackupDto.#ctor(System.Guid,System.Guid,FinanceManager.Shared.Dtos.Accounts.AccountType,System.String,System.String,System.Decimal,System.Guid,System.Nullable{System.Guid},FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation,System.DateTime,System.Nullable{System.DateTime},System.Boolean,System.Boolean)">
             <summary>
             DTO carrying the serializable state of an <see cref="T:FinanceManager.Domain.Accounts.Account"/> for backup purposes.
             </summary>
@@ -146,6 +158,7 @@
             <param name="CreatedUtc">Entity creation timestamp UTC.</param>
             <param name="ModifiedUtc">Entity last modified timestamp UTC, if any.</param>
             <param name="SecurityProcessingEnabled">Indicates whether security processing is allowed.</param>
+            <param name="IsCollectionAccount">Indicates whether this is a collection account.</param>
         </member>
         <member name="P:FinanceManager.Domain.Accounts.Account.AccountBackupDto.Id">
             <summary>Entity identifier.</summary>
@@ -183,6 +196,9 @@
         <member name="P:FinanceManager.Domain.Accounts.Account.AccountBackupDto.SecurityProcessingEnabled">
             <summary>Indicates whether security processing is allowed.</summary>
         </member>
+        <member name="P:FinanceManager.Domain.Accounts.Account.AccountBackupDto.IsCollectionAccount">
+            <summary>Indicates whether this is a collection account.</summary>
+        </member>
         <member name="M:FinanceManager.Domain.Accounts.Account.ToBackupDto">
             <summary>
             Creates a backup DTO representing the serializable state of this account.
@@ -196,6 +212,58 @@
             </summary>
             <param name="dto">The backup DTO to apply to this entity.</param>
             <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+        </member>
+        <member name="T:FinanceManager.Domain.Accounts.AccountLinkedIban">
+            <summary>
+            Represents a linked IBAN (sub-account IBAN) associated with a collection account.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Domain.Accounts.AccountLinkedIban.#ctor(System.Guid,System.String)">
+            <summary>
+            Creates a new linked IBAN entry for the specified collection account.
+            </summary>
+            <param name="accountId">Identifier of the collection account.</param>
+            <param name="iban">The IBAN to link.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.AccountLinkedIban.AccountId">
+            <summary>
+            Identifier of the collection account that owns this linked IBAN.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.AccountLinkedIban.Iban">
+            <summary>
+            The linked IBAN value.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.AccountLinkedIban.Account">
+            <summary>
+            Navigation property back to the owning account.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Domain.Accounts.AccountLinkedIbanBackupDto">
+            <summary>
+            Backup DTO for <see cref="T:FinanceManager.Domain.Accounts.AccountLinkedIban"/>.
+            </summary>
+            <param name="Id">Entity identifier.</param>
+            <param name="AccountId">Identifier of the owning collection account.</param>
+            <param name="Iban">The linked IBAN value.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Accounts.AccountLinkedIbanBackupDto.#ctor(System.Guid,System.Guid,System.String)">
+            <summary>
+            Backup DTO for <see cref="T:FinanceManager.Domain.Accounts.AccountLinkedIban"/>.
+            </summary>
+            <param name="Id">Entity identifier.</param>
+            <param name="AccountId">Identifier of the owning collection account.</param>
+            <param name="Iban">The linked IBAN value.</param>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.AccountLinkedIbanBackupDto.Id">
+            <summary>Entity identifier.</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.AccountLinkedIbanBackupDto.AccountId">
+            <summary>Identifier of the owning collection account.</summary>
+        </member>
+        <member name="P:FinanceManager.Domain.Accounts.AccountLinkedIbanBackupDto.Iban">
+            <summary>The linked IBAN value.</summary>
         </member>
         <member name="T:FinanceManager.Domain.Accounts.AccountShare">
             <summary>

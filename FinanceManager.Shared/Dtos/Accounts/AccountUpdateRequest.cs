@@ -14,4 +14,5 @@ public sealed record AccountUpdateRequest(
     Guid? SymbolAttachmentId,
     SavingsPlanExpectation SavingsPlanExpectation,
     bool SecurityProcessingEnabled = true,
-    bool Archived = false);
+    bool Archived = false,
+    bool IsCollectionAccount = false);

@@ -39,6 +39,12 @@ else
 
         <EmbeddedPanelHost TKeyValue="(string,string)" Provider="_vm" Position="EmbeddedPanelPosition.AfterRibbon" />
         <GenericCardPage TKeyValue="(string, string)" Provider="_vm" Localizer="Localizer" LoadingText="@Localizer["General_Loading"]" />
+
+        @if (_vm is BankAccountCardViewModel bankVm && bankVm.EffectiveIsCollectionAccount && bankVm.Account?.Id != Guid.Empty)
+        {
+            <LinkedIbansPanel Vm="bankVm" Localizer="Localizer" />
+        }
+
         <EmbeddedPanelHost TKeyValue="(string,string)" Provider="_vm" Position="EmbeddedPanelPosition.AfterCard" />
 
         @if ((Kind ?? string.Empty).Trim().ToLowerInvariant() == "securities" && string.IsNullOrWhiteSpace(SubKind) && Id != Guid.Empty)

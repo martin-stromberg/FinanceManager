@@ -79,5 +79,33 @@ public partial class ApiClient
         await EnsureSuccessOrSetErrorAsync(resp);
     }
 
+    /// <summary>
+    /// Returns the list of linked sub-IBANs for a collection account.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> GetLinkedIbansAsync(Guid accountId, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/accounts/{accountId}/linked-ibans", ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<IReadOnlyList<string>>(cancellationToken: ct) ?? Array.Empty<string>();
+    }
+
+    /// <summary>
+    /// Adds a linked sub-IBAN to a collection account.
+    /// </summary>
+    public async Task AddLinkedIbanAsync(Guid accountId, AccountLinkedIbanUpsertRequest request, CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsJsonAsync($"/api/accounts/{accountId}/linked-ibans", request, ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+    }
+
+    /// <summary>
+    /// Removes a linked sub-IBAN from a collection account.
+    /// </summary>
+    public async Task RemoveLinkedIbanAsync(Guid accountId, string iban, CancellationToken ct = default)
+    {
+        var resp = await _http.DeleteAsync($"/api/accounts/{accountId}/linked-ibans/{Uri.EscapeDataString(iban)}", ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+    }
+
     #endregion Accounts
 }

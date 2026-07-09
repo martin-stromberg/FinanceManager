@@ -98,14 +98,14 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// Parses the specified statement file and returns the result if parsing is successful.
         /// </summary>
         /// <param name="statementFile">The statement file to parse. Cannot be null.</param>
-        /// <returns>A <see cref="StatementParseResult"/> containing the parsed data if parsing succeeds; otherwise, <see
+        /// <returns>A list containing a single <see cref="StatementParseResult"/> if parsing succeeds; otherwise, <see
         /// langword="null"/>.</returns>
-        public StatementParseResult? Parse(IStatementFile statementFile)
+        public IReadOnlyList<StatementParseResult>? Parse(IStatementFile statementFile)
         {
             try
             {
                 Load(statementFile);
-                return new StatementParseResult(_GlobalHeader, ReadData().ToList());
+                return new List<StatementParseResult> { new StatementParseResult(_GlobalHeader, ReadData().ToList()) };
             }
             catch
             {
@@ -118,19 +118,11 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// <remarks>If an error occurs during parsing, the method returns <see langword="null"/> instead
         /// of throwing an exception.</remarks>
         /// <param name="statementFile">The statement file to parse. Cannot be null.</param>
-        /// <returns>A <see cref="StatementParseResult"/> containing the parsed header and data if parsing succeeds; otherwise,
+        /// <returns>A list containing a single <see cref="StatementParseResult"/> if parsing succeeds; otherwise,
         /// <see langword="null"/>.</returns>
-        public StatementParseResult? ParseDetails(IStatementFile statementFile)
+        public IReadOnlyList<StatementParseResult>? ParseDetails(IStatementFile statementFile)
         {
-            try
-            {
-                Load(statementFile);
-                return new StatementParseResult(_GlobalHeader, ReadData().ToList());
-            }
-            catch
-            {
-                return null;
-            }
+            return Parse(statementFile);
         }
     }
 }

@@ -9,7 +9,7 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 ## Features / Highlights
 
 - Kontoauszüge importieren, klassifizieren und verbuchen (`StatementDraftsController`)
-- Konten, Kontakte, Sparpläne und Wertpapiere verwalten
+- Konten, Sammelkonten, Kontakte, Sparpläne und Wertpapiere verwalten
 - Berichte, KPI-Dashboards und Budgetauswertungen nutzen
 - Anhänge und Sicherungen (Backup/Restore) verwalten
 - Responsive Web-UI für kleine Viewports (mobile Topbar, responsive Container, mobile E2E-Abdeckung)

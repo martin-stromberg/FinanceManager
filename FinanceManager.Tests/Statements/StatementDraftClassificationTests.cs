@@ -1,4 +1,4 @@
-using FinanceManager.Domain.Accounts;
+ï»¿using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Statements;
 using FinanceManager.Infrastructure;
@@ -8,6 +8,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using FinanceManager.Application.Accounts;
 using Microsoft.Extensions.Logging.Abstractions;
+using FinanceManager.Tests.TestHelpers;
 
 public sealed class StatementDraftClassificationTests
 {
@@ -28,34 +29,11 @@ public sealed class StatementDraftClassificationTests
         db.Contacts.Add(ownerContact);
         db.SaveChanges();
 
-        var accountService = new TestAccountService();
+        var accountService = new StubAccountService();
         var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, conn, owner.Id);
     }
 
-    private sealed class TestAccountService : IAccountService
-    {
-        public Task<AccountDto> CreateAsync(Guid ownerUserId, string name, AccountType type, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public Task<AccountDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string? iban, Guid bankContactId, SavingsPlanExpectation expectation, bool securityProcessingEnabled, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public Task<bool> DeleteAsync(Guid id, Guid ownerUserId, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public Task<IReadOnlyList<AccountDto>> ListAsync(Guid ownerUserId, int skip, int take, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public Task<AccountDto?> GetAsync(Guid id, Guid ownerUserId, CancellationToken ct)
-            => throw new NotImplementedException();
-
-        public AccountDto? Get(Guid id, Guid ownerUserId)
-            => throw new NotImplementedException();
-
-        public Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct)
-            => throw new NotImplementedException();
-    }
 
     private static async Task<Account> AddBankAccountAsync(AppDbContext db, Contact? bankContact = null)
     {
@@ -104,7 +82,7 @@ public sealed class StatementDraftClassificationTests
         var account = await AddBankAccountAsync(db);
         var draft = await CreateStatementDraftAsync(db, account, (draft) =>
         {
-            draft.AddEntry(DateTime.Today, 100, "Test", "Empfänger", DateTime.Today, "EUR", "Buchung", false);
+            draft.AddEntry(DateTime.Today, 100, "Test", "Empfï¿½nger", DateTime.Today, "EUR", "Buchung", false);
         });
 
         await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
@@ -122,7 +100,7 @@ public sealed class StatementDraftClassificationTests
         var draft = await CreateStatementDraftAsync(db, account, (draft) =>
         {
             draft.AccountName = "";
-            draft.AddEntry(DateTime.Today, 100, "Test", "Empfänger", DateTime.Today, "EUR", "Buchung", false);
+            draft.AddEntry(DateTime.Today, 100, "Test", "Empfï¿½nger", DateTime.Today, "EUR", "Buchung", false);
         });
 
         await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
@@ -143,7 +121,7 @@ public sealed class StatementDraftClassificationTests
         var draft = await CreateStatementDraftAsync(db, account, (draft) =>
         {
             draft.AccountName = "DE456";
-            draft.AddEntry(DateTime.Today, 100, "Test", "Empfänger", DateTime.Today, "EUR", "Buchung", false);
+            draft.AddEntry(DateTime.Today, 100, "Test", "Empfï¿½nger", DateTime.Today, "EUR", "Buchung", false);
         });
 
         await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
@@ -160,7 +138,7 @@ public sealed class StatementDraftClassificationTests
         var draft = await CreateStatementDraftAsync(db, account, (draft) =>
         {
             draft.AccountName = "DE456";
-            draft.AddEntry(DateTime.Today, 100, "Test", "Empfänger", DateTime.Today, "EUR", "Buchung", false);
+            draft.AddEntry(DateTime.Today, 100, "Test", "Empfï¿½nger", DateTime.Today, "EUR", "Buchung", false);
         });
 
         await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
@@ -176,7 +154,7 @@ public sealed class StatementDraftClassificationTests
         var account = await AddBankAccountAsync(db);
         var draft = await CreateStatementDraftAsync(db, account, (draft) =>
         {
-            draft.AddEntry(DateTime.Today, 100, "Test", "Empfänger", DateTime.Today, "EUR", "Buchung", true);
+            draft.AddEntry(DateTime.Today, 100, "Test", "Empfï¿½nger", DateTime.Today, "EUR", "Buchung", true);
         });
 
         await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
@@ -193,9 +171,9 @@ public sealed class StatementDraftClassificationTests
         var account = await AddBankAccountAsync(db);
         var draft = await CreateStatementDraftAsync(db, account, (draft) =>
         {
-            draft.AddEntry(DateTime.Today, 100, "Test", "Empfänger", DateTime.Today, "EUR", "Buchung", false);
+            draft.AddEntry(DateTime.Today, 100, "Test", "Empfï¿½nger", DateTime.Today, "EUR", "Buchung", false);
         });
-        db.StatementEntries.Add(new StatementEntry(Guid.NewGuid(), DateTime.Today, 100, "Test", "hash", "Empfänger", DateTime.Today, "EUR", "Buchung", false, false));
+        db.StatementEntries.Add(new StatementEntry(Guid.NewGuid(), DateTime.Today, 100, "Test", "hash", "Empfï¿½nger", DateTime.Today, "EUR", "Buchung", false, false));
         await db.SaveChangesAsync();
 
         await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);

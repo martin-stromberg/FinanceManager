@@ -1,0 +1,114 @@
+@using FinanceManager.Web.ViewModels.Accounts
+@using Microsoft.Extensions.Localization
+
+<div class="linked-ibans-panel" style="margin-top:1.25rem;">
+    <table class="fm-table card card-table" style="width:100%;">
+        <thead>
+            <tr>
+                <th colspan="2" style="text-align:left;padding:.5rem .6rem;font-weight:700;font-size:1rem;border-bottom:1px solid var(--border);">
+                    @(Localizer?["LinkedIbans_Section_Title"] ?? "Linked IBANs")
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Vm?.LinkedIbans == null || !Vm.LinkedIbans.Any())
+            {
+                <tr>
+                    <td colspan="2" style="padding:.5rem .6rem;color:var(--muted);font-style:italic;">
+                        @(Localizer?["LinkedIbans_Empty"] ?? "No linked IBANs configured.")
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var iban in Vm.LinkedIbans)
+                {
+                    var ibanCapture = iban;
+                    <tr>
+                        <td style="padding:.4rem .6rem;font-family:monospace;">@iban</td>
+                        <td style="padding:.4rem .6rem;text-align:right;white-space:nowrap;">
+                            <button class="btn btn-sm btn-danger"
+                                    style="font-size:.8rem;padding:.2rem .6rem;"
+                                    @onclick="() => RemoveIbanAsync(ibanCapture)"
+                                    disabled="@_busy">
+                                @(Localizer?["LinkedIbans_Remove_Button"] ?? "Remove")
+                            </button>
+                        </td>
+                    </tr>
+                }
+            }
+            <tr>
+                <td style="padding:.5rem .6rem;">
+                    <input type="text"
+                           class="card-input"
+                           placeholder="@(Localizer?["LinkedIbans_Add_Placeholder"] ?? "Enter new IBAN...")"
+                           value="@Vm?.NewLinkedIban"
+                           @oninput="OnIbanInput"
+                           @onkeydown="OnKeyDownAsync"
+                           disabled="@_busy" />
+                </td>
+                <td style="padding:.5rem .6rem;text-align:right;white-space:nowrap;">
+                    <button class="btn btn-sm btn-primary"
+                            style="font-size:.8rem;padding:.2rem .6rem;"
+                            @onclick="AddIbanAsync"
+                            disabled="@_busy">
+                        @(Localizer?["LinkedIbans_Add_Button"] ?? "Add")
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+@code {
+    /// <summary>The account view model providing the IBAN list and actions.</summary>
+    [Parameter, EditorRequired] public BankAccountCardViewModel? Vm { get; set; }
+
+    /// <summary>Localizer for translating UI labels.</summary>
+    [Parameter] public IStringLocalizer? Localizer { get; set; }
+
+    private bool _busy;
+
+    private void OnIbanInput(ChangeEventArgs e)
+    {
+        if (Vm != null)
+            Vm.NewLinkedIban = (e.Value?.ToString() ?? string.Empty).Replace(" ", "");
+    }
+
+    private async Task OnKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await AddIbanAsync();
+    }
+
+    private async Task AddIbanAsync()
+    {
+        if (Vm == null || _busy) return;
+        _busy = true;
+        StateHasChanged();
+        try
+        {
+            await Vm.AddLinkedIbanAsync();
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RemoveIbanAsync(string iban)
+    {
+        if (Vm == null || _busy) return;
+        _busy = true;
+        StateHasChanged();
+        try
+        {
+            await Vm.RemoveLinkedIbanAsync(iban);
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+}

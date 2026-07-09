@@ -83,6 +83,30 @@ public interface IApiClient
     /// <param name="ct">Cancellation token.</param>
     Task ClearAccountSymbolAsync(Guid id, CancellationToken ct = default);
 
+    /// <summary>
+    /// Returns the list of linked sub-IBANs for a collection account.
+    /// </summary>
+    /// <param name="accountId">Account identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Read-only list of IBAN strings.</returns>
+    Task<IReadOnlyList<string>> GetLinkedIbansAsync(Guid accountId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Adds a linked sub-IBAN to a collection account.
+    /// </summary>
+    /// <param name="accountId">Account identifier.</param>
+    /// <param name="request">Request payload containing the IBAN to add.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task AddLinkedIbanAsync(Guid accountId, AccountLinkedIbanUpsertRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Removes a linked sub-IBAN from a collection account.
+    /// </summary>
+    /// <param name="accountId">Account identifier.</param>
+    /// <param name="iban">The IBAN to remove.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task RemoveLinkedIbanAsync(Guid accountId, string iban, CancellationToken ct = default);
+
     // Auth
 
     /// <summary>

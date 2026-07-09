@@ -12,4 +12,15 @@ public sealed record AccountDto(
     Guid BankContactId,
     Guid? SymbolAttachmentId,
     SavingsPlanExpectation SavingsPlanExpectation,
-    bool SecurityProcessingEnabled);
+    bool SecurityProcessingEnabled)
+{
+    /// <summary>
+    /// Indicates whether this account is a collection account grouping multiple sub-IBANs.
+    /// </summary>
+    public bool IsCollectionAccount { get; init; } = false;
+
+    /// <summary>
+    /// List of linked sub-IBANs; empty for non-collection accounts.
+    /// </summary>
+    public IReadOnlyList<string> LinkedIbans { get; init; } = Array.Empty<string>();
+}

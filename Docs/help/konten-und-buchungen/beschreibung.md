@@ -8,11 +8,12 @@ Der Bereich verwaltet Bankkonten und die daraus entstehenden Buchungen. Anwender
 
 ## Funktionsweise
 
-Konten werden über `AccountsController` als Stammdaten gepflegt. Buchungsdaten werden über `PostingsController` für Konten, Kontakte, Sparpläne und Wertpapiere bereitgestellt. Stornierungen erfolgen über die Reversal-Funktionen und erzeugen verknüpfte Gegenbuchungen.
+Konten werden über `AccountsController` als Stammdaten gepflegt. Buchungsdaten werden über `PostingsController` für Konten, Kontakte, Sparpläne und Wertpapiere bereitgestellt. Sammelkonten können zusätzlich mehrere verknüpfte IBANs verwalten, etwa für Sparpläne oder Sparbriefe. Stornierungen erfolgen über die Reversal-Funktionen und erzeugen verknüpfte Gegenbuchungen.
 
 ## Beispiele
 
 - Ein Girokonto wird angelegt und mit einem Bankkontakt verknüpft.
+- Ein Sammelkonto bündelt mehrere Unter-IBANs und ordnet importierte Auszüge automatisch zu.
 - Für ein Konto wird eine Buchungsliste als CSV exportiert.
 - Eine fehlerhafte Buchung wird storniert und als Reversal nachvollziehbar markiert.
 

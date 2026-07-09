@@ -29,16 +29,16 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// Parses the specified statement file and returns the result of the parsing operation.
         /// </summary>
         /// <param name="statementFile">The statement file to be parsed. Cannot be null.</param>
-        /// <returns>A <see cref="StatementParseResult"/> containing the results of the parse operation, or <see
+        /// <returns>A list of <see cref="StatementParseResult"/> instances, or <see
         /// langword="null"/> if the file could not be parsed.</returns>
-        public abstract StatementParseResult? Parse(IStatementFile statementFile);
+        public abstract IReadOnlyList<StatementParseResult>? Parse(IStatementFile statementFile);
         /// <summary>
         /// Parses the specified statement file and extracts detailed statement information.
         /// </summary>
         /// <param name="statementFile">The statement file to be parsed. Cannot be null.</param>
-        /// <returns>A <see cref="StatementParseResult"/> containing the parsed statement details if parsing is successful;
+        /// <returns>A list of <see cref="StatementParseResult"/> instances if parsing is successful;
         /// otherwise, <see langword="null"/> if the file could not be parsed.</returns>
-        public abstract StatementParseResult? ParseDetails(IStatementFile statementFile);
+        public abstract IReadOnlyList<StatementParseResult>? ParseDetails(IStatementFile statementFile);
 
         #region Logging Helpers
         /// <summary>
@@ -56,7 +56,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// <param name="message">The warning message to log. Cannot be null.</param>
         protected void LogWarning(string message)
         {
-            logger?.LogWarning(message);
+            logger?.LogWarning("{Message}", message);
         }
         /// <summary>
         /// Logs an error with the specified exception and message to the underlying logging system.
@@ -72,7 +72,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// </summary>
         /// <param name="message">The informational message to log. Cannot be null.</param>
         protected void LogInformation(string message) { 
-            logger?.LogInformation(message);
+            logger?.LogInformation("{Message}", message);
         }
         /// <summary>
         /// Writes a debug-level message to the application's logging system.
@@ -81,7 +81,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// application behavior during development.</param>
         protected void LogDebug(string message)
         {
-            logger?.LogDebug(message);
+            logger?.LogDebug("{Message}", message);
         }
         #endregion
     }
