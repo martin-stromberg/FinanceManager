@@ -135,6 +135,11 @@ public sealed partial class StatementDraftService
         var savingPlans = await _db.SavingsPlans.AsNoTracking()
             .Where(sp => sp.OwnerUserId == ownerUserId && sp.IsActive)
             .ToListAsync(ct);
+        var knownContactAutoCreateEnabled = _knownContactCatalog is not null
+            && await _db.Users.AsNoTracking()
+                .Where(user => user.Id == ownerUserId)
+                .Select(user => user.KnownContactAutoCreateEnabled)
+                .SingleOrDefaultAsync(ct);
 
         // Securities für Auto-Matching laden (nur aktive)
         var securities = await _db.Securities.AsNoTracking()
@@ -202,6 +207,10 @@ public sealed partial class StatementDraftService
             }
 
             TryAutoAssignContact(contacts, aliasLookup, bankContactId, selfContact, entry);
+            if (entry.ContactId is null && knownContactAutoCreateEnabled)
+            {
+                await TryAutoCreateKnownContactAsync(contacts, aliasLookup, ownerUserId, bankContactId, selfContact, entry, ct);
+            }
             if (bankAccount is not null && bankAccount.SavingsPlanExpectation != SavingsPlanExpectation.None)
                 TryAutoAssignSavingsPlan(entry, savingPlans, selfContact);
             TryAutoAssignSecurity(securities, contacts, bankContactId, bankAccount?.SecurityProcessingEnabled ?? false, entry);
@@ -265,6 +274,67 @@ public sealed partial class StatementDraftService
                 entry.SetSecurity(null, null, null, null, null);
             }
         }
+    }
+
+    private async Task TryAutoCreateKnownContactAsync(
+        List<Contact> contacts,
+        Dictionary<Guid, List<string>> aliasLookup,
+        Guid ownerUserId,
+        Guid? bankContactId,
+        Contact selfContact,
+        StatementDraftEntry entry,
+        CancellationToken ct)
+    {
+        if (_knownContactCatalog is null)
+        {
+            return;
+        }
+
+        var match = await _knownContactCatalog.FindMatchAsync(new[]
+        {
+            entry.RecipientName,
+            entry.Subject,
+            entry.BookingDescription
+        }, ct);
+
+        if (match is null)
+        {
+            return;
+        }
+
+        var contact = contacts.FirstOrDefault(existing =>
+            string.Equals(existing.Name, match.Name, StringComparison.OrdinalIgnoreCase));
+
+        if (contact is null)
+        {
+            contact = new Contact(ownerUserId, match.Name, match.Type, null, null);
+            _db.Contacts.Add(contact);
+            contacts.Add(contact);
+        }
+
+        if (!aliasLookup.TryGetValue(contact.Id, out var aliases))
+        {
+            aliases = new List<string>();
+            aliasLookup[contact.Id] = aliases;
+        }
+
+        foreach (var alias in match.Aliases)
+        {
+            if (string.Equals(alias, contact.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (aliases.Any(existing => string.Equals(existing, alias, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            _db.AliasNames.Add(new AliasName(contact.Id, alias));
+            aliases.Add(alias);
+        }
+
+        TryAutoAssignContact(contacts, aliasLookup, bankContactId, selfContact, entry);
     }
 
     /// <summary>

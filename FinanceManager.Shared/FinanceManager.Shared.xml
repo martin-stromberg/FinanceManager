@@ -5923,12 +5923,15 @@
         <member name="P:FinanceManager.Shared.Dtos.Statements.ImportSplitSettingsDto.MassImportDialogPolicy">
             <summary>Dialog policy for start page mass imports.</summary>
         </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.ImportSplitSettingsDto.KnownContactAutoCreateEnabled">
+            <summary>Whether known contacts are created automatically during statement classification.</summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Statements.ImportSplitSettingsUpdateRequest">
             <summary>
             Request payload to update a user's import split settings used during statement draft creation.
             </summary>
         </member>
-        <member name="M:FinanceManager.Shared.Dtos.Statements.ImportSplitSettingsUpdateRequest.#ctor(FinanceManager.Shared.Dtos.Statements.ImportSplitMode,System.Int32,System.Nullable{System.Int32},System.Int32,FinanceManager.Shared.Dtos.Statements.MassImportDialogPolicy)">
+        <member name="M:FinanceManager.Shared.Dtos.Statements.ImportSplitSettingsUpdateRequest.#ctor(FinanceManager.Shared.Dtos.Statements.ImportSplitMode,System.Int32,System.Nullable{System.Int32},System.Int32,FinanceManager.Shared.Dtos.Statements.MassImportDialogPolicy,System.Boolean)">
             <summary>
             Request payload to update a user's import split settings used during statement draft creation.
             </summary>

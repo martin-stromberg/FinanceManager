@@ -1410,6 +1410,28 @@
             <param name="ct">Cancellation token.</param>
             <returns>The number of contacts owned by the user.</returns>
         </member>
+        <member name="T:FinanceManager.Infrastructure.Contacts.KnownContactCatalog">
+            <summary>
+            JSON-backed implementation of <see cref="T:FinanceManager.Application.Contacts.IKnownContactCatalog"/>.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Contacts.KnownContactCatalog.#ctor(Microsoft.Extensions.Hosting.IHostEnvironment,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Contacts.KnownContactCatalog})">
+            <summary>
+            Creates a known contact catalog that reads from the application data directory.
+            </summary>
+            <param name="environment">Host environment used to resolve the content root.</param>
+            <param name="logger">Logger for catalog loading diagnostics.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Contacts.KnownContactCatalog.#ctor(System.String,Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Contacts.KnownContactCatalog})">
+            <summary>
+            Creates a known contact catalog for a specific JSON file path.
+            </summary>
+            <param name="filePath">Path to the JSON catalog file.</param>
+            <param name="logger">Logger for catalog loading diagnostics.</param>
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Contacts.KnownContactCatalog.FindMatchAsync(System.Collections.Generic.IEnumerable{System.String},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:FinanceManager.Infrastructure.Data.Migrations.Identity._20251027_AddIdentityUsers">
             <inheritdoc />
         </member>
@@ -2454,6 +2476,15 @@
             <inheritdoc />
         </member>
         <member name="M:FinanceManager.Infrastructure.Migrations.AddCollectionAccountAndLinkedIbans.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:FinanceManager.Infrastructure.Migrations.AddKnownContactAutoCreateSetting">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddKnownContactAutoCreateSetting.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:FinanceManager.Infrastructure.Migrations.AddKnownContactAutoCreateSetting.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
             <inheritdoc />
         </member>
         <member name="T:FinanceManager.Infrastructure.Notifications.HolidayProviderResolver">
@@ -5391,7 +5422,7 @@
         <member name="P:FinanceManager.Infrastructure.Statements.StatementDraftService.ImportSplitInfo.MonthlyThreshold">
             <summary>Threshold used to decide monthly splitting.</summary>
         </member>
-        <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Aggregates.IPostingAggregateService,FinanceManager.Application.Accounts.IAccountService,FinanceManager.Infrastructure.Statements.Files.IStatementFileFactory,System.Collections.Generic.IEnumerable{FinanceManager.Infrastructure.Statements.Parsers.IStatementFileParser},Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.StatementDraftService},FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.Budget.IReportCacheService,FinanceManager.Application.Statements.IBudgetImpactEvaluationService)">
+        <member name="M:FinanceManager.Infrastructure.Statements.StatementDraftService.#ctor(FinanceManager.Infrastructure.AppDbContext,FinanceManager.Application.Aggregates.IPostingAggregateService,FinanceManager.Application.Accounts.IAccountService,FinanceManager.Infrastructure.Statements.Files.IStatementFileFactory,System.Collections.Generic.IEnumerable{FinanceManager.Infrastructure.Statements.Parsers.IStatementFileParser},Microsoft.Extensions.Logging.ILogger{FinanceManager.Infrastructure.Statements.StatementDraftService},FinanceManager.Application.Attachments.IAttachmentService,FinanceManager.Application.Budget.IReportCacheService,FinanceManager.Application.Statements.IBudgetImpactEvaluationService,FinanceManager.Application.Contacts.IKnownContactCatalog)">
             <summary>
             Initializes a new instance of the <see cref="T:FinanceManager.Infrastructure.Statements.StatementDraftService"/> class.
             </summary>

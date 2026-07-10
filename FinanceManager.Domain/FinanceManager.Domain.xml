@@ -4680,6 +4680,11 @@
             Dialog behavior policy for mixed start-page mass imports.
             </summary>
         </member>
+        <member name="P:FinanceManager.Domain.Users.User.KnownContactAutoCreateEnabled">
+            <summary>
+            Whether known contacts from the application catalog may be created automatically during statement classification.
+            </summary>
+        </member>
         <member name="P:FinanceManager.Domain.Users.User.IsAdmin">
             <summary>
             Admin flag persisted in the database.
@@ -4704,6 +4709,12 @@
             Sets the dialog behavior policy for start-page mass imports.
             </summary>
             <param name="policy">Dialog policy to persist for the user.</param>
+        </member>
+        <member name="M:FinanceManager.Domain.Users.User.SetKnownContactAutoCreateEnabled(System.Boolean)">
+            <summary>
+            Enables or disables automatic creation of known contacts during statement classification.
+            </summary>
+            <param name="enabled">True to allow automatic creation; false to disable it.</param>
         </member>
         <member name="M:FinanceManager.Domain.Users.User.MarkLogin(System.DateTime)">
             <summary>

@@ -917,6 +917,44 @@
             Assigns or clears a symbol attachment for a contact.
             </summary>
         </member>
+        <member name="T:FinanceManager.Application.Contacts.IKnownContactCatalog">
+            <summary>
+            Catalog of known contact definitions shipped with the application.
+            </summary>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.IKnownContactCatalog.FindMatchAsync(System.Collections.Generic.IEnumerable{System.String},System.Threading.CancellationToken)">
+            <summary>
+            Finds one unambiguous known contact for the provided statement texts.
+            </summary>
+            <param name="searchTexts">Texts from a statement entry, such as recipient, subject or booking description.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The unique match, or null when no or multiple definitions match.</returns>
+        </member>
+        <member name="T:FinanceManager.Application.Contacts.KnownContactMatch">
+            <summary>
+            Result returned when a known contact definition matched a statement entry.
+            </summary>
+            <param name="Name">Display name for the contact.</param>
+            <param name="Type">Contact type to create.</param>
+            <param name="Aliases">Alias patterns to store for the created contact.</param>
+        </member>
+        <member name="M:FinanceManager.Application.Contacts.KnownContactMatch.#ctor(System.String,FinanceManager.Shared.Dtos.Contacts.ContactType,System.Collections.Generic.IReadOnlyList{System.String})">
+            <summary>
+            Result returned when a known contact definition matched a statement entry.
+            </summary>
+            <param name="Name">Display name for the contact.</param>
+            <param name="Type">Contact type to create.</param>
+            <param name="Aliases">Alias patterns to store for the created contact.</param>
+        </member>
+        <member name="P:FinanceManager.Application.Contacts.KnownContactMatch.Name">
+            <summary>Display name for the contact.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Contacts.KnownContactMatch.Type">
+            <summary>Contact type to create.</summary>
+        </member>
+        <member name="P:FinanceManager.Application.Contacts.KnownContactMatch.Aliases">
+            <summary>Alias patterns to store for the created contact.</summary>
+        </member>
         <member name="T:FinanceManager.Application.Demo.IDemoDataService">
             <summary>
             Service responsible for creating demo data for a user account.

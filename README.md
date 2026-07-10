@@ -55,6 +55,7 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 | `FileLogging:Enabled` | bool | `false` (appsettings.json) | Aktiviert Dateilogging |
 | `Identity:Lockout:MaxFailedAccessAttempts` | int | `3` | Max. Fehlversuche bis Lockout |
 | `Identity:Password:RequiredLength` | int | `8` | Mindestlänge Passwort |
+| `Data/KnownContacts.json` | JSON-Datei | mitgelieferte Beispiele | Programmliste bekannter Unternehmen und Alias-Muster für automatische Kontaktanlage beim Kontoauszugsimport |
 
 ```json
 {

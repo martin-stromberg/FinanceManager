@@ -2141,4 +2141,10 @@
   </data>
   <data name="LinkedIbans_Error_AlreadyLinked" xml:space="preserve">
     <value>Diese IBAN ist bereits verknüpft.</value>
+  </data>
+  <data name="KnownContacts_AutoCreate_Label" xml:space="preserve">
+    <value>Bekannte Kontakte automatisch anlegen</value>
+  </data>
+  <data name="KnownContacts_AutoCreate_Help" xml:space="preserve">
+    <value>Wenn ein Kontoauszugseintrag keinen vorhandenen Kontakt findet, wird die mitgelieferte Liste bekannter Unternehmen geprueft.</value>
   </data></root>

@@ -1430,6 +1430,11 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<bool>("IsAdmin")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("KnownContactAutoCreateEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
+
                     b.Property<DateTime>("LastLoginUtc")
                         .HasColumnType("TEXT");
 

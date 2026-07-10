@@ -120,6 +120,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.ImportMaxEntriesPerDraft).IsRequired();
             b.Property(x => x.ImportMonthlySplitThreshold);
             b.Property(x => x.MassImportDialogPolicy).HasConversion<short>().HasDefaultValue(FinanceManager.Shared.Dtos.Statements.MassImportDialogPolicy.OnMissingInformation).IsRequired();
+            b.Property(x => x.KnownContactAutoCreateEnabled).HasDefaultValue(true).IsRequired();
             b.Property(x => x.AlphaVantageApiKey).HasMaxLength(120);
             b.Property(x => x.ShareAlphaVantageApiKey).HasDefaultValue(false);
             // Return analysis settings

@@ -12,6 +12,7 @@
     <None Include="wwwroot\css\app.SetupNotificationsTab.css" />
     <!-- Ensure help pages HTML/JSON files are copied to output -->
     <None Include="wwwroot\help\**" CopyToOutputDirectory="PreserveNewest" />
+    <Content Update="Data\KnownContacts.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
