@@ -54,6 +54,10 @@
                         <option value="@MassImportDialogPolicy.OnMissingInformation">@Localizer["MassImport_DialogPolicy_OnMissingInformation"]</option>
                     </select>
                 </div>
+                <div class="form-row">
+                    <label>@Localizer["KnownContacts_AutoCreate_Label"]</label>
+                    <input type="checkbox" @bind="_vm.Model.KnownContactAutoCreateEnabled" />
+                </div>
             </div>
 
             <div class="help-box">
@@ -71,6 +75,7 @@
                     <strong>@Localizer["ImportSplit_MinEntries"]:</strong> @Localizer["ImportSplit_Help_MinEntries"]
                 </p>
                 <p class="help-example">@Localizer["ImportSplit_Help_Example"]</p>
+                <p class="help-field"><strong>@Localizer["KnownContacts_AutoCreate_Label"]:</strong> @Localizer["KnownContacts_AutoCreate_Help"]</p>
             </div>
 
             @if (_vm.ValidationMessage != null)

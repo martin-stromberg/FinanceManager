@@ -242,7 +242,8 @@ public sealed class UserSettingsController : ControllerBase
                 MaxEntriesPerDraft = u.ImportMaxEntriesPerDraft,
                 MonthlySplitThreshold = u.ImportMonthlySplitThreshold,
                 MinEntriesPerDraft = u.ImportMinEntriesPerDraft,
-                MassImportDialogPolicy = u.MassImportDialogPolicy
+                MassImportDialogPolicy = u.MassImportDialogPolicy,
+                KnownContactAutoCreateEnabled = u.KnownContactAutoCreateEnabled
             })
             .SingleOrDefaultAsync(ct) ?? new ImportSplitSettingsDto();
         return Ok(dto);
@@ -289,6 +290,7 @@ public sealed class UserSettingsController : ControllerBase
         {
             user.SetImportSplitSettings(req.Mode, req.MaxEntriesPerDraft, req.MonthlySplitThreshold, req.MinEntriesPerDraft);
             user.SetMassImportDialogPolicy(req.MassImportDialogPolicy);
+            user.SetKnownContactAutoCreateEnabled(req.KnownContactAutoCreateEnabled);
             await _db.SaveChangesAsync(ct);
             return NoContent();
         }

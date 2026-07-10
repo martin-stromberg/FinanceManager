@@ -85,6 +85,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<FinanceManager.Application.Users.IUserReadService, UserReadService>();
         services.AddScoped<FinanceManager.Application.Users.IUserAdminService, UserAdminService>();
         services.AddScoped<IContactService, ContactService>();
+        services.AddSingleton<IKnownContactCatalog, KnownContactCatalog>();
         services.AddScoped<IContactCategoryService, ContactCategoryService>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IStatementDraftService, StatementDraftService>();

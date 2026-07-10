@@ -12,7 +12,22 @@ using FinanceManager.Tests.TestHelpers;
 
 public sealed class StatementDraftClassificationTests
 {
-    private static (StatementDraftService sut, AppDbContext db, SqliteConnection conn, Guid ownerId) Create()
+    private sealed class StubKnownContactCatalog : FinanceManager.Application.Contacts.IKnownContactCatalog
+    {
+        private readonly FinanceManager.Application.Contacts.KnownContactMatch? _match;
+
+        public StubKnownContactCatalog(FinanceManager.Application.Contacts.KnownContactMatch? match)
+        {
+            _match = match;
+        }
+
+        public Task<FinanceManager.Application.Contacts.KnownContactMatch?> FindMatchAsync(IEnumerable<string?> searchTexts, CancellationToken ct)
+        {
+            return Task.FromResult(_match);
+        }
+    }
+
+    private static (StatementDraftService sut, AppDbContext db, SqliteConnection conn, Guid ownerId) Create(FinanceManager.Application.Contacts.IKnownContactCatalog? knownContactCatalog = null)
     {
         var conn = new SqliteConnection("DataSource=:memory:");
         conn.Open();
@@ -30,7 +45,7 @@ public sealed class StatementDraftClassificationTests
         db.SaveChanges();
 
         var accountService = new StubAccountService();
-        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, null, NullLogger<StatementDraftService>.Instance, null, null, null, knownContactCatalog);
         return (sut, db, conn, owner.Id);
     }
 
@@ -295,6 +310,68 @@ public sealed class StatementDraftClassificationTests
 
         var entry = draft.Entries.First();
         Assert.Equal(intermediary.Id, entry.ContactId);
+        conn.Dispose();
+    }
+
+    [Fact]
+    public async Task Entry_KnownContact_IsCreatedAndAssigned_WhenNoExistingContactMatches()
+    {
+        var knownContact = new FinanceManager.Application.Contacts.KnownContactMatch("Amazon", ContactType.Organization, new[] { "AMAZON*", "AMZN*" });
+        var (sut, db, conn, owner) = Create(new StubKnownContactCatalog(knownContact));
+        var account = await AddBankAccountAsync(db);
+        var draft = await CreateStatementDraftAsync(db, account, (draft) =>
+        {
+            draft.AddEntry(DateTime.Today, -25, "Bestellung 123", "AMAZON EU", DateTime.Today, "EUR", "Kartenzahlung", false);
+        });
+
+        await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
+
+        var created = await db.Contacts.SingleAsync(c => c.OwnerUserId == owner && c.Name == "Amazon");
+        var aliases = await db.AliasNames.Where(a => a.ContactId == created.Id).Select(a => a.Pattern).ToListAsync();
+        var entry = draft.Entries.First();
+        Assert.Equal(created.Id, entry.ContactId);
+        Assert.Contains("AMAZON*", aliases);
+        Assert.Contains("AMZN*", aliases);
+        conn.Dispose();
+    }
+
+    [Fact]
+    public async Task Entry_KnownContact_IsIgnored_WhenUserSettingDisabled()
+    {
+        var knownContact = new FinanceManager.Application.Contacts.KnownContactMatch("Amazon", ContactType.Organization, new[] { "AMAZON*" });
+        var (sut, db, conn, owner) = Create(new StubKnownContactCatalog(knownContact));
+        var user = await db.Users.SingleAsync(u => u.Id == owner);
+        user.SetKnownContactAutoCreateEnabled(false);
+        await db.SaveChangesAsync();
+        var account = await AddBankAccountAsync(db);
+        var draft = await CreateStatementDraftAsync(db, account, (draft) =>
+        {
+            draft.AddEntry(DateTime.Today, -25, "Bestellung 123", "AMAZON EU", DateTime.Today, "EUR", "Kartenzahlung", false);
+        });
+
+        await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
+
+        Assert.DoesNotContain(db.Contacts, c => c.OwnerUserId == owner && c.Name == "Amazon");
+        Assert.Null(draft.Entries.First().ContactId);
+        conn.Dispose();
+    }
+
+    [Fact]
+    public async Task Entry_ExistingContact_HasPriorityOverKnownContactCatalog()
+    {
+        var knownContact = new FinanceManager.Application.Contacts.KnownContactMatch("Amazon", ContactType.Organization, new[] { "AMAZON*" });
+        var (sut, db, conn, owner) = Create(new StubKnownContactCatalog(knownContact));
+        var account = await AddBankAccountAsync(db);
+        var existing = await AddContact(db, owner, "Amazon Marketplace", ContactType.Organization, null, null, false, "AMAZON*");
+        var draft = await CreateStatementDraftAsync(db, account, (draft) =>
+        {
+            draft.AddEntry(DateTime.Today, -25, "Bestellung 123", "AMAZON EU", DateTime.Today, "EUR", "Kartenzahlung", false);
+        });
+
+        await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
+
+        Assert.Equal(existing.Id, draft.Entries.First().ContactId);
+        Assert.DoesNotContain(db.Contacts, c => c.OwnerUserId == owner && c.Name == "Amazon");
         conn.Dispose();
     }
 }
