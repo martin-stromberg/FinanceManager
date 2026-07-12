@@ -251,7 +251,9 @@
 }
 
 .projection-detail-modal {
+    box-sizing: border-box;
     max-width: min(920px, calc(100vw - 2.5rem));
+    overflow-x: hidden;
 }
 
 .projection-detail-header {
@@ -294,8 +296,33 @@
 
 .projection-detail-table {
     font-size: 1rem;
+    table-layout: fixed;
     margin-bottom: 0;
     width: 100%;
+}
+
+.projection-detail-table th,
+.projection-detail-table td {
+    padding: .55rem .65rem;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.projection-detail-table th:nth-child(1),
+.projection-detail-table td:nth-child(1) {
+    width: 42%;
+}
+
+.projection-detail-table th:nth-child(2),
+.projection-detail-table td:nth-child(2),
+.projection-detail-table th:nth-child(3),
+.projection-detail-table td:nth-child(3) {
+    width: 20%;
+}
+
+.projection-detail-table th:nth-child(4),
+.projection-detail-table td:nth-child(4) {
+    width: 18%;
 }
 
 @media (max-width: 900px) {
