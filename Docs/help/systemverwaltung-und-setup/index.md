@@ -8,5 +8,6 @@ Dieser Bereich bündelt Benutzerverwaltung, Sicherheit, Benachrichtigungen und S
 - [Technischer Ablauf](ablauf-technisch.md)
 - [API](api.md)
 - [Installation & Konfiguration](installation.md)
+- [Release und Bereitstellung](bereitstellung.md)
 - [Datenmodell](datenmodell.md)
 - [Business Rules](business-rules.md)

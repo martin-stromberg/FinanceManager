@@ -122,8 +122,31 @@ dotnet test FinanceManager.sln
 
 ## Deployment / CI/CD
 
-- Produktionsnahe Konfiguration liegt in `FinanceManager.Web/appsettings.Production.json` (u. a. Kestrel-Endpoint `http://*:5003`, FileLogging aktivierbar).
-- Im Repository sind aktuell keine GitHub-Workflow-Dateien unter `.github/workflows/` und kein `Dockerfile` vorhanden.
+- Die Release-Pipeline ist in [`.github/workflows/release.yml`](.github/workflows/release.yml) definiert.
+- Ein Push auf `master` sowie ein Push eines Tags im Format `vX.Y.Z` starten den
+  Workflow auf `windows-latest`. Auf `master` bestimmt Semantic Release die
+  nächste Version aus Conventional Commits: `feat` erzeugt ein Minor-, `fix`
+  ein Patch- und `feat!` beziehungsweise `BREAKING CHANGE` ein Major-Release.
+  `docs`, `refactor` und `chore` erzeugen kein Release. Ein manueller
+  `vX.Y.Z`-Tag hat Vorrang vor der automatischen Berechnung.
+- Der Workflow verwendet Node 22 und das .NET-SDK `10.0.x`. Vor der
+  Veröffentlichung laufen `npm ci`,
+  `dotnet test FinanceManager.sln --configuration Release` und ein
+  Solution-Build. Anschließend wird
+  `FinanceManager.Web/FinanceManager.Web.csproj` mit .NET 10 als
+  self-contained `win-x64`-Anwendung veröffentlicht.
+- Der vollständige Inhalt des `publish/`-Verzeichnisses wird als
+  `FinanceManager-vX.Y.Z-win-x64.zip` verpackt und als Asset am passenden
+  GitHub-Release veröffentlicht. Fehler bei Versionierung, Tests, Build,
+  Publish oder Paketierung verhindern die Veröffentlichung eines
+  unvollständigen Releases. Ein Push ohne release-relevante Commits endet
+  erfolgreich ohne neues Release. Bei der Reparatur eines unvollständigen
+  Assets wird dessen Release-Tag ausgecheckt. Als vollständig gilt ein Asset
+  nur mit erwartetem Namen, Upload-Status und positiver Dateigröße; die
+  Reparatursuche verarbeitet alle Seiten der GitHub-Release-API.
+- Produktionsnahe Konfiguration liegt in
+  `FinanceManager.Web/appsettings.Production.json` (u. a. Kestrel-Endpoint
+  `http://*:5003`, FileLogging aktivierbar).
 
 ## Contribution Guide
 

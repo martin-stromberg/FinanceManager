@@ -1,0 +1,151 @@
+name: Release
+
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install release dependencies
+        run: npm ci
+
+      - name: Resolve release version
+        id: version
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/resolve-release-version.mjs
+
+      - name: Check out release tag for asset repair
+        if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'upload-existing'
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git checkout --detach "$env:RELEASE_TAG"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not check out release tag '$env:RELEASE_TAG'."
+          }
+
+          $expectedCommit = git rev-parse "$env:RELEASE_TAG^{commit}"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not resolve release tag '$env:RELEASE_TAG' to a commit."
+          }
+
+          $checkedOutCommit = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0 -or $checkedOutCommit -ne $expectedCommit) {
+            throw "Release tag checkout did not resolve to the tagged commit."
+          }
+
+      - name: Test solution
+        if: steps.version.outputs.released == 'true'
+        run: dotnet test FinanceManager.sln --configuration Release
+
+      - name: Build solution
+        if: steps.version.outputs.released == 'true'
+        run: dotnet build FinanceManager.sln --configuration Release --no-restore
+
+      - name: Publish application
+        if: steps.version.outputs.released == 'true'
+        run: |
+          if (Test-Path publish) {
+            Remove-Item -Recurse -Force publish
+          }
+
+          dotnet publish FinanceManager.Web/FinanceManager.Web.csproj --configuration Release --framework net10.0 --runtime win-x64 --self-contained true --output publish
+
+          if (-not (Test-Path publish -PathType Container)) {
+            throw "The publish directory was not created."
+          }
+
+      - name: Package publish output
+        id: package
+        if: steps.version.outputs.released == 'true'
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:RELEASE_VERSION)) {
+            throw "The release version is missing."
+          }
+
+          $publishPath = (Resolve-Path publish).Path
+          $publishedFiles = Get-ChildItem -LiteralPath $publishPath -File -Recurse -Force
+          if ($publishedFiles.Count -eq 0) {
+            throw "The publish directory is empty."
+          }
+
+          $archivePath = Join-Path $PWD "FinanceManager-v$env:RELEASE_VERSION-win-x64.zip"
+          if (Test-Path -LiteralPath $archivePath) {
+            Remove-Item -Force -LiteralPath $archivePath
+          }
+
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [System.IO.Compression.ZipFile]::CreateFromDirectory(
+            $publishPath,
+            $archivePath,
+            [System.IO.Compression.CompressionLevel]::Optimal,
+            $false
+          )
+
+          $archive = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
+          try {
+            if ($archive.Entries.Count -eq 0) {
+              throw "The release archive is empty."
+            }
+          }
+          finally {
+            $archive.Dispose()
+          }
+
+          "asset_path=$([System.IO.Path]::GetFileName($archivePath))" | Add-Content -Path $env:GITHUB_OUTPUT
+
+      - name: Create automatic GitHub release
+        if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'create' && steps.version.outputs.release_kind == 'automatic'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_ASSET_PATH: ${{ steps.package.outputs.asset_path }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: npm run release
+
+      - name: Create manual-tag GitHub release
+        if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'create' && steps.version.outputs.release_kind == 'manual'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ASSET_PATH: ${{ steps.package.outputs.asset_path }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          gh release create "$env:RELEASE_TAG" "$env:RELEASE_ASSET_PATH" --title "$env:RELEASE_TAG" --generate-notes --verify-tag
+
+      - name: Upload asset to existing GitHub release
+        if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'upload-existing'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ASSET_PATH: ${{ steps.package.outputs.asset_path }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: gh release upload "$env:RELEASE_TAG" "$env:RELEASE_ASSET_PATH" --clobber
