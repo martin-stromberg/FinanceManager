@@ -122,9 +122,12 @@ namespace FinanceManager.Web
             {
                 var accessor = sp.GetRequiredService<IHttpContextAccessor>();
                 var ctx = accessor.HttpContext;
-                var baseUri = ctx != null
+                var configuredBaseUri = builder.Configuration["Api:BaseAddress"];
+                var baseUri = !string.IsNullOrWhiteSpace(configuredBaseUri)
+                    ? configuredBaseUri
+                    : ctx != null
                     ? $"{ctx.Request.Scheme}://{ctx.Request.Host.ToUriComponent()}/"
-                    : builder.Configuration["Api:BaseAddress"] ?? "https://localhost:5001/";
+                    : "https://localhost:5001/";
                 client.BaseAddress = new Uri(baseUri);
             }).AddHttpMessageHandler<AuthenticatedHttpClientHandler>();
             builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api"));
@@ -261,7 +264,7 @@ namespace FinanceManager.Web
             {
                 app.UseExceptionHandler("/Error", createScopeForErrors: true);
             }
-            else
+            else if (!app.Configuration.GetValue<bool>("E2E:DisableHttpsRedirection"))
             {
                 app.UseHttpsRedirection();
             }

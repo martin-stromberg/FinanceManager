@@ -155,6 +155,22 @@ namespace FinanceManager.Web.Infrastructure.Auth
         }
 
         /// <summary>
+        /// Stores a known-valid token for later use when no request context is available, for example in a Blazor circuit.
+        /// </summary>
+        /// <param name="token">Serialized JWT token.</param>
+        /// <param name="expiry">Token expiry timestamp.</param>
+        public void PrimeCache(string token, DateTimeOffset expiry)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                InvalidateCache();
+                return;
+            }
+
+            Cache(token, expiry);
+        }
+
+        /// <summary>
         /// Issues a new JWT for the supplied claims with the configured lifetime.
         /// The returned tuple contains the serialized token and the expiry timestamp.
         /// </summary>

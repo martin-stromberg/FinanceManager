@@ -1,6 +1,7 @@
 @inject NavigationManager Nav
 @inject FinanceManager.Application.ICurrentUserService CurrentUser
 @inject FinanceManager.Application.Users.IUserReadService UserRead
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 @code {
@@ -43,7 +44,7 @@
                 return;
             }
 
-            if (!CurrentUser.IsAuthenticated)
+            if (!await IsAuthenticatedAsync())
             {
                 // Decide whether to go to register (first user) or login
                 bool anyUsers = await UserRead.HasAnyUsersAsync(CancellationToken.None);
@@ -56,7 +57,7 @@
         }
         catch
         {
-            // swallow – redirect helper must never throw
+            // swallow - redirect helper must never throw
         }
     }
 
@@ -83,7 +84,24 @@
         return path.Equals("/login", StringComparison.OrdinalIgnoreCase)
             || path.Equals("/register", StringComparison.OrdinalIgnoreCase)
             || path.StartsWith("/api/auth", StringComparison.OrdinalIgnoreCase)
-            || path.StartsWith("/error", StringComparison.OrdinalIgnoreCase); 
+            || path.StartsWith("/error", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task<bool> IsAuthenticatedAsync()
+    {
+        if (CurrentUser.IsAuthenticated)
+        {
+            return true;
+        }
+
+        try
+        {
+            return await JS.InvokeAsync<bool>("fmAuthIsAuthenticated");
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public void Dispose()

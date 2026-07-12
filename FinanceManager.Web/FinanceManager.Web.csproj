@@ -68,8 +68,8 @@
   </ItemGroup>
 
   <Target Name="CopyInitFiles" BeforeTargets="Build">
-	  <Exec Command="if exist &quot;$(ProjectDir)init&quot; rmdir /s /q &quot;$(ProjectDir)init\&quot;" />
-	  <Exec Command="if exist &quot;$(TargetDir)init&quot; rmdir /s /q &quot;$(TargetDir)init\&quot;" />  
+	  <RemoveDir Directories="$(ProjectDir)init" Condition="Exists('$(ProjectDir)init')" />
+	  <RemoveDir Directories="$(TargetDir)init" Condition="Exists('$(TargetDir)init')" />
   </Target>
 
   </Project>

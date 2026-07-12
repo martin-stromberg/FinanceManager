@@ -276,12 +276,19 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
             // ensure parent card VM is notified when the embedded list state changes so Ribbon and UI update
             entriesVm.StateChanged += (_, __) => RaiseStateChanged();
             EmbeddedList = entriesVm;
-            await entriesVm.InitializeAsync();
+            try
+            {
+                await entriesVm.InitializeAsync();
+            }
+            catch (Exception ex)
+            {
+                SetError(null, ex.Message);
+            }
         }
         catch (Exception ex)
         {
             SetError(null, ex.Message);
-            CardRecord = new CardRecord(new List<CardField>());
+            CardRecord ??= new CardRecord(new List<CardField>());
         }
         finally
         {
