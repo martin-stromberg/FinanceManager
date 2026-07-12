@@ -214,6 +214,59 @@ public sealed class ReportAggregationProjectionTests
     }
 
     [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_MonthlyPatternIgnoresCorrectionPairsForFutureExpectations()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-monthly-corrections");
+        var security = AddSecurity(db, user.Id, "Monthly Corrections Dividend");
+        await db.SaveChangesAsync();
+
+        for (var month = 1; month <= 12; month++)
+        {
+            AddDividendGroup(db, security, new DateTime(2025, month, 10), 10m);
+        }
+
+        for (var month = 1; month <= 6; month++)
+        {
+            AddDividendGroup(db, security, new DateTime(2026, month, 10), 10m);
+        }
+
+        AddDividendGroup(db, security, new DateTime(2026, 4, 20), -10m);
+        AddDividendGroup(db, security, new DateTime(2026, 4, 20), 10m);
+        AddDividendGroup(db, security, new DateTime(2026, 4, 25), -10m);
+        AddDividendGroup(db, security, new DateTime(2026, 4, 25), 10m);
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Year,
+            1,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: new DateTime(2026, 6, 1)), CancellationToken.None);
+
+        var yearPoint = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 1, 1));
+        Assert.Equal(60m, yearPoint.Amount);
+        Assert.Equal(120m, yearPoint.ProjectionAmount);
+        var expectedDates = yearPoint.ProjectionExpectedDividends!.Select(p => p.ExpectedDate).ToArray();
+        Assert.Equal(
+            new[]
+            {
+                new DateTime(2026, 7, 10),
+                new DateTime(2026, 8, 10),
+                new DateTime(2026, 9, 10),
+                new DateTime(2026, 10, 10),
+                new DateTime(2026, 11, 10),
+                new DateTime(2026, 12, 10)
+            },
+            expectedDates);
+    }
+
+    [Fact]
     public async Task QueryAsync_SecurityDividendProjection_QuarterlyPatternMatchesWithinQuarterAndDropsElapsedQuarter()
     {
         using var db = CreateDb();

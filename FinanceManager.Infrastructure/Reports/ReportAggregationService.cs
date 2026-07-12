@@ -1080,6 +1080,25 @@ public sealed class ReportAggregationService : IReportAggregationService
                 };
             }
 
+            DateTime GetProjectionPeriodEnd(DateTime periodStart)
+            {
+                return query.Interval switch
+                {
+                    ReportInterval.Month => periodStart.AddMonths(1),
+                    ReportInterval.Quarter => periodStart.AddMonths(3),
+                    ReportInterval.HalfYear => periodStart.AddMonths(6),
+                    ReportInterval.Year => periodStart.AddYears(1),
+                    ReportInterval.Ytd => endExclusive,
+                    _ => endExclusive
+                };
+            }
+
+            var projectionStart = query.Interval == ReportInterval.Year
+                ? targetPoints.Min(p => p.PeriodStart)
+                : startMonth;
+            var projectionEnd = query.Interval == ReportInterval.Year
+                ? targetPoints.Max(p => GetProjectionPeriodEnd(p.PeriodStart))
+                : endExclusive;
             var currentYearStart = new DateTime(analysis.Year, 1, 1);
             var expectedDetails = events
                 .GroupBy(e => e.SecurityId)
@@ -1092,7 +1111,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                         .ToList();
                     var pattern = DetectDividendPattern(securityEvents, analysis.Year - 1);
                     var candidates = securityEvents
-                        .Where(e => e.Date >= startMonth.AddYears(-1) && e.Date < endExclusive.AddYears(-1))
+                        .Where(e => e.Date >= projectionStart.AddYears(-1) && e.Date < projectionEnd.AddYears(-1))
                         .OrderBy(e => e.Date)
                         .Select(e => new ProjectionCandidate(e.SecurityId, e.Date.AddYears(1), e.Date, e.NetAmount))
                         .Where(e => MapProjectionPeriod(e.ExpectedDate) != DateTime.MinValue)
