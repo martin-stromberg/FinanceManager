@@ -1086,11 +1086,10 @@ public sealed class ReportAggregationService : IReportAggregationService
                 {
                     e.SecurityId,
                     Period = MapProjectionPeriod(e.Date),
-                    EventMonth = e.Date.Month,
-                    EventDay = e.Date.Day
+                    EventMonth = e.Date.Month
                 })
                 .Where(e => e.Period != DateTime.MinValue)
-                .GroupBy(e => (e.SecurityId, e.Period, e.EventMonth, e.EventDay))
+                .GroupBy(e => (e.SecurityId, e.Period, e.EventMonth))
                 .ToDictionary(g => g.Key, g => g.Count());
 
             var expectedBySecurityPeriod = events
@@ -1103,12 +1102,12 @@ public sealed class ReportAggregationService : IReportAggregationService
                         e.SecurityId,
                         TargetPeriod = MapProjectionPeriod(targetDate),
                         EventMonth = targetDate.Month,
-                        EventDay = targetDate.Day,
+                        TargetDate = targetDate,
                         e.NetAmount
                     };
                 })
                 .Where(e => e.TargetPeriod != DateTime.MinValue)
-                .GroupBy(e => (e.SecurityId, Period: e.TargetPeriod, e.EventMonth, e.EventDay))
+                .GroupBy(e => (e.SecurityId, Period: e.TargetPeriod, e.EventMonth))
                 .Select(g =>
                 {
                     currentConfirmations.TryGetValue(g.Key, out var confirmedCount);
@@ -1116,7 +1115,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                     {
                         g.Key.SecurityId,
                         g.Key.Period,
-                        Expected = g.Skip(confirmedCount).Sum(x => x.NetAmount)
+                        Expected = g.OrderBy(x => x.TargetDate).Skip(confirmedCount).Sum(x => x.NetAmount)
                     };
                 })
                 .Where(e => e.Expected != 0m)

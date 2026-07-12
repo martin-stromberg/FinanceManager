@@ -72,7 +72,7 @@ public sealed class ReportAggregationProjectionTests
         var analysis = new DateTime(2026, 5, 1);
         AddDividendGroup(db, missingCurrent, new DateTime(2025, 5, 10), 100m, -5m, -25m);
         AddDividendGroup(db, confirmedCurrent, new DateTime(2025, 5, 12), 40m);
-        AddDividendGroup(db, confirmedCurrent, new DateTime(2026, 5, 12), 50m);
+        AddDividendGroup(db, confirmedCurrent, new DateTime(2026, 5, 20), 50m);
         await db.SaveChangesAsync();
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
