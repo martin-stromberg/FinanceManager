@@ -70,11 +70,12 @@ public sealed class ReportingFlowPlaywrightTests
 
         await page.GotoAsync($"/reports/dashboard?favoriteId={created.Id}&edit=false");
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await page.Locator("body").WaitForAsync();
+        await page.Locator("h2").Filter(new LocatorFilterOptions { HasTextString = favoriteName }).WaitForAsync();
         var heading = await page.Locator("h2").TextContentAsync();
         heading.Should().Contain(favoriteName);
 
         await page.ReloadAsync();
+        await page.Locator("h2").Filter(new LocatorFilterOptions { HasTextString = favoriteName }).WaitForAsync();
         heading = await page.Locator("h2").TextContentAsync();
         heading.Should().Contain(favoriteName);
     }

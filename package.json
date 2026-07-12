@@ -1,0 +1,18 @@
+{
+  "name": "finance-manager-release",
+  "private": true,
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "release": "semantic-release",
+    "test:release-version": "node --test scripts/resolve-release-version.test.mjs"
+  },
+  "devDependencies": {
+    "@semantic-release/commit-analyzer": "13.0.1",
+    "@semantic-release/github": "12.0.9",
+    "@semantic-release/release-notes-generator": "14.1.1",
+    "conventional-changelog-conventionalcommits": "10.2.1",
+    "semantic-release": "25.0.6"
+  }
+}
