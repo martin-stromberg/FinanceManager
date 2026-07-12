@@ -86,6 +86,56 @@ public sealed class ReportFavoriteServiceTests
     }
 
     [Fact]
+    public async Task CreateListGetAndUpdate_ShouldRoundtripCompareProjection()
+    {
+        using var db = CreateDb();
+        var user = new FinanceManager.Domain.Users.User("projection-user", "pw", false);
+        db.Users.Add(user); await db.SaveChangesAsync();
+        var svc = new ReportFavoriteService(db);
+
+        var created = await svc.CreateAsync(
+            user.Id,
+            new ReportFavoriteCreateRequest(
+                "Projection",
+                PostingKind.Security,
+                true,
+                ReportInterval.Month,
+                false,
+                false,
+                true,
+                true,
+                true),
+            CancellationToken.None);
+
+        Assert.True(created.CompareProjection);
+        Assert.True((await db.ReportFavorites.SingleAsync()).CompareProjection);
+
+        var listed = await svc.ListAsync(user.Id, CancellationToken.None);
+        Assert.True(listed.Single().CompareProjection);
+
+        var fetched = await svc.GetAsync(created.Id, user.Id, CancellationToken.None);
+        Assert.True(fetched!.CompareProjection);
+
+        var updated = await svc.UpdateAsync(
+            created.Id,
+            user.Id,
+            new ReportFavoriteUpdateRequest(
+                "Projection",
+                PostingKind.Security,
+                true,
+                ReportInterval.Month,
+                false,
+                false,
+                false,
+                true,
+                true),
+            CancellationToken.None);
+
+        Assert.False(updated!.CompareProjection);
+        Assert.False((await db.ReportFavorites.SingleAsync()).CompareProjection);
+    }
+
+    [Fact]
     public async Task DeleteAsync_ShouldReturnFalse_WhenNotOwnedOrMissing()
     {
         using var db = CreateDb();

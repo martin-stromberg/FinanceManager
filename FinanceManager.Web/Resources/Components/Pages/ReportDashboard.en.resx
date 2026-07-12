@@ -138,6 +138,9 @@
   <data name="Label_CompareYear" xml:space="preserve">
     <value>Compare Year</value>
   </data>
+  <data name="Label_CompareProjection" xml:space="preserve">
+    <value>Projection</value>
+  </data>
   <data name="Label_ShowChart" xml:space="preserve">
     <value>Show Chart</value>
   </data>
@@ -161,6 +164,9 @@
   </data>
   <data name="Th_Amount" xml:space="preserve">
     <value>Amount</value>
+  </data>
+  <data name="Th_Projection" xml:space="preserve">
+    <value>Projection</value>
   </data>
   <data name="Th_Prev" xml:space="preserve">
     <value>Prev</value>

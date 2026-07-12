@@ -512,6 +512,7 @@
                 fav.IncludeCategory,
                 disablePrev ? false : fav.ComparePrevious,
                 fav.CompareYear,
+                fav.CompareProjection,
                 fav.UseValutaDate,
                 fav.PostingKinds?.Count > 0 ? fav.PostingKinds : null,
                 null,
@@ -523,6 +524,8 @@
             var agg = await Api.Reports_QueryAggregatesAsync(req);
             if (agg == null) { return; }
             var points = (agg.Points ?? new List<ReportAggregatePointDto>()).OrderBy(p => p.GroupKey).ThenBy(p => p.PeriodStart).ToList();
+            // ReportKpiTile intentionally renders the compact favorite preview from Amount values only.
+            // ProjectionAmount remains available in the report dashboard, which has the dedicated column UI.
             var series = points.Where(p => p.ParentGroupKey == null || p.GroupKey.StartsWith("Type:"))
                                .GroupBy(p => p.PeriodStart)
                                .Select(g => new SeriesPoint(g.Key, g.Where(x => x.ParentGroupKey == null || x.GroupKey.StartsWith("Type:")).Sum(x => x.Amount)))

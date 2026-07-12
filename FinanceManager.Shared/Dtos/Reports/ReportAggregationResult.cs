@@ -7,9 +7,11 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="Points">Aggregated points.</param>
 /// <param name="ComparedPrevious">True when previous-period comparison amounts are present.</param>
 /// <param name="ComparedYear">True when year-ago comparison amounts are present.</param>
+/// <param name="ComparedProjection">True when projection amounts are present.</param>
 public sealed record ReportAggregationResult(
     ReportInterval Interval,
     IReadOnlyList<ReportAggregatePointDto> Points,
     bool ComparedPrevious,
-    bool ComparedYear
+    bool ComparedYear,
+    bool ComparedProjection
 );

@@ -30,7 +30,7 @@ public sealed class ReportDashboardViewModelTests
     {
         var start = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         return Enumerable.Range(0, count)
-            .Select(i => new ReportAggregatePointDto(start.AddMonths(i), "Type:Bank", "Bank", null, 100 + i, null, null, null))
+            .Select(i => new ReportAggregatePointDto(start.AddMonths(i), "Type:Bank", "Bank", null, 100 + i, null, null, null, null))
             .ToList();
     }
 
@@ -38,14 +38,17 @@ public sealed class ReportDashboardViewModelTests
     public async Task LoadAsync_ReturnsPoints()
     {
         var (vm, apiMock) = CreateVm();
-        var result = new ReportAggregationResult(ReportInterval.Month, CreatePoints(3), false, false);
+        var result = new ReportAggregationResult(ReportInterval.Month, CreatePoints(3), false, false, false);
 
         apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
-        var resp = await vm.LoadAsync(PostingKind.Bank, 0, 24, false, false, false, new[] { PostingKind.Bank }, DateTime.UtcNow, null);
+        var resp = await vm.LoadAsync(PostingKind.Bank, 0, 24, false, false, false, false, new[] { PostingKind.Bank }, DateTime.UtcNow, null);
 
         Assert.Equal(3, resp.Points.Count);
+        apiMock.Verify(a => a.Reports_QueryAggregatesAsync(
+            It.Is<ReportAggregatesQueryRequest>(r => !r.CompareProjection),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -62,11 +65,18 @@ public sealed class ReportDashboardViewModelTests
         apiMock.Setup(a => a.Reports_DeleteFavoriteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var saved = await vm.SaveFavoriteAsync("n", PostingKind.Bank, false, 0, 24, false, false, true, true, new[] { PostingKind.Bank }, null);
+        var saved = await vm.SaveFavoriteAsync("n", PostingKind.Bank, false, 0, 24, false, false, true, true, true, new[] { PostingKind.Bank }, null);
         Assert.NotNull(saved);
+        apiMock.Verify(a => a.Reports_CreateFavoriteAsync(
+            It.Is<ReportFavoriteCreateApiRequest>(r => r.CompareProjection),
+            It.IsAny<CancellationToken>()), Times.Once);
 
-        var updated = await vm.UpdateFavoriteAsync(Guid.NewGuid(), "n2", PostingKind.Bank, false, 0, 24, false, false, true, true, new[] { PostingKind.Bank }, null);
+        var updated = await vm.UpdateFavoriteAsync(Guid.NewGuid(), "n2", PostingKind.Bank, false, 0, 24, false, false, true, true, true, new[] { PostingKind.Bank }, null);
         Assert.NotNull(updated);
+        apiMock.Verify(a => a.Reports_UpdateFavoriteAsync(
+            It.IsAny<Guid>(),
+            It.Is<ReportFavoriteUpdateApiRequest>(r => r.CompareProjection),
+            It.IsAny<CancellationToken>()), Times.Once);
 
         var deleted = await vm.DeleteFavoriteAsync(Guid.NewGuid());
         Assert.True(deleted);
@@ -79,11 +89,11 @@ public sealed class ReportDashboardViewModelTests
         var start = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var points = new List<ReportAggregatePointDto>
         {
-            new ReportAggregatePointDto(start, "Type:Bank", "Bank", null, 100m, null, null, null),
-            new ReportAggregatePointDto(start, "Type:Contact", "Contact", null, 50m, null, null, null),
-            new ReportAggregatePointDto(start.AddMonths(1), "Type:Bank", "Bank", null, 200m, null, null, null)
+            new ReportAggregatePointDto(start, "Type:Bank", "Bank", null, 100m, null, null, null, null),
+            new ReportAggregatePointDto(start, "Type:Contact", "Contact", null, 50m, null, null, null, null),
+            new ReportAggregatePointDto(start.AddMonths(1), "Type:Bank", "Bank", null, 200m, null, null, null, null)
         };
-        var result = new ReportAggregationResult(ReportInterval.Month, points, false, false);
+        var result = new ReportAggregationResult(ReportInterval.Month, points, false, false, false);
 
         apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
@@ -108,10 +118,10 @@ public sealed class ReportDashboardViewModelTests
         var start = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var points = new List<ReportAggregatePointDto>
         {
-            new ReportAggregatePointDto(start, "Type:Bank", "Bank", null, 120m, null, 100m, 80m),
-            new ReportAggregatePointDto(start, "Type:Contact", "Contact", null, 30m, null, 25m, 20m)
+            new ReportAggregatePointDto(start, "Type:Bank", "Bank", null, 120m, null, null, 100m, 80m),
+            new ReportAggregatePointDto(start, "Type:Contact", "Contact", null, 30m, null, null, 25m, 20m)
         };
-        var result = new ReportAggregationResult(ReportInterval.Month, points, true, true);
+        var result = new ReportAggregationResult(ReportInterval.Month, points, true, true, false);
 
         apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
@@ -134,9 +144,107 @@ public sealed class ReportDashboardViewModelTests
     }
 
     [Fact]
+    public async Task ProjectionColumn_IsVisibleAndTotalsProjection_WhenServerComparedProjection()
+    {
+        var (vm, apiMock) = CreateVm();
+        var start = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var points = new List<ReportAggregatePointDto>
+        {
+            new ReportAggregatePointDto(start, "Security:abc", "ABC", null, 120m, 150m, null, null, null)
+        };
+        var result = new ReportAggregationResult(ReportInterval.Month, points, false, false, true);
+
+        apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(result);
+
+        vm.SelectedKinds = new List<PostingKind> { PostingKind.Security };
+        vm.CompareProjection = true;
+        vm.Interval = (int)ReportInterval.Month;
+
+        await vm.ReloadAsync(start);
+
+        Assert.True(vm.CanCompareProjection);
+        Assert.True(vm.ShowProjectionColumn);
+        Assert.True(vm.ComparedProjection);
+        Assert.Equal(150m, vm.GetTotals().Projection);
+        apiMock.Verify(a => a.Reports_QueryAggregatesAsync(
+            It.Is<ReportAggregatesQueryRequest>(r => r.CompareProjection),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ReloadAsync_DisablesProjection_ForNonSecuritySelection()
+    {
+        var (vm, apiMock) = CreateVm();
+        var result = new ReportAggregationResult(ReportInterval.Month, CreatePoints(1), false, false, false);
+
+        apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(result);
+
+        vm.SelectedKinds = new List<PostingKind> { PostingKind.Bank };
+        vm.CompareProjection = true;
+        vm.Interval = (int)ReportInterval.Month;
+
+        await vm.ReloadAsync(DateTime.UtcNow);
+
+        Assert.False(vm.CanCompareProjection);
+        Assert.False(vm.CompareProjection);
+        Assert.False(vm.ShowProjectionColumn);
+        apiMock.Verify(a => a.Reports_QueryAggregatesAsync(
+            It.Is<ReportAggregatesQueryRequest>(r => !r.CompareProjection),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ReloadAsync_DisablesProjection_ForMultiKindSelection()
+    {
+        var (vm, apiMock) = CreateVm();
+        var result = new ReportAggregationResult(ReportInterval.Month, CreatePoints(1), false, false, false);
+
+        apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(result);
+
+        vm.SelectedKinds = new List<PostingKind> { PostingKind.Security, PostingKind.Bank };
+        vm.CompareProjection = true;
+        vm.Interval = (int)ReportInterval.Month;
+
+        await vm.ReloadAsync(DateTime.UtcNow);
+
+        Assert.False(vm.CanCompareProjection);
+        Assert.False(vm.CompareProjection);
+        Assert.False(vm.ShowProjectionColumn);
+        apiMock.Verify(a => a.Reports_QueryAggregatesAsync(
+            It.Is<ReportAggregatesQueryRequest>(r => !r.CompareProjection),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ReloadAsync_DisablesProjection_ForAllHistory()
+    {
+        var (vm, apiMock) = CreateVm();
+        var result = new ReportAggregationResult(ReportInterval.AllHistory, CreatePoints(1), false, false, false);
+
+        apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(result);
+
+        vm.SelectedKinds = new List<PostingKind> { PostingKind.Security };
+        vm.CompareProjection = true;
+        vm.Interval = (int)ReportInterval.AllHistory;
+
+        await vm.ReloadAsync(DateTime.UtcNow);
+
+        Assert.False(vm.CanCompareProjection);
+        Assert.False(vm.CompareProjection);
+        Assert.False(vm.ShowProjectionColumn);
+        apiMock.Verify(a => a.Reports_QueryAggregatesAsync(
+            It.Is<ReportAggregatesQueryRequest>(r => !r.CompareProjection),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public void IsNegative_MarksZeroWithNegativeBaselines()
     {
-        var p = new ReportAggregatePointDto(DateTime.UtcNow, "x", "n", null, 0m, null, -10m, -5m);
+        var p = new ReportAggregatePointDto(DateTime.UtcNow, "x", "n", null, 0m, null, null, -10m, -5m);
         Assert.True(ReportDashboardViewModel.IsNegative(p));
     }
 
@@ -147,12 +255,12 @@ public sealed class ReportDashboardViewModelTests
         var start = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var points = new List<ReportAggregatePointDto>
         {
-            new ReportAggregatePointDto(start, "Type:Bank", "Bank", null, 100m, null, null, null),
-            new ReportAggregatePointDto(start, "Type:Contact", "Contact", null, 50m, null, null, null),
-            new ReportAggregatePointDto(start, "Account:acc1", "Checking", null, 60m, "Type:Bank", null, null),
-            new ReportAggregatePointDto(start, "Category:Contact:Food", "Food", "Food", 50m, "Type:Contact", null, null)
+            new ReportAggregatePointDto(start, "Type:Bank", "Bank", null, 100m, null, null, null, null),
+            new ReportAggregatePointDto(start, "Type:Contact", "Contact", null, 50m, null, null, null, null),
+            new ReportAggregatePointDto(start, "Account:acc1", "Checking", null, 60m, null, "Type:Bank", null, null),
+            new ReportAggregatePointDto(start, "Category:Contact:Food", "Food", "Food", 50m, null, "Type:Contact", null, null)
         };
-        var result = new ReportAggregationResult(ReportInterval.Month, points, false, false);
+        var result = new ReportAggregationResult(ReportInterval.Month, points, false, false, false);
 
         apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
@@ -173,7 +281,7 @@ public sealed class ReportDashboardViewModelTests
     [Fact]
     public void IsNegative_Works()
     {
-        var p = new ReportAggregatePointDto(DateTime.UtcNow, "x", "n", null, 0m, null, -10m, -5m);
+        var p = new ReportAggregatePointDto(DateTime.UtcNow, "x", "n", null, 0m, null, null, -10m, -5m);
         Assert.True(ReportDashboardViewModel.IsNegative(p));
     }
 }

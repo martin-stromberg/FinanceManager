@@ -15,7 +15,25 @@
 | `Interval` | `ReportInterval` | Aggregationsintervall |
 | `Take` | `int` | Anzahl Perioden |
 | `UseValutaDate` | `bool` | Aggregation nach Valuta |
+| `CompareProjection` | `bool` | Speichert die Hochrechnungsoption für Dividendenanalysen |
 | `...IdsCsv` | `string?` | Persistierte Filterlisten |
+
+### Report-Aggregation
+
+| Modell | Eigenschaft | Typ | Beschreibung |
+|--------|-------------|-----|--------------|
+| `ReportAggregationQuery` | `CompareProjection` | `bool` | Fordert die Dividendenhochrechnung für gültige Wertpapierberichte an |
+| `ReportAggregatesQueryRequest` | `CompareProjection` | `bool` | API-Eingabefeld für das Dashboard |
+| `ReportAggregationResult` | `ComparedProjection` | `bool` | Meldet, ob die Hochrechnung im Ergebnis tatsächlich aktiv ist |
+| `ReportAggregatePointDto` | `ProjectionAmount` | `decimal?` | Hochgerechneter Betrag direkt nach `Amount` |
+
+### Favoriten-DTOs
+
+| Modell | Eigenschaft | Typ | Beschreibung |
+|--------|-------------|-----|--------------|
+| `ReportFavoriteDto` | `CompareProjection` | `bool` | Gibt die gespeicherte Hochrechnungsoption zurück |
+| `ReportFavoriteCreateRequest` / `ReportFavoriteUpdateRequest` | `CompareProjection` | `bool` | Persistiert die Option beim Anlegen oder Aktualisieren |
+| `ReportFavoriteCreateApiRequest` / `ReportFavoriteUpdateApiRequest` | `CompareProjection` | `bool` | Transportiert die Option über die API |
 
 ### `HomeKpi`
 
