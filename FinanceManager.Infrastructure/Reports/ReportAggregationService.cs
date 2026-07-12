@@ -1159,8 +1159,13 @@ public sealed class ReportAggregationService : IReportAggregationService
                     return DividendPattern.Annual;
                 }
 
-                var distinctMonths = referenceEvents.Select(e => e.Date.Month).Distinct().Count();
-                if (referenceEvents.Count >= 6 && distinctMonths >= 6 && HasRegularSpacing(referenceEvents, 20, 45))
+                var monthlyReferenceEvents = referenceEvents
+                    .GroupBy(e => e.Month)
+                    .Select(g => new DividendEvent(g.First().SecurityId, g.Key, g.Key, g.Sum(e => e.NetAmount), null))
+                    .Where(e => e.NetAmount != 0m)
+                    .OrderBy(e => e.Date)
+                    .ToList();
+                if (monthlyReferenceEvents.Count >= 6 && HasRegularMonthlySpacing(monthlyReferenceEvents))
                 {
                     return DividendPattern.Monthly;
                 }
@@ -1172,6 +1177,27 @@ public sealed class ReportAggregationService : IReportAggregationService
                 }
 
                 return DividendPattern.Irregular;
+            }
+
+            static bool HasRegularMonthlySpacing(IReadOnlyList<DividendEvent> orderedMonthlyEvents)
+            {
+                if (orderedMonthlyEvents.Count < 2)
+                {
+                    return false;
+                }
+
+                for (var i = 1; i < orderedMonthlyEvents.Count; i++)
+                {
+                    var months = (orderedMonthlyEvents[i].Date.Year - orderedMonthlyEvents[i - 1].Date.Year) * 12
+                        + orderedMonthlyEvents[i].Date.Month
+                        - orderedMonthlyEvents[i - 1].Date.Month;
+                    if (months != 1)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
             static bool HasRegularSpacing(IReadOnlyList<DividendEvent> orderedEvents, int minimumDays, int maximumDays)

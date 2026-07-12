@@ -267,6 +267,87 @@ public sealed class ReportAggregationProjectionTests
     }
 
     [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_MonthlyPatternIgnoresManyPriorYearCorrectionRows()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-gladstone-corrections");
+        var security = AddSecurity(db, user.Id, "Gladstone Commercial Corp");
+        await db.SaveChangesAsync();
+
+        AddDividendGroup(db, security, new DateTime(2026, 5, 4), 9.41m);
+        AddDividendGroup(db, security, new DateTime(2026, 4, 1), 9.49m);
+        AddDividendGroup(db, security, new DateTime(2026, 3, 2), 9.41m);
+        AddDividendGroup(db, security, new DateTime(2026, 2, 3), 9.28m);
+        AddDividendGroup(db, security, new DateTime(2026, 1, 2), 9.39m, tax: -1.16m);
+
+        AddDividendGroup(db, security, new DateTime(2025, 11, 27), 9.5m, tax: -1.18m);
+        AddDividendGroup(db, security, new DateTime(2025, 11, 3), 9.56m, tax: -1.18m);
+        AddDividendGroup(db, security, new DateTime(2025, 10, 2), 9.37m, tax: -1.17m);
+        AddDividendGroup(db, security, new DateTime(2025, 9, 1), 9.39m, tax: -1.16m);
+        AddDividendGroup(db, security, new DateTime(2025, 8, 1), 9.65m, tax: -1.2m);
+        AddDividendGroup(db, security, new DateTime(2025, 7, 1), 9.32m, tax: -1.16m);
+        AddDividendGroup(db, security, new DateTime(2025, 6, 2), 9.64m, tax: -2.99m);
+        AddDividendGroup(db, security, new DateTime(2025, 5, 2), 9.71m, tax: -1.21m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 29), 4.3m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 29), -5.07m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 11), 12.02m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 11), -10.14m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 11), 5.07m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 11), -10.21m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 11), -10.65m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 11), 12.53m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 11), 11.68m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 11), -9.93m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 11), 12.31m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 11), -4.3m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 11), -10.46m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 11), -9.97m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 11), 11.73m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 11), 11.92m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 10), 5.12m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 10), -4.33m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 10), -4.35m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 10), -4.33m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 10), 5.1m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 10), 5.1m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 10), -4.29m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 10), 5.05m);
+        AddDividendGroup(db, security, new DateTime(2025, 4, 1), 10.22m);
+        AddDividendGroup(db, security, new DateTime(2025, 3, 3), 10.52m);
+        AddDividendGroup(db, security, new DateTime(2025, 2, 4), 10.75m);
+        AddDividendGroup(db, security, new DateTime(2025, 1, 2), 10.65m, tax: -1.31m);
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Year,
+            1,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: new DateTime(2026, 7, 12)), CancellationToken.None);
+
+        var yearPoint = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 1, 1));
+        Assert.Equal(45.82m, yearPoint.Amount);
+        Assert.Equal(95.56m, yearPoint.ProjectionAmount);
+        var expected = yearPoint.ProjectionExpectedDividends!.Select(p => (p.ExpectedDate, p.Amount)).ToArray();
+        Assert.Equal(
+            new[]
+            {
+                (new DateTime(2026, 7, 1), 8.16m),
+                (new DateTime(2026, 8, 1), 8.45m),
+                (new DateTime(2026, 9, 1), 8.23m),
+                (new DateTime(2026, 10, 2), 8.2m),
+                (new DateTime(2026, 11, 3), 8.38m),
+                (new DateTime(2026, 11, 27), 8.32m)
+            },
+            expected);
+    }
+
+    [Fact]
     public async Task QueryAsync_SecurityDividendProjection_QuarterlyPatternMatchesWithinQuarterAndDropsElapsedQuarter()
     {
         using var db = CreateDb();
