@@ -130,9 +130,10 @@ dotnet test FinanceManager.sln
   `docs`, `refactor` und `chore` erzeugen kein Release. Ein manueller
   `vX.Y.Z`-Tag hat Vorrang vor der automatischen Berechnung.
 - Der Workflow verwendet Node 22 und das .NET-SDK `10.0.x`. Vor der
-  Veröffentlichung laufen `npm ci`,
-  `dotnet test FinanceManager.sln --configuration Release` und ein
-  Solution-Build. Anschließend wird
+  Veröffentlichung laufen `npm ci`, ein Restore der Solution, die Unit- und
+  Integrationstests als Release-Gate sowie ein vollständiger Solution-Build.
+  Die Playwright-E2E-Tests bleiben Bestandteil der Testsuite, blockieren aber
+  den Release-Publish-Pfad nicht. Anschließend wird
   `FinanceManager.Web/FinanceManager.Web.csproj` mit .NET 10 als
   self-contained `win-x64`-Anwendung veröffentlicht.
 - Der vollständige Inhalt des `publish/`-Verzeichnisses wird als

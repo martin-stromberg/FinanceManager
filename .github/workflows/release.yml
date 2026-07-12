@@ -63,9 +63,15 @@ jobs:
             throw "Release tag checkout did not resolve to the tagged commit."
           }
 
-      - name: Test solution
+      - name: Restore solution
         if: steps.version.outputs.released == 'true'
-        run: dotnet test FinanceManager.sln --configuration Release
+        run: dotnet restore FinanceManager.sln
+
+      - name: Test release gate
+        if: steps.version.outputs.released == 'true'
+        run: |
+          dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --configuration Release --no-restore
+          dotnet test FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.csproj --configuration Release --no-restore
 
       - name: Build solution
         if: steps.version.outputs.released == 'true'

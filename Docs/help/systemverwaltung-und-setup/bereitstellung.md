@@ -37,11 +37,17 @@ Der Workflow verwendet `windows-latest`, Node 22 und das .NET-SDK `10.0.x`.
 Vor der Veröffentlichung laufen:
 
 1. `npm ci` für die gesperrten Semantic-Release-Abhängigkeiten;
-2. `dotnet test FinanceManager.sln --configuration Release`;
-3. `dotnet build FinanceManager.sln --configuration Release --no-restore`;
-4. `dotnet publish FinanceManager.Web/FinanceManager.Web.csproj` mit
+2. `dotnet restore FinanceManager.sln`;
+3. Unit- und Integrationstests als Release-Gate;
+4. `dotnet build FinanceManager.sln --configuration Release --no-restore`;
+5. `dotnet publish FinanceManager.Web/FinanceManager.Web.csproj` mit
    `--framework net10.0`, `--runtime win-x64` und
    `--self-contained true` in das Verzeichnis `publish/`.
+
+Die Playwright-E2E-Tests bleiben Teil der Testsuite, werden aber nicht im
+Release-Publish-Pfad ausgeführt. Der Release-Workflow kompiliert sie über den
+vollständigen Solution-Build mit, vermeidet jedoch browserbasierte UI-Flows als
+Blocker für die Veröffentlichung.
 
 Der gesamte Inhalt von `publish/` wird als
 `FinanceManager-vX.Y.Z-win-x64.zip` archiviert. Ein fehlendes oder leeres
@@ -65,7 +71,7 @@ Releases durchläuft alle Seiten der GitHub-Release-API.
 
 ## Betriebshinweise und aktueller Stand
 
-Die Release-Versionsprüfungen, der Semantic-Release-Dry-Run und der
-vollständige .NET-Testlauf (809 Tests einschließlich mobiler E2E-Tests) sind
-erfolgreich. Die tatsächliche GitHub-Veröffentlichung bleibt ein CI-Lauf mit
+Die Release-Versionsprüfungen, der Semantic-Release-Dry-Run, die Unit- und
+Integrationstests sowie der vollständige Solution-Build sind erfolgreich. Die
+tatsächliche GitHub-Veröffentlichung bleibt ein CI-Lauf mit
 Repository-Berechtigungen.
