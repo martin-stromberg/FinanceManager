@@ -1103,6 +1103,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                         TargetPeriod = MapProjectionPeriod(targetDate),
                         EventMonth = targetDate.Month,
                         TargetDate = targetDate,
+                        PriorYearDate = e.Date,
                         e.NetAmount
                     };
                 })
@@ -1111,16 +1112,33 @@ public sealed class ReportAggregationService : IReportAggregationService
                 .Select(g =>
                 {
                     currentConfirmations.TryGetValue(g.Key, out var confirmedCount);
+                    var details = g
+                        .OrderBy(x => x.TargetDate)
+                        .Skip(confirmedCount)
+                        .Select(x => new ReportProjectionExpectedDividendDto(
+                            x.SecurityId,
+                            securityNames.TryGetValue(x.SecurityId, out var name) ? name : x.SecurityId.ToString("N")[..6],
+                            x.TargetDate,
+                            x.PriorYearDate,
+                            x.NetAmount))
+                        .ToList();
+
                     return new
                     {
                         g.Key.SecurityId,
                         g.Key.Period,
-                        Expected = g.OrderBy(x => x.TargetDate).Skip(confirmedCount).Sum(x => x.NetAmount)
+                        Expected = details.Sum(x => x.Amount),
+                        Details = details
                     };
                 })
                 .Where(e => e.Expected != 0m)
                 .GroupBy(e => (e.SecurityId, e.Period))
-                .ToDictionary(g => g.Key, g => g.Sum(x => x.Expected));
+                .ToDictionary(g => g.Key, g => (
+                    Expected: g.Sum(x => x.Expected),
+                    Details: g.SelectMany(x => x.Details)
+                        .OrderBy(x => x.ExpectedDate)
+                        .ThenBy(x => x.SecurityName)
+                        .ToList()));
 
             for (var i = 0; i < targetPoints.Count; i++)
             {
@@ -1130,14 +1148,25 @@ public sealed class ReportAggregationService : IReportAggregationService
                     continue;
                 }
 
-                var expected = expectedBySecurityPeriod.TryGetValue((securityId, point.PeriodStart), out var value) ? value : 0m;
-                targetPoints[i] = point with { ProjectionAmount = point.Amount + expected };
+                var expected = expectedBySecurityPeriod.TryGetValue((securityId, point.PeriodStart), out var value) ? value.Expected : 0m;
+                var details = expectedBySecurityPeriod.TryGetValue((securityId, point.PeriodStart), out var detailValue) && detailValue.Details.Count > 0
+                    ? detailValue.Details
+                    : null;
+                targetPoints[i] = point with { ProjectionAmount = point.Amount + expected, ProjectionExpectedDividends = details };
             }
 
             var childProjectionByParent = targetPoints
                 .Where(p => p.ParentGroupKey != null && p.ProjectionAmount.HasValue)
                 .GroupBy(p => (p.ParentGroupKey!, p.PeriodStart))
                 .ToDictionary(g => g.Key, g => (decimal?)g.Sum(x => x.ProjectionAmount!.Value));
+            var childDetailsByParent = targetPoints
+                .Where(p => p.ParentGroupKey != null && p.ProjectionExpectedDividends is { Count: > 0 })
+                .GroupBy(p => (p.ParentGroupKey!, p.PeriodStart))
+                .ToDictionary(g => g.Key, g => (IReadOnlyList<ReportProjectionExpectedDividendDto>)g
+                    .SelectMany(x => x.ProjectionExpectedDividends!)
+                    .OrderBy(x => x.ExpectedDate)
+                    .ThenBy(x => x.SecurityName)
+                    .ToList());
 
             for (var i = 0; i < targetPoints.Count; i++)
             {
@@ -1146,7 +1175,10 @@ public sealed class ReportAggregationService : IReportAggregationService
                 {
                     if (childProjectionByParent.TryGetValue((point.GroupKey, point.PeriodStart), out var projection))
                     {
-                        targetPoints[i] = point with { ProjectionAmount = projection };
+                        var details = childDetailsByParent.TryGetValue((point.GroupKey, point.PeriodStart), out var detailList)
+                            ? detailList
+                            : null;
+                        targetPoints[i] = point with { ProjectionAmount = projection, ProjectionExpectedDividends = details };
                     }
                 }
             }
@@ -1155,11 +1187,27 @@ public sealed class ReportAggregationService : IReportAggregationService
                 .Where(p => p.GroupKey.StartsWith("Category:", StringComparison.Ordinal) && p.ProjectionAmount.HasValue)
                 .GroupBy(p => ($"Type:{ParseKindFromKey(p.GroupKey)}", p.PeriodStart))
                 .ToDictionary(g => g.Key, g => (decimal?)g.Sum(x => x.ProjectionAmount!.Value));
+            var categoryDetailsByType = targetPoints
+                .Where(p => p.GroupKey.StartsWith("Category:", StringComparison.Ordinal) && p.ProjectionExpectedDividends is { Count: > 0 })
+                .GroupBy(p => ($"Type:{ParseKindFromKey(p.GroupKey)}", p.PeriodStart))
+                .ToDictionary(g => g.Key, g => (IReadOnlyList<ReportProjectionExpectedDividendDto>)g
+                    .SelectMany(x => x.ProjectionExpectedDividends!)
+                    .OrderBy(x => x.ExpectedDate)
+                    .ThenBy(x => x.SecurityName)
+                    .ToList());
 
             var leafProjectionByType = targetPoints
                 .Where(p => p.GroupKey.StartsWith("Security:", StringComparison.Ordinal) && p.ParentGroupKey == null && p.ProjectionAmount.HasValue)
                 .GroupBy(p => ("Type:Security", p.PeriodStart))
                 .ToDictionary(g => g.Key, g => (decimal?)g.Sum(x => x.ProjectionAmount!.Value));
+            var leafDetailsByType = targetPoints
+                .Where(p => p.GroupKey.StartsWith("Security:", StringComparison.Ordinal) && p.ParentGroupKey == null && p.ProjectionExpectedDividends is { Count: > 0 })
+                .GroupBy(p => ("Type:Security", p.PeriodStart))
+                .ToDictionary(g => g.Key, g => (IReadOnlyList<ReportProjectionExpectedDividendDto>)g
+                    .SelectMany(x => x.ProjectionExpectedDividends!)
+                    .OrderBy(x => x.ExpectedDate)
+                    .ThenBy(x => x.SecurityName)
+                    .ToList());
 
             for (var i = 0; i < targetPoints.Count; i++)
             {
@@ -1172,7 +1220,13 @@ public sealed class ReportAggregationService : IReportAggregationService
                 if (categoryProjectionByType.TryGetValue((point.GroupKey, point.PeriodStart), out var categoryProjection) ||
                     leafProjectionByType.TryGetValue((point.GroupKey, point.PeriodStart), out categoryProjection))
                 {
-                    targetPoints[i] = point with { ProjectionAmount = categoryProjection };
+                    IReadOnlyList<ReportProjectionExpectedDividendDto>? details = null;
+                    if (!categoryDetailsByType.TryGetValue((point.GroupKey, point.PeriodStart), out details))
+                    {
+                        leafDetailsByType.TryGetValue((point.GroupKey, point.PeriodStart), out details);
+                    }
+
+                    targetPoints[i] = point with { ProjectionAmount = categoryProjection, ProjectionExpectedDividends = details };
                 }
             }
         }

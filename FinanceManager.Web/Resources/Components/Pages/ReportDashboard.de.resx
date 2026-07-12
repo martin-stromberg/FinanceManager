@@ -357,6 +357,30 @@
   <data name="DateKind_Valuta" xml:space="preserve">
     <value>Valuta-Datum</value>
   </data>
+  <data name="Button_Close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="ProjectionDetails_Open" xml:space="preserve">
+    <value>Erwartete Dividenden anzeigen</value>
+  </data>
+  <data name="ProjectionDetails_Title" xml:space="preserve">
+    <value>Hochrechnung: {0}</value>
+  </data>
+  <data name="ProjectionDetails_None" xml:space="preserve">
+    <value>Keine erwarteten Dividenden.</value>
+  </data>
+  <data name="ProjectionDetails_Security" xml:space="preserve">
+    <value>Wertpapier</value>
+  </data>
+  <data name="ProjectionDetails_ExpectedDate" xml:space="preserve">
+    <value>Erwartet am</value>
+  </data>
+  <data name="ProjectionDetails_PriorYearDate" xml:space="preserve">
+    <value>Vorjahresdatum</value>
+  </data>
+  <data name="ProjectionDetails_Amount" xml:space="preserve">
+    <value>Betrag</value>
+  </data>
   <data name="Ribbon_Tab" xml:space="preserve">
     <value>Dashboard</value>
   </data>

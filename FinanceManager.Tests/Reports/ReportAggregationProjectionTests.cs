@@ -94,8 +94,15 @@ public sealed class ReportAggregationProjectionTests
         var confirmed = result.Points.Single(p => p.GroupKey == $"Security:{confirmedCurrent.Id}" && p.PeriodStart == analysis);
         Assert.Equal(0m, missing.Amount);
         Assert.Equal(70m, missing.ProjectionAmount);
+        var expectedDividend = Assert.Single(missing.ProjectionExpectedDividends!);
+        Assert.Equal(missingCurrent.Id, expectedDividend.SecurityId);
+        Assert.Equal("Missing Current", expectedDividend.SecurityName);
+        Assert.Equal(new DateTime(2026, 5, 10), expectedDividend.ExpectedDate);
+        Assert.Equal(new DateTime(2025, 5, 10), expectedDividend.PriorYearDate);
+        Assert.Equal(70m, expectedDividend.Amount);
         Assert.Equal(50m, confirmed.Amount);
         Assert.Equal(50m, confirmed.ProjectionAmount);
+        Assert.Null(confirmed.ProjectionExpectedDividends);
     }
 
     [Fact]
@@ -253,6 +260,7 @@ public sealed class ReportAggregationProjectionTests
 
         var categoryPoint = result.Points.Single(p => p.GroupKey == $"Category:Security:{category.Id}" && p.PeriodStart == analysis);
         Assert.Equal(80m, categoryPoint.ProjectionAmount);
+        Assert.Equal(80m, Assert.Single(categoryPoint.ProjectionExpectedDividends!).Amount);
     }
 
     [Fact]
