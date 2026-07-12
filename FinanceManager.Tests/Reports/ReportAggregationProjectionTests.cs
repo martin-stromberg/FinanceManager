@@ -133,7 +133,8 @@ public sealed class ReportAggregationProjectionTests
 
         var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == analysis);
         Assert.Equal(45m, point.Amount);
-        Assert.Equal(105m, point.ProjectionAmount);
+        Assert.Equal(45m, point.ProjectionAmount);
+        Assert.Null(point.ProjectionExpectedDividends);
     }
 
     [Fact]
@@ -165,6 +166,182 @@ public sealed class ReportAggregationProjectionTests
         Assert.Equal(0m, mayPoint.Amount);
         Assert.Equal(0m, mayPoint.ProjectionAmount);
         Assert.Null(mayPoint.ProjectionExpectedDividends);
+    }
+
+    [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_MonthlyPatternDoesNotExpectMissedPastMonth()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-monthly");
+        var security = AddSecurity(db, user.Id, "Monthly Dividend");
+        await db.SaveChangesAsync();
+
+        for (var month = 1; month <= 7; month++)
+        {
+            AddDividendGroup(db, security, new DateTime(2025, month, 10), 10m);
+        }
+
+        foreach (var month in new[] { 1, 2, 3, 5, 6 })
+        {
+            AddDividendGroup(db, security, new DateTime(2026, month, 10), 10m);
+        }
+
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Month,
+            7,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: new DateTime(2026, 7, 1)), CancellationToken.None);
+
+        var aprilPoint = result.Points.SingleOrDefault(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 4, 1));
+        var julyPoint = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 7, 1));
+        if (aprilPoint is not null)
+        {
+            Assert.Equal(0m, aprilPoint.Amount);
+            Assert.Equal(0m, aprilPoint.ProjectionAmount);
+            Assert.Null(aprilPoint.ProjectionExpectedDividends);
+        }
+        Assert.Equal(0m, julyPoint.Amount);
+        Assert.Equal(10m, julyPoint.ProjectionAmount);
+        Assert.Equal(new DateTime(2026, 7, 10), Assert.Single(julyPoint.ProjectionExpectedDividends!).ExpectedDate);
+    }
+
+    [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_QuarterlyPatternMatchesWithinQuarterAndDropsElapsedQuarter()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-quarterly");
+        var security = AddSecurity(db, user.Id, "Quarterly Dividend");
+        await db.SaveChangesAsync();
+
+        AddDividendGroup(db, security, new DateTime(2025, 3, 10), 30m);
+        AddDividendGroup(db, security, new DateTime(2025, 6, 12), 40m);
+        AddDividendGroup(db, security, new DateTime(2026, 3, 25), 35m);
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Month,
+            7,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: new DateTime(2026, 7, 1)), CancellationToken.None);
+
+        var marchPoint = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 3, 1));
+        var junePoint = result.Points.SingleOrDefault(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 6, 1));
+        Assert.Equal(35m, marchPoint.Amount);
+        Assert.Equal(35m, marchPoint.ProjectionAmount);
+        Assert.Null(marchPoint.ProjectionExpectedDividends);
+        if (junePoint is not null)
+        {
+            Assert.Equal(0m, junePoint.Amount);
+            Assert.Equal(0m, junePoint.ProjectionAmount);
+            Assert.Null(junePoint.ProjectionExpectedDividends);
+        }
+    }
+
+    [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_QuarterlyPatternExpectsCurrentOpenQuarter()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-quarter-open");
+        var security = AddSecurity(db, user.Id, "Open Quarter Dividend");
+        await db.SaveChangesAsync();
+
+        AddDividendGroup(db, security, new DateTime(2025, 3, 10), 30m);
+        AddDividendGroup(db, security, new DateTime(2025, 6, 12), 40m);
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Month,
+            2,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: new DateTime(2026, 6, 1)), CancellationToken.None);
+
+        var junePoint = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 6, 1));
+        Assert.Equal(0m, junePoint.Amount);
+        Assert.Equal(40m, junePoint.ProjectionAmount);
+        Assert.Equal(new DateTime(2026, 6, 12), Assert.Single(junePoint.ProjectionExpectedDividends!).ExpectedDate);
+    }
+
+    [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_IrregularPatternDoesNotExpectMoreWhenCurrentYearHasPayment()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-irregular-paid");
+        var security = AddSecurity(db, user.Id, "Irregular Paid Dividend");
+        await db.SaveChangesAsync();
+
+        AddDividendGroup(db, security, new DateTime(2025, 1, 10), 10m);
+        AddDividendGroup(db, security, new DateTime(2025, 2, 20), 20m);
+        AddDividendGroup(db, security, new DateTime(2025, 6, 15), 30m);
+        AddDividendGroup(db, security, new DateTime(2026, 4, 30), 25m);
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Month,
+            6,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: new DateTime(2026, 6, 1)), CancellationToken.None);
+
+        var junePoint = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 6, 1));
+        Assert.Equal(0m, junePoint.Amount);
+        Assert.Equal(0m, junePoint.ProjectionAmount);
+        Assert.Null(junePoint.ProjectionExpectedDividends);
+    }
+
+    [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_IrregularPatternCautiouslyExpectsWhenCurrentYearHasNoPayment()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-irregular-open");
+        var security = AddSecurity(db, user.Id, "Irregular Open Dividend");
+        await db.SaveChangesAsync();
+
+        AddDividendGroup(db, security, new DateTime(2025, 1, 10), 10m);
+        AddDividendGroup(db, security, new DateTime(2025, 2, 20), 20m);
+        AddDividendGroup(db, security, new DateTime(2025, 6, 15), 30m);
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Month,
+            1,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: new DateTime(2026, 6, 1)), CancellationToken.None);
+
+        var junePoint = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 6, 1));
+        Assert.Equal(0m, junePoint.Amount);
+        Assert.Equal(30m, junePoint.ProjectionAmount);
+        Assert.Equal(new DateTime(2026, 6, 15), Assert.Single(junePoint.ProjectionExpectedDividends!).ExpectedDate);
     }
 
     [Fact]

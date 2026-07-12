@@ -711,7 +711,7 @@ public sealed class ReportAggregationService : IReportAggregationService
         var dividendSelected = query.Filters?.SecuritySubTypes?.Contains(SecurityPostingSubType_Dividend2) == true;
         var hasContradictingSecuritySubTypes = query.Filters?.SecuritySubTypes is { Count: > 0 } && !dividendSelected;
         var compareProjection = query.CompareProjection && query.Interval != ReportInterval.AllHistory && !hasContradictingSecuritySubTypes;
-        var loadStartMonth = compareProjection || query.CompareYear ? startMonth.AddYears(-1) : startMonth;
+        var loadStartMonth = compareProjection ? startMonth.AddYears(-2) : query.CompareYear ? startMonth.AddYears(-1) : startMonth;
 
         var ownedSecurities = await _db.Securities.AsNoTracking()
             .Where(s => s.OwnerUserId == query.OwnerUserId)
@@ -1080,49 +1080,35 @@ public sealed class ReportAggregationService : IReportAggregationService
                 };
             }
 
-            var currentConfirmationStart = new DateTime(startMonth.Year, 1, 1);
-            var currentConfirmations = events
-                .Where(e => e.Date >= currentConfirmationStart && e.Date < endExclusive)
-                .Select(e => new
+            var currentYearStart = new DateTime(analysis.Year, 1, 1);
+            var expectedDetails = events
+                .GroupBy(e => e.SecurityId)
+                .SelectMany(g =>
                 {
-                    e.SecurityId,
-                    Year = e.Date.Year
-                })
-                .GroupBy(e => (e.SecurityId, e.Year))
-                .ToDictionary(g => g.Key, g => g.Count());
+                    var securityEvents = g.OrderBy(e => e.Date).ToList();
+                    var currentEvents = securityEvents
+                        .Where(e => e.Date >= currentYearStart && e.Date < endExclusive)
+                        .OrderBy(e => e.Date)
+                        .ToList();
+                    var pattern = DetectDividendPattern(securityEvents, analysis.Year - 1);
+                    var candidates = securityEvents
+                        .Where(e => e.Date >= startMonth.AddYears(-1) && e.Date < endExclusive.AddYears(-1))
+                        .OrderBy(e => e.Date)
+                        .Select(e => new ProjectionCandidate(e.SecurityId, e.Date.AddYears(1), e.Date, e.NetAmount))
+                        .Where(e => MapProjectionPeriod(e.ExpectedDate) != DateTime.MinValue)
+                        .ToList();
 
-            var expectedBySecurityPeriod = events
-                .Where(e => e.Date >= startMonth.AddYears(-1) && e.Date < endExclusive.AddYears(-1))
-                .Select(e =>
-                {
-                    var targetDate = e.Date.AddYears(1);
-                    return new
-                    {
-                        e.SecurityId,
-                        TargetPeriod = MapProjectionPeriod(targetDate),
-                        TargetYear = targetDate.Year,
-                        TargetDate = targetDate,
-                        PriorYearDate = e.Date,
-                        e.NetAmount
-                    };
-                })
-                .Where(e => e.TargetPeriod != DateTime.MinValue)
-                .GroupBy(e => (e.SecurityId, e.TargetYear))
-                .Select(g =>
-                {
-                    currentConfirmations.TryGetValue(g.Key, out var confirmedCount);
-                    return g
-                        .OrderBy(x => x.TargetDate)
-                        .Skip(confirmedCount)
+                    return FindExpectedDividends(pattern, candidates, currentEvents)
                         .Select(x => new ReportProjectionExpectedDividendDto(
                             x.SecurityId,
                             securityNames.TryGetValue(x.SecurityId, out var name) ? name : x.SecurityId.ToString("N")[..6],
-                            x.TargetDate,
+                            x.ExpectedDate,
                             x.PriorYearDate,
-                            x.NetAmount))
-                        .ToList();
+                            x.NetAmount));
                 })
-                .SelectMany(details => details)
+                .ToList();
+
+            var expectedBySecurityPeriod = expectedDetails
                 .GroupBy(e => (e.SecurityId, Period: MapProjectionPeriod(e.ExpectedDate)))
                 .Select(g => new
                 {
@@ -1142,6 +1128,120 @@ public sealed class ReportAggregationService : IReportAggregationService
                         .OrderBy(x => x.ExpectedDate)
                         .ThenBy(x => x.SecurityName)
                         .ToList()));
+
+            DividendPattern DetectDividendPattern(IReadOnlyList<DividendEvent> securityEvents, int referenceYear)
+            {
+                var referenceEvents = securityEvents
+                    .Where(e => e.Date.Year == referenceYear)
+                    .OrderBy(e => e.Date)
+                    .ToList();
+                if (referenceEvents.Count == 1)
+                {
+                    return DividendPattern.Annual;
+                }
+
+                var distinctMonths = referenceEvents.Select(e => e.Date.Month).Distinct().Count();
+                if (referenceEvents.Count >= 6 && distinctMonths >= 6 && HasRegularSpacing(referenceEvents, 20, 45))
+                {
+                    return DividendPattern.Monthly;
+                }
+
+                var distinctQuarters = referenceEvents.Select(e => (e.Date.Month - 1) / 3).Distinct().Count();
+                if (referenceEvents.Count is >= 2 and <= 5 && distinctQuarters >= 2 && HasRegularSpacing(referenceEvents, 60, 125))
+                {
+                    return DividendPattern.Quarterly;
+                }
+
+                return DividendPattern.Irregular;
+            }
+
+            static bool HasRegularSpacing(IReadOnlyList<DividendEvent> orderedEvents, int minimumDays, int maximumDays)
+            {
+                if (orderedEvents.Count < 2)
+                {
+                    return false;
+                }
+
+                for (var i = 1; i < orderedEvents.Count; i++)
+                {
+                    var days = (orderedEvents[i].Date - orderedEvents[i - 1].Date).TotalDays;
+                    if (days < minimumDays || days > maximumDays)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            IEnumerable<ProjectionCandidate> FindExpectedDividends(
+                DividendPattern pattern,
+                IReadOnlyList<ProjectionCandidate> candidates,
+                IReadOnlyList<DividendEvent> currentEvents)
+            {
+                if (candidates.Count == 0)
+                {
+                    return Array.Empty<ProjectionCandidate>();
+                }
+
+                return pattern switch
+                {
+                    DividendPattern.Monthly => candidates.Where(candidate =>
+                        !HasCurrentMatch(currentEvents, current => current.Date.Month == candidate.ExpectedDate.Month) &&
+                        candidate.ExpectedDate.Month >= analysis.Month),
+                    DividendPattern.Quarterly => candidates.Where(candidate =>
+                        !HasCurrentMatch(currentEvents, current => GetQuarter(current.Date) == GetQuarter(candidate.ExpectedDate)) &&
+                        GetQuarter(candidate.ExpectedDate) >= GetQuarter(analysis)),
+                    DividendPattern.Annual => currentEvents.Count == 0 ? candidates : Array.Empty<ProjectionCandidate>(),
+                    _ => FindIrregularExpectedDividends(candidates, currentEvents)
+                };
+            }
+
+            static IEnumerable<ProjectionCandidate> FindIrregularExpectedDividends(
+                IReadOnlyList<ProjectionCandidate> candidates,
+                IReadOnlyList<DividendEvent> currentEvents)
+            {
+                var usedCurrentIndexes = new HashSet<int>();
+                var unmatched = new List<ProjectionCandidate>();
+                foreach (var candidate in candidates)
+                {
+                    var matchIndex = -1;
+                    for (var i = 0; i < currentEvents.Count; i++)
+                    {
+                        if (usedCurrentIndexes.Contains(i))
+                        {
+                            continue;
+                        }
+
+                        if (Math.Abs((currentEvents[i].Date - candidate.ExpectedDate).TotalDays) <= 30)
+                        {
+                            matchIndex = i;
+                            break;
+                        }
+                    }
+
+                    if (matchIndex >= 0)
+                    {
+                        usedCurrentIndexes.Add(matchIndex);
+                    }
+                    else
+                    {
+                        unmatched.Add(candidate);
+                    }
+                }
+
+                return currentEvents.Count == 0 ? unmatched : Array.Empty<ProjectionCandidate>();
+            }
+
+            static bool HasCurrentMatch(IReadOnlyList<DividendEvent> currentEvents, Func<DividendEvent, bool> predicate)
+            {
+                return currentEvents.Any(predicate);
+            }
+
+            static int GetQuarter(DateTime date)
+            {
+                return (date.Month - 1) / 3;
+            }
 
             for (var i = 0; i < targetPoints.Count; i++)
             {
@@ -1236,6 +1336,16 @@ public sealed class ReportAggregationService : IReportAggregationService
     }
 
     private sealed record DividendEvent(Guid SecurityId, DateTime Date, DateTime Month, decimal NetAmount, Guid? GroupId);
+
+    private sealed record ProjectionCandidate(Guid SecurityId, DateTime ExpectedDate, DateTime PriorYearDate, decimal NetAmount);
+
+    private enum DividendPattern
+    {
+        Monthly,
+        Quarterly,
+        Annual,
+        Irregular
+    }
 
     private static bool TryParseSecurityKey(string groupKey, out Guid securityId)
     {
