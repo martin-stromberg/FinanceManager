@@ -251,7 +251,7 @@
 }
 
 .projection-detail-modal {
-    max-width: 760px;
+    max-width: min(920px, calc(100vw - 2.5rem));
 }
 
 .projection-detail-header {
