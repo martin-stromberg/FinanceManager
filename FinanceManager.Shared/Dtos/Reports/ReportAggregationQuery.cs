@@ -10,6 +10,7 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="IncludeCategory">True to aggregate on category level when supported.</param>
 /// <param name="ComparePrevious">True to include a previous-period comparison.</param>
 /// <param name="CompareYear">True to include a year-ago comparison.</param>
+/// <param name="CompareProjection">True to include dividend projection amounts where supported.</param>
 /// <param name="PostingKinds">Optional multi-kind extension (falls back to single kind when omitted).</param>
 /// <param name="AnalysisDate">Optional analysis month (first day is used as anchor).</param>
 /// <param name="UseValutaDate">When true, aggregate by ValutaDate, falling back to BookingDate where needed.</param>
@@ -22,6 +23,7 @@ public sealed record ReportAggregationQuery(
     bool IncludeCategory,
     bool ComparePrevious,
     bool CompareYear,
+    bool CompareProjection = false,
     IReadOnlyCollection<PostingKind>? PostingKinds = null,
     DateTime? AnalysisDate = null,
     bool UseValutaDate = false,

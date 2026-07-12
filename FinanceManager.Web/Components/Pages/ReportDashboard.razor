@@ -83,6 +83,7 @@
                 <div class="group-title">@Localizer["FilterGroup_Comparisons"]</div>
                 <div class="row chk"><label><input type="checkbox" @bind="_comparePrevious" disabled="@(_interval == ReportInterval.AllHistory)" /> @Localizer["Label_ComparePrev"]</label></div>
                 <div class="row chk"><label><input type="checkbox" @bind="_compareYear" disabled="@(_interval == ReportInterval.AllHistory)" /> @Localizer["Label_CompareYear"]</label></div>
+                <div class="row chk"><label><input type="checkbox" @bind="_compareProjection" disabled="@(!CanCompareProjection)" /> @Localizer["Label_CompareProjection"]</label></div>
             </div>
             <div class="filter-group">
                 <div class="group-title">@Localizer["FilterGroup_Chart"]</div>
@@ -92,6 +93,61 @@
     }
 
     <div class="result-box">
+        @if(_projectionDetailsTitle is not null)
+        {
+            <div class="modal-overlay projection-detail-overlay" role="dialog" aria-modal="true" aria-labelledby="projection-detail-title">
+                <div class="modal projection-detail-modal">
+                    <div class="projection-detail-header">
+                        <h3 id="projection-detail-title">@_projectionDetailsTitle</h3>
+                        <button type="button" class="icon-btn small" title="@Localizer["Button_Close"]" @onclick="CloseProjectionDetails">
+                            <svg><use href="/icons/sprite.svg#close" /></svg>
+                        </button>
+                    </div>
+                    <div class="projection-detail-summary">
+                        <div class="projection-detail-summary-row projection-detail-summary-muted">
+                            <span>@Localizer["ProjectionDetails_ActualAmount"]</span>
+                            <strong>@_projectionDetailsActualAmount.ToString("N2")</strong>
+                        </div>
+                        <div class="projection-detail-summary-row">
+                            <span>@Localizer["ProjectionDetails_ExpectedAmount"]</span>
+                            <strong>@_projectionDetailsExpectedAmount.ToString("N2")</strong>
+                        </div>
+                        <div class="projection-detail-summary-row projection-detail-summary-total">
+                            <span>@Localizer["ProjectionDetails_ProjectionAmount"]</span>
+                            <strong>@_projectionDetailsAmount.ToString("N2")</strong>
+                        </div>
+                    </div>
+                    @if(_projectionDetails.Count == 0)
+                    {
+                        <div class="small-empty">@Localizer["ProjectionDetails_None"]</div>
+                    }
+                    else
+                    {
+                        <table class="fm-table projection-detail-table">
+                            <thead>
+                                <tr>
+                                    <th>@Localizer["ProjectionDetails_Security"]</th>
+                                    <th>@Localizer["ProjectionDetails_ExpectedDate"]</th>
+                                    <th>@Localizer["ProjectionDetails_PriorYearDate"]</th>
+                                    <th style="text-align:right;">@Localizer["ProjectionDetails_Amount"]</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach(var item in _projectionDetails)
+                                {
+                                    <tr>
+                                        <td>@item.SecurityName</td>
+                                        <td>@item.ExpectedDate.ToString("d")</td>
+                                        <td>@item.PriorYearDate.ToString("d")</td>
+                                        <td style="text-align:right;">@item.Amount.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        }
         @if(_vm?.IsBusy == true)
         {
             <div class="query-overlay">@Localizer["Loading"]</div>
@@ -129,6 +185,7 @@
                             @if(ShowPreviousColumns){<th class="th-prev" style="text-align:right;">@PreviousHeaderLabel</th><th class="th-prev" style="text-align:right;">@Localizer["Th_DeltaPrev"]</th>}
                             @if(_compareYear){<th class="th-year" style="text-align:right;">@YearHeaderLabel</th><th class="th-year" style="text-align:right;">@Localizer["Th_DeltaYear"]</th>}
                             <th class="th-current" style="text-align:right;">@Localizer["Th_Amount"]</th>
+                            @if(ShowProjectionColumn){<th class="th-projection" style="text-align:right;">@Localizer["Th_Projection"]</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -168,6 +225,18 @@
                             @if(ShowPreviousColumns){<td class="amt-prev" style="text-align:right;">@(top.PreviousAmount.HasValue? top.PreviousAmount.Value.ToString("N2") : "-")</td><td class="delta amt-prev" style="text-align:right;">@FormatDelta(top.Amount, top.PreviousAmount)</td>}
                             @if(_compareYear){<td class="amt-year" style="text-align:right;">@(top.YearAgoAmount.HasValue? top.YearAgoAmount.Value.ToString("N2") : "-")</td><td class="delta amt-year" style="text-align:right;">@FormatDelta(top.Amount, top.YearAgoAmount)</td>}
                             <td class="amt-current" style="text-align:right;">@top.Amount.ToString("N2")</td>
+                            @if(ShowProjectionColumn)
+                            {
+                                <td class="amt-projection projection-cell" style="text-align:right;">
+                                    <span>@(top.ProjectionAmount.HasValue ? top.ProjectionAmount.Value.ToString("N2") : "-")</span>
+                                    @if (top.ProjectionExpectedDividends is { Count: > 0 })
+                                    {
+                                        <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(top), top.Amount, top.ProjectionAmount ?? 0m, top.ProjectionExpectedDividends!)">
+                                            <svg><use href="/icons/sprite.svg#info" /></svg>
+                                        </button>
+                                    }
+                                </td>
+                            }
                         </tr>
                         @if(hasChildren && expanded)
                         {
@@ -207,6 +276,18 @@
                                     @if(ShowPreviousColumns){<td class="amt-prev" style="text-align:right;">@(child.PreviousAmount.HasValue? child.PreviousAmount.Value.ToString("N2") : "-")</td><td class="delta amt-prev" style="text-align:right;">@FormatDelta(child.Amount, child.PreviousAmount)</td>}
                                     @if(_compareYear){<td class="amt-year" style="text-align:right;">@(child.YearAgoAmount.HasValue? child.YearAgoAmount.Value.ToString("N2") : "-")</td><td class="delta amt-year" style="text-align:right;">@FormatDelta(child.Amount, child.YearAgoAmount)</td>}
                                     <td class="amt-current" style="text-align:right;">@child.Amount.ToString("N2")</td>
+                                    @if(ShowProjectionColumn)
+                                    {
+                                        <td class="amt-projection projection-cell" style="text-align:right;">
+                                            <span>@(child.ProjectionAmount.HasValue ? child.ProjectionAmount.Value.ToString("N2") : "-")</span>
+                                            @if (child.ProjectionExpectedDividends is { Count: > 0 })
+                                            {
+                                                <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(child), child.Amount, child.ProjectionAmount ?? 0m, child.ProjectionExpectedDividends!)">
+                                                    <svg><use href="/icons/sprite.svg#info" /></svg>
+                                                </button>
+                                            }
+                                        </td>
+                                    }
                                 </tr>
                                 @if(childHasChildren && childExpanded)
                                 {
@@ -237,6 +318,18 @@
                                             @if(ShowPreviousColumns){<td class="amt-prev" style="text-align:right;">@(grand.PreviousAmount.HasValue? grand.PreviousAmount.Value.ToString("N2") : "-")</td><td class="delta amt-prev" style="text-align:right;">@FormatDelta(grand.Amount, grand.PreviousAmount)</td>}
                                             @if(_compareYear){<td class="amt-year" style="text-align:right;">@(grand.YearAgoAmount.HasValue? grand.YearAgoAmount.Value.ToString("N2") : "-")</td><td class="delta amt-year" style="text-align:right;">@FormatDelta(grand.Amount, grand.YearAgoAmount)</td>}
                                             <td class="amt-current" style="text-align:right;">@grand.Amount.ToString("N2")</td>
+                                            @if(ShowProjectionColumn)
+                                            {
+                                                <td class="amt-projection projection-cell" style="text-align:right;">
+                                                    <span>@(grand.ProjectionAmount.HasValue ? grand.ProjectionAmount.Value.ToString("N2") : "-")</span>
+                                                    @if (grand.ProjectionExpectedDividends is { Count: > 0 })
+                                                    {
+                                                        <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(grand), grand.Amount, grand.ProjectionAmount ?? 0m, grand.ProjectionExpectedDividends!)">
+                                                            <svg><use href="/icons/sprite.svg#info" /></svg>
+                                                        </button>
+                                                    }
+                                                </td>
+                                            }
                                         </tr>
                                     }
                                 }
@@ -246,13 +339,27 @@
                         @if(_vm!.GetTopLevelRows().Any())
                         {
                             var totals = _vm!.GetTotals();
+                            var totalProjectionDetails = GetTotalProjectionDetails();
+                            var totalLabel = Localizer["Total_Label"].Value;
                              <tr class="total-row">
                                 <td></td>
-                                <td>@Localizer["Total_Label"]</td>
+                                <td>@totalLabel</td>
                                 @if(_vm!.ShowCategoryColumn){<td></td>}
                                 @if(_vm!.ShowPreviousColumns){<td class="amt-prev" style="text-align:right;">@(totals.Prev.HasValue ? totals.Prev.Value.ToString("N2") : "-")</td><td class="delta amt-prev" style="text-align:right;">@(totals.Prev.HasValue ? FormatDelta(totals.Amount, totals.Prev) : "-")</td>}
                                 @if(_compareYear){<td class="amt-year" style="text-align:right;">@(totals.Year.HasValue ? totals.Year.Value.ToString("N2") : "-")</td><td class="delta amt-year" style="text-align:right;">@(totals.Year.HasValue ? FormatDelta(totals.Amount, totals.Year) : "-")</td>}
                                 <td class="amt-current" style="text-align:right;">@totals.Amount.ToString("N2")</td>
+                                @if(ShowProjectionColumn)
+                                {
+                                    <td class="amt-projection projection-cell" style="text-align:right;">
+                                        <span>@(totals.Projection.HasValue ? totals.Projection.Value.ToString("N2") : "-")</span>
+                                        @if (totalProjectionDetails.Count > 0)
+                                        {
+                                            <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(totalLabel, totals.Amount, totals.Projection ?? 0m, totalProjectionDetails)">
+                                                <svg><use href="/icons/sprite.svg#info" /></svg>
+                                            </button>
+                                        }
+                                    </td>
+                                }
                             </tr>
                         }
                     </tbody>
@@ -374,11 +481,17 @@
     private bool _includeCategory;
     private bool _comparePrevious;
     private bool _compareYear;
+    private bool _compareProjection;
     private bool _showChart = true;
     private int _take = 24;
     private bool _includeDividendRelated; // new
 
     private bool _useValutaDate; // new: whether to use valuta date for analysis
+    private string? _projectionDetailsTitle;
+    private decimal _projectionDetailsActualAmount;
+    private decimal _projectionDetailsExpectedAmount;
+    private decimal _projectionDetailsAmount;
+    private IReadOnlyList<ReportProjectionExpectedDividendDto> _projectionDetails = Array.Empty<ReportProjectionExpectedDividendDto>();
 
     private readonly PostingKind[] _postingKindValues = new[]{ PostingKind.Bank, PostingKind.Contact, PostingKind.SavingsPlan, PostingKind.Security };
 
@@ -388,8 +501,47 @@
     private bool IsCategoryGroupingSingle => !IsMulti && _includeCategory && IsCategorySupported(PrimaryKind);
     private bool ShowCategoryColumn => _includeCategory && !IsCategoryGroupingSingle;
     private bool ShowPreviousColumns => _comparePrevious && _interval is not ReportInterval.Year and not ReportInterval.Ytd;
+    private bool IsSecurityOnlySelection => _selectedKinds.Count == 1 && _selectedKinds[0] == PostingKind.Security;
+    private bool CanCompareProjection => IsSecurityOnlySelection && _interval != ReportInterval.AllHistory;
+    private bool ShowProjectionColumn => _vm?.ShowProjectionColumn == true || (_compareProjection && CanCompareProjection);
     private string PreviousHeaderLabel => Localizer["Th_Prev"];
     private string YearHeaderLabel => Localizer["Th_YearAgo"];
+
+    private IReadOnlyList<ReportProjectionExpectedDividendDto> GetTotalProjectionDetails()
+    {
+        if (_vm is null)
+        {
+            return Array.Empty<ReportProjectionExpectedDividendDto>();
+        }
+
+        return _vm.GetTopLevelRows()
+            .Where(p => p.ProjectionExpectedDividends is { Count: > 0 })
+            .SelectMany(p => p.ProjectionExpectedDividends!)
+            .OrderBy(p => p.ExpectedDate)
+            .ThenBy(p => p.SecurityName)
+            .ToList();
+    }
+
+    private void OpenProjectionDetails(string title, decimal actualAmount, decimal projectionAmount, IReadOnlyList<ReportProjectionExpectedDividendDto> details)
+    {
+        _projectionDetailsTitle = string.Format(System.Globalization.CultureInfo.CurrentCulture, Localizer["ProjectionDetails_Title"].Value, title);
+        _projectionDetailsActualAmount = actualAmount;
+        _projectionDetailsAmount = projectionAmount;
+        _projectionDetails = details
+            .OrderBy(p => p.ExpectedDate)
+            .ThenBy(p => p.SecurityName)
+            .ToList();
+        _projectionDetailsExpectedAmount = _projectionDetails.Sum(p => p.Amount);
+    }
+
+    private void CloseProjectionDetails()
+    {
+        _projectionDetailsTitle = null;
+        _projectionDetailsActualAmount = 0m;
+        _projectionDetailsExpectedAmount = 0m;
+        _projectionDetailsAmount = 0m;
+        _projectionDetails = Array.Empty<ReportProjectionExpectedDividendDto>();
+    }
 
     // Analysis month handling
     private DateTime _analysisMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
@@ -541,6 +693,11 @@
             _vm.IncludeCategory = _includeCategory;
             _vm.ComparePrevious = _comparePrevious;
             _vm.CompareYear = _compareYear;
+            if (!CanCompareProjection)
+            {
+                _compareProjection = false;
+            }
+            _vm.CompareProjection = _compareProjection;
             _vm.ShowChart = _showChart;
             _vm.Take = _take;
             _vm.IncludeDividendRelated = _includeDividendRelated; // new
@@ -773,6 +930,10 @@
             }
         }
         _selectedKinds = _selectedKinds.Distinct().ToList();
+        if (!CanCompareProjection)
+        {
+            _compareProjection = false;
+        }
         if (beforePrimary != PrimaryKind || IsMulti)
         {
             ClearFilters();
@@ -783,7 +944,7 @@
 
     private async Task SubmitFavoriteDialogAsync()
     {
-        var res = await _vm!.SubmitFavoriteDialogAsync(Localizer["Default_FavoriteName"], PrimaryKind, _includeCategory, (int)_interval, _take, _comparePrevious, _compareYear, _showChart, true, IsMulti ? _selectedKinds : null, BuildFilters(), _useValutaDate);
+        var res = await _vm!.SubmitFavoriteDialogAsync(Localizer["Default_FavoriteName"], PrimaryKind, _includeCategory, (int)_interval, _take, _comparePrevious, _compareYear, _compareProjection && CanCompareProjection, _showChart, true, IsMulti ? _selectedKinds : null, BuildFilters(), _useValutaDate);
         if (res is not null)
         {
             _vm!.ActiveFavoriteId = res.Id;
@@ -832,6 +993,7 @@
         _take = fav.Take;
         _comparePrevious = fav.ComparePrevious;
         _compareYear = fav.CompareYear;
+        _compareProjection = fav.CompareProjection && CanCompareProjection;
         _showChart = fav.ShowChart;
         _vm!.SelectedAccounts.Clear(); foreach (var id in fav.Filters?.AccountIds ?? Array.Empty<Guid>()) { _vm.SelectedAccounts.Add(id); }
         _vm!.SelectedContacts.Clear(); foreach (var id in fav.Filters?.ContactIds ?? Array.Empty<Guid>()) { _vm.SelectedContacts.Add(id); }
@@ -845,6 +1007,7 @@
         // restore date kind selection from favorite
         _useValutaDate = fav.UseValutaDate;
         _vm!.UseValutaDate = _useValutaDate;
+        _vm!.CompareProjection = _compareProjection;
           _ = _vm!.LoadFilterOptionsAsync();
        _ = LoadAsync();
     }

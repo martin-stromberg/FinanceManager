@@ -51,7 +51,11 @@ public sealed class ReportAggregationService : IReportAggregationService
         // then merge into the standard aggregate flow (monthly base).
         var includeDividendRelated = query.Filters?.IncludeDividendRelated == true;
         var onlySecurityKind = kinds.Length == 1 && kinds[0] == PostingKind.Security;
-        if (includeDividendRelated && onlySecurityKind)
+        const int SecurityPostingSubType_Dividend = 2;
+        var dividendSelected = query.Filters?.SecuritySubTypes?.Contains(SecurityPostingSubType_Dividend) == true;
+        var hasContradictingSecuritySubTypes = query.Filters?.SecuritySubTypes is { Count: > 0 } && !dividendSelected;
+        var compareProjection = query.CompareProjection && onlySecurityKind && query.Interval != ReportInterval.AllHistory && !hasContradictingSecuritySubTypes;
+        if (onlySecurityKind && (includeDividendRelated || compareProjection))
         {
             var result = await QuerySecurityDividendsNetAsync(query, ct);
             return result;
@@ -72,10 +76,8 @@ public sealed class ReportAggregationService : IReportAggregationService
         var allHistoryMode = query.Interval == ReportInterval.AllHistory;
 
         // Fallback for YTD security dividends with IncludeDividendRelated=true and Dividend subtype selected
-        const int SecurityPostingSubType_Dividend = 2;
         var includeDividendRelated2 = query.Filters?.IncludeDividendRelated == true;
         var onlySecurityKind2 = kinds.Length == 1 && kinds[0] == PostingKind.Security;
-        var dividendSelected = query.Filters?.SecuritySubTypes?.Contains(SecurityPostingSubType_Dividend) == true;
         // Run net-dividend path for YTD when Security kind and Dividend subtype requested (allow even if IncludeDividendRelated not explicitly set)
         if (onlySecurityKind2 && ytdMode && dividendSelected)
         {
@@ -109,7 +111,7 @@ public sealed class ReportAggregationService : IReportAggregationService
 
             if (aggsValuta.Count == 0)
             {
-                return new ReportAggregationResult(query.Interval, Array.Empty<ReportAggregatePointDto>(), query.ComparePrevious, query.CompareYear);
+                return new ReportAggregationResult(query.Interval, Array.Empty<ReportAggregatePointDto>(), query.ComparePrevious, query.CompareYear, false);
             }
 
             rawAnon = aggsValuta.Select(a => (a.Kind, a.PeriodStart, a.Amount, a.AccountId, a.ContactId, a.SavingsPlanId, a.SecurityId, a.SecuritySubType)).ToList();
@@ -132,7 +134,7 @@ public sealed class ReportAggregationService : IReportAggregationService
 
             if (aggs.Count == 0)
             {
-                return new ReportAggregationResult(query.Interval, Array.Empty<ReportAggregatePointDto>(), query.ComparePrevious, query.CompareYear);
+                return new ReportAggregationResult(query.Interval, Array.Empty<ReportAggregatePointDto>(), query.ComparePrevious, query.CompareYear, false);
             }
 
             rawAnon = aggs.Select(a => (a.Kind, a.PeriodStart, a.Amount, a.AccountId, a.ContactId, a.SavingsPlanId, a.SecurityId, a.SecuritySubType)).ToList();
@@ -407,7 +409,7 @@ public sealed class ReportAggregationService : IReportAggregationService
             }
             // In single-kind non-category mode: parent remains null (flat list)
 
-            points.Add(new ReportAggregatePointDto(e.PeriodStart, groupKey, groupName, categoryName, e.Amount, parent, null, null));
+            points.Add(new ReportAggregatePointDto(e.PeriodStart, groupKey, groupName, categoryName, e.Amount, null, parent, null, null));
         }
 
         // Category aggregates (per period) (only when categories requested & kind supports)
@@ -443,7 +445,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                     : "Uncategorized";
                 var groupKey = CategoryKey(c.Kind, c.CategoryId);
                 string? parent = multi ? TypeKey(c.Kind) : null; // in single-kind category tree parent=null (top-level); multi: parent=Type
-                points.Add(new ReportAggregatePointDto(c.PeriodStart, groupKey, name, name, c.Amount, parent, null, null));
+                points.Add(new ReportAggregatePointDto(c.PeriodStart, groupKey, name, name, c.Amount, null, parent, null, null));
             }
         }
 
@@ -469,7 +471,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                     PostingKind.Security => "Securities",
                     _ => kind.ToString()
                 };
-                points.Add(new ReportAggregatePointDto(g.Key.PeriodStart, TypeKey(kind), name, null, amount, null, null, null));
+                points.Add(new ReportAggregatePointDto(g.Key.PeriodStart, TypeKey(kind), name, null, amount, null, null, null, null));
             }
         }
 
@@ -493,7 +495,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                 foreach (var y in byYear)
                 {
                     var start = new DateTime(y.Year, 1, 1);
-                    ytd.Add(new ReportAggregatePointDto(start, y.Sample.GroupKey, y.Sample.GroupName, y.Sample.CategoryName, y.Amount, y.Sample.ParentGroupKey, null, null));
+                    ytd.Add(new ReportAggregatePointDto(start, y.Sample.GroupKey, y.Sample.GroupName, y.Sample.CategoryName, y.Amount, null, y.Sample.ParentGroupKey, null, null));
                 }
             }
             points = ytd.OrderBy(p => p.PeriodStart).ThenBy(p => p.GroupKey).ToList();
@@ -509,7 +511,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                 var sample = grp.OrderBy(x => x.PeriodStart).First();
                 // Use a constant period start (e.g., DateTime.MinValue.Date truncated to year) to anchor display
                 var anchor = new DateTime(2000, 1, 1);
-                hist.Add(new ReportAggregatePointDto(anchor, sample.GroupKey, sample.GroupName, sample.CategoryName, sum, sample.ParentGroupKey, null, null));
+                hist.Add(new ReportAggregatePointDto(anchor, sample.GroupKey, sample.GroupName, sample.CategoryName, sum, null, sample.ParentGroupKey, null, null));
             }
             points = hist.OrderBy(p => p.GroupKey).ToList();
 
@@ -533,7 +535,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                 var typeKey = TypeKey(ts.Kind);
                 if (!points.Any(p => p.GroupKey == typeKey && p.PeriodStart == ts.PeriodStart))
                 {
-                    points.Add(new ReportAggregatePointDto(ts.PeriodStart, typeKey, name, null, ts.Amount, null, null, null));
+                    points.Add(new ReportAggregatePointDto(ts.PeriodStart, typeKey, name, null, ts.Amount, null, null, null, null));
                 }
             }
         }
@@ -575,7 +577,7 @@ public sealed class ReportAggregationService : IReportAggregationService
             {
                 if (!points.Any(p => p.GroupKey == g.Key && p.PeriodStart == latestPeriod))
                 {
-                    points.Add(new ReportAggregatePointDto(latestPeriod, g.Latest.GroupKey, g.Latest.GroupName, g.Latest.CategoryName, 0m, g.Latest.ParentGroupKey, null, null));
+                    points.Add(new ReportAggregatePointDto(latestPeriod, g.Latest.GroupKey, g.Latest.GroupName, g.Latest.CategoryName, 0m, null, g.Latest.ParentGroupKey, null, null));
                 }
             }
         }
@@ -682,7 +684,7 @@ public sealed class ReportAggregationService : IReportAggregationService
             .ThenBy(p => p.GroupName)
             .ToList();
 
-        return new ReportAggregationResult(query.Interval, points, query.ComparePrevious, query.CompareYear);
+        return new ReportAggregationResult(query.Interval, points, query.ComparePrevious, query.CompareYear, false);
     }
 
     /// <summary>
@@ -697,10 +699,19 @@ public sealed class ReportAggregationService : IReportAggregationService
         var today = DateTime.UtcNow.Date;
         var analysis = (query.AnalysisDate?.Date) ?? new DateTime(today.Year, today.Month, 1);
         analysis = new DateTime(analysis.Year, analysis.Month, 1);
+        const int SecurityPostingSubType_Dividend2 = 2;
+        const int SecurityPostingSubType_Fee2 = 3;
+        const int SecurityPostingSubType_Tax2 = 4;
 
         int monthsBack = query.Take > 0 ? query.Take - 1 : 0;
-        var startMonth = analysis.AddMonths(-monthsBack);
+        var startMonth = query.Interval == ReportInterval.Ytd
+            ? new DateTime(analysis.Year - monthsBack, 1, 1)
+            : analysis.AddMonths(-monthsBack);
         var endExclusive = analysis.AddMonths(1);
+        var dividendSelected = query.Filters?.SecuritySubTypes?.Contains(SecurityPostingSubType_Dividend2) == true;
+        var hasContradictingSecuritySubTypes = query.Filters?.SecuritySubTypes is { Count: > 0 } && !dividendSelected;
+        var compareProjection = query.CompareProjection && query.Interval != ReportInterval.AllHistory && !hasContradictingSecuritySubTypes;
+        var loadStartMonth = compareProjection ? startMonth.AddYears(-2) : query.CompareYear ? startMonth.AddYears(-1) : startMonth;
 
         var ownedSecurities = await _db.Securities.AsNoTracking()
             .Where(s => s.OwnerUserId == query.OwnerUserId)
@@ -708,7 +719,7 @@ public sealed class ReportAggregationService : IReportAggregationService
             .ToListAsync(ct);
         if (ownedSecurities.Count == 0)
         {
-            return new ReportAggregationResult(query.Interval, Array.Empty<ReportAggregatePointDto>(), query.ComparePrevious, query.CompareYear);
+            return new ReportAggregationResult(query.Interval, Array.Empty<ReportAggregatePointDto>(), query.ComparePrevious, query.CompareYear, false);
         }
         var ownedIds = ownedSecurities.Select(s => s.Id).ToHashSet();
         var securityNames = ownedSecurities.ToDictionary(s => s.Id, s => s.Name);
@@ -727,12 +738,8 @@ public sealed class ReportAggregationService : IReportAggregationService
         var postings = _db.Postings.AsNoTracking()
             .Where(p => p.Kind == PostingKind.Security)
             .Where(p => p.SecurityId != null && ownedIds.Contains(p.SecurityId.Value))
-            .Where(p => p.BookingDate >= startMonth && p.BookingDate < endExclusive)
+            .Where(p => (query.UseValutaDate ? ((DateTime?)p.ValutaDate ?? p.BookingDate) : p.BookingDate) >= loadStartMonth && (query.UseValutaDate ? ((DateTime?)p.ValutaDate ?? p.BookingDate) : p.BookingDate) < endExclusive)
             .Where(p => p.SecuritySubType != null);
-
-        const int SecurityPostingSubType_Dividend2 = 2;
-        const int SecurityPostingSubType_Fee2 = 3;
-        const int SecurityPostingSubType_Tax2 = 4;
 
         var dividendGroups = postings
             .Where(p => (int)p.SecuritySubType! == SecurityPostingSubType_Dividend2)
@@ -750,15 +757,21 @@ public sealed class ReportAggregationService : IReportAggregationService
                 GroupId = g.Key,
                 SecurityId = g.Select(x => x.SecurityId).FirstOrDefault(),
                 Net = g.Where(x => allowedSubTypes.Contains((int)x.SecuritySubType!)).Sum(x => x.Amount),
-                DividendBooking = g.Where(x => (int)x.SecuritySubType! == SecurityPostingSubType_Dividend2).Select(x => x.BookingDate).FirstOrDefault()
+                DividendDate = g.Where(x => (int)x.SecuritySubType! == SecurityPostingSubType_Dividend2)
+                    .Select(x => query.UseValutaDate ? ((DateTime?)x.ValutaDate ?? x.BookingDate) : x.BookingDate)
+                    .FirstOrDefault()
             })
             .ToListAsync(ct);
 
+        var dividendEvents = groupNets
+            .Where(g => g.DividendDate != default(DateTime) && g.SecurityId.HasValue)
+            .Select(g => new DividendEvent(g.SecurityId!.Value, g.DividendDate, new DateTime(g.DividendDate.Year, g.DividendDate.Month, 1), g.Net, g.GroupId))
+            .ToList();
+
         // Aggregate per security and month using the dividend booking date as period
-        var monthly = groupNets
-            .Where(g => g.DividendBooking != default(DateTime))
-            .GroupBy(r => new { Month = new DateTime(r.DividendBooking.Year, r.DividendBooking.Month, 1), r.SecurityId })
-            .Select(g => new { Month = g.Key.Month, SecurityId = g.Key.SecurityId, Amount = g.Sum(x => x.Net) })
+        var monthly = dividendEvents
+            .GroupBy(r => new { r.Month, SecurityId = (Guid?)r.SecurityId })
+            .Select(g => new { Month = g.Key.Month, SecurityId = g.Key.SecurityId, Amount = g.Sum(x => x.NetAmount) })
             .ToList();
 
         // Apply entity/category filters
@@ -779,7 +792,13 @@ public sealed class ReportAggregationService : IReportAggregationService
         foreach (var e in monthly)
         {
             var key = $"Security:{e.SecurityId}";
-            string name = e.SecurityId.HasValue && securityNames.TryGetValue(e.SecurityId.Value, out var n) ? n : (e.SecurityId?.ToString("N")[..6] ?? string.Empty);
+            var name = string.Empty;
+            if (e.SecurityId.HasValue)
+            {
+                name = securityNames.TryGetValue(e.SecurityId.Value, out var securityName)
+                    ? securityName
+                    : e.SecurityId.Value.ToString("N")[..6];
+            }
             string? categoryName = null; string? parent = null;
             if (query.IncludeCategory && e.SecurityId.HasValue)
             {
@@ -790,21 +809,33 @@ public sealed class ReportAggregationService : IReportAggregationService
                     parent = $"Category:Security:{(cid.HasValue ? cid.Value.ToString() : "_none")}";
                 }
             }
-            points.Add(new ReportAggregatePointDto(e.Month, key, name, categoryName, e.Amount, parent, null, null));
+            points.Add(new ReportAggregatePointDto(e.Month, key, name, categoryName, e.Amount, null, parent, null, null));
         }
 
         // Category aggregates (optional)
         if (query.IncludeCategory)
         {
             var catAgg = monthly
-                .GroupBy(m => new { m.Month, CatId = m.SecurityId.HasValue && securityCategoryMap.TryGetValue(m.SecurityId.Value, out var cid) ? cid : null })
+                .GroupBy(m =>
+                {
+                    Guid? categoryId = null;
+                    if (m.SecurityId.HasValue)
+                    {
+                        securityCategoryMap.TryGetValue(m.SecurityId.Value, out categoryId);
+                    }
+                    return new { m.Month, CatId = categoryId };
+                })
                 .Select(g => new { g.Key.Month, g.Key.CatId, Amount = g.Sum(x => x.Amount) })
                 .ToList();
             foreach (var c in catAgg)
             {
-                string name = c.CatId.HasValue && securityCategoryNames.TryGetValue(c.CatId.Value, out var n) ? n : "Uncategorized";
+                var name = "Uncategorized";
+                if (c.CatId.HasValue && securityCategoryNames.TryGetValue(c.CatId.Value, out var categoryNameValue))
+                {
+                    name = categoryNameValue;
+                }
                 var key = $"Category:Security:{(c.CatId.HasValue ? c.CatId.Value.ToString() : "_none")}";
-                points.Add(new ReportAggregatePointDto(c.Month, key, name, name, c.Amount, null, null, null));
+                points.Add(new ReportAggregatePointDto(c.Month, key, name, name, c.Amount, null, null, null, null));
             }
         }
 
@@ -834,7 +865,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                     foreach (var y in byYear)
                     {
                         var start = new DateTime(y.Year, 1, 1);
-                        ytd.Add(new ReportAggregatePointDto(start, y.Sample.GroupKey, y.Sample.GroupName, y.Sample.CategoryName, y.Amount, y.Sample.ParentGroupKey, null, null));
+                        ytd.Add(new ReportAggregatePointDto(start, y.Sample.GroupKey, y.Sample.GroupName, y.Sample.CategoryName, y.Amount, null, y.Sample.ParentGroupKey, null, null));
                     }
                 }
                 return ytd;
@@ -847,7 +878,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                     var sum = grp.Sum(x => x.Amount);
                     var sample = grp.OrderBy(x => x.PeriodStart).First();
                     var anchor = new DateTime(2000, 1, 1);
-                    hist.Add(new ReportAggregatePointDto(anchor, sample.GroupKey, sample.GroupName, sample.CategoryName, sum, sample.ParentGroupKey, null, null));
+                    hist.Add(new ReportAggregatePointDto(anchor, sample.GroupKey, sample.GroupName, sample.CategoryName, sum, null, sample.ParentGroupKey, null, null));
                 }
 
                 // Add Type-level rows for AllHistory to provide totals even in single-kind mode
@@ -870,7 +901,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                     var typeKey = $"Type:{ts.Kind}";
                     if (!hist.Any(p => p.GroupKey == typeKey && p.PeriodStart == ts.PeriodStart))
                     {
-                        hist.Add(new ReportAggregatePointDto(ts.PeriodStart, typeKey, name, null, ts.Amount, null, null, null));
+                        hist.Add(new ReportAggregatePointDto(ts.PeriodStart, typeKey, name, null, ts.Amount, null, null, null, null));
                     }
                 }
 
@@ -889,11 +920,16 @@ public sealed class ReportAggregationService : IReportAggregationService
             }
             return src
                 .GroupBy(p => new { Period = Map(p.PeriodStart), p.GroupKey, p.GroupName, p.CategoryName, p.ParentGroupKey })
-                .Select(g => new ReportAggregatePointDto(g.Key.Period, g.Key.GroupKey, g.Key.GroupName, g.Key.CategoryName, g.Sum(x => x.Amount), g.Key.ParentGroupKey, null, null))
+                .Select(g => new ReportAggregatePointDto(g.Key.Period, g.Key.GroupKey, g.Key.GroupName, g.Key.CategoryName, g.Sum(x => x.Amount), null, g.Key.ParentGroupKey, null, null))
                 .ToList();
         }
 
         points = TransformToInterval(points);
+
+        if (compareProjection)
+        {
+            ApplyProjectionAmounts(points, dividendEvents);
+        }
 
         // Do not duplicate here: return net dividend amounts once. If the caller needs booking+valuta duplication,
         // it should be handled at aggregate level.
@@ -930,9 +966,14 @@ public sealed class ReportAggregationService : IReportAggregationService
             {
                 if (!points.Any(p => p.GroupKey == g.Key && p.PeriodStart == latestPeriod))
                 {
-                    points.Add(new ReportAggregatePointDto(latestPeriod, g.Latest.GroupKey, g.Latest.GroupName, g.Latest.CategoryName, 0m, g.Latest.ParentGroupKey, null, null));
+                    points.Add(new ReportAggregatePointDto(latestPeriod, g.Latest.GroupKey, g.Latest.GroupName, g.Latest.CategoryName, 0m, null, g.Latest.ParentGroupKey, null, null));
                 }
             }
+        }
+
+        if (compareProjection)
+        {
+            ApplyProjectionAmounts(points, dividendEvents);
         }
                
         // Compute comparisons
@@ -998,9 +1039,10 @@ public sealed class ReportAggregationService : IReportAggregationService
                 .Where(g =>
                 {
                     var r = g.First();
+                    var hasProjectionData = compareProjection && r.ProjectionAmount.HasValue && r.ProjectionAmount.Value != 0m;
                     var hasPrevData = query.ComparePrevious && r.PreviousAmount.HasValue && r.PreviousAmount.Value != 0m;
                     var hasYearData = query.CompareYear && r.YearAgoAmount.HasValue && r.YearAgoAmount.Value != 0m;
-                    return r.Amount == 0m && !hasPrevData && !hasYearData;
+                    return r.Amount == 0m && !hasProjectionData && !hasPrevData && !hasYearData;
                 })
                 .Select(g => g.Key)
                 .ToHashSet();
@@ -1016,7 +1058,345 @@ public sealed class ReportAggregationService : IReportAggregationService
             .ThenBy(p => p.GroupName)
             .ToList();
 
-        return new ReportAggregationResult(query.Interval, points, query.ComparePrevious, query.CompareYear);
+        return new ReportAggregationResult(query.Interval, points, query.ComparePrevious, query.CompareYear, compareProjection);
+
+        void ApplyProjectionAmounts(List<ReportAggregatePointDto> targetPoints, IReadOnlyList<DividendEvent> events)
+        {
+            if (targetPoints.Count == 0 || events.Count == 0)
+            {
+                return;
+            }
+
+            DateTime MapProjectionPeriod(DateTime date)
+            {
+                return query.Interval switch
+                {
+                    ReportInterval.Month => new DateTime(date.Year, date.Month, 1),
+                    ReportInterval.Quarter => new DateTime(date.Year, ((date.Month - 1) / 3) * 3 + 1, 1),
+                    ReportInterval.HalfYear => new DateTime(date.Year, ((date.Month - 1) / 6) * 6 + 1, 1),
+                    ReportInterval.Year => new DateTime(date.Year, 1, 1),
+                    ReportInterval.Ytd => date.Month <= analysis.Month ? new DateTime(date.Year, 1, 1) : DateTime.MinValue,
+                    _ => DateTime.MinValue
+                };
+            }
+
+            DateTime GetProjectionPeriodEnd(DateTime periodStart)
+            {
+                return query.Interval switch
+                {
+                    ReportInterval.Month => periodStart.AddMonths(1),
+                    ReportInterval.Quarter => periodStart.AddMonths(3),
+                    ReportInterval.HalfYear => periodStart.AddMonths(6),
+                    ReportInterval.Year => periodStart.AddYears(1),
+                    ReportInterval.Ytd => endExclusive,
+                    _ => endExclusive
+                };
+            }
+
+            var projectionStart = query.Interval == ReportInterval.Year
+                ? targetPoints.Min(p => p.PeriodStart)
+                : startMonth;
+            var projectionEnd = query.Interval == ReportInterval.Year
+                ? targetPoints.Max(p => GetProjectionPeriodEnd(p.PeriodStart))
+                : endExclusive;
+            var currentYearStart = new DateTime(analysis.Year, 1, 1);
+            var expectedDetails = events
+                .GroupBy(e => e.SecurityId)
+                .SelectMany(g =>
+                {
+                    var securityEvents = g.OrderBy(e => e.Date).ToList();
+                    var currentEvents = securityEvents
+                        .Where(e => e.Date >= currentYearStart && e.Date < endExclusive)
+                        .OrderBy(e => e.Date)
+                        .ToList();
+                    var pattern = DetectDividendPattern(securityEvents, analysis.Year - 1);
+                    var candidates = securityEvents
+                        .Where(e => e.Date >= projectionStart.AddYears(-1) && e.Date < projectionEnd.AddYears(-1))
+                        .OrderBy(e => e.Date)
+                        .Select(e => new ProjectionCandidate(e.SecurityId, e.Date.AddYears(1), e.Date, e.NetAmount))
+                        .Where(e => MapProjectionPeriod(e.ExpectedDate) != DateTime.MinValue)
+                        .ToList();
+
+                    return FindExpectedDividends(pattern, candidates, currentEvents)
+                        .Select(x => new ReportProjectionExpectedDividendDto(
+                            x.SecurityId,
+                            securityNames.TryGetValue(x.SecurityId, out var name) ? name : x.SecurityId.ToString("N")[..6],
+                            x.ExpectedDate,
+                            x.PriorYearDate,
+                            x.NetAmount));
+                })
+                .ToList();
+
+            var expectedBySecurityPeriod = expectedDetails
+                .GroupBy(e => (e.SecurityId, Period: MapProjectionPeriod(e.ExpectedDate)))
+                .Select(g => new
+                {
+                    g.Key.SecurityId,
+                    g.Key.Period,
+                    Expected = g.Sum(x => x.Amount),
+                    Details = g
+                        .OrderBy(x => x.ExpectedDate)
+                        .ThenBy(x => x.SecurityName)
+                        .ToList()
+                })
+                .Where(e => e.Expected != 0m)
+                .GroupBy(e => (e.SecurityId, e.Period))
+                .ToDictionary(g => g.Key, g => (
+                    Expected: g.Sum(x => x.Expected),
+                    Details: g.SelectMany(x => x.Details)
+                        .OrderBy(x => x.ExpectedDate)
+                        .ThenBy(x => x.SecurityName)
+                        .ToList()));
+
+            DividendPattern DetectDividendPattern(IReadOnlyList<DividendEvent> securityEvents, int referenceYear)
+            {
+                var referenceEvents = securityEvents
+                    .Where(e => e.Date.Year == referenceYear)
+                    .OrderBy(e => e.Date)
+                    .ToList();
+                if (referenceEvents.Count == 1)
+                {
+                    return DividendPattern.Annual;
+                }
+
+                var monthlyReferenceEvents = referenceEvents
+                    .GroupBy(e => e.Month)
+                    .Select(g => new DividendEvent(g.First().SecurityId, g.Key, g.Key, g.Sum(e => e.NetAmount), null))
+                    .Where(e => e.NetAmount != 0m)
+                    .OrderBy(e => e.Date)
+                    .ToList();
+                if (monthlyReferenceEvents.Count >= 6 && HasRegularMonthlySpacing(monthlyReferenceEvents))
+                {
+                    return DividendPattern.Monthly;
+                }
+
+                var distinctQuarters = referenceEvents.Select(e => (e.Date.Month - 1) / 3).Distinct().Count();
+                if (referenceEvents.Count is >= 2 and <= 5 && distinctQuarters >= 2 && HasRegularSpacing(referenceEvents, 60, 125))
+                {
+                    return DividendPattern.Quarterly;
+                }
+
+                return DividendPattern.Irregular;
+            }
+
+            static bool HasRegularMonthlySpacing(IReadOnlyList<DividendEvent> orderedMonthlyEvents)
+            {
+                if (orderedMonthlyEvents.Count < 2)
+                {
+                    return false;
+                }
+
+                for (var i = 1; i < orderedMonthlyEvents.Count; i++)
+                {
+                    var months = (orderedMonthlyEvents[i].Date.Year - orderedMonthlyEvents[i - 1].Date.Year) * 12
+                        + orderedMonthlyEvents[i].Date.Month
+                        - orderedMonthlyEvents[i - 1].Date.Month;
+                    if (months != 1)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            static bool HasRegularSpacing(IReadOnlyList<DividendEvent> orderedEvents, int minimumDays, int maximumDays)
+            {
+                if (orderedEvents.Count < 2)
+                {
+                    return false;
+                }
+
+                for (var i = 1; i < orderedEvents.Count; i++)
+                {
+                    var days = (orderedEvents[i].Date - orderedEvents[i - 1].Date).TotalDays;
+                    if (days < minimumDays || days > maximumDays)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            IEnumerable<ProjectionCandidate> FindExpectedDividends(
+                DividendPattern pattern,
+                IReadOnlyList<ProjectionCandidate> candidates,
+                IReadOnlyList<DividendEvent> currentEvents)
+            {
+                if (candidates.Count == 0)
+                {
+                    return Array.Empty<ProjectionCandidate>();
+                }
+
+                return pattern switch
+                {
+                    DividendPattern.Monthly => candidates.Where(candidate =>
+                        !HasCurrentMatch(currentEvents, current => current.Date.Month == candidate.ExpectedDate.Month) &&
+                        candidate.ExpectedDate.Month >= analysis.Month),
+                    DividendPattern.Quarterly => candidates.Where(candidate =>
+                        !HasCurrentMatch(currentEvents, current => GetQuarter(current.Date) == GetQuarter(candidate.ExpectedDate)) &&
+                        GetQuarter(candidate.ExpectedDate) >= GetQuarter(analysis)),
+                    DividendPattern.Annual => currentEvents.Count == 0 ? candidates : Array.Empty<ProjectionCandidate>(),
+                    _ => FindIrregularExpectedDividends(candidates, currentEvents)
+                };
+            }
+
+            static IEnumerable<ProjectionCandidate> FindIrregularExpectedDividends(
+                IReadOnlyList<ProjectionCandidate> candidates,
+                IReadOnlyList<DividendEvent> currentEvents)
+            {
+                var usedCurrentIndexes = new HashSet<int>();
+                var unmatched = new List<ProjectionCandidate>();
+                foreach (var candidate in candidates)
+                {
+                    var matchIndex = -1;
+                    for (var i = 0; i < currentEvents.Count; i++)
+                    {
+                        if (usedCurrentIndexes.Contains(i))
+                        {
+                            continue;
+                        }
+
+                        if (Math.Abs((currentEvents[i].Date - candidate.ExpectedDate).TotalDays) <= 30)
+                        {
+                            matchIndex = i;
+                            break;
+                        }
+                    }
+
+                    if (matchIndex >= 0)
+                    {
+                        usedCurrentIndexes.Add(matchIndex);
+                    }
+                    else
+                    {
+                        unmatched.Add(candidate);
+                    }
+                }
+
+                return currentEvents.Count == 0 ? unmatched : Array.Empty<ProjectionCandidate>();
+            }
+
+            static bool HasCurrentMatch(IReadOnlyList<DividendEvent> currentEvents, Func<DividendEvent, bool> predicate)
+            {
+                return currentEvents.Any(predicate);
+            }
+
+            static int GetQuarter(DateTime date)
+            {
+                return (date.Month - 1) / 3;
+            }
+
+            for (var i = 0; i < targetPoints.Count; i++)
+            {
+                var point = targetPoints[i];
+                if (!TryParseSecurityKey(point.GroupKey, out var securityId))
+                {
+                    continue;
+                }
+
+                var expected = expectedBySecurityPeriod.TryGetValue((securityId, point.PeriodStart), out var value) ? value.Expected : 0m;
+                var details = expectedBySecurityPeriod.TryGetValue((securityId, point.PeriodStart), out var detailValue) && detailValue.Details.Count > 0
+                    ? detailValue.Details
+                    : null;
+                targetPoints[i] = point with { ProjectionAmount = point.Amount + expected, ProjectionExpectedDividends = details };
+            }
+
+            var childProjectionByParent = targetPoints
+                .Where(p => p.ParentGroupKey != null && p.ProjectionAmount.HasValue)
+                .GroupBy(p => (p.ParentGroupKey!, p.PeriodStart))
+                .ToDictionary(g => g.Key, g => (decimal?)g.Sum(x => x.ProjectionAmount!.Value));
+            var childDetailsByParent = targetPoints
+                .Where(p => p.ParentGroupKey != null && p.ProjectionExpectedDividends is { Count: > 0 })
+                .GroupBy(p => (p.ParentGroupKey!, p.PeriodStart))
+                .ToDictionary(g => g.Key, g => (IReadOnlyList<ReportProjectionExpectedDividendDto>)g
+                    .SelectMany(x => x.ProjectionExpectedDividends!)
+                    .OrderBy(x => x.ExpectedDate)
+                    .ThenBy(x => x.SecurityName)
+                    .ToList());
+
+            for (var i = 0; i < targetPoints.Count; i++)
+            {
+                var point = targetPoints[i];
+                if (point.ParentGroupKey == null && point.GroupKey.StartsWith("Category:", StringComparison.Ordinal))
+                {
+                    if (childProjectionByParent.TryGetValue((point.GroupKey, point.PeriodStart), out var projection))
+                    {
+                        var details = childDetailsByParent.TryGetValue((point.GroupKey, point.PeriodStart), out var detailList)
+                            ? detailList
+                            : null;
+                        targetPoints[i] = point with { ProjectionAmount = projection, ProjectionExpectedDividends = details };
+                    }
+                }
+            }
+
+            var categoryProjectionByType = targetPoints
+                .Where(p => p.GroupKey.StartsWith("Category:", StringComparison.Ordinal) && p.ProjectionAmount.HasValue)
+                .GroupBy(p => ($"Type:{ParseKindFromKey(p.GroupKey)}", p.PeriodStart))
+                .ToDictionary(g => g.Key, g => (decimal?)g.Sum(x => x.ProjectionAmount!.Value));
+            var categoryDetailsByType = targetPoints
+                .Where(p => p.GroupKey.StartsWith("Category:", StringComparison.Ordinal) && p.ProjectionExpectedDividends is { Count: > 0 })
+                .GroupBy(p => ($"Type:{ParseKindFromKey(p.GroupKey)}", p.PeriodStart))
+                .ToDictionary(g => g.Key, g => (IReadOnlyList<ReportProjectionExpectedDividendDto>)g
+                    .SelectMany(x => x.ProjectionExpectedDividends!)
+                    .OrderBy(x => x.ExpectedDate)
+                    .ThenBy(x => x.SecurityName)
+                    .ToList());
+
+            var leafProjectionByType = targetPoints
+                .Where(p => p.GroupKey.StartsWith("Security:", StringComparison.Ordinal) && p.ParentGroupKey == null && p.ProjectionAmount.HasValue)
+                .GroupBy(p => ("Type:Security", p.PeriodStart))
+                .ToDictionary(g => g.Key, g => (decimal?)g.Sum(x => x.ProjectionAmount!.Value));
+            var leafDetailsByType = targetPoints
+                .Where(p => p.GroupKey.StartsWith("Security:", StringComparison.Ordinal) && p.ParentGroupKey == null && p.ProjectionExpectedDividends is { Count: > 0 })
+                .GroupBy(p => ("Type:Security", p.PeriodStart))
+                .ToDictionary(g => g.Key, g => (IReadOnlyList<ReportProjectionExpectedDividendDto>)g
+                    .SelectMany(x => x.ProjectionExpectedDividends!)
+                    .OrderBy(x => x.ExpectedDate)
+                    .ThenBy(x => x.SecurityName)
+                    .ToList());
+
+            for (var i = 0; i < targetPoints.Count; i++)
+            {
+                var point = targetPoints[i];
+                if (!point.GroupKey.StartsWith("Type:", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (categoryProjectionByType.TryGetValue((point.GroupKey, point.PeriodStart), out var categoryProjection) ||
+                    leafProjectionByType.TryGetValue((point.GroupKey, point.PeriodStart), out categoryProjection))
+                {
+                    IReadOnlyList<ReportProjectionExpectedDividendDto>? details = null;
+                    if (!categoryDetailsByType.TryGetValue((point.GroupKey, point.PeriodStart), out details))
+                    {
+                        leafDetailsByType.TryGetValue((point.GroupKey, point.PeriodStart), out details);
+                    }
+
+                    targetPoints[i] = point with { ProjectionAmount = categoryProjection, ProjectionExpectedDividends = details };
+                }
+            }
+        }
+    }
+
+    private sealed record DividendEvent(Guid SecurityId, DateTime Date, DateTime Month, decimal NetAmount, Guid? GroupId);
+
+    private sealed record ProjectionCandidate(Guid SecurityId, DateTime ExpectedDate, DateTime PriorYearDate, decimal NetAmount);
+
+    private enum DividendPattern
+    {
+        Monthly,
+        Quarterly,
+        Annual,
+        Irregular
+    }
+
+    private static bool TryParseSecurityKey(string groupKey, out Guid securityId)
+    {
+        securityId = Guid.Empty;
+        return groupKey.StartsWith("Security:", StringComparison.Ordinal)
+            && Guid.TryParse(groupKey["Security:".Length..], out securityId);
     }
 
     private static PostingKind? ParseKindFromKey(string groupKey)
