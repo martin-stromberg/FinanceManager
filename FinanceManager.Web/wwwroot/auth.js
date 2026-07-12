@@ -34,3 +34,15 @@ window.fmAuthLogout = async () => {
     return false;
   }
 };
+
+window.fmAuthIsAuthenticated = async () => {
+  try {
+    const resp = await fetch('/api/user/settings/profile', {
+      method: 'GET',
+      credentials: 'same-origin'
+    });
+    return resp.ok;
+  } catch {
+    return false;
+  }
+};

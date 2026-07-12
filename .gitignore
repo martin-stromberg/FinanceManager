@@ -63,6 +63,15 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
+# Generated .NET XML documentation files
+/FinanceManager.Application/FinanceManager.Application.xml
+/FinanceManager.Domain/FinanceManager.Domain.xml
+/FinanceManager.Infrastructure/FinanceManager.Infrastructure.xml
+/FinanceManager.Shared/FinanceManager.Shared.xml
+/FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.xml
+/FinanceManager.Tests/FinanceManager.Tests.xml
+/FinanceManager.Web/FinanceManager.Web.xml
+
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
 
