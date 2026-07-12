@@ -137,6 +137,37 @@ public sealed class ReportAggregationProjectionTests
     }
 
     [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_TreatsEarlierCurrentYearDividendAsConfirmed()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-shifted");
+        var security = AddSecurity(db, user.Id, "Shifted Annual Dividend");
+        await db.SaveChangesAsync();
+
+        var analysis = new DateTime(2026, 5, 1);
+        AddDividendGroup(db, security, new DateTime(2025, 5, 12), 86m, tax: -22.68m);
+        AddDividendGroup(db, security, new DateTime(2026, 4, 21), 70m);
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Month,
+            2,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: analysis), CancellationToken.None);
+
+        var mayPoint = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == analysis);
+        Assert.Equal(0m, mayPoint.Amount);
+        Assert.Equal(0m, mayPoint.ProjectionAmount);
+        Assert.Null(mayPoint.ProjectionExpectedDividends);
+    }
+
+    [Fact]
     public async Task QueryAsync_SecurityDividendProjection_UsesValutaDateAndBookingFallback()
     {
         using var db = CreateDb();

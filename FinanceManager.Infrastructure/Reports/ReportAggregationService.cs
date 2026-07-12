@@ -1080,16 +1080,15 @@ public sealed class ReportAggregationService : IReportAggregationService
                 };
             }
 
+            var currentConfirmationStart = new DateTime(startMonth.Year, 1, 1);
             var currentConfirmations = events
-                .Where(e => e.Date >= startMonth && e.Date < endExclusive)
+                .Where(e => e.Date >= currentConfirmationStart && e.Date < endExclusive)
                 .Select(e => new
                 {
                     e.SecurityId,
-                    Period = MapProjectionPeriod(e.Date),
-                    EventMonth = e.Date.Month
+                    Year = e.Date.Year
                 })
-                .Where(e => e.Period != DateTime.MinValue)
-                .GroupBy(e => (e.SecurityId, e.Period, e.EventMonth))
+                .GroupBy(e => (e.SecurityId, e.Year))
                 .ToDictionary(g => g.Key, g => g.Count());
 
             var expectedBySecurityPeriod = events
@@ -1101,18 +1100,18 @@ public sealed class ReportAggregationService : IReportAggregationService
                     {
                         e.SecurityId,
                         TargetPeriod = MapProjectionPeriod(targetDate),
-                        EventMonth = targetDate.Month,
+                        TargetYear = targetDate.Year,
                         TargetDate = targetDate,
                         PriorYearDate = e.Date,
                         e.NetAmount
                     };
                 })
                 .Where(e => e.TargetPeriod != DateTime.MinValue)
-                .GroupBy(e => (e.SecurityId, Period: e.TargetPeriod, e.EventMonth))
+                .GroupBy(e => (e.SecurityId, e.TargetYear))
                 .Select(g =>
                 {
                     currentConfirmations.TryGetValue(g.Key, out var confirmedCount);
-                    var details = g
+                    return g
                         .OrderBy(x => x.TargetDate)
                         .Skip(confirmedCount)
                         .Select(x => new ReportProjectionExpectedDividendDto(
@@ -1122,14 +1121,18 @@ public sealed class ReportAggregationService : IReportAggregationService
                             x.PriorYearDate,
                             x.NetAmount))
                         .ToList();
-
-                    return new
-                    {
-                        g.Key.SecurityId,
-                        g.Key.Period,
-                        Expected = details.Sum(x => x.Amount),
-                        Details = details
-                    };
+                })
+                .SelectMany(details => details)
+                .GroupBy(e => (e.SecurityId, Period: MapProjectionPeriod(e.ExpectedDate)))
+                .Select(g => new
+                {
+                    g.Key.SecurityId,
+                    g.Key.Period,
+                    Expected = g.Sum(x => x.Amount),
+                    Details = g
+                        .OrderBy(x => x.ExpectedDate)
+                        .ThenBy(x => x.SecurityName)
+                        .ToList()
                 })
                 .Where(e => e.Expected != 0m)
                 .GroupBy(e => (e.SecurityId, e.Period))
