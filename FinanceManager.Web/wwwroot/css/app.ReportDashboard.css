@@ -293,6 +293,8 @@
 }
 
 .projection-detail-table {
+    font-size: 1rem;
+    margin-bottom: 0;
     width: 100%;
 }
 
