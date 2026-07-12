@@ -268,13 +268,28 @@
 }
 
 .projection-detail-summary {
+    display: grid;
+    gap: .35rem;
+    margin-bottom: .75rem;
+    padding: .55rem .65rem;
+    border-radius: var(--radius);
+}
+
+.projection-detail-summary-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: .75rem;
-    padding: .5rem .65rem;
-    border-radius: var(--radius);
+}
+
+.projection-detail-summary-muted {
+    opacity: .62;
+}
+
+.projection-detail-summary-total {
+    padding-top: .35rem;
+    border-top: 1px solid rgba(127, 127, 127, .25);
+    font-weight: 700;
 }
 
 .projection-detail-table {

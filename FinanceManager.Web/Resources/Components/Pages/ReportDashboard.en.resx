@@ -378,6 +378,15 @@
   <data name="ProjectionDetails_PriorYearDate" xml:space="preserve">
     <value>Prior-year date</value>
   </data>
+  <data name="ProjectionDetails_ActualAmount" xml:space="preserve">
+    <value>Actual values</value>
+  </data>
+  <data name="ProjectionDetails_ExpectedAmount" xml:space="preserve">
+    <value>Expected bookings</value>
+  </data>
+  <data name="ProjectionDetails_ProjectionAmount" xml:space="preserve">
+    <value>Projection</value>
+  </data>
   <data name="ProjectionDetails_Amount" xml:space="preserve">
     <value>Amount</value>
   </data>

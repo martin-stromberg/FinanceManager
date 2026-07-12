@@ -104,8 +104,18 @@
                         </button>
                     </div>
                     <div class="projection-detail-summary">
-                        <span>@Localizer["ProjectionDetails_Amount"]</span>
-                        <strong>@_projectionDetailsAmount.ToString("N2")</strong>
+                        <div class="projection-detail-summary-row projection-detail-summary-muted">
+                            <span>@Localizer["ProjectionDetails_ActualAmount"]</span>
+                            <strong>@_projectionDetailsActualAmount.ToString("N2")</strong>
+                        </div>
+                        <div class="projection-detail-summary-row">
+                            <span>@Localizer["ProjectionDetails_ExpectedAmount"]</span>
+                            <strong>@_projectionDetailsExpectedAmount.ToString("N2")</strong>
+                        </div>
+                        <div class="projection-detail-summary-row projection-detail-summary-total">
+                            <span>@Localizer["ProjectionDetails_ProjectionAmount"]</span>
+                            <strong>@_projectionDetailsAmount.ToString("N2")</strong>
+                        </div>
                     </div>
                     @if(_projectionDetails.Count == 0)
                     {
@@ -221,7 +231,7 @@
                                     <span>@(top.ProjectionAmount.HasValue ? top.ProjectionAmount.Value.ToString("N2") : "-")</span>
                                     @if (top.ProjectionExpectedDividends is { Count: > 0 })
                                     {
-                                        <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(top), top.ProjectionAmount ?? 0m, top.ProjectionExpectedDividends!)">
+                                        <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(top), top.Amount, top.ProjectionAmount ?? 0m, top.ProjectionExpectedDividends!)">
                                             <svg><use href="/icons/sprite.svg#info" /></svg>
                                         </button>
                                     }
@@ -272,7 +282,7 @@
                                             <span>@(child.ProjectionAmount.HasValue ? child.ProjectionAmount.Value.ToString("N2") : "-")</span>
                                             @if (child.ProjectionExpectedDividends is { Count: > 0 })
                                             {
-                                                <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(child), child.ProjectionAmount ?? 0m, child.ProjectionExpectedDividends!)">
+                                                <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(child), child.Amount, child.ProjectionAmount ?? 0m, child.ProjectionExpectedDividends!)">
                                                     <svg><use href="/icons/sprite.svg#info" /></svg>
                                                 </button>
                                             }
@@ -314,7 +324,7 @@
                                                     <span>@(grand.ProjectionAmount.HasValue ? grand.ProjectionAmount.Value.ToString("N2") : "-")</span>
                                                     @if (grand.ProjectionExpectedDividends is { Count: > 0 })
                                                     {
-                                                        <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(grand), grand.ProjectionAmount ?? 0m, grand.ProjectionExpectedDividends!)">
+                                                        <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(grand), grand.Amount, grand.ProjectionAmount ?? 0m, grand.ProjectionExpectedDividends!)">
                                                             <svg><use href="/icons/sprite.svg#info" /></svg>
                                                         </button>
                                                     }
@@ -344,7 +354,7 @@
                                         <span>@(totals.Projection.HasValue ? totals.Projection.Value.ToString("N2") : "-")</span>
                                         @if (totalProjectionDetails.Count > 0)
                                         {
-                                            <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(totalLabel, totals.Projection ?? 0m, totalProjectionDetails)">
+                                            <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(totalLabel, totals.Amount, totals.Projection ?? 0m, totalProjectionDetails)">
                                                 <svg><use href="/icons/sprite.svg#info" /></svg>
                                             </button>
                                         }
@@ -478,6 +488,8 @@
 
     private bool _useValutaDate; // new: whether to use valuta date for analysis
     private string? _projectionDetailsTitle;
+    private decimal _projectionDetailsActualAmount;
+    private decimal _projectionDetailsExpectedAmount;
     private decimal _projectionDetailsAmount;
     private IReadOnlyList<ReportProjectionExpectedDividendDto> _projectionDetails = Array.Empty<ReportProjectionExpectedDividendDto>();
 
@@ -510,19 +522,23 @@
             .ToList();
     }
 
-    private void OpenProjectionDetails(string title, decimal projectionAmount, IReadOnlyList<ReportProjectionExpectedDividendDto> details)
+    private void OpenProjectionDetails(string title, decimal actualAmount, decimal projectionAmount, IReadOnlyList<ReportProjectionExpectedDividendDto> details)
     {
         _projectionDetailsTitle = string.Format(System.Globalization.CultureInfo.CurrentCulture, Localizer["ProjectionDetails_Title"].Value, title);
+        _projectionDetailsActualAmount = actualAmount;
         _projectionDetailsAmount = projectionAmount;
         _projectionDetails = details
             .OrderBy(p => p.ExpectedDate)
             .ThenBy(p => p.SecurityName)
             .ToList();
+        _projectionDetailsExpectedAmount = _projectionDetails.Sum(p => p.Amount);
     }
 
     private void CloseProjectionDetails()
     {
         _projectionDetailsTitle = null;
+        _projectionDetailsActualAmount = 0m;
+        _projectionDetailsExpectedAmount = 0m;
         _projectionDetailsAmount = 0m;
         _projectionDetails = Array.Empty<ReportProjectionExpectedDividendDto>();
     }
