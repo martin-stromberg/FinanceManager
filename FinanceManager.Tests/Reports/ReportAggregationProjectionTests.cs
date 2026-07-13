@@ -60,6 +60,34 @@ public sealed class ReportAggregationProjectionTests
         }
     }
 
+    private static Posting AddTrade(
+        AppDbContext db,
+        FinanceManager.Domain.Securities.Security security,
+        DateTime bookingDate,
+        SecurityPostingSubType subType,
+        decimal? quantity,
+        DateTime? valutaDate = null)
+    {
+        var effectiveValutaDate = valutaDate ?? bookingDate;
+        var posting = new Posting(
+            Guid.NewGuid(),
+            PostingKind.Security,
+            null,
+            null,
+            null,
+            security.Id,
+            bookingDate,
+            effectiveValutaDate,
+            0m,
+            subType.ToString(),
+            null,
+            null,
+            subType,
+            quantity);
+        db.Postings.Add(posting);
+        return posting;
+    }
+
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_AddsUnconfirmedPriorYearNetDividend()
     {
@@ -70,6 +98,7 @@ public sealed class ReportAggregationProjectionTests
         await db.SaveChangesAsync();
 
         var analysis = new DateTime(2026, 5, 1);
+        AddTrade(db, missingCurrent, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddDividendGroup(db, missingCurrent, new DateTime(2025, 5, 10), 100m, -5m, -25m);
         AddDividendGroup(db, confirmedCurrent, new DateTime(2025, 5, 12), 40m);
         AddDividendGroup(db, confirmedCurrent, new DateTime(2026, 5, 20), 50m);
@@ -176,6 +205,7 @@ public sealed class ReportAggregationProjectionTests
         var security = AddSecurity(db, user.Id, "Monthly Dividend");
         await db.SaveChangesAsync();
 
+        AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         for (var month = 1; month <= 7; month++)
         {
             AddDividendGroup(db, security, new DateTime(2025, month, 10), 10m);
@@ -221,6 +251,7 @@ public sealed class ReportAggregationProjectionTests
         var security = AddSecurity(db, user.Id, "Monthly Corrections Dividend");
         await db.SaveChangesAsync();
 
+        AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         for (var month = 1; month <= 12; month++)
         {
             AddDividendGroup(db, security, new DateTime(2025, month, 10), 10m);
@@ -274,6 +305,7 @@ public sealed class ReportAggregationProjectionTests
         var security = AddSecurity(db, user.Id, "Gladstone Commercial Corp");
         await db.SaveChangesAsync();
 
+        AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddDividendGroup(db, security, new DateTime(2026, 5, 4), 9.41m);
         AddDividendGroup(db, security, new DateTime(2026, 4, 1), 9.49m);
         AddDividendGroup(db, security, new DateTime(2026, 3, 2), 9.41m);
@@ -393,6 +425,7 @@ public sealed class ReportAggregationProjectionTests
         var security = AddSecurity(db, user.Id, "Open Quarter Dividend");
         await db.SaveChangesAsync();
 
+        AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddDividendGroup(db, security, new DateTime(2025, 3, 10), 30m);
         AddDividendGroup(db, security, new DateTime(2025, 6, 12), 40m);
         await db.SaveChangesAsync();
@@ -455,6 +488,7 @@ public sealed class ReportAggregationProjectionTests
         var security = AddSecurity(db, user.Id, "Irregular Open Dividend");
         await db.SaveChangesAsync();
 
+        AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddDividendGroup(db, security, new DateTime(2025, 1, 10), 10m);
         AddDividendGroup(db, security, new DateTime(2025, 2, 20), 20m);
         AddDividendGroup(db, security, new DateTime(2025, 6, 15), 30m);
@@ -488,6 +522,8 @@ public sealed class ReportAggregationProjectionTests
         await db.SaveChangesAsync();
 
         var analysis = new DateTime(2026, 5, 1);
+        AddTrade(db, valutaSecurity, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
+        AddTrade(db, bookingSecurity, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddDividendGroup(db, valutaSecurity, new DateTime(2025, 4, 30), 30m, valutaDate: new DateTime(2025, 5, 2));
         AddDividendGroup(db, bookingSecurity, new DateTime(2025, 5, 4), 70m);
         await db.SaveChangesAsync();
@@ -585,6 +621,7 @@ public sealed class ReportAggregationProjectionTests
         var security = AddSecurity(db, user.Id, "Categorized Security", category.Id);
         await db.SaveChangesAsync();
         var analysis = new DateTime(2026, 5, 1);
+        AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddDividendGroup(db, security, new DateTime(2025, 5, 10), 80m);
         await db.SaveChangesAsync();
 
@@ -606,6 +643,337 @@ public sealed class ReportAggregationProjectionTests
     }
 
     [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_DoesNotExpectDividend_WhenHoldingIsFullySold()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-sold");
+        var security = AddSecurity(db, user.Id, "Sold Security");
+        await db.SaveChangesAsync();
+
+        var analysis = new DateTime(2026, 5, 1);
+        AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
+        AddTrade(db, security, new DateTime(2026, 5, 10), SecurityPostingSubType.Sell, -10m);
+        AddDividendGroup(db, security, new DateTime(2025, 5, 10), 100m);
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Month,
+            1,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: analysis), CancellationToken.None);
+
+        var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == analysis);
+        Assert.Equal(0m, point.Amount);
+        Assert.Equal(0m, point.ProjectionAmount);
+        Assert.Null(point.ProjectionExpectedDividends);
+    }
+
+    [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_YearIntervalLoadsTradesUntilExpectedDividendDate()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-year-sold-after-start");
+        var security = AddSecurity(db, user.Id, "Year Sold Security");
+        await db.SaveChangesAsync();
+
+        AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
+        AddTrade(db, security, new DateTime(2026, 5, 10), SecurityPostingSubType.Sell, -10m);
+        AddDividendGroup(db, security, new DateTime(2025, 5, 10), 100m);
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Year,
+            1,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: new DateTime(2026, 5, 1)), CancellationToken.None);
+
+        var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 1, 1));
+        Assert.Equal(0m, point.Amount);
+        Assert.Equal(0m, point.ProjectionAmount);
+        Assert.Null(point.ProjectionExpectedDividends);
+    }
+
+    [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_TreatsPositiveSellQuantityAsDisposition_WhenNotReversal()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-positive-sell");
+        var security = AddSecurity(db, user.Id, "Positive Sell Security");
+        await db.SaveChangesAsync();
+
+        var analysis = new DateTime(2026, 5, 1);
+        AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
+        AddTrade(db, security, new DateTime(2026, 5, 1), SecurityPostingSubType.Sell, 10m);
+        AddDividendGroup(db, security, new DateTime(2025, 5, 10), 100m);
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Month,
+            1,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: analysis), CancellationToken.None);
+
+        var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == analysis);
+        Assert.Equal(0m, point.ProjectionAmount);
+        Assert.Null(point.ProjectionExpectedDividends);
+    }
+
+    [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_ExpectsDividend_WhenSellWasReversed()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-sell-reversal");
+        var security = AddSecurity(db, user.Id, "Reversed Sell Security");
+        await db.SaveChangesAsync();
+
+        var analysis = new DateTime(2026, 5, 1);
+        AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
+        var sell = AddTrade(db, security, new DateTime(2026, 5, 1), SecurityPostingSubType.Sell, -10m);
+        var reversal = AddTrade(db, security, new DateTime(2026, 5, 2), SecurityPostingSubType.Sell, 10m);
+        reversal.SetReversalFor(sell);
+        AddDividendGroup(db, security, new DateTime(2025, 5, 10), 100m);
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Month,
+            1,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: analysis), CancellationToken.None);
+
+        var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == analysis);
+        Assert.Equal(100m, point.ProjectionAmount);
+        Assert.Equal(new DateTime(2026, 5, 10), Assert.Single(point.ProjectionExpectedDividends!).ExpectedDate);
+    }
+
+    [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_ExpectsDividend_WhenHoldingRemainsAfterPartialSell()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-partial-sell");
+        var security = AddSecurity(db, user.Id, "Partially Sold Security");
+        await db.SaveChangesAsync();
+
+        var analysis = new DateTime(2026, 5, 1);
+        AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
+        AddTrade(db, security, new DateTime(2026, 5, 1), SecurityPostingSubType.Sell, -4m);
+        AddDividendGroup(db, security, new DateTime(2025, 5, 10), 100m);
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Month,
+            1,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: analysis), CancellationToken.None);
+
+        var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == analysis);
+        Assert.Equal(100m, point.ProjectionAmount);
+        Assert.Equal(new DateTime(2026, 5, 10), Assert.Single(point.ProjectionExpectedDividends!).ExpectedDate);
+    }
+
+    [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_KeepsBookedDividend_WhenFutureExpectationHasNoHolding()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-booked-closed");
+        var security = AddSecurity(db, user.Id, "Closed Monthly Security");
+        await db.SaveChangesAsync();
+
+        AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
+        AddTrade(db, security, new DateTime(2026, 7, 10), SecurityPostingSubType.Sell, -10m);
+        for (var month = 1; month <= 7; month++)
+        {
+            AddDividendGroup(db, security, new DateTime(2025, month, 10), 10m);
+        }
+
+        for (var month = 1; month <= 6; month++)
+        {
+            AddDividendGroup(db, security, new DateTime(2026, month, 10), 10m);
+        }
+
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Year,
+            1,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: new DateTime(2026, 6, 1)), CancellationToken.None);
+
+        var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 1, 1));
+        Assert.Equal(60m, point.Amount);
+        Assert.Equal(60m, point.ProjectionAmount);
+        Assert.Null(point.ProjectionExpectedDividends);
+    }
+
+    [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_CategoryExcludesSoldSecurityExpectations()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-category-holding");
+        var category = new FinanceManager.Domain.Securities.SecurityCategory(user.Id, "Income");
+        db.SecurityCategories.Add(category);
+        await db.SaveChangesAsync();
+        var heldSecurity = AddSecurity(db, user.Id, "Held Security", category.Id);
+        var soldSecurity = AddSecurity(db, user.Id, "Sold Security", category.Id);
+        await db.SaveChangesAsync();
+
+        var analysis = new DateTime(2026, 5, 1);
+        AddTrade(db, heldSecurity, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
+        AddTrade(db, soldSecurity, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
+        AddTrade(db, soldSecurity, new DateTime(2026, 5, 10), SecurityPostingSubType.Sell, -10m);
+        AddDividendGroup(db, heldSecurity, new DateTime(2025, 5, 10), 80m);
+        AddDividendGroup(db, soldSecurity, new DateTime(2025, 5, 10), 40m);
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Month,
+            1,
+            IncludeCategory: true,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: analysis), CancellationToken.None);
+
+        var categoryPoint = result.Points.Single(p => p.GroupKey == $"Category:Security:{category.Id}" && p.PeriodStart == analysis);
+        var expectedDividend = Assert.Single(categoryPoint.ProjectionExpectedDividends!);
+        Assert.Equal(80m, categoryPoint.ProjectionAmount);
+        Assert.Equal(heldSecurity.Id, expectedDividend.SecurityId);
+        Assert.Equal(80m, expectedDividend.Amount);
+    }
+
+    [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_IgnoresOtherUsersHoldings()
+    {
+        using var db = CreateDb();
+        var owner = await AddUserAsync(db, "projection-owner-isolation");
+        var otherUser = await AddUserAsync(db, "projection-other-isolation");
+        var ownSecurity = AddSecurity(db, owner.Id, "Own Security");
+        var otherSecurity = AddSecurity(db, otherUser.Id, "Other Security");
+        await db.SaveChangesAsync();
+
+        var analysis = new DateTime(2026, 5, 1);
+        AddTrade(db, otherSecurity, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
+        AddDividendGroup(db, ownSecurity, new DateTime(2025, 5, 10), 100m);
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            owner.Id,
+            PostingKind.Security,
+            ReportInterval.Month,
+            1,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: analysis), CancellationToken.None);
+
+        var point = result.Points.Single(p => p.GroupKey == $"Security:{ownSecurity.Id}" && p.PeriodStart == analysis);
+        Assert.Equal(0m, point.ProjectionAmount);
+        Assert.Null(point.ProjectionExpectedDividends);
+    }
+
+    [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_UsesValutaDateForHoldingCheck()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-holding-valuta");
+        var security = AddSecurity(db, user.Id, "Valuta Holding Security");
+        await db.SaveChangesAsync();
+
+        var analysis = new DateTime(2026, 5, 1);
+        AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
+        AddTrade(db, security, new DateTime(2026, 5, 1), SecurityPostingSubType.Sell, -10m, new DateTime(2026, 5, 20));
+        AddDividendGroup(db, security, new DateTime(2025, 5, 10), 100m);
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Month,
+            1,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: analysis,
+            UseValutaDate: true), CancellationToken.None);
+
+        var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == analysis);
+        Assert.Equal(100m, point.ProjectionAmount);
+        Assert.Equal(new DateTime(2026, 5, 10), Assert.Single(point.ProjectionExpectedDividends!).ExpectedDate);
+    }
+
+    [Fact]
+    public async Task QueryAsync_SecurityDividendProjection_DoesNotUseTradeWithoutQuantityAsHolding()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-no-quantity");
+        var security = AddSecurity(db, user.Id, "No Quantity Security");
+        await db.SaveChangesAsync();
+
+        var analysis = new DateTime(2026, 5, 1);
+        AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, null);
+        AddDividendGroup(db, security, new DateTime(2025, 5, 10), 100m);
+        await db.SaveChangesAsync();
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
+            user.Id,
+            PostingKind.Security,
+            ReportInterval.Month,
+            1,
+            IncludeCategory: false,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: true,
+            AnalysisDate: analysis), CancellationToken.None);
+
+        var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == analysis);
+        Assert.Equal(0m, point.ProjectionAmount);
+        Assert.Null(point.ProjectionExpectedDividends);
+    }
+
+    [Fact]
     public async Task QueryAsync_SecurityDividendProjection_HandlesYtdCutoffAndQuarterInterval()
     {
         using var db = CreateDb();
@@ -613,6 +981,7 @@ public sealed class ReportAggregationProjectionTests
         var security = AddSecurity(db, user.Id, "Interval Security");
         await db.SaveChangesAsync();
 
+        AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddDividendGroup(db, security, new DateTime(2025, 1, 10), 10m);
         AddDividendGroup(db, security, new DateTime(2025, 5, 10), 20m);
         AddDividendGroup(db, security, new DateTime(2025, 6, 10), 40m);

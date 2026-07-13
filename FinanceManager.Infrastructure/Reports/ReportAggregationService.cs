@@ -699,6 +699,8 @@ public sealed class ReportAggregationService : IReportAggregationService
         var today = DateTime.UtcNow.Date;
         var analysis = (query.AnalysisDate?.Date) ?? new DateTime(today.Year, today.Month, 1);
         analysis = new DateTime(analysis.Year, analysis.Month, 1);
+        const int SecurityPostingSubType_Buy2 = 0;
+        const int SecurityPostingSubType_Sell2 = 1;
         const int SecurityPostingSubType_Dividend2 = 2;
         const int SecurityPostingSubType_Fee2 = 3;
         const int SecurityPostingSubType_Tax2 = 4;
@@ -926,6 +928,83 @@ public sealed class ReportAggregationService : IReportAggregationService
 
         points = TransformToInterval(points);
 
+        var holdingTransactionsBySecurity = new Dictionary<Guid, List<HoldingTransaction>>();
+        if (compareProjection && points.Count > 0)
+        {
+            DateTime GetHoldingProjectionPeriodEnd(DateTime periodStart)
+            {
+                return query.Interval switch
+                {
+                    ReportInterval.Month => periodStart.AddMonths(1),
+                    ReportInterval.Quarter => periodStart.AddMonths(3),
+                    ReportInterval.HalfYear => periodStart.AddMonths(6),
+                    ReportInterval.Year => periodStart.AddYears(1),
+                    ReportInterval.Ytd => endExclusive,
+                    _ => endExclusive
+                };
+            }
+
+            var holdingProjectionEnd = query.Interval == ReportInterval.Year
+                ? points
+                    .Select(p => GetHoldingProjectionPeriodEnd(p.PeriodStart))
+                    .Append(GetHoldingProjectionPeriodEnd(new DateTime(analysis.Year, 1, 1)))
+                    .Max()
+                : endExclusive;
+
+            var holdingTransactions = await _db.Postings.AsNoTracking()
+                .Where(p => p.Kind == PostingKind.Security)
+                .Where(p => p.SecurityId != null && ownedIds.Contains(p.SecurityId.Value))
+                .Where(p => (int)p.SecuritySubType! == SecurityPostingSubType_Buy2 || (int)p.SecuritySubType! == SecurityPostingSubType_Sell2)
+                .Where(p => p.Quantity != null)
+                .Where(p => (query.UseValutaDate ? ((DateTime?)p.ValutaDate ?? p.BookingDate) : p.BookingDate) <= holdingProjectionEnd)
+                .Select(p => new HoldingTransaction(
+                    p.SecurityId!.Value,
+                    query.UseValutaDate ? ((DateTime?)p.ValutaDate ?? p.BookingDate) : p.BookingDate,
+                    p.SecuritySubType!.Value,
+                    p.Quantity!.Value,
+                    p.ReversalForPostingId.HasValue))
+                .ToListAsync(ct);
+
+            holdingTransactionsBySecurity = holdingTransactions
+                .GroupBy(tx => tx.SecurityId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderBy(tx => tx.Date).ToList());
+        }
+
+        bool HasPositiveHolding(Guid securityId, DateTime date)
+        {
+            if (!holdingTransactionsBySecurity.TryGetValue(securityId, out var transactions))
+            {
+                return false;
+            }
+
+            var shares = 0m;
+            var cutoff = date.Date;
+            foreach (var tx in transactions)
+            {
+                if (tx.Date.Date > cutoff)
+                {
+                    break;
+                }
+
+                if (tx.IsReversal)
+                {
+                    shares += tx.Quantity;
+                }
+                else if (tx.SubType == SecurityPostingSubType.Buy)
+                {
+                    shares += tx.Quantity;
+                }
+                else if (tx.SubType == SecurityPostingSubType.Sell)
+                {
+                    shares -= Math.Abs(tx.Quantity);
+                }
+            }
+
+            return shares > 0m;
+        }
+
         if (compareProjection)
         {
             ApplyProjectionAmounts(points, dividendEvents);
@@ -1115,6 +1194,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                         .OrderBy(e => e.Date)
                         .Select(e => new ProjectionCandidate(e.SecurityId, e.Date.AddYears(1), e.Date, e.NetAmount))
                         .Where(e => MapProjectionPeriod(e.ExpectedDate) != DateTime.MinValue)
+                        .Where(e => HasPositiveHolding(e.SecurityId, e.ExpectedDate))
                         .ToList();
 
                     return FindExpectedDividends(pattern, candidates, currentEvents)
@@ -1381,6 +1461,8 @@ public sealed class ReportAggregationService : IReportAggregationService
     }
 
     private sealed record DividendEvent(Guid SecurityId, DateTime Date, DateTime Month, decimal NetAmount, Guid? GroupId);
+
+    private sealed record HoldingTransaction(Guid SecurityId, DateTime Date, SecurityPostingSubType SubType, decimal Quantity, bool IsReversal);
 
     private sealed record ProjectionCandidate(Guid SecurityId, DateTime ExpectedDate, DateTime PriorYearDate, decimal NetAmount);
 

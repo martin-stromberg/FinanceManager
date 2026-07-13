@@ -12,7 +12,7 @@ Die Seite `/reports` zeigt gespeicherte Favoriten und öffnet Dashboards über `
 
 Im Report-Dashboard können Anwender Vergleichsspalten wie Vorperiode, Vorjahr und bei Dividendenanalysen die Hochrechnung aktivieren. Die Option `Hochrechnung` steht nur für reine Wertpapierberichte zur Verfügung. Sie ergänzt die Ergebnistabelle direkt nach `Betrag` um eine Spalte mit dem erwarteten Dividendenbetrag des Betrachtungszeitraums.
 
-Die Hochrechnung verwendet bereits gebuchte Netto-Dividenden des aktuellen Zeitraums und ergänzt erwartete Netto-Dividenden aus der korrespondierenden Vorjahresperiode, sofern diese im aktuellen Zeitraum noch nicht durch eine Dividende desselben Wertpapiers bestätigt wurden. Wird ein Report als Favorit gespeichert oder aktualisiert, wird die Hochrechnungsoption zusammen mit den übrigen Dashboard-Einstellungen gespeichert und beim erneuten Öffnen wieder angewendet.
+Die Hochrechnung verwendet bereits gebuchte Netto-Dividenden des aktuellen Zeitraums und ergänzt erwartete Netto-Dividenden aus der korrespondierenden Vorjahresperiode, sofern diese im aktuellen Zeitraum noch nicht durch eine Dividende desselben Wertpapiers bestätigt wurden. Erwartete Dividenden werden nur für Wertpapiere berücksichtigt, die zum erwarteten Dividendentag noch einen positiven Bestand haben. Wird ein Report als Favorit gespeichert oder aktualisiert, wird die Hochrechnungsoption zusammen mit den übrigen Dashboard-Einstellungen gespeichert und beim erneuten Öffnen wieder angewendet.
 
 ## Beispiele
 
