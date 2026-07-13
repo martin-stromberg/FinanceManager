@@ -40,6 +40,7 @@
 - Bei gültiger Auswahl liefert die Aggregation `ComparedProjection = true` und pro Berichtspunkt ein optionales `ProjectionAmount`.
 - `ProjectionAmount` besteht aus den gebuchten Netto-Dividenden des aktuellen Betrachtungszeitraums plus erwarteten Netto-Dividenden aus der gleichen Vorjahresperiode.
 - Eine Vorjahresdividende gilt als bestätigt, wenn im korrespondierenden aktuellen Periodenbucket mindestens eine Dividende desselben Wertpapiers vorhanden ist.
+- Erwartete Dividenden werden nur erzeugt, wenn das Wertpapier zum erwarteten Dividendentag einen positiven Bestand hat. Käufe und Verkäufe mit Menge bilden den Bestand; Stornobuchungen wirken mit ihrer gespeicherten Gegenmenge.
 - Bei anderen Buchungsarten, gemischten Auswahlen oder `AllHistory` bleibt die Hochrechnung wirkungslos; `ComparedProjection = false` und `ProjectionAmount` bleibt leer.
 - Kategorie- und Summenzeilen aggregieren die Hochrechnungswerte ihrer Kindzeilen.
 
