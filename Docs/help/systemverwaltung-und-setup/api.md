@@ -28,6 +28,8 @@ Dieser Bereich nutzt mehrere Controller für Authentifizierung, Administration, 
 
 **Beschreibung:** Benutzerverwaltung.
 
+**Berechtigung:** Die Admin-User-Management-Endpunkte unter `api/admin/users` erfordern serverseitig die Rolle `Admin`. Authentifizierte Nicht-Admins erhalten `403 Forbidden`.
+
 ### `GET /api/admin/ip-blocks`
 
 **Beschreibung:** IP-Blocklisten verwalten.

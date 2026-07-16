@@ -104,6 +104,7 @@ Einstiegspunkte:
 - `POST /api/statement-drafts/mass-import` – Massenimport analysieren/ausführen
 - `POST /api/securities/{id}/prices/import` – Wertpapierkurse importieren
 - `POST /api/postings/{id}/reverse` – Buchung stornieren (Reversal)
+- `GET|POST|PUT|DELETE /api/admin/users...` – administrative Benutzerverwaltung; serverseitig auf JWT-authentifizierte Benutzer mit Rolle `Admin` beschränkt. Authentifizierte Nicht-Admins erhalten `403 Forbidden`, anonyme Aufrufe `401 Unauthorized`.
 
 Weitere API-Dokumentation:
 - `Docs/help/*/api.md`
