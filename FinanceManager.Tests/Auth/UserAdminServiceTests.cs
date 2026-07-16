@@ -1,3 +1,4 @@
+using FinanceManager.Application;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Auth;
@@ -57,7 +58,7 @@ namespace FinanceManager.Tests.Auth
                 });
             // --- END NEW ---
 
-            var sut = new UserAdminService(db, userManagerMock.Object, hasher.Object, logger); // pass userManager
+            var sut = new UserAdminService(db, userManagerMock.Object, hasher.Object, new TestCurrentUserService(true), logger); // pass userManager
             return (sut, db, hasher, userManagerMock);
         }
 
@@ -156,6 +157,22 @@ namespace FinanceManager.Tests.Auth
             var (sut, db, _, _) = Create();
             var ok = await sut.DeleteAsync(Guid.NewGuid(), CancellationToken.None);
             Assert.False(ok);
+        }
+
+        private sealed class TestCurrentUserService : ICurrentUserService
+        {
+            public TestCurrentUserService(bool isAdmin)
+            {
+                IsAdmin = isAdmin;
+            }
+
+            public Guid UserId { get; } = Guid.NewGuid();
+
+            public string? PreferredLanguage => null;
+
+            public bool IsAuthenticated => true;
+
+            public bool IsAdmin { get; }
         }
     }
 }

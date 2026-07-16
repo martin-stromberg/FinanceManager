@@ -82,6 +82,31 @@ public class ApiClientUsersAdminTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task NonAdmin_CreateAndUpdate_DoNotPersistChanges()
+    {
+        var nonAdminHttp = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var nonAdminApi = new FinanceManager.Shared.ApiClient(nonAdminHttp);
+        var regularName = $"regular-{Guid.NewGuid():N}";
+        await nonAdminApi.Auth_RegisterAsync(new RegisterRequest(regularName, "Secret123", PreferredLanguage: null, TimeZoneId: null));
+
+        var adminApi = CreateClient();
+        await adminApi.Auth_LoginAsync(new LoginRequest(TestWebApplicationFactory.BootstrapAdminUsername, TestWebApplicationFactory.BootstrapAdminPassword, null, null));
+        var protectedUser = await adminApi.Admin_CreateUserAsync(new CreateUserRequest($"protected-{Guid.NewGuid():N}", "Secret123", IsAdmin: false));
+
+        var blockedCreateName = $"blocked-{Guid.NewGuid():N}";
+        var createResponse = await nonAdminHttp.PostAsJsonAsync("/api/admin/users", new CreateUserRequest(blockedCreateName, "Secret123", IsAdmin: false));
+        var updateResponse = await nonAdminHttp.PutAsJsonAsync($"/api/admin/users/{protectedUser.Id}", new UpdateUserRequest("changed-by-non-admin", false, true, null));
+
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        updateResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var users = await adminApi.Admin_ListUsersAsync();
+        users.Should().NotContain(u => u.Username == blockedCreateName);
+        users.Should().ContainSingle(u => u.Id == protectedUser.Id)
+            .Which.Username.Should().Be(protectedUser.Username);
+    }
+
+    [Fact]
     public async Task Anonymous_UserAdminEndpoint_ReturnsUnauthorized()
     {
         var http = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
