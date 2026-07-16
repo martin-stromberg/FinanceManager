@@ -1,5 +1,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using System.Net;
+using System.Net.Http.Json;
 using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
@@ -29,6 +31,12 @@ public class ApiClientUsersAdminTests : IClassFixture<TestWebApplicationFactory>
         var created = await api.Admin_CreateUserAsync(new CreateUserRequest("user1", "Secret123", IsAdmin: false));
         created.Username.Should().Be("user1");
 
+        // Get single user
+        var fetched = await api.Admin_GetUserAsync(created.Id);
+        fetched.Should().NotBeNull();
+        fetched!.Id.Should().Be(created.Id);
+        fetched.Username.Should().Be("user1");
+
         // List contains new user
         var users = await api.Admin_ListUsersAsync();
         users.Should().Contain(u => u.Username == "user1");
@@ -49,5 +57,62 @@ public class ApiClientUsersAdminTests : IClassFixture<TestWebApplicationFactory>
         // Delete
         var okDel = await api.Admin_DeleteUserAsync(created.Id);
         okDel.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task NonAdmin_UserAdminEndpoints_ReturnForbidden()
+    {
+        var http = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var api = new FinanceManager.Shared.ApiClient(http);
+        await api.Auth_RegisterAsync(new RegisterRequest($"regular-{Guid.NewGuid():N}", "Secret123", PreferredLanguage: null, TimeZoneId: null));
+
+        var id = Guid.NewGuid();
+        var responses = new[]
+        {
+            await http.GetAsync("/api/admin/users"),
+            await http.GetAsync($"/api/admin/users/{id}"),
+            await http.PostAsJsonAsync("/api/admin/users", new CreateUserRequest("blocked-user", "Secret123", IsAdmin: false)),
+            await http.PutAsJsonAsync($"/api/admin/users/{id}", new UpdateUserRequest("blocked-user", false, true, null)),
+            await http.PostAsJsonAsync($"/api/admin/users/{id}/reset-password", new ResetPasswordRequest("Newpass123")),
+            await http.PostAsync($"/api/admin/users/{id}/unlock", content: null),
+            await http.DeleteAsync($"/api/admin/users/{id}")
+        };
+
+        responses.Should().AllSatisfy(response => response.StatusCode.Should().Be(HttpStatusCode.Forbidden));
+    }
+
+    [Fact]
+    public async Task NonAdmin_CreateAndUpdate_DoNotPersistChanges()
+    {
+        var nonAdminHttp = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var nonAdminApi = new FinanceManager.Shared.ApiClient(nonAdminHttp);
+        var regularName = $"regular-{Guid.NewGuid():N}";
+        await nonAdminApi.Auth_RegisterAsync(new RegisterRequest(regularName, "Secret123", PreferredLanguage: null, TimeZoneId: null));
+
+        var adminApi = CreateClient();
+        await adminApi.Auth_LoginAsync(new LoginRequest(TestWebApplicationFactory.BootstrapAdminUsername, TestWebApplicationFactory.BootstrapAdminPassword, null, null));
+        var protectedUser = await adminApi.Admin_CreateUserAsync(new CreateUserRequest($"protected-{Guid.NewGuid():N}", "Secret123", IsAdmin: false));
+
+        var blockedCreateName = $"blocked-{Guid.NewGuid():N}";
+        var createResponse = await nonAdminHttp.PostAsJsonAsync("/api/admin/users", new CreateUserRequest(blockedCreateName, "Secret123", IsAdmin: false));
+        var updateResponse = await nonAdminHttp.PutAsJsonAsync($"/api/admin/users/{protectedUser.Id}", new UpdateUserRequest("changed-by-non-admin", false, true, null));
+
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        updateResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var users = await adminApi.Admin_ListUsersAsync();
+        users.Should().NotContain(u => u.Username == blockedCreateName);
+        users.Should().ContainSingle(u => u.Id == protectedUser.Id)
+            .Which.Username.Should().Be(protectedUser.Username);
+    }
+
+    [Fact]
+    public async Task Anonymous_UserAdminEndpoint_ReturnsUnauthorized()
+    {
+        var http = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        var response = await http.GetAsync("/api/admin/users");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }

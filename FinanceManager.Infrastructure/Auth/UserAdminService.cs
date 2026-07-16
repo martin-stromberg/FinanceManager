@@ -1,3 +1,4 @@
+using FinanceManager.Application;
 using FinanceManager.Application.Users;
 using FinanceManager.Domain.Contacts; // added
 using FinanceManager.Domain.Users;
@@ -16,6 +17,7 @@ public sealed class UserAdminService : IUserAdminService
     private readonly AppDbContext _db;
     private readonly UserManager<User> _userManager;
     private readonly IPasswordHashingService _passwordHasher;
+    private readonly ICurrentUserService _current;
     private readonly ILogger<UserAdminService> _logger;
 
     /// <summary>
@@ -24,12 +26,14 @@ public sealed class UserAdminService : IUserAdminService
     /// <param name="db">Application database context.</param>
     /// <param name="userManager">Identity <see cref="UserManager{TUser}"/> used for role operations and lockout handling.</param>
     /// <param name="passwordHasher">Service used to hash passwords for manual resets/creates.</param>
+    /// <param name="current">Current request user used to enforce administrative access at the service boundary.</param>
     /// <param name="logger">Logger instance for the service.</param>
-    public UserAdminService(AppDbContext db, UserManager<User> userManager, IPasswordHashingService passwordHasher, ILogger<UserAdminService> logger)
+    public UserAdminService(AppDbContext db, UserManager<User> userManager, IPasswordHashingService passwordHasher, ICurrentUserService current, ILogger<UserAdminService> logger)
     {
         _db = db;
         _userManager = userManager;
         _passwordHasher = passwordHasher;
+        _current = current;
         _logger = logger;
     }
 
@@ -41,6 +45,7 @@ public sealed class UserAdminService : IUserAdminService
     /// <exception cref="System.InvalidOperationException">Rethrows database related exceptions when the underlying query fails.</exception>
     public async Task<IReadOnlyList<UserAdminDto>> ListAsync(CancellationToken ct)
     {
+        EnsureAdmin();
         _logger.LogInformation("Listing users");
         var users = await _db.Users.AsNoTracking()
             .OrderBy(u => u.UserName)
@@ -72,6 +77,7 @@ public sealed class UserAdminService : IUserAdminService
     /// <returns>The <see cref="UserAdminDto"/> when the user exists; otherwise <c>null</c>.</returns>
     public async Task<UserAdminDto?> GetAsync(Guid id, CancellationToken ct)
     {
+        EnsureAdmin();
         _logger.LogInformation("Getting user {UserId}", id);
         var user = await _db.Users.AsNoTracking()
             .Where(u => u.Id == id)
@@ -107,6 +113,7 @@ public sealed class UserAdminService : IUserAdminService
     /// <exception cref="DbUpdateException">Thrown when persisting user or contact to the database fails.</exception>
     public async Task<UserAdminDto> CreateAsync(string username, string password, bool isAdmin, CancellationToken ct)
     {
+        EnsureAdmin();
         _logger.LogInformation("Creating user {Username} (IsAdmin={IsAdmin})", username, isAdmin);
         if (string.IsNullOrWhiteSpace(username)) throw new ArgumentException("Username required", nameof(username));
         if (string.IsNullOrWhiteSpace(password)) throw new ArgumentException("Password required", nameof(password));
@@ -125,7 +132,7 @@ public sealed class UserAdminService : IUserAdminService
         _db.Users.Add(user);
         await _db.SaveChangesAsync(ct);
 
-        // Create self contact (admin path) — bypass public service restriction on creating Self contacts.
+        // Create self contact (admin path) - bypass public service restriction on creating Self contacts.
         bool hasSelf = await _db.Contacts.AsNoTracking().AnyAsync(c => c.OwnerUserId == user.Id && c.Type == ContactType.Self, ct);
         if (!hasSelf)
         {
@@ -183,6 +190,7 @@ public sealed class UserAdminService : IUserAdminService
     /// <exception cref="InvalidOperationException">Thrown when username rename conflicts with an existing user.</exception>
     public async Task<UserAdminDto?> UpdateAsync(Guid id, string? username, bool? isAdmin, bool? active, string? preferredLanguage, CancellationToken ct)
     {
+        EnsureAdmin();
         _logger.LogInformation("Updating user {UserId}", id);
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
         if (user == null)
@@ -274,6 +282,7 @@ public sealed class UserAdminService : IUserAdminService
     /// <exception cref="ArgumentException">Thrown when <paramref name="newPassword"/> is empty.</exception>
     public async Task<bool> ResetPasswordAsync(Guid id, string newPassword, CancellationToken ct)
     {
+        EnsureAdmin();
         _logger.LogInformation("Resetting password for user {UserId}", id);
         if (string.IsNullOrWhiteSpace(newPassword)) throw new ArgumentException("Password required", nameof(newPassword));
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
@@ -296,6 +305,7 @@ public sealed class UserAdminService : IUserAdminService
     /// <returns><c>true</c> when the unlock operation succeeded; otherwise <c>false</c>.</returns>
     public async Task<bool> UnlockAsync(Guid id, CancellationToken ct)
     {
+        EnsureAdmin();
         _logger.LogInformation("Unlocking user {UserId}", id);
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
         if (user == null)
@@ -316,7 +326,7 @@ public sealed class UserAdminService : IUserAdminService
         if (!resetResult.Succeeded)
         {
             _logger.LogWarning("Failed to reset access failed count for user {UserId}: {Errors}", id, string.Join(';', resetResult.Errors.Select(e => e.Description)));
-            // lockout cleared but failed count not reset — still consider operation successful,
+            // lockout cleared but failed count not reset - still consider operation successful,
             // caller can retry/reset manually if needed.
         }
 
@@ -332,6 +342,7 @@ public sealed class UserAdminService : IUserAdminService
     /// <returns><c>true</c> when the user existed and was removed; otherwise <c>false</c>.</returns>
     public async Task<bool> DeleteAsync(Guid id, CancellationToken ct)
     {
+        EnsureAdmin();
         _logger.LogInformation("Deleting user {UserId}", id);
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
         if (user == null)
@@ -356,10 +367,20 @@ public sealed class UserAdminService : IUserAdminService
     /// <exception cref="ArgumentException">Thrown when the target user is not found.</exception>
     public async Task SetSymbolAttachmentAsync(Guid userId, Guid targetUserId, Guid? attachmentId, CancellationToken ct)
     {
+        EnsureAdmin();
         _logger.LogInformation("Setting symbol for user {TargetUserId} by admin {AdminId}", targetUserId, userId);
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == targetUserId, ct);
         if (user == null) throw new ArgumentException("User not found", nameof(targetUserId));
         user.SetSymbolAttachment(attachmentId);
         await _db.SaveChangesAsync(ct);
+    }
+
+    private void EnsureAdmin()
+    {
+        if (!_current.IsAuthenticated || !_current.IsAdmin)
+        {
+            _logger.LogWarning("Rejected user administration operation for non-admin user {UserId}", _current.UserId);
+            throw new UnauthorizedAccessException("Admin privileges are required for user administration.");
+        }
     }
 }
