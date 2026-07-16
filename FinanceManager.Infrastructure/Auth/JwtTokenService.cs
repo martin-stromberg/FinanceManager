@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -27,19 +27,18 @@ public interface IJwtTokenService
 }
 
 /// <summary>
-/// Default implementation of <see cref="IJwtTokenService"/> that reads signing configuration from <see cref="IConfiguration"/> and
-/// produces HMAC-SHA256 signed tokens.
+/// Default implementation of <see cref="IJwtTokenService"/> that reads validated JWT options and produces HMAC-SHA256 signed tokens.
 /// </summary>
 public sealed class JwtTokenService : IJwtTokenService
 {
-    private readonly IConfiguration _config;
+    private readonly IOptions<JwtOptions> _options;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="JwtTokenService"/> class.
     /// </summary>
-    /// <param name="config">Application configuration used to read JWT signing settings (e.g. Jwt:Key, Jwt:Issuer).</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="config"/> is <c>null</c>.</exception>
-    public JwtTokenService(IConfiguration config) => _config = config ?? throw new ArgumentNullException(nameof(config));
+    /// <param name="options">Validated JWT signing settings.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="options"/> is <c>null</c>.</exception>
+    public JwtTokenService(IOptions<JwtOptions> options) => _options = options ?? throw new ArgumentNullException(nameof(options));
 
     /// <summary>
     /// Creates a signed JWT for the specified user and returns the token string.
@@ -54,11 +53,13 @@ public sealed class JwtTokenService : IJwtTokenService
     /// <exception cref="InvalidOperationException">Thrown when required configuration value "Jwt:Key" is missing.</exception>
     public string CreateToken(Guid userId, string username, bool isAdmin, out DateTime expiresUtc, string? preferredLanguage = null, string? timeZoneId = null)
     {
-        var key = _config["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key missing");
-        var issuer = _config["Jwt:Issuer"] ?? "financemanager";
-        var audience = _config["Jwt:Audience"] ?? issuer;
-        var lifetimeMinutes = int.TryParse(_config["Jwt:LifetimeMinutes"], out var lm) ? lm : 30;
-        expiresUtc = DateTime.UtcNow.AddMinutes(lifetimeMinutes);
+        var jwt = _options.Value;
+        if (string.IsNullOrWhiteSpace(jwt.Key))
+        {
+            throw new InvalidOperationException("Jwt:Key missing");
+        }
+
+        expiresUtc = DateTime.UtcNow.AddMinutes(jwt.LifetimeMinutes);
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, userId.ToString()),
@@ -79,8 +80,8 @@ public sealed class JwtTokenService : IJwtTokenService
         {
             claims.Add(new Claim("tz", timeZoneId));
         }
-        var credentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)), SecurityAlgorithms.HmacSha256);
-        var token = new JwtSecurityToken(issuer, audience, claims, notBefore: DateTime.UtcNow, expires: expiresUtc, signingCredentials: credentials);
+        var credentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)), SecurityAlgorithms.HmacSha256);
+        var token = new JwtSecurityToken(jwt.Issuer, jwt.Audience, claims, notBefore: DateTime.UtcNow, expires: expiresUtc, signingCredentials: credentials);
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

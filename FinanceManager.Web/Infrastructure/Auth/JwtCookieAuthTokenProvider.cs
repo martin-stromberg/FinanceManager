@@ -1,3 +1,5 @@
+using FinanceManager.Infrastructure.Auth;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -13,7 +15,8 @@ namespace FinanceManager.Web.Infrastructure.Auth
     public sealed class JwtCookieAuthTokenProvider : IAuthTokenProvider
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IConfiguration _configuration;
+        private readonly IOptions<JwtOptions> _options;
+        private readonly JwtTokenValidationParametersFactory _validationParametersFactory;
 
         private readonly object _sync = new();
         private string? _cachedToken;
@@ -26,12 +29,17 @@ namespace FinanceManager.Web.Infrastructure.Auth
         /// Initializes a new instance of the <see cref="JwtCookieAuthTokenProvider"/> class.
         /// </summary>
         /// <param name="httpContextAccessor">Accessor to obtain the current HTTP context (required).</param>
-        /// <param name="configuration">Application configuration used to read JWT settings (required).</param>
+        /// <param name="options">Validated JWT settings.</param>
+        /// <param name="validationParametersFactory">Factory for shared JWT validation parameters.</param>
         /// <exception cref="ArgumentNullException">Thrown when either argument is <c>null</c>.</exception>
-        public JwtCookieAuthTokenProvider(IHttpContextAccessor httpContextAccessor, IConfiguration configuration)
+        public JwtCookieAuthTokenProvider(
+            IHttpContextAccessor httpContextAccessor,
+            IOptions<JwtOptions> options,
+            JwtTokenValidationParametersFactory validationParametersFactory)
         {
-            _httpContextAccessor = httpContextAccessor;
-            _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+            _options = options ?? throw new ArgumentNullException(nameof(options));
+            _validationParametersFactory = validationParametersFactory ?? throw new ArgumentNullException(nameof(validationParametersFactory));
         }
 
         /// <summary>
@@ -52,8 +60,8 @@ namespace FinanceManager.Web.Infrastructure.Auth
             var now = DateTimeOffset.UtcNow;
 
             // Determine renewal window from configured lifetime (half of it)
-            var lifetimeMinutes = int.TryParse(_configuration["Jwt:LifetimeMinutes"], out var lm) ? lm : 30;
-            var renewalWindow = TimeSpan.FromMinutes(Math.Max(MinRenewalWindow.TotalMinutes, lm / 2.0));
+            var lifetimeMinutes = _options.Value.LifetimeMinutes;
+            var renewalWindow = TimeSpan.FromMinutes(Math.Max(MinRenewalWindow.TotalMinutes, lifetimeMinutes / 2.0));
 
             // Prefer request cookie over cache when a request context is available.
             // This prevents serving stale tokens from a different browser tab/user session.
@@ -94,24 +102,10 @@ namespace FinanceManager.Web.Infrastructure.Auth
             DateTimeOffset now)
         {
             var handler = new JwtSecurityTokenHandler();
-            var key = _configuration["Jwt:Key"];
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                InvalidateCache();
-                return null;
-            }
 
             try
             {
-                var parameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
-                    ClockSkew = TimeSpan.FromSeconds(10)
-                };
+                var parameters = _validationParametersFactory.Create();
 
                 var principal = handler.ValidateToken(cookie, parameters, out var validatedToken);
                 var jwt = (JwtSecurityToken)validatedToken;
@@ -179,10 +173,10 @@ namespace FinanceManager.Web.Infrastructure.Auth
         /// <returns>A tuple with the token string and its expiry <see cref="DateTimeOffset"/>.</returns>
         private (string token, DateTimeOffset expiry) IssueToken(IEnumerable<Claim> claims, int lifetimeMinutes)
         {
-            var key = _configuration["Jwt:Key"]!;
+            var jwtOptions = _options.Value;
             var expiry = DateTimeOffset.UtcNow.AddMinutes(lifetimeMinutes);
 
-            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key));
             var creds = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
 
             // Claims filtern: Keine doppelten exp/nbf/iat erneut hinzuf�gen
@@ -191,10 +185,9 @@ namespace FinanceManager.Web.Infrastructure.Auth
                 c.Type != JwtRegisteredClaimNames.Nbf &&
                 c.Type != JwtRegisteredClaimNames.Iat).ToList();
 
-            // Ensure Admin role claim is present when principal indicates admin
-            var hasRoleClaim = filtered.Any(c => c.Type == ClaimTypes.Role || string.Equals(c.Type, "role", StringComparison.OrdinalIgnoreCase));
-
             var jwt = new JwtSecurityToken(
+                issuer: jwtOptions.Issuer,
+                audience: jwtOptions.Audience,
                 claims: filtered,
                 notBefore: DateTime.UtcNow,
                 expires: expiry.UtcDateTime,
