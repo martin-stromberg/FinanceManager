@@ -103,7 +103,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         }
 
         // start apply backup
-        var status = await api.Backups_StartApplyAsync(created.Id);
+        var status = await api.Backups_StartApplyAsync(created.Id, new BackupRestoreRequestDto(created.FileName, created.FileName));
         status.Running.Should().BeTrue();
 
         // run background task runner to process the restore
@@ -621,7 +621,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
                 return a with { Id = mappedId, EntityId = newEntityId, CategoryId = mappedCategory };
             }
 
-            // no id mapping found for the attachment itself — still remap EntityId & CategoryId where possible
+            // no id mapping found for the attachment itself ï¿½ still remap EntityId & CategoryId where possible
             return a with { EntityId = newEntityId, CategoryId = mappedCategory };
         }).ToList();
 

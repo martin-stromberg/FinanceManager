@@ -49,7 +49,7 @@
                             <td>@FormatSize(b.SizeBytes)</td>
                             <td>@b.Source</td>
                             <td style="white-space:nowrap;display:flex;gap:.25rem;">
-                                <button class="icon-btn" title="@Localizer["Ribbon_Restore"]" disabled="@(_vm!.Busy || _vm!.HasActiveRestore)" @onclick:stopPropagation @onclick="() => StartApplyBackgroundAsync(b.Id)">
+                                <button class="icon-btn" title="@Localizer["Ribbon_Restore"]" disabled="@(_vm!.Busy || _vm!.HasActiveRestore)" @onclick:stopPropagation @onclick="() => ShowRestoreDialog(b)">
                                     <svg class="icon"><use href="icons/sprite.svg#restore" /></svg>
                                 </button>
                                 <a class="icon-btn" title="@Localizer["Ribbon_Download"]" href="@($"/api/setup/backups/{b.Id}/download")" download @onclick:stopPropagation>
@@ -96,7 +96,7 @@
                         <div class="setup-mobile-value">@b.Source</div>
                     </div>
                     <div class="setup-mobile-actions">
-                        <button class="icon-btn" title="@Localizer["Ribbon_Restore"]" disabled="@(_vm!.Busy || _vm!.HasActiveRestore)" @onclick="() => StartApplyBackgroundAsync(b.Id)">
+                        <button class="icon-btn" title="@Localizer["Ribbon_Restore"]" disabled="@(_vm!.Busy || _vm!.HasActiveRestore)" @onclick="() => ShowRestoreDialog(b)">
                             <svg class="icon"><use href="icons/sprite.svg#restore" /></svg>
                         </button>
                         <a class="icon-btn" title="@Localizer["Ribbon_Download"]" href="@($"/api/setup/backups/{b.Id}/download")" download>
@@ -112,6 +112,30 @@
     </div>
 </div>
 
+@if (_restoreCandidate is not null)
+{
+    <div class="modal-backdrop" @onclick="CancelRestoreDialog">
+        <div class="modal" role="dialog" aria-modal="true" @onclick:stopPropagation>
+            <h5>@Localizer["SetupBackup_RestoreConfirm_Title"]</h5>
+            <p>@Localizer["SetupBackup_RestoreConfirm_Warning"]</p>
+            <dl>
+                <dt>@Localizer["SetupBackup_Th_File"]</dt>
+                <dd>@_restoreCandidate.FileName</dd>
+                <dt>@Localizer["SetupBackup_Th_Created"]</dt>
+                <dd>@_restoreCandidate.CreatedUtc.ToLocalTime().ToString("g")</dd>
+                <dt>@Localizer["SetupBackup_Th_Size"]</dt>
+                <dd>@FormatSize(_restoreCandidate.SizeBytes)</dd>
+            </dl>
+            <label for="restoreConfirmation">@Localizer["SetupBackup_RestoreConfirm_Label"]</label>
+            <input id="restoreConfirmation" class="form-control" @bind="_restoreConfirmationText" @bind:event="oninput" autocomplete="off" />
+            <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem;">
+                <button type="button" class="btn secondary" @onclick="CancelRestoreDialog">@Localizer["Btn_Cancel"]</button>
+                <button type="button" class="btn danger" disabled="@(!RestoreConfirmationMatches || _vm!.Busy)" @onclick="ConfirmRestoreAsync">@Localizer["Ribbon_Restore"]</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter] public SetupBackupsViewModel? ViewModel { get; set; }
 
@@ -119,6 +143,8 @@
     private Guid? _selectedBackupId;
     private IBrowserFile? _uploadFile;
     private EventHandler? _stateChangedHandler;
+    private SetupBackupsViewModel.BackupItem? _restoreCandidate;
+    private string _restoreConfirmationText = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -145,10 +171,28 @@
         _selectedBackupId = _selectedBackupId == id ? (Guid?)null : id;
     }
 
-    private async Task StartApplyBackgroundAsync(Guid id)
+    private void ShowRestoreDialog(SetupBackupsViewModel.BackupItem backup)
     {
-        if (id == Guid.Empty) return;
-        await _vm!.StartApplyAsync(id);
+        _restoreCandidate = backup;
+        _restoreConfirmationText = string.Empty;
+    }
+
+    private bool RestoreConfirmationMatches =>
+        _restoreCandidate is not null &&
+        string.Equals(_restoreConfirmationText, _restoreCandidate.FileName, StringComparison.Ordinal);
+
+    private void CancelRestoreDialog()
+    {
+        _restoreCandidate = null;
+        _restoreConfirmationText = string.Empty;
+    }
+
+    private async Task ConfirmRestoreAsync()
+    {
+        if (_restoreCandidate is null || !RestoreConfirmationMatches) return;
+        var backup = _restoreCandidate;
+        await _vm!.StartApplyAsync(backup.Id, _restoreConfirmationText, backup.FileName);
+        CancelRestoreDialog();
     }
 
     private async Task DeleteBackupAsync(Guid id)

@@ -10,6 +10,10 @@ Der Bereich stellt Betriebs- und Administrationsfunktionen bereit: Benutzer, Rol
 
 Setup-Abschnitte (`profile`, `notifications`, `statements`, `attachments`, `backup`, `security`, `returnanalysis`) werden über `SetupCardViewModel` bereitgestellt. API-seitig decken `AuthController`, `AdminController`, `UserSettingsController`, `BackupsController`, `NotificationsController`, `MetaHolidayProvidersController` und `BackgroundTasksController` den Funktionsumfang ab.
 
+Backups werden als ZIP-Dateien verwaltet. Uploads und Restores akzeptieren nur ZIP-Container mit genau einer zulässigen NDJSON-Datei (`backup.ndjson` oder `backup-*.ndjson`) und Backup-Metadaten `Type = "Backup"` sowie `Version = 3`. Raw-NDJSON-Uploads werden nicht mehr automatisch in ein ZIP verpackt, sondern als ungültiges Format abgelehnt.
+
+Ein Restore ersetzt vorhandene Daten und ist deshalb eine besonders riskante Aktion. Vor dem Start muss der Benutzer den exakten Backup-Dateinamen in einem Bestätigungsdialog eingeben. Die Eingabe wird serverseitig geprüft; eine reine UI-Bestätigung reicht nicht aus. Bei falscher oder fehlender Bestätigung wird kein Restore gestartet und kein Hintergrundtask angelegt.
+
 Die Einstellungsseite verwendet ein Akkordeon-Layout: Sektionen können einzeln auf- und zugeklappt werden. Die Ribbon-Aktionsleiste zeigt die Aktionen aller Sektionen dauerhaft an — unabhängig davon, welche Sektion gerade geöffnet ist. Vier Section-ViewModels tragen Ribbon-Aktionen bei:
 
 | Section | ViewModel | Ribbon-Aktionen |
@@ -25,9 +29,10 @@ Die `UploadBackup`-Aktion klappt die Backup-Sektion automatisch auf, falls sie b
 
 - Ein Administrator legt Benutzer an oder setzt Passwörter zurück.
 - Ein Benutzer pflegt Import- und Benachrichtigungseinstellungen.
-- Ein Backup wird erstellt und ein Restore als Hintergrundtask ausgeführt.
+- Ein Backup wird erstellt, als ZIP heruntergeladen und später nach Dateinamen-Bestätigung als Hintergrundtask wiederhergestellt.
 
 ## Einschränkungen
 
 - Administrative Endpunkte erfordern entsprechende Berechtigungen.
 - Restore- und Aggregatjobs laufen asynchron und sind statusbasiert zu überwachen.
+- Backup-Uploads sind auf 100 MB komprimiert, 250 MB entpackte NDJSON-Daten, einen ZIP-Eintrag und ein maximales Kompressionsverhältnis von 25 begrenzt.

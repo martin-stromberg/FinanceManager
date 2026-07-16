@@ -52,6 +52,12 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 | `Jwt:LifetimeMinutes` | int | `30` | JWT-/Cookie-Lebensdauer in Minuten |
 | `BackgroundTasks:Enabled` | bool | `true` | Aktiviert den `BackgroundTaskRunner` |
 | `Workers:SecurityPriceWorker:Enabled` | bool | `true` | Aktiviert den Security-Price-Worker |
+| `Backups:Security:MaxUploadBytes` | long | `104857600` | Maximale Uploadgroesse fuer Backup-ZIP-Dateien |
+| `Backups:Security:MaxCompressedZipBytes` | long | `104857600` | Maximale komprimierte ZIP-Groesse fuer Backup-Validierung |
+| `Backups:Security:MaxUncompressedNdjsonBytes` | long | `262144000` | Maximale entpackte NDJSON-Nutzlast im Backup |
+| `Backups:Security:MaxZipEntries` | int | `1` | Maximal erlaubte ZIP-Entries pro Backup |
+| `Backups:Security:MaxCompressionRatio` | int | `25` | Maximal erlaubtes Verhaeltnis zwischen entpackter und komprimierter Backup-Nutzlast |
+| `Backups:Security:AllowedBackupVersions` | int[] | `[3]` | Erlaubte Backup-Metaversionen fuer Upload und Restore |
 | `AlphaVantage:Quota:MaxSymbolsPerRun` | int | `8` | Begrenzung pro Abruflauf |
 | `AlphaVantage:Quota:RequestsPerMinute` | int | `4` | API-Rate-Limit pro Minute |
 | `FileLogging:Enabled` | bool | `false` (appsettings.json) | Aktiviert Dateilogging |
@@ -106,6 +112,9 @@ Einstiegspunkte:
 - `POST /api/auth/login` – Anmeldung
 - `POST /api/statement-drafts/upload` – Einzeldatei als Entwurf importieren
 - `POST /api/statement-drafts/mass-import` – Massenimport analysieren/ausführen
+- `POST /api/setup/backups/upload` – ZIP-Backup hochladen; akzeptiert nur valide ZIP/NDJSON-Backups innerhalb der konfigurierten `Backups:Security`-Limits
+- `POST /api/setup/backups/{id}/apply` – Backup synchron wiederherstellen; destruktiv und nur mit `BackupRestoreRequestDto`, dessen `confirmationText` exakt dem gespeicherten Dateinamen entspricht
+- `POST /api/setup/backups/{id}/apply/start` – destruktiven Restore als Hintergrundtask starten; verwendet dieselbe serverseitige Dateinamen-Bestaetigung
 - `POST /api/securities/{id}/prices/import` – Wertpapierkurse importieren
 - `POST /api/postings/{id}/reverse` – Buchung stornieren (Reversal)
 - `GET|POST|PUT|DELETE /api/admin/users...` – administrative Benutzerverwaltung; serverseitig auf JWT-authentifizierte Benutzer mit Rolle `Admin` beschränkt. Authentifizierte Nicht-Admins erhalten `403 Forbidden`, anonyme Aufrufe `401 Unauthorized`.
