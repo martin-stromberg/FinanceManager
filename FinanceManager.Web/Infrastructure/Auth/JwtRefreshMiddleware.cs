@@ -1,4 +1,5 @@
 using FinanceManager.Infrastructure.Auth;
+using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -12,7 +13,7 @@ namespace FinanceManager.Web.Infrastructure.Auth
     public sealed class JwtRefreshMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly IConfiguration _configuration;
+        private readonly IOptions<JwtOptions> _options;
 
         private const string RefreshHeaderName = "X-Auth-Token";
         private const string RefreshExpiresHeaderName = "X-Auth-Token-Expires";
@@ -22,12 +23,12 @@ namespace FinanceManager.Web.Infrastructure.Auth
         /// Initializes a new instance of <see cref="JwtRefreshMiddleware"/>.
         /// </summary>
         /// <param name="next">The next middleware delegate in the pipeline.</param>
-        /// <param name="configuration">Application configuration used to read JWT lifetime settings (e.g. "Jwt:LifetimeMinutes").</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="next"/> or <paramref name="configuration"/> is <c>null</c>.</exception>
-        public JwtRefreshMiddleware(RequestDelegate next, IConfiguration configuration)
+        /// <param name="options">Validated JWT settings.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="next"/> or <paramref name="options"/> is <c>null</c>.</exception>
+        public JwtRefreshMiddleware(RequestDelegate next, IOptions<JwtOptions> options)
         {
-            _next = next;
-            _configuration = configuration;
+            _next = next ?? throw new ArgumentNullException(nameof(next));
+            _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
         /// <summary>
@@ -77,8 +78,8 @@ namespace FinanceManager.Web.Infrastructure.Auth
                 var now = DateTimeOffset.UtcNow;
 
                 // Determine renewal window dynamically based on configured lifetime
-                var lifetimeMinutes = int.TryParse(_configuration["Jwt:LifetimeMinutes"], out var lm) ? lm : 30;
-                var renewalWindow = TimeSpan.FromMinutes(Math.Max(5, lm / 2)); // renew when half of lifetime has passed
+                var lifetimeMinutes = _options.Value.LifetimeMinutes;
+                var renewalWindow = TimeSpan.FromMinutes(Math.Max(5, lifetimeMinutes / 2)); // renew when half of lifetime has passed
 
                 if (exp - renewalWindow > now)
                 {

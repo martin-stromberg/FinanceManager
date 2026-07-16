@@ -1,9 +1,10 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using FinanceManager.Infrastructure.Auth;
 using FinanceManager.Web.Infrastructure.Auth;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace FinanceManager.Tests.Infrastructure.Auth;
@@ -11,6 +12,8 @@ namespace FinanceManager.Tests.Infrastructure.Auth;
 public sealed class JwtCookieAuthTokenProviderTests
 {
     private const string JwtKey = "test-signing-key-with-sufficient-length-1234567890";
+    private const string JwtIssuer = "financemanager";
+    private const string JwtAudience = "financemanager";
 
     /// <summary>
     /// Ensures that an available request cookie takes precedence over a still-valid cached token.
@@ -20,8 +23,7 @@ public sealed class JwtCookieAuthTokenProviderTests
     {
         // Arrange
         var accessor = new HttpContextAccessor();
-        var config = CreateConfiguration();
-        var sut = new JwtCookieAuthTokenProvider(accessor, config);
+        var sut = CreateProvider(accessor);
 
         var firstToken = CreateToken("user-a", DateTime.UtcNow.AddMinutes(120));
         accessor.HttpContext = CreateHttpContextWithCookie(firstToken);
@@ -45,8 +47,7 @@ public sealed class JwtCookieAuthTokenProviderTests
     {
         // Arrange
         var accessor = new HttpContextAccessor();
-        var config = CreateConfiguration();
-        var sut = new JwtCookieAuthTokenProvider(accessor, config);
+        var sut = CreateProvider(accessor);
 
         var token = CreateToken("user-a", DateTime.UtcNow.AddMinutes(120));
         accessor.HttpContext = CreateHttpContextWithCookie(token);
@@ -61,15 +62,44 @@ public sealed class JwtCookieAuthTokenProviderTests
         Assert.Equal(token, actual);
     }
 
-    private static IConfiguration CreateConfiguration()
+    /// <summary>
+    /// Ensures that cookie JWTs with an unexpected issuer are rejected.
+    /// </summary>
+    [Fact]
+    public async Task GetAccessTokenAsync_ShouldReturnNull_WhenIssuerIsInvalid()
     {
-        return new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Jwt:Key"] = JwtKey,
-                ["Jwt:LifetimeMinutes"] = "30"
-            })
-            .Build();
+        // Arrange
+        var accessor = new HttpContextAccessor();
+        var sut = CreateProvider(accessor);
+
+        var token = CreateToken("user-a", DateTime.UtcNow.AddMinutes(120), issuer: "wrong-issuer");
+        accessor.HttpContext = CreateHttpContextWithCookie(token);
+
+        // Act
+        var actual = await sut.GetAccessTokenAsync(CancellationToken.None);
+
+        // Assert
+        Assert.Null(actual);
+    }
+
+    /// <summary>
+    /// Ensures that cookie JWTs with an unexpected audience are rejected.
+    /// </summary>
+    [Fact]
+    public async Task GetAccessTokenAsync_ShouldReturnNull_WhenAudienceIsInvalid()
+    {
+        // Arrange
+        var accessor = new HttpContextAccessor();
+        var sut = CreateProvider(accessor);
+
+        var token = CreateToken("user-a", DateTime.UtcNow.AddMinutes(120), audience: "wrong-audience");
+        accessor.HttpContext = CreateHttpContextWithCookie(token);
+
+        // Act
+        var actual = await sut.GetAccessTokenAsync(CancellationToken.None);
+
+        // Assert
+        Assert.Null(actual);
     }
 
     private static HttpContext CreateHttpContextWithCookie(string token)
@@ -79,12 +109,31 @@ public sealed class JwtCookieAuthTokenProviderTests
         return context;
     }
 
-    private static string CreateToken(string subject, DateTime expiresUtc)
+    private static JwtCookieAuthTokenProvider CreateProvider(HttpContextAccessor accessor)
+    {
+        var options = Options.Create(new JwtOptions
+        {
+            Key = JwtKey,
+            Issuer = JwtIssuer,
+            Audience = JwtAudience,
+            LifetimeMinutes = 30
+        });
+        var validationParametersFactory = new JwtTokenValidationParametersFactory(options);
+        return new JwtCookieAuthTokenProvider(accessor, options, validationParametersFactory);
+    }
+
+    private static string CreateToken(
+        string subject,
+        DateTime expiresUtc,
+        string issuer = JwtIssuer,
+        string audience = JwtAudience)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
+            issuer: issuer,
+            audience: audience,
             claims: new[] { new Claim(JwtRegisteredClaimNames.Sub, subject) },
             notBefore: DateTime.UtcNow.AddMinutes(-1),
             expires: expiresUtc,

@@ -3,6 +3,7 @@ using FinanceManager.Application.Notifications;
 using FinanceManager.Application.Securities.ReturnAnalysis;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
+using FinanceManager.Infrastructure.Auth;
 using FinanceManager.Infrastructure.Notifications;
 using FinanceManager.Infrastructure.Setup;
 using FinanceManager.Shared; // register ApiClient
@@ -13,14 +14,14 @@ using FinanceManager.Web.Infrastructure.Auth;
 using FinanceManager.Web.Infrastructure.Logging;
 using FinanceManager.Web.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
 using System.Globalization;
-using System.Text;
 
 namespace FinanceManager.Web
 {
@@ -151,22 +152,19 @@ namespace FinanceManager.Web
             builder.Services.Configure<AlphaVantageQuotaOptions>(builder.Configuration.GetSection("AlphaVantage:Quota"));
 
             // JWT + Identity
-            var keyBytes = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
+            builder.Services
+                .AddOptions<JwtOptions>()
+                .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
+                .ValidateOnStart();
+            builder.Services.AddSingleton<IValidateOptions<JwtOptions>>(new JwtOptionsValidator(builder.Environment));
+            builder.Services.AddSingleton<JwtTokenValidationParametersFactory>();
+
             builder.Services
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
                     options.RequireHttpsMetadata = false;
                     options.SaveToken = false;
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = false,
-                        ValidateAudience = false,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
-                        ClockSkew = TimeSpan.FromSeconds(10)
-                    };
                     options.Events = new JwtBearerEvents
                     {
                         OnMessageReceived = ctx =>
@@ -182,6 +180,12 @@ namespace FinanceManager.Web
                             return Task.CompletedTask;
                         }
                     };
+                });
+            builder.Services
+                .AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+                .Configure<JwtTokenValidationParametersFactory>((options, factory) =>
+                {
+                    options.TokenValidationParameters = factory.Create();
                 });
 
             var identitySection = builder.Configuration.GetSection("Identity");
@@ -217,9 +221,13 @@ namespace FinanceManager.Web
                 options.AccessDeniedPath = "/AccessDenied";
                 options.SlidingExpiration = true;
 
-                var jwtLifetimeMinutes = builder.Configuration.GetValue<int?>("Jwt:LifetimeMinutes") ?? 30;
-                options.ExpireTimeSpan = TimeSpan.FromMinutes(jwtLifetimeMinutes);
             });
+            builder.Services
+                .AddOptions<CookieAuthenticationOptions>(IdentityConstants.ApplicationScheme)
+                .Configure<IOptions<JwtOptions>>((options, jwtOptions) =>
+                {
+                    options.ExpireTimeSpan = TimeSpan.FromMinutes(jwtOptions.Value.LifetimeMinutes);
+                });
 
             builder.Services.AddAntiforgery(options =>
             {

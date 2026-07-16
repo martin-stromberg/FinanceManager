@@ -46,8 +46,10 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 | Parameter | Typ | Standardwert | Beschreibung |
 |---|---|---|---|
 | `ConnectionStrings:Default` | string | `Data Source=financemanager.db` (Fallback) | Standard-SQLite-Datenbank (Fallback in `AddInfrastructure`) |
-| `Jwt:Key` | string | `""` (appsettings.json) | Signaturschlüssel für JWT |
-| `Jwt:LifetimeMinutes` | int | `43200` | JWT-/Cookie-Lebensdauer in Minuten |
+| `Jwt:Key` | string | kein produktiver Standardwert | Signaturschluessel fuer JWT; in Produktion extern bereitstellen, nicht im Repository |
+| `Jwt:Issuer` | string | `financemanager` | Erwarteter JWT-Issuer fuer Ausstellung und Validierung |
+| `Jwt:Audience` | string | `financemanager` | Erwartete JWT-Audience fuer Ausstellung und Validierung |
+| `Jwt:LifetimeMinutes` | int | `30` | JWT-/Cookie-Lebensdauer in Minuten |
 | `BackgroundTasks:Enabled` | bool | `true` | Aktiviert den `BackgroundTaskRunner` |
 | `Workers:SecurityPriceWorker:Enabled` | bool | `true` | Aktiviert den Security-Price-Worker |
 | `AlphaVantage:Quota:MaxSymbolsPerRun` | int | `8` | Begrenzung pro Abruflauf |
@@ -63,8 +65,10 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
     "Default": "Data Source=financemanager.db"
   },
   "Jwt": {
-    "Key": "PLEASE_SET_A_LONG_RANDOM_SECRET",
-    "LifetimeMinutes": 43200
+    "Key": "",
+    "Issuer": "financemanager",
+    "Audience": "financemanager",
+    "LifetimeMinutes": 30
   },
   "BackgroundTasks": {
     "Enabled": true
@@ -149,6 +153,13 @@ dotnet test FinanceManager.sln
 - Produktionsnahe Konfiguration liegt in
   `FinanceManager.Web/appsettings.Production.json` (u. a. Kestrel-Endpoint
   `http://*:5003`, FileLogging aktivierbar).
+- JWT-Secrets gehoeren nicht ins Repository. Betreiber stellen produktive Werte
+  ueber die .NET-Konfiguration bereit, bevorzugt als Environment-Variablen:
+  `Jwt__Key`, `Jwt__Issuer`, `Jwt__Audience` und `Jwt__LifetimeMinutes`.
+  In produktionsnahen Umgebungen (alle Umgebungen ausser `Development`) bricht
+  der Start ab, wenn `Jwt__Key` fehlt, ein Platzhalter ist, weniger als 32
+  UTF-8-Bytes Schluesselmaterial enthaelt oder `Jwt__Issuer`,
+  `Jwt__Audience` beziehungsweise `Jwt__LifetimeMinutes` ungueltig sind.
 
 ## Contribution Guide
 

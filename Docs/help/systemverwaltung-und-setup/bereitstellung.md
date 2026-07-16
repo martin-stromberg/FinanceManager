@@ -75,3 +75,47 @@ Die Release-Versionsprüfungen, der Semantic-Release-Dry-Run, die Unit- und
 Integrationstests sowie der vollständige Solution-Build sind erfolgreich. Die
 tatsächliche GitHub-Veröffentlichung bleibt ein CI-Lauf mit
 Repository-Berechtigungen.
+
+## Produktive JWT-Konfiguration
+
+Produktive JWT-Secrets werden nicht mit dem Release-Artefakt ausgeliefert.
+`appsettings.Production.json` enthaelt keinen `Jwt:Key`; der Wert muss beim
+Start durch die Zielumgebung bereitgestellt werden. Fuer Windows- oder
+Container-Deployments koennen die normalen .NET-Environment-Variablen genutzt
+werden:
+
+| Environment-Variable | Entspricht | Pflicht fuer produktionsnahe Starts | Hinweis |
+|----------------------|------------|-------------------------------------|---------|
+| `Jwt__Key` | `Jwt:Key` | Ja | Signaturschluessel mit mindestens 32 UTF-8-Bytes Entropie; nicht im Repository speichern. |
+| `Jwt__Issuer` | `Jwt:Issuer` | Ja | Muss zu den ausgestellten Tokens passen. |
+| `Jwt__Audience` | `Jwt:Audience` | Ja | Muss zu den ausgestellten Tokens passen. |
+| `Jwt__LifetimeMinutes` | `Jwt:LifetimeMinutes` | Ja | Positiver Wert, produktionsnah maximal `1440`; empfohlen ist `30`. |
+
+Alle Umgebungen ausser `Development` gelten als produktionsnah. Beim
+Anwendungsstart validiert `ValidateOnStart` die JWT-Konfiguration. Der Start
+bricht ab, wenn `Jwt__Key` fehlt, leer ist, einem bekannten Platzhalter
+entspricht oder weniger als 32 UTF-8-Bytes Schluesselmaterial enthaelt.
+Ebenfalls abgelehnt werden fehlende Werte fuer `Jwt__Issuer` oder
+`Jwt__Audience` sowie eine ungueltige oder produktionsnah zu lange
+`Jwt__LifetimeMinutes`-Konfiguration.
+
+Die Token-Validierung prueft Signaturschluessel, Lebensdauer, Issuer und
+Audience. Nach einer Aenderung von `Jwt__Key`, `Jwt__Issuer` oder
+`Jwt__Audience` werden vorhandene JWT-Cookies und Bearer-Tokens ungueltig;
+Benutzer muessen sich danach erneut anmelden.
+
+## Secret-Rotation
+
+Bei einer Kompromittierung oder turnusmaessigen Rotation des JWT-Secrets:
+
+1. Neuen zufaelligen `Jwt__Key` mit mindestens 32 UTF-8-Bytes Entropie in der
+   Zielumgebung hinterlegen.
+2. `Jwt__Issuer`, `Jwt__Audience` und `Jwt__LifetimeMinutes` unveraendert
+   lassen, sofern keine bewusst geplante Token-Inkompatibilitaet gewuenscht
+   ist.
+3. Anwendung neu starten und pruefen, dass der Start ohne
+   Options-Validierungsfehler abgeschlossen wird.
+4. Erwartete Folge kommunizieren: Alle bestehenden Sessions werden durch den
+   neuen Signaturschluessel invalidiert und Benutzer melden sich neu an.
+5. Alte Secret-Werte aus Deployment-Systemen, CI/CD-Variablen,
+   Secret-Stores und lokalen Betriebsnotizen entfernen.
