@@ -245,9 +245,9 @@ public interface IApiClient
     /// <summary>Downloads a backup file stream or null if not found.</summary>
     Task<Stream?> Backups_DownloadAsync(Guid id, CancellationToken ct = default);
     /// <summary>Immediately applies the specified backup. Returns false when not found.</summary>
-    Task<bool> Backups_ApplyAsync(Guid id, CancellationToken ct = default);
+    Task<bool> Backups_ApplyAsync(Guid id, BackupRestoreRequestDto request, CancellationToken ct = default);
     /// <summary>Starts a background restore task for a backup and returns status.</summary>
-    Task<BackupRestoreStatusDto> Backups_StartApplyAsync(Guid id, CancellationToken ct = default);
+    Task<BackupRestoreStatusDto> Backups_StartApplyAsync(Guid id, BackupRestoreRequestDto request, CancellationToken ct = default);
     /// <summary>Gets the status of the current or last backup restore task.</summary>
     Task<BackupRestoreStatusDto> Backups_GetStatusAsync(CancellationToken ct = default);
     /// <summary>Cancels the currently running backup restore task.</summary>

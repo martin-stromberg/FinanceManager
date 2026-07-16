@@ -101,6 +101,8 @@ public sealed class SetupBackupsViewModelTests
     public async Task StartApply_Sets_Flag_On_Success()
     {
         var id = Guid.NewGuid();
+        const string fileName = "backup.zip";
+        string? requestBody = null;
         var api = CreateApiClient(req =>
         {
             if (req.Method == HttpMethod.Get && req.RequestUri!.AbsolutePath == "/api/setup/backups")
@@ -109,6 +111,7 @@ public sealed class SetupBackupsViewModelTests
             }
             if (req.Method == HttpMethod.Post && req.RequestUri!.AbsolutePath == $"/api/setup/backups/{id}/apply/start")
             {
+                requestBody = req.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
                 var status = new FinanceManager.Shared.Dtos.Admin.BackupRestoreStatusDto(true, 0, 1, null, null, 0, 0, null);
                 return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(JsonSerializer.Serialize(status), Encoding.UTF8, "application/json") };
             }
@@ -117,7 +120,8 @@ public sealed class SetupBackupsViewModelTests
         var vm = new SetupBackupsViewModel(CreateSp(api));
         await vm.LoadBackupsAsync();
 
-        await vm.StartApplyAsync(id);
+        await vm.StartApplyAsync(id, fileName, fileName);
         Assert.True(vm.HasActiveRestore);
+        Assert.Contains(fileName, requestBody);
     }
 }

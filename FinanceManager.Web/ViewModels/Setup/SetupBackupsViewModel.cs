@@ -127,13 +127,14 @@ public sealed class SetupBackupsViewModel : BaseViewModel, IUploadTrigger
     /// <param name="id">Backup identifier to apply.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes when the request finishes.</returns>
-    public async Task StartApplyAsync(Guid id, CancellationToken ct = default)
+    public async Task StartApplyAsync(Guid id, string confirmationText, string expectedFileName, CancellationToken ct = default)
     {
         if (id == Guid.Empty) { return; }
         BeginBusyOperation();
         try
         {
-            var status = await ApiClient.Backups_StartApplyAsync(id, ct);
+            var request = new BackupRestoreRequestDto(confirmationText, expectedFileName);
+            var status = await ApiClient.Backups_StartApplyAsync(id, request, ct);
             if (status is not null)
             {
                 HasActiveRestore = status.Running;

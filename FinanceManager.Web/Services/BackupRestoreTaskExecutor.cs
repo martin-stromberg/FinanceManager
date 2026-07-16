@@ -21,11 +21,12 @@ namespace FinanceManager.Web.Services
         private readonly IStringLocalizer _localizer;
 
         /// <summary>
-        /// Payload shape expected by the executor when enqueued: JSON object with <c>BackupId</c> (GUID) and optional <c>ReplaceExisting</c> (bool).
+        /// Payload shape expected by the executor when enqueued: JSON object with <c>BackupId</c> (GUID), <c>Confirmed</c> and <c>ExpectedFileName</c>.
         /// </summary>
         /// <param name="BackupId">Identifier of the backup to restore.</param>
-        /// <param name="ReplaceExisting">When <c>true</c> existing data will be replaced; when <c>false</c> it may be merged according to service rules.</param>
-        private sealed record RestorePayload(Guid BackupId, bool ReplaceExisting);
+        /// <param name="Confirmed">Server-side marker set only after the controller verified the file-name confirmation.</param>
+        /// <param name="ExpectedFileName">The backup file name that was confirmed before enqueue.</param>
+        private sealed record RestorePayload(Guid BackupId, bool Confirmed, string? ExpectedFileName);
 
         /// <summary>
         /// Initializes a new instance of <see cref="BackupRestoreTaskExecutor"/>.
@@ -58,20 +59,25 @@ namespace FinanceManager.Web.Services
                 throw new InvalidOperationException("BackupId payload required");
             }
             Guid backupId;
-            var replaceExisting = true; // current behaviour always replace
+            bool confirmed;
+            string? expectedFileName;
             try
             {
                 using var doc = JsonDocument.Parse(raw);
                 backupId = doc.RootElement.GetProperty("BackupId").GetGuid();
-                if (doc.RootElement.TryGetProperty("ReplaceExisting", out var repEl))
-                {
-                    replaceExisting = repEl.GetBoolean();
-                }
+                confirmed = doc.RootElement.TryGetProperty("Confirmed", out var confirmedEl) && confirmedEl.GetBoolean();
+                expectedFileName = doc.RootElement.TryGetProperty("ExpectedFileName", out var expectedEl) ? expectedEl.GetString() : null;
             }
             catch (Exception ex)
             {
                 context.ReportProgress(0, 1, _localizer["BR_InvalidPayload"], 0, 1);
                 throw new InvalidOperationException("Invalid backup restore payload", ex);
+            }
+
+            if (!confirmed || string.IsNullOrWhiteSpace(expectedFileName))
+            {
+                context.ReportProgress(0, 1, _localizer["BR_InvalidPayload"], 0, 1);
+                throw new InvalidOperationException("Backup restore confirmation payload required");
             }
 
             using var scope = _scopeFactory.CreateScope();
@@ -81,7 +87,7 @@ namespace FinanceManager.Web.Services
             context.ReportProgress(0, 0, _localizer["BR_Start"], 0, 0);
             try
             {
-                var ok = await backupService.ApplyAsync(context.UserId, backupId, (desc, step, stepTotal, subStep, subTotal) =>
+                var result = await backupService.ApplyAsync(context.UserId, backupId, expectedFileName, confirmationAlreadyValidated: true, (desc, step, stepTotal, subStep, subTotal) =>
                 {
                     var info = taskManager.Get(context.TaskId);
                     if (info != null)
@@ -98,10 +104,11 @@ namespace FinanceManager.Web.Services
                         taskManager.UpdateTaskInfo(updated);
                     }
                 }, ct);
-                if (!ok)
+                if (result.Status != BackupApplyStatus.Succeeded)
                 {
-                    context.ReportProgress(0, 0, _localizer["BR_ApplyFailed"], 0, 1);
-                    throw new InvalidOperationException("Backup apply failed");
+                    var message = string.IsNullOrWhiteSpace(result.Message) ? _localizer["BR_ApplyFailed"].Value : result.Message;
+                    context.ReportProgress(0, 0, message, 0, 1);
+                    throw new InvalidOperationException(message);
                 }
                 var finalInfo = taskManager.Get(context.TaskId);
                 var finalProcessed = finalInfo?.Processed ?? 1;

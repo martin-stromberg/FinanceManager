@@ -1224,6 +1224,15 @@
   <data name="SetupBackup_Titel" xml:space="preserve">
     <value>Backups</value>
   </data>
+  <data name="SetupBackup_RestoreConfirm_Title" xml:space="preserve">
+    <value>Confirm backup restore</value>
+  </data>
+  <data name="SetupBackup_RestoreConfirm_Warning" xml:space="preserve">
+    <value>This restore replaces the current data. Type the backup file name exactly to continue.</value>
+  </data>
+  <data name="SetupBackup_RestoreConfirm_Label" xml:space="preserve">
+    <value>Backup file name</value>
+  </data>
   <data name="Ribbon_CreateBackup" xml:space="preserve">
     <value>Create backup</value>
   </data>

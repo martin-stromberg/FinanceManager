@@ -55,9 +55,9 @@ public partial class ApiClient
     /// <summary>
     /// Starts applying the backup immediately and returns the restore status.
     /// </summary>
-    public async Task<BackupRestoreStatusDto> Backups_StartApplyAsync(Guid id, CancellationToken ct = default)
+    public async Task<BackupRestoreStatusDto> Backups_StartApplyAsync(Guid id, BackupRestoreRequestDto request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/setup/backups/{id}/apply/start", content: null, ct);
+        var resp = await _http.PostAsJsonAsync($"/api/setup/backups/{id}/apply/start", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BackupRestoreStatusDto>(cancellationToken: ct))!;
     }
@@ -75,11 +75,11 @@ public partial class ApiClient
     /// <summary>
     /// Applies a backup immediately. Returns false when the backup id was not found.
     /// </summary>
-    public async Task<bool> Backups_ApplyAsync(Guid id, CancellationToken ct = default)
+    public async Task<bool> Backups_ApplyAsync(Guid id, BackupRestoreRequestDto request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/setup/backups/{id}/apply", content: null, ct);
+        var resp = await _http.PostAsJsonAsync($"/api/setup/backups/{id}/apply", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
 

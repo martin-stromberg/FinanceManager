@@ -70,3 +70,55 @@
 - Wenn aufgeklappt: `BeforeUploadCallback` ist ein No-Op; `TriggerUploadRequest()` wird nicht doppelt aufgerufen (der Callback feuert nur das Event; das Aufklappen selbst triggert kein weiteres Upload).
 
 **Umsetzung:** `SetupBackupsViewModel.BeforeUploadCallback`, `SetupCardViewModel.ExpandSectionRequested`, `SetupSections.razor.OnExpandSectionRequested`, `SetupSections.razor.OnAfterRenderAsync`.
+
+## Backup-Uploads akzeptieren nur validierte ZIP-Backups
+
+**Beschreibung:** Hochgeladene Backup-Dateien werden vor dem Speichern vollständig als Backup-Container validiert.
+
+**Bedingungen:**
+- Upload-Datei ist ein ZIP-Container.
+- ZIP enthält genau einen zulässigen NDJSON-Eintrag: `backup.ndjson` oder einen Namen mit Prefix `backup-`.
+- Komprimierte Größe maximal 100 MB.
+- Entpackte NDJSON-Größe maximal 250 MB.
+- Maximal ein ZIP-Entry.
+- Kompressionsverhältnis maximal 25.
+- Erste NDJSON-Zeile enthält Backup-Metadaten mit `Type = "Backup"` und `Version = 3`.
+
+**Verhalten:**
+- Gültige ZIP-Backups werden gespeichert und in der Backup-Liste angezeigt.
+- Raw-NDJSON-Dateien, leere Dateien, ZIPs mit mehreren Entries, falsche Entry-Namen, zu große Inhalte, zu stark komprimierte Inhalte oder falsche Backup-Metadaten werden mit einem fachlichen `400 ApiErrorDto` abgelehnt.
+- Bei Ablehnung wird kein Backup-Eintrag persistiert.
+
+**Umsetzung:** `BackupsController.UploadAsync`, `BackupService.UploadAsync`, zentrale Backup-Validierung in der Backup-Infrastruktur, Konfiguration `Backups:Security`.
+
+## Restore validiert gespeicherte Backups erneut
+
+**Beschreibung:** Gespeicherte Backup-Dateien gelten beim Restore nicht als vertrauenswürdig. Vor dem destruktiven Import wird derselbe ZIP-/NDJSON-Prüfpfad wie beim Upload ausgeführt.
+
+**Bedingungen:**
+- Backup existiert und gehört zum aktuellen Benutzer.
+- Backup-Datei erfüllt die ZIP-, Größen-, Struktur-, Kompressions- und Versionsregeln.
+- Restore-Bestätigung wurde serverseitig akzeptiert.
+
+**Verhalten:**
+- Bei bestandener Validierung ruft der Restore `SetupImportService.ImportAsync(..., replaceExisting: true, ...)` auf und ersetzt vorhandene Daten.
+- Bei ungültiger Backup-Datei wird kein Import gestartet und es werden keine vorhandenen Daten gelöscht.
+- Validierungs-, Import- und Bestätigungsfehler werden als kontrollierte fachliche Fehler gemeldet und auditierbar protokolliert.
+
+**Umsetzung:** `BackupService.ApplyAsync`, `BackupsController.ApplyAsync`, `BackupsController.StartApplyAsync`, `BackupRestoreTaskExecutor`.
+
+## Destruktiver Restore erfordert Dateinamen-Bestätigung
+
+**Beschreibung:** Synchroner und asynchroner Restore benötigen ein Request-DTO mit einer expliziten Bestätigung.
+
+**Bedingungen:**
+- `BackupRestoreRequestDto.ConfirmationText` muss exakt dem gespeicherten Backup-Dateinamen entsprechen.
+- Falls `ExpectedFileName` gesetzt ist, muss auch dieser Wert exakt dem gespeicherten Backup-Dateinamen entsprechen.
+- Beim asynchronen Restore wird der Hintergrundtask erst nach erfolgreicher Bestätigung erzeugt.
+
+**Verhalten:**
+- Korrekte Bestätigung: Restore startet synchron oder als Hintergrundtask.
+- Fehlende oder falsche Bestätigung: `400 ApiErrorDto` mit `Err_Backup_ConfirmationRequired`; es wird kein Import gestartet.
+- Bereits aktiver Restore im Start-Pfad: `409 ApiErrorDto` mit `Err_Backup_RestoreActive`.
+
+**Umsetzung:** `BackupRestoreRequestDto`, `BackupsController.ApplyAsync`, `BackupsController.StartApplyAsync`, `SetupBackupTab.razor`, `SetupBackupsViewModel.StartApplyAsync`.

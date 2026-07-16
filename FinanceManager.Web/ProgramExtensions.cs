@@ -4,6 +4,7 @@ using FinanceManager.Application.Securities.ReturnAnalysis;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Auth;
+using FinanceManager.Infrastructure.Backups;
 using FinanceManager.Infrastructure.Notifications;
 using FinanceManager.Infrastructure.Setup;
 using FinanceManager.Shared; // register ApiClient
@@ -81,6 +82,7 @@ namespace FinanceManager.Web
 
             // Attachment upload validation options
             builder.Services.Configure<AttachmentUploadOptions>(builder.Configuration.GetSection("Attachments"));
+            builder.Services.Configure<BackupSecurityOptions>(builder.Configuration.GetSection(BackupSecurityOptions.SectionName));
 
             // Background task queue
             builder.Services.AddSingleton<IBackgroundTaskManager, BackgroundTaskManager>();
