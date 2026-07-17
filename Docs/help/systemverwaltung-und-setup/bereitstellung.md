@@ -89,7 +89,7 @@ werden:
 | `Jwt__Key` | `Jwt:Key` | Ja | Signaturschluessel mit mindestens 32 UTF-8-Bytes Entropie; nicht im Repository speichern. |
 | `Jwt__Issuer` | `Jwt:Issuer` | Ja | Muss zu den ausgestellten Tokens passen. |
 | `Jwt__Audience` | `Jwt:Audience` | Ja | Muss zu den ausgestellten Tokens passen. |
-| `Jwt__LifetimeMinutes` | `Jwt:LifetimeMinutes` | Ja | Positiver Wert, produktionsnah maximal `1440`; empfohlen ist `30`. |
+| `Jwt__LifetimeMinutes` | `Jwt:LifetimeMinutes` | Ja | Betriebsstandard `30`; produktionsnah maximal `1440`. |
 
 Alle Umgebungen ausser `Development` gelten als produktionsnah. Beim
 Anwendungsstart validiert `ValidateOnStart` die JWT-Konfiguration. Der Start
@@ -100,9 +100,12 @@ Ebenfalls abgelehnt werden fehlende Werte fuer `Jwt__Issuer` oder
 `Jwt__LifetimeMinutes`-Konfiguration.
 
 Die Token-Validierung prueft Signaturschluessel, Lebensdauer, Issuer und
-Audience. Nach einer Aenderung von `Jwt__Key`, `Jwt__Issuer` oder
-`Jwt__Audience` werden vorhandene JWT-Cookies und Bearer-Tokens ungueltig;
-Benutzer muessen sich danach erneut anmelden.
+Audience sowie den aktuellen Benutzerzustand aus der Datenbank. Jedes JWT ist
+an den Identity-`SecurityStamp` gebunden. Deaktivierte Benutzer, geaenderte
+SecurityStamps oder abweichende Rollen werden bei Request-Validierung und
+Refresh abgelehnt. Nach einer Aenderung von `Jwt__Key`, `Jwt__Issuer` oder
+`Jwt__Audience` werden vorhandene JWT-Cookies und Bearer-Tokens ebenfalls
+ungueltig; Benutzer muessen sich danach erneut anmelden.
 
 ## Secret-Rotation
 

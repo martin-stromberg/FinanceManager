@@ -211,6 +211,8 @@ public sealed class UserAdminService : IUserAdminService
             user.Rename(username.Trim());
         }
 
+        var refreshSecurityStamp = false;
+
         if (isAdmin.HasValue)
         {
             try
@@ -224,6 +226,10 @@ public sealed class UserAdminService : IUserAdminService
                     {
                         _logger.LogWarning("Failed to add user {UserId} to role {Role}: {Errors}", id, roleName, string.Join(';', addRes.Errors.Select(e => e.Description)));
                     }
+                    else
+                    {
+                        refreshSecurityStamp = true;
+                    }
                 }
                 else if (!isAdmin.Value && currentlyInRole)
                 {
@@ -231,6 +237,10 @@ public sealed class UserAdminService : IUserAdminService
                     if (!removeRes.Succeeded)
                     {
                         _logger.LogWarning("Failed to remove user {UserId} from role {Role}: {Errors}", id, roleName, string.Join(';', removeRes.Errors.Select(e => e.Description)));
+                    }
+                    else
+                    {
+                        refreshSecurityStamp = true;
                     }
                 }
             }
@@ -246,11 +256,13 @@ public sealed class UserAdminService : IUserAdminService
             {
                 _logger.LogInformation("Deactivating user {UserId}", id);
                 user.Deactivate();
+                refreshSecurityStamp = true;
             }
             else
             {
                 _logger.LogInformation("Activating user {UserId}", id);
                 user.Activate();
+                refreshSecurityStamp = true;
             }
         }
 
@@ -258,6 +270,11 @@ public sealed class UserAdminService : IUserAdminService
         {
             _logger.LogInformation("Setting preferred language for user {UserId} to {Lang}", id, preferredLanguage);
             user.SetPreferredLanguage(preferredLanguage);
+        }
+
+        if (refreshSecurityStamp)
+        {
+            await UpdateSecurityStampOrThrowAsync(user, "user update");
         }
 
         await _db.SaveChangesAsync(ct);
@@ -292,6 +309,7 @@ public sealed class UserAdminService : IUserAdminService
             return false;
         }
         user.SetPasswordHash(_passwordHasher.Hash(newPassword));
+        await UpdateSecurityStampOrThrowAsync(user, "password reset");
         await _db.SaveChangesAsync(ct);
         _logger.LogInformation("Password reset for user {UserId} completed", id);
         return true;
@@ -382,5 +400,18 @@ public sealed class UserAdminService : IUserAdminService
             _logger.LogWarning("Rejected user administration operation for non-admin user {UserId}", _current.UserId);
             throw new UnauthorizedAccessException("Admin privileges are required for user administration.");
         }
+    }
+
+    private async Task UpdateSecurityStampOrThrowAsync(User user, string operation)
+    {
+        var stampResult = await _userManager.UpdateSecurityStampAsync(user);
+        if (stampResult.Succeeded)
+        {
+            return;
+        }
+
+        var errors = string.Join(';', stampResult.Errors.Select(e => e.Description));
+        _logger.LogError("Failed to update security stamp for {Operation} of user {UserId}: {Errors}", operation, user.Id, errors);
+        throw new InvalidOperationException("Security stamp update failed");
     }
 }

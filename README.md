@@ -14,6 +14,7 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 - Anhänge und Sicherungen (Backup/Restore) verwalten
 - Responsive Web-UI für kleine Viewports (mobile Topbar, responsive Container, mobile E2E-Abdeckung)
 - Einstellungs-Ribbon mit stets sichtbaren Aktionen: Backup erstellen/hochladen, Profil speichern/zurücksetzen, Benachrichtigungen und Kontoauszugs-Importregeln speichern — unabhängig davon, welche Sektion gerade aufgeklappt ist
+- JWT-Authentifizierung mit 30 Minuten Access-Token-Laufzeit, SecurityStamp-/Rollen-/Active-Revalidierung und DB-validiertem Refresh
 
 ## Installation / Setup
 
@@ -165,6 +166,9 @@ dotnet test FinanceManager.sln
 - JWT-Secrets gehoeren nicht ins Repository. Betreiber stellen produktive Werte
   ueber die .NET-Konfiguration bereit, bevorzugt als Environment-Variablen:
   `Jwt__Key`, `Jwt__Issuer`, `Jwt__Audience` und `Jwt__LifetimeMinutes`.
+  `Jwt__LifetimeMinutes` ist auf 30 Minuten ausgelegt; Refresh und Request-
+  Authentifizierung validieren Benutzerstatus, SecurityStamp und aktuelle Rollen
+  serverseitig gegen die Datenbank.
   In produktionsnahen Umgebungen (alle Umgebungen ausser `Development`) bricht
   der Start ab, wenn `Jwt__Key` fehlt, ein Platzhalter ist, weniger als 32
   UTF-8-Bytes Schluesselmaterial enthaelt oder `Jwt__Issuer`,

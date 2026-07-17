@@ -1,9 +1,6 @@
 using FinanceManager.Infrastructure.Auth;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace FinanceManager.Web.Infrastructure.Auth
 {
@@ -17,6 +14,7 @@ namespace FinanceManager.Web.Infrastructure.Auth
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IOptions<JwtOptions> _options;
         private readonly JwtTokenValidationParametersFactory _validationParametersFactory;
+        private readonly IJwtRefreshService _refreshService;
 
         private readonly object _sync = new();
         private string? _cachedToken;
@@ -31,15 +29,18 @@ namespace FinanceManager.Web.Infrastructure.Auth
         /// <param name="httpContextAccessor">Accessor to obtain the current HTTP context (required).</param>
         /// <param name="options">Validated JWT settings.</param>
         /// <param name="validationParametersFactory">Factory for shared JWT validation parameters.</param>
+        /// <param name="refreshService">Service that validates and renews JWTs against current user state.</param>
         /// <exception cref="ArgumentNullException">Thrown when either argument is <c>null</c>.</exception>
         public JwtCookieAuthTokenProvider(
             IHttpContextAccessor httpContextAccessor,
             IOptions<JwtOptions> options,
-            JwtTokenValidationParametersFactory validationParametersFactory)
+            JwtTokenValidationParametersFactory validationParametersFactory,
+            IJwtRefreshService refreshService)
         {
             _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _validationParametersFactory = validationParametersFactory ?? throw new ArgumentNullException(nameof(validationParametersFactory));
+            _refreshService = refreshService ?? throw new ArgumentNullException(nameof(refreshService));
         }
 
         /// <summary>
@@ -54,7 +55,7 @@ namespace FinanceManager.Web.Infrastructure.Auth
         /// </returns>
         /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the provided <paramref name="cancellationToken"/>.</exception>
         /// <exception cref="InvalidOperationException">May be thrown when the provider is not correctly configured (for example missing signing key) - implementations may also return <c>null</c> instead of throwing.</exception>
-        public Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken)
+        public async Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken)
         {
             var ctx = _httpContextAccessor.HttpContext;
             var now = DateTimeOffset.UtcNow;
@@ -71,35 +72,35 @@ namespace FinanceManager.Web.Infrastructure.Auth
                 if (string.IsNullOrEmpty(cookie))
                 {
                     InvalidateCache();
-                    return Task.FromResult<string?>(null);
+                    return null;
                 }
 
                 if (_cachedToken != null
                     && string.Equals(_cachedToken, cookie, StringComparison.Ordinal)
                     && _cachedExpiry - renewalWindow > now)
                 {
-                    return Task.FromResult<string?>(_cachedToken);
+                    return _cachedToken;
                 }
 
-                return Task.FromResult(ValidateAndRefreshToken(ctx, cookie, lifetimeMinutes, renewalWindow, now));
+                return await ValidateAndRefreshTokenAsync(ctx, cookie, renewalWindow, now, cancellationToken);
             }
 
             // When no request context is available (for example within a running Blazor circuit),
             // fall back to a still-valid cached token.
             if (_cachedToken != null && _cachedExpiry - renewalWindow > now)
             {
-                return Task.FromResult<string?>(_cachedToken);
+                return _cachedToken;
             }
 
-            return Task.FromResult<string?>(null);
+            return null;
         }
 
-        private string? ValidateAndRefreshToken(
+        private async Task<string?> ValidateAndRefreshTokenAsync(
             HttpContext ctx,
             string cookie,
-            int lifetimeMinutes,
             TimeSpan renewalWindow,
-            DateTimeOffset now)
+            DateTimeOffset now,
+            CancellationToken cancellationToken)
         {
             var handler = new JwtSecurityTokenHandler();
 
@@ -114,10 +115,18 @@ namespace FinanceManager.Web.Infrastructure.Auth
                 // Erneuern wenn bald ablaufend
                 if (exp - renewalWindow <= now)
                 {
-                    var refreshed = IssueToken(principal.Claims, lifetimeMinutes);
-                    SetCookie(ctx, refreshed.token, refreshed.expiry);
-                    Cache(refreshed.token, refreshed.expiry);
-                    return refreshed.token;
+                    var refreshed = await _refreshService.RefreshAsync(principal, cancellationToken);
+                    if (!refreshed.Succeeded || refreshed.Token is null || refreshed.ExpiresUtc is null)
+                    {
+                        InvalidateCache();
+                        DeleteCookie(ctx);
+                        return null;
+                    }
+
+                    var expiry = new DateTimeOffset(refreshed.ExpiresUtc.Value);
+                    SetCookie(ctx, refreshed.Token, expiry);
+                    Cache(refreshed.Token, expiry);
+                    return refreshed.Token;
                 }
 
                 Cache(cookie, exp);
@@ -165,39 +174,6 @@ namespace FinanceManager.Web.Infrastructure.Auth
         }
 
         /// <summary>
-        /// Issues a new JWT for the supplied claims with the configured lifetime.
-        /// The returned tuple contains the serialized token and the expiry timestamp.
-        /// </summary>
-        /// <param name="claims">Claims to include in the token.</param>
-        /// <param name="lifetimeMinutes">Lifetime in minutes for the issued token.</param>
-        /// <returns>A tuple with the token string and its expiry <see cref="DateTimeOffset"/>.</returns>
-        private (string token, DateTimeOffset expiry) IssueToken(IEnumerable<Claim> claims, int lifetimeMinutes)
-        {
-            var jwtOptions = _options.Value;
-            var expiry = DateTimeOffset.UtcNow.AddMinutes(lifetimeMinutes);
-
-            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key));
-            var creds = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
-
-            // Claims filtern: Keine doppelten exp/nbf/iat erneut hinzuf�gen
-            var filtered = claims.Where(c =>
-                c.Type != JwtRegisteredClaimNames.Exp &&
-                c.Type != JwtRegisteredClaimNames.Nbf &&
-                c.Type != JwtRegisteredClaimNames.Iat).ToList();
-
-            var jwt = new JwtSecurityToken(
-                issuer: jwtOptions.Issuer,
-                audience: jwtOptions.Audience,
-                claims: filtered,
-                notBefore: DateTime.UtcNow,
-                expires: expiry.UtcDateTime,
-                signingCredentials: creds);
-
-            var token = new JwtSecurityTokenHandler().WriteToken(jwt);
-            return (token, expiry);
-        }
-
-        /// <summary>
         /// Writes the authentication cookie to the response.
         /// </summary>
         /// <param name="ctx">Current HTTP context.</param>
@@ -211,6 +187,16 @@ namespace FinanceManager.Web.Infrastructure.Auth
                 Secure = ctx.Request.IsHttps,
                 SameSite = SameSiteMode.Lax,
                 Expires = expiry,
+                Path = "/"
+            });
+        }
+
+        private static void DeleteCookie(HttpContext ctx)
+        {
+            ctx.Response.Cookies.Delete(AuthCookieName, new CookieOptions
+            {
+                Secure = ctx.Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
                 Path = "/"
             });
         }

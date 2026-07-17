@@ -6,6 +6,7 @@ using FinanceManager.Tests.TestHelpers;
 using FinanceManager.Web.Controllers;
 using FinanceManager.Web.Infrastructure.Auth;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,11 +48,16 @@ public sealed class UserImportSplitSettingsControllerTests
         var logger = LoggerFactory.Create(b => { }).CreateLogger<UserSettingsController>();
 
         var jwtMock = new Mock<IJwtTokenService>();
-        jwtMock.Setup(j => j.CreateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<bool>(), out It.Ref<DateTime>.IsAny, It.IsAny<string?>(), It.IsAny<string?>()))
+        jwtMock.Setup(j => j.CreateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>(), out It.Ref<DateTime>.IsAny, It.IsAny<string?>(), It.IsAny<string?>()))
                .Returns("token");
         var tokenProviderMock = new Mock<IAuthTokenProvider>();
 
-        var controller = new UserSettingsController(db, current, logger, localizer, jwtMock.Object, tokenProviderMock.Object);
+        var store = new Mock<IUserStore<User>>();
+        var userManagerMock = new Mock<UserManager<User>>(store.Object, null, null, null, null, null, null, null, null);
+        userManagerMock.Setup(um => um.IsInRoleAsync(It.IsAny<User>(), "Admin")).ReturnsAsync(false);
+        userManagerMock.Setup(um => um.GetSecurityStampAsync(It.IsAny<User>())).ReturnsAsync((User u) => u.SecurityStamp ?? "stamp");
+
+        var controller = new UserSettingsController(db, current, logger, localizer, jwtMock.Object, tokenProviderMock.Object, userManagerMock.Object);
         var http = new DefaultHttpContext();
         http.User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, current.UserId.ToString()) }, "test"));
         controller.ControllerContext = new ControllerContext { HttpContext = http };

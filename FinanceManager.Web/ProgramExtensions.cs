@@ -22,7 +22,9 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
+using System.IdentityModel.Tokens.Jwt;
 using System.Globalization;
+using System.Security.Claims;
 
 namespace FinanceManager.Web
 {
@@ -120,7 +122,7 @@ namespace FinanceManager.Web
 
             // HttpClient
             builder.Services.AddTransient<AuthenticatedHttpClientHandler>();
-            builder.Services.AddSingleton<IAuthTokenProvider, JwtCookieAuthTokenProvider>();
+            builder.Services.AddScoped<IAuthTokenProvider, JwtCookieAuthTokenProvider>();
             builder.Services.AddHttpClient("Api", (sp, client) =>
             {
                 var accessor = sp.GetRequiredService<IHttpContextAccessor>();
@@ -160,6 +162,7 @@ namespace FinanceManager.Web
                 .ValidateOnStart();
             builder.Services.AddSingleton<IValidateOptions<JwtOptions>>(new JwtOptionsValidator(builder.Environment));
             builder.Services.AddSingleton<JwtTokenValidationParametersFactory>();
+            builder.Services.AddScoped<IJwtRefreshService, JwtRefreshService>();
 
             builder.Services
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -180,6 +183,39 @@ namespace FinanceManager.Web
                                 }
                             }
                             return Task.CompletedTask;
+                        },
+                        OnTokenValidated = async ctx =>
+                        {
+                            var userIdValue = ctx.Principal?.FindFirstValue(ClaimTypes.NameIdentifier)
+                                ?? ctx.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                            var tokenStamp = ctx.Principal?.FindFirstValue(JwtRefreshService.SecurityStampClaimType);
+                            if (!Guid.TryParse(userIdValue, out var userId) || string.IsNullOrWhiteSpace(tokenStamp))
+                            {
+                                ctx.Fail("Invalid token user state");
+                                return;
+                            }
+
+                            var userManager = ctx.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
+                            var user = await userManager.FindByIdAsync(userId.ToString());
+                            if (user is null || !user.Active)
+                            {
+                                ctx.Fail("Invalid token user state");
+                                return;
+                            }
+
+                            var currentStamp = await userManager.GetSecurityStampAsync(user);
+                            if (!string.Equals(tokenStamp, currentStamp, StringComparison.Ordinal))
+                            {
+                                ctx.Fail("Invalid token user state");
+                                return;
+                            }
+
+                            var tokenHasAdminRole = ctx.Principal?.IsInRole("Admin") == true;
+                            var currentHasAdminRole = await userManager.IsInRoleAsync(user, "Admin");
+                            if (tokenHasAdminRole != currentHasAdminRole)
+                            {
+                                ctx.Fail("Invalid token user state");
+                            }
                         }
                     };
                 });

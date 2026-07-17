@@ -8,7 +8,58 @@ Die Setup-Karte aggregiert Ribbon-Aktionen aus vier Section-ViewModels über den
 
 ## Abläufe
 
-### 1. Ribbon-Initialisierung beim Laden der Setup-Karte
+### 1. JWT-Authentifizierung und SecurityStamp-Prüfung
+
+1. Ein Request liefert ein Bearer-Token oder das Cookie `FinanceManager.Auth`.
+2. Die JWT-Pruefung validiert Signatur, Issuer, Audience und Ablaufzeit.
+3. `OnTokenValidated` liest Benutzer-ID und `security_stamp` aus dem Token.
+4. Der aktuelle Benutzer wird aus der Datenbank geladen.
+5. Der Request wird abgelehnt, wenn der Benutzer fehlt, inaktiv ist, der
+   SecurityStamp abweicht oder der Admin-Rollenstand nicht mehr zum Token passt.
+6. Nur ein Token mit aktuellem Benutzerzustand erreicht die Autorisierung.
+
+Beteiligte Komponenten: `ProgramExtensions`, `UserManager<User>`,
+`JwtRefreshService.SecurityStampClaimType`
+
+---
+
+### 2. DB-validierter JWT-Refresh
+
+1. `JwtRefreshMiddleware` oder `JwtCookieAuthTokenProvider` erkennt ein Token
+   nahe am Ablauf.
+2. Der Refresh ruft `IJwtRefreshService.RefreshAsync` auf und erzeugt kein Token
+   mehr direkt aus alten Claims.
+3. `JwtRefreshService` liest Benutzer-ID und `security_stamp` aus dem Principal.
+4. Der Benutzer wird aus der Datenbank geladen; inaktive oder geloeschte
+   Benutzer werden abgelehnt.
+5. Der aktuelle Identity-`SecurityStamp` muss dem Token-Claim entsprechen.
+6. Die aktuelle Admin-Rolle wird aus Identity gelesen.
+7. Bei Erfolg wird ein neues JWT mit aktueller Rolle, aktuellem SecurityStamp
+   und 30 Minuten Laufzeit ausgegeben.
+8. Bei Ablehnung wird kein neues Token gesetzt; Cookie-basierte Requests
+   verlieren das Auth-Cookie.
+
+Beteiligte Komponenten: `JwtRefreshMiddleware`, `JwtCookieAuthTokenProvider`,
+`JwtRefreshService`, `JwtTokenService`
+
+---
+
+### 3. Token-Invalidierung bei Benutzeränderungen
+
+1. Ein Administrator deaktiviert oder aktiviert einen Benutzer oder aendert die
+   Admin-Rolle.
+2. `UserAdminService` aktualisiert nach erfolgreicher Aenderung den
+   SecurityStamp des Benutzers.
+3. Bereits ausgegebene JWTs enthalten den alten SecurityStamp.
+4. Der naechste Request oder Refresh mit einem alten Token wird abgelehnt.
+5. Bei Passwortreset wird der SecurityStamp ebenfalls aktualisiert.
+
+Beteiligte Komponenten: `UserAdminService`, `UserManager<User>`,
+`ProgramExtensions`, `JwtRefreshService`
+
+---
+
+### 4. Ribbon-Initialisierung beim Laden der Setup-Karte
 
 1. `SetupCardViewModel.LoadAsync(Guid id)` wird aufgerufen (z. B. bei Navigation zur Setup-Seite).
 2. Guard `_sectionViewModels.Count == 0` verhindert Doppel-Registrierung bei Re-Navigation.
@@ -32,7 +83,7 @@ Beteiligte Komponenten: `SetupCardViewModel`, `BaseViewModel`, `SetupProfileView
 
 ---
 
-### 2. Bereitstellung eines Section-ViewModels für SetupSections.razor
+### 5. Bereitstellung eines Section-ViewModels für SetupSections.razor
 
 1. Benutzer klappt eine Sektion im Akkordeon auf.
 2. `SetupSections.razor.BuildSectionSpec(key)` ruft `Provider.TryGetSectionComponentType(key, ...)` und `Provider.CreateSectionViewModel(key, Services)` auf.
@@ -45,7 +96,7 @@ Beteiligte Komponenten: `SetupSections.razor`, `SetupCardViewModel`, `BaseViewMo
 
 ---
 
-### 3. UploadBackup-Ribbon-Aktion bei zugeklappter Backup-Sektion
+### 6. UploadBackup-Ribbon-Aktion bei zugeklappter Backup-Sektion
 
 1. Benutzer klickt auf `UploadBackup` im Ribbon (Backup-Sektion ist zugeklappt).
 2. `SetupBackupsViewModel.GetRibbonRegisterDefinition()` hat für `UploadBackup` den Callback `BeforeUploadCallback?.Invoke()` registriert.
@@ -96,7 +147,7 @@ flowchart TD
 
 ---
 
-### 4. Gehärteter Backup-Upload
+### 7. Gehärteter Backup-Upload
 
 1. Benutzer wählt in der Backup-Sektion eine Datei aus.
 2. `SetupBackupsViewModel` sendet die Datei über den API-Client an `POST /api/setup/backups/upload`.
@@ -114,7 +165,7 @@ Beteiligte Komponenten: `SetupBackupsViewModel`, `ApiClient.Backups_UploadAsync`
 
 ---
 
-### 5. Restore mit serverseitiger Dateinamen-Bestätigung
+### 8. Restore mit serverseitiger Dateinamen-Bestätigung
 
 1. Benutzer wählt ein Backup zum Wiederherstellen aus.
 2. `SetupBackupTab.razor` zeigt einen Dialog mit Dateiname, Datum und Größe an.
@@ -131,7 +182,7 @@ Beteiligte Komponenten: `SetupBackupTab.razor`, `SetupBackupsViewModel`, `ApiCli
 
 ---
 
-### 6. Synchroner Restore
+### 9. Synchroner Restore
 
 1. Ein Client sendet `POST /api/setup/backups/{id}/apply` mit `BackupRestoreRequestDto`.
 2. `BackupsController.ApplyAsync` übergibt die Bestätigung an `BackupService.ApplyAsync`.
