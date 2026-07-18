@@ -16,10 +16,13 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     // API client and maps for symbols/names (per-instance)
     private readonly IApiClient _api;
     private Dictionary<Guid, Guid?> _contactSymbols = new();
+    private Dictionary<Guid, string?> _contactNames = new();
     private Dictionary<Guid, Guid?> _savingsPlanSymbols = new();
     private Dictionary<Guid, string?> _savingsPlanNames = new();
     private Dictionary<Guid, Guid?> _securitySymbols = new();
     private Dictionary<Guid, string?> _securityNames = new();
+    private Guid? _accountBankContactId;
+    private Guid? _selfContactId;
     // map of entry id -> hint text
     private readonly Dictionary<Guid, string> _entryHints = new();
     // flag to request UI focus on first invalid entry after validation
@@ -228,14 +231,19 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
                 }
                 // capture symbol/name maps from draft so list can show icons and names similar to StatementDraftDetail page
                 _contactSymbols = draft?.ContactSymbols != null ? new Dictionary<Guid, Guid?>(draft.ContactSymbols) : new Dictionary<Guid, Guid?>();
+                _contactNames = draft?.ContactNames != null ? new Dictionary<Guid, string?>(draft.ContactNames) : new Dictionary<Guid, string?>();
                 _savingsPlanSymbols = draft?.SavingsPlanSymbols != null ? new Dictionary<Guid, Guid?>(draft.SavingsPlanSymbols) : new Dictionary<Guid, Guid?>();
                 _savingsPlanNames = draft?.SavingsPlanNames != null ? new Dictionary<Guid, string?>(draft.SavingsPlanNames) : new Dictionary<Guid, string?>();
                 _securitySymbols = draft?.SecuritySymbols != null ? new Dictionary<Guid, Guid?>(draft.SecuritySymbols) : new Dictionary<Guid, Guid?>();
                 _securityNames = draft?.SecurityNames != null ? new Dictionary<Guid, string?>(draft.SecurityNames) : new Dictionary<Guid, string?>();
+                _accountBankContactId = draft?.AccountBankContactId;
+                _selfContactId = draft?.SelfContactId;
             }
             catch
             {
                 _allEntries = new List<StatementDraftEntryDto>();
+                _accountBankContactId = null;
+                _selfContactId = null;
             }
         }
 
@@ -253,8 +261,12 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
                 Amount = d.Amount,
                 RecipientName = d.RecipientName,
                     Subject = d.Subject,
-                    BookingDescription = d.BookingDescription,
+                BookingDescription = d.BookingDescription,
                 Status = d.Status,
+                ContactId = d.ContactId,
+                SavingsPlanId = d.SavingsPlanId,
+                SecurityId = d.SecurityId,
+                SecurityTransactionType = d.SecurityTransactionType,
                 BudgetImpact = d.BudgetImpact
             }).ToList();
 
@@ -282,12 +294,14 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         Records = Items.Select(i => {
             // resolve symbol ids and names from draft-level maps if available
             _contactSymbols.TryGetValue(i.Id, out var contactSym);
+            _contactNames.TryGetValue(i.Id, out var contactName);
             _savingsPlanSymbols.TryGetValue(i.Id, out var planSym);
             _savingsPlanNames.TryGetValue(i.Id, out var planName);
             _securitySymbols.TryGetValue(i.Id, out var secSym);
             _securityNames.TryGetValue(i.Id, out var secName);
 
             var isMuted = i.Status == StatementDraftEntryStatus.AlreadyBooked;
+            var securityText = BuildSecurityText(secName, i.SecurityTransactionType, L);
             var cells = new List<ListCell>
             {
                 new ListCell(ListCellKind.Symbol, SymbolId: contactSym, Muted: isMuted),
@@ -299,10 +313,140 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
                 new ListCell(ListCellKind.Text, Text: (string.IsNullOrWhiteSpace(secName) && secSym == null) ? string.Empty : (secName ?? string.Empty), Muted: isMuted),
                 new ListCell(ListCellKind.Text, Text: i.Status.ToString(), Muted: isMuted)
             };
+            var mobileRows = BuildMobileRows(i, contactSym, contactName, planName, securityText, isMuted, L);
             // attach hint for this entry if available
             _entryHints.TryGetValue(i.Id, out var hint);
-            return new ListRecord(cells.ToArray(), i, hint);
+            return new ListRecord(cells.ToArray(), i, hint, mobileRows);
         }).ToList();
+    }
+
+    private IReadOnlyList<ListMobileRow> BuildMobileRows(
+        StatementDraftEntryItem item,
+        Guid? contactSymbol,
+        string? contactName,
+        string? savingsPlanName,
+        string? securityText,
+        bool isMuted,
+        IStringLocalizer<Pages> localizer)
+    {
+        var rows = new List<ListMobileRow>();
+
+        if (contactSymbol.HasValue)
+        {
+            rows.Add(new ListMobileRow(new[]
+            {
+                new ListMobileCell(null, new ListCell(ListCellKind.Symbol, SymbolId: contactSymbol, Muted: isMuted))
+            }, CssClass: "statement-draft-entry-symbol"));
+        }
+
+        rows.Add(new ListMobileRow(new[]
+        {
+            new ListMobileCell(ResolveLabel(localizer, "List_Th_Date", "Date"), new ListCell(ListCellKind.Text, Text: item.BookingDate.ToString("d"), Muted: isMuted)),
+            new ListMobileCell(ResolveLabel(localizer, "List_Th_Amount", "Amount"), new ListCell(ListCellKind.Currency, Amount: item.Amount, Muted: isMuted))
+        }, ListMobileRowKind.TwoColumn, "statement-draft-entry-date-amount"));
+
+        var contactOrRecipient = GetMobileContactOrRecipient(item, contactName, localizer);
+        if (contactOrRecipient.Text != null)
+        {
+            rows.Add(new ListMobileRow(new[]
+            {
+                new ListMobileCell(contactOrRecipient.Label, new ListCell(ListCellKind.Text, Text: contactOrRecipient.Text, Muted: isMuted))
+            }, CssClass: contactOrRecipient.CssClass));
+        }
+
+        if (!string.IsNullOrWhiteSpace(item.Subject))
+        {
+            rows.Add(new ListMobileRow(new[]
+            {
+                new ListMobileCell(ResolveLabel(localizer, "List_Th_Subject", "Subject"), new ListCell(ListCellKind.Text, Text: item.Subject, Muted: isMuted))
+            }));
+        }
+
+        if (!string.IsNullOrWhiteSpace(savingsPlanName))
+        {
+            rows.Add(new ListMobileRow(new[]
+            {
+                new ListMobileCell(ResolveLabel(localizer, "List_Th_SavingsPlan", "SavingsPlan"), new ListCell(ListCellKind.Text, Text: savingsPlanName, Muted: isMuted))
+            }));
+        }
+
+        if (!string.IsNullOrWhiteSpace(securityText))
+        {
+            rows.Add(new ListMobileRow(new[]
+            {
+                new ListMobileCell(ResolveLabel(localizer, "List_Th_Security", "Security"), new ListCell(ListCellKind.Text, Text: securityText, Muted: isMuted))
+            }));
+        }
+
+        if (item.Status == StatementDraftEntryStatus.Open)
+        {
+            rows.Add(new ListMobileRow(new[]
+            {
+                new ListMobileCell(ResolveLabel(localizer, "List_Th_Status", "Status"), new ListCell(ListCellKind.Text, Text: BuildStatusText(item.Status, localizer), Muted: isMuted))
+            }));
+        }
+
+        return rows;
+    }
+
+    private (string? Label, string? Text, string? CssClass) GetMobileContactOrRecipient(StatementDraftEntryItem item, string? contactName, IStringLocalizer<Pages> localizer)
+    {
+        if (item.ContactId.HasValue)
+        {
+            var contactId = item.ContactId.Value;
+            var isBankContact = _accountBankContactId.HasValue && contactId == _accountBankContactId.Value;
+            var isSelfContact = _selfContactId.HasValue && contactId == _selfContactId.Value;
+            if (!isBankContact && !isSelfContact && !string.IsNullOrWhiteSpace(contactName))
+            {
+                return (ResolveLabel(localizer, "List_Th_Contact", "Contact"), contactName, "statement-draft-entry-contact");
+            }
+
+            return (null, null, null);
+        }
+
+        if (!string.IsNullOrWhiteSpace(item.RecipientName))
+        {
+            return (ResolveLabel(localizer, "List_Th_Recipient", "Recipient"), item.RecipientName, "statement-draft-entry-recipient");
+        }
+
+        return (null, null, null);
+    }
+
+    private static string? BuildSecurityText(string? securityName, SecurityTransactionType? transactionType, IStringLocalizer<Pages> localizer)
+    {
+        if (string.IsNullOrWhiteSpace(securityName))
+        {
+            return null;
+        }
+
+        if (!transactionType.HasValue)
+        {
+            return securityName;
+        }
+
+        var typeKey = $"EnumType_SecurityTransactionType_{transactionType.Value}";
+        var localized = localizer[typeKey];
+        var typeText = localized.ResourceNotFound || string.Equals(localized.Value, typeKey, StringComparison.Ordinal)
+            ? transactionType.Value.ToString()
+            : localized.Value;
+        return $"{securityName} ({typeText})";
+    }
+
+    private static string BuildStatusText(StatementDraftEntryStatus status, IStringLocalizer<Pages> localizer)
+    {
+        var key = $"EnumType_StatementDraftEntryStatus_{status}";
+        var localized = localizer[key];
+        return localized.ResourceNotFound || string.IsNullOrWhiteSpace(localized.Value) || string.Equals(localized.Value, key, StringComparison.Ordinal)
+            ? status.ToString()
+            : localized.Value;
+    }
+
+    private static string ResolveLabel(IStringLocalizer<Pages> localizer, string key, string fallback)
+    {
+        var localized = localizer[key];
+        return localized.ResourceNotFound || string.IsNullOrWhiteSpace(localized.Value) || string.Equals(localized.Value, key, StringComparison.Ordinal)
+            ? fallback
+            : localized.Value;
     }
 
     public void ApplyValidationMessages(DraftValidationResultDto? result)

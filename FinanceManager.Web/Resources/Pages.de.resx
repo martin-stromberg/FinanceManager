@@ -384,6 +384,9 @@
   <data name="List_Th_Contact_Type" xml:space="preserve">
     <value>Art</value>
   </data>
+  <data name="List_Th_Contact" xml:space="preserve">
+    <value>Kontakt</value>
+  </data>
   <data name="Card_Caption_Contact_Name" xml:space="preserve">
     <value>Name</value>
   </data>
