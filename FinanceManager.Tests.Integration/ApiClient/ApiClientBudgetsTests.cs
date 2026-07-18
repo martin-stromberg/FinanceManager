@@ -63,11 +63,13 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
 
         createdPurpose.Id.Should().NotBeEmpty();
         createdPurpose.Name.Should().Be("Groceries");
+        createdPurpose.ValuationType.Should().Be(BudgetValuationType.ExactPostings);
 
         // Get purpose
         var gotPurpose = await api.Budgets_GetPurposeAsync(createdPurpose.Id);
         gotPurpose.Should().NotBeNull();
         gotPurpose!.Id.Should().Be(createdPurpose.Id);
+        gotPurpose.ValuationType.Should().Be(BudgetValuationType.ExactPostings);
 
         // Update purpose
         var updatedPurpose = await api.Budgets_UpdatePurposeAsync(createdPurpose.Id, new BudgetPurposeUpdateRequest(
@@ -75,11 +77,13 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
             SourceType: BudgetSourceType.ContactGroup,
             SourceId: createdPurpose.SourceId,
             Description: "desc",
-            BudgetCategoryId: null));
+            BudgetCategoryId: null,
+            ValuationType: BudgetValuationType.TotalBudget));
 
         updatedPurpose.Should().NotBeNull();
         updatedPurpose!.Name.Should().Be("Groceries2");
         updatedPurpose.Description.Should().Be("desc");
+        updatedPurpose.ValuationType.Should().Be(BudgetValuationType.TotalBudget);
 
         // Create rules (one yearly in January, one monthly)
         var ruleYearlyJan = await api.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(

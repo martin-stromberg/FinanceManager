@@ -228,7 +228,7 @@ public sealed class BudgetReportsController : ControllerBase
                 {
                     foreach (var pur in cat.Purposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
                     {
-                        foreach (var p in pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                        foreach (var p in (pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>()).Where(p => p.IsValuedForBudgetPurpose))
                         {
                             var d = GetDate(p, req.DateBasis);
                             var dd = DateOnly.FromDateTime(d);
@@ -240,7 +240,7 @@ public sealed class BudgetReportsController : ControllerBase
                 // uncategorized purposes
                 foreach (var pur in raw.UncategorizedPurposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
                 {
-                    foreach (var p in pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                    foreach (var p in (pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>()).Where(p => p.IsValuedForBudgetPurpose))
                     {
                         var d = GetDate(p, req.DateBasis);
                         var dd = DateOnly.FromDateTime(d);
@@ -285,6 +285,7 @@ public sealed class BudgetReportsController : ControllerBase
                 foreach (var pur in cat.Purposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
                 {
                     postingsToConsider.AddRange((pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                        .Where(p => p.IsValuedForBudgetPurpose)
                         .Where(p =>
                         {
                             var d = GetDate(p, req.DateBasis);
@@ -305,6 +306,7 @@ public sealed class BudgetReportsController : ControllerBase
                     decimal purBudget = ComputeBudgetedAmountForPeriod(purposeRules, categoryFrom, categoryTo);
                     catBudget += purBudget;
                     decimal purActual = (pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                        .Where(p => p.IsValuedForBudgetPurpose)
                         .Where(p =>
                         {
                             var dd = DateOnly.FromDateTime(GetDate(p, req.DateBasis));

@@ -1539,6 +1539,15 @@
   <data name="Card_Caption_BudgetPurpose_Description" xml:space="preserve">
     <value>Beschreibung</value>
   </data>
+  <data name="Card_Caption_BudgetPurpose_ValuationType" xml:space="preserve">
+    <value>Budgetwertungsart</value>
+  </data>
+  <data name="EnumType_BudgetValuationType_ExactPostings" xml:space="preserve">
+    <value>Exakte Buchungen</value>
+  </data>
+  <data name="EnumType_BudgetValuationType_TotalBudget" xml:space="preserve">
+    <value>Gesamtbudget</value>
+  </data>
   <data name="EnumType_BudgetSourceType_ContactGroup" xml:space="preserve">
     <value>Kontaktgruppe</value>
   </data>

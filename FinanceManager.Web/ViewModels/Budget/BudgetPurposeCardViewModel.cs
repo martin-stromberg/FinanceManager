@@ -161,6 +161,37 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
         return ParseSourceType(raw, Purpose?.SourceType ?? BudgetSourceType.ContactGroup);
     }
 
+    private BudgetValuationType ParseValuationType(string? value, BudgetValuationType fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return fallback;
+        }
+
+        if (Enum.TryParse<BudgetValuationType>(value, ignoreCase: true, out var parsed))
+        {
+            return parsed;
+        }
+
+        var localizer = Localizer;
+        if (localizer == null)
+        {
+            return fallback;
+        }
+
+        foreach (var v in new[] { BudgetValuationType.ExactPostings, BudgetValuationType.TotalBudget })
+        {
+            var key = $"EnumType_{nameof(BudgetValuationType)}_{v}";
+            var localized = localizer[key];
+            if (localized != null && !localized.ResourceNotFound && string.Equals(localized.Value, value, StringComparison.OrdinalIgnoreCase))
+            {
+                return v;
+            }
+        }
+
+        return fallback;
+    }
+
     private void UpdateSourceFieldLookup(CardRecord? record)
     {
         var srcField = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_BudgetPurpose_SourceId");
@@ -218,6 +249,7 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
                 valueId: dto.BudgetCategoryId,
                 allowAdd: true,
                 recordCreationNameSuggestion: dto.Name),
+            new CardField("Card_Caption_BudgetPurpose_ValuationType", CardFieldKind.Text, text: dto.ValuationType.ToString(), editable: true, lookupType: "Enum:BudgetValuationType"),
             new CardField("Card_Caption_BudgetPurpose_Description", CardFieldKind.Text, text: dto.Description ?? string.Empty, editable: true)
         };
 
@@ -399,8 +431,10 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
             ?? Purpose?.BudgetCategoryId;
 
         var desc = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_BudgetPurpose_Description")?.Text;
+        var valuationText = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_BudgetPurpose_ValuationType")?.Text ?? Purpose?.ValuationType.ToString() ?? BudgetValuationType.ExactPostings.ToString();
+        var valuationType = ParseValuationType(valuationText, Purpose?.ValuationType ?? BudgetValuationType.ExactPostings);
 
-        return new BudgetPurposeDto(Id, Guid.Empty, name, desc, sourceType, sourceId, categoryId);
+        return new BudgetPurposeDto(Id, Guid.Empty, name, desc, sourceType, sourceId, categoryId, valuationType);
     }
 
     /// <inheritdoc />
@@ -529,7 +563,7 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
 
             if (Id == Guid.Empty)
             {
-                var created = await ApiClient.Budgets_CreatePurposeAsync(new BudgetPurposeCreateRequest(dto.Name, dto.SourceType, dto.SourceId, dto.Description, dto.BudgetCategoryId));
+                var created = await ApiClient.Budgets_CreatePurposeAsync(new BudgetPurposeCreateRequest(dto.Name, dto.SourceType, dto.SourceId, dto.Description, dto.BudgetCategoryId, dto.ValuationType));
                 Id = created.Id;
                 Purpose = created;
                 CardRecord = BuildCardRecord(created);
@@ -546,7 +580,7 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
                 return true;
             }
 
-            var updated = await ApiClient.Budgets_UpdatePurposeAsync(Id, new BudgetPurposeUpdateRequest(dto.Name, dto.SourceType, dto.SourceId, dto.Description, dto.BudgetCategoryId));
+            var updated = await ApiClient.Budgets_UpdatePurposeAsync(Id, new BudgetPurposeUpdateRequest(dto.Name, dto.SourceType, dto.SourceId, dto.Description, dto.BudgetCategoryId, dto.ValuationType));
             if (updated == null)
             {
                 SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Update failed");

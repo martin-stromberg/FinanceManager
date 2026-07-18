@@ -103,7 +103,7 @@ namespace FinanceManager.Web.Services
                 {
                     foreach (var pur in cat.Purposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
                     {
-                        foreach (var p in pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                        foreach (var p in (pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>()).Where(p => p.IsValuedForBudgetPurpose))
                         {
                             postings.Add(p with { BudgetCategoryName = cat.CategoryName, BudgetPurposeName = pur.PurposeName });
                         }
@@ -111,7 +111,7 @@ namespace FinanceManager.Web.Services
                 }
                 foreach (var pur in raw.UncategorizedPurposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
                 {
-                    foreach (var p in pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                    foreach (var p in (pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>()).Where(p => p.IsValuedForBudgetPurpose))
                     {
                         postings.Add(p with { BudgetCategoryName = null, BudgetPurposeName = pur.PurposeName });
                     }
@@ -311,7 +311,7 @@ namespace FinanceManager.Web.Services
                 {
                     foreach (var pur in cat.Purposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
                     {
-                        foreach (var p in pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                        foreach (var p in (pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>()).Where(p => p.IsValuedForBudgetPurpose))
                         {
                             var dd = DateOnly.FromDateTime(GetPostingDate(p, dateBasis));
                             if (dd >= periodFrom && dd <= periodTo)
@@ -324,7 +324,7 @@ namespace FinanceManager.Web.Services
 
                 foreach (var pur in raw.UncategorizedPurposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
                 {
-                    foreach (var p in pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                    foreach (var p in (pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>()).Where(p => p.IsValuedForBudgetPurpose))
                     {
                         var dd = DateOnly.FromDateTime(GetPostingDate(p, dateBasis));
                         if (dd >= periodFrom && dd <= periodTo)
@@ -370,7 +370,7 @@ namespace FinanceManager.Web.Services
                 var purposeRows = new List<CurrentMonthRow>();
                 foreach (var pur in cat.Purposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
                 {
-                    foreach (var p in pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                    foreach (var p in (pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>()).Where(p => p.IsValuedForBudgetPurpose))
                     {
                         var dd = DateOnly.FromDateTime(GetPostingDate(p, dateBasis));
                         if (dd >= from && dd <= to)
@@ -395,7 +395,7 @@ namespace FinanceManager.Web.Services
                     var purBudget = ComputeBudgetedAmountForPeriod(purRules, from, to);
                     catBudget += purBudget;
                     var purActual = 0m;
-                    foreach (var p in pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                    foreach (var p in (pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>()).Where(p => p.IsValuedForBudgetPurpose))
                     {
                         var dd = DateOnly.FromDateTime(GetPostingDate(p, dateBasis));
                         if (dd >= from && dd <= to)

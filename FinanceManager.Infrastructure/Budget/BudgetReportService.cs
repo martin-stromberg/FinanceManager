@@ -208,6 +208,7 @@ public sealed class BudgetReportService : IBudgetReportService
             var rules = (await _rules.ListByPurposeAsync(ownerUserId, pur.Id, ct)).ToList();
 
             var matchedPostings = new List<BudgetReportPostingRawDataDto>();
+            var unvaluedMatchingPostings = new List<BudgetReportPostingRawDataDto>();
 
             // If no rules exist, assign all postings to the purpose
             if (rules.Count == 0)
@@ -218,6 +219,32 @@ public sealed class BudgetReportService : IBudgetReportService
                     postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
                 }
                 postingsForPurpose.Clear();
+            }
+            else if (pur.ValuationType == BudgetValuationType.TotalBudget)
+            {
+                foreach (var rule in rules)
+                {
+                    foreach (var (bucketStart, bucketEnd) in EnumerateRulePeriods(rule, from, to))
+                    {
+                        var bucketPostings = postingsForPurpose
+                            .Where(p => BudgetRulePatternMatcher.MatchesPosting(p.Subject, p.Description, rule.PurposePattern, rule.UseRegex))
+                            .Where(p =>
+                            {
+                                var postingDate = GetPostingDate(p, dateBasis);
+                                return postingDate >= bucketStart && postingDate <= bucketEnd;
+                            })
+                            .OrderBy(p => GetPostingDate(p, dateBasis))
+                            .ThenBy(p => p.Amount)
+                            .ToList();
+
+                        foreach (var p in bucketPostings)
+                        {
+                            matchedPostings.Add(p with { IsValuedForBudgetPurpose = true });
+                            postingsForPurpose.RemoveAll(x => x.PostingId == p.PostingId);
+                            postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
+                        }
+                    }
+                }
             }
             else
             {
@@ -364,10 +391,17 @@ public sealed class BudgetReportService : IBudgetReportService
             // any postings left in postingsForPurpose are unbudgeted for this purpose
             foreach (var left in postingsForPurpose)
             {
+                if (pur.ValuationType == BudgetValuationType.ExactPostings
+                    && rules.Any(rule => BudgetRulePatternMatcher.MatchesPosting(left.Subject, left.Description, rule.PurposePattern, rule.UseRegex)))
+                {
+                    unvaluedMatchingPostings.Add(left with { IsValuedForBudgetPurpose = false });
+                }
+
                 unbudgetedList.Add(left with
                 {
                     BudgetCategoryId = null,
-                    BudgetPurposeId = null
+                    BudgetPurposeId = null,
+                    IsValuedForBudgetPurpose = false
                 });
                 postingDtos.RemoveAll(x => x.PostingId == left.PostingId);
             }
@@ -382,7 +416,12 @@ public sealed class BudgetReportService : IBudgetReportService
                 BudgetSourceType = pur.SourceType,
                 SourceId = pur.SourceId,
                 SourceName = pur.SourceName ?? string.Empty,
-                Postings = matchedPostings.ToArray()
+                ValuationType = pur.ValuationType,
+                Postings = matchedPostings
+                    .Concat(unvaluedMatchingPostings)
+                    .OrderBy(p => GetPostingDate(p, dateBasis))
+                    .ThenBy(p => p.Amount)
+                    .ToArray()
             });
         }
 
@@ -1176,19 +1215,23 @@ public sealed class BudgetReportService : IBudgetReportService
         var budgetedRealizedIncome= rawData.Categories
                 .SelectMany(c => c.Purposes)
                 .SelectMany(p => p.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                .Where(p => p.IsValuedForBudgetPurpose)
                 .Where(p => p.Amount > 0)
                 .Sum(p => p.Amount)
             + rawData.UncategorizedPurposes?
                 .SelectMany(p => p.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                .Where(p => p.IsValuedForBudgetPurpose)
                 .Where(p => p.Amount > 0)
                 .Sum(p => p.Amount) ?? 0m;
         var budgetedRealizedExpenseAbs = Math.Abs(rawData.Categories
                 .SelectMany(c => c.Purposes)
                 .SelectMany(p => p.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                .Where(p => p.IsValuedForBudgetPurpose)
                 .Where(p => p.Amount < 0)
                 .Sum(p => p.Amount))
             + Math.Abs(rawData.UncategorizedPurposes?
                 .SelectMany(p => p.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                .Where(p => p.IsValuedForBudgetPurpose)
                 .Where(p => p.Amount < 0)
                 .Sum(p => p.Amount) ?? 0m);
 
