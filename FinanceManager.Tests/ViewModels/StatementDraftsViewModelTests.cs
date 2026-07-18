@@ -1,5 +1,6 @@
 using FinanceManager.Application;
 using FinanceManager.Shared; // added
+using FinanceManager.Web.ViewModels.Common;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
@@ -52,6 +53,108 @@ public sealed class StatementDraftsViewModelTests
     }
 
     private static string Json(object obj) => JsonSerializer.Serialize(obj);
+
+    private static StatementDraftEntryDto Entry(
+        int number,
+        Guid? contactId = null,
+        string? recipient = null,
+        string? subject = null,
+        Guid? savingsPlanId = null,
+        Guid? securityId = null,
+        SecurityTransactionType? transactionType = null,
+        StatementDraftEntryStatus status = StatementDraftEntryStatus.Open)
+        => new(
+            Guid.NewGuid(),
+            number,
+            new DateTime(2026, 7, number),
+            null,
+            number * 10m,
+            "EUR",
+            subject ?? string.Empty,
+            recipient,
+            null,
+            false,
+            false,
+            status,
+            contactId,
+            savingsPlanId,
+            false,
+            null,
+            securityId,
+            transactionType,
+            null,
+            null,
+            null);
+
+    private static StatementDraftDetailDto DraftDetail(
+        Guid draftId,
+        IReadOnlyList<StatementDraftEntryDto> entries,
+        IReadOnlyDictionary<Guid, string>? contactNames = null,
+        IReadOnlyDictionary<Guid, string>? savingsPlanNames = null,
+        IReadOnlyDictionary<Guid, string>? securityNames = null,
+        Guid? accountBankContactId = null,
+        Guid? selfContactId = null)
+        => new(
+            draftId,
+            "statement.csv",
+            null,
+            null,
+            StatementDraftStatus.Draft,
+            entries.Sum(e => e.Amount),
+            false,
+            null,
+            null,
+            null,
+            null,
+            entries,
+            null,
+            null,
+            ContactNames: contactNames,
+            SavingsPlanNames: savingsPlanNames,
+            SecurityNames: securityNames,
+            AccountBankContactId: accountBankContactId,
+            SelfContactId: selfContactId);
+
+    private static async Task<IReadOnlyList<ListRecord>> LoadEntryRecordsAsync(StatementDraftDetailDto detail)
+    {
+        var client = CreateHttpClient(req =>
+        {
+            if (req.Method == HttpMethod.Get && req.RequestUri!.AbsolutePath == $"/api/statement-drafts/{detail.DraftId}")
+            {
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(Json(detail), Encoding.UTF8, "application/json")
+                };
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        var api = new ApiClient(client);
+        var vm = new FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel(CreateSp(api));
+        await vm.LoadAsync(detail.DraftId);
+
+        Assert.NotNull(vm.EmbeddedList);
+        var provider = Assert.IsAssignableFrom<IListProvider>(vm.EmbeddedList);
+        return provider.Records;
+    }
+
+    private static IReadOnlyList<ListMobileRow> MobileRows(ListRecord record)
+    {
+        Assert.NotNull(record.MobileRows);
+        return record.MobileRows!;
+    }
+
+    private static IReadOnlyList<string> MobileTexts(ListRecord record)
+        => MobileRows(record)
+            .SelectMany(r => r.Cells)
+            .Select(c => c.Cell.Text)
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Select(t => t!)
+            .ToList();
+
+    private static ListRecord RecordForEntry(IReadOnlyList<ListRecord> records, Guid entryId)
+        => records.Single(r => r.Item?.GetType().GetProperty("Id")?.GetValue(r.Item) is Guid id && id == entryId);
 
     [Fact]
     public async Task Initialize_Loads_First_Page()
@@ -279,6 +382,71 @@ public sealed class StatementDraftsViewModelTests
 
         await vm.CancelBookingAsync();
         // no exception means ok
+    }
+
+    [Fact]
+    public async Task EntriesList_BuildsMobileRows_ForStatementDraftInformation()
+    {
+        var bankContactId = Guid.NewGuid();
+        var selfContactId = Guid.NewGuid();
+        var externalContactId = Guid.NewGuid();
+        var savingsPlanId = Guid.NewGuid();
+        var securityId = Guid.NewGuid();
+        var entries = new[]
+        {
+            Entry(1, status: StatementDraftEntryStatus.AlreadyBooked, subject: "Booked"),
+            Entry(2, contactId: externalContactId, recipient: "Hidden recipient", subject: "External subject"),
+            Entry(3, contactId: bankContactId, recipient: "Bank recipient"),
+            Entry(4, contactId: selfContactId, recipient: "Self recipient"),
+            Entry(5, recipient: "Plain recipient"),
+            Entry(6, savingsPlanId: savingsPlanId),
+            Entry(7, securityId: securityId, transactionType: SecurityTransactionType.Buy)
+        };
+        var detail = DraftDetail(
+            Guid.NewGuid(),
+            entries,
+            contactNames: new Dictionary<Guid, string> { [entries[1].Id] = "External GmbH", [entries[2].Id] = "Bank AG", [entries[3].Id] = "Me" },
+            savingsPlanNames: new Dictionary<Guid, string> { [entries[5].Id] = "ETF Sparplan" },
+            securityNames: new Dictionary<Guid, string> { [entries[6].Id] = "ACME ETF" },
+            accountBankContactId: bankContactId,
+            selfContactId: selfContactId);
+
+        var records = await LoadEntryRecordsAsync(detail);
+
+        var bookedRecord = RecordForEntry(records, entries[0].Id);
+        Assert.All(bookedRecord.Cells, c => Assert.True(c.Muted));
+        Assert.All(MobileRows(bookedRecord).SelectMany(r => r.Cells), c => Assert.True(c.Cell.Muted));
+
+        var contactTexts = MobileTexts(RecordForEntry(records, entries[1].Id));
+        Assert.Contains("External GmbH", contactTexts);
+        Assert.DoesNotContain("Hidden recipient", contactTexts);
+
+        var bankTexts = MobileTexts(RecordForEntry(records, entries[2].Id));
+        Assert.DoesNotContain("Bank AG", bankTexts);
+        Assert.DoesNotContain("Bank recipient", bankTexts);
+
+        var selfTexts = MobileTexts(RecordForEntry(records, entries[3].Id));
+        Assert.DoesNotContain("Me", selfTexts);
+        Assert.DoesNotContain("Self recipient", selfTexts);
+
+        Assert.Contains("Plain recipient", MobileTexts(RecordForEntry(records, entries[4].Id)));
+        Assert.Contains("ETF Sparplan", MobileTexts(RecordForEntry(records, entries[5].Id)));
+        Assert.Contains("ACME ETF (Buy)", MobileTexts(RecordForEntry(records, entries[6].Id)));
+    }
+
+    [Fact]
+    public async Task EntriesList_MobileRows_PutDateAndAmountIntoTwoColumnBlock()
+    {
+        var entry = Entry(1, recipient: "Recipient");
+        var detail = DraftDetail(Guid.NewGuid(), new[] { entry });
+
+        var record = (await LoadEntryRecordsAsync(detail)).Single();
+        var twoColumnRow = MobileRows(record).Single(r => r.Kind == ListMobileRowKind.TwoColumn);
+
+        Assert.Equal("statement-draft-entry-date-amount", twoColumnRow.CssClass);
+        Assert.Equal(2, twoColumnRow.Cells.Count);
+        Assert.Equal(ListCellKind.Text, twoColumnRow.Cells[0].Cell.Kind);
+        Assert.Equal(ListCellKind.Currency, twoColumnRow.Cells[1].Cell.Kind);
     }
 }
 

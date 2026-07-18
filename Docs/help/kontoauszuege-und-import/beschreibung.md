@@ -12,6 +12,10 @@ Dateien werden über `StatementDraftsController` hochgeladen (`upload` oder `mas
 
 Wenn die Klassifizierung keinen vorhandenen Kontakt findet, kann sie die mitgelieferte Liste bekannter Kontakte prüfen. Bei genau einem Treffer wird für den Benutzer automatisch ein Kontakt mit den hinterlegten Alias-Mustern angelegt und der Entwurfszeile zugeordnet. Die Funktion kann in den Einstellungen für den Kontoauszugsimport deaktiviert werden.
 
+Auf mobilen Geräten werden Kontoauszugseinträge als Karten dargestellt. Datum und Betrag stehen dort in einer zweispaltigen Zeile. Bereits gebuchte Einträge erscheinen abgeschwächt, damit offene und erledigte Zeilen unterscheidbar bleiben. Lange Datei- und Textwerte brechen innerhalb der verfügbaren Breite um und erzeugen keine horizontale Seitenverschiebung.
+
+Die mobile Karte zeigt die fachlich relevanten Zuordnungen direkt am Eintrag: einen abweichenden Kontakt oder, falls kein Kontakt gesetzt ist, den Empfänger, außerdem einen zugeordneten Sparplan und ein zugeordnetes Wertpapier. Bei Wertpapierzeilen steht die Buchungsart direkt neben dem Wertpapier in Klammern.
+
 ## Beispiele
 
 - Ein CSV-Kontoauszug wird importiert und automatisch klassifiziert.
@@ -19,6 +23,7 @@ Wenn die Klassifizierung keinen vorhandenen Kontakt findet, kann sie die mitgeli
 - Ein Sammelauszug erzeugt mehrere Entwürfe, die später einzeln zugeordnet werden können.
 - Einzelne Entwurfszeilen werden vor der Verbuchung manuell korrigiert.
 - Mehrere Dateien werden als Massenimport mit Sicherheitszuordnung verarbeitet.
+- Auf dem Smartphone zeigt eine Entwurfszeile Datum und Betrag nebeneinander sowie Kontakt, Sparplan und Wertpapier inklusive Buchungsart untereinander.
 
 ## Einschränkungen
 

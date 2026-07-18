@@ -20,6 +20,15 @@ Kontrollieren Sie die vorgeschlagenen Zuordnungen (Kontakt, Sparplan, Wertpapier
 
 > **Hinweis:** Bei Warnungen zuerst die betroffenen Zeilen bearbeiten.
 
+Auf mobilen Geräten erscheinen die Kontoauszugseinträge als Karten. Prüfen Sie dort pro Eintrag:
+
+- Datum und Betrag stehen nebeneinander.
+- Bereits gebuchte Einträge sind optisch abgeschwächt.
+- Ein abweichender Kontakt wird angezeigt; ohne Kontakt wird stattdessen ein vorhandener Empfänger angezeigt.
+- Zugeordnete Sparpläne werden angezeigt.
+- Zugeordnete Wertpapiere werden zusammen mit der Buchungsart in Klammern angezeigt.
+- Lange Dateinamen und lange Textwerte brechen innerhalb der Karte um.
+
 ### 3. Verbuchen
 
 Starten Sie die Verbuchung für den gesamten Entwurf oder einzelne Zeilen.
