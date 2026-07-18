@@ -143,6 +143,12 @@ public sealed class BudgetReportsController : ControllerBase
         return sum;
     }
 
+    private static decimal ComputeDelta(decimal budget, decimal actual)
+        => actual - budget;
+
+    private static decimal ComputeDeltaPct(decimal budget, decimal delta)
+        => budget == 0m ? 0m : delta / Math.Abs(budget);
+
     /// <summary>
     /// Generates a budget report for the current user.
     /// </summary>
@@ -251,8 +257,8 @@ public sealed class BudgetReportsController : ControllerBase
                 }
 
                 var budget = ComputeBudgetedAmountForPeriod(rules, periodFrom, periodTo);
-                var delta = budget - actual;
-                var deltaPct = budget == 0m ? 0m : delta / Math.Abs(budget);
+                var delta = ComputeDelta(budget, actual);
+                var deltaPct = ComputeDeltaPct(budget, delta);
 
                 periods.Add(new BudgetReportPeriodDto(periodFrom, periodTo, budget, actual, delta, deltaPct));
             }
@@ -297,6 +303,7 @@ public sealed class BudgetReportsController : ControllerBase
                 {
                     var purposeRules = rules.Where(r => r.BudgetPurposeId == pur.PurposeId).ToList();
                     decimal purBudget = ComputeBudgetedAmountForPeriod(purposeRules, categoryFrom, categoryTo);
+                    catBudget += purBudget;
                     decimal purActual = (pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
                         .Where(p =>
                         {
@@ -309,16 +316,20 @@ public sealed class BudgetReportsController : ControllerBase
                         .Where(IsInCategoryRange)
                         .Sum(p => p.Amount);
 
+                    var purDelta = ComputeDelta(purBudget, purActual);
+
                     purposeDtos.Add(new BudgetReportPurposeDto(
                         pur.PurposeId,
                         pur.PurposeName,
                         purBudget,
                         purActual,
-                        purBudget - purActual,
-                        purBudget == 0 ? 0m : (purBudget - purActual) / Math.Abs(purBudget),
+                        purDelta,
+                        ComputeDeltaPct(purBudget, purDelta),
                         pur.BudgetSourceType,
                         pur.SourceId));
                 }
+
+                var catDelta = ComputeDelta(catBudget, catActual);
 
                 categories.Add(new BudgetReportCategoryDto(
                     cat.CategoryId,
@@ -326,8 +337,8 @@ public sealed class BudgetReportsController : ControllerBase
                     BudgetReportCategoryRowKind.Data,
                     catBudget,
                     catActual,
-                    catBudget - catActual,
-                    catBudget == 0 ? 0m : (catBudget - catActual) / Math.Abs(catBudget),
+                    catDelta,
+                    ComputeDeltaPct(catBudget, catDelta),
                     purposeDtos));
             }
 
@@ -344,17 +355,17 @@ public sealed class BudgetReportsController : ControllerBase
                     BudgetReportCategoryRowKind.Unbudgeted,
                     0m,
                     unbudgetedActual,
-                    -unbudgetedActual,
+                    unbudgetedActual,
                     0m,
                     Array.Empty<BudgetReportPurposeDto>()));
             }
 
             if (categories.Count > 0)
             {
-                var sumBudget = categories.Sum(c => c.Budget + c.Purposes.Sum(p => p.Budget));
+                var sumBudget = categories.Sum(c => c.Budget);
                 var sumActual = categories.Sum(c => c.Actual);
-                var sumDelta = sumBudget - sumActual;
-                var sumDeltaPct = sumBudget == 0m ? 0m : sumDelta / Math.Abs(sumBudget);
+                var sumDelta = ComputeDelta(sumBudget, sumActual);
+                var sumDeltaPct = ComputeDeltaPct(sumBudget, sumDelta);
 
                 categories.Add(new BudgetReportCategoryDto(
                     Guid.Empty,

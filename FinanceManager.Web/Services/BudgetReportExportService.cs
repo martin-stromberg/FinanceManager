@@ -344,8 +344,8 @@ namespace FinanceManager.Web.Services
                 }
 
                 var budget = ComputeBudgetedAmountForPeriod(rules, periodFrom, periodTo);
-                var delta = budget - actual;
-                var deltaPct = budget == 0m ? 0m : delta / Math.Abs(budget);
+                var delta = ComputeDelta(budget, actual);
+                var deltaPct = ComputeDeltaPct(budget, delta);
                 periods.Add(new BudgetReportPeriodDto(periodFrom, periodTo, budget, actual, delta, deltaPct));
             }
 
@@ -367,6 +367,7 @@ namespace FinanceManager.Web.Services
                 var catRules = rules.Where(r => r.BudgetCategoryId == cat.CategoryId).ToList();
                 var catBudget = ComputeBudgetedAmountForPeriod(catRules, from, to);
                 var catActual = 0m;
+                var purposeRows = new List<CurrentMonthRow>();
                 foreach (var pur in cat.Purposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
                 {
                     foreach (var p in pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
@@ -388,12 +389,11 @@ namespace FinanceManager.Web.Services
                     }
                 }
 
-                result.Add(CurrentMonthRow.CreateCategory(cat.CategoryName, catBudget, catActual));
-
                 foreach (var pur in cat.Purposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
                 {
                     var purRules = rules.Where(r => r.BudgetPurposeId == pur.PurposeId).ToList();
                     var purBudget = ComputeBudgetedAmountForPeriod(purRules, from, to);
+                    catBudget += purBudget;
                     var purActual = 0m;
                     foreach (var p in pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
                     {
@@ -413,8 +413,11 @@ namespace FinanceManager.Web.Services
                         }
                     }
 
-                    result.Add(CurrentMonthRow.CreatePurpose(cat.CategoryName, pur.PurposeName, purBudget, purActual));
+                    purposeRows.Add(CurrentMonthRow.CreatePurpose(cat.CategoryName, pur.PurposeName, purBudget, purActual));
                 }
+
+                result.Add(CurrentMonthRow.CreateCategory(cat.CategoryName, catBudget, catActual));
+                result.AddRange(purposeRows);
             }
 
             var unbudgetedActual = unbudgetedPostings
@@ -436,6 +439,12 @@ namespace FinanceManager.Web.Services
 
         private static DateTime GetPostingDate(BudgetReportPostingRawDataDto posting, BudgetReportDateBasis dateBasis)
             => dateBasis == BudgetReportDateBasis.ValutaDate ? (posting.ValutaDate ?? posting.BookingDate) : posting.BookingDate;
+
+        private static decimal ComputeDelta(decimal budget, decimal actual)
+            => actual - budget;
+
+        private static decimal ComputeDeltaPct(decimal budget, decimal delta)
+            => budget == 0m ? 0m : delta / Math.Abs(budget);
 
         private static decimal ComputeBudgetedAmountForPeriod(IReadOnlyList<BudgetRule> rules, DateOnly from, DateOnly to)
         {
@@ -791,15 +800,15 @@ namespace FinanceManager.Web.Services
         {
             public static CurrentMonthRow CreateCategory(string? name, decimal budget, decimal actual)
             {
-                var delta = budget - actual;
-                var pct = budget == 0m ? 0m : delta / Math.Abs(budget);
+                var delta = ComputeDelta(budget, actual);
+                var pct = ComputeDeltaPct(budget, delta);
                 return new CurrentMonthRow(name, null, budget, actual, delta, pct);
             }
 
             public static CurrentMonthRow CreatePurpose(string? category, string? purpose, decimal budget, decimal actual)
             {
-                var delta = budget - actual;
-                var pct = budget == 0m ? 0m : delta / Math.Abs(budget);
+                var delta = ComputeDelta(budget, actual);
+                var pct = ComputeDeltaPct(budget, delta);
                 return new CurrentMonthRow(category, purpose, budget, actual, delta, pct);
             }
         }
