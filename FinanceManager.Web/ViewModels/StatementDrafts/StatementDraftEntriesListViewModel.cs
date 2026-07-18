@@ -378,10 +378,13 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
             }));
         }
 
-        rows.Add(new ListMobileRow(new[]
+        if (item.Status == StatementDraftEntryStatus.Open)
         {
-            new ListMobileCell(ResolveLabel(localizer, "List_Th_Status", "Status"), new ListCell(ListCellKind.Text, Text: item.Status.ToString(), Muted: isMuted))
-        }));
+            rows.Add(new ListMobileRow(new[]
+            {
+                new ListMobileCell(ResolveLabel(localizer, "List_Th_Status", "Status"), new ListCell(ListCellKind.Text, Text: BuildStatusText(item.Status, localizer), Muted: isMuted))
+            }));
+        }
 
         return rows;
     }
@@ -427,6 +430,15 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
             ? transactionType.Value.ToString()
             : localized.Value;
         return $"{securityName} ({typeText})";
+    }
+
+    private static string BuildStatusText(StatementDraftEntryStatus status, IStringLocalizer<Pages> localizer)
+    {
+        var key = $"EnumType_StatementDraftEntryStatus_{status}";
+        var localized = localizer[key];
+        return localized.ResourceNotFound || string.IsNullOrWhiteSpace(localized.Value) || string.Equals(localized.Value, key, StringComparison.Ordinal)
+            ? status.ToString()
+            : localized.Value;
     }
 
     private static string ResolveLabel(IStringLocalizer<Pages> localizer, string key, string fallback)

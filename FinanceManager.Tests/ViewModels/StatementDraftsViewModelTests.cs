@@ -416,10 +416,14 @@ public sealed class StatementDraftsViewModelTests
         var bookedRecord = RecordForEntry(records, entries[0].Id);
         Assert.All(bookedRecord.Cells, c => Assert.True(c.Muted));
         Assert.All(MobileRows(bookedRecord).SelectMany(r => r.Cells), c => Assert.True(c.Cell.Muted));
+        Assert.DoesNotContain("AlreadyBooked", MobileTexts(bookedRecord));
 
+        var openStatusTexts = MobileTexts(RecordForEntry(records, entries[1].Id));
+        Assert.Contains("Open", openStatusTexts);
         var contactTexts = MobileTexts(RecordForEntry(records, entries[1].Id));
         Assert.Contains("External GmbH", contactTexts);
         Assert.DoesNotContain("Hidden recipient", contactTexts);
+        Assert.Contains(MobileRows(RecordForEntry(records, entries[1].Id)).SelectMany(r => r.Cells), c => c.Label == "Kontakt");
 
         var bankTexts = MobileTexts(RecordForEntry(records, entries[2].Id));
         Assert.DoesNotContain("Bank AG", bankTexts);
@@ -455,7 +459,17 @@ public sealed class StatementDraftsViewModelTests
 public sealed class TestStringLocalizer<T> : Microsoft.Extensions.Localization.IStringLocalizer<T>
 {
     public LocalizedString this[string name]
-        => new LocalizedString(name, name, resourceNotFound: false);
+    {
+        get
+        {
+            var value = name switch
+            {
+                "List_Th_Contact" => "Kontakt",
+                _ => name
+            };
+            return new LocalizedString(name, value, resourceNotFound: false);
+        }
+    }
 
     public LocalizedString this[string name, params object[] arguments]
     {
