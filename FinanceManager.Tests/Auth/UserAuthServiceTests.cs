@@ -49,7 +49,7 @@ public sealed class UserAuthServiceTests
         var jwt = new Mock<IJwtTokenService>();
         var timeProvider = TimeProvider.System;
 
-        jwt.Setup(j => j.CreateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<bool>(), out It.Ref<DateTime>.IsAny, It.IsAny<string?>(), It.IsAny<string?>()))
+        jwt.Setup(j => j.CreateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>(), out It.Ref<DateTime>.IsAny, It.IsAny<string?>(), It.IsAny<string?>()))
             .Returns("token");
 
         var logger = new Mock<ILogger<UserAuthService>>();
@@ -253,6 +253,24 @@ public sealed class UserAuthServiceTests
         var res = await sut.LoginAsync(new LoginCommand("bob", "pw"), CancellationToken.None);
         Assert.True(res.Success);
         Assert.Equal("token", res.Value!.Token);
+        jwt.Verify(j => j.CreateToken(user.Id, user.UserName, false, user.SecurityStamp!, out It.Ref<DateTime>.IsAny, user.PreferredLanguage, user.TimeZoneId), Times.Once);
+    }
+
+    [Fact]
+    public async Task LoginAsync_ShouldRejectInactiveUser_WithoutPasswordSignInOrToken()
+    {
+        var (sut, db, _, signInManager, jwt, _) = Create();
+        var user = new User("inactive", "HASH::pw", false);
+        user.Deactivate();
+        db.Users.Add(user);
+        db.SaveChanges();
+
+        var res = await sut.LoginAsync(new LoginCommand("inactive", "pw"), CancellationToken.None);
+
+        Assert.False(res.Success);
+        Assert.Contains("Invalid credentials", res.Error);
+        signInManager.Verify(s => s.PasswordSignInAsync(It.IsAny<User>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()), Times.Never);
+        jwt.Verify(j => j.CreateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>(), out It.Ref<DateTime>.IsAny, It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
 
     [Fact]

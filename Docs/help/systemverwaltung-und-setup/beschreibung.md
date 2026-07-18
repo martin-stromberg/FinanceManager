@@ -10,6 +10,11 @@ Der Bereich stellt Betriebs- und Administrationsfunktionen bereit: Benutzer, Rol
 
 Setup-Abschnitte (`profile`, `notifications`, `statements`, `attachments`, `backup`, `security`, `returnanalysis`) werden über `SetupCardViewModel` bereitgestellt. API-seitig decken `AuthController`, `AdminController`, `UserSettingsController`, `BackupsController`, `NotificationsController`, `MetaHolidayProvidersController` und `BackgroundTasksController` den Funktionsumfang ab.
 
+Die Authentifizierung verwendet 30-Minuten-JWTs. Tokens sind an den aktuellen
+Identity-`SecurityStamp` gebunden; Request-Validierung und Refresh pruefen den
+aktuellen Benutzerzustand in der Datenbank. Deaktivierte Benutzer, geaenderte
+SecurityStamps und Rollenabweichungen invalidieren alte Tokens.
+
 Backups werden als ZIP-Dateien verwaltet. Uploads und Restores akzeptieren nur ZIP-Container mit genau einer zulässigen NDJSON-Datei (`backup.ndjson` oder `backup-*.ndjson`) und Backup-Metadaten `Type = "Backup"` sowie `Version = 3`. Raw-NDJSON-Uploads werden nicht mehr automatisch in ein ZIP verpackt, sondern als ungültiges Format abgelehnt.
 
 Ein Restore ersetzt vorhandene Daten und ist deshalb eine besonders riskante Aktion. Vor dem Start muss der Benutzer den exakten Backup-Dateinamen in einem Bestätigungsdialog eingeben. Die Eingabe wird serverseitig geprüft; eine reine UI-Bestätigung reicht nicht aus. Bei falscher oder fehlender Bestätigung wird kein Restore gestartet und kein Hintergrundtask angelegt.
@@ -28,6 +33,8 @@ Die `UploadBackup`-Aktion klappt die Backup-Sektion automatisch auf, falls sie b
 ## Beispiele
 
 - Ein Administrator legt Benutzer an oder setzt Passwörter zurück.
+- Ein Administrator deaktiviert einen Benutzer oder entzieht die Admin-Rolle;
+  vorhandene Tokens werden danach nicht mehr akzeptiert.
 - Ein Benutzer pflegt Import- und Benachrichtigungseinstellungen.
 - Ein Backup wird erstellt, als ZIP heruntergeladen und später nach Dateinamen-Bestätigung als Hintergrundtask wiederhergestellt.
 

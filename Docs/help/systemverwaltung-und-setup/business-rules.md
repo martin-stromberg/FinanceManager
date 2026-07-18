@@ -2,6 +2,46 @@
 
 # Systemverwaltung und Setup — Business Rules
 
+## JWTs sind kurzlebig und serverseitig widerrufbar
+
+**Beschreibung:** JWTs laufen nach 30 Minuten ab und sind an den aktuellen
+Identity-`SecurityStamp` des Benutzers gebunden.
+
+**Bedingungen:**
+- JWT enthaelt den Claim `security_stamp`.
+- Benutzer existiert, ist aktiv und der gespeicherte SecurityStamp entspricht
+  dem Token-Claim.
+- Rollen im Token entsprechen dem aktuellen Rollenstand.
+
+**Verhalten:**
+- Gueltiger Benutzerzustand: Request-Authentifizierung und Refresh koennen
+  fortgesetzt werden.
+- Fehlender oder abweichender SecurityStamp, inaktiver Benutzer oder
+  abweichender Rollenstand: Token wird abgelehnt und nicht erneuert.
+
+**Umsetzung:** JWT-Validierung in `ProgramExtensions`, Refresh ueber
+`JwtRefreshService`, Tokenausgabe ueber `JwtTokenService`.
+
+## Sicherheitsrelevante Benutzeränderungen invalidieren Tokens
+
+**Beschreibung:** Deaktivierung, Aktivierung, Rollenwechsel und Passwortreset
+aktualisieren den SecurityStamp und machen alte Tokens unwirksam.
+
+**Bedingungen:**
+- `Active` wird geaendert.
+- Admin-Rollenmitgliedschaft wird hinzugefuegt oder entfernt.
+- Passwort wird administrativ zurueckgesetzt.
+
+**Verhalten:**
+- Nach der Aenderung schlagen alte JWTs bei der naechsten Request-Validierung
+  oder beim Refresh fehl.
+- Deaktivierte Benutzer koennen sich nicht anmelden und erhalten beim Refresh
+  kein neues Token.
+- Nach Rollenentzug werden alte Rollenclaims nicht weiterverwendet.
+
+**Umsetzung:** `UserAdminService.UpdateAsync`,
+`UserAdminService.ResetPasswordAsync`, `UserAuthService.LoginAsync`.
+
 ## Import-Split-Einstellungen haben harte Grenzen
 
 **Beschreibung:** Benutzerpräferenzen für Import-Splitting werden validiert.

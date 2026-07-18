@@ -6,6 +6,7 @@ using FinanceManager.Web.Infrastructure.Auth;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Moq;
 
 namespace FinanceManager.Tests.Infrastructure.Auth;
 
@@ -109,7 +110,43 @@ public sealed class JwtCookieAuthTokenProviderTests
         return context;
     }
 
-    private static JwtCookieAuthTokenProvider CreateProvider(HttpContextAccessor accessor)
+    [Fact]
+    public async Task GetAccessTokenAsync_ShouldUseRefreshService_WhenTokenNearExpiry()
+    {
+        var accessor = new HttpContextAccessor();
+        var refresh = new Mock<IJwtRefreshService>();
+        var refreshedExpiry = DateTime.UtcNow.AddMinutes(30);
+        refresh.Setup(r => r.RefreshAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(JwtRefreshResult.Success("new-token", refreshedExpiry));
+        var sut = CreateProvider(accessor, refresh.Object);
+
+        var token = CreateToken("user-a", DateTime.UtcNow.AddMinutes(1));
+        accessor.HttpContext = CreateHttpContextWithCookie(token);
+
+        var actual = await sut.GetAccessTokenAsync(CancellationToken.None);
+
+        Assert.Equal("new-token", actual);
+        refresh.Verify(r => r.RefreshAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAccessTokenAsync_ShouldReturnNull_WhenRefreshIsRejected()
+    {
+        var accessor = new HttpContextAccessor();
+        var refresh = new Mock<IJwtRefreshService>();
+        refresh.Setup(r => r.RefreshAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(JwtRefreshResult.Fail("inactive"));
+        var sut = CreateProvider(accessor, refresh.Object);
+
+        var token = CreateToken("user-a", DateTime.UtcNow.AddMinutes(1));
+        accessor.HttpContext = CreateHttpContextWithCookie(token);
+
+        var actual = await sut.GetAccessTokenAsync(CancellationToken.None);
+
+        Assert.Null(actual);
+    }
+
+    private static JwtCookieAuthTokenProvider CreateProvider(HttpContextAccessor accessor, IJwtRefreshService? refreshService = null)
     {
         var options = Options.Create(new JwtOptions
         {
@@ -119,7 +156,8 @@ public sealed class JwtCookieAuthTokenProviderTests
             LifetimeMinutes = 30
         });
         var validationParametersFactory = new JwtTokenValidationParametersFactory(options);
-        return new JwtCookieAuthTokenProvider(accessor, options, validationParametersFactory);
+        refreshService ??= Mock.Of<IJwtRefreshService>();
+        return new JwtCookieAuthTokenProvider(accessor, options, validationParametersFactory, refreshService);
     }
 
     private static string CreateToken(

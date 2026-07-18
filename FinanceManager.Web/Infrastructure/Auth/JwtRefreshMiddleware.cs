@@ -7,7 +7,7 @@ namespace FinanceManager.Web.Infrastructure.Auth
 {
     /// <summary>
     /// Middleware that automatically renews short-lived JWTs for authenticated requests when they approach expiry.
-    /// When a token is eligible for renewal the middleware generates a fresh token via <see cref="IJwtTokenService"/>,
+    /// When a token is eligible for renewal the middleware generates a fresh token via <see cref="IJwtRefreshService"/>,
     /// appends it as a secure cookie and also sets response headers with the refreshed token and expiry.
     /// </summary>
     public sealed class JwtRefreshMiddleware
@@ -86,36 +86,36 @@ namespace FinanceManager.Web.Infrastructure.Auth
                     return;
                 }
 
-                var userIdStr = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
-                                  ?? context.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-                var username = context.User.Identity?.Name
-                               ?? context.User.FindFirstValue(JwtRegisteredClaimNames.UniqueName)
-                               ?? context.User.FindFirstValue(ClaimTypes.Name)
-                               ?? string.Empty;
-                var isAdmin = context.User.IsInRole("Admin");
-
-                if (!Guid.TryParse(userIdStr, out var userId))
+                var refreshService = context.RequestServices.GetRequiredService<IJwtRefreshService>();
+                var refresh = await refreshService.RefreshAsync(context.User, context.RequestAborted);
+                if (!refresh.Succeeded || refresh.Token is null || refresh.ExpiresUtc is null)
                 {
+                    if (!context.Response.HasStarted)
+                    {
+                        context.Response.Cookies.Delete(AuthCookieName, new CookieOptions
+                        {
+                            Secure = context.Request.IsHttps,
+                            SameSite = SameSiteMode.Lax,
+                            Path = "/"
+                        });
+                    }
                     return;
                 }
 
-                var jts = context.RequestServices.GetRequiredService<IJwtTokenService>();
-                var newToken = jts.CreateToken(userId, username, isAdmin, out var newExpiry);
-
                 if (!context.Response.HasStarted)
                 {
-                    context.Response.Cookies.Append(AuthCookieName, newToken, new CookieOptions
+                    context.Response.Cookies.Append(AuthCookieName, refresh.Token, new CookieOptions
                     {
                         HttpOnly = true,
                         Secure = context.Request.IsHttps, // vorher: true
                         SameSite = SameSiteMode.Lax,
-                        Expires = new DateTimeOffset(newExpiry),
+                        Expires = new DateTimeOffset(refresh.ExpiresUtc.Value),
                         Path = "/"
                     });
                 }
 
-                context.Response.Headers[RefreshHeaderName] = newToken;
-                context.Response.Headers[RefreshExpiresHeaderName] = newExpiry.ToString("o");
+                context.Response.Headers[RefreshHeaderName] = refresh.Token;
+                context.Response.Headers[RefreshExpiresHeaderName] = refresh.ExpiresUtc.Value.ToString("o");
             }
             finally
             {

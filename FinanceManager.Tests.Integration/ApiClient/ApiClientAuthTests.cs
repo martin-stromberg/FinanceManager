@@ -4,7 +4,11 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using FluentAssertions;
+using FinanceManager.Domain.Users;
+using FinanceManager.Infrastructure;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Xunit;
 
@@ -80,7 +84,7 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         {
             AllowAutoRedirect = false,
         });
-        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateBearerToken(issuer: "wrong-issuer"));
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await CreateBearerTokenAsync(issuer: "wrong-issuer"));
 
         var response = await http.GetAsync("/api/user/settings/profile");
 
@@ -94,7 +98,7 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         {
             AllowAutoRedirect = false,
         });
-        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateBearerToken(audience: "wrong-audience"));
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await CreateBearerTokenAsync(audience: "wrong-audience"));
 
         var response = await http.GetAsync("/api/user/settings/profile");
 
@@ -108,27 +112,170 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         {
             AllowAutoRedirect = false,
         });
-        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateBearerToken());
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await CreateBearerTokenAsync(includeAdminRole: true));
 
         var response = await http.GetAsync("/api/user/settings/profile");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
-    private static string CreateBearerToken(
-        string issuer = JwtIssuer,
-        string audience = JwtAudience)
+    [Fact]
+    public async Task Bearer_ShouldRejectToken_WhenSecurityStampChanged()
     {
-        var userId = Guid.NewGuid();
+        var token = await CreateBearerTokenAsync(includeAdminRole: true);
+        using var scope = _factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+        var user = await userManager.FindByNameAsync(TestWebApplicationFactory.BootstrapAdminUsername);
+        user.Should().NotBeNull();
+        var result = await userManager.UpdateSecurityStampAsync(user!);
+        result.Succeeded.Should().BeTrue();
+
+        var http = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+        });
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await http.GetAsync("/api/user/settings/profile");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Bearer_ShouldRejectAdminClaim_WhenCurrentAdminRoleWasRevokedWithoutSecurityStampChange()
+    {
+        var username = $"revoked_admin_{Guid.NewGuid():N}";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+            const string adminRole = "Admin";
+            if (!await roleManager.RoleExistsAsync(adminRole))
+            {
+                var roleCreated = await roleManager.CreateAsync(new IdentityRole<Guid> { Name = adminRole, NormalizedName = adminRole.ToUpperInvariant() });
+                roleCreated.Succeeded.Should().BeTrue();
+            }
+
+            var user = new User(username, isAdmin: true)
+            {
+                SecurityStamp = Guid.NewGuid().ToString("N"),
+                ConcurrencyStamp = Guid.NewGuid().ToString("N")
+            };
+            var created = await userManager.CreateAsync(user, "Secret123");
+            created.Succeeded.Should().BeTrue();
+            var roleAdded = await userManager.AddToRoleAsync(user, adminRole);
+            roleAdded.Succeeded.Should().BeTrue();
+        }
+
+        var token = await CreateBearerTokenAsync(username: username, includeAdminRole: true);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            var user = await userManager.FindByNameAsync(username);
+            user.Should().NotBeNull();
+            var originalSecurityStamp = user!.SecurityStamp;
+            var roleRemoved = await userManager.RemoveFromRoleAsync(user, "Admin");
+            roleRemoved.Succeeded.Should().BeTrue();
+            user.SecurityStamp.Should().Be(originalSecurityStamp);
+        }
+
+        var http = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+        });
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await http.GetAsync("/api/admin/users");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Bearer_ShouldRejectExistingToken_WhenUserWasDeactivated()
+    {
+        var username = $"deactivated_{Guid.NewGuid():N}";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            var user = new User(username, "unused", false)
+            {
+                SecurityStamp = Guid.NewGuid().ToString("N"),
+                ConcurrencyStamp = Guid.NewGuid().ToString("N")
+            };
+            var created = await userManager.CreateAsync(user, "Secret123");
+            created.Succeeded.Should().BeTrue();
+        }
+
+        var token = await CreateBearerTokenAsync(username: username);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            var user = await userManager.FindByNameAsync(username);
+            user.Should().NotBeNull();
+            user!.Deactivate();
+            var updated = await userManager.UpdateAsync(user);
+            updated.Succeeded.Should().BeTrue();
+        }
+
+        var http = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+        });
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await http.GetAsync("/api/user/settings/profile");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Login_ShouldRejectInactiveUser()
+    {
+        var username = $"inactive_{Guid.NewGuid():N}";
+        const string password = "Secret123";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            var user = new User(username, "unused", false)
+            {
+                SecurityStamp = Guid.NewGuid().ToString("N"),
+                ConcurrencyStamp = Guid.NewGuid().ToString("N")
+            };
+            var created = await userManager.CreateAsync(user, password);
+            created.Succeeded.Should().BeTrue();
+            user.Deactivate();
+            await userManager.UpdateAsync(user);
+        }
+
+        var api = CreateClient();
+        Func<Task> login = () => api.Auth_LoginAsync(new LoginRequest(username, password, null, null));
+
+        await login.Should().ThrowAsync<HttpRequestException>();
+    }
+
+    private async Task<string> CreateBearerTokenAsync(
+        string issuer = JwtIssuer,
+        string audience = JwtAudience,
+        string username = TestWebApplicationFactory.BootstrapAdminUsername,
+        bool includeAdminRole = false)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var user = db.Users.Single(u => u.UserName == username);
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(DevelopmentJwtKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-            new Claim(ClaimTypes.Name, "jwt-test-user"),
-            new Claim(JwtRegisteredClaimNames.UniqueName, "jwt-test-user")
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.UserName!),
+            new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName!),
+            new Claim("security_stamp", user.SecurityStamp!)
         };
+        if (includeAdminRole)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+        }
 
         var token = new JwtSecurityToken(
             issuer: issuer,
