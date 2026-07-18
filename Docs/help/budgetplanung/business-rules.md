@@ -40,3 +40,31 @@
 - Ungültiger Regex: Fehler wird zurückgegeben.
 
 **Umsetzung:** `BudgetRule.SetPurposePattern`.
+
+## Kategoriezeilen aggregieren Zweckbudgets
+
+**Beschreibung:** Im Budgetbericht enthält das Budget einer Kategoriezeile auch die Budgets der zugeordneten Verwendungszwecke.
+
+**Bedingungen:**
+- Eine Kategorie besitzt direkte Budgetregeln, zugeordnete Verwendungszwecke mit eigenen Budgetregeln oder beides.
+
+**Verhalten:**
+- Direkte Kategorie-Budgets und Zweckbudgets werden zur Kategorie-Summe addiert.
+- Istwerte werden weiterhin auf Kategorieebene aggregiert.
+- Verwendungszwecke behalten ihre eigenen Budget-, Ist- und Abweichungswerte.
+
+**Umsetzung:** `BudgetReportsController` und `BudgetReportExportService`.
+
+## Abweichung wird als Ist minus Budget berechnet
+
+**Beschreibung:** Sichtbare Abweichungen im Budgetbericht verwenden die Richtung `Ist - Budget`.
+
+**Bedingungen:**
+- Budgetbericht in der Anwendung, Periodensummen und XLSX-Export.
+
+**Verhalten:**
+- `Abweichung = Ist - Budget`.
+- `Abweichung % = Abweichung / Abs(Budget)`.
+- Bei Budget `0` wird die prozentuale Abweichung mit `0` ausgewiesen.
+
+**Umsetzung:** `BudgetReportsController`, `BudgetReport.razor` und `BudgetReportExportService`.

@@ -147,7 +147,7 @@ else
                                 var sumBudget = _vm.Periods.Sum(p => p.Budget);
                                 var sumActual = _vm.Periods.Sum(p => p.Actual);
                                 var sumDelta = sumActual - sumBudget;
-                                var sumPct = sumBudget == 0m ? 0m : sumDelta / sumBudget;
+                                var sumPct = sumBudget == 0m ? 0m : sumDelta / Math.Abs(sumBudget);
 
                                 <tr style="font-weight:600;">
                                     <td>@(Localizer?["List_Sum"].Value ?? "Sum")</td>
@@ -191,13 +191,14 @@ else
 
                             if ((hasCategoryBudget && !isSpecialRow) || isUnbudgetedGroup)
                             {
-                                var delta = isUnbudgetedGroup ? 0 : sumActualPurposes - cat.Budget;
-                                var pct = cat.Budget == 0m ? 0m : delta / cat.Budget;
+                                var actual = isUnbudgetedGroup ? sumActualPurposes : cat.Actual;
+                                var delta = isUnbudgetedGroup ? 0 : cat.Delta;
+                                var pct = cat.Budget == 0m ? 0m : delta / Math.Abs(cat.Budget);
 
                                 <tr style="font-weight:600;">
                                     <td>@cat.Name</td>
                                     <td style="text-align:right;">@(showZeroAsEmpty && cat.Budget == 0m ? string.Empty : cat.Budget.ToString("N2"))</td>
-                                    <td style="text-align:right;">@(showZeroAsEmpty && sumActualPurposes == 0m ? string.Empty : sumActualPurposes.ToString("N2"))</td>
+                                    <td style="text-align:right;">@(showZeroAsEmpty && actual == 0m ? string.Empty : actual.ToString("N2"))</td>
                                     <td style="text-align:right;">@(delta == 0m ? string.Empty : delta.ToString("N2"))</td>
                                     <td style="text-align:right;">@(pct == 0m ? string.Empty : pct.ToString("P0"))</td>
                                     <td></td>
