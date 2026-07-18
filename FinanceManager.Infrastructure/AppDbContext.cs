@@ -462,6 +462,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.SourceType).HasConversion<short>().IsRequired();
             b.Property(x => x.SourceId).IsRequired();
             b.Property(x => x.BudgetCategoryId);
+            b.Property(x => x.ValuationType).HasConversion<short>().HasDefaultValue(BudgetValuationType.ExactPostings).IsRequired();
             b.HasIndex(x => new { x.OwnerUserId, x.Name });
             b.HasIndex(x => new { x.OwnerUserId, x.SourceType, x.SourceId });
 

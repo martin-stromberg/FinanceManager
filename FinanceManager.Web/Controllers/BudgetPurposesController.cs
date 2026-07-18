@@ -106,7 +106,7 @@ public sealed class BudgetPurposesController : ControllerBase
 
         try
         {
-            var created = await _svc.CreateAsync(_current.UserId, req.Name, req.SourceType, req.SourceId, req.Description, req.BudgetCategoryId, ct);
+            var created = await _svc.CreateAsync(_current.UserId, req.Name, req.SourceType, req.SourceId, req.Description, req.BudgetCategoryId, ct, req.ValuationType);
             return Created($"/api/budget/purposes/{created.Id}", created);
         }
         catch (AggregateException ex)
@@ -152,7 +152,7 @@ public sealed class BudgetPurposesController : ControllerBase
 
         try
         {
-            var updated = await _svc.UpdateAsync(id, _current.UserId, req.Name, req.SourceType, req.SourceId, req.Description, req.BudgetCategoryId, ct);
+            var updated = await _svc.UpdateAsync(id, _current.UserId, req.Name, req.SourceType, req.SourceId, req.Description, req.BudgetCategoryId, ct, req.ValuationType);
             return updated == null ? NotFound() : NoContent();
         }
         catch (AggregateException ex)

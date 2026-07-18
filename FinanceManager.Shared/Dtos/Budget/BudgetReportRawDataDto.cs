@@ -124,6 +124,11 @@ public sealed record BudgetReportPurposeRawDataDto
     public string SourceName { get; init; } = string.Empty;
 
     /// <summary>
+    /// Gets the budget valuation type used for this purpose.
+    /// </summary>
+    public BudgetValuationType ValuationType { get; init; } = BudgetValuationType.ExactPostings;
+
+    /// <summary>
     /// Gets the contributing postings for the purpose in the requested period.
     /// </summary>
     public BudgetReportPostingRawDataDto[] Postings { get; init; } = Array.Empty<BudgetReportPostingRawDataDto>();
@@ -229,4 +234,9 @@ public sealed record BudgetReportPostingRawDataDto
     /// Gets the budget purpose name this posting belongs to (if any).
     /// </summary>
     public string? BudgetPurposeName { get; init; }
+
+    /// <summary>
+    /// Gets whether this posting is valued in the actual amount of its budget purpose.
+    /// </summary>
+    public bool IsValuedForBudgetPurpose { get; init; } = true;
 }

@@ -55,6 +55,22 @@
 
 **Umsetzung:** `BudgetReportsController` und `BudgetReportExportService`.
 
+## Budgetwertungsart steuert Zweck-Istwerte
+
+**Beschreibung:** Verwendungszwecke bestimmen ueber ihre Budgetwertungsart, welche passenden Buchungen in den Istwert eingehen.
+
+**Bedingungen:**
+- `Exakte Buchungen`: Standard fuer bestehende und neue Zwecke ohne abweichende Einstellung.
+- `Gesamtbudget`: bewusste Saldierung aller passenden Buchungen.
+
+**Verhalten:**
+- Bei `Exakte Buchungen` werden nur passende Buchungen mit dem Vorzeichen des Budgetpostens gewertet.
+- Passende Buchungen mit anderem Vorzeichen werden beim Zweck als nicht gewertet sichtbar und zusaetzlich regulaer als nicht budgetiert ausgegeben.
+- Bei `Gesamtbudget` werden alle passenden Buchungen unabhaengig vom Vorzeichen in den Istwert saldiert.
+- Direkte Kategorie-Budgetregeln werden als Gesamtbudget betrachtet.
+
+**Umsetzung:** `BudgetPurpose`, `BudgetReportService`, `BudgetReportsController` und `BudgetReportExportService`.
+
 ## Abweichung wird als Ist minus Budget berechnet
 
 **Beschreibung:** Sichtbare Abweichungen im Budgetbericht verwenden die Richtung `Ist - Budget`.
