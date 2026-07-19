@@ -5,11 +5,18 @@ using FinanceManager.Web.Controllers;
 using FinanceManager.Web.Infrastructure.Attachments;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
+using System.Net.Http;
 
 namespace FinanceManager.Tests.Controllers;
 
@@ -24,6 +31,12 @@ public sealed class AttachmentsControllerTests
     }
 
     private static LocalizedString L(string key, string value) => new(key, value, resourceNotFound: false);
+
+    private sealed class TestMaxRequestBodySizeFeature : IHttpMaxRequestBodySizeFeature
+    {
+        public bool IsReadOnly { get; set; }
+        public long? MaxRequestBodySize { get; set; }
+    }
 
     private static (
         AttachmentsController controller,
@@ -56,7 +69,14 @@ public sealed class AttachmentsControllerTests
            });
 
         var dp = DataProtectionProvider.Create("tests");
-        var controller = new AttachmentsController(svc.Object, cats.Object, current, NullLogger<AttachmentsController>.Instance, opts, loc.Object, dp);
+        var policy = new AttachmentContentPolicy(opts);
+        var controller = new AttachmentsController(svc.Object, cats.Object, current, NullLogger<AttachmentsController>.Instance, opts, policy, loc.Object, dp)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
         return (controller, svc, cats, current);
     }
 
@@ -102,7 +122,7 @@ public sealed class AttachmentsControllerTests
         var bad = Assert.IsAssignableFrom<ObjectResult>(resp);
         Assert.Equal(StatusCodes.Status400BadRequest, bad.StatusCode);
         var err = Assert.IsType<ApiErrorDto>(bad.Value);
-        Assert.Contains("unsupported content type", err.message!.ToLowerInvariant());
+        Assert.Contains("unsupported", err.message!.ToLowerInvariant());
     }
 
     [Fact]
@@ -110,7 +130,7 @@ public sealed class AttachmentsControllerTests
     {
         var opts = new AttachmentUploadOptions { MaxSizeBytes = 1024, AllowedMimeTypes = new[] { "application/pdf" } };
         var (controller, service, _, current) = Create(opts);
-        var data = new byte[10];
+        var data = "%PDF-1.7 test"u8.ToArray();
         var formFile = new FormFile(new MemoryStream(data), 0, data.Length, "file", "doc.pdf") { Headers = new HeaderDictionary(), ContentType = "application/pdf" };
         var dto = new AttachmentDto(
             Id: Guid.NewGuid(),
@@ -130,6 +150,147 @@ public sealed class AttachmentsControllerTests
 
         var ok = Assert.IsType<OkObjectResult>(resp);
         Assert.IsType<AttachmentDto>(ok.Value);
+        service.VerifyAll();
+    }
+
+    [Fact]
+    public async Task UploadAsync_ShouldReject_HeaderBytesMismatch()
+    {
+        var opts = new AttachmentUploadOptions { MaxSizeBytes = 1024, AllowedMimeTypes = new[] { "application/pdf", "image/png" } };
+        var (controller, _, _, _) = Create(opts);
+        var data = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 1, 2 };
+        var formFile = new FormFile(new MemoryStream(data), 0, data.Length, "file", "doc.pdf") { Headers = new HeaderDictionary(), ContentType = "application/pdf" };
+
+        var resp = await controller.UploadAsync((short)AttachmentEntityKind.Contact, Guid.NewGuid(), formFile, null, null, CancellationToken.None);
+
+        var bad = Assert.IsAssignableFrom<ObjectResult>(resp);
+        Assert.Equal(StatusCodes.Status400BadRequest, bad.StatusCode);
+        var err = Assert.IsType<ApiErrorDto>(bad.Value);
+        Assert.Equal("Err_Invalid_ContentType", err.code);
+    }
+
+    [Fact]
+    public async Task UploadAsync_ShouldNormalize_EmptyClientContentType_FromBytes()
+    {
+        var opts = new AttachmentUploadOptions { MaxSizeBytes = 1024, AllowedMimeTypes = new[] { "image/png" } };
+        var (controller, service, _, current) = Create(opts);
+        var entityId = Guid.NewGuid();
+        var data = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 1, 2 };
+        var formFile = new FormFile(new MemoryStream(data), 0, data.Length, "file", "image.bin") { Headers = new HeaderDictionary(), ContentType = "" };
+
+        service.Setup(s => s.UploadAsync(current.UserId, AttachmentEntityKind.Contact, entityId, It.IsAny<Stream>(), "image.bin", "image/png", null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AttachmentDto(Guid.NewGuid(), (short)AttachmentEntityKind.Contact, entityId, "image.bin", "image/png", data.Length, null, DateTime.UtcNow, false));
+
+        var resp = await controller.UploadAsync((short)AttachmentEntityKind.Contact, entityId, formFile, null, null, CancellationToken.None);
+
+        Assert.IsType<OkObjectResult>(resp);
+        service.VerifyAll();
+    }
+
+    [Fact]
+    public async Task UploadAsync_ShouldReject_TextWithNulByte()
+    {
+        var opts = new AttachmentUploadOptions { MaxSizeBytes = 1024, AllowedMimeTypes = new[] { "text/plain" } };
+        var (controller, _, _, _) = Create(opts);
+        var data = new byte[] { (byte)'a', 0, (byte)'b' };
+        var formFile = new FormFile(new MemoryStream(data), 0, data.Length, "file", "notes.txt") { Headers = new HeaderDictionary(), ContentType = "text/plain" };
+
+        var resp = await controller.UploadAsync((short)AttachmentEntityKind.Contact, Guid.NewGuid(), formFile, null, null, CancellationToken.None);
+
+        var bad = Assert.IsAssignableFrom<ObjectResult>(resp);
+        Assert.Equal(StatusCodes.Status400BadRequest, bad.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadAsync_ShouldUse_RuntimeConfiguredAttachmentSizeLimits()
+    {
+        var method = typeof(AttachmentsController).GetMethod(nameof(AttachmentsController.UploadAsync))!;
+        var configuredLimit = AttachmentUploadOptions.DefaultMaxSizeBytes + 1024;
+        var services = new ServiceCollection()
+            .Configure<AttachmentUploadOptions>(options => options.MaxSizeBytes = configuredLimit)
+            .Configure<FormOptions>(options => options.MultipartBodyLengthLimit = 8)
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = services
+        };
+        var maxRequestBodySizeFeature = new TestMaxRequestBodySizeFeature();
+        httpContext.Features.Set<IHttpMaxRequestBodySizeFeature>(maxRequestBodySizeFeature);
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent(new byte[16]), "file", "a.pdf");
+        var body = await content.ReadAsByteArrayAsync();
+        httpContext.Request.Method = HttpMethods.Post;
+        httpContext.Request.ContentType = content.Headers.ContentType!.ToString();
+        httpContext.Request.ContentLength = body.Length;
+        httpContext.Request.Body = new MemoryStream(body);
+
+        var filterAttribute = Assert.Single(method.GetCustomAttributes(typeof(AttachmentUploadSizeLimitAttribute), inherit: false).Cast<AttachmentUploadSizeLimitAttribute>());
+        Assert.Empty(method.GetCustomAttributes(typeof(RequestSizeLimitAttribute), inherit: false));
+        Assert.Empty(method.GetCustomAttributes(typeof(RequestFormLimitsAttribute), inherit: false));
+
+        var filter = Assert.IsAssignableFrom<IResourceFilter>(filterAttribute.CreateInstance(services));
+        var context = new ResourceExecutingContext(
+            new ActionContext(httpContext, new RouteData(), new ActionDescriptor()),
+            new List<IFilterMetadata>(),
+            new List<IValueProviderFactory>());
+
+        filter.OnResourceExecuting(context);
+        var form = await httpContext.Request.ReadFormAsync();
+
+        Assert.True(maxRequestBodySizeFeature.MaxRequestBodySize > configuredLimit);
+        Assert.Single(form.Files);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task UploadAsync_ShouldNormalize_InvalidConfiguredAttachmentSizeLimits(long configuredLimit)
+    {
+        var method = typeof(AttachmentsController).GetMethod(nameof(AttachmentsController.UploadAsync))!;
+        var services = new ServiceCollection()
+            .Configure<AttachmentUploadOptions>(options => options.MaxSizeBytes = configuredLimit)
+            .Configure<FormOptions>(options => options.MultipartBodyLengthLimit = 8)
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = services
+        };
+        var maxRequestBodySizeFeature = new TestMaxRequestBodySizeFeature();
+        httpContext.Features.Set<IHttpMaxRequestBodySizeFeature>(maxRequestBodySizeFeature);
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent("%PDF-1.7 test"u8.ToArray()), "file", "a.pdf");
+        var body = await content.ReadAsByteArrayAsync();
+        httpContext.Request.Method = HttpMethods.Post;
+        httpContext.Request.ContentType = content.Headers.ContentType!.ToString();
+        httpContext.Request.ContentLength = body.Length;
+        httpContext.Request.Body = new MemoryStream(body);
+
+        var filterAttribute = Assert.Single(method.GetCustomAttributes(typeof(AttachmentUploadSizeLimitAttribute), inherit: false).Cast<AttachmentUploadSizeLimitAttribute>());
+        var filter = Assert.IsAssignableFrom<IResourceFilter>(filterAttribute.CreateInstance(services));
+        var context = new ResourceExecutingContext(
+            new ActionContext(httpContext, new RouteData(), new ActionDescriptor()),
+            new List<IFilterMetadata>(),
+            new List<IValueProviderFactory>());
+
+        filter.OnResourceExecuting(context);
+        var form = await httpContext.Request.ReadFormAsync();
+
+        Assert.Equal(AttachmentUploadOptions.DefaultMaxSizeBytes + 1024L * 1024L, maxRequestBodySizeFeature.MaxRequestBodySize);
+        Assert.Single(form.Files);
+
+        var opts = new AttachmentUploadOptions { MaxSizeBytes = configuredLimit, AllowedMimeTypes = new[] { "application/pdf" } };
+        var (controller, service, _, current) = Create(opts);
+        var entityId = Guid.NewGuid();
+        var data = "%PDF-1.7 test"u8.ToArray();
+        var formFile = new FormFile(new MemoryStream(data), 0, data.Length, "file", "doc.pdf") { Headers = new HeaderDictionary(), ContentType = "application/pdf" };
+        service.Setup(s => s.UploadAsync(current.UserId, AttachmentEntityKind.Contact, entityId, It.IsAny<Stream>(), "doc.pdf", "application/pdf", null, It.IsAny<CancellationToken>()))
+               .ReturnsAsync(new AttachmentDto(Guid.NewGuid(), (short)AttachmentEntityKind.Contact, entityId, "doc.pdf", "application/pdf", data.Length, null, DateTime.UtcNow, false));
+
+        var resp = await controller.UploadAsync((short)AttachmentEntityKind.Contact, entityId, formFile, null, null, CancellationToken.None);
+
+        Assert.IsType<OkObjectResult>(resp);
         service.VerifyAll();
     }
 
@@ -188,7 +349,7 @@ public sealed class AttachmentsControllerTests
         var (controller, service, _, current) = Create(opts);
         var entityId = Guid.NewGuid();
         var categoryId = Guid.NewGuid();
-        var data = new byte[10];
+        var data = "%PDF-1.7 test"u8.ToArray();
         var formFile = new FormFile(new MemoryStream(data), 0, data.Length, "file", "doc.pdf") { Headers = new HeaderDictionary(), ContentType = "application/pdf" };
 
         service.Setup(s => s.UploadAsync(current.UserId, AttachmentEntityKind.Contact, entityId, It.IsAny<Stream>(), "doc.pdf", "application/pdf", categoryId, It.IsAny<CancellationToken>()))
@@ -239,6 +400,25 @@ public sealed class AttachmentsControllerTests
         var file = Assert.IsType<FileStreamResult>(resp);
         Assert.Equal("file.bin", file.FileDownloadName);
         Assert.Equal("application/octet-stream", file.ContentType);
+        Assert.Equal("nosniff", controller.Response.Headers["X-Content-Type-Options"].ToString());
+        service.VerifyAll();
+    }
+
+    [Fact]
+    public async Task DownloadAsync_ShouldFallback_RiskyContentType_ToOctetStream()
+    {
+        var (controller, service, _, current) = Create();
+        var id = Guid.NewGuid();
+        var content = new MemoryStream(new byte[] { 1, 2, 3 });
+        service.Setup(s => s.DownloadAsync(current.UserId, id, It.IsAny<CancellationToken>()))
+               .ReturnsAsync((content, "file.html", "text/html"));
+
+        var resp = await controller.DownloadAsync(id, null, CancellationToken.None);
+
+        var file = Assert.IsType<FileStreamResult>(resp);
+        Assert.Equal("file.html", file.FileDownloadName);
+        Assert.Equal("application/octet-stream", file.ContentType);
+        Assert.Equal("nosniff", controller.Response.Headers["X-Content-Type-Options"].ToString());
         service.VerifyAll();
     }
 

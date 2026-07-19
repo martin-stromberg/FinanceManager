@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace FinanceManager.Web.Infrastructure;
 
@@ -9,6 +11,12 @@ namespace FinanceManager.Web.Infrastructure;
 /// </summary>
 public sealed class RequestLoggingMiddleware
 {
+    private const string RedactedValue = "[REDACTED]";
+    private static readonly HashSet<string> SensitiveQueryParameters = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "token"
+    };
+
     private readonly RequestDelegate _next;
     private readonly ILogger<RequestLoggingMiddleware> _logger;
 
@@ -48,7 +56,7 @@ public sealed class RequestLoggingMiddleware
             var status = context.Response?.StatusCode ?? 0;
             var level = status < 400 ? LogLevel.Debug : LogLevel.Warning;
             var method = context.Request.Method;
-            var path = context.Request.Path + context.Request.QueryString;
+            var path = GetSafePath(context.Request);
             var elapsedMs = sw.ElapsedMilliseconds;
             var traceId = context.TraceIdentifier;
 
@@ -60,7 +68,7 @@ public sealed class RequestLoggingMiddleware
         {
             sw.Stop();
             var method = context.Request.Method;
-            var path = context.Request.Path + context.Request.QueryString;
+            var path = GetSafePath(context.Request);
             var elapsedMs = sw.ElapsedMilliseconds;
             var traceId = context.TraceIdentifier;
 
@@ -70,5 +78,32 @@ public sealed class RequestLoggingMiddleware
 
             throw;
         }
+    }
+
+    private static string GetSafePath(HttpRequest request)
+    {
+        if (!request.QueryString.HasValue)
+        {
+            return request.Path.ToString();
+        }
+
+        var query = QueryHelpers.ParseQuery(request.QueryString.Value);
+        var builder = new QueryBuilder();
+
+        foreach (var parameter in query)
+        {
+            if (SensitiveQueryParameters.Contains(parameter.Key))
+            {
+                builder.Add(parameter.Key, RedactedValue);
+                continue;
+            }
+
+            foreach (var value in parameter.Value)
+            {
+                builder.Add(parameter.Key, value);
+            }
+        }
+
+        return request.Path + builder.ToQueryString().ToString();
     }
 }
