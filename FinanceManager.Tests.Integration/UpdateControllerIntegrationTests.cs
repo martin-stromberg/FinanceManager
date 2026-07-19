@@ -53,7 +53,6 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             "update.json",
             new TimeOnly(3, 30),
             "FinanceManagerService",
-            "financemanager",
             null,
             "updates",
             120);
