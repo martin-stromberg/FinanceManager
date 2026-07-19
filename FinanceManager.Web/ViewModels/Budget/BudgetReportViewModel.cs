@@ -21,6 +21,8 @@ public sealed class BudgetReportViewModel : BaseViewModel
 
     private readonly Dictionary<Guid, ContactDto?> _contactCache = new();
     private readonly Dictionary<Guid, SavingsPlanDto?> _savingsPlanCache = new();
+    private BudgetReportRequest? _cachedRawReportRequest;
+    private BudgetReportRawDataDto? _cachedRawReport;
 
     /// <summary>
     /// Creates a new instance.
@@ -141,6 +143,8 @@ public sealed class BudgetReportViewModel : BaseViewModel
         LoadingFrom = from;
         LoadingTo = to;
         Loading = true;
+        _cachedRawReportRequest = null;
+        _cachedRawReport = null;
         SetError(null, null);
         RaiseStateChanged();
 
@@ -660,7 +664,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
         {
             var (fromDt, toDt) = GetOverlayDateRange();
 
-            var raw = await _api.Budgets_GetReportRawAsync(CreateCurrentReportRequest(), CancellationToken.None);
+            var raw = await GetCurrentRawReportAsync(CancellationToken.None);
             var rawPurpose = (raw.Categories ?? Array.Empty<BudgetReportCategoryRawDataDto>())
                 .SelectMany(c => c.Purposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
                 .Concat(raw.UncategorizedPurposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
@@ -700,6 +704,20 @@ public sealed class BudgetReportViewModel : BaseViewModel
             PurposePostingsLoading = false;
             RaiseStateChanged();
         }
+    }
+
+    private async Task<BudgetReportRawDataDto> GetCurrentRawReportAsync(CancellationToken ct)
+    {
+        var request = CreateCurrentReportRequest();
+        if (_cachedRawReportRequest == request && _cachedRawReport != null)
+        {
+            return _cachedRawReport;
+        }
+
+        var raw = await _api.Budgets_GetReportRawAsync(request, ct);
+        _cachedRawReportRequest = request;
+        _cachedRawReport = raw;
+        return raw;
     }
 
     private (DateTime? From, DateTime? To) GetOverlayDateRange()
