@@ -276,48 +276,44 @@ export async function resolveReleaseVersion(environment = process.env, dependenc
     );
   }
 
-  const incomplete = incompleteReleases(await effects.listGitHubReleases({ repository, token }));
-  if (incomplete.length > 1) {
-    throw new Error("Multiple GitHub releases are missing their expected ZIP asset; repair them one at a time.");
+  const version = parseNextReleaseVersion(effects.runSemanticReleaseDryRun());
+  if (version) {
+    const tag = `v${version}`;
+    const existingRelease = await effects.getGitHubRelease({ repository, tag, token });
+    if (existingRelease) {
+      if (!releaseHasExpectedAsset(existingRelease, version)) {
+        return emit(repairRelease({ release: existingRelease, kind: releaseRef.kind }), `release '${tag}' is missing its asset`);
+      }
+
+      throw new Error(`GitHub release '${tag}' already exists and will not be overwritten.`);
+    }
+
+    if (effects.remoteTagExists(tag)) {
+      throw new Error(`Tag '${tag}' already exists and will not be overwritten.`);
+    }
+
+    return emit(
+      releaseOutputs({
+        released: true,
+        reason: "semantic-release",
+        version,
+        tag,
+        kind: releaseRef.kind,
+        action: "create"
+      }),
+      `Semantic Release resolved '${tag}'`
+    );
   }
 
-  if (incomplete.length === 1) {
+  const incomplete = incompleteReleases(await effects.listGitHubReleases({ repository, token }));
+  if (incomplete.length >= 1) {
     const release = incomplete[0];
     return emit(repairRelease({ release, kind: releaseRef.kind }), `release '${release.tag_name}' is missing its asset`);
   }
 
-  const version = parseNextReleaseVersion(effects.runSemanticReleaseDryRun());
-  if (!version) {
-    return emit(
-      releaseOutputs({ released: false, reason: "no-release", kind: releaseRef.kind }),
-      "no releasable commits"
-    );
-  }
-
-  const tag = `v${version}`;
-  const existingRelease = await effects.getGitHubRelease({ repository, tag, token });
-  if (existingRelease) {
-    if (!releaseHasExpectedAsset(existingRelease, version)) {
-      return emit(repairRelease({ release: existingRelease, kind: releaseRef.kind }), `release '${tag}' is missing its asset`);
-    }
-
-    throw new Error(`GitHub release '${tag}' already exists and will not be overwritten.`);
-  }
-
-  if (effects.remoteTagExists(tag)) {
-    throw new Error(`Tag '${tag}' already exists and will not be overwritten.`);
-  }
-
   return emit(
-    releaseOutputs({
-      released: true,
-      reason: "semantic-release",
-      version,
-      tag,
-      kind: releaseRef.kind,
-      action: "create"
-    }),
-    `Semantic Release resolved '${tag}'`
+    releaseOutputs({ released: false, reason: "no-release", kind: releaseRef.kind }),
+    "no releasable commits"
   );
 }
 
