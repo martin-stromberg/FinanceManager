@@ -13,6 +13,8 @@
 | `IsAdmin` | `bool` | Administratorstatus |
 | `PreferredLanguage` | `string?` | UI-Sprache |
 | `Active` | `bool` | Konto aktiv |
+| `AlphaVantageApiKey` | `string?` | Geschuetzter AlphaVantage API Key mit `dp:v1:`-Praefix; Altwerte ohne Praefix werden beim naechsten erfolgreichen Lesen automatisch geschuetzt |
+| `ShareAlphaVantageApiKey` | `bool` | Gibt an, ob ein Administrator seinen AlphaVantage API Key als Fallback fuer andere Benutzer freigibt |
 | `ImportSplitMode` | `ImportSplitMode` | Split-Strategie |
 | `ImportMaxEntriesPerDraft` | `int` | Maximalgröße Importdraft |
 | `MassImportDialogPolicy` | `MassImportDialogPolicy` | Dialogrichtlinie |

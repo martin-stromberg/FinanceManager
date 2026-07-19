@@ -122,3 +122,30 @@ Bei einer Kompromittierung oder turnusmaessigen Rotation des JWT-Secrets:
    neuen Signaturschluessel invalidiert und Benutzer melden sich neu an.
 5. Alte Secret-Werte aus Deployment-Systemen, CI/CD-Variablen,
    Secret-Stores und lokalen Betriebsnotizen entfernen.
+
+## AlphaVantage-Key-Ring-Betrieb
+
+AlphaVantage API Keys werden in der Datenbank nur noch als
+Data-Protection-Payload mit `dp:v1:`-Praefix gespeichert. Der zugehoerige
+ASP.NET-Core-Data-Protection-Key-Ring entscheidet, ob diese Werte nach einem
+Release, Containerwechsel oder Restore wieder lesbar sind.
+
+Fuer produktionsnahe Umgebungen sollte `DataProtection__KeysPath` auf ein
+persistentes, zugriffsbeschraenktes Volume zeigen. Mehrere parallel laufende
+Instanzen derselben Umgebung muessen denselben Key-Ring nutzen, damit jede
+Instanz die gespeicherten AlphaVantage-Keys entschluesseln kann. Der Key-Ring
+darf nicht mit Entwicklungs-, Test- oder anderen Mandantenumgebungen geteilt
+werden.
+
+Backups der Datenbank oder des Anwendungsdatenverzeichnisses enthalten keine
+direkt verwendbaren AlphaVantage-Klartext-Keys mehr, solange der Key-Ring nicht
+ebenfalls offengelegt wird. Vollstaendige Betriebsbackups muessen den Key-Ring
+dennoch enthalten, sonst koennen verschluesselte Werte nach Disaster Recovery
+nicht wieder gelesen werden. Zugriff, Ablageort und Wiederherstellung des
+Key-Rings sind daher Teil des Secret-Betriebskonzepts.
+
+Bei Verdacht, dass ein AlphaVantage-Key bereits vor der Verschluesselung oder
+durch gemeinsame Offenlegung von Datenbank und Key-Ring kompromittiert wurde,
+reicht eine technische Re-Verschluesselung nicht aus. Der externe API Key muss
+beim Anbieter rotiert oder widerrufen und anschliessend im Benutzerprofil neu
+hinterlegt werden.

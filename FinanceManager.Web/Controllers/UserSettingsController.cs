@@ -8,6 +8,7 @@ using FinanceManager.Shared.Dtos.Common;
 using FinanceManager.Shared.Dtos.Users;
 using FinanceManager.Web.Infrastructure.ApiErrors;
 using FinanceManager.Web.Infrastructure.Auth;
+using FinanceManager.Web.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -38,6 +39,7 @@ public sealed class UserSettingsController : ControllerBase
     private readonly IJwtTokenService _jwt;
     private readonly IAuthTokenProvider _tokenProvider;
     private readonly UserManager<User> _userManager;
+    private readonly IAlphaVantageSecretProtector _alphaVantageSecretProtector;
 
     /// <summary>
     /// Initializes a new instance of <see cref="UserSettingsController"/>
@@ -49,7 +51,8 @@ public sealed class UserSettingsController : ControllerBase
     /// <param name="jwt">Service used to issue new JWT tokens after profile changes.</param>
     /// <param name="tokenProvider">Token provider whose cache is invalidated after the auth cookie is replaced.</param>
     /// <param name="userManager">Identity user manager used to read current roles and security stamp.</param>
-    public UserSettingsController(AppDbContext db, ICurrentUserService current, ILogger<UserSettingsController> logger, IStringLocalizer<Controller> localizer, IJwtTokenService jwt, IAuthTokenProvider tokenProvider, UserManager<User> userManager)
+    /// <param name="alphaVantageSecretProtector">Protector used to store AlphaVantage API keys in encrypted form.</param>
+    public UserSettingsController(AppDbContext db, ICurrentUserService current, ILogger<UserSettingsController> logger, IStringLocalizer<Controller> localizer, IJwtTokenService jwt, IAuthTokenProvider tokenProvider, UserManager<User> userManager, IAlphaVantageSecretProtector alphaVantageSecretProtector)
     {
         _db = db;
         _current = current;
@@ -58,6 +61,7 @@ public sealed class UserSettingsController : ControllerBase
         _jwt = jwt;
         _tokenProvider = tokenProvider;
         _userManager = userManager;
+        _alphaVantageSecretProtector = alphaVantageSecretProtector;
     }
 
     /// <summary>
@@ -117,7 +121,7 @@ public sealed class UserSettingsController : ControllerBase
             }
             else if (!string.IsNullOrWhiteSpace(req.AlphaVantageApiKey))
             {
-                user.SetAlphaVantageKey(req.AlphaVantageApiKey);
+                user.SetAlphaVantageKey(_alphaVantageSecretProtector.Protect(req.AlphaVantageApiKey));
             }
 
             if (req.ShareAlphaVantageApiKey.HasValue)

@@ -51,6 +51,7 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 | `Jwt:Issuer` | string | `financemanager` | Erwarteter JWT-Issuer fuer Ausstellung und Validierung |
 | `Jwt:Audience` | string | `financemanager` | Erwartete JWT-Audience fuer Ausstellung und Validierung |
 | `Jwt:LifetimeMinutes` | int | `30` | JWT-/Cookie-Lebensdauer in Minuten |
+| `DataProtection:KeysPath` | string | leer | Optionaler Pfad fuer den ASP.NET-Core-Data-Protection-Key-Ring; in produktionsnahen Deployments persistent und geschuetzt bereitstellen |
 | `BackgroundTasks:Enabled` | bool | `true` | Aktiviert den `BackgroundTaskRunner` |
 | `Workers:SecurityPriceWorker:Enabled` | bool | `true` | Aktiviert den Security-Price-Worker |
 | `Backups:Security:MaxUploadBytes` | long | `104857600` | Maximale Uploadgroesse fuer Backup-ZIP-Dateien |
@@ -173,6 +174,13 @@ dotnet test FinanceManager.sln
   der Start ab, wenn `Jwt__Key` fehlt, ein Platzhalter ist, weniger als 32
   UTF-8-Bytes Schluesselmaterial enthaelt oder `Jwt__Issuer`,
   `Jwt__Audience` beziehungsweise `Jwt__LifetimeMinutes` ungueltig sind.
+- AlphaVantage API Keys werden vor der Persistenz mit ASP.NET Core Data
+  Protection geschuetzt und nur fuer den unmittelbaren API-Aufruf entschluesselt.
+  Fuer produktionsnahe Deployments muss der Data-Protection-Key-Ring erhalten
+  bleiben, sonst koennen gespeicherte AlphaVantage-Keys nach Containerwechsel,
+  Neuinstallation oder Deployment nicht verlaesslich gelesen werden. Setze
+  dafuer `DataProtection__KeysPath` auf ein persistentes, zugriffsgeschuetztes
+  Volume und sichere diesen Key-Ring gemeinsam mit der Datenbank.
 
 ## Contribution Guide
 
