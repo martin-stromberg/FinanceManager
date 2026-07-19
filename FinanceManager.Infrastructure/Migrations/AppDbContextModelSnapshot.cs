@@ -1397,7 +1397,7 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("AlphaVantageApiKey")
-                        .HasMaxLength(120)
+                        .HasMaxLength(2048)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("BenchmarkSecurityId")

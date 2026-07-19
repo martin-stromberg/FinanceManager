@@ -19,6 +19,13 @@ Backups werden als ZIP-Dateien verwaltet. Uploads und Restores akzeptieren nur Z
 
 Ein Restore ersetzt vorhandene Daten und ist deshalb eine besonders riskante Aktion. Vor dem Start muss der Benutzer den exakten Backup-Dateinamen in einem Bestätigungsdialog eingeben. Die Eingabe wird serverseitig geprüft; eine reine UI-Bestätigung reicht nicht aus. Bei falscher oder fehlender Bestätigung wird kein Restore gestartet und kein Hintergrundtask angelegt.
 
+AlphaVantage API Keys aus dem Benutzerprofil werden verschluesselt gespeichert.
+Die Profilansicht zeigt nur an, ob ein Key vorhanden ist; der gespeicherte Wert
+wird nicht im Klartext zurueckgegeben. Admins koennen ihren Key weiterhin zur
+gemeinsamen Nutzung freigeben. Andere Benutzer verwenden diesen geteilten Key
+als Fallback fuer Kursabrufe, ohne den Klartext in Profilantworten oder UI
+einsehen zu koennen.
+
 Die Einstellungsseite verwendet ein Akkordeon-Layout: Sektionen können einzeln auf- und zugeklappt werden. Die Ribbon-Aktionsleiste zeigt die Aktionen aller Sektionen dauerhaft an — unabhängig davon, welche Sektion gerade geöffnet ist. Vier Section-ViewModels tragen Ribbon-Aktionen bei:
 
 | Section | ViewModel | Ribbon-Aktionen |
@@ -36,6 +43,10 @@ Die `UploadBackup`-Aktion klappt die Backup-Sektion automatisch auf, falls sie b
 - Ein Administrator deaktiviert einen Benutzer oder entzieht die Admin-Rolle;
   vorhandene Tokens werden danach nicht mehr akzeptiert.
 - Ein Benutzer pflegt Import- und Benachrichtigungseinstellungen.
+- Ein Benutzer hinterlegt einen AlphaVantage API Key; die Anwendung speichert
+  nur den geschuetzten Persistenzwert.
+- Ein Administrator gibt seinen AlphaVantage API Key frei; andere Benutzer
+  koennen Kursabrufe darueber ausfuehren, sehen den Key aber nicht im Klartext.
 - Ein Backup wird erstellt, als ZIP heruntergeladen und später nach Dateinamen-Bestätigung als Hintergrundtask wiederhergestellt.
 
 ## Einschränkungen
@@ -43,3 +54,5 @@ Die `UploadBackup`-Aktion klappt die Backup-Sektion automatisch auf, falls sie b
 - Administrative Endpunkte erfordern entsprechende Berechtigungen.
 - Restore- und Aggregatjobs laufen asynchron und sind statusbasiert zu überwachen.
 - Backup-Uploads sind auf 100 MB komprimiert, 250 MB entpackte NDJSON-Daten, einen ZIP-Eintrag und ein maximales Kompressionsverhältnis von 25 begrenzt.
+- Die Lesbarkeit verschluesselt gespeicherter AlphaVantage API Keys haengt vom
+  passenden ASP.NET-Core-Data-Protection-Key-Ring ab.

@@ -42,6 +42,50 @@ aktualisieren den SecurityStamp und machen alte Tokens unwirksam.
 **Umsetzung:** `UserAdminService.UpdateAsync`,
 `UserAdminService.ResetPasswordAsync`, `UserAuthService.LoginAsync`.
 
+## AlphaVantage API Keys werden geschuetzt gespeichert
+
+**Beschreibung:** Benutzer- und Admin-Keys fuer AlphaVantage werden nicht als
+verwendbarer Klartext persistiert.
+
+**Bedingungen:**
+- Ein Benutzer speichert im Profil einen neuen AlphaVantage API Key.
+- Ein vorhandener gespeicherter Altwert ohne `dp:v1:`-Praefix wird erfolgreich
+  fuer einen Kursabruf gelesen.
+- Ein Benutzer loescht den gespeicherten Key.
+
+**Verhalten:**
+- Neue oder geaenderte Keys werden vor dem Speichern mit ASP.NET Core Data
+  Protection geschuetzt und mit `dp:v1:`-Praefix abgelegt.
+- Altwerte ohne Praefix werden nach erfolgreichem Lesen automatisch
+  re-protected und in geschuetzter Form zurueckgeschrieben.
+- Beim Loeschen wird der gespeicherte Wert entfernt.
+- Fehler beim Entschluesseln erzeugen generische Fehlermeldungen ohne
+  Klartext-Key und ohne geschuetzten Payload.
+
+**Umsetzung:** `DataProtectionAlphaVantageSecretProtector`,
+`UserSettingsController`, `AlphaVantageKeyResolver`.
+
+## Admin-Key-Sharing legt keinen Klartext offen
+
+**Beschreibung:** Administratoren koennen ihren AlphaVantage API Key weiterhin
+als gemeinsamen Fallback bereitstellen, ohne dass andere Benutzer den Key sehen
+oder aus der Profil-API lesen koennen.
+
+**Bedingungen:**
+- Ein Administrator hat einen AlphaVantage API Key gespeichert.
+- `ShareAlphaVantageApiKey` ist beim Administrator aktiviert.
+- Ein anderer Benutzer startet einen AlphaVantage-Kursabruf ohne eigenen Key.
+
+**Verhalten:**
+- Der Resolver waehlt deterministisch einen freigegebenen Admin-Key aus.
+- Der Key wird nur fuer den unmittelbaren AlphaVantage-Aufruf entschluesselt.
+- Strukturierte Logs dokumentieren Quelle `personal` oder `shared`, die
+  anfragende User-ID und bei Shared-Nutzung die Admin-User-ID, aber keinen
+  API-Key-Wert.
+
+**Umsetzung:** `AlphaVantageKeyResolver`,
+`DataProtectionAlphaVantageSecretProtector`.
+
 ## Import-Split-Einstellungen haben harte Grenzen
 
 **Beschreibung:** Benutzerpräferenzen für Import-Splitting werden validiert.

@@ -20,6 +20,20 @@ Dieser Bereich nutzt mehrere Controller für Authentifizierung, Administration, 
 
 **Beschreibung:** Profil laden.
 
+Die Antwort zeigt fuer AlphaVantage nur Statusinformationen wie
+`HasAlphaVantageApiKey` und `ShareAlphaVantageApiKey`. Der gespeicherte API Key
+wird nie im Klartext ausgeliefert.
+
+### `PUT /api/user-settings/profile`
+
+**Beschreibung:** Profil speichern, einschliesslich AlphaVantage-Key-Status.
+
+Ein neu uebergebener `AlphaVantageApiKey` wird vor der Persistenz geschuetzt.
+`ClearAlphaVantageApiKey = true` entfernt den gespeicherten Wert. Die
+Sharing-Einstellung `ShareAlphaVantageApiKey` steuert nur, ob ein Admin-Key als
+Fallback fuer andere Benutzer verwendet werden darf; sie gibt den Klartext-Key
+nicht ueber die API aus.
+
 ### `PUT /api/user-settings/import-split`
 
 **Beschreibung:** Import-Split-Einstellungen speichern.

@@ -14,6 +14,7 @@ using FinanceManager.Web.Infrastructure.Attachments;
 using FinanceManager.Web.Infrastructure.Auth;
 using FinanceManager.Web.Infrastructure.Logging;
 using FinanceManager.Web.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Features;
@@ -85,6 +86,12 @@ namespace FinanceManager.Web
             // Attachment upload validation options
             builder.Services.Configure<AttachmentUploadOptions>(builder.Configuration.GetSection("Attachments"));
             builder.Services.Configure<BackupSecurityOptions>(builder.Configuration.GetSection(BackupSecurityOptions.SectionName));
+            var dataProtectionBuilder = builder.Services.AddDataProtection();
+            var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
+            if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+            {
+                dataProtectionBuilder.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+            }
 
             // Background task queue
             builder.Services.AddSingleton<IBackgroundTaskManager, BackgroundTaskManager>();
@@ -145,6 +152,7 @@ namespace FinanceManager.Web
                 client.Timeout = TimeSpan.FromSeconds(30);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("FinanceManager/1.0 (+https://github.com/Muesli84/FinanceManager)");
             });
+            builder.Services.AddScoped<IAlphaVantageSecretProtector, DataProtectionAlphaVantageSecretProtector>();
             builder.Services.AddScoped<IAlphaVantageKeyResolver, AlphaVantageKeyResolver>();
             builder.Services.AddScoped<IPriceProvider, AlphaVantagePriceProvider>();
             // Conditionally enable SecurityPriceWorker via config flag

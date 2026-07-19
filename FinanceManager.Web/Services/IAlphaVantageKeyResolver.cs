@@ -1,6 +1,8 @@
 using FinanceManager.Application;
+using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace FinanceManager.Web.Services;
 
@@ -37,14 +39,20 @@ public interface IAlphaVantageKeyResolver
 public sealed class AlphaVantageKeyResolver : IAlphaVantageKeyResolver
 {
     private readonly AppDbContext _db;
+    private readonly IAlphaVantageSecretProtector _secretProtector;
+    private readonly ILogger<AlphaVantageKeyResolver> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AlphaVantageKeyResolver"/> class.
     /// </summary>
     /// <param name="db">The application's <see cref="AppDbContext"/> used to query stored API keys.</param>
-    public AlphaVantageKeyResolver(AppDbContext db)
+    /// <param name="secretProtector">Protector used to restore and lazily protect stored API keys.</param>
+    /// <param name="logger">Logger used for secret-free audit events.</param>
+    public AlphaVantageKeyResolver(AppDbContext db, IAlphaVantageSecretProtector secretProtector, ILogger<AlphaVantageKeyResolver> logger)
     {
         _db = db;
+        _secretProtector = secretProtector;
+        _logger = logger;
     }
 
     /// <summary>
@@ -59,13 +67,15 @@ public sealed class AlphaVantageKeyResolver : IAlphaVantageKeyResolver
     /// <exception cref="System.Exception">Propagates exceptions thrown by the underlying data provider.</exception>
     public async Task<string?> GetForUserAsync(Guid userId, CancellationToken ct)
     {
-        var key = await _db.Users.AsNoTracking()
-            .Where(u => u.Id == userId)
-            .Select(u => u.AlphaVantageApiKey)
-            .SingleOrDefaultAsync(ct);
-        if (!string.IsNullOrWhiteSpace(key)) return key;
+        var user = await _db.Users.SingleOrDefaultAsync(u => u.Id == userId, ct);
+        if (!string.IsNullOrWhiteSpace(user?.AlphaVantageApiKey))
+        {
+            var key = await RestoreAndReprotectIfNeededAsync(user, "personal", requestedUserId: userId, ct);
+            _logger.LogInformation("AlphaVantage API key resolved from {Source} key for user {RequestedUserId}", "personal", userId);
+            return key;
+        }
 
-        return await GetSharedAsync(ct);
+        return await GetSharedAsync(requestedUserId: userId, ct);
     }
 
     /// <summary>
@@ -76,11 +86,44 @@ public sealed class AlphaVantageKeyResolver : IAlphaVantageKeyResolver
     /// <returns>The shared API key when present; otherwise <c>null</c>.</returns>
     /// <exception cref="System.Exception">Propagates exceptions thrown by the underlying data provider.</exception>
     public async Task<string?> GetSharedAsync(CancellationToken ct)
+        => await GetSharedAsync(requestedUserId: null, ct);
+
+    private async Task<string?> GetSharedAsync(Guid? requestedUserId, CancellationToken ct)
     {
-        return await _db.Users.AsNoTracking()
+        var admin = await _db.Users
             .Where(u => u.IsAdmin && u.ShareAlphaVantageApiKey && u.AlphaVantageApiKey != null)
-            .OrderBy(u => u.UserName) // deterministic choice — use mapped Identity property
-            .Select(u => u.AlphaVantageApiKey!)
+            .OrderBy(u => u.UserName) // deterministic choice using mapped Identity property
             .FirstOrDefaultAsync(ct);
+        if (admin == null)
+        {
+            return null;
+        }
+
+        var key = await RestoreAndReprotectIfNeededAsync(admin, "shared", requestedUserId, ct);
+        _logger.LogInformation(
+            "AlphaVantage API key resolved from {Source} admin key {AdminUserId} requested by {RequestedUserId}",
+            "shared",
+            admin.Id,
+            requestedUserId);
+        return key;
+    }
+
+    private async Task<string?> RestoreAndReprotectIfNeededAsync(User user, string source, Guid? requestedUserId, CancellationToken ct)
+    {
+        var storedValue = user.AlphaVantageApiKey;
+        var key = _secretProtector.Unprotect(storedValue);
+        if (string.IsNullOrWhiteSpace(key) || _secretProtector.IsProtected(storedValue))
+        {
+            return key;
+        }
+
+        user.SetAlphaVantageKey(_secretProtector.Protect(key));
+        await _db.SaveChangesAsync(ct);
+        _logger.LogInformation(
+            "AlphaVantage API key lazily protected for user {StoredUserId} from {Source} key requested by {RequestedUserId}",
+            user.Id,
+            source,
+            requestedUserId);
+        return key;
     }
 }
