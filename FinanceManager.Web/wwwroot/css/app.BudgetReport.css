@@ -87,6 +87,36 @@
     color: var(--text-muted, #666);
 }
 
+.budget-report-postings-head {
+    position: sticky;
+    top: 0;
+    background: #eef2f7;
+    color: #111827;
+    z-index: 1;
+}
+
+.budget-report-postings-head th {
+    border-bottom: 1px solid #cbd5e1;
+    font-weight: 600;
+}
+
+.budget-report-posting-unbudgeted {
+    background: #ffffff;
+    color: #111827;
+    opacity: 0.8;
+}
+
+.budget-report-posting-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.05rem 0.35rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    color: #334155;
+    background: #ffffff;
+}
+
 @keyframes budget-report-spin {
     to {
         transform: rotate(360deg);

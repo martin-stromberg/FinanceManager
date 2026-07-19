@@ -418,7 +418,7 @@ public sealed class BudgetReportsController : ControllerBase
 
             var to = new DateOnly(req.AsOfDate.Year, req.AsOfDate.Month, DateTime.DaysInMonth(req.AsOfDate.Year, req.AsOfDate.Month));
             var from = new DateOnly(to.Year, to.Month, 1).AddMonths(-(req.Months - 1));
-            var raw = await _reports.GetRawDataAsync(_current.UserId, from, to, req.DateBasis, ct, ignoreCache: true);
+            var raw = await _reports.GetRawDataAsync(_current.UserId, from, to, req.DateBasis, ct);
             return Ok(raw);
         }
         catch (ArgumentOutOfRangeException ex)
@@ -459,7 +459,7 @@ public sealed class BudgetReportsController : ControllerBase
             var toDate = DateOnly.FromDateTime(toDt);
 
             // Use GetRawDataAsync to get properly filtered posting IDs that respect pattern matching
-            var raw = await _reports.GetRawDataAsync(ownerUserId, fromDate, toDate, dateBasis, ct, ignoreCache: true);
+            var raw = await _reports.GetRawDataAsync(ownerUserId, fromDate, toDate, dateBasis, ct);
 
             var unbudgetedPostingIds = (raw.UnbudgetedPostings ?? Array.Empty<BudgetReportPostingRawDataDto>())
                 .Select(p => p.PostingId)
