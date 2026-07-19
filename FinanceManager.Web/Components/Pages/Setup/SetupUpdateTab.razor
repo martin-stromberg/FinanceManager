@@ -1,0 +1,238 @@
+@using FinanceManager.Shared.Dtos.Update
+@using FinanceManager.Web.ViewModels.Setup
+@using Microsoft.JSInterop
+@implements IDisposable
+@inject FinanceManager.Application.ICurrentUserService CurrentUser
+@inject Microsoft.Extensions.Localization.IStringLocalizer<Pages> Localizer
+@inject NavigationManager Navigation
+@inject IJSRuntime Js
+
+@if (!CurrentUser.IsAuthenticated || !CurrentUser.IsAdmin)
+{
+    <p>@Localizer["Access_AdminOnly"]</p>
+}
+else
+{
+<div class="setup-tab setup-update-tab">
+    <h4 style="margin-top:0;">Automatische Updates</h4>
+
+    @if (!string.IsNullOrWhiteSpace(_vm?.LastError))
+    {
+        <div class="error" style="margin-top:.5rem;">@_vm!.LastError</div>
+    }
+
+    @if (_vm?.Settings is null || _vm.Status is null)
+    {
+        <div>@Localizer["Msg_Loading"]</div>
+    }
+    else if (_vm.Installing)
+    {
+        <div class="info" style="margin-bottom:.75rem;">Update wird installiert. Die Anwendung wird neu geladen, sobald der Health-Endpunkt wieder erreichbar ist.</div>
+    }
+    else
+    {
+        <div class="setup-form-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:.75rem;">
+            <label>
+                <input type="checkbox" checked="@_vm.Settings.Enabled" @onchange="OnEnabledChanged" />
+                Automatische Pruefung aktiv
+            </label>
+            <label>
+                Pruefintervall in Minuten
+                <input class="form-control" type="number" min="1" max="1440" value="@_vm.Settings.CheckIntervalMinutes" @onchange="OnIntervalChanged" />
+            </label>
+            <label>
+                Geplante Uhrzeit
+                <input class="form-control" type="time" value="@FormatTime(_vm.Settings.ScheduledInstallTime)" @onchange="OnScheduleChanged" />
+            </label>
+            <label>
+                Windows-Service
+                <input class="form-control" value="@_vm.Settings.WindowsServiceName" @onchange="OnWindowsServiceChanged" />
+            </label>
+            <label>
+                Linux-systemd-Service
+                <input class="form-control" value="@_vm.Settings.LinuxServiceName" @onchange="OnLinuxServiceChanged" />
+            </label>
+            <label>
+                EXE-Pfad
+                <input class="form-control" value="@_vm.Settings.ExecutablePath" @onchange="OnExecutablePathChanged" />
+            </label>
+            <label>
+                Repository-Owner
+                <input class="form-control" value="@_vm.Settings.RepositoryOwner" @onchange="OnRepositoryOwnerChanged" />
+            </label>
+            <label>
+                Repository-Name
+                <input class="form-control" value="@_vm.Settings.RepositoryName" @onchange="OnRepositoryNameChanged" />
+            </label>
+            <label>
+                Manifest-Asset
+                <input class="form-control" value="@_vm.Settings.ManifestAssetName" @onchange="OnManifestAssetNameChanged" />
+            </label>
+            <label>
+                Arbeitsverzeichnis
+                <input class="form-control" value="@_vm.Settings.WorkingDirectory" @onchange="OnWorkingDirectoryChanged" />
+            </label>
+            <label>
+                Health-Timeout in Sekunden
+                <input class="form-control" type="number" min="10" max="600" value="@_vm.Settings.HealthTimeoutSeconds" @onchange="OnHealthTimeoutChanged" />
+            </label>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem;">
+            <button class="btn" disabled="@_vm.Busy" @onclick="async () => await _vm.SaveAsync()">Einstellungen speichern</button>
+            <button class="btn secondary" disabled="@_vm.Busy" @onclick="async () => await _vm.CheckAsync()">Jetzt pruefen</button>
+            <button class="btn danger" disabled="@(_vm.Busy || _vm.Status.Status != UpdateStatusKind.Ready)" @onclick="StartInstallAsync">Update installieren</button>
+            <button class="btn secondary" disabled="@(_vm.Busy || !_vm.Status.IsLocked)" @onclick="async () => await _vm.ResetLockAsync()">Update-Lock zuruecksetzen</button>
+        </div>
+
+        <dl style="display:grid;grid-template-columns:max-content 1fr;gap:.35rem .75rem;margin-top:1rem;">
+            <dt>Updatequelle</dt><dd>@_vm.Settings.RepositoryOwner/@_vm.Settings.RepositoryName (@_vm.Settings.ManifestAssetName)</dd>
+            <dt>Status</dt><dd>@_vm.Status.Status</dd>
+            <dt>Installiert</dt><dd>@(_vm.Status.InstalledVersion ?? "Unknown")</dd>
+            <dt>Plattform</dt><dd>@_vm.Status.CurrentPlatform</dd>
+            <dt>Letzte Pruefung</dt><dd>@FormatDate(_vm.Status.LastCheckedAt)</dd>
+            <dt>Verfuegbar</dt><dd>@(_vm.Status.AvailableVersion ?? "-")</dd>
+            <dt>Paket</dt><dd>@(_vm.Status.DownloadedAssetName ?? "-")</dd>
+            <dt>Lock</dt><dd>@(_vm.Status.IsLocked ? $"aktiv seit {FormatDate(_vm.Status.LockCreatedAt)}" : "-")</dd>
+        </dl>
+
+        @if (_vm.Status.AvailableUpdate is not null)
+        {
+            <div style="margin-top:1rem;">
+                <h5>Release @_vm.Status.AvailableUpdate.Version</h5>
+                <div class="table-responsive">
+                    <table class="fm-table">
+                        <thead>
+                            <tr>
+                                <th>Plattform</th>
+                                <th>Runtime</th>
+                                <th>Datei</th>
+                                <th>Groesse</th>
+                                <th>SHA-256</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var asset in _vm.Status.AvailableUpdate.Assets)
+                            {
+                                <tr>
+                                    <td>@asset.Platform</td>
+                                    <td>@asset.RuntimeIdentifier</td>
+                                    <td>@asset.AssetName</td>
+                                    <td>@FormatBytes(asset.SizeBytes)</td>
+                                    <td style="font-family:monospace;word-break:break-all;">@asset.Sha256</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <p style="white-space:pre-wrap;">@_vm.Status.AvailableUpdate.ReleaseNotes</p>
+            </div>
+        }
+    }
+</div>
+}
+
+@code {
+    [Parameter] public SetupUpdateViewModel? ViewModel { get; set; }
+
+    private SetupUpdateViewModel? _vm;
+    private EventHandler? _stateChangedHandler;
+    private PeriodicTimer? _timer;
+    private CancellationTokenSource? _pollingCts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _vm = ViewModel ?? throw new InvalidOperationException("ViewModel parameter is required for SetupUpdateTab.");
+        _stateChangedHandler = (_, __) => _ = InvokeAsync(StateHasChanged);
+        _vm.StateChanged += _stateChangedHandler;
+        await _vm.LoadAsync();
+    }
+
+    public void Dispose()
+    {
+        if (_vm is not null && _stateChangedHandler is not null)
+        {
+            _vm.StateChanged -= _stateChangedHandler;
+        }
+        _pollingCts?.Cancel();
+        _pollingCts?.Dispose();
+        _timer?.Dispose();
+    }
+
+    private async Task StartInstallAsync()
+    {
+        var confirmed = await Js.InvokeAsync<bool>("confirm", "Das Update beendet die Anwendung kurzzeitig und ersetzt die installierten Dateien. Jetzt installieren?");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        await _vm!.StartInstallAsync(confirmDowntime: true);
+        if (_vm.Installing)
+        {
+            _ = PollHealthAsync();
+        }
+    }
+
+    private async Task PollHealthAsync()
+    {
+        _pollingCts?.Cancel();
+        _pollingCts = new CancellationTokenSource(TimeSpan.FromSeconds(_vm!.Settings?.HealthTimeoutSeconds ?? 120));
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+        using var http = new HttpClient { BaseAddress = new Uri(Navigation.BaseUri) };
+        var outageObserved = false;
+        try
+        {
+            while (await _timer.WaitForNextTickAsync(_pollingCts.Token))
+            {
+                try
+                {
+                    var response = await http.GetAsync("health", _pollingCts.Token);
+                    if (ShouldReloadAfterHealth(outageObserved, response.IsSuccessStatusCode))
+                    {
+                        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+                        return;
+                    }
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        outageObserved = true;
+                    }
+                }
+                catch
+                {
+                    outageObserved = true;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            _vm!.MarkHealthTimeout();
+        }
+    }
+
+    private void OnEnabledChanged(ChangeEventArgs e) => Update(s => s with { Enabled = e.Value is bool b && b });
+    private void OnIntervalChanged(ChangeEventArgs e) => Update(s => s with { CheckIntervalMinutes = int.TryParse(Convert.ToString(e.Value), out var value) ? value : s.CheckIntervalMinutes });
+    private void OnScheduleChanged(ChangeEventArgs e) => Update(s => s with { ScheduledInstallTime = TimeOnly.TryParse(Convert.ToString(e.Value), out var t) ? t : null });
+    private void OnWindowsServiceChanged(ChangeEventArgs e) => Update(s => s with { WindowsServiceName = Convert.ToString(e.Value) });
+    private void OnLinuxServiceChanged(ChangeEventArgs e) => Update(s => s with { LinuxServiceName = Convert.ToString(e.Value) });
+    private void OnExecutablePathChanged(ChangeEventArgs e) => Update(s => s with { ExecutablePath = Convert.ToString(e.Value) });
+    private void OnRepositoryOwnerChanged(ChangeEventArgs e) => Update(s => s with { RepositoryOwner = Convert.ToString(e.Value) ?? s.RepositoryOwner });
+    private void OnRepositoryNameChanged(ChangeEventArgs e) => Update(s => s with { RepositoryName = Convert.ToString(e.Value) ?? s.RepositoryName });
+    private void OnManifestAssetNameChanged(ChangeEventArgs e) => Update(s => s with { ManifestAssetName = Convert.ToString(e.Value) ?? s.ManifestAssetName });
+    private void OnWorkingDirectoryChanged(ChangeEventArgs e) => Update(s => s with { WorkingDirectory = Convert.ToString(e.Value) ?? s.WorkingDirectory });
+    private void OnHealthTimeoutChanged(ChangeEventArgs e) => Update(s => s with { HealthTimeoutSeconds = int.TryParse(Convert.ToString(e.Value), out var value) ? value : s.HealthTimeoutSeconds });
+
+    private void Update(Func<UpdateSettingsDto, UpdateSettingsDto> update)
+    {
+        if (_vm?.Settings is not null)
+        {
+            _vm.UpdateSettings(update(_vm.Settings));
+        }
+    }
+
+    private static string FormatTime(TimeOnly? time) => time?.ToString("HH:mm") ?? string.Empty;
+    private static string FormatDate(DateTimeOffset? date) => date?.ToLocalTime().ToString("g") ?? "-";
+    private static string FormatBytes(long bytes) => bytes <= 0 ? "-" : $"{bytes / 1024d / 1024d:0.##} MB";
+    public static bool ShouldReloadAfterHealth(bool outageObserved, bool healthSuccessful) => outageObserved && healthSuccessful;
+}

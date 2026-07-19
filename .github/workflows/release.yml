@@ -79,12 +79,32 @@ jobs:
 
       - name: Publish application
         if: steps.version.outputs.released == 'true'
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          RELEASE_COMMIT: ${{ github.sha }}
         run: |
           if (Test-Path publish) {
             Remove-Item -Recurse -Force publish
           }
 
-          dotnet publish FinanceManager.Web/FinanceManager.Web.csproj --configuration Release --framework net10.0 --runtime win-x64 --self-contained true --output publish
+          foreach ($runtime in @("win-x64", "linux-x64")) {
+            $output = Join-Path "publish" $runtime
+            dotnet publish FinanceManager.Web/FinanceManager.Web.csproj --configuration Release --framework net10.0 --runtime $runtime --self-contained true --output $output
+            if ($LASTEXITCODE -ne 0) {
+              throw "Publish failed for $runtime."
+            }
+
+            $metadata = @{
+              version = $env:RELEASE_VERSION
+              publishedAt = (Get-Date).ToUniversalTime().ToString("O")
+              commitSha = $env:RELEASE_COMMIT
+              repository = $env:RELEASE_REPOSITORY
+              runtimeIdentifier = $runtime
+            } | ConvertTo-Json
+            Set-Content -LiteralPath (Join-Path $output "release-metadata.json") -Value $metadata -Encoding UTF8
+          }
 
           if (-not (Test-Path publish -PathType Container)) {
             throw "The publish directory was not created."
@@ -100,42 +120,95 @@ jobs:
             throw "The release version is missing."
           }
 
-          $publishPath = (Resolve-Path publish).Path
-          $publishedFiles = Get-ChildItem -LiteralPath $publishPath -File -Recurse -Force
-          if ($publishedFiles.Count -eq 0) {
-            throw "The publish directory is empty."
+          $assetPaths = New-Object System.Collections.Generic.List[string]
+
+          foreach ($runtime in @("win-x64", "linux-x64")) {
+            $publishPath = (Resolve-Path (Join-Path "publish" $runtime)).Path
+            $publishedFiles = Get-ChildItem -LiteralPath $publishPath -File -Recurse -Force
+            if ($publishedFiles.Count -eq 0) {
+              throw "The publish directory for $runtime is empty."
+            }
+
+            $archivePath = Join-Path $PWD "FinanceManager-v$env:RELEASE_VERSION-$runtime.zip"
+            if (Test-Path -LiteralPath $archivePath) {
+              Remove-Item -Force -LiteralPath $archivePath
+            }
+
+            Add-Type -AssemblyName System.IO.Compression.FileSystem
+            [System.IO.Compression.ZipFile]::CreateFromDirectory(
+              $publishPath,
+              $archivePath,
+              [System.IO.Compression.CompressionLevel]::Optimal,
+              $false
+            )
+
+            $archive = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
+            try {
+              if ($archive.Entries.Count -eq 0) {
+                throw "The release archive for $runtime is empty."
+              }
+            }
+            finally {
+              $archive.Dispose()
+            }
+
+            $assetPaths.Add([System.IO.Path]::GetFileName($archivePath))
           }
 
-          $archivePath = Join-Path $PWD "FinanceManager-v$env:RELEASE_VERSION-win-x64.zip"
-          if (Test-Path -LiteralPath $archivePath) {
-            Remove-Item -Force -LiteralPath $archivePath
-          }
+          "asset_paths=$($assetPaths -join ';')" | Add-Content -Path $env:GITHUB_OUTPUT
 
-          Add-Type -AssemblyName System.IO.Compression.FileSystem
-          [System.IO.Compression.ZipFile]::CreateFromDirectory(
-            $publishPath,
-            $archivePath,
-            [System.IO.Compression.CompressionLevel]::Optimal,
-            $false
-          )
+      - name: Generate release notes for update manifest
+        id: notes
+        if: steps.version.outputs.released == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          $json = gh api repos/${{ github.repository }}/releases/generate-notes -f tag_name="$env:RELEASE_TAG"
+          $notes = ($json | ConvertFrom-Json).body
+          $notesPath = Join-Path $PWD "release-notes.md"
+          Set-Content -LiteralPath $notesPath -Value $notes -Encoding UTF8
+          "notes_path=release-notes.md" | Add-Content -Path $env:GITHUB_OUTPUT
 
-          $archive = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
+      - name: Generate update manifest
+        id: manifest
+        if: steps.version.outputs.released == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_NOTES_PATH: ${{ steps.notes.outputs.notes_path }}
+        run: |
+          $publishedAt = ""
           try {
-            if ($archive.Entries.Count -eq 0) {
-              throw "The release archive is empty."
+            $releaseJson = gh release view "$env:RELEASE_TAG" --json publishedAt 2>$null
+            if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($releaseJson)) {
+              $publishedAt = ($releaseJson | ConvertFrom-Json).publishedAt
             }
           }
-          finally {
-            $archive.Dispose()
+          catch {
+            $publishedAt = ""
           }
 
-          "asset_path=$([System.IO.Path]::GetFileName($archivePath))" | Add-Content -Path $env:GITHUB_OUTPUT
+          if ([string]::IsNullOrWhiteSpace($publishedAt)) {
+            $publishedAt = (Get-Date).ToUniversalTime().ToString("O")
+          }
+
+          $env:RELEASE_PUBLISHED_AT = $publishedAt
+          $env:RELEASE_NOTES = Get-Content -Raw -LiteralPath $env:RELEASE_NOTES_PATH
+          node scripts/generate-update-manifest.mjs
+          if (-not (Test-Path -LiteralPath "update.json")) {
+            throw "update.json was not generated."
+          }
+          "manifest_path=update.json" | Add-Content -Path $env:GITHUB_OUTPUT
 
       - name: Create automatic GitHub release
         if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'create' && steps.version.outputs.release_kind == 'automatic'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          RELEASE_ASSET_PATH: ${{ steps.package.outputs.asset_path }}
+          RELEASE_ASSET_PATHS: ${{ steps.package.outputs.asset_paths }}
+          RELEASE_MANIFEST_PATH: ${{ steps.manifest.outputs.manifest_path }}
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: npm run release
 
@@ -143,15 +216,20 @@ jobs:
         if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'create' && steps.version.outputs.release_kind == 'manual'
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_ASSET_PATH: ${{ steps.package.outputs.asset_path }}
+          RELEASE_ASSET_PATHS: ${{ steps.package.outputs.asset_paths }}
+          RELEASE_MANIFEST_PATH: ${{ steps.manifest.outputs.manifest_path }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: |
-          gh release create "$env:RELEASE_TAG" "$env:RELEASE_ASSET_PATH" --title "$env:RELEASE_TAG" --generate-notes --verify-tag
+          $assets = @($env:RELEASE_ASSET_PATHS -split ';') + @($env:RELEASE_MANIFEST_PATH)
+          gh release create "$env:RELEASE_TAG" @assets --title "$env:RELEASE_TAG" --notes-file "${{ steps.notes.outputs.notes_path }}" --verify-tag
 
       - name: Upload asset to existing GitHub release
         if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'upload-existing'
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_ASSET_PATH: ${{ steps.package.outputs.asset_path }}
+          RELEASE_ASSET_PATHS: ${{ steps.package.outputs.asset_paths }}
+          RELEASE_MANIFEST_PATH: ${{ steps.manifest.outputs.manifest_path }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
-        run: gh release upload "$env:RELEASE_TAG" "$env:RELEASE_ASSET_PATH" --clobber
+        run: |
+          $assets = @($env:RELEASE_ASSET_PATHS -split ';') + @($env:RELEASE_MANIFEST_PATH)
+          gh release upload "$env:RELEASE_TAG" @assets --clobber

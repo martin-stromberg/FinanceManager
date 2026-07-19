@@ -54,6 +54,15 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 | `DataProtection:KeysPath` | string | leer | Optionaler Pfad fuer den ASP.NET-Core-Data-Protection-Key-Ring; in produktionsnahen Deployments persistent und geschuetzt bereitstellen |
 | `BackgroundTasks:Enabled` | bool | `true` | Aktiviert den `BackgroundTaskRunner` |
 | `Workers:SecurityPriceWorker:Enabled` | bool | `true` | Aktiviert den Security-Price-Worker |
+| `Updates:Enabled` | bool | `false` | Aktiviert die automatische Suche nach Self-Update-Releases |
+| `Updates:HostedServicesEnabled` | bool | `true` | Aktiviert `UpdateChecker` und `UpdateScheduler` |
+| `Updates:RepositoryOwner` / `Updates:RepositoryName` | string | `martin-stromberg` / `FinanceManager` | GitHub-Repository der Updatequelle |
+| `Updates:ManifestAssetName` | string | `update.json` | Release-Asset mit Update-Metadaten |
+| `Updates:WorkingDirectory` | string | `updates` | Betriebsverzeichnis fuer Pending-Paket, Status, Lock, Staging und Skripte |
+| `Updates:WindowsServiceName` / `Updates:LinuxServiceName` | string? | leer | Optionaler Service-Override fuer produktive Installationen |
+| `Updates:ExecutablePath` | string? | leer | Windows-Fallback, wenn kein Service gesteuert wird; muss absolut im aktuellen Anwendungsverzeichnis liegen |
+| `Updates:HealthTimeoutSeconds` | int | `120` | Wartezeit der Setup-UI bis zur Wiedererreichbarkeit von `/health` |
+| `Updates:MaxAssetBytes` | long | `536870912` | Maximale Groesse eines Update-ZIP-Assets |
 | `Backups:Security:MaxUploadBytes` | long | `104857600` | Maximale Uploadgroesse fuer Backup-ZIP-Dateien |
 | `Backups:Security:MaxCompressedZipBytes` | long | `104857600` | Maximale komprimierte ZIP-Groesse fuer Backup-Validierung |
 | `Backups:Security:MaxUncompressedNdjsonBytes` | long | `262144000` | Maximale entpackte NDJSON-Nutzlast im Backup |
@@ -117,6 +126,11 @@ Einstiegspunkte:
 - `POST /api/setup/backups/upload` – ZIP-Backup hochladen; akzeptiert nur valide ZIP/NDJSON-Backups innerhalb der konfigurierten `Backups:Security`-Limits
 - `POST /api/setup/backups/{id}/apply` – Backup synchron wiederherstellen; destruktiv und nur mit `BackupRestoreRequestDto`, dessen `confirmationText` exakt dem gespeicherten Dateinamen entspricht
 - `POST /api/setup/backups/{id}/apply/start` – destruktiven Restore als Hintergrundtask starten; verwendet dieselbe serverseitige Dateinamen-Bestaetigung
+- `GET /api/setup/update/status` und `GET|PUT /api/setup/update/settings` – Self-Update-Status und Admin-Einstellungen; nur Rolle `Admin`
+- `POST /api/setup/update/check` – GitHub-Release-Manifest abrufen, passendes Paket laden und Hash/ZIP validieren
+- `POST /api/setup/update/schedule` – geplante Installationszeit fuer ein vorbereitetes Update speichern
+- `POST /api/setup/update/install/start` – vorbereitetes Update nach Downtime-Bestaetigung installieren; erstellt Lock und startet ein externes Update-Skript
+- `POST /api/setup/update/lock/reset` – Update-Lock administrativ zuruecksetzen, sofern dieser Prozess keine laufende Installation kennt
 - `POST /api/securities/{id}/prices/import` – Wertpapierkurse importieren
 - `POST /api/postings/{id}/reverse` – Buchung stornieren (Reversal)
 - `GET|POST|PUT|DELETE /api/admin/users...` – administrative Benutzerverwaltung; serverseitig auf JWT-authentifizierte Benutzer mit Rolle `Admin` beschränkt. Authentifizierte Nicht-Admins erhalten `403 Forbidden`, anonyme Aufrufe `401 Unauthorized`.
@@ -151,16 +165,29 @@ dotnet test FinanceManager.sln
   Die Playwright-E2E-Tests bleiben Bestandteil der Testsuite, blockieren aber
   den Release-Publish-Pfad nicht. Anschließend wird
   `FinanceManager.Web/FinanceManager.Web.csproj` mit .NET 10 als
-  self-contained `win-x64`-Anwendung veröffentlicht.
-- Der vollständige Inhalt des `publish/`-Verzeichnisses wird als
-  `FinanceManager-vX.Y.Z-win-x64.zip` verpackt und als Asset am passenden
+  self-contained `win-x64`- und `linux-x64`-Anwendung veröffentlicht.
+- Die vollständigen Inhalte der runtime-spezifischen Publish-Verzeichnisse
+  werden als `FinanceManager-vX.Y.Z-win-x64.zip` und
+  `FinanceManager-vX.Y.Z-linux-x64.zip` verpackt. Zusaetzlich erzeugt der
+  Workflow `update.json` mit Plattform, Runtime, Asset-URL, Dateigroesse,
+  SHA-256 und Release Notes. Alle drei Assets werden am passenden
   GitHub-Release veröffentlicht. Fehler bei Versionierung, Tests, Build,
-  Publish oder Paketierung verhindern die Veröffentlichung eines
-  unvollständigen Releases. Ein Push ohne release-relevante Commits endet
-  erfolgreich ohne neues Release. Bei der Reparatur eines unvollständigen
-  Assets wird dessen Release-Tag ausgecheckt. Als vollständig gilt ein Asset
-  nur mit erwartetem Namen, Upload-Status und positiver Dateigröße; die
-  Reparatursuche verarbeitet alle Seiten der GitHub-Release-API.
+  Publish, Manifest oder Paketierung verhindern unvollständige Releases.
+  Ein Push ohne release-relevante Commits endet erfolgreich ohne neues Release.
+  Bei der Reparatur eines unvollständigen Assets wird dessen Release-Tag
+  ausgecheckt; die Reparatursuche verarbeitet alle Seiten der
+  GitHub-Release-API.
+- Das Self-Update ist eine Admin-Funktion im Setup. Die UI zeigt Quelle,
+  Status, Paketmetadaten und Release Notes, verlangt vor manueller Installation
+  eine Downtime-Bestaetigung und wartet nach Start erst auf einen beobachteten
+  Ausfall, bevor ein spaeterer `/health`-Erfolg als abgeschlossen gilt. Vor der
+  Installation validiert der Server Hash, Groesse, ZIP-Pfade, Service-/EXE-Ziel
+  und Lock. Eine geplante Installationszeit wird vom Scheduler minuetlich
+  geprueft und startet ein bereites Update ohne erneute Benutzerbestaetigung.
+  Ein Admin-Lock-Reset ist vorhanden, verweigert aber nur Locks, die der
+  aktuelle Prozess noch als laufende Installation kennt. Fuer produktive Hosts
+  sollte ein eindeutiger Windows-Service oder Linux-systemd-Service konfiguriert
+  werden; Best-Effort-Erkennung wird nur genutzt, wenn sie eindeutig ist.
 - Produktionsnahe Konfiguration liegt in
   `FinanceManager.Web/appsettings.Production.json` (u. a. Kestrel-Endpoint
   `http://*:5003`, FileLogging aktivierbar).

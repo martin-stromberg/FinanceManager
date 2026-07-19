@@ -1,6 +1,7 @@
 using static FinanceManager.Shared.ApiClient;
 using FinanceManager.Shared.Dtos.Postings;
 using FinanceManager.Shared.Dtos.Budget;
+using FinanceManager.Shared.Dtos.Update;
 
 namespace FinanceManager.Shared;
 
@@ -254,6 +255,23 @@ public interface IApiClient
     Task<bool> Backups_CancelAsync(CancellationToken ct = default);
     /// <summary>Deletes a backup entry. Returns false when not found.</summary>
     Task<bool> Backups_DeleteAsync(Guid id, CancellationToken ct = default);
+
+    // Setup - Updates
+
+    /// <summary>Gets current self-update status.</summary>
+    Task<UpdateStatusDto> Updates_GetStatusAsync(CancellationToken ct = default);
+    /// <summary>Gets self-update settings.</summary>
+    Task<UpdateSettingsDto> Updates_GetSettingsAsync(CancellationToken ct = default);
+    /// <summary>Updates self-update settings.</summary>
+    Task<UpdateSettingsDto> Updates_UpdateSettingsAsync(UpdateSettingsUpdateRequest request, CancellationToken ct = default);
+    /// <summary>Runs an immediate update check.</summary>
+    Task<UpdateCheckResultDto> Updates_CheckAsync(CancellationToken ct = default);
+    /// <summary>Stores the scheduled installation time.</summary>
+    Task<UpdateSettingsDto> Updates_ScheduleAsync(UpdateScheduleRequest request, CancellationToken ct = default);
+    /// <summary>Starts installing a ready update package.</summary>
+    Task<UpdateStatusDto?> Updates_StartInstallAsync(UpdateStartRequest request, CancellationToken ct = default);
+    /// <summary>Resets a hanging self-update lock.</summary>
+    Task<bool> Updates_ResetLockAsync(UpdateLockResetRequest request, CancellationToken ct = default);
 
     // Contact Categories
 

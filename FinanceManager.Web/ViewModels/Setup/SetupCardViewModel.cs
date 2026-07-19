@@ -68,6 +68,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
         new SetupSectionDefinition("statements", "Setup_Section_Statements", "Kontoauszüge", typeof(SetupStatementsViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupStatementTab)),
         new SetupSectionDefinition("attachments", "Setup_Section_Attachments", "Anhänge", typeof(SetupAttachmentCategoriesViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupAttachmentCategoriesTab)),
         new SetupSectionDefinition("backup", "Setup_Section_Backup", "Backup", typeof(SetupBackupsViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupBackupTab)),
+        new SetupSectionDefinition("update", "Setup_Section_Update", "Update", typeof(SetupUpdateViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupUpdateTab)),
         new SetupSectionDefinition("security", "Setup_Section_Security", "Sicherheit", typeof(SetupSecurityViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupSecurityTab)),
         new SetupSectionDefinition("returnanalysis", "Setup_Section_ReturnAnalysis", "Renditeanalyse", typeof(SetupReturnAnalysisViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupReturnAnalysisTab)),
     };
@@ -100,7 +101,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     /// <returns><c>true</c> when the section exists; otherwise <c>false</c>.</returns>
     public bool TryGetSectionComponentType(string key, out Type? componentType)
     {
-        if (!TryGetSectionDefinition(key, out var sectionDefinition) || sectionDefinition is null)
+        if (!TryGetSectionDefinition(key, out var sectionDefinition) || sectionDefinition is null || !IsSectionVisible(sectionDefinition))
         {
             componentType = null;
             return false;
@@ -120,7 +121,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     /// <returns>The created view model instance, or <c>null</c> when the section key is unknown.</returns>
     public BaseViewModel? CreateSectionViewModel(string key, IServiceProvider services)
     {
-        if (!TryGetSectionDefinition(key, out var sectionDefinition) || sectionDefinition is null)
+        if (!TryGetSectionDefinition(key, out var sectionDefinition) || sectionDefinition is null || !IsSectionVisible(sectionDefinition))
         {
             return null;
         }
@@ -193,6 +194,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
             }
 
             _settingSections = SectionDefinitions
+                .Where(IsSectionVisible)
                 .Select(section => new KeyValuePair<string, string>(section.Key, Localizer?[section.LocalizationKey].Value ?? section.FallbackTitle))
                 .ToList();
 
@@ -288,6 +290,17 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     {
         sectionDefinition = SectionDefinitions.FirstOrDefault(section => string.Equals(section.Key, key, StringComparison.OrdinalIgnoreCase));
         return sectionDefinition is not null;
+    }
+
+    private bool IsSectionVisible(SetupSectionDefinition section)
+    {
+        if (!string.Equals(section.Key, "update", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var currentUser = ServiceProvider.GetService<FinanceManager.Application.ICurrentUserService>();
+        return currentUser?.IsAuthenticated == true && currentUser.IsAdmin;
     }
 
     private sealed class SetupSectionDefinition

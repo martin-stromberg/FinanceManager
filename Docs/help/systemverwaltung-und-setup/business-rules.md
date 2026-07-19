@@ -206,3 +206,85 @@ oder aus der Profil-API lesen koennen.
 - Bereits aktiver Restore im Start-Pfad: `409 ApiErrorDto` mit `Err_Backup_RestoreActive`.
 
 **Umsetzung:** `BackupRestoreRequestDto`, `BackupsController.ApplyAsync`, `BackupsController.StartApplyAsync`, `SetupBackupTab.razor`, `SetupBackupsViewModel.StartApplyAsync`.
+
+## Self-Update ist eine Admin-Funktion
+
+**Beschreibung:** Anzeige, Konfiguration, Updatepruefung, Installationsstart
+und Lock-Reset sind auf Administratoren beschraenkt.
+
+**Bedingungen:**
+- Benutzer ist authentifiziert.
+- Benutzer besitzt die Rolle `Admin`.
+
+**Verhalten:**
+- Admins sehen die Setup-Sektion `update` und koennen die Endpunkte unter
+  `api/setup/update` verwenden.
+- Nicht-Admins sehen die Sektion nicht beziehungsweise erhalten eine
+  Admin-only-Hinweisansicht; API-Zugriffe werden serverseitig abgelehnt.
+
+**Umsetzung:** `SetupCardViewModel`, `SetupUpdateTab.razor`,
+`UpdateController`.
+
+## Self-Update installiert nur validierte Release-Pakete
+
+**Beschreibung:** Die Anwendung installiert nur ein zur aktuellen Runtime
+passendes GitHub-Release-Asset, das Manifest- und ZIP-Validierung besteht.
+
+**Bedingungen:**
+- `update.json` gehoert zum konfigurierten Repository.
+- Manifest-Version ist neuer als die installierte Version aus
+  `release-metadata.json`.
+- Es gibt genau ein passendes Asset fuer die aktuelle Runtime.
+- Dateigroesse, SHA-256 und ZIP-Struktur sind gueltig.
+
+**Verhalten:**
+- Gueltiges neues Paket: Status wechselt nach Download und Validierung auf
+  `Ready`.
+- Fehlende installierte Version, unpassendes Manifest, falscher Hash,
+  unsichere ZIP-Pfade oder fehlendes Runtime-Asset verhindern die
+  Installation und setzen einen Fehlerstatus.
+
+**Umsetzung:** `UpdateOrchestrator.CheckAsync`, `UpdateValidator`,
+`UpdatePlatformResolver`, `InstalledReleaseMetadataProvider`.
+
+## Self-Update-Start erzeugt ein externes Installationsskript
+
+**Beschreibung:** Die laufende Webanwendung ersetzt ihre Dateien nicht selbst,
+sondern startet ein generiertes Plattformskript und beendet danach den Host.
+
+**Bedingungen:**
+- Status ist `Ready`.
+- Kein Update-Lock ist aktiv.
+- Manuelle Starts enthalten `ConfirmDowntime = true`.
+- Service- oder EXE-Ziel kann eindeutig aufgeloest werden.
+
+**Verhalten:**
+- Bei Erfolg wird ein Lock angelegt, der Status auf `Installing` gesetzt, ein
+  Windows- oder Linux-Skript gestartet und die Anwendung beendet.
+- Fehler vor dem externen Skriptstart setzen den Status auf `Failed` und geben
+  den Lock wieder frei.
+- Bei fehlendem Paket, aktivem Lock oder unvollstaendiger Zielkonfiguration
+  wird der Start mit fachlichem API-Fehler abgelehnt.
+
+**Umsetzung:** `UpdateOrchestrator.StartInstallAsync`, `UpdateExecutor`,
+`UpdateServiceResolver`, `UpdateScriptGenerator`.
+
+## Update-Lock-Reset ist manuell zu pruefen
+
+**Beschreibung:** Der administrative Lock-Reset ist fuer Haengefaelle gedacht,
+klassifiziert eine Lock-Datei aktuell aber nicht automatisch als verwaist.
+
+**Bedingungen:**
+- Benutzer ist Admin.
+- Die aktuelle Prozessinstanz besitzt keine laufende Installation.
+
+**Verhalten:**
+- Wenn `UpdateExecutor.IsInstallRunning` gesetzt ist, antwortet der Reset mit
+  Konflikt und loescht den Lock nicht.
+- Andernfalls wird die Lock-Datei geloescht und optional der angegebene Grund
+  im Statusfehler vermerkt.
+- Alter, Besitzer oder Stale-Zustand der Lock-Datei werden noch nicht
+  bewertet.
+
+**Umsetzung:** `UpdateController.ResetLock`, `UpdateOrchestrator.ResetLockAsync`,
+`UpdateFileStore.DeleteLockAsync`.

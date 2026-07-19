@@ -1,6 +1,14 @@
 const path = require("node:path");
 
 const releaseAssetPath = process.env.RELEASE_ASSET_PATH;
+const releaseAssetPaths = (process.env.RELEASE_ASSET_PATHS ?? "")
+  .split(/[;\n]/)
+  .map((value) => value.trim())
+  .filter(Boolean);
+const releaseManifestPath = process.env.RELEASE_MANIFEST_PATH;
+const releaseAssets = [...releaseAssetPaths, releaseAssetPath, releaseManifestPath]
+  .filter(Boolean)
+  .map((assetPath) => ({ path: assetPath, name: path.basename(assetPath) }));
 
 module.exports = {
   branches: ["master"],
@@ -30,9 +38,7 @@ module.exports = {
     [
       "@semantic-release/github",
       {
-        assets: releaseAssetPath
-          ? [{ path: releaseAssetPath, name: path.basename(releaseAssetPath) }]
-          : []
+        assets: releaseAssets
       }
     ]
   ]

@@ -6,7 +6,7 @@
   },
   "scripts": {
     "release": "semantic-release",
-    "test:release-version": "node --test scripts/resolve-release-version.test.mjs"
+    "test:release-version": "node --test scripts/resolve-release-version.test.mjs scripts/generate-update-manifest.test.mjs"
   },
   "devDependencies": {
     "@semantic-release/commit-analyzer": "13.0.1",

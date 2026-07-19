@@ -14,6 +14,7 @@ using FinanceManager.Web.Infrastructure.Attachments;
 using FinanceManager.Web.Infrastructure.Auth;
 using FinanceManager.Web.Infrastructure.Logging;
 using FinanceManager.Web.Services;
+using FinanceManager.Web.Services.Updates;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -90,6 +91,7 @@ namespace FinanceManager.Web
             builder.Services.Configure<AttachmentUploadOptions>(builder.Configuration.GetSection("Attachments"));
             builder.Services.AddSingleton<IAttachmentContentPolicy, AttachmentContentPolicy>();
             builder.Services.Configure<BackupSecurityOptions>(builder.Configuration.GetSection(BackupSecurityOptions.SectionName));
+            builder.Services.Configure<UpdateOptions>(builder.Configuration.GetSection(UpdateOptions.SectionName));
             var dataProtectionBuilder = builder.Services.AddDataProtection();
             var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
             if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
@@ -148,6 +150,32 @@ namespace FinanceManager.Web
             }).AddHttpMessageHandler<AuthenticatedHttpClientHandler>();
             builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api"));
             builder.Services.AddScoped<IApiClient>(sp => new ApiClient(sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api")));
+
+            // Self-update services
+            builder.Services.AddHttpClient<IUpdateManifestClient, UpdateManifestClient>(client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(5);
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("FinanceManager/1.0 (+https://github.com/martin-stromberg/FinanceManager)");
+            });
+            builder.Services.AddSingleton<IUpdateFileStore, UpdateFileStore>();
+            builder.Services.AddSingleton<IUpdateSettingsStore, UpdateSettingsStore>();
+            builder.Services.AddSingleton<IInstalledReleaseMetadataProvider, InstalledReleaseMetadataProvider>();
+            builder.Services.AddSingleton<IUpdatePlatformResolver, UpdatePlatformResolver>();
+            builder.Services.AddSingleton<IUpdateServiceProbe, DefaultUpdateServiceProbe>();
+            builder.Services.AddSingleton<IUpdateServiceResolver, UpdateServiceResolver>();
+            builder.Services.AddSingleton<IUpdateValidator, UpdateValidator>();
+            builder.Services.AddSingleton<IUpdateScriptGenerator, UpdateScriptGenerator>();
+            builder.Services.AddSingleton<IUpdateProcessRunner, DefaultUpdateProcessRunner>();
+            builder.Services.AddSingleton<IUpdateHostTerminator, DefaultUpdateHostTerminator>();
+            builder.Services.AddSingleton<IUpdateExecutor, UpdateExecutor>();
+            builder.Services.AddScoped<IUpdateOrchestrator, UpdateOrchestrator>();
+            builder.Services.AddSingleton(TimeProvider.System);
+            var enableUpdateHostedServices = builder.Configuration.GetValue<bool?>("Updates:HostedServicesEnabled") ?? true;
+            if (enableUpdateHostedServices)
+            {
+                builder.Services.AddHostedService<UpdateChecker>();
+                builder.Services.AddHostedService<UpdateScheduler>();
+            }
 
             // AlphaVantage
             builder.Services.AddHttpClient("AlphaVantage", client =>

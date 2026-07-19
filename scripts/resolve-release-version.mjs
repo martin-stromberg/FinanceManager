@@ -37,15 +37,23 @@ export function classifyWorkflowRef({ refType, refName }) {
   throw new Error(`Unsupported release ref '${refType ?? ""}:${refName ?? ""}'.`);
 }
 
-export function releaseAssetName(version) {
-  return `FinanceManager-v${version}-win-x64.zip`;
+export function releaseAssetName(version, runtimeIdentifier = "win-x64") {
+  return `FinanceManager-v${version}-${runtimeIdentifier}.zip`;
+}
+
+export function expectedReleaseAssetNames(version) {
+  return [
+    releaseAssetName(version, "win-x64"),
+    releaseAssetName(version, "linux-x64"),
+    "update.json"
+  ];
 }
 
 export function releaseHasExpectedAsset(release, version) {
-  const assetName = releaseAssetName(version);
-  return release.assets?.some(
-    (asset) => asset.name === assetName && asset.state === "uploaded" && asset.size > 0
-  ) ?? false;
+  const assets = release.assets ?? [];
+  return expectedReleaseAssetNames(version).every((assetName) =>
+    assets.some((asset) => asset.name === assetName && asset.state === "uploaded" && asset.size > 0)
+  );
 }
 
 function requireValue(value, name) {

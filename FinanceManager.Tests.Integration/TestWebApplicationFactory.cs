@@ -45,6 +45,7 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
             {
                 ["BackgroundTasks:Enabled"] = "false",
                 ["Workers:SecurityPriceWorker:Enabled"] = "false",
+                ["Updates:HostedServicesEnabled"] = "false",
                 ["FileLogging:Enabled"] = "false"
             };
             cfg.AddInMemoryCollection(overrides);
