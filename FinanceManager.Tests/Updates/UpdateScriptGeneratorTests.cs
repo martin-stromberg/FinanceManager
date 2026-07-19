@@ -18,7 +18,7 @@ public sealed class UpdateScriptGeneratorTests
             var env = new TestEnvironment(root.FullName);
             var store = new UpdateFileStore(env, Options.Create(new UpdateOptions { WorkingDirectory = Path.Combine(root.FullName, "updates") }));
             var generator = new UpdateScriptGenerator(env, store);
-            var settings = new UpdateSettingsDto(false, 60, "martin-stromberg", "FinanceManager", "update.json", null, "FinanceManager", "financemanager", null, "updates", 120);
+            var settings = new UpdateSettingsDto(false, 60, "martin-stromberg", "FinanceManager", "update.json", null, "FinanceManager", null, "updates", 120);
             var asset = new UpdateAssetDto("current", "current", "release.zip", "https://example.test/release.zip", "abc", 1);
 
             var target = OperatingSystem.IsWindows()

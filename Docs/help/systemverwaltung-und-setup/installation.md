@@ -27,7 +27,7 @@
 | `Updates:RepositoryOwner` / `Updates:RepositoryName` | string | `martin-stromberg` / `FinanceManager` | GitHub-Repository der Updatequelle. |
 | `Updates:ManifestAssetName` | string | `update.json` | Release-Asset mit Update-Metadaten. |
 | `Updates:WorkingDirectory` | string | `updates` | Betriebsverzeichnis fuer Pending-Paket, Status, Lock, Staging und Skripte. |
-| `Updates:WindowsServiceName` / `Updates:LinuxServiceName` | string? | leer | Service-Override fuer produktive Self-Update-Installationen. |
+| `Updates:ServiceName` | string? | leer | Service-Override fuer die aktuelle Plattform. Unter Windows ist dies der Windows-Dienst, unter Linux der systemd-Service. |
 | `Updates:ExecutablePath` | string? | leer | Windows-Fallback ohne Service; muss absolut im aktuellen Anwendungsverzeichnis liegen. |
 | `Updates:HealthTimeoutSeconds` | int | `120` | Maximale Wartezeit der Setup-UI auf die Wiedererreichbarkeit von `/health`. |
 | `ImportSplitMode` | Enum | `MonthlyOrFixed` | Strategie für Import-Splitting |
@@ -124,8 +124,8 @@ Das Manifest verweist auf runtime-spezifische ZIP-Pakete fuer `win-x64` und
 und sichere Eintragspfade validiert.
 
 Produktive Installationen sollten einen eindeutigen Service konfigurieren:
-`Updates:WindowsServiceName` fuer Windows-Dienste oder
-`Updates:LinuxServiceName` fuer systemd. Ohne Override versucht die Anwendung
+`Updates:ServiceName` gilt fuer das aktuell installierte System. Unter Windows
+ist dies der Windows-Dienst, unter Linux der systemd-Service. Ohne Override versucht die Anwendung
 eine Best-Effort-Ermittlung fuer den aktuellen Prozess. Ist diese Ermittlung
 nicht eindeutig oder fehlt ein notwendiger Service, lehnt der Installationsstart
 mit einer konkreten Admin-Meldung ab. Unter Windows ist alternativ

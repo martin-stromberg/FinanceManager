@@ -116,7 +116,7 @@ public sealed class UpdateExecutorTests
     }
 
     private static UpdateSettingsDto Settings()
-        => new(false, 60, "martin-stromberg", "FinanceManager", "update.json", null, "FinanceManager", "financemanager", null, "updates", 120);
+        => new(false, 60, "martin-stromberg", "FinanceManager", "update.json", null, "FinanceManager", null, "updates", 120);
 
     private static async Task<UpdateStatusDto> ReadyStatusAsync(IUpdateFileStore fileStore)
     {

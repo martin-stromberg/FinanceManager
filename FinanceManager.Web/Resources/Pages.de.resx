@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Access_AdminOnly" xml:space="preserve">
+    <value>Nur fuer Administratoren</value>
+  </data>
   <data name="Card_Caption_Account_Balance" xml:space="preserve">
     <value>Saldo</value>
   </data>
@@ -1028,6 +1031,9 @@
   </data>
   <data name="Setup_Section_Security" xml:space="preserve">
     <value>Sicherheit</value>
+  </data>
+  <data name="Setup_Section_Update" xml:space="preserve">
+    <value>Aktualisierungen</value>
   </data>
   <data name="Setup_Section_ReturnAnalysis" xml:space="preserve">
     <value>Renditeanalyse</value>

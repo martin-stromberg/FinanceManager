@@ -59,7 +59,7 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 | `Updates:RepositoryOwner` / `Updates:RepositoryName` | string | `martin-stromberg` / `FinanceManager` | GitHub-Repository der Updatequelle |
 | `Updates:ManifestAssetName` | string | `update.json` | Release-Asset mit Update-Metadaten |
 | `Updates:WorkingDirectory` | string | `updates` | Betriebsverzeichnis fuer Pending-Paket, Status, Lock, Staging und Skripte |
-| `Updates:WindowsServiceName` / `Updates:LinuxServiceName` | string? | leer | Optionaler Service-Override fuer produktive Installationen |
+| `Updates:ServiceName` | string? | leer | Optionaler Service-Override fuer die aktuelle Plattform |
 | `Updates:ExecutablePath` | string? | leer | Windows-Fallback, wenn kein Service gesteuert wird; muss absolut im aktuellen Anwendungsverzeichnis liegen |
 | `Updates:HealthTimeoutSeconds` | int | `120` | Wartezeit der Setup-UI bis zur Wiedererreichbarkeit von `/health` |
 | `Updates:MaxAssetBytes` | long | `536870912` | Maximale Groesse eines Update-ZIP-Assets |
@@ -187,8 +187,9 @@ dotnet test FinanceManager.sln
   Ein Admin-Lock-Reset loescht nur vorhandene Locks, die aelter als das
   konfigurierte Health-Timeout sind, und verweigert den Reset, solange der
   aktuelle Prozess noch eine laufende Installation kennt. Fuer produktive Hosts
-  sollte ein eindeutiger Windows-Service oder Linux-systemd-Service konfiguriert
-  werden; Best-Effort-Erkennung wird nur genutzt, wenn sie eindeutig ist.
+  sollte ein eindeutiger `Updates:ServiceName` fuer das aktuelle System
+  konfiguriert werden; Best-Effort-Erkennung wird nur genutzt, wenn sie
+  eindeutig ist.
 - Produktionsnahe Konfiguration liegt in
   `FinanceManager.Web/appsettings.Production.json` (u. a. Kestrel-Endpoint
   `http://*:5003`, FileLogging aktivierbar).

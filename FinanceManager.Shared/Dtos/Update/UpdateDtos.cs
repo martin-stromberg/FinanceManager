@@ -56,8 +56,7 @@ public sealed record UpdateSettingsDto(
     string RepositoryName,
     string ManifestAssetName,
     TimeOnly? ScheduledInstallTime,
-    string? WindowsServiceName,
-    string? LinuxServiceName,
+    string? ServiceName,
     string? ExecutablePath,
     string WorkingDirectory,
     int HealthTimeoutSeconds);
@@ -69,8 +68,7 @@ public sealed record UpdateSettingsUpdateRequest(
     string? RepositoryName,
     string? ManifestAssetName,
     TimeOnly? ScheduledInstallTime,
-    string? WindowsServiceName,
-    string? LinuxServiceName,
+    string? ServiceName,
     string? ExecutablePath,
     string? WorkingDirectory,
     int HealthTimeoutSeconds);

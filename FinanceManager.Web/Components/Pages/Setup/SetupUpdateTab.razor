@@ -45,12 +45,8 @@ else
                 <input class="form-control" type="time" value="@FormatTime(_vm.Settings.ScheduledInstallTime)" @onchange="OnScheduleChanged" />
             </label>
             <label>
-                Windows-Service
-                <input class="form-control" value="@_vm.Settings.WindowsServiceName" @onchange="OnWindowsServiceChanged" />
-            </label>
-            <label>
-                Linux-systemd-Service
-                <input class="form-control" value="@_vm.Settings.LinuxServiceName" @onchange="OnLinuxServiceChanged" />
+                Servicename
+                <input class="form-control" value="@_vm.Settings.ServiceName" @onchange="OnServiceNameChanged" />
             </label>
             <label>
                 EXE-Pfad
@@ -214,8 +210,7 @@ else
     private void OnEnabledChanged(ChangeEventArgs e) => Update(s => s with { Enabled = e.Value is bool b && b });
     private void OnIntervalChanged(ChangeEventArgs e) => Update(s => s with { CheckIntervalMinutes = int.TryParse(Convert.ToString(e.Value), out var value) ? value : s.CheckIntervalMinutes });
     private void OnScheduleChanged(ChangeEventArgs e) => Update(s => s with { ScheduledInstallTime = TimeOnly.TryParse(Convert.ToString(e.Value), out var t) ? t : null });
-    private void OnWindowsServiceChanged(ChangeEventArgs e) => Update(s => s with { WindowsServiceName = Convert.ToString(e.Value) });
-    private void OnLinuxServiceChanged(ChangeEventArgs e) => Update(s => s with { LinuxServiceName = Convert.ToString(e.Value) });
+    private void OnServiceNameChanged(ChangeEventArgs e) => Update(s => s with { ServiceName = Convert.ToString(e.Value) });
     private void OnExecutablePathChanged(ChangeEventArgs e) => Update(s => s with { ExecutablePath = Convert.ToString(e.Value) });
     private void OnRepositoryOwnerChanged(ChangeEventArgs e) => Update(s => s with { RepositoryOwner = Convert.ToString(e.Value) ?? s.RepositoryOwner });
     private void OnRepositoryNameChanged(ChangeEventArgs e) => Update(s => s with { RepositoryName = Convert.ToString(e.Value) ?? s.RepositoryName });

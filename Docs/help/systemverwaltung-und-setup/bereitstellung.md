@@ -92,8 +92,8 @@ Das Self-Update ist eine Admin-Funktion im Setup und standardmaessig
 deaktiviert. Die Quelle ist ueber `Updates:RepositoryOwner`,
 `Updates:RepositoryName` und `Updates:ManifestAssetName` konfigurierbar. Fuer
 produktive Installationen sollte der Dienst eindeutig angegeben werden:
-`Updates:WindowsServiceName` fuer Windows oder `Updates:LinuxServiceName` fuer
-systemd. Ohne Override wird Best-Effort erkannt; bei fehlender oder
+`Updates:ServiceName` gilt fuer die aktuelle Plattform, also als Windows-Dienst
+unter Windows oder als systemd-Service unter Linux. Ohne Override wird Best-Effort erkannt; bei fehlender oder
 mehrdeutiger Erkennung lehnt die API den Installationsstart mit `400 BadRequest`
 ab. Unter Windows kann alternativ `Updates:ExecutablePath` verwendet werden,
 wenn die Anwendung ohne Dienst betrieben wird.

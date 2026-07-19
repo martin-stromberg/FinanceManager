@@ -63,7 +63,7 @@ Datenbankentitaeten.
 | `RepositoryOwner` / `RepositoryName` | `string` | GitHub-Repository der Updatequelle |
 | `ManifestAssetName` | `string` | Name des Manifest-Assets, standardmaessig `update.json` |
 | `ScheduledInstallTime` | `TimeOnly?` | Optionale lokale Uhrzeit fuer geplante Installation |
-| `WindowsServiceName` / `LinuxServiceName` | `string?` | Optionale Service-Overrides fuer produktive Installationen |
+| `ServiceName` | `string?` | Optionaler Service-Override fuer die aktuelle Plattform |
 | `ExecutablePath` | `string?` | Windows-EXE-Fallback ohne Service |
 | `WorkingDirectory` | `string` | Verzeichnis fuer Status, Pending-Paket, Staging, Lock und Skripte |
 | `HealthTimeoutSeconds` | `int` | Timeout der Warteseite beim Health-Polling |
