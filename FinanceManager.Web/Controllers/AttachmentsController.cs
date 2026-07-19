@@ -35,6 +35,7 @@ public sealed class AttachmentsController : ControllerBase
     private readonly ICurrentUserService _current;
     private readonly ILogger<AttachmentsController> _logger;
     private readonly AttachmentUploadOptions _options;
+    private readonly IAttachmentContentPolicy _contentPolicy;
     private readonly IStringLocalizer<AttachmentsController> _localizer;
     private readonly IDataProtector _protector;
 
@@ -51,6 +52,7 @@ public sealed class AttachmentsController : ControllerBase
     /// <param name="current">The current user service.</param>
     /// <param name="logger">The logger.</param>
     /// <param name="options">The attachment upload options.</param>
+    /// <param name="contentPolicy">The server-side attachment content policy.</param>
     /// <param name="localizer">The localizer.</param>
     /// <param name="dp">The data protection provider.</param>
     public AttachmentsController(
@@ -59,6 +61,7 @@ public sealed class AttachmentsController : ControllerBase
         ICurrentUserService current,
         ILogger<AttachmentsController> logger,
         IOptions<AttachmentUploadOptions> options,
+        IAttachmentContentPolicy contentPolicy,
         IStringLocalizer<AttachmentsController> localizer,
         IDataProtectionProvider dp)
     {
@@ -67,6 +70,7 @@ public sealed class AttachmentsController : ControllerBase
         _current = current;
         _logger = logger;
         _options = options.Value;
+        _contentPolicy = contentPolicy;
         _localizer = localizer;
         _protector = dp.CreateProtector(ProtectorPurpose);
     }
@@ -116,7 +120,7 @@ public sealed class AttachmentsController : ControllerBase
     /// <returns>200 OK with the created <see cref="AttachmentDto"/> on success, 400 Bad Request for validation issues, 500 on unexpected server error.</returns>
     /// <exception cref="ArgumentException">Thrown when the service reports invalid arguments (mapped to 400).</exception>
     [HttpPost("{entityKind}/{entityId:guid}")]
-    [RequestSizeLimit(long.MaxValue)]
+    [AttachmentUploadSizeLimit]
     [ProducesResponseType(typeof(AttachmentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status500InternalServerError)]
@@ -132,6 +136,8 @@ public sealed class AttachmentsController : ControllerBase
             return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid_FileOrUrl", _localizer["Error_FileOrUrlRequired"]));
         }
 
+        AttachmentContentValidationResult? fileValidation = null;
+
         // Validation: either URL or file; if file then enforce size and mime
         if (file != null)
         {
@@ -140,21 +146,19 @@ public sealed class AttachmentsController : ControllerBase
                 return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid_EmptyFile", _localizer["Error_EmptyFile"]));
             }
 
-            if (file.Length > _options.MaxSizeBytes)
+            var maxSizeBytes = _options.NormalizedMaxSizeBytes;
+            if (file.Length > maxSizeBytes)
             {
-                var limitStr = FileSizeToString(_options.MaxSizeBytes);
+                var limitStr = FileSizeToString(maxSizeBytes);
                 var msg = string.Format(CultureInfo.CurrentUICulture, _localizer["Error_FileTooLarge"], limitStr);
                 return BadRequest(ApiErrorDto.Create(Origin, "Err_OutOfRange_FileSize", msg));
             }
 
-            if (!string.IsNullOrWhiteSpace(file.ContentType))
+            fileValidation = await _contentPolicy.ValidateUploadAsync(file, ct);
+            if (!fileValidation.IsAllowed)
             {
-                var ctIn = file.ContentType;
-                if (!_options.AllowedMimeTypes.Contains(ctIn, StringComparer.OrdinalIgnoreCase))
-                {
-                    var msg = string.Format(CultureInfo.CurrentUICulture, _localizer["Error_UnsupportedContentType"], ctIn);
-                    return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid_ContentType", msg));
-                }
+                var msg = fileValidation.ErrorMessage;
+                return BadRequest(ApiErrorDto.Create(Origin, fileValidation.ErrorCode, msg));
             }
         }
 
@@ -194,15 +198,16 @@ public sealed class AttachmentsController : ControllerBase
                     }
                 }
 
-                using var stream = file!.OpenReadStream();
+                using var stream = fileValidation?.Content ?? throw new InvalidOperationException("Attachment content validation did not provide a stream.");
+                var contentType = fileValidation.ContentType ?? MediaTypeNames.Application.Octet;
                 if (role.HasValue)
                 {
-                    var dto = await _service.UploadAsync(_current.UserId, (AttachmentEntityKind)entityKind, entityId, stream, file.FileName, file.ContentType ?? "application/octet-stream", useCategory, role.Value, ct);
+                    var dto = await _service.UploadAsync(_current.UserId, (AttachmentEntityKind)entityKind, entityId, stream, file!.FileName, contentType, useCategory, role.Value, ct);
                     return Ok(dto);
                 }
                 else
                 {
-                    var dto = await _service.UploadAsync(_current.UserId, (AttachmentEntityKind)entityKind, entityId, stream, file.FileName, file.ContentType ?? "application/octet-stream", useCategory, ct);
+                    var dto = await _service.UploadAsync(_current.UserId, (AttachmentEntityKind)entityKind, entityId, stream, file!.FileName, contentType, useCategory, ct);
                     return Ok(dto);
                 }
             }
@@ -267,8 +272,7 @@ public sealed class AttachmentsController : ControllerBase
         {
             var payload = await _service.DownloadAsync(_current.UserId, id, ct);
             if (payload == null) { return NotFound(); }
-            var (content, fileName, contentType) = payload.Value;
-            return File(content, string.IsNullOrWhiteSpace(contentType) ? MediaTypeNames.Application.Octet : contentType, fileName);
+            return DownloadFile(payload.Value);
         }
 
         // Otherwise, validate token
@@ -285,8 +289,7 @@ public sealed class AttachmentsController : ControllerBase
             if (tokenAttachmentId != id || DateTime.UtcNow > expires) { return NotFound(); }
             var payload = await _service.DownloadAsync(ownerUserId, id, ct);
             if (payload == null) { return NotFound(); }
-            var (content, fileName, contentType) = payload.Value;
-            return File(content, string.IsNullOrWhiteSpace(contentType) ? MediaTypeNames.Application.Octet : contentType, fileName);
+            return DownloadFile(payload.Value);
         }
         catch (Exception ex)
         {
@@ -451,5 +454,11 @@ public sealed class AttachmentsController : ControllerBase
         }
 
         return string.Format(CultureInfo.CurrentUICulture, "{0:N0} bytes", bytes);
+    }
+
+    private FileStreamResult DownloadFile((Stream Content, string FileName, string ContentType) payload)
+    {
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+        return File(payload.Content, _contentPolicy.NormalizeDownloadContentType(payload.ContentType), payload.FileName);
     }
 }
