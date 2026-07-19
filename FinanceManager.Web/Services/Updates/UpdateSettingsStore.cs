@@ -1,4 +1,5 @@
 #pragma warning disable CS1591
+using System.Text.Json;
 using FinanceManager.Shared.Dtos.Update;
 using Microsoft.Extensions.Options;
 
@@ -18,7 +19,7 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
     public async Task<UpdateSettingsDto> GetAsync(CancellationToken ct = default)
     {
         await _fileStore.EnsureAsync(ct);
-        var settings = await JsonFileStore.ReadAsync<UpdateSettingsDto>(_fileStore.SettingsPath, ct) ?? Defaults();
+        var settings = await ReadSettingsAsync(ct) ?? Defaults();
         _fileStore.UseWorkingDirectory(settings.WorkingDirectory);
         await _fileStore.EnsureAsync(ct);
         return settings;
@@ -50,8 +51,7 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
             NormalizeRepositoryPart(_options.RepositoryName, "FinanceManager"),
             string.IsNullOrWhiteSpace(_options.ManifestAssetName) ? "update.json" : _options.ManifestAssetName.Trim(),
             null,
-            TrimToNull(_options.WindowsServiceName),
-            TrimToNull(_options.LinuxServiceName),
+            TrimToNull(_options.ServiceName),
             TrimToNull(_options.ExecutablePath),
             NormalizeWorkingDirectory(_options.WorkingDirectory),
             Math.Clamp(_options.HealthTimeoutSeconds, 10, 600));
@@ -64,11 +64,44 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
             NormalizeRepositoryPart(request.RepositoryName, "FinanceManager"),
             string.IsNullOrWhiteSpace(request.ManifestAssetName) ? "update.json" : request.ManifestAssetName.Trim(),
             request.ScheduledInstallTime,
-            TrimToNull(request.WindowsServiceName),
-            TrimToNull(request.LinuxServiceName),
+            TrimToNull(request.ServiceName),
             TrimToNull(request.ExecutablePath),
             NormalizeWorkingDirectory(request.WorkingDirectory),
             Math.Clamp(request.HealthTimeoutSeconds, 10, 600));
+
+    private async Task<UpdateSettingsDto?> ReadSettingsAsync(CancellationToken ct)
+    {
+        if (!File.Exists(_fileStore.SettingsPath))
+        {
+            return null;
+        }
+
+        await using var stream = File.OpenRead(_fileStore.SettingsPath);
+        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+        if (document.RootElement.TryGetProperty("windowsServiceName", out _) ||
+            document.RootElement.TryGetProperty("linuxServiceName", out _))
+        {
+            var legacy = document.Deserialize<LegacyUpdateSettingsDto>(JsonFileStore.JsonOptions);
+            if (legacy is null)
+            {
+                return null;
+            }
+
+            return new UpdateSettingsDto(
+                legacy.Enabled,
+                Math.Clamp(legacy.CheckIntervalMinutes, 1, 24 * 60),
+                NormalizeRepositoryPart(legacy.RepositoryOwner, "martin-stromberg"),
+                NormalizeRepositoryPart(legacy.RepositoryName, "FinanceManager"),
+                string.IsNullOrWhiteSpace(legacy.ManifestAssetName) ? "update.json" : legacy.ManifestAssetName.Trim(),
+                legacy.ScheduledInstallTime,
+                TrimToNull(legacy.ServiceName) ?? TrimToNull(legacy.WindowsServiceName) ?? TrimToNull(legacy.LinuxServiceName),
+                TrimToNull(legacy.ExecutablePath),
+                NormalizeWorkingDirectory(legacy.WorkingDirectory),
+                Math.Clamp(legacy.HealthTimeoutSeconds, 10, 600));
+        }
+
+        return document.Deserialize<UpdateSettingsDto>(JsonFileStore.JsonOptions);
+    }
 
     private static string NormalizeRepositoryPart(string? value, string fallback)
         => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
@@ -86,5 +119,19 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
 
         return path;
     }
+
+    private sealed record LegacyUpdateSettingsDto(
+        bool Enabled,
+        int CheckIntervalMinutes,
+        string? RepositoryOwner,
+        string? RepositoryName,
+        string? ManifestAssetName,
+        TimeOnly? ScheduledInstallTime,
+        string? ServiceName,
+        string? WindowsServiceName,
+        string? LinuxServiceName,
+        string? ExecutablePath,
+        string? WorkingDirectory,
+        int HealthTimeoutSeconds);
 }
 #pragma warning restore CS1591

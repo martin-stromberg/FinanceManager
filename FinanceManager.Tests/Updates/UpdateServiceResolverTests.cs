@@ -15,13 +15,11 @@ public sealed class UpdateServiceResolverTests
         try
         {
             var resolver = new UpdateServiceResolver(new TestEnvironment(root.FullName), new TestProbe());
-            var settings = Settings(
-                windowsServiceName: "FinanceManager",
-                linuxServiceName: "financemanager.service");
+            var settings = Settings(serviceName: "FinanceManagerService");
 
             var target = resolver.Resolve(settings);
 
-            target.ServiceName.Should().Be(OperatingSystem.IsWindows() ? "FinanceManager" : "financemanager.service");
+            target.ServiceName.Should().Be("FinanceManagerService");
         }
         finally
         {
@@ -82,8 +80,8 @@ public sealed class UpdateServiceResolverTests
         }
     }
 
-    private static UpdateSettingsDto Settings(string? windowsServiceName = null, string? linuxServiceName = null, string? executablePath = null)
-        => new(false, 60, "martin-stromberg", "FinanceManager", "update.json", null, windowsServiceName, linuxServiceName, executablePath, "updates", 120);
+    private static UpdateSettingsDto Settings(string? serviceName = null, string? executablePath = null)
+        => new(false, 60, "martin-stromberg", "FinanceManager", "update.json", null, serviceName, executablePath, "updates", 120);
 
     private sealed class TestProbe : IUpdateServiceProbe
     {

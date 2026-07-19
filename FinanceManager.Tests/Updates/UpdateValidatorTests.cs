@@ -153,7 +153,7 @@ public sealed class UpdateValidatorTests
     }
 
     private static UpdateSettingsDto Settings()
-        => new(false, 60, "martin-stromberg", "FinanceManager", "update.json", null, "FinanceManager", "financemanager", null, "updates", 120);
+        => new(false, 60, "martin-stromberg", "FinanceManager", "update.json", null, "FinanceManager", null, "updates", 120);
 
     private static UpdateMetadataDto ValidManifest()
         => new("1.2.3", "Release notes", DateTimeOffset.Parse("2026-07-19T00:00:00Z"), "martin-stromberg", "FinanceManager", new[] { ValidAsset() });

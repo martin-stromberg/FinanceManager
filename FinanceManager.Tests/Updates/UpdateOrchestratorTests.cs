@@ -204,7 +204,7 @@ public sealed class UpdateOrchestratorTests
 
     private sealed class TestSettingsStore : IUpdateSettingsStore
     {
-        private UpdateSettingsDto _settings = new(false, 60, "martin-stromberg", "FinanceManager", "update.json", null, "FinanceManager", "financemanager", null, "updates", 120);
+        private UpdateSettingsDto _settings = new(false, 60, "martin-stromberg", "FinanceManager", "update.json", null, "FinanceManager", null, "updates", 120);
 
         public Task<UpdateSettingsDto> GetAsync(CancellationToken ct = default) => Task.FromResult(_settings);
         public Task<UpdateSettingsDto> SaveAsync(UpdateSettingsUpdateRequest request, CancellationToken ct = default) => Task.FromResult(_settings);

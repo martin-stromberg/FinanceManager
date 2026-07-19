@@ -34,9 +34,9 @@ public sealed class UpdateServiceResolver : IUpdateServiceResolver
 
     private UpdateInstallationTarget ResolveWindows(UpdateSettingsDto settings)
     {
-        if (!string.IsNullOrWhiteSpace(settings.WindowsServiceName))
+        if (!string.IsNullOrWhiteSpace(settings.ServiceName))
         {
-            return new UpdateInstallationTarget("windows", ValidateServiceName(settings.WindowsServiceName, "Windows service name"), null);
+            return new UpdateInstallationTarget("windows", ValidateServiceName(settings.ServiceName, "Service name"), null);
         }
 
         if (!string.IsNullOrWhiteSpace(settings.ExecutablePath))
@@ -53,17 +53,17 @@ public sealed class UpdateServiceResolver : IUpdateServiceResolver
 
         if (detected.Count > 1)
         {
-            throw new InvalidOperationException($"Multiple Windows services match the current process ({string.Join(", ", detected)}). Configure the Windows service name explicitly before starting installation.");
+            throw new InvalidOperationException($"Multiple Windows services match the current process ({string.Join(", ", detected)}). Configure the service name explicitly before starting installation.");
         }
 
-        throw new InvalidOperationException("Configure a Windows service name or executable path before starting installation.");
+        throw new InvalidOperationException("Configure a service name or executable path before starting installation.");
     }
 
     private UpdateInstallationTarget ResolveLinux(UpdateSettingsDto settings)
     {
-        if (!string.IsNullOrWhiteSpace(settings.LinuxServiceName))
+        if (!string.IsNullOrWhiteSpace(settings.ServiceName))
         {
-            return new UpdateInstallationTarget("linux", ValidateServiceName(settings.LinuxServiceName, "Linux systemd service name"), null);
+            return new UpdateInstallationTarget("linux", ValidateServiceName(settings.ServiceName, "Service name"), null);
         }
 
         var detected = Distinct(_probe.FindLinuxServicesForCurrentProcess());
@@ -74,10 +74,10 @@ public sealed class UpdateServiceResolver : IUpdateServiceResolver
 
         if (detected.Count > 1)
         {
-            throw new InvalidOperationException($"Multiple Linux systemd services match the current process ({string.Join(", ", detected)}). Configure the Linux service name explicitly before starting installation.");
+            throw new InvalidOperationException($"Multiple Linux systemd services match the current process ({string.Join(", ", detected)}). Configure the service name explicitly before starting installation.");
         }
 
-        throw new InvalidOperationException("Configure a Linux systemd service name before starting installation.");
+        throw new InvalidOperationException("Configure a service name before starting installation.");
     }
 
     private string ValidateExecutablePath(string value)

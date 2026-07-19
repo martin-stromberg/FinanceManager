@@ -14,8 +14,7 @@ public sealed class UpdateOptions
     public int HealthTimeoutSeconds { get; set; } = 120;
     public long MaxAssetBytes { get; set; } = 512L * 1024L * 1024L;
     public bool HostedServicesEnabled { get; set; } = true;
-    public string? WindowsServiceName { get; set; }
-    public string? LinuxServiceName { get; set; }
+    public string? ServiceName { get; set; }
     public string? ExecutablePath { get; set; }
 }
 #pragma warning restore CS1591

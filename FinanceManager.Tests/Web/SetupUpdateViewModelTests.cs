@@ -31,7 +31,7 @@ public sealed class SetupUpdateViewModelTests
     [Fact]
     public async Task LoadSaveAndInstallFlows_UpdateViewModelState()
     {
-        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, null, "updates", 120);
+        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120);
         var ready = Status(UpdateStatusKind.Ready);
         var installing = Status(UpdateStatusKind.Installing);
         var apiMock = new Mock<IApiClient>();

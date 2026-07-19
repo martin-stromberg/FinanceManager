@@ -55,8 +55,7 @@ public sealed class SetupUpdateViewModel : BaseViewModel
                 Settings.RepositoryName,
                 Settings.ManifestAssetName,
                 Settings.ScheduledInstallTime,
-                Settings.WindowsServiceName,
-                Settings.LinuxServiceName,
+                Settings.ServiceName,
                 Settings.ExecutablePath,
                 Settings.WorkingDirectory,
                 Settings.HealthTimeoutSeconds), ct);

@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Access_AdminOnly" xml:space="preserve">
+    <value>Administrators only.</value>
+  </data>
   <data name="Card_Caption_Account_Balance" xml:space="preserve">
     <value>Balance</value>
   </data>
@@ -1029,6 +1032,9 @@
   <data name="Setup_Section_Security" xml:space="preserve">
     <value>Security</value>
   </data>
+  <data name="Setup_Section_Update" xml:space="preserve">
+    <value>Updates</value>
+  </data>
   <data name="Setup_Section_ReturnAnalysis" xml:space="preserve">
     <value>Return Analysis</value>
   </data>
@@ -1833,15 +1839,11 @@
   <data name="BudgetImpact_FulfillmentChange" xml:space="preserve">
     <value>Change in target fulfillment</value>
   </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="Ribbon_Group_Period" type="System.Resources.ResXNullRef, System.Windows.Forms">
-    <value />
+  <data name="Ribbon_Group_Period" xml:space="preserve">
+    <value>Period</value>
   </data>
   <data name="Ribbon_OpenAccount" xml:space="preserve">
     <value>Account</value>
-  </data>
-  <data name="BudgetImpact_FulfillmentChange" xml:space="preserve">
-    <value>Change in target fulfillment</value>
   </data>
   <data name="StatementDrafts_SaveQuickEdit_RowsFailedValidation" xml:space="preserve">
     <value>Some rows have validation errors. Please review and correct the highlighted entries.</value>
@@ -1947,9 +1949,6 @@
   </data>
   <data name="Tab_Benchmark" xml:space="preserve">
     <value>Benchmark</value>
-  </data>
-  <data name="Ribbon_Group_Period" xml:space="preserve">
-    <value>Period</value>
   </data>
   <data name="Ribbon_Group_Settings" xml:space="preserve">
     <value>Settings</value>
@@ -2163,4 +2162,17 @@
   </data>
   <data name="KnownContacts_AutoCreate_Help" xml:space="preserve">
     <value>When a statement entry does not match an existing contact, the bundled list of known companies is checked.</value>
-  </data></root>
+  </data>
+  <data name="MassImport_DialogPolicy_Label" xml:space="preserve">
+    <value>Mass import dialog</value>
+  </data>
+  <data name="MassImport_DialogPolicy_AlwaysConfirm" xml:space="preserve">
+    <value>Always confirm</value>
+  </data>
+  <data name="MassImport_DialogPolicy_OnMissingInformation" xml:space="preserve">
+    <value>Only on missing information</value>
+  </data>
+  <data name="LinkedIbans_Error_AlreadyLinked" xml:space="preserve">
+    <value>This IBAN is already linked to this account.</value>
+  </data>
+</root>

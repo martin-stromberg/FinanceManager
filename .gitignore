@@ -62,6 +62,7 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 artifacts/
+**/artifacts/
 
 # Generated .NET XML documentation files
 /FinanceManager.Application/FinanceManager.Application.xml

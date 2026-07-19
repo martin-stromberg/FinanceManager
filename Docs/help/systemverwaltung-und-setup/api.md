@@ -122,8 +122,8 @@ Release-Metadaten.
 
 **Beschreibung:** Self-Update-Einstellungen speichern. Relevante Felder sind
 Aktivierung, Pruefintervall, RepositoryOwner, RepositoryName,
-ManifestAssetName, geplante Uhrzeit, Windows-/Linux-Service, optionaler
-Windows-EXE-Pfad, WorkingDirectory und HealthTimeoutSeconds.
+ManifestAssetName, geplante Uhrzeit, Servicename fuer das aktuelle System,
+optionaler Windows-EXE-Pfad, WorkingDirectory und HealthTimeoutSeconds.
 
 **Berechtigung:** Rolle `Admin`.
 
