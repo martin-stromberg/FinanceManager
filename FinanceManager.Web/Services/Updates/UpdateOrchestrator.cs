@@ -6,6 +6,7 @@ namespace FinanceManager.Web.Services.Updates;
 
 public sealed class UpdateOrchestrator : IUpdateOrchestrator
 {
+    private static readonly TimeSpan MinimumStaleLockAge = TimeSpan.FromMinutes(1);
     private readonly IUpdateSettingsStore _settingsStore;
     private readonly IInstalledReleaseMetadataProvider _installedProvider;
     private readonly IUpdateManifestClient _manifestClient;
@@ -120,6 +121,18 @@ public sealed class UpdateOrchestrator : IUpdateOrchestrator
         if (_executor.IsInstallRunning)
         {
             throw new IOException("The current process still owns an update installation.");
+        }
+
+        var lockCreatedAt = await _fileStore.GetLockCreatedAtAsync(ct);
+        if (!lockCreatedAt.HasValue)
+        {
+            throw new IOException("No update lock is active.");
+        }
+
+        var staleLockAge = TimeSpan.FromSeconds(Math.Max(_options.HealthTimeoutSeconds, (int)MinimumStaleLockAge.TotalSeconds));
+        if (DateTimeOffset.UtcNow - lockCreatedAt.Value < staleLockAge)
+        {
+            throw new IOException("The update lock is not old enough to be considered stale.");
         }
 
         await _fileStore.DeleteLockAsync(ct);

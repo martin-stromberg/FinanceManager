@@ -97,8 +97,12 @@ public sealed class SetupUpdateViewModel : BaseViewModel
         BeginBusy();
         try
         {
-            Status = await ApiClient.Updates_StartInstallAsync(new UpdateStartRequest(confirmDowntime), ct) ?? Status;
-            Installing = true;
+            var status = await ApiClient.Updates_StartInstallAsync(new UpdateStartRequest(confirmDowntime), ct);
+            if (status is not null)
+            {
+                Status = status;
+                Installing = status.Status == UpdateStatusKind.Installing;
+            }
         }
         catch (Exception ex)
         {

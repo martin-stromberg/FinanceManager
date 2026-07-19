@@ -171,9 +171,9 @@ Paketstatus, Service-/EXE-Ziel und erzeugt ein externes Update-Skript.
 
 **Beschreibung:** Update-Lock administrativ zuruecksetzen. Der Reset wird
 abgelehnt, solange die aktuelle Prozessinstanz selbst eine Installation
-besitzt. Eine weitergehende Stale-/Owner-Bewertung der Lock-Datei findet
-aktuell nicht statt; Betreiber sollten den Endpunkt daher nur nach manueller
-Pruefung eines haengenden Updates verwenden.
+besitzt, kein Lock vorhanden ist oder die Lock-Datei juenger als das
+konfigurierte Health-Timeout ist. Der Endpunkt ist fuer verwaiste
+Installationslocks gedacht.
 
 **Berechtigung:** Rolle `Admin`.
 

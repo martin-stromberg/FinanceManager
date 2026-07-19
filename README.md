@@ -130,7 +130,7 @@ Einstiegspunkte:
 - `POST /api/setup/update/check` – GitHub-Release-Manifest abrufen, passendes Paket laden und Hash/ZIP validieren
 - `POST /api/setup/update/schedule` – geplante Installationszeit fuer ein vorbereitetes Update speichern
 - `POST /api/setup/update/install/start` – vorbereitetes Update nach Downtime-Bestaetigung installieren; erstellt Lock und startet ein externes Update-Skript
-- `POST /api/setup/update/lock/reset` – Update-Lock administrativ zuruecksetzen, sofern dieser Prozess keine laufende Installation kennt
+- `POST /api/setup/update/lock/reset` – verwaisten Update-Lock administrativ zuruecksetzen, sofern dieser Prozess keine laufende Installation kennt und der Lock aelter als das Health-Timeout ist
 - `POST /api/securities/{id}/prices/import` – Wertpapierkurse importieren
 - `POST /api/postings/{id}/reverse` – Buchung stornieren (Reversal)
 - `GET|POST|PUT|DELETE /api/admin/users...` – administrative Benutzerverwaltung; serverseitig auf JWT-authentifizierte Benutzer mit Rolle `Admin` beschränkt. Authentifizierte Nicht-Admins erhalten `403 Forbidden`, anonyme Aufrufe `401 Unauthorized`.
@@ -184,8 +184,9 @@ dotnet test FinanceManager.sln
   Installation validiert der Server Hash, Groesse, ZIP-Pfade, Service-/EXE-Ziel
   und Lock. Eine geplante Installationszeit wird vom Scheduler minuetlich
   geprueft und startet ein bereites Update ohne erneute Benutzerbestaetigung.
-  Ein Admin-Lock-Reset ist vorhanden, verweigert aber nur Locks, die der
-  aktuelle Prozess noch als laufende Installation kennt. Fuer produktive Hosts
+  Ein Admin-Lock-Reset loescht nur vorhandene Locks, die aelter als das
+  konfigurierte Health-Timeout sind, und verweigert den Reset, solange der
+  aktuelle Prozess noch eine laufende Installation kennt. Fuer produktive Hosts
   sollte ein eindeutiger Windows-Service oder Linux-systemd-Service konfiguriert
   werden; Best-Effort-Erkennung wird nur genutzt, wenn sie eindeutig ist.
 - Produktionsnahe Konfiguration liegt in
