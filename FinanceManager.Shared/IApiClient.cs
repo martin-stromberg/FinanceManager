@@ -816,6 +816,11 @@ public interface IApiClient
     /// </summary>
     Task<FinanceManager.Shared.Dtos.Budget.BudgetReportDto> Budgets_GetReportAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportRequest request, CancellationToken ct = default);
 
+    /// <summary>
+    /// Gets raw budget report data for a given period.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetReportRawDataDto> Budgets_GetReportRawAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportRequest request, CancellationToken ct = default);
+
 
     /// <summary>
     /// Lists postings that are not covered by any budget purpose for the given range.

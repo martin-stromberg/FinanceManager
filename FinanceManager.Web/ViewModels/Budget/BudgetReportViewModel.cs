@@ -45,7 +45,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
         PurposePostingsVisible = true;
         PurposePostingsKind = PostingsOverlayKind.Unbudgeted;
         PurposePostingsPurpose = null;
-        PurposePostings = Array.Empty<PostingServiceDto>();
+        PurposePostings = Array.Empty<BudgetReportPostingOverlayRow>();
         PurposePostingsLoading = true;
         RaiseStateChanged();
 
@@ -65,14 +65,15 @@ public sealed class BudgetReportViewModel : BaseViewModel
                 ? rows.Where(p => DateOnly.FromDateTime(p.ValutaDate) >= fromDate && DateOnly.FromDateTime(p.ValutaDate) <= toDate)
                 : rows.Where(p => DateOnly.FromDateTime(p.BookingDate) >= fromDate && DateOnly.FromDateTime(p.BookingDate) <= toDate);
 
-            PurposePostings = Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
+            var orderedRows = Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
                 ? filteredRows.OrderByDescending(p => p.ValutaDate).ToList()
                 : filteredRows.OrderByDescending(p => p.BookingDate).ToList();
+            PurposePostings = orderedRows.Select(p => new BudgetReportPostingOverlayRow(p, true)).ToList();
         }
         catch (Exception ex)
         {
             SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
-            PurposePostings = Array.Empty<PostingServiceDto>();
+            PurposePostings = Array.Empty<BudgetReportPostingOverlayRow>();
         }
         finally
         {
@@ -527,7 +528,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
     /// <summary>
     /// Loaded postings for <see cref="PurposePostingsPurpose"/> within the current report range.
     /// </summary>
-    public IReadOnlyList<PostingServiceDto> PurposePostings { get; private set; } = Array.Empty<PostingServiceDto>();
+    public IReadOnlyList<BudgetReportPostingOverlayRow> PurposePostings { get; private set; } = Array.Empty<BudgetReportPostingOverlayRow>();
 
     /// <summary>
     /// Whether postings for <see cref="PurposePostingsPurpose"/> are currently loading.
@@ -588,7 +589,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
         PurposePostingsVisible = false;
         PurposePostingsKind = PostingsOverlayKind.Purpose;
         PurposePostingsPurpose = null;
-        PurposePostings = Array.Empty<PostingServiceDto>();
+        PurposePostings = Array.Empty<BudgetReportPostingOverlayRow>();
         PurposePostingsLoading = false;
         RaiseStateChanged();
     }
@@ -606,7 +607,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
         PurposePostingsVisible = true;
         PurposePostingsKind = PostingsOverlayKind.Unbudgeted;
         PurposePostingsPurpose = null;
-        PurposePostings = Array.Empty<PostingServiceDto>();
+        PurposePostings = Array.Empty<BudgetReportPostingOverlayRow>();
         PurposePostingsLoading = true;
         RaiseStateChanged();
 
@@ -619,14 +620,15 @@ public sealed class BudgetReportViewModel : BaseViewModel
                 : FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.BookingDate;
 
             var rows = await _api.Budgets_GetUnbudgetedPostingsAsync(fromDt, toDt, basis, kind: "remaining", ct: CancellationToken.None);
-            PurposePostings = (Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
+            var orderedRows = (Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
                 ? rows.OrderByDescending(p => p.ValutaDate).ThenBy(p => p.RecipientName).ThenBy(p => p.Description)
                 : rows.OrderByDescending(p => p.BookingDate).ThenBy(p => p.RecipientName).ThenBy(p => p.Description)).ToList();
+            PurposePostings = orderedRows.Select(p => new BudgetReportPostingOverlayRow(p, true)).ToList();
         }
         catch (Exception ex)
         {
             SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
-            PurposePostings = Array.Empty<PostingServiceDto>();
+            PurposePostings = Array.Empty<BudgetReportPostingOverlayRow>();
         }
         finally
         {
@@ -650,7 +652,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
         PurposePostingsVisible = true;
         PurposePostingsKind = PostingsOverlayKind.Purpose;
         PurposePostingsPurpose = purpose;
-        PurposePostings = Array.Empty<PostingServiceDto>();
+        PurposePostings = Array.Empty<BudgetReportPostingOverlayRow>();
         PurposePostingsLoading = true;
         RaiseStateChanged();
 
@@ -658,73 +660,40 @@ public sealed class BudgetReportViewModel : BaseViewModel
         {
             var (fromDt, toDt) = GetOverlayDateRange();
 
-            IReadOnlyList<PostingServiceDto> rows;
-            var applicableRules = new List<BudgetRuleDto>();
-            switch (purpose.SourceType)
-            {
-                case BudgetSourceType.Contact:
-                    rows = await _api.Postings_GetContactAsync(purpose.SourceId, skip: 0, take: 250, q: null, from: fromDt, to: toDt, ct: CancellationToken.None);
-                    applicableRules.AddRange(await _api.Budgets_ListRulesByPurposeAsync(purpose.Id, CancellationToken.None));
-                    break;
-                case BudgetSourceType.SavingsPlan:
-                    rows = await _api.Postings_GetSavingsPlanAsync(purpose.SourceId, skip: 0, take: 250, from: fromDt, to: toDt, q: null, ct: CancellationToken.None);
-                    applicableRules.AddRange(await _api.Budgets_ListRulesByPurposeAsync(purpose.Id, CancellationToken.None));
-                    break;
-                case BudgetSourceType.ContactGroup:
-                    // Load postings for all contacts assigned to this contact group.
-                    var contacts = await _api.Contacts_ListAsync(skip: 0, take: 5000, type: null, all: true, nameFilter: null, ct: CancellationToken.None);
-                    var contactIds = contacts
-                        .Where(c => c.CategoryId == purpose.SourceId)
-                        .Select(c => c.Id)
-                        .ToList();
+            var raw = await _api.Budgets_GetReportRawAsync(CreateCurrentReportRequest(), CancellationToken.None);
+            var rawPurpose = (raw.Categories ?? Array.Empty<BudgetReportCategoryRawDataDto>())
+                .SelectMany(c => c.Purposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
+                .Concat(raw.UncategorizedPurposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
+                .FirstOrDefault(p => p.PurposeId == purpose.Id);
 
-                    var list = new List<PostingServiceDto>();
-                    foreach (var contactId in contactIds)
-                    {
-                        var part = await _api.Postings_GetContactAsync(contactId, skip: 0, take: 250, q: null, from: fromDt, to: toDt, ct: CancellationToken.None);
-                        if (part.Count > 0)
-                        {
-                            list.AddRange(part);
-                        }
-                    }
+            var rows = rawPurpose?.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>();
+            var fromDate = DateOnly.FromDateTime(fromDt ?? DateTime.MinValue);
+            var toDate = DateOnly.FromDateTime(toDt ?? DateTime.MaxValue);
 
-                    rows = list
-                        .GroupBy(p => p.Id)
-                        .Select(g => g.First())
-                        .ToList();
-                    applicableRules.AddRange(await _api.Budgets_ListRulesByPurposeAsync(purpose.Id, CancellationToken.None));
-                    break;
-                default:
-                    rows = Array.Empty<PostingServiceDto>();
-                    break;
-            }
-
-            var category = Categories.FirstOrDefault(c => c.Purposes.Any(p => p.Id == purpose.Id));
-            if (category != null)
-            {
-                var categoryRules = await _api.Budgets_ListRulesByCategoryAsync(category.Id, CancellationToken.None);
-                applicableRules.AddRange(categoryRules);
-            }
-
-            // Filter postings by all matching budget rules for this purpose and its category.
-            var rules = applicableRules
-                .GroupBy(r => r.Id)
-                .Select(g => g.First())
-                .ToList();
-
-            if (rules.Count > 0)
-            {
-                rows = rows.Where(posting => rules.Any(rule => BudgetRulePatternMatcher.MatchesPosting(posting.Subject, posting.Description, rule.PurposePattern, rule.UseRegex))).ToList();
-            }
+            var filteredRows = rows
+                .Where(p =>
+                {
+                    var date = Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
+                        ? p.ValutaDate ?? p.BookingDate
+                        : p.BookingDate;
+                    var rowDate = DateOnly.FromDateTime(date);
+                    return rowDate >= fromDate && rowDate <= toDate;
+                });
 
             PurposePostings = Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
-                ? rows.OrderByDescending(p => p.ValutaDate).ToList()
-                : rows.OrderByDescending(p => p.BookingDate).ToList();
+                ? filteredRows
+                    .OrderByDescending(p => p.ValutaDate ?? p.BookingDate)
+                    .Select(MapRawPosting)
+                    .ToList()
+                : filteredRows
+                    .OrderByDescending(p => p.BookingDate)
+                    .Select(MapRawPosting)
+                    .ToList();
         }
         catch (Exception ex)
         {
             SetError(_api.LastErrorCode ?? null, _api.LastError ?? ex.Message);
-            PurposePostings = Array.Empty<PostingServiceDto>();
+            PurposePostings = Array.Empty<BudgetReportPostingOverlayRow>();
         }
         finally
         {
@@ -750,6 +719,54 @@ public sealed class BudgetReportViewModel : BaseViewModel
         return (intervalFrom.ToDateTime(TimeOnly.MinValue), intervalTo.ToDateTime(TimeOnly.MaxValue));
     }
 
+    private BudgetReportRequest CreateCurrentReportRequest()
+        => new(
+            AsOfDate: Settings.AsOfDate,
+            Months: Settings.Months,
+            Interval: (FinanceManager.Shared.Dtos.Budget.BudgetReportInterval)Settings.Interval,
+            ShowTitle: Settings.ShowTitle,
+            ShowLineChart: Settings.ShowLineChart,
+            ShowMonthlyTable: Settings.ShowMonthlyTable,
+            ShowDetailsTable: Settings.ShowDetailsTable,
+            CategoryValueScope: (FinanceManager.Shared.Dtos.Budget.BudgetReportValueScope)Settings.CategoryValueScope,
+            IncludePurposeRows: Settings.ShowPurposeRows,
+            DateBasis: Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate
+                ? FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.ValutaDate
+                : FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.BookingDate);
+
+    private static BudgetReportPostingOverlayRow MapRawPosting(BudgetReportPostingRawDataDto row)
+        => new(
+            new PostingServiceDto(
+                row.PostingId,
+                row.BookingDate,
+                row.ValutaDate ?? row.BookingDate,
+                row.Amount,
+                row.PostingKind,
+                row.AccountId,
+                row.ContactId,
+                row.SavingsPlanId,
+                row.SecurityId,
+                row.PostingId,
+                row.Subject,
+                null,
+                row.Description,
+                null,
+                null,
+                Guid.Empty,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false,
+                false,
+                null,
+                null),
+            row.IsValuedForBudgetPurpose);
+
 }
 
 /// <summary>
@@ -766,3 +783,8 @@ public sealed record BudgetReportPurposeRow(Guid Id, string Name, decimal Budget
 /// Category row including nested purposes.
 /// </summary>
 public sealed record BudgetReportCategoryRow(Guid Id, string Name, BudgetReportCategoryRowKind Kind, decimal Budget, decimal Actual, decimal Delta, decimal DeltaPct, IReadOnlyList<BudgetReportPurposeRow> Purposes);
+
+/// <summary>
+/// Posting row shown in the budget report postings overlay.
+/// </summary>
+public sealed record BudgetReportPostingOverlayRow(PostingServiceDto Posting, bool IsValuedForBudgetPurpose);

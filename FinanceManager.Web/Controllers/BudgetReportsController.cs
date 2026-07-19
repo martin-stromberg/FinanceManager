@@ -12,7 +12,6 @@ using FinanceManager.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using FinanceManager.Shared.Dtos.Postings;
 using FinanceManager.Domain.Postings;
-using FinanceManager.Application.Budget;
 using FinanceManager.Web.Infrastructure;
 
 namespace FinanceManager.Web.Controllers;
@@ -394,6 +393,45 @@ public sealed class BudgetReportsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Get budget report failed");
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
+    }
+
+    /// <summary>
+    /// Returns raw budget report data for UI scenarios that need posting-level budget valuation state.
+    /// </summary>
+    /// <param name="req">The report request parameters.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>An <see cref="IActionResult"/> containing raw budget report data.</returns>
+    [HttpPost("raw")]
+    [ProducesResponseType(typeof(BudgetReportRawDataDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetRawAsync([FromBody] BudgetReportRequest req, CancellationToken ct = default)
+    {
+        try
+        {
+            if (req.Months < 1 || req.Months > 60)
+            {
+                var ex = new ArgumentOutOfRangeException(nameof(req.Months), "Months must be 1..60");
+                return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+            }
+
+            var to = new DateOnly(req.AsOfDate.Year, req.AsOfDate.Month, DateTime.DaysInMonth(req.AsOfDate.Year, req.AsOfDate.Month));
+            var from = new DateOnly(to.Year, to.Month, 1).AddMonths(-(req.Months - 1));
+            var raw = await _reports.GetRawDataAsync(_current.UserId, from, to, req.DateBasis, ct, ignoreCache: true);
+            return Ok(raw);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Get raw budget report failed");
             return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }

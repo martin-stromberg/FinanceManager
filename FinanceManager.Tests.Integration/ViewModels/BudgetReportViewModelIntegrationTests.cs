@@ -251,24 +251,98 @@ public sealed class BudgetReportViewModelIntegrationTests : IClassFixture<TestWe
         vm.PurposePostingsKind.Should().Be(BudgetReportViewModel.PostingsOverlayKind.Purpose);
         vm.PurposePostingsPurpose.Should().NotBeNull();
         vm.PurposePostings.Should().ContainSingle();
-        vm.PurposePostings[0].Amount.Should().Be(-80m);
-        vm.PurposePostings[0].ContactId.Should().Be(stromContact.Id);
-        vm.PurposePostings[0].Subject.Should().Contain("KNR-4711");
-        vm.PurposePostings[0].Description.Should().Be("Lastschrift");
+        vm.PurposePostings[0].IsValuedForBudgetPurpose.Should().BeTrue();
+        vm.PurposePostings[0].Posting.Amount.Should().Be(-80m);
+        vm.PurposePostings[0].Posting.ContactId.Should().Be(stromContact.Id);
+        vm.PurposePostings[0].Posting.Subject.Should().Contain("KNR-4711");
+        vm.PurposePostings[0].Posting.Description.Should().Be("Lastschrift");
 
         await vm.ShowUnbudgetedPostingsAsync();
         vm.PurposePostingsVisible.Should().BeTrue();
         vm.PurposePostingsKind.Should().Be(BudgetReportViewModel.PostingsOverlayKind.Unbudgeted);
         vm.PurposePostingsPurpose.Should().BeNull();
         vm.PurposePostings.Should().ContainSingle();
-        vm.PurposePostings[0].Amount.Should().Be(-49.90m);
-        vm.PurposePostings[0].ContactId.Should().Be(stromContact.Id);
-        vm.PurposePostings[0].Description.Should().Be("Lastschrift");
-        vm.PurposePostings[0].Subject.Should().Contain("Verkehrsabo");
+        vm.PurposePostings[0].IsValuedForBudgetPurpose.Should().BeTrue();
+        vm.PurposePostings[0].Posting.Amount.Should().Be(-49.90m);
+        vm.PurposePostings[0].Posting.ContactId.Should().Be(stromContact.Id);
+        vm.PurposePostings[0].Posting.Description.Should().Be("Lastschrift");
+        vm.PurposePostings[0].Posting.Subject.Should().Contain("Verkehrsabo");
 
         var unbudgeted = vm.Categories.Should().ContainSingle(c => c.Kind == BudgetReportCategoryRowKind.Unbudgeted).Subject;
         unbudgeted.Actual.Should().Be(-49.90m);
         unbudgeted.Purposes.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that exact-posting purpose overlays distinguish valued and matching unvalued postings.
+    /// </summary>
+    [Fact]
+    public async Task ShowPurposePostingsAsync_ShouldMarkMatchingUnvaluedPostings_WhenPurposeUsesExactPostings()
+    {
+        var today = DateTime.Today;
+        var asOfDate = new DateOnly(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month));
+        _factory.FixedUtcNow = DateTime.SpecifyKind(today, DateTimeKind.Utc);
+
+        var api = await CreateAuthenticatedApiClientAsync();
+        var account = await EnsureAccountAsync(api);
+        var contact = await api.Contacts_CreateAsync(new ContactCreateRequest(
+            Name: "Mitgliedschaft",
+            Type: ContactType.Organization,
+            CategoryId: null,
+            Description: null,
+            IsPaymentIntermediary: null));
+        var category = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Freizeit"));
+        var purpose = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Verein",
+            SourceType: BudgetSourceType.Contact,
+            SourceId: contact.Id,
+            Description: null,
+            BudgetCategoryId: category.Id,
+            ValuationType: BudgetValuationType.ExactPostings));
+
+        var ruleStart = new DateOnly(today.Year, today.Month, 1);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: purpose.Id,
+            BudgetCategoryId: null,
+            Amount: -15m,
+            Interval: BudgetIntervalType.Monthly,
+            CustomIntervalMonths: null,
+            StartDate: ruleStart,
+            EndDate: null,
+            PurposePattern: "VEREIN",
+            UseRegex: false));
+
+        var draft = await api.StatementDrafts_CreateAsync();
+        draft.Should().NotBeNull();
+        await api.StatementDrafts_SetAccountAsync(draft!.DraftId, account.Id);
+        await AddEntryAsync(api, draft.DraftId, ruleStart.AddDays(3), -12.50m, "VEREIN Beitrag", contact.Id);
+        await AddEntryAsync(api, draft.DraftId, ruleStart.AddDays(4), 9.40m, "VEREIN Erstattung", contact.Id, "Gutschrift");
+
+        var booking = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true);
+        booking.Should().NotBeNull();
+        booking!.Success.Should().BeTrue();
+
+        var vm = CreateViewModel(api);
+        await vm.ApplySettingsAsync(BudgetReportSettings.Default with
+        {
+            AsOfDate = asOfDate,
+            Months = 1,
+            CategoryValueScope = FinanceManager.Web.ViewModels.Budget.BudgetReportValueScope.LastInterval
+        });
+
+        var categoryRow = vm.Categories.Should().ContainSingle(c => c.Name == "Freizeit" && c.Kind == BudgetReportCategoryRowKind.Data).Subject;
+        var purposeRow = categoryRow.Purposes.Should().ContainSingle(p => p.Name == "Verein").Subject;
+        purposeRow.Actual.Should().Be(-12.50m);
+
+        await vm.ShowPurposePostingsAsync(purposeRow);
+
+        vm.PurposePostings.Should().HaveCount(2);
+        vm.PurposePostings.Single(p => p.Posting.Amount == -12.50m).IsValuedForBudgetPurpose.Should().BeTrue();
+        vm.PurposePostings.Single(p => p.Posting.Amount == 9.40m).IsValuedForBudgetPurpose.Should().BeFalse();
+
+        await vm.ShowUnbudgetedPostingsAsync();
+
+        vm.PurposePostings.Should().ContainSingle(p => p.Posting.Amount == 9.40m);
     }
 
     /// <summary>

@@ -313,7 +313,7 @@ else
                 {
                     <div class="budget-table-wrap table-responsive" style="max-height:60vh;overflow:auto;border:1px solid var(--border-color,#ddd);border-radius:.25rem;">
                         <table class="table" style="width:100%;margin:0;">
-                            <thead style="position:sticky;top:0;background:var(--surface,#fff);z-index:1;">
+                            <thead style="position:sticky;top:0;background:var(--table-header-bg,#f3f4f6);color:var(--text-color,#1f2937);z-index:1;">
                                 <tr>
                                     <th style="text-align:left;">@(Localizer?["List_Th_Date"].Value ?? "Date")</th>
                                     <th style="text-align:left;">@(Localizer?["List_Th_Origin"].Value ?? "Origin")</th>
@@ -324,14 +324,24 @@ else
                             <tbody>
                                 @foreach (var row in _vm.PurposePostings)
                                 {
-                                    var date = _vm.Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate ? row.ValutaDate : row.BookingDate;
-                                    <tr>
+                                    var posting = row.Posting;
+                                    var date = _vm.Settings.DateBasis == FinanceManager.Web.ViewModels.Budget.BudgetReportDateBasis.ValutaDate ? posting.ValutaDate : posting.BookingDate;
+                                    var rowStyle = row.IsValuedForBudgetPurpose ? string.Empty : "opacity:.62;background:var(--surface-muted,#f8f9fa);";
+                                    <tr style="@rowStyle">
                                         <td>@date.ToString("d", CultureInfo.CurrentCulture)</td>
                                         <td style="white-space:nowrap;">
-                                            <BudgetReportPostingOriginCell Vm="_vm" Posting="row" />
+                                            <BudgetReportPostingOriginCell Vm="_vm" Posting="posting" />
                                         </td>
-                                        <td>@(row.Subject ?? row.Description ?? row.RecipientName ?? string.Empty)</td>
-                                        <td style="text-align:right;">@row.Amount.ToString("N2")</td>
+                                        <td>
+                                            @(posting.Subject ?? posting.Description ?? posting.RecipientName ?? string.Empty)
+                                            @if (!row.IsValuedForBudgetPurpose)
+                                            {
+                                                <span style="display:inline-block;margin-left:.5rem;padding:.05rem .35rem;border:1px solid var(--border-color,#ddd);border-radius:.25rem;font-size:.75rem;color:var(--text-muted,#666);">
+                                                    @(Localizer?["Budget_Report_Unbudgeted"].Value ?? "Unbudgeted")
+                                                </span>
+                                            }
+                                        </td>
+                                        <td style="text-align:right;">@posting.Amount.ToString("N2")</td>
                                     </tr>
                                 }
                             </tbody>
