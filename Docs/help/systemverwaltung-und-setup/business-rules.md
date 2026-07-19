@@ -269,22 +269,26 @@ sondern startet ein generiertes Plattformskript und beendet danach den Host.
 **Umsetzung:** `UpdateOrchestrator.StartInstallAsync`, `UpdateExecutor`,
 `UpdateServiceResolver`, `UpdateScriptGenerator`.
 
-## Update-Lock-Reset ist manuell zu pruefen
+## Update-Lock-Reset loescht nur verwaiste Locks
 
 **Beschreibung:** Der administrative Lock-Reset ist fuer Haengefaelle gedacht,
-klassifiziert eine Lock-Datei aktuell aber nicht automatisch als verwaist.
+in denen eine alte Lock-Datei nach einer unterbrochenen Installation
+zurueckgeblieben ist.
 
 **Bedingungen:**
 - Benutzer ist Admin.
 - Die aktuelle Prozessinstanz besitzt keine laufende Installation.
+- Eine Lock-Datei ist vorhanden.
+- Die Lock-Datei ist aelter als das konfigurierte Health-Timeout, mindestens
+  jedoch eine Minute.
 
 **Verhalten:**
 - Wenn `UpdateExecutor.IsInstallRunning` gesetzt ist, antwortet der Reset mit
   Konflikt und loescht den Lock nicht.
-- Andernfalls wird die Lock-Datei geloescht und optional der angegebene Grund
-  im Statusfehler vermerkt.
-- Alter, Besitzer oder Stale-Zustand der Lock-Datei werden noch nicht
-  bewertet.
+- Wenn kein Lock vorhanden ist oder der Lock noch frisch ist, antwortet der
+  Reset mit Konflikt und loescht nichts.
+- Bei einem verwaisten Lock wird die Lock-Datei geloescht und optional der
+  angegebene Grund im Statusfehler vermerkt.
 
 **Umsetzung:** `UpdateController.ResetLock`, `UpdateOrchestrator.ResetLockAsync`,
 `UpdateFileStore.DeleteLockAsync`.

@@ -45,8 +45,8 @@ Installationsstart verlangt eine Downtime-Bestaetigung. Nach dem Start zeigt
 die UI eine Warteseite, wartet zunaechst auf einen beobachteten Ausfall und
 laedt erst nach einem spaeteren erfolgreichen `/health`-Aufruf neu.
 Ein aktiver Update-Lock kann durch Administratoren zurueckgesetzt werden, wenn
-die aktuelle Prozessinstanz keine Installation mehr besitzt; die Anwendung
-klassifiziert die Lock-Datei dabei noch nicht selbst als verwaist.
+die aktuelle Prozessinstanz keine Installation mehr besitzt und die Lock-Datei
+aelter als das konfigurierte Health-Timeout ist.
 
 ## Beispiele
 

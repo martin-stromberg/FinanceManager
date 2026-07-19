@@ -6,28 +6,42 @@ namespace FinanceManager.Web.Services.Updates;
 
 public sealed class UpdatePlatformResolver : IUpdatePlatformResolver
 {
+    private readonly Func<OSPlatform, bool> _isOSPlatform;
+    private readonly string _runtimeIdentifier;
+
+    public UpdatePlatformResolver()
+        : this(RuntimeInformation.IsOSPlatform, RuntimeInformation.RuntimeIdentifier)
+    {
+    }
+
+    public UpdatePlatformResolver(Func<OSPlatform, bool> isOSPlatform, string runtimeIdentifier)
+    {
+        _isOSPlatform = isOSPlatform;
+        _runtimeIdentifier = runtimeIdentifier;
+    }
+
     public string CurrentRuntimeIdentifier
     {
         get
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (_isOSPlatform(OSPlatform.Windows))
             {
                 return "win-x64";
             }
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            if (_isOSPlatform(OSPlatform.Linux))
             {
                 return "linux-x64";
             }
 
-            return RuntimeInformation.RuntimeIdentifier;
+            return _runtimeIdentifier;
         }
     }
 
     public string CurrentPlatform
-        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+        => _isOSPlatform(OSPlatform.Windows)
             ? "windows"
-            : RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+            : _isOSPlatform(OSPlatform.Linux)
                 ? "linux"
                 : RuntimeInformation.OSDescription;
 

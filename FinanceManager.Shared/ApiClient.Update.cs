@@ -1,5 +1,4 @@
 #pragma warning disable CS1591
-using System.Net;
 using System.Net.Http.Json;
 using FinanceManager.Shared.Dtos.Update;
 
@@ -45,11 +44,6 @@ public partial class ApiClient
     public async Task<UpdateStatusDto?> Updates_StartInstallAsync(UpdateStartRequest request, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync("/api/setup/update/install/start", request, ct);
-        if (resp.StatusCode == HttpStatusCode.NotFound)
-        {
-            return null;
-        }
-
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<UpdateStatusDto>(cancellationToken: ct);
     }

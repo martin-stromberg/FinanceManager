@@ -106,11 +106,11 @@ Update-Skript gestartet wurde. Geplante Installationen werden pro konfigurierte
 Uhrzeit nur einmal pro Tag versucht, damit ein fehlerhaft konfigurierter Host
 nicht jede Minute erneut installiert.
 
-Der Admin-Endpunkt zum Lock-Reset loescht eine vorhandene Lock-Datei nur dann
-nicht, wenn die aktuelle Prozessinstanz selbst noch eine Installation fuehrt.
-Eine automatische Bewertung nach Alter, Besitzer oder Stale-Zustand ist noch
-nicht umgesetzt; der Reset ist deshalb als manuell kontrollierte
-Betriebsaktion zu behandeln.
+Der Admin-Endpunkt zum Lock-Reset loescht eine vorhandene Lock-Datei nur dann,
+wenn die aktuelle Prozessinstanz keine Installation fuehrt und die Lock-Datei
+aelter als das konfigurierte Health-Timeout ist. Frische Locks und fehlende
+Locks werden abgelehnt; der Reset bleibt deshalb eine gezielte Betriebsaktion
+fuer verwaiste Installationen.
 
 ## Produktive JWT-Konfiguration
 
