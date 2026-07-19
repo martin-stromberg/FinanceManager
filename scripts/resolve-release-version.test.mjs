@@ -178,19 +178,30 @@ test("creates an automatic release when Semantic Release resolves a new version"
   });
 });
 
-test("repairs an automatic release whose expected asset is missing before resolving a new version", async () => {
+test("creates an automatic release even when older releases are missing expected assets", async () => {
   const testEffects = effects({
-    listGitHubReleases: async () => [release("v3.4.5")],
-    runSemanticReleaseDryRun: () => {
-      throw new Error("Semantic Release must not run while repairing an asset.");
-    }
+    listGitHubReleases: async () => [release("v2.3.4"), release("v2.3.3")]
+  });
+
+  await resolveReleaseVersion(environment(), testEffects.dependencies);
+
+  assert.equal(testEffects.output[0].released, "true");
+  assert.equal(testEffects.output[0].reason, "semantic-release");
+  assert.equal(testEffects.output[0].release_action, "create");
+  assert.equal(testEffects.output[0].tag, "v3.4.5");
+});
+
+test("repairs one automatic release whose expected asset is missing when no new release is pending", async () => {
+  const testEffects = effects({
+    listGitHubReleases: async () => [release("v2.3.4"), release("v2.3.3")],
+    runSemanticReleaseDryRun: () => "There are no relevant changes"
   });
 
   await resolveReleaseVersion(environment(), testEffects.dependencies);
 
   assert.equal(testEffects.output[0].released, "true");
   assert.equal(testEffects.output[0].release_action, "upload-existing");
-  assert.equal(testEffects.output[0].tag, "v3.4.5");
+  assert.equal(testEffects.output[0].tag, "v2.3.4");
 });
 
 test("skips automatic releases without releasable commits", async () => {
@@ -226,17 +237,6 @@ test("rejects an automatic release when its complete release already exists", as
     /GitHub release 'v3\.4\.5' already exists/
   );
   assert.deepEqual(testEffects.output, []);
-});
-
-test("rejects ambiguous automatic repair attempts", async () => {
-  const testEffects = effects({
-    listGitHubReleases: async () => [release("v2.3.4"), release("v3.4.5")]
-  });
-
-  await assert.rejects(
-    resolveReleaseVersion(environment(), testEffects.dependencies),
-    /Multiple GitHub releases are missing/
-  );
 });
 
 test("lists GitHub releases across all pages", async () => {
