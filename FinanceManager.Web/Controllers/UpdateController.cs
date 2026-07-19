@@ -86,7 +86,11 @@ public sealed class UpdateController : ControllerBase
     {
         try
         {
-            _logger.LogWarning("Update lock reset requested by {User}. Reason: {Reason}", User.Identity?.Name, request.Reason);
+            var sanitizedReason = request.Reason?
+                .Replace("\r", " ")
+                .Replace("\n", " ");
+
+            _logger.LogWarning("Update lock reset requested by {User}. Reason: {Reason}", User.Identity?.Name, sanitizedReason);
             await _orchestrator.ResetLockAsync(request.Reason, ct);
             return NoContent();
         }
