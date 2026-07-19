@@ -14,6 +14,7 @@ using FinanceManager.Web.Infrastructure.Attachments;
 using FinanceManager.Web.Infrastructure.Auth;
 using FinanceManager.Web.Infrastructure.Logging;
 using FinanceManager.Web.Services;
+using FinanceManager.Web.Services.Help;
 using FinanceManager.Web.Services.Updates;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -128,6 +129,8 @@ namespace FinanceManager.Web
             builder.Services.AddScoped<IPostingsQueryService, PostingsQueryService>();
             builder.Services.AddScoped<Application.Postings.IPostingsQueryService>(sp => sp.GetRequiredService<IPostingsQueryService>());
             builder.Services.AddScoped<Application.Budget.IBudgetReportExportService, BudgetReportExportService>();
+            builder.Services.AddSingleton<IHelpContentRenderer, HelpContentRenderer>();
+            builder.Services.AddSingleton<IHelpAssetIntegrityValidator, HelpAssetIntegrityValidator>();
 
             // Monthly reminder scheduler
             builder.Services.AddScoped<MonthlyReminderJob>();
@@ -354,6 +357,40 @@ namespace FinanceManager.Web
             {
                 app.UseHttpsRedirection();
             }
+
+            app.Use(async (context, next) =>
+            {
+                if (HelpSecurityPolicy.IsHelpPath(context.Request.Path))
+                {
+                    context.Response.Headers.ContentSecurityPolicy = HelpSecurityPolicy.ContentSecurityPolicy;
+                }
+
+                await next();
+            });
+
+            app.Use(async (context, next) =>
+            {
+                if (!HelpSecurityPolicy.IsStaticHelpAssetPath(context.Request.Path))
+                {
+                    await next();
+                    return;
+                }
+
+                var relativePath = context.Request.Path.Value?.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+                var fullPath = relativePath is null
+                    ? null
+                    : Path.Combine(app.Environment.WebRootPath, relativePath);
+
+                var validator = context.RequestServices.GetRequiredService<IHelpAssetIntegrityValidator>();
+                if (fullPath is null || !validator.IsTrustedHelpFile(fullPath))
+                {
+                    app.Logger.LogWarning("Blocked untrusted static help asset: {Path}", context.Request.Path.Value);
+                    context.Response.StatusCode = StatusCodes.Status404NotFound;
+                    return;
+                }
+
+                await next();
+            });
 
             // Serve ALL static files including help HTML pages
             app.UseStaticFiles();

@@ -40,6 +40,15 @@ Hinweise:
 - Anmelden/Registrieren über die UI
 - Typischer Flow: Import (`/api/statement-drafts/upload` oder `mass-import`) → Klassifizieren → Buchen → Reporting
 
+### Help-Dokumentation und Sicherheit
+
+- Help ist unter `/help` verfügbar; die Markdown-Quellen liegen unter `Docs/help/`.
+- Help-Markdown wird über einen Whitelist-Renderer ausgegeben. Rohes HTML, Skripte,
+  Inline-Handler und unsichere Linkziele sind kein unterstütztes Format.
+- Für Help-Seiten und Help-Assets gilt eine restriktive CSP. Der Build erzeugt
+  `FinanceManager.Web/wwwroot/help/help-assets.sha256`; Änderungen unter
+  `Docs/help/` erfordern daher einen neuen Build vor dem Deployment.
+
 ## Konfiguration
 
 Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:

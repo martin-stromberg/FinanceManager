@@ -133,6 +133,147 @@ mark {
     font-weight: 500;
 }
 
+.feature-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid #0d6efd;
+    cursor: pointer;
+}
+
+.feature-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    border-left-color: #0a58ca;
+}
+
+.feature-card-action {
+    cursor: pointer;
+}
+
+.search-highlight {
+    background-color: #fff3cd;
+    padding: 0.1rem 0.2rem;
+    border-radius: 0.2rem;
+    font-weight: 500;
+}
+
+.help-view-container {
+    padding: 2rem 0;
+}
+
+.help-view-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.help-view-content {
+    max-width: 900px;
+    line-height: 1.6;
+}
+
+.help-view-content h1 {
+    color: #bb86fc;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-size: 2rem;
+    border-bottom: 2px solid #bb86fc;
+    padding-bottom: 0.5rem;
+}
+
+.help-view-content h2 {
+    color: #bb86fc;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 1.5rem;
+}
+
+.help-view-content h3 {
+    color: #9575cd;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+}
+
+.help-view-content p {
+    margin-bottom: 1rem;
+    line-height: 1.8;
+}
+
+.help-view-content a {
+    color: #bb86fc;
+    text-decoration: none;
+    border-bottom: 1px dotted #bb86fc;
+}
+
+.help-view-content a:hover {
+    color: #d4a5ff;
+    border-bottom: 1px solid #d4a5ff;
+}
+
+.help-view-content ul,
+.help-view-content ol {
+    margin: 1rem 0 1rem 2rem;
+}
+
+.help-view-content li {
+    margin-bottom: 0.5rem;
+}
+
+.help-view-content code {
+    background-color: #1e1e1e;
+    color: #ce9178;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+}
+
+.help-view-content pre {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1rem 0;
+}
+
+.help-view-content blockquote {
+    border-left: 4px solid #bb86fc;
+    margin: 1rem 0;
+    padding-left: 1rem;
+    color: #9575cd;
+}
+
+.help-view-content strong {
+    color: #d4a5ff;
+    font-weight: 600;
+}
+
+.help-view-content em {
+    color: #9575cd;
+}
+
+.help-view-content table {
+    border-collapse: collapse;
+    margin: 1rem 0;
+    width: 100%;
+}
+
+.help-view-content table th,
+.help-view-content table td {
+    border: 1px solid #444;
+    padding: 0.75rem;
+    text-align: left;
+}
+
+.help-view-content table th {
+    background-color: #2d2d2d;
+    color: #bb86fc;
+}
+
+.help-view-content table tr:nth-child(even) {
+    background-color: #1f1f1f;
+}
+
 @media (prefers-color-scheme: dark) {
     mark {
         background-color: #664d03;
