@@ -1,5 +1,4 @@
 @page "/help"
-@rendermode InteractiveServer
 @using System.Globalization
 
 @{
@@ -50,27 +49,6 @@
         </div>
     </div>
 </div>
-
-<style>
-.feature-card {
-    transition: all 0.3s ease;
-    border-left: 4px solid #0d6efd;
-    cursor: pointer;
-}
-
-.feature-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
-    border-left-color: #0a58ca;
-}
-
-.search-highlight {
-    background-color: #fff3cd;
-    padding: 0.1rem 0.2rem;
-    border-radius: 0.2rem;
-    font-weight: 500;
-}
-</style>
 
 <!-- Load the help search script directly after the HTML -->
 <script src="/help/js/help-search.js" defer></script>

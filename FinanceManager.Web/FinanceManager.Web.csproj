@@ -10,9 +10,12 @@
 
   <ItemGroup>
     <None Include="wwwroot\css\app.SetupNotificationsTab.css" />
-    <!-- Ensure help pages HTML/JSON files are copied to output -->
-    <None Include="wwwroot\help\**" CopyToOutputDirectory="PreserveNewest" />
     <Content Update="Data\KnownContacts.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="wwwroot\help\**\*.*" />
+    <Content Include="wwwroot\help\css\**\*.css;wwwroot\help\js\**\*.js;wwwroot\help\**\*.json;wwwroot\help\**\*.html;wwwroot\help\help-assets.sha256" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,7 +39,9 @@
 	</PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="HtmlSanitizer" Version="9.0.892" />
     <PackageReference Include="itext.bouncy-castle-adapter" Version="9.6.0" />
+    <PackageReference Include="Markdig" Version="1.3.2" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Cryptography.KeyDerivation" Version="10.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.7" />
@@ -70,6 +75,20 @@
   <Target Name="CopyInitFiles" BeforeTargets="Build">
 	  <RemoveDir Directories="$(ProjectDir)init" Condition="Exists('$(ProjectDir)init')" />
 	  <RemoveDir Directories="$(TargetDir)init" Condition="Exists('$(TargetDir)init')" />
+  </Target>
+
+  <Target Name="GenerateHelpAssetManifest" BeforeTargets="Build">
+    <ItemGroup>
+      <HelpManifestAsset Include="wwwroot\help\css\**\*.css;wwwroot\help\js\**\*.js;wwwroot\help\**\*.json;wwwroot\help\**\*.html;..\Docs\help\**\*.md" />
+    </ItemGroup>
+    <GetFileHash Files="@(HelpManifestAsset)" Algorithm="SHA256">
+      <Output TaskParameter="Items" ItemName="HelpManifestAssetHash" />
+    </GetFileHash>
+    <WriteLinesToFile
+      File="$(ProjectDir)wwwroot\help\help-assets.sha256"
+      Lines="@(HelpManifestAssetHash->'%(Identity)|%(FileHash)')"
+      Overwrite="true"
+      Encoding="UTF-8" />
   </Target>
 
   </Project>

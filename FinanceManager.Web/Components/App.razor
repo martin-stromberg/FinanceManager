@@ -1,6 +1,12 @@
 ﻿<!DOCTYPE html>
 <html lang="en" data-culture="@CultureInfo.CurrentUICulture.Name">
 
+@{
+    var currentPath = Navigation.ToAbsoluteUri(Navigation.Uri).AbsolutePath;
+    var isHelpSurface = currentPath.Equals("/help", StringComparison.OrdinalIgnoreCase)
+        || currentPath.StartsWith("/help/", StringComparison.OrdinalIgnoreCase);
+}
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -31,6 +37,7 @@
     <link rel="stylesheet" href="css/app.BackgroundTaskStatusPanel.css" />
     <link rel="stylesheet" href="css/app.SetupNotificationsTab.css" />
     <link rel="stylesheet" href="css/app.ReturnAnalysis.css" />
+    <link rel="stylesheet" href="help/css/help-page.css" />
     <link rel="stylesheet" href="css/app.ReturnSummaryWidget.css" />
     
     
@@ -59,19 +66,29 @@
     
     <link rel="stylesheet" href="FinanceManager.Web.styles.css" />
     <link rel="manifest" href="/manifest.json">
-    <ImportMap />
+    @if (!isHelpSurface)
+    {
+        <ImportMap />
+    }
     <HeadOutlet />
 </head>
 
 <body class="dark-mode">
-    <AuthRedirect />
-    <NavMenu />
+    @if (!isHelpSurface)
+    {
+        <AuthRedirect />
+        <NavMenu />
+    }
     <Routes />
-    <script src="auth.js"></script>
-    <script src="scroll.js"></script>
-    <script src="_framework/blazor.web.js"></script>
+    @if (!isHelpSurface)
+    {
+        <script src="auth.js"></script>
+        <script src="scroll.js"></script>
+        <script src="_framework/blazor.web.js"></script>
+    }
 </body>
 
 </html>
 
 @using System.Globalization
+@inject NavigationManager Navigation

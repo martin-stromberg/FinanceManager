@@ -9,5 +9,6 @@ Dieser Bereich bündelt Benutzerverwaltung, Sicherheit, Benachrichtigungen und S
 - [API](api.md)
 - [Installation & Konfiguration](installation.md)
 - [Release und Bereitstellung](bereitstellung.md)
+- [Help-Dokumentation und Sicherheit](sicherheit-help.md)
 - [Datenmodell](datenmodell.md)
 - [Business Rules](business-rules.md)
