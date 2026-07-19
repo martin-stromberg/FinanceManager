@@ -194,3 +194,57 @@ Beteiligte Komponenten: `SetupBackupTab.razor`, `SetupBackupsViewModel`, `ApiCli
    - `400 ApiErrorDto` bei fehlender Bestätigung, ungültigem Backup oder Importfehler.
 
 Beteiligte Komponenten: `ApiClient.Backups_ApplyAsync`, `BackupsController.ApplyAsync`, `BackupService.ApplyAsync`
+
+---
+
+### 10. Self-Update-Pruefung und Download
+
+1. Ein Administrator startet `POST /api/setup/update/check` oder der
+   `UpdateChecker` laeuft bei aktivierter Updatepruefung im konfigurierten
+   Intervall.
+2. `UpdateOrchestrator.CheckAsync` setzt den Status auf `Checking` und liest
+   Einstellungen sowie lokal installierte Release-Metadaten aus
+   `release-metadata.json`.
+3. `UpdateManifestClient` laedt das konfigurierte Manifest-Asset, standardmaessig
+   `update.json`, aus dem GitHub-Release-Kontext.
+4. `UpdateValidator.ValidateManifest` prueft Version, PublishedAt, Release
+   Notes, Repository, Assetnamen, HTTPS-GitHub-URLs, SHA-256, positive
+   Dateigroessen sowie Plattform-/Runtime-Konsistenz.
+5. `UpdatePlatformResolver` waehlt das Asset fuer die aktuelle Runtime, z. B.
+   `win-x64` oder `linux-x64`.
+6. Nur wenn die Manifest-Version neuer als die installierte Version ist, wird
+   das ZIP in `updates/pending` geladen.
+7. Nach Download validiert `UpdateValidator` Dateigroesse, SHA-256 und die
+   ZIP-Eintraege. Bei Erfolg wird der Status `Ready` gespeichert, sonst
+   `Failed` mit Fehlermeldung.
+
+Beteiligte Komponenten: `UpdateController`, `UpdateChecker`,
+`UpdateOrchestrator`, `UpdateManifestClient`, `UpdateValidator`,
+`UpdatePlatformResolver`, `UpdateFileStore`.
+
+---
+
+### 11. Self-Update-Installation und Warteseite
+
+1. Ein Administrator startet `POST /api/setup/update/install/start` mit
+   `ConfirmDowntime = true` oder der `UpdateScheduler` erreicht eine geplante
+   Uhrzeit bei Status `Ready`.
+2. Der Orchestrator lehnt den Start ab, wenn kein vorbereitetes Paket vorliegt,
+   ein Lock aktiv ist oder bereits `Installing` gemeldet wird.
+3. `UpdateExecutor` erzeugt eine Lock-Datei, validiert das heruntergeladene
+   Paket erneut und loest das Service-/EXE-Ziel auf.
+4. `UpdateScriptGenerator` erzeugt ein Plattformskript in `updates/pending`:
+   PowerShell fuer Windows oder Shell-Skript fuer Linux.
+5. Das Skript wird als externer Prozess gestartet und die Webanwendung wird
+   kontrolliert beendet. Die eigentliche Dateiersetzung findet ausserhalb des
+   laufenden ASP.NET-Core-Prozesses statt.
+6. Die Setup-UI zeigt den Installationszustand, pollt alle zwei Sekunden
+   `/health`, wartet zuerst auf einen beobachteten Ausfall und laedt erst nach
+   einem anschliessenden erfolgreichen Health-Aufruf neu.
+7. Nach Ablauf von `HealthTimeoutSeconds`, standardmaessig 120 Sekunden, zeigt
+   das ViewModel einen Timeout-Fehler.
+
+Beteiligte Komponenten: `UpdateController`, `UpdateScheduler`,
+`UpdateOrchestrator`, `UpdateExecutor`, `UpdateServiceResolver`,
+`UpdateScriptGenerator`, `HealthController`, `SetupUpdateViewModel`,
+`SetupUpdateTab.razor`.

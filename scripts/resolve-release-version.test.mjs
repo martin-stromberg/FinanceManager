@@ -95,7 +95,7 @@ test("creates a release for a manual tag without an existing release", async () 
 
 test("skips a manual tag whose release already has the expected asset", async () => {
   const testEffects = effects({
-    getGitHubRelease: async () => release("v2.3.4", [releaseAssetName("2.3.4")])
+    getGitHubRelease: async () => release("v2.3.4", [releaseAssetName("2.3.4"), releaseAssetName("2.3.4", "linux-x64"), "update.json"])
   });
 
   await resolveReleaseVersion(environment({ refType: "tag", refName: "v2.3.4" }), testEffects.dependencies);
@@ -134,11 +134,15 @@ test("repairs a manual release whose uploaded asset has zero size", async () => 
 
 test("treats an uploaded asset with positive size as complete", async () => {
   const testEffects = effects({
-    getGitHubRelease: async () => release("v2.3.4", [{
-      name: releaseAssetName("2.3.4"),
-      state: "uploaded",
-      size: 1024
-    }])
+    getGitHubRelease: async () => release("v2.3.4", [
+      {
+        name: releaseAssetName("2.3.4"),
+        state: "uploaded",
+        size: 1024
+      },
+      releaseAssetName("2.3.4", "linux-x64"),
+      "update.json"
+    ])
   });
 
   await resolveReleaseVersion(environment({ refType: "tag", refName: "v2.3.4" }), testEffects.dependencies);
@@ -210,7 +214,11 @@ test("rejects an automatic release when its tag already exists", async () => {
 
 test("rejects an automatic release when its complete release already exists", async () => {
   const testEffects = effects({
-    getGitHubRelease: async () => release("v3.4.5", [releaseAssetName("3.4.5")])
+    getGitHubRelease: async () => release("v3.4.5", [
+      releaseAssetName("3.4.5"),
+      releaseAssetName("3.4.5", "linux-x64"),
+      "update.json"
+    ])
   });
 
   await assert.rejects(
@@ -262,4 +270,18 @@ test("checks out the release tag before repairing an existing release asset", ()
   assert.match(workflow, /steps\.version\.outputs\.release_action == 'upload-existing'/);
   assert.match(workflow, /git checkout --detach \"\$env:RELEASE_TAG\"/);
   assert.match(workflow, /Release tag checkout did not resolve to the tagged commit/);
+});
+
+test("expects windows, linux and update manifest release assets", async () => {
+  const testEffects = effects({
+    getGitHubRelease: async () => release("v2.3.4", [
+      releaseAssetName("2.3.4"),
+      releaseAssetName("2.3.4", "linux-x64"),
+      "update.json"
+    ])
+  });
+
+  await resolveReleaseVersion(environment({ refType: "tag", refName: "v2.3.4" }), testEffects.dependencies);
+
+  assert.equal(testEffects.output[0].released, "false");
 });

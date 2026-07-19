@@ -390,6 +390,7 @@ FodyWeavers.xsd
 /coverage/
 /FinanceManager.Web/financemanager.db-shm
 /FinanceManager.Web/financemanager.db-wal
+/FinanceManager.Web/updates/
 /init
 /FinanceManager.Web/init
 /FinanceManager.Web/.config/dotnet-tools.json

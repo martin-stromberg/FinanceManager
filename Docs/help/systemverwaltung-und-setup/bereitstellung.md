@@ -5,8 +5,8 @@
 ## Zweck
 
 Die Release-Pipeline baut die fertige Web-Anwendung, bestimmt eine
-Semantic-Version und veröffentlicht ein GitHub-Release mit dem vollständigen
-Windows-Publish als ZIP-Asset. Die Pipeline ist in
+Semantic-Version und veröffentlicht ein GitHub-Release mit vollständigen
+Windows- und Linux-Publish-Artefakten sowie einem Update-Manifest. Die Pipeline ist in
 `.github/workflows/release.yml` definiert.
 
 ## Auslöser und Versionierung
@@ -41,25 +41,35 @@ Vor der Veröffentlichung laufen:
 3. Unit- und Integrationstests als Release-Gate;
 4. `dotnet build FinanceManager.sln --configuration Release --no-restore`;
 5. `dotnet publish FinanceManager.Web/FinanceManager.Web.csproj` mit
-   `--framework net10.0`, `--runtime win-x64` und
-   `--self-contained true` in das Verzeichnis `publish/`.
+   `--framework net10.0`, `--runtime win-x64` beziehungsweise
+   `--runtime linux-x64` und `--self-contained true` in runtime-spezifische
+   Unterverzeichnisse von `publish/`.
 
 Die Playwright-E2E-Tests bleiben Teil der Testsuite, werden aber nicht im
 Release-Publish-Pfad ausgeführt. Der Release-Workflow kompiliert sie über den
 vollständigen Solution-Build mit, vermeidet jedoch browserbasierte UI-Flows als
 Blocker für die Veröffentlichung.
 
-Der gesamte Inhalt von `publish/` wird als
-`FinanceManager-vX.Y.Z-win-x64.zip` archiviert. Ein fehlendes oder leeres
-Publish-Verzeichnis sowie ein leeres Archiv brechen den Workflow vor der
-Veröffentlichung ab.
+Die Inhalte der runtime-spezifischen Publish-Verzeichnisse werden als
+`FinanceManager-vX.Y.Z-win-x64.zip` und
+`FinanceManager-vX.Y.Z-linux-x64.zip` archiviert. Beide Publish-Ausgaben
+enthalten `release-metadata.json` mit Version, Commit, Repository und Runtime.
+Ein fehlendes oder leeres Publish-Verzeichnis sowie ein leeres Archiv brechen
+den Workflow vor der Veröffentlichung ab.
 
 ## Release und Asset
 
 Für automatische Releases erzeugt Semantic Release den Tag, die Release Notes
 und das GitHub-Release. Für manuelle Tags erstellt `gh release create` das
-Release mit generierten Notes. Das ZIP wird in beiden Fällen als Asset
-derselben Version angehängt.
+Release mit generierten Notes. Die ZIPs und `update.json` werden in beiden
+Fällen als Assets derselben Version angehängt.
+
+`scripts/generate-update-manifest.mjs` erzeugt `update.json` aus Repository,
+Version, Release Notes und den erzeugten ZIP-Dateien. Das Manifest enthaelt je
+Asset Plattform, Runtime Identifier, Asset-Name, Asset-URL, SHA-256 und
+Dateigroesse. Die Anwendung nutzt dieses Manifest fuer die Self-Update-Pruefung
+und validiert das heruntergeladene ZIP vor der Installation erneut gegen diese
+Metadaten.
 
 Vor der Versionsfreigabe prüft `scripts/resolve-release-version.mjs` bereits
 vorhandene Tags und Releases. Ein vollständiges vorhandenes Release wird nicht
@@ -75,6 +85,32 @@ Die Release-Versionsprüfungen, der Semantic-Release-Dry-Run, die Unit- und
 Integrationstests sowie der vollständige Solution-Build sind erfolgreich. Die
 tatsächliche GitHub-Veröffentlichung bleibt ein CI-Lauf mit
 Repository-Berechtigungen.
+
+## Self-Update im Betrieb
+
+Das Self-Update ist eine Admin-Funktion im Setup und standardmaessig
+deaktiviert. Die Quelle ist ueber `Updates:RepositoryOwner`,
+`Updates:RepositoryName` und `Updates:ManifestAssetName` konfigurierbar. Fuer
+produktive Installationen sollte der Dienst eindeutig angegeben werden:
+`Updates:WindowsServiceName` fuer Windows oder `Updates:LinuxServiceName` fuer
+systemd. Ohne Override wird Best-Effort erkannt; bei fehlender oder
+mehrdeutiger Erkennung lehnt die API den Installationsstart mit `400 BadRequest`
+ab. Unter Windows kann alternativ `Updates:ExecutablePath` verwendet werden,
+wenn die Anwendung ohne Dienst betrieben wird.
+
+Vor der Installation erstellt der Server ein Lock, validiert Service-/EXE-Ziel,
+Paketgroesse, SHA-256 und ZIP-Eintraege gegen Traversal, absolute Pfade und
+Sonderdateien. Fehler nach Lock-Erstellung werden transaktional auf Status
+`Failed` gesetzt und geben den Lock wieder frei, solange noch kein externes
+Update-Skript gestartet wurde. Geplante Installationen werden pro konfigurierte
+Uhrzeit nur einmal pro Tag versucht, damit ein fehlerhaft konfigurierter Host
+nicht jede Minute erneut installiert.
+
+Der Admin-Endpunkt zum Lock-Reset loescht eine vorhandene Lock-Datei nur dann
+nicht, wenn die aktuelle Prozessinstanz selbst noch eine Installation fuehrt.
+Eine automatische Bewertung nach Alter, Besitzer oder Stale-Zustand ist noch
+nicht umgesetzt; der Reset ist deshalb als manuell kontrollierte
+Betriebsaktion zu behandeln.
 
 ## Produktive JWT-Konfiguration
 

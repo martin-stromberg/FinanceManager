@@ -104,6 +104,79 @@ nicht ueber die API aus.
 
 **Beschreibung:** Laufenden Restore-Hintergrundtask abbrechen.
 
+### `GET /api/setup/update/status`
+
+**Beschreibung:** Self-Update-Status abrufen, inklusive installierter Version,
+verfuegbarer Version, Plattform, Lock, geplanter Installationszeit und
+Release-Metadaten.
+
+**Berechtigung:** Rolle `Admin`.
+
+### `GET /api/setup/update/settings`
+
+**Beschreibung:** Self-Update-Einstellungen abrufen.
+
+**Berechtigung:** Rolle `Admin`.
+
+### `PUT /api/setup/update/settings`
+
+**Beschreibung:** Self-Update-Einstellungen speichern. Relevante Felder sind
+Aktivierung, Pruefintervall, RepositoryOwner, RepositoryName,
+ManifestAssetName, geplante Uhrzeit, Windows-/Linux-Service, optionaler
+Windows-EXE-Pfad, WorkingDirectory und HealthTimeoutSeconds.
+
+**Berechtigung:** Rolle `Admin`.
+
+### `POST /api/setup/update/check`
+
+**Beschreibung:** Update-Manifest aus dem konfigurierten GitHub-Release-Kontext
+abrufen, passendes Asset fuer die aktuelle Runtime auswaehlen, ZIP laden und
+gegen Manifest sowie sichere ZIP-Eintragspfade validieren.
+
+**Berechtigung:** Rolle `Admin`.
+
+### `POST /api/setup/update/schedule`
+
+**Beschreibung:** Geplante Installationszeit speichern. Der Scheduler startet
+ein vorbereitetes Update bei erreichter Uhrzeit automatisch mit Downtime-
+Bestaetigung im Serverpfad.
+
+**Request-Body:** `UpdateScheduleRequest`
+
+```json
+{
+  "scheduledInstallTime": "02:30:00"
+}
+```
+
+`scheduledInstallTime = null` entfernt die geplante Uhrzeit.
+
+**Berechtigung:** Rolle `Admin`.
+
+### `POST /api/setup/update/install/start`
+
+**Beschreibung:** Vorbereitetes Update installieren. Der Request muss
+`ConfirmDowntime = true` enthalten. Vor dem Start validiert der Server Lock,
+Paketstatus, Service-/EXE-Ziel und erzeugt ein externes Update-Skript.
+
+**Antworten:**
+- `200 OK` mit `UpdateStatusDto`, wenn der externe Installationsprozess
+  gestartet wurde.
+- `400 ApiErrorDto`, wenn Downtime-Bestaetigung, Service-/EXE-Konfiguration
+  oder Installationsvalidierung fehlen.
+- `404 ApiErrorDto`, wenn kein vorbereitetes Updatepaket vorhanden ist.
+- `409 ApiErrorDto`, wenn ein Update-Lock aktiv ist.
+
+### `POST /api/setup/update/lock/reset`
+
+**Beschreibung:** Update-Lock administrativ zuruecksetzen. Der Reset wird
+abgelehnt, solange die aktuelle Prozessinstanz selbst eine Installation
+besitzt. Eine weitergehende Stale-/Owner-Bewertung der Lock-Datei findet
+aktuell nicht statt; Betreiber sollten den Endpunkt daher nur nach manueller
+Pruefung eines haengenden Updates verwenden.
+
+**Berechtigung:** Rolle `Admin`.
+
 ### `GET /api/notifications`
 
 **Beschreibung:** Benachrichtigungen laden.

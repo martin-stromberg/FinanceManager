@@ -8,7 +8,7 @@ Der Bereich stellt Betriebs- und Administrationsfunktionen bereit: Benutzer, Rol
 
 ## Funktionsweise
 
-Setup-Abschnitte (`profile`, `notifications`, `statements`, `attachments`, `backup`, `security`, `returnanalysis`) werden über `SetupCardViewModel` bereitgestellt. API-seitig decken `AuthController`, `AdminController`, `UserSettingsController`, `BackupsController`, `NotificationsController`, `MetaHolidayProvidersController` und `BackgroundTasksController` den Funktionsumfang ab.
+Setup-Abschnitte (`profile`, `notifications`, `statements`, `attachments`, `backup`, `update`, `security`, `returnanalysis`) werden über `SetupCardViewModel` bereitgestellt. Die Update-Sektion ist nur fuer authentifizierte Administratoren sichtbar. API-seitig decken `AuthController`, `AdminController`, `UserSettingsController`, `BackupsController`, `UpdateController`, `NotificationsController`, `MetaHolidayProvidersController` und `BackgroundTasksController` den Funktionsumfang ab.
 
 Die Authentifizierung verwendet 30-Minuten-JWTs. Tokens sind an den aktuellen
 Identity-`SecurityStamp` gebunden; Request-Validierung und Refresh pruefen den
@@ -37,6 +37,17 @@ Die Einstellungsseite verwendet ein Akkordeon-Layout: Sektionen können einzeln 
 
 Die `UploadBackup`-Aktion klappt die Backup-Sektion automatisch auf, falls sie beim Klick auf den Ribbon-Button noch geschlossen ist, bevor der Datei-Picker geöffnet wird.
 
+Die Update-Sektion zeigt Quelle, Status, Release Notes und die Metadaten der
+verfuegbaren Release-Assets. Administratoren koennen die automatische Pruefung
+aktivieren, Repository/Manifest, Pruefintervall, geplante Uhrzeit,
+Service-/EXE-Ziele, WorkingDirectory und Health-Timeout pflegen. Ein manueller
+Installationsstart verlangt eine Downtime-Bestaetigung. Nach dem Start zeigt
+die UI eine Warteseite, wartet zunaechst auf einen beobachteten Ausfall und
+laedt erst nach einem spaeteren erfolgreichen `/health`-Aufruf neu.
+Ein aktiver Update-Lock kann durch Administratoren zurueckgesetzt werden, wenn
+die aktuelle Prozessinstanz keine Installation mehr besitzt; die Anwendung
+klassifiziert die Lock-Datei dabei noch nicht selbst als verwaist.
+
 ## Beispiele
 
 - Ein Administrator legt Benutzer an oder setzt Passwörter zurück.
@@ -48,6 +59,8 @@ Die `UploadBackup`-Aktion klappt die Backup-Sektion automatisch auf, falls sie b
 - Ein Administrator gibt seinen AlphaVantage API Key frei; andere Benutzer
   koennen Kursabrufe darueber ausfuehren, sehen den Key aber nicht im Klartext.
 - Ein Backup wird erstellt, als ZIP heruntergeladen und später nach Dateinamen-Bestätigung als Hintergrundtask wiederhergestellt.
+- Ein Administrator prueft auf ein Self-Update, kontrolliert Paketmetadaten und
+  startet die Installation nach Downtime-Bestaetigung.
 
 ## Einschränkungen
 
@@ -56,3 +69,9 @@ Die `UploadBackup`-Aktion klappt die Backup-Sektion automatisch auf, falls sie b
 - Backup-Uploads sind auf 100 MB komprimiert, 250 MB entpackte NDJSON-Daten, einen ZIP-Eintrag und ein maximales Kompressionsverhältnis von 25 begrenzt.
 - Die Lesbarkeit verschluesselt gespeicherter AlphaVantage API Keys haengt vom
   passenden ASP.NET-Core-Data-Protection-Key-Ring ab.
+- Self-Updates beenden die laufende Anwendung kurzzeitig. Der Start wird
+  abgelehnt, wenn Paket, Lock, ZIP-Struktur oder Service-/EXE-Ziel nicht
+  eindeutig valide sind.
+- Der administrative Lock-Reset ist ein Betriebswerkzeug fuer manuell
+  gepruefte Haengefaelle. Aktuell prueft die Anwendung nur, ob diese
+  Prozessinstanz noch eine Installation besitzt.

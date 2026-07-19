@@ -22,6 +22,14 @@
 | `Jwt:Audience` | string | `financemanager` | Erwartete Token-Audience fuer Ausstellung und Validierung. Bereitstellung per `Jwt__Audience` ist moeglich. |
 | `Jwt:LifetimeMinutes` | int | `30` | JWT- und Cookie-Lebensdauer in Minuten. Betriebsstandard ist `30`; produktionsnah muss der Wert groesser als `0` sein und darf maximal `1440` betragen. Bereitstellung per `Jwt__LifetimeMinutes` ist moeglich. |
 | `DataProtection:KeysPath` | string | leer | Optionaler Dateisystempfad fuer den ASP.NET-Core-Data-Protection-Key-Ring. Fuer produktionsnahe Deployments mit persistent verschluesselten AlphaVantage API Keys sollte der Pfad auf ein dauerhaftes, gesichertes Volume zeigen. |
+| `Updates:Enabled` | bool | `false` | Aktiviert die automatische Suche nach GitHub-Releases. |
+| `Updates:HostedServicesEnabled` | bool | `true` | Aktiviert die Hintergrunddienste fuer Updatepruefung und geplante Installation. |
+| `Updates:RepositoryOwner` / `Updates:RepositoryName` | string | `martin-stromberg` / `FinanceManager` | GitHub-Repository der Updatequelle. |
+| `Updates:ManifestAssetName` | string | `update.json` | Release-Asset mit Update-Metadaten. |
+| `Updates:WorkingDirectory` | string | `updates` | Betriebsverzeichnis fuer Pending-Paket, Status, Lock, Staging und Skripte. |
+| `Updates:WindowsServiceName` / `Updates:LinuxServiceName` | string? | leer | Service-Override fuer produktive Self-Update-Installationen. |
+| `Updates:ExecutablePath` | string? | leer | Windows-Fallback ohne Service; muss absolut im aktuellen Anwendungsverzeichnis liegen. |
+| `Updates:HealthTimeoutSeconds` | int | `120` | Maximale Wartezeit der Setup-UI auf die Wiedererreichbarkeit von `/health`. |
 | `ImportSplitMode` | Enum | `MonthlyOrFixed` | Strategie für Import-Splitting |
 | `ImportMaxEntriesPerDraft` | int | `250` | Max. Entwurfszeilen pro Draft |
 | `ImportMonthlySplitThreshold` | int? | `250` | Schwellwert für Monats-Split |
@@ -106,6 +114,30 @@ automatisch rotiert. Betreiber muessen betroffene Keys organisatorisch beim
 externen Anbieter erneuern, alte Keys sperren und die neuen Keys in den
 Benutzerprofilen hinterlegen.
 
+## Self-Update-Betrieb
+
+Das Self-Update ist im Setup nur fuer Administratoren sichtbar. Die Anwendung
+liest das Release-Manifest standardmaessig aus
+`martin-stromberg/FinanceManager` und erwartet dort das Asset `update.json`.
+Das Manifest verweist auf runtime-spezifische ZIP-Pakete fuer `win-x64` und
+`linux-x64`; vor der Installation werden Dateigroesse, SHA-256, ZIP-Struktur
+und sichere Eintragspfade validiert.
+
+Produktive Installationen sollten einen eindeutigen Service konfigurieren:
+`Updates:WindowsServiceName` fuer Windows-Dienste oder
+`Updates:LinuxServiceName` fuer systemd. Ohne Override versucht die Anwendung
+eine Best-Effort-Ermittlung fuer den aktuellen Prozess. Ist diese Ermittlung
+nicht eindeutig oder fehlt ein notwendiger Service, lehnt der Installationsstart
+mit einer konkreten Admin-Meldung ab. Unter Windows ist alternativ
+`Updates:ExecutablePath` moeglich; der Pfad muss absolut sein und im aktuellen
+Anwendungsverzeichnis liegen.
+
+`Updates:WorkingDirectory` bestimmt das Betriebsverzeichnis fuer Pending-ZIP,
+Staging, Status, Lock und erzeugte Skripte. Aenderungen ueber die Admin-UI
+werden gespeichert und nach einem Neustart wieder angewendet. Der manuelle
+Installationsstart verlangt eine Downtime-Bestaetigung; geplante Installationen
+werden pro konfigurierter Uhrzeit hoechstens einmal pro Tag versucht.
+
 ## Überprüfung
 
 - Login/Logout funktioniert.
@@ -121,3 +153,8 @@ Benutzerprofilen hinterlegen.
   Klartext, sondern mit `dp:v1:`-Praefix gespeichert und lassen sich nach
   Neustart mit unveraendertem Data-Protection-Key-Ring weiter verwenden.
 - Backup kann erstellt und Restore-Status abgefragt werden.
+- `/health` ist anonym erreichbar.
+- Die Update-Sektion ist fuer Nicht-Admins nicht sichtbar und die
+  Update-API akzeptiert nur Admin-Tokens.
+- Ein Self-Update startet nur bei vorbereitetem Paket, gueltigem Lock-Zustand,
+  validem Service-/EXE-Ziel und bestaetigter Downtime.

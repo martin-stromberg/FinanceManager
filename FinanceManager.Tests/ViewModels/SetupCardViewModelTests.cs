@@ -19,23 +19,24 @@ namespace FinanceManager.Tests.ViewModels
     {
         private sealed class TestCurrentUserService : FinanceManager.Application.ICurrentUserService
         {
-            public TestCurrentUserService(Guid userId, bool isAuthenticated = true)
+            public TestCurrentUserService(Guid userId, bool isAuthenticated = true, bool isAdmin = false)
             {
                 UserId = userId;
                 IsAuthenticated = isAuthenticated;
+                IsAdmin = isAdmin;
                 PreferredLanguage = null;
             }
 
             public Guid UserId { get; }
             public string? PreferredLanguage { get; }
             public bool IsAuthenticated { get; }
-            public bool IsAdmin => false;
+            public bool IsAdmin { get; }
         }
 
-        private static IServiceProvider BuildServices()
+        private static IServiceProvider BuildServices(bool isAdmin = false)
         {
             var sc = new ServiceCollection();
-            sc.AddSingleton<FinanceManager.Application.ICurrentUserService>(new TestCurrentUserService(Guid.NewGuid()));
+            sc.AddSingleton<FinanceManager.Application.ICurrentUserService>(new TestCurrentUserService(Guid.NewGuid(), isAdmin: isAdmin));
             sc.AddLogging();
             sc.AddSingleton<IApiClient>(new Mock<IApiClient>().Object);
             return sc.BuildServiceProvider();
@@ -101,6 +102,32 @@ namespace FinanceManager.Tests.ViewModels
 
             sectionVm.Should().NotBeNull();
             sectionVm.Should().BeOfType<SetupProfileViewModel>();
+        }
+
+        [Fact]
+        public async Task LoadAsync_HidesUpdateSectionForNonAdmin()
+        {
+            var sp = BuildServices(isAdmin: false);
+            var vm = new SetupCardViewModel(sp);
+
+            await vm.LoadAsync(Guid.Empty);
+
+            vm.SettingSections.Select(section => section.Key).Should().NotContain("update");
+            vm.TryGetSectionComponentType("update", out _).Should().BeFalse();
+            vm.CreateSectionViewModel("update", sp).Should().BeNull();
+        }
+
+        [Fact]
+        public async Task LoadAsync_ShowsUpdateSectionForAdmin()
+        {
+            var sp = BuildServices(isAdmin: true);
+            var vm = new SetupCardViewModel(sp);
+
+            await vm.LoadAsync(Guid.Empty);
+
+            vm.SettingSections.Select(section => section.Key).Should().Contain("update");
+            vm.TryGetSectionComponentType("update", out var componentType).Should().BeTrue();
+            componentType.Should().Be(typeof(FinanceManager.Web.Components.Pages.Setup.SetupUpdateTab));
         }
 
         [Fact]
