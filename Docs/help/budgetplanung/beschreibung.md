@@ -14,7 +14,7 @@ Verwendungszwecke besitzen eine Budgetwertungsart. `Exakte Buchungen` ist der St
 
 Im Budgetbericht zeigen Kategoriezeilen das zusammengefasste Budget der Kategorie. Dazu zählen direkte Regeln auf die Kategorie und die Budgets der zugeordneten Verwendungszwecke. Die darunter angezeigten Verwendungszwecke behalten ihre eigenen Budget-, Ist- und Abweichungswerte.
 
-Passende Buchungen, die wegen der Budgetwertungsart nicht in den Istwert eines Verwendungszwecks eingehen, bleiben beim Verwendungszweck sichtbar und erscheinen zusaetzlich in der regulaeren Auflistung der nicht budgetierten Betraege.
+Passende Buchungen, die wegen der Budgetwertungsart nicht in den Istwert eines Verwendungszwecks eingehen, bleiben beim Verwendungszweck sichtbar und erscheinen zusaetzlich in der regulaeren Auflistung der nicht budgetierten Betraege. In der Postenauflistung des Verwendungszwecks werden sie als nicht budgetiert gekennzeichnet und optisch schwaecher dargestellt.
 
 Die Abweichung im Budgetbericht wird als `Ist - Budget` ausgewiesen. Die prozentuale Abweichung verwendet dieselbe Richtung und bezieht sich auf den Absolutbetrag des Budgets. Dadurch bleiben Kategorieansicht, Periodensummen und XLSX-Export fachlich konsistent.
 
