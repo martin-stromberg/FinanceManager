@@ -12,6 +12,7 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         public ViewportSize? ViewportSize { get; init; }
         public bool? IsMobile { get; init; }
         public bool? HasTouch { get; init; }
+        public string? Locale { get; init; }
     }
 
     private static readonly PlaywrightSessionOptions MobileSessionOptions = new()
@@ -121,6 +122,7 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
             ViewportSize = options?.ViewportSize,
             IsMobile = options?.IsMobile,
             HasTouch = options?.HasTouch,
+            Locale = options?.Locale,
         });
         context.SetDefaultTimeout(_options.ActionTimeoutSeconds * 1000);
         context.SetDefaultNavigationTimeout(_options.NavigationTimeoutSeconds * 1000);
@@ -181,7 +183,7 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         {
             FileName = "dotnet",
             Arguments = $"\"{webDll}\"",
-            WorkingDirectory = Path.GetDirectoryName(webDll) ?? GetRepoRoot(),
+            WorkingDirectory = Path.Combine(GetRepoRoot(), "FinanceManager.Web"),
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
