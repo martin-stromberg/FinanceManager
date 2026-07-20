@@ -49,7 +49,14 @@ public partial class HelpController : ControllerBase
                 return BadRequest("Invalid help request");
             }
 
-            var filePath = Path.Combine(_env.WebRootPath, "help", normalizedLanguage, $"{normalizedFeatureId}.html");
+            var helpRoot = Path.GetFullPath(Path.Combine(_env.WebRootPath, "help"));
+            var filePath = Path.GetFullPath(Path.Combine(helpRoot, normalizedLanguage, $"{normalizedFeatureId}.html"));
+
+            if (!filePath.StartsWith(helpRoot + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            {
+                _logger.LogWarning("Blocked help path outside help root: {FilePath}", filePath);
+                return BadRequest("Invalid help request");
+            }
 
             var safeFilePath = SanitizeForLog(filePath);
 
