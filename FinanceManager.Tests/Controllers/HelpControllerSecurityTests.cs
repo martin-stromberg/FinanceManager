@@ -93,6 +93,36 @@ public sealed class HelpControllerSecurityTests : IDisposable
     }
 
     [Fact]
+    public async Task GetMarkdown_WithRealValidatorSanitizesNestedTablesCodeAndLinks()
+    {
+        var markdownPath = Path.Combine(_root, "Docs", "help", "budgetplanung", "index.md");
+        Directory.CreateDirectory(Path.GetDirectoryName(markdownPath)!);
+        await File.WriteAllTextAsync(markdownPath, """
+            # Budgetplanung
+
+            | Link | Code |
+            | - | - |
+            | [intern](beschreibung.md) | `value` |
+            | [bad](javascript:alert(1)) | <img src=x onerror=alert(1)> |
+
+            ```html
+            <script>alert(1)</script>
+            ```
+            """);
+        await WriteManifestAsync(("../Docs/help/budgetplanung/index.md", markdownPath));
+
+        var result = await CreateControllerWithRealValidator().GetMarkdown("de", "budgetplanung");
+        var content = Assert.IsType<ContentResult>(result);
+
+        Assert.Contains("<table", content.Content);
+        Assert.Contains("<code", content.Content);
+        Assert.Contains("href=\"/help/view/budgetplanung/beschreibung\"", content.Content);
+        Assert.Contains("&lt;script&gt;alert(1)&lt;/script&gt;", content.Content);
+        Assert.DoesNotContain("javascript:", content.Content, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("<img", content.Content, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task GetSearchIndex_GeneratesDocumentsFromDocsHelpWhenStaticIndexIsMissing()
     {
         var docsPath = Path.Combine(_root, "Docs", "help", "budgetplanung");
@@ -130,6 +160,26 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Assert.Contains("Hilfe", content.Content);
         Assert.DoesNotContain("onclick", content.Content, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("<script", content.Content, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GetHelpPage_WithRealValidatorBlocksManipulatedLegacyHtml()
+    {
+        var helpPagePath = Path.Combine(_webRoot, "help", "de", "f001.html");
+        Directory.CreateDirectory(Path.GetDirectoryName(helpPagePath)!);
+        await File.WriteAllTextAsync(helpPagePath, "<h1>Hilfe</h1>");
+        await WriteManifestAsync(("wwwroot/help/de/f001.html", helpPagePath));
+
+        var controller = CreateControllerWithRealValidator();
+        var initialResult = await controller.GetHelpPage("de", "f001");
+
+        Assert.IsType<ContentResult>(initialResult);
+
+        await File.WriteAllTextAsync(helpPagePath, "<h1>Manipuliert</h1>");
+
+        var manipulatedResult = await controller.GetHelpPage("de", "f001");
+
+        Assert.IsType<NotFoundObjectResult>(manipulatedResult);
     }
 
     [Fact]

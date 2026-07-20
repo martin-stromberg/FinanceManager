@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
-using Ganss.Xss;
+using AngleSharp.Dom;
+using AngleSharp.Html.Parser;
 using Markdig;
 
 namespace FinanceManager.Web.Services.Help;
@@ -10,6 +11,17 @@ namespace FinanceManager.Web.Services.Help;
 public sealed partial class HelpContentRenderer : IHelpContentRenderer
 {
     private const string InternalHelpLinkBaseUrl = "https://finance-manager.local/help/view/";
+    private static readonly ISet<string> AllowedTags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "a", "blockquote", "br", "code", "div", "em", "h1", "h2", "h3", "h4", "h5", "h6",
+        "hr", "li", "ol", "p", "pre", "strong", "table", "tbody", "td", "th", "thead", "tr", "ul"
+    };
+
+    private static readonly ISet<string> DropWithContentTags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "script", "style", "iframe", "object", "embed", "form", "input", "button", "textarea", "select", "option"
+    };
+
     private readonly MarkdownPipeline _markdownPipeline;
 
     /// <summary>
@@ -63,37 +75,69 @@ public sealed partial class HelpContentRenderer : IHelpContentRenderer
             return string.Empty;
         }
 
-        var sanitized = CreateSanitizer().Sanitize(html);
+        var parser = new HtmlParser();
+        var document = parser.ParseDocument(html);
+        var sanitized = string.Concat(document.Body?.ChildNodes.Select(RenderSanitizedNode) ?? []);
         sanitized = RestoreInternalHelpLinks(sanitized);
-        sanitized = RemoveUnsafeAnchorHrefs(sanitized);
-        return AddExternalLinkSafetyAttributes(sanitized);
+        return sanitized;
     }
 
-    private static HtmlSanitizer CreateSanitizer()
+    private static string RenderSanitizedNode(INode node)
     {
-        var sanitizer = new HtmlSanitizer();
-
-        sanitizer.AllowedTags.Clear();
-        foreach (var tag in new[]
-                 {
-                     "a", "blockquote", "br", "code", "div", "em", "h1", "h2", "h3", "h4", "h5", "h6",
-                     "hr", "li", "ol", "p", "pre", "strong", "table", "tbody", "td", "th", "thead", "tr", "ul"
-                 })
+        return node switch
         {
-            sanitizer.AllowedTags.Add(tag);
+            IText text => System.Net.WebUtility.HtmlEncode(text.Data),
+            IElement element => RenderSanitizedElement(element),
+            _ => string.Empty
+        };
+    }
+
+    private static string RenderSanitizedElement(IElement element)
+    {
+        var tagName = element.TagName.ToLowerInvariant();
+        if (DropWithContentTags.Contains(tagName))
+        {
+            return string.Empty;
         }
 
-        sanitizer.AllowedAttributes.Clear();
-        sanitizer.AllowedAttributes.Add("href");
-        sanitizer.AllowedAttributes.Add("rel");
-        sanitizer.AllowedAttributes.Add("target");
-        sanitizer.UriAttributes.Remove("href");
+        var children = string.Concat(element.ChildNodes.Select(RenderSanitizedNode));
+        if (!AllowedTags.Contains(tagName))
+        {
+            return children;
+        }
 
-        sanitizer.AllowedSchemes.Clear();
-        sanitizer.AllowedSchemes.Add("http");
-        sanitizer.AllowedSchemes.Add("https");
+        if (tagName is "br" or "hr")
+        {
+            return $"<{tagName}>";
+        }
 
-        return sanitizer;
+        var attributes = tagName == "a" ? BuildAnchorAttributes(element) : string.Empty;
+        return $"<{tagName}{attributes}>{children}</{tagName}>";
+    }
+
+    private static string BuildAnchorAttributes(IElement element)
+    {
+        var href = element.GetAttribute("href")?.Trim();
+        if (string.IsNullOrWhiteSpace(href) || !IsAllowedHref(href))
+        {
+            return string.Empty;
+        }
+
+        var attributes = $" href=\"{EncodeAttribute(href)}\"";
+        if (!IsExternalHref(href))
+        {
+            return attributes;
+        }
+
+        attributes += " target=\"_blank\"";
+        var rel = BuildSafeRelValue(element.GetAttribute("rel") ?? string.Empty);
+        attributes += $" rel=\"{EncodeAttribute(rel)}\"";
+        return attributes;
+    }
+
+    private static string EncodeAttribute(string value)
+    {
+        return System.Net.WebUtility.HtmlEncode(value).Replace("\"", "&quot;", StringComparison.Ordinal);
     }
 
     private static string RewriteInternalHelpLinks(string markdown, string? currentDocumentPath)
@@ -123,32 +167,6 @@ public sealed partial class HelpContentRenderer : IHelpContentRenderer
             StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string AddExternalLinkSafetyAttributes(string html)
-    {
-        return ExternalLinkRegex().Replace(html, match =>
-        {
-            var attributes = match.Groups["attrs"].Value;
-            if (!TargetAttributeRegex().IsMatch(attributes))
-            {
-                attributes += " target=\"_blank\"";
-            }
-
-            if (!RelAttributeRegex().IsMatch(attributes))
-            {
-                attributes += " rel=\"noopener noreferrer\"";
-            }
-            else
-            {
-                attributes = RelAttributeValueRegex().Replace(
-                    attributes,
-                    relMatch => $"{relMatch.Groups["prefix"].Value}\"{BuildSafeRelValue(relMatch.Groups["value"].Value)}\"",
-                    1);
-            }
-
-            return $"<a{attributes}>";
-        });
-    }
-
     private static string BuildSafeRelValue(string relValue)
     {
         var tokens = relValue
@@ -170,28 +188,22 @@ public sealed partial class HelpContentRenderer : IHelpContentRenderer
         return string.Join(' ', tokens);
     }
 
-    private static string RemoveUnsafeAnchorHrefs(string html)
-    {
-        return AnchorHrefRegex().Replace(html, match =>
-        {
-            var href = match.Groups["href"].Value;
-            if (IsAllowedHref(href))
-            {
-                return match.Value;
-            }
-
-            return $"<a{match.Groups["before"].Value}{match.Groups["after"].Value}>";
-        });
-    }
-
     private static bool IsAllowedHref(string href)
     {
-        if (InternalHrefRegex().IsMatch(href))
+        if (InternalHrefRegex().IsMatch(href)
+            || href.StartsWith(InternalHelpLinkBaseUrl, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
         return Uri.TryCreate(href, UriKind.Absolute, out var uri)
+            && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+    }
+
+    private static bool IsExternalHref(string href)
+    {
+        return !href.StartsWith(InternalHelpLinkBaseUrl, StringComparison.OrdinalIgnoreCase)
+            && Uri.TryCreate(href, UriKind.Absolute, out var uri)
             && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
     }
 
@@ -321,12 +333,6 @@ public sealed partial class HelpContentRenderer : IHelpContentRenderer
     [GeneratedRegex(@"(?<image>!?)\[(?<text>(?:[^\]\\]|\\.)+)\]\((?<target><[^>]+>|[^\s\)]+)(?<title>\s+(?:""[^""]*""|'[^']*'))?\)", RegexOptions.Compiled)]
     private static partial Regex MarkdownLinkRegex();
 
-    [GeneratedRegex(@"<a(?<attrs>[^>]*\shref=""https?://[^""]+""[^>]*)>", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
-    private static partial Regex ExternalLinkRegex();
-
-    [GeneratedRegex(@"<a(?<before>[^>]*?)\shref=""(?<href>[^""]*)""(?<after>[^>]*)>", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
-    private static partial Regex AnchorHrefRegex();
-
     [GeneratedRegex(@"^/help/view/[a-z][a-z0-9-]{0,63}(?:/[a-z][a-z0-9-]{0,63})*(?:#[A-Za-z0-9_-]{1,80})?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex InternalHrefRegex();
 
@@ -336,12 +342,4 @@ public sealed partial class HelpContentRenderer : IHelpContentRenderer
     [GeneratedRegex(@"^[A-Za-z0-9_-]{1,80}$", RegexOptions.Compiled)]
     private static partial Regex SafeFragmentRegex();
 
-    [GeneratedRegex(@"\starget\s*=", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
-    private static partial Regex TargetAttributeRegex();
-
-    [GeneratedRegex(@"\srel\s*=", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
-    private static partial Regex RelAttributeRegex();
-
-    [GeneratedRegex(@"(?<prefix>\srel\s*=\s*)[""'](?<value>[^""']*)[""']", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
-    private static partial Regex RelAttributeValueRegex();
 }

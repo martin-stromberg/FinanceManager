@@ -87,6 +87,37 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
         Assert.True(validator.IsTrustedHelpFile(markdownPath));
     }
 
+    [Fact]
+    public void BuildManifest_CoversAndHashesAllDeliveredHelpAssets()
+    {
+        var repoRoot = GetRepoRoot();
+        var webProjectRoot = Path.Combine(repoRoot, "FinanceManager.Web");
+        var manifestPath = Path.Combine(webProjectRoot, "wwwroot", "help", "help-assets.sha256");
+        var manifest = File.ReadAllLines(manifestPath)
+            .Select(line => line.Split('|', 2, StringSplitOptions.TrimEntries))
+            .Where(parts => parts.Length == 2)
+            .ToDictionary(parts => NormalizeManifestPath(parts[0]), parts => parts[1], StringComparer.OrdinalIgnoreCase);
+
+        var expectedFiles = Directory.EnumerateFiles(Path.Combine(webProjectRoot, "wwwroot", "help"), "*.*", SearchOption.AllDirectories)
+            .Where(path => IsManifestedStaticHelpAsset(path) && !path.EndsWith("help-assets.sha256", StringComparison.OrdinalIgnoreCase))
+            .Concat(Directory.EnumerateFiles(Path.Combine(repoRoot, "Docs", "help"), "*.md", SearchOption.AllDirectories))
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        var expectedKeys = expectedFiles
+            .Select(path => NormalizeManifestPath(Path.GetRelativePath(webProjectRoot, path)))
+            .ToArray();
+
+        Assert.Empty(expectedKeys.Except(manifest.Keys, StringComparer.OrdinalIgnoreCase));
+        Assert.Empty(manifest.Keys.Except(expectedKeys, StringComparer.OrdinalIgnoreCase));
+
+        foreach (var file in expectedFiles)
+        {
+            var key = NormalizeManifestPath(Path.GetRelativePath(webProjectRoot, file));
+            Assert.Equal(ComputeSha256(file), manifest[key], ignoreCase: true);
+        }
+    }
+
     private HelpAssetIntegrityValidator CreateValidator()
     {
         return new HelpAssetIntegrityValidator(
@@ -110,6 +141,31 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
     private static string ComputeSha256(string path)
     {
         return Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)));
+    }
+
+    private static bool IsManifestedStaticHelpAsset(string path)
+    {
+        var extension = Path.GetExtension(path);
+        return extension.Equals(".css", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".js", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".json", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".html", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeManifestPath(string path)
+    {
+        return path.Replace('\\', '/').TrimStart('/');
+    }
+
+    private static string GetRepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        for (var i = 0; i < 4; i++)
+        {
+            dir = dir.Parent ?? throw new InvalidOperationException("Unable to resolve repository root.");
+        }
+
+        return dir.FullName;
     }
 
     public void Dispose()

@@ -25,6 +25,10 @@ body {
     color: var(--help-text-color);
 }
 
+.help-layout {
+    min-height: 100vh;
+}
+
 .help-container {
     max-width: 900px;
     margin: 0 auto;
