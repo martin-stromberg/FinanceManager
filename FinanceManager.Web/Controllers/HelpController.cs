@@ -92,7 +92,10 @@ public partial class HelpController : ControllerBase
     {
         try
         {
-            if (!TryNormalizeLanguage(language, out var normalizedLanguage)
+            _logger.LogInformation(
+                "Searching for help path: {HelpPath}, Language: {Language}",
+                SanitizeForLog(normalizedHelpPath),
+                SanitizeForLog(normalizedLanguage));
                 || !HelpDocumentPathResolver.TryNormalizeHelpPath(helpPath, out var normalizedHelpPath))
             {
                 return BadRequest("Invalid help request");
@@ -103,7 +106,7 @@ public partial class HelpController : ControllerBase
             _logger.LogInformation("Looking for markdown in: {DocsPath}", docsPath);
             _logger.LogInformation("Searching for help path: {HelpPath}, Language: {Language}", normalizedHelpPath, normalizedLanguage);
 
-            if (!Directory.Exists(docsPath))
+                _logger.LogWarning("No markdown files found for: {HelpPath}", SanitizeForLog(normalizedHelpPath));
             {
                 _logger.LogError("Docs directory not found: {DocsPath}", docsPath);
                 return StatusCode(500, "Docs directory not found");
@@ -131,7 +134,11 @@ public partial class HelpController : ControllerBase
             }
 
             var content = await System.IO.File.ReadAllTextAsync(selectedFile, System.Text.Encoding.UTF8);
-            var relativeDocumentPath = Path.GetRelativePath(docsPath, selectedFile).Replace('\\', '/');
+            _logger.LogError(
+                ex,
+                "Error serving markdown: {Language}/{HelpPath}",
+                SanitizeForLog(language),
+                SanitizeForLog(helpPath));
             var html = _renderer.RenderMarkdownToHtml(content, relativeDocumentPath);
 
             _logger.LogInformation("Successfully loaded markdown content ({Size} bytes)", content.Length);
@@ -393,6 +400,12 @@ public partial class HelpController : ControllerBase
         return normalizedLanguage is "de" or "en";
     }
 
+    private static string SanitizeForLog(string? value)
+    {
+        return (value ?? string.Empty)
+            .Replace("\r", string.Empty)
+            .Replace("\n", string.Empty);
+    }
     private static bool TryNormalizeFeatureId(string? featureId, out string normalizedFeatureId)
     {
         normalizedFeatureId = (featureId ?? string.Empty).Trim().ToLowerInvariant();
