@@ -145,6 +145,8 @@ public partial class HelpController : ControllerBase
     {
         try
         {
+            var languageForLog = (language ?? string.Empty).Replace("\r", string.Empty).Replace("\n", string.Empty);
+
             if (!TryNormalizeLanguage(language, out var normalizedLanguage))
             {
                 return BadRequest("Invalid language parameter");
@@ -170,12 +172,12 @@ public partial class HelpController : ControllerBase
         }
         catch (JsonException ex)
         {
-            _logger.LogWarning(ex, "Invalid search index for language: {Language}", language);
+            _logger.LogWarning(ex, "Invalid search index for language: {Language}", languageForLog);
             return BadRequest("Invalid search index");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error serving search index for language: {Language}", language);
+            _logger.LogError(ex, "Error serving search index for language: {Language}", languageForLog);
             return StatusCode(500, "Error retrieving search index");
         }
     }
