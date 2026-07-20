@@ -29,26 +29,69 @@ public sealed class SetupUpdateViewModelTests
     }
 
     [Fact]
-    public async Task LoadSaveAndInstallFlows_UpdateViewModelState()
+    public async Task LoadAsync_PopulatesSettingsAndStatus()
     {
         var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120);
         var ready = Status(UpdateStatusKind.Ready);
-        var installing = Status(UpdateStatusKind.Installing);
+        var apiMock = new Mock<IApiClient>();
+        apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
+        apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(ready);
+        var vm = CreateVm(apiMock.Object);
+
+        await vm.LoadAsync();
+
+        vm.Settings.Should().BeEquivalentTo(settings);
+        vm.Status!.Status.Should().Be(UpdateStatusKind.Ready);
+    }
+
+    [Fact]
+    public async Task SaveAsync_PersistsUpdatedSettings()
+    {
+        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120);
+        var ready = Status(UpdateStatusKind.Ready);
         var apiMock = new Mock<IApiClient>();
         apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(ready);
         apiMock.Setup(a => a.Updates_UpdateSettingsAsync(It.IsAny<UpdateSettingsUpdateRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(settings with { Enabled = true });
+        var vm = CreateVm(apiMock.Object);
+        await vm.LoadAsync();
+        vm.UpdateSettings(settings with { Enabled = true });
+
+        await vm.SaveAsync();
+
+        vm.Settings!.Enabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task StartInstallAsync_WhenReady_SetsInstallingState()
+    {
+        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120);
+        var installing = Status(UpdateStatusKind.Installing);
+        var apiMock = new Mock<IApiClient>();
         apiMock.Setup(a => a.Updates_StartInstallAsync(It.IsAny<UpdateStartRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(installing);
         var vm = CreateVm(apiMock.Object);
 
-        await vm.LoadAsync();
-        vm.UpdateSettings(settings with { Enabled = true });
-        await vm.SaveAsync();
         await vm.StartInstallAsync(confirmDowntime: true);
 
-        vm.Settings!.Enabled.Should().BeTrue();
         vm.Status!.Status.Should().Be(UpdateStatusKind.Installing);
         vm.Installing.Should().BeTrue();
+    }
+
+    [Fact]
+    public void SetInstallPhase_TransitionsFromInstallingToWaiting()
+    {
+        var apiMock = new Mock<IApiClient>();
+        var vm = CreateVm(apiMock.Object);
+        var stateChangedCount = 0;
+        vm.StateChanged += (_, _) => stateChangedCount++;
+
+        vm.SetInstallPhase("Msg_Update_Installing");
+        vm.InstallPhase.Should().Be("Msg_Update_Installing");
+
+        vm.SetInstallPhase("Msg_Update_WaitingForRestart");
+        vm.InstallPhase.Should().Be("Msg_Update_WaitingForRestart");
+
+        stateChangedCount.Should().Be(2);
     }
 
     private static SetupUpdateViewModel CreateVm(IApiClient api)

@@ -6,6 +6,7 @@
 @inject Microsoft.Extensions.Localization.IStringLocalizer<Pages> Localizer
 @inject NavigationManager Navigation
 @inject IJSRuntime Js
+@inject IHttpClientFactory HttpClientFactory
 
 @if (!CurrentUser.IsAuthenticated || !CurrentUser.IsAdmin)
 {
@@ -14,7 +15,7 @@
 else
 {
 <div class="setup-tab setup-update-tab">
-    <h4 style="margin-top:0;">Automatische Updates</h4>
+    <h4 style="margin-top:0;">@Localizer["SetupUpdate_Titel"]</h4>
 
     @if (!string.IsNullOrWhiteSpace(_vm?.LastError))
     {
@@ -27,84 +28,84 @@ else
     }
     else if (_vm.Installing)
     {
-        <div class="info" style="margin-bottom:.75rem;">Update wird installiert. Die Anwendung wird neu geladen, sobald der Health-Endpunkt wieder erreichbar ist.</div>
+        <div class="info" style="margin-bottom:.75rem;">@Localizer[_vm.InstallPhase ?? "Msg_Update_Installing"]</div>
     }
     else
     {
         <div class="setup-form-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:.75rem;">
             <label>
                 <input type="checkbox" checked="@_vm.Settings.Enabled" @onchange="OnEnabledChanged" />
-                Automatische Pruefung aktiv
+                @Localizer["SetupUpdate_Lbl_Enabled"]
             </label>
             <label>
-                Pruefintervall in Minuten
+                @Localizer["SetupUpdate_Lbl_CheckInterval"]
                 <input class="form-control" type="number" min="1" max="1440" value="@_vm.Settings.CheckIntervalMinutes" @onchange="OnIntervalChanged" />
             </label>
             <label>
-                Geplante Uhrzeit
+                @Localizer["SetupUpdate_Lbl_ScheduledTime"]
                 <input class="form-control" type="time" value="@FormatTime(_vm.Settings.ScheduledInstallTime)" @onchange="OnScheduleChanged" />
             </label>
             <label>
-                Servicename
+                @Localizer["SetupUpdate_Lbl_ServiceName"]
                 <input class="form-control" value="@_vm.Settings.ServiceName" @onchange="OnServiceNameChanged" />
             </label>
             <label>
-                EXE-Pfad
+                @Localizer["SetupUpdate_Lbl_ExecutablePath"]
                 <input class="form-control" value="@_vm.Settings.ExecutablePath" @onchange="OnExecutablePathChanged" />
             </label>
             <label>
-                Repository-Owner
+                @Localizer["SetupUpdate_Lbl_RepositoryOwner"]
                 <input class="form-control" value="@_vm.Settings.RepositoryOwner" @onchange="OnRepositoryOwnerChanged" />
             </label>
             <label>
-                Repository-Name
+                @Localizer["SetupUpdate_Lbl_RepositoryName"]
                 <input class="form-control" value="@_vm.Settings.RepositoryName" @onchange="OnRepositoryNameChanged" />
             </label>
             <label>
-                Manifest-Asset
+                @Localizer["SetupUpdate_Lbl_ManifestAssetName"]
                 <input class="form-control" value="@_vm.Settings.ManifestAssetName" @onchange="OnManifestAssetNameChanged" />
             </label>
             <label>
-                Arbeitsverzeichnis
+                @Localizer["SetupUpdate_Lbl_WorkingDirectory"]
                 <input class="form-control" value="@_vm.Settings.WorkingDirectory" @onchange="OnWorkingDirectoryChanged" />
             </label>
             <label>
-                Health-Timeout in Sekunden
+                @Localizer["SetupUpdate_Lbl_HealthTimeout"]
                 <input class="form-control" type="number" min="10" max="600" value="@_vm.Settings.HealthTimeoutSeconds" @onchange="OnHealthTimeoutChanged" />
             </label>
         </div>
 
         <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem;">
-            <button class="btn" disabled="@_vm.Busy" @onclick="async () => await _vm.SaveAsync()">Einstellungen speichern</button>
-            <button class="btn secondary" disabled="@_vm.Busy" @onclick="async () => await _vm.CheckAsync()">Jetzt pruefen</button>
-            <button class="btn danger" disabled="@(_vm.Busy || _vm.Status.Status != UpdateStatusKind.Ready)" @onclick="StartInstallAsync">Update installieren</button>
-            <button class="btn secondary" disabled="@(_vm.Busy || !_vm.Status.IsLocked)" @onclick="async () => await _vm.ResetLockAsync()">Update-Lock zuruecksetzen</button>
+            <button class="btn" disabled="@_vm.Busy" @onclick="async () => await _vm.SaveAsync()">@Localizer["SetupUpdate_Btn_SaveSettings"]</button>
+            <button class="btn secondary" disabled="@_vm.Busy" @onclick="async () => await _vm.CheckAsync()">@Localizer["SetupUpdate_Btn_CheckNow"]</button>
+            <button class="btn danger" disabled="@(_vm.Busy || _vm.Status.Status != UpdateStatusKind.Ready)" @onclick="StartInstallAsync">@Localizer["SetupUpdate_Btn_Install"]</button>
+            <button class="btn secondary" disabled="@(_vm.Busy || !_vm.Status.IsLocked)" @onclick="async () => await _vm.ResetLockAsync()">@Localizer["SetupUpdate_Btn_ResetLock"]</button>
         </div>
 
         <dl style="display:grid;grid-template-columns:max-content 1fr;gap:.35rem .75rem;margin-top:1rem;">
-            <dt>Updatequelle</dt><dd>@_vm.Settings.RepositoryOwner/@_vm.Settings.RepositoryName (@_vm.Settings.ManifestAssetName)</dd>
-            <dt>Status</dt><dd>@_vm.Status.Status</dd>
-            <dt>Installiert</dt><dd>@(_vm.Status.InstalledVersion ?? "Unknown")</dd>
-            <dt>Plattform</dt><dd>@_vm.Status.CurrentPlatform</dd>
-            <dt>Letzte Pruefung</dt><dd>@FormatDate(_vm.Status.LastCheckedAt)</dd>
-            <dt>Verfuegbar</dt><dd>@(_vm.Status.AvailableVersion ?? "-")</dd>
-            <dt>Paket</dt><dd>@(_vm.Status.DownloadedAssetName ?? "-")</dd>
-            <dt>Lock</dt><dd>@(_vm.Status.IsLocked ? $"aktiv seit {FormatDate(_vm.Status.LockCreatedAt)}" : "-")</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Source"]</dt><dd>@_vm.Settings.RepositoryOwner/@_vm.Settings.RepositoryName (@_vm.Settings.ManifestAssetName)</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Status"]</dt><dd>@_vm.Status.Status</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Installed"]</dt><dd>@(_vm.Status.InstalledVersion ?? Localizer["SetupUpdate_Val_Unknown"].Value)</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Platform"]</dt><dd>@_vm.Status.CurrentPlatform</dd>
+            <dt>@Localizer["SetupUpdate_Dl_LastChecked"]</dt><dd>@FormatDate(_vm.Status.LastCheckedAt)</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Available"]</dt><dd>@(_vm.Status.AvailableVersion ?? "-")</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Package"]</dt><dd>@(_vm.Status.DownloadedAssetName ?? "-")</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Lock"]</dt><dd>@(_vm.Status.IsLocked ? string.Format(Localizer["SetupUpdate_Val_LockActiveSince"].Value, FormatDate(_vm.Status.LockCreatedAt)) : "-")</dd>
         </dl>
 
         @if (_vm.Status.AvailableUpdate is not null)
         {
             <div style="margin-top:1rem;">
-                <h5>Release @_vm.Status.AvailableUpdate.Version</h5>
+                <h5>@string.Format(Localizer["SetupUpdate_ReleaseHeading"].Value, _vm.Status.AvailableUpdate.Version)</h5>
                 <div class="table-responsive">
                     <table class="fm-table">
                         <thead>
                             <tr>
-                                <th>Plattform</th>
-                                <th>Runtime</th>
-                                <th>Datei</th>
-                                <th>Groesse</th>
-                                <th>SHA-256</th>
+                                <th>@Localizer["SetupUpdate_Th_Platform"]</th>
+                                <th>@Localizer["SetupUpdate_Th_Runtime"]</th>
+                                <th>@Localizer["SetupUpdate_Th_File"]</th>
+                                <th>@Localizer["SetupUpdate_Th_Size"]</th>
+                                <th>@Localizer["SetupUpdate_Th_Sha256"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -157,7 +158,7 @@ else
 
     private async Task StartInstallAsync()
     {
-        var confirmed = await Js.InvokeAsync<bool>("confirm", "Das Update beendet die Anwendung kurzzeitig und ersetzt die installierten Dateien. Jetzt installieren?");
+        var confirmed = await Js.InvokeAsync<bool>("confirm", Localizer["Msg_Update_ConfirmDowntime"].Value);
         if (!confirmed)
         {
             return;
@@ -173,10 +174,14 @@ else
     private async Task PollHealthAsync()
     {
         _pollingCts?.Cancel();
+        _pollingCts?.Dispose();
         _pollingCts = new CancellationTokenSource(TimeSpan.FromSeconds(_vm!.Settings?.HealthTimeoutSeconds ?? 120));
+        _timer?.Dispose();
         _timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
-        using var http = new HttpClient { BaseAddress = new Uri(Navigation.BaseUri) };
+        using var http = HttpClientFactory.CreateClient();
+        http.BaseAddress = new Uri(Navigation.BaseUri);
         var outageObserved = false;
+        _vm.SetInstallPhase("Msg_Update_Installing");
         try
         {
             while (await _timer.WaitForNextTickAsync(_pollingCts.Token))
@@ -193,11 +198,13 @@ else
                     if (!response.IsSuccessStatusCode)
                     {
                         outageObserved = true;
+                        _vm.SetInstallPhase("Msg_Update_WaitingForRestart");
                     }
                 }
-                catch
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     outageObserved = true;
+                    _vm.SetInstallPhase("Msg_Update_WaitingForRestart");
                 }
             }
         }

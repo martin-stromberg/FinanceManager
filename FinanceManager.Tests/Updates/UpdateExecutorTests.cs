@@ -14,105 +14,74 @@ public sealed class UpdateExecutorTests
     [Fact]
     public async Task StartAsync_WhenGeneratorFails_RemovesLockAndWritesFailedStatus()
     {
-        var root = Directory.CreateTempSubdirectory();
-        try
-        {
-            var env = new TestEnvironment(root.FullName);
-            var fileStore = new UpdateFileStore(env, Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
-            var executor = new UpdateExecutor(
-                fileStore,
-                new TestResolver(),
-                new ThrowingGenerator(),
-                new TestRunner(),
-                new TestTerminator(),
-                new UpdateValidator(Options.Create(new UpdateOptions())),
-                Options.Create(new UpdateOptions { MaxAssetBytes = 1024 * 1024 }));
-            var status = await ReadyStatusAsync(fileStore);
+        using var context = TestContext.Create();
+        var executor = context.BuildExecutor(new ThrowingGenerator(), new TestRunner(), new TestTerminator());
+        var status = await ReadyStatusAsync(context.FileStore);
 
-            var act = () => executor.StartAsync(Settings(), status);
+        var act = () => executor.StartAsync(Settings(), status);
 
-            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("script failed");
-            File.Exists(fileStore.LockPath).Should().BeFalse();
-            executor.IsInstallRunning.Should().BeFalse();
-            var stored = await fileStore.ReadStatusAsync();
-            stored.Should().NotBeNull();
-            stored!.Status.Should().Be(UpdateStatusKind.Failed);
-            stored.IsLocked.Should().BeFalse();
-            stored.LastError.Should().Be("script failed");
-        }
-        finally
-        {
-            root.Delete(recursive: true);
-        }
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("script failed");
+        File.Exists(context.FileStore.LockPath).Should().BeFalse();
+        executor.IsInstallRunning.Should().BeFalse();
+        var stored = await context.FileStore.ReadStatusAsync();
+        stored.Should().NotBeNull();
+        stored!.Status.Should().Be(UpdateStatusKind.Failed);
+        stored.IsLocked.Should().BeFalse();
+        stored.LastError.Should().Be("script failed");
     }
 
     [Fact]
     public async Task StartAsync_WhenRunnerFails_RemovesLockAndWritesFailedStatus()
     {
-        var root = Directory.CreateTempSubdirectory();
-        try
-        {
-            var env = new TestEnvironment(root.FullName);
-            var fileStore = new UpdateFileStore(env, Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
-            var scriptPath = fileStore.ScriptPath("ps1");
-            var executor = new UpdateExecutor(
-                fileStore,
-                new TestResolver(),
-                new TestGenerator(scriptPath),
-                new ThrowingRunner(),
-                new TestTerminator(),
-                new UpdateValidator(Options.Create(new UpdateOptions())),
-                Options.Create(new UpdateOptions { MaxAssetBytes = 1024 * 1024 }));
+        using var context = TestContext.Create();
+        var executor = context.BuildExecutor(new TestGenerator(context.FileStore.ScriptPath("ps1")), new ThrowingRunner(), new TestTerminator());
 
-            var act = async () => await executor.StartAsync(Settings(), await ReadyStatusAsync(fileStore));
+        var act = async () => await executor.StartAsync(Settings(), await ReadyStatusAsync(context.FileStore));
 
-            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("runner failed");
-            File.Exists(fileStore.LockPath).Should().BeFalse();
-            executor.IsInstallRunning.Should().BeFalse();
-            var stored = await fileStore.ReadStatusAsync();
-            stored!.Status.Should().Be(UpdateStatusKind.Failed);
-            stored.LastError.Should().Be("runner failed");
-        }
-        finally
-        {
-            root.Delete(recursive: true);
-        }
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("runner failed");
+        File.Exists(context.FileStore.LockPath).Should().BeFalse();
+        executor.IsInstallRunning.Should().BeFalse();
+        var stored = await context.FileStore.ReadStatusAsync();
+        stored!.Status.Should().Be(UpdateStatusKind.Failed);
+        stored.LastError.Should().Be("runner failed");
+    }
+
+    [Fact]
+    public async Task StartAsync_WhenHostTerminationFails_ReleasesLockAndResetsFlag()
+    {
+        using var context = TestContext.Create();
+        var executor = context.BuildExecutor(new TestGenerator(context.FileStore.ScriptPath("ps1")), new TestRunner(), new ThrowingTerminator());
+
+        var act = async () => await executor.StartAsync(Settings(), await ReadyStatusAsync(context.FileStore));
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("termination failed");
+        File.Exists(context.FileStore.LockPath).Should().BeFalse();
+        executor.IsInstallRunning.Should().BeFalse();
+        var stored = await context.FileStore.ReadStatusAsync();
+        stored.Should().NotBeNull();
+        stored!.Status.Should().Be(UpdateStatusKind.Failed);
+        stored.IsLocked.Should().BeFalse();
+        stored.LastError.Should().Be("termination failed");
     }
 
     [Fact]
     public async Task StartAsync_RevalidatesPendingZipBeforeGeneratingScript()
     {
-        var root = Directory.CreateTempSubdirectory();
-        try
-        {
-            var env = new TestEnvironment(root.FullName);
-            var fileStore = new UpdateFileStore(env, Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
-            var status = await ReadyStatusAsync(fileStore);
-            await File.WriteAllTextAsync(fileStore.PendingAssetPath(status.DownloadedAssetName!), "tampered");
-            var generator = new TrackingGenerator(fileStore.ScriptPath("ps1"));
-            var executor = new UpdateExecutor(
-                fileStore,
-                new TestResolver(),
-                generator,
-                new TestRunner(),
-                new TestTerminator(),
-                new UpdateValidator(Options.Create(new UpdateOptions())),
-                Options.Create(new UpdateOptions { MaxAssetBytes = 1024 * 1024 }));
+        using var context = TestContext.Create();
+        var status = await ReadyStatusAsync(context.FileStore);
+        await File.WriteAllTextAsync(context.FileStore.PendingAssetPath(status.DownloadedAssetName!), "tampered");
+        var generator = new TrackingGenerator(context.FileStore.ScriptPath("ps1"));
+        var executor = context.BuildExecutor(generator, new TestRunner(), new TestTerminator());
 
-            var act = () => executor.StartAsync(Settings(), status);
+        var act = () => executor.StartAsync(Settings(), status);
 
-            await act.Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage("Update package size does not match the manifest.");
-            generator.WasCalled.Should().BeFalse();
-            File.Exists(fileStore.LockPath).Should().BeFalse();
-            var stored = await fileStore.ReadStatusAsync();
-            stored!.Status.Should().Be(UpdateStatusKind.Failed);
-            stored.LastError.Should().Be("Update package size does not match the manifest.");
-        }
-        finally
-        {
-            root.Delete(recursive: true);
-        }
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Update package size does not match the manifest.");
+        generator.WasCalled.Should().BeFalse();
+        File.Exists(context.FileStore.LockPath).Should().BeFalse();
+        var stored = await context.FileStore.ReadStatusAsync();
+        stored!.Status.Should().Be(UpdateStatusKind.Failed);
+        stored.LastError.Should().Be("Update package size does not match the manifest.");
     }
 
     private static UpdateSettingsDto Settings()
@@ -139,6 +108,39 @@ public sealed class UpdateExecutorTests
     {
         await using var stream = File.OpenRead(path);
         return Convert.ToHexString(await SHA256.HashDataAsync(stream)).ToLowerInvariant();
+    }
+
+    private sealed class TestContext : IDisposable
+    {
+        private readonly DirectoryInfo _root;
+
+        private TestContext(DirectoryInfo root, UpdateFileStore fileStore)
+        {
+            _root = root;
+            FileStore = fileStore;
+        }
+
+        public UpdateFileStore FileStore { get; }
+
+        public static TestContext Create()
+        {
+            var root = Directory.CreateTempSubdirectory();
+            var env = new TestEnvironment(root.FullName);
+            var fileStore = new UpdateFileStore(env, Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
+            return new TestContext(root, fileStore);
+        }
+
+        public UpdateExecutor BuildExecutor(IUpdateScriptGenerator generator, IUpdateProcessRunner runner, IUpdateHostTerminator terminator)
+            => new(
+                FileStore,
+                new TestResolver(),
+                generator,
+                runner,
+                terminator,
+                new UpdateValidator(Options.Create(new UpdateOptions())),
+                Options.Create(new UpdateOptions { MaxAssetBytes = 1024 * 1024 }));
+
+        public void Dispose() => _root.Delete(recursive: true);
     }
 
     private sealed class TestResolver : IUpdateServiceResolver
@@ -206,6 +208,11 @@ public sealed class UpdateExecutorTests
         public void StopApplication()
         {
         }
+    }
+
+    private sealed class ThrowingTerminator : IUpdateHostTerminator
+    {
+        public void StopApplication() => throw new InvalidOperationException("termination failed");
     }
 
     private sealed class TestEnvironment : IWebHostEnvironment

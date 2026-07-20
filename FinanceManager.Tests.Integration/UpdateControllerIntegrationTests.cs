@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
+using FinanceManager.Shared.Dtos.Common;
 using FinanceManager.Shared.Dtos.Update;
 using FinanceManager.Web.Services.Updates;
 using FluentAssertions;
@@ -83,6 +85,143 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         var response = await client.PostAsJsonAsync("/api/setup/update/install/start", new UpdateStartRequest(true));
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
+        error!.code.Should().Be("Err_Update_Locked");
+    }
+
+    [Fact]
+    public async Task StartInstall_ReturnsNotFoundWithLocalizableCode_WhenNoReadyPackage()
+    {
+        using var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<IUpdateOrchestrator>();
+                services.AddScoped<IUpdateOrchestrator>(_ => new ThrowingUpdateOrchestrator(new FileNotFoundException("No ready update package is available.")));
+            });
+        });
+        var client = factory.CreateClient();
+        await AuthenticateAdminAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/setup/update/install/start", new UpdateStartRequest(true));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
+        error!.code.Should().Be("Err_Update_NotReady");
+    }
+
+    [Fact]
+    public async Task ResetLock_Returns204_WhenStaleLockIsReleasedOnDisk()
+    {
+        var tempDir = Directory.CreateTempSubdirectory();
+        try
+        {
+            using var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    services.PostConfigure<UpdateOptions>(o => o.WorkingDirectory = tempDir.FullName);
+                });
+            });
+            var client = factory.CreateClient();
+            await AuthenticateAdminAsync(client);
+
+            var lockPath = Path.Combine(tempDir.FullName, "update.lock");
+            await File.WriteAllTextAsync(lockPath, DateTimeOffset.UtcNow.AddMinutes(-10).ToString("O"));
+
+            var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"));
+
+            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+            File.Exists(lockPath).Should().BeFalse();
+        }
+        finally
+        {
+            tempDir.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Status_WhenInstallingAndVersionMatchesAfterRestart_ReportsNoUpdate()
+    {
+        var tempDir = Directory.CreateTempSubdirectory();
+        try
+        {
+            using var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    services.PostConfigure<UpdateOptions>(o => o.WorkingDirectory = tempDir.FullName);
+                    services.RemoveAll<IInstalledReleaseMetadataProvider>();
+                    services.AddSingleton<IInstalledReleaseMetadataProvider>(new FixedInstalledReleaseMetadataProvider("1.2.3"));
+                });
+            });
+            var client = factory.CreateClient();
+            await AuthenticateAdminAsync(client);
+            await WriteStatusAsync(tempDir.FullName, InstallingStatus("1.2.3"));
+
+            var response = await client.GetAsync("/api/setup/update/status");
+
+            response.EnsureSuccessStatusCode();
+            var status = await response.Content.ReadFromJsonAsync<UpdateStatusDto>();
+            status!.Status.Should().Be(UpdateStatusKind.NoUpdate);
+        }
+        finally
+        {
+            tempDir.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Status_WhenInstallingAndVersionMismatchAfterRestart_ReportsFailed()
+    {
+        var tempDir = Directory.CreateTempSubdirectory();
+        try
+        {
+            using var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    services.PostConfigure<UpdateOptions>(o => o.WorkingDirectory = tempDir.FullName);
+                    services.RemoveAll<IInstalledReleaseMetadataProvider>();
+                    services.AddSingleton<IInstalledReleaseMetadataProvider>(new FixedInstalledReleaseMetadataProvider("1.2.3"));
+                });
+            });
+            var client = factory.CreateClient();
+            await AuthenticateAdminAsync(client);
+            await WriteStatusAsync(tempDir.FullName, InstallingStatus("9.9.9"));
+
+            var response = await client.GetAsync("/api/setup/update/status");
+
+            response.EnsureSuccessStatusCode();
+            var status = await response.Content.ReadFromJsonAsync<UpdateStatusDto>();
+            status!.Status.Should().Be(UpdateStatusKind.Failed);
+            status.LastError.Should().Be("Installed version '1.2.3' does not match the expected version '9.9.9' after the update process finished.");
+        }
+        finally
+        {
+            tempDir.Delete(recursive: true);
+        }
+    }
+
+    private static UpdateStatusDto InstallingStatus(string availableVersion)
+        => new(
+            UpdateStatusKind.Installing,
+            null,
+            null,
+            availableVersion,
+            "win-x64",
+            DateTimeOffset.UtcNow,
+            null,
+            "release.zip",
+            true,
+            DateTimeOffset.UtcNow,
+            null,
+            null);
+
+    private static Task WriteStatusAsync(string workingDirectory, UpdateStatusDto status)
+    {
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        return File.WriteAllTextAsync(Path.Combine(workingDirectory, "status.json"), JsonSerializer.Serialize(status, options));
     }
 
     [Fact]
@@ -130,5 +269,18 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         public Task<UpdateCheckResultDto> CheckAsync(CancellationToken ct = default) => throw new NotSupportedException();
         public Task ResetLockAsync(string? reason, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<UpdateStatusDto> StartInstallAsync(bool confirmDowntime, CancellationToken ct = default) => Task.FromException<UpdateStatusDto>(_exception);
+    }
+
+    private sealed class FixedInstalledReleaseMetadataProvider : IInstalledReleaseMetadataProvider
+    {
+        private readonly string _version;
+
+        public FixedInstalledReleaseMetadataProvider(string version)
+        {
+            _version = version;
+        }
+
+        public Task<InstalledReleaseMetadataDto> GetAsync(CancellationToken ct = default)
+            => Task.FromResult(new InstalledReleaseMetadataDto(_version, null, null, null, null));
     }
 }

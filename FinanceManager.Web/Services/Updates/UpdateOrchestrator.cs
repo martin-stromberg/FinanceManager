@@ -39,7 +39,6 @@ public sealed class UpdateOrchestrator : IUpdateOrchestrator
     public async Task<UpdateStatusDto> GetStatusAsync(CancellationToken ct = default)
     {
         var installed = await _installedProvider.GetAsync(ct);
-        await _settingsStore.GetAsync(ct);
         var stored = await _fileStore.ReadStatusAsync(ct);
         return await WithRuntimeStateAsync(stored ?? EmptyStatus(installed), installed, ct);
     }
@@ -159,7 +158,7 @@ public sealed class UpdateOrchestrator : IUpdateOrchestrator
     {
         var settings = await _settingsStore.GetAsync(ct);
         var lockCreatedAt = await _fileStore.GetLockCreatedAtAsync(ct);
-        return status with
+        var enriched = status with
         {
             InstalledVersion = installed.Version,
             InstalledReleasePublishedAt = installed.PublishedAt,
@@ -168,6 +167,39 @@ public sealed class UpdateOrchestrator : IUpdateOrchestrator
             LockCreatedAt = lockCreatedAt,
             ScheduledInstallTime = settings.ScheduledInstallTime
         };
+
+        if (enriched.Status != UpdateStatusKind.Installing)
+        {
+            return enriched;
+        }
+
+        return await ReconcileInstallingAsync(enriched, installed, lockCreatedAt.HasValue, ct);
+    }
+
+    private async Task<UpdateStatusDto> ReconcileInstallingAsync(UpdateStatusDto stored, InstalledReleaseMetadataDto installed, bool lockActive, CancellationToken ct)
+    {
+        if (lockActive || string.IsNullOrWhiteSpace(stored.AvailableVersion))
+        {
+            return stored;
+        }
+
+        var reconciled = string.Equals(installed.Version, stored.AvailableVersion, StringComparison.Ordinal)
+            ? stored with
+            {
+                Status = UpdateStatusKind.NoUpdate,
+                LastError = null,
+                DownloadedAssetName = null,
+                AvailableVersion = null,
+                AvailableUpdate = null
+            }
+            : stored with
+            {
+                Status = UpdateStatusKind.Failed,
+                LastError = $"Installed version '{installed.Version}' does not match the expected version '{stored.AvailableVersion}' after the update process finished."
+            };
+
+        await _fileStore.WriteStatusAsync(reconciled, ct);
+        return reconciled;
     }
 }
 #pragma warning restore CS1591

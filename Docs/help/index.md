@@ -27,4 +27,5 @@
 ## Systemverwaltung
 
 - [Anhänge](anhaenge/index.md) — Dieser Bereich verwaltet Dateianhänge und Kategorien für Fachobjekte.
+- [Automatische Updates](updates/index.md) — Dieser Bereich orchestriert automatische Erkennung, Download und Installation von Programmaktualisierungen auf produktiven Servern.
 - [Systemverwaltung und Setup](systemverwaltung-und-setup/index.md) — Dieser Bereich bündelt Benutzerverwaltung, Sicherheit, Benachrichtigungen und Sicherungen.

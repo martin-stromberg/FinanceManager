@@ -18,6 +18,7 @@ public sealed class SetupUpdateViewModel : BaseViewModel
     public UpdateStatusDto? Status { get; private set; }
     public bool Busy { get; private set; }
     public bool Installing { get; private set; }
+    public string? InstallPhase { get; private set; }
 
     public async Task LoadAsync(CancellationToken ct = default)
     {
@@ -142,6 +143,12 @@ public sealed class SetupUpdateViewModel : BaseViewModel
     public void MarkHealthTimeout()
     {
         SetError("Err_Update_HealthTimeout", "Die Anwendung wurde nach dem Update nicht innerhalb des erwarteten Zeitfensters erreichbar.");
+        RaiseStateChanged();
+    }
+
+    public void SetInstallPhase(string? phase)
+    {
+        InstallPhase = phase;
         RaiseStateChanged();
     }
 

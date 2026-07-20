@@ -1,5 +1,4 @@
 #pragma warning disable CS1591
-using System.Diagnostics;
 using FinanceManager.Shared.Dtos.Update;
 using Microsoft.Extensions.Options;
 
@@ -55,7 +54,6 @@ public sealed class UpdateExecutor : IUpdateExecutor
         }
 
         UpdateStatusDto? installing = null;
-        var processStarted = false;
         try
         {
             IsInstallRunning = true;
@@ -72,58 +70,24 @@ public sealed class UpdateExecutor : IUpdateExecutor
             };
             await _fileStore.WriteStatusAsync(installing, ct);
             _processRunner.StartScript(scriptPath);
-            processStarted = true;
             _hostTerminator.StopApplication();
             return installing;
         }
         catch (Exception ex)
         {
-            if (!processStarted)
+            IsInstallRunning = false;
+            await _fileStore.DeleteLockAsync(CancellationToken.None);
+            var failed = (installing ?? status) with
             {
-                IsInstallRunning = false;
-                await _fileStore.DeleteLockAsync(CancellationToken.None);
-                var failed = (installing ?? status) with
-                {
-                    Status = UpdateStatusKind.Failed,
-                    IsLocked = false,
-                    LockCreatedAt = null,
-                    LastError = ex.Message
-                };
-                await _fileStore.WriteStatusAsync(failed, CancellationToken.None);
-            }
+                Status = UpdateStatusKind.Failed,
+                IsLocked = false,
+                LockCreatedAt = null,
+                LastError = ex.Message
+            };
+            await _fileStore.WriteStatusAsync(failed, CancellationToken.None);
 
             throw;
         }
     }
-}
-
-public sealed class DefaultUpdateProcessRunner : IUpdateProcessRunner
-{
-    public void StartScript(string scriptPath)
-    {
-        var extension = Path.GetExtension(scriptPath);
-        var startInfo = extension.Equals(".ps1", StringComparison.OrdinalIgnoreCase)
-            ? new ProcessStartInfo("powershell.exe", $"-ExecutionPolicy Bypass -File \"{scriptPath}\"")
-            : new ProcessStartInfo("/usr/bin/env", $"bash \"{scriptPath}\"");
-
-        startInfo.UseShellExecute = false;
-        startInfo.CreateNoWindow = true;
-        if (Process.Start(startInfo) is null)
-        {
-            throw new InvalidOperationException("Update script process could not be started.");
-        }
-    }
-}
-
-public sealed class DefaultUpdateHostTerminator : IUpdateHostTerminator
-{
-    private readonly IHostApplicationLifetime _lifetime;
-
-    public DefaultUpdateHostTerminator(IHostApplicationLifetime lifetime)
-    {
-        _lifetime = lifetime;
-    }
-
-    public void StopApplication() => _lifetime.StopApplication();
 }
 #pragma warning restore CS1591

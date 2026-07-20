@@ -1,4 +1,5 @@
 #pragma warning disable CS1591
+using System.Globalization;
 using FinanceManager.Shared.Dtos.Update;
 using Microsoft.Extensions.Options;
 
@@ -8,6 +9,10 @@ public sealed class UpdateFileStore : IUpdateFileStore
 {
     private readonly IWebHostEnvironment _environment;
     private readonly UpdateOptions _options;
+    // Intentionally resolved once at construction time (before any UseWorkingDirectory override) and never
+    // recomputed: settings.json persists the working directory itself, so its own location must stay fixed
+    // at the originally configured directory. Otherwise, after a process restart, the singleton would not
+    // know where to look for the persisted working directory before having read it.
     private readonly string _settingsDirectory;
     private string? _workingDirectory;
 
@@ -15,10 +20,10 @@ public sealed class UpdateFileStore : IUpdateFileStore
     {
         _environment = environment;
         _options = options.Value;
-        _settingsDirectory = ResolveSafePath(string.IsNullOrWhiteSpace(_options.WorkingDirectory) ? "updates" : _options.WorkingDirectory);
+        _settingsDirectory = ResolveFullPath(ResolveConfiguredWorkingDirectory());
     }
 
-    public string RootDirectory => ResolveSafePath(string.IsNullOrWhiteSpace(_workingDirectory) ? _options.WorkingDirectory : _workingDirectory);
+    public string RootDirectory => ResolveFullPath(ResolveConfiguredWorkingDirectory());
     public string PendingDirectory => Path.Combine(RootDirectory, "pending");
     public string StagingDirectory => Path.Combine(RootDirectory, "staging");
     public string SettingsPath => Path.Combine(_settingsDirectory, "settings.json");
@@ -65,14 +70,28 @@ public sealed class UpdateFileStore : IUpdateFileStore
         await JsonFileStore.WriteAtomicAsync(StatusPath, status, ct);
     }
 
-    public Task<DateTimeOffset?> GetLockCreatedAtAsync(CancellationToken ct = default)
+    public async Task<DateTimeOffset?> GetLockCreatedAtAsync(CancellationToken ct = default)
     {
         if (!File.Exists(LockPath))
         {
-            return Task.FromResult<DateTimeOffset?>(null);
+            return null;
         }
 
-        return Task.FromResult<DateTimeOffset?>(File.GetCreationTimeUtc(LockPath));
+        try
+        {
+            using var reader = new StreamReader(LockPath);
+            var firstLine = await reader.ReadLineAsync(ct);
+            if (!string.IsNullOrWhiteSpace(firstLine)
+                && DateTimeOffset.TryParse(firstLine, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed))
+            {
+                return parsed;
+            }
+        }
+        catch (IOException)
+        {
+        }
+
+        return File.GetLastWriteTimeUtc(LockPath);
     }
 
     public async Task<bool> TryCreateLockAsync(CancellationToken ct = default)
@@ -102,7 +121,17 @@ public sealed class UpdateFileStore : IUpdateFileStore
         return Task.FromResult(true);
     }
 
-    private string ResolveSafePath(string configuredPath)
+    private string ResolveConfiguredWorkingDirectory()
+    {
+        if (!string.IsNullOrWhiteSpace(_workingDirectory))
+        {
+            return _workingDirectory;
+        }
+
+        return string.IsNullOrWhiteSpace(_options.WorkingDirectory) ? "updates" : _options.WorkingDirectory;
+    }
+
+    private string ResolveFullPath(string configuredPath)
     {
         var root = _environment.ContentRootPath;
         var candidate = Path.IsPathRooted(configuredPath)

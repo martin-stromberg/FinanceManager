@@ -1,5 +1,7 @@
 # Finance Manager
 
+[![Tests](https://img.shields.io/github/actions/workflow/status/martin-stromberg/FinanceManager/test.yml?label=Tests)](https://github.com/martin-stromberg/FinanceManager/actions)
+[![Release](https://img.shields.io/github/actions/workflow/status/martin-stromberg/FinanceManager/release.yml?label=Release)](https://github.com/martin-stromberg/FinanceManager/actions)
 [![License](https://img.shields.io/github/license/martin-stromberg/FinanceManager)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 
@@ -199,6 +201,13 @@ dotnet test FinanceManager.sln
   sollte ein eindeutiger `Updates:ServiceName` fuer das aktuelle System
   konfiguriert werden; Best-Effort-Erkennung wird nur genutzt, wenn sie
   eindeutig ist.
+- **Verbesserungen (Issue #206):** Das Update-System wurde fuer Produktionsumgebungen
+  (insbesondere Linux) stabilisiert: Lock-Verwaltung ist atomarer, verwaiste Locks
+  werden zuverlaessiger erkannt und bereinigt, der Service-Neustart und die
+  Versionserkennung nach dem Update sind robuster, und kritische Fehlermeldungen
+  sind vollstaendig lokalisiert. Die UI zeigt waehrend der Installation einen
+  Fortschrittsstatus an (Installation laeuft → Warte auf Neustart). Siehe
+  `Docs/help/updates/troubleshooting.md` fuer Linux-spezifische Hinweise.
 - Produktionsnahe Konfiguration liegt in
   `FinanceManager.Web/appsettings.Production.json` (u. a. Kestrel-Endpoint
   `http://*:5003`, FileLogging aktivierbar).
@@ -228,6 +237,17 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md), insbesondere:
 - PR-Hinweise zu Ressourcenpfaden und CI-Checks
 
 ## Roadmap
+
+### Aktuelle / In Bearbeitung
+
+**Issue #206 – Automatisches Update reparieren** ✓ Abgeschlossen
+- Lock-State Stabilisierung für Linux/Produktionsumgebungen
+- Dienst-Neustart und Post-Update-Validierung gehärtet
+- Vollständige Lokalisierung von Fehlermeldungen
+- Fortschrittsanzeige während Installation verbessert
+- Siehe Änderungen im Branch `task/issue-206-*-automatisches-update-repariere`
+
+### Geplant
 
 Aus `Docs/features/task/issue-90-fb7b291b995c45f3b35a0bf86c8ae321-mobile-ansicht/plan.md` (Mobile Ansicht):
 

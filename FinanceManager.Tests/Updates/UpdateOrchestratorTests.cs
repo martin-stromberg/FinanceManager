@@ -13,7 +13,7 @@ public sealed class UpdateOrchestratorTests
     [Fact]
     public async Task ResetLockAsync_WhenInstallRuns_RefusesReset()
     {
-        var context = TestContext.Create();
+        using var context = TestContext.Create();
         context.Executor.IsInstallRunning = true;
         await context.FileStore.TryCreateLockAsync();
 
@@ -22,25 +22,23 @@ public sealed class UpdateOrchestratorTests
         await act.Should().ThrowAsync<IOException>()
             .WithMessage("The current process still owns an update installation.");
         File.Exists(context.FileStore.LockPath).Should().BeTrue();
-        context.Dispose();
     }
 
     [Fact]
     public async Task ResetLockAsync_WhenNoLockExists_RefusesReset()
     {
-        var context = TestContext.Create();
+        using var context = TestContext.Create();
 
         var act = () => context.Orchestrator.ResetLockAsync("admin");
 
         await act.Should().ThrowAsync<IOException>()
             .WithMessage("No update lock is active.");
-        context.Dispose();
     }
 
     [Fact]
     public async Task ResetLockAsync_WhenLockIsFresh_RefusesReset()
     {
-        var context = TestContext.Create(healthTimeoutSeconds: 120);
+        using var context = TestContext.Create(healthTimeoutSeconds: 120);
         await context.FileStore.TryCreateLockAsync();
 
         var act = () => context.Orchestrator.ResetLockAsync("admin");
@@ -48,15 +46,14 @@ public sealed class UpdateOrchestratorTests
         await act.Should().ThrowAsync<IOException>()
             .WithMessage("The update lock is not old enough to be considered stale.");
         File.Exists(context.FileStore.LockPath).Should().BeTrue();
-        context.Dispose();
     }
 
     [Fact]
     public async Task ResetLockAsync_WhenLockIsStale_DeletesLockAndWritesReason()
     {
-        var context = TestContext.Create(healthTimeoutSeconds: 60);
-        await context.FileStore.TryCreateLockAsync();
-        File.SetCreationTimeUtc(context.FileStore.LockPath, DateTime.UtcNow.AddMinutes(-3));
+        using var context = TestContext.Create(healthTimeoutSeconds: 60);
+        await context.FileStore.EnsureAsync();
+        await File.WriteAllTextAsync(context.FileStore.LockPath, DateTimeOffset.UtcNow.AddMinutes(-3).ToString("O"));
 
         await context.Orchestrator.ResetLockAsync("verified stale");
 
@@ -66,37 +63,47 @@ public sealed class UpdateOrchestratorTests
         status!.IsLocked.Should().BeFalse();
         status.LockCreatedAt.Should().BeNull();
         status.LastError.Should().Be("Lock reset: verified stale");
-        context.Dispose();
+    }
+
+    [Fact]
+    public async Task ResetLockAsync_WhenLockIsStaleByContent_DeletesLock()
+    {
+        using var context = TestContext.Create(healthTimeoutSeconds: 60);
+        await context.FileStore.EnsureAsync();
+        await File.WriteAllTextAsync(context.FileStore.LockPath, DateTimeOffset.UtcNow.AddMinutes(-3).ToString("O"));
+        File.SetCreationTimeUtc(context.FileStore.LockPath, DateTime.UtcNow);
+
+        await context.Orchestrator.ResetLockAsync("verified stale");
+
+        File.Exists(context.FileStore.LockPath).Should().BeFalse();
     }
 
     [Fact]
     public async Task StartInstallAsync_WhenDowntimeIsNotConfirmed_ThrowsBadRequestCause()
     {
-        var context = TestContext.Create();
+        using var context = TestContext.Create();
 
         var act = () => context.Orchestrator.StartInstallAsync(confirmDowntime: false);
 
         await act.Should().ThrowAsync<ArgumentException>()
             .WithMessage("Downtime confirmation is required.*");
-        context.Dispose();
     }
 
     [Fact]
     public async Task StartInstallAsync_WhenUpdateIsNotReady_ThrowsNotReadyCause()
     {
-        var context = TestContext.Create();
+        using var context = TestContext.Create();
 
         var act = () => context.Orchestrator.StartInstallAsync(confirmDowntime: true);
 
         await act.Should().ThrowAsync<FileNotFoundException>()
             .WithMessage("No ready update package is available.");
-        context.Dispose();
     }
 
     [Fact]
     public async Task StartInstallAsync_WhenReady_DelegatesToExecutorAndReturnsInstalling()
     {
-        var context = TestContext.Create();
+        using var context = TestContext.Create();
         var ready = TestData.ReadyStatus();
         await context.FileStore.WriteStatusAsync(ready);
 
@@ -104,13 +111,12 @@ public sealed class UpdateOrchestratorTests
 
         status.Status.Should().Be(UpdateStatusKind.Installing);
         context.Executor.StartCalls.Should().Be(1);
-        context.Dispose();
     }
 
     [Fact]
     public async Task CheckAsync_WhenManifestHasNewerVersion_WritesCheckingThenReady()
     {
-        var context = TestContext.Create(manifest: TestData.Manifest(version: "1.2.4"));
+        using var context = TestContext.Create(manifest: TestData.Manifest(version: "1.2.4"));
 
         var result = await context.Orchestrator.CheckAsync();
 
@@ -119,20 +125,62 @@ public sealed class UpdateOrchestratorTests
         result.Status.DownloadedAssetName.Should().Be("release.zip");
         context.FileStore.ReadStatusAsync().Result!.Status.Should().Be(UpdateStatusKind.Ready);
         context.ManifestClient.DownloadCalls.Should().Be(1);
-        context.Dispose();
     }
 
     [Fact]
     public async Task CheckAsync_WhenManifestClientFails_WritesFailedStatus()
     {
-        var context = TestContext.Create(manifestFailure: new InvalidOperationException("manifest unavailable"));
+        using var context = TestContext.Create(manifestFailure: new InvalidOperationException("manifest unavailable"));
 
         var result = await context.Orchestrator.CheckAsync();
 
         result.UpdateAvailable.Should().BeFalse();
         result.Status.Status.Should().Be(UpdateStatusKind.Failed);
         result.Status.LastError.Should().Be("manifest unavailable");
-        context.Dispose();
+    }
+
+    [Fact]
+    public async Task GetStatusAsync_WhenInstallingAndVersionMatches_ReportsNoUpdate()
+    {
+        using var context = TestContext.Create(installedVersion: "1.2.4");
+        await context.FileStore.WriteStatusAsync(TestData.InstallingStatus("1.2.4"));
+
+        var status = await context.Orchestrator.GetStatusAsync();
+
+        status.Status.Should().Be(UpdateStatusKind.NoUpdate);
+        status.LastError.Should().BeNull();
+        status.DownloadedAssetName.Should().BeNull();
+        status.AvailableVersion.Should().BeNull();
+        var stored = await context.FileStore.ReadStatusAsync();
+        stored!.Status.Should().Be(UpdateStatusKind.NoUpdate);
+    }
+
+    [Fact]
+    public async Task GetStatusAsync_WhenInstallingAndVersionMismatch_ReportsFailed()
+    {
+        using var context = TestContext.Create(installedVersion: "1.2.3");
+        await context.FileStore.WriteStatusAsync(TestData.InstallingStatus("1.2.4"));
+
+        var status = await context.Orchestrator.GetStatusAsync();
+
+        status.Status.Should().Be(UpdateStatusKind.Failed);
+        status.LastError.Should().Be("Installed version '1.2.3' does not match the expected version '1.2.4' after the update process finished.");
+        var stored = await context.FileStore.ReadStatusAsync();
+        stored!.Status.Should().Be(UpdateStatusKind.Failed);
+    }
+
+    [Fact]
+    public async Task GetStatusAsync_WhenInstallingAndLockActive_KeepsInstalling()
+    {
+        using var context = TestContext.Create(installedVersion: "1.2.3");
+        await context.FileStore.WriteStatusAsync(TestData.InstallingStatus("1.2.4"));
+        await context.FileStore.TryCreateLockAsync();
+
+        var status = await context.Orchestrator.GetStatusAsync();
+
+        status.Status.Should().Be(UpdateStatusKind.Installing);
+        var stored = await context.FileStore.ReadStatusAsync();
+        stored!.Status.Should().Be(UpdateStatusKind.Installing);
     }
 
     private sealed class TestContext : IDisposable
@@ -153,7 +201,7 @@ public sealed class UpdateOrchestratorTests
         public TestManifestClient ManifestClient { get; }
         public UpdateOrchestrator Orchestrator { get; }
 
-        public static TestContext Create(int healthTimeoutSeconds = 120, UpdateMetadataDto? manifest = null, Exception? manifestFailure = null)
+        public static TestContext Create(int healthTimeoutSeconds = 120, UpdateMetadataDto? manifest = null, Exception? manifestFailure = null, string? installedVersion = "1.2.3")
         {
             var root = Directory.CreateTempSubdirectory();
             var options = new UpdateOptions { WorkingDirectory = "updates", HealthTimeoutSeconds = healthTimeoutSeconds, MaxAssetBytes = 1024 * 1024 };
@@ -162,7 +210,7 @@ public sealed class UpdateOrchestratorTests
             var manifestClient = new TestManifestClient(fileStore, manifest ?? TestData.Manifest(), manifestFailure);
             var orchestrator = new UpdateOrchestrator(
                 new TestSettingsStore(),
-                new TestInstalledProvider(),
+                new TestInstalledProvider(installedVersion),
                 manifestClient,
                 new TestPlatformResolver(),
                 fileStore,
@@ -194,12 +242,34 @@ public sealed class UpdateOrchestratorTests
 
         public static UpdateMetadataDto Manifest(string version = "1.2.4")
             => new(version, null, null, "martin-stromberg", "FinanceManager", new[] { new UpdateAssetDto("windows", "win-x64", "release.zip", "https://example.test/release.zip", "hash", 3) });
+
+        public static UpdateStatusDto InstallingStatus(string availableVersion)
+            => new(
+                UpdateStatusKind.Installing,
+                null,
+                null,
+                availableVersion,
+                "win-x64",
+                DateTimeOffset.UtcNow,
+                null,
+                "release.zip",
+                true,
+                DateTimeOffset.UtcNow,
+                null,
+                Manifest(version: availableVersion));
     }
 
     private sealed class TestInstalledProvider : IInstalledReleaseMetadataProvider
     {
+        private readonly string? _version;
+
+        public TestInstalledProvider(string? version = "1.2.3")
+        {
+            _version = version;
+        }
+
         public Task<InstalledReleaseMetadataDto> GetAsync(CancellationToken ct = default)
-            => Task.FromResult(new InstalledReleaseMetadataDto("1.2.3", null, null, null, null));
+            => Task.FromResult(new InstalledReleaseMetadataDto(_version, null, null, null, null));
     }
 
     private sealed class TestSettingsStore : IUpdateSettingsStore
