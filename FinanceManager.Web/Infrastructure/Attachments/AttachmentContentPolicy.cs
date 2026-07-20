@@ -93,6 +93,7 @@ public sealed class AttachmentContentPolicy : IAttachmentContentPolicy
             "application/pdf" => normalized,
             "image/png" => normalized,
             "image/jpeg" => normalized,
+            "image/svg+xml" => normalized,
             "image/x-icon" => normalized,
             "image/vnd.microsoft.icon" => normalized,
             "text/plain" => normalized,
