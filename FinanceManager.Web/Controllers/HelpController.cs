@@ -189,7 +189,8 @@ public partial class HelpController : ControllerBase
 
             if (!_assetIntegrityValidator.IsTrustedHelpFile(filePath))
             {
-                _logger.LogWarning("Blocked untrusted search index: {FilePath}", filePath);
+                var safeFilePathForLog = filePath.Replace("\r", string.Empty).Replace("\n", string.Empty);
+                _logger.LogWarning("Blocked untrusted search index: {FilePath}", safeFilePathForLog);
                 return NotFound("Search index not found");
             }
 
