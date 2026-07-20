@@ -354,33 +354,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
 
     private sealed class TrustAllHelpAssetIntegrityValidator : IHelpAssetIntegrityValidator
     {
-        private readonly string _allowedHelpRoot;
-
-        public TrustAllHelpAssetIntegrityValidator(string webRootPath)
-        {
-            _allowedHelpRoot = Path.GetFullPath(Path.Combine(webRootPath, "help"));
-        }
-
-        public bool IsTrustedHelpFile(string fullPath)
-        {
-            if (string.IsNullOrWhiteSpace(fullPath))
-            {
-                return false;
-            }
-
-            var resolvedPath = Path.GetFullPath(fullPath);
-            var allowedPrefix = _allowedHelpRoot.EndsWith(Path.DirectorySeparatorChar)
-                ? _allowedHelpRoot
-                : _allowedHelpRoot + Path.DirectorySeparatorChar;
-
-            if (!resolvedPath.StartsWith(allowedPrefix, StringComparison.Ordinal)
-                && !string.Equals(resolvedPath, _allowedHelpRoot, StringComparison.Ordinal))
-            {
-                return false;
-            }
-
-            return File.Exists(resolvedPath);
-        }
+        public bool IsTrustedHelpFile(string fullPath) => File.Exists(fullPath);
     }
 
     private sealed class TestWebHostEnvironment : IWebHostEnvironment
