@@ -1,0 +1,84 @@
+name: Tests
+
+# Bisher gab es keine CI-Pipeline, die "dotnet test" ausfuehrt - release.yml baut/published/released
+# nur (siehe dortige Kommentare). Ohne diesen Job war die gesamte Testsuite ausschliesslich durch
+# gelegentliche manuelle Laeufe abgesichert.
+on:
+  # Nur "push" auf master (Merge-Nachkontrolle) + "pull_request" fuer Feature-Branches - nicht beides
+  # fuer denselben Branch, sonst laeuft die ~13-Minuten-Suite doppelt: jeder Push auf einen Branch
+  # mit offenem PR loest sowohl "push" als auch "pull_request: synchronize" aus.
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+        shell: pwsh
+
+      - name: Build
+        run: |
+          dotnet build FinanceManager.Tests/FinanceManager.Tests.csproj --no-restore -c Debug
+          dotnet build FinanceManager.Tests.E2E/FinanceManager.Tests.E2E.csproj --no-restore -c Debug
+          dotnet build FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.csproj --no-restore -c Debug
+        shell: pwsh
+
+      - name: Test regular tests
+        run: dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --no-build -c Debug --filter "Category!=OsInterface" --logger "trx;LogFileName=test-results-regular-tests.trx" --logger "console;verbosity=normal"
+        shell: pwsh
+
+      - name: Test regular integration
+        run: dotnet test FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.csproj --no-build -c Debug --logger "trx;LogFileName=test-results-regular-integration.trx" --logger "console;verbosity=normal"
+        shell: pwsh
+
+      - name: Test E2E tests
+        continue-on-error: true
+        run: dotnet test FinanceManager.Tests.E2E/FinanceManager.Tests.E2E.csproj --no-build -c Debug --logger "trx;LogFileName=test-results-e2e-tests.trx" --logger "console;verbosity=normal"
+        shell: pwsh
+
+      - name: Upload regular test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-regular
+          path: |
+            FinanceManager.Tests/TestResults/*regular*.trx
+            FinanceManager.Tests.Integration/TestResults/*regular*.trx
+          retention-days: 14
+
+      - name: Upload interface test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-interface
+          path: |
+            FinanceManager.Tests/TestResults/*os-interface*.trx
+            FinanceManager.Tests.Integration/TestResults/*os-interface*.trx
+          retention-days: 14
+
+      - name: Upload E2E test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-e2e
+          path: |
+            FinanceManager.Tests.E2E/TestResults/*e2e*.trx
+          retention-days: 14
