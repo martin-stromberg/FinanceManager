@@ -51,15 +51,17 @@ public partial class HelpController : ControllerBase
 
             var filePath = Path.Combine(_env.WebRootPath, "help", normalizedLanguage, $"{normalizedFeatureId}.html");
 
+            var safeFilePath = SanitizeForLog(filePath);
+
             if (!System.IO.File.Exists(filePath))
             {
-                _logger.LogWarning("Help page not found: {FilePath}", filePath);
+                _logger.LogWarning("Help page not found: {FilePath}", safeFilePath);
                 return NotFound("Help page not found");
             }
 
             if (!_assetIntegrityValidator.IsTrustedHelpFile(filePath))
             {
-                _logger.LogWarning("Blocked untrusted help page: {FilePath}", filePath);
+                _logger.LogWarning("Blocked untrusted help page: {FilePath}", safeFilePath);
                 return NotFound("Help page not found");
             }
 
@@ -68,7 +70,7 @@ public partial class HelpController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error serving help page: {Language}/{FeatureId}", language, featureId);
+            _logger.LogError(ex, "Error serving help page: {Language}/{FeatureId}", SanitizeForLog(language), SanitizeForLog(featureId));
             return StatusCode(500, "Error retrieving help page");
         }
     }
@@ -366,6 +368,16 @@ public partial class HelpController : ControllerBase
             && !value.Any(char.IsControl)
             && !value.Contains('<', StringComparison.Ordinal)
             && !value.Contains('>', StringComparison.Ordinal);
+    }
+
+    private static string SanitizeForLog(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        return new string(value.Where(c => !char.IsControl(c)).ToArray());
     }
 
     private static bool TryNormalizeLanguage(string? language, out string normalizedLanguage)
