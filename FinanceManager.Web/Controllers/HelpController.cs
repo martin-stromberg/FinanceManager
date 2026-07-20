@@ -131,7 +131,9 @@ public partial class HelpController : ControllerBase
             if (!System.IO.File.Exists(selectedFile))
             {
                 _logger.LogError("Selected file does not exist: {FilePath}", selectedFile);
-                return StatusCode(500, "Selected documentation not found");
+            var safeLanguage = Regex.Replace(language ?? string.Empty, @"[\r\n\0\t\f\v]+", " ");
+            var safeHelpPath = Regex.Replace(helpPath ?? string.Empty, @"[\r\n\0\t\f\v]+", " ");
+            _logger.LogError(ex, "Error serving markdown: {Language}/{HelpPath}", safeLanguage, safeHelpPath);
             }
 
             if (!_assetIntegrityValidator.IsTrustedHelpFile(selectedFile))
