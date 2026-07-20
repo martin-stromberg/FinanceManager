@@ -14,6 +14,7 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 - Anhänge und Sicherungen (Backup/Restore) verwalten
 - Responsive Web-UI für kleine Viewports (mobile Topbar, responsive Container, mobile E2E-Abdeckung)
 - Einstellungs-Ribbon mit stets sichtbaren Aktionen: Backup erstellen/hochladen, Profil speichern/zurücksetzen, Benachrichtigungen und Kontoauszugs-Importregeln speichern — unabhängig davon, welche Sektion gerade aufgeklappt ist
+- Versionsinformation im Programmmenü (Footer) angezeigt — aktuelle Versionnummer oder Fallback `"Version unbekannt"`
 - JWT-Authentifizierung mit 30 Minuten Access-Token-Laufzeit, SecurityStamp-/Rollen-/Active-Revalidierung und DB-validiertem Refresh
 
 ## Installation / Setup
