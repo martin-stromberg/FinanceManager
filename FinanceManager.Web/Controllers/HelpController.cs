@@ -19,11 +19,6 @@ public partial class HelpController : ControllerBase
     private readonly IHelpContentRenderer _renderer;
     private readonly IHelpAssetIntegrityValidator _assetIntegrityValidator;
 
-    private static string SanitizeForLog(string? value)
-    {
-        return (value ?? string.Empty).Replace("\r", string.Empty).Replace("\n", string.Empty);
-    }
-
     /// <summary>
     /// Initializes a new instance of HelpController.
     /// </summary>
@@ -54,26 +49,17 @@ public partial class HelpController : ControllerBase
                 return BadRequest("Invalid help request");
             }
 
-            var helpRoot = Path.GetFullPath(Path.Combine(_env.WebRootPath, "help"));
-            var filePath = Path.GetFullPath(Path.Combine(helpRoot, normalizedLanguage, $"{normalizedFeatureId}.html"));
-
-            if (!filePath.StartsWith(helpRoot + Path.DirectorySeparatorChar, StringComparison.Ordinal))
-            {
-                _logger.LogWarning("Blocked help path outside help root: {FilePath}", filePath);
-                return BadRequest("Invalid help request");
-            }
-
-            var safeFilePath = SanitizeForLog(filePath);
+            var filePath = Path.Combine(_env.WebRootPath, "help", normalizedLanguage, $"{normalizedFeatureId}.html");
 
             if (!System.IO.File.Exists(filePath))
             {
-                _logger.LogWarning("Help page not found: {FilePath}", safeFilePath);
+                _logger.LogWarning("Help page not found: {FilePath}", filePath);
                 return NotFound("Help page not found");
             }
 
             if (!_assetIntegrityValidator.IsTrustedHelpFile(filePath))
             {
-                _logger.LogWarning("Blocked untrusted help page: {FilePath}", safeFilePath);
+                _logger.LogWarning("Blocked untrusted help page: {FilePath}", filePath);
                 return NotFound("Help page not found");
             }
 
@@ -82,7 +68,7 @@ public partial class HelpController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error serving help page: {Language}/{FeatureId}", SanitizeForLog(language), SanitizeForLog(featureId));
+            _logger.LogError(ex, "Error serving help page: {Language}/{FeatureId}", language, featureId);
             return StatusCode(500, "Error retrieving help page");
         }
     }
@@ -97,23 +83,18 @@ public partial class HelpController : ControllerBase
     {
         try
         {
-            _logger.LogInformation(
-                "Searching for help path: {HelpPath}, Language: {Language}",
-                SanitizeForLog(normalizedHelpPath),
-                SanitizeForLog(normalizedLanguage));
+            if (!TryNormalizeLanguage(language, out var normalizedLanguage)
                 || !HelpDocumentPathResolver.TryNormalizeHelpPath(helpPath, out var normalizedHelpPath))
             {
                 return BadRequest("Invalid help request");
             }
 
             var docsPath = HelpDocumentPathResolver.GetHelpSourcePath(_env);
-            var safeHelpPathForLog = SanitizeForLog(normalizedHelpPath);
-            var safeLanguageForLog = SanitizeForLog(normalizedLanguage);
 
             _logger.LogInformation("Looking for markdown in: {DocsPath}", docsPath);
-            _logger.LogInformation("Searching for help path: {HelpPath}, Language: {Language}", safeHelpPathForLog, safeLanguageForLog);
+            _logger.LogInformation("Searching for help path: {HelpPath}, Language: {Language}", normalizedHelpPath, normalizedLanguage);
 
-                _logger.LogWarning("No markdown files found for: {HelpPath}", SanitizeForLog(normalizedHelpPath));
+            if (!Directory.Exists(docsPath))
             {
                 _logger.LogError("Docs directory not found: {DocsPath}", docsPath);
                 return StatusCode(500, "Docs directory not found");
@@ -122,7 +103,7 @@ public partial class HelpController : ControllerBase
             var selectedFile = HelpDocumentPathResolver.FindMarkdownFile(docsPath, normalizedLanguage, normalizedHelpPath);
             if (selectedFile is null)
             {
-                _logger.LogWarning("No markdown files found for: {HelpPath}", safeHelpPathForLog);
+                _logger.LogWarning("No markdown files found for: {HelpPath}", normalizedHelpPath);
                 return NotFound("Documentation not found");
             }
 
@@ -131,9 +112,7 @@ public partial class HelpController : ControllerBase
             if (!System.IO.File.Exists(selectedFile))
             {
                 _logger.LogError("Selected file does not exist: {FilePath}", selectedFile);
-            var safeLanguage = Regex.Replace(language ?? string.Empty, @"[\r\n\0\t\f\v]+", " ");
-            var safeHelpPath = Regex.Replace(helpPath ?? string.Empty, @"[\r\n\0\t\f\v]+", " ");
-            _logger.LogError(ex, "Error serving markdown: {Language}/{HelpPath}", safeLanguage, safeHelpPath);
+                return StatusCode(500, "Selected documentation not found");
             }
 
             if (!_assetIntegrityValidator.IsTrustedHelpFile(selectedFile))
@@ -143,11 +122,7 @@ public partial class HelpController : ControllerBase
             }
 
             var content = await System.IO.File.ReadAllTextAsync(selectedFile, System.Text.Encoding.UTF8);
-            _logger.LogError(
-                ex,
-                "Error serving markdown: {Language}/{HelpPath}",
-                SanitizeForLog(language),
-                SanitizeForLog(helpPath));
+            var relativeDocumentPath = Path.GetRelativePath(docsPath, selectedFile).Replace('\\', '/');
             var html = _renderer.RenderMarkdownToHtml(content, relativeDocumentPath);
 
             _logger.LogInformation("Successfully loaded markdown content ({Size} bytes)", content.Length);
@@ -156,11 +131,7 @@ public partial class HelpController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Error serving markdown: {Language}/{HelpPath}",
-                SanitizeForLog(language),
-                SanitizeForLog(helpPath));
+            _logger.LogError(ex, "Error serving markdown: {Language}/{HelpPath}", language, helpPath);
             return StatusCode(500, "Error retrieving markdown");
         }
     }
@@ -174,8 +145,6 @@ public partial class HelpController : ControllerBase
     {
         try
         {
-            var languageForLog = (language ?? string.Empty).Replace("\r", string.Empty).Replace("\n", string.Empty);
-
             if (!TryNormalizeLanguage(language, out var normalizedLanguage))
             {
                 return BadRequest("Invalid language parameter");
@@ -191,8 +160,7 @@ public partial class HelpController : ControllerBase
 
             if (!_assetIntegrityValidator.IsTrustedHelpFile(filePath))
             {
-                var safeFilePathForLog = filePath.Replace("\r", string.Empty).Replace("\n", string.Empty);
-                _logger.LogWarning("Blocked untrusted search index: {FilePath}", safeFilePathForLog);
+                _logger.LogWarning("Blocked untrusted search index: {FilePath}", filePath);
                 return NotFound("Search index not found");
             }
 
@@ -202,12 +170,12 @@ public partial class HelpController : ControllerBase
         }
         catch (JsonException ex)
         {
-            _logger.LogWarning(ex, "Invalid search index for language: {Language}", languageForLog);
+            _logger.LogWarning(ex, "Invalid search index for language: {Language}", language);
             return BadRequest("Invalid search index");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error serving search index for language: {Language}", languageForLog);
+            _logger.LogError(ex, "Error serving search index for language: {Language}", language);
             return StatusCode(500, "Error retrieving search index");
         }
     }
@@ -398,28 +366,12 @@ public partial class HelpController : ControllerBase
             && !value.Contains('>', StringComparison.Ordinal);
     }
 
-    private static string SanitizeForLog(string? value)
-    {
-        if (string.IsNullOrEmpty(value))
-        {
-            return string.Empty;
-        }
-
-        return new string(value.Where(c => !char.IsControl(c)).ToArray());
-    }
-
     private static bool TryNormalizeLanguage(string? language, out string normalizedLanguage)
     {
         normalizedLanguage = (language ?? string.Empty).Trim().ToLowerInvariant();
         return normalizedLanguage is "de" or "en";
     }
 
-    private static string SanitizeForLog(string? value)
-    {
-        return (value ?? string.Empty)
-            .Replace("\r", string.Empty)
-            .Replace("\n", string.Empty);
-    }
     private static bool TryNormalizeFeatureId(string? featureId, out string normalizedFeatureId)
     {
         normalizedFeatureId = (featureId ?? string.Empty).Trim().ToLowerInvariant();
