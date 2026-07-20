@@ -19,6 +19,11 @@ public partial class HelpController : ControllerBase
     private readonly IHelpContentRenderer _renderer;
     private readonly IHelpAssetIntegrityValidator _assetIntegrityValidator;
 
+    private static string SanitizeForLog(string? value)
+    {
+        return (value ?? string.Empty).Replace("\r", string.Empty).Replace("\n", string.Empty);
+    }
+
     /// <summary>
     /// Initializes a new instance of HelpController.
     /// </summary>
@@ -102,9 +107,11 @@ public partial class HelpController : ControllerBase
             }
 
             var docsPath = HelpDocumentPathResolver.GetHelpSourcePath(_env);
+            var safeHelpPathForLog = SanitizeForLog(normalizedHelpPath);
+            var safeLanguageForLog = SanitizeForLog(normalizedLanguage);
 
             _logger.LogInformation("Looking for markdown in: {DocsPath}", docsPath);
-            _logger.LogInformation("Searching for help path: {HelpPath}, Language: {Language}", normalizedHelpPath, normalizedLanguage);
+            _logger.LogInformation("Searching for help path: {HelpPath}, Language: {Language}", safeHelpPathForLog, safeLanguageForLog);
 
                 _logger.LogWarning("No markdown files found for: {HelpPath}", SanitizeForLog(normalizedHelpPath));
             {
@@ -115,7 +122,7 @@ public partial class HelpController : ControllerBase
             var selectedFile = HelpDocumentPathResolver.FindMarkdownFile(docsPath, normalizedLanguage, normalizedHelpPath);
             if (selectedFile is null)
             {
-                _logger.LogWarning("No markdown files found for: {HelpPath}", normalizedHelpPath);
+                _logger.LogWarning("No markdown files found for: {HelpPath}", safeHelpPathForLog);
                 return NotFound("Documentation not found");
             }
 
@@ -147,7 +154,11 @@ public partial class HelpController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error serving markdown: {Language}/{HelpPath}", language, helpPath);
+            _logger.LogError(
+                ex,
+                "Error serving markdown: {Language}/{HelpPath}",
+                SanitizeForLog(language),
+                SanitizeForLog(helpPath));
             return StatusCode(500, "Error retrieving markdown");
         }
     }
