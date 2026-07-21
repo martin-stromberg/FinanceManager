@@ -236,7 +236,11 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             username = TestWebApplicationFactory.BootstrapAdminUsername,
             password = TestWebApplicationFactory.BootstrapAdminPassword
         });
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            throw new InvalidOperationException($"Admin login failed with {(int)response.StatusCode} {response.StatusCode}: {body}");
+        }
     }
 
     private sealed class ThrowingUpdateOrchestrator : IUpdateOrchestrator

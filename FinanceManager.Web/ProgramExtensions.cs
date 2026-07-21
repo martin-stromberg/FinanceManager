@@ -353,9 +353,17 @@ namespace FinanceManager.Web
             {
                 app.UseExceptionHandler("/Error", createScopeForErrors: true);
             }
-            else if (!app.Configuration.GetValue<bool>("E2E:DisableHttpsRedirection"))
+            else
             {
-                app.UseHttpsRedirection();
+                // Surfaces the real exception (stack trace in the response body) instead of a bare,
+                // bodyless 500, which otherwise made unhandled exceptions during local development and
+                // integration tests (both run with Environment=Development) impossible to diagnose.
+                app.UseDeveloperExceptionPage();
+
+                if (!app.Configuration.GetValue<bool>("E2E:DisableHttpsRedirection"))
+                {
+                    app.UseHttpsRedirection();
+                }
             }
 
             app.Use(async (context, next) =>
