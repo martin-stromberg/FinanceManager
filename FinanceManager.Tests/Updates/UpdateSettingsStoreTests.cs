@@ -1,8 +1,6 @@
 using FinanceManager.Shared.Dtos.Update;
 using FinanceManager.Web.Services.Updates;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 
 namespace FinanceManager.Tests.Updates;
@@ -15,7 +13,7 @@ public sealed class UpdateSettingsStoreTests
         var root = Directory.CreateTempSubdirectory();
         try
         {
-            var env = new TestEnvironment(root.FullName);
+            var env = new TestWebHostEnvironment(root.FullName);
             var fileStore = new UpdateFileStore(env, Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
             var store = new UpdateSettingsStore(Options.Create(new UpdateOptions { WorkingDirectory = "updates" }), fileStore);
 
@@ -48,7 +46,7 @@ public sealed class UpdateSettingsStoreTests
         var root = Directory.CreateTempSubdirectory();
         try
         {
-            var env = new TestEnvironment(root.FullName);
+            var env = new TestWebHostEnvironment(root.FullName);
             var firstFileStore = new UpdateFileStore(env, Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
             var firstStore = new UpdateSettingsStore(Options.Create(new UpdateOptions { WorkingDirectory = "updates" }), firstFileStore);
             await firstStore.SaveAsync(new UpdateSettingsUpdateRequest(false, 60, "martin-stromberg", "FinanceManager", "update.json", null, null, null, "custom-updates", 120));
@@ -76,7 +74,7 @@ public sealed class UpdateSettingsStoreTests
         var root = Directory.CreateTempSubdirectory();
         try
         {
-            var env = new TestEnvironment(root.FullName);
+            var env = new TestWebHostEnvironment(root.FullName);
             var fileStore = new UpdateFileStore(env, Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
             await fileStore.EnsureAsync();
             await File.WriteAllTextAsync(
@@ -109,19 +107,4 @@ public sealed class UpdateSettingsStoreTests
         }
     }
 
-    private sealed class TestEnvironment : IWebHostEnvironment
-    {
-        public TestEnvironment(string root)
-        {
-            ContentRootPath = root;
-            WebRootPath = root;
-        }
-
-        public string ApplicationName { get; set; } = "Tests";
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
-        public string ContentRootPath { get; set; }
-        public string EnvironmentName { get; set; } = "Development";
-        public string WebRootPath { get; set; }
-        public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
-    }
 }

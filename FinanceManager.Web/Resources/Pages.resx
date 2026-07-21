@@ -2175,4 +2175,130 @@
   <data name="LinkedIbans_Error_AlreadyLinked" xml:space="preserve">
     <value>This IBAN is already linked to this account.</value>
   </data>
+  <data name="Msg_Loading" xml:space="preserve">
+    <value>Loading...</value>
+  </data>
+  <data name="Err_Update_Locked" xml:space="preserve">
+    <value>An update lock is active.</value>
+  </data>
+  <data name="Err_Update_InstallRunning" xml:space="preserve">
+    <value>The current process still owns an update installation.</value>
+  </data>
+  <data name="Err_Update_NotReady" xml:space="preserve">
+    <value>No ready update package is available.</value>
+  </data>
+  <data name="Err_Update_InvalidState" xml:space="preserve">
+    <value>Invalid update state.</value>
+  </data>
+  <data name="Err_Update_InvalidRequest" xml:space="preserve">
+    <value>Invalid update request.</value>
+  </data>
+  <data name="Err_Update_HealthTimeout" xml:space="preserve">
+    <value>The application did not become reachable within the expected time window after the update.</value>
+  </data>
+  <data name="Err_Update_VersionMismatch" xml:space="preserve">
+    <value>The installed version does not match the expected target version.</value>
+  </data>
+  <data name="Msg_Update_Installing" xml:space="preserve">
+    <value>The update is being installed. The application will reload once the health endpoint becomes reachable again.</value>
+  </data>
+  <data name="Msg_Update_WaitingForRestart" xml:space="preserve">
+    <value>Waiting for the application to become reachable after restart...</value>
+  </data>
+  <data name="Msg_Update_ConfirmDowntime" xml:space="preserve">
+    <value>The update will briefly stop the application and replace the installed files. Install now?</value>
+  </data>
+  <data name="SetupUpdate_Titel" xml:space="preserve">
+    <value>Automatic updates</value>
+  </data>
+  <data name="SetupUpdate_Lbl_Enabled" xml:space="preserve">
+    <value>Automatic check enabled</value>
+  </data>
+  <data name="SetupUpdate_Lbl_CheckInterval" xml:space="preserve">
+    <value>Check interval (minutes)</value>
+  </data>
+  <data name="SetupUpdate_Lbl_ScheduledTime" xml:space="preserve">
+    <value>Scheduled time</value>
+  </data>
+  <data name="SetupUpdate_Lbl_ServiceName" xml:space="preserve">
+    <value>Service name</value>
+  </data>
+  <data name="SetupUpdate_Lbl_ExecutablePath" xml:space="preserve">
+    <value>Executable path</value>
+  </data>
+  <data name="SetupUpdate_Lbl_RepositoryOwner" xml:space="preserve">
+    <value>Repository owner</value>
+  </data>
+  <data name="SetupUpdate_Lbl_RepositoryName" xml:space="preserve">
+    <value>Repository name</value>
+  </data>
+  <data name="SetupUpdate_Lbl_ManifestAssetName" xml:space="preserve">
+    <value>Manifest asset</value>
+  </data>
+  <data name="SetupUpdate_Lbl_WorkingDirectory" xml:space="preserve">
+    <value>Working directory</value>
+  </data>
+  <data name="SetupUpdate_Lbl_HealthTimeout" xml:space="preserve">
+    <value>Health timeout (seconds)</value>
+  </data>
+  <data name="SetupUpdate_Btn_SaveSettings" xml:space="preserve">
+    <value>Save settings</value>
+  </data>
+  <data name="SetupUpdate_Btn_CheckNow" xml:space="preserve">
+    <value>Check now</value>
+  </data>
+  <data name="SetupUpdate_Btn_Install" xml:space="preserve">
+    <value>Install update</value>
+  </data>
+  <data name="SetupUpdate_Btn_ResetLock" xml:space="preserve">
+    <value>Reset update lock</value>
+  </data>
+  <data name="SetupUpdate_Dl_Source" xml:space="preserve">
+    <value>Update source</value>
+  </data>
+  <data name="SetupUpdate_Dl_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="SetupUpdate_Dl_Installed" xml:space="preserve">
+    <value>Installed</value>
+  </data>
+  <data name="SetupUpdate_Dl_Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="SetupUpdate_Dl_LastChecked" xml:space="preserve">
+    <value>Last checked</value>
+  </data>
+  <data name="SetupUpdate_Dl_Available" xml:space="preserve">
+    <value>Available</value>
+  </data>
+  <data name="SetupUpdate_Dl_Package" xml:space="preserve">
+    <value>Package</value>
+  </data>
+  <data name="SetupUpdate_Dl_Lock" xml:space="preserve">
+    <value>Lock</value>
+  </data>
+  <data name="SetupUpdate_Val_Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="SetupUpdate_Val_LockActiveSince" xml:space="preserve">
+    <value>active since {0}</value>
+  </data>
+  <data name="SetupUpdate_ReleaseHeading" xml:space="preserve">
+    <value>Release {0}</value>
+  </data>
+  <data name="SetupUpdate_Th_Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="SetupUpdate_Th_Runtime" xml:space="preserve">
+    <value>Runtime</value>
+  </data>
+  <data name="SetupUpdate_Th_File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="SetupUpdate_Th_Size" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="SetupUpdate_Th_Sha256" xml:space="preserve">
+    <value>SHA-256</value>
+  </data>
 </root>
