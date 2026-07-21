@@ -79,8 +79,11 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
             // connection against the same named in-memory database (Mode=Memory;Cache=Shared), which SQLite
             // handles safely for concurrent access. The anchor connection below is kept open for the
             // lifetime of the factory so the named in-memory database isn't dropped between uses.
+            // "Default Timeout" sets SQLite's busy-retry timeout (seconds): when two separate connections
+            // briefly contend for the same shared-cache database, the later one waits instead of immediately
+            // failing with "database is locked".
             var dbName = $"testdb_{Guid.NewGuid():N}";
-            var connectionString = $"Data Source={dbName};Mode=Memory;Cache=Shared";
+            var connectionString = $"Data Source={dbName};Mode=Memory;Cache=Shared;Default Timeout=30";
             _connection = new SqliteConnection(connectionString);
             _connection.Open();
 
@@ -102,15 +105,24 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
                 services.AddSingleton<TimeProvider>(new FixedTimeProvider(FixedUtcNow.Value));
             }
 
-            // Ensure schema is created for the fresh database using migrations
-            using var sp = services.BuildServiceProvider();
-            using var scope = sp.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Database.EnsureDeleted();
-            db.Database.Migrate();
+            // Create and migrate the schema directly against the anchor connection object (not through the
+            // connection-string-based DI registration used above). This removes any timing dependency on
+            // SQLite's shared-cache database-name registration between opening the anchor connection and a
+            // second, separately-opened connection resolved via DI reaching the same named database -
+            // schema creation happens on the exact connection instance kept open for the factory's lifetime.
+            var migrationOptions = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+            using (var migrationDb = new AppDbContext(migrationOptions))
+            {
+                migrationDb.Database.EnsureDeleted();
+                migrationDb.Database.Migrate();
+            }
 
             // Seed a bootstrap admin user so that test registrations are never treated as the first user.
             // Without this, the first registered user in each test run would automatically receive Admin rights.
+            // Resolved through the normal DI-registered (connection-string-based) AppDbContext: by this point
+            // the schema is guaranteed present on the shared in-memory database via the anchor connection above.
+            using var sp = services.BuildServiceProvider();
+            using var scope = sp.CreateScope();
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
             const string adminRole = "Admin";
