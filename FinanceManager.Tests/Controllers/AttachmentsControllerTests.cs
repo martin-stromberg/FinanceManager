@@ -154,6 +154,50 @@ public sealed class AttachmentsControllerTests
     }
 
     [Fact]
+    public async Task UploadAsync_ShouldAccept_SafeSvg()
+    {
+        var opts = new AttachmentUploadOptions { MaxSizeBytes = 1024, AllowedMimeTypes = new[] { "image/svg+xml" } };
+        var (controller, service, _, current) = Create(opts);
+        var entityId = Guid.NewGuid();
+        var data = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><path d="M0 0h1v1H0z"/></svg>"""u8.ToArray();
+        var formFile = new FormFile(new MemoryStream(data), 0, data.Length, "file", "symbol.svg") { Headers = new HeaderDictionary(), ContentType = "image/svg+xml" };
+        var dto = new AttachmentDto(
+            Id: Guid.NewGuid(),
+            EntityKind: (short)AttachmentEntityKind.Contact,
+            EntityId: entityId,
+            FileName: "symbol.svg",
+            ContentType: "image/svg+xml",
+            SizeBytes: data.Length,
+            CategoryId: null,
+            UploadedUtc: DateTime.UtcNow,
+            IsUrl: false);
+
+        service.Setup(s => s.UploadAsync(current.UserId, AttachmentEntityKind.Contact, entityId, It.IsAny<Stream>(), "symbol.svg", "image/svg+xml", null, It.IsAny<CancellationToken>()))
+               .ReturnsAsync(dto);
+
+        var resp = await controller.UploadAsync((short)AttachmentEntityKind.Contact, entityId, formFile, null, null, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(resp);
+        Assert.IsType<AttachmentDto>(ok.Value);
+        service.VerifyAll();
+    }
+
+    [Fact]
+    public async Task UploadAsync_ShouldReject_UnsafeSvg()
+    {
+        var opts = new AttachmentUploadOptions { MaxSizeBytes = 1024, AllowedMimeTypes = new[] { "image/svg+xml" } };
+        var (controller, _, _, _) = Create(opts);
+        var data = """<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script>alert(1)</script></svg>"""u8.ToArray();
+        var formFile = new FormFile(new MemoryStream(data), 0, data.Length, "file", "symbol.svg") { Headers = new HeaderDictionary(), ContentType = "image/svg+xml" };
+
+        var resp = await controller.UploadAsync((short)AttachmentEntityKind.Contact, Guid.NewGuid(), formFile, null, null, CancellationToken.None);
+
+        var bad = Assert.IsType<BadRequestObjectResult>(resp);
+        var err = Assert.IsType<ApiErrorDto>(bad.Value);
+        Assert.Equal("Err_Invalid_ContentType", err.code);
+    }
+
+    [Fact]
     public async Task UploadAsync_ShouldReject_HeaderBytesMismatch()
     {
         var opts = new AttachmentUploadOptions { MaxSizeBytes = 1024, AllowedMimeTypes = new[] { "application/pdf", "image/png" } };
@@ -418,6 +462,24 @@ public sealed class AttachmentsControllerTests
         var file = Assert.IsType<FileStreamResult>(resp);
         Assert.Equal("file.html", file.FileDownloadName);
         Assert.Equal("application/octet-stream", file.ContentType);
+        Assert.Equal("nosniff", controller.Response.Headers["X-Content-Type-Options"].ToString());
+        service.VerifyAll();
+    }
+
+    [Fact]
+    public async Task DownloadAsync_ShouldReturnSvgContentType_ForStoredSvg()
+    {
+        var (controller, service, _, current) = Create();
+        var id = Guid.NewGuid();
+        var content = new MemoryStream("""<svg xmlns="http://www.w3.org/2000/svg"></svg>"""u8.ToArray());
+        service.Setup(s => s.DownloadAsync(current.UserId, id, It.IsAny<CancellationToken>()))
+               .ReturnsAsync((content, "symbol.svg", "image/svg+xml"));
+
+        var resp = await controller.DownloadAsync(id, null, CancellationToken.None);
+
+        var file = Assert.IsType<FileStreamResult>(resp);
+        Assert.Equal("symbol.svg", file.FileDownloadName);
+        Assert.Equal("image/svg+xml", file.ContentType);
         Assert.Equal("nosniff", controller.Response.Headers["X-Content-Type-Options"].ToString());
         service.VerifyAll();
     }

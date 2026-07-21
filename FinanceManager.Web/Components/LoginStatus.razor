@@ -1,12 +1,14 @@
 @using Microsoft.AspNetCore.Components
+@using FinanceManager.Shared.Dtos.Update
 @rendermode InteractiveServer
 @inject FinanceManager.Application.ICurrentUserService CurrentUser
 @inject NavigationManager Nav
 @inject IJSRuntime JS
-    
+@inject FinanceManager.Web.Services.Updates.IInstalledReleaseMetadataProvider ReleaseMetadata
+
 @if (CurrentUser.IsAuthenticated)
 {
-    <div class="login-status">@CurrentUser.UserId<br />
+    <div class="login-status">@DisplayVersion<br />
         <button @onclick="LogoutAsync">Logout</button>
     </div>
 }
@@ -16,10 +18,21 @@ else
 }
 
 @code {
+    private InstalledReleaseMetadataDto? _versionInfo;
+
+    private string DisplayVersion => string.IsNullOrEmpty(_versionInfo?.Version)
+        ? "Version unbekannt"
+        : _versionInfo.Version;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _versionInfo = await ReleaseMetadata.GetAsync();
+    }
+
     private async Task LogoutAsync()
     {
         var ok = await JS.InvokeAsync<bool>("fmAuthLogout");
-        // Fallback: falls API nicht erreichbar, erzwungener Reload löscht serverseitig nicht gesetzte Cookies evtl. nicht, aber UI wird zur Login-Seite gehen
+        // Fallback: falls API nicht erreichbar, erzwungener Reload lï¿½scht serverseitig nicht gesetzte Cookies evtl. nicht, aber UI wird zur Login-Seite gehen
         Nav.NavigateTo("/login", forceLoad: true);
     }
 }

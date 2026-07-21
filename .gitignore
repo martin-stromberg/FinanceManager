@@ -130,6 +130,7 @@ ipch/
 
 # Visual Studio Trace Files
 *.e2e
+!FinanceManager.Tests.E2E/
 
 # TFS 2012 Local Workspace
 $tf/
