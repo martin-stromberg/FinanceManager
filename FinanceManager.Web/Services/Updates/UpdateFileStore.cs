@@ -1,6 +1,8 @@
 #pragma warning disable CS1591
 using System.Globalization;
 using FinanceManager.Shared.Dtos.Update;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace FinanceManager.Web.Services.Updates;
@@ -9,6 +11,7 @@ public sealed class UpdateFileStore : IUpdateFileStore
 {
     private readonly IWebHostEnvironment _environment;
     private readonly UpdateOptions _options;
+    private readonly ILogger<UpdateFileStore> _logger;
     // Intentionally resolved once at construction time (before any UseWorkingDirectory override) and never
     // recomputed: settings.json persists the working directory itself, so its own location must stay fixed
     // at the originally configured directory. Otherwise, after a process restart, the singleton would not
@@ -16,10 +19,11 @@ public sealed class UpdateFileStore : IUpdateFileStore
     private readonly string _settingsDirectory;
     private string? _workingDirectory;
 
-    public UpdateFileStore(IWebHostEnvironment environment, IOptions<UpdateOptions> options)
+    public UpdateFileStore(IWebHostEnvironment environment, IOptions<UpdateOptions> options, ILogger<UpdateFileStore>? logger = null)
     {
         _environment = environment;
         _options = options.Value;
+        _logger = logger ?? NullLogger<UpdateFileStore>.Instance;
         _settingsDirectory = ResolveFullPath(ResolveConfiguredWorkingDirectory());
     }
 
@@ -87,8 +91,9 @@ public sealed class UpdateFileStore : IUpdateFileStore
                 return parsed;
             }
         }
-        catch (IOException)
+        catch (IOException ex)
         {
+            _logger.LogWarning(ex, "Failed to read the update lock file at {LockPath}; falling back to the file's last write time.", LockPath);
         }
 
         return File.GetLastWriteTimeUtc(LockPath);

@@ -2,8 +2,6 @@ using System.IO.Compression;
 using FinanceManager.Shared.Dtos.Update;
 using FinanceManager.Web.Services.Updates;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 
 namespace FinanceManager.Tests.Updates;
@@ -123,7 +121,7 @@ public sealed class UpdateOrchestratorTests
         result.UpdateAvailable.Should().BeTrue();
         result.Status.Status.Should().Be(UpdateStatusKind.Ready);
         result.Status.DownloadedAssetName.Should().Be("release.zip");
-        context.FileStore.ReadStatusAsync().Result!.Status.Should().Be(UpdateStatusKind.Ready);
+        (await context.FileStore.ReadStatusAsync())!.Status.Should().Be(UpdateStatusKind.Ready);
         context.ManifestClient.DownloadCalls.Should().Be(1);
     }
 
@@ -205,7 +203,7 @@ public sealed class UpdateOrchestratorTests
         {
             var root = Directory.CreateTempSubdirectory();
             var options = new UpdateOptions { WorkingDirectory = "updates", HealthTimeoutSeconds = healthTimeoutSeconds, MaxAssetBytes = 1024 * 1024 };
-            var fileStore = new UpdateFileStore(new TestEnvironment(root.FullName), Options.Create(options));
+            var fileStore = new UpdateFileStore(new TestWebHostEnvironment(root.FullName), Options.Create(options));
             var executor = new TestExecutor();
             var manifestClient = new TestManifestClient(fileStore, manifest ?? TestData.Manifest(), manifestFailure);
             var orchestrator = new UpdateOrchestrator(
@@ -244,19 +242,7 @@ public sealed class UpdateOrchestratorTests
             => new(version, null, null, "martin-stromberg", "FinanceManager", new[] { new UpdateAssetDto("windows", "win-x64", "release.zip", "https://example.test/release.zip", "hash", 3) });
 
         public static UpdateStatusDto InstallingStatus(string availableVersion)
-            => new(
-                UpdateStatusKind.Installing,
-                null,
-                null,
-                availableVersion,
-                "win-x64",
-                DateTimeOffset.UtcNow,
-                null,
-                "release.zip",
-                true,
-                DateTimeOffset.UtcNow,
-                null,
-                Manifest(version: availableVersion));
+            => UpdateStatusTestData.InstallingStatus(availableVersion, Manifest(version: availableVersion));
     }
 
     private sealed class TestInstalledProvider : IInstalledReleaseMetadataProvider
@@ -342,19 +328,4 @@ public sealed class UpdateOrchestratorTests
             => Task.CompletedTask;
     }
 
-    private sealed class TestEnvironment : IWebHostEnvironment
-    {
-        public TestEnvironment(string root)
-        {
-            ContentRootPath = root;
-            WebRootPath = root;
-        }
-
-        public string ApplicationName { get; set; } = "Tests";
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
-        public string ContentRootPath { get; set; }
-        public string EnvironmentName { get; set; } = "Development";
-        public string WebRootPath { get; set; }
-        public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
-    }
 }

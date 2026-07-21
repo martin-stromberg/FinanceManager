@@ -182,6 +182,13 @@ else
         http.BaseAddress = new Uri(Navigation.BaseUri);
         var outageObserved = false;
         _vm.SetInstallPhase("Msg_Update_Installing");
+
+        void MarkOutage()
+        {
+            outageObserved = true;
+            _vm.SetInstallPhase("Msg_Update_WaitingForRestart");
+        }
+
         try
         {
             while (await _timer.WaitForNextTickAsync(_pollingCts.Token))
@@ -197,14 +204,12 @@ else
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        outageObserved = true;
-                        _vm.SetInstallPhase("Msg_Update_WaitingForRestart");
+                        MarkOutage();
                     }
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    outageObserved = true;
-                    _vm.SetInstallPhase("Msg_Update_WaitingForRestart");
+                    MarkOutage();
                 }
             }
         }

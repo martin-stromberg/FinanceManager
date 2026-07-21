@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using FinanceManager.Shared.Dtos.Common;
 using FinanceManager.Shared.Dtos.Update;
+using FinanceManager.Tests.Updates;
 using FinanceManager.Web.Services.Updates;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -157,7 +158,7 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             });
             var client = factory.CreateClient();
             await AuthenticateAdminAsync(client);
-            await WriteStatusAsync(tempDir.FullName, InstallingStatus("1.2.3"));
+            await WriteStatusAsync(tempDir.FullName, UpdateStatusTestData.InstallingStatus("1.2.3"));
 
             var response = await client.GetAsync("/api/setup/update/status");
 
@@ -188,7 +189,7 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             });
             var client = factory.CreateClient();
             await AuthenticateAdminAsync(client);
-            await WriteStatusAsync(tempDir.FullName, InstallingStatus("9.9.9"));
+            await WriteStatusAsync(tempDir.FullName, UpdateStatusTestData.InstallingStatus("9.9.9"));
 
             var response = await client.GetAsync("/api/setup/update/status");
 
@@ -202,21 +203,6 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             tempDir.Delete(recursive: true);
         }
     }
-
-    private static UpdateStatusDto InstallingStatus(string availableVersion)
-        => new(
-            UpdateStatusKind.Installing,
-            null,
-            null,
-            availableVersion,
-            "win-x64",
-            DateTimeOffset.UtcNow,
-            null,
-            "release.zip",
-            true,
-            DateTimeOffset.UtcNow,
-            null,
-            null);
 
     private static Task WriteStatusAsync(string workingDirectory, UpdateStatusDto status)
     {

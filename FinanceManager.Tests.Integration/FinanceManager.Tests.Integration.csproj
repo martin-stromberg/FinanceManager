@@ -22,5 +22,6 @@
   <ItemGroup>
     <ProjectReference Include="..\FinanceManager.Web\FinanceManager.Web.csproj" />
     <ProjectReference Include="..\FinanceManager.Shared\FinanceManager.Shared.csproj" />
+    <ProjectReference Include="..\FinanceManager.Tests\FinanceManager.Tests.csproj" />
   </ItemGroup>
 </Project>

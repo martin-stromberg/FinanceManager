@@ -1,8 +1,6 @@
 using FinanceManager.Shared.Dtos.Update;
 using FinanceManager.Web.Services.Updates;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.FileProviders;
 
 namespace FinanceManager.Tests.Updates;
 
@@ -14,7 +12,7 @@ public sealed class UpdateServiceResolverTests
         var root = Directory.CreateTempSubdirectory();
         try
         {
-            var resolver = new UpdateServiceResolver(new TestEnvironment(root.FullName), new TestProbe());
+            var resolver = new UpdateServiceResolver(new TestWebHostEnvironment(root.FullName), new TestProbe());
             var settings = Settings(serviceName: "FinanceManagerService");
 
             var target = resolver.Resolve(settings);
@@ -41,7 +39,7 @@ public sealed class UpdateServiceResolverTests
             var probe = OperatingSystem.IsWindows()
                 ? new TestProbe(windows: new[] { "one", "two" })
                 : new TestProbe(linux: new[] { "one.service", "two.service" });
-            var resolver = new UpdateServiceResolver(new TestEnvironment(root.FullName), probe);
+            var resolver = new UpdateServiceResolver(new TestWebHostEnvironment(root.FullName), probe);
 
             var act = () => resolver.Resolve(Settings());
 
@@ -67,7 +65,7 @@ public sealed class UpdateServiceResolverTests
         {
             var exe = Path.Combine(outside.FullName, "FinanceManager.exe");
             File.WriteAllText(exe, string.Empty);
-            var resolver = new UpdateServiceResolver(new TestEnvironment(root.FullName), new TestProbe());
+            var resolver = new UpdateServiceResolver(new TestWebHostEnvironment(root.FullName), new TestProbe());
 
             var act = () => resolver.Resolve(Settings(executablePath: exe));
 
@@ -98,19 +96,4 @@ public sealed class UpdateServiceResolverTests
         public IReadOnlyList<string> FindLinuxServicesForCurrentProcess() => _linux;
     }
 
-    private sealed class TestEnvironment : IWebHostEnvironment
-    {
-        public TestEnvironment(string root)
-        {
-            ContentRootPath = root;
-            WebRootPath = root;
-        }
-
-        public string ApplicationName { get; set; } = "Tests";
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
-        public string ContentRootPath { get; set; }
-        public string EnvironmentName { get; set; } = "Development";
-        public string WebRootPath { get; set; }
-        public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
-    }
 }

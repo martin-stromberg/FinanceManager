@@ -1,8 +1,6 @@
 using FinanceManager.Shared.Dtos.Update;
 using FinanceManager.Web.Services.Updates;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 
 namespace FinanceManager.Tests.Updates;
@@ -15,7 +13,7 @@ public sealed class UpdateScriptGeneratorTests
         var root = Directory.CreateTempSubdirectory();
         try
         {
-            var env = new TestEnvironment(root.FullName);
+            var env = new TestWebHostEnvironment(root.FullName);
             var store = new UpdateFileStore(env, Options.Create(new UpdateOptions { WorkingDirectory = Path.Combine(root.FullName, "updates") }));
             var generator = new UpdateScriptGenerator(env, store);
             var settings = new UpdateSettingsDto(false, 60, "martin-stromberg", "FinanceManager", "update.json", null, "FinanceManager", null, "updates", 120);
@@ -38,19 +36,4 @@ public sealed class UpdateScriptGeneratorTests
         }
     }
 
-    private sealed class TestEnvironment : IWebHostEnvironment
-    {
-        public TestEnvironment(string root)
-        {
-            ContentRootPath = root;
-            WebRootPath = root;
-        }
-
-        public string ApplicationName { get; set; } = "Tests";
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
-        public string ContentRootPath { get; set; }
-        public string EnvironmentName { get; set; } = "Development";
-        public string WebRootPath { get; set; }
-        public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
-    }
 }

@@ -3,8 +3,6 @@ using System.Security.Cryptography;
 using FinanceManager.Shared.Dtos.Update;
 using FinanceManager.Web.Services.Updates;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 
 namespace FinanceManager.Tests.Updates;
@@ -125,7 +123,7 @@ public sealed class UpdateExecutorTests
         public static TestContext Create()
         {
             var root = Directory.CreateTempSubdirectory();
-            var env = new TestEnvironment(root.FullName);
+            var env = new TestWebHostEnvironment(root.FullName);
             var fileStore = new UpdateFileStore(env, Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
             return new TestContext(root, fileStore);
         }
@@ -213,21 +211,5 @@ public sealed class UpdateExecutorTests
     private sealed class ThrowingTerminator : IUpdateHostTerminator
     {
         public void StopApplication() => throw new InvalidOperationException("termination failed");
-    }
-
-    private sealed class TestEnvironment : IWebHostEnvironment
-    {
-        public TestEnvironment(string root)
-        {
-            ContentRootPath = root;
-            WebRootPath = root;
-        }
-
-        public string ApplicationName { get; set; } = "Tests";
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
-        public string ContentRootPath { get; set; }
-        public string EnvironmentName { get; set; } = "Development";
-        public string WebRootPath { get; set; }
-        public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
     }
 }

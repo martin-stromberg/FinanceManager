@@ -1,7 +1,5 @@
 using FinanceManager.Web.Services.Updates;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 
 namespace FinanceManager.Tests.Updates;
@@ -14,7 +12,7 @@ public sealed class UpdateFileStoreTests
         var root = Directory.CreateTempSubdirectory();
         try
         {
-            var fileStore = new UpdateFileStore(new TestEnvironment(root.FullName), Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
+            var fileStore = new UpdateFileStore(new TestWebHostEnvironment(root.FullName), Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
             await fileStore.EnsureAsync();
             var contentTimestamp = DateTimeOffset.UtcNow.AddMinutes(-10);
             await File.WriteAllTextAsync(fileStore.LockPath, contentTimestamp.ToString("O"));
@@ -38,7 +36,7 @@ public sealed class UpdateFileStoreTests
         var overrideDir = Directory.CreateTempSubdirectory();
         try
         {
-            var fileStore = new UpdateFileStore(new TestEnvironment(root.FullName), Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
+            var fileStore = new UpdateFileStore(new TestWebHostEnvironment(root.FullName), Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
             var originalSettingsPath = fileStore.SettingsPath;
 
             fileStore.UseWorkingDirectory(overrideDir.FullName);
@@ -61,7 +59,7 @@ public sealed class UpdateFileStoreTests
         var root = Directory.CreateTempSubdirectory();
         try
         {
-            var fileStore = new UpdateFileStore(new TestEnvironment(root.FullName), Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
+            var fileStore = new UpdateFileStore(new TestWebHostEnvironment(root.FullName), Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
             await fileStore.EnsureAsync();
             await File.WriteAllTextAsync(fileStore.LockPath, "not-a-timestamp");
             var expected = File.GetLastWriteTimeUtc(fileStore.LockPath);
@@ -77,19 +75,25 @@ public sealed class UpdateFileStoreTests
         }
     }
 
-    private sealed class TestEnvironment : IWebHostEnvironment
+    [Fact]
+    public async Task UpdateFileStore_LockLifecycle_TracksFreeActiveAndDeletedLock()
     {
-        public TestEnvironment(string root)
+        var root = Directory.CreateTempSubdirectory();
+        try
         {
-            ContentRootPath = root;
-            WebRootPath = root;
-        }
+            var fileStore = new UpdateFileStore(new TestWebHostEnvironment(root.FullName), Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
 
-        public string ApplicationName { get; set; } = "Tests";
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
-        public string ContentRootPath { get; set; }
-        public string EnvironmentName { get; set; } = "Development";
-        public string WebRootPath { get; set; }
-        public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
+            (await fileStore.GetLockCreatedAtAsync()).Should().BeNull();
+            (await fileStore.TryCreateLockAsync()).Should().BeTrue();
+            (await fileStore.TryCreateLockAsync()).Should().BeFalse();
+            (await fileStore.GetLockCreatedAtAsync()).Should().NotBeNull();
+            (await fileStore.DeleteLockAsync()).Should().BeTrue();
+            (await fileStore.DeleteLockAsync()).Should().BeFalse();
+        }
+        finally
+        {
+            root.Delete(recursive: true);
+        }
     }
+
 }
