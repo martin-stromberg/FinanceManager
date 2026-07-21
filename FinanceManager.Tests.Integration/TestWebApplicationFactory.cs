@@ -72,13 +72,21 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
                 services.Remove(descriptor);
             }
 
-            // Create and open in-memory SQLite connection (shared cache to support multiple contexts)
-            _connection = new SqliteConnection("DataSource=:memory:;Cache=Shared");
+            // Use a uniquely-named shared-cache in-memory database (not a shared SqliteConnection object):
+            // a single SqliteConnection instance is not safe for concurrent use from multiple threads and
+            // causes "SQLite Error 5: database is locked" when the background task runner and an HTTP
+            // request thread access the database at the same time. Each AppDbContext instead opens its own
+            // connection against the same named in-memory database (Mode=Memory;Cache=Shared), which SQLite
+            // handles safely for concurrent access. The anchor connection below is kept open for the
+            // lifetime of the factory so the named in-memory database isn't dropped between uses.
+            var dbName = $"testdb_{Guid.NewGuid():N}";
+            var connectionString = $"Data Source={dbName};Mode=Memory;Cache=Shared";
+            _connection = new SqliteConnection(connectionString);
             _connection.Open();
 
             services.AddDbContext<AppDbContext>(options =>
             {
-                options.UseSqlite(_connection);
+                options.UseSqlite(connectionString);
             });
 
             // If a fixed time was requested by the test, replace the application's TimeProvider
