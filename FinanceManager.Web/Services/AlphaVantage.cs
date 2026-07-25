@@ -54,7 +54,7 @@ public sealed class AlphaVantage
     public async Task<TimeSeriesDaily?> GetTimeSeriesDailyAsync(string symbol, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(_apiKey)) { throw new ArgumentException("API key required", nameof(_apiKey)); }
-        if (string.IsNullOrWhiteSpace(symbol)) { throw new ArgumentException("symbol required", nameof(symbol)); }
+        if (string.IsNullOrWhiteSpace(symbol.Replace("-", ""))) { throw new ArgumentException("symbol required", nameof(symbol)); }
         if (LimitExceeded)
         {
             throw new RequestLimitExceededException($"AlphaVantage limit exceeded. Next attempt after {_skipRequestsUntilUtc:u}.");
