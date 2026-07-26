@@ -12,6 +12,7 @@ public sealed class UpdateExecutor : IUpdateExecutor
     private readonly IUpdateProcessRunner _processRunner;
     private readonly IUpdateHostTerminator _hostTerminator;
     private readonly IUpdateValidator _validator;
+    private readonly ILogger<UpdateExecutor> _logger;
     private readonly UpdateOptions _options;
 
     public UpdateExecutor(
@@ -21,7 +22,8 @@ public sealed class UpdateExecutor : IUpdateExecutor
         IUpdateProcessRunner processRunner,
         IUpdateHostTerminator hostTerminator,
         IUpdateValidator validator,
-        IOptions<UpdateOptions> options)
+        IOptions<UpdateOptions> options,
+        ILogger<UpdateExecutor> logger)
     {
         _fileStore = fileStore;
         _serviceResolver = serviceResolver;
@@ -29,6 +31,7 @@ public sealed class UpdateExecutor : IUpdateExecutor
         _processRunner = processRunner;
         _hostTerminator = hostTerminator;
         _validator = validator;
+        _logger = logger;
         _options = options.Value;
     }
 
@@ -69,8 +72,9 @@ public sealed class UpdateExecutor : IUpdateExecutor
                 LastError = null
             };
             await _fileStore.WriteStatusAsync(installing, ct);
+            _processRunner.StartPrepareEnvironment(scriptPath);
             _processRunner.StartScript(scriptPath);
-            _hostTerminator.StopApplication();
+            IsInstallRunning = false;
             return installing;
         }
         catch (Exception ex)

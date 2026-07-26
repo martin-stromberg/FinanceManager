@@ -33,6 +33,7 @@ public sealed class UpdateFileStore : IUpdateFileStore
     public string SettingsPath => Path.Combine(_settingsDirectory, "settings.json");
     public string StatusPath => Path.Combine(RootDirectory, "status.json");
     public string LockPath => Path.Combine(RootDirectory, "update.lock");
+    public string LogPath => Path.Combine(RootDirectory, "update.log");
 
     public string ScriptPath(string extension) => Path.Combine(PendingDirectory, $"update.{extension.TrimStart('.')}");
 

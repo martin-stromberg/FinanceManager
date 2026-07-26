@@ -67,42 +67,72 @@ if (Test-Path -LiteralPath $lock) { Remove-Item -LiteralPath $lock -Force }
     }
 
     private async Task<string> GenerateLinuxAsync(string zipPath, UpdateInstallationTarget target, CancellationToken ct)
+{
+    if (string.IsNullOrWhiteSpace(target.ServiceName))
     {
-        if (string.IsNullOrWhiteSpace(target.ServiceName))
-        {
-            throw new InvalidOperationException("Validated Linux systemd service target is required.");
-        }
+        throw new InvalidOperationException("Validated Linux systemd service target is required.");
+    }
 
-        var appDir = _environment.ContentRootPath;
-        var staging = _fileStore.StagingDirectory;
-        var script = _fileStore.ScriptPath("sh");
-        var content = $$"""
+    var appDir = _environment.ContentRootPath;
+    var staging = _fileStore.StagingDirectory;
+    var script = _fileStore.ScriptPath("sh");
+    var log = _fileStore.LogPath; 
+
+    var content = $$"""
 #!/usr/bin/env bash
 set -euo pipefail
+
+log={{Sh(log)}}
 zip={{Sh(zipPath)}}
 app={{Sh(appDir)}}
 staging={{Sh(staging)}}
 lock={{Sh(_fileStore.LockPath)}}
-sleep 3
-systemctl stop {{Sh(target.ServiceName)}}
-rm -rf "$staging"
-mkdir -p "$staging"
-unzip -o "$zip" -d "$staging"
-cp -a "$staging"/. "$app"/
-rm -f "$lock"
-systemctl start {{Sh(target.ServiceName)}}
-""";
-        await File.WriteAllTextAsync(script, content, ct);
-        try
-        {
-            File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
-        }
-        catch
-        {
-        }
 
-        return script;
+log_msg() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$log"
+}
+
+log_msg "Update gestartet."
+
+sleep 3
+
+log_msg "Stoppe Dienst {{target.ServiceName}}..."
+systemctl stop {{Sh(target.ServiceName)}} 2>&1 | tee -a "$log"
+
+log_msg "Bereinige Staging-Verzeichnis..."
+rm -rf "$staging" 2>&1 | tee -a "$log"
+mkdir -p "$staging" 2>&1 | tee -a "$log"
+
+log_msg "Entpacke ZIP-Datei: $zip"
+unzip -o "$zip" -d "$staging" 2>&1 | tee -a "$log"
+
+log_msg "Kopiere Dateien ins Live-Verzeichnis..."
+cp -r "$staging"/. "$app"/ 2>&1 | tee -a "$log"
+
+log_msg "Entferne Lock-Datei..."
+rm -f "$lock" 2>&1 | tee -a "$log"
+
+log_msg "Starte Dienst {{target.ServiceName}}..."
+systemctl start {{Sh(target.ServiceName)}} 2>&1 | tee -a "$log"
+
+log_msg "Update erfolgreich abgeschlossen."
+""";
+    content = content
+        .Replace("\r\n", "\n")
+        .Replace("\r", "\n");
+    await File.WriteAllTextAsync(script, content, ct);
+
+    try
+    {
+        File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
     }
+    catch
+    {
+    }
+
+    return script;
+}
+
 
     private static string Ps(string value) => $"'{value.Replace("'", "''")}'";
     private static string Sh(string value) => $"'{value.Replace("'", "'\"'\"'")}'";
