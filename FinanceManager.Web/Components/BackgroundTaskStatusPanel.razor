@@ -1,6 +1,10 @@
+@using System.Net
+@using FinanceManager.Application
 @using FinanceManager.Shared.Dtos
 @using FinanceManager.Shared.Dtos.Admin
 @inject FinanceManager.Shared.IApiClient Api
+@inject ICurrentUserService CurrentUser
+@inject IJSRuntime JS
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.BackgroundTaskStatusPanel> Localizer
 @code {
     [Parameter] public int PollInterval { get; set; } = 2000; // ms
@@ -12,17 +16,56 @@
 
     private CancellationTokenSource? _cts;
     private bool _loopStarted;
+    private bool _authenticatedForPolling;
+    private bool _pollingDisabled;
     private bool _shouldShow; // render flag (based on AllowedTypes subset)
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && !_loopStarted)
         {
+            if (!await CanPollAsync())
+            {
+                return;
+            }
+
             _loopStarted = true;
             _cts = new CancellationTokenSource();
             _ = PollLoopAsync(_cts.Token);
             await LoadTasksAsync(_cts.Token); // initial fetch
         }
+    }
+
+    private bool CanPoll() => _authenticatedForPolling && !_pollingDisabled;
+
+    private async Task<bool> CanPollAsync()
+    {
+        if (_pollingDisabled)
+        {
+            return false;
+        }
+
+        if (_authenticatedForPolling)
+        {
+            return true;
+        }
+
+        if (CurrentUser.IsAuthenticated)
+        {
+            _authenticatedForPolling = true;
+            return true;
+        }
+
+        try
+        {
+            _authenticatedForPolling = await JS.InvokeAsync<bool>("fmAuthIsAuthenticated");
+        }
+        catch
+        {
+            _authenticatedForPolling = false;
+        }
+
+        return _authenticatedForPolling;
     }
 
     private async Task PollLoopAsync(CancellationToken ct)
@@ -32,7 +75,7 @@
             try
             {
                 await Task.Delay(PollInterval, ct);
-                if (ct.IsCancellationRequested) { break; }
+                if (ct.IsCancellationRequested || !await CanPollAsync()) { break; }
                 await LoadTasksAsync(ct);
             }
             catch (OperationCanceledException) { break; }
@@ -42,6 +85,11 @@
 
     private async Task LoadTasksAsync(CancellationToken ct = default)
     {
+        if (!await CanPollAsync())
+        {
+            return;
+        }
+
         try
         {
             var result = (await Api.BackgroundTasks_GetActiveAsync(ct)).ToList();
@@ -59,19 +107,51 @@
             await InvokeAsync(StateHasChanged);
         }
         catch (OperationCanceledException) { }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            await DisablePollingAsync();
+        }
         catch { }
+    }
+
+    private async Task DisablePollingAsync()
+    {
+        _pollingDisabled = true;
+
+        try { _cts?.Cancel(); } catch { }
+
+        Tasks.Clear();
+        _shouldShow = false;
+
+        await InvokeAsync(StateHasChanged);
     }
 
     public async Task CancelTaskAsync(Guid id)
     {
+        if (!await CanPollAsync())
+        {
+            return;
+        }
+
         try { await Api.BackgroundTasks_CancelOrRemoveAsync(id, _cts?.Token ?? CancellationToken.None); } catch { }
-        await LoadTasksAsync(_cts?.Token ?? CancellationToken.None);
+        if (CanPoll())
+        {
+            await LoadTasksAsync(_cts?.Token ?? CancellationToken.None);
+        }
     }
 
     public async Task RemoveQueuedAsync(Guid id)
     {
+        if (!await CanPollAsync())
+        {
+            return;
+        }
+
         try { await Api.BackgroundTasks_CancelOrRemoveAsync(id, _cts?.Token ?? CancellationToken.None); } catch { }
-        await LoadTasksAsync(_cts?.Token ?? CancellationToken.None);
+        if (CanPoll())
+        {
+            await LoadTasksAsync(_cts?.Token ?? CancellationToken.None);
+        }
     }
 
     private string GetTypeLabel(BackgroundTaskType type)

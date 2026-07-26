@@ -207,6 +207,23 @@ oder aus der Profil-API lesen koennen.
 
 **Umsetzung:** `BackupRestoreRequestDto`, `BackupsController.ApplyAsync`, `BackupsController.StartApplyAsync`, `SetupBackupTab.razor`, `SetupBackupsViewModel.StartApplyAsync`.
 
+## Background-Task-Statuspolling erfordert Authentifizierung
+
+**Beschreibung:** Das Statuspanel für aktive Hintergrundtasks darf keine wiederkehrenden nicht autorisierten Statusabfragen erzeugen.
+
+**Bedingungen:**
+- Ein Benutzerkontext ist authentifiziert oder nicht authentifiziert.
+- `BackgroundTaskStatusPanel` wird in einer Seite gerendert.
+- Der API-Client erhält beim Statusabruf optional `401 Unauthorized`.
+
+**Verhalten:**
+- Authentifizierter Benutzer: Das Panel darf `GET /api/background-tasks/active` initial und anschließend im Polling-Intervall abrufen.
+- Nicht authentifizierter Benutzer: Das Panel startet keine Polling-Schleife und ruft den Endpunkt nicht wiederkehrend auf.
+- `401 Unauthorized` während einer laufenden Sitzung: Das Panel deaktiviert das Polling für seine aktuelle Lebensdauer, leert den lokalen Task-Zustand und löst keine Folgeabfragen durch Cancel- oder Remove-Aktionen aus.
+- Andere technische Fehler gelten als transient; das autorisierte Polling bleibt aktiv.
+
+**Umsetzung:** `BackgroundTaskStatusPanel`, `ICurrentUserService`, `BackgroundTasksController`.
+
 ## Self-Update ist eine Admin-Funktion
 
 **Beschreibung:** Anzeige, Konfiguration, Updatepruefung, Installationsstart
