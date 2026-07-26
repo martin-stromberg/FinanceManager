@@ -59,7 +59,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
 
     public bool CanDeleteRow(StatementDraftEntryItem item)
         => !item.IsPlaceholder
-           && (item.IsNew || (item.Status != StatementDraftEntryStatus.AlreadyBooked && item.Status != StatementDraftEntryStatus.Announced && !item.IsAnnounced));
+           && (item.IsNew || item.Status != StatementDraftEntryStatus.AlreadyBooked);
 
     private StatementDraftEntryItem ToItem(StatementDraftEntryDto d) => new()
     {
@@ -74,7 +74,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         Status = d.Status,
         IsAnnounced = d.IsAnnounced,
         BudgetImpact = d.BudgetImpact,
-        CanDelete = d.Status != StatementDraftEntryStatus.AlreadyBooked && d.Status != StatementDraftEntryStatus.Announced && !d.IsAnnounced
+        CanDelete = d.Status != StatementDraftEntryStatus.AlreadyBooked
     };
 
     private Dictionary<string, object?> CreateEditSnapshot(StatementDraftEntryItem it) => new()

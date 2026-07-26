@@ -299,7 +299,7 @@ else
                         @if (vm.CanDeleteRow(item))
                         {
                             var deleteLabel = localizer != null ? (localizer["QuickEdit_DeleteRow"].ResourceNotFound ? "Delete row" : localizer["QuickEdit_DeleteRow"].Value) : "Delete row";
-                            <button type="button" class="btn btn-sm btn-outline-danger icon-button" title="@deleteLabel" aria-label="@deleteLabel" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="() => DeleteRow(item.Id)">
+                            <button type="button" class="quick-edit-delete-button" title="@deleteLabel" aria-label="@deleteLabel" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="() => DeleteRow(item.Id)">
                                 <svg aria-hidden="true"><use href="/icons/sprite.svg#delete"></use></svg>
                             </button>
                         }

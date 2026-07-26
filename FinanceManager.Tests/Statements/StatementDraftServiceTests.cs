@@ -274,7 +274,7 @@ public sealed class StatementDraftServiceTests
     }
 
     [Fact]
-    public async Task ApplyBatchEntryUpdatesAsync_ShouldRejectDeleteForAnnouncedEntries()
+    public async Task ApplyBatchEntryUpdatesAsync_ShouldDeleteAnnouncedEntries()
     {
         var (sut, db, owner) = Create();
         var draft = new FinanceManager.Domain.Statements.StatementDraft(owner, "file.csv", null, null);
@@ -287,11 +287,10 @@ public sealed class StatementDraftServiceTests
 
         var result = await sut.ApplyBatchEntryUpdatesAsync(draft.Id, owner, req, CancellationToken.None);
 
-        Assert.False(result.Success);
-        Assert.NotNull(result.ErrorResponse);
-        Assert.Contains(result.ErrorResponse!.Errors, e => e.EntryId == entry.Id);
-        var unchanged = await sut.GetDraftAsync(draft.Id, owner, CancellationToken.None);
-        Assert.Contains(unchanged!.Entries, e => e.Id == entry.Id);
+        Assert.True(result.Success);
+        Assert.NotNull(result.SuccessResponse);
+        var updated = await sut.GetDraftAsync(draft.Id, owner, CancellationToken.None);
+        Assert.DoesNotContain(updated!.Entries, e => e.Id == entry.Id);
     }
 
     [Fact]

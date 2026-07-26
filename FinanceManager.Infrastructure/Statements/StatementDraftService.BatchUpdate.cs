@@ -91,7 +91,7 @@ public sealed partial class StatementDraftService
                 {
                     entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = string.Empty, Message = "Entry cannot be updated and deleted in the same request" });
                 }
-                if (entry.Status == StatementDraftEntryStatus.AlreadyBooked || entry.Status == StatementDraftEntryStatus.Announced || entry.IsAnnounced)
+                if (entry.Status == StatementDraftEntryStatus.AlreadyBooked)
                 {
                     entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = string.Empty, Message = "Entry cannot be deleted in quick edit" });
                 }

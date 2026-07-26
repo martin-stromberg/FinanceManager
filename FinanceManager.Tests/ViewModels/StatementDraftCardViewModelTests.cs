@@ -301,7 +301,7 @@ public sealed class StatementDraftCardViewModelTests
     }
 
     [Fact]
-    public async Task IsAnnouncedOpenRow_IsNotEditableOrDeletableInQuickEdit()
+    public async Task IsAnnouncedOpenRow_IsNotEditableButCanBeDeletedInQuickEdit()
     {
         var entryId = Guid.NewGuid();
         var vm = CreateEntriesVm(new[] { Entry(entryId, isAnnounced: true, status: StatementDraftEntryStatus.Open) }, out _);
@@ -310,14 +310,14 @@ public sealed class StatementDraftCardViewModelTests
         var entry = vm.Items.Single(i => i.Id == entryId);
 
         Assert.True(entry.IsAnnounced);
-        Assert.False(entry.CanDelete);
-        Assert.False(vm.CanDeleteRow(entry));
+        Assert.True(entry.CanDelete);
+        Assert.True(vm.CanDeleteRow(entry));
         Assert.False(vm.IsRowEditable(entry));
 
         vm.MarkRowForDeletion(entryId);
 
-        Assert.Empty(vm.CollectQuickEditSaveRequest().Deletes);
-        Assert.Contains(vm.VisibleQuickEditItems, i => i.Id == entryId);
+        Assert.Contains(entryId, vm.CollectQuickEditSaveRequest().Deletes);
+        Assert.DoesNotContain(vm.VisibleQuickEditItems, i => i.Id == entryId);
     }
 
     [Fact]
