@@ -44,9 +44,28 @@
 - Eine leere Eingabezeile am Tabellenende ermöglicht das Erfassen neuer Entwurfszeilen.
 - Abbrechen verwirft lokale Bearbeitungen, Löschvormerkungen und neue noch nicht gespeicherte Zeilen.
 - Speichern übernimmt alle gültigen Änderungen gemeinsam; bei einem Validierungsfehler wird keine Teiländerung übernommen.
-- Bereits gebuchte oder angekündigte Zeilen können im Massenänderungsmodus nicht gelöscht werden.
+- Bereits gebuchte Zeilen können im Massenänderungsmodus nicht gelöscht werden. Angekündigte Zeilen bleiben nicht editierbar, können aber zum Löschen vorgemerkt werden.
 
 **Umsetzung:** QuickEdit-Speicherung der Kontoauszugsentwurfszeilen über den erweiterten Batch-Speicherpfad.
+
+## Mobile Entwurfszeilen zeigen relevante Zuordnungen
+
+**Beschreibung:** Die mobile Kontoauszugsansicht stellt Entwurfszeilen als Karten dar und zeigt die wichtigsten Buchungsinformationen ohne horizontales Scrollen.
+
+**Bedingungen:**
+- Die Ansicht wird auf einem mobilen Viewport verwendet.
+- Eine Entwurfszeile besitzt Datum, Betrag und optionale Zuordnungen.
+
+**Verhalten:**
+- Datum und Betrag werden in einer gemeinsamen zweispaltigen Zeile angezeigt.
+- Bereits gebuchte Einträge werden optisch abgeschwächt dargestellt.
+- Ein zugewiesener Kontakt wird nur angezeigt, wenn er vom Bankkonto-Kontakt und vom Self-Kontakt abweicht.
+- Der Empfänger wird nur angezeigt, wenn kein Kontakt zugewiesen ist und ein Empfänger vorhanden ist.
+- Ein zugewiesener Sparplan wird angezeigt.
+- Ein zugewiesenes Wertpapier wird angezeigt; die Buchungsart steht direkt daneben in Klammern.
+- Lange Datei- und Textwerte brechen innerhalb der Karte um.
+
+**Umsetzung:** `StatementDraftEntriesListViewModel` liefert die mobilen Listenzeilen; `GenericListPage` rendert die mobile Kartenstruktur.
 
 ## Sammelauszüge erzeugen mehrere Entwürfe
 

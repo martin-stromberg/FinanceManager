@@ -12,6 +12,7 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         public ViewportSize? ViewportSize { get; init; }
         public bool? IsMobile { get; init; }
         public bool? HasTouch { get; init; }
+        public string? Locale { get; init; }
     }
 
     private static readonly PlaywrightSessionOptions MobileSessionOptions = new()
@@ -121,14 +122,28 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
             ViewportSize = options?.ViewportSize,
             IsMobile = options?.IsMobile,
             HasTouch = options?.HasTouch,
+            Locale = options?.Locale,
         });
         context.SetDefaultTimeout(_options.ActionTimeoutSeconds * 1000);
         context.SetDefaultNavigationTimeout(_options.NavigationTimeoutSeconds * 1000);
 
+        var artifactPrefix = (_options.ArtifactCaptureEnabled || _options.TraceEnabled)
+            ? Path.Combine(GetArtifactDirectory(), $"session-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}")
+            : null;
+        if (_options.TraceEnabled)
+        {
+            await context.Tracing.StartAsync(new()
+            {
+                Screenshots = true,
+                Snapshots = true,
+                Sources = true
+            });
+        }
+
         var page = await context.NewPageAsync();
         page.SetDefaultTimeout(_options.ActionTimeoutSeconds * 1000);
         page.SetDefaultNavigationTimeout(_options.NavigationTimeoutSeconds * 1000);
-        return new PlaywrightBrowserSession(context, page);
+        return new PlaywrightBrowserSession(context, page, artifactPrefix, _options.ArtifactCaptureEnabled, _options.TraceEnabled);
     }
 
     public Task<PlaywrightBrowserSession> CreateMobileSessionAsync()
@@ -168,7 +183,7 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         {
             FileName = "dotnet",
             Arguments = $"\"{webDll}\"",
-            WorkingDirectory = Path.GetDirectoryName(webDll) ?? GetRepoRoot(),
+            WorkingDirectory = Path.Combine(GetRepoRoot(), "FinanceManager.Web"),
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -180,6 +195,8 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         startInfo.Environment["ASPNETCORE_URLS"] = $"https://127.0.0.1:{port};http://127.0.0.1:{port + 1}";
         startInfo.Environment["Kestrel__Endpoints__Http__Url"] = $"http://127.0.0.1:{port + 1}";
         startInfo.Environment["Kestrel__Endpoints__Https__Url"] = $"https://127.0.0.1:{port}";
+        startInfo.Environment["Api__BaseAddress"] = $"http://127.0.0.1:{port + 1}/";
+        startInfo.Environment["E2E__DisableHttpsRedirection"] = "true";
         startInfo.Environment["ConnectionStrings__Default"] = $"Data Source={dbPath}";
         startInfo.Environment["BackgroundTasks__Enabled"] = "false";
         startInfo.Environment["Workers__SecurityPriceWorker__Enabled"] = "false";
@@ -261,6 +278,13 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
                 _serverError.ToString()
             }.Where(x => !string.IsNullOrWhiteSpace(x)));
         }
+    }
+
+    private static string GetArtifactDirectory()
+    {
+        var path = Path.Combine(GetRepoRoot(), "TestResults", "E2E", "artifacts");
+        Directory.CreateDirectory(path);
+        return path;
     }
 
     private static int GetFreePort()

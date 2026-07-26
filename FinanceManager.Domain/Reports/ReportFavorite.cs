@@ -21,6 +21,7 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
     /// <param name="interval">Time interval used for the report aggregation.</param>
     /// <param name="comparePrevious">Whether to compare to the previous interval.</param>
     /// <param name="compareYear">Whether to compare to the same period in the previous year.</param>
+    /// <param name="compareProjection">Whether to include dividend projection amounts.</param>
     /// <param name="showChart">Whether to show a chart representation.</param>
     /// <param name="expandable">Whether the result should be expandable in the UI.</param>
     /// <param name="take">How many intervals to include (default 24). Will be clamped to a reasonable range.</param>
@@ -32,6 +33,7 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
         ReportInterval interval,
         bool comparePrevious,
         bool compareYear,
+        bool compareProjection,
         bool showChart,
         bool expandable,
         int take = 24)
@@ -43,9 +45,37 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
         Interval = interval;
         ComparePrevious = comparePrevious;
         CompareYear = compareYear;
+        CompareProjection = compareProjection;
         ShowChart = showChart;
         Expandable = expandable;
         SetTake(take);
+    }
+
+    /// <summary>
+    /// Compatibility constructor for callers that do not provide projection settings.
+    /// </summary>
+    /// <param name="ownerUserId">The identifier of the user owning this favorite.</param>
+    /// <param name="name">Name of the favorite.</param>
+    /// <param name="postingKind">Primary posting kind for the report.</param>
+    /// <param name="includeCategory">Whether to include category grouping in the report.</param>
+    /// <param name="interval">Time interval used for the report aggregation.</param>
+    /// <param name="comparePrevious">Whether to compare to the previous interval.</param>
+    /// <param name="compareYear">Whether to compare to the same period in the previous year.</param>
+    /// <param name="showChart">Whether to show a chart representation.</param>
+    /// <param name="expandable">Whether the result should be expandable in the UI.</param>
+    /// <param name="take">How many intervals to include.</param>
+    public ReportFavorite(Guid ownerUserId,
+        string name,
+        PostingKind postingKind,
+        bool includeCategory,
+        ReportInterval interval,
+        bool comparePrevious,
+        bool compareYear,
+        bool showChart,
+        bool expandable,
+        int take = 24)
+        : this(ownerUserId, name, postingKind, includeCategory, interval, comparePrevious, compareYear, false, showChart, expandable, take)
+    {
     }
 
     /// <summary>
@@ -89,6 +119,12 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
     /// </summary>
     /// <value>True to compare year-on-year.</value>
     public bool CompareYear { get; private set; }
+
+    /// <summary>
+    /// Whether the report should include dividend projection amounts.
+    /// </summary>
+    /// <value>True to include projections where supported.</value>
+    public bool CompareProjection { get; private set; }
 
     /// <summary>
     /// Whether a chart should be shown for this favorite.
@@ -178,17 +214,19 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
     /// <param name="interval">Aggregation interval.</param>
     /// <param name="comparePrevious">Compare to previous interval.</param>
     /// <param name="compareYear">Compare to previous year.</param>
+    /// <param name="compareProjection">Include dividend projection amounts.</param>
     /// <param name="showChart">Show chart.</param>
     /// <param name="expandable">Expandable in UI.</param>
     /// <param name="take">Number of intervals to include; will be clamped.</param>
     /// <param name="useValutaDate">Whether to aggregate by ValutaDate.</param>
-    public void Update(PostingKind postingKind, bool includeCategory, ReportInterval interval, bool comparePrevious, bool compareYear, bool showChart, bool expandable, int take, bool useValutaDate)
+    public void Update(PostingKind postingKind, bool includeCategory, ReportInterval interval, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, int take, bool useValutaDate)
     {
         PostingKind = postingKind;
         IncludeCategory = includeCategory;
         Interval = interval;
         ComparePrevious = comparePrevious;
         CompareYear = compareYear;
+        CompareProjection = compareProjection;
         ShowChart = showChart;
         Expandable = expandable;
         SetTake(take);
@@ -333,6 +371,7 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
         int Take,
         bool ComparePrevious,
         bool CompareYear,
+        bool CompareProjection,
         bool ShowChart,
         bool Expandable,
         string? PostingKindsCsv,
@@ -351,7 +390,7 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
     /// Creates a backup DTO representing the serializable state of this ReportFavorite.
     /// </summary>
     /// <returns>A <see cref="ReportFavoriteBackupDto"/> containing the backup data.</returns>
-    public ReportFavoriteBackupDto ToBackupDto() => new ReportFavoriteBackupDto(Id, OwnerUserId, Name, PostingKind, IncludeCategory, Interval, Take, ComparePrevious, CompareYear, ShowChart, Expandable, PostingKindsCsv, AccountIdsCsv, ContactIdsCsv, SavingsPlanIdsCsv, SecurityIdsCsv, ContactCategoryIdsCsv, SavingsPlanCategoryIdsCsv, SecurityCategoryIdsCsv, SecuritySubTypesCsv, IncludeDividendRelated, UseValutaDate);
+    public ReportFavoriteBackupDto ToBackupDto() => new ReportFavoriteBackupDto(Id, OwnerUserId, Name, PostingKind, IncludeCategory, Interval, Take, ComparePrevious, CompareYear, CompareProjection, ShowChart, Expandable, PostingKindsCsv, AccountIdsCsv, ContactIdsCsv, SavingsPlanIdsCsv, SecurityIdsCsv, ContactCategoryIdsCsv, SavingsPlanCategoryIdsCsv, SecurityCategoryIdsCsv, SecuritySubTypesCsv, IncludeDividendRelated, UseValutaDate);
 
     /// <summary>
     /// Assigns values from a backup DTO to this entity. Uses existing setters to preserve invariants where applicable.
@@ -367,6 +406,7 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
         Take = dto.Take;
         ComparePrevious = dto.ComparePrevious;
         CompareYear = dto.CompareYear;
+        CompareProjection = dto.CompareProjection;
         ShowChart = dto.ShowChart;
         Expandable = dto.Expandable;
         PostingKindsCsv = dto.PostingKindsCsv;

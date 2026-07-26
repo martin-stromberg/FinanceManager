@@ -96,12 +96,16 @@ public sealed class BackupsController : ControllerBase
             var dto = await _svc.UploadAsync(_current.UserId, s, file.FileName, ct);
             return Ok(dto);
         }
-        catch (FileLoadException ex)
+        catch (FileLoadException)
         {
             const string code = "Err_Conflict_DuplicateFileName";
             var entry = _localizer[$"{Origin}_{code}"];
             var message = entry.ResourceNotFound ? "A backup with that filename already exists." : entry.Value;
             return BadRequest(ApiErrorDto.Create(Origin, code, message));
+        }
+        catch (BackupValidationException ex)
+        {
+            return BadRequest(ApiErrorDto.Create(Origin, ex.Code, ex.Message));
         }
     }
 
@@ -128,14 +132,15 @@ public sealed class BackupsController : ControllerBase
     /// <returns>204 No Content when restore succeeded; 404 Not Found when the backup does not exist.</returns>
     [HttpPost("{id:guid}/apply")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ApplyAsync(Guid id, CancellationToken ct)
+    public async Task<IActionResult> ApplyAsync(Guid id, [FromBody] BackupRestoreRequestDto? request, CancellationToken ct)
     {
-        var ok = await _svc.ApplyAsync(_current.UserId, id, (s1, i1, i2, i3, i4) => { }, ct);
-        return ok ? NoContent() : NotFound();
+        var result = await _svc.ApplyAsync(_current.UserId, id, request?.ConfirmationText, confirmationAlreadyValidated: false, (s1, i1, i2, i3, i4) => { }, ct);
+        return MapApplyResult(result);
     }
 
-    private sealed record BackupRestorePayload(Guid BackupId);
+    private sealed record BackupRestorePayload(Guid BackupId, bool Confirmed, string ExpectedFileName);
 
     /// <summary>
     /// Enqueues a background restore task for a backup if none is currently running or queued.
@@ -145,17 +150,33 @@ public sealed class BackupsController : ControllerBase
     /// <returns>200 OK with a <see cref="FinanceManager.Shared.Dtos.Admin.BackupRestoreStatusDto"/> describing the enqueued or current task status.</returns>
     [HttpPost("{id:guid}/apply/start")]
     [ProducesResponseType(typeof(FinanceManager.Shared.Dtos.Admin.BackupRestoreStatusDto), StatusCodes.Status200OK)]
-    public IActionResult StartApplyAsync(Guid id)
+    [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> StartApplyAsync(Guid id, [FromBody] BackupRestoreRequestDto? request, CancellationToken ct)
     {
+        var backup = await _svc.GetAsync(_current.UserId, id, ct);
+        if (backup == null)
+        {
+            return NotFound();
+        }
+
+        if (!string.Equals(request?.ConfirmationText, backup.FileName, StringComparison.Ordinal) ||
+            (request?.ExpectedFileName is not null && !string.Equals(request.ExpectedFileName, backup.FileName, StringComparison.Ordinal)))
+        {
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_Backup_ConfirmationRequired", "Restore confirmation must match the backup file name."));
+        }
+
         var existing = _taskManager.GetAll()
             .Where(t => t.UserId == _current.UserId && t.Type == BackgroundTaskType.BackupRestore && (t.Status == BackgroundTaskStatus.Running || t.Status == BackgroundTaskStatus.Queued))
             .OrderByDescending(t => t.EnqueuedUtc)
             .FirstOrDefault();
         if (existing != null)
         {
-            return Ok(MapStatus(existing));
+            return Conflict(ApiErrorDto.Create(Origin, "Err_Backup_RestoreActive", "A backup restore is already active."));
         }
-        var payload = new BackupRestorePayload(id);
+
+        var payload = new BackupRestorePayload(id, Confirmed: true, backup.FileName);
         var info = _taskManager.Enqueue(BackgroundTaskType.BackupRestore, _current.UserId, payload, allowDuplicate: false);
         return Ok(MapStatus(info));
     }
@@ -225,5 +246,18 @@ public sealed class BackupsController : ControllerBase
             info.Total2 ?? 0,
             info.Message2
         );
+    }
+
+    private IActionResult MapApplyResult(BackupApplyResult result)
+    {
+        return result.Status switch
+        {
+            BackupApplyStatus.Succeeded => NoContent(),
+            BackupApplyStatus.NotFound => NotFound(),
+            BackupApplyStatus.ConfirmationRequired => BadRequest(ApiErrorDto.Create(Origin, "Err_Backup_ConfirmationRequired", result.Message)),
+            BackupApplyStatus.InvalidBackup => BadRequest(ApiErrorDto.Create(Origin, "Err_Backup_Invalid", result.Message)),
+            BackupApplyStatus.ImportFailed => BadRequest(ApiErrorDto.Create(Origin, "Err_Backup_ImportFailed", result.Message)),
+            _ => BadRequest(ApiErrorDto.Create(Origin, "Err_Backup_ApplyFailed", result.Message))
+        };
     }
 }

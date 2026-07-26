@@ -1,3 +1,4 @@
+using FinanceManager.Application;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Auth;
@@ -27,6 +28,9 @@ namespace FinanceManager.Tests.Auth
             var userManagerMock = new Mock<UserManager<User>>(store.Object, null, null, null, null, null, null, null, null);
             userManagerMock.Setup(u => u.SetLockoutEndDateAsync(It.IsAny<User>(), It.IsAny<DateTimeOffset?>())).ReturnsAsync(IdentityResult.Success);
             userManagerMock.Setup(u => u.ResetAccessFailedCountAsync(It.IsAny<User>())).ReturnsAsync(IdentityResult.Success);
+            userManagerMock.Setup(u => u.UpdateSecurityStampAsync(It.IsAny<User>()))
+                .ReturnsAsync(IdentityResult.Success)
+                .Callback<User>(u => u.SecurityStamp = Guid.NewGuid().ToString("N"));
 
             // --- NEW: maintain role membership state inside the mock ---
             var adminUsers = new HashSet<Guid>();
@@ -57,7 +61,7 @@ namespace FinanceManager.Tests.Auth
                 });
             // --- END NEW ---
 
-            var sut = new UserAdminService(db, userManagerMock.Object, hasher.Object, logger); // pass userManager
+            var sut = new UserAdminService(db, userManagerMock.Object, hasher.Object, new TestCurrentUserService(true), logger); // pass userManager
             return (sut, db, hasher, userManagerMock);
         }
 
@@ -115,12 +119,93 @@ namespace FinanceManager.Tests.Auth
         }
 
         [Fact]
+        public async Task UpdateAsync_Deactivate_ShouldUpdateSecurityStamp()
+        {
+            var (sut, db, _, userManagerMock) = Create();
+            var u = new User("user", "HASH::x", false);
+            db.Users.Add(u);
+            db.SaveChanges();
+
+            await sut.UpdateAsync(u.Id, null, null, false, null, CancellationToken.None);
+
+            userManagerMock.Verify(um => um.UpdateSecurityStampAsync(It.Is<User>(x => x.Id == u.Id)), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_RemoveAdminRole_ShouldUpdateSecurityStamp()
+        {
+            var (sut, db, _, userManagerMock) = Create();
+            var u = new User("admin", "HASH::x", true);
+            db.Users.Add(u);
+            db.SaveChanges();
+            await userManagerMock.Object.AddToRoleAsync(u, "Admin");
+
+            await sut.UpdateAsync(u.Id, null, false, null, null, CancellationToken.None);
+
+            userManagerMock.Verify(um => um.UpdateSecurityStampAsync(It.Is<User>(x => x.Id == u.Id)), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_Deactivate_ShouldThrow_WhenSecurityStampUpdateFails()
+        {
+            var (sut, db, _, userManagerMock) = Create();
+            var u = new User("user", "HASH::x", false);
+            db.Users.Add(u);
+            db.SaveChanges();
+            userManagerMock.Setup(um => um.UpdateSecurityStampAsync(It.Is<User>(x => x.Id == u.Id)))
+                .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "stamp failed" }));
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => sut.UpdateAsync(u.Id, null, null, false, null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task UpdateAsync_RemoveAdminRole_ShouldThrow_WhenSecurityStampUpdateFails()
+        {
+            var (sut, db, _, userManagerMock) = Create();
+            var u = new User("admin", "HASH::x", true);
+            db.Users.Add(u);
+            db.SaveChanges();
+            await userManagerMock.Object.AddToRoleAsync(u, "Admin");
+            userManagerMock.Setup(um => um.UpdateSecurityStampAsync(It.Is<User>(x => x.Id == u.Id)))
+                .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "stamp failed" }));
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => sut.UpdateAsync(u.Id, null, false, null, null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task UpdateAsync_UnchangedActiveAndRole_ShouldNotUpdateSecurityStamp()
+        {
+            var (sut, db, _, userManagerMock) = Create();
+            var u = new User("user", "HASH::x", false);
+            db.Users.Add(u);
+            db.SaveChanges();
+
+            await sut.UpdateAsync(u.Id, null, false, true, null, CancellationToken.None);
+
+            userManagerMock.Verify(um => um.UpdateSecurityStampAsync(It.IsAny<User>()), Times.Never);
+        }
+
+        [Fact]
         public async Task ResetPasswordAsync_Empty_Throws()
         {
             var (sut, db, _, _) = Create();
             var u = new User("user", "HASH::old", false);
             db.Users.Add(u); db.SaveChanges();
             await Assert.ThrowsAsync<ArgumentException>(() => sut.ResetPasswordAsync(u.Id, "", CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task ResetPasswordAsync_ShouldThrow_WhenSecurityStampUpdateFails()
+        {
+            var (sut, db, hasher, userManagerMock) = Create();
+            var u = new User("user", "HASH::old", false);
+            db.Users.Add(u);
+            db.SaveChanges();
+            hasher.Setup(h => h.Hash("newpw")).Returns("HASH::newpw");
+            userManagerMock.Setup(um => um.UpdateSecurityStampAsync(It.Is<User>(x => x.Id == u.Id)))
+                .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "stamp failed" }));
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => sut.ResetPasswordAsync(u.Id, "newpw", CancellationToken.None));
         }
 
         [Fact]
@@ -156,6 +241,22 @@ namespace FinanceManager.Tests.Auth
             var (sut, db, _, _) = Create();
             var ok = await sut.DeleteAsync(Guid.NewGuid(), CancellationToken.None);
             Assert.False(ok);
+        }
+
+        private sealed class TestCurrentUserService : ICurrentUserService
+        {
+            public TestCurrentUserService(bool isAdmin)
+            {
+                IsAdmin = isAdmin;
+            }
+
+            public Guid UserId { get; } = Guid.NewGuid();
+
+            public string? PreferredLanguage => null;
+
+            public bool IsAuthenticated => true;
+
+            public bool IsAdmin { get; }
         }
     }
 }

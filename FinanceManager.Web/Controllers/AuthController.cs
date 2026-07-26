@@ -1,5 +1,6 @@
 using FinanceManager.Application.Users;
 using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure.Auth;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using System.Net.Mime;
@@ -17,6 +18,7 @@ public sealed class AuthController : ControllerBase
 
     private readonly IUserAuthService _auth;
     private readonly IStringLocalizer<Controller> _localizer;
+    private readonly IAuthTokenProvider _tokenProvider;
     private const string AuthCookieName = "FinanceManager.Auth";
 
     /// <summary>
@@ -24,10 +26,11 @@ public sealed class AuthController : ControllerBase
     /// </summary>
     /// <param name="auth">Service handling user authentication operations (login/register).</param>
     /// <param name="localizer">Localizer for providing localized error messages.</param>
-    public AuthController(IUserAuthService auth, IStringLocalizer<Controller> localizer)
+    public AuthController(IUserAuthService auth, IStringLocalizer<Controller> localizer, IAuthTokenProvider tokenProvider)
     {
         _auth = auth;
         _localizer = localizer;
+        _tokenProvider = tokenProvider;
     }
 
     /// <summary>
@@ -70,6 +73,7 @@ public sealed class AuthController : ControllerBase
             IsEssential = true,
             Expires = new DateTimeOffset(result.Value.ExpiresUtc)
         });
+        PrimeTokenCache(result.Value.Token, result.Value.ExpiresUtc);
 
         return Ok(new AuthOkResponse(result.Value.Username, result.Value.IsAdmin, result.Value.ExpiresUtc));
     }
@@ -112,6 +116,7 @@ public sealed class AuthController : ControllerBase
             IsEssential = true,
             Expires = new DateTimeOffset(result.Value.ExpiresUtc)
         });
+        PrimeTokenCache(result.Value.Token, result.Value.ExpiresUtc);
 
         return Ok(new AuthOkResponse(result.Value.Username, result.Value.IsAdmin, result.Value.ExpiresUtc));
     }
@@ -135,5 +140,13 @@ public sealed class AuthController : ControllerBase
         }
 
         return Ok();
+    }
+
+    private void PrimeTokenCache(string token, DateTime expiresUtc)
+    {
+        if (_tokenProvider is JwtCookieAuthTokenProvider jwtCookieProvider)
+        {
+            jwtCookieProvider.PrimeCache(token, new DateTimeOffset(expiresUtc));
+        }
     }
 }

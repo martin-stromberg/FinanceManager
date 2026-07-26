@@ -337,6 +337,13 @@ form {
     margin-bottom: .55rem;
     background: var(--panel);
     cursor: pointer;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.generic-list-mobile-card.muted-row {
+    opacity: .68;
+    color: var(--muted);
 }
 
 .generic-list-mobile-row {
@@ -344,10 +351,22 @@ form {
     flex-direction: column;
     gap: .15rem;
     margin-top: .45rem;
+    min-width: 0;
 }
 
 .generic-list-mobile-row:first-child {
     margin-top: 0;
+}
+
+.generic-list-mobile-row.two-column {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: .75rem;
+    row-gap: .35rem;
+}
+
+.generic-list-mobile-cell {
+    min-width: 0;
 }
 
 .generic-list-mobile-label {
@@ -357,6 +376,8 @@ form {
 
 .generic-list-mobile-value {
     font-size: .92rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
     word-break: break-word;
 }
 
@@ -424,9 +445,13 @@ form {
     .card-view-responsive .card-table td {
         display: block;
         padding-top: .1rem;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
     .card-embedded-list {
         overflow-x: auto;
+        min-width: 0;
     }
     .split-center {
         padding: .5rem;

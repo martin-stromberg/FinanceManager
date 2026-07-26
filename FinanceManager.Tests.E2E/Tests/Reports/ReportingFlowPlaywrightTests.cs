@@ -1,4 +1,5 @@
 using FinanceManager.Shared.Dtos.Accounts;
+using FinanceManager.Shared.Dtos.Admin;
 using FinanceManager.Shared.Dtos.Contacts;
 using FinanceManager.Shared.Dtos.SavingsPlans;
 using FinanceManager.Shared.Dtos.Securities;
@@ -70,12 +71,14 @@ public sealed class ReportingFlowPlaywrightTests
 
         await page.GotoAsync($"/reports/dashboard?favoriteId={created.Id}&edit=false");
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await page.Locator("body").WaitForAsync();
-        var heading = await page.Locator("h2").TextContentAsync();
+        var favoriteHeading = page.Locator("h2").Filter(new LocatorFilterOptions { HasTextString = favoriteName });
+        await favoriteHeading.WaitForAsync();
+        var heading = await favoriteHeading.TextContentAsync();
         heading.Should().Contain(favoriteName);
 
         await page.ReloadAsync();
-        heading = await page.Locator("h2").TextContentAsync();
+        await favoriteHeading.WaitForAsync();
+        heading = await favoriteHeading.TextContentAsync();
         heading.Should().Contain(favoriteName);
     }
 
@@ -115,6 +118,7 @@ public sealed class ReportingFlowPlaywrightTests
         var backupCreate = await BrowserApiHelper.PostWithStatusAsync<JsonElement>(page, "/api/setup/backups");
         backupCreate.Status.Should().Be(200);
         var backupId = GetGuid(backupCreate.Value, "id");
+        var backupFileName = GetString(backupCreate.Value, "fileName");
 
         await BrowserApiHelper.PutJsonAsync<ContactUpdateRequest, ContactDto>(
             page,
@@ -127,7 +131,10 @@ public sealed class ReportingFlowPlaywrightTests
         var deleteSecurityStatus = await BrowserApiHelper.DeleteAsync(page, $"/api/securities/{security.Id}");
         deleteSecurityStatus.Should().BeOneOf(200, 204);
 
-        await BrowserApiHelper.PostNoContentAsync(page, $"/api/setup/backups/{backupId}/apply");
+        await BrowserApiHelper.PostJsonAsync(
+            page,
+            $"/api/setup/backups/{backupId}/apply",
+            new BackupRestoreRequestDto(backupFileName, backupFileName));
 
         var restoredContacts = await BrowserApiHelper.GetJsonAsync<IReadOnlyList<ContactDto>>(page, "/api/contacts?all=true");
         restoredContacts.Should().Contain(c => c.Name == contact.Name);
@@ -161,5 +168,26 @@ public sealed class ReportingFlowPlaywrightTests
         }
 
         throw new InvalidOperationException($"Property '{propertyName}' with a GUID value was not found.");
+    }
+
+    private static string GetString(JsonElement? element, string propertyName)
+    {
+        if (element is null)
+        {
+            throw new InvalidOperationException("Missing JSON payload.");
+        }
+
+        var value = element.Value;
+        if (value.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.String)
+        {
+            return property.GetString() ?? throw new InvalidOperationException($"Property '{propertyName}' was null.");
+        }
+
+        if (value.TryGetProperty(char.ToUpperInvariant(propertyName[0]) + propertyName[1..], out property) && property.ValueKind == JsonValueKind.String)
+        {
+            return property.GetString() ?? throw new InvalidOperationException($"Property '{propertyName}' was null.");
+        }
+
+        throw new InvalidOperationException($"Property '{propertyName}' with a string value was not found.");
     }
 }

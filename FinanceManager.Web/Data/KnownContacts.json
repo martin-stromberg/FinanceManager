@@ -1,0 +1,27 @@
+{
+  "contacts": [
+    {
+      "name": "Amazon",
+      "type": "Organization",
+      "aliases": [
+        "AMAZON*",
+        "AMZN*"
+      ]
+    },
+    {
+      "name": "PayPal",
+      "type": "Organization",
+      "aliases": [
+        "PAYPAL*",
+        "PP.*"
+      ]
+    },
+    {
+      "name": "Netflix",
+      "type": "Organization",
+      "aliases": [
+        "NETFLIX*"
+      ]
+    }
+  ]
+}

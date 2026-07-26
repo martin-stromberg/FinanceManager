@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
@@ -20,6 +21,35 @@ public sealed class BackupService : IBackupService
     private readonly IHostEnvironment _env;
     private readonly ILogger<BackupService> _logger;
     private readonly IServiceProvider _services;
+    private readonly BackupSecurityOptions _securityOptions;
+
+    private static readonly string[] RequiredDataProperties =
+    [
+        "Accounts",
+        "Contacts",
+        "ContactCategories",
+        "AliasNames",
+        "SavingsPlanCategories",
+        "SavingsPlans",
+        "SecurityCategories",
+        "Securities",
+        "SecurityPrices",
+        "StatementImports",
+        "StatementEntries",
+        "Postings",
+        "StatementDrafts",
+        "StatementDraftEntries",
+        "ReportFavorites",
+        "HomeKpis",
+        "AttachmentCategories",
+        "Attachments",
+        "Notifications",
+        "AccountShares",
+        "BudgetCategories",
+        "BudgetPurposes",
+        "BudgetRules",
+        "BudgetOverrides"
+    ];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BackupService"/> class.
@@ -28,9 +58,19 @@ public sealed class BackupService : IBackupService
     /// <param name="env">Host environment used to resolve the content root for file storage.</param>
     /// <param name="logger">Logger instance for diagnostic messages.</param>
     /// <param name="services">Service provider used to create scoped services when applying backups.</param>
-    public BackupService(AppDbContext db, IHostEnvironment env, ILogger<BackupService> logger, IServiceProvider services)
+    /// <param name="securityOptions">Security limits for backup validation.</param>
+    public BackupService(
+        AppDbContext db,
+        IHostEnvironment env,
+        ILogger<BackupService> logger,
+        IServiceProvider services,
+        IOptions<BackupSecurityOptions>? securityOptions = null)
     {
-        _db = db; _env = env; _logger = logger; _services = services;
+        _db = db;
+        _env = env;
+        _logger = logger;
+        _services = services;
+        _securityOptions = securityOptions?.Value ?? new BackupSecurityOptions();
     }
 
     /// <summary>
@@ -89,7 +129,7 @@ public sealed class BackupService : IBackupService
     }
 
     /// <summary>
-    /// Uploads a user-provided backup file. If the file is not a ZIP it will be wrapped into a ZIP containing the NDJSON payload.
+    /// Uploads a user-provided ZIP backup file after validating its container and NDJSON payload.
     /// A database record will be created referencing the stored file.
     /// </summary>
     /// <param name="userId">Owner user identifier.</param>
@@ -102,25 +142,27 @@ public sealed class BackupService : IBackupService
     {
         var safeName = Path.GetFileName(fileName);
         var isZip = safeName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
-        var targetName = isZip ? safeName : Path.ChangeExtension($"upload-{DateTime.UtcNow:yyyyMMddHHmmss}", ".zip");
+        if (!isZip)
+        {
+            _logger.LogWarning("BackupRestoreAudit Operation={Operation} Result={Result} Reason={Reason} UserId={UserId} FileName={FileName}", "Upload", "Rejected", "UnsupportedFormat", userId, safeName);
+            throw new BackupValidationException("Err_Backup_UnsupportedFormat", "Only ZIP backup files are supported.");
+        }
+
+        var targetName = safeName;
         var target = Path.Combine(GetRoot(), targetName);
 
         if (await _db.Backups.AnyAsync(b => b.OwnerUserId == userId && b.FileName == targetName, ct))
             throw new FileLoadException("Eine Sicherung mit diesem Dateinamen existiert bereits.");
 
-        if (isZip)
+        await using var uploadCopy = new MemoryStream();
+        await CopyBoundedAsync(stream, uploadCopy, _securityOptions.MaxUploadBytes, ct);
+        uploadCopy.Position = 0;
+        var validation = await ValidateAndReadBackupAsync(uploadCopy, BackupValidationPurpose.Upload, ct);
+
+        uploadCopy.Position = 0;
+        await using (var fs = File.Create(target))
         {
-            await using var fs = File.Create(target);
-            await stream.CopyToAsync(fs, ct);
-        }
-        else
-        {
-            // Wrap uploaded content (assumed NDJSON) into a zip
-            using var zipFs = File.Create(target);
-            using var zip = new ZipArchive(zipFs, ZipArchiveMode.Create, leaveOpen: false);
-            var entry = zip.CreateEntry("backup.ndjson", CompressionLevel.Optimal);
-            await using var es = entry.Open();
-            await stream.CopyToAsync(es, ct);
+            await uploadCopy.CopyToAsync(fs, ct);
         }
 
         var size = new FileInfo(target).Length;
@@ -135,6 +177,16 @@ public sealed class BackupService : IBackupService
         };
         _db.Backups.Add(rec);
         await _db.SaveChangesAsync(ct);
+        _logger.LogInformation(
+            "BackupRestoreAudit Operation={Operation} Result={Result} UserId={UserId} FileName={FileName} EntryName={EntryName} CompressedBytes={CompressedBytes} UncompressedBytes={UncompressedBytes} Version={Version}",
+            "Upload",
+            "Succeeded",
+            userId,
+            rec.FileName,
+            validation.EntryName,
+            validation.CompressedBytes,
+            validation.UncompressedBytes,
+            validation.Version);
         return Map(rec);
     }
 
@@ -188,33 +240,59 @@ public sealed class BackupService : IBackupService
     }
 
     /// <summary>
+    /// Gets a single backup metadata entry for the specified user.
+    /// </summary>
+    /// <param name="userId">Owner user identifier.</param>
+    /// <param name="id">Backup identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The backup metadata or <c>null</c> when it is not found.</returns>
+    public async Task<BackupDto?> GetAsync(Guid userId, Guid id, CancellationToken ct)
+    {
+        var rec = await _db.Backups.AsNoTracking().FirstOrDefaultAsync(b => b.Id == id && b.OwnerUserId == userId, ct);
+        return rec == null ? null : Map(rec);
+    }
+
+    /// <summary>
     /// Applies the specified backup for the user by reading the NDJSON payload and invoking the importer.
     /// Progress updates reported by the importer are forwarded to the provided callback.
     /// </summary>
     /// <param name="userId">Owner user identifier.</param>
     /// <param name="id">Identifier of the backup record to apply.</param>
+    /// <param name="confirmationText">Confirmation text that must match the stored backup file name.</param>
+    /// <param name="confirmationAlreadyValidated">True when the caller already validated the confirmation before enqueueing a background restore.</param>
     /// <param name="progressCallback">Callback that receives progress updates. Parameters: stepDescription, step, total, subStep, subTotal.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns><c>true</c> when the backup was applied; otherwise <c>false</c> when the record or file was missing or reading failed.</returns>
-    public async Task<bool> ApplyAsync(Guid userId, Guid id, Action<string, int, int, int, int> progressCallback, CancellationToken ct)
+    /// <returns>A typed result describing whether the restore succeeded or why it was rejected.</returns>
+    public async Task<BackupApplyResult> ApplyAsync(
+        Guid userId,
+        Guid id,
+        string? confirmationText,
+        bool confirmationAlreadyValidated,
+        Action<string, int, int, int, int> progressCallback,
+        CancellationToken ct)
     {
         var rec = await _db.Backups.AsNoTracking().FirstOrDefaultAsync(b => b.Id == id && b.OwnerUserId == userId, ct);
-        if (rec == null) return false;
+        if (rec == null) return BackupApplyResult.NotFound("Backup not found.");
+
+        if (!string.Equals(confirmationText, rec.FileName, StringComparison.Ordinal))
+        {
+            _logger.LogWarning("BackupRestoreAudit Operation={Operation} Result={Result} Reason={Reason} UserId={UserId} BackupId={BackupId} FileName={FileName}", "Restore", "Rejected", confirmationAlreadyValidated ? "StaleConfirmation" : "ConfirmationRequired", userId, id, rec.FileName);
+            return BackupApplyResult.ConfirmationRequired("Restore confirmation must match the backup file name.");
+        }
+
         var full = Path.Combine(GetRoot(), rec.StoragePath);
-        if (!File.Exists(full)) return false;
+        if (!File.Exists(full)) return BackupApplyResult.NotFound("Backup file not found.");
 
-        // Extract NDJSON from zip or read directly if file is NDJSON
-        var (ok, ndjson) = await ReadNdjsonAsync(full, ct);
-        if (!ok || ndjson == null) { return false; }
-
-        // Read first line for meta/version
-        ndjson.Position = 0;
-        using var sr = new StreamReader(ndjson, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
-        var metaLine = await sr.ReadLineAsync();
-        if (string.IsNullOrWhiteSpace(metaLine)) { return false; }
-        using var metaDoc = JsonDocument.Parse(metaLine);
-        var versionProp = metaDoc.RootElement.TryGetProperty("Version", out var vEl) ? vEl.GetInt32() : 3;
-        ndjson.Position = 0;
+        BackupValidationResult validation;
+        try
+        {
+            validation = await ValidateAndReadBackupAsync(full, BackupValidationPurpose.Restore, ct);
+        }
+        catch (BackupValidationException ex)
+        {
+            _logger.LogWarning("BackupRestoreAudit Operation={Operation} Result={Result} Reason={Reason} UserId={UserId} BackupId={BackupId} FileName={FileName}", "Restore", "Rejected", ex.Code, userId, id, rec.FileName);
+            return BackupApplyResult.InvalidBackup(ex.Message);
+        }
 
         // Resolve services scoped to this operation
         using var scope = _services.CreateScope();
@@ -230,47 +308,228 @@ public sealed class BackupService : IBackupService
         {
             progressCallback(e.StepDescription, e.Step, e.Total, e.SubStep, e.SubTotal);
         };
-        await importerLegacy.ImportAsync(userId, ndjson, replaceExisting: true, ct);
+        try
+        {
+            await importerLegacy.ImportAsync(userId, validation.Stream, replaceExisting: true, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogError(ex, "BackupRestoreAudit Operation={Operation} Result={Result} Reason={Reason} UserId={UserId} BackupId={BackupId} FileName={FileName}", "Restore", "Failed", "ImportFailed", userId, id, rec.FileName);
+            return BackupApplyResult.ImportFailed(ex.Message);
+        }
 
         if (reportCache != null)
         {
             await reportCache.MarkAllReportCacheEntriesForUpdateAsync(userId, ct);
             reportCache.EnqueueBudgetReportCacheRefresh(userId);
         }
-        return true;
+        _logger.LogInformation(
+            "BackupRestoreAudit Operation={Operation} Result={Result} UserId={UserId} BackupId={BackupId} FileName={FileName} EntryName={EntryName} CompressedBytes={CompressedBytes} UncompressedBytes={UncompressedBytes} Version={Version}",
+            "Restore",
+            "Succeeded",
+            userId,
+            id,
+            rec.FileName,
+            validation.EntryName,
+            validation.CompressedBytes,
+            validation.UncompressedBytes,
+            validation.Version);
+        return BackupApplyResult.Succeeded();
     }
 
-    /// <summary>
-    /// Reads the NDJSON content from either an NDJSON file or a ZIP containing an NDJSON entry.
-    /// </summary>
-    /// <param name="filePath">Full path to the backup file.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>Tuple indicating success and the memory stream containing the NDJSON payload when successful.</returns>
-    private static async Task<(bool ok, MemoryStream? content)> ReadNdjsonAsync(string filePath, CancellationToken ct)
+    private async Task<BackupValidationResult> ValidateAndReadBackupAsync(string filePath, BackupValidationPurpose purpose, CancellationToken ct)
     {
-        var isZip = filePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
-        if (!isZip)
+        await using var zipFs = File.OpenRead(filePath);
+        return await ValidateAndReadBackupAsync(zipFs, purpose, ct);
+    }
+
+    private async Task<BackupValidationResult> ValidateAndReadBackupAsync(Stream zipStream, BackupValidationPurpose purpose, CancellationToken ct)
+    {
+        if (zipStream.CanSeek && zipStream.Length > _securityOptions.MaxCompressedZipBytes)
         {
-            // Assume NDJSON file
-            var ms = new MemoryStream();
-            await using (var fs = File.OpenRead(filePath))
-            {
-                await fs.CopyToAsync(ms, ct);
-            }
-            ms.Position = 0;
-            return (true, ms);
+            throw new BackupValidationException("Err_Backup_TooLarge", "Backup ZIP exceeds the configured compressed size limit.");
         }
 
-        await using var zipFs = File.OpenRead(filePath);
-        using var zip = new ZipArchive(zipFs, ZipArchiveMode.Read, leaveOpen: false);
-        var entry = zip.Entries.FirstOrDefault(e => e.FullName.EndsWith(".ndjson", StringComparison.OrdinalIgnoreCase))
-                    ?? zip.Entries.FirstOrDefault();
-        if (entry == null) { return (false, null); }
-        await using var es = entry.Open();
-        var outMs = new MemoryStream();
-        await es.CopyToAsync(outMs, ct);
-        outMs.Position = 0;
-        return (true, outMs);
+        ZipArchive zip;
+        try
+        {
+            zip = new ZipArchive(zipStream, ZipArchiveMode.Read, leaveOpen: true);
+        }
+        catch (InvalidDataException ex)
+        {
+            throw new BackupValidationException("Err_Backup_InvalidZip", "Backup must be a valid ZIP file.", ex);
+        }
+
+        using (zip)
+        {
+            if (zip.Entries.Count == 0)
+            {
+                throw new BackupValidationException("Err_Backup_EmptyZip", "Backup ZIP does not contain an NDJSON entry.");
+            }
+
+            if (zip.Entries.Count > _securityOptions.MaxZipEntries)
+            {
+                throw new BackupValidationException("Err_Backup_TooManyEntries", "Backup ZIP contains too many entries.");
+            }
+
+            var entry = zip.Entries.Single();
+            ValidateEntry(entry);
+
+            var outMs = new MemoryStream();
+            await using (var es = entry.Open())
+            {
+                await CopyBoundedAsync(es, outMs, _securityOptions.MaxUncompressedNdjsonBytes, ct);
+            }
+
+            if (outMs.Length != entry.Length)
+            {
+                throw new BackupValidationException("Err_Backup_SizeMismatch", "Backup entry size does not match ZIP metadata.");
+            }
+
+            outMs.Position = 0;
+            var version = await ValidateNdjsonSchemaAsync(outMs, ct);
+            outMs.Position = 0;
+
+            return new BackupValidationResult(outMs, entry.FullName, entry.CompressedLength, outMs.Length, version);
+        }
+    }
+
+    private void ValidateEntry(ZipArchiveEntry entry)
+    {
+        if (!IsAllowedEntryName(entry.FullName))
+        {
+            throw new BackupValidationException("Err_Backup_UnexpectedEntryName", "Backup ZIP contains an unexpected entry name.");
+        }
+
+        if (entry.CompressedLength < 0 || entry.Length < 0)
+        {
+            throw new BackupValidationException("Err_Backup_InvalidZipMetadata", "Backup ZIP contains invalid entry size metadata.");
+        }
+
+        if (entry.CompressedLength > _securityOptions.MaxCompressedZipBytes)
+        {
+            throw new BackupValidationException("Err_Backup_TooLarge", "Backup entry exceeds the configured compressed size limit.");
+        }
+
+        if (entry.Length <= 0)
+        {
+            throw new BackupValidationException("Err_Backup_EmptyPayload", "Backup NDJSON payload is empty.");
+        }
+
+        if (entry.Length > _securityOptions.MaxUncompressedNdjsonBytes)
+        {
+            throw new BackupValidationException("Err_Backup_UncompressedTooLarge", "Backup entry exceeds the configured uncompressed size limit.");
+        }
+
+        if (entry.CompressedLength == 0 || entry.Length / (double)entry.CompressedLength > _securityOptions.MaxCompressionRatio)
+        {
+            throw new BackupValidationException("Err_Backup_CompressionRatio", "Backup compression ratio exceeds the configured limit.");
+        }
+    }
+
+    private bool IsAllowedEntryName(string entryName)
+    {
+        if (Path.GetFileName(entryName) != entryName)
+        {
+            return false;
+        }
+
+        if (_securityOptions.AllowedEntryNames.Any(n => string.Equals(n, entryName, StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        return _securityOptions.AllowedEntryPrefixes.Any(prefix =>
+            entryName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
+            entryName.EndsWith(".ndjson", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task<int> ValidateNdjsonSchemaAsync(MemoryStream ndjson, CancellationToken ct)
+    {
+        using var reader = new StreamReader(ndjson, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
+        var metaLine = await reader.ReadLineAsync(ct);
+        if (string.IsNullOrWhiteSpace(metaLine))
+        {
+            throw new BackupValidationException("Err_Backup_MissingMeta", "Backup NDJSON metadata is missing.");
+        }
+
+        int version;
+        try
+        {
+            using var metaDoc = JsonDocument.Parse(metaLine);
+            if (metaDoc.RootElement.ValueKind != JsonValueKind.Object ||
+                !metaDoc.RootElement.TryGetProperty("Type", out var typeEl) ||
+                !string.Equals(typeEl.GetString(), "Backup", StringComparison.Ordinal) ||
+                !metaDoc.RootElement.TryGetProperty("Version", out var versionEl) ||
+                versionEl.ValueKind != JsonValueKind.Number ||
+                !versionEl.TryGetInt32(out version))
+            {
+                throw new BackupValidationException("Err_Backup_InvalidMeta", "Backup NDJSON metadata is invalid.");
+            }
+        }
+        catch (JsonException ex)
+        {
+            throw new BackupValidationException("Err_Backup_InvalidMeta", "Backup NDJSON metadata is invalid.", ex);
+        }
+
+        if (!_securityOptions.AllowedBackupVersions.Contains(version))
+        {
+            throw new BackupValidationException("Err_Backup_UnsupportedVersion", "Backup version is not supported.");
+        }
+
+        var dataLine = await reader.ReadLineAsync(ct);
+        if (string.IsNullOrWhiteSpace(dataLine))
+        {
+            throw new BackupValidationException("Err_Backup_MissingData", "Backup NDJSON data object is missing.");
+        }
+
+        try
+        {
+            using var dataDoc = JsonDocument.Parse(dataLine);
+            if (dataDoc.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                throw new BackupValidationException("Err_Backup_InvalidData", "Backup NDJSON data must be a JSON object.");
+            }
+
+            foreach (var propertyName in RequiredDataProperties)
+            {
+                if (!dataDoc.RootElement.TryGetProperty(propertyName, out var property) || property.ValueKind != JsonValueKind.Array)
+                {
+                    throw new BackupValidationException("Err_Backup_InvalidData", $"Backup data is missing array property '{propertyName}'.");
+                }
+            }
+        }
+        catch (JsonException ex)
+        {
+            throw new BackupValidationException("Err_Backup_InvalidData", "Backup NDJSON data is invalid.", ex);
+        }
+
+        return version;
+    }
+
+    private static async Task CopyBoundedAsync(Stream source, Stream destination, long maxBytes, CancellationToken ct)
+    {
+        var buffer = new byte[81920];
+        long total = 0;
+        int read;
+        while ((read = await source.ReadAsync(buffer, ct)) > 0)
+        {
+            total += read;
+            if (total > maxBytes)
+            {
+                throw new BackupValidationException("Err_Backup_TooLarge", "Backup exceeds the configured size limit.");
+            }
+
+            await destination.WriteAsync(buffer.AsMemory(0, read), ct);
+        }
+    }
+
+    private sealed record BackupValidationResult(MemoryStream Stream, string EntryName, long CompressedBytes, long UncompressedBytes, int Version);
+
+    private enum BackupValidationPurpose
+    {
+        Upload,
+        Restore
     }
 
     /// <summary>
@@ -299,7 +558,7 @@ public sealed class BackupService : IBackupService
         // Alias names (only those referencing loaded contacts)
         var contactIds = contactEntities.Select(c => c.Id).ToList();
         var aliasEntities = await _db.AliasNames.AsNoTracking()
-            .Where(a => a.ContactId != null && contactIds.Contains(a.ContactId))
+            .Where(a => contactIds.Contains(a.ContactId))
             .ToListAsync(ct);
         var aliasNames = aliasEntities.Select(a => a.ToBackupDto()).ToList();
 
@@ -472,4 +731,30 @@ public sealed class BackupService : IBackupService
         SizeBytes = r.SizeBytes,
         Source = r.Source
     };
+}
+
+/// <summary>
+/// Security limits used when validating uploaded or stored backup ZIP containers.
+/// </summary>
+public sealed class BackupSecurityOptions
+{
+    /// <summary>Configuration section path for backup security limits.</summary>
+    public const string SectionName = "Backups:Security";
+
+    /// <summary>Maximum accepted upload body size in bytes.</summary>
+    public long MaxUploadBytes { get; set; } = 100L * 1024L * 1024L;
+    /// <summary>Maximum accepted compressed ZIP size in bytes.</summary>
+    public long MaxCompressedZipBytes { get; set; } = 100L * 1024L * 1024L;
+    /// <summary>Maximum accepted uncompressed NDJSON payload size in bytes.</summary>
+    public long MaxUncompressedNdjsonBytes { get; set; } = 250L * 1024L * 1024L;
+    /// <summary>Maximum number of entries accepted in a backup ZIP.</summary>
+    public int MaxZipEntries { get; set; } = 1;
+    /// <summary>Maximum allowed uncompressed-to-compressed size ratio.</summary>
+    public double MaxCompressionRatio { get; set; } = 25d;
+    /// <summary>Exact allowed ZIP entry names.</summary>
+    public string[] AllowedEntryNames { get; set; } = ["backup.ndjson"];
+    /// <summary>Allowed ZIP entry prefixes; entries must still end in <c>.ndjson</c>.</summary>
+    public string[] AllowedEntryPrefixes { get; set; } = ["backup-"];
+    /// <summary>Supported backup metadata versions.</summary>
+    public int[] AllowedBackupVersions { get; set; } = [3];
 }

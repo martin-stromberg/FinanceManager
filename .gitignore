@@ -62,6 +62,16 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 artifacts/
+**/artifacts/
+
+# Generated .NET XML documentation files
+/FinanceManager.Application/FinanceManager.Application.xml
+/FinanceManager.Domain/FinanceManager.Domain.xml
+/FinanceManager.Infrastructure/FinanceManager.Infrastructure.xml
+/FinanceManager.Shared/FinanceManager.Shared.xml
+/FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.xml
+/FinanceManager.Tests/FinanceManager.Tests.xml
+/FinanceManager.Web/FinanceManager.Web.xml
 
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
@@ -120,6 +130,7 @@ ipch/
 
 # Visual Studio Trace Files
 *.e2e
+!FinanceManager.Tests.E2E/
 
 # TFS 2012 Local Workspace
 $tf/
@@ -381,6 +392,7 @@ FodyWeavers.xsd
 /coverage/
 /FinanceManager.Web/financemanager.db-shm
 /FinanceManager.Web/financemanager.db-wal
+/FinanceManager.Web/updates/
 /init
 /FinanceManager.Web/init
 /FinanceManager.Web/.config/dotnet-tools.json

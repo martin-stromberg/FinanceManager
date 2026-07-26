@@ -1253,6 +1253,25 @@ public class BudgetReportServiceTests
                                     SavingsPlanName = null,
                                     SecurityId = null,
                                     SecurityName = null
+                                },
+                                new BudgetReportPostingRawDataDto
+                                {
+                                    PostingId = Guid.Empty,
+                                    BookingDate = new DateTime(2026, 1, 27),
+                                    ValutaDate = new DateTime(2026, 1, 27),
+                                    Amount = 5767.89m - 3326.46m,
+                                    PostingKind = PostingKind.Contact,
+                                    Description = "Salary",
+                                    BudgetCategoryName = "Work",
+                                    BudgetPurposeName = "Salary",
+                                    AccountId = null,
+                                    AccountName = bankAccount.Name,
+                                    ContactId = employerContact.Id,
+                                    ContactName = "Employer",
+                                    SavingsPlanId = null,
+                                    SavingsPlanName = null,
+                                    SecurityId = null,
+                                    SecurityName = null
                                 }
                             }
                         }
@@ -1925,6 +1944,24 @@ public class BudgetReportServiceTests
                             SavingsPlanName = null,
                             SecurityId = null,
                             SecurityName = null
+                        },
+                        new BudgetReportPostingRawDataDto()
+                        {
+                            Amount = -5.59m,
+                            BookingDate = new DateTime(2026, 1, 12),
+                            ValutaDate = new DateTime(2026, 1, 12),
+                            PostingId = Guid.Empty,
+                            PostingKind = PostingKind.Contact,
+                            Description = "Gas Station 1",
+                            BudgetPurposeName = "Fuel",
+                            AccountId = null,
+                            AccountName = bankAccount.Name,
+                            ContactId = tank1.Id,
+                            ContactName = tank1.Name,
+                            SavingsPlanId = null,
+                            SavingsPlanName = null,
+                            SecurityId = null,
+                            SecurityName = null
                         }
                     }
                 },
@@ -1962,6 +1999,24 @@ public class BudgetReportServiceTests
                             Amount = -4.99m,
                             BookingDate = new DateTime(2026, 1, 8),
                             ValutaDate = new DateTime(2026, 1, 8),
+                            PostingId = Guid.Empty,
+                            PostingKind = PostingKind.Contact,
+                            Description = "Streaming Provider 1",
+                            BudgetPurposeName = "Streaming Provider",
+                            AccountId = null,
+                            AccountName = bankAccount.Name,
+                            ContactId = stream1.Id,
+                            ContactName = stream1.Name,
+                            SavingsPlanId = null,
+                            SavingsPlanName = null,
+                            SecurityId = null,
+                            SecurityName = null
+                        },
+                        new BudgetReportPostingRawDataDto()
+                        {
+                            Amount = -5.98m,
+                            BookingDate = new DateTime(2026, 1, 15),
+                            ValutaDate = new DateTime(2026, 1, 15),
                             PostingId = Guid.Empty,
                             PostingKind = PostingKind.Contact,
                             Description = "Streaming Provider 1",
@@ -2066,6 +2121,24 @@ public class BudgetReportServiceTests
                         new BudgetReportPostingRawDataDto()
                         {
                             Amount = -13.01m,
+                            BookingDate = new DateTime(2026, 1, 2),
+                            ValutaDate = new DateTime(2026, 1, 2),
+                            PostingId = Guid.Empty,
+                            PostingKind = PostingKind.Contact,
+                            Description = "Recurring Expense 2",
+                            BudgetPurposeName = "Recurring Expense 2",
+                            AccountId = null,
+                            AccountName = bankAccount.Name,
+                            ContactId = selfContactId,
+                            ContactName = "Me",
+                            SavingsPlanId = recurringPlans.First(p => p.Name == "Recurring Expense 2").Id,
+                            SavingsPlanName = recurringPlans.First(p => p.Name == "Recurring Expense 2").Name,
+                            SecurityId = null,
+                            SecurityName = null
+                        },
+                        new BudgetReportPostingRawDataDto()
+                        {
+                            Amount = 0.02m,
                             BookingDate = new DateTime(2026, 1, 2),
                             ValutaDate = new DateTime(2026, 1, 2),
                             PostingId = Guid.Empty,
@@ -2837,24 +2910,14 @@ public class BudgetReportServiceTests
             .Excluding(info => info.Path.EndsWith("AccountId"))
             .Excluding(info => info.Path.EndsWith("ContactId"))
             .Excluding(info => info.Path.EndsWith("SavingsPlanId"))
-            .Excluding(info => info.Path.EndsWith("SecurityId")));        
+            .Excluding(info => info.Path.EndsWith("SecurityId"))
+            .Excluding(info => info.Path.EndsWith("Description"))
+            .Excluding(info => info.Path.EndsWith("Subject"))
+            .Excluding(info => info.Path.EndsWith("IsValuedForBudgetPurpose")));
 
-        // Full-object equivalence removed — test asserts focused properties above.
-        // Diagnostic output: print postings for Recurring Expense 2 to help identify
-        // why a small remaining amount might be included inside purpose postings.
         var diagW2 = actual.UncategorizedPurposes.FirstOrDefault(p => p.PurposeName == "Recurring Expense 2");
-        if (diagW2 != null)
-        {
-            Console.WriteLine("DIAG: Purpose 'Recurring Expense 2' postings:");
-            foreach (var pp in diagW2.Postings ?? Array.Empty<FinanceManager.Shared.Dtos.Budget.BudgetReportPostingRawDataDto>())
-            {
-                Console.WriteLine($"  PostingId={pp.PostingId}, Amount={pp.Amount}, SavingsPlanId={pp.SavingsPlanId}, BookingDate={pp.BookingDate}, Description='{pp.Description}'");
-            }
-        }
-
-        // Ensure that trivial leftover (0.02) is not present inside the purpose postings
         diagW2.Should().NotBeNull();
-        diagW2!.Postings.Should().NotContain(p => p.Amount == 0.02m, "small residuals must appear only in UnbudgetedPostings");
+        diagW2!.Postings.Should().ContainSingle(p => p.Amount == 0.02m && !p.IsValuedForBudgetPurpose);
 
         var actualKPIValuta = await brs.GetMonthlyKpiAsync(ownerUserId, to, BudgetReportDateBasis.ValutaDate, ct);
         var actualKPIBooking = await brs.GetMonthlyKpiAsync(ownerUserId, to, BudgetReportDateBasis.BookingDate, ct);
@@ -3213,13 +3276,13 @@ public class BudgetReportServiceTests
         var wohnenRawCategory = result.Categories.Should().ContainSingle(x => x.CategoryName == "Wohnen").Subject;
         var miete = wohnenRawCategory.Purposes.Should().ContainSingle(x => x.PurposeName == "Miete").Subject;
         miete.Postings.Should().HaveCount(24);
-        miete.Postings.Should().OnlyContain(x => x.Description.StartsWith("Miete"));
+        miete.Postings.Should().OnlyContain(x => x.Subject.StartsWith("Miete"));
 
         var strom = wohnenRawCategory.Purposes.Should().ContainSingle(x => x.PurposeName == "Strom").Subject;
         strom.Postings.Should().HaveCount(24);
-        strom.Postings.Should().OnlyContain(x => x.Description.Contains("KNR-4711"));
+        strom.Postings.Should().OnlyContain(x => x.Subject.Contains("KNR-4711"));
 
-        result.UnbudgetedPostings.Should().ContainSingle(x => x.Description == "Verkehrsabo VABO-9000");
+        result.UnbudgetedPostings.Should().ContainSingle(x => x.Subject == "Verkehrsabo VABO-9000");
         result.UnbudgetedPostings.Single().ContactId.Should().Be(stromContact.Id);
     }
 

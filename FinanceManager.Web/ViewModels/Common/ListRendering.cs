@@ -64,12 +64,45 @@ namespace FinanceManager.Web.ViewModels.Common
     public sealed record ListCell(ListCellKind Kind, string? Text = null, System.Guid? SymbolId = null, decimal? Amount = null, string? IconUrl = null, bool Muted = false);
 
     /// <summary>
+    /// Describes how a row inside a mobile list card is rendered.
+    /// </summary>
+    public enum ListMobileRowKind
+    {
+        /// <summary>
+        /// Render each mobile cell as a regular label/value row.
+        /// </summary>
+        Single,
+
+        /// <summary>
+        /// Render the mobile cells next to each other in two equal columns.
+        /// </summary>
+        TwoColumn
+    }
+
+    /// <summary>
+    /// Represents a cell inside a mobile list-card row.
+    /// </summary>
+    /// <param name="Label">Optional label rendered above the value.</param>
+    /// <param name="Cell">Cell value using the same rendering rules as regular list cells.</param>
+    /// <param name="CssClass">Optional CSS class for this mobile cell.</param>
+    public sealed record ListMobileCell(string? Label, ListCell Cell, string? CssClass = null);
+
+    /// <summary>
+    /// Represents a row block inside a mobile list card.
+    /// </summary>
+    /// <param name="Cells">Cells rendered inside this mobile row.</param>
+    /// <param name="Kind">Layout kind used for the row.</param>
+    /// <param name="CssClass">Optional CSS class for this mobile row.</param>
+    public sealed record ListMobileRow(IReadOnlyList<ListMobileCell> Cells, ListMobileRowKind Kind = ListMobileRowKind.Single, string? CssClass = null);
+
+    /// <summary>
     /// A single list record containing the rendered cells and the underlying item payload.
     /// </summary>
     /// <param name="Cells">Sequence of cells to render for the record.</param>
     /// <param name="Item">Optional underlying item object associated with the row (used for navigation or actions).</param>
     /// <param name="Hint">Optional hint text displayed as a full-width row under the record.</param>
-    public sealed record ListRecord(IReadOnlyList<ListCell> Cells, object? Item = null, string? Hint = null);
+    /// <param name="MobileRows">Optional specialized mobile card rows. When omitted the generic mobile fallback is used.</param>
+    public sealed record ListRecord(IReadOnlyList<ListCell> Cells, object? Item = null, string? Hint = null, IReadOnlyList<ListMobileRow>? MobileRows = null);
 
     /// <summary>
     /// Represents the different kinds of card fields that can be rendered in a card view.

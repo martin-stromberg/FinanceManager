@@ -68,9 +68,9 @@ public sealed class CollectionAccountImportPlaywrightTests
         await page.GotoAsync("/list/statement-drafts");
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        // Allow a short moment for the list to render items
+        // GitHub-hosted runners can take longer to finish the import and render the draft list.
         await page.Locator("tbody tr:visible, .generic-list-mobile-card:visible").First
-            .WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+            .WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 30_000 });
 
         var draftRows = page.Locator("tbody tr:visible, .generic-list-mobile-card:visible");
         var rowCount = await draftRows.CountAsync();

@@ -10,5 +10,6 @@ public sealed record ImportSplitSettingsUpdateRequest(
     [param: Range(20, 10000)] int MaxEntriesPerDraft,
     int? MonthlySplitThreshold,
     [param: Range(1, 10000)] int MinEntriesPerDraft,
-    [param: Required] MassImportDialogPolicy MassImportDialogPolicy
+    [param: Required] MassImportDialogPolicy MassImportDialogPolicy,
+    bool KnownContactAutoCreateEnabled = true
 );

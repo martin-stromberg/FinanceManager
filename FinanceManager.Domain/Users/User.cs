@@ -143,6 +143,11 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
     public MassImportDialogPolicy MassImportDialogPolicy { get; private set; } = MassImportDialogPolicy.OnMissingInformation;
 
     /// <summary>
+    /// Whether known contacts from the application catalog may be created automatically during statement classification.
+    /// </summary>
+    public bool KnownContactAutoCreateEnabled { get; private set; } = true;
+
+    /// <summary>
     /// Admin flag persisted in the database.
     /// </summary>
     /// <value><c>true</c> for administrators.</value>
@@ -227,6 +232,16 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
     public void SetMassImportDialogPolicy(MassImportDialogPolicy policy)
     {
         MassImportDialogPolicy = policy;
+        Touch();
+    }
+
+    /// <summary>
+    /// Enables or disables automatic creation of known contacts during statement classification.
+    /// </summary>
+    /// <param name="enabled">True to allow automatic creation; false to disable it.</param>
+    public void SetKnownContactAutoCreateEnabled(bool enabled)
+    {
+        KnownContactAutoCreateEnabled = enabled;
         Touch();
     }
 

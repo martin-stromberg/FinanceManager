@@ -10,12 +10,12 @@ public interface IBudgetPurposeService
     /// <summary>
     /// Creates a new budget purpose.
     /// </summary>
-    Task<BudgetPurposeDto> CreateAsync(Guid ownerUserId, string name, BudgetSourceType sourceType, Guid sourceId, string? description, Guid? budgetCategoryId, CancellationToken ct);
+    Task<BudgetPurposeDto> CreateAsync(Guid ownerUserId, string name, BudgetSourceType sourceType, Guid sourceId, string? description, Guid? budgetCategoryId, CancellationToken ct, BudgetValuationType valuationType = BudgetValuationType.ExactPostings);
 
     /// <summary>
     /// Updates an existing budget purpose.
     /// </summary>
-    Task<BudgetPurposeDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, BudgetSourceType sourceType, Guid sourceId, string? description, Guid? budgetCategoryId, CancellationToken ct);
+    Task<BudgetPurposeDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, BudgetSourceType sourceType, Guid sourceId, string? description, Guid? budgetCategoryId, CancellationToken ct, BudgetValuationType valuationType = BudgetValuationType.ExactPostings);
 
     /// <summary>
     /// Deletes an existing budget purpose.

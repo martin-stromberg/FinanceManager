@@ -30,9 +30,20 @@ Aktivieren Sie bei Bedarf den Massenänderungsmodus für die Entwurfszeilen.
 
 Speichern Sie die Massenänderung, um Bearbeitungen, Löschungen und neue Zeilen gemeinsam zu übernehmen. Brechen Sie den Massenänderungsmodus ab, um alle noch nicht gespeicherten Änderungen zu verwerfen.
 
-> **Hinweis:** Bereits gebuchte oder angekündigte Zeilen können im Massenänderungsmodus nicht gelöscht werden.
+> **Hinweis:** Bereits gebuchte Zeilen können im Massenänderungsmodus nicht gelöscht werden. Angekündigte Zeilen bleiben nicht editierbar, können aber zum Löschen vorgemerkt werden.
 
-### 4. Verbuchen
+### 4. Mobile Ansicht prüfen
+
+Auf mobilen Geräten erscheinen die Kontoauszugseinträge als Karten. Prüfen Sie dort pro Eintrag:
+
+- Datum und Betrag stehen nebeneinander.
+- Bereits gebuchte Einträge sind optisch abgeschwächt.
+- Ein abweichender Kontakt wird angezeigt; ohne Kontakt wird stattdessen ein vorhandener Empfänger angezeigt.
+- Zugeordnete Sparpläne werden angezeigt.
+- Zugeordnete Wertpapiere werden zusammen mit der Buchungsart in Klammern angezeigt.
+- Lange Dateinamen und lange Textwerte brechen innerhalb der Karte um.
+
+### 5. Verbuchen
 
 Starten Sie die Verbuchung für den gesamten Entwurf oder einzelne Zeilen.
 

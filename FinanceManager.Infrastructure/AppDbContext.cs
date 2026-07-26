@@ -120,7 +120,8 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.ImportMaxEntriesPerDraft).IsRequired();
             b.Property(x => x.ImportMonthlySplitThreshold);
             b.Property(x => x.MassImportDialogPolicy).HasConversion<short>().HasDefaultValue(FinanceManager.Shared.Dtos.Statements.MassImportDialogPolicy.OnMissingInformation).IsRequired();
-            b.Property(x => x.AlphaVantageApiKey).HasMaxLength(120);
+            b.Property(x => x.KnownContactAutoCreateEnabled).HasDefaultValue(true).IsRequired();
+            b.Property(x => x.AlphaVantageApiKey).HasMaxLength(2048);
             b.Property(x => x.ShareAlphaVantageApiKey).HasDefaultValue(false);
             // Return analysis settings
             b.Property(x => x.BenchmarkSecurityId);
@@ -461,6 +462,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.SourceType).HasConversion<short>().IsRequired();
             b.Property(x => x.SourceId).IsRequired();
             b.Property(x => x.BudgetCategoryId);
+            b.Property(x => x.ValuationType).HasConversion<short>().HasDefaultValue(BudgetValuationType.ExactPostings).IsRequired();
             b.HasIndex(x => new { x.OwnerUserId, x.Name });
             b.HasIndex(x => new { x.OwnerUserId, x.SourceType, x.SourceId });
 

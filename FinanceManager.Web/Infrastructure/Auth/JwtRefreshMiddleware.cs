@@ -1,4 +1,5 @@
 using FinanceManager.Infrastructure.Auth;
+using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -6,13 +7,13 @@ namespace FinanceManager.Web.Infrastructure.Auth
 {
     /// <summary>
     /// Middleware that automatically renews short-lived JWTs for authenticated requests when they approach expiry.
-    /// When a token is eligible for renewal the middleware generates a fresh token via <see cref="IJwtTokenService"/>,
+    /// When a token is eligible for renewal the middleware generates a fresh token via <see cref="IJwtRefreshService"/>,
     /// appends it as a secure cookie and also sets response headers with the refreshed token and expiry.
     /// </summary>
     public sealed class JwtRefreshMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly IConfiguration _configuration;
+        private readonly IOptions<JwtOptions> _options;
 
         private const string RefreshHeaderName = "X-Auth-Token";
         private const string RefreshExpiresHeaderName = "X-Auth-Token-Expires";
@@ -22,12 +23,12 @@ namespace FinanceManager.Web.Infrastructure.Auth
         /// Initializes a new instance of <see cref="JwtRefreshMiddleware"/>.
         /// </summary>
         /// <param name="next">The next middleware delegate in the pipeline.</param>
-        /// <param name="configuration">Application configuration used to read JWT lifetime settings (e.g. "Jwt:LifetimeMinutes").</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="next"/> or <paramref name="configuration"/> is <c>null</c>.</exception>
-        public JwtRefreshMiddleware(RequestDelegate next, IConfiguration configuration)
+        /// <param name="options">Validated JWT settings.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="next"/> or <paramref name="options"/> is <c>null</c>.</exception>
+        public JwtRefreshMiddleware(RequestDelegate next, IOptions<JwtOptions> options)
         {
-            _next = next;
-            _configuration = configuration;
+            _next = next ?? throw new ArgumentNullException(nameof(next));
+            _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
         /// <summary>
@@ -77,44 +78,44 @@ namespace FinanceManager.Web.Infrastructure.Auth
                 var now = DateTimeOffset.UtcNow;
 
                 // Determine renewal window dynamically based on configured lifetime
-                var lifetimeMinutes = int.TryParse(_configuration["Jwt:LifetimeMinutes"], out var lm) ? lm : 30;
-                var renewalWindow = TimeSpan.FromMinutes(Math.Max(5, lm / 2)); // renew when half of lifetime has passed
+                var lifetimeMinutes = _options.Value.LifetimeMinutes;
+                var renewalWindow = TimeSpan.FromMinutes(Math.Max(5, lifetimeMinutes / 2)); // renew when half of lifetime has passed
 
                 if (exp - renewalWindow > now)
                 {
                     return;
                 }
 
-                var userIdStr = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
-                                  ?? context.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-                var username = context.User.Identity?.Name
-                               ?? context.User.FindFirstValue(JwtRegisteredClaimNames.UniqueName)
-                               ?? context.User.FindFirstValue(ClaimTypes.Name)
-                               ?? string.Empty;
-                var isAdmin = context.User.IsInRole("Admin");
-
-                if (!Guid.TryParse(userIdStr, out var userId))
+                var refreshService = context.RequestServices.GetRequiredService<IJwtRefreshService>();
+                var refresh = await refreshService.RefreshAsync(context.User, context.RequestAborted);
+                if (!refresh.Succeeded || refresh.Token is null || refresh.ExpiresUtc is null)
                 {
+                    if (!context.Response.HasStarted)
+                    {
+                        context.Response.Cookies.Delete(AuthCookieName, new CookieOptions
+                        {
+                            Secure = context.Request.IsHttps,
+                            SameSite = SameSiteMode.Lax,
+                            Path = "/"
+                        });
+                    }
                     return;
                 }
 
-                var jts = context.RequestServices.GetRequiredService<IJwtTokenService>();
-                var newToken = jts.CreateToken(userId, username, isAdmin, out var newExpiry);
-
                 if (!context.Response.HasStarted)
                 {
-                    context.Response.Cookies.Append(AuthCookieName, newToken, new CookieOptions
+                    context.Response.Cookies.Append(AuthCookieName, refresh.Token, new CookieOptions
                     {
                         HttpOnly = true,
                         Secure = context.Request.IsHttps, // vorher: true
                         SameSite = SameSiteMode.Lax,
-                        Expires = new DateTimeOffset(newExpiry),
+                        Expires = new DateTimeOffset(refresh.ExpiresUtc.Value),
                         Path = "/"
                     });
                 }
 
-                context.Response.Headers[RefreshHeaderName] = newToken;
-                context.Response.Headers[RefreshExpiresHeaderName] = newExpiry.ToString("o");
+                context.Response.Headers[RefreshHeaderName] = refresh.Token;
+                context.Response.Headers[RefreshExpiresHeaderName] = refresh.ExpiresUtc.Value.ToString("o");
             }
             finally
             {

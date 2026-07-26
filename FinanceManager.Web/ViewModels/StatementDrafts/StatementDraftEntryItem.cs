@@ -1,6 +1,7 @@
 namespace FinanceManager.Web.ViewModels.StatementDrafts;
 
 using FinanceManager.Shared.Dtos.Statements;
+using FinanceManager.Shared.Dtos.Securities;
 
 // Lightweight navigation-capable item for listing entries in embedded list
 internal sealed class StatementDraftEntryItem : IListItemNavigation
@@ -15,6 +16,10 @@ internal sealed class StatementDraftEntryItem : IListItemNavigation
     public string? BookingDescription { get; set; }
     public StatementDraftEntryStatus Status { get; set; }
     public bool IsAnnounced { get; set; }
+    public Guid? ContactId { get; set; }
+    public Guid? SavingsPlanId { get; set; }
+    public Guid? SecurityId { get; set; }
+    public SecurityTransactionType? SecurityTransactionType { get; set; }
     public BudgetImpactEvaluationDto? BudgetImpact { get; set; }
     public bool IsNew { get; set; }
     public bool IsPlaceholder { get; set; }

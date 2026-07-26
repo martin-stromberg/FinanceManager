@@ -22,5 +22,8 @@ public sealed record StatementDraftDetailDto(
     IReadOnlyDictionary<Guid, Guid?>? SavingsPlanSymbols = null,
     IReadOnlyDictionary<Guid, string>? SavingsPlanNames = null,
     IReadOnlyDictionary<Guid, Guid?>? SecuritySymbols = null,
-    IReadOnlyDictionary<Guid, string>? SecurityNames = null
+    IReadOnlyDictionary<Guid, string>? SecurityNames = null,
+    IReadOnlyDictionary<Guid, string>? ContactNames = null,
+    Guid? AccountBankContactId = null,
+    Guid? SelfContactId = null
 );

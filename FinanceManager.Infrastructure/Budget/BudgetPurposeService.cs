@@ -23,7 +23,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
     }
 
     /// <inheritdoc />
-    public async Task<BudgetPurposeDto> CreateAsync(Guid ownerUserId, string name, FinanceManager.Shared.Dtos.Budget.BudgetSourceType sourceType, Guid sourceId, string? description, Guid? budgetCategoryId, CancellationToken ct)
+    public async Task<BudgetPurposeDto> CreateAsync(Guid ownerUserId, string name, FinanceManager.Shared.Dtos.Budget.BudgetSourceType sourceType, Guid sourceId, string? description, Guid? budgetCategoryId, CancellationToken ct, BudgetValuationType valuationType = BudgetValuationType.ExactPostings)
     {
         if (ownerUserId == Guid.Empty)
         {
@@ -39,7 +39,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
             }
         }
 
-        var entity = new BudgetPurpose(ownerUserId, name, (FinanceManager.Shared.Dtos.Budget.BudgetSourceType)sourceType, sourceId, description);
+        var entity = new BudgetPurpose(ownerUserId, name, (FinanceManager.Shared.Dtos.Budget.BudgetSourceType)sourceType, sourceId, description, valuationType);
         entity.SetCategory(budgetCategoryId);
 
         _db.BudgetPurposes.Add(entity);
@@ -49,7 +49,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
     }
 
     /// <inheritdoc />
-    public async Task<BudgetPurposeDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, FinanceManager.Shared.Dtos.Budget.BudgetSourceType sourceType, Guid sourceId, string? description, Guid? budgetCategoryId, CancellationToken ct)
+    public async Task<BudgetPurposeDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, FinanceManager.Shared.Dtos.Budget.BudgetSourceType sourceType, Guid sourceId, string? description, Guid? budgetCategoryId, CancellationToken ct, BudgetValuationType valuationType = BudgetValuationType.ExactPostings)
     {
         var entity = await _db.BudgetPurposes.FirstOrDefaultAsync(p => p.Id == id && p.OwnerUserId == ownerUserId, ct);
         if (entity == null)
@@ -84,6 +84,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
         entity.SetSource((FinanceManager.Shared.Dtos.Budget.BudgetSourceType)sourceType, sourceId);
         entity.SetDescription(description);
         entity.SetCategory(budgetCategoryId);
+        entity.SetValuationType(valuationType);
 
         await _db.SaveChangesAsync(ct);
         return Map(entity);
@@ -123,7 +124,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
     {
         return await _db.BudgetPurposes.AsNoTracking()
             .Where(p => p.Id == id && p.OwnerUserId == ownerUserId)
-            .Select(p => new BudgetPurposeDto(p.Id, p.OwnerUserId, p.Name, p.Description, p.SourceType, p.SourceId, p.BudgetCategoryId))
+            .Select(p => new BudgetPurposeDto(p.Id, p.OwnerUserId, p.Name, p.Description, p.SourceType, p.SourceId, p.BudgetCategoryId, p.ValuationType))
             .FirstOrDefaultAsync(ct);
     }
 
@@ -147,7 +148,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
             .OrderBy(p => p.Name)
             .Skip(skip)
             .Take(take)
-            .Select(p => new BudgetPurposeDto(p.Id, p.OwnerUserId, p.Name, p.Description, (FinanceManager.Shared.Dtos.Budget.BudgetSourceType)p.SourceType, p.SourceId, p.BudgetCategoryId))
+            .Select(p => new BudgetPurposeDto(p.Id, p.OwnerUserId, p.Name, p.Description, (FinanceManager.Shared.Dtos.Budget.BudgetSourceType)p.SourceType, p.SourceId, p.BudgetCategoryId, p.ValuationType))
             .ToListAsync(ct);
     }
 
@@ -213,6 +214,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
                 p.SourceType,
                 p.SourceId,
                 p.BudgetCategoryId,
+                p.ValuationType,
                 BudgetCategoryName = c != null ? c.Name : null
             };
 
@@ -405,7 +407,8 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
                     src.Name,
                     src.SymbolId,
                     p.BudgetCategoryId,
-                    p.BudgetCategoryName);
+                    p.BudgetCategoryName,
+                    p.ValuationType);
             })
             .ToList();
     }
@@ -499,5 +502,5 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
     }
 
     private static BudgetPurposeDto Map(BudgetPurpose p)
-        => new(p.Id, p.OwnerUserId, p.Name, p.Description, (FinanceManager.Shared.Dtos.Budget.BudgetSourceType)p.SourceType, p.SourceId, p.BudgetCategoryId);
+        => new(p.Id, p.OwnerUserId, p.Name, p.Description, (FinanceManager.Shared.Dtos.Budget.BudgetSourceType)p.SourceType, p.SourceId, p.BudgetCategoryId, p.ValuationType);
 }

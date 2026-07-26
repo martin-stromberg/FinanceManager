@@ -20,3 +20,10 @@ public sealed record BackupRestoreStatusDto(
     int Processed2,
     int Total2,
     string? Message2);
+
+/// <summary>
+/// Request payload used to confirm a destructive backup restore on the server.
+/// </summary>
+/// <param name="ConfirmationText">Text entered by the user; must match the backup file name exactly.</param>
+/// <param name="ExpectedFileName">Optional client-side file-name expectation, also matched against the stored backup.</param>
+public sealed record BackupRestoreRequestDto(string? ConfirmationText, string? ExpectedFileName = null);

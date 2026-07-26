@@ -40,6 +40,7 @@ public sealed class AdminController : ControllerBase
     /// <returns>HTTP 200 with a list of <see cref="UserAdminDto"/> on success; HTTP 500 on unexpected error.</returns>
     /// <exception cref="Exception">Thrown when an unexpected error occurs while listing users.</exception>
     [HttpGet("users")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
     [ProducesResponseType(typeof(IReadOnlyList<UserAdminDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListUsersAsync(CancellationToken ct)
     {
@@ -55,6 +56,7 @@ public sealed class AdminController : ControllerBase
     /// <returns>HTTP 200 with <see cref="UserAdminDto"/> when found; HTTP 404 when not found; HTTP 500 on unexpected error.</returns>
     /// <exception cref="Exception">Thrown when an unexpected error occurs while retrieving the user.</exception>
     [HttpGet("users/{id:guid}", Name = "GetAdminUser")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
     [ProducesResponseType(typeof(UserAdminDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUserAsync(Guid id, CancellationToken ct)
@@ -72,6 +74,7 @@ public sealed class AdminController : ControllerBase
     /// <exception cref="InvalidOperationException">Thrown when a user with the same username already exists.</exception>
     /// <exception cref="ArgumentException">Thrown when creation parameters are invalid.</exception>
     [HttpPost("users")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
     [ProducesResponseType(typeof(UserAdminDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -94,6 +97,7 @@ public sealed class AdminController : ControllerBase
     /// <exception cref="InvalidOperationException">Thrown when update causes a conflict (e.g. username already in use).</exception>
     /// <exception cref="ArgumentException">Thrown when provided arguments are invalid.</exception>
     [HttpPut("users/{id:guid}")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
     [ProducesResponseType(typeof(UserAdminDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -115,6 +119,7 @@ public sealed class AdminController : ControllerBase
     /// <returns>HTTP 204 when password reset succeeded; HTTP 404 when user not found; HTTP 400 when request invalid.</returns>
     /// <exception cref="ArgumentException">Thrown when provided arguments are invalid.</exception>
     [HttpPost("users/{id:guid}/reset-password")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ResetPasswordAsync(Guid id, [FromBody] ResetPasswordRequest req, CancellationToken ct)
@@ -133,6 +138,7 @@ public sealed class AdminController : ControllerBase
     /// <returns>HTTP 204 when unlock succeeded; HTTP 404 when user not found.</returns>
     /// <exception cref="Exception">Thrown when an unexpected error occurs while unlocking the user.</exception>
     [HttpPost("users/{id:guid}/unlock")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UnlockUserAsync(Guid id, CancellationToken ct)
@@ -149,6 +155,7 @@ public sealed class AdminController : ControllerBase
     /// <returns>HTTP 204 when deletion succeeded; HTTP 404 when user not found.</returns>
     /// <exception cref="Exception">Thrown when an unexpected error occurs while deleting the user.</exception>
     [HttpDelete("users/{id:guid}")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteUserAsync(Guid id, CancellationToken ct)

@@ -10,4 +10,5 @@ public sealed record BudgetPurposeCreateRequest(
     BudgetSourceType SourceType,
     Guid SourceId,
     [MaxLength(500)] string? Description,
-    Guid? BudgetCategoryId);
+    Guid? BudgetCategoryId,
+    BudgetValuationType ValuationType = BudgetValuationType.ExactPostings);

@@ -12,7 +12,6 @@ using FinanceManager.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using FinanceManager.Shared.Dtos.Postings;
 using FinanceManager.Domain.Postings;
-using FinanceManager.Application.Budget;
 using FinanceManager.Web.Infrastructure;
 
 namespace FinanceManager.Web.Controllers;
@@ -143,6 +142,12 @@ public sealed class BudgetReportsController : ControllerBase
         return sum;
     }
 
+    private static decimal ComputeDelta(decimal budget, decimal actual)
+        => actual - budget;
+
+    private static decimal ComputeDeltaPct(decimal budget, decimal delta)
+        => budget == 0m ? 0m : delta / Math.Abs(budget);
+
     /// <summary>
     /// Generates a budget report for the current user.
     /// </summary>
@@ -222,7 +227,7 @@ public sealed class BudgetReportsController : ControllerBase
                 {
                     foreach (var pur in cat.Purposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
                     {
-                        foreach (var p in pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                        foreach (var p in (pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>()).Where(p => p.IsValuedForBudgetPurpose))
                         {
                             var d = GetDate(p, req.DateBasis);
                             var dd = DateOnly.FromDateTime(d);
@@ -234,7 +239,7 @@ public sealed class BudgetReportsController : ControllerBase
                 // uncategorized purposes
                 foreach (var pur in raw.UncategorizedPurposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
                 {
-                    foreach (var p in pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                    foreach (var p in (pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>()).Where(p => p.IsValuedForBudgetPurpose))
                     {
                         var d = GetDate(p, req.DateBasis);
                         var dd = DateOnly.FromDateTime(d);
@@ -251,8 +256,8 @@ public sealed class BudgetReportsController : ControllerBase
                 }
 
                 var budget = ComputeBudgetedAmountForPeriod(rules, periodFrom, periodTo);
-                var delta = budget - actual;
-                var deltaPct = budget == 0m ? 0m : delta / Math.Abs(budget);
+                var delta = ComputeDelta(budget, actual);
+                var deltaPct = ComputeDeltaPct(budget, delta);
 
                 periods.Add(new BudgetReportPeriodDto(periodFrom, periodTo, budget, actual, delta, deltaPct));
             }
@@ -279,6 +284,7 @@ public sealed class BudgetReportsController : ControllerBase
                 foreach (var pur in cat.Purposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
                 {
                     postingsToConsider.AddRange((pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                        .Where(p => p.IsValuedForBudgetPurpose)
                         .Where(p =>
                         {
                             var d = GetDate(p, req.DateBasis);
@@ -297,7 +303,9 @@ public sealed class BudgetReportsController : ControllerBase
                 {
                     var purposeRules = rules.Where(r => r.BudgetPurposeId == pur.PurposeId).ToList();
                     decimal purBudget = ComputeBudgetedAmountForPeriod(purposeRules, categoryFrom, categoryTo);
+                    catBudget += purBudget;
                     decimal purActual = (pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
+                        .Where(p => p.IsValuedForBudgetPurpose)
                         .Where(p =>
                         {
                             var dd = DateOnly.FromDateTime(GetDate(p, req.DateBasis));
@@ -309,16 +317,20 @@ public sealed class BudgetReportsController : ControllerBase
                         .Where(IsInCategoryRange)
                         .Sum(p => p.Amount);
 
+                    var purDelta = ComputeDelta(purBudget, purActual);
+
                     purposeDtos.Add(new BudgetReportPurposeDto(
                         pur.PurposeId,
                         pur.PurposeName,
                         purBudget,
                         purActual,
-                        purBudget - purActual,
-                        purBudget == 0 ? 0m : (purBudget - purActual) / Math.Abs(purBudget),
+                        purDelta,
+                        ComputeDeltaPct(purBudget, purDelta),
                         pur.BudgetSourceType,
                         pur.SourceId));
                 }
+
+                var catDelta = ComputeDelta(catBudget, catActual);
 
                 categories.Add(new BudgetReportCategoryDto(
                     cat.CategoryId,
@@ -326,8 +338,8 @@ public sealed class BudgetReportsController : ControllerBase
                     BudgetReportCategoryRowKind.Data,
                     catBudget,
                     catActual,
-                    catBudget - catActual,
-                    catBudget == 0 ? 0m : (catBudget - catActual) / Math.Abs(catBudget),
+                    catDelta,
+                    ComputeDeltaPct(catBudget, catDelta),
                     purposeDtos));
             }
 
@@ -344,17 +356,17 @@ public sealed class BudgetReportsController : ControllerBase
                     BudgetReportCategoryRowKind.Unbudgeted,
                     0m,
                     unbudgetedActual,
-                    -unbudgetedActual,
+                    unbudgetedActual,
                     0m,
                     Array.Empty<BudgetReportPurposeDto>()));
             }
 
             if (categories.Count > 0)
             {
-                var sumBudget = categories.Sum(c => c.Budget + c.Purposes.Sum(p => p.Budget));
+                var sumBudget = categories.Sum(c => c.Budget);
                 var sumActual = categories.Sum(c => c.Actual);
-                var sumDelta = sumBudget - sumActual;
-                var sumDeltaPct = sumBudget == 0m ? 0m : sumDelta / Math.Abs(sumBudget);
+                var sumDelta = ComputeDelta(sumBudget, sumActual);
+                var sumDeltaPct = ComputeDeltaPct(sumBudget, sumDelta);
 
                 categories.Add(new BudgetReportCategoryDto(
                     Guid.Empty,
@@ -386,6 +398,45 @@ public sealed class BudgetReportsController : ControllerBase
     }
 
     /// <summary>
+    /// Returns raw budget report data for UI scenarios that need posting-level budget valuation state.
+    /// </summary>
+    /// <param name="req">The report request parameters.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>An <see cref="IActionResult"/> containing raw budget report data.</returns>
+    [HttpPost("raw")]
+    [ProducesResponseType(typeof(BudgetReportRawDataDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetRawAsync([FromBody] BudgetReportRequest req, CancellationToken ct = default)
+    {
+        try
+        {
+            if (req.Months < 1 || req.Months > 60)
+            {
+                var ex = new ArgumentOutOfRangeException(nameof(req.Months), "Months must be 1..60");
+                return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+            }
+
+            var to = new DateOnly(req.AsOfDate.Year, req.AsOfDate.Month, DateTime.DaysInMonth(req.AsOfDate.Year, req.AsOfDate.Month));
+            var from = new DateOnly(to.Year, to.Month, 1).AddMonths(-(req.Months - 1));
+            var raw = await _reports.GetRawDataAsync(_current.UserId, from, to, req.DateBasis, ct);
+            return Ok(raw);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Get raw budget report failed");
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
+    }
+
+    /// <summary>
     /// Lists postings that are not covered by any budget purpose for the given date range.
     /// </summary>
     [HttpGet("unbudgeted")]
@@ -408,7 +459,7 @@ public sealed class BudgetReportsController : ControllerBase
             var toDate = DateOnly.FromDateTime(toDt);
 
             // Use GetRawDataAsync to get properly filtered posting IDs that respect pattern matching
-            var raw = await _reports.GetRawDataAsync(ownerUserId, fromDate, toDate, dateBasis, ct, ignoreCache: true);
+            var raw = await _reports.GetRawDataAsync(ownerUserId, fromDate, toDate, dateBasis, ct);
 
             var unbudgetedPostingIds = (raw.UnbudgetedPostings ?? Array.Empty<BudgetReportPostingRawDataDto>())
                 .Select(p => p.PostingId)

@@ -1,6 +1,7 @@
 using static FinanceManager.Shared.ApiClient;
 using FinanceManager.Shared.Dtos.Postings;
 using FinanceManager.Shared.Dtos.Budget;
+using FinanceManager.Shared.Dtos.Update;
 
 namespace FinanceManager.Shared;
 
@@ -245,15 +246,32 @@ public interface IApiClient
     /// <summary>Downloads a backup file stream or null if not found.</summary>
     Task<Stream?> Backups_DownloadAsync(Guid id, CancellationToken ct = default);
     /// <summary>Immediately applies the specified backup. Returns false when not found.</summary>
-    Task<bool> Backups_ApplyAsync(Guid id, CancellationToken ct = default);
+    Task<bool> Backups_ApplyAsync(Guid id, BackupRestoreRequestDto request, CancellationToken ct = default);
     /// <summary>Starts a background restore task for a backup and returns status.</summary>
-    Task<BackupRestoreStatusDto> Backups_StartApplyAsync(Guid id, CancellationToken ct = default);
+    Task<BackupRestoreStatusDto> Backups_StartApplyAsync(Guid id, BackupRestoreRequestDto request, CancellationToken ct = default);
     /// <summary>Gets the status of the current or last backup restore task.</summary>
     Task<BackupRestoreStatusDto> Backups_GetStatusAsync(CancellationToken ct = default);
     /// <summary>Cancels the currently running backup restore task.</summary>
     Task<bool> Backups_CancelAsync(CancellationToken ct = default);
     /// <summary>Deletes a backup entry. Returns false when not found.</summary>
     Task<bool> Backups_DeleteAsync(Guid id, CancellationToken ct = default);
+
+    // Setup - Updates
+
+    /// <summary>Gets current self-update status.</summary>
+    Task<UpdateStatusDto> Updates_GetStatusAsync(CancellationToken ct = default);
+    /// <summary>Gets self-update settings.</summary>
+    Task<UpdateSettingsDto> Updates_GetSettingsAsync(CancellationToken ct = default);
+    /// <summary>Updates self-update settings.</summary>
+    Task<UpdateSettingsDto> Updates_UpdateSettingsAsync(UpdateSettingsUpdateRequest request, CancellationToken ct = default);
+    /// <summary>Runs an immediate update check.</summary>
+    Task<UpdateCheckResultDto> Updates_CheckAsync(CancellationToken ct = default);
+    /// <summary>Stores the scheduled installation time.</summary>
+    Task<UpdateSettingsDto> Updates_ScheduleAsync(UpdateScheduleRequest request, CancellationToken ct = default);
+    /// <summary>Starts installing a ready update package.</summary>
+    Task<UpdateStatusDto?> Updates_StartInstallAsync(UpdateStartRequest request, CancellationToken ct = default);
+    /// <summary>Resets a hanging self-update lock.</summary>
+    Task<bool> Updates_ResetLockAsync(UpdateLockResetRequest request, CancellationToken ct = default);
 
     // Contact Categories
 
@@ -815,6 +833,11 @@ public interface IApiClient
     /// Gets the budget report for a given period.
     /// </summary>
     Task<FinanceManager.Shared.Dtos.Budget.BudgetReportDto> Budgets_GetReportAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets raw budget report data for a given period.
+    /// </summary>
+    Task<FinanceManager.Shared.Dtos.Budget.BudgetReportRawDataDto> Budgets_GetReportRawAsync(FinanceManager.Shared.Dtos.Budget.BudgetReportRequest request, CancellationToken ct = default);
 
 
     /// <summary>

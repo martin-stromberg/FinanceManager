@@ -9,4 +9,8 @@ public sealed class PlaywrightTestOptions
     public int ActionTimeoutSeconds { get; init; } = 10;
 
     public int NavigationTimeoutSeconds { get; init; } = 30;
+
+    public bool TraceEnabled { get; init; } = string.Equals(Environment.GetEnvironmentVariable("PLAYWRIGHT_TRACE"), "1", StringComparison.OrdinalIgnoreCase);
+
+    public bool ArtifactCaptureEnabled { get; init; } = string.Equals(Environment.GetEnvironmentVariable("PLAYWRIGHT_ARTIFACTS"), "1", StringComparison.OrdinalIgnoreCase);
 }

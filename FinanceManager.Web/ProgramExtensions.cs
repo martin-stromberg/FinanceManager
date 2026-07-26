@@ -3,6 +3,8 @@ using FinanceManager.Application.Notifications;
 using FinanceManager.Application.Securities.ReturnAnalysis;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
+using FinanceManager.Infrastructure.Auth;
+using FinanceManager.Infrastructure.Backups;
 using FinanceManager.Infrastructure.Notifications;
 using FinanceManager.Infrastructure.Setup;
 using FinanceManager.Shared; // register ApiClient
@@ -12,15 +14,20 @@ using FinanceManager.Web.Infrastructure.Attachments;
 using FinanceManager.Web.Infrastructure.Auth;
 using FinanceManager.Web.Infrastructure.Logging;
 using FinanceManager.Web.Services;
+using FinanceManager.Web.Services.Help;
+using FinanceManager.Web.Services.Updates;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
+using System.IdentityModel.Tokens.Jwt;
 using System.Globalization;
-using System.Text;
+using System.Security.Claims;
 
 namespace FinanceManager.Web
 {
@@ -73,13 +80,25 @@ namespace FinanceManager.Web
             builder.Services.AddInfrastructure(builder.Configuration.GetConnectionString("Default"));
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+            var attachmentMaxSizeBytes = AttachmentUploadOptions.NormalizeMaxSizeBytes(
+                builder.Configuration.GetValue<long?>("Attachments:MaxSizeBytes")
+                    ?? AttachmentUploadOptions.DefaultMaxSizeBytes);
             builder.Services.Configure<FormOptions>(options =>
             {
-                options.MultipartBodyLengthLimit = 1024L * 1024L * 1024L; // 1 GB
+                options.MultipartBodyLengthLimit = attachmentMaxSizeBytes;
             });
 
             // Attachment upload validation options
             builder.Services.Configure<AttachmentUploadOptions>(builder.Configuration.GetSection("Attachments"));
+            builder.Services.AddSingleton<IAttachmentContentPolicy, AttachmentContentPolicy>();
+            builder.Services.Configure<BackupSecurityOptions>(builder.Configuration.GetSection(BackupSecurityOptions.SectionName));
+            builder.Services.Configure<UpdateOptions>(builder.Configuration.GetSection(UpdateOptions.SectionName));
+            var dataProtectionBuilder = builder.Services.AddDataProtection();
+            var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
+            if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+            {
+                dataProtectionBuilder.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+            }
 
             // Background task queue
             builder.Services.AddSingleton<IBackgroundTaskManager, BackgroundTaskManager>();
@@ -110,6 +129,8 @@ namespace FinanceManager.Web
             builder.Services.AddScoped<IPostingsQueryService, PostingsQueryService>();
             builder.Services.AddScoped<Application.Postings.IPostingsQueryService>(sp => sp.GetRequiredService<IPostingsQueryService>());
             builder.Services.AddScoped<Application.Budget.IBudgetReportExportService, BudgetReportExportService>();
+            builder.Services.AddSingleton<IHelpContentRenderer, HelpContentRenderer>();
+            builder.Services.AddSingleton<IHelpAssetIntegrityValidator, HelpAssetIntegrityValidator>();
 
             // Monthly reminder scheduler
             builder.Services.AddScoped<MonthlyReminderJob>();
@@ -117,18 +138,47 @@ namespace FinanceManager.Web
 
             // HttpClient
             builder.Services.AddTransient<AuthenticatedHttpClientHandler>();
-            builder.Services.AddSingleton<IAuthTokenProvider, JwtCookieAuthTokenProvider>();
+            builder.Services.AddScoped<IAuthTokenProvider, JwtCookieAuthTokenProvider>();
             builder.Services.AddHttpClient("Api", (sp, client) =>
             {
                 var accessor = sp.GetRequiredService<IHttpContextAccessor>();
                 var ctx = accessor.HttpContext;
-                var baseUri = ctx != null
+                var configuredBaseUri = builder.Configuration["Api:BaseAddress"];
+                var baseUri = !string.IsNullOrWhiteSpace(configuredBaseUri)
+                    ? configuredBaseUri
+                    : ctx != null
                     ? $"{ctx.Request.Scheme}://{ctx.Request.Host.ToUriComponent()}/"
-                    : builder.Configuration["Api:BaseAddress"] ?? "https://localhost:5001/";
+                    : "https://localhost:5001/";
                 client.BaseAddress = new Uri(baseUri);
             }).AddHttpMessageHandler<AuthenticatedHttpClientHandler>();
             builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api"));
             builder.Services.AddScoped<IApiClient>(sp => new ApiClient(sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api")));
+
+            // Self-update services
+            builder.Services.AddHttpClient<IUpdateManifestClient, UpdateManifestClient>(client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(5);
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("FinanceManager/1.0 (+https://github.com/martin-stromberg/FinanceManager)");
+            });
+            builder.Services.AddSingleton<IUpdateFileStore, UpdateFileStore>();
+            builder.Services.AddSingleton<IUpdateSettingsStore, UpdateSettingsStore>();
+            builder.Services.AddSingleton<IInstalledReleaseMetadataProvider, InstalledReleaseMetadataProvider>();
+            builder.Services.AddSingleton<IUpdatePlatformResolver, UpdatePlatformResolver>();
+            builder.Services.AddSingleton<IUpdateServiceProbe, DefaultUpdateServiceProbe>();
+            builder.Services.AddSingleton<IUpdateServiceResolver, UpdateServiceResolver>();
+            builder.Services.AddSingleton<IUpdateValidator, UpdateValidator>();
+            builder.Services.AddSingleton<IUpdateScriptGenerator, UpdateScriptGenerator>();
+            builder.Services.AddSingleton<IUpdateProcessRunner, DefaultUpdateProcessRunner>();
+            builder.Services.AddSingleton<IUpdateHostTerminator, DefaultUpdateHostTerminator>();
+            builder.Services.AddSingleton<IUpdateExecutor, UpdateExecutor>();
+            builder.Services.AddScoped<IUpdateOrchestrator, UpdateOrchestrator>();
+            builder.Services.AddSingleton(TimeProvider.System);
+            var enableUpdateHostedServices = builder.Configuration.GetValue<bool?>("Updates:HostedServicesEnabled") ?? true;
+            if (enableUpdateHostedServices)
+            {
+                builder.Services.AddHostedService<UpdateChecker>();
+                builder.Services.AddHostedService<UpdateScheduler>();
+            }
 
             // AlphaVantage
             builder.Services.AddHttpClient("AlphaVantage", client =>
@@ -137,6 +187,7 @@ namespace FinanceManager.Web
                 client.Timeout = TimeSpan.FromSeconds(30);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("FinanceManager/1.0 (+https://github.com/Muesli84/FinanceManager)");
             });
+            builder.Services.AddScoped<IAlphaVantageSecretProtector, DataProtectionAlphaVantageSecretProtector>();
             builder.Services.AddScoped<IAlphaVantageKeyResolver, AlphaVantageKeyResolver>();
             builder.Services.AddScoped<IPriceProvider, AlphaVantagePriceProvider>();
             // Conditionally enable SecurityPriceWorker via config flag
@@ -148,22 +199,20 @@ namespace FinanceManager.Web
             builder.Services.Configure<AlphaVantageQuotaOptions>(builder.Configuration.GetSection("AlphaVantage:Quota"));
 
             // JWT + Identity
-            var keyBytes = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
+            builder.Services
+                .AddOptions<JwtOptions>()
+                .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
+                .ValidateOnStart();
+            builder.Services.AddSingleton<IValidateOptions<JwtOptions>>(new JwtOptionsValidator(builder.Environment));
+            builder.Services.AddSingleton<JwtTokenValidationParametersFactory>();
+            builder.Services.AddScoped<IJwtRefreshService, JwtRefreshService>();
+
             builder.Services
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
                     options.RequireHttpsMetadata = false;
                     options.SaveToken = false;
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = false,
-                        ValidateAudience = false,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
-                        ClockSkew = TimeSpan.FromSeconds(10)
-                    };
                     options.Events = new JwtBearerEvents
                     {
                         OnMessageReceived = ctx =>
@@ -177,8 +226,47 @@ namespace FinanceManager.Web
                                 }
                             }
                             return Task.CompletedTask;
+                        },
+                        OnTokenValidated = async ctx =>
+                        {
+                            var userIdValue = ctx.Principal?.FindFirstValue(ClaimTypes.NameIdentifier)
+                                ?? ctx.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                            var tokenStamp = ctx.Principal?.FindFirstValue(JwtRefreshService.SecurityStampClaimType);
+                            if (!Guid.TryParse(userIdValue, out var userId) || string.IsNullOrWhiteSpace(tokenStamp))
+                            {
+                                ctx.Fail("Invalid token user state");
+                                return;
+                            }
+
+                            var userManager = ctx.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
+                            var user = await userManager.FindByIdAsync(userId.ToString());
+                            if (user is null || !user.Active)
+                            {
+                                ctx.Fail("Invalid token user state");
+                                return;
+                            }
+
+                            var currentStamp = await userManager.GetSecurityStampAsync(user);
+                            if (!string.Equals(tokenStamp, currentStamp, StringComparison.Ordinal))
+                            {
+                                ctx.Fail("Invalid token user state");
+                                return;
+                            }
+
+                            var tokenHasAdminRole = ctx.Principal?.IsInRole("Admin") == true;
+                            var currentHasAdminRole = await userManager.IsInRoleAsync(user, "Admin");
+                            if (tokenHasAdminRole != currentHasAdminRole)
+                            {
+                                ctx.Fail("Invalid token user state");
+                            }
                         }
                     };
+                });
+            builder.Services
+                .AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+                .Configure<JwtTokenValidationParametersFactory>((options, factory) =>
+                {
+                    options.TokenValidationParameters = factory.Create();
                 });
 
             var identitySection = builder.Configuration.GetSection("Identity");
@@ -214,9 +302,13 @@ namespace FinanceManager.Web
                 options.AccessDeniedPath = "/AccessDenied";
                 options.SlidingExpiration = true;
 
-                var jwtLifetimeMinutes = builder.Configuration.GetValue<int?>("Jwt:LifetimeMinutes") ?? 30;
-                options.ExpireTimeSpan = TimeSpan.FromMinutes(jwtLifetimeMinutes);
             });
+            builder.Services
+                .AddOptions<CookieAuthenticationOptions>(IdentityConstants.ApplicationScheme)
+                .Configure<IOptions<JwtOptions>>((options, jwtOptions) =>
+                {
+                    options.ExpireTimeSpan = TimeSpan.FromMinutes(jwtOptions.Value.LifetimeMinutes);
+                });
 
             builder.Services.AddAntiforgery(options =>
             {
@@ -263,8 +355,50 @@ namespace FinanceManager.Web
             }
             else
             {
-                app.UseHttpsRedirection();
+                // Surfaces the real exception (stack trace in the response body) instead of a bare,
+                // bodyless 500, which otherwise made unhandled exceptions during local development and
+                // integration tests (both run with Environment=Development) impossible to diagnose.
+                app.UseDeveloperExceptionPage();
+
+                if (!app.Configuration.GetValue<bool>("E2E:DisableHttpsRedirection"))
+                {
+                    app.UseHttpsRedirection();
+                }
             }
+
+            app.Use(async (context, next) =>
+            {
+                if (HelpSecurityPolicy.IsHelpPath(context.Request.Path))
+                {
+                    context.Response.Headers.ContentSecurityPolicy = HelpSecurityPolicy.ContentSecurityPolicy;
+                }
+
+                await next();
+            });
+
+            app.Use(async (context, next) =>
+            {
+                if (!HelpSecurityPolicy.IsStaticHelpAssetPath(context.Request.Path))
+                {
+                    await next();
+                    return;
+                }
+
+                var relativePath = context.Request.Path.Value?.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+                var fullPath = relativePath is null
+                    ? null
+                    : Path.Combine(app.Environment.WebRootPath, relativePath);
+
+                var validator = context.RequestServices.GetRequiredService<IHelpAssetIntegrityValidator>();
+                if (fullPath is null || !validator.IsTrustedHelpFile(fullPath))
+                {
+                    app.Logger.LogWarning("Blocked untrusted static help asset: {Path}", context.Request.Path.Value);
+                    context.Response.StatusCode = StatusCodes.Status404NotFound;
+                    return;
+                }
+
+                await next();
+            });
 
             // Serve ALL static files including help HTML pages
             app.UseStaticFiles();

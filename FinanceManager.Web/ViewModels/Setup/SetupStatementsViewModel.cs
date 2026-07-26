@@ -110,7 +110,8 @@ public sealed class SetupStatementsViewModel : BaseViewModel
                 MaxEntriesPerDraft: Model.MaxEntriesPerDraft,
                 MonthlySplitThreshold: Model.MonthlySplitThreshold,
                 MinEntriesPerDraft: Model.MinEntriesPerDraft,
-                MassImportDialogPolicy: Model.MassImportDialogPolicy
+                MassImportDialogPolicy: Model.MassImportDialogPolicy,
+                KnownContactAutoCreateEnabled: Model.KnownContactAutoCreateEnabled
             );
 
             var ok = await ApiClient.UserSettings_UpdateImportSplitAsync(request, ct);
@@ -143,6 +144,7 @@ public sealed class SetupStatementsViewModel : BaseViewModel
         Model.MonthlySplitThreshold = _original.MonthlySplitThreshold;
         Model.MinEntriesPerDraft = _original.MinEntriesPerDraft;
         Model.MassImportDialogPolicy = _original.MassImportDialogPolicy;
+        Model.KnownContactAutoCreateEnabled = _original.KnownContactAutoCreateEnabled;
         SavedOk = false; SaveError = null;
         Validate();
         RecomputeDirty();
@@ -206,7 +208,8 @@ public sealed class SetupStatementsViewModel : BaseViewModel
              || Model.MaxEntriesPerDraft != _original.MaxEntriesPerDraft
              || (Model.MonthlySplitThreshold ?? 0) != (_original.MonthlySplitThreshold ?? 0)
              || Model.MinEntriesPerDraft != _original.MinEntriesPerDraft
-             || Model.MassImportDialogPolicy != _original.MassImportDialogPolicy;
+             || Model.MassImportDialogPolicy != _original.MassImportDialogPolicy
+             || Model.KnownContactAutoCreateEnabled != _original.KnownContactAutoCreateEnabled;
     }
 
     private static ImportSplitSettingsDto Clone(ImportSplitSettingsDto src) => new()
@@ -215,7 +218,8 @@ public sealed class SetupStatementsViewModel : BaseViewModel
         MaxEntriesPerDraft = src.MaxEntriesPerDraft,
         MonthlySplitThreshold = src.MonthlySplitThreshold,
         MinEntriesPerDraft = src.MinEntriesPerDraft,
-        MassImportDialogPolicy = src.MassImportDialogPolicy
+        MassImportDialogPolicy = src.MassImportDialogPolicy,
+        KnownContactAutoCreateEnabled = src.KnownContactAutoCreateEnabled
     };
 
     // Provide ribbon actions for this child ViewModel; parent/host will merge them automatically

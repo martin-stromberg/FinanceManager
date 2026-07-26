@@ -2,6 +2,7 @@
 using FinanceManager.Application.Aggregates;
 using FinanceManager.Application.Attachments; // added
 using FinanceManager.Application.Budget;
+using FinanceManager.Application.Contacts;
 using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Accounts; // added for Account type
 using FinanceManager.Domain.Attachments; // added
@@ -35,6 +36,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
     private readonly IAttachmentService? _attachments; // optional to keep compatibility with tests
     private readonly IReportCacheService? _reportCacheService;
     private readonly IBudgetImpactEvaluationService? _budgetImpactEvaluationService;
+    private readonly IKnownContactCatalog? _knownContactCatalog;
     // no-op
     private List<StatementDraftDto>? allDrafts = null;
     private List<FinanceManager.Domain.Securities.Security>? allSecurities = null;
@@ -102,7 +104,8 @@ public sealed partial class StatementDraftService : IStatementDraftService
         ILogger<StatementDraftService>? logger = null, 
         IAttachmentService? attachments = null,
         IReportCacheService? reportCacheService = null,
-        IBudgetImpactEvaluationService? budgetImpactEvaluationService = null)
+        IBudgetImpactEvaluationService? budgetImpactEvaluationService = null,
+        IKnownContactCatalog? knownContactCatalog = null)
     {
         _db = db;
         _aggregateService = aggregateService;
@@ -112,6 +115,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
         _attachments = attachments;
         _reportCacheService = reportCacheService;
         _budgetImpactEvaluationService = budgetImpactEvaluationService;
+        _knownContactCatalog = knownContactCatalog;
         // localization not required in constructor
         _statementFileParsers = (readers is not null && readers.ToList().Any()) ? readers.ToList() : new List<IStatementFileParser>
         {

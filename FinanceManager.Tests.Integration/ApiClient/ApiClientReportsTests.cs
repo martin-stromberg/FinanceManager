@@ -35,7 +35,7 @@ public class ApiClientReportsTests : IClassFixture<TestWebApplicationFactory>
         await EnsureAuthenticatedAsync(api);
 
         // Aggregates query minimal
-        var aggReq = new ReportAggregatesQueryRequest(PostingKind: 0, Interval: 0, Take: 6, IncludeCategory: false, ComparePrevious: false, CompareYear: false, AnalysisDate: null, PostingKinds: null, Filters: null, UseValutaDate: false);
+        var aggReq = new ReportAggregatesQueryRequest(PostingKind: 0, Interval: 0, Take: 6, IncludeCategory: false, ComparePrevious: false, CompareYear: false, CompareProjection: false, AnalysisDate: null, PostingKinds: null, Filters: null, UseValutaDate: false);
         var agg = await api.Reports_QueryAggregatesAsync(aggReq);
         agg.Should().NotBeNull();
 
@@ -53,17 +53,20 @@ public class ApiClientReportsTests : IClassFixture<TestWebApplicationFactory>
             Take = 6,
             ComparePrevious = false,
             CompareYear = false,
+            CompareProjection = true,
             ShowChart = false,
             Expandable = false,
             UseValutaDate = false
         };
         var created = await api.Reports_CreateFavoriteAsync(createReq);
         created.Should().NotBeNull();
+        created.CompareProjection.Should().BeTrue();
 
         // Get by id
         var got = await api.Reports_GetFavoriteAsync(created.Id);
         got.Should().NotBeNull();
         got!.Id.Should().Be(created.Id);
+        got.CompareProjection.Should().BeTrue();
 
         // Update
         var updateReq = new ReportFavoriteUpdateApiRequest
@@ -75,6 +78,7 @@ public class ApiClientReportsTests : IClassFixture<TestWebApplicationFactory>
             Take = created.Take,
             ComparePrevious = created.ComparePrevious,
             CompareYear = created.CompareYear,
+            CompareProjection = false,
             ShowChart = created.ShowChart,
             Expandable = created.Expandable,
             UseValutaDate = created.UseValutaDate,
@@ -84,6 +88,7 @@ public class ApiClientReportsTests : IClassFixture<TestWebApplicationFactory>
         var updated = await api.Reports_UpdateFavoriteAsync(created.Id, updateReq);
         updated.Should().NotBeNull();
         updated!.Name.Should().Be(createReq.Name + "_X");
+        updated.CompareProjection.Should().BeFalse();
 
         // Delete
         var del = await api.Reports_DeleteFavoriteAsync(created.Id);

@@ -23,6 +23,19 @@ public partial class ApiClient
     }
 
     /// <summary>
+    /// Gets raw budget report data for the current user.
+    /// </summary>
+    /// <param name="request">The report request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The raw budget report data.</returns>
+    public async Task<BudgetReportRawDataDto> Budgets_GetReportRawAsync(BudgetReportRequest request, CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsJsonAsync("/api/budget/report/raw", request, ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return (await resp.Content.ReadFromJsonAsync<BudgetReportRawDataDto>(cancellationToken: ct))!;
+    }
+
+    /// <summary>
     /// Lists postings that are not covered by any budget purpose for the given range.
     /// </summary>
     /// <param name="from">Start date (optional).</param>

@@ -40,3 +40,47 @@
 - Ungültiger Regex: Fehler wird zurückgegeben.
 
 **Umsetzung:** `BudgetRule.SetPurposePattern`.
+
+## Kategoriezeilen aggregieren Zweckbudgets
+
+**Beschreibung:** Im Budgetbericht enthält das Budget einer Kategoriezeile auch die Budgets der zugeordneten Verwendungszwecke.
+
+**Bedingungen:**
+- Eine Kategorie besitzt direkte Budgetregeln, zugeordnete Verwendungszwecke mit eigenen Budgetregeln oder beides.
+
+**Verhalten:**
+- Direkte Kategorie-Budgets und Zweckbudgets werden zur Kategorie-Summe addiert.
+- Istwerte werden weiterhin auf Kategorieebene aggregiert.
+- Verwendungszwecke behalten ihre eigenen Budget-, Ist- und Abweichungswerte.
+
+**Umsetzung:** `BudgetReportsController` und `BudgetReportExportService`.
+
+## Budgetwertungsart steuert Zweck-Istwerte
+
+**Beschreibung:** Verwendungszwecke bestimmen ueber ihre Budgetwertungsart, welche passenden Buchungen in den Istwert eingehen.
+
+**Bedingungen:**
+- `Exakte Buchungen`: Standard fuer bestehende und neue Zwecke ohne abweichende Einstellung.
+- `Gesamtbudget`: bewusste Saldierung aller passenden Buchungen.
+
+**Verhalten:**
+- Bei `Exakte Buchungen` werden nur passende Buchungen mit dem Vorzeichen des Budgetpostens gewertet.
+- Passende Buchungen mit anderem Vorzeichen werden beim Zweck als nicht gewertet sichtbar und zusaetzlich regulaer als nicht budgetiert ausgegeben.
+- Bei `Gesamtbudget` werden alle passenden Buchungen unabhaengig vom Vorzeichen in den Istwert saldiert.
+- Direkte Kategorie-Budgetregeln werden als Gesamtbudget betrachtet.
+
+**Umsetzung:** `BudgetPurpose`, `BudgetReportService`, `BudgetReportsController` und `BudgetReportExportService`.
+
+## Abweichung wird als Ist minus Budget berechnet
+
+**Beschreibung:** Sichtbare Abweichungen im Budgetbericht verwenden die Richtung `Ist - Budget`.
+
+**Bedingungen:**
+- Budgetbericht in der Anwendung, Periodensummen und XLSX-Export.
+
+**Verhalten:**
+- `Abweichung = Ist - Budget`.
+- `Abweichung % = Abweichung / Abs(Budget)`.
+- Bei Budget `0` wird die prozentuale Abweichung mit `0` ausgewiesen.
+
+**Umsetzung:** `BudgetReportsController`, `BudgetReport.razor` und `BudgetReportExportService`.

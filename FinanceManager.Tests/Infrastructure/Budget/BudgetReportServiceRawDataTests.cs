@@ -369,6 +369,113 @@ public sealed class BudgetReportServiceRawDataTests
         result.UnbudgetedPostings.Should().ContainSingle(x => x.PostingId == nonMatchingPostingId);
     }
 
+    [Fact]
+    public async Task GetRawDataAsync_ShouldValueAllMatchingPostings_WhenPurposeUsesTotalBudget()
+    {
+        var ownerUserId = Guid.NewGuid();
+        var contactId = Guid.NewGuid();
+        var purposeId = Guid.NewGuid();
+        var from = new DateOnly(2026, 1, 1);
+        var to = new DateOnly(2026, 1, 31);
+        var expensePostingId = Guid.NewGuid();
+        var incomePostingId = Guid.NewGuid();
+
+        var purpose = new BudgetPurposeOverviewDto(
+            purposeId,
+            ownerUserId,
+            "Freizeit",
+            null,
+            BudgetSourceType.Contact,
+            contactId,
+            1,
+            -15m,
+            0m,
+            0m,
+            "Freizeitkontakt",
+            null,
+            null,
+            null,
+            BudgetValuationType.TotalBudget);
+
+        var rule = new BudgetRuleDto(Guid.NewGuid(), ownerUserId, purposeId, null, -15m, BudgetIntervalType.Monthly, null, from, null);
+        var postings = new[]
+        {
+            CreateContactPosting(expensePostingId, contactId, new DateTime(2026, 1, 10), -12.50m, "Beitrag"),
+            CreateContactPosting(incomePostingId, contactId, new DateTime(2026, 1, 11), 9.40m, "Erstattung")
+        };
+
+        var sut = CreateSut(
+            ownerUserId,
+            from,
+            to,
+            new[] { purpose },
+            new[] { rule },
+            postings,
+            new ContactDto(contactId, "Freizeitkontakt", ContactType.Organization, null, null, false, null));
+
+        var result = await sut.GetRawDataAsync(ownerUserId, from, to, BudgetReportDateBasis.BookingDate, CancellationToken.None);
+
+        var purposePostings = result.UncategorizedPurposes.Single(x => x.PurposeId == purposeId).Postings;
+        purposePostings.Should().HaveCount(2);
+        purposePostings.Should().OnlyContain(x => x.IsValuedForBudgetPurpose);
+        purposePostings.Sum(x => x.Amount).Should().Be(-3.10m);
+        result.UnbudgetedPostings.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetRawDataAsync_ShouldExposeUnvaluedMatchingPostings_WhenPurposeUsesExactPostings()
+    {
+        var ownerUserId = Guid.NewGuid();
+        var contactId = Guid.NewGuid();
+        var purposeId = Guid.NewGuid();
+        var from = new DateOnly(2026, 1, 1);
+        var to = new DateOnly(2026, 1, 31);
+        var expensePostingId = Guid.NewGuid();
+        var incomePostingId = Guid.NewGuid();
+
+        var purpose = new BudgetPurposeOverviewDto(
+            purposeId,
+            ownerUserId,
+            "Freizeit",
+            null,
+            BudgetSourceType.Contact,
+            contactId,
+            1,
+            -15m,
+            0m,
+            0m,
+            "Freizeitkontakt",
+            null,
+            null,
+            null,
+            BudgetValuationType.ExactPostings);
+
+        var rule = new BudgetRuleDto(Guid.NewGuid(), ownerUserId, purposeId, null, -15m, BudgetIntervalType.Monthly, null, from, null);
+        var postings = new[]
+        {
+            CreateContactPosting(expensePostingId, contactId, new DateTime(2026, 1, 10), -12.50m, "Beitrag"),
+            CreateContactPosting(incomePostingId, contactId, new DateTime(2026, 1, 11), 9.40m, "Erstattung")
+        };
+
+        var sut = CreateSut(
+            ownerUserId,
+            from,
+            to,
+            new[] { purpose },
+            new[] { rule },
+            postings,
+            new ContactDto(contactId, "Freizeitkontakt", ContactType.Organization, null, null, false, null));
+
+        var result = await sut.GetRawDataAsync(ownerUserId, from, to, BudgetReportDateBasis.BookingDate, CancellationToken.None);
+
+        var purposePostings = result.UncategorizedPurposes.Single(x => x.PurposeId == purposeId).Postings;
+        purposePostings.Should().HaveCount(2);
+        purposePostings.Single(x => x.PostingId == expensePostingId).IsValuedForBudgetPurpose.Should().BeTrue();
+        purposePostings.Single(x => x.PostingId == incomePostingId).IsValuedForBudgetPurpose.Should().BeFalse();
+        purposePostings.Where(x => x.IsValuedForBudgetPurpose).Sum(x => x.Amount).Should().Be(-12.50m);
+        result.UnbudgetedPostings.Should().ContainSingle(x => x.PostingId == incomePostingId);
+    }
+
     private static BudgetReportService CreateSut(
         Guid ownerUserId,
         DateOnly from,

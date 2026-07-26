@@ -9,12 +9,24 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="updates\settings.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="updates\status.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
     <None Include="wwwroot\css\app.SetupNotificationsTab.css" />
-    <!-- Ensure help pages HTML/JSON files are copied to output -->
-    <None Include="wwwroot\help\**" CopyToOutputDirectory="PreserveNewest" />
+    <Content Update="Data\KnownContacts.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Remove="wwwroot\help\**\*.*" />
+    <Content Include="wwwroot\help\css\**\*.css;wwwroot\help\js\**\*.js;wwwroot\help\**\*.json;wwwroot\help\**\*.html;wwwroot\help\help-assets.sha256" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="updates\settings.json" />
+    <Content Remove="updates\status.json" />
     <Content Remove="wwwroot\help\de\f004b.html" />
     <Content Remove="wwwroot\help\en\f004b.html" />
   </ItemGroup>
@@ -35,7 +47,9 @@
 	</PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="itext.bouncy-castle-adapter" Version="9.6.0" />
+    <PackageReference Include="AngleSharp" Version="1.5.2" />
+    <PackageReference Include="itext.bouncy-castle-adapter" Version="9.7.0" />
+    <PackageReference Include="Markdig" Version="1.3.2" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Cryptography.KeyDerivation" Version="10.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.7" />
@@ -45,30 +59,46 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.7" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.7" />
-    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.17.0" />
-    <PackageReference Include="PdfPig" Version="0.1.14" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.21.0" />
+    <PackageReference Include="PdfPig" Version="0.1.15" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" />
     <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
-    <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.17.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.21.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Update="updates\settings.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+    <Content Update="updates\status.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
     <Content Update="wwwroot\help\de\f001.html">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
   <Target Name="CopyInitFiles" BeforeTargets="Build">
-	  <Exec Command="if exist &quot;$(ProjectDir)init&quot; rmdir /s /q &quot;$(ProjectDir)init\&quot;" />
-	  <Exec Command="if exist &quot;$(TargetDir)init&quot; rmdir /s /q &quot;$(TargetDir)init\&quot;" />  
+	  <RemoveDir Directories="$(ProjectDir)init" Condition="Exists('$(ProjectDir)init')" />
+	  <RemoveDir Directories="$(TargetDir)init" Condition="Exists('$(TargetDir)init')" />
+  </Target>
+
+  <Target Name="GenerateHelpAssetManifest" BeforeTargets="Build">
+    <ItemGroup>
+      <HelpManifestAsset Include="wwwroot\help\css\**\*.css;wwwroot\help\js\**\*.js;wwwroot\help\**\*.json;wwwroot\help\**\*.html;..\Docs\help\**\*.md" />
+    </ItemGroup>
+    <GetFileHash Files="@(HelpManifestAsset)" Algorithm="SHA256">
+      <Output TaskParameter="Items" ItemName="HelpManifestAssetHash" />
+    </GetFileHash>
+    <WriteLinesToFile File="$(ProjectDir)wwwroot\help\help-assets.sha256" Lines="@(HelpManifestAssetHash->'%(Identity)|%(FileHash)')" Overwrite="true" Encoding="UTF-8" />
   </Target>
 
   </Project>

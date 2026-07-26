@@ -8,7 +8,58 @@ Die Setup-Karte aggregiert Ribbon-Aktionen aus vier Section-ViewModels über den
 
 ## Abläufe
 
-### 1. Ribbon-Initialisierung beim Laden der Setup-Karte
+### 1. JWT-Authentifizierung und SecurityStamp-Prüfung
+
+1. Ein Request liefert ein Bearer-Token oder das Cookie `FinanceManager.Auth`.
+2. Die JWT-Pruefung validiert Signatur, Issuer, Audience und Ablaufzeit.
+3. `OnTokenValidated` liest Benutzer-ID und `security_stamp` aus dem Token.
+4. Der aktuelle Benutzer wird aus der Datenbank geladen.
+5. Der Request wird abgelehnt, wenn der Benutzer fehlt, inaktiv ist, der
+   SecurityStamp abweicht oder der Admin-Rollenstand nicht mehr zum Token passt.
+6. Nur ein Token mit aktuellem Benutzerzustand erreicht die Autorisierung.
+
+Beteiligte Komponenten: `ProgramExtensions`, `UserManager<User>`,
+`JwtRefreshService.SecurityStampClaimType`
+
+---
+
+### 2. DB-validierter JWT-Refresh
+
+1. `JwtRefreshMiddleware` oder `JwtCookieAuthTokenProvider` erkennt ein Token
+   nahe am Ablauf.
+2. Der Refresh ruft `IJwtRefreshService.RefreshAsync` auf und erzeugt kein Token
+   mehr direkt aus alten Claims.
+3. `JwtRefreshService` liest Benutzer-ID und `security_stamp` aus dem Principal.
+4. Der Benutzer wird aus der Datenbank geladen; inaktive oder geloeschte
+   Benutzer werden abgelehnt.
+5. Der aktuelle Identity-`SecurityStamp` muss dem Token-Claim entsprechen.
+6. Die aktuelle Admin-Rolle wird aus Identity gelesen.
+7. Bei Erfolg wird ein neues JWT mit aktueller Rolle, aktuellem SecurityStamp
+   und 30 Minuten Laufzeit ausgegeben.
+8. Bei Ablehnung wird kein neues Token gesetzt; Cookie-basierte Requests
+   verlieren das Auth-Cookie.
+
+Beteiligte Komponenten: `JwtRefreshMiddleware`, `JwtCookieAuthTokenProvider`,
+`JwtRefreshService`, `JwtTokenService`
+
+---
+
+### 3. Token-Invalidierung bei Benutzeränderungen
+
+1. Ein Administrator deaktiviert oder aktiviert einen Benutzer oder aendert die
+   Admin-Rolle.
+2. `UserAdminService` aktualisiert nach erfolgreicher Aenderung den
+   SecurityStamp des Benutzers.
+3. Bereits ausgegebene JWTs enthalten den alten SecurityStamp.
+4. Der naechste Request oder Refresh mit einem alten Token wird abgelehnt.
+5. Bei Passwortreset wird der SecurityStamp ebenfalls aktualisiert.
+
+Beteiligte Komponenten: `UserAdminService`, `UserManager<User>`,
+`ProgramExtensions`, `JwtRefreshService`
+
+---
+
+### 4. Ribbon-Initialisierung beim Laden der Setup-Karte
 
 1. `SetupCardViewModel.LoadAsync(Guid id)` wird aufgerufen (z. B. bei Navigation zur Setup-Seite).
 2. Guard `_sectionViewModels.Count == 0` verhindert Doppel-Registrierung bei Re-Navigation.
@@ -32,7 +83,7 @@ Beteiligte Komponenten: `SetupCardViewModel`, `BaseViewModel`, `SetupProfileView
 
 ---
 
-### 2. Bereitstellung eines Section-ViewModels für SetupSections.razor
+### 5. Bereitstellung eines Section-ViewModels für SetupSections.razor
 
 1. Benutzer klappt eine Sektion im Akkordeon auf.
 2. `SetupSections.razor.BuildSectionSpec(key)` ruft `Provider.TryGetSectionComponentType(key, ...)` und `Provider.CreateSectionViewModel(key, Services)` auf.
@@ -45,7 +96,7 @@ Beteiligte Komponenten: `SetupSections.razor`, `SetupCardViewModel`, `BaseViewMo
 
 ---
 
-### 3. UploadBackup-Ribbon-Aktion bei zugeklappter Backup-Sektion
+### 6. UploadBackup-Ribbon-Aktion bei zugeklappter Backup-Sektion
 
 1. Benutzer klickt auf `UploadBackup` im Ribbon (Backup-Sektion ist zugeklappt).
 2. `SetupBackupsViewModel.GetRibbonRegisterDefinition()` hat für `UploadBackup` den Callback `BeforeUploadCallback?.Invoke()` registriert.
@@ -91,3 +142,109 @@ flowchart TD
 - Fehler in `LoadAsync` werden via `SetError(null, ex.Message)` gesetzt und im `Loading`-State abgeschlossen — die UI zeigt den Fehlerzustand.
 - Fehler in Ribbon-Callback-Lambdas (z. B. `RebuildAggregates`, `CreateBackup`) werden per `ILogger` protokolliert und nicht nach oben propagiert, um einen UI-Absturz zu verhindern.
 - Fehler in `RaiseEmbeddedPanelUiAction()` werden ebenfalls per `ILogger` protokolliert.
+- Backup-Validierungsfehler werden als fachliche API-Fehler (`ApiErrorDto`) zurückgegeben und lösen keinen destruktiven Import aus.
+- Restore-Bestätigungsfehler werden vor dem Import beziehungsweise vor dem Enqueue des Hintergrundtasks abgefangen.
+
+---
+
+### 7. Gehärteter Backup-Upload
+
+1. Benutzer wählt in der Backup-Sektion eine Datei aus.
+2. `SetupBackupsViewModel` sendet die Datei über den API-Client an `POST /api/setup/backups/upload`.
+3. `BackupsController.UploadAsync` prüft, ob eine Datei vorhanden ist, und übergibt den Stream an `BackupService.UploadAsync`.
+4. Die Backup-Infrastruktur validiert den Container:
+   - Nur ZIP wird akzeptiert.
+   - Es darf höchstens ein ZIP-Entry vorhanden sein.
+   - Der Entry-Name muss `backup.ndjson` sein oder mit `backup-` beginnen.
+   - Komprimierte und entpackte Größe sowie Kompressionsverhältnis müssen innerhalb der konfigurierten Grenzen liegen.
+   - Die NDJSON-Metadaten müssen ein Backup vom Typ `Backup` in Version `3` beschreiben.
+5. Erst nach bestandener Validierung wird die Datei gespeichert und als `BackupDto` zurückgegeben.
+6. Bei Fehlern liefert der Controller `400 ApiErrorDto`; doppelte Dateinamen bleiben ebenfalls ein fachlicher Fehler.
+
+Beteiligte Komponenten: `SetupBackupsViewModel`, `ApiClient.Backups_UploadAsync`, `BackupsController.UploadAsync`, `BackupService.UploadAsync`
+
+---
+
+### 8. Restore mit serverseitiger Dateinamen-Bestätigung
+
+1. Benutzer wählt ein Backup zum Wiederherstellen aus.
+2. `SetupBackupTab.razor` zeigt einen Dialog mit Dateiname, Datum und Größe an.
+3. Der Benutzer muss den exakten Backup-Dateinamen eingeben. Der Restore-Button wird erst bei exakter Übereinstimmung aktiviert.
+4. `SetupBackupsViewModel.StartApplyAsync` sendet `BackupRestoreRequestDto` mit `ConfirmationText` und `ExpectedFileName` an `POST /api/setup/backups/{id}/apply/start`.
+5. `BackupsController.StartApplyAsync` lädt das Backup und vergleicht beide Werte serverseitig mit dem gespeicherten Dateinamen.
+6. Bei falscher Bestätigung antwortet der Controller mit `400 ApiErrorDto` und legt keinen Hintergrundtask an.
+7. Wenn bereits ein Restore läuft oder wartet, antwortet der Controller mit `409 ApiErrorDto`.
+8. Nach erfolgreicher Prüfung wird ein `BackupRestore`-Hintergrundtask mit validiertem Payload erstellt.
+9. `BackupRestoreTaskExecutor` ruft `BackupService.ApplyAsync` auf.
+10. `BackupService.ApplyAsync` validiert die gespeicherte ZIP-Datei erneut und startet erst danach den destruktiven Import mit `replaceExisting: true`.
+
+Beteiligte Komponenten: `SetupBackupTab.razor`, `SetupBackupsViewModel`, `ApiClient.Backups_StartApplyAsync`, `BackupsController.StartApplyAsync`, `BackupRestoreTaskExecutor`, `BackupService.ApplyAsync`
+
+---
+
+### 9. Synchroner Restore
+
+1. Ein Client sendet `POST /api/setup/backups/{id}/apply` mit `BackupRestoreRequestDto`.
+2. `BackupsController.ApplyAsync` übergibt die Bestätigung an `BackupService.ApplyAsync`.
+3. Der Service prüft Backup-Besitz, Dateinamen-Bestätigung, Containerstruktur, Größenlimits, Kompressionsverhältnis und NDJSON-Schema.
+4. Nur bei Erfolg wird der Import ausgeführt.
+5. Das Ergebnis wird auf HTTP-Antworten abgebildet:
+   - `204 No Content` bei Erfolg.
+   - `404 Not Found` bei fehlendem Backup.
+   - `400 ApiErrorDto` bei fehlender Bestätigung, ungültigem Backup oder Importfehler.
+
+Beteiligte Komponenten: `ApiClient.Backups_ApplyAsync`, `BackupsController.ApplyAsync`, `BackupService.ApplyAsync`
+
+---
+
+### 10. Self-Update-Pruefung und Download
+
+1. Ein Administrator startet `POST /api/setup/update/check` oder der
+   `UpdateChecker` laeuft bei aktivierter Updatepruefung im konfigurierten
+   Intervall.
+2. `UpdateOrchestrator.CheckAsync` setzt den Status auf `Checking` und liest
+   Einstellungen sowie lokal installierte Release-Metadaten aus
+   `release-metadata.json`.
+3. `UpdateManifestClient` laedt das konfigurierte Manifest-Asset, standardmaessig
+   `update.json`, aus dem GitHub-Release-Kontext.
+4. `UpdateValidator.ValidateManifest` prueft Version, PublishedAt, Release
+   Notes, Repository, Assetnamen, HTTPS-GitHub-URLs, SHA-256, positive
+   Dateigroessen sowie Plattform-/Runtime-Konsistenz.
+5. `UpdatePlatformResolver` waehlt das Asset fuer die aktuelle Runtime, z. B.
+   `win-x64` oder `linux-x64`.
+6. Nur wenn die Manifest-Version neuer als die installierte Version ist, wird
+   das ZIP in `updates/pending` geladen.
+7. Nach Download validiert `UpdateValidator` Dateigroesse, SHA-256 und die
+   ZIP-Eintraege. Bei Erfolg wird der Status `Ready` gespeichert, sonst
+   `Failed` mit Fehlermeldung.
+
+Beteiligte Komponenten: `UpdateController`, `UpdateChecker`,
+`UpdateOrchestrator`, `UpdateManifestClient`, `UpdateValidator`,
+`UpdatePlatformResolver`, `UpdateFileStore`.
+
+---
+
+### 11. Self-Update-Installation und Warteseite
+
+1. Ein Administrator startet `POST /api/setup/update/install/start` mit
+   `ConfirmDowntime = true` oder der `UpdateScheduler` erreicht eine geplante
+   Uhrzeit bei Status `Ready`.
+2. Der Orchestrator lehnt den Start ab, wenn kein vorbereitetes Paket vorliegt,
+   ein Lock aktiv ist oder bereits `Installing` gemeldet wird.
+3. `UpdateExecutor` erzeugt eine Lock-Datei, validiert das heruntergeladene
+   Paket erneut und loest das Service-/EXE-Ziel auf.
+4. `UpdateScriptGenerator` erzeugt ein Plattformskript in `updates/pending`:
+   PowerShell fuer Windows oder Shell-Skript fuer Linux.
+5. Das Skript wird als externer Prozess gestartet und die Webanwendung wird
+   kontrolliert beendet. Die eigentliche Dateiersetzung findet ausserhalb des
+   laufenden ASP.NET-Core-Prozesses statt.
+6. Die Setup-UI zeigt den Installationszustand, pollt alle zwei Sekunden
+   `/health`, wartet zuerst auf einen beobachteten Ausfall und laedt erst nach
+   einem anschliessenden erfolgreichen Health-Aufruf neu.
+7. Nach Ablauf von `HealthTimeoutSeconds`, standardmaessig 120 Sekunden, zeigt
+   das ViewModel einen Timeout-Fehler.
+
+Beteiligte Komponenten: `UpdateController`, `UpdateScheduler`,
+`UpdateOrchestrator`, `UpdateExecutor`, `UpdateServiceResolver`,
+`UpdateScriptGenerator`, `HealthController`, `SetupUpdateViewModel`,
+`SetupUpdateTab.razor`.

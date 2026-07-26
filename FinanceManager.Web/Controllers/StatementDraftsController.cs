@@ -276,17 +276,32 @@ public sealed class StatementDraftsController : ControllerBase
         IReadOnlyDictionary<Guid, string>? planNames = null;
         IReadOnlyDictionary<Guid, Guid?>? securitySymbols = null;
         IReadOnlyDictionary<Guid, string>? securityNames = null;
+        IReadOnlyDictionary<Guid, string>? contactNames = null;
+        Guid? accountBankContactId = null;
+        Guid? selfContactId = null;
         try
         {
             var contactSvc = HttpContext.RequestServices.GetRequiredService<IContactService>();
             var categorySvc = HttpContext.RequestServices.GetRequiredService<IContactCategoryService>();
+            var accountSvc = HttpContext.RequestServices.GetService<IAccountService>();
             var planSvc = HttpContext.RequestServices.GetRequiredService<ISavingsPlanService>();
             var securitySvc = HttpContext.RequestServices.GetRequiredService<ISecurityService>();
             var cMap = new Dictionary<Guid, Guid?>();
+            var cNames = new Dictionary<Guid, string>();
             var pMap = new Dictionary<Guid, Guid?>();
             var pNames = new Dictionary<Guid, string>();
             var sMap = new Dictionary<Guid, Guid?>();
             var sNames = new Dictionary<Guid, string>();
+            if (draft.DetectedAccountId.HasValue && accountSvc != null)
+            {
+                var account = await accountSvc.GetAsync(draft.DetectedAccountId.Value, _current.UserId, ct);
+                accountBankContactId = account?.BankContactId;
+            }
+            accountBankContactId ??= draft.AccountBankContactId;
+
+            var selfContacts = await contactSvc.ListAsync(_current.UserId, 0, 1, ContactType.Self, null, ct);
+            selfContactId = selfContacts.FirstOrDefault()?.Id;
+
             foreach (var e in draft.Entries)
             {
                 if (e.ContactId.HasValue)
@@ -299,6 +314,10 @@ public sealed class StatementDraftsController : ControllerBase
                         symbol = cat?.SymbolAttachmentId;
                     }
                     cMap[e.Id] = symbol;
+                    if (!string.IsNullOrWhiteSpace(c?.Name))
+                    {
+                        cNames[e.Id] = c.Name;
+                    }
                 }
                 if (e.SavingsPlanId.HasValue)
                 {
@@ -314,6 +333,7 @@ public sealed class StatementDraftsController : ControllerBase
                 }
             }
             contactSymbols = cMap;
+            contactNames = cNames;
             planSymbols = pMap;
             planNames = pNames;
             securitySymbols = sMap;
@@ -321,7 +341,7 @@ public sealed class StatementDraftsController : ControllerBase
         }
         catch { }
 
-        var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId, contactSymbols, planSymbols, planNames, securitySymbols, securityNames);
+        var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId, contactSymbols, planSymbols, planNames, securitySymbols, securityNames, contactNames, accountBankContactId, selfContactId);
         return Ok(dto);
     }
 

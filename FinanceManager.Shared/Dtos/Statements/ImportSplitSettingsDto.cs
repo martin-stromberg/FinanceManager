@@ -16,4 +16,7 @@ public sealed class ImportSplitSettingsDto
 
     /// <summary>Dialog policy for start page mass imports.</summary>
     public MassImportDialogPolicy MassImportDialogPolicy { get; set; } = MassImportDialogPolicy.OnMissingInformation;
+
+    /// <summary>Whether known contacts are created automatically during statement classification.</summary>
+    public bool KnownContactAutoCreateEnabled { get; set; } = true;
 }

@@ -8,8 +8,10 @@ using FinanceManager.Shared.Dtos.Common;
 using FinanceManager.Shared.Dtos.Users;
 using FinanceManager.Web.Infrastructure.ApiErrors;
 using FinanceManager.Web.Infrastructure.Auth;
+using FinanceManager.Web.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
@@ -36,6 +38,8 @@ public sealed class UserSettingsController : ControllerBase
     private readonly IStringLocalizer<Controller> _localizer;
     private readonly IJwtTokenService _jwt;
     private readonly IAuthTokenProvider _tokenProvider;
+    private readonly UserManager<User> _userManager;
+    private readonly IAlphaVantageSecretProtector _alphaVantageSecretProtector;
 
     /// <summary>
     /// Initializes a new instance of <see cref="UserSettingsController"/>
@@ -46,7 +50,9 @@ public sealed class UserSettingsController : ControllerBase
     /// <param name="localizer">Localizer for accessing localized strings.</param>
     /// <param name="jwt">Service used to issue new JWT tokens after profile changes.</param>
     /// <param name="tokenProvider">Token provider whose cache is invalidated after the auth cookie is replaced.</param>
-    public UserSettingsController(AppDbContext db, ICurrentUserService current, ILogger<UserSettingsController> logger, IStringLocalizer<Controller> localizer, IJwtTokenService jwt, IAuthTokenProvider tokenProvider)
+    /// <param name="userManager">Identity user manager used to read current roles and security stamp.</param>
+    /// <param name="alphaVantageSecretProtector">Protector used to store AlphaVantage API keys in encrypted form.</param>
+    public UserSettingsController(AppDbContext db, ICurrentUserService current, ILogger<UserSettingsController> logger, IStringLocalizer<Controller> localizer, IJwtTokenService jwt, IAuthTokenProvider tokenProvider, UserManager<User> userManager, IAlphaVantageSecretProtector alphaVantageSecretProtector)
     {
         _db = db;
         _current = current;
@@ -54,6 +60,8 @@ public sealed class UserSettingsController : ControllerBase
         _localizer = localizer;
         _jwt = jwt;
         _tokenProvider = tokenProvider;
+        _userManager = userManager;
+        _alphaVantageSecretProtector = alphaVantageSecretProtector;
     }
 
     /// <summary>
@@ -113,7 +121,7 @@ public sealed class UserSettingsController : ControllerBase
             }
             else if (!string.IsNullOrWhiteSpace(req.AlphaVantageApiKey))
             {
-                user.SetAlphaVantageKey(req.AlphaVantageApiKey);
+                user.SetAlphaVantageKey(_alphaVantageSecretProtector.Protect(req.AlphaVantageApiKey));
             }
 
             if (req.ShareAlphaVantageApiKey.HasValue)
@@ -134,7 +142,9 @@ public sealed class UserSettingsController : ControllerBase
             // claims are picked up immediately by the request culture provider without requiring re-login.
             if (languageChanged || timezoneChanged)
             {
-                var newToken = _jwt.CreateToken(user.Id, user.UserName!, _current.IsAdmin, out var expiresUtc, user.PreferredLanguage, user.TimeZoneId);
+                var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+                var securityStamp = await _userManager.GetSecurityStampAsync(user);
+                var newToken = _jwt.CreateToken(user.Id, user.UserName!, isAdmin, securityStamp, out var expiresUtc, user.PreferredLanguage, user.TimeZoneId);
                 Response.Cookies.Append(AuthCookieName, newToken, new CookieOptions
                 {
                     HttpOnly = true,
@@ -242,7 +252,8 @@ public sealed class UserSettingsController : ControllerBase
                 MaxEntriesPerDraft = u.ImportMaxEntriesPerDraft,
                 MonthlySplitThreshold = u.ImportMonthlySplitThreshold,
                 MinEntriesPerDraft = u.ImportMinEntriesPerDraft,
-                MassImportDialogPolicy = u.MassImportDialogPolicy
+                MassImportDialogPolicy = u.MassImportDialogPolicy,
+                KnownContactAutoCreateEnabled = u.KnownContactAutoCreateEnabled
             })
             .SingleOrDefaultAsync(ct) ?? new ImportSplitSettingsDto();
         return Ok(dto);
@@ -289,6 +300,7 @@ public sealed class UserSettingsController : ControllerBase
         {
             user.SetImportSplitSettings(req.Mode, req.MaxEntriesPerDraft, req.MonthlySplitThreshold, req.MinEntriesPerDraft);
             user.SetMassImportDialogPolicy(req.MassImportDialogPolicy);
+            user.SetKnownContactAutoCreateEnabled(req.KnownContactAutoCreateEnabled);
             await _db.SaveChangesAsync(ct);
             return NoContent();
         }

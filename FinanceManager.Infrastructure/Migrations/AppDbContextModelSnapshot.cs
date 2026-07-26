@@ -336,6 +336,11 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<short>("SourceType")
                         .HasColumnType("INTEGER");
 
+                    b.Property<short>("ValuationType")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue((short)0);
+
                     b.HasKey("Id");
 
                     b.HasIndex("BudgetCategoryId");
@@ -812,6 +817,9 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("ComparePrevious")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("CompareProjection")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("CompareYear")
@@ -1389,7 +1397,7 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("AlphaVantageApiKey")
-                        .HasMaxLength(120)
+                        .HasMaxLength(2048)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("BenchmarkSecurityId")
@@ -1429,6 +1437,11 @@ namespace FinanceManager.Infrastructure.Migrations
 
                     b.Property<bool>("IsAdmin")
                         .HasColumnType("INTEGER");
+
+                    b.Property<bool>("KnownContactAutoCreateEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
 
                     b.Property<DateTime>("LastLoginUtc")
                         .HasColumnType("TEXT");

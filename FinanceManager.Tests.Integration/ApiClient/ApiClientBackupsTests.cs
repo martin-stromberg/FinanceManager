@@ -1,5 +1,8 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using System.IO.Compression;
+using System.Text;
+using System.Text.Json;
 using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
@@ -49,24 +52,36 @@ public class ApiClientBackupsTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
-    public async Task Upload_AllowsZip_AndNdjson()
+    public async Task Upload_AllowsValidZip_AndRejectsNdjson()
     {
         var api = CreateClient();
         await EnsureAuthenticatedAsync(api);
-        // upload NDJSON content (auto-wrapped to zip)
-        await using var ndjson = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("{\"Type\":\"Backup\",\"Version\":3}\n{}"));
-        var up1 = await api.Backups_UploadAsync(ndjson, "backup.ndjson");
-        up1.Should().NotBeNull();
-        up1.FileName.Should().EndWith(".zip");
+
+        await using var ndjson = new MemoryStream(Encoding.UTF8.GetBytes(CreateValidNdjson()));
+        var ndjsonUpload = () => api.Backups_UploadAsync(ndjson, "backup.ndjson");
+        await ndjsonUpload.Should().ThrowAsync<HttpRequestException>();
 
         // upload zip content
-        await using var zipStream = new MemoryStream(new byte[] { 0x50, 0x4B, 0x03, 0x04 });
+        await using var zipStream = CreateZip("backup.ndjson", CreateValidNdjson());
         var up2 = await api.Backups_UploadAsync(zipStream, "custom.zip");
         up2.Should().NotBeNull();
         up2.FileName.Should().Be("custom.zip");
 
         var list = await api.Backups_ListAsync();
-        list.Should().HaveCountGreaterThanOrEqualTo(2);
+        list.Should().ContainSingle(b => b.Id == up2.Id);
+    }
+
+    [Fact]
+    public async Task Upload_InvalidZip_ReturnsBadRequest()
+    {
+        var api = CreateClient();
+        await EnsureAuthenticatedAsync(api);
+
+        await using var zipStream = new MemoryStream(new byte[] { 0x50, 0x4B, 0x03, 0x04 });
+        var act = () => api.Backups_UploadAsync(zipStream, "custom.zip");
+
+        await act.Should().ThrowAsync<HttpRequestException>();
+        api.LastErrorCode.Should().Be("Err_Backup_InvalidZip");
     }
 
     [Fact]
@@ -93,7 +108,11 @@ public class ApiClientBackupsTests : IClassFixture<TestWebApplicationFactory>
         await EnsureAuthenticatedAsync(api);
         var created = await api.Backups_CreateAsync();
 
-        var status = await api.Backups_StartApplyAsync(created.Id);
+        var missingConfirmation = () => api.Backups_StartApplyAsync(created.Id, new BackupRestoreRequestDto(null, created.FileName));
+        await missingConfirmation.Should().ThrowAsync<HttpRequestException>();
+        api.LastErrorCode.Should().Be("Err_Backup_ConfirmationRequired");
+
+        var status = await api.Backups_StartApplyAsync(created.Id, new BackupRestoreRequestDto(created.FileName, created.FileName));
         status.Running.Should().BeTrue();
 
         var polled = await api.Backups_GetStatusAsync();
@@ -101,5 +120,53 @@ public class ApiClientBackupsTests : IClassFixture<TestWebApplicationFactory>
 
         var canceled = await api.Backups_CancelAsync();
         canceled.Should().BeTrue();
+    }
+
+    private static MemoryStream CreateZip(string entryName, string ndjson)
+    {
+        var stream = new MemoryStream();
+        using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            var entry = zip.CreateEntry(entryName, CompressionLevel.NoCompression);
+            using var entryStream = entry.Open();
+            var bytes = Encoding.UTF8.GetBytes(ndjson);
+            entryStream.Write(bytes, 0, bytes.Length);
+        }
+
+        stream.Position = 0;
+        return stream;
+    }
+
+    private static string CreateValidNdjson()
+    {
+        var data = new Dictionary<string, object[]>
+        {
+            ["Accounts"] = [],
+            ["Contacts"] = [],
+            ["ContactCategories"] = [],
+            ["AliasNames"] = [],
+            ["SavingsPlanCategories"] = [],
+            ["SavingsPlans"] = [],
+            ["SecurityCategories"] = [],
+            ["Securities"] = [],
+            ["SecurityPrices"] = [],
+            ["StatementImports"] = [],
+            ["StatementEntries"] = [],
+            ["Postings"] = [],
+            ["StatementDrafts"] = [],
+            ["StatementDraftEntries"] = [],
+            ["ReportFavorites"] = [],
+            ["HomeKpis"] = [],
+            ["AttachmentCategories"] = [],
+            ["Attachments"] = [],
+            ["Notifications"] = [],
+            ["AccountShares"] = [],
+            ["BudgetCategories"] = [],
+            ["BudgetPurposes"] = [],
+            ["BudgetRules"] = [],
+            ["BudgetOverrides"] = []
+        };
+
+        return JsonSerializer.Serialize(new { Type = "Backup", Version = 3 }) + "\n" + JsonSerializer.Serialize(data);
     }
 }

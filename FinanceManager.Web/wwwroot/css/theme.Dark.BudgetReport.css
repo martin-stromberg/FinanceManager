@@ -32,6 +32,27 @@
     border-top: 1px solid var(--border);
 }
 
+.budget-report-postings-head {
+    background: #1f2937;
+    color: #f9fafb;
+}
+
+.budget-report-postings-head th {
+    border-bottom: 1px solid #4b5563;
+}
+
+.budget-report-posting-unbudgeted {
+    background: #111827;
+    color: #f9fafb;
+    opacity: 0.8;
+}
+
+.budget-report-posting-badge {
+    border-color: #4b5563;
+    color: #e5e7eb;
+    background: #111827;
+}
+
 @media (max-width: 900px) {
     .budget-report-sheet {
         box-shadow: 0 4px 16px #0008, 0 0 0 1px #000 inset;
