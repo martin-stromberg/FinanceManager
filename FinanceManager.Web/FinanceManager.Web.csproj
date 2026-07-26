@@ -67,6 +67,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Update="updates\settings.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+    <Content Update="updates\status.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
     <Content Update="wwwroot\help\de\f001.html">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
@@ -84,11 +90,7 @@
     <GetFileHash Files="@(HelpManifestAsset)" Algorithm="SHA256">
       <Output TaskParameter="Items" ItemName="HelpManifestAssetHash" />
     </GetFileHash>
-    <WriteLinesToFile
-      File="$(ProjectDir)wwwroot\help\help-assets.sha256"
-      Lines="@(HelpManifestAssetHash->'%(Identity)|%(FileHash)')"
-      Overwrite="true"
-      Encoding="UTF-8" />
+    <WriteLinesToFile File="$(ProjectDir)wwwroot\help\help-assets.sha256" Lines="@(HelpManifestAssetHash->'%(Identity)|%(FileHash)')" Overwrite="true" Encoding="UTF-8" />
   </Target>
 
   </Project>
