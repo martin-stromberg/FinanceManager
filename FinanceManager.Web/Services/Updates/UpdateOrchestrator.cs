@@ -14,6 +14,7 @@ public sealed class UpdateOrchestrator : IUpdateOrchestrator
     private readonly IUpdateFileStore _fileStore;
     private readonly IUpdateValidator _validator;
     private readonly IUpdateExecutor _executor;
+    private readonly ILogger<UpdateOrchestrator> _logger;
     private readonly UpdateOptions _options;
 
     public UpdateOrchestrator(
@@ -24,7 +25,8 @@ public sealed class UpdateOrchestrator : IUpdateOrchestrator
         IUpdateFileStore fileStore,
         IUpdateValidator validator,
         IUpdateExecutor executor,
-        IOptions<UpdateOptions> options)
+        IOptions<UpdateOptions> options,
+        ILogger<UpdateOrchestrator> logger)
     {
         _settingsStore = settingsStore;
         _installedProvider = installedProvider;
@@ -33,6 +35,7 @@ public sealed class UpdateOrchestrator : IUpdateOrchestrator
         _fileStore = fileStore;
         _validator = validator;
         _executor = executor;
+        _logger = logger;
         _options = options.Value;
     }
 
@@ -54,6 +57,7 @@ public sealed class UpdateOrchestrator : IUpdateOrchestrator
 
     public async Task<UpdateCheckResultDto> CheckAsync(CancellationToken ct = default)
     {
+        _logger.LogInformation("Starting update check...");
         var settings = await _settingsStore.GetAsync(ct);
         var installed = await _installedProvider.GetAsync(ct);
         var checking = EmptyStatus(installed) with { Status = UpdateStatusKind.Checking, LastCheckedAt = DateTimeOffset.UtcNow };
@@ -76,6 +80,7 @@ public sealed class UpdateOrchestrator : IUpdateOrchestrator
 
             if (isNewer)
             {
+                _logger.LogInformation("New update available: {Version}", manifest.Version);
                 var targetPath = _fileStore.PendingAssetPath(asset.AssetName);
                 await _manifestClient.DownloadAssetAsync(asset, targetPath, _options.MaxAssetBytes, ct);
                 await _validator.ValidateDownloadedAssetAsync(asset, targetPath, _options.MaxAssetBytes, ct);
@@ -87,6 +92,7 @@ public sealed class UpdateOrchestrator : IUpdateOrchestrator
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Update check failed.");
             var failed = checking with { Status = UpdateStatusKind.Failed, LastError = ex.Message };
             await _fileStore.WriteStatusAsync(failed, ct);
             return new UpdateCheckResultDto(false, await WithRuntimeStateAsync(failed, installed, ct), ex.Message);

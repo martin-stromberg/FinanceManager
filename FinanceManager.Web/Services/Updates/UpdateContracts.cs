@@ -36,6 +36,8 @@ public interface IUpdateFileStore
     string SettingsPath { get; }
     string StatusPath { get; }
     string LockPath { get; }
+    string LogPath { get; }
+
     string ScriptPath(string extension);
     string PendingAssetPath(string assetName);
     void UseWorkingDirectory(string workingDirectory);
@@ -77,6 +79,7 @@ public interface IUpdateServiceProbe
 
 public interface IUpdateProcessRunner
 {
+    void StartPrepareEnvironment(string scriptPath);
     void StartScript(string scriptPath);
 }
 

@@ -59,22 +59,27 @@ public sealed class UpdateController : ControllerBase
     {
         try
         {
+            _logger.LogInformation("Update installation requested by {User}. ConfirmDowntime: {ConfirmDowntime}", User.Identity?.Name, request.ConfirmDowntime);
             return Ok(await _orchestrator.StartInstallAsync(request.ConfirmDowntime, ct));
         }
         catch (FileNotFoundException ex)
         {
+            _logger.LogWarning(ex, "Update installation failed: {Message}", ex.Message);
             return NotFound(ApiErrorDto.Create(Origin, "Err_Update_NotReady", ex.Message));
         }
         catch (IOException ex)
         {
+            _logger.LogWarning(ex, "Update installation failed: {Message}", ex.Message);
             return Conflict(ApiErrorDto.Create(Origin, "Err_Update_Locked", ex.Message));
         }
         catch (ArgumentException ex)
         {
+            _logger.LogWarning(ex, "Update installation failed: {Message}", ex.Message);
             return BadRequest(ApiErrorDto.Create(Origin, "Err_Update_InvalidRequest", ex.Message));
         }
         catch (InvalidOperationException ex)
         {
+            _logger.LogWarning(ex, "Update installation failed: {Message}", ex.Message);
             return BadRequest(ApiErrorDto.Create(Origin, "Err_Update_InvalidState", ex.Message));
         }
     }
