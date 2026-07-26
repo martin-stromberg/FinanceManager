@@ -144,6 +144,7 @@ Einstiegspunkte:
 - `POST /api/setup/update/schedule` – geplante Installationszeit fuer ein vorbereitetes Update speichern
 - `POST /api/setup/update/install/start` – vorbereitetes Update nach Downtime-Bestaetigung installieren; erstellt Lock und startet ein externes Update-Skript
 - `POST /api/setup/update/lock/reset` – verwaisten Update-Lock administrativ zuruecksetzen, sofern dieser Prozess keine laufende Installation kennt und der Lock aelter als das Health-Timeout ist
+- `GET /api/background-tasks/active` – aktive und wartende Background-Tasks fuer authentifizierte Nutzer abrufen; das UI startet das Polling nur bei erkannter Anmeldung und beendet es nach einem `401 Unauthorized`
 - `POST /api/securities/{id}/prices/import` – Wertpapierkurse importieren
 - `POST /api/postings/{id}/reverse` – Buchung stornieren (Reversal)
 - `GET|POST|PUT|DELETE /api/admin/users...` – administrative Benutzerverwaltung; serverseitig auf JWT-authentifizierte Benutzer mit Rolle `Admin` beschränkt. Authentifizierte Nicht-Admins erhalten `403 Forbidden`, anonyme Aufrufe `401 Unauthorized`.

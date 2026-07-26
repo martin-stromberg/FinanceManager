@@ -197,7 +197,21 @@ Beteiligte Komponenten: `ApiClient.Backups_ApplyAsync`, `BackupsController.Apply
 
 ---
 
-### 10. Self-Update-Pruefung und Download
+### 10. Authentifiziertes Background-Task-Statuspolling
+
+1. `BackgroundTaskStatusPanel` wird nach dem ersten Rendern initialisiert.
+2. Vor dem Start der Polling-Schleife prüft die Komponente `ICurrentUserService.IsAuthenticated` und, falls nötig, den Browser-Authentifizierungsstatus über `fmAuthIsAuthenticated`.
+3. Nur bei authentifiziertem Benutzerkontext erstellt das Panel eine `CancellationTokenSource`, lädt initial `GET /api/background-tasks/active` und startet die wiederkehrende Abfrage.
+4. Der Endpunkt bleibt serverseitig durch JWT-Bearer-Authentifizierung geschützt und liefert nur laufende oder wartende Tasks des aktuellen Benutzers.
+5. Sichtbarkeit wird weiterhin über `AllowedTypes` entschieden; die geladene Task-Liste enthält aber alle aktiven oder wartenden Tasks des Benutzers.
+6. Bei `401 Unauthorized` deaktiviert das Panel das Polling für die aktuelle Komponenteninstanz, bricht die laufende Schleife ab, leert den lokalen Task-Zustand und rendert ohne Statuspanel weiter.
+7. Cancel- und Remove-Aktionen prüfen denselben Authentifizierungs- und Stop-Zustand, bevor sie `DELETE /api/background-tasks/{id}` oder eine anschließende Statusabfrage auslösen.
+
+Beteiligte Komponenten: `BackgroundTaskStatusPanel`, `ICurrentUserService`, `ApiClient.BackgroundTasks_GetActiveAsync`, `BackgroundTasksController.GetActiveAndQueued`, `IBackgroundTaskManager`.
+
+---
+
+### 11. Self-Update-Pruefung und Download
 
 1. Ein Administrator startet `POST /api/setup/update/check` oder der
    `UpdateChecker` laeuft bei aktivierter Updatepruefung im konfigurierten
@@ -224,7 +238,7 @@ Beteiligte Komponenten: `UpdateController`, `UpdateChecker`,
 
 ---
 
-### 11. Self-Update-Installation und Warteseite
+### 12. Self-Update-Installation und Warteseite
 
 1. Ein Administrator startet `POST /api/setup/update/install/start` mit
    `ConfirmDowntime = true` oder der `UpdateScheduler` erreicht eine geplante

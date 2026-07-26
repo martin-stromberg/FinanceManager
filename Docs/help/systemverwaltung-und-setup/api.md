@@ -181,6 +181,20 @@ Installationslocks gedacht.
 
 **Beschreibung:** Benachrichtigungen laden.
 
+### `GET /api/background-tasks/active`
+
+**Beschreibung:** Laufende und wartende Hintergrundtasks des aktuellen Benutzers laden.
+
+**Berechtigung:** JWT-Bearer-Authentifizierung. Nicht authentifizierte Anfragen werden mit `401 Unauthorized` abgelehnt.
+
+**UI-Verhalten:** Das globale Statuspanel ruft diesen Endpunkt nur bei authentifiziertem Benutzerkontext wiederkehrend auf. Erhält das Panel während einer laufenden Sitzung dennoch `401 Unauthorized`, stoppt es das Polling für die aktuelle Komponenteninstanz.
+
+### `DELETE /api/background-tasks/{id}`
+
+**Beschreibung:** Laufenden Hintergrundtask abbrechen oder wartenden Hintergrundtask entfernen, sofern der Task dem aktuellen Benutzer gehört.
+
+**Berechtigung:** JWT-Bearer-Authentifizierung.
+
 ### `POST /api/background-tasks/aggregates/rebuild`
 
 **Beschreibung:** Rebuild von Aggregaten starten.
