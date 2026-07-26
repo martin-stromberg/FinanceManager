@@ -91,7 +91,7 @@ lock={{Sh(_fileStore.LockPath)}}
 log_msg() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$log"
 }
-
+rm -f "$log"
 log_msg "Update gestartet."
 
 sleep 3
