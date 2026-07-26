@@ -278,7 +278,7 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
                     var updated = await ApiClient.Contacts_UpdateAsync(Id, new ContactUpdateRequest(dto.Name, dto.Type, dto.CategoryId, dto.Description, dto.IsPaymentIntermediary));
                     if (updated != null) { Contact = updated; CardRecord = await BuildCardRecordAsync(Contact); ClearPendingChanges(); RaiseStateChanged(); RaiseUiActionRequested("Saved", Id.ToString()); }
                 }
-            }),
+            }) { MobileShortcut = true },
             new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Contact==null, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
         });
 

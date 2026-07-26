@@ -149,7 +149,8 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
                     UiRibbonItemSize.Large,
                     false,
                     null,
-                    new Func<Task>(() => { _nav.NavigateTo($"/card/statement-drafts/new"); return Task.CompletedTask; })),
+                    new Func<Task>(() => { _nav.NavigateTo($"/card/statement-drafts/new"); return Task.CompletedTask; }))
+                { MobileShortcut = true },
                 new UiRibbonAction(
                     "DeleteAll",
                     localizer["Ribbon_DeleteAll"].Value,
@@ -189,7 +190,8 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
                         var spec = new FinanceManager.Web.ViewModels.Common.BaseViewModel.UiOverlaySpec(overlayType, parameters);
                         RaiseUiActionRequested(null, payloadObject: spec);
                         return Task.CompletedTask;
-                    })),
+                    }))
+                { MobileShortcut = true },
                 new UiRibbonAction(
                     "Import",
                     localizer["Ribbon_Import"].Value,
@@ -229,7 +231,8 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
                         // refresh list after upload
                         ResetAndSearch();
                         await LoadAsync();
-                    }
+                    },
+                    MobileShortcut = true
                 }
             })
         };

@@ -208,6 +208,9 @@ public class RibbonTests : Bunit.BunitContext
                 MobileShortcut = true
             },
             new UiRibbonAction("delete", "Löschen", "<svg></svg>", UiRibbonItemSize.Small, false, null, null)
+            {
+                MobileShortcut = true
+            }
         });
 
         var cut = RenderRibbon(registers);
@@ -237,6 +240,9 @@ public class RibbonTests : Bunit.BunitContext
                 MobileShortcut = true
             },
             new UiRibbonAction("delete", "Löschen", "<svg></svg>", UiRibbonItemSize.Small, false, null, null)
+            {
+                MobileShortcut = true
+            }
         });
 
         var cut = RenderRibbon(registers);
@@ -282,6 +288,35 @@ public class RibbonTests : Bunit.BunitContext
     }
 
     [Fact]
+    public void MobileShortcut_SingleVisibleFileAction_IsAutomaticShortcut()
+    {
+        var registers = CreateRegisters(new List<UiRibbonAction>
+        {
+            new UiRibbonAction("import", "Importieren", "<svg></svg>", UiRibbonItemSize.Small, false, null, null)
+            {
+                FileCallback = _ => Task.CompletedTask
+            }
+        });
+
+        var cut = RenderRibbon(registers);
+
+        Assert.Single(cut.FindAll("#import-mobile-shortcut"));
+    }
+
+    [Fact]
+    public void MobileShortcut_SingleDisabledAction_IsNotAutomaticShortcut()
+    {
+        var registers = CreateRegisters(new List<UiRibbonAction>
+        {
+            new UiRibbonAction("save", "Speichern", "<svg></svg>", UiRibbonItemSize.Small, true, null, null)
+        });
+
+        var cut = RenderRibbon(registers);
+
+        Assert.Empty(cut.FindAll("#save-mobile-shortcut"));
+    }
+
+    [Fact]
     public void MobileShortcut_MultipleActionsWithoutMarking_RenderNoShortcut()
     {
         var registers = CreateRegisters(new List<UiRibbonAction>
@@ -315,7 +350,7 @@ public class RibbonTests : Bunit.BunitContext
     }
 
     [Fact]
-    public void MobileShortcut_DisabledAction_RendersDisabled()
+    public void MobileShortcut_DisabledAction_IsNotRenderedAsShortcut()
     {
         var registers = CreateRegisters(new List<UiRibbonAction>
         {
@@ -324,17 +359,19 @@ public class RibbonTests : Bunit.BunitContext
                 MobileShortcut = true
             },
             new UiRibbonAction("delete", "Löschen", "<svg></svg>", UiRibbonItemSize.Small, false, null, null)
+            {
+                MobileShortcut = true
+            }
         });
 
         var cut = RenderRibbon(registers);
 
-        var shortcut = cut.Find("#save-mobile-shortcut");
-        Assert.True(shortcut.HasAttribute("disabled"));
-        Assert.Equal("true", shortcut.GetAttribute("aria-disabled"));
+        Assert.Empty(cut.FindAll("#save-mobile-shortcut"));
+        Assert.Single(cut.FindAll("#delete-mobile-shortcut"));
     }
 
     [Fact]
-    public void MobileShortcut_FileCallbackAction_IsNotRenderedAsShortcut()
+    public void MobileShortcut_FileCallbackAction_RendersUploadShortcut()
     {
         var registers = CreateRegisters(new List<UiRibbonAction>
         {
@@ -348,9 +385,31 @@ public class RibbonTests : Bunit.BunitContext
 
         var cut = RenderRibbon(registers);
 
-        Assert.Empty(cut.FindAll("#import-mobile-shortcut"));
-        Assert.Empty(cut.FindAll(".fm-ribbon-mobile-shortcut"));
+        var shortcut = cut.Find("#import-mobile-shortcut");
+        Assert.Contains("fm-ribbon-mobile-shortcut", shortcut.ClassList);
+        Assert.NotNull(shortcut.QuerySelector("input[type=\"file\"]"));
         Assert.Single(cut.FindAll("#import-mobile"));
+    }
+
+    [Fact]
+    public void MobileShortcut_HeaderPlacesShortcutsBeforeExpandButton()
+    {
+        var registers = CreateRegisters(new List<UiRibbonAction>
+        {
+            new UiRibbonAction("save", "Speichern", "<svg></svg>", UiRibbonItemSize.Small, false, null, null)
+            {
+                MobileShortcut = true
+            },
+            new UiRibbonAction("delete", "Löschen", "<svg></svg>", UiRibbonItemSize.Small, false, null, null)
+        });
+
+        var cut = RenderRibbon(registers);
+
+        var header = cut.Find(".fm-ribbon-mobile-group-header");
+        var children = header.Children.Select(child => child.ClassName).ToList();
+        Assert.Equal("fm-ribbon-mobile-group-title-toggle", children[0]);
+        Assert.Equal("fm-ribbon-mobile-shortcuts", children[1]);
+        Assert.Equal("fm-ribbon-mobile-group-toggle", children[2]);
     }
 
     private IRenderedComponent<Ribbon<TabId>> RenderRibbon(List<UiRibbonRegister> registers)

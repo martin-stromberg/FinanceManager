@@ -83,28 +83,21 @@
                        <div class="fm-ribbon-mobile-group-panel">
                            <div class="fm-ribbon-mobile-group-header">
                                <button type="button"
-                                       class="fm-ribbon-mobile-group-toggle"
+                                       class="fm-ribbon-mobile-group-title-toggle"
                                        aria-expanded="@mobileOpen"
                                        aria-controls="@mobileMenuId"
                                        @onclick="(() => ToggleMobileGroup(mobileGroupId))">
                                    <span class="fm-ribbon-mobile-group-title">@g.Title</span>
-                                   <span class="fm-ribbon-mobile-group-hamburger" aria-hidden="true">
-                                       <svg viewBox="0 0 24 24" width="20" height="20">
-                                           <path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" />
-                                       </svg>
-                                   </span>
                                </button>
                                @if (!mobileOpen)
                                {
-                                   var shortcutItems = g.Items.Where(item => item.MobileShortcut && item.FileCallback == null).ToList();
+                                   var shortcutItems = g.Items.Where(item => item.MobileShortcut && !item.Disabled).ToList();
                                    if (shortcutItems.Count > 0)
                                    {
                                        <div class="fm-ribbon-mobile-shortcuts" aria-label="@g.Title">
                                            @foreach (var item in shortcutItems)
                                            {
                                                <button id="@(item.Id is null ? null : $"{item.Id}-mobile-shortcut")"
-                                                       disabled="@item.Disabled"
-                                                       aria-disabled="@(item.Disabled ? "true" : null)"
                                                        aria-label="@item.Label"
                                                        title="@GetItemTitle(item)"
                                                        type="button"
@@ -118,6 +111,17 @@
                                        </div>
                                    }
                                }
+                               <button type="button"
+                                       class="fm-ribbon-mobile-group-toggle"
+                                       aria-expanded="@mobileOpen"
+                                       aria-controls="@mobileMenuId"
+                                       @onclick="(() => ToggleMobileGroup(mobileGroupId))">
+                                   <span class="fm-ribbon-mobile-group-hamburger" aria-hidden="true">
+                                       <svg viewBox="0 0 24 24" width="20" height="20">
+                                           <path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" />
+                                       </svg>
+                                   </span>
+                               </button>
                            </div>
                            <div id="@mobileMenuId" class="fm-ribbon-mobile-menu @(mobileOpen ? "open" : null)">
                                @foreach (var item in g.Items)
@@ -203,7 +207,7 @@
                         Tooltip = act.Tooltip,
                         Callback = act.Callback,
                         FileCallback = fileCallback,
-                        MobileShortcut = act.MobileShortcut && fileCallback == null
+                        MobileShortcut = act.MobileShortcut
                     });
                 }
             }
@@ -212,7 +216,7 @@
         var groups = groupOrder.Select(title => groupMap[title]).ToList();
         foreach (var group in groups)
         {
-            if (group.Items.Count == 1 && group.Items[0].FileCallback == null)
+            if (group.Items.Count == 1 && !group.Items[0].Disabled)
             {
                 group.Items[0].MobileShortcut = true;
             }
@@ -338,6 +342,10 @@
 
     private RenderFragment RenderRibbonShortcutContent(RibbonItem item) => @<text>
         <span class="icon" aria-hidden="true">@((MarkupString)item.IconSvg)</span>
+        @if (item.FileCallback != null)
+        {
+            <InputFile OnChange="@(async (e) => { await item.FileCallback(e); })" multiple style="@FileOverlayInputStyle" />
+        }
     </text>;
 
     private static string GetMobileGroupId(int activeIndex, int groupIndex) => $"{activeIndex}:{groupIndex}";
