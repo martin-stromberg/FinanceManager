@@ -340,7 +340,8 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                     UiRibbonItemSize.Small,
                     Saving || !HasPendingChanges,
                     null,
-                    new Func<Task>(async () => await SaveAllAsync())),
+                    new Func<Task>(async () => await SaveAllAsync()))
+                { MobileShortcut = true },
                 new UiRibbonAction(
                     "Reset",
                     localizer["Ribbon_Reset"].Value,
@@ -348,7 +349,8 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                     UiRibbonItemSize.Small,
                     Saving || !HasPendingChanges,
                     null,
-                    new Func<Task>(() => { ResetAll(); return Task.CompletedTask; })),
+                    new Func<Task>(() => { ResetAll(); return Task.CompletedTask; }))
+                { MobileShortcut = true },
                 new UiRibbonAction(
                     "RebuildAggregates",
                     localizer["Ribbon_RebuildAggregates"].Value,

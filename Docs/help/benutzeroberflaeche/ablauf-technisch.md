@@ -30,9 +30,9 @@ Beteiligte Komponenten:
 
 ### 3. Mobile Ribbon-Shortcuts
 
-`Ribbon` rendert geschlossene mobile Gruppen mit separatem Toggle-Button und optionalen Shortcut-Buttons im Header. Ein Shortcut entsteht entweder aus `UiRibbonAction.MobileShortcut` oder automatisch, wenn eine Gruppe genau eine sichtbare Aktion ohne `FileCallback` enthält. Versteckte Aktionen werden nicht berücksichtigt, deaktivierte Aktionen bleiben als deaktivierte Shortcuts sichtbar.
+`Ribbon` rendert geschlossene mobile Gruppen mit separatem Toggle-Button und optionalen Shortcut-Buttons im Header. Ein Shortcut entsteht entweder aus `UiRibbonAction.MobileShortcut` oder automatisch, wenn eine Gruppe genau eine sichtbare und aktivierte Aktion enthält. Versteckte oder deaktivierte Aktionen werden nicht als Header-Shortcuts berücksichtigt.
 
-Die Shortcut-Buttons nutzen den bestehenden Aktionspfad des Ribbon-Eintrags und stoppen die Klick-Weitergabe, damit der Gruppentoggle nicht ausgelöst wird. Geöffnete mobile Gruppen rendern keine Header-Shortcuts; Dateiaktionen mit `FileCallback` werden nicht als mobile Shortcuts angezeigt.
+Die Shortcut-Buttons nutzen den bestehenden Aktionspfad des Ribbon-Eintrags und stoppen die Klick-Weitergabe, damit der Gruppentoggle nicht ausgelöst wird. Geöffnete mobile Gruppen rendern keine Header-Shortcuts; Dateiaktionen mit `FileCallback` behalten ihr Upload-Overlay auch im kompakten Shortcut.
 
 Beteiligte Komponenten:
 - `FinanceManager.Web/ViewModels/Common/RibbonModels.cs` — transportiert die Shortcut-Markierung über `UiRibbonAction.MobileShortcut`.

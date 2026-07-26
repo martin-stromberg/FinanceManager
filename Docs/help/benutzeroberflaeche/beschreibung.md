@@ -11,7 +11,7 @@ Die Anwendung stellt zentrale Seiten auf kleinen Displays (z. B. Smartphone-Brei
 Das Layout nutzt in `MainLayout` eine mobile Topbar mit Hamburger-Trigger (`aria-label="Menu"`), ein ausklappbares Seitenmenü und eine mobile Overlay-Fläche.  
 Listen, Karten und tabellarische Bereiche werden in responsive Container eingebettet (u. a. `.table-responsive`, `.generic-list-table-wrap`, `.card-view-responsive`).  
 Zusätzlich wurden seitenbezogene Styles für Home, Berichtsdashboard, Berichtsübersicht, Budgetreport, Setup und Wertpapier-Performance für `@media (max-width: 900px)` ergänzt.
-Das Ribbon wird auf mobilen Breiten als Gruppe dargestellt. Geschlossene Gruppen können rechts im Gruppen-Header kompakte Symbol-Shortcuts anzeigen, wenn eine Aktion als mobiler Shortcut vorgesehen ist oder die Gruppe genau eine sichtbare Nicht-Dateiaktion enthält. Diese Shortcuts führen dieselbe Aktion wie der normale Ribbon-Eintrag aus, ohne die Gruppe zu öffnen. Sobald die Gruppe geöffnet ist, werden die Header-Shortcuts ausgeblendet.
+Das Ribbon wird auf mobilen Breiten als Gruppe dargestellt. Geschlossene Gruppen können rechts im Gruppen-Header kompakte Symbol-Shortcuts anzeigen, wenn eine Aktion als mobiler Shortcut vorgesehen ist oder die Gruppe genau eine sichtbare und aktivierte Aktion enthält. Diese Shortcuts führen dieselbe Aktion wie der normale Ribbon-Eintrag aus, ohne die Gruppe zu öffnen. Sobald die Gruppe geöffnet ist, werden die Header-Shortcuts ausgeblendet.
 
 ## Beispiele
 

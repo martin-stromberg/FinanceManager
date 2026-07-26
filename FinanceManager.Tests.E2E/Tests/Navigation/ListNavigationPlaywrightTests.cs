@@ -46,18 +46,23 @@ public sealed class ListNavigationPlaywrightTests
         var page = session.Page;
         await EnsureAuthenticatedAsync(page, "ribbon-shortcut-mobile-user");
 
-        var checks = new[]
+        var checks = new (string Url, string[] ShortcutIds)[]
         {
-            (Url: "/list/accounts", ShortcutId: "New-mobile-shortcut"),
-            (Url: "/list/contacts", ShortcutId: "New-mobile-shortcut"),
-            (Url: "/list/savings-plans", ShortcutId: "New-mobile-shortcut"),
-            (Url: "/list/securities", ShortcutId: "ToggleActive-mobile-shortcut"),
-            (Url: "/card/accounts/new", ShortcutId: "Back-mobile-shortcut")
+            ("/", new[] { "Import-mobile-shortcut" }),
+            ("/list/accounts", new[] { "New-mobile-shortcut" }),
+            ("/list/contacts", new[] { "New-mobile-shortcut" }),
+            ("/list/savings-plans", new[] { "New-mobile-shortcut" }),
+            ("/list/securities", new[] { "New-mobile-shortcut" }),
+            ("/list/statement-drafts", new[] { "New-mobile-shortcut", "MassBooking-mobile-shortcut", "Import-mobile-shortcut" }),
+            ("/card/accounts/new", new[] { "Back-mobile-shortcut" })
         };
 
         foreach (var check in checks)
         {
-            await AssertMobileShortcutVisibleOnlyWhenGroupIsClosedAsync(page, check.Url, check.ShortcutId);
+            foreach (var shortcutId in check.ShortcutIds)
+            {
+                await AssertMobileShortcutVisibleOnlyWhenGroupIsClosedAsync(page, check.Url, shortcutId);
+            }
         }
     }
 

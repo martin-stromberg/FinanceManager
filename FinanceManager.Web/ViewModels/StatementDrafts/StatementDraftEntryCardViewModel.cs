@@ -984,7 +984,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                     }
                 }
                 return Task.CompletedTask;
-            })),
+            })) { MobileShortcut = true },
             new UiRibbonAction("OpenSavingsPlan", localizer["Ribbon_OpenSavingsPlan"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Entry == null || Entry.SavingsPlanId == null, null, new Func<Task>(() => {
                 if (Entry?.SavingsPlanId != null)
                 {
@@ -1003,7 +1003,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                     }
                 }
                 return Task.CompletedTask;
-            })),
+            })) { MobileShortcut = true },
             new UiRibbonAction("OpenSecurity", localizer["Ribbon_OpenSecurity"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Entry == null || Entry.SecurityId == null, null, new Func<Task>(() => {
                  if (Entry?.SecurityId != null)
                  {
@@ -1022,7 +1022,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                      }
                  }
                  return Task.CompletedTask;
-             }))
+             })) { MobileShortcut = true }
         };
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, linkedActions));
 
@@ -1106,7 +1106,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
          }
          else
          {
-             var editAction = new UiRibbonAction("Edit", localizer[_isEditMode ? "Ribbon_ReadOnly" : "Ribbon_Edit"].Value, "<svg><use href='/icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(() => ToggleEditModeAsync()));
+             var editAction = new UiRibbonAction("Edit", localizer[_isEditMode ? "Ribbon_ReadOnly" : "Ribbon_Edit"].Value, "<svg><use href='/icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(() => ToggleEditModeAsync())) { MobileShortcut = true };
             actions.Insert(0, editAction);
             // Delete action
             var delLabel = localizer["Ribbon_Delete"].Value;
