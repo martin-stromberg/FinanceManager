@@ -39,6 +39,48 @@ public sealed class ListNavigationPlaywrightTests
             "Navigated Mobile Account");
     }
 
+    [Fact]
+    public async Task MobileRibbonShortcuts_ShouldShowShortcutOnlyWhenGroupIsClosed_OnRepresentativePages()
+    {
+        await using var session = await _fixture.CreateMobileSessionAsync();
+        var page = session.Page;
+        await EnsureAuthenticatedAsync(page, "ribbon-shortcut-mobile-user");
+
+        var checks = new[]
+        {
+            (Url: "/list/accounts", ShortcutId: "New-mobile-shortcut"),
+            (Url: "/list/contacts", ShortcutId: "New-mobile-shortcut"),
+            (Url: "/list/savings-plans", ShortcutId: "New-mobile-shortcut"),
+            (Url: "/list/securities", ShortcutId: "ToggleActive-mobile-shortcut"),
+            (Url: "/card/accounts/new", ShortcutId: "Back-mobile-shortcut")
+        };
+
+        foreach (var check in checks)
+        {
+            await AssertMobileShortcutVisibleOnlyWhenGroupIsClosedAsync(page, check.Url, check.ShortcutId);
+        }
+    }
+
+    private static async Task AssertMobileShortcutVisibleOnlyWhenGroupIsClosedAsync(
+        IPage page,
+        string url,
+        string shortcutId)
+    {
+        await page.GotoAsync(url);
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var selector = $"#{shortcutId}";
+        var shortcut = page.Locator(selector);
+        await shortcut.WaitForAsync(new() { State = WaitForSelectorState.Visible });
+        (await shortcut.GetAttributeAsync("aria-label")).Should().NotBeNullOrWhiteSpace();
+        (await shortcut.Locator(".text,.text-inline").CountAsync()).Should().Be(0);
+
+        await page.Locator($".fm-ribbon-mobile-group-header:has({selector}) .fm-ribbon-mobile-group-toggle").ClickAsync();
+
+        await page.Locator(selector).WaitForAsync(new() { State = WaitForSelectorState.Detached });
+        (await page.Locator(selector).CountAsync()).Should().Be(0);
+    }
+
     private async Task ClickAccountRowShouldNavigateToDetailPageAsync(
         Func<Task<PlaywrightBrowserSession>> createSessionAsync,
         string userPrefix,

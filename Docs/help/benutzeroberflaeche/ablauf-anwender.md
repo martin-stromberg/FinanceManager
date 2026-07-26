@@ -28,6 +28,8 @@ Tabellen sind so eingebettet, dass bei Bedarf nur der Tabellenbereich horizontal
 Aktionsleisten (Ribbon), Dialoge und Formulare bleiben verfügbar und werden auf kleinen Breiten umgebrochen bzw. gestapelt.  
 Das gilt u. a. für Home, Berichte, Setup und Wertpapier-Performance.
 
+Bei geschlossenen Ribbon-Gruppen können rechts im Gruppen-Header zusätzliche Symbol-Schaltflächen erscheinen. Diese Shortcuts führen die jeweilige Aktion direkt aus, ohne die Gruppe zu öffnen. Wird die Gruppe aufgeklappt, verschwinden die Header-Shortcuts und alle Aktionen stehen wie gewohnt in der geöffneten Gruppe zur Verfügung.
+
 ## Ergebnis
 
 Kernabläufe (Anmeldung, Navigation, Favoriten/Reporting, Import) bleiben auch im mobilen Viewport nutzbar und wurden zusätzlich per E2E geprüft.
