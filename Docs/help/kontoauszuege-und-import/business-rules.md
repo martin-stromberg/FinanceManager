@@ -29,6 +29,25 @@
 
 **Umsetzung:** `SetEntryContactAsync`, `AssignSavingsPlanAsync`, `SetEntrySecurityAsync`, `UpdateEntryCoreAsync`.
 
+## Massenänderungen werden gemeinsam gespeichert
+
+**Beschreibung:** Im Massenänderungsmodus für Kontoauszugsentwürfe können Bearbeitungen, Löschvormerkungen und neue Zeilen in einem gemeinsamen Speichervorgang übernommen werden.
+
+**Bedingungen:**
+- Der Entwurf gehört zum Benutzer.
+- Der Entwurf befindet sich im Entwurfsstatus.
+- Betroffene Bestandszeilen sind editierbar.
+- Neue Zeilen enthalten mindestens Buchungsdatum, Betrag und Verwendungszweck; der Betrag darf nicht `0` sein.
+
+**Verhalten:**
+- Zum Löschen vorgemerkte Zeilen verschwinden sofort aus der Tabelle, werden aber erst beim Speichern gelöscht.
+- Eine leere Eingabezeile am Tabellenende ermöglicht das Erfassen neuer Entwurfszeilen.
+- Abbrechen verwirft lokale Bearbeitungen, Löschvormerkungen und neue noch nicht gespeicherte Zeilen.
+- Speichern übernimmt alle gültigen Änderungen gemeinsam; bei einem Validierungsfehler wird keine Teiländerung übernommen.
+- Bereits gebuchte oder angekündigte Zeilen können im Massenänderungsmodus nicht gelöscht werden.
+
+**Umsetzung:** QuickEdit-Speicherung der Kontoauszugsentwurfszeilen über den erweiterten Batch-Speicherpfad.
+
 ## Sammelauszüge erzeugen mehrere Entwürfe
 
 **Beschreibung:** Wenn ein Import mehrere Auszüge für unterschiedliche IBANs enthält, wird für jede IBAN ein eigener Entwurf erzeugt.

@@ -9,6 +9,7 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 ## Features / Highlights
 
 - Kontoauszüge importieren, klassifizieren und verbuchen (`StatementDraftsController`)
+- Kontoauszugsentwürfe im Massenänderungsmodus bearbeiten, Zeilen zum Löschen vormerken und neue Zeilen ergänzen
 - Konten, Sammelkonten, Kontakte, Sparpläne und Wertpapiere verwalten
 - Berichte, KPI-Dashboards und Budgetauswertungen nutzen
 - Anhänge und Sicherungen (Backup/Restore) verwalten
@@ -37,7 +38,7 @@ Hinweise:
 
 - Web-App starten: `dotnet run --project FinanceManager.Web`
 - Anmelden/Registrieren über die UI
-- Typischer Flow: Import (`/api/statement-drafts/upload` oder `mass-import`) → Klassifizieren → Buchen → Reporting
+- Typischer Flow: Import (`/api/statement-drafts/upload` oder `mass-import`) → Klassifizieren → optional im Massenänderungsmodus nachbearbeiten → Buchen → Reporting
 
 ## Konfiguration
 

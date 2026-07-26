@@ -20,7 +20,19 @@ Kontrollieren Sie die vorgeschlagenen Zuordnungen (Kontakt, Sparplan, Wertpapier
 
 > **Hinweis:** Bei Warnungen zuerst die betroffenen Zeilen bearbeiten.
 
-### 3. Verbuchen
+### 3. Mehrere Zeilen gemeinsam bearbeiten
+
+Aktivieren Sie bei Bedarf den Massenänderungsmodus für die Entwurfszeilen.
+
+- Bearbeiten Sie bestehende editierbare Zeilen direkt in der Tabelle.
+- Löschen Sie editierbare Zeilen über die Zeilenaktion. Die Zeile verschwindet sofort aus der Tabelle, wird aber erst beim Speichern tatsächlich gelöscht.
+- Erfassen Sie neue Zeilen über die leere Eingabezeile am Tabellenende. Nach einer Eingabe wird automatisch wieder eine neue leere Zeile bereitgestellt.
+
+Speichern Sie die Massenänderung, um Bearbeitungen, Löschungen und neue Zeilen gemeinsam zu übernehmen. Brechen Sie den Massenänderungsmodus ab, um alle noch nicht gespeicherten Änderungen zu verwerfen.
+
+> **Hinweis:** Bereits gebuchte oder angekündigte Zeilen können im Massenänderungsmodus nicht gelöscht werden.
+
+### 4. Verbuchen
 
 Starten Sie die Verbuchung für den gesamten Entwurf oder einzelne Zeilen.
 

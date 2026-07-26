@@ -14,7 +14,11 @@ internal sealed class StatementDraftEntryItem : IListItemNavigation
     public string? Subject { get; set; }
     public string? BookingDescription { get; set; }
     public StatementDraftEntryStatus Status { get; set; }
+    public bool IsAnnounced { get; set; }
     public BudgetImpactEvaluationDto? BudgetImpact { get; set; }
+    public bool IsNew { get; set; }
+    public bool IsPlaceholder { get; set; }
+    public bool CanDelete { get; set; }
 
     public string GetNavigateUrl() => $"/card/statement-drafts/entries/{Id}?draftId={DraftId}";
 }

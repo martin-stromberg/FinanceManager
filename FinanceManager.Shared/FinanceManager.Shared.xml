@@ -5567,6 +5567,12 @@
         <member name="P:FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto.Updates">
             <summary>List of entry updates to apply.</summary>
         </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto.Deletes">
+            <summary>Persisted entry identifiers to delete.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto.Creates">
+            <summary>New entries to create during the same quick-edit save.</summary>
+        </member>
         <member name="T:FinanceManager.Shared.Dtos.Statements.EntryUpdateDto">
             <summary>Update for a single entry.</summary>
         </member>
@@ -5575,6 +5581,30 @@
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Statements.EntryUpdateDto.Fields">
             <summary>Field key -> value mapping for changed fields.</summary>
+        </member>
+        <member name="T:FinanceManager.Shared.Dtos.Statements.EntryCreateDto">
+            <summary>Create request for a local quick-edit entry.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.EntryCreateDto.ClientId">
+            <summary>Client-side identifier used to map validation errors before persistence.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.EntryCreateDto.BookingDate">
+            <summary>Required booking date.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.EntryCreateDto.ValutaDate">
+            <summary>Optional valuta date.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.EntryCreateDto.Amount">
+            <summary>Required amount. Must not be zero.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.EntryCreateDto.Subject">
+            <summary>Required subject.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.EntryCreateDto.BookingDescription">
+            <summary>Optional booking description.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.EntryCreateDto.RecipientName">
+            <summary>Optional recipient name.</summary>
         </member>
         <member name="T:FinanceManager.Shared.Dtos.Statements.BatchUpdateSuccessResponseDto">
             <summary>Success response for batch update.</summary>
@@ -5598,7 +5628,10 @@
             <summary>Errors for a single entry.</summary>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Statements.EntryErrorDto.EntryId">
-            <summary>Entry identifier the errors belong to.</summary>
+            <summary>Persisted entry identifier the errors belong to.</summary>
+        </member>
+        <member name="P:FinanceManager.Shared.Dtos.Statements.EntryErrorDto.ClientId">
+            <summary>Client-side identifier for errors on new local rows.</summary>
         </member>
         <member name="P:FinanceManager.Shared.Dtos.Statements.EntryErrorDto.FieldErrors">
             <summary>Field-level errors for this entry.</summary>

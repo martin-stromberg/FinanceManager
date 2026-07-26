@@ -193,6 +193,142 @@ public sealed class StatementDraftServiceTests
     }
 
     [Fact]
+    public async Task ApplyBatchEntryUpdatesAsync_ShouldApplyUpdatesDeletesAndCreates_WhenValid()
+    {
+        var (sut, db, owner) = Create();
+        var draft = await sut.CreateEmptyDraftAsync(owner, "file.csv", CancellationToken.None);
+        Assert.NotNull(draft);
+        var withFirst = await sut.AddEntryAsync(draft!.DraftId, owner, DateTime.Today, 10m, "First", CancellationToken.None);
+        Assert.NotNull(withFirst);
+        var withSecond = await sut.AddEntryAsync(draft.DraftId, owner, DateTime.Today.AddDays(1), 20m, "Second", CancellationToken.None);
+        Assert.NotNull(withSecond);
+        var first = withSecond!.Entries.Single(e => e.Subject == "First");
+        var second = withSecond.Entries.Single(e => e.Subject == "Second");
+
+        var clientId = Guid.NewGuid();
+        var req = new FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto();
+        req.Updates.Add(new FinanceManager.Shared.Dtos.Statements.EntryUpdateDto
+        {
+            EntryId = first.Id,
+            Fields = new Dictionary<string, object?> { ["Subject"] = "Updated first", ["Amount"] = 15m }
+        });
+        req.Deletes.Add(second.Id);
+        req.Creates.Add(new FinanceManager.Shared.Dtos.Statements.EntryCreateDto
+        {
+            ClientId = clientId,
+            BookingDate = DateTime.Today.AddDays(2),
+            ValutaDate = DateTime.Today.AddDays(3),
+            Amount = 30m,
+            Subject = "Created",
+            BookingDescription = "Created description",
+            RecipientName = "Recipient"
+        });
+
+        var result = await sut.ApplyBatchEntryUpdatesAsync(draft.DraftId, owner, req, CancellationToken.None);
+
+        Assert.True(result.Success);
+        var updated = await sut.GetDraftAsync(draft.DraftId, owner, CancellationToken.None);
+        Assert.NotNull(updated);
+        Assert.Contains(updated!.Entries, e => e.Id == first.Id && e.Subject == "Updated first" && e.Amount == 15m);
+        Assert.DoesNotContain(updated.Entries, e => e.Id == second.Id);
+        Assert.Contains(updated.Entries, e => e.Subject == "Created" && e.Amount == 30m && e.ValutaDate == DateTime.Today.AddDays(3));
+    }
+
+    [Fact]
+    public async Task ApplyBatchEntryUpdatesAsync_ShouldNotPersistAnyChanges_WhenCreateIsInvalid()
+    {
+        var (sut, db, owner) = Create();
+        var draft = await sut.CreateEmptyDraftAsync(owner, "file.csv", CancellationToken.None);
+        Assert.NotNull(draft);
+        var withFirst = await sut.AddEntryAsync(draft!.DraftId, owner, DateTime.Today, 10m, "First", CancellationToken.None);
+        Assert.NotNull(withFirst);
+        var withSecond = await sut.AddEntryAsync(draft.DraftId, owner, DateTime.Today.AddDays(1), 20m, "Second", CancellationToken.None);
+        Assert.NotNull(withSecond);
+        var first = withSecond!.Entries.Single(e => e.Subject == "First");
+        var second = withSecond.Entries.Single(e => e.Subject == "Second");
+
+        var req = new FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto();
+        req.Updates.Add(new FinanceManager.Shared.Dtos.Statements.EntryUpdateDto
+        {
+            EntryId = first.Id,
+            Fields = new Dictionary<string, object?> { ["Subject"] = "Should not persist" }
+        });
+        req.Deletes.Add(second.Id);
+        req.Creates.Add(new FinanceManager.Shared.Dtos.Statements.EntryCreateDto
+        {
+            ClientId = Guid.NewGuid(),
+            BookingDate = DateTime.Today,
+            Amount = 0m,
+            Subject = "Invalid"
+        });
+
+        var result = await sut.ApplyBatchEntryUpdatesAsync(draft.DraftId, owner, req, CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.NotNull(result.ErrorResponse);
+        var unchanged = await sut.GetDraftAsync(draft.DraftId, owner, CancellationToken.None);
+        Assert.NotNull(unchanged);
+        Assert.Contains(unchanged!.Entries, e => e.Id == first.Id && e.Subject == "First");
+        Assert.Contains(unchanged.Entries, e => e.Id == second.Id && e.Subject == "Second");
+        Assert.DoesNotContain(unchanged.Entries, e => e.Subject == "Should not persist");
+    }
+
+    [Fact]
+    public async Task ApplyBatchEntryUpdatesAsync_ShouldRejectDeleteForAnnouncedEntries()
+    {
+        var (sut, db, owner) = Create();
+        var draft = new FinanceManager.Domain.Statements.StatementDraft(owner, "file.csv", null, null);
+        var entry = draft.AddEntry(DateTime.Today, 10m, "Announced", null, null, null, null, isAnnounced: true);
+        db.StatementDrafts.Add(draft);
+        db.SaveChanges();
+
+        var req = new FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto();
+        req.Deletes.Add(entry.Id);
+
+        var result = await sut.ApplyBatchEntryUpdatesAsync(draft.Id, owner, req, CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.NotNull(result.ErrorResponse);
+        Assert.Contains(result.ErrorResponse!.Errors, e => e.EntryId == entry.Id);
+        var unchanged = await sut.GetDraftAsync(draft.Id, owner, CancellationToken.None);
+        Assert.Contains(unchanged!.Entries, e => e.Id == entry.Id);
+    }
+
+    [Fact]
+    public async Task ApplyBatchEntryUpdatesAsync_ShouldNotApplyStatusLogic_WhenStatusFieldIsNotProvided()
+    {
+        var (sut, db, owner) = Create();
+        var draft = new FinanceManager.Domain.Statements.StatementDraft(owner, "file.csv", null, null);
+        var entry = draft.AddEntry(
+            DateTime.Today,
+            10m,
+            "Announced",
+            null,
+            null,
+            null,
+            null,
+            isAnnounced: true,
+            isCostNeutral: true);
+        db.StatementDrafts.Add(draft);
+        db.SaveChanges();
+
+        var req = new FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto();
+        req.Updates.Add(new FinanceManager.Shared.Dtos.Statements.EntryUpdateDto
+        {
+            EntryId = entry.Id,
+            Fields = new Dictionary<string, object?> { ["Subject"] = "Updated announced" }
+        });
+
+        var result = await sut.ApplyBatchEntryUpdatesAsync(draft.Id, owner, req, CancellationToken.None);
+
+        Assert.True(result.Success);
+        var unchangedStatusEntry = await db.StatementDraftEntries.SingleAsync(e => e.Id == entry.Id);
+        Assert.Equal(FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus.Announced, unchangedStatusEntry.Status);
+        Assert.True(unchangedStatusEntry.IsCostNeutral);
+        Assert.Equal("Updated announced", unchangedStatusEntry.Subject);
+    }
+
+    [Fact]
     public async Task CreateDraftAsync_ShouldHaveNullDetectedAccount_WhenNoAccounts()
     {
         var (sut, _, owner) = Create();

@@ -2621,6 +2621,16 @@
             List of entry updates to apply.
             </summary>
         </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.BatchUpdateRequestDto.Deletes">
+            <summary>
+            Persisted entry identifiers to delete.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.BatchUpdateRequestDto.Creates">
+            <summary>
+            New entries to create during the same quick-edit save.
+            </summary>
+        </member>
         <member name="T:FinanceManager.Application.Statements.Dtos.EntryUpdateDto">
             <summary>
             Represents an update for a single draft entry.
@@ -2634,6 +2644,46 @@
         <member name="P:FinanceManager.Application.Statements.Dtos.EntryUpdateDto.Fields">
             <summary>
             Mapping of field key to new value. Unknown keys are ignored by the service.
+            </summary>
+        </member>
+        <member name="T:FinanceManager.Application.Statements.Dtos.EntryCreateDto">
+            <summary>
+            Represents a local quick-edit row that should be created when the batch is saved.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.EntryCreateDto.ClientId">
+            <summary>
+            Client-side identifier used to map validation errors before persistence.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.EntryCreateDto.BookingDate">
+            <summary>
+            Required booking date.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.EntryCreateDto.ValutaDate">
+            <summary>
+            Optional valuta date.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.EntryCreateDto.Amount">
+            <summary>
+            Required amount. Must not be zero.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.EntryCreateDto.Subject">
+            <summary>
+            Required subject.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.EntryCreateDto.BookingDescription">
+            <summary>
+            Optional booking description.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.EntryCreateDto.RecipientName">
+            <summary>
+            Optional recipient name.
             </summary>
         </member>
         <member name="T:FinanceManager.Application.Statements.Dtos.BatchUpdateSuccessResponseDto">
@@ -2673,7 +2723,12 @@
         </member>
         <member name="P:FinanceManager.Application.Statements.Dtos.EntryErrorDto.EntryId">
             <summary>
-            Entry identifier the errors belong to.
+            Persisted entry identifier the errors belong to.
+            </summary>
+        </member>
+        <member name="P:FinanceManager.Application.Statements.Dtos.EntryErrorDto.ClientId">
+            <summary>
+            Client-side identifier for errors on new local rows.
             </summary>
         </member>
         <member name="P:FinanceManager.Application.Statements.Dtos.EntryErrorDto.FieldErrors">

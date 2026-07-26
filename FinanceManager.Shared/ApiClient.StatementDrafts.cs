@@ -175,10 +175,12 @@ public partial class ApiClient
         // "Invalid date format" errors for boxed DateTime values inside the
         // generic Fields dictionary, convert DateTime/DateTimeOffset values to
         // a stable date-only string (ISO yyyy-MM-dd) before serialization.
-        var sanitized = new FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto();
+        static string FormatDate(DateTime value)
+            => value.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+        var sanitizedUpdates = new System.Collections.Generic.List<FinanceManager.Shared.Dtos.Statements.EntryUpdateDto>();
         if (req?.Updates != null)
         {
-            sanitized.Updates = new System.Collections.Generic.List<FinanceManager.Shared.Dtos.Statements.EntryUpdateDto>();
             foreach (var u in req.Updates)
             {
                 var nu = new FinanceManager.Shared.Dtos.Statements.EntryUpdateDto { EntryId = u.EntryId, Fields = new System.Collections.Generic.Dictionary<string, object?>(StringComparer.Ordinal) };
@@ -188,7 +190,7 @@ public partial class ApiClient
                     {
                         if (kv.Value is DateTime dt)
                         {
-                            nu.Fields[kv.Key] = dt.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                            nu.Fields[kv.Key] = FormatDate(dt);
                         }
                         else if (kv.Value is DateTimeOffset dto)
                         {
@@ -200,12 +202,29 @@ public partial class ApiClient
                         }
                     }
                 }
-                sanitized.Updates.Add(nu);
+                sanitizedUpdates.Add(nu);
             }
         }
 
+        var creates = req?.Creates ?? new System.Collections.Generic.List<FinanceManager.Shared.Dtos.Statements.EntryCreateDto>();
+        var payload = new
+        {
+            Updates = sanitizedUpdates,
+            Deletes = req?.Deletes != null ? new System.Collections.Generic.List<Guid>(req.Deletes) : new System.Collections.Generic.List<Guid>(),
+            Creates = creates.Select(c => new
+            {
+                c.ClientId,
+                BookingDate = FormatDate(c.BookingDate),
+                ValutaDate = c.ValutaDate.HasValue ? FormatDate(c.ValutaDate.Value) : null,
+                c.Amount,
+                c.Subject,
+                c.BookingDescription,
+                c.RecipientName
+            }).ToList()
+        };
+
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        using var content = new StringContent(JsonSerializer.Serialize(sanitized, options), System.Text.Encoding.UTF8, "application/json");
+        using var content = new StringContent(JsonSerializer.Serialize(payload, options), System.Text.Encoding.UTF8, "application/json");
         var resp = await _http.PostAsync($"/api/statement-drafts/{draftId}/entries/batch-update", content, ct);
         if (resp.IsSuccessStatusCode)
         {

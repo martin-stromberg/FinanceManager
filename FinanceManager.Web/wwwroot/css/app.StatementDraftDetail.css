@@ -1,5 +1,5 @@
 /* =====================================================
-   app.StatementDraftDetail.css - Allgemeingültige StatementDraftDetail Styles
+   app.StatementDraftDetail.css - Allgemeingï¿½ltige StatementDraftDetail Styles
    ===================================================== */
 
 .draft-entries-container {
@@ -32,6 +32,14 @@
 .entry-row { cursor: pointer; }
 .row-booked { opacity: .55; }
 .row-announced { opacity: .55; }
+.quick-edit-new-row td {
+    background-color: color-mix(in srgb, var(--accent, #2f7d57) 8%, transparent);
+}
+
+.quick-edit-placeholder-row td {
+    background-color: color-mix(in srgb, var(--border, #d6d6d6) 16%, transparent);
+    opacity: .72;
+}
 
 .split-icon { width: 1rem; height: 1rem; }
 

@@ -924,6 +924,9 @@
   <data name="Ribbon_ResetDuplicate" xml:space="preserve">
     <value>Duplikatstatus zurücksetzen</value>
   </data>
+  <data name="QuickEdit_DeleteRow" xml:space="preserve">
+    <value>Zeile loeschen</value>
+  </data>
   <data name="Ribbon_Add" xml:space="preserve">
     <value>Hinzufügen</value>
   </data>

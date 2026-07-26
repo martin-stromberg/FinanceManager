@@ -46,6 +46,12 @@
         vm?.ResetRow(id);
     }
 
+    private void DeleteRow(Guid id)
+    {
+        var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
+        vm?.MarkRowForDeletion(id);
+    }
+
     private void OnValutaChanged(ChangeEventArgs e, Guid id)
     {
         var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
@@ -178,16 +184,18 @@ else
         <tbody>
             @{
                 var renderedCols = 8; // BookingDate, Valuta, Amount, BookingDescription, Recipient, Purpose, Status, Actions
+                var visibleItems = vm.IsQuickEditActive ? vm.VisibleQuickEditItems : vm.Items;
             }
-            @for (int idx = 0; idx < vm.Items.Count; idx++)
+            @for (int idx = 0; idx < visibleItems.Count; idx++)
             {
-                var item = vm.Items[idx];
+                var item = visibleItems[idx];
                 var rec = records.FirstOrDefault(r => (r.Item as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntryItem)?.Id == item.Id);
                 var editable = vm.IsRowEditable(item);
                 var isMuted = item.Status == FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus.AlreadyBooked;
                 var rowStyle = isMuted ? "cursor:pointer;opacity:.6;" : "cursor:pointer;";
+                var rowClass = item.IsPlaceholder ? "quick-edit-placeholder-row" : isMuted ? "muted-row" : item.IsNew ? "quick-edit-new-row" : null;
 
-                <tr @key="item.Id" class="@(isMuted ? "muted-row" : null)" style="@rowStyle">
+                <tr @key="item.Id" class="@rowClass" style="@rowStyle">
                     @* Booking date *@
                     <td style="text-align:left;vertical-align:middle;">
                         @if (editable)
@@ -284,9 +292,16 @@ else
                     </td>
 
                     <td style="vertical-align:middle;display:flex;gap:.25rem;align-items:center;">
-                        @if (editable)
+                        @if (editable && !item.IsPlaceholder)
                         {
                             <button type="button" class="btn btn-sm btn-outline-secondary" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="() => ResetRow(item.Id)">@(localizer != null ? localizer["Ribbon_Reset"].Value : "Reset")</button>
+                        }
+                        @if (vm.CanDeleteRow(item))
+                        {
+                            var deleteLabel = localizer != null ? (localizer["QuickEdit_DeleteRow"].ResourceNotFound ? "Delete row" : localizer["QuickEdit_DeleteRow"].Value) : "Delete row";
+                            <button type="button" class="btn btn-sm btn-outline-danger icon-button" title="@deleteLabel" aria-label="@deleteLabel" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="() => DeleteRow(item.Id)">
+                                <svg aria-hidden="true"><use href="/icons/sprite.svg#delete"></use></svg>
+                            </button>
                         }
                         @* Show Reset Dup only for items marked as AlreadyBooked (duplicate) *@
                         @if (isMuted)
