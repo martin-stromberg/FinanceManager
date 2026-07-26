@@ -9,6 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="updates\settings.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="updates\status.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
     <None Include="wwwroot\css\app.SetupNotificationsTab.css" />
     <Content Update="Data\KnownContacts.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
@@ -19,6 +25,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Remove="updates\settings.json" />
+    <Content Remove="updates\status.json" />
     <Content Remove="wwwroot\help\de\f004b.html" />
     <Content Remove="wwwroot\help\en\f004b.html" />
   </ItemGroup>
