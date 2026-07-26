@@ -329,6 +329,45 @@ public sealed class StatementDraftServiceTests
     }
 
     [Fact]
+    public async Task ApplyBatchEntryUpdatesAsync_ShouldAllowAlreadyBookedResetWithFieldUpdates()
+    {
+        var (sut, db, owner) = Create();
+        var draft = new FinanceManager.Domain.Statements.StatementDraft(owner, "file.csv", null, null);
+        var entry = draft.AddEntry(
+            DateTime.Today,
+            10m,
+            "Duplicate",
+            null,
+            null,
+            null,
+            null,
+            isAnnounced: false);
+        entry.MarkAlreadyBooked();
+        db.StatementDrafts.Add(draft);
+        db.SaveChanges();
+
+        var req = new FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto();
+        req.Updates.Add(new FinanceManager.Shared.Dtos.Statements.EntryUpdateDto
+        {
+            EntryId = entry.Id,
+            Fields = new Dictionary<string, object?>
+            {
+                ["Status"] = FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus.Open,
+                ["Subject"] = "Corrected duplicate",
+                ["Amount"] = 12.5m
+            }
+        });
+
+        var result = await sut.ApplyBatchEntryUpdatesAsync(draft.Id, owner, req, CancellationToken.None);
+
+        Assert.True(result.Success);
+        var updatedEntry = await db.StatementDraftEntries.SingleAsync(e => e.Id == entry.Id);
+        Assert.Equal(FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus.Open, updatedEntry.Status);
+        Assert.Equal("Corrected duplicate", updatedEntry.Subject);
+        Assert.Equal(12.5m, updatedEntry.Amount);
+    }
+
+    [Fact]
     public async Task CreateDraftAsync_ShouldHaveNullDetectedAccount_WhenNoAccounts()
     {
         var (sut, _, owner) = Create();

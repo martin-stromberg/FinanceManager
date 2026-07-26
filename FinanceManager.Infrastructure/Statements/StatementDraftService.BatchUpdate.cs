@@ -112,12 +112,6 @@ public sealed partial class StatementDraftService
                 continue;
             }
 
-            var nonStatusFields = upd.Fields?.Keys.Where(k => !string.Equals(k, "Status", StringComparison.Ordinal)).ToList() ?? new List<string>();
-            if (entry.Status == StatementDraftEntryStatus.AlreadyBooked && nonStatusFields.Count > 0)
-            {
-                entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = string.Empty, Message = "Entry is not editable" });
-            }
-
             // start from current values
             DateTime newBooking = entry.BookingDate;
             DateTime? newValuta = entry.ValutaDate;
@@ -335,6 +329,14 @@ public sealed partial class StatementDraftService
                         _logger?.Log(LogLevel.Debug, "Ignoring unknown field '{Field}' in batch update for entry {EntryId}", key, upd.EntryId);
                         break;
                 }
+            }
+
+            var nonStatusFields = upd.Fields?.Keys.Where(k => !string.Equals(k, "Status", StringComparison.Ordinal)).ToList() ?? new List<string>();
+            if (entry.Status == StatementDraftEntryStatus.AlreadyBooked
+                && nonStatusFields.Count > 0
+                && newStatus != StatementDraftEntryStatus.Open)
+            {
+                entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = string.Empty, Message = "Entry is not editable" });
             }
 
             if (entryErrors.Count > 0)

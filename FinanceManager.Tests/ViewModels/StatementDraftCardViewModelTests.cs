@@ -319,4 +319,26 @@ public sealed class StatementDraftCardViewModelTests
         Assert.Empty(vm.CollectQuickEditSaveRequest().Deletes);
         Assert.Contains(vm.VisibleQuickEditItems, i => i.Id == entryId);
     }
+
+    [Fact]
+    public async Task ResetDuplicateQuickEdit_CollectsStatusResetWithFieldUpdates()
+    {
+        var entryId = Guid.NewGuid();
+        var vm = CreateEntriesVm(new[] { Entry(entryId, status: StatementDraftEntryStatus.AlreadyBooked) }, out _);
+        await vm.InitializeAsync();
+        await vm.BeginQuickEditAsync();
+        var entry = vm.Items.Single(i => i.Id == entryId);
+
+        Assert.False(vm.IsRowEditable(entry));
+
+        vm.SetEditValue(entryId, "Status", StatementDraftEntryStatus.Open);
+        vm.SetEditValue(entryId, "Subject", "Corrected duplicate");
+
+        Assert.True(vm.IsRowEditable(entry));
+        var request = vm.CollectQuickEditSaveRequest();
+        var update = Assert.Single(request.Updates);
+        Assert.Equal(entryId, update.EntryId);
+        Assert.Equal(StatementDraftEntryStatus.Open, update.Fields["Status"]);
+        Assert.Equal("Corrected duplicate", update.Fields["Subject"]);
+    }
 }
