@@ -12,6 +12,16 @@ namespace FinanceManager.Application.Statements.Dtos
         /// List of entry updates to apply.
         /// </summary>
         public List<EntryUpdateDto> Updates { get; set; } = new();
+
+        /// <summary>
+        /// Persisted entry identifiers to delete.
+        /// </summary>
+        public List<Guid> Deletes { get; set; } = new();
+
+        /// <summary>
+        /// New entries to create during the same quick-edit save.
+        /// </summary>
+        public List<EntryCreateDto> Creates { get; set; } = new();
     }
 
     /// <summary>
@@ -28,6 +38,47 @@ namespace FinanceManager.Application.Statements.Dtos
         /// Mapping of field key to new value. Unknown keys are ignored by the service.
         /// </summary>
         public Dictionary<string, object?> Fields { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Represents a local quick-edit row that should be created when the batch is saved.
+    /// </summary>
+    public sealed class EntryCreateDto
+    {
+        /// <summary>
+        /// Client-side identifier used to map validation errors before persistence.
+        /// </summary>
+        public Guid ClientId { get; set; }
+
+        /// <summary>
+        /// Required booking date.
+        /// </summary>
+        public DateTime BookingDate { get; set; }
+
+        /// <summary>
+        /// Optional valuta date.
+        /// </summary>
+        public DateTime? ValutaDate { get; set; }
+
+        /// <summary>
+        /// Required amount. Must not be zero.
+        /// </summary>
+        public decimal Amount { get; set; }
+
+        /// <summary>
+        /// Required subject.
+        /// </summary>
+        public string Subject { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Optional booking description.
+        /// </summary>
+        public string? BookingDescription { get; set; }
+
+        /// <summary>
+        /// Optional recipient name.
+        /// </summary>
+        public string? RecipientName { get; set; }
     }
 
     /// <summary>
@@ -68,9 +119,14 @@ namespace FinanceManager.Application.Statements.Dtos
     public sealed class EntryErrorDto
     {
         /// <summary>
-        /// Entry identifier the errors belong to.
+        /// Persisted entry identifier the errors belong to.
         /// </summary>
-        public Guid EntryId { get; set; }
+        public Guid? EntryId { get; set; }
+
+        /// <summary>
+        /// Client-side identifier for errors on new local rows.
+        /// </summary>
+        public Guid? ClientId { get; set; }
 
         /// <summary>
         /// List of field-level errors.

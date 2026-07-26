@@ -1,0 +1,69 @@
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using FinanceManager.Shared;
+using FinanceManager.Shared.Dtos.Statements;
+
+namespace FinanceManager.UnitTests.Http;
+
+public sealed class ApiClientStatementDraftsBatchUpdateTests
+{
+    [Fact]
+    public async Task StatementDrafts_BatchUpdateDetailedAsync_ShouldSerializeCreateDatesAsDateOnlyStrings()
+    {
+        string? capturedBody = null;
+        var api = CreateApiClient(request =>
+        {
+            capturedBody = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{}", Encoding.UTF8, "application/json")
+            };
+        });
+        var createClientId = Guid.NewGuid();
+        var deleteId = Guid.NewGuid();
+        var request = new BatchUpdateRequestDto();
+        request.Deletes.Add(deleteId);
+        request.Creates.Add(new EntryCreateDto
+        {
+            ClientId = createClientId,
+            BookingDate = new DateTime(2026, 7, 21, 14, 15, 16),
+            ValutaDate = new DateTime(2026, 7, 22, 9, 8, 7),
+            Amount = 19.95m,
+            Subject = "Created",
+            BookingDescription = "Description",
+            RecipientName = "Recipient"
+        });
+
+        await api.StatementDrafts_BatchUpdateDetailedAsync(Guid.NewGuid(), request);
+
+        Assert.NotNull(capturedBody);
+        using var document = JsonDocument.Parse(capturedBody!);
+        var root = document.RootElement;
+        var create = root.GetProperty("creates")[0];
+        Assert.Equal(createClientId, create.GetProperty("clientId").GetGuid());
+        Assert.Equal("2026-07-21", create.GetProperty("bookingDate").GetString());
+        Assert.Equal("2026-07-22", create.GetProperty("valutaDate").GetString());
+        Assert.DoesNotContain("T14:15:16", capturedBody);
+        Assert.Equal(deleteId, root.GetProperty("deletes")[0].GetGuid());
+    }
+
+    private static ApiClient CreateApiClient(Func<HttpRequestMessage, HttpResponseMessage> responder)
+    {
+        var http = new HttpClient(new DelegateHandler(responder)) { BaseAddress = new Uri("http://localhost") };
+        return new ApiClient(http);
+    }
+
+    private sealed class DelegateHandler : HttpMessageHandler
+    {
+        private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder;
+
+        public DelegateHandler(Func<HttpRequestMessage, HttpResponseMessage> responder)
+        {
+            _responder = responder;
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            => Task.FromResult(_responder(request));
+    }
+}

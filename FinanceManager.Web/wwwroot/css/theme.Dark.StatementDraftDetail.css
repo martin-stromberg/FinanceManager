@@ -1,5 +1,5 @@
 /* =====================================================
-   theme.Dark.StatementDraftDetail.css - Dark Theme für StatementDraftDetail
+   theme.Dark.StatementDraftDetail.css - Dark Theme fï¿½r StatementDraftDetail
    ===================================================== */
 
 .fm-table tr[style*="opacity:.55"] td {
@@ -8,6 +8,14 @@
 
 .row-booked { background: #141414; }
 .row-announced { background: #131313; }
+.quick-edit-new-row td {
+    background-color: rgba(84, 160, 120, .12);
+}
+
+.quick-edit-placeholder-row td {
+    background-color: rgba(255, 255, 255, .05);
+    color: var(--muted);
+}
 
 .entity-symbol {
     border: 1px solid var(--border);
