@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using FinanceManager.Shared.Dtos.Update;
+using FinanceManager.Tests.TestHelpers;
 using FinanceManager.Web.Services.Updates;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
@@ -214,7 +215,8 @@ public sealed class UpdateOrchestratorTests
                 fileStore,
                 new TestValidator(),
                 executor,
-                Options.Create(options));
+                Options.Create(options),
+                TestLoggerHelper.CreateLogger<UpdateOrchestrator>());
             return new TestContext(root, fileStore, executor, manifestClient, orchestrator);
         }
 

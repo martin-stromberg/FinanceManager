@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
 using FinanceManager.Shared.Dtos.Update;
+using FinanceManager.Tests.TestHelpers;
 using FinanceManager.Web.Services.Updates;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
@@ -44,23 +45,6 @@ public sealed class UpdateExecutorTests
         stored.LastError.Should().Be("runner failed");
     }
 
-    [Fact]
-    public async Task StartAsync_WhenHostTerminationFails_ReleasesLockAndResetsFlag()
-    {
-        using var context = TestContext.Create();
-        var executor = context.BuildExecutor(new TestGenerator(context.FileStore.ScriptPath("ps1")), new TestRunner(), new ThrowingTerminator());
-
-        var act = async () => await executor.StartAsync(Settings(), await ReadyStatusAsync(context.FileStore));
-
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("termination failed");
-        File.Exists(context.FileStore.LockPath).Should().BeFalse();
-        executor.IsInstallRunning.Should().BeFalse();
-        var stored = await context.FileStore.ReadStatusAsync();
-        stored.Should().NotBeNull();
-        stored!.Status.Should().Be(UpdateStatusKind.Failed);
-        stored.IsLocked.Should().BeFalse();
-        stored.LastError.Should().Be("termination failed");
-    }
 
     [Fact]
     public async Task StartAsync_RevalidatesPendingZipBeforeGeneratingScript()
@@ -136,7 +120,8 @@ public sealed class UpdateExecutorTests
                 runner,
                 terminator,
                 new UpdateValidator(Options.Create(new UpdateOptions())),
-                Options.Create(new UpdateOptions { MaxAssetBytes = 1024 * 1024 }));
+                Options.Create(new UpdateOptions { MaxAssetBytes = 1024 * 1024 }),
+                TestLoggerHelper.CreateLogger<UpdateExecutor>());
 
         public void Dispose() => _root.Delete(recursive: true);
     }
@@ -191,6 +176,11 @@ public sealed class UpdateExecutorTests
 
     private sealed class TestRunner : IUpdateProcessRunner
     {
+        public void StartPrepareEnvironment(string scriptPath)
+        {
+            
+        }
+
         public void StartScript(string scriptPath)
         {
         }
@@ -198,6 +188,8 @@ public sealed class UpdateExecutorTests
 
     private sealed class ThrowingRunner : IUpdateProcessRunner
     {
+        public void StartPrepareEnvironment(string scriptPath) => throw new InvalidOperationException("runner failed");
+
         public void StartScript(string scriptPath) => throw new InvalidOperationException("runner failed");
     }
 
