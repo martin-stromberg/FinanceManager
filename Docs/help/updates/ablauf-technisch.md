@@ -4,13 +4,13 @@
 
 ## Übersicht
 
-Das Update-System prüft GitHub-Releases regelmäßig ab, lädt neue Versionen herunter und orchestriert die Installation durch einen eigenständigen Installer-Prozess. Nach Prozessbeendigung validiert das System, dass die neue Version tatsächlich geladen wurde. Lock-Dateien verhindern gleichzeitige Installationen; bei Fehlern werden Locks automatisch bereinigt.
+Das Update-System prüft GitHub-Releases regelmäßig, lädt neue Versionen herunter und orchestriert die Installation über einen eigenständigen Installer-Prozess. Die Installation wird nicht vom Host-Prozess selbst durchgeführt, sondern über eine transient service unit, die mittels systemd-run gestartet wird. Dadurch kann der Host-Prozess sich selbst beenden, während das Installer-Skript unabhängig weiterläuft. Nach dem Neustart validiert das System, ob die neue Version erfolgreich geladen wurde. Lock-Dateien verhindern parallele Installationen; bei Fehlern werden Locks automatisch bereinigt.
 
 ## Ablauf
 
 ### 1. Automatische Prüfung (CheckAsync)
 
-**Voraussetzung:** Update-Service ist aktiviert und Prüf-Intervall ist abgelaufen
+**Voraussetzung:** Update-Service ist aktiviert und das Prüfintervall ist abgelaufen.
 
 **Beteiligte Komponenten:**
 - `UpdateOrchestrator.CheckAsync()` — Einstiegspunkt der Prüfung
@@ -58,7 +58,7 @@ Das Update-System prüft GitHub-Releases regelmäßig ab, lädt neue Versionen h
    - Skript schreibt Zielversion in Metadaten, führt `dotnet publish` / `unzip` durch, startet Dienst neu, löscht Lock-Datei
    - Status auf `Installing` setzen
    - Prozess starten (PowerShell oder Bash)
-   - Host-Anwendung beenden
+      Bash unter Linux: Der Installer-Prozess wird über systemd-run gestartet. Dabei wird eine transient service unit erzeugt, die das Skript ausführt. Der Host-Prozess bleibt nicht aktiv beteiligt.
 4. **Neu (Fehlerbehandlung):** Falls Ausnahme **nach** Prozessstart auftritt:
    - `IsInstallRunning = false` zurücksetzen
    - Lock-Datei löschen
@@ -73,27 +73,15 @@ Das Update-System prüft GitHub-Releases regelmäßig ab, lädt neue Versionen h
 
 ### 3. Installation läuft (asynchron)
 
-**Installer-Skript-Ablauf (auf dem Server ausgeführt):**
+Das Installer-Skript wird durch systemd-run als eigenständige transient service unit ausgeführt. Der Host-Prozess ist zu diesem Zeitpunkt bereits beendet.
 
-Linux (`.sh`):
-```bash
-#!/bin/bash
-set -e
-cd /opt/app
-rm -f update.lock
-unzip -q -o /tmp/app-2.5.0-linux-x64.zip
-systemctl restart finance-app
-# Versionsmetadaten aktualisieren
-echo "2.5.0" > .version
-```
+Ablauf des Skripts:
+- Lock-Datei wird entfernt.
+- ZIP-Asset wird entpackt und die neue Version installiert.
+- Der Dienst wird neu gestartet.
+- Versionsmetadaten werden aktualisiert.
 
-Windows (`.ps1`):
-```powershell
-$ErrorActionPreference = "Stop"
-Remove-Item -Path "C:\Program Files\App\update.lock" -ErrorAction SilentlyContinue
-Expand-Archive -Path "C:\temp\app-2.5.0-win-x64.zip" -DestinationPath "C:\Program Files\App" -Force
-Restart-Service -Name "FinanceManagerService"
-```
+Die Ausgabe des Skripts erscheint ausschließlich im Journal der transienten Unit.
 
 ### 4. Post-Update-Reconciliation (nach Neustart)
 
@@ -128,6 +116,7 @@ Ermittelt:   InstalledVersion jetzt = "2.4.0" (Installer fehlgeschlagen, alte Ve
 Resultat:    {Status: Failed, LastError: "Err_Update_VersionMismatch"}
 ```
 
+
 ### 5. Lock-Reset (Verweigerung und Staleness-Prüfung)
 
 **Einstiegspunkt:** `UpdateOrchestrator.ResetLockAsync(reason: string?)`
@@ -147,6 +136,18 @@ Resultat:    {Status: Failed, LastError: "Err_Update_VersionMismatch"}
 
 **Fehlerbehandlung:**
 Alle Verweigerungen werfen `IOException`, die über die API als HTTP 409 (Conflict) oder HTTP 400 (Bad Request) beantwortet werden.
+
+## systemd-run Integration
+
+Der Installer-Prozess wird nicht direkt gestartet, sondern über systemd-run als transient service unit. Dadurch läuft die Installation unabhängig vom Host-Prozess weiter.
+
+Wesentliche Eigenschaften:
+- Der Host-Prozess kann sich selbst beenden.
+- Das Skript läuft weiter, da es von systemd verwaltet wird.
+- Die Ausgabe des Skripts erscheint im Journal der Unit.
+- Der Dienst kann nach Installation neu gestartet werden.
+- Die Unit ist kurzlebig und wird nach Abschluss automatisch entfernt.
+
 
 ## Diagramm
 
@@ -205,3 +206,4 @@ flowchart TD
 - **Prüf-Intervall:** Konfigurierbar 1–1440 Minuten (Default: 60 Min)
 - **Download-Limit:** Konfigurierbar max. Asset-Größe (verhindert DoS)
 - **Health-Timeout:** Konfigurierbar 10–600 Sekunden für Neustart-Wartezeit
+

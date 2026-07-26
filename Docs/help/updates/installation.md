@@ -1,5 +1,3 @@
-← [Zurück zur Übersicht](index.md)
-
 # Automatische Updates — Installation und Konfiguration
 
 ## Voraussetzungen
@@ -7,8 +5,62 @@
 - ASP.NET Core 8.0+ (für die Web-Anwendung)
 - GitHub-Repository mit Releases (als Update-Quelle)
 - Admin-Berechtigungen zum Verwalten von Updates
-- Auf Linux: `systemd`-Service oder Daemon-Mechanismus für Dienst-Restart
 - Auf Windows: Windows Service mit entsprechender Dienstkonfiguration
+- Auf Linux: systemd-Service oder Daemon-Mechanismus für Dienst-Restart
+- Auf Linux: Dienstbenutzer muss Berechtigungen zum Starten transienter systemd-Units besitzen (siehe Abschnitt „Dienstbenutzer-Berechtigungen“)
+
+## Dienstbenutzer-Berechtigungen (Linux)
+
+Damit der Installer-Prozess korrekt ausgeführt werden kann, muss der Dienstbenutzer in der Lage sein, systemd-run auszuführen und transient service units zu starten. Dies ist notwendig, weil der Installer-Prozess nicht direkt vom Host-Prozess ausgeführt wird, sondern über systemd-run als eigenständige Unit gestartet wird. Der Host-Prozess kann sich dadurch selbst beenden, während die Installation unabhängig weiterläuft.
+
+Folgende Voraussetzungen müssen erfüllt sein:
+
+1. Der Dienst läuft unter einem regulären Benutzerkonto (z. B. financemanager) mit gültiger Login-Shell wie /bin/bash.
+   - Prüfung: grep <user> /etc/passwd
+   - Falls notwendig: usermod -s /bin/bash <user>
+
+2. Der Benutzer benötigt Berechtigungen, um systemd-Operationen auszuführen. Dies wird über eine Polkit-Regel ermöglicht, die Aktionen mit Präfix org.freedesktop.systemd1.* für diesen Benutzer erlaubt.
+   - Datei erstellen unter /etc/polkit-1/rules.d/10-allow-systemd-run.rules
+   - Inhalt: Polkit-Regel, die alle systemd1-Aktionen für den Dienstbenutzer erlaubt.
+   ```
+   polkit.addRule(function(action, subject) {
+    if (subject.user == "financemanager" &&
+        action.id.startsWith("org.freedesktop.systemd1.")) {
+        return polkit.Result.YES;
+    }
+   });
+   ```
+   - Polkit neu laden: systemctl restart polkit
+
+3. Der Benutzer benötigt Schreibrechte auf das Update-Verzeichnis (BaseDirectory), einschließlich Lock-Datei, Status-Datei und heruntergeladenen Assets.
+   - Verzeichnis erstellen: mkdir -p <BaseDirectory>
+   - Eigentümer setzen: chown <user>:<user> <BaseDirectory>
+   - Schreibrechte sicherstellen: chmod 755 <BaseDirectory>
+
+4. Der Benutzer muss das Installer-Skript ausführen können, einschließlich der darin enthaltenen Befehle wie unzip, rm, mv oder systemctl restart.
+   - Sicherstellen, dass unzip installiert ist: apt install unzip oder dnf install unzip
+   - Sicherstellen, dass das Skript ausführbar ist: chmod +x <Pfad zum Skript>
+   - Der Benutzer benötigt Rechte für systemctl restart <ServiceName>. Dies wird durch die Polkit-Regel aus Punkt 2 abgedeckt.
+
+5. Der systemd-Dienst der Anwendung muss so konfiguriert sein, dass der Dienstbenutzer Prozesse starten darf. Dies erfordert keine speziellen systemd-Optionen, solange systemd-run über Polkit freigeschaltet ist.
+   - Dienstdatei prüfen: systemctl cat <ServiceName>
+   - User=<user> muss gesetzt sein.
+   - Optional: Delegate=yes kann gesetzt werden, ist aber nicht erforderlich, wenn systemd-run direkt aus dem Terminal oder aus der Anwendung heraus ausgeführt wird.
+
+Wenn diese Voraussetzungen nicht erfüllt sind, wird der Installer-Prozess zwar als Unit angelegt, aber nicht ausgeführt. Die Ausgabe des Skripts erscheint ausschließlich im Journal der transienten Unit. In diesem Fall zeigt systemd-run lediglich die Meldung „Running as unit: <UnitName>.service“, ohne dass das Skript tatsächlich gestartet wird.
+
+Zusammenfassung der notwendigen Konfigurationsbefehle:
+
+- Benutzer-Shell sicherstellen: usermod -s /bin/bash <user>
+- Polkit-Regel erstellen: Datei unter /etc/polkit-1/rules.d/10-allow-systemd-run.rules anlegen
+- Polkit neu laden: systemctl restart polkit
+- Update-Verzeichnis vorbereiten: mkdir -p <BaseDirectory>, chown <user>:<user> <BaseDirectory>, chmod 755 <BaseDirectory>
+- Skript ausführbar machen: chmod +x <Pfad zum Skript>
+- unzip installieren: apt install unzip oder dnf install unzip
+- Dienstbenutzer in systemd-Dienstdatei setzen: User=<user>
+
+Diese Konfiguration stellt sicher, dass der Installer-Prozess zuverlässig ausgeführt wird und die Anwendung nach der Installation korrekt neu gestartet werden kann.
+
 
 ## Installationsschritte
 
@@ -180,3 +232,8 @@ Wichtig:
 1. Dateisystem-Schreibrechte prüfen: `ls -la /opt/app/`
 2. Service-Name korrekt in Konfiguration? `systemctl list-units --type service | grep myapp`
 3. Service-Benutzer hat Neustartrechte? Ggf. `sudoers` anpassen
+
+## Hinweise zur systemd-run Integration
+
+Der Installer-Prozess wird über systemd-run als transient service unit gestartet. Dadurch läuft die Installation unabhängig vom Host-Prozess weiter. Die Ausgabe des Skripts erscheint im Journal der Unit. Der Dienst kann nach Installation neu gestartet werden. Die Unit ist kurzlebig und wird nach Abschluss automatisch entfernt.
+
