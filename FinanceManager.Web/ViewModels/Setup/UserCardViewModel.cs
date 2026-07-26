@@ -1,4 +1,4 @@
-﻿using FinanceManager.Domain.Attachments;
+using FinanceManager.Domain.Attachments;
 using FinanceManager.Shared.Dtos.Users;
 using Microsoft.Extensions.Localization;
 using System.Reflection;
@@ -355,12 +355,12 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
     {
         var actions = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }) { MobileShortcut = true }
         };
 
         var manage = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, User != null && User.Id != Guid.Empty, null, async () => { await SaveAsync(); }),
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, User != null && User.Id != Guid.Empty, null, async () => { await SaveAsync(); }) { MobileShortcut = true },
             new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, !(UserId != Guid.Empty && User != null), null, async () => { await DeleteAsync(); })
         };
 

@@ -15,7 +15,7 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 - Konten, Sammelkonten, Kontakte, Sparpläne und Wertpapiere verwalten, inklusive sichtbarer SVG-Symbole für Kontakte
 - Berichte, KPI-Dashboards und Budgetauswertungen nutzen, inklusive bestandsgepruefter Hochrechnung fuer Wertpapier-Dividendenreports
 - Anhänge und Sicherungen (Backup/Restore) verwalten
-- Responsive Web-UI für kleine Viewports (mobile Topbar, responsive Container, mobile E2E-Abdeckung)
+- Responsive Web-UI für kleine Viewports (mobile Topbar, responsive Container, mobile Ribbon-Shortcuts, mobile E2E-Abdeckung)
 - Einstellungs-Ribbon mit stets sichtbaren Aktionen: Backup erstellen/hochladen, Profil speichern/zurücksetzen, Benachrichtigungen und Kontoauszugs-Importregeln speichern — unabhängig davon, welche Sektion gerade aufgeklappt ist
 - Versionsinformation im Programmmenü (Footer) angezeigt — aktuelle Versionnummer oder Fallback `"Version unbekannt"`
 - JWT-Authentifizierung mit 30 Minuten Access-Token-Laufzeit, SecurityStamp-/Rollen-/Active-Revalidierung und DB-validiertem Refresh

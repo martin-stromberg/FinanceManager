@@ -182,7 +182,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             }
             if (Entry.Status == StatementDraftEntryStatus.AlreadyBooked)
             {
-                SetError(null, "Entry already booked — reset status first to allow editing.");
+                SetError(null, "Entry already booked - reset status first to allow editing.");
                 return Task.CompletedTask;
             }
         }
@@ -949,15 +949,15 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         var navItems = new List<UiRibbonAction>
         {
             // include DraftId as payload so pages can navigate back to this card with context
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, Entry == null, null, new Func<Task>(() => OnBackRequestedAsync())),
-            new UiRibbonAction("Prev", localizer["Ribbon_Prev"].Value, "<svg><use href='/icons/sprite.svg#chevron-left'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(OnPrevRequestedAsync)),
-            new UiRibbonAction("Next", localizer["Ribbon_Next"].Value, "<svg><use href='/icons/sprite.svg#chevron-right'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(OnNextRequestedAsync))
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, Entry == null, null, new Func<Task>(() => OnBackRequestedAsync())) { MobileShortcut = true },
+            new UiRibbonAction("Prev", localizer["Ribbon_Prev"].Value, "<svg><use href='/icons/sprite.svg#chevron-left'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(OnPrevRequestedAsync)) { MobileShortcut = true },
+            new UiRibbonAction("Next", localizer["Ribbon_Next"].Value, "<svg><use href='/icons/sprite.svg#chevron-right'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(OnNextRequestedAsync)) { MobileShortcut = true }
         };
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, navItems));
 
         var actions = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Small, (Entry == null && EntryId != Guid.Empty), null, new Func<Task>(async () => { await SaveAsync(); })),
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Small, (Entry == null && EntryId != Guid.Empty), null, new Func<Task>(async () => { await SaveAsync(); })) { MobileShortcut = true },
             new UiRibbonAction("Validate", localizer["Ribbon_Validate"].Value, "<svg><use href='/icons/sprite.svg#check'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(async () => { await ValidateAsync(); })),
             new UiRibbonAction("BookEntry", localizer["Ribbon_Book"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(async () => { await BookEntryAsync(false); }))
         };

@@ -121,6 +121,30 @@ public sealed class StatementDraftCardViewModelTests
         return vm;
     }
 
+    private static async Task<StatementDraftEntryCardViewModel> CreateLoadedEntryCardAsync(StatementDraftEntryDto entry)
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton(typeof(IStringLocalizer<>), typeof(DummyGenericLocalizer<>));
+        var apiMock = new Mock<IApiClient>();
+        apiMock
+            .Setup(x => x.StatementDrafts_GetEntryAsync(Guid.Empty, entry.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StatementDraftEntryDetailDto(
+                Guid.Empty,
+                "statement.csv",
+                entry,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null));
+        services.AddSingleton(apiMock.Object);
+
+        var vm = new StatementDraftEntryCardViewModel(services.BuildServiceProvider());
+        await vm.LoadAsync(entry.Id);
+        return vm;
+    }
+
     [Fact]
     public async Task NewDraft_SelectingBankAccount_enablesSaveInRibbon()
     {
@@ -318,6 +342,17 @@ public sealed class StatementDraftCardViewModelTests
 
         Assert.Contains(entryId, vm.CollectQuickEditSaveRequest().Deletes);
         Assert.DoesNotContain(vm.VisibleQuickEditItems, i => i.Id == entryId);
+    }
+
+    [Fact]
+    public async Task AlreadyBookedEntry_ToggleEditMode_ShowsAsciiStableError()
+    {
+        var vm = await CreateLoadedEntryCardAsync(Entry(Guid.NewGuid(), status: StatementDraftEntryStatus.AlreadyBooked));
+
+        await vm.ToggleEditModeAsync();
+
+        Assert.False(vm.IsEditMode);
+        Assert.Equal("Entry already booked - reset status first to allow editing.", vm.LastError);
     }
 
     [Fact]
