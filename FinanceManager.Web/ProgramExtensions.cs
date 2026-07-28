@@ -165,6 +165,7 @@ namespace FinanceManager.Web
             builder.Services.AddSingleton<IInstalledReleaseMetadataProvider, InstalledReleaseMetadataProvider>();
             builder.Services.AddSingleton<IUpdatePlatformResolver, UpdatePlatformResolver>();
             builder.Services.AddSingleton<IUpdateServiceProbe, DefaultUpdateServiceProbe>();
+            builder.Services.AddSingleton<IUpdateServiceCatalog, DefaultUpdateServiceCatalog>();
             builder.Services.AddSingleton<IUpdateServiceResolver, UpdateServiceResolver>();
             builder.Services.AddSingleton<IUpdateValidator, UpdateValidator>();
             builder.Services.AddSingleton<IUpdateScriptGenerator, UpdateScriptGenerator>();

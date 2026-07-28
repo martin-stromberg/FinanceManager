@@ -8,7 +8,7 @@ namespace FinanceManager.Tests.Updates;
 public sealed class UpdateSettingsStoreTests
 {
     [Fact]
-    public async Task SaveAsync_AppliesWorkingDirectoryToOperationalPaths()
+    public async Task SaveAsync_NormalizesRemovedSettingsAndAppliesFixedWorkingDirectoryToOperationalPaths()
     {
         var root = Directory.CreateTempSubdirectory();
         try
@@ -17,22 +17,28 @@ public sealed class UpdateSettingsStoreTests
             var fileStore = new UpdateFileStore(env, Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
             var store = new UpdateSettingsStore(Options.Create(new UpdateOptions { WorkingDirectory = "updates" }), fileStore);
 
-            await store.SaveAsync(new UpdateSettingsUpdateRequest(
+            var settings = await store.SaveAsync(new UpdateSettingsUpdateRequest(
                 true,
                 30,
-                "martin-stromberg",
-                "FinanceManager",
-                "update.json",
+                "other-owner",
+                "OtherRepo",
+                "manifest.json",
                 null,
                 "FinanceManager",
-                null,
+                "C:\\app\\FinanceManager.exe",
                 "custom-updates",
-                120));
+                30));
 
-            fileStore.RootDirectory.Should().Be(Path.Combine(root.FullName, "custom-updates"));
-            fileStore.LockPath.Should().Be(Path.Combine(root.FullName, "custom-updates", "update.lock"));
-            fileStore.PendingDirectory.Should().Be(Path.Combine(root.FullName, "custom-updates", "pending"));
-            fileStore.StagingDirectory.Should().Be(Path.Combine(root.FullName, "custom-updates", "staging"));
+            settings.RepositoryOwner.Should().Be("martin-stromberg");
+            settings.RepositoryName.Should().Be("FinanceManager");
+            settings.ManifestAssetName.Should().Be("update.json");
+            settings.ExecutablePath.Should().BeNull();
+            settings.WorkingDirectory.Should().Be("updates");
+            settings.HealthTimeoutSeconds.Should().Be(120);
+            fileStore.RootDirectory.Should().Be(Path.Combine(root.FullName, "updates"));
+            fileStore.LockPath.Should().Be(Path.Combine(root.FullName, "updates", "update.lock"));
+            fileStore.PendingDirectory.Should().Be(Path.Combine(root.FullName, "updates", "pending"));
+            fileStore.StagingDirectory.Should().Be(Path.Combine(root.FullName, "updates", "staging"));
         }
         finally
         {
@@ -41,7 +47,7 @@ public sealed class UpdateSettingsStoreTests
     }
 
     [Fact]
-    public async Task GetAsync_AppliesPersistedWorkingDirectoryAfterRestart()
+    public async Task GetAsync_NormalizesPersistedWorkingDirectoryAfterRestart()
     {
         var root = Directory.CreateTempSubdirectory();
         try
@@ -58,7 +64,7 @@ public sealed class UpdateSettingsStoreTests
             await restartedStore.GetAsync();
             var status = await restartedFileStore.ReadStatusAsync();
 
-            restartedFileStore.RootDirectory.Should().Be(Path.Combine(root.FullName, "custom-updates"));
+            restartedFileStore.RootDirectory.Should().Be(Path.Combine(root.FullName, "updates"));
             status.Should().NotBeNull();
             status!.Status.Should().Be(UpdateStatusKind.Ready);
         }

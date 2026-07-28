@@ -2199,6 +2199,9 @@
   <data name="Err_Update_HealthTimeout" xml:space="preserve">
     <value>The application did not become reachable within the expected time window after the update.</value>
   </data>
+  <data name="Err_Update_ConfirmationRequired" xml:space="preserve">
+    <value>The update installation can only be started while the downtime confirmation is available.</value>
+  </data>
   <data name="Err_Update_VersionMismatch" xml:space="preserve">
     <value>The installed version does not match the expected target version.</value>
   </data>
@@ -2255,6 +2258,36 @@
   </data>
   <data name="SetupUpdate_Btn_ResetLock" xml:space="preserve">
     <value>Reset update lock</value>
+  </data>
+  <data name="Hint_SetupUpdate_CheckNow" xml:space="preserve">
+    <value>Checks GitHub for available updates.</value>
+  </data>
+  <data name="Hint_SetupUpdate_Install" xml:space="preserve">
+    <value>Installs the downloaded update package.</value>
+  </data>
+  <data name="Hint_SetupUpdate_ResetLock" xml:space="preserve">
+    <value>Clears a stale update lock.</value>
+  </data>
+  <data name="UpdateStatusKind_NoUpdate" xml:space="preserve">
+    <value>No update</value>
+  </data>
+  <data name="UpdateStatusKind_Checking" xml:space="preserve">
+    <value>Checking</value>
+  </data>
+  <data name="UpdateStatusKind_Available" xml:space="preserve">
+    <value>Available</value>
+  </data>
+  <data name="UpdateStatusKind_Downloading" xml:space="preserve">
+    <value>Downloading</value>
+  </data>
+  <data name="UpdateStatusKind_Ready" xml:space="preserve">
+    <value>Ready to install</value>
+  </data>
+  <data name="UpdateStatusKind_Installing" xml:space="preserve">
+    <value>Installing</value>
+  </data>
+  <data name="UpdateStatusKind_Failed" xml:space="preserve">
+    <value>Failed</value>
   </data>
   <data name="SetupUpdate_Dl_Source" xml:space="preserve">
     <value>Update source</value>

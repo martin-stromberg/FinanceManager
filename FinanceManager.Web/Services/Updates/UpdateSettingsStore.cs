@@ -7,6 +7,11 @@ namespace FinanceManager.Web.Services.Updates;
 
 public sealed class UpdateSettingsStore : IUpdateSettingsStore
 {
+    private const string FixedRepositoryOwner = "martin-stromberg";
+    private const string FixedRepositoryName = "FinanceManager";
+    private const string FixedManifestAssetName = "update.json";
+    private const string FixedWorkingDirectory = "updates";
+
     private readonly UpdateOptions _options;
     private readonly IUpdateFileStore _fileStore;
 
@@ -47,27 +52,27 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
         => new(
             _options.Enabled,
             Math.Max(1, _options.CheckIntervalMinutes),
-            NormalizeRepositoryPart(_options.RepositoryOwner, "martin-stromberg"),
-            NormalizeRepositoryPart(_options.RepositoryName, "FinanceManager"),
-            string.IsNullOrWhiteSpace(_options.ManifestAssetName) ? "update.json" : _options.ManifestAssetName.Trim(),
+            FixedRepositoryOwner,
+            FixedRepositoryName,
+            FixedManifestAssetName,
             null,
             TrimToNull(_options.ServiceName),
             TrimToNull(_options.ExecutablePath),
-            NormalizeWorkingDirectory(_options.WorkingDirectory),
-            Math.Clamp(_options.HealthTimeoutSeconds, 10, 600));
+            FixedWorkingDirectory,
+            NormalizeHealthTimeout());
 
     private UpdateSettingsDto Normalize(UpdateSettingsUpdateRequest request)
         => new(
             request.Enabled,
             Math.Clamp(request.CheckIntervalMinutes, 1, 24 * 60),
-            NormalizeRepositoryPart(request.RepositoryOwner, "martin-stromberg"),
-            NormalizeRepositoryPart(request.RepositoryName, "FinanceManager"),
-            string.IsNullOrWhiteSpace(request.ManifestAssetName) ? "update.json" : request.ManifestAssetName.Trim(),
+            FixedRepositoryOwner,
+            FixedRepositoryName,
+            FixedManifestAssetName,
             request.ScheduledInstallTime,
             TrimToNull(request.ServiceName),
-            TrimToNull(request.ExecutablePath),
-            NormalizeWorkingDirectory(request.WorkingDirectory),
-            Math.Clamp(request.HealthTimeoutSeconds, 10, 600));
+            null,
+            FixedWorkingDirectory,
+            NormalizeHealthTimeout());
 
     private async Task<UpdateSettingsDto?> ReadSettingsAsync(CancellationToken ct)
     {
@@ -90,35 +95,34 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
             return new UpdateSettingsDto(
                 legacy.Enabled,
                 Math.Clamp(legacy.CheckIntervalMinutes, 1, 24 * 60),
-                NormalizeRepositoryPart(legacy.RepositoryOwner, "martin-stromberg"),
-                NormalizeRepositoryPart(legacy.RepositoryName, "FinanceManager"),
-                string.IsNullOrWhiteSpace(legacy.ManifestAssetName) ? "update.json" : legacy.ManifestAssetName.Trim(),
+                FixedRepositoryOwner,
+                FixedRepositoryName,
+                FixedManifestAssetName,
                 legacy.ScheduledInstallTime,
                 TrimToNull(legacy.ServiceName) ?? TrimToNull(legacy.WindowsServiceName) ?? TrimToNull(legacy.LinuxServiceName),
                 TrimToNull(legacy.ExecutablePath),
-                NormalizeWorkingDirectory(legacy.WorkingDirectory),
-                Math.Clamp(legacy.HealthTimeoutSeconds, 10, 600));
+                FixedWorkingDirectory,
+                NormalizeHealthTimeout());
         }
 
-        return document.Deserialize<UpdateSettingsDto>(JsonFileStore.JsonOptions);
+        var settings = document.Deserialize<UpdateSettingsDto>(JsonFileStore.JsonOptions);
+        return settings is null
+            ? null
+            : settings with
+            {
+                RepositoryOwner = FixedRepositoryOwner,
+                RepositoryName = FixedRepositoryName,
+                ManifestAssetName = FixedManifestAssetName,
+                WorkingDirectory = FixedWorkingDirectory,
+                HealthTimeoutSeconds = NormalizeHealthTimeout()
+            };
     }
-
-    private static string NormalizeRepositoryPart(string? value, string fallback)
-        => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
 
     private static string? TrimToNull(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private static string NormalizeWorkingDirectory(string? value)
-    {
-        var path = string.IsNullOrWhiteSpace(value) ? "updates" : value.Trim();
-        if (path.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
-        {
-            throw new InvalidOperationException("Working directory contains invalid path characters.");
-        }
-
-        return path;
-    }
+    private int NormalizeHealthTimeout()
+        => Math.Clamp(_options.HealthTimeoutSeconds <= 0 ? 120 : _options.HealthTimeoutSeconds, 10, 600);
 
     private sealed record LegacyUpdateSettingsDto(
         bool Enabled,

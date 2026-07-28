@@ -2199,6 +2199,9 @@
   <data name="Err_Update_HealthTimeout" xml:space="preserve">
     <value>Die Anwendung wurde nach dem Update nicht innerhalb des erwarteten Zeitfensters erreichbar.</value>
   </data>
+  <data name="Err_Update_ConfirmationRequired" xml:space="preserve">
+    <value>Die Update-Installation kann nur gestartet werden, wenn die Downtime-Bestaetigung verfuegbar ist.</value>
+  </data>
   <data name="Err_Update_VersionMismatch" xml:space="preserve">
     <value>Die installierte Version stimmt nicht mit der erwarteten Zielversion überein.</value>
   </data>
@@ -2255,6 +2258,36 @@
   </data>
   <data name="SetupUpdate_Btn_ResetLock" xml:space="preserve">
     <value>Update-Lock zurücksetzen</value>
+  </data>
+  <data name="Hint_SetupUpdate_CheckNow" xml:space="preserve">
+    <value>Prüft GitHub auf verfügbare Updates.</value>
+  </data>
+  <data name="Hint_SetupUpdate_Install" xml:space="preserve">
+    <value>Installiert das heruntergeladene Update-Paket.</value>
+  </data>
+  <data name="Hint_SetupUpdate_ResetLock" xml:space="preserve">
+    <value>Entfernt einen veralteten Update-Lock.</value>
+  </data>
+  <data name="UpdateStatusKind_NoUpdate" xml:space="preserve">
+    <value>Kein Update</value>
+  </data>
+  <data name="UpdateStatusKind_Checking" xml:space="preserve">
+    <value>Prüfung läuft</value>
+  </data>
+  <data name="UpdateStatusKind_Available" xml:space="preserve">
+    <value>Verfügbar</value>
+  </data>
+  <data name="UpdateStatusKind_Downloading" xml:space="preserve">
+    <value>Download läuft</value>
+  </data>
+  <data name="UpdateStatusKind_Ready" xml:space="preserve">
+    <value>Installationsbereit</value>
+  </data>
+  <data name="UpdateStatusKind_Installing" xml:space="preserve">
+    <value>Installation läuft</value>
+  </data>
+  <data name="UpdateStatusKind_Failed" xml:space="preserve">
+    <value>Fehlgeschlagen</value>
   </data>
   <data name="SetupUpdate_Dl_Source" xml:space="preserve">
     <value>Updatequelle</value>

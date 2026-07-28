@@ -7,8 +7,11 @@ using FinanceManager.Tests.Updates;
 using FinanceManager.Web.Services.Updates;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace FinanceManager.Tests.Integration;
@@ -121,13 +124,15 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             {
                 builder.ConfigureServices(services =>
                 {
-                    services.PostConfigure<UpdateOptions>(o => o.WorkingDirectory = tempDir.FullName);
+                    UseTemporaryUpdateFileStore(services, tempDir.FullName);
                 });
             });
             var client = factory.CreateClient();
             await AuthenticateAdminAsync(client);
 
-            var lockPath = Path.Combine(tempDir.FullName, "update.lock");
+            var updateDirectory = Path.Combine(tempDir.FullName, "updates");
+            Directory.CreateDirectory(updateDirectory);
+            var lockPath = Path.Combine(updateDirectory, "update.lock");
             await File.WriteAllTextAsync(lockPath, DateTimeOffset.UtcNow.AddMinutes(-10).ToString("O"));
 
             var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"));
@@ -151,14 +156,14 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             {
                 builder.ConfigureServices(services =>
                 {
-                    services.PostConfigure<UpdateOptions>(o => o.WorkingDirectory = tempDir.FullName);
+                    UseTemporaryUpdateFileStore(services, tempDir.FullName);
                     services.RemoveAll<IInstalledReleaseMetadataProvider>();
                     services.AddSingleton<IInstalledReleaseMetadataProvider>(new FixedInstalledReleaseMetadataProvider("1.2.3"));
                 });
             });
             var client = factory.CreateClient();
             await AuthenticateAdminAsync(client);
-            await WriteStatusAsync(tempDir.FullName, UpdateStatusTestData.InstallingStatus("1.2.3"));
+            await WriteStatusAsync(Path.Combine(tempDir.FullName, "updates"), UpdateStatusTestData.InstallingStatus("1.2.3"));
 
             var response = await client.GetAsync("/api/setup/update/status");
 
@@ -182,14 +187,14 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             {
                 builder.ConfigureServices(services =>
                 {
-                    services.PostConfigure<UpdateOptions>(o => o.WorkingDirectory = tempDir.FullName);
+                    UseTemporaryUpdateFileStore(services, tempDir.FullName);
                     services.RemoveAll<IInstalledReleaseMetadataProvider>();
                     services.AddSingleton<IInstalledReleaseMetadataProvider>(new FixedInstalledReleaseMetadataProvider("1.2.3"));
                 });
             });
             var client = factory.CreateClient();
             await AuthenticateAdminAsync(client);
-            await WriteStatusAsync(tempDir.FullName, UpdateStatusTestData.InstallingStatus("9.9.9"));
+            await WriteStatusAsync(Path.Combine(tempDir.FullName, "updates"), UpdateStatusTestData.InstallingStatus("9.9.9"));
 
             var response = await client.GetAsync("/api/setup/update/status");
 
@@ -206,8 +211,17 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
 
     private static Task WriteStatusAsync(string workingDirectory, UpdateStatusDto status)
     {
+        Directory.CreateDirectory(workingDirectory);
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
         return File.WriteAllTextAsync(Path.Combine(workingDirectory, "status.json"), JsonSerializer.Serialize(status, options));
+    }
+
+    private static void UseTemporaryUpdateFileStore(IServiceCollection services, string root)
+    {
+        services.RemoveAll<IUpdateFileStore>();
+        services.AddSingleton<IUpdateFileStore>(_ => new UpdateFileStore(
+            new TestUpdateWebHostEnvironment(root),
+            Options.Create(new UpdateOptions { WorkingDirectory = "updates" })));
     }
 
     [Fact]
@@ -272,5 +286,21 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
 
         public Task<InstalledReleaseMetadataDto> GetAsync(CancellationToken ct = default)
             => Task.FromResult(new InstalledReleaseMetadataDto(_version, null, null, null, null));
+    }
+
+    private sealed class TestUpdateWebHostEnvironment : IWebHostEnvironment
+    {
+        public TestUpdateWebHostEnvironment(string root)
+        {
+            ContentRootPath = root;
+            WebRootPath = root;
+        }
+
+        public string ApplicationName { get; set; } = "FinanceManager.Tests.Integration";
+        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
+        public string ContentRootPath { get; set; }
+        public string EnvironmentName { get; set; } = "Development";
+        public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
+        public string WebRootPath { get; set; }
     }
 }
