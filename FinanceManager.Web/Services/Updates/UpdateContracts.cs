@@ -77,6 +77,11 @@ public interface IUpdateServiceProbe
     IReadOnlyList<string> FindLinuxServicesForCurrentProcess();
 }
 
+public interface IUpdateServiceCatalog
+{
+    Task<IReadOnlyList<string>> ListServiceNamesAsync(string? query, int take, CancellationToken ct = default);
+}
+
 public interface IUpdateProcessRunner
 {
     void StartPrepareEnvironment(string scriptPath);

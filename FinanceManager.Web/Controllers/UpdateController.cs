@@ -17,11 +17,13 @@ public sealed class UpdateController : ControllerBase
 {
     private const string Origin = "API_Update";
     private readonly IUpdateOrchestrator _orchestrator;
+    private readonly IUpdateServiceCatalog _serviceCatalog;
     private readonly ILogger<UpdateController> _logger;
 
-    public UpdateController(IUpdateOrchestrator orchestrator, ILogger<UpdateController> logger)
+    public UpdateController(IUpdateOrchestrator orchestrator, IUpdateServiceCatalog serviceCatalog, ILogger<UpdateController> logger)
     {
         _orchestrator = orchestrator;
+        _serviceCatalog = serviceCatalog;
         _logger = logger;
     }
 
@@ -39,6 +41,11 @@ public sealed class UpdateController : ControllerBase
     [ProducesResponseType(typeof(UpdateSettingsDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateSettings([FromBody] UpdateSettingsUpdateRequest request, CancellationToken ct)
         => Ok(await _orchestrator.SaveSettingsAsync(request, ct));
+
+    [HttpGet("services")]
+    [ProducesResponseType(typeof(IReadOnlyList<string>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Services([FromQuery] string? query, [FromQuery] int take = 20, CancellationToken ct = default)
+        => Ok(await _serviceCatalog.ListServiceNamesAsync(query, take, ct));
 
     [HttpPost("check")]
     [ProducesResponseType(typeof(UpdateCheckResultDto), StatusCodes.Status200OK)]

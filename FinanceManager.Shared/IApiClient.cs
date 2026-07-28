@@ -264,6 +264,8 @@ public interface IApiClient
     Task<UpdateSettingsDto> Updates_GetSettingsAsync(CancellationToken ct = default);
     /// <summary>Updates self-update settings.</summary>
     Task<UpdateSettingsDto> Updates_UpdateSettingsAsync(UpdateSettingsUpdateRequest request, CancellationToken ct = default);
+    /// <summary>Lists service names for self-update service autocomplete.</summary>
+    Task<IReadOnlyList<string>> Updates_GetServiceNamesAsync(string? query, int take = 20, CancellationToken ct = default);
     /// <summary>Runs an immediate update check.</summary>
     Task<UpdateCheckResultDto> Updates_CheckAsync(CancellationToken ct = default);
     /// <summary>Stores the scheduled installation time.</summary>
