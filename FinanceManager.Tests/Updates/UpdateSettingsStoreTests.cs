@@ -2,20 +2,19 @@ using FinanceManager.Shared.Dtos.Update;
 using FinanceManager.Web.Services.Updates;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
+using SoftwareSchmiede.AutoUpdate;
 
 namespace FinanceManager.Tests.Updates;
 
 public sealed class UpdateSettingsStoreTests
 {
     [Fact]
-    public async Task SaveAsync_AppliesWorkingDirectoryToOperationalPaths()
+    public async Task SaveAsync_PersistsUnderPackageStoreRootDirectory()
     {
         var root = Directory.CreateTempSubdirectory();
         try
         {
-            var env = new TestWebHostEnvironment(root.FullName);
-            var fileStore = new UpdateFileStore(env, Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
-            var store = new UpdateSettingsStore(Options.Create(new UpdateOptions { WorkingDirectory = "updates" }), fileStore);
+            var (store, packageStore) = CreateStore(root.FullName);
 
             await store.SaveAsync(new UpdateSettingsUpdateRequest(
                 true,
@@ -29,10 +28,7 @@ public sealed class UpdateSettingsStoreTests
                 "custom-updates",
                 120));
 
-            fileStore.RootDirectory.Should().Be(Path.Combine(root.FullName, "custom-updates"));
-            fileStore.LockPath.Should().Be(Path.Combine(root.FullName, "custom-updates", "update.lock"));
-            fileStore.PendingDirectory.Should().Be(Path.Combine(root.FullName, "custom-updates", "pending"));
-            fileStore.StagingDirectory.Should().Be(Path.Combine(root.FullName, "custom-updates", "staging"));
+            File.Exists(Path.Combine(packageStore.RootDirectory, "settings.json")).Should().BeTrue();
         }
         finally
         {
@@ -41,26 +37,19 @@ public sealed class UpdateSettingsStoreTests
     }
 
     [Fact]
-    public async Task GetAsync_AppliesPersistedWorkingDirectoryAfterRestart()
+    public async Task GetAsync_PersistsAndReloadsSettings()
     {
         var root = Directory.CreateTempSubdirectory();
         try
         {
-            var env = new TestWebHostEnvironment(root.FullName);
-            var firstFileStore = new UpdateFileStore(env, Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
-            var firstStore = new UpdateSettingsStore(Options.Create(new UpdateOptions { WorkingDirectory = "updates" }), firstFileStore);
-            await firstStore.SaveAsync(new UpdateSettingsUpdateRequest(false, 60, "martin-stromberg", "FinanceManager", "update.json", null, null, null, "custom-updates", 120));
-            await firstFileStore.WriteStatusAsync(new UpdateStatusDto(UpdateStatusKind.Ready, "1.0.0", null, "1.1.0", "win-x64", null, null, "release.zip", false, null, null, null));
+            var (firstStore, _) = CreateStore(root.FullName);
+            await firstStore.SaveAsync(new UpdateSettingsUpdateRequest(false, 60, "martin-stromberg", "FinanceManager", "update.json", null, null, null, "updates", 120));
 
-            var restartedFileStore = new UpdateFileStore(env, Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
-            var restartedStore = new UpdateSettingsStore(Options.Create(new UpdateOptions { WorkingDirectory = "updates" }), restartedFileStore);
+            var (restartedStore, _) = CreateStore(root.FullName);
+            var settings = await restartedStore.GetAsync();
 
-            await restartedStore.GetAsync();
-            var status = await restartedFileStore.ReadStatusAsync();
-
-            restartedFileStore.RootDirectory.Should().Be(Path.Combine(root.FullName, "custom-updates"));
-            status.Should().NotBeNull();
-            status!.Status.Should().Be(UpdateStatusKind.Ready);
+            settings.Enabled.Should().BeFalse();
+            settings.CheckIntervalMinutes.Should().Be(60);
         }
         finally
         {
@@ -74,11 +63,10 @@ public sealed class UpdateSettingsStoreTests
         var root = Directory.CreateTempSubdirectory();
         try
         {
-            var env = new TestWebHostEnvironment(root.FullName);
-            var fileStore = new UpdateFileStore(env, Options.Create(new UpdateOptions { WorkingDirectory = "updates" }));
-            await fileStore.EnsureAsync();
+            var (store, packageStore) = CreateStore(root.FullName);
+            await packageStore.EnsureAsync();
             await File.WriteAllTextAsync(
-                fileStore.SettingsPath,
+                Path.Combine(packageStore.RootDirectory, "settings.json"),
                 """
                 {
                   "enabled": true,
@@ -95,8 +83,6 @@ public sealed class UpdateSettingsStoreTests
                 }
                 """);
 
-            var store = new UpdateSettingsStore(Options.Create(new UpdateOptions { WorkingDirectory = "updates" }), fileStore);
-
             var settings = await store.GetAsync();
 
             settings.ServiceName.Should().Be("FinanceManagerService");
@@ -107,4 +93,60 @@ public sealed class UpdateSettingsStoreTests
         }
     }
 
+    [Fact]
+    public async Task ApplyToOptions_TransfersSettingsIntoAutoUpdateOptions()
+    {
+        var root = Directory.CreateTempSubdirectory();
+        try
+        {
+            var (store, _) = CreateStore(root.FullName, out var autoUpdateOptions);
+            var settings = await store.SaveAsync(new UpdateSettingsUpdateRequest(
+                true,
+                45,
+                "martin-stromberg",
+                "FinanceManager",
+                "update.json",
+                new TimeOnly(3, 0),
+                "FinanceManagerService",
+                null,
+                "custom-updates",
+                200));
+
+            store.ApplyToOptions(settings);
+
+            autoUpdateOptions.Enabled.Should().BeTrue();
+            autoUpdateOptions.SourceCheck.Interval.Should().Be(45);
+            autoUpdateOptions.ServiceName.Should().Be("FinanceManagerService");
+            autoUpdateOptions.DownloadPath.Should().Be("custom-updates");
+            autoUpdateOptions.HealthTimeoutSeconds.Should().Be(200);
+            autoUpdateOptions.ScheduledInstallTime.Should().Be(new TimeOnly(3, 0));
+        }
+        finally
+        {
+            root.Delete(recursive: true);
+        }
+    }
+
+    private static (UpdateSettingsStore Store, IAutoUpdatePackageStore PackageStore) CreateStore(string root)
+        => CreateStore(root, out _);
+
+    private static (UpdateSettingsStore Store, IAutoUpdatePackageStore PackageStore) CreateStore(string root, out AutoUpdateOptions autoUpdateOptions)
+    {
+        var environment = new AutoUpdateEnvironmentAdapter(new TestWebHostEnvironment(root));
+        autoUpdateOptions = new AutoUpdateOptions { DownloadPath = "updates" };
+        var packageStore = new FileSystemAutoUpdatePackageStore(environment, autoUpdateOptions, TimeProvider.System);
+        var webOptions = Options.Create(new UpdateOptions());
+        var store = new UpdateSettingsStore(webOptions, autoUpdateOptions, packageStore);
+        return (store, packageStore);
+    }
+
+    private sealed class AutoUpdateEnvironmentAdapter : IAutoUpdateEnvironment
+    {
+        public AutoUpdateEnvironmentAdapter(TestWebHostEnvironment environment)
+        {
+            ApplicationDirectory = environment.ContentRootPath;
+        }
+
+        public string ApplicationDirectory { get; }
+    }
 }

@@ -1,107 +1,112 @@
-#pragma warning disable CS1591
 using FinanceManager.Shared.Dtos.Update;
 
 namespace FinanceManager.Web.Services.Updates;
 
+/// <summary>
+/// Persists and reloads the update settings configured through the setup UI.
+/// </summary>
 public interface IUpdateSettingsStore
 {
+    /// <summary>
+    /// Reads the current update settings, applying defaults on first access.
+    /// </summary>
+    /// <param name="ct">A token to observe for cancellation requests.</param>
+    /// <returns>The current update settings.</returns>
     Task<UpdateSettingsDto> GetAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Saves the update settings submitted from the setup UI.
+    /// </summary>
+    /// <param name="request">The settings to save.</param>
+    /// <param name="ct">A token to observe for cancellation requests.</param>
+    /// <returns>The saved settings.</returns>
     Task<UpdateSettingsDto> SaveAsync(UpdateSettingsUpdateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Saves only the scheduled installation time, keeping all other settings unchanged.
+    /// </summary>
+    /// <param name="scheduledInstallTime">The new scheduled installation time, or <see langword="null"/> to clear it.</param>
+    /// <param name="ct">A token to observe for cancellation requests.</param>
+    /// <returns>The saved settings.</returns>
     Task<UpdateSettingsDto> SaveScheduleAsync(TimeOnly? scheduledInstallTime, CancellationToken ct = default);
+
+    /// <summary>
+    /// Transfers the given settings into the runtime-mutable auto-update library options, so that changes made
+    /// through the setup UI take effect immediately.
+    /// </summary>
+    /// <param name="settings">The settings to apply.</param>
+    void ApplyToOptions(UpdateSettingsDto settings);
 }
 
+/// <summary>
+/// Provides the metadata of the currently installed release, as displayed in the application menu.
+/// </summary>
 public interface IInstalledReleaseMetadataProvider
 {
+    /// <summary>
+    /// Reads the metadata of the currently installed release.
+    /// </summary>
+    /// <param name="ct">A token to observe for cancellation requests.</param>
+    /// <returns>The installed release metadata.</returns>
     Task<InstalledReleaseMetadataDto> GetAsync(CancellationToken ct = default);
 }
 
-public interface IUpdateManifestClient
-{
-    Task<UpdateMetadataDto> GetManifestAsync(UpdateSettingsDto settings, CancellationToken ct = default);
-    Task DownloadAssetAsync(UpdateAssetDto asset, string targetPath, long maxBytes, CancellationToken ct = default);
-}
-
-public interface IUpdatePlatformResolver
-{
-    string CurrentRuntimeIdentifier { get; }
-    string CurrentPlatform { get; }
-    UpdateAssetDto? SelectAsset(UpdateMetadataDto manifest);
-}
-
-public interface IUpdateFileStore
-{
-    string RootDirectory { get; }
-    string PendingDirectory { get; }
-    string StagingDirectory { get; }
-    string SettingsPath { get; }
-    string StatusPath { get; }
-    string LockPath { get; }
-    string LogPath { get; }
-
-    string ScriptPath(string extension);
-    string PendingAssetPath(string assetName);
-    void UseWorkingDirectory(string workingDirectory);
-    Task EnsureAsync(CancellationToken ct = default);
-    Task<UpdateStatusDto?> ReadStatusAsync(CancellationToken ct = default);
-    Task WriteStatusAsync(UpdateStatusDto status, CancellationToken ct = default);
-    Task<DateTimeOffset?> GetLockCreatedAtAsync(CancellationToken ct = default);
-    Task<bool> TryCreateLockAsync(CancellationToken ct = default);
-    Task<bool> DeleteLockAsync(CancellationToken ct = default);
-}
-
-public interface IUpdateValidator
-{
-    bool IsNewerVersion(string? installedVersion, string availableVersion);
-    void ValidateManifest(UpdateMetadataDto manifest, UpdateSettingsDto settings, string currentPlatform);
-    Task ValidateDownloadedAssetAsync(UpdateAssetDto asset, string path, long maxBytes, CancellationToken ct = default);
-}
-
-public interface IUpdateScriptGenerator
-{
-    Task<string> GenerateAsync(UpdateAssetDto asset, string zipPath, UpdateSettingsDto settings, UpdateInstallationTarget target, CancellationToken ct = default);
-}
-
-public sealed record UpdateInstallationTarget(
-    string Platform,
-    string? ServiceName,
-    string? ExecutablePath);
-
-public interface IUpdateServiceResolver
-{
-    UpdateInstallationTarget Resolve(UpdateSettingsDto settings);
-}
-
-public interface IUpdateServiceProbe
-{
-    IReadOnlyList<string> FindWindowsServicesForCurrentProcess();
-    IReadOnlyList<string> FindLinuxServicesForCurrentProcess();
-}
-
-public interface IUpdateProcessRunner
-{
-    void StartPrepareEnvironment(string scriptPath);
-    void StartScript(string scriptPath);
-}
-
-public interface IUpdateHostTerminator
-{
-    void StopApplication();
-}
-
-public interface IUpdateExecutor
-{
-    Task<UpdateStatusDto> StartAsync(UpdateSettingsDto settings, UpdateStatusDto status, CancellationToken ct = default);
-    bool IsInstallRunning { get; }
-}
-
+/// <summary>
+/// Coordinates the self-update workflow for the REST API and setup UI. Implemented by
+/// <see cref="UpdateOrchestratorAdapter"/> on top of the <c>SoftwareSchmiede.AutoUpdate</c> library.
+/// </summary>
 public interface IUpdateOrchestrator
 {
+    /// <summary>
+    /// Gets the current update status.
+    /// </summary>
+    /// <param name="ct">A token to observe for cancellation requests.</param>
+    /// <returns>The current update status.</returns>
     Task<UpdateStatusDto> GetStatusAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets the current update settings.
+    /// </summary>
+    /// <param name="ct">A token to observe for cancellation requests.</param>
+    /// <returns>The current update settings.</returns>
     Task<UpdateSettingsDto> GetSettingsAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Saves updated settings submitted from the setup UI.
+    /// </summary>
+    /// <param name="request">The settings to save.</param>
+    /// <param name="ct">A token to observe for cancellation requests.</param>
+    /// <returns>The saved settings.</returns>
     Task<UpdateSettingsDto> SaveSettingsAsync(UpdateSettingsUpdateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Sets or clears the scheduled installation time.
+    /// </summary>
+    /// <param name="scheduledInstallTime">The new scheduled installation time, or <see langword="null"/> to clear it.</param>
+    /// <param name="ct">A token to observe for cancellation requests.</param>
+    /// <returns>The saved settings.</returns>
     Task<UpdateSettingsDto> ScheduleAsync(TimeOnly? scheduledInstallTime, CancellationToken ct = default);
+
+    /// <summary>
+    /// Manually triggers a source check.
+    /// </summary>
+    /// <param name="ct">A token to observe for cancellation requests.</param>
+    /// <returns>The result of the check.</returns>
     Task<UpdateCheckResultDto> CheckAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Manually triggers installation of a downloaded update package.
+    /// </summary>
+    /// <param name="confirmDowntime">Must be <see langword="true"/> to acknowledge that installation restarts the application.</param>
+    /// <param name="ct">A token to observe for cancellation requests.</param>
+    /// <returns>The status after installation was started.</returns>
     Task<UpdateStatusDto> StartInstallAsync(bool confirmDowntime, CancellationToken ct = default);
+
+    /// <summary>
+    /// Resets a stale installation lock.
+    /// </summary>
+    /// <param name="reason">An optional explanation recorded alongside the reset.</param>
+    /// <param name="ct">A token to observe for cancellation requests.</param>
+    /// <returns>A task that completes once the lock has been reset.</returns>
     Task ResetLockAsync(string? reason, CancellationToken ct = default);
 }
-#pragma warning restore CS1591

@@ -129,9 +129,11 @@ optionaler Windows-EXE-Pfad, WorkingDirectory und HealthTimeoutSeconds.
 
 ### `POST /api/setup/update/check`
 
-**Beschreibung:** Update-Manifest aus dem konfigurierten GitHub-Release-Kontext
-abrufen, passendes Asset fuer die aktuelle Runtime auswaehlen, ZIP laden und
-gegen Manifest sowie sichere ZIP-Eintragspfade validieren.
+**Beschreibung:** Update-Manifest aus der konfigurierten Quelle abrufen
+(GitHub-Release oder lokaler Ordner, gesteuert ueber `Updates:SourceType`),
+passendes Asset fuer die aktuelle Runtime auswaehlen, ZIP laden (sofern
+`Updates:EnableAutomaticDownload` aktiviert ist) und gegen Manifest sowie
+sichere ZIP-Eintragspfade validieren.
 
 **Berechtigung:** Rolle `Admin`.
 

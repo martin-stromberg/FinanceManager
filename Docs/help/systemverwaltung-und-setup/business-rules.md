@@ -245,10 +245,12 @@ und Lock-Reset sind auf Administratoren beschraenkt.
 ## Self-Update installiert nur validierte Release-Pakete
 
 **Beschreibung:** Die Anwendung installiert nur ein zur aktuellen Runtime
-passendes GitHub-Release-Asset, das Manifest- und ZIP-Validierung besteht.
+passendes Release-Asset der konfigurierten Quelle (GitHub-Release oder
+lokaler Ordner), das Manifest- und ZIP-Validierung besteht.
 
 **Bedingungen:**
-- `update.json` gehoert zum konfigurierten Repository.
+- Das Manifest (`update.json`) stammt aus der konfigurierten Quelle
+  (`Updates:SourceType` = `Github` oder `LocalFolder`).
 - Manifest-Version ist neuer als die installierte Version aus
   `release-metadata.json`.
 - Es gibt genau ein passendes Asset fuer die aktuelle Runtime.
@@ -261,13 +263,17 @@ passendes GitHub-Release-Asset, das Manifest- und ZIP-Validierung besteht.
   unsichere ZIP-Pfade oder fehlendes Runtime-Asset verhindern die
   Installation und setzen einen Fehlerstatus.
 
-**Umsetzung:** `UpdateOrchestrator.CheckAsync`, `UpdateValidator`,
-`UpdatePlatformResolver`, `InstalledReleaseMetadataProvider`.
+**Umsetzung:** `AutoUpdateOrchestrator.CheckForUpdateAsync` (aufgerufen ueber
+`UpdateOrchestratorAdapter.CheckAsync`), `AutoUpdateGithubSource`/
+`AutoUpdateLocalFolderSource`, `AutoUpdatePackageValidator`,
+`AutoUpdatePlatformResolver`, `ReleaseMetadataInstalledVersionProvider`. Diese
+Klassen liegen in der Bibliothek `SoftwareSchmiede.AutoUpdate`.
 
 ## Self-Update-Start erzeugt ein externes Installationsskript
 
 **Beschreibung:** Die laufende Webanwendung ersetzt ihre Dateien nicht selbst,
-sondern startet ein generiertes Plattformskript und beendet danach den Host.
+sondern startet ein generiertes Plattformskript und beendet danach den Host
+(sofern konfiguriert).
 
 **Bedingungen:**
 - Status ist `Ready`.
@@ -276,17 +282,22 @@ sondern startet ein generiertes Plattformskript und beendet danach den Host.
 - Service- oder EXE-Ziel kann eindeutig aufgeloest werden.
 
 **Verhalten:**
-- Bei Erfolg wird ein Lock angelegt, der Status auf `Installing` gesetzt, ein
-  Windows- oder Linux-Skript gestartet und die Anwendung beendet.
+- Bei Erfolg wird ein Lock angelegt, der Status auf `Installing` gesetzt und
+  ein Windows- (`.ps1`) oder Linux-Skript (`.sh`) gestartet. Nur wenn
+  `Updates:StopHostAfterScriptStart` aktiviert ist, wird die Anwendung
+  anschliessend beendet; standardmaessig bleibt der Host bis zum externen
+  Prozessende laufen, so wie bisher.
 - Fehler vor dem externen Skriptstart setzen den Status auf `Failed` und geben
   den Lock wieder frei.
 - Bei fehlendem Paket, aktivem Lock oder unvollstaendiger Zielkonfiguration
   wird der Start mit fachlichem API-Fehler abgelehnt.
 
-**Umsetzung:** `UpdateOrchestrator.StartInstallAsync`, `UpdateExecutor`,
-`UpdateServiceResolver`, `UpdateScriptGenerator`.
+**Umsetzung:** `AutoUpdateOrchestrator.InstallAsync` (aufgerufen ueber
+`UpdateOrchestratorAdapter.StartInstallAsync`), `AutoUpdateInstaller`,
+`AutoUpdateServiceResolver`, `AutoUpdateScriptGenerator`. Diese Klassen liegen
+in der Bibliothek `SoftwareSchmiede.AutoUpdate`.
 
-## Update-Lock-Reset loescht nur verwaiste Locks
+## Update-Lock-Reset loescht nur alte Locks
 
 **Beschreibung:** Der administrative Lock-Reset ist fuer Haengefaelle gedacht,
 in denen eine alte Lock-Datei nach einer unterbrochenen Installation
@@ -294,18 +305,18 @@ zurueckgeblieben ist.
 
 **Bedingungen:**
 - Benutzer ist Admin.
-- Die aktuelle Prozessinstanz besitzt keine laufende Installation.
 - Eine Lock-Datei ist vorhanden.
-- Die Lock-Datei ist aelter als das konfigurierte Health-Timeout, mindestens
-  jedoch eine Minute.
+- Die Lock-Datei ist mindestens so alt wie das groessere aus konfiguriertem
+  Health-Timeout und 60 Sekunden.
 
 **Verhalten:**
-- Wenn `UpdateExecutor.IsInstallRunning` gesetzt ist, antwortet der Reset mit
+- Wenn kein Lock vorhanden ist, antwortet der Reset mit Konflikt (`409`) und
+  loescht nichts.
+- Wenn der Lock noch nicht alt genug ist, antwortet der Reset ebenfalls mit
   Konflikt und loescht den Lock nicht.
-- Wenn kein Lock vorhanden ist oder der Lock noch frisch ist, antwortet der
-  Reset mit Konflikt und loescht nichts.
-- Bei einem verwaisten Lock wird die Lock-Datei geloescht und optional der
-  angegebene Grund im Statusfehler vermerkt.
+- Bei einem ausreichend alten Lock wird die Lock-Datei geloescht, der
+  Statussnapshot als entsperrt aktualisiert und optional der angegebene Grund
+  im Statusfehler vermerkt.
 
-**Umsetzung:** `UpdateController.ResetLock`, `UpdateOrchestrator.ResetLockAsync`,
-`UpdateFileStore.DeleteLockAsync`.
+**Umsetzung:** `UpdateController.ResetLock`, `UpdateOrchestratorAdapter.ResetLockAsync`,
+`IAutoUpdatePackageStore.DeleteLockAsync`, `AutoUpdateStatusService.UpdateAsync`.

@@ -25,6 +25,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Action button "Stornieren" (Cancel/Reverse) added to posting detail pages in the web UI.
   - "Storno" indicator column added to posting list views.
 
+- **Self-update extracted into `SoftwareSchmiede.AutoUpdate` library:** The self-update system previously built into `FinanceManager.Web` has been extracted into a standalone, hosting-independent NuGet-ready library (feature branch `230-programmupdate-als-komponenten`).
+  - New project `SoftwareSchmiede.AutoUpdate` — activated via a single `builder.UseAutoUpdate(cfg => ...)` call on any `IHostApplicationBuilder` (web, worker or console host).
+  - Fluent configuration via `AutoUpdateBuilder`: `EnableAutomaticDownload`, `EnableAutomaticInstallation`, `UseSource`/`UseGithubSource`/`UseLocalFolderSource`, `WithSourceCheck`, `BindConfiguration`, `DisableHostedServices`.
+  - Pluggable update sources via `IAutoUpdateSource`: built-in `AutoUpdateGithubSource` (GitHub Releases) and `AutoUpdateLocalFolderSource` (local directory, the new default).
+  - Cancellable lifecycle events via `IAutoUpdateEventAggregator`: `BeforeCheckSource`, `BeforeDownload`, `BeforeInstall`, `BeforeStartUpdateScript`, `AfterStartUpdateScript`, `ErrorOccured`.
+  - Thread-safe status tracking via `AutoUpdateStatusService`/`IAutoUpdateStatusProvider`, persisted across restarts, and manual control via `AutoUpdateCommandService`/`IAutoUpdateCommandHandler`.
+  - Background services `AutoUpdateCheckerService` (periodic source check, honoring configured time windows) and `AutoUpdateSchedulerService` (scheduled installation).
+  - New project `SoftwareSchmiede.AutoUpdate.Tests` with unit test coverage for the library.
+  - `FinanceManager.Web` now consumes the library through a new `UpdateOrchestratorAdapter`; the public REST API (`/api/setup/update/*`), `ApiClient`, `SetupUpdateViewModel` and `SetupUpdateTab.razor` are unchanged.
+  - New `Updates` configuration entries: `SourceType` (`Github`/`LocalFolder`), `LocalFolderPath`, `EnableAutomaticDownload`, `EnableAutomaticInstallation`, `SourceCheck:Interval`/`SourceCheck:TimeRanges`, `StopHostAfterScriptStart`. Existing installations keep their previous behavior unchanged.
+  - macOS is not supported (unchanged from before); documented as a known limitation of the library.
+
 ---
 
 ### Known Issues

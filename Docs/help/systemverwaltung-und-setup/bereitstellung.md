@@ -89,22 +89,38 @@ Repository-Berechtigungen.
 ## Self-Update im Betrieb
 
 Das Self-Update ist eine Admin-Funktion im Setup und standardmaessig
-deaktiviert. Die Quelle ist ueber `Updates:RepositoryOwner`,
-`Updates:RepositoryName` und `Updates:ManifestAssetName` konfigurierbar. Fuer
-produktive Installationen sollte der Dienst eindeutig angegeben werden:
-`Updates:ServiceName` gilt fuer die aktuelle Plattform, also als Windows-Dienst
-unter Windows oder als systemd-Service unter Linux. Ohne Override wird Best-Effort erkannt; bei fehlender oder
-mehrdeutiger Erkennung lehnt die API den Installationsstart mit `400 BadRequest`
-ab. Unter Windows kann alternativ `Updates:ExecutablePath` verwendet werden,
-wenn die Anwendung ohne Dienst betrieben wird.
+deaktiviert. Die Logik wird durch die unabhaengige Bibliothek
+`SoftwareSchmiede.AutoUpdate` bereitgestellt. FinanceManager konsumiert diese
+Bibliothek ueber einen Adapter (`UpdateOrchestratorAdapter`); die oeffentliche
+REST-API und die Setup-UI bleiben davon unberührt.
+
+Die Update-Quelle ist wahlweise GitHub-Releases (`Updates:SourceType: Github`,
+Standardwert) oder ein lokales Verzeichnis (`Updates:SourceType: LocalFolder`).
+Für GitHub ist der Repository ueber `Updates:RepositoryOwner`,
+`Updates:RepositoryName` und `Updates:ManifestAssetName` konfigurierbar.
+Für lokale Quellen muss `Updates:LocalFolderPath` auf ein Verzeichnis mit
+`update.json` und den runtime-spezifischen ZIP-Paketen zeigen.
+
+Produktive Installationen sollten die Zielinstanz eindeutig angeben:
+`Updates:ServiceName` gilt fuer die aktuelle Plattform (Windows-Dienst oder
+systemd-Service unter Linux). Ohne Override versucht die Anwendung eine
+Best-Effort-Ermittlung; bei fehlender oder mehrdeutiger Erkennung lehnt die
+API den Installationsstart mit `400 BadRequest` ab. Unter Windows kann
+alternativ `Updates:ExecutablePath` verwendet werden, wenn die Anwendung
+ohne Dienst betrieben wird.
+
+Automatische Pruefungen laufen im Intervall `Updates:SourceCheck:Interval`
+Minuten und respektieren Zeitfenster in `Updates:SourceCheck:TimeRanges`.
+`Updates:EnableAutomaticDownload` und `Updates:EnableAutomaticInstallation`
+steuern, ob Pakete automatisch heruntergeladen bzw. installiert werden.
 
 Vor der Installation erstellt der Server ein Lock, validiert Service-/EXE-Ziel,
 Paketgroesse, SHA-256 und ZIP-Eintraege gegen Traversal, absolute Pfade und
-Sonderdateien. Fehler nach Lock-Erstellung werden transaktional auf Status
-`Failed` gesetzt und geben den Lock wieder frei, solange noch kein externes
-Update-Skript gestartet wurde. Geplante Installationen werden pro konfigurierte
-Uhrzeit nur einmal pro Tag versucht, damit ein fehlerhaft konfigurierter Host
-nicht jede Minute erneut installiert.
+Sonderdateien. Fehler nach Lock-Erstellung werden auf Status `Failed` gesetzt
+und geben den Lock frei, solange noch kein externes Update-Skript gestartet
+wurde. Geplante Installationen werden pro konfigurierte Uhrzeit nur einmal pro
+Tag versucht, damit ein fehlerhaft konfigurierter Host nicht jede Minute
+erneut installiert.
 
 Der Admin-Endpunkt zum Lock-Reset loescht eine vorhandene Lock-Datei nur dann,
 wenn die aktuelle Prozessinstanz keine Installation fuehrt und die Lock-Datei

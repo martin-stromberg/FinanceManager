@@ -16,6 +16,7 @@ using FinanceManager.Web.Infrastructure.Logging;
 using FinanceManager.Web.Services;
 using FinanceManager.Web.Services.Help;
 using FinanceManager.Web.Services.Updates;
+using SoftwareSchmiede.AutoUpdate;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -154,31 +155,45 @@ namespace FinanceManager.Web
             builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api"));
             builder.Services.AddScoped<IApiClient>(sp => new ApiClient(sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api")));
 
-            // Self-update services
-            builder.Services.AddHttpClient<IUpdateManifestClient, UpdateManifestClient>(client =>
+            // Self-update services: the auto-update subsystem itself lives in SoftwareSchmiede.AutoUpdate and is
+            // activated through the single UseAutoUpdate() entry point. The Web project only keeps the adapter
+            // that maps the library onto the existing IUpdateOrchestrator contract and DTOs, plus the
+            // FinanceManager-specific settings persistence and installed-version display.
+            builder.Services.AddSingleton(TimeProvider.System);
+            var updateOptions = builder.Configuration.GetSection(UpdateOptions.SectionName).Get<UpdateOptions>() ?? new UpdateOptions();
+            // "Updates:SourceCheck:Interval" binds directly onto AutoUpdateOptions.SourceCheck.Interval (matching
+            // property names). Only fall back to the legacy "Updates:CheckIntervalMinutes" alias via the fluent
+            // setter when the new key is absent - calling WithSourceCheck unconditionally would make the fluent
+            // value win over configuration every time, per UseAutoUpdate's documented precedence.
+            var sourceCheckIntervalConfigured = builder.Configuration.GetValue<int?>($"{UpdateOptions.SectionName}:SourceCheck:Interval") is not null;
+            builder.UseAutoUpdate(cfg =>
             {
-                client.Timeout = TimeSpan.FromMinutes(5);
-                client.DefaultRequestHeaders.UserAgent.ParseAdd("FinanceManager/1.0 (+https://github.com/martin-stromberg/FinanceManager)");
+                cfg.BindConfiguration(UpdateOptions.SectionName);
+                cfg.WithUpdateUnitName("FinanceManagerUpdate");
+                if (!string.IsNullOrWhiteSpace(updateOptions.WorkingDirectory))
+                {
+                    cfg.WithDownloadPath(updateOptions.WorkingDirectory);
+                }
+
+                if (!sourceCheckIntervalConfigured)
+                {
+                    cfg.WithSourceCheck(Math.Max(1, updateOptions.CheckIntervalMinutes));
+                }
+
+                if (string.Equals(updateOptions.SourceType, "LocalFolder", StringComparison.OrdinalIgnoreCase))
+                {
+                    cfg.UseLocalFolderSource(string.IsNullOrWhiteSpace(updateOptions.LocalFolderPath)
+                        ? Path.Combine(updateOptions.WorkingDirectory, "source")
+                        : updateOptions.LocalFolderPath);
+                }
+                else
+                {
+                    cfg.UseGithubSource(updateOptions.RepositoryOwner, updateOptions.RepositoryName);
+                }
             });
-            builder.Services.AddSingleton<IUpdateFileStore, UpdateFileStore>();
+            builder.Services.AddScoped<IUpdateOrchestrator, UpdateOrchestratorAdapter>();
             builder.Services.AddSingleton<IUpdateSettingsStore, UpdateSettingsStore>();
             builder.Services.AddSingleton<IInstalledReleaseMetadataProvider, InstalledReleaseMetadataProvider>();
-            builder.Services.AddSingleton<IUpdatePlatformResolver, UpdatePlatformResolver>();
-            builder.Services.AddSingleton<IUpdateServiceProbe, DefaultUpdateServiceProbe>();
-            builder.Services.AddSingleton<IUpdateServiceResolver, UpdateServiceResolver>();
-            builder.Services.AddSingleton<IUpdateValidator, UpdateValidator>();
-            builder.Services.AddSingleton<IUpdateScriptGenerator, UpdateScriptGenerator>();
-            builder.Services.AddSingleton<IUpdateProcessRunner, DefaultUpdateProcessRunner>();
-            builder.Services.AddSingleton<IUpdateHostTerminator, DefaultUpdateHostTerminator>();
-            builder.Services.AddSingleton<IUpdateExecutor, UpdateExecutor>();
-            builder.Services.AddScoped<IUpdateOrchestrator, UpdateOrchestrator>();
-            builder.Services.AddSingleton(TimeProvider.System);
-            var enableUpdateHostedServices = builder.Configuration.GetValue<bool?>("Updates:HostedServicesEnabled") ?? true;
-            if (enableUpdateHostedServices)
-            {
-                builder.Services.AddHostedService<UpdateChecker>();
-                builder.Services.AddHostedService<UpdateScheduler>();
-            }
 
             // AlphaVantage
             builder.Services.AddHttpClient("AlphaVantage", client =>

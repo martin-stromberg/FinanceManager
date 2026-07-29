@@ -76,21 +76,21 @@ else
         </div>
 
         <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem;">
-            <button class="btn" disabled="@_vm.Busy" @onclick="async () => await _vm.SaveAsync()">@Localizer["SetupUpdate_Btn_SaveSettings"]</button>
-            <button class="btn secondary" disabled="@_vm.Busy" @onclick="async () => await _vm.CheckAsync()">@Localizer["SetupUpdate_Btn_CheckNow"]</button>
-            <button class="btn danger" disabled="@(_vm.Busy || _vm.Status.Status != UpdateStatusKind.Ready)" @onclick="StartInstallAsync">@Localizer["SetupUpdate_Btn_Install"]</button>
-            <button class="btn secondary" disabled="@(_vm.Busy || !_vm.Status.IsLocked)" @onclick="async () => await _vm.ResetLockAsync()">@Localizer["SetupUpdate_Btn_ResetLock"]</button>
+            <button class="btn" data-testid="update-save-settings" disabled="@_vm.Busy" @onclick="async () => await _vm.SaveAsync()">@Localizer["SetupUpdate_Btn_SaveSettings"]</button>
+            <button class="btn secondary" data-testid="update-check-now" disabled="@_vm.Busy" @onclick="async () => await _vm.CheckAsync()">@Localizer["SetupUpdate_Btn_CheckNow"]</button>
+            <button class="btn danger" data-testid="update-install" disabled="@(_vm.Busy || _vm.Status.Status != UpdateStatusKind.Ready)" @onclick="StartInstallAsync">@Localizer["SetupUpdate_Btn_Install"]</button>
+            <button class="btn secondary" data-testid="update-reset-lock" disabled="@(_vm.Busy || !_vm.Status.IsLocked)" @onclick="async () => await _vm.ResetLockAsync()">@Localizer["SetupUpdate_Btn_ResetLock"]</button>
         </div>
 
         <dl style="display:grid;grid-template-columns:max-content 1fr;gap:.35rem .75rem;margin-top:1rem;">
-            <dt>@Localizer["SetupUpdate_Dl_Source"]</dt><dd>@_vm.Settings.RepositoryOwner/@_vm.Settings.RepositoryName (@_vm.Settings.ManifestAssetName)</dd>
-            <dt>@Localizer["SetupUpdate_Dl_Status"]</dt><dd>@_vm.Status.Status</dd>
-            <dt>@Localizer["SetupUpdate_Dl_Installed"]</dt><dd>@(_vm.Status.InstalledVersion ?? Localizer["SetupUpdate_Val_Unknown"].Value)</dd>
-            <dt>@Localizer["SetupUpdate_Dl_Platform"]</dt><dd>@_vm.Status.CurrentPlatform</dd>
-            <dt>@Localizer["SetupUpdate_Dl_LastChecked"]</dt><dd>@FormatDate(_vm.Status.LastCheckedAt)</dd>
-            <dt>@Localizer["SetupUpdate_Dl_Available"]</dt><dd>@(_vm.Status.AvailableVersion ?? "-")</dd>
-            <dt>@Localizer["SetupUpdate_Dl_Package"]</dt><dd>@(_vm.Status.DownloadedAssetName ?? "-")</dd>
-            <dt>@Localizer["SetupUpdate_Dl_Lock"]</dt><dd>@(_vm.Status.IsLocked ? string.Format(Localizer["SetupUpdate_Val_LockActiveSince"].Value, FormatDate(_vm.Status.LockCreatedAt)) : "-")</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Source"]</dt><dd data-testid="update-source-value">@_vm.Settings.RepositoryOwner/@_vm.Settings.RepositoryName (@_vm.Settings.ManifestAssetName)</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Status"]</dt><dd data-testid="update-status-value">@_vm.Status.Status</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Installed"]</dt><dd data-testid="update-installed-value">@(_vm.Status.InstalledVersion ?? Localizer["SetupUpdate_Val_Unknown"].Value)</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Platform"]</dt><dd data-testid="update-platform-value">@_vm.Status.CurrentPlatform</dd>
+            <dt>@Localizer["SetupUpdate_Dl_LastChecked"]</dt><dd data-testid="update-last-checked-value">@FormatDate(_vm.Status.LastCheckedAt)</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Available"]</dt><dd data-testid="update-available-value">@(_vm.Status.AvailableVersion ?? "-")</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Package"]</dt><dd data-testid="update-package-value">@(_vm.Status.DownloadedAssetName ?? "-")</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Lock"]</dt><dd data-testid="update-lock-value">@(_vm.Status.IsLocked ? string.Format(Localizer["SetupUpdate_Val_LockActiveSince"].Value, FormatDate(_vm.Status.LockCreatedAt)) : "-")</dd>
         </dl>
 
         @if (_vm.Status.AvailableUpdate is not null)
