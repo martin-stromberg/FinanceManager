@@ -20,6 +20,6 @@ Branch: `task/issue-230-a811613b947d43608023b0a62271de90-programmupdate-als-komp
 | [x] | 8a | Folgeaufgaben dokumentieren (bei Schleifenabbruch) | `continue.md` |
 | [x] | 9 | Dokumentation erstellen (Unteragent) | `docs/help/` |
 | [x] | 9b | README aktualisieren (Unteragent) | `README.md` |
-| [ ] | 10 | Nacharbeiten abschließen (offene Punkte aus `continue.md`) | `continue-done.md` |
-| [ ] | – | Feature-Verzeichnis löschen | – |
-| [ ] | – | Commit durchführen | – |
+| [x] | 10 | Nacharbeiten abschließen (erster Zyklus, 29 Punkte) | `continue-done.md` |
+| [ ] | – | Feature-Verzeichnis löschen (blockiert: neue `continue.md` mit 37 offenen Punkten aus Iteration 2) | – |
+| [x] | – | Commit durchführen | – |
