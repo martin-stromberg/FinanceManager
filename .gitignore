@@ -75,8 +75,6 @@ artifacts/
 /FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.xml
 /FinanceManager.Tests/FinanceManager.Tests.xml
 /FinanceManager.Web/FinanceManager.Web.xml
-/SoftwareSchmiede.AutoUpdate/SoftwareSchmiede.AutoUpdate.xml
-/SoftwareSchmiede.AutoUpdate.Tests/SoftwareSchmiede.AutoUpdate.Tests.xml
 
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt

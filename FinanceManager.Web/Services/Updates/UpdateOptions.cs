@@ -2,10 +2,10 @@ namespace FinanceManager.Web.Services.Updates;
 
 /// <summary>
 /// Host-specific binding for the <c>Updates</c> configuration section. Holds the FinanceManager-specific fields
-/// (repository, manifest name, source selection) used to build the <see cref="SoftwareSchmiede.AutoUpdate.AutoUpdateBuilder"/>
+/// (repository, manifest name, source selection) used to build the <see cref="msTools.Updater.AutoUpdateBuilder"/>
 /// configuration in <c>ProgramExtensions</c>. All runtime-mutable values (automatic download/installation,
 /// timeouts, byte limits, hosted services, service/executable targets) are bound only onto
-/// <see cref="SoftwareSchmiede.AutoUpdate.AutoUpdateOptions"/> from the same configuration section, not onto this
+/// <see cref="msTools.Updater.AutoUpdateOptions"/> from the same configuration section, not onto this
 /// class.
 /// </summary>
 public sealed class UpdateOptions

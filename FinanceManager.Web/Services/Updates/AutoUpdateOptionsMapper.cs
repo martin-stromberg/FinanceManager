@@ -1,5 +1,5 @@
 using FinanceManager.Shared.Dtos.Update;
-using SoftwareSchmiede.AutoUpdate;
+using msTools.Updater;
 
 namespace FinanceManager.Web.Services.Updates;
 

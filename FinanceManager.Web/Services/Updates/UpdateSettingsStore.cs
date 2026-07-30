@@ -1,7 +1,7 @@
 using System.Text.Json;
 using FinanceManager.Shared.Dtos.Update;
 using Microsoft.Extensions.Options;
-using SoftwareSchmiede.AutoUpdate;
+using msTools.Updater;
 
 namespace FinanceManager.Web.Services.Updates;
 

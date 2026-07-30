@@ -67,7 +67,7 @@ public interface IUpdateServiceCatalog
 
 /// <summary>
 /// Coordinates the self-update workflow for the REST API and setup UI. Implemented by
-/// <see cref="UpdateOrchestratorAdapter"/> on top of the <c>SoftwareSchmiede.AutoUpdate</c> library.
+/// <see cref="UpdateOrchestratorAdapter"/> on top of the <c>msTools.Updater</c> library.
 /// </summary>
 public interface IUpdateOrchestrator
 {

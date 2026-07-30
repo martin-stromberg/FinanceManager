@@ -1,6 +1,6 @@
 using FinanceManager.Web.Services.Updates;
 using Moq;
-using SoftwareSchmiede.AutoUpdate;
+using msTools.Updater;
 
 namespace FinanceManager.Tests.Updates;
 

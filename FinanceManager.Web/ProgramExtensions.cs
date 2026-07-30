@@ -16,7 +16,7 @@ using FinanceManager.Web.Infrastructure.Logging;
 using FinanceManager.Web.Services;
 using FinanceManager.Web.Services.Help;
 using FinanceManager.Web.Services.Updates;
-using SoftwareSchmiede.AutoUpdate;
+using msTools.Updater;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -155,8 +155,8 @@ namespace FinanceManager.Web
             builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api"));
             builder.Services.AddScoped<IApiClient>(sp => new ApiClient(sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api")));
 
-            // Self-update services: the auto-update subsystem itself lives in SoftwareSchmiede.AutoUpdate and is
-            // activated through the single UseAutoUpdate() entry point. The Web project only keeps the adapter
+            // Self-update services: the auto-update subsystem is provided by the external msTools.Updater release
+            // and activated through the single UseAutoUpdate() entry point. The Web project only keeps the adapter
             // that maps the library onto the existing IUpdateOrchestrator contract and DTOs, plus the
             // FinanceManager-specific settings persistence and installed-version display.
             builder.Services.AddSingleton(TimeProvider.System);

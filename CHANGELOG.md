@@ -37,6 +37,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - New `Updates` configuration entries: `SourceType` (`Github`/`LocalFolder`), `LocalFolderPath`, `EnableAutomaticDownload`, `EnableAutomaticInstallation`, `SourceCheck:Interval`/`SourceCheck:TimeRanges`, `StopHostAfterScriptStart`. Existing installations keep their previous behavior unchanged.
   - macOS is not supported (unchanged from before); documented as a known limitation of the library.
 
+### Changed
+
+- **Self-update library moved to external release artifact:** `FinanceManager.Web` now references the vendored `msTools.Updater` `v0.2.0` release under `external/msTools.Updater/v0.2.0/` instead of the local `SoftwareSchmiede.AutoUpdate` project. The ZIP is kept with a SHA256 checksum and the extracted `msTools.Updater.dll` is copied locally for build and publish.
+
+### Removed
+
+- Removed the local `SoftwareSchmiede.AutoUpdate` and `SoftwareSchmiede.AutoUpdate.Tests` projects from the solution. Updater library tests belong to the external updater repository; this repository keeps only the FinanceManager integration tests.
+
 ---
 
 ### Known Issues
