@@ -24,7 +24,7 @@ else
             @foreach (var m in ValidationResult.Messages.Where(e => e.EntryId is null))
             {
                 <li style="margin:.25rem 0;">
-                    @($"[{m.Severity}] {m.Message}")
+                    @($"[{m.Severity}] {GetLocalizedMessage(m)}")
                     @{
                         var relatedRecordUrl = BuildRelatedRecordUrl(m);
                     }
@@ -91,5 +91,59 @@ else
         var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         var currentUrl = "/" + currentPath;
         return $"/card/{kind}/{message.RelatedRecordId}?back={Uri.EscapeDataString(currentUrl)}";
+    }
+
+    private string GetLocalizedMessage(DraftValidationMessageDto message)
+    {
+        // Check if the message contains a translation key with parameters (format: Key|param1|param2)
+        if (message.Message.Contains('|'))
+        {
+            var parts = message.Message.Split('|');
+            var key = parts[0];
+            var parameters = parts.Skip(1).ToArray();
+            
+            // Try to get the localized string
+            var localizedString = Localizer?[key];
+            if (localizedString != null && !localizedString.ResourceNotFound)
+            {
+                // Format the message with parameters
+                try
+                {
+                    // Convert parameters to appropriate types for formatting
+                    var formattedParams = new List<object>();
+                    foreach (var p in parameters)
+                    {
+                        // Try to parse as DateTime for date formatting
+                        if (DateTime.TryParse(p, out var dateValue))
+                        {
+                            formattedParams.Add(dateValue);
+                        }
+                        else
+                        {
+                            formattedParams.Add(p);
+                        }
+                    }
+                    
+                    return string.Format(localizedString, formattedParams.ToArray());
+                }
+                catch (FormatException)
+                {
+                    // If formatting fails, return the key as fallback
+                    return message.Message;
+                }
+            }
+        }
+        else
+        {
+            // Simple translation key without parameters
+            var localizedString = Localizer?[message.Message];
+            if (localizedString != null && !localizedString.ResourceNotFound)
+            {
+                return localizedString;
+            }
+        }
+        
+        // Fallback to the original message if translation not found
+        return message.Message;
     }
 }

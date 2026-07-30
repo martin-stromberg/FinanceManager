@@ -78,6 +78,52 @@ public sealed class SetupUpdateTabTests : BunitContext
         render.Markup.Should().Contain(localizer["Msg_Update_WaitingForRestart"].Value);
     }
 
+    [Fact]
+    public void Render_WithLoadedSettings_HidesRemovedFieldsAndTabButtons()
+    {
+        var settings = new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, "FinanceManagerService", "app.exe", "updates", 120);
+        var status = new UpdateStatusDto(UpdateStatusKind.Ready, "1.0.0", null, "1.0.1", "win-x64", null, null, "release.zip", false, null, null, null);
+        var apiMock = new Mock<IApiClient>();
+        apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
+        apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(status);
+        var (vm, localizer) = CreateVmAndLocalizer(apiMock.Object);
+
+        var render = Render<SetupUpdateTab>(parameters => parameters.Add(p => p.ViewModel, vm));
+
+        render.WaitForAssertion(() =>
+        {
+            render.Markup.Should().NotContain(localizer["SetupUpdate_Lbl_ExecutablePath"].Value);
+            render.Markup.Should().NotContain(localizer["SetupUpdate_Lbl_RepositoryOwner"].Value);
+            render.Markup.Should().NotContain(localizer["SetupUpdate_Lbl_RepositoryName"].Value);
+            render.Markup.Should().NotContain(localizer["SetupUpdate_Lbl_ManifestAssetName"].Value);
+            render.Markup.Should().NotContain(localizer["SetupUpdate_Lbl_WorkingDirectory"].Value);
+            render.Markup.Should().NotContain(localizer["SetupUpdate_Lbl_HealthTimeout"].Value);
+            render.Markup.Should().NotContain(localizer["SetupUpdate_Btn_SaveSettings"].Value);
+            render.Markup.Should().NotContain(localizer["SetupUpdate_Btn_CheckNow"].Value);
+            render.Markup.Should().NotContain(localizer["SetupUpdate_Btn_Install"].Value);
+            render.Markup.Should().NotContain(localizer["SetupUpdate_Btn_ResetLock"].Value);
+        });
+    }
+
+    [Fact]
+    public void Render_WithLoadedStatus_ShowsLocalizedStatus()
+    {
+        var settings = new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, null, null, "updates", 120);
+        var status = new UpdateStatusDto(UpdateStatusKind.Ready, "1.0.0", null, "1.0.1", "win-x64", null, null, "release.zip", false, null, null, null);
+        var apiMock = new Mock<IApiClient>();
+        apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
+        apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(status);
+        var (vm, localizer) = CreateVmAndLocalizer(apiMock.Object);
+
+        var render = Render<SetupUpdateTab>(parameters => parameters.Add(p => p.ViewModel, vm));
+
+        render.WaitForAssertion(() =>
+        {
+            render.Markup.Should().Contain(localizer["UpdateStatusKind_Ready"].Value);
+            render.Markup.Should().NotContain($">{UpdateStatusKind.Ready}<");
+        });
+    }
+
     private (SetupUpdateViewModel Vm, IStringLocalizer<Pages> Localizer) CreateVmAndLocalizer(IApiClient api, bool useHangingHttpClient = false)
     {
         Services.AddSingleton<ICurrentUserService>(new TestCurrentUserService());
@@ -111,7 +157,7 @@ public sealed class SetupUpdateTabTests : BunitContext
         JSInterop.Setup<bool>("confirm", _ => true).SetResult(true);
 
         var render = Render<SetupUpdateTab>(parameters => parameters.Add(p => p.ViewModel, vm));
-        render.Find("button.danger").Click();
+        await vm.StartInstallWithConfirmationAsync();
 
         var deadline = DateTime.UtcNow.AddSeconds(8);
         while (vm.LastErrorCode is null && DateTime.UtcNow < deadline)

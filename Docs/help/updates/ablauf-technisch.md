@@ -137,6 +137,25 @@ Resultat:    {Status: Failed, LastError: "Err_Update_VersionMismatch"}
 **Fehlerbehandlung:**
 Alle Verweigerungen werfen `IOException`, die über die API als HTTP 409 (Conflict) oder HTTP 400 (Bad Request) beantwortet werden.
 
+### 6. Einstellungen normalisieren und Service-Vorschläge laden
+
+Die Update-Einstellungen enthalten weiterhin DTO-Felder für ältere gespeicherte Dateien und API-Kompatibilität. Anwender bearbeiten in der Setup-UI jedoch nur noch `Enabled`, `CheckIntervalMinutes`, `ScheduledInstallTime` und `ServiceName`.
+
+Beim Laden und Speichern normalisiert `UpdateSettingsStore` technische Werte:
+- `RepositoryOwner` = `martin-stromberg`
+- `RepositoryName` = `FinanceManager`
+- `ManifestAssetName` = `update.json`
+- `WorkingDirectory` = `updates`
+- `HealthTimeoutSeconds` = `UpdateOptions.HealthTimeoutSeconds`, Fallback `120`, Clamp `10..600`
+- `ExecutablePath` wird bei Speichervorgängen nicht aus Anwenderwerten übernommen
+
+Das Autocomplete für `ServiceName` läuft über `IUpdateServiceCatalog`:
+- Windows: `sc.exe query type= service state= all`, Dienstnamen aus `SERVICE_NAME:`-Zeilen
+- Linux: `systemctl list-units --type=service --all --no-legend --no-pager`, Service-Namen aus der ersten Spalte
+- Andere Plattformen, fehlende Tools, Prozessfehler oder Timeouts liefern eine leere Liste
+
+Die Vorschläge werden gefiltert, dedupliziert, stabil sortiert und begrenzt zurückgegeben. Die UI behandelt Fehler als leere Vorschlagsliste, damit die Setup-Seite nicht blockiert.
+
 ## systemd-run Integration
 
 Der Installer-Prozess wird nicht direkt gestartet, sondern über systemd-run als transient service unit. Dadurch läuft die Installation unabhängig vom Host-Prozess weiter.

@@ -7,6 +7,8 @@ using FinanceManager.Tests.Updates;
 using FinanceManager.Web.Services.Updates;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SoftwareSchmiede.AutoUpdate;

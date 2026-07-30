@@ -4,7 +4,7 @@
 
 ## Übersicht
 
-Die Update-API wird von der Verwaltungs-UI (`SetupUpdateTab.razor`) verwendet, um Status abzurufen, Konfiguration zu speichern, Prüfungen durchzuführen und Installationen zu starten. Alle Endpunkte sind Admin-only und erfordern entsprechende Authentifizierung.
+Die Update-API wird von der Verwaltungs-UI (`SetupUpdateTab.razor`) verwendet, um Status abzurufen, Konfiguration zu speichern, Service-Vorschläge zu laden, Prüfungen durchzuführen und Installationen zu starten. Alle Endpunkte sind Admin-only und erfordern entsprechende Authentifizierung.
 
 ## Authentifizierung
 
@@ -16,7 +16,7 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 
 ## Endpunkte
 
-### `GET /api/updates/status`
+### `GET /api/setup/update/status`
 
 **Beschreibung:** Aktuellen Update-Status auslesen (zuletzt geladene Version, verfügbare Update, Lock-Status, Fehler)
 
@@ -53,7 +53,7 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 
 ---
 
-### `GET /api/updates/settings`
+### `GET /api/setup/update/settings`
 
 **Beschreibung:** Update-Konfiguration auslesen
 
@@ -65,13 +65,13 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 {
   "enabled": true,
   "checkIntervalMinutes": 60,
-  "repositoryOwner": "my-org",
-  "repositoryName": "my-app",
-  "manifestAssetName": "manifest.json",
+  "repositoryOwner": "martin-stromberg",
+  "repositoryName": "FinanceManager",
+  "manifestAssetName": "update.json",
   "scheduledInstallTime": "03:00:00",
   "serviceName": "my-app-service",
-  "executablePath": "/opt/app/MyApp",
-  "workingDirectory": "/opt/app",
+  "executablePath": null,
+  "workingDirectory": "updates",
   "healthTimeoutSeconds": 120
 }
 ```
@@ -85,7 +85,7 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 
 ---
 
-### `POST /api/updates/settings`
+### `PUT /api/setup/update/settings`
 
 **Beschreibung:** Update-Konfiguration speichern
 
@@ -95,22 +95,27 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 {
   "enabled": true,
   "checkIntervalMinutes": 60,
-  "repositoryOwner": "my-org",
-  "repositoryName": "my-app",
-  "manifestAssetName": "manifest.json",
+  "repositoryOwner": "ignored",
+  "repositoryName": "ignored",
+  "manifestAssetName": "ignored",
   "scheduledInstallTime": "03:00:00",
   "serviceName": "my-app-service",
-  "executablePath": "/opt/app/MyApp",
-  "workingDirectory": "/opt/app",
-  "healthTimeoutSeconds": 120
+  "executablePath": null,
+  "workingDirectory": "updates",
+  "healthTimeoutSeconds": 300
 }
 ```
 
 **Rückgabe:** `UpdateSettingsDto` (gespeicherte Konfiguration, mit Normalisierung)
 
-**Validierung:**
+**Normalisierung und Validierung:**
 - `CheckIntervalMinutes`: 1–1440 (geclamped)
-- `HealthTimeoutSeconds`: 10–600 (geclamped)
+- `RepositoryOwner`: immer `martin-stromberg`
+- `RepositoryName`: immer `FinanceManager`
+- `ManifestAssetName`: immer `update.json`
+- `WorkingDirectory`: immer `updates`
+- `ExecutablePath`: wird bei Speichervorgängen nicht aus Anwenderwerten fortgeschrieben
+- `HealthTimeoutSeconds`: kommt aus `UpdateOptions.HealthTimeoutSeconds`, Fallback `120`, Clamp 10–600
 
 **Fehler:**
 
@@ -122,7 +127,40 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 
 ---
 
-### `POST /api/updates/schedule`
+### `GET /api/setup/update/services`
+
+**Beschreibung:** Service-Namen für das Autocomplete-Feld der Update-Einstellungen laden.
+
+**Query-Parameter:**
+
+| Parameter | Typ | Standard | Beschreibung |
+|-----------|-----|----------|--------------|
+| `query` | string? | leer | Optionaler Filter; Treffer enthalten den Suchtext ohne Beachtung der Groß-/Kleinschreibung |
+| `take` | int | 20 | Maximale Trefferanzahl, serverseitig auf 1–100 begrenzt |
+
+**Rückgabe:** alphabetisch sortierte, deduplizierte Liste von Service-Namen.
+
+```json
+[
+  "FinanceManager.service",
+  "nginx.service"
+]
+```
+
+**Plattformverhalten:**
+- Windows: Dienstnamen aus `sc.exe query type= service state= all`
+- Linux: systemd-Services aus `systemctl list-units --type=service --all --no-legend --no-pager`
+- Andere Plattformen, fehlende Tools, Timeouts oder Prozessfehler: leere Liste
+
+**Fehler:**
+
+| Code | Ursache |
+|------|---------|
+| 403 | Anwender ist nicht Admin |
+
+---
+
+### `POST /api/setup/update/schedule`
 
 **Beschreibung:** Geplante Installationszeit setzen (für zukünftige geplante Installationen)
 
@@ -140,7 +178,7 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 
 ---
 
-### `POST /api/updates/check`
+### `POST /api/setup/update/check`
 
 **Beschreibung:** Sofortige Prüfung auf verfügbare Updates auslösen
 
@@ -182,7 +220,7 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 
 ---
 
-### `POST /api/updates/install`
+### `POST /api/setup/update/install/start`
 
 **Beschreibung:** Installation eines bereiten Updates starten
 
@@ -221,7 +259,7 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 
 ---
 
-### `POST /api/updates/reset-lock`
+### `POST /api/setup/update/lock/reset`
 
 **Beschreibung:** Update-Lock manuell zurücksetzen (nur bei verwaisten Locks)
 
@@ -236,7 +274,7 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 **Parameter:**
 - `reason` (string?, optional): Grund für den Reset (wird in Status-Fehler-Meldung dokumentiert)
 
-**Rückgabe:** `UpdateStatusDto` (Status mit `isLocked: false`)
+**Rückgabe:** HTTP 204 No Content. Die UI lädt den Status danach erneut.
 
 **Fehler:**
 
@@ -303,9 +341,9 @@ public class UpdateSettingsDto
     public string ManifestAssetName { get; set; }
     public TimeOnly? ScheduledInstallTime { get; set; }
     public string ServiceName { get; set; }                 // Windows Service oder systemd-Dienst
-    public string ExecutablePath { get; set; }
-    public string WorkingDirectory { get; set; }
-    public int HealthTimeoutSeconds { get; set; }           // 10-600
+    public string ExecutablePath { get; set; }               // Legacy-Lesewert, nicht mehr editierbar
+    public string WorkingDirectory { get; set; }             // serverseitig normalisiert auf "updates"
+    public int HealthTimeoutSeconds { get; set; }            // aus Serverkonfiguration, nicht mehr editierbar
 }
 ```
 

@@ -47,50 +47,24 @@ else
             </label>
             <label>
                 @Localizer["SetupUpdate_Lbl_ServiceName"]
-                <input class="form-control" value="@_vm.Settings.ServiceName" @onchange="OnServiceNameChanged" />
+                <input class="form-control" list="update-service-suggestions" value="@_vm.Settings.ServiceName" @oninput="OnServiceNameInputAsync" @onchange="OnServiceNameChanged" @onfocus="LoadServiceSuggestionsAsync" />
+                <datalist id="update-service-suggestions">
+                    @foreach (var serviceName in _vm.ServiceSuggestions)
+                    {
+                        <option value="@serviceName"></option>
+                    }
+                </datalist>
             </label>
-            <label>
-                @Localizer["SetupUpdate_Lbl_ExecutablePath"]
-                <input class="form-control" value="@_vm.Settings.ExecutablePath" @onchange="OnExecutablePathChanged" />
-            </label>
-            <label>
-                @Localizer["SetupUpdate_Lbl_RepositoryOwner"]
-                <input class="form-control" value="@_vm.Settings.RepositoryOwner" @onchange="OnRepositoryOwnerChanged" />
-            </label>
-            <label>
-                @Localizer["SetupUpdate_Lbl_RepositoryName"]
-                <input class="form-control" value="@_vm.Settings.RepositoryName" @onchange="OnRepositoryNameChanged" />
-            </label>
-            <label>
-                @Localizer["SetupUpdate_Lbl_ManifestAssetName"]
-                <input class="form-control" value="@_vm.Settings.ManifestAssetName" @onchange="OnManifestAssetNameChanged" />
-            </label>
-            <label>
-                @Localizer["SetupUpdate_Lbl_WorkingDirectory"]
-                <input class="form-control" value="@_vm.Settings.WorkingDirectory" @onchange="OnWorkingDirectoryChanged" />
-            </label>
-            <label>
-                @Localizer["SetupUpdate_Lbl_HealthTimeout"]
-                <input class="form-control" type="number" min="10" max="600" value="@_vm.Settings.HealthTimeoutSeconds" @onchange="OnHealthTimeoutChanged" />
-            </label>
-        </div>
-
-        <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem;">
-            <button class="btn" data-testid="update-save-settings" disabled="@_vm.Busy" @onclick="async () => await _vm.SaveAsync()">@Localizer["SetupUpdate_Btn_SaveSettings"]</button>
-            <button class="btn secondary" data-testid="update-check-now" disabled="@_vm.Busy" @onclick="async () => await _vm.CheckAsync()">@Localizer["SetupUpdate_Btn_CheckNow"]</button>
-            <button class="btn danger" data-testid="update-install" disabled="@(_vm.Busy || _vm.Status.Status != UpdateStatusKind.Ready)" @onclick="StartInstallAsync">@Localizer["SetupUpdate_Btn_Install"]</button>
-            <button class="btn secondary" data-testid="update-reset-lock" disabled="@(_vm.Busy || !_vm.Status.IsLocked)" @onclick="async () => await _vm.ResetLockAsync()">@Localizer["SetupUpdate_Btn_ResetLock"]</button>
         </div>
 
         <dl style="display:grid;grid-template-columns:max-content 1fr;gap:.35rem .75rem;margin-top:1rem;">
-            <dt>@Localizer["SetupUpdate_Dl_Source"]</dt><dd data-testid="update-source-value">@_vm.Settings.RepositoryOwner/@_vm.Settings.RepositoryName (@_vm.Settings.ManifestAssetName)</dd>
-            <dt>@Localizer["SetupUpdate_Dl_Status"]</dt><dd data-testid="update-status-value">@_vm.Status.Status</dd>
-            <dt>@Localizer["SetupUpdate_Dl_Installed"]</dt><dd data-testid="update-installed-value">@(_vm.Status.InstalledVersion ?? Localizer["SetupUpdate_Val_Unknown"].Value)</dd>
-            <dt>@Localizer["SetupUpdate_Dl_Platform"]</dt><dd data-testid="update-platform-value">@_vm.Status.CurrentPlatform</dd>
-            <dt>@Localizer["SetupUpdate_Dl_LastChecked"]</dt><dd data-testid="update-last-checked-value">@FormatDate(_vm.Status.LastCheckedAt)</dd>
-            <dt>@Localizer["SetupUpdate_Dl_Available"]</dt><dd data-testid="update-available-value">@(_vm.Status.AvailableVersion ?? "-")</dd>
-            <dt>@Localizer["SetupUpdate_Dl_Package"]</dt><dd data-testid="update-package-value">@(_vm.Status.DownloadedAssetName ?? "-")</dd>
-            <dt>@Localizer["SetupUpdate_Dl_Lock"]</dt><dd data-testid="update-lock-value">@(_vm.Status.IsLocked ? string.Format(Localizer["SetupUpdate_Val_LockActiveSince"].Value, FormatDate(_vm.Status.LockCreatedAt)) : "-")</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Status"]</dt><dd>@Localizer[UpdateStatusKey(_vm.Status.Status)]</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Installed"]</dt><dd>@(_vm.Status.InstalledVersion ?? Localizer["SetupUpdate_Val_Unknown"].Value)</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Platform"]</dt><dd>@_vm.Status.CurrentPlatform</dd>
+            <dt>@Localizer["SetupUpdate_Dl_LastChecked"]</dt><dd>@FormatDate(_vm.Status.LastCheckedAt)</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Available"]</dt><dd>@(_vm.Status.AvailableVersion ?? "-")</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Package"]</dt><dd>@(_vm.Status.DownloadedAssetName ?? "-")</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Lock"]</dt><dd>@(_vm.Status.IsLocked ? string.Format(Localizer["SetupUpdate_Val_LockActiveSince"].Value, FormatDate(_vm.Status.LockCreatedAt)) : "-")</dd>
         </dl>
 
         @if (_vm.Status.AvailableUpdate is not null)
@@ -142,6 +116,8 @@ else
         _vm = ViewModel ?? throw new InvalidOperationException("ViewModel parameter is required for SetupUpdateTab.");
         _stateChangedHandler = (_, __) => _ = InvokeAsync(StateHasChanged);
         _vm.StateChanged += _stateChangedHandler;
+        _vm.ConfirmInstallAsync = ConfirmInstallAsync;
+        _vm.InstallStarted += OnInstallStarted;
         await _vm.LoadAsync();
     }
 
@@ -151,25 +127,21 @@ else
         {
             _vm.StateChanged -= _stateChangedHandler;
         }
+        if (_vm is not null)
+        {
+            _vm.ConfirmInstallAsync = null;
+            _vm.InstallStarted -= OnInstallStarted;
+        }
         _pollingCts?.Cancel();
         _pollingCts?.Dispose();
         _timer?.Dispose();
     }
 
-    private async Task StartInstallAsync()
-    {
-        var confirmed = await Js.InvokeAsync<bool>("confirm", Localizer["Msg_Update_ConfirmDowntime"].Value);
-        if (!confirmed)
-        {
-            return;
-        }
+    private ValueTask<bool> ConfirmInstallAsync()
+        => Js.InvokeAsync<bool>("confirm", Localizer["Msg_Update_ConfirmDowntime"].Value);
 
-        await _vm!.StartInstallAsync(confirmDowntime: true);
-        if (_vm.Installing)
-        {
-            _ = PollHealthAsync();
-        }
-    }
+    private void OnInstallStarted(object? sender, EventArgs args)
+        => _ = InvokeAsync(PollHealthAsync);
 
     private async Task PollHealthAsync()
     {
@@ -223,12 +195,15 @@ else
     private void OnIntervalChanged(ChangeEventArgs e) => Update(s => s with { CheckIntervalMinutes = int.TryParse(Convert.ToString(e.Value), out var value) ? value : s.CheckIntervalMinutes });
     private void OnScheduleChanged(ChangeEventArgs e) => Update(s => s with { ScheduledInstallTime = TimeOnly.TryParse(Convert.ToString(e.Value), out var t) ? t : null });
     private void OnServiceNameChanged(ChangeEventArgs e) => Update(s => s with { ServiceName = Convert.ToString(e.Value) });
-    private void OnExecutablePathChanged(ChangeEventArgs e) => Update(s => s with { ExecutablePath = Convert.ToString(e.Value) });
-    private void OnRepositoryOwnerChanged(ChangeEventArgs e) => Update(s => s with { RepositoryOwner = Convert.ToString(e.Value) ?? s.RepositoryOwner });
-    private void OnRepositoryNameChanged(ChangeEventArgs e) => Update(s => s with { RepositoryName = Convert.ToString(e.Value) ?? s.RepositoryName });
-    private void OnManifestAssetNameChanged(ChangeEventArgs e) => Update(s => s with { ManifestAssetName = Convert.ToString(e.Value) ?? s.ManifestAssetName });
-    private void OnWorkingDirectoryChanged(ChangeEventArgs e) => Update(s => s with { WorkingDirectory = Convert.ToString(e.Value) ?? s.WorkingDirectory });
-    private void OnHealthTimeoutChanged(ChangeEventArgs e) => Update(s => s with { HealthTimeoutSeconds = int.TryParse(Convert.ToString(e.Value), out var value) ? value : s.HealthTimeoutSeconds });
+
+    private async Task OnServiceNameInputAsync(ChangeEventArgs e)
+    {
+        OnServiceNameChanged(e);
+        await LoadServiceSuggestionsAsync();
+    }
+
+    private Task LoadServiceSuggestionsAsync()
+        => _vm?.LoadServiceSuggestionsAsync(_vm.Settings?.ServiceName) ?? Task.CompletedTask;
 
     private void Update(Func<UpdateSettingsDto, UpdateSettingsDto> update)
     {
@@ -241,5 +216,6 @@ else
     private static string FormatTime(TimeOnly? time) => time?.ToString("HH:mm") ?? string.Empty;
     private static string FormatDate(DateTimeOffset? date) => date?.ToLocalTime().ToString("g") ?? "-";
     private static string FormatBytes(long bytes) => bytes <= 0 ? "-" : $"{bytes / 1024d / 1024d:0.##} MB";
+    private static string UpdateStatusKey(UpdateStatusKind status) => $"UpdateStatusKind_{status}";
     public static bool ShouldReloadAfterHealth(bool outageObserved, bool healthSuccessful) => outageObserved && healthSuccessful;
 }

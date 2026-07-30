@@ -50,6 +50,20 @@ public interface IInstalledReleaseMetadataProvider
     /// <returns>The installed release metadata.</returns>
     Task<InstalledReleaseMetadataDto> GetAsync(CancellationToken ct = default);
 }
+/// <summary>
+/// Provides a catalog of candidate host process/service names for the service-name autocomplete field in the setup UI.
+/// </summary>
+public interface IUpdateServiceCatalog
+{
+    /// <summary>
+    /// Lists candidate host process/service names for the service-name autocomplete field in the setup UI.
+    /// </summary>
+    /// <param name="query">Optional filter substring.</param>
+    /// <param name="take">Maximum number of names to return.</param>
+    /// <param name="ct">A token to observe for cancellation requests.</param>
+    /// <returns>The matching candidate service names.</returns>
+    Task<IReadOnlyList<string>> ListServiceNamesAsync(string? query, int take, CancellationToken ct = default);
+}
 
 /// <summary>
 /// Coordinates the self-update workflow for the REST API and setup UI. Implemented by

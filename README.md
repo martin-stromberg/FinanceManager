@@ -16,7 +16,7 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 - Berichte, KPI-Dashboards und Budgetauswertungen nutzen, inklusive bestandsgepruefter Hochrechnung fuer Wertpapier-Dividendenreports
 - Anhänge und Sicherungen (Backup/Restore) verwalten
 - Responsive Web-UI für kleine Viewports (mobile Topbar, responsive Container, mobile Ribbon-Shortcuts, mobile E2E-Abdeckung)
-- Einstellungs-Ribbon mit stets sichtbaren Aktionen: Backup erstellen/hochladen, Profil speichern/zurücksetzen, Benachrichtigungen und Kontoauszugs-Importregeln speichern — unabhängig davon, welche Sektion gerade aufgeklappt ist
+- Einstellungs-Ribbon mit stets sichtbaren Aktionen: Backup erstellen/hochladen, Profil speichern/zurücksetzen, Benachrichtigungen, Kontoauszugs-Importregeln und Update-Einstellungen speichern sowie Update-Prüfung, Installation und Lock-Reset auslösen — unabhängig davon, welche Sektion gerade aufgeklappt ist
 - Versionsinformation im Programmmenü (Footer) angezeigt — aktuelle Versionnummer oder Fallback `"Version unbekannt"`
 - JWT-Authentifizierung mit 30 Minuten Access-Token-Laufzeit, SecurityStamp-/Rollen-/Active-Revalidierung und DB-validiertem Refresh
 
@@ -75,9 +75,9 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 | `Updates:EnableAutomaticInstallation` | bool | `false` | Installation nach erfolgreichem Download |
 | `Updates:ManifestAssetName` | string | `update.json` | Release-Asset mit Update-Metadaten |
 | `Updates:WorkingDirectory` | string | `updates` | Betriebsverzeichnis fuer Pending-Paket, Status, Lock, Staging und Skripte |
-| `Updates:ServiceName` | string? | leer | Optionaler Service-Override fuer die aktuelle Plattform |
-| `Updates:ExecutablePath` | string? | leer | Windows-Fallback, wenn kein Service gesteuert wird; muss absolut im aktuellen Anwendungsverzeichnis liegen |
-| `Updates:HealthTimeoutSeconds` | int | `120` | Wartezeit der Setup-UI bis zur Wiedererreichbarkeit von `/health` |
+| `Updates:ServiceName` | string? | leer | Optionaler Service-Override fuer die aktuelle Plattform; in der Admin-UI mit Windows-/Linux-Service-Autocomplete |
+| `Updates:ExecutablePath` | string? | leer | Windows-Fallback, wenn kein Service gesteuert wird; muss absolut im aktuellen Anwendungsverzeichnis liegen; nicht mehr ueber die Admin-UI editierbar |
+| `Updates:HealthTimeoutSeconds` | int | `120` | Wartezeit der Setup-UI bis zur Wiedererreichbarkeit von `/health`, serverseitig auf 10..600 begrenzt; nicht mehr ueber die Admin-UI editierbar |
 | `Updates:MaxAssetBytes` | long | `536870912` | Maximale Groesse eines Update-ZIP-Assets |
 | `Updates:HostedServicesEnabled` | bool | `true` | Aktiviert `AutoUpdateCheckerService` und `AutoUpdateSchedulerService` |
 | `Updates:SourceCheck:Interval` | int | `360` | Prüfintervall in Minuten (neue Syntax; Legacy-Alias: `CheckIntervalMinutes`) |
@@ -160,7 +160,7 @@ Einstiegspunkte:
 - `POST /api/setup/backups/upload` – ZIP-Backup hochladen; akzeptiert nur valide ZIP/NDJSON-Backups innerhalb der konfigurierten `Backups:Security`-Limits
 - `POST /api/setup/backups/{id}/apply` – Backup synchron wiederherstellen; destruktiv und nur mit `BackupRestoreRequestDto`, dessen `confirmationText` exakt dem gespeicherten Dateinamen entspricht
 - `POST /api/setup/backups/{id}/apply/start` – destruktiven Restore als Hintergrundtask starten; verwendet dieselbe serverseitige Dateinamen-Bestaetigung
-- `GET /api/setup/update/status` und `GET|PUT /api/setup/update/settings` – Self-Update-Status und Admin-Einstellungen; nur Rolle `Admin`
+- `GET /api/setup/update/status`, `GET|PUT /api/setup/update/settings` und `GET /api/setup/update/services` – Self-Update-Status, Admin-Einstellungen und Service-Autocomplete; nur Rolle `Admin`
 - `POST /api/setup/update/check` – GitHub-Release-Manifest abrufen, passendes Paket laden und Hash/ZIP validieren
 - `POST /api/setup/update/schedule` – geplante Installationszeit fuer ein vorbereitetes Update speichern
 - `POST /api/setup/update/install/start` – vorbereitetes Update nach Downtime-Bestaetigung installieren; erstellt Lock und startet ein externes Update-Skript
@@ -212,19 +212,23 @@ dotnet test FinanceManager.sln
   Bei der Reparatur eines unvollständigen Assets wird dessen Release-Tag
   ausgecheckt; die Reparatursuche verarbeitet alle Seiten der
   GitHub-Release-API.
-- Das Self-Update ist eine Admin-Funktion im Setup. Die UI zeigt Quelle,
-  Status, Paketmetadaten und Release Notes, verlangt vor manueller Installation
-  eine Downtime-Bestaetigung und wartet nach Start erst auf einen beobachteten
+- Das Self-Update ist eine Admin-Funktion im Setup. Die UI zeigt Status,
+  Paketmetadaten und Release Notes; die technische Update-Quelle (GitHub-Repository
+  oder lokaler Ordner via `Updates:SourceType`) sowie Manifest-Asset und
+  Arbeitsverzeichnis werden serverseitig über `SoftwareSchmiede.AutoUpdate`
+  konfiguriert. Sichtbare Einstellungswerte werden über den globalen
+  Ribbon-Button `Speichern` persistiert; die Aktionen `Jetzt prüfen`,
+  `Update installieren` und `Update-Lock zurücksetzen` liegen ebenfalls im
+  Setup-Ribbon. Der Service-Name bietet Vorschläge aus Windows-Diensten oder
+  Linux-systemd-Services. Vor manueller Installation verlangt die UI eine
+  Downtime-Bestaetigung und wartet nach Start erst auf einen beobachteten
   Ausfall, bevor ein spaeterer `/health`-Erfolg als abgeschlossen gilt. Vor der
   Installation validiert der Server Hash, Groesse, ZIP-Pfade, Service-/EXE-Ziel
   und Lock. Eine geplante Installationszeit wird vom Scheduler minuetlich
   geprueft und startet ein bereites Update ohne erneute Benutzerbestaetigung.
-  Ein Admin-Lock-Reset loescht nur vorhandene Locks, die aelter als das
-  konfigurierte Health-Timeout sind, und verweigert den Reset, solange der
-  aktuelle Prozess noch eine laufende Installation kennt. Fuer produktive Hosts
-  sollte ein eindeutiger `Updates:ServiceName` fuer das aktuelle System
-  konfiguriert werden; Best-Effort-Erkennung wird nur genutzt, wenn sie
-  eindeutig ist.
+  Ein Admin-Lock-Reset loescht nur vorhandene Locks, die aelter als der interne
+  Health-Timeout sind, und verweigert den Reset, solange der aktuelle Prozess
+  noch eine laufende Installation kennt.
 - **Verbesserungen (Issue #206):** Das Update-System wurde fuer Produktionsumgebungen
   (insbesondere Linux) stabilisiert: Lock-Verwaltung ist atomarer, verwaiste Locks
   werden zuverlaessiger erkannt und bereinigt, der Service-Neustart und die
@@ -264,12 +268,12 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md), insbesondere:
 
 ### Aktuelle / In Bearbeitung
 
-**Issue #206 – Automatisches Update reparieren** ✓ Abgeschlossen
-- Lock-State Stabilisierung für Linux/Produktionsumgebungen
-- Dienst-Neustart und Post-Update-Validierung gehärtet
-- Vollständige Lokalisierung von Fehlermeldungen
-- Fortschrittsanzeige während Installation verbessert
-- Siehe Änderungen im Branch `task/issue-206-*-automatisches-update-repariere`
+**Issue #224 – Update-Einstellungen vereinheitlichen** ✓ Abgeschlossen
+- Technische Update-Konfiguration aus der Admin-UI entfernt und serverseitig normalisiert
+- Update-Einstellungen an das globale Setup-Speicherpattern angebunden
+- Update-Aktionen in das Setup-Ribbon verschoben
+- Service-Name mit plattformspezifischem Autocomplete für Windows und Linux ergänzt
+- Update-Statuswerte lokalisiert
 
 ### Geplant
 

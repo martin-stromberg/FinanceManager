@@ -16,17 +16,17 @@ public sealed class UpdateSettingsStoreTests
         {
             var (store, packageStore) = CreateStore(root.FullName);
 
-            await store.SaveAsync(new UpdateSettingsUpdateRequest(
+            var settings = await store.SaveAsync(new UpdateSettingsUpdateRequest(
                 true,
                 30,
-                "martin-stromberg",
-                "FinanceManager",
-                "update.json",
+                "other-owner",
+                "OtherRepo",
+                "manifest.json",
                 null,
                 "FinanceManager",
-                null,
+                "C:\\app\\FinanceManager.exe",
                 "custom-updates",
-                120));
+                30));
 
             File.Exists(Path.Combine(packageStore.RootDirectory, "settings.json")).Should().BeTrue();
         }

@@ -168,35 +168,13 @@ namespace FinanceManager.Web
             var sourceCheckIntervalConfigured = builder.Configuration.GetValue<int?>($"{UpdateOptions.SectionName}:SourceCheck:Interval") is not null;
             builder.UseAutoUpdate(cfg =>
             {
-                cfg.BindConfiguration(UpdateOptions.SectionName);
-                cfg.WithUpdateUnitName("FinanceManagerUpdate");
-                if (!string.IsNullOrWhiteSpace(updateOptions.WorkingDirectory))
-                {
-                    cfg.WithDownloadPath(updateOptions.WorkingDirectory);
-                }
-
-                if (!sourceCheckIntervalConfigured)
-                {
-                    cfg.WithSourceCheck(Math.Max(1, updateOptions.CheckIntervalMinutes));
-                }
-
-                if (string.Equals(updateOptions.SourceType, "LocalFolder", StringComparison.OrdinalIgnoreCase))
-                {
-                    cfg.UseLocalFolderSource(
-                        string.IsNullOrWhiteSpace(updateOptions.LocalFolderPath)
-                            ? Path.Combine(updateOptions.WorkingDirectory, "source")
-                            : updateOptions.LocalFolderPath,
-                        updateOptions.ManifestAssetName);
-                }
-                else
-                {
-                    cfg.UseGithubSource(updateOptions.RepositoryOwner, updateOptions.RepositoryName, updateOptions.ManifestAssetName);
-                }
+                cfg.SetInitialConfiguration(updateOptions, sourceCheckIntervalConfigured);
             });
             builder.Services.AddScoped<IUpdateOrchestrator, UpdateOrchestratorAdapter>();
             builder.Services.AddSingleton<IUpdateSettingsStore, UpdateSettingsStore>();
             builder.Services.AddSingleton<IInstalledReleaseMetadataProvider, InstalledReleaseMetadataProvider>();
             builder.Services.AddSingleton<UpdateStatusMapper>();
+            builder.Services.AddSingleton<IUpdateServiceCatalog, DefaultUpdateServiceCatalog>();
 
             // AlphaVantage
             builder.Services.AddHttpClient("AlphaVantage", client =>
@@ -337,6 +315,34 @@ namespace FinanceManager.Web
             });
 
             builder.Services.AddAuthorization();
+        }
+
+        private static void SetInitialConfiguration(this AutoUpdateBuilder cfg, UpdateOptions updateOptions, bool sourceCheckIntervalConfigured)
+        {
+            cfg.BindConfiguration(UpdateOptions.SectionName);
+            cfg.WithUpdateUnitName("FinanceManagerUpdate");
+            if (!string.IsNullOrWhiteSpace(updateOptions.WorkingDirectory))
+            {
+                cfg.WithDownloadPath(updateOptions.WorkingDirectory);
+            }
+
+            if (!sourceCheckIntervalConfigured)
+            {
+                cfg.WithSourceCheck(Math.Max(1, updateOptions.CheckIntervalMinutes));
+            }
+
+            if (string.Equals(updateOptions.SourceType, "LocalFolder", StringComparison.OrdinalIgnoreCase))
+            {
+                cfg.UseLocalFolderSource(
+                    string.IsNullOrWhiteSpace(updateOptions.LocalFolderPath)
+                        ? Path.Combine(updateOptions.WorkingDirectory, "source")
+                        : updateOptions.LocalFolderPath,
+                    updateOptions.ManifestAssetName);
+            }
+            else
+            {
+                cfg.UseGithubSource(updateOptions.RepositoryOwner, updateOptions.RepositoryName, updateOptions.ManifestAssetName);
+            }
         }
 
         /// <summary>
