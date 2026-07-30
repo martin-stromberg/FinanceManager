@@ -33,7 +33,7 @@ public sealed partial class DefaultAutoUpdateServiceProbe : IAutoUpdateServicePr
 
         try
         {
-            var output = ProcessOutputReader.Read("sc.exe", "queryex type= service state= all", timeoutMs: ServiceProbeTimeoutMs);
+            var output = ProcessOutputReader.Read("sc.exe", "queryex type= service state= all", timeoutMs: ServiceProbeTimeoutMs, logger: _logger);
             var services = new List<string>();
             string? currentService = null;
             foreach (var line in output.Split('\n'))
@@ -78,7 +78,7 @@ public sealed partial class DefaultAutoUpdateServiceProbe : IAutoUpdateServicePr
 
         try
         {
-            var output = ProcessOutputReader.Read("systemctl", $"status {Environment.ProcessId}", timeoutMs: ServiceProbeTimeoutMs);
+            var output = ProcessOutputReader.Read("systemctl", $"status {Environment.ProcessId}", timeoutMs: ServiceProbeTimeoutMs, logger: _logger);
             var matches = SystemdServiceRegex().Matches(output)
                 .Select(match => match.Value)
                 .Distinct(StringComparer.OrdinalIgnoreCase)

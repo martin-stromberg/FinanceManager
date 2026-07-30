@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-
 namespace SoftwareSchmiede.AutoUpdate;
 
 /// <summary>
@@ -10,28 +8,31 @@ public sealed class AutoUpdateScriptGenerator : IAutoUpdateScriptGenerator
 {
     private readonly IAutoUpdateEnvironment _environment;
     private readonly IAutoUpdatePackageStore _packageStore;
+    private readonly IAutoUpdatePlatformResolver _platformResolver;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AutoUpdateScriptGenerator"/> class.
     /// </summary>
     /// <param name="environment">Provides the application's root directory the package is extracted into.</param>
     /// <param name="packageStore">Provides the staging directory and script/lock paths.</param>
-    public AutoUpdateScriptGenerator(IAutoUpdateEnvironment environment, IAutoUpdatePackageStore packageStore)
+    /// <param name="platformResolver">Used to determine the current platform. Defaults to a new <see cref="AutoUpdatePlatformResolver"/>.</param>
+    public AutoUpdateScriptGenerator(IAutoUpdateEnvironment environment, IAutoUpdatePackageStore packageStore, IAutoUpdatePlatformResolver? platformResolver = null)
     {
         _environment = environment;
         _packageStore = packageStore;
+        _platformResolver = platformResolver ?? new AutoUpdatePlatformResolver();
     }
 
     /// <inheritdoc />
     public async Task<string> GenerateAsync(AutoUpdatePackageDescriptor package, string zipPath, AutoUpdateInstallationTarget target, CancellationToken ct = default)
     {
         await _packageStore.EnsureAsync(ct);
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if (_platformResolver.CurrentPlatform == AutoUpdatePlatformResolver.WindowsPlatform)
         {
             return await GenerateWindowsAsync(zipPath, target, ct);
         }
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        if (_platformResolver.CurrentPlatform == AutoUpdatePlatformResolver.LinuxPlatform)
         {
             return await GenerateLinuxAsync(zipPath, target, ct);
         }

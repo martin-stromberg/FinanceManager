@@ -93,10 +93,11 @@ public sealed class AutoUpdateBuilder
     /// </summary>
     /// <param name="repositoryOwner">The owner (user or organization) of the GitHub repository.</param>
     /// <param name="repositoryName">The name of the GitHub repository.</param>
+    /// <param name="manifestAssetName">The name of the release manifest asset, or <see langword="null"/> to use <see cref="AutoUpdateGithubSource.DefaultManifestAssetName"/>.</param>
     /// <returns>The same builder instance, for chaining.</returns>
-    public AutoUpdateBuilder UseGithubSource(string repositoryOwner, string repositoryName)
+    public AutoUpdateBuilder UseGithubSource(string repositoryOwner, string repositoryName, string? manifestAssetName = null)
     {
-        Options.Source = AutoUpdateGithubSource.Create(repositoryOwner, repositoryName);
+        Options.Source = AutoUpdateGithubSource.Create(repositoryOwner, repositoryName, manifestAssetName);
         return this;
     }
 
@@ -104,10 +105,11 @@ public sealed class AutoUpdateBuilder
     /// Configures a local-folder update source.
     /// </summary>
     /// <param name="sourceDirectory">The local directory the release manifest and packages are read from.</param>
+    /// <param name="manifestFileName">The name of the release manifest file, or <see langword="null"/> to use <see cref="AutoUpdateLocalFolderSource.DefaultManifestFileName"/>.</param>
     /// <returns>The same builder instance, for chaining.</returns>
-    public AutoUpdateBuilder UseLocalFolderSource(string sourceDirectory)
+    public AutoUpdateBuilder UseLocalFolderSource(string sourceDirectory, string? manifestFileName = null)
     {
-        Options.Source = new AutoUpdateLocalFolderSource(sourceDirectory);
+        Options.Source = new AutoUpdateLocalFolderSource(sourceDirectory, manifestFileName: manifestFileName);
         return this;
     }
 

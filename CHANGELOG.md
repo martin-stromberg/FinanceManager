@@ -29,7 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - New project `SoftwareSchmiede.AutoUpdate` — activated via a single `builder.UseAutoUpdate(cfg => ...)` call on any `IHostApplicationBuilder` (web, worker or console host).
   - Fluent configuration via `AutoUpdateBuilder`: `EnableAutomaticDownload`, `EnableAutomaticInstallation`, `UseSource`/`UseGithubSource`/`UseLocalFolderSource`, `WithSourceCheck`, `BindConfiguration`, `DisableHostedServices`.
   - Pluggable update sources via `IAutoUpdateSource`: built-in `AutoUpdateGithubSource` (GitHub Releases) and `AutoUpdateLocalFolderSource` (local directory, the new default).
-  - Cancellable lifecycle events via `IAutoUpdateEventAggregator`: `BeforeCheckSource`, `BeforeDownload`, `BeforeInstall`, `BeforeStartUpdateScript`, `AfterStartUpdateScript`, `ErrorOccured`.
+  - Cancellable lifecycle events via `IAutoUpdateEventAggregator`: `BeforeCheckSource`, `BeforeDownload`, `BeforeInstall`, `BeforeStartUpdateScript`, `AfterStartUpdateScript`, `ErrorOccurred`.
   - Thread-safe status tracking via `AutoUpdateStatusService`/`IAutoUpdateStatusProvider`, persisted across restarts, and manual control via `AutoUpdateCommandService`/`IAutoUpdateCommandHandler`.
   - Background services `AutoUpdateCheckerService` (periodic source check, honoring configured time windows) and `AutoUpdateSchedulerService` (scheduled installation).
   - New project `SoftwareSchmiede.AutoUpdate.Tests` with unit test coverage for the library.

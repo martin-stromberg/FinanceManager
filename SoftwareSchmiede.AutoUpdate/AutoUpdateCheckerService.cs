@@ -4,8 +4,10 @@ using Microsoft.Extensions.Logging;
 namespace SoftwareSchmiede.AutoUpdate;
 
 /// <summary>
-/// Hosted service periodically checking the configured update source, honoring the configured interval and
-/// time windows. Never downloads or installs updates; only calls <see cref="IAutoUpdateOrchestrator.CheckForUpdateAsync"/>.
+/// Hosted service periodically running the update workflow against the configured source, honoring the
+/// configured interval and time windows. Calls <see cref="IAutoUpdateOrchestrator.RunUpdateAsync"/>, which checks
+/// for a newer version and then downloads and installs it depending on <see cref="AutoUpdateOptions.EnableAutomaticDownload"/>
+/// and <see cref="AutoUpdateOptions.EnableAutomaticInstallation"/>.
 /// </summary>
 public sealed class AutoUpdateCheckerService : BackgroundService
 {
@@ -21,7 +23,7 @@ public sealed class AutoUpdateCheckerService : BackgroundService
     /// <summary>
     /// Initializes a new instance of the <see cref="AutoUpdateCheckerService"/> class.
     /// </summary>
-    /// <param name="orchestrator">Used to trigger the source check.</param>
+    /// <param name="orchestrator">Used to run the update workflow.</param>
     /// <param name="options">The runtime-mutable auto-update options, read fresh on every iteration.</param>
     /// <param name="windowEvaluator">Used to determine whether checks are currently allowed.</param>
     /// <param name="timeProvider">The time source used for scheduling and delays.</param>
@@ -49,7 +51,7 @@ public sealed class AutoUpdateCheckerService : BackgroundService
             {
                 if (_options.Enabled && _windowEvaluator.IsWithinWindow(_options.SourceCheck.TimeRanges, _timeProvider.GetLocalNow()))
                 {
-                    await _orchestrator.CheckForUpdateAsync(stoppingToken);
+                    await _orchestrator.RunUpdateAsync(stoppingToken);
                 }
 
                 await Task.Delay(TimeSpan.FromMinutes(Math.Max(MinimumIntervalMinutes, _options.SourceCheck.Interval)), _timeProvider, stoppingToken);
@@ -60,8 +62,15 @@ public sealed class AutoUpdateCheckerService : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Periodic source check failed.");
-                await Task.Delay(ErrorBackoff, _timeProvider, stoppingToken);
+                _logger.LogError(ex, "Periodic update run failed.");
+                try
+                {
+                    await Task.Delay(ErrorBackoff, _timeProvider, stoppingToken);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
             }
         }
     }

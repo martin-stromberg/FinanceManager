@@ -182,18 +182,21 @@ namespace FinanceManager.Web
 
                 if (string.Equals(updateOptions.SourceType, "LocalFolder", StringComparison.OrdinalIgnoreCase))
                 {
-                    cfg.UseLocalFolderSource(string.IsNullOrWhiteSpace(updateOptions.LocalFolderPath)
-                        ? Path.Combine(updateOptions.WorkingDirectory, "source")
-                        : updateOptions.LocalFolderPath);
+                    cfg.UseLocalFolderSource(
+                        string.IsNullOrWhiteSpace(updateOptions.LocalFolderPath)
+                            ? Path.Combine(updateOptions.WorkingDirectory, "source")
+                            : updateOptions.LocalFolderPath,
+                        updateOptions.ManifestAssetName);
                 }
                 else
                 {
-                    cfg.UseGithubSource(updateOptions.RepositoryOwner, updateOptions.RepositoryName);
+                    cfg.UseGithubSource(updateOptions.RepositoryOwner, updateOptions.RepositoryName, updateOptions.ManifestAssetName);
                 }
             });
             builder.Services.AddScoped<IUpdateOrchestrator, UpdateOrchestratorAdapter>();
             builder.Services.AddSingleton<IUpdateSettingsStore, UpdateSettingsStore>();
             builder.Services.AddSingleton<IInstalledReleaseMetadataProvider, InstalledReleaseMetadataProvider>();
+            builder.Services.AddSingleton<UpdateStatusMapper>();
 
             // AlphaVantage
             builder.Services.AddHttpClient("AlphaVantage", client =>

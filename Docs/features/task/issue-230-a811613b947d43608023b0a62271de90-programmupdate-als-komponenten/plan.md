@@ -19,7 +19,7 @@ Die bisher fest in `FinanceManager.Web` verdrahtete Selbstaktualisierung (`Finan
 | Pfad-/Umgebungszugriff | Neues `IAutoUpdateEnvironment` (`ApplicationDirectory`), Standardimplementierung `HostAutoUpdateEnvironment` liest `IHostEnvironment.ContentRootPath` | Löst die in der Bestandsaufnahme genannte `IWebHostEnvironment`-Abhängigkeit von `UpdateFileStore`, `UpdateScriptGenerator`, `InstalledReleaseMetadataProvider` auf, ohne ASP.NET-Referenz |
 | `IAutoUpdateSource` | Zustandsloses **Gateway**: `CheckAsync`/`DownloadAsync` liefern Ergebnisobjekte; keine veränderlichen `CurrentVersion`/`AvailableVersion`-Properties | Anforderung fordert Thread-Safety, deterministisches Verhalten und dass die Quelle den Status-Service nicht schreibt; Instanz-State auf einem Singleton widerspräche dem. Versionsinformationen fließen über `AutoUpdateCheckResult` |
 | Event-Signaturen | `EventHandler<T>` mit von `CancelEventArgs` abgeleiteten Argumentklassen statt `ref bool cancel` | C#-Events erlauben keine `ref`-Parameter; `CancelEventArgs` ist das idiomatische .NET-Äquivalent und erfüllt dieselbe Anforderung |
-| Fehler in Event-Handlern | Ausnahme wird gefangen, über `ErrorOccured` gemeldet, im Status-Service als `LastError` abgelegt; der Ablauf läuft weiter, die Abbruch-Stimme des fehlgeschlagenen Handlers zählt nicht | Ein einzelner defekter Abonnent darf das Update weder unbemerkt abbrechen noch die Bibliothek destabilisieren; Anforderung verlangt ausdrücklich nur Meldung und Speicherung |
+| Fehler in Event-Handlern | Ausnahme wird gefangen, über `ErrorOccurred` gemeldet, im Status-Service als `LastError` abgelegt; der Ablauf läuft weiter, die Abbruch-Stimme des fehlgeschlagenen Handlers zählt nicht | Ein einzelner defekter Abonnent darf das Update weder unbemerkt abbrechen noch die Bibliothek destabilisieren; Anforderung verlangt ausdrücklich nur Meldung und Speicherung |
 | Lebensdauer `AutoUpdateOrchestrator` | Singleton | Anforderung Abschnitt 5 („Er wird als Singleton registriert"). Alle Abhängigkeiten des Orchestrators sind zustandslos oder selbst thread-sicher |
 | Serialisierung paralleler Aufrufe | `AutoUpdateOrchestrator` serialisiert Check/Download/Install über ein internes `SemaphoreSlim`; `AutoUpdateCommandService` reicht nur durch | Thread-Safety-Anforderung; nur eine Stelle hält den kritischen Abschnitt, damit Hintergrunddienst und UI dieselbe Sperre teilen |
 | Status-Speicherung | `AutoUpdateStatusService` hält einen unveränderlichen `AutoUpdateStatusSnapshot` hinter einem `lock`; Aktualisierung durch Austausch des Snapshots (**Value Object**) | Einfacher und zuverlässiger als feldweise Sperren; Leser bekommen immer einen konsistenten Gesamtzustand |
@@ -60,7 +60,7 @@ Beteiligte Klassen/Komponenten: `AutoUpdateHostBuilderExtensions`, `AutoUpdateBu
 9. Zustand `ReadyToInstall`; `LastDownloadResult` wird gespeichert. Ist `EnableAutomaticInstallation` `false`, Ergebnis `Skipped`.
 10. `RaiseBeforeInstall` mit dem `FileInfo` des heruntergeladenen Pakets. Bei Abbruch: Ergebnis `Canceled`, Zustand `ReadyToInstall`.
 11. Weiter mit dem Ablauf „Installation und Skriptstart".
-12. Jede Ausnahme in den Schritten 4–11 wird gefangen, über `RaiseErrorOccured` gemeldet, im Status-Service als `LastError` mit Zustand `Failed` abgelegt und als `AutoUpdateResult` mit `Outcome.Failed` zurückgegeben — der Aufrufer erhält keine Ausnahme.
+12. Jede Ausnahme in den Schritten 4–11 wird gefangen, über `RaiseErrorOccurred` gemeldet, im Status-Service als `LastError` mit Zustand `Failed` abgelegt und als `AutoUpdateResult` mit `Outcome.Failed` zurückgegeben — der Aufrufer erhält keine Ausnahme.
 
 Beteiligte Klassen/Komponenten: `AutoUpdateOrchestrator`, `IAutoUpdateSource`, `AutoUpdateEvents`, `AutoUpdateStatusService`, `IAutoUpdatePackageStore`, `IAutoUpdatePackageValidator`, `IInstalledVersionProvider`
 
@@ -74,7 +74,7 @@ Beteiligte Klassen/Komponenten: `AutoUpdateOrchestrator`, `IAutoUpdateSource`, `
 6. `IAutoUpdateProcessRunner.StartPrepareEnvironment` und `StartScript` starten das Skript.
 7. `RaiseAfterStartUpdateScript` wird ausgelöst. Ist `StopHostAfterScriptStart` gesetzt, ruft der Orchestrator anschließend `IAutoUpdateHostTerminator.StopApplication`.
 8. Ergebnis `AutoUpdateResult` mit `Outcome.Success` und Zustand `Installing`; `LastInstallResult` wird gespeichert.
-9. Schlägt Schritt 3, 6 oder 7 fehl: Sperre löschen, Zustand `Failed`, `ErrorOccured` melden.
+9. Schlägt Schritt 3, 6 oder 7 fehl: Sperre löschen, Zustand `Failed`, `ErrorOccurred` melden.
 
 Beteiligte Klassen/Komponenten: `AutoUpdateOrchestrator`, `AutoUpdateInstaller`, `AutoUpdateScriptGenerator`, `AutoUpdateServiceResolver`, `DefaultAutoUpdateProcessRunner`, `DefaultAutoUpdateHostTerminator`, `AutoUpdateEvents`, `AutoUpdateStatusService`
 
@@ -91,8 +91,8 @@ Beteiligte Klassen/Komponenten: `AutoUpdateOrchestrator`, `AutoUpdateStatusServi
 
 1. `AutoUpdateCheckerService.ExecuteAsync` liest bei jedem Durchlauf die aktuellen `AutoUpdateOptions` (laufzeitveränderlich).
 2. `SourceCheckWindowEvaluator.IsWithinWindow` prüft anhand von `SourceCheck.TimeRanges` und `TimeProvider.GetLocalNow`, ob geprüft werden darf.
-3. Innerhalb des Fensters und bei `Enabled` ruft der Dienst ausschließlich `IAutoUpdateOrchestrator.CheckForUpdateAsync` auf — nie Download oder Installation.
-4. Der Dienst wartet `SourceCheck.Interval` bis zum nächsten Durchlauf; bei einer Ausnahme wird geloggt und nach einer festen Rückfallwartezeit erneut versucht.
+3. Innerhalb des Fensters und bei `Enabled` ruft der Dienst `IAutoUpdateOrchestrator.RunUpdateAsync` auf; Download und Installation finden dadurch nur statt, wenn `AutoUpdateOptions.EnableAutomaticDownload` bzw. `EnableAutomaticInstallation` gesetzt sind — der Dienst selbst enthält keine eigene Download-/Installationslogik, sondern delegiert vollständig an den Orchestrator (`RunUpdateAsync` bricht ohne Nebeneffekte ab, sobald einer der beiden Schalter deaktiviert ist).
+4. Der Dienst wartet `SourceCheck.Interval` bis zum nächsten Durchlauf; bei einer Ausnahme wird geloggt und nach einer festen Rückfallwartezeit (mit eigener Abbruchbehandlung, analog `AutoUpdateSchedulerService`) erneut versucht.
 
 Beteiligte Klassen/Komponenten: `AutoUpdateCheckerService`, `SourceCheckWindowEvaluator`, `AutoUpdateOptions`, `IAutoUpdateOrchestrator`
 
@@ -163,7 +163,7 @@ Alle Typen liegen im neuen Projekt `SoftwareSchmiede.AutoUpdate` (Root-Namespace
 | `IAutoUpdateStateStore` | Interface | Lesen/Schreiben des persistierten Status-Snapshots |
 | `FileSystemAutoUpdateStateStore` | Klasse | Atomare JSON-Persistenz von `AutoUpdateStatusSnapshot` |
 | `JsonFileStore` | Interne statische Klasse | Atomares Lesen/Schreiben von JSON (Portierung) |
-| `IAutoUpdatePackageValidator` | Interface | `IsNewerVersion`, `ValidateReleaseAsync`, `ValidateDownloadedPackageAsync` |
+| `IAutoUpdatePackageValidator` | Interface | `IsNewerVersion`, `ValidateDownloadedPackageAsync` (kein separates `ValidateReleaseAsync`: keiner der Programmabläufe validiert das Manifest getrennt vom heruntergeladenen Paket, ein ungenutztes öffentliches Interface-Mitglied würde in einem NuGet-Paket dauerhaft mitgeschleppt) |
 | `AutoUpdatePackageValidator` | Klasse | Portierung von `UpdateValidator` (SemVer-Vergleich, SHA256, ZIP-Integrität, Größenlimit) |
 | `IAutoUpdateInstaller` | Interface | `PrepareAsync` (Ziel auflösen, Skript erzeugen), `StartAsync` (Skript starten) |
 | `AutoUpdateInstaller` | Klasse | Portierung der Kernlogik von `UpdateExecutor` ohne Ereignisauslösung |
@@ -241,7 +241,7 @@ Keine. Das Update-System persistiert ausschließlich in Dateien (`settings.json`
 | `SourceCheckTimeRange` | `StartTime < EndTime` | `OptionsValidationException` beim Start |
 | `AutoUpdateGithubSource.Create` | `repositoryOwner` und `repositoryName` nicht leer | `ArgumentException` bei Erzeugung |
 | `AutoUpdateLocalFolderSource` | Quellverzeichnis nicht leer; fehlendes Verzeichnis bei `CheckAsync` liefert `AutoUpdateCheckResult` ohne Version statt einer Ausnahme | `AutoUpdateOutcome.NoUpdate` mit Meldung |
-| `AutoUpdatePackageDescriptor.FileName` | Darf keine Pfadsegmente enthalten (`Path.GetFileName`-Gleichheit) | `InvalidOperationException`, gemeldet über `ErrorOccured` |
+| `AutoUpdatePackageDescriptor.FileName` | Darf keine Pfadsegmente enthalten (`Path.GetFileName`-Gleichheit) | `InvalidOperationException`, gemeldet über `ErrorOccurred` |
 | Heruntergeladenes Paket | Größe `<= MaxAssetBytes`, SHA256 stimmt mit dem Deskriptor überein, gültiges ZIP-Archiv | Download-Ergebnis `Failed`, Zustand `Failed` |
 | Versionsvergleich | Semantische Versionierung; ist die installierte Version unbekannt, gilt kein Update als neuer | Ergebnis `NoUpdate` mit erklärender Meldung |
 | `InstallAsync(confirmDowntime)` | Muss `true` sein | `AutoUpdateResult` mit `Outcome.Failed`; Adapter wirft daraus `ArgumentException` → HTTP 400 |
@@ -404,7 +404,7 @@ Alle Testklassen ohne abweichenden Vermerk liegen in `SoftwareSchmiede.AutoUpdat
 | `Validate_WithEmptyDownloadPath_Fails` | `AutoUpdateOptionsValidationTests` | Leerer Download-Pfad |
 | `Validate_WithNonPositiveMaxAssetBytes_Fails` | `AutoUpdateOptionsValidationTests` | `MaxAssetBytes <= 0` |
 | `Raise_BeforeCheckSource_HonorsCancel` | `AutoUpdateEventsTests` | Abbruchstimme eines Abonnenten |
-| `Raise_WhenHandlerThrows_ReportsErrorAndContinues` | `AutoUpdateEventsTests` | Handler-Ausnahme → `ErrorOccured`, kein Abbruch |
+| `Raise_WhenHandlerThrows_ReportsErrorAndContinues` | `AutoUpdateEventsTests` | Handler-Ausnahme → `ErrorOccurred`, kein Abbruch |
 | `Raise_AfterStartUpdateScript_HasNoCancelSemantics` | `AutoUpdateEventsTests` | Ereignis ohne Abbruchmöglichkeit |
 | `Subscribe_FromMultipleThreads_IsSafe` | `AutoUpdateEventsTests` | Thread-Sicherheit der Abonnentenverwaltung |
 | `GetSnapshot_ReturnsConsistentState` | `AutoUpdateStatusServiceTests` | Snapshot ist in sich konsistent |
@@ -414,7 +414,7 @@ Alle Testklassen ohne abweichenden Vermerk liegen in `SoftwareSchmiede.AutoUpdat
 | `Check_WhenNewerVersionAvailable_SetsUpdateAvailable` | `AutoUpdateOrchestratorCheckTests` | Zustandsübergang und `LastCheckResult` |
 | `Check_WhenNoNewerVersion_ReturnsNoUpdate` | `AutoUpdateOrchestratorCheckTests` | Kein Zustandswechsel auf `UpdateAvailable` |
 | `Check_WhenDisabled_ReturnsSkippedAndDisabledState` | `AutoUpdateOrchestratorCheckTests` | `Enabled = false` |
-| `Check_WhenSourceThrows_ReportsErrorAndFails` | `AutoUpdateOrchestratorCheckTests` | Ausnahme → `ErrorOccured`, Zustand `Failed`, keine Weitergabe der Ausnahme |
+| `Check_WhenSourceThrows_ReportsErrorAndFails` | `AutoUpdateOrchestratorCheckTests` | Ausnahme → `ErrorOccurred`, Zustand `Failed`, keine Weitergabe der Ausnahme |
 | `Run_WhenAutomaticDownloadDisabled_StopsAfterCheck` | `AutoUpdateOrchestratorDownloadTests` | `Outcome.Skipped` |
 | `Run_DownloadsAndValidatesPackage` | `AutoUpdateOrchestratorDownloadTests` | Download, Prüfsumme, Zustand `ReadyToInstall` |
 | `Run_WhenChecksumMismatch_Fails` | `AutoUpdateOrchestratorDownloadTests` | Fehlerhafte Prüfsumme |

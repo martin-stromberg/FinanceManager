@@ -17,7 +17,7 @@ public sealed class AutoUpdateScriptGeneratorTests
         var dir = Directory.CreateTempSubdirectory();
         try
         {
-            var (generator, _) = CreateGenerator(dir.FullName);
+            var generator = CreateGenerator(dir.FullName);
             var target = new AutoUpdateInstallationTarget("windows", "TestService", null);
             var package = BuildPackage(dir.FullName);
 
@@ -44,7 +44,7 @@ public sealed class AutoUpdateScriptGeneratorTests
         var dir = Directory.CreateTempSubdirectory();
         try
         {
-            var (generator, _) = CreateGenerator(dir.FullName);
+            var generator = CreateGenerator(dir.FullName);
             var target = new AutoUpdateInstallationTarget("linux", "test.service", null);
             var package = BuildPackage(dir.FullName);
 
@@ -71,7 +71,7 @@ public sealed class AutoUpdateScriptGeneratorTests
         var dir = Directory.CreateTempSubdirectory();
         try
         {
-            var (generator, _) = CreateGenerator(dir.FullName);
+            var generator = CreateGenerator(dir.FullName);
             var target = OperatingSystem.IsWindows()
                 ? new AutoUpdateInstallationTarget("windows", null, null)
                 : new AutoUpdateInstallationTarget("linux", null, null);
@@ -87,12 +87,12 @@ public sealed class AutoUpdateScriptGeneratorTests
         }
     }
 
-    private static (AutoUpdateScriptGenerator Generator, IAutoUpdatePackageStore PackageStore) CreateGenerator(string root)
+    private static AutoUpdateScriptGenerator CreateGenerator(string root)
     {
         var environment = new TestAutoUpdateEnvironment(root);
         var options = new AutoUpdateOptions { DownloadPath = "updates" };
         var packageStore = new FileSystemAutoUpdatePackageStore(environment, options, TimeProvider.System);
-        return (new AutoUpdateScriptGenerator(environment, packageStore), packageStore);
+        return new AutoUpdateScriptGenerator(environment, packageStore);
     }
 
     private static AutoUpdatePackageDescriptor BuildPackage(string root)

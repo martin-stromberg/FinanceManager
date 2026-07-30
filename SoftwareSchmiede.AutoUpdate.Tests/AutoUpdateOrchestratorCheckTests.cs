@@ -54,7 +54,7 @@ public sealed class AutoUpdateOrchestratorCheckTests
         using var ctx = new AutoUpdateTestContext();
         ctx.Source.ThrowOnCheck = true;
         AutoUpdateErrorEventArgs? captured = null;
-        ctx.Events.ErrorOccured += (_, args) => captured = args;
+        ctx.Events.ErrorOccurred += (_, args) => captured = args;
 
         var result = await ctx.Orchestrator.CheckForUpdateAsync();
 

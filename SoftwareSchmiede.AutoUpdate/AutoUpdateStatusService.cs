@@ -5,7 +5,7 @@ namespace SoftwareSchmiede.AutoUpdate;
 /// persisting every mutation through <see cref="IAutoUpdateStateStore"/>. The persisted snapshot is loaded lazily
 /// on first access.
 /// </summary>
-public sealed class AutoUpdateStatusService : IAutoUpdateStatusProvider
+public sealed class AutoUpdateStatusService : IAutoUpdateStatusProvider, IDisposable
 {
     private readonly IAutoUpdateStateStore _stateStore;
     private readonly IInstalledVersionProvider _installedVersionProvider;
@@ -99,5 +99,14 @@ public sealed class AutoUpdateStatusService : IAutoUpdateStatusProvider
         {
             _writeGate.Release();
         }
+    }
+
+    /// <summary>
+    /// Releases the internal load and write serialization semaphores.
+    /// </summary>
+    public void Dispose()
+    {
+        _loadGate.Dispose();
+        _writeGate.Dispose();
     }
 }

@@ -3,11 +3,10 @@ namespace FinanceManager.Web.Services.Updates;
 /// <summary>
 /// Host-specific binding for the <c>Updates</c> configuration section. Holds the FinanceManager-specific fields
 /// (repository, manifest name, source selection) used to build the <see cref="SoftwareSchmiede.AutoUpdate.AutoUpdateBuilder"/>
-/// configuration in <c>ProgramExtensions</c>, plus <see cref="EnableAutomaticDownload"/>/<see cref="EnableAutomaticInstallation"/>,
-/// which mirror the identically named keys already bound directly onto the auto-update library's
-/// <see cref="SoftwareSchmiede.AutoUpdate.AutoUpdateOptions"/> from the same configuration section. All other
-/// runtime-mutable values (timeouts, byte limits, hosted services, service/executable targets) are bound only
-/// onto <see cref="SoftwareSchmiede.AutoUpdate.AutoUpdateOptions"/>, not onto this class.
+/// configuration in <c>ProgramExtensions</c>. All runtime-mutable values (automatic download/installation,
+/// timeouts, byte limits, hosted services, service/executable targets) are bound only onto
+/// <see cref="SoftwareSchmiede.AutoUpdate.AutoUpdateOptions"/> from the same configuration section, not onto this
+/// class.
 /// </summary>
 public sealed class UpdateOptions
 {
@@ -50,16 +49,4 @@ public sealed class UpdateOptions
     /// Gets or sets the local directory used by the local-folder source, when <see cref="SourceType"/> is <c>LocalFolder</c>.
     /// </summary>
     public string? LocalFolderPath { get; set; }
-
-    /// <summary>
-    /// Gets or sets whether a discovered newer version is downloaded automatically. Mirrors
-    /// <c>Updates:EnableAutomaticDownload</c>, which is also bound directly onto <see cref="SoftwareSchmiede.AutoUpdate.AutoUpdateOptions.EnableAutomaticDownload"/>.
-    /// </summary>
-    public bool EnableAutomaticDownload { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets whether a downloaded update package is installed automatically. Mirrors
-    /// <c>Updates:EnableAutomaticInstallation</c>, which is also bound directly onto <see cref="SoftwareSchmiede.AutoUpdate.AutoUpdateOptions.EnableAutomaticInstallation"/>.
-    /// </summary>
-    public bool EnableAutomaticInstallation { get; set; }
 }

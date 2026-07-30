@@ -72,4 +72,13 @@ public interface IAutoUpdatePackageStore
     /// <param name="ct">A token to observe for cancellation requests.</param>
     /// <returns><see langword="true"/> if a lock file was deleted; <see langword="false"/> if none existed.</returns>
     Task<bool> DeleteLockAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Determines whether a lock created at <paramref name="lockCreatedAt"/> is older than
+    /// <see cref="AutoUpdateOptions.HealthTimeoutSeconds"/> and can therefore be considered stale (e.g. left behind
+    /// by an installation that started but never finished restarting the application).
+    /// </summary>
+    /// <param name="lockCreatedAt">The lock's creation timestamp, as returned by <see cref="GetLockCreatedAtAsync"/>.</param>
+    /// <returns><see langword="true"/> if the lock is old enough to be considered stale; otherwise <see langword="false"/>.</returns>
+    bool IsLockStale(DateTimeOffset lockCreatedAt);
 }

@@ -24,17 +24,11 @@ public sealed class UpdateOrchestratorAdapterTests
             .ReturnsAsync(new InstalledReleaseMetadataDto("1.0.0", DateTimeOffset.UtcNow, "sha", "repo", "win-x64"));
         var platformResolver = new Mock<IAutoUpdatePlatformResolver>();
         platformResolver.SetupGet(p => p.CurrentRuntimeIdentifier).Returns("win-x64");
-        var adapter = new UpdateOrchestratorAdapter(
-            orchestrator.Object,
-            new Mock<IAutoUpdateCommandHandler>().Object,
-            new Mock<IAutoUpdateStatusProvider>().Object,
-            settingsStore.Object,
-            installedProvider.Object,
-            platformResolver.Object,
-            new Mock<IAutoUpdatePackageStore>().Object,
-            CreateStatusService(),
-            new AutoUpdateOptions(),
-            TimeProvider.System);
+        var adapter = UpdateOrchestratorAdapterTestFactory.Create(
+            orchestrator: orchestrator.Object,
+            settingsStore: settingsStore.Object,
+            installedProvider: installedProvider.Object,
+            platformResolver: platformResolver.Object);
 
         var status = await adapter.GetStatusAsync();
 
@@ -55,20 +49,10 @@ public sealed class UpdateOrchestratorAdapterTests
     public async Task Adapter_MapsFailedResultToExpectedException(Type exceptionType)
     {
         var exception = (Exception)Activator.CreateInstance(exceptionType, "boom")!;
-        var commandHandler = new Mock<IAutoUpdateCommandHandler>();
-        commandHandler.Setup(c => c.InstallAsync(true, It.IsAny<CancellationToken>()))
+        var orchestrator = new Mock<IAutoUpdateOrchestrator>();
+        orchestrator.Setup(o => o.InstallAsync(true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Failed, AutoUpdateState.Failed, exception.Message, exception));
-        var adapter = new UpdateOrchestratorAdapter(
-            new Mock<IAutoUpdateOrchestrator>().Object,
-            commandHandler.Object,
-            new Mock<IAutoUpdateStatusProvider>().Object,
-            new Mock<IUpdateSettingsStore>().Object,
-            new Mock<IInstalledReleaseMetadataProvider>().Object,
-            new Mock<IAutoUpdatePlatformResolver>().Object,
-            new Mock<IAutoUpdatePackageStore>().Object,
-            CreateStatusService(),
-            new AutoUpdateOptions(),
-            TimeProvider.System);
+        var adapter = UpdateOrchestratorAdapterTestFactory.Create(orchestrator: orchestrator.Object);
 
         var act = () => adapter.StartInstallAsync(true);
 
@@ -79,28 +63,19 @@ public sealed class UpdateOrchestratorAdapterTests
     [Fact]
     public async Task Adapter_CheckAsync_MapsSuccessOutcomeToUpdateCheckResultDto()
     {
-        var commandHandler = new Mock<IAutoUpdateCommandHandler>();
-        commandHandler.Setup(c => c.CheckAsync(It.IsAny<CancellationToken>()))
+        var orchestrator = new Mock<IAutoUpdateOrchestrator>();
+        orchestrator.Setup(o => o.CheckForUpdateAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.UpdateAvailable, "found an update", null));
-        var statusProvider = new Mock<IAutoUpdateStatusProvider>();
-        statusProvider.Setup(p => p.GetSnapshot()).Returns(AutoUpdateStatusSnapshot.Idle(null));
         var settingsStore = new Mock<IUpdateSettingsStore>();
         settingsStore.Setup(s => s.GetAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, "svc", null, "updates", 120));
         var installedProvider = new Mock<IInstalledReleaseMetadataProvider>();
         installedProvider.Setup(p => p.GetAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new InstalledReleaseMetadataDto(null, null, null, null, null));
-        var adapter = new UpdateOrchestratorAdapter(
-            new Mock<IAutoUpdateOrchestrator>().Object,
-            commandHandler.Object,
-            statusProvider.Object,
-            settingsStore.Object,
-            installedProvider.Object,
-            new Mock<IAutoUpdatePlatformResolver>().Object,
-            new Mock<IAutoUpdatePackageStore>().Object,
-            CreateStatusService(),
-            new AutoUpdateOptions(),
-            TimeProvider.System);
+        var adapter = UpdateOrchestratorAdapterTestFactory.Create(
+            orchestrator: orchestrator.Object,
+            settingsStore: settingsStore.Object,
+            installedProvider: installedProvider.Object);
 
         var result = await adapter.CheckAsync();
 
@@ -119,31 +94,11 @@ public sealed class UpdateOrchestratorAdapterTests
         var applied = false;
         settingsStore.Setup(s => s.ApplyToOptions(savedSettings))
             .Callback(() => applied = true);
-        var adapter = new UpdateOrchestratorAdapter(
-            new Mock<IAutoUpdateOrchestrator>().Object,
-            new Mock<IAutoUpdateCommandHandler>().Object,
-            new Mock<IAutoUpdateStatusProvider>().Object,
-            settingsStore.Object,
-            new Mock<IInstalledReleaseMetadataProvider>().Object,
-            new Mock<IAutoUpdatePlatformResolver>().Object,
-            new Mock<IAutoUpdatePackageStore>().Object,
-            CreateStatusService(),
-            new AutoUpdateOptions(),
-            TimeProvider.System);
+        var adapter = UpdateOrchestratorAdapterTestFactory.Create(settingsStore: settingsStore.Object);
 
         var result = await adapter.SaveSettingsAsync(new UpdateSettingsUpdateRequest(true, 45, "owner", "repo", "update.json", null, "svc", null, "custom", 200));
 
         result.Should().Be(savedSettings);
         applied.Should().BeTrue();
-    }
-
-    private static AutoUpdateStatusService CreateStatusService()
-    {
-        var stateStore = new Mock<IAutoUpdateStateStore>();
-        stateStore.Setup(s => s.ReadAsync(It.IsAny<CancellationToken>())).ReturnsAsync((AutoUpdateStatusSnapshot?)null);
-        var installedVersionProvider = new Mock<IInstalledVersionProvider>();
-        installedVersionProvider.Setup(p => p.GetAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new InstalledReleaseInfo(null, null, null, null, null));
-        return new AutoUpdateStatusService(stateStore.Object, installedVersionProvider.Object);
     }
 }

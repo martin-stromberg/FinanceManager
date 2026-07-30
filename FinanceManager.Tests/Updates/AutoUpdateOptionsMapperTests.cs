@@ -63,4 +63,37 @@ public sealed class AutoUpdateOptionsMapperTests
 
         roundTripped.Should().Be(original);
     }
+
+    [Fact]
+    public void ApplySettings_WhenSourceIsGithubSource_ReplacesSourceWithUpdatedRepository()
+    {
+        var options = new AutoUpdateOptions { Source = AutoUpdateGithubSource.Create("old-owner", "old-repo") };
+        var previousSource = options.Source;
+        var settings = new UpdateSettingsDto(true, 60, "new-owner", "new-repo", "manifest.json", null, null, null, "updates", 120);
+
+        AutoUpdateOptionsMapper.ApplySettings(options, settings);
+
+        options.Source.Should().NotBeSameAs(previousSource);
+        options.Source.Should().BeOfType<AutoUpdateGithubSource>();
+    }
+
+    [Fact]
+    public void ApplySettings_WhenSourceIsNotGithubSource_LeavesSourceUnchanged()
+    {
+        var dir = Directory.CreateTempSubdirectory();
+        try
+        {
+            var localSource = new AutoUpdateLocalFolderSource(dir.FullName);
+            var options = new AutoUpdateOptions { Source = localSource };
+            var settings = new UpdateSettingsDto(true, 60, "owner", "repo", "manifest.json", null, null, null, "updates", 120);
+
+            AutoUpdateOptionsMapper.ApplySettings(options, settings);
+
+            options.Source.Should().BeSameAs(localSource);
+        }
+        finally
+        {
+            dir.Delete(recursive: true);
+        }
+    }
 }

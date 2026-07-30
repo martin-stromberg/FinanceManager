@@ -10,7 +10,11 @@ namespace SoftwareSchmiede.AutoUpdate;
 /// </summary>
 public sealed partial class AutoUpdateGithubSource : IAutoUpdateSource, IDisposable
 {
-    private const string ManifestAssetName = "update.json";
+    /// <summary>
+    /// The default name of the release manifest asset, used unless a different name is configured.
+    /// </summary>
+    public const string DefaultManifestAssetName = "update.json";
+
     private static readonly TimeSpan DefaultHttpTimeout = TimeSpan.FromMinutes(5);
 
     [GeneratedRegex("^[A-Za-z0-9._-]+$", RegexOptions.Compiled)]
@@ -20,6 +24,7 @@ public sealed partial class AutoUpdateGithubSource : IAutoUpdateSource, IDisposa
     private readonly bool _ownsHttpClient;
     private readonly string _repositoryOwner;
     private readonly string _repositoryName;
+    private readonly string _manifestAssetName;
     private readonly IAutoUpdatePlatformResolver _platformResolver;
     private bool _disposed;
 
@@ -30,17 +35,19 @@ public sealed partial class AutoUpdateGithubSource : IAutoUpdateSource, IDisposa
     /// <param name="repositoryOwner">The owner (user or organization) of the GitHub repository.</param>
     /// <param name="repositoryName">The name of the GitHub repository.</param>
     /// <param name="platformResolver">Used to select the package matching the current platform.</param>
-    public AutoUpdateGithubSource(HttpClient httpClient, string repositoryOwner, string repositoryName, IAutoUpdatePlatformResolver? platformResolver = null)
-        : this(httpClient, repositoryOwner, repositoryName, platformResolver, ownsHttpClient: false)
+    /// <param name="manifestAssetName">The name of the release manifest asset, or <see langword="null"/> to use <see cref="DefaultManifestAssetName"/>.</param>
+    public AutoUpdateGithubSource(HttpClient httpClient, string repositoryOwner, string repositoryName, IAutoUpdatePlatformResolver? platformResolver = null, string? manifestAssetName = null)
+        : this(httpClient, repositoryOwner, repositoryName, platformResolver, manifestAssetName, ownsHttpClient: false)
     {
     }
 
-    private AutoUpdateGithubSource(HttpClient httpClient, string repositoryOwner, string repositoryName, IAutoUpdatePlatformResolver? platformResolver, bool ownsHttpClient)
+    private AutoUpdateGithubSource(HttpClient httpClient, string repositoryOwner, string repositoryName, IAutoUpdatePlatformResolver? platformResolver, string? manifestAssetName, bool ownsHttpClient)
     {
         _httpClient = httpClient;
         _ownsHttpClient = ownsHttpClient;
         _repositoryOwner = ValidateRepositorySegment(repositoryOwner, nameof(repositoryOwner));
         _repositoryName = ValidateRepositorySegment(repositoryName, nameof(repositoryName));
+        _manifestAssetName = string.IsNullOrWhiteSpace(manifestAssetName) ? DefaultManifestAssetName : manifestAssetName;
         _platformResolver = platformResolver ?? new AutoUpdatePlatformResolver();
     }
 
@@ -50,14 +57,15 @@ public sealed partial class AutoUpdateGithubSource : IAutoUpdateSource, IDisposa
     /// </summary>
     /// <param name="repositoryOwner">The owner (user or organization) of the GitHub repository.</param>
     /// <param name="repositoryName">The name of the GitHub repository.</param>
+    /// <param name="manifestAssetName">The name of the release manifest asset, or <see langword="null"/> to use <see cref="DefaultManifestAssetName"/>.</param>
     /// <returns>A new <see cref="AutoUpdateGithubSource"/> instance.</returns>
-    public static AutoUpdateGithubSource Create(string repositoryOwner, string repositoryName)
+    public static AutoUpdateGithubSource Create(string repositoryOwner, string repositoryName, string? manifestAssetName = null)
     {
         var handler = new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(10) };
         var httpClient = new HttpClient(handler) { Timeout = DefaultHttpTimeout };
         var version = typeof(AutoUpdateGithubSource).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"SoftwareSchmiede.AutoUpdate/{version}");
-        return new AutoUpdateGithubSource(httpClient, repositoryOwner, repositoryName, platformResolver: null, ownsHttpClient: true);
+        return new AutoUpdateGithubSource(httpClient, repositoryOwner, repositoryName, platformResolver: null, manifestAssetName, ownsHttpClient: true);
     }
 
     /// <summary>
@@ -91,7 +99,7 @@ public sealed partial class AutoUpdateGithubSource : IAutoUpdateSource, IDisposa
     /// <inheritdoc />
     public async Task<AutoUpdateCheckResult> CheckAsync(CancellationToken ct = default)
     {
-        var url = $"https://github.com/{_repositoryOwner}/{_repositoryName}/releases/latest/download/{Uri.EscapeDataString(ManifestAssetName)}";
+        var url = $"https://github.com/{_repositoryOwner}/{_repositoryName}/releases/latest/download/{Uri.EscapeDataString(_manifestAssetName)}";
         var manifest = await _httpClient.GetFromJsonAsync<GithubReleaseManifest>(url, JsonFileStore.JsonOptions, ct);
         if (manifest is null)
         {
@@ -127,48 +135,8 @@ public sealed partial class AutoUpdateGithubSource : IAutoUpdateSource, IDisposa
             throw new InvalidOperationException("Update package exceeds the configured size limit.");
         }
 
-        Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
-        var tempPath = $"{targetPath}.{Guid.NewGuid():N}.tmp";
-        try
-        {
-            await using (var source = await response.Content.ReadAsStreamAsync(ct))
-            await using (var target = File.Create(tempPath))
-            {
-                var buffer = new byte[81920];
-                long copied = 0;
-                while (true)
-                {
-                    var read = await source.ReadAsync(buffer, ct);
-                    if (read == 0)
-                    {
-                        break;
-                    }
-
-                    copied += read;
-                    if (copied > maxBytes)
-                    {
-                        throw new InvalidOperationException("Update package exceeds the configured size limit.");
-                    }
-
-                    await target.WriteAsync(buffer.AsMemory(0, read), ct);
-                }
-            }
-
-            File.Move(tempPath, targetPath, overwrite: true);
-        }
-        catch
-        {
-            try
-            {
-                File.Delete(tempPath);
-            }
-            catch
-            {
-                // Best-effort cleanup only; the original exception must propagate.
-            }
-
-            throw;
-        }
+        await using var source = await response.Content.ReadAsStreamAsync(ct);
+        await AutoUpdateSourceDownloadHelper.CopyToTargetAsync(source, targetPath, maxBytes, ct);
     }
 
     private sealed record GithubReleaseManifest(

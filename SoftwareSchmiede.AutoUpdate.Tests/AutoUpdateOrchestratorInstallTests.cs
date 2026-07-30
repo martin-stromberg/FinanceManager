@@ -118,4 +118,49 @@ public sealed class AutoUpdateOrchestratorInstallTests
 
         status.State.Should().Be(AutoUpdateState.Failed);
     }
+
+    [Fact]
+    public async Task Install_WhenCanceledAndLockDeletionFails_ReportsError()
+    {
+        using var ctx = new AutoUpdateTestContext();
+        ctx.InstalledVersionProvider.Version = "1.0.0";
+        ctx.CreateAvailablePackage("2.0.0");
+        await ctx.Orchestrator.CheckForUpdateAsync();
+        await ctx.Orchestrator.DownloadAsync();
+
+        var failingStore = new FailingDeleteLockPackageStore(ctx.PackageStore);
+        var orchestrator = new AutoUpdateOrchestrator(
+            ctx.Options, ctx.Events, ctx.StatusService, failingStore, ctx.Validator,
+            ctx.InstalledVersionProvider, ctx.Installer, ctx.HostTerminator, ctx.TimeProvider);
+        AutoUpdateErrorEventArgs? captured = null;
+        ctx.Events.ErrorOccurred += (_, args) => captured = args;
+        ctx.Events.BeforeStartUpdateScript += (_, args) => args.Cancel = true;
+
+        var result = await orchestrator.InstallAsync(confirmDowntime: true);
+
+        result.Outcome.Should().Be(AutoUpdateOutcome.Canceled);
+        captured.Should().NotBeNull();
+        captured!.Error.Should().BeOfType<IOException>();
+        captured.Phase.Should().Be("Install");
+    }
+
+    private sealed class FailingDeleteLockPackageStore : IAutoUpdatePackageStore
+    {
+        private readonly IAutoUpdatePackageStore _inner;
+
+        public FailingDeleteLockPackageStore(IAutoUpdatePackageStore inner) => _inner = inner;
+
+        public string RootDirectory => _inner.RootDirectory;
+        public string PendingDirectory => _inner.PendingDirectory;
+        public string StagingDirectory => _inner.StagingDirectory;
+        public string LockPath => _inner.LockPath;
+        public string LogPath => _inner.LogPath;
+        public string ScriptPath(string extension) => _inner.ScriptPath(extension);
+        public string PendingAssetPath(string fileName) => _inner.PendingAssetPath(fileName);
+        public Task EnsureAsync(CancellationToken ct = default) => _inner.EnsureAsync(ct);
+        public Task<DateTimeOffset?> GetLockCreatedAtAsync(CancellationToken ct = default) => _inner.GetLockCreatedAtAsync(ct);
+        public Task<bool> TryCreateLockAsync(CancellationToken ct = default) => _inner.TryCreateLockAsync(ct);
+        public Task<bool> DeleteLockAsync(CancellationToken ct = default) => Task.FromResult(false);
+        public bool IsLockStale(DateTimeOffset lockCreatedAt) => _inner.IsLockStale(lockCreatedAt);
+    }
 }

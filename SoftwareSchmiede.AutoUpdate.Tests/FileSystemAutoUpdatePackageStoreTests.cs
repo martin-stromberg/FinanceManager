@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Time.Testing;
 using SoftwareSchmiede.AutoUpdate;
 using SoftwareSchmiede.AutoUpdate.Tests.TestSupport;
 
@@ -57,6 +58,50 @@ public sealed class FileSystemAutoUpdatePackageStoreTests
             Directory.Exists(store.RootDirectory).Should().BeTrue();
             Directory.Exists(store.PendingDirectory).Should().BeTrue();
             Directory.Exists(store.StagingDirectory).Should().BeTrue();
+        }
+        finally
+        {
+            dir.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void IsLockStale_WhenLockYoungerThanHealthTimeout_ReturnsFalse()
+    {
+        var dir = Directory.CreateTempSubdirectory();
+        try
+        {
+            var timeProvider = new FakeTimeProvider(DateTimeOffset.Parse("2026-07-28T12:00:00+00:00"));
+            var store = new FileSystemAutoUpdatePackageStore(
+                new TestAutoUpdateEnvironment(dir.FullName),
+                new AutoUpdateOptions { DownloadPath = "updates", HealthTimeoutSeconds = 120 },
+                timeProvider);
+
+            var isStale = store.IsLockStale(timeProvider.GetUtcNow() - TimeSpan.FromSeconds(5));
+
+            isStale.Should().BeFalse();
+        }
+        finally
+        {
+            dir.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void IsLockStale_WhenLockOlderThanHealthTimeout_ReturnsTrue()
+    {
+        var dir = Directory.CreateTempSubdirectory();
+        try
+        {
+            var timeProvider = new FakeTimeProvider(DateTimeOffset.Parse("2026-07-28T12:00:00+00:00"));
+            var store = new FileSystemAutoUpdatePackageStore(
+                new TestAutoUpdateEnvironment(dir.FullName),
+                new AutoUpdateOptions { DownloadPath = "updates", HealthTimeoutSeconds = 120 },
+                timeProvider);
+
+            var isStale = store.IsLockStale(timeProvider.GetUtcNow() - TimeSpan.FromSeconds(200));
+
+            isStale.Should().BeTrue();
         }
         finally
         {

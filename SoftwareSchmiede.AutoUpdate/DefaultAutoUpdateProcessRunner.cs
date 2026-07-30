@@ -99,9 +99,9 @@ public sealed class DefaultAutoUpdateProcessRunner : IAutoUpdateProcessRunner
     /// <param name="unitName">The systemd unit name, without the <c>.service</c> suffix.</param>
     /// <param name="property">The property to read, e.g. <c>LoadState</c>.</param>
     /// <returns>The property value, or an empty string when it could not be determined.</returns>
-    private static string ReadUnitProperty(string unitName, string property)
+    private string ReadUnitProperty(string unitName, string property)
     {
-        var output = ProcessOutputReader.Read("systemctl", $"show {unitName}.service --property={property}", timeoutMs: SystemctlTimeoutMs);
+        var output = ProcessOutputReader.Read("systemctl", $"show {unitName}.service --property={property}", timeoutMs: SystemctlTimeoutMs, logger: _logger);
         var parts = output.Split('=', 2);
         return parts.Length < 2 ? string.Empty : parts[1].Trim();
     }

@@ -40,7 +40,7 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
     /// <inheritdoc />
     public async Task<UpdateSettingsDto> SaveAsync(UpdateSettingsUpdateRequest request, CancellationToken ct = default)
     {
-        var dto = Normalize(request);
+        var dto = Build(request);
         await _packageStore.EnsureAsync(ct);
         await WriteAtomicAsync(dto, ct);
         return dto;
@@ -67,7 +67,7 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
             _webOptions.RepositoryName,
             _webOptions.ManifestAssetName);
 
-        return Build(
+        return Build(new UpdateSettingsUpdateRequest(
             raw.Enabled,
             raw.CheckIntervalMinutes,
             raw.RepositoryOwner,
@@ -77,44 +77,28 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
             raw.ServiceName,
             raw.ExecutablePath,
             raw.WorkingDirectory,
-            raw.HealthTimeoutSeconds);
+            raw.HealthTimeoutSeconds));
     }
 
-    private UpdateSettingsDto Normalize(UpdateSettingsUpdateRequest request)
-        => Build(
-            request.Enabled,
-            request.CheckIntervalMinutes,
-            request.RepositoryOwner,
-            request.RepositoryName,
-            request.ManifestAssetName,
-            request.ScheduledInstallTime,
-            request.ServiceName,
-            request.ExecutablePath,
-            request.WorkingDirectory,
-            request.HealthTimeoutSeconds);
-
-    private UpdateSettingsDto Build(
-        bool enabled,
-        int intervalMinutes,
-        string? repositoryOwner,
-        string? repositoryName,
-        string? manifestAssetName,
-        TimeOnly? scheduledInstallTime,
-        string? serviceName,
-        string? executablePath,
-        string? workingDirectory,
-        int healthTimeoutSeconds)
+    /// <summary>
+    /// Normalizes and clamps <paramref name="request"/> into a persistable <see cref="UpdateSettingsDto"/>: blank
+    /// repository/manifest values fall back to the host defaults, the check interval and health timeout are
+    /// clamped to their valid ranges, and optional string fields are trimmed to <see langword="null"/>.
+    /// </summary>
+    /// <param name="request">The settings to normalize.</param>
+    /// <returns>The normalized settings.</returns>
+    private UpdateSettingsDto Build(UpdateSettingsUpdateRequest request)
         => new(
-            enabled,
-            Math.Clamp(intervalMinutes, 1, 24 * 60),
-            NormalizeRepositoryPart(repositoryOwner, _webOptions.RepositoryOwner),
-            NormalizeRepositoryPart(repositoryName, _webOptions.RepositoryName),
-            string.IsNullOrWhiteSpace(manifestAssetName) ? _webOptions.ManifestAssetName : manifestAssetName.Trim(),
-            scheduledInstallTime,
-            TrimToNull(serviceName),
-            TrimToNull(executablePath),
-            NormalizeWorkingDirectory(workingDirectory),
-            Math.Clamp(healthTimeoutSeconds, AutoUpdateOptions.MinHealthTimeoutSeconds, AutoUpdateOptions.MaxHealthTimeoutSeconds));
+            request.Enabled,
+            Math.Clamp(request.CheckIntervalMinutes, 1, 24 * 60),
+            NormalizeRepositoryPart(request.RepositoryOwner, _webOptions.RepositoryOwner),
+            NormalizeRepositoryPart(request.RepositoryName, _webOptions.RepositoryName),
+            string.IsNullOrWhiteSpace(request.ManifestAssetName) ? _webOptions.ManifestAssetName : request.ManifestAssetName.Trim(),
+            request.ScheduledInstallTime,
+            TrimToNull(request.ServiceName),
+            TrimToNull(request.ExecutablePath),
+            NormalizeWorkingDirectory(request.WorkingDirectory),
+            Math.Clamp(request.HealthTimeoutSeconds, AutoUpdateOptions.MinHealthTimeoutSeconds, AutoUpdateOptions.MaxHealthTimeoutSeconds));
 
     private async Task<UpdateSettingsDto?> ReadSettingsAsync(CancellationToken ct)
     {
@@ -135,7 +119,7 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
             }
 
             var legacyServiceName = TrimToNull(legacy.ServiceName) ?? TrimToNull(legacy.WindowsServiceName) ?? TrimToNull(legacy.LinuxServiceName);
-            return Build(
+            return Build(new UpdateSettingsUpdateRequest(
                 legacy.Enabled,
                 legacy.CheckIntervalMinutes,
                 legacy.RepositoryOwner,
@@ -145,7 +129,7 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
                 legacyServiceName,
                 legacy.ExecutablePath,
                 legacy.WorkingDirectory,
-                legacy.HealthTimeoutSeconds);
+                legacy.HealthTimeoutSeconds));
         }
 
         return document.Deserialize<UpdateSettingsDto>(JsonFileStore.JsonOptions);

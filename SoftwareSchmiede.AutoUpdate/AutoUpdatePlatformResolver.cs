@@ -7,6 +7,16 @@ namespace SoftwareSchmiede.AutoUpdate;
 /// </summary>
 public sealed class AutoUpdatePlatformResolver : IAutoUpdatePlatformResolver
 {
+    /// <summary>
+    /// The <see cref="IAutoUpdatePlatformResolver.CurrentPlatform"/> value reported on Windows.
+    /// </summary>
+    public const string WindowsPlatform = "windows";
+
+    /// <summary>
+    /// The <see cref="IAutoUpdatePlatformResolver.CurrentPlatform"/> value reported on Linux.
+    /// </summary>
+    public const string LinuxPlatform = "linux";
+
     private readonly Func<OSPlatform, bool> _isOSPlatform;
     private readonly string _runtimeIdentifier;
     private readonly string _osDescription;
@@ -56,9 +66,9 @@ public sealed class AutoUpdatePlatformResolver : IAutoUpdatePlatformResolver
     /// <inheritdoc />
     public string CurrentPlatform
         => _isOSPlatform(OSPlatform.Windows)
-            ? "windows"
+            ? WindowsPlatform
             : _isOSPlatform(OSPlatform.Linux)
-                ? "linux"
+                ? LinuxPlatform
                 : _osDescription;
 
     /// <inheritdoc />

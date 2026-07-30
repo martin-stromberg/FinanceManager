@@ -24,7 +24,7 @@ public sealed class AutoUpdateEventsTests
         var secondSubscriberInvoked = false;
         events.BeforeCheckSource += (_, _) => throw new InvalidOperationException("boom");
         events.BeforeCheckSource += (_, _) => secondSubscriberInvoked = true;
-        events.ErrorOccured += (_, args) => captured = args;
+        events.ErrorOccurred += (_, args) => captured = args;
 
         var canceled = events.RaiseBeforeCheckSource(this);
 
@@ -105,9 +105,9 @@ public sealed class AutoUpdateEventsTests
     public void Raise_WhenErrorSubscriberThrows_DoesNotPropagate()
     {
         var events = new AutoUpdateEvents();
-        events.ErrorOccured += (_, _) => throw new InvalidOperationException("subscriber boom");
+        events.ErrorOccurred += (_, _) => throw new InvalidOperationException("subscriber boom");
 
-        var act = () => events.RaiseErrorOccured(this, new InvalidOperationException("original"), "SomePhase");
+        var act = () => events.RaiseErrorOccurred(this, new InvalidOperationException("original"), "SomePhase");
 
         act.Should().NotThrow();
     }

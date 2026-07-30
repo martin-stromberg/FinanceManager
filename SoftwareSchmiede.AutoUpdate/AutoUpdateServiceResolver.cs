@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-
 namespace SoftwareSchmiede.AutoUpdate;
 
 /// <summary>
@@ -11,6 +9,7 @@ public sealed class AutoUpdateServiceResolver : IAutoUpdateServiceResolver
     private readonly IAutoUpdateEnvironment _environment;
     private readonly IAutoUpdateServiceProbe _probe;
     private readonly AutoUpdateOptions _options;
+    private readonly IAutoUpdatePlatformResolver _platformResolver;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AutoUpdateServiceResolver"/> class.
@@ -18,22 +17,24 @@ public sealed class AutoUpdateServiceResolver : IAutoUpdateServiceResolver
     /// <param name="environment">Provides the application's root directory, used to validate the executable path.</param>
     /// <param name="probe">Used to auto-detect the current service when none is configured explicitly.</param>
     /// <param name="options">The runtime-mutable auto-update options.</param>
-    public AutoUpdateServiceResolver(IAutoUpdateEnvironment environment, IAutoUpdateServiceProbe probe, AutoUpdateOptions options)
+    /// <param name="platformResolver">Used to determine the current platform. Defaults to a new <see cref="AutoUpdatePlatformResolver"/>.</param>
+    public AutoUpdateServiceResolver(IAutoUpdateEnvironment environment, IAutoUpdateServiceProbe probe, AutoUpdateOptions options, IAutoUpdatePlatformResolver? platformResolver = null)
     {
         _environment = environment;
         _probe = probe;
         _options = options;
+        _platformResolver = platformResolver ?? new AutoUpdatePlatformResolver();
     }
 
     /// <inheritdoc />
     public AutoUpdateInstallationTarget Resolve()
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if (_platformResolver.CurrentPlatform == AutoUpdatePlatformResolver.WindowsPlatform)
         {
             return ResolveWindows();
         }
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        if (_platformResolver.CurrentPlatform == AutoUpdatePlatformResolver.LinuxPlatform)
         {
             return ResolveLinux();
         }
@@ -45,26 +46,26 @@ public sealed class AutoUpdateServiceResolver : IAutoUpdateServiceResolver
     {
         if (!string.IsNullOrWhiteSpace(_options.ServiceName))
         {
-            return new AutoUpdateInstallationTarget("windows", ValidateServiceName(_options.ServiceName), null);
+            return new AutoUpdateInstallationTarget(AutoUpdatePlatformResolver.WindowsPlatform, ValidateServiceName(_options.ServiceName), null);
         }
 
         if (!string.IsNullOrWhiteSpace(_options.ExecutablePath))
         {
             var executable = ValidateExecutablePath(_options.ExecutablePath);
-            return new AutoUpdateInstallationTarget("windows", null, executable);
+            return new AutoUpdateInstallationTarget(AutoUpdatePlatformResolver.WindowsPlatform, null, executable);
         }
 
-        return ResolveFromProbe("windows", "Windows services", "a service name or executable path", _probe.FindWindowsServicesForCurrentProcess());
+        return ResolveFromProbe(AutoUpdatePlatformResolver.WindowsPlatform, "Windows services", "a service name or executable path", _probe.FindWindowsServicesForCurrentProcess());
     }
 
     private AutoUpdateInstallationTarget ResolveLinux()
     {
         if (!string.IsNullOrWhiteSpace(_options.ServiceName))
         {
-            return new AutoUpdateInstallationTarget("linux", ValidateServiceName(_options.ServiceName), null);
+            return new AutoUpdateInstallationTarget(AutoUpdatePlatformResolver.LinuxPlatform, ValidateServiceName(_options.ServiceName), null);
         }
 
-        return ResolveFromProbe("linux", "Linux systemd services", "a service name", _probe.FindLinuxServicesForCurrentProcess());
+        return ResolveFromProbe(AutoUpdatePlatformResolver.LinuxPlatform, "Linux systemd services", "a service name", _probe.FindLinuxServicesForCurrentProcess());
     }
 
     private AutoUpdateInstallationTarget ResolveFromProbe(string platform, string candidateLabel, string configurationHint, IReadOnlyList<string> probed)

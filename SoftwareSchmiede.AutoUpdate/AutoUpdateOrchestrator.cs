@@ -3,7 +3,7 @@ namespace SoftwareSchmiede.AutoUpdate;
 /// <summary>
 /// Default <see cref="IAutoUpdateOrchestrator"/> implementation. Coordinates checking, downloading and
 /// installing update packages, raises the lifecycle events in the documented order, persists status through
-/// <see cref="AutoUpdateStatusService"/> and reports every error via <see cref="IAutoUpdateEventAggregator.ErrorOccured"/>
+/// <see cref="AutoUpdateStatusService"/> and reports every error via <see cref="IAutoUpdateEventAggregator.ErrorOccurred"/>
 /// instead of throwing. Registered as a singleton; all Check/Download/Install operations are serialized through
 /// an internal semaphore.
 /// </summary>
@@ -290,7 +290,7 @@ public sealed class AutoUpdateOrchestrator : IAutoUpdateOrchestrator, IDisposabl
 
             if (_events.RaiseBeforeStartUpdateScript(this, scriptFile))
             {
-                await _packageStore.DeleteLockAsync(ct);
+                await ReleaseLockAsync(ct);
                 return new AutoUpdateResult(AutoUpdateOutcome.Canceled, AutoUpdateState.ReadyToInstall, "Installation script start canceled.", null);
             }
 
@@ -318,13 +318,24 @@ public sealed class AutoUpdateOrchestrator : IAutoUpdateOrchestrator, IDisposabl
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            await _packageStore.DeleteLockAsync(CancellationToken.None);
+            await ReleaseLockAsync(CancellationToken.None);
             return CanceledResult("Install");
         }
         catch (Exception ex)
         {
-            await _packageStore.DeleteLockAsync(CancellationToken.None);
+            await ReleaseLockAsync(CancellationToken.None);
             return await FailAsync(ex, "Install", ct);
+        }
+    }
+
+    private async Task ReleaseLockAsync(CancellationToken ct)
+    {
+        if (!await _packageStore.DeleteLockAsync(ct))
+        {
+            _events.RaiseErrorOccurred(
+                this,
+                new IOException("Failed to delete the update lock file. Future installations will remain blocked until the lock is reset manually."),
+                "Install");
         }
     }
 
@@ -369,7 +380,7 @@ public sealed class AutoUpdateOrchestrator : IAutoUpdateOrchestrator, IDisposabl
 
     private async Task<AutoUpdateResult> FailAsync(Exception ex, string phase, CancellationToken ct)
     {
-        _events.RaiseErrorOccured(this, ex, phase);
+        _events.RaiseErrorOccurred(this, ex, phase);
         await _statusService.UpdateAsync(s => s with { State = AutoUpdateState.Failed, LastError = ex.Message }, ct);
         return new AutoUpdateResult(AutoUpdateOutcome.Failed, AutoUpdateState.Failed, ex.Message, ex);
     }

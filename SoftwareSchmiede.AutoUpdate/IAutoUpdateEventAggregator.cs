@@ -34,7 +34,7 @@ public interface IAutoUpdateEventAggregator
     /// Raised whenever an error occurs during the update workflow, including errors thrown by other event
     /// subscribers.
     /// </summary>
-    event EventHandler<AutoUpdateErrorEventArgs>? ErrorOccured;
+    event EventHandler<AutoUpdateErrorEventArgs>? ErrorOccurred;
 
     /// <summary>
     /// Raises <see cref="BeforeCheckSource"/> and returns whether any subscriber requested cancellation.
@@ -74,10 +74,10 @@ public interface IAutoUpdateEventAggregator
     void RaiseAfterStartUpdateScript(object sender);
 
     /// <summary>
-    /// Raises <see cref="ErrorOccured"/>.
+    /// Raises <see cref="ErrorOccurred"/>.
     /// </summary>
     /// <param name="sender">The object raising the event.</param>
     /// <param name="error">The exception that occurred.</param>
     /// <param name="phase">A short identifier of the workflow phase the error occurred in.</param>
-    void RaiseErrorOccured(object sender, Exception error, string phase);
+    void RaiseErrorOccurred(object sender, Exception error, string phase);
 }

@@ -126,6 +126,10 @@ public sealed class FileSystemAutoUpdatePackageStore : IAutoUpdatePackageStore
         }
     }
 
+    /// <inheritdoc />
+    public bool IsLockStale(DateTimeOffset lockCreatedAt)
+        => _timeProvider.GetUtcNow() - lockCreatedAt >= TimeSpan.FromSeconds(_options.HealthTimeoutSeconds);
+
     private string ResolveFullPath(string configuredPath)
     {
         var root = _environment.ApplicationDirectory;

@@ -20,7 +20,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.UseAutoUpdate(cfg =>
 {
     cfg.EnableAutomaticDownload("./updates")
-       .UseGithubSource("MyRepository", "my-org")
+       .UseGithubSource("my-org", "MyRepository")
        .WithSourceCheck(interval: 360)
        .EnableAutomaticInstallation();
 });
@@ -50,7 +50,7 @@ By default, `AutoUpdateOptions` binds from the `AutoUpdate` configuration sectio
     "SourceCheck": {
       "Interval": 360,
       "TimeRanges": [
-        { "DayOfWeek": "Monday", "StartTime": "22:00:00", "EndTime": "06:00:00" }
+        { "DayOfWeek": "Monday", "StartTime": "08:00:00", "EndTime": "18:00:00" }
       ]
     }
   }
@@ -59,6 +59,10 @@ By default, `AutoUpdateOptions` binds from the `AutoUpdate` configuration sectio
 
 `Source` cannot be bound from configuration (it requires code) — configure it via `UseGithubSource`,
 `UseLocalFolderSource` or `UseSource` in the `UseAutoUpdate` delegate.
+
+Each `SourceCheck.TimeRanges` entry must have `StartTime` strictly before `EndTime` within the same day; a range
+spanning midnight (e.g. `22:00:00`–`06:00:00`) is rejected by `AutoUpdateOptionsValidator` at startup. Cover an
+overnight window with two entries instead, e.g. `22:00:00`–`23:59:59` and `00:00:00`–`06:00:00`.
 
 ## Update sources
 
@@ -83,12 +87,12 @@ events.BeforeInstall += (_, args) =>
         args.Cancel = true;
     }
 };
-events.ErrorOccured += (_, args) => logger.LogError(args.Error, "Auto-update failed during {Phase}", args.Phase);
+events.ErrorOccurred += (_, args) => logger.LogError(args.Error, "Auto-update failed during {Phase}", args.Phase);
 ```
 
 `BeforeCheckSource`, `BeforeDownload`, `BeforeInstall` and `BeforeStartUpdateScript` are cancellable.
-`AfterStartUpdateScript` and `ErrorOccured` are informational. A failing subscriber is reported via
-`ErrorOccured` and does not abort the operation or destabilize the library.
+`AfterStartUpdateScript` and `ErrorOccurred` are informational. A failing subscriber is reported via
+`ErrorOccurred` and does not abort the operation or destabilize the library.
 
 ## Status and manual control
 
@@ -104,8 +108,10 @@ events.ErrorOccured += (_, args) => logger.LogError(args.Error, "Auto-update fai
 
 When `AutoUpdateOptions.HostedServicesEnabled` is `true` (the default), two hosted services are registered:
 
-- **`AutoUpdateCheckerService`** — periodically calls `CheckForUpdateAsync`, honoring
-  `SourceCheck.Interval` and `SourceCheck.TimeRanges`. Never downloads or installs.
+- **`AutoUpdateCheckerService`** — periodically calls `RunUpdateAsync`, honoring
+  `SourceCheck.Interval` and `SourceCheck.TimeRanges`. Downloads and installs only when
+  `EnableAutomaticDownload`/`EnableAutomaticInstallation` are set, since `RunUpdateAsync` itself
+  respects those options.
 - **`AutoUpdateSchedulerService`** — triggers installation once per day at `AutoUpdateOptions.ScheduledInstallTime`
   when a package is `ReadyToInstall`.
 
@@ -125,7 +131,7 @@ All update operations return a structured `AutoUpdateResult` containing:
 - `Message` – Human-readable summary of the result
 - `Error` – Exception details if `Outcome` is `Failed`
 
-The library never throws exceptions for update failures; instead, errors are reported via the `ErrorOccured` event
+The library never throws exceptions for update failures; instead, errors are reported via the `ErrorOccurred` event
 and persisted in the status snapshot.
 
 ## Testing

@@ -10,7 +10,10 @@ namespace FinanceManager.Web.Services.Updates;
 public static class AutoUpdateOptionsMapper
 {
     /// <summary>
-    /// Applies the given settings onto <paramref name="options"/>.
+    /// Applies the given settings onto <paramref name="options"/>. If the configured source is a
+    /// <see cref="AutoUpdateGithubSource"/>, it is replaced with a new instance reflecting the (possibly changed)
+    /// repository owner, repository name and manifest asset name, so that changes made through the setup UI take
+    /// effect on the next check instead of only after a restart. The previous source is disposed.
     /// </summary>
     /// <param name="options">The auto-update library's runtime-mutable options to update.</param>
     /// <param name="settings">The settings to apply.</param>
@@ -23,6 +26,12 @@ public static class AutoUpdateOptionsMapper
         options.DownloadPath = settings.WorkingDirectory;
         options.HealthTimeoutSeconds = settings.HealthTimeoutSeconds;
         options.ScheduledInstallTime = settings.ScheduledInstallTime;
+
+        if (options.Source is AutoUpdateGithubSource previousSource)
+        {
+            options.Source = AutoUpdateGithubSource.Create(settings.RepositoryOwner, settings.RepositoryName, settings.ManifestAssetName);
+            previousSource.Dispose();
+        }
     }
 
     /// <summary>

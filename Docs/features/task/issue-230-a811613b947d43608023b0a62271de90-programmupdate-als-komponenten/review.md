@@ -1,209 +1,228 @@
 # Plan-Review
 
+Geprüft am 2026-07-30 (fünfter Durchlauf) gegen den Arbeitsstand des Branches
+`task/issue-230-...-programmupdate-als-komponenten` inklusive der noch nicht committeten Änderungen.
+
 ## Ergebnis
 
 **Status:** Offene Aufgaben vorhanden
 
-Stand: 2026-07-29 (dritter Review-Durchlauf). Geprüft wurde `plan.md` gegen den Code-Stand
-im Arbeitsverzeichnis. Von 124 Aufgaben sind 123 umgesetzt, 1 ist teilweise umgesetzt.
+Sanity-Check: `dotnet build FinanceManager.sln -c Debug` → 0 Fehler, 60 Warnungen (sämtlich Vorbestand).
+`dotnet test SoftwareSchmiede.AutoUpdate.Tests` → 103 erfolgreich, 1 plattformbedingt übersprungen (Linux-Skript).
+`dotnet test FinanceManager.Tests --filter Updates` → 39 erfolgreich.
 
-Die drei im Vorreview offenen Punkte (Aufgaben 2, 21, 124) sind geschlossen und wurden
-einzeln am Code verifiziert. Neu als Lücke erkannt: ein im Plan gelistetes
-Interface-Mitglied (`IAutoUpdatePackageValidator.ValidateReleaseAsync`), das im gesamten
-Repository nicht existiert.
-
-Sanity-Check: `dotnet build FinanceManager.sln -c Debug` → **0 Fehler**, 60 Warnungen
-(sämtlich Vorbestand: NU1903-Sicherheitshinweise und NU1510-Trimming-Hinweise, keine aus
-`SoftwareSchmiede.AutoUpdate`). Laut `test-results.md` 1.093/1.094 Tests grün, 1 Test
-plattformbedingt übersprungen (Linux-Skripttest auf Windows-Agent).
-
----
+123 von 126 Planelementen sind vollständig umgesetzt. Drei Punkte bleiben offen; alle drei sind
+funktional folgenlos, weichen aber vom Wortlaut des Plans ab.
 
 ## Umgesetzte Planelemente
 
-### Projektstruktur (Schritte 1, 14)
+### Projekt- und Paketstruktur
 
-- [x] `SoftwareSchmiede.AutoUpdate.csproj` — angelegt (net10.0, `Nullable`, `ImplicitUsings`, `GenerateDocumentationFile`, `WarningsAsErrors` inkl. `CS1591` für Debug und Release)
-- [x] NuGet-Metadaten — `PackageId`, `Version` (0.1.0, eigener SemVer-Strang gemäß Offenem Punkt 3), `Description`, `Authors`, `PackageLicenseExpression`, `RepositoryUrl`, `PackageReadmeFile` vorhanden
-- [x] Alle 6 geplanten Paketreferenzen — `Hosting.Abstractions`, `Options`, `Logging.Abstractions`, `Http`, `DependencyInjection.Abstractions`, `Configuration.Binder` (schließt Aufgabe 2 aus dem Vorreview)
-- [x] `SoftwareSchmiede.AutoUpdate.Tests.csproj` — angelegt (xunit.v3, FluentAssertions, Moq, `Microsoft.Extensions.TimeProvider.Testing`, `Microsoft.NET.Test.Sdk`, coverlet), Projektreferenz auf die Bibliothek gesetzt
-- [x] Beide Projekte in `FinanceManager.sln` eingetragen
+- [x] `SoftwareSchmiede.AutoUpdate` (Projekt) — angelegt, net10.0, `Nullable`, `ImplicitUsings`,
+      `GenerateDocumentationFile`, `WarningsAsErrors` inkl. `CS1591` in Debug und Release
+- [x] NuGet-Metadaten — `PackageId`, `Version` 0.1.0, `Description`, `Authors`,
+      `PackageLicenseExpression`, `RepositoryUrl`, `PackageReadmeFile` vorhanden
+- [x] Alle sechs geplanten Paketreferenzen (`Hosting.Abstractions`, `Options`,
+      `Logging.Abstractions`, `Http`, `DependencyInjection.Abstractions`, `Configuration.Binder`) — gesetzt
+- [x] `SoftwareSchmiede.AutoUpdate` und `SoftwareSchmiede.AutoUpdate.Tests` in `FinanceManager.sln` — eingetragen
 
-### Modelle und Zustandsmodell (Schritt 2)
+### Registrierung und Konfiguration
 
-- [x] `AutoUpdateState` (Enum) — alle 9 Werte: Idle, Checking, UpdateAvailable, Downloading, ReadyToInstall, Installing, Success, Failed, Disabled
-- [x] `AutoUpdateOutcome` (Enum) — alle 5 Werte: Success, NoUpdate, Skipped, Canceled, Failed
-- [x] `AutoUpdateResult`, `AutoUpdateCheckResult`, `AutoUpdateDownloadResult`, `AutoUpdateInstallResult` (records) — angelegt
-- [x] `AutoUpdateStatusSnapshot` (record) — alle 10 geplanten Felder vorhanden: State, InstalledVersion, AvailableVersion, LastCheckedAt, LastCheckResult, LastDownloadResult, LastInstallResult, LastError, IsLocked, LockCreatedAt
-- [x] `AutoUpdatePackageDescriptor`, `AutoUpdateReleaseInfo`, `InstalledReleaseInfo`, `AutoUpdateInstallationTarget` (records) — angelegt
+- [x] `AutoUpdateHostBuilderExtensions` (statische Klasse) mit `UseAutoUpdate(this IHostApplicationBuilder, Action<AutoUpdateBuilder>?)` — vorhanden, keine ASP.NET-Referenz
+- [x] `AutoUpdateBuilder` (Klasse) — alle acht geplanten Fluent-Methoden vorhanden
+      (`EnableAutomaticDownload`, `EnableAutomaticInstallation`, `UseSource`, `UseGithubSource`,
+      `UseLocalFolderSource`, `WithSourceCheck`, `BindConfiguration`, `DisableHostedServices`)
+- [x] `AutoUpdateOptions` (Konfigurationsklasse) — alle 13 geplanten Eigenschaften vorhanden
+- [x] `SourceCheckOptions` (`Interval`, `TimeRanges`), `SourceCheckTimeRange` (`DayOfWeek`, `StartTime`, `EndTime`) — vorhanden
+- [x] `AutoUpdateOptionsValidator` (`IValidateOptions<AutoUpdateOptions>`) — implementiert, deckt alle
+      fünf geplanten Startregeln ab; `HealthTimeoutSeconds` wird wie geplant geklemmt statt abgewiesen
+- [x] Standardquelle `AutoUpdateLocalFolderSource`, wenn keine Quelle gesetzt ist — vorhanden
+- [x] Registrierung aller Dienste per `TryAddSingleton`, Hosted Services nur bei `HostedServicesEnabled` — vorhanden
+- [x] `TimeProvider` nur per `TryAddSingleton` (keine Doppelregistrierung gegenüber `ProgramExtensions`) — vorhanden
 
-### Konfigurationsmodell (Schritt 3)
+### Datenmodell und Zustand
 
-- [x] `SourceCheckTimeRange` — `DayOfWeek`, `TimeOnly StartTime`, `TimeOnly EndTime`
-- [x] `SourceCheckOptions` — `Interval`, `TimeRanges`
-- [x] `AutoUpdateOptions` — alle 13 geplanten Eigenschaften vorhanden (Enabled, EnableAutomaticDownload, DownloadPath, EnableAutomaticInstallation, Source, SourceCheck, MaxAssetBytes, HostedServicesEnabled, ScheduledInstallTime, ServiceName, ExecutablePath, StopHostAfterScriptStart, HealthTimeoutSeconds)
-- [x] `SourceCheckWindowEvaluator.IsWithinWindow` — leere `TimeRanges` bedeuten „immer erlaubt"
+- [x] `AutoUpdateState` (Enum) — alle neun Werte
+- [x] `AutoUpdateOutcome` (Enum) — alle fünf Werte
+- [x] `AutoUpdateStatusSnapshot` (record) — alle zehn geplanten Felder
+- [x] `AutoUpdateResult`, `AutoUpdateCheckResult`, `AutoUpdateDownloadResult`, `AutoUpdateInstallResult` (records) — vorhanden
+- [x] `AutoUpdatePackageDescriptor` (record) — alle sieben geplanten Felder
+- [x] `AutoUpdateReleaseInfo`, `InstalledReleaseInfo`, `AutoUpdateInstallationTarget` (records) — vorhanden
 
-### Kern-Schnittstellen (Schritt 4)
+### Schnittstellen
 
-- [x] `IAutoUpdateSource` — `CheckAsync`, `DownloadAsync` (zustandsloses Gateway, keine veränderlichen Versions-Properties, wie in den Designentscheidungen gefordert)
-- [x] `IAutoUpdateEnvironment`, `IInstalledVersionProvider`, `IAutoUpdatePackageStore`, `IAutoUpdateStateStore` — definiert
-- [x] `IAutoUpdateScriptGenerator`, `IAutoUpdatePlatformResolver`, `IAutoUpdateServiceResolver`, `IAutoUpdateServiceProbe`, `IAutoUpdateProcessRunner`, `IAutoUpdateHostTerminator` — definiert
-- [x] `IAutoUpdateInstaller`, `IAutoUpdateStatusProvider`, `IAutoUpdateEventAggregator` — definiert
-- [x] `IAutoUpdateOrchestrator` — alle 5 Methoden: `RunUpdateAsync`, `CheckForUpdateAsync`, `DownloadAsync`, `InstallAsync`, `GetStatusAsync`
-- [x] `IAutoUpdateCommandHandler` — `CheckAsync`, `DownloadAsync`, `InstallAsync(bool confirmDowntime, …)`
+- [x] Alle 17 geplanten Kern-Schnittstellen vorhanden: `IAutoUpdateSource`, `IAutoUpdateEnvironment`,
+      `IInstalledVersionProvider`, `IAutoUpdatePackageStore`, `IAutoUpdateStateStore`,
+      `IAutoUpdatePackageValidator`, `IAutoUpdateScriptGenerator`, `IAutoUpdatePlatformResolver`,
+      `IAutoUpdateServiceResolver`, `IAutoUpdateServiceProbe`, `IAutoUpdateProcessRunner`,
+      `IAutoUpdateHostTerminator`, `IAutoUpdateInstaller`, `IAutoUpdateStatusProvider`,
+      `IAutoUpdateEventAggregator`, `IAutoUpdateOrchestrator`, `IAutoUpdateCommandHandler`
+- [x] `IAutoUpdatePackageValidator` ohne `ValidateReleaseAsync` — entspricht Plan Zeile 166
+- [x] `IAutoUpdateOrchestrator` — alle fünf Methoden (`RunUpdateAsync`, `CheckForUpdateAsync`,
+      `DownloadAsync`, `InstallAsync`, `GetStatusAsync`)
 
-### Event-Infrastruktur (Schritt 5)
+### Ereignisse
 
-- [x] `AutoUpdateCancelEventArgs` (Basisklasse), `BeforeDownloadEventArgs` (`Uri SourceUri`), `BeforeInstallEventArgs` (`FileInfo PackageFile`), `BeforeStartUpdateScriptEventArgs` (`FileInfo ScriptFile`), `AutoUpdateErrorEventArgs` (`Exception` + Phase) — angelegt
-- [x] `AutoUpdateEvents` — alle 6 Ereignisse (`BeforeCheckSource`, `BeforeDownload`, `BeforeInstall`, `BeforeStartUpdateScript`, `AfterStartUpdateScript`, `ErrorOccured`) mit Raise-Methoden
-- [x] Event-Signaturen als `EventHandler<T>` mit `CancelEventArgs`-Ableitung statt `ref bool cancel` — gemäß Designentscheidung
-- [x] `AfterStartUpdateScript` ohne Abbruchsemantik — als `EventHandler` (nicht generisch) modelliert
-- [x] Handler-Ausnahmebehandlung — Ausnahme wird gefangen, über `ErrorOccured` gemeldet, Abbruch-Stimme des fehlgeschlagenen Handlers zählt nicht
+- [x] `AutoUpdateCancelEventArgs`, `BeforeDownloadEventArgs` (`Uri SourceUri`),
+      `BeforeInstallEventArgs` (`FileInfo PackageFile`), `BeforeStartUpdateScriptEventArgs`
+      (`FileInfo ScriptFile`), `AutoUpdateErrorEventArgs` (`Exception`, Phase) — vorhanden
+- [x] `AutoUpdateEvents` (Klasse) — thread-sichere Abonnentenverwaltung hinter `Lock`, alle sechs Ereignisse
+- [x] Handler-Ausnahmen brechen den Ablauf nicht ab und zählen nicht als Abbruchstimme; jeder Abonnent
+      erhält eine eigene Argumentinstanz — vorhanden
+- [x] `AfterStartUpdateScript` ohne Abbruchsemantik — vorhanden
 
-### Umgebung, Persistenz, Validierung (Schritt 6)
+### Ablauflogik
 
-- [x] `HostAutoUpdateEnvironment` — Standardimplementierung über `IHostEnvironment.ContentRootPath`, keine ASP.NET-Referenz
-- [x] `JsonFileStore` — atomares Lesen/Schreiben portiert
-- [x] `FileSystemAutoUpdatePackageStore` — Portierung von `UpdateFileStore` ohne `IWebHostEnvironment`
-- [x] `FileSystemAutoUpdateStateStore` — atomare JSON-Persistenz mit tolerantem Fallback auf `Idle` bei fremdem/defektem Schema
-- [x] `AutoUpdatePackageValidator.IsNewerVersion` — SemVer-Vergleich
-- [x] `AutoUpdatePackageValidator.ValidateDownloadedPackageAsync` — Größenlimit, SHA256 und ZIP-Integrität (`ZipFile.OpenRead` + `ValidateEntry`)
-- [x] `ReleaseMetadataInstalledVersionProvider` — liest `release-metadata.json` aus dem Anwendungsverzeichnis
+- [x] `AutoUpdateOrchestrator` (Klasse) — Singleton-tauglich, `SemaphoreSlim` serialisiert
+      Check/Download/Install/Status
+- [x] Vollworkflow `RunUpdateAsync` — Reihenfolge entspricht dem Programmablauf: `Disabled`/`Skipped` bei
+      `Enabled = false`, `BeforeCheckSource` mit Abbruch → `Idle`/`Canceled`, `Checking`,
+      Versionsvergleich über `IsNewerVersion`, `NoUpdate` ohne neuere Version, `UpdateAvailable`,
+      Abbruch bei deaktiviertem Download, `BeforeDownload`, `Downloading`, Validierung,
+      `ReadyToInstall`, Abbruch bei deaktivierter Installation, `BeforeInstall`
+- [x] Installation und Skriptstart — Sperre über `TryCreateLockAsync`, `PrepareAsync`,
+      `BeforeStartUpdateScript` mit Sperrfreigabe bei Abbruch, Zustand `Installing` wird **vor** dem
+      Skriptstart persistiert, `AfterStartUpdateScript`, `StopHostAfterScriptStart` → `StopApplication`
+- [x] Zustandsabgleich nach Neustart in `GetStatusAsync` — `Installing` ohne Sperrdatei,
+      Versionsgleichheit → `Success` mit geleerten Feldern, sonst `Failed` mit erklärender Meldung
+- [x] Zentrale Fehlerbehandlung — jede Ausnahme wird gefangen, über `RaiseErrorOccurred` gemeldet, als
+      `LastError` mit Zustand `Failed` abgelegt und als `Outcome.Failed` zurückgegeben; keine Ausnahme
+      erreicht den Aufrufer
+- [x] `AutoUpdateCommandService` (Klasse) — dünne Fassade ohne eigene Update-Logik
+- [x] `AutoUpdateStatusService` (Klasse) — unveränderlicher Snapshot hinter `Lock`, serialisierte
+      Schreibvorgänge, verzögertes Laden beim ersten Zugriff über `EnsureLoadedAsync`
 
-### Plattform- und Installationsdienste (Schritt 7)
+### Persistenz, Plattform- und Installationsdienste
 
-- [x] `AutoUpdatePlatformResolver`, `DefaultAutoUpdateServiceProbe`, `AutoUpdateServiceResolver` — portiert
-- [x] `AutoUpdateScriptGenerator` — Windows `.ps1` / Linux `.sh`, Pfade über `IAutoUpdateEnvironment` und `IAutoUpdatePackageStore`
-- [x] `DefaultAutoUpdateProcessRunner`, `DefaultAutoUpdateHostTerminator` — portiert
-- [x] `AutoUpdateInstaller` — `PrepareAsync` validiert das Paket erneut, löst das Ziel über `IAutoUpdateServiceResolver.Resolve` auf und lässt das Skript erzeugen; Start ohne Ereignisauslösung (Ereignisse liegen beim Orchestrator)
+- [x] `HostAutoUpdateEnvironment`, `JsonFileStore`, `ReleaseMetadataInstalledVersionProvider` — vorhanden
+- [x] `FileSystemAutoUpdatePackageStore` — Verzeichnislayout `pending`/`staging` sowie `update.lock`,
+      `update.log` unter dem `DownloadPath`-Wurzelverzeichnis unverändert; kein `IWebHostEnvironment`
+- [x] Pfadsicherheit `PendingAssetPath` — `InvalidOperationException` bei Pfadsegmenten im Dateinamen
+- [x] `FileSystemAutoUpdateStateStore` — atomares Schreiben nach `status.json`; unlesbare oder
+      fremdformatige Dateien führen zu `null` und damit zu einem frischen `Idle`-Zustand, zusätzlich
+      Warnung im Log (Offener Punkt 7 des Plans)
+- [x] `AutoUpdatePackageValidator`, `AutoUpdatePlatformResolver`, `AutoUpdateServiceResolver`,
+      `DefaultAutoUpdateServiceProbe`, `AutoUpdateScriptGenerator`, `DefaultAutoUpdateProcessRunner`,
+      `DefaultAutoUpdateHostTerminator`, `AutoUpdateInstaller` — portiert
+- [x] Installationsziel-Regeln — Windows `ServiceName` oder `ExecutablePath`, Linux `ServiceName`,
+      sonst `InvalidOperationException`; andere Plattformen brechen mit „Unsupported platform for self update" ab
 
-### Status-Service (Schritt 8)
+### Hintergrunddienste
 
-- [x] `AutoUpdateStatusService` — unveränderlicher Snapshot hinter `Lock`, Austausch statt feldweiser Mutation (Value Object)
-- [x] `EnsureLoadedAsync` — verzögertes Laden beim ersten Zugriff über `IAutoUpdateStateStore.ReadAsync`, Fallback `AutoUpdateStatusSnapshot.Idle`
-- [x] `UpdateAsync` — Mutation und Persistenz hinter eigenem Schreib-Gate
+- [x] `SourceCheckWindowEvaluator.IsWithinWindow` — leere `TimeRanges` bedeuten „immer erlaubt",
+      Wochentag und Zeitfenster werden geprüft
+- [x] `AutoUpdateCheckerService` (Hosted Service) — liest die Optionen bei jedem Durchlauf frisch,
+      respektiert Zeitfenster und `Enabled`, wartet `SourceCheck.Interval`, fängt Ausnahmen ab und
+      versucht es nach einer festen Rückfallwartezeit erneut; durchgängig `TimeProvider`
+- [x] `AutoUpdateSchedulerService` (Hosted Service) — minütliche Prüfung, Auslösung nur bei
+      `ReadyToInstall` ohne aktive Sperre und erreichter Uhrzeit, Merken des letzten Termins gegen
+      Mehrfachauslösung, `InstallAsync(confirmDowntime: true)`
 
-### Quellen (Schritt 9)
+### Anbindung in `FinanceManager.Web`
 
-- [x] `AutoUpdateLocalFolderSource` — Manifest und Paket aus lokalem Verzeichnis; fehlendes Verzeichnis liefert Ergebnis ohne Version statt Ausnahme
-- [x] `AutoUpdateGithubSource` — inkl. statischer Factory `Create(repositoryOwner, repositoryName)` mit Argumentprüfung; zusätzlich öffentlicher Konstruktor für einen extern verwalteten `HttpClient`
+- [x] `UpdateOrchestratorAdapter` (Klasse) — implementiert `IUpdateOrchestrator` unverändert und mappt
+      Snapshot und Ergebnisobjekte auf `UpdateStatusDto`/`UpdateCheckResultDto`
+- [x] Fehlerergebnis-Mapping — `result.Error` wird erneut geworfen, damit das bestehende
+      Ausnahme-Mapping des `UpdateController` (404/409/400) greift
+- [x] `AutoUpdateOptionsMapper` (statische Klasse) — überträgt `UpdateSettingsDto` in die
+      Singleton-`AutoUpdateOptions` und zurück
+- [x] `UpdateSettingsStore` — nutzt `IAutoUpdatePackageStore` für den Pfad der `settings.json` und
+      `AutoUpdateOptions` für Standardwerte; `ApplyToOptions` ergänzt; Legacy-Migration
+      (`windowsServiceName`/`linuxServiceName` → `ServiceName`) unverändert erhalten
+- [x] `InstalledReleaseMetadataProvider` — delegiert an `IInstalledVersionProvider` und mappt auf
+      `InstalledReleaseMetadataDto`; keine `IWebHostEnvironment`-Abhängigkeit mehr
+- [x] `ProgramExtensions` — Self-update-Block durch einen einzigen `builder.UseAutoUpdate(...)`-Aufruf
+      ersetzt, bindet Sektion `Updates`, wählt anhand von `SourceType` zwischen GitHub- und
+      Ordnerquelle; `AddSingleton(TimeProvider.System)` bleibt bestehen
+- [x] `UpdateContracts.cs` — auf genau `IUpdateSettingsStore`, `IInstalledReleaseMetadataProvider`,
+      `IUpdateOrchestrator` reduziert
+- [x] Alle 13 geplanten Alt-Klassen (`UpdateOrchestrator`, `UpdateExecutor`, `UpdateFileStore`,
+      `UpdateValidator`, `UpdateScriptGenerator`, `UpdatePlatformResolver`, `UpdateServiceResolver`,
+      `DefaultUpdateProcessRunner`, `DefaultUpdateHostTerminator`, `UpdateManifestClient`,
+      `UpdateChecker`, `UpdateScheduler`, `JsonFileStore`) — entfernt
+- [x] `UpdateController`, `SetupUpdateViewModel`, `SetupUpdateTab.razor` — unverändert
 
-### Orchestrator, Command-Service, Hintergrunddienste (Schritte 10–12)
+### Konfiguration und Tests
 
-- [x] `AutoUpdateOrchestrator` — alle 5 Methoden; Ablauf entspricht „Vollständiger Update-Workflow" und „Installation und Skriptstart" Schritt für Schritt
-- [x] Serialisierung über internes `SemaphoreSlim` an genau einer Stelle — Hintergrunddienst und UI teilen dieselbe Sperre
-- [x] Zentrale Fehlerbehandlung — Ausnahme → `RaiseErrorOccured` → `LastError` + Zustand `Failed` → `Outcome.Failed`; der Aufrufer erhält keine Ausnahme
-- [x] Zustand `Installing` wird **vor** dem Skriptstart gesetzt und persistiert (Zeilen 300–309)
-- [x] `StopHostAfterScriptStart` — `IAutoUpdateHostTerminator.StopApplication` wird nur bei gesetzter Option gerufen
-- [x] Abbruch vor dem Skriptstart gibt die Sperre frei (`DeleteLockAsync`), Zustand zurück auf `ReadyToInstall`
-- [x] `ReconcileAfterRestartAsync` — Zustandsabgleich nach Neustart: Versionsgleichheit → `Success` mit geleerten Feldern, Abweichung → `Failed` mit erklärender Meldung
-- [x] `AutoUpdateCommandService` — dünne Fassade, reicht ausschließlich durch, keine eigene Update-Logik
-- [x] `AutoUpdateCheckerService` — liest die Optionen bei jedem Durchlauf, respektiert Zeitfenster, ruft **ausschließlich** `CheckForUpdateAsync`, Rückfallwartezeit bei Ausnahme, durchgängig `TimeProvider`
-- [x] `AutoUpdateSchedulerService` — minütliche Prüfung, Vorbedingung `ReadyToInstall`, `InstallAsync(confirmDowntime: true)`, merkt Datum und Uhrzeit des letzten Versuchs gegen Mehrfachauslösung
-
-### Builder und Registrierung (Schritt 13)
-
-- [x] `AutoUpdateHostBuilderExtensions.UseAutoUpdate(this IHostApplicationBuilder, Action<AutoUpdateBuilder>?)` — Erweiterung auf `IHostApplicationBuilder`, keine `FrameworkReference` auf ASP.NET
-- [x] `AutoUpdateBuilder` — alle 8 geplanten Fluent-Methoden vorhanden
-- [x] Standardquelle `AutoUpdateLocalFolderSource`, wenn keine Quelle gesetzt wurde
-- [x] Alle Dienste per `TryAddSingleton` registriert; Hosted Services nur bei `HostedServicesEnabled`
-- [x] `TimeProvider` nur per `TryAddSingleton` — die im Risikoabschnitt genannte Doppelregistrierung ist ausgeschlossen (Test `UseAutoUpdate_DoesNotOverrideExistingTimeProvider`)
-- [x] `AutoUpdateOptionsValidator` — alle 5 Validierungsregeln (DownloadPath, Source, MaxAssetBytes, SourceCheck.Interval, TimeRange-Reihenfolge); `HealthTimeoutSeconds` wird auf 10–600 geklemmt
-
-### Aufräumen im Web-Projekt (Schritt 16)
-
-- [x] `UpdateOrchestrator`, `UpdateExecutor`, `UpdateFileStore`, `UpdateValidator`, `UpdateScriptGenerator`, `UpdatePlatformResolver`, `UpdateServiceResolver`, `DefaultUpdateProcessRunner`, `DefaultUpdateHostTerminator`, `UpdateManifestClient`, `UpdateChecker`, `UpdateScheduler`, `JsonFileStore` — gelöscht
-- [x] `UpdateContracts.cs` — auf `IUpdateSettingsStore`, `IInstalledReleaseMetadataProvider`, `IUpdateOrchestrator` reduziert; `IUpdateOrchestrator` in der Signatur unverändert
-
-### Adapterschicht (Schritt 17)
-
-- [x] `UpdateOrchestratorAdapter` — implementiert `IUpdateOrchestrator`, mappt `AutoUpdateStatusSnapshot` vollständig auf `UpdateStatusDto` (inkl. `UpdateMetadataDto`/`UpdateAssetDto`) und `AutoUpdateState` auf `UpdateStatusKind`
-- [x] Fehlerergebnis-Mapping — `StartInstallAsync` wirft `result.Error` erneut, damit das bestehende Ausnahme-Mapping des `UpdateController` (404/409/400) weiter greift
-- [x] `ResetLockAsync` — Staleness-Prüfung gegen `HealthTimeoutSeconds`, `IOException` bei fehlender bzw. zu junger Sperre
-- [x] `AutoUpdateOptionsMapper` — `ApplySettings` (DTO → Options) und `ToSettingsDto` (Options → DTO)
-- [x] `UpdateSettingsStore` — nutzt `IAutoUpdatePackageStore` und `AutoUpdateOptions` statt `IUpdateFileStore`/`IOptions<UpdateOptions>`; Legacy-Migration (`windowsServiceName`/`linuxServiceName`) unverändert erhalten
-- [x] `InstalledReleaseMetadataProvider` — delegiert an `IInstalledVersionProvider`, `IWebHostEnvironment`-Abhängigkeit entfallen
-
-### Registrierung und Konfiguration (Schritte 18, 19)
-
-- [x] `ProgramExtensions` — Self-update-Block durch einen einzigen `builder.UseAutoUpdate(cfg => …)`-Aufruf ersetzt; Sektion `Updates` gebunden, Quellenauswahl über `Updates:SourceType`
-- [x] `IUpdateOrchestrator` → `UpdateOrchestratorAdapter` (Scoped), `IUpdateSettingsStore` (Singleton), `IInstalledReleaseMetadataProvider` (Singleton) registriert
-- [x] `UpdateOptions` — um `SourceType`, `LocalFolderPath`, `EnableAutomaticDownload`, `EnableAutomaticInstallation` erweitert (schließt Aufgabe 21 aus dem Vorreview)
-- [x] `appsettings.json` — alle 7 geplanten neuen Einträge vorhanden; die 10 unverändert weiterverwendeten Einträge binden direkt auf `AutoUpdateOptions` (namensgleich)
-- [x] Präzedenz `Updates:SourceCheck:Interval` vor `CheckIntervalMinutes` — `WithSourceCheck` wird nur noch aufgerufen, wenn der neue Schlüssel fehlt (schließt Aufgabe 124 aus dem Vorreview)
-
-### Tests (Schritte 15, 20–22)
-
-- [x] Testhilfen `FakeAutoUpdateSource`, `TestAutoUpdateEnvironment`, `AutoUpdateTestContext` — bereitgestellt
-- [x] Alle im Plan gelisteten Bibliothekstestklassen vorhanden (19 Testklassen, 87 Testmethoden)
-- [x] Sämtliche namentlich geplanten Testmethoden auffindbar; `Commands_DelegateToOrchestrator` wurde thematisch in `Check_`/`Download_`/`Install_DelegatesToOrchestrator` aufgeteilt
-- [x] Die 8 obsoleten Testklassen unter `FinanceManager.Tests/Updates/` — gelöscht
-- [x] `UpdateSettingsStoreTests`, `InstalledReleaseMetadataProviderTests`, `UpdateStatusTestData`, `TestWebHostEnvironment` — angepasst
-- [x] `UpdateOrchestratorAdapterTests` — alle 3 geplanten Tests vorhanden (plus `_LockAndSchedule`-Ergänzung)
-- [x] `UpdateControllerIntegrationTests` / `TestWebApplicationFactory` — auf `SourceType=LocalFolder` und `HostedServicesEnabled=false` umgestellt, keine GitHub-Anfragen im Testserver
-- [x] `PlaywrightWebAppFixture` — alle geplanten `Updates__*`-Umgebungsvariablen gesetzt
-- [x] `UpdateSetupPlaywrightTests` — alle 3 geplanten E2E-Szenarien implementiert
-- [x] `VersionDisplayPlaywrightTests` — als Regressionsnachweis grün
-
-### Dokumentation (Schritt 23)
-
-- [x] `SoftwareSchmiede.AutoUpdate/README.md` — angelegt
-- [x] `CHANGELOG.md` — Eintrag unter „Unreleased/Added" mit Bibliothek, Fluent-Optionen, Quellen, Ereignissen und Hintergrunddiensten
-- [x] `Docs/help/systemverwaltung-und-setup/` — `ablauf-technisch.md`, `api.md`, `beschreibung.md`, `business-rules.md` aktualisiert
-
----
+- [x] Alle sieben neuen `Updates`-Einträge in `appsettings.json` — `SourceType`, `LocalFolderPath`,
+      `EnableAutomaticDownload`, `EnableAutomaticInstallation`, `SourceCheck:Interval`,
+      `SourceCheck:TimeRanges`, `StopHostAfterScriptStart`
+- [x] Alle fünf `Updates__*`-Umgebungsvariablen in `PlaywrightWebAppFixture` — gesetzt
+- [x] Testhilfen `FakeAutoUpdateSource`, `TestAutoUpdateEnvironment`, `AutoUpdateTestContext` — vorhanden
+- [x] Alle im Plan aufgeführten Testmethoden — vorhanden (vier davon unter abweichendem Namen, siehe Hinweise)
+- [x] Drei E2E-Pflichtszenarien in `UpdateSetupPlaywrightTests` sowie `VersionDisplayPlaywrightTests` als
+      Regressionsnachweis — vorhanden
+- [x] `README.md` der Bibliothek, `CHANGELOG.md`-Eintrag, aktualisierte Abschnitte in `Docs/help` — vorhanden
 
 ## Offene Aufgaben
 
-- [ ] `IAutoUpdatePackageValidator.ValidateReleaseAsync` — **teilweise umgesetzt**: Der Plan
-  listet für `IAutoUpdatePackageValidator` drei Mitglieder (`IsNewerVersion`,
-  `ValidateReleaseAsync`, `ValidateDownloadedPackageAsync`). Implementiert sind nur
-  `IsNewerVersion` und `ValidateDownloadedPackageAsync`. `ValidateReleaseAsync` existiert
-  weder im Interface (`SoftwareSchmiede.AutoUpdate/IAutoUpdatePackageValidator.cs`) noch in
-  der Implementierung (`SoftwareSchmiede.AutoUpdate/AutoUpdatePackageValidator.cs`) — eine
-  Volltextsuche über das gesamte Repository liefert keinen Treffer.
+- [ ] **`UpdateOptions.EnableAutomaticDownload` / `UpdateOptions.EnableAutomaticInstallation`
+      (Plan Zeile 212)** — fehlt vollständig: Die Web-Bindungsklasse
+      `FinanceManager.Web/Services/Updates/UpdateOptions.cs` enthält von den vier geplanten neuen
+      Eigenschaften nur `SourceType` und `LocalFolderPath`. Die beiden booleschen Schalter sind nicht
+      vorhanden. Auswirkung: keine — beide Konfigurationswerte existieren in `appsettings.json` und
+      binden über `BindConfiguration("Updates")` unmittelbar auf die gleichnamigen Eigenschaften von
+      `AutoUpdateOptions`. Zu schließen entweder durch Ergänzen der beiden Eigenschaften oder durch
+      Anpassen des Plans an den bewusst schlankeren Vertrag.
 
-  Einordnung: Die Lücke ist funktional folgenlos. Keiner der im Plan beschriebenen
-  Programmabläufe ruft `ValidateReleaseAsync` auf; die Manifest-/Release-Prüfung findet
-  faktisch in den Quellenimplementierungen statt (`AutoUpdateLocalFolderSource`,
-  `AutoUpdateGithubSource`) und die Paketprüfung in `ValidateDownloadedPackageAsync`.
-  Zu entscheiden ist daher, ob das Mitglied nachgezogen oder der Plan an den bewusst
-  schlankeren Vertrag angepasst wird — Letzteres ist die naheliegendere Auflösung, da ein
-  ungenutztes öffentliches Interface-Mitglied in einem NuGet-Paket dauerhaft mitgeschleppt
-  werden müsste.
+- [ ] **DI-Registrierung von `IValidateOptions<AutoUpdateOptions>` (Plan Zeile 44, Ablauf
+      „Registrierung beim Start", Schritt 4)** — fehlt vollständig: `UseAutoUpdate` registriert
+      `AutoUpdateOptions` als Instanz-Singleton und führt `AutoUpdateOptionsValidator` in
+      `BuildOptions` direkt aus (Zeile 103–107), meldet Fehler also sofort beim Start über
+      `OptionsValidationException`. Eine Registrierung von `IValidateOptions<AutoUpdateOptions>` im
+      Servicecontainer existiert nicht. Auswirkung: keine — da die Optionen nicht über das
+      `IOptions`-Muster aufgelöst werden, würde ein registrierter Validator ohnehin nie ausgeführt.
+      Zu schließen entweder durch die Registrierung oder durch Anpassen des Plans an die
+      eager ausgeführte Validierung.
 
----
+- [ ] **Ablage von Handler-Ausnahmen als `LastError` (Plan Zeile 22, Designentscheidung „Fehler in
+      Event-Handlern")** — teilweise umgesetzt: Der Plan verlangt vier Dinge, wenn ein Event-Abonnent
+      eine Ausnahme wirft. Drei davon sind erfüllt — die Ausnahme wird in
+      `AutoUpdateEvents.RaiseCancelable` gefangen, über `ErrorOccurred` gemeldet, der Ablauf läuft
+      weiter und die Abbruchstimme des fehlgeschlagenen Handlers zählt nicht. Die vierte Forderung
+      („im Status-Service als `LastError` abgelegt") ist nicht umgesetzt: `AutoUpdateEvents` kennt den
+      Status-Service nicht, und kein Dienst abonniert `ErrorOccurred`, um `LastError` zu schreiben —
+      im gesamten Produktivcode existiert keine einzige `ErrorOccurred +=`-Registrierung, nur in vier
+      Testdateien. `LastError` wird ausschließlich in `AutoUpdateOrchestrator.FailAsync` für Ausnahmen
+      der Workflow-Schritte gesetzt; eine Ausnahme aus `BeforeCheckSource`, `BeforeDownload`,
+      `BeforeInstall`, `BeforeStartUpdateScript` oder `AfterStartUpdateScript` bleibt im Statusfeld
+      unsichtbar. Auswirkung: gering — der Ablauf bleibt stabil und der Fehler wird an Abonnenten
+      gemeldet; er taucht aber nicht in der Setup-UI auf. Neu in diesem Durchlauf erkannt; der
+      bestehende Test `AutoUpdateEventsTests.Raise_WhenHandlerThrows_ReportsErrorAndContinues` prüft
+      diesen Teilaspekt nicht.
 
 ## Hinweise
 
-### Bewusste Abweichungen ohne funktionale Lücke
-
-Die folgenden Punkte weichen von der Buchstabenform des Plans ab, erfüllen aber den
-beschriebenen Zweck vollständig. Sie sind als umgesetzt gewertet:
-
-| Plan | Implementierung | Bewertung |
-|------|-----------------|-----------|
-| `IAutoUpdateInstaller.StartAsync` | `Start(string scriptPath)` (synchron) | Das Starten eines Prozesses ist synchron; ein `Task`-Rückgabewert wäre irreführend |
-| `IAutoUpdatePackageStore.GetPendingPath` | `PendingAssetPath(fileName)` | Reine Umbenennung |
-| `IAutoUpdateProcessRunner.StartPrepareEnvironment` | `EnsureUpdateUnitAvailable(scriptPath)` | Reine Umbenennung, gleiche Aufgabe |
-| `UpdateSettingsStore.ApplyToOptionsAsync` | `ApplyToOptions` (synchron) | Reines Feldkopieren in die Singleton-Options, kein I/O |
-| `SourceCheckWindowEvaluator.IsWithinWindow(DateTimeOffset)` | `IsWithinWindow(IReadOnlyList<SourceCheckTimeRange>, DateTimeOffset)` | Zeitfenster als Parameter statt als Feld — hält die Klasse zustandslos und rein, wie in der Designentscheidung („Specification") gefordert |
-| `AutoUpdateGithubSource.Create(repositoryName, repositoryOwner)` | `Create(repositoryOwner, repositoryName)` | Der Plan ist in sich uneinheitlich (die Validierungstabelle nennt die umgekehrte Reihenfolge); die Implementierung folgt der üblichen GitHub-Konvention `owner/name` |
-| `JsonFileStore` als „interne statische Klasse" | `public static class` | Sichtbarkeitsabweichung. Für ein NuGet-Paket wäre `internal` die sauberere Wahl, da die Klasse zur öffentlichen API-Oberfläche zählt und damit versioniert werden muss |
-| `IValidateOptions<AutoUpdateOptions>` wird registriert | Validator wird in `UseAutoUpdate` direkt ausgeführt und wirft `OptionsValidationException` | Der Typ implementiert `IValidateOptions<AutoUpdateOptions>`, wird aber nicht im Container registriert. Die eager-Validierung erfüllt die Planvorgabe „Fehler beim Start" sogar zuverlässiger, weil `AutoUpdateOptions` als nackte Singleton-Instanz und nicht über `IOptions<T>` registriert ist — eine DI-Registrierung des Validators würde dort nie greifen |
-
-### Ergänzungen über den Plan hinaus
-
-Nicht im Plan vorgesehen, aber vorhanden und unschädlich:
-
-- `AutoUpdateOptions.UpdateUnitName` und `AutoUpdateBuilder.WithUpdateUnitName` — verhindert, dass mehrere Anwendungen, die die Bibliothek nutzen, auf Linux dieselbe systemd-Unit belegen. Sinnvolle Härtung für ein wiederverwendbares Paket.
-- `AutoUpdateBuilder.WithDownloadPath` — setzt den Download-Pfad, ohne den automatischen Download zu aktivieren; wird von `ProgramExtensions` genutzt, um `Updates:WorkingDirectory` zu übernehmen.
-- `ScheduledInstallEvaluator` — zieht die Auslöselogik des Schedulers in eine rein testbare Klasse, analog zum geplanten `SourceCheckWindowEvaluator`.
-- `ProcessOutputReader` (internal), `AsyncTestWait`, `AutoUpdateOptionsMapperTests`, `UpdateOrchestratorAdapterTests_LockAndSchedule`.
-
-### Beobachtungen zur Nacharbeit
-
-- **ZIP-Integrität ohne eigenen Test:** Die Planzeile `ValidateDownloadedPackageAsync_*` nennt „Prüfsumme, Größe, ZIP-Integrität". Der Code prüft die ZIP-Integrität (`ZipFile.OpenRead` plus `ValidateEntry` je Eintrag), die drei vorhandenen Tests decken jedoch nur Prüfsumme, Größenlimit und den Positivfall ab. Ein Test mit einem beschädigten Archiv würde diesen Pfad absichern.
-- **Risiken des Plans sind adressiert:** Statusdatei-Schemawechsel (toleranter `Idle`-Fallback, Test `Load_WithUnreadableStateFile_FallsBackToIdle`), Lebensdauer-Wechsel auf Singleton (Adapter bleibt Scoped und zustandslos), `TimeProvider`-Doppelregistrierung (`TryAddSingleton` plus Test), Testprojekt-Aufteilung (Projektmappe baut mit 0 Fehlern) — alle im Risikoabschnitt genannten Punkte sind geschlossen.
-- **Offene Punkte 1–7 des Plans:** Namensgebung (`SoftwareSchmiede.AutoUpdate`), Paketierungsvorbereitung ohne Veröffentlichung, eigener SemVer-Strang ab 0.1.0, kein macOS, kein `.bat`, gemeinsames Manifestschema für beide Quellen und tolerantes `status.json`-Verhalten sind durchgängig gemäß den empfohlenen Vorschlägen umgesetzt.
+- **Planwiderspruch beim Prüfdienst (unverändert):** Der Programmablauf „Periodische Quellprüfung"
+  (Plan Zeile 94) beschreibt ausdrücklich, dass der Dienst vollständig an `RunUpdateAsync` delegiert.
+  Umsetzungsreihenfolge Schritt 12 (Zeile 336) und die geplanten Tests `Execute_TriggersCheckOnlyWithinWindow`
+  und `Execute_NeverTriggersDownloadOrInstall` (Zeilen 449–450) fordern dagegen, dass ausschließlich
+  `CheckForUpdateAsync` aufgerufen wird. Die Implementierung folgt dem Programmablauf; die Tests heißen
+  entsprechend `Execute_RunsUpdateWorkflow_WithinWindow`, `Execute_DoesNotRun_OutsideWindow`,
+  `Execute_OnlyCallsRunUpdateAsync_NeverIndividualSteps` und `Execute_WhenRunThrows_ContinuesLoop`.
+  Das ist keine Implementierungslücke, sondern eine Inkonsistenz im Plan — Zeile 336 und die beiden
+  Testzeilen sollten an den Programmablauf angeglichen werden.
+- **Abweichende Testnamen ohne inhaltliche Lücke:** Zusätzlich zu den vier Prüfdienst-Tests wurde der
+  geplante Test `Commands_DelegateToOrchestrator` in die drei Einzeltests `Check_DelegatesToOrchestrator`,
+  `Download_DelegatesToOrchestrator` und `Install_DelegatesToOrchestrator` aufgeteilt. Inhaltlich ist
+  alles Geplante abgedeckt.
+- **Namensabweichungen ohne inhaltliche Lücke:** `IAutoUpdateInstaller.Start(string)` ist synchron
+  statt `StartAsync`; `IUpdateSettingsStore.ApplyToOptions` ist synchron statt `ApplyToOptionsAsync`;
+  `IAutoUpdatePackageStore.PendingAssetPath` statt `GetPendingPath`;
+  `IAutoUpdateProcessRunner.EnsureUpdateUnitAvailable` statt `StartPrepareEnvironment`;
+  `AutoUpdateGithubSource.Create(repositoryOwner, repositoryName, manifestAssetName?)` mit gegenüber
+  Plan Zeile 133 vertauschter Parameterreihenfolge.
+- **`UpdateSettingsStore` behält `IOptions<UpdateOptions>`:** Plan Zeile 200 formuliert den Wechsel als
+  Ersetzung („statt `IUpdateFileStore`/`IOptions<UpdateOptions>` künftig …"). Tatsächlich kommen
+  `IAutoUpdatePackageStore` und `AutoUpdateOptions` hinzu, `IOptions<UpdateOptions>` bleibt für die
+  FinanceManager-spezifischen Repository- und Manifest-Standardwerte erhalten. Das ist notwendig, da
+  diese Felder bewusst nicht in die Bibliothek gewandert sind (Plan Zeile 29), und stellt keine Lücke dar.
+- **Ergänzungen über den Plan hinaus** (kein Prüfgegenstand, für die Nachimplementierung aber relevant):
+  `ScheduledInstallEvaluator`, `AutoUpdateSourceDownloadHelper`, `ProcessOutputReader`,
+  `UpdateStatusMapper` (Web), `AutoUpdateOptions.UpdateUnitName`, `AutoUpdateBuilder.WithUpdateUnitName`
+  und `WithDownloadPath`, `IAutoUpdatePackageStore.IsLockStale` sowie
+  `UpdateOrchestratorAdapterLockAndScheduleTests` und `UpdateOrchestratorAdapterTestFactory`.
+- **Reihenfolge beim Schließen:** Die drei offenen Punkte sind voneinander unabhängig und können in
+  beliebiger Reihenfolge bearbeitet werden. Punkt 3 ist der einzige mit sichtbarer, wenn auch geringer
+  fachlicher Wirkung; die Punkte 1 und 2 sind reine Vertragsfragen, bei denen auch eine Anpassung des
+  Plans an die Implementierung eine valide Auflösung wäre.

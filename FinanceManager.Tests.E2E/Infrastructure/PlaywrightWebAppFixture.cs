@@ -46,6 +46,7 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
     private string? _updatesWorkingDir;
     private string? _releaseMetadataPath;
     private string? _originalReleaseMetadata;
+    private EventHandler? _processExitHandler;
     private readonly StringBuilder _serverOutput = new();
     private readonly StringBuilder _serverError = new();
 
@@ -63,6 +64,8 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         var webDll = ResolveWebDllPath();
         PrepareUpdateSource(_updatesSourceDir);
         PrepareInstalledReleaseMetadata();
+        _processExitHandler = (_, _) => RestoreInstalledReleaseMetadata();
+        AppDomain.CurrentDomain.ProcessExit += _processExitHandler;
         StartServer(port, webDll, _dbPath);
         await WaitForServerAsync();
 
@@ -127,6 +130,12 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
                     break;
                 }
             }
+        }
+
+        if (_processExitHandler is not null)
+        {
+            AppDomain.CurrentDomain.ProcessExit -= _processExitHandler;
+            _processExitHandler = null;
         }
 
         RestoreInstalledReleaseMetadata();
@@ -397,6 +406,17 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         File.WriteAllText(Path.Combine(sourceDirectory, "update.json"), JsonSerializer.Serialize(manifest, options));
     }
 
+    /// <summary>
+    /// Seeds <c>release-metadata.json</c> next to the server's content root so <c>ReleaseMetadataInstalledVersionProvider</c>
+    /// picks it up. This cannot be redirected to a temporary directory: the server process is started with
+    /// <see cref="StartServer"/>'s <c>WorkingDirectory</c> set to the source <c>FinanceManager.Web</c> folder (its
+    /// <c>ContentRootPath</c>), which the help feature also depends on (<c>HelpDocumentPathResolver</c> reads
+    /// <c>ContentRootPath/../Docs/help</c>) - redirecting the content root away from the source tree would break
+    /// that feature for these tests. The original content is captured and restored in
+    /// <see cref="RestoreInstalledReleaseMetadata"/>, including via an <see cref="AppDomain.ProcessExit"/> handler
+    /// so an aborted test run does not leave the seeded content behind; the file is also excluded via
+    /// <c>.gitignore</c> as defense in depth.
+    /// </summary>
     private void PrepareInstalledReleaseMetadata()
     {
         _releaseMetadataPath = Path.Combine(GetRepoRoot(), "FinanceManager.Web", "release-metadata.json");

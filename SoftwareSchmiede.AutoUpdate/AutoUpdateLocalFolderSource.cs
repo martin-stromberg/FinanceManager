@@ -7,9 +7,13 @@ namespace SoftwareSchmiede.AutoUpdate;
 /// </summary>
 public sealed class AutoUpdateLocalFolderSource : IAutoUpdateSource
 {
-    private const string ManifestFileName = "update.json";
+    /// <summary>
+    /// The default name of the release manifest file, used unless a different name is configured.
+    /// </summary>
+    public const string DefaultManifestFileName = "update.json";
 
     private readonly string _sourceDirectory;
+    private readonly string _manifestFileName;
     private readonly IAutoUpdatePlatformResolver _platformResolver;
 
     /// <summary>
@@ -17,7 +21,8 @@ public sealed class AutoUpdateLocalFolderSource : IAutoUpdateSource
     /// </summary>
     /// <param name="sourceDirectory">The local directory the release manifest and packages are read from.</param>
     /// <param name="platformResolver">Used to select the package matching the current platform.</param>
-    public AutoUpdateLocalFolderSource(string sourceDirectory, IAutoUpdatePlatformResolver? platformResolver = null)
+    /// <param name="manifestFileName">The name of the release manifest file, or <see langword="null"/> to use <see cref="DefaultManifestFileName"/>.</param>
+    public AutoUpdateLocalFolderSource(string sourceDirectory, IAutoUpdatePlatformResolver? platformResolver = null, string? manifestFileName = null)
     {
         if (string.IsNullOrWhiteSpace(sourceDirectory))
         {
@@ -25,13 +30,14 @@ public sealed class AutoUpdateLocalFolderSource : IAutoUpdateSource
         }
 
         _sourceDirectory = sourceDirectory;
+        _manifestFileName = string.IsNullOrWhiteSpace(manifestFileName) ? DefaultManifestFileName : manifestFileName;
         _platformResolver = platformResolver ?? new AutoUpdatePlatformResolver();
     }
 
     /// <inheritdoc />
     public async Task<AutoUpdateCheckResult> CheckAsync(CancellationToken ct = default)
     {
-        var manifestPath = Path.Combine(_sourceDirectory, ManifestFileName);
+        var manifestPath = Path.Combine(_sourceDirectory, _manifestFileName);
         if (!Directory.Exists(_sourceDirectory) || !File.Exists(manifestPath))
         {
             return new AutoUpdateCheckResult(null, null, null, null);
@@ -69,9 +75,7 @@ public sealed class AutoUpdateLocalFolderSource : IAutoUpdateSource
             throw new InvalidOperationException("Update package exceeds the configured size limit.");
         }
 
-        Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
         await using var source = File.OpenRead(sourcePath);
-        await using var target = File.Create(targetPath);
-        await source.CopyToAsync(target, ct);
+        await AutoUpdateSourceDownloadHelper.CopyToTargetAsync(source, targetPath, maxBytes, ct);
     }
 }

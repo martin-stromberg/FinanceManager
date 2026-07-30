@@ -232,10 +232,31 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         return File.WriteAllTextAsync(Path.Combine(downloadPath, "status.json"), JsonSerializer.Serialize(snapshot, options));
     }
 
+    /// <summary>
+    /// Mutates <see cref="AutoUpdateOptions.DownloadPath"/> on the already-registered singleton instance before the
+    /// test server starts, so status/lock files are read from an isolated temp directory instead of the real
+    /// <c>updates</c> folder.
+    /// </summary>
+    /// <param name="services">The service collection to locate the registered <see cref="AutoUpdateOptions"/> instance in.</param>
+    /// <param name="downloadPath">The temporary directory to redirect <see cref="AutoUpdateOptions.DownloadPath"/> to.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown with an actionable message if <see cref="AutoUpdateOptions"/> is no longer registered as a singleton
+    /// instance descriptor (see <c>AutoUpdateHostBuilderExtensions.UseAutoUpdate</c>), instead of failing later with
+    /// an unexplained <see cref="NullReferenceException"/>.
+    /// </exception>
     private static void SetDownloadPath(IServiceCollection services, string downloadPath)
     {
-        var descriptor = services.Single(d => d.ServiceType == typeof(AutoUpdateOptions));
-        ((AutoUpdateOptions)descriptor.ImplementationInstance!).DownloadPath = downloadPath;
+        var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(AutoUpdateOptions));
+        if (descriptor?.ImplementationInstance is not AutoUpdateOptions options)
+        {
+            throw new InvalidOperationException(
+                $"Expected {nameof(AutoUpdateOptions)} to be registered as a singleton instance " +
+                "(see AutoUpdateHostBuilderExtensions.UseAutoUpdate's `builder.Services.AddSingleton(options)`), " +
+                "so this test helper can mutate DownloadPath before the test server starts. " +
+                "The registration style has changed - update this helper to match.");
+        }
+
+        options.DownloadPath = downloadPath;
     }
 
     private static async Task AuthenticateAdminAsync(HttpClient client)

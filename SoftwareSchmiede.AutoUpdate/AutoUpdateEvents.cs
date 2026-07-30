@@ -5,7 +5,7 @@ namespace SoftwareSchmiede.AutoUpdate;
 
 /// <summary>
 /// Thread-safe implementation of <see cref="IAutoUpdateEventAggregator"/>. Raise methods invoke all subscribers
-/// even if one throws; exceptions from subscribers are reported via <see cref="ErrorOccured"/> instead of
+/// even if one throws; exceptions from subscribers are reported via <see cref="ErrorOccurred"/> instead of
 /// propagating, and do not count as a cancellation vote.
 /// </summary>
 public sealed class AutoUpdateEvents : IAutoUpdateEventAggregator
@@ -16,7 +16,7 @@ public sealed class AutoUpdateEvents : IAutoUpdateEventAggregator
     /// <summary>
     /// Initializes a new instance of the <see cref="AutoUpdateEvents"/> class.
     /// </summary>
-    /// <param name="logger">Used to log exceptions thrown by <see cref="ErrorOccured"/> subscribers, which cannot otherwise be reported. Defaults to a no-op logger.</param>
+    /// <param name="logger">Used to log exceptions thrown by <see cref="ErrorOccurred"/> subscribers, which cannot otherwise be reported. Defaults to a no-op logger.</param>
     public AutoUpdateEvents(ILogger<AutoUpdateEvents>? logger = null)
     {
         _logger = logger ?? NullLogger<AutoUpdateEvents>.Instance;
@@ -65,7 +65,7 @@ public sealed class AutoUpdateEvents : IAutoUpdateEventAggregator
     }
 
     /// <inheritdoc />
-    public event EventHandler<AutoUpdateErrorEventArgs>? ErrorOccured
+    public event EventHandler<AutoUpdateErrorEventArgs>? ErrorOccurred
     {
         add { lock (_gate) { _errorOccured += value; } }
         remove { lock (_gate) { _errorOccured -= value; } }
@@ -143,18 +143,18 @@ public sealed class AutoUpdateEvents : IAutoUpdateEventAggregator
             }
             catch (Exception ex)
             {
-                RaiseErrorOccured(sender, ex, "AfterStartUpdateScript");
+                RaiseErrorOccurred(sender, ex, "AfterStartUpdateScript");
             }
         }
     }
 
     /// <summary>
-    /// Raises <see cref="ErrorOccured"/>.
+    /// Raises <see cref="ErrorOccurred"/>.
     /// </summary>
     /// <param name="sender">The object raising the event.</param>
     /// <param name="error">The exception that occurred.</param>
     /// <param name="phase">A short identifier of the workflow phase the error occurred in.</param>
-    public void RaiseErrorOccured(object sender, Exception error, string phase)
+    public void RaiseErrorOccurred(object sender, Exception error, string phase)
     {
         EventHandler<AutoUpdateErrorEventArgs>? handler;
         lock (_gate) { handler = _errorOccured; }
@@ -172,8 +172,8 @@ public sealed class AutoUpdateEvents : IAutoUpdateEventAggregator
             }
             catch (Exception ex)
             {
-                // A failing ErrorOccured subscriber must not destabilize the library further; log for diagnostics only.
-                _logger.LogWarning(ex, "An ErrorOccured subscriber threw while handling a {Phase} error.", phase);
+                // A failing ErrorOccurred subscriber must not destabilize the library further; log for diagnostics only.
+                _logger.LogWarning(ex, "An ErrorOccurred subscriber threw while handling a {Phase} error.", phase);
             }
         }
     }
@@ -202,7 +202,7 @@ public sealed class AutoUpdateEvents : IAutoUpdateEventAggregator
             }
             catch (Exception ex)
             {
-                RaiseErrorOccured(sender, ex, phase);
+                RaiseErrorOccurred(sender, ex, phase);
             }
         }
 
