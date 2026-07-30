@@ -142,6 +142,46 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
     }
 
     [Fact]
+    public async Task PersistedSettings_AreAppliedToAutoUpdateOptions_OnStartup_WithoutManualSave()
+    {
+        var tempDir = Directory.CreateTempSubdirectory();
+        try
+        {
+            // Simulates settings saved through the setup UI during a previous run, persisted to disk, but never
+            // re-applied to the auto-update library's runtime options because the process later restarted.
+            var persisted = new UpdateSettingsDto(
+                true,
+                77,
+                "martin-stromberg",
+                "FinanceManager",
+                "update.json",
+                null,
+                "PersistedServiceName",
+                null,
+                tempDir.FullName,
+                250);
+            var json = JsonSerializer.Serialize(persisted, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            await File.WriteAllTextAsync(Path.Combine(tempDir.FullName, "settings.json"), json);
+
+            using var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services => SetDownloadPath(services, tempDir.FullName));
+            });
+            using var client = factory.CreateClient();
+
+            var options = factory.Services.GetRequiredService<AutoUpdateOptions>();
+
+            options.ServiceName.Should().Be("PersistedServiceName");
+            options.SourceCheck.Interval.Should().Be(77);
+            options.HealthTimeoutSeconds.Should().Be(250);
+        }
+        finally
+        {
+            tempDir.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Status_WhenInstallingAndVersionMatchesAfterRestart_ReportsNoUpdate()
     {
         var tempDir = Directory.CreateTempSubdirectory();

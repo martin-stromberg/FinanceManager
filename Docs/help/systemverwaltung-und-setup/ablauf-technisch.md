@@ -219,6 +219,17 @@ registriert. FinanceManager greift ausschliesslich ueber die Adapterklasse
 `UpdateOrchestratorAdapter` darauf zu, sodass Controller, `ApiClient` und
 ViewModel unveraendert bleiben.
 
+`UseAutoUpdate(...)` seedet die Bibliothekseinstellungen (`AutoUpdateOptions`)
+zunaechst ausschliesslich aus `appsettings*.json`. Direkt danach, aber noch vor
+dem Start der Hintergrunddienste (`AutoUpdateCheckerService`,
+`AutoUpdateSchedulerService`), wendet `ProgramExtensions.ApplyPersistedUpdateSettings`
+die zuletzt ueber die Setup-UI gespeicherten Einstellungen (`IUpdateSettingsStore`)
+auf `AutoUpdateOptions` an. Dadurch haben persistierte Einstellungen bei jedem
+Programmstart Vorrang vor `appsettings*.json` — nicht erst, nachdem ein
+Administrator sie nach dem Neustart erneut speichert. Existiert noch keine
+gespeicherte Konfiguration (z. B. beim allerersten Start), bleiben die
+`appsettings*.json`-Werte unveraendert wirksam.
+
 1. Ein Administrator startet `POST /api/setup/update/check` oder der
    Hintergrunddienst `AutoUpdateCheckerService` laeuft bei aktivierter
    Updatepruefung im konfigurierten Intervall (`Updates:SourceCheck:Interval`,

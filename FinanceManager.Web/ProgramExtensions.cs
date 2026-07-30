@@ -488,6 +488,36 @@ namespace FinanceManager.Web
         }
 
         /// <summary>
+        /// Applies the persisted update settings (from <see cref="IUpdateSettingsStore"/>) onto the auto-update
+        /// library's runtime <c>AutoUpdateOptions</c> singleton before the host starts.
+        /// </summary>
+        /// <param name="app">The <see cref="WebApplication"/> instance used to resolve services and for logging.</param>
+        /// <remarks>
+        /// <see cref="AutoUpdateHostBuilderExtensions.UseAutoUpdate"/> only seeds <c>AutoUpdateOptions</c> from
+        /// <c>appsettings*.json</c>; without this step, settings previously saved through the setup UI would only
+        /// take effect once the admin saves them again after each restart (they were applied in-memory by
+        /// <see cref="IUpdateSettingsStore.ApplyToOptions"/> only from <c>UpdateOrchestratorAdapter.SaveSettingsAsync</c>/
+        /// <c>ScheduleAsync</c>), while the auto-update hosted services would keep running against the
+        /// configuration-only defaults after every restart. Must run before <c>app.Run()</c>/<c>app.RunAsync()</c>
+        /// starts <c>AutoUpdateCheckerService</c>/<c>AutoUpdateSchedulerService</c>, which read <c>AutoUpdateOptions</c>
+        /// as soon as they start. Failures are logged and swallowed so that a corrupt settings file cannot prevent
+        /// the application from starting; the appsettings-configured defaults remain in effect in that case.
+        /// </remarks>
+        public static void ApplyPersistedUpdateSettings(this WebApplication app)
+        {
+            try
+            {
+                var settingsStore = app.Services.GetRequiredService<IUpdateSettingsStore>();
+                var settings = settingsStore.GetAsync().GetAwaiter().GetResult();
+                settingsStore.ApplyToOptions(settings);
+            }
+            catch (Exception ex)
+            {
+                app.Logger.LogError(ex, "Failed to apply persisted update settings at startup; using appsettings-configured defaults instead.");
+            }
+        }
+
+        /// <summary>
         /// Ensures that the Admin identity role exists and synchronizes role membership with domain users marked as IsAdmin.
         /// This is an internal helper used by <see cref="ApplyMigrationsAndSeed(WebApplication)"/>.
         /// </summary>
