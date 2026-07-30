@@ -1,5 +1,7 @@
 using FinanceManager.Shared;
 using Microsoft.Extensions.Localization;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace FinanceManager.Web.ViewModels.StatementDrafts;
 
@@ -669,22 +671,100 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
                         severityLocalized = m.Severity ?? string.Empty;
                     }
 
-                    // try to map common English message texts to resource keys (e.g. "Invalid date format")
-                    string normalized = string.Empty;
+                    // First check if the message is a direct translation key (e.g. "Validation_ENTRY_NO_CONTACT")
+                    string msgLocalized = string.Empty;
                     if (!string.IsNullOrWhiteSpace(m.Message))
                     {
-                        var partsWords = m.Message.Split(new[] { ' ', '\t', '\r', '\n', '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
-                        normalized = string.Concat(partsWords.Select(w => char.ToUpperInvariant(w[0]) + (w.Length > 1 ? w.Substring(1) : string.Empty)));
+                        // Check if the message contains a pipe separator (indicating translation key with parameters)
+                        if (m.Message.Contains('|'))
+                        {
+                            var keyParts = m.Message.Split('|');
+                            var key = keyParts[0];
+                            var parameters = keyParts.Skip(1).ToArray();
+
+                            // Try to get the localized string
+                            try
+                            {
+                                var localizedString = L?[key];
+                                if (localizedString != null && !localizedString.ResourceNotFound && localizedString.Value != null)
+                                {
+                                    // Format the message with parameters
+                                    try
+                                    {
+                                        var formattedParams = new List<object>();
+                                        foreach (var p in parameters)
+                                        {
+                                            // Try to parse as DateTime for date formatting
+                                            if (DateTime.TryParse(p, out var dateValue))
+                                            {
+                                                formattedParams.Add(dateValue);
+                                            }
+                                            else
+                                            {
+                                                formattedParams.Add(p);
+                                            }
+                                        }
+                                        
+                                        msgLocalized = string.Format(localizedString.Value, formattedParams.ToArray());
+                                    }
+                                    catch (FormatException)
+                                    {
+                                        // If formatting fails, use the key as fallback
+                                        msgLocalized = m.Message;
+                                    }
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                // If localization fails, use the original message as fallback
+                                msgLocalized = m.Message;
+                            }
+                        }
+                        else
+                        {
+                            // Simple translation key without parameters
+                            try
+                            {
+                                var localizedString = L?[m.Message];
+                                if (localizedString != null && !localizedString.ResourceNotFound && localizedString.Value != null)
+                                {
+                                    msgLocalized = localizedString.Value;
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                // If localization fails, use the original message as fallback
+                                msgLocalized = m.Message;
+                            }
+                        }
                     }
 
-                    string msgLocalized = string.Empty;
-                    if (!string.IsNullOrWhiteSpace(normalized))
+                    // If direct translation didn't work, try the old normalization approach
+                    if (string.IsNullOrWhiteSpace(msgLocalized))
                     {
-                        var msgKey = $"Validation_Message_{normalized}";
-                        var candidate = L[msgKey].Value;
-                        if (!string.IsNullOrWhiteSpace(candidate) && candidate != msgKey)
+                        try
                         {
-                            msgLocalized = candidate;
+                            string normalized = string.Empty;
+                            if (!string.IsNullOrWhiteSpace(m.Message))
+                            {
+                                var partsWords = m.Message.Split(new[] { ' ', '\t', '\r', '\n', '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
+                                normalized = string.Concat(partsWords.Select(w => char.ToUpperInvariant(w[0]) + (w.Length > 1 ? w.Substring(1) : string.Empty)));
+                            }
+
+                            if (!string.IsNullOrWhiteSpace(normalized))
+                            {
+                                var msgKey = $"Validation_Message_{normalized}";
+                                var candidate = L?[msgKey]?.Value;
+                                if (!string.IsNullOrWhiteSpace(candidate) && candidate != msgKey)
+                                {
+                                    msgLocalized = candidate;
+                                }
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            // If normalization fails, use the original message as fallback
+                            msgLocalized = m.Message ?? string.Empty;
                         }
                     }
 

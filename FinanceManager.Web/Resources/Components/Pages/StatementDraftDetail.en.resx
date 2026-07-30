@@ -312,4 +312,61 @@
   <data name="Ribbon_Group_Operations" xml:space="preserve">
     <value>Operations</value>
   </data>
+  <data name="Validation_NO_ACCOUNT" xml:space="preserve">
+    <value>No account assigned.</value>
+  </data>
+  <data name="Validation_SPLIT_CYCLE_DETECTED" xml:space="preserve">
+    <value>[Split] Cycles detected in split connections.</value>
+  </data>
+  <data name="Validation_SPLIT_DRAFT_HAS_ACCOUNT" xml:space="preserve">
+    <value>Split draft must not have an account assigned.</value>
+  </data>
+  <data name="Validation_SPLIT_AMOUNT_MISMATCH" xml:space="preserve">
+    <value>Sum of split does not match original amount.</value>
+  </data>
+  <data name="Validation_ENTRY_NO_CONTACT" xml:space="preserve">
+    <value>No contact assigned.</value>
+  </data>
+  <data name="Validation_INTERMEDIARY_NO_SPLIT" xml:space="preserve">
+    <value>Payment service without further split.</value>
+  </data>
+  <data name="Validation_SAVINGSPLAN_MISSING_FOR_SELF" xml:space="preserve">
+    <value>For self-transfer, a savings plan is recommended.</value>
+  </data>
+  <data name="Validation_SECURITY_ACCOUNT_NOT_ALLOWED" xml:space="preserve">
+    <value>Security processing is disabled for this account.</value>
+  </data>
+  <data name="Validation_SECURITY_INVALID_CONTACT" xml:space="preserve">
+    <value>Security booking requires bank contact of the account.</value>
+  </data>
+  <data name="Validation_SECURITY_MISSING_TXTYPE" xml:space="preserve">
+    <value>Security: Transaction type missing.</value>
+  </data>
+  <data name="Validation_SECURITY_MISSING_QUANTITY" xml:space="preserve">
+    <value>Security: Quantity missing.</value>
+  </data>
+  <data name="Validation_SECURITY_QUANTITY_NOT_ALLOWED_FOR_DIVIDEND" xml:space="preserve">
+    <value>Security: Quantity not allowed for dividend.</value>
+  </data>
+  <data name="Validation_SECURITY_FEE_TAX_EXCEEDS_AMOUNT" xml:space="preserve">
+    <value>Security: Fees+taxes exceed amount.</value>
+  </data>
+  <data name="Validation_ENTRY_NEEDS_CHECK" xml:space="preserve">
+    <value>A check of the information is required.</value>
+  </data>
+  <data name="Validation_SAVINGSPLAN_INVALID_ACCOUNT" xml:space="preserve">
+    <value>Savings plan on savings account is not allowed.</value>
+  </data>
+  <data name="Validation_SAVINGSPLAN_GOAL_REACHED_INFO" xml:space="preserve">
+    <value>With the bookings in this statement, the savings goal of the savings plan '{0}' will be reached.</value>
+  </data>
+  <data name="Validation_SAVINGSPLAN_GOAL_EXCEEDS" xml:space="preserve">
+    <value>The planned bookings exceed the savings goal of the savings plan '{0}'.</value>
+  </data>
+  <data name="Validation_SAVINGSPLAN_ARCHIVE_MISMATCH" xml:space="preserve">
+    <value>Savings plan '{0}' cannot be archived: Bookings do not exactly match the remaining amount.</value>
+  </data>
+  <data name="Validation_SAVINGSPLAN_DUE" xml:space="preserve">
+    <value>Savings plan '{0}' is due (Due date: {1:d}).</value>
+  </data>
 </root>
