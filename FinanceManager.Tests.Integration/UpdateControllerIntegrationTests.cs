@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
+using SoftwareSchmiede.AutoUpdate;
 using Xunit;
 
 namespace FinanceManager.Tests.Integration;
@@ -122,23 +122,58 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         {
             using var factory = _factory.WithWebHostBuilder(builder =>
             {
-                builder.ConfigureServices(services =>
-                {
-                    UseTemporaryUpdateFileStore(services, tempDir.FullName);
-                });
+                builder.ConfigureServices(services => SetDownloadPath(services, tempDir.FullName));
             });
             var client = factory.CreateClient();
             await AuthenticateAdminAsync(client);
 
-            var updateDirectory = Path.Combine(tempDir.FullName, "updates");
-            Directory.CreateDirectory(updateDirectory);
-            var lockPath = Path.Combine(updateDirectory, "update.lock");
+            var lockPath = Path.Combine(tempDir.FullName, "update.lock");
             await File.WriteAllTextAsync(lockPath, DateTimeOffset.UtcNow.AddMinutes(-10).ToString("O"));
 
             var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"));
 
             response.StatusCode.Should().Be(HttpStatusCode.NoContent);
             File.Exists(lockPath).Should().BeFalse();
+        }
+        finally
+        {
+            tempDir.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task PersistedSettings_AreAppliedToAutoUpdateOptions_OnStartup_WithoutManualSave()
+    {
+        var tempDir = Directory.CreateTempSubdirectory();
+        try
+        {
+            // Simulates settings saved through the setup UI during a previous run, persisted to disk, but never
+            // re-applied to the auto-update library's runtime options because the process later restarted.
+            var persisted = new UpdateSettingsDto(
+                true,
+                77,
+                "martin-stromberg",
+                "FinanceManager",
+                "update.json",
+                null,
+                "PersistedServiceName",
+                null,
+                tempDir.FullName,
+                250);
+            var json = JsonSerializer.Serialize(persisted, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            await File.WriteAllTextAsync(Path.Combine(tempDir.FullName, "settings.json"), json);
+
+            using var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services => SetDownloadPath(services, tempDir.FullName));
+            });
+            using var client = factory.CreateClient();
+
+            var options = factory.Services.GetRequiredService<AutoUpdateOptions>();
+
+            options.ServiceName.Should().Be("PersistedServiceName");
+            options.SourceCheck.Interval.Should().Be(77);
+            options.HealthTimeoutSeconds.Should().Be(250);
         }
         finally
         {
@@ -156,14 +191,16 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             {
                 builder.ConfigureServices(services =>
                 {
-                    UseTemporaryUpdateFileStore(services, tempDir.FullName);
+                    SetDownloadPath(services, tempDir.FullName);
                     services.RemoveAll<IInstalledReleaseMetadataProvider>();
                     services.AddSingleton<IInstalledReleaseMetadataProvider>(new FixedInstalledReleaseMetadataProvider("1.2.3"));
+                    services.RemoveAll<IInstalledVersionProvider>();
+                    services.AddSingleton<IInstalledVersionProvider>(new FixedInstalledVersionProvider("1.2.3"));
                 });
             });
             var client = factory.CreateClient();
             await AuthenticateAdminAsync(client);
-            await WriteStatusAsync(Path.Combine(tempDir.FullName, "updates"), UpdateStatusTestData.InstallingStatus("1.2.3"));
+            await WriteStatusAsync(tempDir.FullName, UpdateStatusTestData.InstallingSnapshot("1.2.3"));
 
             var response = await client.GetAsync("/api/setup/update/status");
 
@@ -187,14 +224,16 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             {
                 builder.ConfigureServices(services =>
                 {
-                    UseTemporaryUpdateFileStore(services, tempDir.FullName);
+                    SetDownloadPath(services, tempDir.FullName);
                     services.RemoveAll<IInstalledReleaseMetadataProvider>();
                     services.AddSingleton<IInstalledReleaseMetadataProvider>(new FixedInstalledReleaseMetadataProvider("1.2.3"));
+                    services.RemoveAll<IInstalledVersionProvider>();
+                    services.AddSingleton<IInstalledVersionProvider>(new FixedInstalledVersionProvider("1.2.3"));
                 });
             });
             var client = factory.CreateClient();
             await AuthenticateAdminAsync(client);
-            await WriteStatusAsync(Path.Combine(tempDir.FullName, "updates"), UpdateStatusTestData.InstallingStatus("9.9.9"));
+            await WriteStatusAsync(tempDir.FullName, UpdateStatusTestData.InstallingSnapshot("9.9.9"));
 
             var response = await client.GetAsync("/api/setup/update/status");
 
@@ -207,21 +246,6 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         {
             tempDir.Delete(recursive: true);
         }
-    }
-
-    private static Task WriteStatusAsync(string workingDirectory, UpdateStatusDto status)
-    {
-        Directory.CreateDirectory(workingDirectory);
-        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        return File.WriteAllTextAsync(Path.Combine(workingDirectory, "status.json"), JsonSerializer.Serialize(status, options));
-    }
-
-    private static void UseTemporaryUpdateFileStore(IServiceCollection services, string root)
-    {
-        services.RemoveAll<IUpdateFileStore>();
-        services.AddSingleton<IUpdateFileStore>(_ => new UpdateFileStore(
-            new TestUpdateWebHostEnvironment(root),
-            Options.Create(new UpdateOptions { WorkingDirectory = "updates" })));
     }
 
     [Fact]
@@ -241,6 +265,40 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         var response = await client.PostAsJsonAsync("/api/setup/update/install/start", new UpdateStartRequest(false));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    private static Task WriteStatusAsync(string downloadPath, AutoUpdateStatusSnapshot snapshot)
+    {
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        Directory.CreateDirectory(downloadPath);
+        return File.WriteAllTextAsync(Path.Combine(downloadPath, "status.json"), JsonSerializer.Serialize(snapshot, options));
+    }
+
+    /// <summary>
+    /// Mutates <see cref="AutoUpdateOptions.DownloadPath"/> on the already-registered singleton instance before the
+    /// test server starts, so status/lock files are read from an isolated temp directory instead of the real
+    /// <c>updates</c> folder.
+    /// </summary>
+    /// <param name="services">The service collection to locate the registered <see cref="AutoUpdateOptions"/> instance in.</param>
+    /// <param name="downloadPath">The temporary directory to redirect <see cref="AutoUpdateOptions.DownloadPath"/> to.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown with an actionable message if <see cref="AutoUpdateOptions"/> is no longer registered as a singleton
+    /// instance descriptor (see <c>AutoUpdateHostBuilderExtensions.UseAutoUpdate</c>), instead of failing later with
+    /// an unexplained <see cref="NullReferenceException"/>.
+    /// </exception>
+    private static void SetDownloadPath(IServiceCollection services, string downloadPath)
+    {
+        var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(AutoUpdateOptions));
+        if (descriptor?.ImplementationInstance is not AutoUpdateOptions options)
+        {
+            throw new InvalidOperationException(
+                $"Expected {nameof(AutoUpdateOptions)} to be registered as a singleton instance " +
+                "(see AutoUpdateHostBuilderExtensions.UseAutoUpdate's `builder.Services.AddSingleton(options)`), " +
+                "so this test helper can mutate DownloadPath before the test server starts. " +
+                "The registration style has changed - update this helper to match.");
+        }
+
+        options.DownloadPath = downloadPath;
     }
 
     private static async Task AuthenticateAdminAsync(HttpClient client)
@@ -288,19 +346,16 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             => Task.FromResult(new InstalledReleaseMetadataDto(_version, null, null, null, null));
     }
 
-    private sealed class TestUpdateWebHostEnvironment : IWebHostEnvironment
+    private sealed class FixedInstalledVersionProvider : IInstalledVersionProvider
     {
-        public TestUpdateWebHostEnvironment(string root)
+        private readonly string _version;
+
+        public FixedInstalledVersionProvider(string version)
         {
-            ContentRootPath = root;
-            WebRootPath = root;
+            _version = version;
         }
 
-        public string ApplicationName { get; set; } = "FinanceManager.Tests.Integration";
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
-        public string ContentRootPath { get; set; }
-        public string EnvironmentName { get; set; } = "Development";
-        public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
-        public string WebRootPath { get; set; }
+        public Task<InstalledReleaseInfo> GetAsync(CancellationToken ct = default)
+            => Task.FromResult(new InstalledReleaseInfo(_version, null, null, null, null));
     }
 }

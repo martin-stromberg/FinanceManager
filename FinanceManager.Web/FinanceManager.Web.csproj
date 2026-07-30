@@ -36,6 +36,7 @@
     <ProjectReference Include="..\FinanceManager.Infrastructure\FinanceManager.Infrastructure.csproj" />
     <ProjectReference Include="..\FinanceManager.Domain\FinanceManager.Domain.csproj" />
     <ProjectReference Include="..\FinanceManager.Shared\FinanceManager.Shared.csproj" />
+    <ProjectReference Include="..\SoftwareSchmiede.AutoUpdate\SoftwareSchmiede.AutoUpdate.csproj" />
   </ItemGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

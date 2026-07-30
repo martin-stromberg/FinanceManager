@@ -57,6 +57,8 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
                 ["BackgroundTasks:Enabled"] = "false",
                 ["Workers:SecurityPriceWorker:Enabled"] = "false",
                 ["Updates:HostedServicesEnabled"] = "false",
+                ["Updates:SourceType"] = "LocalFolder",
+                ["Updates:LocalFolderPath"] = Path.Combine(Path.GetTempPath(), $"updates-source-{Guid.NewGuid():N}"),
                 ["FileLogging:Enabled"] = "false"
             };
             cfg.AddInMemoryCollection(overrides);

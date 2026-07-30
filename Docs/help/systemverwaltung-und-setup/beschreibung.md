@@ -50,6 +50,22 @@ Ein aktiver Update-Lock kann durch Administratoren zurueckgesetzt werden, wenn
 die aktuelle Prozessinstanz keine Installation mehr besitzt und die Lock-Datei
 aelter als das konfigurierte Health-Timeout ist.
 
+Die Self-Update-Logik selbst ist als eigenstaendige, hosting-unabhaengige
+Bibliothek `SoftwareSchmiede.AutoUpdate` ausgelagert und wird beim Start ueber
+einen einzigen Aufruf `builder.UseAutoUpdate(...)` in `ProgramExtensions`
+registriert. FinanceManager greift darauf ueber die duenne Adapterschicht
+`UpdateOrchestratorAdapter` zu, sodass Controller, `ApiClient`,
+`SetupUpdateViewModel` und `SetupUpdateTab.razor` unveraendert bleiben. Die
+Konfigurationssektion `Updates` in `appsettings.json` steuert zusaetzlich
+folgende, neu hinzugekommene Werte: `SourceType` (`Github` oder `LocalFolder`)
+waehlt die Update-Quelle, `LocalFolderPath` das Quellverzeichnis fuer
+`LocalFolder`, `EnableAutomaticDownload`/`EnableAutomaticInstallation`
+schalten den automatischen Download bzw. die automatische Installation nach
+einer gefundenen neueren Version, `SourceCheck:Interval` und
+`SourceCheck:TimeRanges` steuern Intervall und erlaubte Zeitfenster der
+Hintergrundpruefung, und `StopHostAfterScriptStart` beendet den Host nach dem
+Start des Installationsskripts (Standard: deaktiviert, wie bisher).
+
 ## Beispiele
 
 - Ein Administrator legt Benutzer an oder setzt Passwörter zurück.

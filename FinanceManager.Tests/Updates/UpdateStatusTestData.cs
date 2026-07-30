@@ -1,32 +1,48 @@
-using FinanceManager.Shared.Dtos.Update;
+using SoftwareSchmiede.AutoUpdate;
 
 namespace FinanceManager.Tests.Updates;
 
 /// <summary>
-/// Shared builder for <see cref="UpdateStatusDto"/> test fixtures, reused across the unit and integration test
-/// projects to avoid duplicating the DTO's long positional constructor in multiple places.
+/// Shared builder for <see cref="AutoUpdateStatusSnapshot"/> test fixtures, reused across the unit and
+/// integration test projects to avoid duplicating the long positional constructor in multiple places.
 /// </summary>
 public static class UpdateStatusTestData
 {
     /// <summary>
-    /// Builds an <see cref="UpdateStatusDto"/> representing an in-progress installation of
+    /// Builds an <see cref="AutoUpdateStatusSnapshot"/> representing an in-progress installation of
     /// <paramref name="availableVersion"/> with an active lock.
     /// </summary>
     /// <param name="availableVersion">The version currently being installed.</param>
-    /// <param name="manifest">The manifest metadata to attach, or <see langword="null"/> if none is needed.</param>
-    /// <returns>An <see cref="UpdateStatusDto"/> with <see cref="UpdateStatusKind.Installing"/> status.</returns>
-    public static UpdateStatusDto InstallingStatus(string availableVersion, UpdateMetadataDto? manifest = null)
+    /// <returns>An <see cref="AutoUpdateStatusSnapshot"/> with <see cref="AutoUpdateState.Installing"/> state.</returns>
+    public static AutoUpdateStatusSnapshot InstallingSnapshot(string availableVersion)
         => new(
-            UpdateStatusKind.Installing,
-            null,
+            AutoUpdateState.Installing,
             null,
             availableVersion,
-            "win-x64",
             DateTimeOffset.UtcNow,
             null,
-            "release.zip",
+            null,
+            null,
+            null,
             true,
+            DateTimeOffset.UtcNow);
+
+    /// <summary>
+    /// Builds an <see cref="AutoUpdateStatusSnapshot"/> representing a package ready to install.
+    /// </summary>
+    /// <param name="availableVersion">The version ready to be installed.</param>
+    /// <param name="package">The package descriptor to attach as the last check result, or <see langword="null"/> if none is needed.</param>
+    /// <returns>An <see cref="AutoUpdateStatusSnapshot"/> with <see cref="AutoUpdateState.ReadyToInstall"/> state.</returns>
+    public static AutoUpdateStatusSnapshot ReadyToInstallSnapshot(string availableVersion, AutoUpdatePackageDescriptor? package = null)
+        => new(
+            AutoUpdateState.ReadyToInstall,
+            "1.0.0",
+            availableVersion,
             DateTimeOffset.UtcNow,
+            package is null ? null : new AutoUpdateCheckResult(availableVersion, package, null, null),
+            new AutoUpdateDownloadResult("release.zip", 10, true),
             null,
-            manifest);
+            null,
+            false,
+            null);
 }

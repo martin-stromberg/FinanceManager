@@ -67,15 +67,22 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 | `DataProtection:KeysPath` | string | leer | Optionaler Pfad fuer den ASP.NET-Core-Data-Protection-Key-Ring; in produktionsnahen Deployments persistent und geschuetzt bereitstellen |
 | `BackgroundTasks:Enabled` | bool | `true` | Aktiviert den `BackgroundTaskRunner` |
 | `Workers:SecurityPriceWorker:Enabled` | bool | `true` | Aktiviert den Security-Price-Worker |
-| `Updates:Enabled` | bool | `false` | Aktiviert die automatische Suche nach Self-Update-Releases |
-| `Updates:HostedServicesEnabled` | bool | `true` | Aktiviert `UpdateChecker` und `UpdateScheduler` |
-| `Updates:RepositoryOwner` / `Updates:RepositoryName` | string | `martin-stromberg` / `FinanceManager` | Festes GitHub-Repository der Updatequelle; beim Speichern serverseitig normalisiert |
-| `Updates:ManifestAssetName` | string | `update.json` | Festes Release-Asset mit Update-Metadaten; beim Speichern serverseitig normalisiert |
-| `Updates:WorkingDirectory` | string | `updates` | Festes Betriebsverzeichnis fuer Pending-Paket, Status, Lock, Staging und Skripte |
+| `Updates:Enabled` | bool | `false` | Aktiviert die automatische Suche nach Self-Update-Releases (steuert `SoftwareSchmiede.AutoUpdate`) |
+| `Updates:SourceType` | string | `Github` | Update-Quelle: `Github` oder `LocalFolder` |
+| `Updates:RepositoryOwner` / `Updates:RepositoryName` | string | `martin-stromberg` / `FinanceManager` | GitHub-Repository (nur bei `SourceType: Github`) |
+| `Updates:LocalFolderPath` | string? | `null` | Lokales Quellverzeichnis (nur bei `SourceType: LocalFolder`; Fallback: `{WorkingDirectory}/source`) |
+| `Updates:EnableAutomaticDownload` | bool | `true` | Download nach erfolgreicher Versionsprüfung |
+| `Updates:EnableAutomaticInstallation` | bool | `false` | Installation nach erfolgreichem Download |
+| `Updates:ManifestAssetName` | string | `update.json` | Release-Asset mit Update-Metadaten |
+| `Updates:WorkingDirectory` | string | `updates` | Betriebsverzeichnis fuer Pending-Paket, Status, Lock, Staging und Skripte |
 | `Updates:ServiceName` | string? | leer | Optionaler Service-Override fuer die aktuelle Plattform; in der Admin-UI mit Windows-/Linux-Service-Autocomplete |
-| `Updates:ExecutablePath` | string? | leer | Legacy-Lesewert; nicht mehr als Anwender-Einstellung editierbar |
-| `Updates:HealthTimeoutSeconds` | int | `120` | Interner Timeout fuer Health-Polling und Lock-Staleness, aus Serverkonfiguration mit Clamp 10..600 |
+| `Updates:ExecutablePath` | string? | leer | Windows-Fallback, wenn kein Service gesteuert wird; muss absolut im aktuellen Anwendungsverzeichnis liegen; nicht mehr ueber die Admin-UI editierbar |
+| `Updates:HealthTimeoutSeconds` | int | `120` | Wartezeit der Setup-UI bis zur Wiedererreichbarkeit von `/health`, serverseitig auf 10..600 begrenzt; nicht mehr ueber die Admin-UI editierbar |
 | `Updates:MaxAssetBytes` | long | `536870912` | Maximale Groesse eines Update-ZIP-Assets |
+| `Updates:HostedServicesEnabled` | bool | `true` | Aktiviert `AutoUpdateCheckerService` und `AutoUpdateSchedulerService` |
+| `Updates:SourceCheck:Interval` | int | `360` | Prüfintervall in Minuten (neue Syntax; Legacy-Alias: `CheckIntervalMinutes`) |
+| `Updates:SourceCheck:TimeRanges` | Array | `[]` | Zeitfenster für Prüfungen mit `DayOfWeek`, `StartTime`, `EndTime`; leer = immer erlaubt |
+| `Updates:StopHostAfterScriptStart` | bool | `false` | Host nach erfolgreichem Update-Skriptstart beenden |
 | `Backups:Security:MaxUploadBytes` | long | `104857600` | Maximale Uploadgroesse fuer Backup-ZIP-Dateien |
 | `Backups:Security:MaxCompressedZipBytes` | long | `104857600` | Maximale komprimierte ZIP-Groesse fuer Backup-Validierung |
 | `Backups:Security:MaxUncompressedNdjsonBytes` | long | `262144000` | Maximale entpackte NDJSON-Nutzlast im Backup |
@@ -122,12 +129,26 @@ FinanceManager.Domain                   # Domain-Modelle
 FinanceManager.Infrastructure           # EF Core, Persistenz, Integrationen
 FinanceManager.Shared                   # Gemeinsame DTOs / Client
 FinanceManager.Shared.Dtos.Budget       # Budget-DTO-Paket
+
+SoftwareSchmiede.AutoUpdate             # Standalone Update-Bibliothek (NuGet-ready)
+SoftwareSchmiede.AutoUpdate.Tests       # Tests für die Update-Bibliothek
+
 FinanceManager.Tests                    # Unit- und Komponenten-Tests (xUnit/bUnit)
 FinanceManager.Tests.Integration        # Integrationstests
 FinanceManager.Tests.E2E                # Playwright-End-to-End-Tests
 ```
 
-Technologien: .NET 10, ASP.NET Core, Blazor Server, EF Core (SQLite), ASP.NET Identity/JWT, xUnit, bUnit, Playwright.
+**Technologien:** .NET 10, ASP.NET Core, Blazor Server, EF Core (SQLite), ASP.NET Identity/JWT, xUnit, bUnit, Playwright.
+
+### Self-Update-System
+
+Das Self-Update-System wurde in eine eigenständige Bibliothek [`SoftwareSchmiede.AutoUpdate`](SoftwareSchmiede.AutoUpdate/) extrahiert. Sie ist:
+- **Hosting-unabhängig:** Funktioniert mit Web-, Worker- und Console-Hosts via `IHostApplicationBuilder`
+- **DI-kompatibel:** Alle Services als Singleton/Scoped mit fluenter Konfiguration
+- **Modular:** Pluggable Update-Quellen (`IAutoUpdateSource`), Events, Status-Tracking und Hintergrunddienste
+- **NuGet-ready:** Dokumentiert und für zukünftige Veröffentlichung vorbereitet
+
+Die `FinanceManager.Web`-Integration erfolgt über einen Adapter (`UpdateOrchestratorAdapter`); die öffentliche API bleibt unverändert. Details: [SoftwareSchmiede.AutoUpdate/README.md](SoftwareSchmiede.AutoUpdate/README.md).
 
 ## API-Dokumentation
 
@@ -192,9 +213,10 @@ dotnet test FinanceManager.sln
   ausgecheckt; die Reparatursuche verarbeitet alle Seiten der
   GitHub-Release-API.
 - Das Self-Update ist eine Admin-Funktion im Setup. Die UI zeigt Status,
-  Paketmetadaten und Release Notes; technische Update-Quellen sind fest auf
-  `martin-stromberg/FinanceManager`, `update.json` und das Arbeitsverzeichnis
-  `updates` normalisiert. Sichtbare Einstellungswerte werden über den globalen
+  Paketmetadaten und Release Notes; die technische Update-Quelle (GitHub-Repository
+  oder lokaler Ordner via `Updates:SourceType`) sowie Manifest-Asset und
+  Arbeitsverzeichnis werden serverseitig über `SoftwareSchmiede.AutoUpdate`
+  konfiguriert. Sichtbare Einstellungswerte werden über den globalen
   Ribbon-Button `Speichern` persistiert; die Aktionen `Jetzt prüfen`,
   `Update installieren` und `Update-Lock zurücksetzen` liegen ebenfalls im
   Setup-Ribbon. Der Service-Name bietet Vorschläge aus Windows-Diensten oder

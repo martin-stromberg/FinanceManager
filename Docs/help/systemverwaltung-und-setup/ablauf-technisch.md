@@ -213,44 +213,75 @@ Beteiligte Komponenten: `BackgroundTaskStatusPanel`, `ICurrentUserService`, `Api
 
 ### 11. Self-Update-Pruefung und Download
 
-1. Ein Administrator startet `POST /api/setup/update/check` oder der
-   `UpdateChecker` laeuft bei aktivierter Updatepruefung im konfigurierten
-   Intervall.
-2. `UpdateOrchestrator.CheckAsync` setzt den Status auf `Checking` und liest
-   Einstellungen sowie lokal installierte Release-Metadaten aus
-   `release-metadata.json`.
-3. `UpdateManifestClient` laedt das konfigurierte Manifest-Asset, standardmaessig
-   `update.json`, aus dem GitHub-Release-Kontext.
-4. `UpdateValidator.ValidateManifest` prueft Version, PublishedAt, Release
-   Notes, Repository, Assetnamen, HTTPS-GitHub-URLs, SHA-256, positive
-   Dateigroessen sowie Plattform-/Runtime-Konsistenz.
-5. `UpdatePlatformResolver` waehlt das Asset fuer die aktuelle Runtime, z. B.
-   `win-x64` oder `linux-x64`.
-6. Nur wenn die Manifest-Version neuer als die installierte Version ist, wird
-   das ZIP in `updates/pending` geladen.
-7. Nach Download validiert `UpdateValidator` Dateigroesse, SHA-256 und die
-   ZIP-Eintraege. Bei Erfolg wird der Status `Ready` gespeichert, sonst
-   `Failed` mit Fehlermeldung.
+Die Self-Update-Logik ist als eigenstaendige Bibliothek `SoftwareSchmiede.AutoUpdate`
+ausgelagert und wird ueber `builder.UseAutoUpdate(...)` in `ProgramExtensions`
+registriert. FinanceManager greift ausschliesslich ueber die Adapterklasse
+`UpdateOrchestratorAdapter` darauf zu, sodass Controller, `ApiClient` und
+ViewModel unveraendert bleiben.
 
-Beteiligte Komponenten: `UpdateController`, `UpdateChecker`,
-`UpdateOrchestrator`, `UpdateManifestClient`, `UpdateValidator`,
-`UpdatePlatformResolver`, `UpdateFileStore`.
+`UseAutoUpdate(...)` seedet die Bibliothekseinstellungen (`AutoUpdateOptions`)
+zunaechst ausschliesslich aus `appsettings*.json`. Direkt danach, aber noch vor
+dem Start der Hintergrunddienste (`AutoUpdateCheckerService`,
+`AutoUpdateSchedulerService`), wendet `ProgramExtensions.ApplyPersistedUpdateSettings`
+die zuletzt ueber die Setup-UI gespeicherten Einstellungen (`IUpdateSettingsStore`)
+auf `AutoUpdateOptions` an. Dadurch haben persistierte Einstellungen bei jedem
+Programmstart Vorrang vor `appsettings*.json` — nicht erst, nachdem ein
+Administrator sie nach dem Neustart erneut speichert. Existiert noch keine
+gespeicherte Konfiguration (z. B. beim allerersten Start), bleiben die
+`appsettings*.json`-Werte unveraendert wirksam.
+
+1. Ein Administrator startet `POST /api/setup/update/check` oder der
+   Hintergrunddienst `AutoUpdateCheckerService` laeuft bei aktivierter
+   Updatepruefung im konfigurierten Intervall (`Updates:SourceCheck:Interval`,
+   unter Beachtung optionaler Zeitfenster).
+2. `AutoUpdateOrchestrator.CheckForUpdateAsync` setzt den Status auf
+   `Checking` und liest die installierte Version ueber
+   `ReleaseMetadataInstalledVersionProvider` (`IInstalledVersionProvider`) aus
+   `release-metadata.json`.
+3. Je nach `Updates:SourceType` laedt `AutoUpdateGithubSource` das Manifest aus
+   dem GitHub-Release-Kontext oder `AutoUpdateLocalFolderSource` aus dem unter
+   `Updates:LocalFolderPath` konfigurierten Verzeichnis. Der Manifestname ist
+   in beiden Quellen `update.json`.
+4. `AutoUpdatePackageValidator` prueft Version, PublishedAt, Release Notes,
+   Repository/Herkunft, Assetnamen, SHA-256, positive Dateigroessen sowie
+   Plattform-/Runtime-Konsistenz.
+5. `AutoUpdatePlatformResolver` waehlt das Asset fuer die aktuelle Runtime, z. B.
+   `win-x64` oder `linux-x64`.
+6. Nur wenn die Manifest-Version neuer als die installierte Version ist und
+   `Updates:EnableAutomaticDownload` aktiviert ist, wird das ZIP in
+   `<DownloadPath>/pending` geladen.
+7. Nach Download validiert `AutoUpdatePackageValidator` Dateigroesse, SHA-256
+   und die ZIP-Eintraege. Bei Erfolg wird der Status `Ready` gespeichert
+   (Zustand `ReadyToInstall`), sonst `Failed` mit Fehlermeldung.
+
+Beteiligte Komponenten: `UpdateController`, `AutoUpdateCheckerService`,
+`UpdateOrchestratorAdapter`, `AutoUpdateOrchestrator`, `AutoUpdateGithubSource`,
+`AutoUpdateLocalFolderSource`, `AutoUpdatePackageValidator`,
+`AutoUpdatePlatformResolver`, `FileSystemAutoUpdatePackageStore`.
 
 ---
 
 ### 12. Self-Update-Installation und Warteseite
 
 1. Ein Administrator startet `POST /api/setup/update/install/start` mit
-   `ConfirmDowntime = true` oder der `UpdateScheduler` erreicht eine geplante
-   Uhrzeit bei Status `Ready`.
+   `ConfirmDowntime = true` oder der Hintergrunddienst
+   `AutoUpdateSchedulerService` erreicht eine geplante Uhrzeit
+   (`Updates:ScheduledInstallTime`) bei Status `Ready`.
 2. Der Orchestrator lehnt den Start ab, wenn kein vorbereitetes Paket vorliegt,
-   ein Lock aktiv ist oder bereits `Installing` gemeldet wird.
-3. `UpdateExecutor` erzeugt eine Lock-Datei, validiert das heruntergeladene
-   Paket erneut und loest das Service-/EXE-Ziel auf.
-4. `UpdateScriptGenerator` erzeugt ein Plattformskript in `updates/pending`:
-   PowerShell fuer Windows oder Shell-Skript fuer Linux.
-5. Das Skript wird als externer Prozess gestartet und die Webanwendung wird
-   kontrolliert beendet. Die eigentliche Dateiersetzung findet ausserhalb des
+   ein Lock aktiv ist, keine Downtime-Bestaetigung vorliegt oder bereits
+   `Installing` gemeldet wird.
+3. `AutoUpdateInstaller.PrepareAsync` erzeugt eine Lock-Datei (ueber
+   `IAutoUpdatePackageStore.TryCreateLockAsync`), validiert das
+   heruntergeladene Paket erneut und loest ueber `AutoUpdateServiceResolver`
+   das Service-/EXE-Ziel auf.
+4. `AutoUpdateScriptGenerator` erzeugt ein Plattformskript in
+   `<DownloadPath>/pending`: PowerShell fuer Windows oder Shell-Skript fuer
+   Linux.
+5. `DefaultAutoUpdateProcessRunner` startet das Skript als externen Prozess.
+   Nur wenn `Updates:StopHostAfterScriptStart` aktiviert ist, beendet
+   `DefaultAutoUpdateHostTerminator` anschliessend die Webanwendung
+   kontrolliert; andernfalls laeuft der Host unveraendert weiter, so wie
+   bisher. Die eigentliche Dateiersetzung findet in jedem Fall ausserhalb des
    laufenden ASP.NET-Core-Prozesses statt.
 6. Die Setup-UI zeigt den Installationszustand, pollt alle zwei Sekunden
    `/health`, wartet zuerst auf einen beobachteten Ausfall und laedt erst nach
@@ -258,7 +289,8 @@ Beteiligte Komponenten: `UpdateController`, `UpdateChecker`,
 7. Nach Ablauf von `HealthTimeoutSeconds`, standardmaessig 120 Sekunden, zeigt
    das ViewModel einen Timeout-Fehler.
 
-Beteiligte Komponenten: `UpdateController`, `UpdateScheduler`,
-`UpdateOrchestrator`, `UpdateExecutor`, `UpdateServiceResolver`,
-`UpdateScriptGenerator`, `HealthController`, `SetupUpdateViewModel`,
-`SetupUpdateTab.razor`.
+Beteiligte Komponenten: `UpdateController`, `AutoUpdateSchedulerService`,
+`UpdateOrchestratorAdapter`, `AutoUpdateOrchestrator`, `AutoUpdateInstaller`,
+`AutoUpdateServiceResolver`, `AutoUpdateScriptGenerator`,
+`DefaultAutoUpdateProcessRunner`, `DefaultAutoUpdateHostTerminator`,
+`HealthController`, `SetupUpdateViewModel`, `SetupUpdateTab.razor`.
