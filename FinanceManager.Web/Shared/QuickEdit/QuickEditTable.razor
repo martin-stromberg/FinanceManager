@@ -3,6 +3,8 @@
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
 @using FinanceManager.Shared.Dtos.Statements
+@using System.Linq
+@using System.Collections.Generic
 @inject IServiceProvider ServiceProvider
 @inject IJSRuntime JS
 
@@ -119,15 +121,58 @@
             return null;
         }
 
-        return $"{highest.BudgetPurposeName} ({highest.BudgetPeriod}): {highest.Reason}";
+        var localizedReason = GetLocalizedMessage(highest.Reason);
+        return $"{highest.BudgetPurposeName} ({highest.BudgetPeriod}): {localizedReason}";
+    }
+
+    private string GetLocalizedMessage(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return message;
+        }
+
+        // Check if the message contains a pipe separator (indicating translation key with parameters)
+        if (message.Contains('|'))
+        {
+            var parts = message.Split('|');
+            var key = parts[0];
+            var parameters = parts.Skip(1).ToArray();
+
+            // Try to get the localized string (need to get localizer from service provider)
+            var localizer = ServiceProvider.GetService<Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages>>();
+            var localizedString = localizer?[key];
+            if (localizedString != null && !localizedString.ResourceNotFound)
+            {
+                // Format the message with parameters
+                try
+                {
+                    var formattedParams = new List<object>();
+                    foreach (var p in parameters)
+                    {
+                        formattedParams.Add(p);
+                    }
+                    
+                    return string.Format(localizedString, formattedParams.ToArray());
+                }
+                catch (FormatException)
+                {
+                    // If formatting fails, return the key as fallback
+                    return message;
+                }
+            }
+        }
+        
+        // If no translation key format or translation not found, return the original message
+        return message;
     }
 }
 
 @{
     var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
     var records = vm?.Records ?? new List<FinanceManager.Web.ViewModels.Common.ListRecord>();
-    Microsoft.Extensions.Localization.IStringLocalizer<Pages>? localizer = null;
-    try { localizer = ServiceProvider.GetService<Microsoft.Extensions.Localization.IStringLocalizer<Pages>>(); } catch { }
+    Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages>? localizer = null;
+    try { localizer = ServiceProvider.GetService<Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages>>(); } catch { }
     // If the ViewModel requested focusing first invalid row, consume the id and focus client-side
     var focusId = (vm as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel)?.ConsumeFocusFirstInvalid();
     if (focusId != null)
