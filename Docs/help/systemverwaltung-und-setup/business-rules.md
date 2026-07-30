@@ -267,7 +267,7 @@ lokaler Ordner), das Manifest- und ZIP-Validierung besteht.
 `UpdateOrchestratorAdapter.CheckAsync`), `AutoUpdateGithubSource`/
 `AutoUpdateLocalFolderSource`, `AutoUpdatePackageValidator`,
 `AutoUpdatePlatformResolver`, `ReleaseMetadataInstalledVersionProvider`. Diese
-Klassen liegen in der Bibliothek `SoftwareSchmiede.AutoUpdate`.
+Klassen werden aus der externen Bibliothek `msTools.Updater` eingebunden.
 
 ## Self-Update-Start erzeugt ein externes Installationsskript
 
@@ -295,7 +295,7 @@ sondern startet ein generiertes Plattformskript und beendet danach den Host
 **Umsetzung:** `AutoUpdateOrchestrator.InstallAsync` (aufgerufen ueber
 `UpdateOrchestratorAdapter.StartInstallAsync`), `AutoUpdateInstaller`,
 `AutoUpdateServiceResolver`, `AutoUpdateScriptGenerator`. Diese Klassen liegen
-in der Bibliothek `SoftwareSchmiede.AutoUpdate`.
+in der externen Bibliothek `msTools.Updater`.
 
 ## Update-Lock-Reset loescht nur alte Locks
 

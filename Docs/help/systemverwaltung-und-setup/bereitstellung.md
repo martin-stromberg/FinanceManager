@@ -89,10 +89,20 @@ Repository-Berechtigungen.
 ## Self-Update im Betrieb
 
 Das Self-Update ist eine Admin-Funktion im Setup und standardmaessig
-deaktiviert. Die Logik wird durch die unabhaengige Bibliothek
-`SoftwareSchmiede.AutoUpdate` bereitgestellt. FinanceManager konsumiert diese
-Bibliothek ueber einen Adapter (`UpdateOrchestratorAdapter`); die oeffentliche
-REST-API und die Setup-UI bleiben davon unberührt.
+deaktiviert. Die Logik wird durch das externe Release-Artefakt
+`msTools.Updater` bereitgestellt. FinanceManager konsumiert die unter
+`external/msTools.Updater/v0.2.0/` abgelegte `msTools.Updater.dll` ueber einen
+Adapter (`UpdateOrchestratorAdapter`); die oeffentliche REST-API und die
+Setup-UI bleiben davon unberührt.
+
+Das eingebundene Artefakt stammt aus dem GitHub-Release `v0.2.0` des
+Repositories `martin-stromberg/msTools.Updater`. Das Original-ZIP
+`release.zip` und `SHA256SUMS.txt` bleiben im Repository erhalten; massgeblich
+ist der SHA-256-Wert
+`adf4e64e18345ac8ef30e8c626c639489b3eb84accae0f2f5ab61b59e8ea029c`. Die
+frueher lokale Updater-Bibliothek ist kein Projekt dieser Solution mehr. Eine
+spaetere NuGet-Referenz ersetzt nur diese lokale Artefaktablage, nicht die
+FinanceManager-spezifische Update-API.
 
 Die Update-Quelle ist wahlweise GitHub-Releases (`Updates:SourceType: Github`,
 Standardwert) oder ein lokales Verzeichnis (`Updates:SourceType: LocalFolder`).

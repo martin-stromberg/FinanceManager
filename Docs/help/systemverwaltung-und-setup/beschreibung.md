@@ -50,11 +50,13 @@ Ein aktiver Update-Lock kann durch Administratoren zurueckgesetzt werden, wenn
 die aktuelle Prozessinstanz keine Installation mehr besitzt und die Lock-Datei
 aelter als das konfigurierte Health-Timeout ist.
 
-Die Self-Update-Logik selbst ist als eigenstaendige, hosting-unabhaengige
-Bibliothek `SoftwareSchmiede.AutoUpdate` ausgelagert und wird beim Start ueber
-einen einzigen Aufruf `builder.UseAutoUpdate(...)` in `ProgramExtensions`
-registriert. FinanceManager greift darauf ueber die duenne Adapterschicht
-`UpdateOrchestratorAdapter` zu, sodass Controller, `ApiClient`,
+Die Self-Update-Logik selbst wird als externe, hosting-unabhaengige Bibliothek
+`msTools.Updater` eingebunden. Bis zur NuGet-Veroeffentlichung referenziert
+FinanceManager den geprueften Release `v0.2.0` unter
+`external/msTools.Updater/v0.2.0/`; die dort entpackte `msTools.Updater.dll`
+wird beim Start ueber einen einzigen Aufruf `builder.UseAutoUpdate(...)` in
+`ProgramExtensions` registriert. FinanceManager greift darauf ueber die duenne
+Adapterschicht `UpdateOrchestratorAdapter` zu, sodass Controller, `ApiClient`,
 `SetupUpdateViewModel` und `SetupUpdateTab.razor` unveraendert bleiben. Die
 Konfigurationssektion `Updates` in `appsettings.json` steuert zusaetzlich
 folgende, neu hinzugekommene Werte: `SourceType` (`Github` oder `LocalFolder`)

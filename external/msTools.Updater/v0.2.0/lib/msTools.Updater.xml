@@ -1,0 +1,2027 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>msTools.Updater</name>
+    </assembly>
+    <members>
+        <member name="T:msTools.Updater.AutoUpdateBuilder">
+            <summary>
+            Fluent configuration surface for the auto-update subsystem, used from the delegate passed to
+            <see cref="M:msTools.Updater.AutoUpdateHostBuilderExtensions.UseAutoUpdate(Microsoft.Extensions.Hosting.IHostApplicationBuilder,System.Action{msTools.Updater.AutoUpdateBuilder})"/>.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateBuilder.Options">
+            <summary>
+            Gets the options instance being configured.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateBuilder.ConfigurationSectionName">
+            <summary>
+            Gets the configuration section name the options are bound from.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateBuilder.ExplicitDownloadPath">
+            <summary>
+            Gets the download path explicitly set via <see cref="M:msTools.Updater.AutoUpdateBuilder.EnableAutomaticDownload(System.String)"/>, if any. Used by
+            <see cref="M:msTools.Updater.AutoUpdateHostBuilderExtensions.UseAutoUpdate(Microsoft.Extensions.Hosting.IHostApplicationBuilder,System.Action{msTools.Updater.AutoUpdateBuilder})"/> to make sure this explicit value is not
+            silently overwritten by configuration binding.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateBuilder.ExplicitEnableAutomaticDownload">
+            <summary>
+            Gets a value indicating whether <see cref="M:msTools.Updater.AutoUpdateBuilder.EnableAutomaticDownload(System.String)"/> was called.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateBuilder.ExplicitEnableAutomaticInstallation">
+            <summary>
+            Gets a value indicating whether <see cref="M:msTools.Updater.AutoUpdateBuilder.EnableAutomaticInstallation"/> was called.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateBuilder.ExplicitSourceCheckInterval">
+            <summary>
+            Gets the source check interval explicitly set via <see cref="M:msTools.Updater.AutoUpdateBuilder.WithSourceCheck(System.Int32,System.Collections.Generic.IEnumerable{msTools.Updater.SourceCheckTimeRange})"/>, if any.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateBuilder.ExplicitSourceCheckTimeRanges">
+            <summary>
+            Gets the source check time ranges explicitly set via <see cref="M:msTools.Updater.AutoUpdateBuilder.WithSourceCheck(System.Int32,System.Collections.Generic.IEnumerable{msTools.Updater.SourceCheckTimeRange})"/>, if any.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateBuilder.ExplicitUpdateUnitName">
+            <summary>
+            Gets the update unit name explicitly set via <see cref="M:msTools.Updater.AutoUpdateBuilder.WithUpdateUnitName(System.String)"/>, if any.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateBuilder.EnableAutomaticDownload(System.String)">
+            <summary>
+            Enables automatic download of a newer version once discovered.
+            </summary>
+            <param name="downloadPath">The root directory update packages are stored in, or <see langword="null"/> to keep the current value.</param>
+            <returns>The same builder instance, for chaining.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateBuilder.EnableAutomaticInstallation">
+            <summary>
+            Enables automatic installation of a downloaded update package.
+            </summary>
+            <returns>The same builder instance, for chaining.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateBuilder.UseSource(msTools.Updater.IAutoUpdateSource)">
+            <summary>
+            Configures a custom update source.
+            </summary>
+            <param name="source">The update source to use.</param>
+            <returns>The same builder instance, for chaining.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateBuilder.UseGithubSource(System.String,System.String,System.String)">
+            <summary>
+            Configures a GitHub-releases update source.
+            </summary>
+            <param name="repositoryOwner">The owner (user or organization) of the GitHub repository.</param>
+            <param name="repositoryName">The name of the GitHub repository.</param>
+            <param name="manifestAssetName">The name of the release manifest asset, or <see langword="null"/> to use <see cref="F:msTools.Updater.AutoUpdateGithubSource.DefaultManifestAssetName"/>.</param>
+            <returns>The same builder instance, for chaining.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateBuilder.UseLocalFolderSource(System.String,System.String)">
+            <summary>
+            Configures a local-folder update source.
+            </summary>
+            <param name="sourceDirectory">The local directory the release manifest and packages are read from.</param>
+            <param name="manifestFileName">The name of the release manifest file, or <see langword="null"/> to use <see cref="F:msTools.Updater.AutoUpdateLocalFolderSource.DefaultManifestFileName"/>.</param>
+            <returns>The same builder instance, for chaining.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateBuilder.WithSourceCheck(System.Int32,System.Collections.Generic.IEnumerable{msTools.Updater.SourceCheckTimeRange})">
+            <summary>
+            Configures the periodic background source check.
+            </summary>
+            <param name="interval">The interval, in minutes, between successive checks.</param>
+            <param name="timeRanges">The allowed time windows, or <see langword="null"/> to allow checks at any time.</param>
+            <returns>The same builder instance, for chaining.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateBuilder.BindConfiguration(System.String)">
+            <summary>
+            Binds <see cref="T:msTools.Updater.AutoUpdateOptions"/> from a configuration section other than the default ("AutoUpdate").
+            </summary>
+            <param name="sectionName">The configuration section name to bind from.</param>
+            <returns>The same builder instance, for chaining.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateBuilder.DisableHostedServices">
+            <summary>
+            Prevents <see cref="T:msTools.Updater.AutoUpdateCheckerService"/> and <see cref="T:msTools.Updater.AutoUpdateSchedulerService"/> from being
+            registered as hosted services.
+            </summary>
+            <returns>The same builder instance, for chaining.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateBuilder.WithUpdateUnitName(System.String)">
+            <summary>
+            Sets the systemd unit name used on Linux to run the installation script (see
+            <see cref="P:msTools.Updater.AutoUpdateOptions.UpdateUnitName"/>). Consuming applications should set a unique value so that
+            concurrently installed applications using this library do not collide on the same unit.
+            </summary>
+            <param name="unitName">The unit name to use.</param>
+            <returns>The same builder instance, for chaining.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateBuilder.WithDownloadPath(System.String)">
+            <summary>
+            Sets the root directory update packages, status and lock files are stored in, without affecting whether
+            automatic download is enabled. Use <see cref="M:msTools.Updater.AutoUpdateBuilder.EnableAutomaticDownload(System.String)"/> instead to also enable automatic
+            download of a newer version once discovered.
+            </summary>
+            <param name="downloadPath">The root directory update packages are stored in.</param>
+            <returns>The same builder instance, for chaining.</returns>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateCancelEventArgs">
+            <summary>
+            Base event argument for cancellable auto-update lifecycle events, raised before the source is checked.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateCancelEventArgs.Cancel">
+            <summary>
+            Gets or sets a value indicating whether the pending operation should be canceled. Set by a subscriber to
+            <see langword="true"/> to cancel.
+            </summary>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateCheckerService">
+            <summary>
+            Hosted service periodically running the update workflow against the configured source, honoring the
+            configured interval and time windows. Calls <see cref="M:msTools.Updater.IAutoUpdateOrchestrator.RunUpdateAsync(System.Threading.CancellationToken)"/>, which checks
+            for a newer version and then downloads and installs it depending on <see cref="P:msTools.Updater.AutoUpdateOptions.EnableAutomaticDownload"/>
+            and <see cref="P:msTools.Updater.AutoUpdateOptions.EnableAutomaticInstallation"/>.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateCheckerService.#ctor(msTools.Updater.IAutoUpdateOrchestrator,msTools.Updater.AutoUpdateOptions,msTools.Updater.SourceCheckWindowEvaluator,System.TimeProvider,Microsoft.Extensions.Logging.ILogger{msTools.Updater.AutoUpdateCheckerService})">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.AutoUpdateCheckerService"/> class.
+            </summary>
+            <param name="orchestrator">Used to run the update workflow.</param>
+            <param name="options">The runtime-mutable auto-update options, read fresh on every iteration.</param>
+            <param name="windowEvaluator">Used to determine whether checks are currently allowed.</param>
+            <param name="timeProvider">The time source used for scheduling and delays.</param>
+            <param name="logger">Used to log failures.</param>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateCheckerService.ExecuteAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateCheckResult">
+            <summary>
+            Describes the result of querying an <see cref="T:msTools.Updater.IAutoUpdateSource"/> for a newer version.
+            </summary>
+            <param name="AvailableVersion">The version reported by the source, or <see langword="null"/> if none was found.</param>
+            <param name="Package">The package descriptor matching the current platform, if a version was found.</param>
+            <param name="ReleaseNotes">The release notes of the available version, if provided.</param>
+            <param name="PublishedAt">The publication timestamp of the available version.</param>
+            <returns>An immutable result describing the outcome of a source check.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateCheckResult.#ctor(System.String,msTools.Updater.AutoUpdatePackageDescriptor,System.String,System.Nullable{System.DateTimeOffset})">
+            <summary>
+            Describes the result of querying an <see cref="T:msTools.Updater.IAutoUpdateSource"/> for a newer version.
+            </summary>
+            <param name="AvailableVersion">The version reported by the source, or <see langword="null"/> if none was found.</param>
+            <param name="Package">The package descriptor matching the current platform, if a version was found.</param>
+            <param name="ReleaseNotes">The release notes of the available version, if provided.</param>
+            <param name="PublishedAt">The publication timestamp of the available version.</param>
+            <returns>An immutable result describing the outcome of a source check.</returns>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateCheckResult.AvailableVersion">
+            <summary>The version reported by the source, or <see langword="null"/> if none was found.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateCheckResult.Package">
+            <summary>The package descriptor matching the current platform, if a version was found.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateCheckResult.ReleaseNotes">
+            <summary>The release notes of the available version, if provided.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateCheckResult.PublishedAt">
+            <summary>The publication timestamp of the available version.</summary>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateCommandService">
+            <summary>
+            UI-agnostic, thin facade over <see cref="T:msTools.Updater.IAutoUpdateOrchestrator"/> for manually triggered update operations.
+            Contains no update logic of its own; thread-safety is inherited from the orchestrator's internal
+            serialization.
+            </summary>
+            <remarks>
+            Deliberate interface segregation, not an accidental middle man: <see cref="T:msTools.Updater.IAutoUpdateCommandHandler"/> exposes
+            only the subset of <see cref="T:msTools.Updater.IAutoUpdateOrchestrator"/> meant for manual, UI-triggered operations
+            (check/download/install), while <see cref="T:msTools.Updater.IAutoUpdateOrchestrator"/> additionally covers status reads and the
+            full automated workflow used by the background services. Consumers that only need manual triggering (e.g. a
+            setup UI adapter) depend on the narrower contract instead of the full orchestrator surface.
+            </remarks>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateCommandService.#ctor(msTools.Updater.IAutoUpdateOrchestrator)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.AutoUpdateCommandService"/> class.
+            </summary>
+            <param name="orchestrator">The orchestrator all operations are delegated to.</param>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateCommandService.CheckAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateCommandService.DownloadAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateCommandService.InstallAsync(System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateDownloadResult">
+            <summary>
+            Describes the result of downloading an update package.
+            </summary>
+            <param name="LocalPath">The local file system path the package was downloaded to.</param>
+            <param name="SizeBytes">The size of the downloaded file in bytes.</param>
+            <param name="ChecksumValid">Whether the downloaded package's checksum matched the descriptor.</param>
+            <returns>An immutable result describing a completed download.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateDownloadResult.#ctor(System.String,System.Int64,System.Boolean)">
+            <summary>
+            Describes the result of downloading an update package.
+            </summary>
+            <param name="LocalPath">The local file system path the package was downloaded to.</param>
+            <param name="SizeBytes">The size of the downloaded file in bytes.</param>
+            <param name="ChecksumValid">Whether the downloaded package's checksum matched the descriptor.</param>
+            <returns>An immutable result describing a completed download.</returns>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateDownloadResult.LocalPath">
+            <summary>The local file system path the package was downloaded to.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateDownloadResult.SizeBytes">
+            <summary>The size of the downloaded file in bytes.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateDownloadResult.ChecksumValid">
+            <summary>Whether the downloaded package's checksum matched the descriptor.</summary>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateErrorEventArgs">
+            <summary>
+            Event argument raised whenever an error occurs during the update workflow.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateErrorEventArgs.#ctor(System.Exception,System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.AutoUpdateErrorEventArgs"/> class.
+            </summary>
+            <param name="error">The exception that occurred.</param>
+            <param name="phase">A short identifier of the workflow phase the error occurred in.</param>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateErrorEventArgs.Error">
+            <summary>
+            Gets the exception that occurred.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateErrorEventArgs.Phase">
+            <summary>
+            Gets a short identifier of the workflow phase the error occurred in (e.g. "Check", "Download", "Install").
+            </summary>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateEvents">
+            <summary>
+            Thread-safe implementation of <see cref="T:msTools.Updater.IAutoUpdateEventAggregator"/>. Raise methods invoke all subscribers
+            even if one throws; exceptions from subscribers are reported via <see cref="E:msTools.Updater.AutoUpdateEvents.ErrorOccurred"/> instead of
+            propagating, and do not count as a cancellation vote.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateEvents.#ctor(Microsoft.Extensions.Logging.ILogger{msTools.Updater.AutoUpdateEvents})">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.AutoUpdateEvents"/> class.
+            </summary>
+            <param name="logger">Used to log exceptions thrown by <see cref="E:msTools.Updater.AutoUpdateEvents.ErrorOccurred"/> subscribers, which cannot otherwise be reported. Defaults to a no-op logger.</param>
+        </member>
+        <member name="E:msTools.Updater.AutoUpdateEvents.BeforeCheckSource">
+            <inheritdoc />
+        </member>
+        <member name="E:msTools.Updater.AutoUpdateEvents.BeforeDownload">
+            <inheritdoc />
+        </member>
+        <member name="E:msTools.Updater.AutoUpdateEvents.BeforeInstall">
+            <inheritdoc />
+        </member>
+        <member name="E:msTools.Updater.AutoUpdateEvents.BeforeStartUpdateScript">
+            <inheritdoc />
+        </member>
+        <member name="E:msTools.Updater.AutoUpdateEvents.AfterStartUpdateScript">
+            <inheritdoc />
+        </member>
+        <member name="E:msTools.Updater.AutoUpdateEvents.ErrorOccurred">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateEvents.RaiseBeforeCheckSource(System.Object)">
+            <summary>
+            Raises <see cref="E:msTools.Updater.AutoUpdateEvents.BeforeCheckSource"/> and returns whether any subscriber requested cancellation.
+            </summary>
+            <param name="sender">The object raising the event.</param>
+            <returns><see langword="true"/> if a subscriber canceled the operation.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateEvents.RaiseBeforeDownload(System.Object,System.Uri)">
+            <summary>
+            Raises <see cref="E:msTools.Updater.AutoUpdateEvents.BeforeDownload"/> and returns whether any subscriber requested cancellation.
+            </summary>
+            <param name="sender">The object raising the event.</param>
+            <param name="sourceUri">The location the package will be downloaded from.</param>
+            <returns><see langword="true"/> if a subscriber canceled the operation.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateEvents.RaiseBeforeInstall(System.Object,System.IO.FileInfo)">
+            <summary>
+            Raises <see cref="E:msTools.Updater.AutoUpdateEvents.BeforeInstall"/> and returns whether any subscriber requested cancellation.
+            </summary>
+            <param name="sender">The object raising the event.</param>
+            <param name="packageFile">The downloaded package file about to be installed.</param>
+            <returns><see langword="true"/> if a subscriber canceled the operation.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateEvents.RaiseBeforeStartUpdateScript(System.Object,System.IO.FileInfo)">
+            <summary>
+            Raises <see cref="E:msTools.Updater.AutoUpdateEvents.BeforeStartUpdateScript"/> and returns whether any subscriber requested cancellation.
+            </summary>
+            <param name="sender">The object raising the event.</param>
+            <param name="scriptFile">The generated installation script about to be started.</param>
+            <returns><see langword="true"/> if a subscriber canceled the operation.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateEvents.RaiseAfterStartUpdateScript(System.Object)">
+            <summary>
+            Raises <see cref="E:msTools.Updater.AutoUpdateEvents.AfterStartUpdateScript"/>. This event has no cancellation semantics.
+            </summary>
+            <param name="sender">The object raising the event.</param>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateEvents.RaiseErrorOccurred(System.Object,System.Exception,System.String)">
+            <summary>
+            Raises <see cref="E:msTools.Updater.AutoUpdateEvents.ErrorOccurred"/>.
+            </summary>
+            <param name="sender">The object raising the event.</param>
+            <param name="error">The exception that occurred.</param>
+            <param name="phase">A short identifier of the workflow phase the error occurred in.</param>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateGithubSource">
+            <summary>
+            <see cref="T:msTools.Updater.IAutoUpdateSource"/> implementation reading a release manifest (<c>update.json</c>) and its
+            packages from the latest release of a GitHub repository. Requires network access to <c>github.com</c>.
+            </summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateGithubSource.DefaultManifestAssetName">
+            <summary>
+            The default name of the release manifest asset, used unless a different name is configured.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateGithubSource.RepositorySegmentRegex">
+            <remarks>
+            Pattern:<br/>
+            <code>^[A-Za-z0-9._-]+$</code><br/>
+            Options:<br/>
+            <code>RegexOptions.Compiled</code><br/>
+            Explanation:<br/>
+            <code>
+            ○ Match if at the beginning of the string.<br/>
+            ○ Match a character in the set [\-.0-9A-Z_a-z] atomically at least once.<br/>
+            ○ Match if at the end of the string or if before an ending newline.<br/>
+            </code>
+            </remarks>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateGithubSource.#ctor(System.Net.Http.HttpClient,System.String,System.String,msTools.Updater.IAutoUpdatePlatformResolver,System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.AutoUpdateGithubSource"/> class.
+            </summary>
+            <param name="httpClient">The HTTP client used to query the GitHub release manifest and download assets.</param>
+            <param name="repositoryOwner">The owner (user or organization) of the GitHub repository.</param>
+            <param name="repositoryName">The name of the GitHub repository.</param>
+            <param name="platformResolver">Used to select the package matching the current platform.</param>
+            <param name="manifestAssetName">The name of the release manifest asset, or <see langword="null"/> to use <see cref="F:msTools.Updater.AutoUpdateGithubSource.DefaultManifestAssetName"/>.</param>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateGithubSource.Create(System.String,System.String,System.String)">
+            <summary>
+            Creates an <see cref="T:msTools.Updater.AutoUpdateGithubSource"/> with a default, internally owned <see cref="T:System.Net.Http.HttpClient"/>
+            that is disposed together with this instance.
+            </summary>
+            <param name="repositoryOwner">The owner (user or organization) of the GitHub repository.</param>
+            <param name="repositoryName">The name of the GitHub repository.</param>
+            <param name="manifestAssetName">The name of the release manifest asset, or <see langword="null"/> to use <see cref="F:msTools.Updater.AutoUpdateGithubSource.DefaultManifestAssetName"/>.</param>
+            <returns>A new <see cref="T:msTools.Updater.AutoUpdateGithubSource"/> instance.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateGithubSource.Dispose">
+            <summary>
+            Releases the internally owned <see cref="T:System.Net.Http.HttpClient"/> created by <see cref="M:msTools.Updater.AutoUpdateGithubSource.Create(System.String,System.String,System.String)"/>. Has no effect for
+            instances created via the public constructor with an externally owned <see cref="T:System.Net.Http.HttpClient"/>.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateGithubSource.CheckAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateGithubSource.DownloadAsync(msTools.Updater.AutoUpdatePackageDescriptor,System.String,System.Int64,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateHostBuilderExtensions">
+            <summary>
+            Registers the auto-update subsystem on an <see cref="T:Microsoft.Extensions.Hosting.IHostApplicationBuilder"/>. This is the only supported
+            entry point for consuming the library.
+            </summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateHostBuilderExtensions.DefaultConfigurationSectionName">
+            <summary>
+            The default configuration section name <see cref="T:msTools.Updater.AutoUpdateOptions"/> are bound from, unless overridden
+            via <see cref="M:msTools.Updater.AutoUpdateBuilder.BindConfiguration(System.String)"/>.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateHostBuilderExtensions.UseAutoUpdate(Microsoft.Extensions.Hosting.IHostApplicationBuilder,System.Action{msTools.Updater.AutoUpdateBuilder})">
+            <summary>
+            Configures and registers the auto-update subsystem. Works with any host implementing
+            <see cref="T:Microsoft.Extensions.Hosting.IHostApplicationBuilder"/> (web, worker or console), since no ASP.NET Core dependency is used.
+            </summary>
+            <param name="builder">The host application builder to register services on.</param>
+            <param name="configure">An optional delegate configuring the auto-update options via <see cref="T:msTools.Updater.AutoUpdateBuilder"/>.</param>
+            <returns>The same builder instance, for chaining.</returns>
+            <exception cref="T:Microsoft.Extensions.Options.OptionsValidationException">Thrown when the resulting <see cref="T:msTools.Updater.AutoUpdateOptions"/> are invalid.</exception>
+            <remarks>
+            Configuration is bound after <paramref name="configure"/> runs, so that values only present in configuration
+            (e.g. <see cref="P:msTools.Updater.AutoUpdateOptions.Enabled"/>, which has no fluent setter) are filled in. Values explicitly
+            set via the fluent <see cref="T:msTools.Updater.AutoUpdateBuilder"/> methods (<see cref="M:msTools.Updater.AutoUpdateBuilder.EnableAutomaticDownload(System.String)"/>,
+            <see cref="M:msTools.Updater.AutoUpdateBuilder.EnableAutomaticInstallation"/>, <see cref="M:msTools.Updater.AutoUpdateBuilder.WithSourceCheck(System.Int32,System.Collections.Generic.IEnumerable{msTools.Updater.SourceCheckTimeRange})"/>) take
+            precedence and are re-applied after binding, so configuration cannot silently override explicit code configuration.
+            </remarks>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateHostBuilderExtensions.BuildOptions(Microsoft.Extensions.Hosting.IHostApplicationBuilder,msTools.Updater.AutoUpdateBuilder)">
+            <summary>
+            Builds and validates the effective <see cref="T:msTools.Updater.AutoUpdateOptions"/> for <paramref name="builder"/>: binds
+            configuration, re-applies explicit fluent values, clamps <see cref="P:msTools.Updater.AutoUpdateOptions.HealthTimeoutSeconds"/>,
+            derives the default source when none was configured and validates the result.
+            </summary>
+            <param name="builder">The host application builder configuration is read from.</param>
+            <param name="autoUpdateBuilder">The builder holding the fluent configuration applied by the caller's configure delegate.</param>
+            <returns>The validated, effective options.</returns>
+            <exception cref="T:Microsoft.Extensions.Options.OptionsValidationException">Thrown when the resulting options are invalid.</exception>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateHostBuilderExtensions.ReapplyExplicitValues(msTools.Updater.AutoUpdateBuilder,msTools.Updater.AutoUpdateOptions)">
+            <summary>
+            Re-applies the fluent <see cref="T:msTools.Updater.AutoUpdateBuilder"/> values onto <paramref name="options"/> after
+            configuration binding, so that explicit code configuration is not silently discarded by a matching
+            configuration key.
+            </summary>
+            <param name="autoUpdateBuilder">The builder holding the explicitly-set values.</param>
+            <param name="options">The options instance configuration was just bound onto.</param>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateInstallationTarget">
+            <summary>
+            Describes the resolved installation target for the current platform, as produced by
+            <see cref="T:msTools.Updater.IAutoUpdateServiceResolver"/>.
+            </summary>
+            <param name="Platform">The platform identifier ("windows" or "linux").</param>
+            <param name="ServiceName">The name of the service to stop and restart, if applicable.</param>
+            <param name="ExecutablePath">The path of the executable to restart, if applicable.</param>
+            <returns>An immutable description of the resolved installation target.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateInstallationTarget.#ctor(System.String,System.String,System.String)">
+            <summary>
+            Describes the resolved installation target for the current platform, as produced by
+            <see cref="T:msTools.Updater.IAutoUpdateServiceResolver"/>.
+            </summary>
+            <param name="Platform">The platform identifier ("windows" or "linux").</param>
+            <param name="ServiceName">The name of the service to stop and restart, if applicable.</param>
+            <param name="ExecutablePath">The path of the executable to restart, if applicable.</param>
+            <returns>An immutable description of the resolved installation target.</returns>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateInstallationTarget.Platform">
+            <summary>The platform identifier ("windows" or "linux").</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateInstallationTarget.ServiceName">
+            <summary>The name of the service to stop and restart, if applicable.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateInstallationTarget.ExecutablePath">
+            <summary>The path of the executable to restart, if applicable.</summary>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateInstaller">
+            <summary>
+            Default <see cref="T:msTools.Updater.IAutoUpdateInstaller"/> implementation: re-validates the downloaded package, resolves the
+            installation target and generates the platform-specific installation script. Event raising is the
+            responsibility of the caller (<see cref="T:msTools.Updater.AutoUpdateOrchestrator"/>).
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateInstaller.#ctor(msTools.Updater.IAutoUpdatePackageValidator,msTools.Updater.IAutoUpdateServiceResolver,msTools.Updater.IAutoUpdateScriptGenerator,msTools.Updater.IAutoUpdateProcessRunner,msTools.Updater.AutoUpdateOptions)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.AutoUpdateInstaller"/> class.
+            </summary>
+            <param name="validator">Used to re-validate the downloaded package before installation.</param>
+            <param name="serviceResolver">Used to resolve the installation target.</param>
+            <param name="scriptGenerator">Used to generate the installation script.</param>
+            <param name="processRunner">Used to start the installation script.</param>
+            <param name="options">The runtime-mutable auto-update options.</param>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateInstaller.PrepareAsync(msTools.Updater.AutoUpdatePackageDescriptor,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateInstaller.Start(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateInstallResult">
+            <summary>
+            Describes the result of starting an update installation.
+            </summary>
+            <param name="Version">The version being installed.</param>
+            <param name="ScriptPath">The local file system path of the generated installation script.</param>
+            <param name="StartedAt">The timestamp the installation script was started at.</param>
+            <returns>An immutable result describing a started installation.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateInstallResult.#ctor(System.String,System.String,System.DateTimeOffset)">
+            <summary>
+            Describes the result of starting an update installation.
+            </summary>
+            <param name="Version">The version being installed.</param>
+            <param name="ScriptPath">The local file system path of the generated installation script.</param>
+            <param name="StartedAt">The timestamp the installation script was started at.</param>
+            <returns>An immutable result describing a started installation.</returns>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateInstallResult.Version">
+            <summary>The version being installed.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateInstallResult.ScriptPath">
+            <summary>The local file system path of the generated installation script.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateInstallResult.StartedAt">
+            <summary>The timestamp the installation script was started at.</summary>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateLocalFolderSource">
+            <summary>
+            Default <see cref="T:msTools.Updater.IAutoUpdateSource"/> implementation reading a release manifest (<c>update.json</c>) and
+            its packages from a local directory. Deterministic and offline-capable; used as the fallback source when
+            none is configured.
+            </summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateLocalFolderSource.DefaultManifestFileName">
+            <summary>
+            The default name of the release manifest file, used unless a different name is configured.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateLocalFolderSource.#ctor(System.String,msTools.Updater.IAutoUpdatePlatformResolver,System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.AutoUpdateLocalFolderSource"/> class.
+            </summary>
+            <param name="sourceDirectory">The local directory the release manifest and packages are read from.</param>
+            <param name="platformResolver">Used to select the package matching the current platform.</param>
+            <param name="manifestFileName">The name of the release manifest file, or <see langword="null"/> to use <see cref="F:msTools.Updater.AutoUpdateLocalFolderSource.DefaultManifestFileName"/>.</param>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateLocalFolderSource.CheckAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateLocalFolderSource.DownloadAsync(msTools.Updater.AutoUpdatePackageDescriptor,System.String,System.Int64,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateOptions">
+            <summary>
+            Runtime-mutable configuration for the auto-update subsystem, registered as a singleton instance by
+            <see cref="M:msTools.Updater.AutoUpdateHostBuilderExtensions.UseAutoUpdate(Microsoft.Extensions.Hosting.IHostApplicationBuilder,System.Action{msTools.Updater.AutoUpdateBuilder})"/>.
+            </summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateOptions.MinHealthTimeoutSeconds">
+            <summary>
+            The minimum allowed value of <see cref="P:msTools.Updater.AutoUpdateOptions.HealthTimeoutSeconds"/>.
+            </summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateOptions.MaxHealthTimeoutSeconds">
+            <summary>
+            The maximum allowed value of <see cref="P:msTools.Updater.AutoUpdateOptions.HealthTimeoutSeconds"/>.
+            </summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateOptions.DefaultDownloadPath">
+            <summary>
+            The default value of <see cref="P:msTools.Updater.AutoUpdateOptions.DownloadPath"/>, also used as the fallback root directory name by
+            <see cref="T:msTools.Updater.FileSystemAutoUpdatePackageStore"/> when <see cref="P:msTools.Updater.AutoUpdateOptions.DownloadPath"/> is blank.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateOptions.Enabled">
+            <summary>
+            Gets or sets a value indicating whether the auto-update subsystem is enabled at all.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateOptions.EnableAutomaticDownload">
+            <summary>
+            Gets or sets a value indicating whether a discovered newer version is downloaded automatically.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateOptions.DownloadPath">
+            <summary>
+            Gets or sets the root directory update packages, status and lock files are stored in.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateOptions.EnableAutomaticInstallation">
+            <summary>
+            Gets or sets a value indicating whether a downloaded update package is installed automatically.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateOptions.Source">
+            <summary>
+            Gets or sets the update source used to check for and download new versions.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateOptions.SourceCheck">
+            <summary>
+            Gets or sets the configuration for the periodic background source check.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateOptions.MaxAssetBytes">
+            <summary>
+            Gets or sets the maximum accepted size, in bytes, of a downloaded update package.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateOptions.HostedServicesEnabled">
+            <summary>
+            Gets or sets a value indicating whether <see cref="T:msTools.Updater.AutoUpdateCheckerService"/> and
+            <see cref="T:msTools.Updater.AutoUpdateSchedulerService"/> are registered as hosted services.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateOptions.ScheduledInstallTime">
+            <summary>
+            Gets or sets the time of day scheduled installations should be attempted at, or <see langword="null"/> if
+            no scheduled installation is configured.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateOptions.ServiceName">
+            <summary>
+            Gets or sets the name of the service to stop and restart during installation.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateOptions.ExecutablePath">
+            <summary>
+            Gets or sets the path of the executable to restart during installation, used when no service is
+            configured.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateOptions.StopHostAfterScriptStart">
+            <summary>
+            Gets or sets a value indicating whether the host application is stopped after the installation script has
+            been started.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateOptions.HealthTimeoutSeconds">
+            <summary>
+            Gets or sets the number of seconds an installation lock must be older than the health timeout before it
+            is considered stale and eligible for a manual reset.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateOptions.UpdateUnitName">
+            <summary>
+            Gets or sets the systemd unit name <see cref="T:msTools.Updater.DefaultAutoUpdateProcessRunner"/> uses on Linux to run the
+            installation script. Must be unique per consuming application so that concurrently installed applications
+            using this library do not collide on the same unit.
+            </summary>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateOptionsValidator">
+            <summary>
+            Validates <see cref="T:msTools.Updater.AutoUpdateOptions"/> at startup. Does not validate <see cref="P:msTools.Updater.AutoUpdateOptions.HealthTimeoutSeconds"/>:
+            <see cref="M:msTools.Updater.AutoUpdateHostBuilderExtensions.UseAutoUpdate(Microsoft.Extensions.Hosting.IHostApplicationBuilder,System.Action{msTools.Updater.AutoUpdateBuilder})"/> clamps it into range before validation runs, so an
+            out-of-range value is silently corrected rather than rejected.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateOptionsValidator.Validate(System.String,msTools.Updater.AutoUpdateOptions)">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateOrchestrator">
+            <summary>
+            Default <see cref="T:msTools.Updater.IAutoUpdateOrchestrator"/> implementation. Coordinates checking, downloading and
+            installing update packages, raises the lifecycle events in the documented order, persists status through
+            <see cref="T:msTools.Updater.AutoUpdateStatusService"/> and reports every error via <see cref="E:msTools.Updater.IAutoUpdateEventAggregator.ErrorOccurred"/>
+            instead of throwing. Registered as a singleton; all Check/Download/Install operations are serialized through
+            an internal semaphore.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateOrchestrator.#ctor(msTools.Updater.AutoUpdateOptions,msTools.Updater.IAutoUpdateEventAggregator,msTools.Updater.AutoUpdateStatusService,msTools.Updater.IAutoUpdatePackageStore,msTools.Updater.IAutoUpdatePackageValidator,msTools.Updater.IInstalledVersionProvider,msTools.Updater.IAutoUpdateInstaller,msTools.Updater.IAutoUpdateHostTerminator,System.TimeProvider)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.AutoUpdateOrchestrator"/> class.
+            </summary>
+            <param name="options">The runtime-mutable auto-update options, including the configured source.</param>
+            <param name="events">Used to raise the lifecycle events of the update workflow.</param>
+            <param name="statusService">Used to read and persist the current status snapshot.</param>
+            <param name="packageStore">Used to resolve package paths and manage the installation lock.</param>
+            <param name="validator">Used to compare versions and validate downloaded packages.</param>
+            <param name="installedVersionProvider">Used to determine the currently installed version.</param>
+            <param name="installer">Used to prepare and start the installation.</param>
+            <param name="hostTerminator">Used to stop the host application after the installation script starts, if configured.</param>
+            <param name="timeProvider">Used to time-stamp status transitions.</param>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateOrchestrator.Dispose">
+            <summary>
+            Releases the internal serialization semaphore.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateOrchestrator.RunUpdateAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateOrchestrator.CheckForUpdateAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateOrchestrator.DownloadAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateOrchestrator.InstallAsync(System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateOrchestrator.GetStatusAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateOutcome">
+            <summary>
+            Represents the outcome of a single auto-update operation.
+            </summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateOutcome.Success">
+            <summary>The operation completed successfully.</summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateOutcome.NoUpdate">
+            <summary>No newer version was available.</summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateOutcome.Skipped">
+            <summary>The operation was skipped because the next automatic step is disabled.</summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateOutcome.Canceled">
+            <summary>The operation was canceled by an event subscriber.</summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateOutcome.Failed">
+            <summary>The operation failed with an error.</summary>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdatePackageDescriptor">
+            <summary>
+            Describes a single downloadable update package for a specific platform and runtime.
+            </summary>
+            <param name="Version">The semantic version of the package.</param>
+            <param name="Platform">The platform identifier (e.g. "windows", "linux").</param>
+            <param name="RuntimeIdentifier">The .NET runtime identifier (e.g. "win-x64", "linux-x64").</param>
+            <param name="FileName">The file name of the package, without any path segments.</param>
+            <param name="Uri">The location the package can be downloaded from.</param>
+            <param name="Sha256">The expected SHA256 checksum of the downloaded package, in lowercase hex.</param>
+            <param name="SizeBytes">The expected size of the package in bytes.</param>
+            <returns>An immutable descriptor identifying a single downloadable update package.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdatePackageDescriptor.#ctor(System.String,System.String,System.String,System.String,System.Uri,System.String,System.Int64)">
+            <summary>
+            Describes a single downloadable update package for a specific platform and runtime.
+            </summary>
+            <param name="Version">The semantic version of the package.</param>
+            <param name="Platform">The platform identifier (e.g. "windows", "linux").</param>
+            <param name="RuntimeIdentifier">The .NET runtime identifier (e.g. "win-x64", "linux-x64").</param>
+            <param name="FileName">The file name of the package, without any path segments.</param>
+            <param name="Uri">The location the package can be downloaded from.</param>
+            <param name="Sha256">The expected SHA256 checksum of the downloaded package, in lowercase hex.</param>
+            <param name="SizeBytes">The expected size of the package in bytes.</param>
+            <returns>An immutable descriptor identifying a single downloadable update package.</returns>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdatePackageDescriptor.Version">
+            <summary>The semantic version of the package.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdatePackageDescriptor.Platform">
+            <summary>The platform identifier (e.g. "windows", "linux").</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdatePackageDescriptor.RuntimeIdentifier">
+            <summary>The .NET runtime identifier (e.g. "win-x64", "linux-x64").</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdatePackageDescriptor.FileName">
+            <summary>The file name of the package, without any path segments.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdatePackageDescriptor.Uri">
+            <summary>The location the package can be downloaded from.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdatePackageDescriptor.Sha256">
+            <summary>The expected SHA256 checksum of the downloaded package, in lowercase hex.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdatePackageDescriptor.SizeBytes">
+            <summary>The expected size of the package in bytes.</summary>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdatePackageValidator">
+            <summary>
+            Default <see cref="T:msTools.Updater.IAutoUpdatePackageValidator"/> implementation: compares semantic versions and validates
+            downloaded packages by size, SHA256 checksum and ZIP archive integrity.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdatePackageValidator.IsNewerVersion(System.String,System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.AutoUpdatePackageValidator.ValidateDownloadedPackageAsync(msTools.Updater.AutoUpdatePackageDescriptor,System.String,System.Int64,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.AutoUpdatePlatformResolver">
+            <summary>
+            Default <see cref="T:msTools.Updater.IAutoUpdatePlatformResolver"/> implementation based on <see cref="T:System.Runtime.InteropServices.RuntimeInformation"/>.
+            </summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdatePlatformResolver.WindowsPlatform">
+            <summary>
+            The <see cref="P:msTools.Updater.IAutoUpdatePlatformResolver.CurrentPlatform"/> value reported on Windows.
+            </summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdatePlatformResolver.LinuxPlatform">
+            <summary>
+            The <see cref="P:msTools.Updater.IAutoUpdatePlatformResolver.CurrentPlatform"/> value reported on Linux.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdatePlatformResolver.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.AutoUpdatePlatformResolver"/> class using the actual
+            runtime platform.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdatePlatformResolver.#ctor(System.Func{System.Runtime.InteropServices.OSPlatform,System.Boolean},System.String,System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.AutoUpdatePlatformResolver"/> class with an overridable
+            platform detection function, used for testing.
+            </summary>
+            <param name="isOSPlatform">Determines whether the current process is running on the given platform.</param>
+            <param name="runtimeIdentifier">The fallback runtime identifier for unsupported platforms.</param>
+            <param name="osDescription">The fallback platform description for unsupported platforms, used by <see cref="P:msTools.Updater.AutoUpdatePlatformResolver.CurrentPlatform"/>.</param>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdatePlatformResolver.CurrentRuntimeIdentifier">
+            <inheritdoc />
+        </member>
+        <member name="P:msTools.Updater.AutoUpdatePlatformResolver.CurrentPlatform">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.AutoUpdatePlatformResolver.SelectPackage(msTools.Updater.AutoUpdateReleaseInfo)">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateReleaseInfo">
+            <summary>
+            Describes a release manifest published by an <see cref="T:msTools.Updater.IAutoUpdateSource"/>.
+            </summary>
+            <param name="Version">The semantic version of the release.</param>
+            <param name="ReleaseNotes">The release notes, if provided by the source.</param>
+            <param name="PublishedAt">The publication timestamp of the release.</param>
+            <param name="Packages">The packages available for this release, one per supported platform.</param>
+            <returns>An immutable description of a published release manifest.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateReleaseInfo.#ctor(System.String,System.String,System.Nullable{System.DateTimeOffset},System.Collections.Generic.IReadOnlyList{msTools.Updater.AutoUpdatePackageDescriptor})">
+            <summary>
+            Describes a release manifest published by an <see cref="T:msTools.Updater.IAutoUpdateSource"/>.
+            </summary>
+            <param name="Version">The semantic version of the release.</param>
+            <param name="ReleaseNotes">The release notes, if provided by the source.</param>
+            <param name="PublishedAt">The publication timestamp of the release.</param>
+            <param name="Packages">The packages available for this release, one per supported platform.</param>
+            <returns>An immutable description of a published release manifest.</returns>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateReleaseInfo.Version">
+            <summary>The semantic version of the release.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateReleaseInfo.ReleaseNotes">
+            <summary>The release notes, if provided by the source.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateReleaseInfo.PublishedAt">
+            <summary>The publication timestamp of the release.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateReleaseInfo.Packages">
+            <summary>The packages available for this release, one per supported platform.</summary>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateResult">
+            <summary>
+            Describes the result of an update operation performed by <see cref="T:msTools.Updater.IAutoUpdateOrchestrator"/> or
+            <see cref="T:msTools.Updater.IAutoUpdateCommandHandler"/>.
+            </summary>
+            <param name="Outcome">The outcome of the operation.</param>
+            <param name="State">The <see cref="T:msTools.Updater.AutoUpdateState"/> after the operation completed.</param>
+            <param name="Message">A human-readable message describing the result.</param>
+            <param name="Error">The exception that caused a <see cref="F:msTools.Updater.AutoUpdateOutcome.Failed"/> outcome, if any.</param>
+            <returns>An immutable result describing the outcome of the operation.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateResult.#ctor(msTools.Updater.AutoUpdateOutcome,msTools.Updater.AutoUpdateState,System.String,System.Exception)">
+            <summary>
+            Describes the result of an update operation performed by <see cref="T:msTools.Updater.IAutoUpdateOrchestrator"/> or
+            <see cref="T:msTools.Updater.IAutoUpdateCommandHandler"/>.
+            </summary>
+            <param name="Outcome">The outcome of the operation.</param>
+            <param name="State">The <see cref="T:msTools.Updater.AutoUpdateState"/> after the operation completed.</param>
+            <param name="Message">A human-readable message describing the result.</param>
+            <param name="Error">The exception that caused a <see cref="F:msTools.Updater.AutoUpdateOutcome.Failed"/> outcome, if any.</param>
+            <returns>An immutable result describing the outcome of the operation.</returns>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateResult.Outcome">
+            <summary>The outcome of the operation.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateResult.State">
+            <summary>The <see cref="T:msTools.Updater.AutoUpdateState"/> after the operation completed.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateResult.Message">
+            <summary>A human-readable message describing the result.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateResult.Error">
+            <summary>The exception that caused a <see cref="F:msTools.Updater.AutoUpdateOutcome.Failed"/> outcome, if any.</summary>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateSchedulerService">
+            <summary>
+            Hosted service triggering installation of a ready update package at the configured
+            <see cref="P:msTools.Updater.AutoUpdateOptions.ScheduledInstallTime"/>, once per day.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateSchedulerService.#ctor(msTools.Updater.IAutoUpdateCommandHandler,msTools.Updater.IAutoUpdateStatusProvider,msTools.Updater.AutoUpdateOptions,System.TimeProvider,Microsoft.Extensions.Logging.ILogger{msTools.Updater.AutoUpdateSchedulerService},msTools.Updater.ScheduledInstallEvaluator)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.AutoUpdateSchedulerService"/> class.
+            </summary>
+            <param name="commandService">Used to trigger installation.</param>
+            <param name="statusProvider">Used to read the current status snapshot.</param>
+            <param name="options">The runtime-mutable auto-update options, read fresh on every iteration.</param>
+            <param name="timeProvider">The time source used for scheduling and delays.</param>
+            <param name="logger">Used to log failures.</param>
+            <param name="evaluator">Used to determine whether a scheduled installation should be triggered.</param>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateSchedulerService.ExecuteAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateScriptGenerator">
+            <summary>
+            Default <see cref="T:msTools.Updater.IAutoUpdateScriptGenerator"/> implementation, generating a PowerShell script on Windows
+            and a POSIX shell script on Linux. macOS and other platforms are not supported.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateScriptGenerator.#ctor(msTools.Updater.IAutoUpdateEnvironment,msTools.Updater.IAutoUpdatePackageStore,msTools.Updater.IAutoUpdatePlatformResolver)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.AutoUpdateScriptGenerator"/> class.
+            </summary>
+            <param name="environment">Provides the application's root directory the package is extracted into.</param>
+            <param name="packageStore">Provides the staging directory and script/lock paths.</param>
+            <param name="platformResolver">Used to determine the current platform. Defaults to a new <see cref="T:msTools.Updater.AutoUpdatePlatformResolver"/>.</param>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateScriptGenerator.GenerateAsync(msTools.Updater.AutoUpdatePackageDescriptor,System.String,msTools.Updater.AutoUpdateInstallationTarget,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateServiceResolver">
+            <summary>
+            Default <see cref="T:msTools.Updater.IAutoUpdateServiceResolver"/> implementation, using the configured service name or
+            executable path and falling back to auto-detection via <see cref="T:msTools.Updater.IAutoUpdateServiceProbe"/>.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateServiceResolver.#ctor(msTools.Updater.IAutoUpdateEnvironment,msTools.Updater.IAutoUpdateServiceProbe,msTools.Updater.AutoUpdateOptions,msTools.Updater.IAutoUpdatePlatformResolver)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.AutoUpdateServiceResolver"/> class.
+            </summary>
+            <param name="environment">Provides the application's root directory, used to validate the executable path.</param>
+            <param name="probe">Used to auto-detect the current service when none is configured explicitly.</param>
+            <param name="options">The runtime-mutable auto-update options.</param>
+            <param name="platformResolver">Used to determine the current platform. Defaults to a new <see cref="T:msTools.Updater.AutoUpdatePlatformResolver"/>.</param>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateServiceResolver.Resolve">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateSourceDownloadHelper">
+            <summary>
+            Shared download-to-disk logic for <see cref="T:msTools.Updater.IAutoUpdateSource"/> implementations: ensures the target
+            directory exists, streams into a temporary file while enforcing a size limit, and atomically moves the
+            temporary file onto the target path only once fully written - so a canceled or failed download never leaves a
+            partial file under the final name.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateSourceDownloadHelper.CopyToTargetAsync(System.IO.Stream,System.String,System.Int64,System.Threading.CancellationToken)">
+            <summary>
+            Copies <paramref name="source"/> to <paramref name="targetPath"/> via a temporary file and an atomic move.
+            </summary>
+            <param name="source">The stream to read the package content from.</param>
+            <param name="targetPath">The final path the package should be stored at.</param>
+            <param name="maxBytes">The maximum accepted size, in bytes.</param>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <exception cref="T:System.InvalidOperationException">Thrown when the copied content exceeds <paramref name="maxBytes"/>.</exception>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateState">
+            <summary>
+            Represents the lifecycle state of the auto-update subsystem.
+            </summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateState.Idle">
+            <summary>No update activity is currently in progress.</summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateState.Checking">
+            <summary>The configured source is being queried for a newer version.</summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateState.UpdateAvailable">
+            <summary>A newer version was found and is waiting to be downloaded.</summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateState.Downloading">
+            <summary>The update package is being downloaded.</summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateState.ReadyToInstall">
+            <summary>The update package has been downloaded and validated and is ready to install.</summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateState.Installing">
+            <summary>The installation script has been started.</summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateState.Success">
+            <summary>The installation completed successfully.</summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateState.Failed">
+            <summary>An error occurred during any phase of the update workflow.</summary>
+        </member>
+        <member name="F:msTools.Updater.AutoUpdateState.Disabled">
+            <summary>The auto-update subsystem is disabled via configuration.</summary>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateStatusService">
+            <summary>
+            Thread-safe status service holding the current <see cref="T:msTools.Updater.AutoUpdateStatusSnapshot"/> behind a lock and
+            persisting every mutation through <see cref="T:msTools.Updater.IAutoUpdateStateStore"/>. The persisted snapshot is loaded lazily
+            on first access.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateStatusService.#ctor(msTools.Updater.IAutoUpdateStateStore,msTools.Updater.IInstalledVersionProvider)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.AutoUpdateStatusService"/> class.
+            </summary>
+            <param name="stateStore">Used to persist and reload the status snapshot.</param>
+            <param name="installedVersionProvider">Used to determine the installed version for a fresh snapshot.</param>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateStatusService.GetSnapshot">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateStatusService.EnsureLoadedAsync(System.Threading.CancellationToken)">
+            <summary>
+            Ensures that the persisted snapshot has been loaded. Subsequent calls are no-ops. Safe to call from
+            multiple threads concurrently.
+            </summary>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>A task that completes once the snapshot has been loaded.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateStatusService.UpdateAsync(System.Func{msTools.Updater.AutoUpdateStatusSnapshot,msTools.Updater.AutoUpdateStatusSnapshot},System.Threading.CancellationToken)">
+            <summary>
+            Atomically replaces the current snapshot using <paramref name="mutate"/> and persists the result. Calls
+            are serialized (including the persistence step) so that concurrent callers cannot race each other's writes
+            to the underlying <see cref="T:msTools.Updater.IAutoUpdateStateStore"/>, and so the persisted file always reflects the most
+            recently computed in-memory snapshot.
+            </summary>
+            <param name="mutate">Computes the new snapshot from the current one. Invoked while holding an internal lock; must not block.</param>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>The updated snapshot.</returns>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateStatusService.Dispose">
+            <summary>
+            Releases the internal load and write serialization semaphores.
+            </summary>
+        </member>
+        <member name="T:msTools.Updater.AutoUpdateStatusSnapshot">
+            <summary>
+            An immutable, self-consistent snapshot of the auto-update subsystem's current state, as maintained by
+            <see cref="T:msTools.Updater.AutoUpdateStatusService"/>.
+            </summary>
+            <param name="State">The current lifecycle state.</param>
+            <param name="InstalledVersion">The currently installed version.</param>
+            <param name="AvailableVersion">The most recently discovered available version, if any.</param>
+            <param name="LastCheckedAt">The timestamp of the most recent source check.</param>
+            <param name="LastCheckResult">The result of the most recent source check.</param>
+            <param name="LastDownloadResult">The result of the most recent download.</param>
+            <param name="LastInstallResult">The result of the most recent installation attempt.</param>
+            <param name="LastError">The message of the most recently reported error, if any.</param>
+            <param name="IsLocked">Whether an installation lock is currently active.</param>
+            <param name="LockCreatedAt">The timestamp the active installation lock was created at.</param>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateStatusSnapshot.#ctor(msTools.Updater.AutoUpdateState,System.String,System.String,System.Nullable{System.DateTimeOffset},msTools.Updater.AutoUpdateCheckResult,msTools.Updater.AutoUpdateDownloadResult,msTools.Updater.AutoUpdateInstallResult,System.String,System.Boolean,System.Nullable{System.DateTimeOffset})">
+            <summary>
+            An immutable, self-consistent snapshot of the auto-update subsystem's current state, as maintained by
+            <see cref="T:msTools.Updater.AutoUpdateStatusService"/>.
+            </summary>
+            <param name="State">The current lifecycle state.</param>
+            <param name="InstalledVersion">The currently installed version.</param>
+            <param name="AvailableVersion">The most recently discovered available version, if any.</param>
+            <param name="LastCheckedAt">The timestamp of the most recent source check.</param>
+            <param name="LastCheckResult">The result of the most recent source check.</param>
+            <param name="LastDownloadResult">The result of the most recent download.</param>
+            <param name="LastInstallResult">The result of the most recent installation attempt.</param>
+            <param name="LastError">The message of the most recently reported error, if any.</param>
+            <param name="IsLocked">Whether an installation lock is currently active.</param>
+            <param name="LockCreatedAt">The timestamp the active installation lock was created at.</param>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateStatusSnapshot.State">
+            <summary>The current lifecycle state.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateStatusSnapshot.InstalledVersion">
+            <summary>The currently installed version.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateStatusSnapshot.AvailableVersion">
+            <summary>The most recently discovered available version, if any.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateStatusSnapshot.LastCheckedAt">
+            <summary>The timestamp of the most recent source check.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateStatusSnapshot.LastCheckResult">
+            <summary>The result of the most recent source check.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateStatusSnapshot.LastDownloadResult">
+            <summary>The result of the most recent download.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateStatusSnapshot.LastInstallResult">
+            <summary>The result of the most recent installation attempt.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateStatusSnapshot.LastError">
+            <summary>The message of the most recently reported error, if any.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateStatusSnapshot.IsLocked">
+            <summary>Whether an installation lock is currently active.</summary>
+        </member>
+        <member name="P:msTools.Updater.AutoUpdateStatusSnapshot.LockCreatedAt">
+            <summary>The timestamp the active installation lock was created at.</summary>
+        </member>
+        <member name="M:msTools.Updater.AutoUpdateStatusSnapshot.Idle(System.String)">
+            <summary>
+            Returns a fresh snapshot in the <see cref="F:msTools.Updater.AutoUpdateState.Idle"/> state with no history, used whenever
+            no snapshot could be loaded from persistence.
+            </summary>
+            <param name="installedVersion">The currently installed version.</param>
+            <returns>A fresh, idle snapshot with no history.</returns>
+        </member>
+        <member name="T:msTools.Updater.BeforeDownloadEventArgs">
+            <summary>
+            Event argument raised before an update package is downloaded.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.BeforeDownloadEventArgs.#ctor(System.Uri)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.BeforeDownloadEventArgs"/> class.
+            </summary>
+            <param name="sourceUri">The location the package will be downloaded from.</param>
+        </member>
+        <member name="P:msTools.Updater.BeforeDownloadEventArgs.SourceUri">
+            <summary>
+            Gets the location the package will be downloaded from.
+            </summary>
+        </member>
+        <member name="T:msTools.Updater.BeforeInstallEventArgs">
+            <summary>
+            Event argument raised before an installation is started.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.BeforeInstallEventArgs.#ctor(System.IO.FileInfo)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.BeforeInstallEventArgs"/> class.
+            </summary>
+            <param name="packageFile">The downloaded package file about to be installed.</param>
+        </member>
+        <member name="P:msTools.Updater.BeforeInstallEventArgs.PackageFile">
+            <summary>
+            Gets the downloaded package file about to be installed.
+            </summary>
+        </member>
+        <member name="T:msTools.Updater.BeforeStartUpdateScriptEventArgs">
+            <summary>
+            Event argument raised before the installation script is started.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.BeforeStartUpdateScriptEventArgs.#ctor(System.IO.FileInfo)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.BeforeStartUpdateScriptEventArgs"/> class.
+            </summary>
+            <param name="scriptFile">The generated installation script about to be started.</param>
+        </member>
+        <member name="P:msTools.Updater.BeforeStartUpdateScriptEventArgs.ScriptFile">
+            <summary>
+            Gets the generated installation script about to be started.
+            </summary>
+        </member>
+        <member name="T:msTools.Updater.DefaultAutoUpdateHostTerminator">
+            <summary>
+            Default <see cref="T:msTools.Updater.IAutoUpdateHostTerminator"/> implementation, delegating to
+            <see cref="M:Microsoft.Extensions.Hosting.IHostApplicationLifetime.StopApplication"/>.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.DefaultAutoUpdateHostTerminator.#ctor(Microsoft.Extensions.Hosting.IHostApplicationLifetime)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.DefaultAutoUpdateHostTerminator"/> class.
+            </summary>
+            <param name="lifetime">The host application lifetime used to stop the application.</param>
+        </member>
+        <member name="M:msTools.Updater.DefaultAutoUpdateHostTerminator.StopApplication">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.DefaultAutoUpdateProcessRunner">
+            <summary>
+            Default <see cref="T:msTools.Updater.IAutoUpdateProcessRunner"/> implementation, starting the installation script as a
+            detached process via PowerShell on Windows and <c>systemd-run</c> on Linux.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.DefaultAutoUpdateProcessRunner.#ctor(Microsoft.Extensions.Logging.ILogger{msTools.Updater.DefaultAutoUpdateProcessRunner},msTools.Updater.AutoUpdateOptions)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.DefaultAutoUpdateProcessRunner"/> class.
+            </summary>
+            <param name="logger">Used to log process start outcomes.</param>
+            <param name="options">The runtime-mutable auto-update options, used for the configured systemd unit name.</param>
+        </member>
+        <member name="M:msTools.Updater.DefaultAutoUpdateProcessRunner.EnsureUpdateUnitAvailable(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.DefaultAutoUpdateProcessRunner.StartScript(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.DefaultAutoUpdateProcessRunner.ReadUnitProperty(System.String,System.String)">
+            <summary>
+            Reads a single systemd unit property via <c>systemctl show</c>. Returns an empty string when the output
+            is empty or does not contain the expected <c>key=value</c> format, instead of throwing.
+            </summary>
+            <param name="unitName">The systemd unit name, without the <c>.service</c> suffix.</param>
+            <param name="property">The property to read, e.g. <c>LoadState</c>.</param>
+            <returns>The property value, or an empty string when it could not be determined.</returns>
+        </member>
+        <member name="T:msTools.Updater.DefaultAutoUpdateServiceProbe">
+            <summary>
+            Default <see cref="T:msTools.Updater.IAutoUpdateServiceProbe"/> implementation, detecting Windows services via <c>sc.exe</c>
+            and Linux systemd units via the process cgroup or <c>systemctl</c>.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.DefaultAutoUpdateServiceProbe.#ctor(Microsoft.Extensions.Logging.ILogger{msTools.Updater.DefaultAutoUpdateServiceProbe})">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.DefaultAutoUpdateServiceProbe"/> class.
+            </summary>
+            <param name="logger">Used to log the underlying command when service detection fails.</param>
+        </member>
+        <member name="M:msTools.Updater.DefaultAutoUpdateServiceProbe.FindWindowsServicesForCurrentProcess">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.DefaultAutoUpdateServiceProbe.FindLinuxServicesForCurrentProcess">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.DefaultAutoUpdateServiceProbe.SystemdServiceRegex">
+            <remarks>
+            Pattern:<br/>
+            <code>[A-Za-z0-9_.@-]+\\.service</code><br/>
+            Options:<br/>
+            <code>RegexOptions.CultureInvariant</code><br/>
+            Explanation:<br/>
+            <code>
+            ○ Match a character in the set [\-.0-9@-Z_a-z] greedily at least once.<br/>
+            ○ Match the string ".service".<br/>
+            </code>
+            </remarks>
+        </member>
+        <member name="T:msTools.Updater.FileSystemAutoUpdatePackageStore">
+            <summary>
+            File-system-backed <see cref="T:msTools.Updater.IAutoUpdatePackageStore"/> implementation rooted at
+            <see cref="P:msTools.Updater.AutoUpdateOptions.DownloadPath"/>, relative to <see cref="P:msTools.Updater.IAutoUpdateEnvironment.ApplicationDirectory"/>.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.FileSystemAutoUpdatePackageStore.#ctor(msTools.Updater.IAutoUpdateEnvironment,msTools.Updater.AutoUpdateOptions,System.TimeProvider)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.FileSystemAutoUpdatePackageStore"/> class.
+            </summary>
+            <param name="environment">Provides the application's root directory.</param>
+            <param name="options">The runtime-mutable auto-update options.</param>
+            <param name="timeProvider">Used for the lock timestamp, so lock aging can be controlled in tests.</param>
+        </member>
+        <member name="P:msTools.Updater.FileSystemAutoUpdatePackageStore.RootDirectory">
+            <inheritdoc />
+        </member>
+        <member name="P:msTools.Updater.FileSystemAutoUpdatePackageStore.PendingDirectory">
+            <inheritdoc />
+        </member>
+        <member name="P:msTools.Updater.FileSystemAutoUpdatePackageStore.StagingDirectory">
+            <inheritdoc />
+        </member>
+        <member name="P:msTools.Updater.FileSystemAutoUpdatePackageStore.LockPath">
+            <inheritdoc />
+        </member>
+        <member name="P:msTools.Updater.FileSystemAutoUpdatePackageStore.LogPath">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.FileSystemAutoUpdatePackageStore.ScriptPath(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.FileSystemAutoUpdatePackageStore.PendingAssetPath(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.FileSystemAutoUpdatePackageStore.EnsureAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.FileSystemAutoUpdatePackageStore.GetLockCreatedAtAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.FileSystemAutoUpdatePackageStore.TryCreateLockAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.FileSystemAutoUpdatePackageStore.DeleteLockAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.FileSystemAutoUpdatePackageStore.IsLockStale(System.DateTimeOffset)">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.FileSystemAutoUpdateStateStore">
+            <summary>
+            Persists the <see cref="T:msTools.Updater.AutoUpdateStatusSnapshot"/> atomically as <c>status.json</c> under the package
+            store's root directory. Unreadable or foreign-schema files are treated as absent rather than as an error, so
+            that a status file written by an older version of the application does not prevent startup.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.FileSystemAutoUpdateStateStore.#ctor(msTools.Updater.IAutoUpdatePackageStore,Microsoft.Extensions.Logging.ILogger{msTools.Updater.FileSystemAutoUpdateStateStore})">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.FileSystemAutoUpdateStateStore"/> class.
+            </summary>
+            <param name="packageStore">Provides the root directory the status file is stored in.</param>
+            <param name="logger">Used to log a warning when a foreign-schema status file is encountered.</param>
+        </member>
+        <member name="M:msTools.Updater.FileSystemAutoUpdateStateStore.ReadAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:msTools.Updater.FileSystemAutoUpdateStateStore.WriteAsync(msTools.Updater.AutoUpdateStatusSnapshot,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.HostAutoUpdateEnvironment">
+            <summary>
+            Default <see cref="T:msTools.Updater.IAutoUpdateEnvironment"/> implementation backed by <see cref="P:Microsoft.Extensions.Hosting.IHostEnvironment.ContentRootPath"/>.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.HostAutoUpdateEnvironment.#ctor(Microsoft.Extensions.Hosting.IHostEnvironment)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.HostAutoUpdateEnvironment"/> class.
+            </summary>
+            <param name="hostEnvironment">The host environment to read the content root path from.</param>
+        </member>
+        <member name="P:msTools.Updater.HostAutoUpdateEnvironment.ApplicationDirectory">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.IAutoUpdateCommandHandler">
+            <summary>
+            UI-agnostic entry point for manually triggering update operations, as used by REST APIs, Razor components or
+            console commands.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateCommandHandler.CheckAsync(System.Threading.CancellationToken)">
+            <summary>
+            Manually triggers a source check.
+            </summary>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>The result of the check.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateCommandHandler.DownloadAsync(System.Threading.CancellationToken)">
+            <summary>
+            Manually triggers a download of the previously discovered update package.
+            </summary>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>The result of the download.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateCommandHandler.InstallAsync(System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Manually triggers installation of the previously downloaded update package.
+            </summary>
+            <param name="confirmDowntime">Must be <see langword="true"/> to acknowledge that installation restarts the application.</param>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>The result of the installation.</returns>
+        </member>
+        <member name="T:msTools.Updater.IAutoUpdateEnvironment">
+            <summary>
+            Provides hosting-independent access to the application's file system layout.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.IAutoUpdateEnvironment.ApplicationDirectory">
+            <summary>
+            Gets the root directory the application is deployed to. Update packages are installed relative to this
+            directory.
+            </summary>
+        </member>
+        <member name="T:msTools.Updater.IAutoUpdateEventAggregator">
+            <summary>
+            Registers and raises the lifecycle events of the auto-update workflow. Implementations must be thread-safe.
+            </summary>
+        </member>
+        <member name="E:msTools.Updater.IAutoUpdateEventAggregator.BeforeCheckSource">
+            <summary>
+            Raised before the update source is checked for a newer version. Subscribers can cancel the check.
+            </summary>
+        </member>
+        <member name="E:msTools.Updater.IAutoUpdateEventAggregator.BeforeDownload">
+            <summary>
+            Raised before an update package is downloaded. Subscribers can cancel the download.
+            </summary>
+        </member>
+        <member name="E:msTools.Updater.IAutoUpdateEventAggregator.BeforeInstall">
+            <summary>
+            Raised before an installation is started. Subscribers can cancel the installation.
+            </summary>
+        </member>
+        <member name="E:msTools.Updater.IAutoUpdateEventAggregator.BeforeStartUpdateScript">
+            <summary>
+            Raised before the installation script is started. Subscribers can cancel the script start.
+            </summary>
+        </member>
+        <member name="E:msTools.Updater.IAutoUpdateEventAggregator.AfterStartUpdateScript">
+            <summary>
+            Raised after the installation script has been started successfully.
+            </summary>
+        </member>
+        <member name="E:msTools.Updater.IAutoUpdateEventAggregator.ErrorOccurred">
+            <summary>
+            Raised whenever an error occurs during the update workflow, including errors thrown by other event
+            subscribers.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateEventAggregator.RaiseBeforeCheckSource(System.Object)">
+            <summary>
+            Raises <see cref="E:msTools.Updater.IAutoUpdateEventAggregator.BeforeCheckSource"/> and returns whether any subscriber requested cancellation.
+            </summary>
+            <param name="sender">The object raising the event.</param>
+            <returns><see langword="true"/> if a subscriber canceled the operation.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateEventAggregator.RaiseBeforeDownload(System.Object,System.Uri)">
+            <summary>
+            Raises <see cref="E:msTools.Updater.IAutoUpdateEventAggregator.BeforeDownload"/> and returns whether any subscriber requested cancellation.
+            </summary>
+            <param name="sender">The object raising the event.</param>
+            <param name="sourceUri">The location the package will be downloaded from.</param>
+            <returns><see langword="true"/> if a subscriber canceled the operation.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateEventAggregator.RaiseBeforeInstall(System.Object,System.IO.FileInfo)">
+            <summary>
+            Raises <see cref="E:msTools.Updater.IAutoUpdateEventAggregator.BeforeInstall"/> and returns whether any subscriber requested cancellation.
+            </summary>
+            <param name="sender">The object raising the event.</param>
+            <param name="packageFile">The downloaded package file about to be installed.</param>
+            <returns><see langword="true"/> if a subscriber canceled the operation.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateEventAggregator.RaiseBeforeStartUpdateScript(System.Object,System.IO.FileInfo)">
+            <summary>
+            Raises <see cref="E:msTools.Updater.IAutoUpdateEventAggregator.BeforeStartUpdateScript"/> and returns whether any subscriber requested cancellation.
+            </summary>
+            <param name="sender">The object raising the event.</param>
+            <param name="scriptFile">The generated installation script about to be started.</param>
+            <returns><see langword="true"/> if a subscriber canceled the operation.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateEventAggregator.RaiseAfterStartUpdateScript(System.Object)">
+            <summary>
+            Raises <see cref="E:msTools.Updater.IAutoUpdateEventAggregator.AfterStartUpdateScript"/>. This event has no cancellation semantics.
+            </summary>
+            <param name="sender">The object raising the event.</param>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateEventAggregator.RaiseErrorOccurred(System.Object,System.Exception,System.String)">
+            <summary>
+            Raises <see cref="E:msTools.Updater.IAutoUpdateEventAggregator.ErrorOccurred"/>.
+            </summary>
+            <param name="sender">The object raising the event.</param>
+            <param name="error">The exception that occurred.</param>
+            <param name="phase">A short identifier of the workflow phase the error occurred in.</param>
+        </member>
+        <member name="T:msTools.Updater.IAutoUpdateHostTerminator">
+            <summary>
+            Stops the hosting application after the installation script has been started, when
+            <see cref="P:msTools.Updater.AutoUpdateOptions.StopHostAfterScriptStart"/> is enabled.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateHostTerminator.StopApplication">
+            <summary>
+            Requests that the host application shuts down.
+            </summary>
+        </member>
+        <member name="T:msTools.Updater.IAutoUpdateInstaller">
+            <summary>
+            Prepares and starts the installation of a downloaded update package.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateInstaller.PrepareAsync(msTools.Updater.AutoUpdatePackageDescriptor,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Validates the downloaded package, resolves the installation target and generates the installation script.
+            </summary>
+            <param name="package">The package descriptor to install.</param>
+            <param name="zipPath">The local file system path of the downloaded package.</param>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>The full path of the generated installation script.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateInstaller.Start(System.String)">
+            <summary>
+            Starts the previously generated installation script.
+            </summary>
+            <param name="scriptPath">The full path of the installation script, as returned by <see cref="M:msTools.Updater.IAutoUpdateInstaller.PrepareAsync(msTools.Updater.AutoUpdatePackageDescriptor,System.String,System.Threading.CancellationToken)"/>.</param>
+        </member>
+        <member name="T:msTools.Updater.IAutoUpdateOrchestrator">
+            <summary>
+            Coordinates the full auto-update workflow: checking, downloading and installing, including event raising,
+            status persistence and error handling. Registered as a singleton.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateOrchestrator.RunUpdateAsync(System.Threading.CancellationToken)">
+            <summary>
+            Runs the full update workflow: check, and, depending on configuration, download and install.
+            </summary>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>The result of the workflow.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateOrchestrator.CheckForUpdateAsync(System.Threading.CancellationToken)">
+            <summary>
+            Checks the configured source for a newer version, without downloading or installing it.
+            </summary>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>The result of the check.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateOrchestrator.DownloadAsync(System.Threading.CancellationToken)">
+            <summary>
+            Downloads the previously discovered update package.
+            </summary>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>The result of the download.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateOrchestrator.InstallAsync(System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Installs the previously downloaded update package.
+            </summary>
+            <param name="confirmDowntime">Must be <see langword="true"/> to acknowledge that installation restarts the application.</param>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>The result of the installation.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateOrchestrator.GetStatusAsync(System.Threading.CancellationToken)">
+            <summary>
+            Gets the current status snapshot, reconciling it with the installed version after a restart if necessary.
+            </summary>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>The current status snapshot.</returns>
+        </member>
+        <member name="T:msTools.Updater.IAutoUpdatePackageStore">
+            <summary>
+            Manages the on-disk directory layout used to stage, validate and lock update packages.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.IAutoUpdatePackageStore.RootDirectory">
+            <summary>
+            Gets the root directory update packages, status and lock files are stored in.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.IAutoUpdatePackageStore.PendingDirectory">
+            <summary>
+            Gets the directory downloaded packages are stored in before installation.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.IAutoUpdatePackageStore.StagingDirectory">
+            <summary>
+            Gets the directory a package is extracted into during installation.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.IAutoUpdatePackageStore.LockPath">
+            <summary>
+            Gets the path of the installation lock file.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.IAutoUpdatePackageStore.LogPath">
+            <summary>
+            Gets the path of the installation log file.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdatePackageStore.ScriptPath(System.String)">
+            <summary>
+            Builds the path of the generated installation script with the given file extension.
+            </summary>
+            <param name="extension">The script file extension, with or without a leading dot.</param>
+            <returns>The full path of the installation script.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdatePackageStore.PendingAssetPath(System.String)">
+            <summary>
+            Builds the path a downloaded package with the given file name should be stored at.
+            </summary>
+            <param name="fileName">The file name of the package. Must not contain path segments.</param>
+            <returns>The full path of the pending package file.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdatePackageStore.EnsureAsync(System.Threading.CancellationToken)">
+            <summary>
+            Ensures that <see cref="P:msTools.Updater.IAutoUpdatePackageStore.RootDirectory"/>, <see cref="P:msTools.Updater.IAutoUpdatePackageStore.PendingDirectory"/> and <see cref="P:msTools.Updater.IAutoUpdatePackageStore.StagingDirectory"/>
+            exist.
+            </summary>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>A task that completes once the directories exist.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdatePackageStore.GetLockCreatedAtAsync(System.Threading.CancellationToken)">
+            <summary>
+            Reads the creation timestamp of the active installation lock, if any.
+            </summary>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>The lock's creation timestamp, or <see langword="null"/> if no lock is active.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdatePackageStore.TryCreateLockAsync(System.Threading.CancellationToken)">
+            <summary>
+            Atomically creates the installation lock file if none exists yet.
+            </summary>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns><see langword="true"/> if the lock was created; <see langword="false"/> if it already existed.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdatePackageStore.DeleteLockAsync(System.Threading.CancellationToken)">
+            <summary>
+            Deletes the installation lock file, if any.
+            </summary>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns><see langword="true"/> if a lock file was deleted; <see langword="false"/> if none existed.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdatePackageStore.IsLockStale(System.DateTimeOffset)">
+            <summary>
+            Determines whether a lock created at <paramref name="lockCreatedAt"/> is older than
+            <see cref="P:msTools.Updater.AutoUpdateOptions.HealthTimeoutSeconds"/> and can therefore be considered stale (e.g. left behind
+            by an installation that started but never finished restarting the application).
+            </summary>
+            <param name="lockCreatedAt">The lock's creation timestamp, as returned by <see cref="M:msTools.Updater.IAutoUpdatePackageStore.GetLockCreatedAtAsync(System.Threading.CancellationToken)"/>.</param>
+            <returns><see langword="true"/> if the lock is old enough to be considered stale; otherwise <see langword="false"/>.</returns>
+        </member>
+        <member name="T:msTools.Updater.IAutoUpdatePackageValidator">
+            <summary>
+            Compares versions and validates downloaded update packages.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdatePackageValidator.IsNewerVersion(System.String,System.String)">
+            <summary>
+            Determines whether <paramref name="availableVersion"/> is a newer semantic version than
+            <paramref name="installedVersion"/>.
+            </summary>
+            <param name="installedVersion">The currently installed version, or <see langword="null"/> or blank if unknown.</param>
+            <param name="availableVersion">The version reported by the update source.</param>
+            <returns>
+            <see langword="true"/> if <paramref name="availableVersion"/> is newer; otherwise <see langword="false"/>.
+            When <paramref name="installedVersion"/> is <see langword="null"/>, blank, or not parseable as a version,
+            this always returns <see langword="false"/> (no update is considered available) rather than treating the
+            installed version as arbitrarily old - an unreadable <see cref="P:msTools.Updater.InstalledReleaseInfo.Version"/> is treated
+            as a data problem to investigate, not as an automatic trigger to update.
+            </returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdatePackageValidator.ValidateDownloadedPackageAsync(msTools.Updater.AutoUpdatePackageDescriptor,System.String,System.Int64,System.Threading.CancellationToken)">
+            <summary>
+            Validates a downloaded update package: size, checksum and ZIP archive integrity.
+            </summary>
+            <param name="package">The descriptor the package was downloaded from.</param>
+            <param name="path">The local file system path of the downloaded package.</param>
+            <param name="maxBytes">The maximum accepted size, in bytes.</param>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>A task that completes once validation has finished, or throws if the package is invalid.</returns>
+        </member>
+        <member name="T:msTools.Updater.IAutoUpdatePlatformResolver">
+            <summary>
+            Resolves the current platform and selects the matching package from a release manifest.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.IAutoUpdatePlatformResolver.CurrentRuntimeIdentifier">
+            <summary>
+            Gets the .NET runtime identifier of the currently running process (e.g. "win-x64").
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.IAutoUpdatePlatformResolver.CurrentPlatform">
+            <summary>
+            Gets the platform identifier of the currently running process (e.g. "windows", "linux").
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdatePlatformResolver.SelectPackage(msTools.Updater.AutoUpdateReleaseInfo)">
+            <summary>
+            Selects the package matching the current platform and runtime identifier from a release manifest.
+            </summary>
+            <param name="release">The release manifest to select a package from.</param>
+            <returns>The matching package, or <see langword="null"/> if none matches the current platform.</returns>
+        </member>
+        <member name="T:msTools.Updater.IAutoUpdateProcessRunner">
+            <summary>
+            Starts the generated installation script as an external process.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateProcessRunner.EnsureUpdateUnitAvailable(System.String)">
+            <summary>
+            Ensures the systemd unit used to run the installation script is available, e.g. by resetting a previously
+            failed unit on Linux, and throws if an update is already running.
+            </summary>
+            <param name="scriptPath">The full path of the installation script.</param>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateProcessRunner.StartScript(System.String)">
+            <summary>
+            Starts the installation script as a detached process.
+            </summary>
+            <param name="scriptPath">The full path of the installation script.</param>
+        </member>
+        <member name="T:msTools.Updater.IAutoUpdateScriptGenerator">
+            <summary>
+            Generates the platform-specific installation script that extracts a downloaded package and restarts the
+            application.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateScriptGenerator.GenerateAsync(msTools.Updater.AutoUpdatePackageDescriptor,System.String,msTools.Updater.AutoUpdateInstallationTarget,System.Threading.CancellationToken)">
+            <summary>
+            Generates the installation script for the current platform.
+            </summary>
+            <param name="package">The package descriptor being installed.</param>
+            <param name="zipPath">The local file system path of the downloaded package.</param>
+            <param name="target">The resolved installation target.</param>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>The full path of the generated script.</returns>
+        </member>
+        <member name="T:msTools.Updater.IAutoUpdateServiceProbe">
+            <summary>
+            Detects the service(s) the current process is running as, used to auto-detect the installation target when
+            none is configured explicitly.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateServiceProbe.FindWindowsServicesForCurrentProcess">
+            <summary>
+            Finds the Windows services the current process belongs to.
+            </summary>
+            <returns>The matching service names, empty if none were found or the platform is not Windows.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateServiceProbe.FindLinuxServicesForCurrentProcess">
+            <summary>
+            Finds the Linux systemd services the current process belongs to.
+            </summary>
+            <returns>The matching service names, empty if none were found or the platform is not Linux.</returns>
+        </member>
+        <member name="T:msTools.Updater.IAutoUpdateServiceResolver">
+            <summary>
+            Resolves the service or executable that must be stopped and restarted during installation.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateServiceResolver.Resolve">
+            <summary>
+            Resolves the installation target for the current platform, using the configured
+            <see cref="P:msTools.Updater.AutoUpdateOptions.ServiceName"/>/<see cref="P:msTools.Updater.AutoUpdateOptions.ExecutablePath"/> or, if neither
+            is configured, auto-detection via <see cref="T:msTools.Updater.IAutoUpdateServiceProbe"/>.
+            </summary>
+            <returns>The resolved installation target.</returns>
+        </member>
+        <member name="T:msTools.Updater.IAutoUpdateSource">
+            <summary>
+            Abstracts the origin update packages are discovered and downloaded from. Implementations must be stateless
+            and thread-safe, since a single instance is shared as part of the singleton <see cref="T:msTools.Updater.AutoUpdateOptions"/>.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateSource.CheckAsync(System.Threading.CancellationToken)">
+            <summary>
+            Queries the source for the latest available release.
+            </summary>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>The result of the check, including the available version and package descriptor, if any.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateSource.DownloadAsync(msTools.Updater.AutoUpdatePackageDescriptor,System.String,System.Int64,System.Threading.CancellationToken)">
+            <summary>
+            Downloads the package described by <paramref name="package"/> to <paramref name="targetPath"/>.
+            </summary>
+            <param name="package">The package to download.</param>
+            <param name="targetPath">The local file system path the package is written to.</param>
+            <param name="maxBytes">The maximum accepted size, in bytes, of the downloaded package.</param>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>A task that completes once the download has finished.</returns>
+        </member>
+        <member name="T:msTools.Updater.IAutoUpdateStateStore">
+            <summary>
+            Persists and reloads the auto-update status snapshot so it survives a process restart triggered by the
+            installation script.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateStateStore.ReadAsync(System.Threading.CancellationToken)">
+            <summary>
+            Reads the persisted status snapshot.
+            </summary>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>The persisted snapshot, or <see langword="null"/> if none exists or it could not be read.</returns>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateStateStore.WriteAsync(msTools.Updater.AutoUpdateStatusSnapshot,System.Threading.CancellationToken)">
+            <summary>
+            Atomically writes the given status snapshot.
+            </summary>
+            <param name="snapshot">The snapshot to persist.</param>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>A task that completes once the snapshot has been written.</returns>
+        </member>
+        <member name="T:msTools.Updater.IAutoUpdateStatusProvider">
+            <summary>
+            Provides thread-safe, read-only access to the current auto-update status.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.IAutoUpdateStatusProvider.GetSnapshot">
+            <summary>
+            Gets a consistent, immutable snapshot of the current auto-update status.
+            </summary>
+            <returns>The current status snapshot.</returns>
+        </member>
+        <member name="T:msTools.Updater.IInstalledVersionProvider">
+            <summary>
+            Determines the currently installed release.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.IInstalledVersionProvider.GetAsync(System.Threading.CancellationToken)">
+            <summary>
+            Reads the metadata of the currently installed release.
+            </summary>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>The installed release metadata. Individual fields are <see langword="null"/> if unknown.</returns>
+        </member>
+        <member name="T:msTools.Updater.InstalledReleaseInfo">
+            <summary>
+            Describes the currently installed release, as reported by <see cref="T:msTools.Updater.IInstalledVersionProvider"/>.
+            </summary>
+            <param name="Version">The installed version, or <see langword="null"/> if unknown.</param>
+            <param name="PublishedAt">The publication timestamp of the installed release.</param>
+            <param name="CommitSha">The source control commit the installed release was built from.</param>
+            <param name="Repository">The repository the installed release originates from.</param>
+            <param name="RuntimeIdentifier">The .NET runtime identifier of the installed release.</param>
+            <returns>An immutable description of the currently installed release.</returns>
+        </member>
+        <member name="M:msTools.Updater.InstalledReleaseInfo.#ctor(System.String,System.Nullable{System.DateTimeOffset},System.String,System.String,System.String)">
+            <summary>
+            Describes the currently installed release, as reported by <see cref="T:msTools.Updater.IInstalledVersionProvider"/>.
+            </summary>
+            <param name="Version">The installed version, or <see langword="null"/> if unknown.</param>
+            <param name="PublishedAt">The publication timestamp of the installed release.</param>
+            <param name="CommitSha">The source control commit the installed release was built from.</param>
+            <param name="Repository">The repository the installed release originates from.</param>
+            <param name="RuntimeIdentifier">The .NET runtime identifier of the installed release.</param>
+            <returns>An immutable description of the currently installed release.</returns>
+        </member>
+        <member name="P:msTools.Updater.InstalledReleaseInfo.Version">
+            <summary>The installed version, or <see langword="null"/> if unknown.</summary>
+        </member>
+        <member name="P:msTools.Updater.InstalledReleaseInfo.PublishedAt">
+            <summary>The publication timestamp of the installed release.</summary>
+        </member>
+        <member name="P:msTools.Updater.InstalledReleaseInfo.CommitSha">
+            <summary>The source control commit the installed release was built from.</summary>
+        </member>
+        <member name="P:msTools.Updater.InstalledReleaseInfo.Repository">
+            <summary>The repository the installed release originates from.</summary>
+        </member>
+        <member name="P:msTools.Updater.InstalledReleaseInfo.RuntimeIdentifier">
+            <summary>The .NET runtime identifier of the installed release.</summary>
+        </member>
+        <member name="T:msTools.Updater.JsonFileStore">
+            <summary>
+            Atomic JSON file read/write helper shared by the library's file-based stores and available to consuming
+            applications for their own auto-update-adjacent settings files.
+            </summary>
+        </member>
+        <member name="F:msTools.Updater.JsonFileStore.JsonOptions">
+            <summary>
+            The <see cref="T:System.Text.Json.JsonSerializerOptions"/> used for all reads and writes performed by this class.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.JsonFileStore.ReadAsync``1(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Reads and deserializes the JSON file at <paramref name="path"/>, or returns <see langword="default"/> if it
+            does not exist.
+            </summary>
+            <typeparam name="T">The type to deserialize into.</typeparam>
+            <param name="path">The full path of the JSON file to read.</param>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>The deserialized value, or <see langword="default"/> if the file does not exist.</returns>
+        </member>
+        <member name="M:msTools.Updater.JsonFileStore.WriteAtomicAsync``1(System.String,``0,System.Threading.CancellationToken)">
+            <summary>
+            Serializes <paramref name="value"/> to a temporary file next to <paramref name="path"/> and atomically
+            moves it into place, so readers never observe a partially written file.
+            </summary>
+            <typeparam name="T">The type to serialize.</typeparam>
+            <param name="path">The full path of the JSON file to write.</param>
+            <param name="value">The value to serialize.</param>
+            <param name="ct">A token to observe for cancellation requests.</param>
+            <returns>A task that completes once the file has been written.</returns>
+        </member>
+        <member name="T:msTools.Updater.ProcessOutputReader">
+            <summary>
+            Shared helper for running a process and capturing its standard output, used by
+            <see cref="T:msTools.Updater.DefaultAutoUpdateProcessRunner"/> and <see cref="T:msTools.Updater.DefaultAutoUpdateServiceProbe"/>.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.ProcessOutputReader.Read(System.String,System.String,System.Int32,System.Boolean,Microsoft.Extensions.Logging.ILogger)">
+            <summary>
+            Starts <paramref name="fileName"/> with <paramref name="arguments"/>, waits for it to exit and returns its
+            captured standard output.
+            </summary>
+            <param name="fileName">The executable to run.</param>
+            <param name="arguments">The command-line arguments to pass.</param>
+            <param name="timeoutMs">The maximum time, in milliseconds, to wait for the process to exit.</param>
+            <param name="throwOnNonZeroExitCode">When <see langword="true"/>, throws an <see cref="T:System.InvalidOperationException"/> if the process exits with a non-zero exit code.</param>
+            <param name="logger">When <paramref name="throwOnNonZeroExitCode"/> is <see langword="false"/>, used to log a warning with the captured stderr if the process still exits with a non-zero exit code.</param>
+            <returns>The captured standard output.</returns>
+        </member>
+        <member name="T:msTools.Updater.ReleaseMetadataInstalledVersionProvider">
+            <summary>
+            Default <see cref="T:msTools.Updater.IInstalledVersionProvider"/> implementation reading <c>release-metadata.json</c> from the
+            application's root directory.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.ReleaseMetadataInstalledVersionProvider.#ctor(msTools.Updater.IAutoUpdateEnvironment)">
+            <summary>
+            Initializes a new instance of the <see cref="T:msTools.Updater.ReleaseMetadataInstalledVersionProvider"/> class.
+            </summary>
+            <param name="environment">Provides the application's root directory.</param>
+        </member>
+        <member name="M:msTools.Updater.ReleaseMetadataInstalledVersionProvider.GetAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:msTools.Updater.ScheduledInstallEvaluator">
+            <summary>
+            Determines whether a scheduled installation should be triggered for a given status snapshot, point in time
+            and record of the last attempted schedule, used by <see cref="T:msTools.Updater.AutoUpdateSchedulerService"/>.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.ScheduledInstallEvaluator.ShouldInstall(System.Nullable{System.TimeOnly},msTools.Updater.AutoUpdateStatusSnapshot,System.DateTimeOffset,System.Nullable{System.DateOnly},System.Nullable{System.TimeOnly})">
+            <summary>
+            Determines whether a scheduled installation should be triggered.
+            </summary>
+            <param name="scheduledTime">The configured scheduled install time, or <see langword="null"/> if none is configured.</param>
+            <param name="snapshot">The current status snapshot.</param>
+            <param name="now">The current local time.</param>
+            <param name="lastAttemptedDate">The date the last scheduled installation attempt was made, if any.</param>
+            <param name="lastAttemptedTime">The scheduled time of the last scheduled installation attempt, if any.</param>
+            <returns><see langword="true"/> if installation should be triggered now.</returns>
+        </member>
+        <member name="T:msTools.Updater.SourceCheckOptions">
+            <summary>
+            Configures the periodic background check of the configured <see cref="T:msTools.Updater.IAutoUpdateSource"/>.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.SourceCheckOptions.Interval">
+            <summary>
+            Gets or sets the interval, in minutes, between successive source checks. Must be at least 1.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.SourceCheckOptions.TimeRanges">
+            <summary>
+            Gets or sets the time windows within which checks are allowed to run. An empty list means checks are
+            allowed at any time.
+            </summary>
+        </member>
+        <member name="T:msTools.Updater.SourceCheckTimeRange">
+            <summary>
+            Describes a single allowed time window for periodic source checks on a given day of week.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.SourceCheckTimeRange.DayOfWeek">
+            <summary>
+            Gets or sets the day of week this time range applies to.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.SourceCheckTimeRange.StartTime">
+            <summary>
+            Gets or sets the inclusive start time of the window.
+            </summary>
+        </member>
+        <member name="P:msTools.Updater.SourceCheckTimeRange.EndTime">
+            <summary>
+            Gets or sets the exclusive end time of the window.
+            </summary>
+        </member>
+        <member name="T:msTools.Updater.SourceCheckWindowEvaluator">
+            <summary>
+            Determines whether a given point in time falls within a configured set of <see cref="T:msTools.Updater.SourceCheckTimeRange"/>
+            windows. An empty set of ranges means checks are always allowed.
+            </summary>
+        </member>
+        <member name="M:msTools.Updater.SourceCheckWindowEvaluator.IsWithinWindow(System.Collections.Generic.IReadOnlyList{msTools.Updater.SourceCheckTimeRange},System.DateTimeOffset)">
+            <summary>
+            Determines whether <paramref name="now"/> falls within any of <paramref name="timeRanges"/>.
+            </summary>
+            <param name="timeRanges">The configured time windows. An empty collection always returns <see langword="true"/>.</param>
+            <param name="now">The point in time to evaluate, in the local time zone.</param>
+            <returns><see langword="true"/> if checks are allowed at <paramref name="now"/>; otherwise <see langword="false"/>.</returns>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.RepositorySegmentRegex_0">
+            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the RepositorySegmentRegex method.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.RepositorySegmentRegex_0.Instance">
+            <summary>Cached, thread-safe singleton instance.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.RepositorySegmentRegex_0.#ctor">
+            <summary>Initializes the instance.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.RepositorySegmentRegex_0.RunnerFactory">
+            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.RepositorySegmentRegex_0.RunnerFactory.CreateInstance">
+            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.RepositorySegmentRegex_0.RunnerFactory.Runner">
+            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.RepositorySegmentRegex_0.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
+            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.RepositorySegmentRegex_0.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if a possible match was found; false if no more matches are possible.</returns>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.RepositorySegmentRegex_0.RunnerFactory.Runner.TryMatchAtCurrentPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Determine whether <paramref name="inputSpan"/> at base.runtextpos is a match for the regular expression.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if the regular expression matches at the current position; otherwise, false.</returns>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.SystemdServiceRegex_1">
+            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the SystemdServiceRegex method.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.SystemdServiceRegex_1.Instance">
+            <summary>Cached, thread-safe singleton instance.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.SystemdServiceRegex_1.#ctor">
+            <summary>Initializes the instance.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.SystemdServiceRegex_1.RunnerFactory">
+            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.SystemdServiceRegex_1.RunnerFactory.CreateInstance">
+            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.SystemdServiceRegex_1.RunnerFactory.Runner">
+            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.SystemdServiceRegex_1.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
+            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.SystemdServiceRegex_1.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if a possible match was found; false if no more matches are possible.</returns>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.SystemdServiceRegex_1.RunnerFactory.Runner.TryMatchAtCurrentPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Determine whether <paramref name="inputSpan"/> at base.runtextpos is a match for the regular expression.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if the regular expression matches at the current position; otherwise, false.</returns>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.Utilities">
+            <summary>Helper methods used by generated <see cref="T:System.Text.RegularExpressions.Regex"/>-derived implementations.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.Utilities.s_defaultTimeout">
+            <summary>Default timeout value set in <see cref="T:System.AppContext"/>, or <see cref="F:System.Text.RegularExpressions.Regex.InfiniteMatchTimeout"/> if none was set.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.Utilities.s_hasTimeout">
+            <summary>Whether <see cref="F:System.Text.RegularExpressions.Generated.Utilities.s_defaultTimeout"/> is non-infinite.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.Utilities.s_asciiLettersAndDigitsAndDashDotUnderscore">
+            <summary>Supports searching for characters in or not in "-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz".</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.Utilities.s_ascii_60FF03FFFFFF87FEFFFF07">
+            <summary>Supports searching for characters in or not in "-.0123456789@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz".</summary>
+        </member>
+    </members>
+</doc>

@@ -1,10 +1,10 @@
 using FinanceManager.Shared.Dtos.Update;
-using SoftwareSchmiede.AutoUpdate;
+using msTools.Updater;
 
 namespace FinanceManager.Web.Services.Updates;
 
 /// <summary>
-/// Implements <see cref="IUpdateOrchestrator"/> on top of the <c>SoftwareSchmiede.AutoUpdate</c> library, mapping
+/// Implements <see cref="IUpdateOrchestrator"/> on top of the <c>msTools.Updater</c> library, mapping
 /// between the library's status/result types and the existing DTOs in <c>FinanceManager.Shared.Dtos.Update</c> so
 /// that <c>UpdateController</c>, <c>ApiClient</c>, <c>SetupUpdateViewModel</c> and <c>SetupUpdateTab.razor</c>
 /// remain unchanged. Errors reported by the library as <see cref="AutoUpdateResult.Error"/> are re-thrown so the

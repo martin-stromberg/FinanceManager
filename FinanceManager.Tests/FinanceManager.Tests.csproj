@@ -49,6 +49,10 @@
     <ProjectReference Include="..\FinanceManager.Domain\FinanceManager.Domain.csproj" />
     <ProjectReference Include="..\FinanceManager.Web\FinanceManager.Web.csproj" />
     <ProjectReference Include="..\FinanceManager.Shared\FinanceManager.Shared.csproj" />
+    <Reference Include="msTools.Updater">
+      <HintPath>..\external\msTools.Updater\v0.2.0\lib\msTools.Updater.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

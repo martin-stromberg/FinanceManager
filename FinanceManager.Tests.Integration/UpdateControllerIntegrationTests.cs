@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using SoftwareSchmiede.AutoUpdate;
+using msTools.Updater;
 using Xunit;
 
 namespace FinanceManager.Tests.Integration;

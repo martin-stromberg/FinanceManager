@@ -67,7 +67,7 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 | `DataProtection:KeysPath` | string | leer | Optionaler Pfad fuer den ASP.NET-Core-Data-Protection-Key-Ring; in produktionsnahen Deployments persistent und geschuetzt bereitstellen |
 | `BackgroundTasks:Enabled` | bool | `true` | Aktiviert den `BackgroundTaskRunner` |
 | `Workers:SecurityPriceWorker:Enabled` | bool | `true` | Aktiviert den Security-Price-Worker |
-| `Updates:Enabled` | bool | `false` | Aktiviert die automatische Suche nach Self-Update-Releases (steuert `SoftwareSchmiede.AutoUpdate`) |
+| `Updates:Enabled` | bool | `false` | Aktiviert die automatische Suche nach Self-Update-Releases (steuert die externe `msTools.Updater`-Bibliothek) |
 | `Updates:SourceType` | string | `Github` | Update-Quelle: `Github` oder `LocalFolder` |
 | `Updates:RepositoryOwner` / `Updates:RepositoryName` | string | `martin-stromberg` / `FinanceManager` | GitHub-Repository (nur bei `SourceType: Github`) |
 | `Updates:LocalFolderPath` | string? | `null` | Lokales Quellverzeichnis (nur bei `SourceType: LocalFolder`; Fallback: `{WorkingDirectory}/source`) |
@@ -130,25 +130,22 @@ FinanceManager.Infrastructure           # EF Core, Persistenz, Integrationen
 FinanceManager.Shared                   # Gemeinsame DTOs / Client
 FinanceManager.Shared.Dtos.Budget       # Budget-DTO-Paket
 
-SoftwareSchmiede.AutoUpdate             # Standalone Update-Bibliothek (NuGet-ready)
-SoftwareSchmiede.AutoUpdate.Tests       # Tests für die Update-Bibliothek
-
 FinanceManager.Tests                    # Unit- und Komponenten-Tests (xUnit/bUnit)
 FinanceManager.Tests.Integration        # Integrationstests
 FinanceManager.Tests.E2E                # Playwright-End-to-End-Tests
+
+external/msTools.Updater/v0.2.0         # Geprueftes externes Updater-Release fuer den Testlauf vor NuGet
 ```
 
 **Technologien:** .NET 10, ASP.NET Core, Blazor Server, EF Core (SQLite), ASP.NET Identity/JWT, xUnit, bUnit, Playwright.
 
 ### Self-Update-System
 
-Das Self-Update-System wurde in eine eigenständige Bibliothek [`SoftwareSchmiede.AutoUpdate`](SoftwareSchmiede.AutoUpdate/) extrahiert. Sie ist:
-- **Hosting-unabhängig:** Funktioniert mit Web-, Worker- und Console-Hosts via `IHostApplicationBuilder`
-- **DI-kompatibel:** Alle Services als Singleton/Scoped mit fluenter Konfiguration
-- **Modular:** Pluggable Update-Quellen (`IAutoUpdateSource`), Events, Status-Tracking und Hintergrunddienste
-- **NuGet-ready:** Dokumentiert und für zukünftige Veröffentlichung vorbereitet
+Das Self-Update-System wird aus dem externen Release-Artefakt `msTools.Updater` eingebunden. Die fruehere lokale Bibliothek `SoftwareSchmiede.AutoUpdate` und ihr Testprojekt sind nicht mehr Teil der Solution.
 
-Die `FinanceManager.Web`-Integration erfolgt über einen Adapter (`UpdateOrchestratorAdapter`); die öffentliche API bleibt unverändert. Details: [SoftwareSchmiede.AutoUpdate/README.md](SoftwareSchmiede.AutoUpdate/README.md).
+Bis zur geplanten NuGet-Veröffentlichung liegt der geprüfte Release `v0.2.0` aus `martin-stromberg/msTools.Updater` unter [`external/msTools.Updater/v0.2.0/`](external/msTools.Updater/v0.2.0/). Dort sind das originale `release.zip`, `SHA256SUMS.txt`, eine Herkunfts-README und die entpackte `lib/msTools.Updater.dll` abgelegt; der dokumentierte SHA-256 des ZIPs ist `adf4e64e18345ac8ef30e8c626c639489b3eb84accae0f2f5ab61b59e8ea029c`.
+
+`FinanceManager.Web` referenziert die entpackte DLL direkt und kopiert sie in Build- und Publish-Ausgaben. Die Integration erfolgt weiterhin über den FinanceManager-Adapter (`UpdateOrchestratorAdapter`); Controller, DTOs, Admin-UI und REST-API bleiben dadurch aus Anwendersicht unverändert.
 
 ## API-Dokumentation
 
@@ -215,7 +212,7 @@ dotnet test FinanceManager.sln
 - Das Self-Update ist eine Admin-Funktion im Setup. Die UI zeigt Status,
   Paketmetadaten und Release Notes; die technische Update-Quelle (GitHub-Repository
   oder lokaler Ordner via `Updates:SourceType`) sowie Manifest-Asset und
-  Arbeitsverzeichnis werden serverseitig über `SoftwareSchmiede.AutoUpdate`
+  Arbeitsverzeichnis werden serverseitig über `msTools.Updater`
   konfiguriert. Sichtbare Einstellungswerte werden über den globalen
   Ribbon-Button `Speichern` persistiert; die Aktionen `Jetzt prüfen`,
   `Update installieren` und `Update-Lock zurücksetzen` liegen ebenfalls im

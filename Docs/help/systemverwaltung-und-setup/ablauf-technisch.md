@@ -213,11 +213,13 @@ Beteiligte Komponenten: `BackgroundTaskStatusPanel`, `ICurrentUserService`, `Api
 
 ### 11. Self-Update-Pruefung und Download
 
-Die Self-Update-Logik ist als eigenstaendige Bibliothek `SoftwareSchmiede.AutoUpdate`
-ausgelagert und wird ueber `builder.UseAutoUpdate(...)` in `ProgramExtensions`
-registriert. FinanceManager greift ausschliesslich ueber die Adapterklasse
-`UpdateOrchestratorAdapter` darauf zu, sodass Controller, `ApiClient` und
-ViewModel unveraendert bleiben.
+Die Self-Update-Logik wird aus dem externen Release-Artefakt
+`msTools.Updater` eingebunden. Bis zur NuGet-Veroeffentlichung liegt der
+gepruefte Release `v0.2.0` unter `external/msTools.Updater/v0.2.0/`; die dort
+entpackte `msTools.Updater.dll` wird ueber `builder.UseAutoUpdate(...)` in
+`ProgramExtensions` registriert. FinanceManager greift ausschliesslich ueber
+die Adapterklasse `UpdateOrchestratorAdapter` darauf zu, sodass Controller,
+`ApiClient` und ViewModel unveraendert bleiben.
 
 `UseAutoUpdate(...)` seedet die Bibliothekseinstellungen (`AutoUpdateOptions`)
 zunaechst ausschliesslich aus `appsettings*.json`. Direkt danach, aber noch vor

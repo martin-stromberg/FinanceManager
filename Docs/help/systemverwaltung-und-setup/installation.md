@@ -125,10 +125,11 @@ Benutzerprofilen hinterlegen.
 ## Self-Update-Betrieb
 
 Das Self-Update ist im Setup nur fuer Administratoren sichtbar und wird durch
-die unabhaengige Bibliothek `SoftwareSchmiede.AutoUpdate` bereitgestellt.
-Updates koennen aus GitHub-Releases (`Updates:SourceType: Github`, Standardwert)
-oder aus einem lokalen Verzeichnis (`Updates:SourceType: LocalFolder`,
-`Updates:LocalFolderPath`) geladen werden.
+die externe Bibliothek `msTools.Updater` bereitgestellt. FinanceManager
+referenziert bis zur NuGet-Veroeffentlichung den geprueften Release `v0.2.0`
+unter `external/msTools.Updater/v0.2.0/`. Updates koennen aus GitHub-Releases
+(`Updates:SourceType: Github`, Standardwert) oder aus einem lokalen Verzeichnis
+(`Updates:SourceType: LocalFolder`, `Updates:LocalFolderPath`) geladen werden.
 
 Das Release-Manifest hat immer den Namen `update.json` und verweist auf
 runtime-spezifische ZIP-Pakete fuer `win-x64` und `linux-x64`. Vor der

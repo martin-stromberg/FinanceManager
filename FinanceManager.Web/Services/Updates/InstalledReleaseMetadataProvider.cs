@@ -1,5 +1,5 @@
 using FinanceManager.Shared.Dtos.Update;
-using SoftwareSchmiede.AutoUpdate;
+using msTools.Updater;
 
 namespace FinanceManager.Web.Services.Updates;
 
@@ -9,7 +9,7 @@ namespace FinanceManager.Web.Services.Updates;
 /// </summary>
 /// <remarks>
 /// Deliberately kept as a thin mapping layer rather than removed: it shields the Web layer (e.g. <c>LoginStatus.razor</c>
-/// via <see cref="IInstalledReleaseMetadataProvider"/>) from depending directly on <c>SoftwareSchmiede.AutoUpdate</c>
+/// via <see cref="IInstalledReleaseMetadataProvider"/>) from depending directly on <c>msTools.Updater</c>
 /// library types, keeping the library an implementation detail of the update subsystem.
 /// </remarks>
 public sealed class InstalledReleaseMetadataProvider : IInstalledReleaseMetadataProvider
