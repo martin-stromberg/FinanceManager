@@ -979,7 +979,9 @@ public sealed class BudgetReportService : IBudgetReportService
                 _ => 1
             };
 
-            var occ = rule.StartDate;
+            var occ = rule.Interval == BudgetIntervalType.Yearly
+                ? new DateOnly(rule.StartDate.Year, rule.StartDate.Month, 1)
+                : rule.StartDate;
             var ruleEnd = rule.EndDate ?? to;
 
             while (occ < from)
@@ -1053,11 +1055,44 @@ public sealed class BudgetReportService : IBudgetReportService
             return count;
         }
 
+        static int CountByMonthStepIgnoreDay(DateOnly ruleStart, DateOnly rangeStart, DateOnly rangeEnd, int stepMonths)
+        {
+            // For yearly budgets, ignore the day and only consider month/year
+            // This ensures that a budget set for July 15 applies to all of July
+            var occ = new DateOnly(ruleStart.Year, ruleStart.Month, 1);
+            var effStart = new DateOnly(rangeStart.Year, rangeStart.Month, 1);
+            var effEnd = new DateOnly(rangeEnd.Year, rangeEnd.Month, 1);
+
+            if (occ < effStart)
+            {
+                var monthsDiff = (effStart.Year - occ.Year) * 12 + (effStart.Month - occ.Month);
+                var stepsToAdvance = monthsDiff / stepMonths;
+                if (stepsToAdvance > 0)
+                {
+                    occ = AddMonthsSafe(occ, stepsToAdvance * stepMonths);
+                }
+
+                while (occ < effStart)
+                {
+                    occ = AddMonthsSafe(occ, stepMonths);
+                }
+            }
+
+            var count = 0;
+            while (occ <= effEnd)
+            {
+                count++;
+                occ = AddMonthsSafe(occ, stepMonths);
+            }
+
+            return count;
+        }
+
         return interval switch
         {
             BudgetIntervalType.Monthly => CountByMonthStep(start, effectiveStart, effectiveEnd, 1),
             BudgetIntervalType.Quarterly => CountByMonthStep(start, effectiveStart, effectiveEnd, 3),
-            BudgetIntervalType.Yearly => CountByMonthStep(start, effectiveStart, effectiveEnd, 12),
+            BudgetIntervalType.Yearly => CountByMonthStepIgnoreDay(start, effectiveStart, effectiveEnd, 12),
             BudgetIntervalType.CustomMonths => CountByMonthStep(start, effectiveStart, effectiveEnd, Math.Max(1, customIntervalMonths ?? 1)),
             _ => CountByMonthStep(start, effectiveStart, effectiveEnd, 1)
         };

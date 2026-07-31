@@ -1094,7 +1094,7 @@ public sealed class BudgetReportServiceRawDataTests
             -150m, // Budget
             -150m, // Actual should match
             -150m, // Total
-            null,
+            "Kfz Amt",
             null,
             budgetCategoryId,
             "Steuern",
@@ -1210,5 +1210,143 @@ public sealed class BudgetReportServiceRawDataTests
 
         // Verify that there are no unbudgeted postings
         result.UnbudgetedPostings.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetRawDataAsync_ShouldShowActualValues_WhenYearlyBudgetDayMismatchWithPostingDay()
+    {
+        // This test verifies that yearly budgets ignore the day and only consider month/year
+        // Scenario: Budget set for July 15, posting on July 14
+        // Expected: Budget applies to the posting (day should be ignored)
+        var ownerUserId = Guid.NewGuid();
+        var from = new DateOnly(2026, 7, 1);
+        var to = new DateOnly(2026, 7, 31);
+
+        var budgetCategoryId = Guid.NewGuid();
+        var purposeId = Guid.NewGuid();
+        var contactId = Guid.NewGuid();
+        var postingId = Guid.NewGuid();
+
+        var purpose = new BudgetPurposeOverviewDto(
+            purposeId,
+            ownerUserId,
+            "Kfz Steuer",
+            null,
+            BudgetSourceType.Contact,
+            contactId,
+            1,
+            -150m, // Budget
+            -150m, // Actual should match
+            -150m, // Total
+            "Kfz Amt",
+            null,
+            budgetCategoryId,
+            "Steuern",
+            BudgetValuationType.TotalBudget);
+
+        var category = new BudgetCategoryOverviewDto(
+            budgetCategoryId,
+            "Steuern",
+            -150m,
+            -150m,
+            -150m,
+            1);
+
+        var contact = new ContactDto(
+            contactId,
+            "Kfz Amt",
+            ContactType.Organization,
+            null,
+            null,
+            false,
+            null);
+
+        var postings = new[]
+        {
+            CreateContactPosting(
+                postingId,
+                contactId,
+                new DateTime(2026, 7, 14), // Posting on July 14
+                -150m,
+                "Kfz Steuer Juli")
+        };
+
+        var purposeService = new Mock<IBudgetPurposeService>();
+        purposeService
+            .Setup(x => x.ListOverviewAsync(ownerUserId, 0, 5000, null, null, from, to, null, It.IsAny<CancellationToken>(), BudgetReportDateBasis.BookingDate))
+            .ReturnsAsync(new[] { purpose });
+
+        var categoryService = new Mock<IBudgetCategoryService>();
+        categoryService
+            .Setup(x => x.ListOverviewAsync(ownerUserId, from, to, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { category });
+
+        var ruleService = new Mock<IBudgetRuleService>();
+        // Purpose rule: yearly -150 EUR starting July 15 (day should be ignored)
+        var purposeRule = new BudgetRuleDto(
+            Guid.NewGuid(),
+            ownerUserId,
+            purposeId,
+            null,
+            -150m,
+            BudgetIntervalType.Yearly,
+            null,
+            new DateOnly(2026, 7, 15), // Budget starts July 15
+            null);
+        ruleService
+            .Setup(x => x.ListByPurposeAsync(ownerUserId, purposeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { purposeRule });
+        ruleService
+            .Setup(x => x.ListByCategoryAsync(ownerUserId, budgetCategoryId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<BudgetRuleDto>());
+
+        var postingsService = new Mock<IPostingsQueryService>();
+        postingsService
+            .Setup(x => x.GetContactPostingsAsync(contactId, 0, 5000, null, from.ToDateTime(TimeOnly.MinValue), to.ToDateTime(TimeOnly.MaxValue), ownerUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(postings);
+
+        var contactService = new Mock<IContactService>();
+        contactService
+            .Setup(x => x.ListAsync(ownerUserId, 0, 5000, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { contact });
+
+        var savingsPlanService = new Mock<ISavingsPlanService>();
+        savingsPlanService
+            .Setup(x => x.ListAsync(ownerUserId, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<SavingsPlanDto>());
+
+        var securityService = new Mock<ISecurityService>();
+        securityService
+            .Setup(x => x.ListAsync(ownerUserId, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<SecurityDto>());
+
+        var cacheService = new Mock<IReportCacheService>();
+        cacheService
+            .Setup(x => x.GetBudgetReportRawDataAsync(ownerUserId, from, to, BudgetReportDateBasis.BookingDate, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((BudgetReportRawDataDto?)null);
+        cacheService
+            .Setup(x => x.SetBudgetReportRawDataAsync(ownerUserId, from, to, BudgetReportDateBasis.BookingDate, It.IsAny<BudgetReportRawDataDto>(), false, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var sut = new BudgetReportService(
+            purposeService.Object,
+            categoryService.Object,
+            ruleService.Object,
+            postingsService.Object,
+            contactService.Object,
+            savingsPlanService.Object,
+            securityService.Object,
+            cacheService.Object);
+
+        var result = await sut.GetRawDataAsync(ownerUserId, from, to, BudgetReportDateBasis.BookingDate, CancellationToken.None);
+
+        result.Categories.Should().ContainSingle(x => x.CategoryId == budgetCategoryId);
+        var rawCategory = result.Categories.Single(x => x.CategoryId == budgetCategoryId);
+        rawCategory.Purposes.Should().HaveCount(1);
+
+        var purposeResult = rawCategory.Purposes.Single(x => x.PurposeId == purposeId);
+
+        // Purpose should have budget calculated (even though posting day (14) != budget day (15))
+        purposeResult.BudgetedExpense.Should().Be(-150m);
     }
 }
