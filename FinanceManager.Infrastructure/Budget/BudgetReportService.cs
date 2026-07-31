@@ -689,9 +689,9 @@ public sealed class BudgetReportService : IBudgetReportService
                     bool allocateToPurpose = false;
                     if (left.BudgetPurposeId.HasValue)
                     {
-                        var purpose = purposesInCat.FirstOrDefault(p => p.Id == left.BudgetPurposeId.Value);
+                        var purpose = purposesInCat.FirstOrDefault(pur => pur.Id == left.BudgetPurposeId.Value);
                         var isContactGroupPurpose = purpose?.SourceType == BudgetSourceType.ContactGroup;
-                        
+
                         allocateToPurpose = originalCategoryRules.Count == 0 || (isContactGroupPurpose && originalCategoryRules.Count > 0);
                     }
                     
