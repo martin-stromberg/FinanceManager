@@ -1224,6 +1224,7 @@ public sealed class BudgetReportServiceRawDataTests
 
         var budgetCategoryId = Guid.NewGuid();
         var purposeId = Guid.NewGuid();
+        var contactGroupId = Guid.NewGuid();
         var contactId = Guid.NewGuid();
         var postingId = Guid.NewGuid();
 
@@ -1232,13 +1233,13 @@ public sealed class BudgetReportServiceRawDataTests
             ownerUserId,
             "Kfz Steuer",
             null,
-            BudgetSourceType.Contact,
-            contactId,
+            BudgetSourceType.ContactGroup,
+            contactGroupId,
             1,
             -150m, // Budget
             -150m, // Actual should match
             -150m, // Total
-            "Kfz Amt",
+            "Kfz Kontakte",
             null,
             budgetCategoryId,
             "Steuern",
@@ -1256,7 +1257,7 @@ public sealed class BudgetReportServiceRawDataTests
             contactId,
             "Kfz Amt",
             ContactType.Organization,
-            null,
+            contactGroupId, // Contact belongs to the group
             null,
             false,
             null);
