@@ -553,7 +553,7 @@ public sealed class BudgetReportService : IBudgetReportService
                                 postingsList = new List<BudgetReportPostingRawDataDto>();
                                 allocated[key] = postingsList;
                             }
-                            postingsList.Add(candidate);
+                            postingsList.Add(candidate with { IsValuedForBudgetPurpose = true });
                         }
 
                         rulesForCategory.Remove(rule);
@@ -564,6 +564,9 @@ public sealed class BudgetReportService : IBudgetReportService
 
                 var positiveRulesCat = rulesForCategory.Where(r => r.Amount > 0).OrderByDescending(r => r.Amount).ToList();
                 var negativeRulesCat = rulesForCategory.Where(r => r.Amount < 0).OrderBy(r => r.Amount).ToList();
+                
+                // store original rules for pattern check
+                var originalCategoryRules = categoryRules.ToList();
 
                 void AllocateCategoryRule(BudgetRuleDto rule)
                 {
@@ -586,7 +589,7 @@ public sealed class BudgetReportService : IBudgetReportService
                                     postsForPurpose = new List<BudgetReportPostingRawDataDto>();
                                     allocated[targetPurposeId] = postsForPurpose;
                                 }
-                                postsForPurpose.Add(p);
+                                postsForPurpose.Add(p with { IsValuedForBudgetPurpose = true });
                                 }
 
                                 remaining -= p.Amount;
@@ -603,7 +606,7 @@ public sealed class BudgetReportService : IBudgetReportService
                                     postsForPurpose2 = new List<BudgetReportPostingRawDataDto>();
                                     allocated[targetPurposeId] = postsForPurpose2;
                                 }
-                                postsForPurpose2.Add(allocatedPart);
+                                postsForPurpose2.Add(allocatedPart with { IsValuedForBudgetPurpose = true });
                                 }
 
                                 var remainingAmount = p.Amount - remaining;
@@ -638,7 +641,7 @@ public sealed class BudgetReportService : IBudgetReportService
                                         list = new List<BudgetReportPostingRawDataDto>();
                                         allocated[targetPurposeId] = list;
                                     }
-                                    list.Add(p);
+                                    list.Add(p with { IsValuedForBudgetPurpose = true });
                                 }
 
                                 remainingAbs -= pAbs;
@@ -655,7 +658,7 @@ public sealed class BudgetReportService : IBudgetReportService
                                         list = new List<BudgetReportPostingRawDataDto>();
                                         allocated[targetPurposeId] = list;
                                     }
-                                    list.Add(allocatedPart);
+                                    list.Add(allocatedPart with { IsValuedForBudgetPurpose = true });
                                 }
 
                                 var remainingAmount = p.Amount + remainingAbs; // negative
@@ -677,14 +680,29 @@ public sealed class BudgetReportService : IBudgetReportService
                 foreach (var r in positiveRulesCat) AllocateCategoryRule(r);
                 foreach (var r in negativeRulesCat) AllocateCategoryRule(r);
 
-                // remaining postings become unbudgeted within this category
+                // remaining postings: if there are category rules with patterns, they become unbudgeted
+                // if there are NO category rules with patterns, allocate to purposes based on contact group
+                var categoryRulesHavePatterns = originalCategoryRules.Any(r => !string.IsNullOrEmpty(r.PurposePattern));
                 foreach (var left in postingsForCategory)
                 {
-                    unbudgetedList.Add(left with
+                    if (!categoryRulesHavePatterns && left.BudgetPurposeId.HasValue)
                     {
-                        BudgetCategoryId = null,
-                        BudgetPurposeId = null
-                    });
+                        var key = left.BudgetPurposeId.Value;
+                        if (!allocated.TryGetValue(key, out var postingsList))
+                        {
+                            postingsList = new List<BudgetReportPostingRawDataDto>();
+                            allocated[key] = postingsList;
+                        }
+                        postingsList.Add(left with { IsValuedForBudgetPurpose = true });
+                    }
+                    else
+                    {
+                        unbudgetedList.Add(left with
+                        {
+                            BudgetCategoryId = null,
+                            BudgetPurposeId = null
+                        });
+                    }
                     postingDtos.RemoveAll(x => x.PostingId == left.PostingId);
                 }
 
@@ -704,6 +722,7 @@ public sealed class BudgetReportService : IBudgetReportService
                         BudgetSourceType = pur.SourceType,
                         SourceId = pur.SourceId,
                         SourceName = pur.SourceName ?? string.Empty,
+                        ValuationType = pur.ValuationType,
                         Postings = posts?.ToArray() ?? Array.Empty<BudgetReportPostingRawDataDto>()
                     });
                 }
