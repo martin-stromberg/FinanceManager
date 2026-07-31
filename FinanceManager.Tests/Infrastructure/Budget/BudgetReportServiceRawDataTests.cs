@@ -707,7 +707,7 @@ public sealed class BudgetReportServiceRawDataTests
     /// Ensures category-level budget rules show actual values for purposes with contact group assignments.
     /// </summary>
     [Fact]
-    public async Task GetRawDataAsync_ShouldShowActualValues_WhenCategoryHasBudgetRuleAndPurposesHaveContactGroups()
+    public async Task GetRawDataAsync_ShouldShowActualValues_WhenCategoryHasBudgetRuleAndPurposesAreContactGroupBased()
     {
         var ownerUserId = Guid.NewGuid();
         var bakeryCategoryId = Guid.NewGuid();
@@ -879,7 +879,182 @@ public sealed class BudgetReportServiceRawDataTests
         var bakeryPurposeResult = rawCategory.Purposes.Single(x => x.PurposeId == bakeryPurposeId);
         var restaurantPurposeResult = rawCategory.Purposes.Single(x => x.PurposeId == restaurantPurposeId);
 
-        // Verify that actual values are shown for both purposes
+        // With a category rule and ContactGroup-based purposes, postings should be allocated to purposes
+        bakeryPurposeResult.Postings.Should().ContainSingle(x => x.PostingId == bakeryPostingId);
+        restaurantPurposeResult.Postings.Should().ContainSingle(x => x.PostingId == restaurantPostingId);
+
+        // Verify that the postings are valued for budget purpose
+        bakeryPurposeResult.Postings.Single().IsValuedForBudgetPurpose.Should().BeTrue();
+        restaurantPurposeResult.Postings.Single().IsValuedForBudgetPurpose.Should().BeTrue();
+
+        // Verify that there are no unbudgeted postings
+        result.UnbudgetedPostings.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetRawDataAsync_ShouldShowActualValues_WhenCategoryHasNoBudgetRuleAndPurposesHaveContactGroups()
+    {
+        // This test verifies that when a category has NO budget rules,
+        // postings are allocated to purposes based on contact group assignments
+        var ownerUserId = Guid.NewGuid();
+        var from = new DateOnly(2026, 1, 1);
+        var to = new DateOnly(2026, 1, 31);
+
+        var budgetCategoryId = Guid.NewGuid();
+        var bakeryCategoryId = Guid.NewGuid();
+        var restaurantCategoryId = Guid.NewGuid();
+        var bakeryPurposeId = Guid.NewGuid();
+        var restaurantPurposeId = Guid.NewGuid();
+        var bakeryContactId = Guid.NewGuid();
+        var restaurantContactId = Guid.NewGuid();
+        var bakeryPostingId = Guid.NewGuid();
+        var restaurantPostingId = Guid.NewGuid();
+
+        var bakeryPurpose = new BudgetPurposeOverviewDto(
+            bakeryPurposeId,
+            ownerUserId,
+            "Bäckereien",
+            null,
+            BudgetSourceType.ContactGroup,
+            bakeryCategoryId,
+            1,
+            0m,
+            0m,
+            0m,
+            null,
+            null,
+            budgetCategoryId,
+            "Verpflegung",
+            BudgetValuationType.TotalBudget);
+
+        var restaurantPurpose = new BudgetPurposeOverviewDto(
+            restaurantPurposeId,
+            ownerUserId,
+            "Gastronomie",
+            null,
+            BudgetSourceType.ContactGroup,
+            restaurantCategoryId,
+            1,
+            0m,
+            0m,
+            0m,
+            null,
+            null,
+            budgetCategoryId,
+            "Verpflegung",
+            BudgetValuationType.TotalBudget);
+
+        var category = new BudgetCategoryOverviewDto(
+            budgetCategoryId,
+            "Verpflegung",
+            0m,
+            0m,
+            0m,
+            2);
+
+        var bakeryContact = new ContactDto(
+            bakeryContactId,
+            "Bäckerei",
+            ContactType.Organization,
+            bakeryCategoryId,
+            null,
+            false,
+            null);
+
+        var restaurantContact = new ContactDto(
+            restaurantContactId,
+            "Restaurant",
+            ContactType.Organization,
+            restaurantCategoryId,
+            null,
+            false,
+            null);
+
+        var postings = new[]
+        {
+            CreateContactPosting(
+                bakeryPostingId,
+                bakeryContactId,
+                new DateTime(2026, 1, 15),
+                -150m,
+                "Brötchen"),
+            CreateContactPosting(
+                restaurantPostingId,
+                restaurantContactId,
+                new DateTime(2026, 1, 20),
+                -200m,
+                "Mittagessen")
+        };
+
+        var purposeService = new Mock<IBudgetPurposeService>();
+        purposeService
+            .Setup(x => x.ListOverviewAsync(ownerUserId, 0, 5000, null, null, from, to, null, It.IsAny<CancellationToken>(), BudgetReportDateBasis.BookingDate))
+            .ReturnsAsync(new[] { bakeryPurpose, restaurantPurpose });
+
+        var categoryService = new Mock<IBudgetCategoryService>();
+        categoryService
+            .Setup(x => x.ListOverviewAsync(ownerUserId, from, to, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { category });
+
+        var ruleService = new Mock<IBudgetRuleService>();
+        ruleService
+            .Setup(x => x.ListByPurposeAsync(ownerUserId, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<BudgetRuleDto>());
+        ruleService
+            .Setup(x => x.ListByCategoryAsync(ownerUserId, budgetCategoryId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<BudgetRuleDto>()); // NO category rules
+
+        var postingsService = new Mock<IPostingsQueryService>();
+        postingsService
+            .Setup(x => x.GetContactPostingsAsync(bakeryContactId, 0, 5000, null, from.ToDateTime(TimeOnly.MinValue), to.ToDateTime(TimeOnly.MaxValue), ownerUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { postings[0] });
+        postingsService
+            .Setup(x => x.GetContactPostingsAsync(restaurantContactId, 0, 5000, null, from.ToDateTime(TimeOnly.MinValue), to.ToDateTime(TimeOnly.MaxValue), ownerUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { postings[1] });
+
+        var contactService = new Mock<IContactService>();
+        contactService
+            .Setup(x => x.ListAsync(ownerUserId, 0, 5000, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { bakeryContact, restaurantContact });
+
+        var savingsPlanService = new Mock<ISavingsPlanService>();
+        savingsPlanService
+            .Setup(x => x.ListAsync(ownerUserId, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<SavingsPlanDto>());
+
+        var securityService = new Mock<ISecurityService>();
+        securityService
+            .Setup(x => x.ListAsync(ownerUserId, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<SecurityDto>());
+
+        var cacheService = new Mock<IReportCacheService>();
+        cacheService
+            .Setup(x => x.GetBudgetReportRawDataAsync(ownerUserId, from, to, BudgetReportDateBasis.BookingDate, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((BudgetReportRawDataDto?)null);
+        cacheService
+            .Setup(x => x.SetBudgetReportRawDataAsync(ownerUserId, from, to, BudgetReportDateBasis.BookingDate, It.IsAny<BudgetReportRawDataDto>(), false, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var sut = new BudgetReportService(
+            purposeService.Object,
+            categoryService.Object,
+            ruleService.Object,
+            postingsService.Object,
+            contactService.Object,
+            savingsPlanService.Object,
+            securityService.Object,
+            cacheService.Object);
+
+        var result = await sut.GetRawDataAsync(ownerUserId, from, to, BudgetReportDateBasis.BookingDate, CancellationToken.None);
+
+        result.Categories.Should().ContainSingle(x => x.CategoryId == budgetCategoryId);
+        var rawCategory = result.Categories.Single(x => x.CategoryId == budgetCategoryId);
+        rawCategory.Purposes.Should().HaveCount(2);
+
+        var bakeryPurposeResult = rawCategory.Purposes.Single(x => x.PurposeId == bakeryPurposeId);
+        var restaurantPurposeResult = rawCategory.Purposes.Single(x => x.PurposeId == restaurantPurposeId);
+
+        // Without category rules, postings should be allocated to purposes based on contact group
         bakeryPurposeResult.Postings.Should().ContainSingle(x => x.PostingId == bakeryPostingId);
         restaurantPurposeResult.Postings.Should().ContainSingle(x => x.PostingId == restaurantPostingId);
 
