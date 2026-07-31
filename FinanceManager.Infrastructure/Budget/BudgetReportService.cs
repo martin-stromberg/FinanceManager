@@ -680,12 +680,22 @@ public sealed class BudgetReportService : IBudgetReportService
                 foreach (var r in positiveRulesCat) AllocateCategoryRule(r);
                 foreach (var r in negativeRulesCat) AllocateCategoryRule(r);
 
-                // remaining postings: if there are category rules with patterns, they become unbudgeted
-                // if there are NO category rules with patterns, allocate to purposes based on contact group
-                var categoryRulesHavePatterns = originalCategoryRules.Any(r => !string.IsNullOrEmpty(r.PurposePattern));
+                // remaining postings: allocate to purposes based on contact group if:
+                // - there are NO category rules, OR
+                // - the purpose is ContactGroup-based and has a category rule
+                // Otherwise, they become unbudgeted.
                 foreach (var left in postingsForCategory)
                 {
-                    if (!categoryRulesHavePatterns && left.BudgetPurposeId.HasValue)
+                    bool allocateToPurpose = false;
+                    if (left.BudgetPurposeId.HasValue)
+                    {
+                        var purpose = purposesInCat.FirstOrDefault(p => p.Id == left.BudgetPurposeId.Value);
+                        var isContactGroupPurpose = purpose?.SourceType == BudgetSourceType.ContactGroup;
+                        
+                        allocateToPurpose = originalCategoryRules.Count == 0 || (isContactGroupPurpose && originalCategoryRules.Count > 0);
+                    }
+                    
+                    if (allocateToPurpose)
                     {
                         var key = left.BudgetPurposeId.Value;
                         if (!allocated.TryGetValue(key, out var postingsList))
