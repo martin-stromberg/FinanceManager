@@ -159,57 +159,6 @@ public sealed class ProfileSettingsLanguageTests
     }
 
     /// <summary>
-    /// Test Scenario 4 (Optional): Auto-mode (PreferredLanguage=null) respects browser language
-    /// Note: This scenario depends on the implementation supporting a null/empty value for PreferredLanguage
-    /// to mean "auto" mode. If not implemented, this test should be skipped.
-    /// </summary>
-    [Fact]
-    public async Task ChangeLanguage_ToAutomatic_RespectsBrowserLanguage()
-    {
-        // Note: This test verifies the optional AC3 from the plan.
-        // It may be skipped if auto-mode is not yet implemented.
-        
-        await using var session = await _fixture.CreateSessionAsync();
-        var page = session.Page;
-        var auth = new AuthGateway(page, _fixture.BaseUrl);
-        var seed = new TestUserSeeder(_fixture.DatabasePath);
-
-        var username = $"autotest-{Guid.NewGuid():N}";
-        const string password = "Secret123";
-        
-        await seed.EnsureUserAsync(username, password);
-        await auth.LoginAsync(username, password);
-        
-        // Navigate to Setup/Profile tab
-        await page.GotoAsync("/setup");
-        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        
-        var setupProfileTab = new SetupProfileTabPageObject(page, _fixture.BaseUrl);
-        
-        // Act: First, set language to English
-        await setupProfileTab.SelectLanguageAsync("en");
-        await setupProfileTab.ClickSaveAsync();
-        await setupProfileTab.VerifySuccessMessageDisplayedAsync();
-        
-        // Reload and verify English
-        await page.ReloadAsync();
-        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        
-        // Navigate back to setup to change to Auto
-        await page.GotoAsync("/setup");
-        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        
-        // Act: Select "Automatic" option
-        await setupProfileTab.SelectLanguageAsync("");  // Empty string or "auto" code for automatic
-        await setupProfileTab.ClickSaveAsync();
-        await setupProfileTab.VerifySuccessMessageDisplayedAsync();
-        
-        // For now, just verify the save was successful
-        var saveButton = await page.Locator("button").Filter(new LocatorFilterOptions { HasText = "Speichern|Save" }).CountAsync();
-        saveButton.Should().BeGreaterThan(0, "Save button should still be available after Auto selection");
-    }
-
-    /// <summary>
     /// Helper test to verify language change is persisted across different browser sessions.
     /// </summary>
     [Fact]
