@@ -1222,9 +1222,8 @@ public sealed class BudgetReportServiceRawDataTests
         var from = new DateOnly(2026, 7, 1);
         var to = new DateOnly(2026, 7, 31);
 
-        var budgetCategoryId = Guid.NewGuid();
         var purposeId = Guid.NewGuid();
-        var contactGroupId = Guid.NewGuid();
+        var categoryId = Guid.NewGuid();
         var contactId = Guid.NewGuid();
         var postingId = Guid.NewGuid();
 
@@ -1232,32 +1231,24 @@ public sealed class BudgetReportServiceRawDataTests
             purposeId,
             ownerUserId,
             "Kfz Steuer",
-            null,
-            BudgetSourceType.ContactGroup,
-            contactGroupId,
+            null, // Description
+            BudgetSourceType.Contact,
+            contactId,
             1,
             -150m, // Budget
             -150m, // Actual should match
             -150m, // Total
-            "Kfz Kontakte",
+            "Kfz Amt",
             null,
-            budgetCategoryId,
-            "Steuern",
+            categoryId, // Purpose is assigned to a category
+            null,
             BudgetValuationType.TotalBudget);
-
-        var category = new BudgetCategoryOverviewDto(
-            budgetCategoryId,
-            "Steuern",
-            -150m,
-            -150m,
-            -150m,
-            1);
 
         var contact = new ContactDto(
             contactId,
             "Kfz Amt",
             ContactType.Organization,
-            contactGroupId, // Contact belongs to the group
+            null,
             null,
             false,
             null);
@@ -1277,6 +1268,14 @@ public sealed class BudgetReportServiceRawDataTests
             .Setup(x => x.ListOverviewAsync(ownerUserId, 0, 5000, null, null, from, to, null, It.IsAny<CancellationToken>(), BudgetReportDateBasis.BookingDate))
             .ReturnsAsync(new[] { purpose });
 
+        var category = new BudgetCategoryOverviewDto(
+            categoryId,
+            "Steuer",
+            -150m,
+            -150m,
+            -150m,
+            1);
+
         var categoryService = new Mock<IBudgetCategoryService>();
         categoryService
             .Setup(x => x.ListOverviewAsync(ownerUserId, from, to, It.IsAny<CancellationToken>()))
@@ -1293,12 +1292,14 @@ public sealed class BudgetReportServiceRawDataTests
             BudgetIntervalType.Yearly,
             null,
             new DateOnly(2026, 7, 15), // Budget starts July 15
-            null);
+            null,
+            null, // No pattern - matches all postings
+            false);
         ruleService
-            .Setup(x => x.ListByPurposeAsync(ownerUserId, purposeId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListByPurposeAsync(ownerUserId, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { purposeRule });
         ruleService
-            .Setup(x => x.ListByCategoryAsync(ownerUserId, budgetCategoryId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListByCategoryAsync(ownerUserId, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<BudgetRuleDto>());
 
         var postingsService = new Mock<IPostingsQueryService>();
@@ -1341,13 +1342,17 @@ public sealed class BudgetReportServiceRawDataTests
 
         var result = await sut.GetRawDataAsync(ownerUserId, from, to, BudgetReportDateBasis.BookingDate, CancellationToken.None);
 
-        result.Categories.Should().ContainSingle(x => x.CategoryId == budgetCategoryId);
-        var rawCategory = result.Categories.Single(x => x.CategoryId == budgetCategoryId);
-        rawCategory.Purposes.Should().HaveCount(1);
+        result.Categories.Should().ContainSingle(x => x.CategoryId == categoryId);
+        var categoryResult = result.Categories.Single(x => x.CategoryId == categoryId);
 
-        var purposeResult = rawCategory.Purposes.Single(x => x.PurposeId == purposeId);
+        categoryResult.Purposes.Should().ContainSingle(x => x.PurposeId == purposeId);
+        var purposeResult = categoryResult.Purposes.Single(x => x.PurposeId == purposeId);
 
         // Purpose should have budget calculated (even though posting day (14) != budget day (15))
         purposeResult.BudgetedExpense.Should().Be(-150m);
+
+        // Posting should be allocated to the purpose via contact matching and rule (not unbudgeted)
+        purposeResult.Postings.Should().ContainSingle(x => x.PostingId == postingId);
+        result.UnbudgetedPostings.Should().BeEmpty();
     }
 }
