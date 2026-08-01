@@ -187,20 +187,24 @@ public sealed class ProfileSettingsLanguageTests
         var setupProfileTab = new SetupProfileTabPageObject(page, _fixture.BaseUrl);
 
         // Step 1: Change language to English.
-        // After save the page reloads automatically — wait for reload to settle.
+        // RunAndWaitForNavigationAsync ensures we wait for the full page reload triggered by
+        // Navigation.Refresh(forceReload: true) inside SaveAsync, not just for network-idle
+        // which may return before Blazor has dispatched the reload instruction.
         await setupProfileTab.SelectLanguageAsync("en");
-        await setupProfileTab.ClickSaveAsync();
-        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await page.RunAndWaitForNavigationAsync(
+            async () => await setupProfileTab.ClickSaveAsync(),
+            new PageRunAndWaitForNavigationOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
         // Verify English is active after the automatic reload
         var englishLabel = await page.Locator("text=Language").CountAsync();
         englishLabel.Should().BeGreaterThan(0, "English should be displayed after saving 'en'");
 
         // Step 2: Switch back to Automatic (empty value).
-        // The language select is still on the same /setup page after the reload.
+        // Same pattern: wait for the navigation caused by the automatic reload.
         await setupProfileTab.SelectLanguageAsync("");
-        await setupProfileTab.ClickSaveAsync();
-        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await page.RunAndWaitForNavigationAsync(
+            async () => await setupProfileTab.ClickSaveAsync(),
+            new PageRunAndWaitForNavigationOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
         // Verify the page reloaded and the setup form is still functional
         var langSelect = await page.Locator("select#lang").CountAsync();
