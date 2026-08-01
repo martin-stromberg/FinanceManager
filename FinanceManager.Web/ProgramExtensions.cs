@@ -322,11 +322,16 @@ namespace FinanceManager.Web
         }
 
         /// <summary>
-        /// Configures request localization for the application including supported cultures and a custom request culture provider
-        /// that reads a user preference.
+        /// Builds the request localization options with supported cultures and the custom
+        /// <see cref="UserPreferenceRequestCultureProvider"/>.
+        /// <para>
+        /// <b>Important:</b> the returned options must be applied via <c>app.UseRequestLocalization</c>
+        /// <em>after</em> <c>app.UseAuthentication()</c> so that <see cref="HttpContext.User"/> is already
+        /// populated when <see cref="UserPreferenceRequestCultureProvider"/> reads the JWT claims.
+        /// </para>
         /// </summary>
-        /// <param name="app">The <see cref="WebApplication"/> instance to configure.</param>
-        public static void ConfigureLocalization(this WebApplication app)
+        /// <returns>Configured <see cref="RequestLocalizationOptions"/>.</returns>
+        public static RequestLocalizationOptions BuildLocalizationOptions(this WebApplication _)
         {
             var supportedCultures = new[] { "de", "en" }.Select(c => new CultureInfo(c)).ToList();
             var locOptions = new RequestLocalizationOptions
@@ -336,7 +341,7 @@ namespace FinanceManager.Web
                 SupportedUICultures = supportedCultures
             };
             locOptions.RequestCultureProviders.Insert(0, new UserPreferenceRequestCultureProvider());
-            app.UseRequestLocalization(locOptions);
+            return locOptions;
         }
 
         /// <summary>
@@ -406,6 +411,10 @@ namespace FinanceManager.Web
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            // Localization must run AFTER authentication so that HttpContext.User is populated
+            // when UserPreferenceRequestCultureProvider reads the pref_lang JWT claim.
+            app.UseRequestLocalization(app.BuildLocalizationOptions());
 
             app.UseMiddleware<JwtRefreshMiddleware>();
 
