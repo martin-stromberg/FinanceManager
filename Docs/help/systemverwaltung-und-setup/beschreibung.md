@@ -62,6 +62,41 @@ aelter als das konfigurierte Health-Timeout ist.
 - Ein Administrator prueft auf ein Self-Update, kontrolliert Paketmetadaten und
   startet die Installation nach Downtime-Bestaetigung.
 
+## Spracheinstellung (Anzeigesprache)
+
+Benutzer können ihre bevorzugte Anzeigesprache im Profil-Tab der Einstellungsseite festlegen.
+Unterstützte Sprachen sind aktuell **Deutsch (de)** und **Englisch (en)**.
+
+### Technische Umsetzung
+
+Die gewählte Sprache wird als `PreferredLanguage`-Feld am Benutzer in der Datenbank gespeichert
+und beim Login sowie bei Sprachänderungen als `pref_lang`-Claim in das JWT eingebettet.
+
+Der `UserPreferenceRequestCultureProvider` liest bei jedem HTTP-Request die Anzeigesprache
+in folgender Priorität:
+
+1. **JWT-Claim `pref_lang`** — schnellster Pfad, kein Datenbankzugriff
+2. **Datenbankabfrage** — Fallback, wenn der Claim fehlt oder ungültig ist
+3. **Standardsprache Deutsch (`de`)** — wenn keine Einstellung hinterlegt ist
+
+Die Browsersprache (`Accept-Language`-Header) wird **niemals** zur Ermittlung der
+Anzeigesprache verwendet. Unangemeldete Benutzer erhalten immer die Standardsprache Deutsch.
+
+### Sprachänderung & sofortige Wirkung
+
+Wenn ein Benutzer die Sprache speichert, stellt der Server den Auth-Cookie mit einem neuen
+JWT neu aus, der den aktualisierten `pref_lang`-Claim enthält. Die Seite lädt anschließend
+automatisch neu, sodass die neue Sprache unmittelbar in der gesamten Benutzeroberfläche
+sichtbar wird — ohne erneuten Login.
+
+### Beispiele
+
+- Ein Benutzer mit Browser-Sprache Deutsch stellt Englisch als Anzeigesprache ein.
+  Nach dem Speichern lädt die Seite neu und alle Texte erscheinen auf Englisch.
+- Ein neuer Benutzer ohne Spracheinstellung sieht die Anwendung immer auf Deutsch,
+  unabhängig von der konfigurierten Browser-Sprache.
+- Die Spracheinstellung bleibt auch nach einem erneuten Login erhalten.
+
 ## Einschränkungen
 
 - Administrative Endpunkte erfordern entsprechende Berechtigungen.
@@ -75,3 +110,5 @@ aelter als das konfigurierte Health-Timeout ist.
 - Der administrative Lock-Reset ist ein Betriebswerkzeug fuer manuell
   gepruefte Haengefaelle. Aktuell prueft die Anwendung nur, ob diese
   Prozessinstanz noch eine Installation besitzt.
+- Die Anzeigesprache gilt für die gesamte Benutzeroberfläche. Eine automatische
+  Erkennung der Browsersprache wird nicht unterstützt.
