@@ -25,21 +25,27 @@ public sealed class UserPreferenceRequestCultureProvider : RequestCultureProvide
     /// </summary>
     /// <param name="httpContext">The HTTP context for the current request. Must not be <c>null</c>.</param>
     /// <returns>
-    /// A <see cref="ProviderCultureResult"/> when a culture could be resolved from the user's preferences; otherwise <c>null</c>
-    /// to let subsequent <see cref="RequestCultureProvider"/> instances attempt resolution.
+    /// A <see cref="ProviderCultureResult"/> when a culture could be resolved from the user's preferences; otherwise
+    /// a <see cref="ProviderCultureResult"/> with the default culture ("de") to prevent the browser's Accept-Language
+    /// header from overriding the user's explicit language preference setting.
     /// </returns>
     /// <exception cref="OperationCanceledException">Thrown when the request's cancellation token (<see cref="HttpContext.RequestAborted"/>) is signalled while awaiting database operations.</exception>
     /// <remarks>
     /// The method first attempts to read a "pref_lang" claim from the authenticated user's claims (no DB access).
     /// If the claim exists and represents a valid culture name it will be returned. If the claim is absent or invalid
     /// the provider looks up the user's preferred language in the database using <see cref="AppDbContext"/>.
-    /// If no preference is configured or if parsing fails the method returns <c>null</c>.
+    /// If no preference is configured or if parsing fails the method returns the default culture ("de") to ensure
+    /// the user's preference is never overridden by the browser's Accept-Language header.
+    /// 
+    /// For unauthenticated requests, the default culture ("de") is returned.
     /// </remarks>
     public override async Task<ProviderCultureResult?> DetermineProviderCultureResult(HttpContext httpContext)
     {
+        const string DefaultCulture = "de";
+
         if (httpContext.User?.Identity?.IsAuthenticated != true)
         {
-            return null;
+            return new ProviderCultureResult(DefaultCulture, DefaultCulture);
         }
 
         // 1) Try JWT claim first (no DB access)
@@ -53,7 +59,7 @@ public sealed class UserPreferenceRequestCultureProvider : RequestCultureProvide
             }
             catch (CultureNotFoundException)
             {
-                // ignore and fallback to DB or next providers
+                // ignore and fallback to DB
             }
         }
 
@@ -61,13 +67,13 @@ public sealed class UserPreferenceRequestCultureProvider : RequestCultureProvide
         var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
         {
-            return null;
+            return new ProviderCultureResult(DefaultCulture, DefaultCulture);
         }
 
         var db = httpContext.RequestServices.GetService<AppDbContext>();
         if (db == null)
         {
-            return null;
+            return new ProviderCultureResult(DefaultCulture, DefaultCulture);
         }
 
         var lang = await db.Users
@@ -78,7 +84,7 @@ public sealed class UserPreferenceRequestCultureProvider : RequestCultureProvide
 
         if (string.IsNullOrWhiteSpace(lang))
         {
-            return null;
+            return new ProviderCultureResult(DefaultCulture, DefaultCulture);
         }
 
         try
@@ -88,7 +94,7 @@ public sealed class UserPreferenceRequestCultureProvider : RequestCultureProvide
         }
         catch (CultureNotFoundException)
         {
-            return null;
+            return new ProviderCultureResult(DefaultCulture, DefaultCulture);
         }
     }
 }
