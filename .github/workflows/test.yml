@@ -4,13 +4,13 @@ name: Tests
 # nur (siehe dortige Kommentare). Ohne diesen Job war die gesamte Testsuite ausschliesslich durch
 # gelegentliche manuelle Laeufe abgesichert.
 on:
-  # Nur "push" auf master (Merge-Nachkontrolle) + "pull_request" fuer Feature-Branches - nicht beides
-  # fuer denselben Branch, sonst laeuft die ~13-Minuten-Suite doppelt: jeder Push auf einen Branch
+  # Nur "push" auf master/staging (Merge-Nachkontrolle) + "pull_request" fuer Feature-Branches - nicht
+  # beides fuer denselben Branch, sonst laeuft die ~13-Minuten-Suite doppelt: jeder Push auf einen Branch
   # mit offenem PR loest sowohl "push" als auch "pull_request: synchronize" aus.
   push:
-    branches: [master]
+    branches: [master, staging]
   pull_request:
-    branches: [master]
+    branches: [master, staging]
 
 permissions:
   contents: read
@@ -51,17 +51,49 @@ jobs:
         shell: pwsh
 
       - name: Test regular tests
-        run: dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --no-build -c Debug --filter "Category!=OsInterface" --logger "trx;LogFileName=test-results-regular-tests.trx" --logger "console;verbosity=normal"
+        run: dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --no-build -c Debug --filter "Category!=OsInterface" --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results-regular-tests.trx" --logger "console;verbosity=normal"
         shell: pwsh
 
       - name: Test regular integration
-        run: dotnet test FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.csproj --no-build -c Debug --logger "trx;LogFileName=test-results-regular-integration.trx" --logger "console;verbosity=normal"
+        run: dotnet test FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.csproj --no-build -c Debug --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results-regular-integration.trx" --logger "console;verbosity=normal"
         shell: pwsh
 
       - name: Test E2E tests
         continue-on-error: true
         run: dotnet test FinanceManager.Tests.E2E/FinanceManager.Tests.E2E.csproj --no-build -c Debug --logger "trx;LogFileName=test-results-e2e-tests.trx" --logger "console;verbosity=normal"
         shell: pwsh
+
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.5.11
+        shell: pwsh
+
+      - name: Generate coverage report
+        run: reportgenerator "-reports:FinanceManager.Tests/TestResults/**/coverage.cobertura.xml;FinanceManager.Tests.Integration/TestResults/**/coverage.cobertura.xml" "-targetdir:coverage-report" "-reporttypes:TextSummary"
+        shell: pwsh
+
+      - name: Enforce coverage threshold
+        env:
+          COVERAGE_THRESHOLD: '70'
+        run: |
+          $summary = Get-Content coverage-report/Summary.txt -Raw
+          if ($summary -notmatch "Line coverage:\s*([\d.,]+)%") {
+            throw "Could not determine line coverage from the generated report."
+          }
+          $lineCoverage = [double]($matches[1] -replace ',', '.')
+          $threshold = [double]$env:COVERAGE_THRESHOLD
+          Write-Host "Line coverage: $lineCoverage% (threshold: $threshold%)"
+          if ($lineCoverage -lt $threshold) {
+            throw "Code coverage $lineCoverage% is below the required threshold of $threshold%."
+          }
+        shell: pwsh
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-report/
+          retention-days: 14
 
       - name: Upload regular test results
         if: always()
