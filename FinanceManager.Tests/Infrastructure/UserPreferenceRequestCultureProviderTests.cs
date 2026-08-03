@@ -77,11 +77,11 @@ public class UserPreferenceRequestCultureProviderTests
 
     /// <summary>
     /// Verifies that when an invalid JWT claim is provided (cannot be parsed to CultureInfo),
-    /// the provider falls back to the database lookup path (or default culture if DB unavailable).
-    /// This test verifies the failure path when DB context is not available.
+    /// the provider falls back to the database lookup path and returns null when DB is unavailable.
+    /// Returning null lets the next provider (Accept-Language header) determine the culture.
     /// </summary>
     [Fact]
-    public async Task DetermineProviderCultureResult_JwtClaimInvalid_FallsBackToDefault()
+    public async Task DetermineProviderCultureResult_JwtClaimInvalid_FallsBackToNull()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -91,21 +91,16 @@ public class UserPreferenceRequestCultureProviderTests
         // Act
         var result = await _provider.DetermineProviderCultureResult(context);
 
-        // Assert - Falls back to default culture when invalid and no DB
-        result.Should().NotBeNull();
-        result!.Cultures.Should().HaveCount(1);
-        result.Cultures.First().ToString().Should().Be("de");
-        result.UICultures.Should().HaveCount(1);
-        result.UICultures.First().ToString().Should().Be("de");
+        // Assert - Falls back to null when claim invalid and no DB (Automatic mode)
+        result.Should().BeNull("Provider must return null to allow Accept-Language header to decide when no explicit preference");
     }
 
     /// <summary>
-    /// Critical test: Verifies the bug fix - when no JWT claim and no DB preference,
-    /// the provider returns the default culture ("de") instead of null.
-    /// This prevents the browser's Accept-Language header from overriding user preferences.
+    /// Verifies that when no JWT claim and no DB preference ("Automatisch" / Automatic mode),
+    /// the provider returns null so that the browser's Accept-Language header determines the culture.
     /// </summary>
     [Fact]
-    public async Task DetermineProviderCultureResult_NoClaimNoDatabaseValue_ReturnsDefaultCulture()
+    public async Task DetermineProviderCultureResult_NoClaimNoDatabaseValue_ReturnsNull()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -115,19 +110,16 @@ public class UserPreferenceRequestCultureProviderTests
         // Act
         var result = await _provider.DetermineProviderCultureResult(context);
 
-        // Assert - Must NOT be null to prevent browser language override
-        result.Should().NotBeNull("Provider must return a ProviderCultureResult to prevent browser Accept-Language override");
-        result!.Cultures.Should().HaveCount(1);
-        result.Cultures.First().ToString().Should().Be("de", "Default culture must be 'de'");
-        result.UICultures.Should().HaveCount(1);
-        result.UICultures.First().ToString().Should().Be("de", "Default UI culture must be 'de'");
+        // Assert - Must be null: "Automatisch" should let the Accept-Language header decide
+        result.Should().BeNull("Provider must return null for Automatic mode to allow browser language to take effect");
     }
 
     /// <summary>
-    /// Verifies that unauthenticated requests get the default culture instead of null.
+    /// Verifies that unauthenticated requests return null so that the next provider
+    /// (Accept-Language header or default) determines the culture.
     /// </summary>
     [Fact]
-    public async Task DetermineProviderCultureResult_UnauthenticatedRequest_ReturnsDefaultCulture()
+    public async Task DetermineProviderCultureResult_UnauthenticatedRequest_ReturnsNull()
     {
         // Arrange
         var user = CreateUnauthenticatedUser();
@@ -137,19 +129,14 @@ public class UserPreferenceRequestCultureProviderTests
         var result = await _provider.DetermineProviderCultureResult(context);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Cultures.Should().HaveCount(1);
-        result.Cultures.First().ToString().Should().Be("de");
-        result.UICultures.Should().HaveCount(1);
-        result.UICultures.First().ToString().Should().Be("de");
+        result.Should().BeNull("Unauthenticated requests should fall through to the Accept-Language header provider");
     }
 
     /// <summary>
-    /// Verifies that an invalid culture code in the JWT claim falls back to default.
-    /// This tests exception handling during CultureInfo creation.
+    /// Verifies that an invalid culture code in the JWT claim returns null (falls through to next provider).
     /// </summary>
     [Fact]
-    public async Task DetermineProviderCultureResult_InvalidCultureExceptionFallsBack_ReturnsDefaultCulture()
+    public async Task DetermineProviderCultureResult_InvalidCultureExceptionFallsBack_ReturnsNull()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -159,12 +146,8 @@ public class UserPreferenceRequestCultureProviderTests
         // Act
         var result = await _provider.DetermineProviderCultureResult(context);
 
-        // Assert - Must not crash and must return default culture
-        result.Should().NotBeNull();
-        result!.Cultures.Should().HaveCount(1);
-        result.Cultures.First().ToString().Should().Be("de");
-        result.UICultures.Should().HaveCount(1);
-        result.UICultures.First().ToString().Should().Be("de");
+        // Assert - Must not crash, must return null
+        result.Should().BeNull("Invalid culture codes must return null, not crash");
     }
 
     /// <summary>
