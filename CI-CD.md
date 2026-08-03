@@ -1,0 +1,243 @@
+# CI/CD und Branch-Strategie
+
+Übersicht über die Continuous-Integration und Continuous-Deployment Pipeline sowie die Git-Strategie für dieses Projekt.
+
+## Branch-Strategie
+
+Das Projekt folgt einer zweistufigen Branch-Strategie mit `staging` als Integrations- und Qualitätssicherungsbranch sowie `master` als ausschließlichem Release-Branch.
+
+```
+Feature-Branch
+    ↓
+    ├→ Pull Request gegen staging
+         ↓
+         ├→ test.yml (Tests, Coverage, Build)
+         ├→ Branch-Protection-Rules prüfen (1 Approval erforderlich)
+         ↓
+         ├→ Merge zu staging
+              ↓
+              ├→ test.yml (Push-Event auf staging)
+              ├→ staging-to-master.yml (automatisierte Promotion)
+                   ↓
+                   ├→ Prüfung: Liegt master hinter staging?
+                   ├→ Falls ja: Erstelle Draft-PR staging → master
+                        ↓
+                        ├→ Maintainer Review + Merge
+                             ↓
+                             ├→ release.yml (Push-Event auf master)
+                                  ↓
+                                  ├→ Semantic Release (Version-Bump)
+                                  ├→ ZIP-Artefakt erstellen
+                                  ├→ GitHub Release veröffentlichen
+```
+
+## Workflows
+
+### 1. test.yml — Qualitätssicherung (Tests, Coverage, Build)
+
+**Auslöser:**
+- `push` zu `staging` oder `master`
+- `pull_request` gegen `staging` oder `master`
+
+**Schritte:**
+1. Checkout des Branches (Windows-latest)
+2. .NET 10 SDK Setup
+3. npm Abhängigkeiten installieren
+4. Playwright Browser installieren
+5. `dotnet restore` und Dependency-Restore
+6. Build der Test-Projekte (Debug)
+7. **Unit-Tests ausführen** (`FinanceManager.Tests`, XPlat Code Coverage sammeln)
+8. **Integrationstests ausführen** (`FinanceManager.Tests.Integration`, XPlat Code Coverage)
+9. **E2E-Tests ausführen** (`FinanceManager.Tests.E2E`, continue-on-error)
+10. Coverage-Report mit `reportgenerator` generieren
+11. **Coverage-Schwellwert erzwingen** (Line Coverage ≥ 70%)
+12. Artefakte hochladen (Coverage-Report, Test-Ergebnisse)
+
+**Fehlschlag bei:**
+- Build fehlgeschlagen
+- Unit- oder Integrationstests fehlgeschlagen
+- Coverage unter 70%
+- E2E-Tests fehlgeschlagen (aber verzeiht, blockiert nicht)
+
+**Erforderliche Approvals (via Branch-Protection):**
+- Mindestens 1 Approval erforderlich
+
+### 2. staging-to-master.yml — Automatisierte Promotion
+
+**Auslöser:**
+- Erfolgreicher Abschluss von `test.yml` auf `staging` (workflow_run-Event)
+
+**Schritte:**
+1. Checkout von staging (shallow clone, ~13 min nach test.yml-Ende)
+2. `git fetch origin master`
+3. **Differenzprüfung:** Anzahl Commits berechnen, um die `master` hinter `staging` zurückliegt
+4. Falls Commits vorhanden:
+   - Stelle sicher, dass Label `automated-promotion` existiert (erstelle es, wenn nicht)
+   - Prüfe auf offene PRs von `staging` → `master`
+   - Falls keine offen: Erstelle Draft-PR mit Label `automated-promotion`
+   - Draft-PR benötigt manuelles Review und Merge durch Maintainer
+   - Branch-Protection-Rules auf `master` erzwingen mindestens 1 Approval
+5. Falls keine Commits vorhanden: Keine Aktion notwendig (staging == master)
+
+**Fehlschlag bei:**
+- Datenextraktion aus test.yml fehlgeschlagen
+- Label-Erstellung fehlgeschlagen
+- PR-Erstellung fehlgeschlagen
+
+### 3. release.yml — Versionsverwaltung und Publikation
+
+**Auslöser:**
+- `push` zu `master`
+- `push` eines Tags im Format `vX.Y.Z`
+
+**Schritte:**
+1. Checkout, .NET 10 + Node 22 Setup
+2. npm + .NET Restore
+3. Unit- und Integrationstests (als Release-Gate)
+4. Build und Publish (self-contained `win-x64` und `linux-x64`)
+5. Semantic Release (Version-Bump aus Conventional Commits)
+6. ZIP-Artefakte erstellen
+7. `update.json` mit Metadaten (Platform, URL, SHA-256) generieren
+8. GitHub Release veröffentlichen
+
+**Nicht blockiert durch:**
+- E2E-Test-Fehler (continue-on-error)
+- Manuelle Tags (haben Vorrang vor Auto-Versioning)
+
+## Quality Gates
+
+### Coverage-Schwellwert (test.yml)
+
+- **Mindestanforderung:** 70% Line Coverage
+- **Gemessen auf:** `FinanceManager.Tests` und `FinanceManager.Tests.Integration`
+- **Methode:** `dotnet test --collect:"XPlat Code Coverage"` + `reportgenerator`
+- **Blockiert Merge bei Unterschreitung**
+
+### Dependency-Updates (dependabot.yml)
+
+- **Automatische Updates für:** NuGet, npm, GitHub Actions
+- **Erstellt automatische PRs** gegen `staging` und `master`
+- **Quality Gates:** Abhängigkeits-PRs müssen alle bestehenden Checks (test.yml) bestehen
+
+### Branch-Protection-Rules
+
+**Für `staging`:**
+- Status-Checks erforderlich (test.yml muss erfolgreich sein)
+- Mindestens 1 Approval erforderlich
+- Stale Approvals nach neuen Commits invalidieren
+- Direct-Push blockieren (nur PRs erlaubt)
+
+**Für `master`:**
+- Status-Checks erforderlich (test.yml muss erfolgreich sein)
+- Mindestens 1 Approval erforderlich
+- Branch up-to-date sein vor Merge
+- Direct-Push blockieren
+- **Strict:** Nur PRs aus `staging` erlaubt (keine anderen Quell-Branches)
+
+## Typsicher Prozesse
+
+### Feature-Entwicklung
+
+1. **Branch erstellen:** `git checkout -b feature/my-feature staging`
+2. **Lokale Entwicklung und Tests**
+3. **Commit mit Conventional Commits:** `feat(component): description`
+4. **Push:** `git push origin feature/my-feature`
+5. **PR erstellen:** Gegen `staging`, nicht `master`
+6. **GitHub Checks:**
+   - test.yml läuft automatisch
+   - Mindestens 1 Approval erforderlich
+   - Alle Checks müssen grün sein
+7. **Merge:** "Squash and merge" oder "Create a merge commit" (je nach Projektvorgabe)
+8. **Automatische Promotion:** Nach dem Merge zu `staging` prüft `staging-to-master.yml`, ob ein PR zu `master` nötig ist
+
+### Hotfix-Prozess
+
+1. **Branch aus `master`:** `git checkout -b hotfix/issue-description master`
+2. **Hotfix implementieren**
+3. **PR gegen `staging` erstellen** (nicht direkt gegen `master`)
+4. **Gleicher Test- und Review-Prozess wie Features**
+5. **Merge zu `staging`**
+6. **Automatische Promotion zu `master`** erfolgt wie üblich
+7. **Release** über standard release.yml-Prozess
+
+### Release-Prozess
+
+1. **Automatisch:** Merge zu `master` löst release.yml aus
+2. **Versionierung:** Semantic Release aus Conventional Commits
+3. **Artefakte:** ZIP-Pakete für Windows und Linux werden erstellt
+4. **GitHub Release:** Automatisch veröffentlicht mit Update-Manifest
+
+## Fehlersuche
+
+### PR gegen staging hängt fest / Checks laufen nicht
+
+**Ursachen:**
+- `.github/workflows/test.yml` ist nicht erreichbar
+- Workflow hat Syntax-Fehler (YAML-Indentation)
+
+**Lösung:**
+1. Prüfe Workflow-Syntax: `yamllint .github/workflows/test.yml` (optional)
+2. Manuell triggern via GitHub UI: "Re-run jobs"
+3. Logs prüfen: Actions-Tab → letzte Workflow-Ausführung
+
+### Coverage unter 70% — Merge blockiert
+
+**Ursachen:**
+- Neue Code-Zeilen sind nicht getestet
+- Alte Tests wurden gelöscht oder deaktiviert
+
+**Lösung:**
+1. `dotnet test --collect:"XPlat Code Coverage"` lokal ausführen
+2. Coverage-Report prüfen: `coverage-report/Summary.txt`
+3. Untestete Zeilen identifizieren und Tests hinzufügen
+4. Push und PR erneut versuchen
+
+### staging-to-master PR wird nicht erstellt
+
+**Ursachen:**
+- `staging` und `master` sind identisch (kein Unterschied)
+- Workflow-Fehler (selten)
+- Existiert bereits offener PR von `staging` → `master`
+
+**Lösung:**
+1. Lokal prüfen: `git log master..staging --oneline` (Commits anzahl)
+2. Falls Commits vorhanden, aber kein PR: GitHub Actions-Logs prüfen
+3. Falls bereits PR vorhanden: Diesen erst schließen oder mergen
+
+### master und staging sind desynchronisiert
+
+**Symptom:**
+- `staging` hat Commits, die `master` nicht hat
+- Es ist unklar, warum `staging-to-master.yml` keinen PR erstellt hat
+
+**Ursachen:**
+- Alte Integration, bevor `staging-to-master.yml` implementiert war
+- Manuell erstellter PR, der nicht gemergt wurde
+
+**Lösung:**
+1. Manuell einen PR zu `master` erstellen und mergen
+2. Überprüfen, dass `test.yml` erfolgreich läuft
+3. Nach Merge sollte `master` auf dem Stand von `staging` sein
+
+### Release schlägt fehl
+
+**Ursachen:**
+- Version-Konflikt (Semantic Release kann nächste Version nicht bestimmen)
+- Test fehlgeschlagen (Release-Gate)
+- ZIP-Paketierung fehlgeschlagen
+- GitHub Release-Publikation fehlgeschlagen
+
+**Lösung:**
+1. Logs in GitHub Actions prüfen (Release-Workflow)
+2. Bei Test-Fehler: Tests lokal reproduzieren
+3. Bei ZIP/Release-Fehler: `release.yml` Workflow überprüfen
+4. Manueller Tag als Fallback: `git tag vX.Y.Z` → `git push --tags`
+
+## Weiterführende Ressourcen
+
+- [CONTRIBUTING.md](CONTRIBUTING.md#branch-workflow-staging--master) — Branch-Workflow für Entwickler
+- [README.md](README.md#deployment--cicd) — Deployment und CI/CD Übersicht
+- [.github/workflows/test.yml](.github/workflows/test.yml) — Test-Workflow (Quelle)
+- [.github/workflows/staging-to-master.yml](.github/workflows/staging-to-master.yml) — Promotion-Workflow (Quelle)
+- [.github/workflows/release.yml](.github/workflows/release.yml) — Release-Workflow (Quelle)
+- [.github/dependabot.yml](.github/dependabot.yml) — Abhängigkeits-Update-Konfiguration
