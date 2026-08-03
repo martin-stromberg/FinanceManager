@@ -237,11 +237,9 @@ public sealed class UserAuthService : IUserAuthService
             return Result<AuthResult>.Fail("Invalid credentials");
         }
 
-        // success: update optional preferences and persist
-        if (string.IsNullOrWhiteSpace(user.PreferredLanguage) && !string.IsNullOrWhiteSpace(command.PreferredLanguage))
-        {
-            user.SetPreferredLanguage(command.PreferredLanguage);
-        }
+        // Only update timezone if not yet set — never overwrite PreferredLanguage on login.
+        // A null PreferredLanguage means "Automatic" (use browser Accept-Language header), which
+        // must be preserved even if the browser sends a language hint in the login request.
         if (string.IsNullOrWhiteSpace(user.TimeZoneId) && !string.IsNullOrWhiteSpace(command.TimeZoneId))
         {
             user.SetTimeZoneId(command.TimeZoneId);
