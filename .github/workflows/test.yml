@@ -89,7 +89,7 @@ jobs:
 
       - name: Upload coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: coverage-report/
@@ -97,7 +97,7 @@ jobs:
 
       - name: Upload regular test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-regular
           path: |
@@ -107,7 +107,7 @@ jobs:
 
       - name: Upload interface test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-interface
           path: |
@@ -117,7 +117,7 @@ jobs:
 
       - name: Upload E2E test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-e2e
           path: |
