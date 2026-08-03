@@ -1,0 +1,66 @@
+name: Staging to Master Promotion
+
+# Nach erfolgreichem Durchlauf von "Tests" auf staging (Push-Event) wird geprueft, ob master
+# gegenueber staging zurueckliegt. Falls ja, wird automatisch ein Draft-PR staging -> master
+# erstellt. Der PR benoetigt manuellen Review und Merge durch einen Maintainer; Branch-Protection
+# auf master erzwingt mindestens ein Approval.
+
+on:
+  workflow_run:
+    workflows: ["Tests"]
+    types: [completed]
+    branches: [staging]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  promote:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout staging
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Fetch master
+        run: git fetch origin master
+        shell: pwsh
+
+      - name: Check if master is behind staging
+        id: diff
+        run: |
+          $count = git rev-list origin/master..HEAD --count
+          "commits_ahead=$count" | Add-Content -Path $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Ensure automated-promotion label exists
+        if: steps.diff.outputs.commits_ahead != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh label create automated-promotion --color "0E8A16" --description "Automatisierter PR von staging nach master" --force
+        shell: pwsh
+
+      - name: Create promotion pull request
+        if: steps.diff.outputs.commits_ahead != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $existing = gh pr list --base master --head staging --state open --json number | ConvertFrom-Json
+          if ($existing.Count -eq 0) {
+            gh pr create `
+              --base master `
+              --head staging `
+              --title "Automated promotion from staging to master" `
+              --body "Automated promotion from staging to master. Enthaelt alle Aenderungen, die auf staging integriert und erfolgreich getestet wurden. Benoetigt manuellen Review und Merge durch einen Maintainer." `
+              --draft `
+              --label "automated-promotion"
+          } else {
+            Write-Host "An open promotion PR from staging to master already exists (#$($existing[0].number))."
+          }
+        shell: pwsh
