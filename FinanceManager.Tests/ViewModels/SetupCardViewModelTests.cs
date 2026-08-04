@@ -12,6 +12,7 @@ using FinanceManager.Web.ViewModels.Common;
 using FinanceManager.Shared;
 using FinanceManager.Shared.Dtos.Securities;
 using FinanceManager.Shared.Dtos.Statements;
+using FinanceManager.Shared.Dtos.Update;
 
 namespace FinanceManager.Tests.ViewModels
 {
@@ -42,10 +43,10 @@ namespace FinanceManager.Tests.ViewModels
             return sc.BuildServiceProvider();
         }
 
-        private static IServiceProvider BuildServices(IApiClient apiClient)
+        private static IServiceProvider BuildServices(IApiClient apiClient, bool isAdmin = false)
         {
             var sc = new ServiceCollection();
-            sc.AddSingleton<FinanceManager.Application.ICurrentUserService>(new TestCurrentUserService(Guid.NewGuid()));
+            sc.AddSingleton<FinanceManager.Application.ICurrentUserService>(new TestCurrentUserService(Guid.NewGuid(), isAdmin: isAdmin));
             sc.AddLogging();
             sc.AddSingleton(apiClient);
             return sc.BuildServiceProvider();
@@ -140,6 +141,27 @@ namespace FinanceManager.Tests.ViewModels
         }
 
         [Fact]
+        public async Task GetRibbonRegisters_AfterAdminLoad_IncludesUpdateActions()
+        {
+            var apiMock = new Mock<IApiClient>();
+            apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, null, null, "updates", 120));
+            apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UpdateStatusDto(UpdateStatusKind.Ready, "1.0.0", null, "1.1.0", "win-x64", null, null, "release.zip", true, null, null, null));
+            var sp = BuildServices(apiMock.Object, isAdmin: true);
+            var vm = new SetupCardViewModel(sp);
+            await vm.LoadAsync(Guid.Empty);
+            var updateVm = (SetupUpdateViewModel)vm.CreateSectionViewModel("update", sp)!;
+            await updateVm.LoadAsync();
+
+            var allActionIds = GetAllActionIds(vm);
+
+            allActionIds.Should().Contain("UpdateCheckNow");
+            allActionIds.Should().Contain("UpdateInstall");
+            allActionIds.Should().Contain("UpdateResetLock");
+        }
+
+        [Fact]
         public async Task GetRibbonRegisters_AfterLoad_ExposesSingleGlobalSaveAndReset()
         {
             var allActionIds = await GetAllActionIdsAfterLoad();
@@ -219,7 +241,15 @@ namespace FinanceManager.Tests.ViewModels
             apiMock.Setup(a => a.Securities_UpdateReturnAnalysisSettingsAsync(It.IsAny<ReturnAnalysisSettingsUpdateRequest>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
-            var sp = BuildServices(apiMock.Object);
+            var updateSettings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120);
+            apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(updateSettings);
+            apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UpdateStatusDto(UpdateStatusKind.NoUpdate, "1.0.0", null, null, "win-x64", null, null, null, false, null, null, null));
+            apiMock.Setup(a => a.Updates_UpdateSettingsAsync(It.IsAny<UpdateSettingsUpdateRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(updateSettings with { Enabled = true });
+
+            var sp = BuildServices(apiMock.Object, isAdmin: true);
             var vm = new SetupCardViewModel(sp);
 
             await vm.LoadAsync(Guid.Empty);
@@ -244,6 +274,10 @@ namespace FinanceManager.Tests.ViewModels
             returnAnalysisVm.ShowSharpeRatio = true;
             returnAnalysisVm.OnChanged();
 
+            var updateVm = (SetupUpdateViewModel)vm.CreateSectionViewModel("update", sp)!;
+            await updateVm.LoadAsync();
+            updateVm.UpdateSettings(updateSettings with { Enabled = true });
+
             var localizerMock = new Mock<IStringLocalizer>();
             localizerMock.Setup(l => l[It.IsAny<string>()])
                 .Returns((string key) => new LocalizedString(key, key));
@@ -259,6 +293,7 @@ namespace FinanceManager.Tests.ViewModels
             apiMock.Verify(a => a.User_UpdateNotificationSettingsAsync(It.IsAny<bool>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
             apiMock.Verify(a => a.UserSettings_UpdateImportSplitAsync(It.IsAny<ImportSplitSettingsUpdateRequest>(), It.IsAny<CancellationToken>()), Times.Once);
             apiMock.Verify(a => a.Securities_UpdateReturnAnalysisSettingsAsync(It.IsAny<ReturnAnalysisSettingsUpdateRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+            apiMock.Verify(a => a.Updates_UpdateSettingsAsync(It.IsAny<UpdateSettingsUpdateRequest>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         private static List<string> GetAllActionIds(SetupCardViewModel vm)

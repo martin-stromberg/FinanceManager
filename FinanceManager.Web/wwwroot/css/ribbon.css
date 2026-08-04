@@ -180,26 +180,87 @@
 
     .fm-ribbon-mobile-group-header {
         width: 100%;
-        border: 0;
-        background: transparent;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: .5rem;
+        justify-content: flex-start;
+        gap: .35rem;
         padding: .55rem .7rem;
+        box-sizing: border-box;
+    }
+
+    .fm-ribbon-mobile-group-title-toggle,
+    .fm-ribbon-mobile-group-toggle {
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
         cursor: pointer;
         font: inherit;
         text-align: left;
     }
 
+    .fm-ribbon-mobile-group-title-toggle {
+        flex: 1 1 auto;
+        justify-content: flex-start;
+    }
+
+    .fm-ribbon-mobile-group-toggle {
+        flex: 0 0 34px;
+        width: 34px;
+        height: 34px;
+    }
+
     .fm-ribbon-mobile-group-title {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
         font-weight: 600;
     }
 
     .fm-ribbon-mobile-group-hamburger {
+        flex: 0 0 auto;
         display: inline-flex;
         align-items: center;
         justify-content: center;
+    }
+
+    .fm-ribbon-mobile-shortcuts {
+        flex: 0 1 auto;
+        display: flex;
+        justify-content: flex-end;
+        gap: .25rem;
+        max-width: min(42vw, 11rem);
+        overflow: hidden;
+    }
+
+    .fm-ribbon-mobile-shortcut {
+        flex: 0 0 34px;
+        width: 34px;
+        height: 34px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        background: transparent;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .fm-ribbon-mobile-shortcut:disabled {
+        opacity: .45;
+        cursor: default;
+    }
+
+    .fm-ribbon-mobile-shortcut .icon,
+    .fm-ribbon-mobile-shortcut .icon svg {
+        display: inline-flex;
+        width: 16px;
+        height: 16px;
     }
 
     .fm-ribbon-mobile-menu {

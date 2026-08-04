@@ -37,6 +37,8 @@ Die Einstellungsseite verwendet ein Akkordeon-Layout: Sektionen können einzeln 
 
 Die `UploadBackup`-Aktion klappt die Backup-Sektion automatisch auf, falls sie beim Klick auf den Ribbon-Button noch geschlossen ist, bevor der Datei-Picker geöffnet wird.
 
+Aktive Hintergrundtasks werden in der Benutzeroberfläche über ein Statuspanel angezeigt. Dieses Panel fragt laufende und wartende Tasks nur ab, wenn ein authentifizierter Benutzerkontext vorhanden ist. Nicht angemeldete Benutzer starten keine wiederkehrende Statusabfrage gegen `/api/background-tasks/active`. Falls ein bereits gestartetes Panel vom API-Client dennoch `401 Unauthorized` erhält, beendet es seine Polling-Schleife für die aktuelle Komponenteninstanz und blendet die Task-Anzeige aus.
+
 Die Update-Sektion zeigt Quelle, Status, Release Notes und die Metadaten der
 verfuegbaren Release-Assets. Administratoren koennen die automatische Pruefung
 aktivieren, Repository/Manifest, Pruefintervall, geplante Uhrzeit,
@@ -47,6 +49,24 @@ laedt erst nach einem spaeteren erfolgreichen `/health`-Aufruf neu.
 Ein aktiver Update-Lock kann durch Administratoren zurueckgesetzt werden, wenn
 die aktuelle Prozessinstanz keine Installation mehr besitzt und die Lock-Datei
 aelter als das konfigurierte Health-Timeout ist.
+
+Die Self-Update-Logik selbst wird als externe, hosting-unabhaengige Bibliothek
+`msTools.Updater` eingebunden. Bis zur NuGet-Veroeffentlichung referenziert
+FinanceManager den geprueften Release `v0.2.0` unter
+`external/msTools.Updater/v0.2.0/`; die dort entpackte `msTools.Updater.dll`
+wird beim Start ueber einen einzigen Aufruf `builder.UseAutoUpdate(...)` in
+`ProgramExtensions` registriert. FinanceManager greift darauf ueber die duenne
+Adapterschicht `UpdateOrchestratorAdapter` zu, sodass Controller, `ApiClient`,
+`SetupUpdateViewModel` und `SetupUpdateTab.razor` unveraendert bleiben. Die
+Konfigurationssektion `Updates` in `appsettings.json` steuert zusaetzlich
+folgende, neu hinzugekommene Werte: `SourceType` (`Github` oder `LocalFolder`)
+waehlt die Update-Quelle, `LocalFolderPath` das Quellverzeichnis fuer
+`LocalFolder`, `EnableAutomaticDownload`/`EnableAutomaticInstallation`
+schalten den automatischen Download bzw. die automatische Installation nach
+einer gefundenen neueren Version, `SourceCheck:Interval` und
+`SourceCheck:TimeRanges` steuern Intervall und erlaubte Zeitfenster der
+Hintergrundpruefung, und `StopHostAfterScriptStart` beendet den Host nach dem
+Start des Installationsskripts (Standard: deaktiviert, wie bisher).
 
 ## Beispiele
 
@@ -61,6 +81,7 @@ aelter als das konfigurierte Health-Timeout ist.
 - Ein Backup wird erstellt, als ZIP heruntergeladen und später nach Dateinamen-Bestätigung als Hintergrundtask wiederhergestellt.
 - Ein Administrator prueft auf ein Self-Update, kontrolliert Paketmetadaten und
   startet die Installation nach Downtime-Bestaetigung.
+- Ein angemeldeter Benutzer startet einen Hintergrundtask und sieht Fortschritt, Warteschlange sowie Abbrechen- oder Entfernen-Aktionen im Statuspanel.
 
 ## Spracheinstellung (Anzeigesprache)
 
@@ -107,7 +128,7 @@ sichtbar wird — ohne erneuten Login.
 ## Einschränkungen
 
 - Administrative Endpunkte erfordern entsprechende Berechtigungen.
-- Restore- und Aggregatjobs laufen asynchron und sind statusbasiert zu überwachen.
+- Restore- und Aggregatjobs laufen asynchron und sind statusbasiert zu überwachen; die automatische Statusabfrage erfolgt nur für authentifizierte Benutzer.
 - Backup-Uploads sind auf 100 MB komprimiert, 250 MB entpackte NDJSON-Daten, einen ZIP-Eintrag und ein maximales Kompressionsverhältnis von 25 begrenzt.
 - Die Lesbarkeit verschluesselt gespeicherter AlphaVantage API Keys haengt vom
   passenden ASP.NET-Core-Data-Protection-Key-Ring ab.

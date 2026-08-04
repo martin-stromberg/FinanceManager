@@ -294,7 +294,7 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
     {
         var actions = new List<UiRibbonAction>
         {
-            new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("New"); return Task.CompletedTask; }),
+            new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("New"); return Task.CompletedTask; }) { MobileShortcut = true },
             new UiRibbonAction("Categories", localizer["Ribbon_Categories"].Value, "<svg><use href='/icons/sprite.svg#groups'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("OpenCategories"); return Task.CompletedTask; }),
         };
 

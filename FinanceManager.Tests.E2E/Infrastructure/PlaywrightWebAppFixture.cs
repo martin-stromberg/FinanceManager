@@ -1,6 +1,9 @@
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Text.Json;
 using Microsoft.Playwright;
 
 namespace FinanceManager.Tests.E2E;
@@ -15,6 +18,17 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         public string? Locale { get; init; }
     }
 
+    /// <summary>
+    /// Version advertised by the local-folder update source seeded for this fixture, always newer than
+    /// <see cref="InstalledUpdateVersion"/> so a manual check reports an available update.
+    /// </summary>
+    public const string AvailableUpdateVersion = "9.9.9";
+
+    /// <summary>
+    /// Installed version seeded via <c>release-metadata.json</c> for this fixture's server.
+    /// </summary>
+    public const string InstalledUpdateVersion = "1.0.0";
+
     private static readonly PlaywrightSessionOptions MobileSessionOptions = new()
     {
         ViewportSize = new ViewportSize { Width = 390, Height = 844 },
@@ -28,6 +42,11 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
     private Process? _server;
     private string? _baseUrl;
     private string? _dbPath;
+    private string? _updatesSourceDir;
+    private string? _updatesWorkingDir;
+    private string? _releaseMetadataPath;
+    private string? _originalReleaseMetadata;
+    private EventHandler? _processExitHandler;
     private readonly StringBuilder _serverOutput = new();
     private readonly StringBuilder _serverError = new();
 
@@ -39,8 +58,14 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         var port = GetFreePort();
         _baseUrl = $"https://127.0.0.1:{port}";
         _dbPath = Path.Combine(Path.GetTempPath(), $"financemanager-e2e-{Guid.NewGuid():N}.db");
+        _updatesSourceDir = Path.Combine(Path.GetTempPath(), $"financemanager-e2e-update-source-{Guid.NewGuid():N}");
+        _updatesWorkingDir = Path.Combine(Path.GetTempPath(), $"financemanager-e2e-update-working-{Guid.NewGuid():N}");
 
         var webDll = ResolveWebDllPath();
+        PrepareUpdateSource(_updatesSourceDir);
+        PrepareInstalledReleaseMetadata();
+        _processExitHandler = (_, _) => RestoreInstalledReleaseMetadata();
+        AppDomain.CurrentDomain.ProcessExit += _processExitHandler;
         StartServer(port, webDll, _dbPath);
         await WaitForServerAsync();
 
@@ -106,6 +131,16 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
                 }
             }
         }
+
+        if (_processExitHandler is not null)
+        {
+            AppDomain.CurrentDomain.ProcessExit -= _processExitHandler;
+            _processExitHandler = null;
+        }
+
+        RestoreInstalledReleaseMetadata();
+        DeleteDirectoryBestEffort(_updatesSourceDir);
+        DeleteDirectoryBestEffort(_updatesWorkingDir);
     }
 
     public async Task<PlaywrightBrowserSession> CreateSessionAsync(PlaywrightSessionOptions? options = null)
@@ -202,6 +237,12 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         startInfo.Environment["Workers__SecurityPriceWorker__Enabled"] = "false";
         startInfo.Environment["FileLogging__Enabled"] = "false";
         startInfo.Environment["DetailedErrors"] = "true";
+        startInfo.Environment["Updates__Enabled"] = "true";
+        startInfo.Environment["Updates__SourceType"] = "LocalFolder";
+        startInfo.Environment["Updates__LocalFolderPath"] = _updatesSourceDir;
+        startInfo.Environment["Updates__EnableAutomaticInstallation"] = "false";
+        startInfo.Environment["Updates__HostedServicesEnabled"] = "false";
+        startInfo.Environment["Updates__WorkingDirectory"] = _updatesWorkingDir;
 
         _server = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start the Playwright test server.");
         _server.OutputDataReceived += (_, e) =>
@@ -325,5 +366,112 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         }
 
         throw new FileNotFoundException("Could not locate the built FinanceManager.Web.dll.");
+    }
+
+    private static void PrepareUpdateSource(string sourceDirectory)
+    {
+        Directory.CreateDirectory(sourceDirectory);
+        var packageBytes = "financemanager-e2e-update-package"u8.ToArray();
+        var packagePath = Path.Combine(sourceDirectory, "app.zip");
+        using (var stream = File.Create(packagePath))
+        using (var archive = new ZipArchive(stream, ZipArchiveMode.Create))
+        {
+            var entry = archive.CreateEntry("app.txt");
+            using var entryStream = entry.Open();
+            entryStream.Write(packageBytes);
+        }
+
+        var sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(packagePath))).ToLowerInvariant();
+        var (platform, runtimeIdentifier) = OperatingSystem.IsWindows() ? ("windows", "win-x64") : ("linux", "linux-x64");
+        var manifest = new
+        {
+            version = AvailableUpdateVersion,
+            releaseNotes = "End-to-end test release.",
+            publishedAt = DateTimeOffset.UtcNow,
+            packages = new[]
+            {
+                new
+                {
+                    version = AvailableUpdateVersion,
+                    platform,
+                    runtimeIdentifier,
+                    fileName = "app.zip",
+                    uri = new Uri(packagePath).ToString(),
+                    sha256,
+                    sizeBytes = new FileInfo(packagePath).Length
+                }
+            }
+        };
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true };
+        File.WriteAllText(Path.Combine(sourceDirectory, "update.json"), JsonSerializer.Serialize(manifest, options));
+    }
+
+    /// <summary>
+    /// Seeds <c>release-metadata.json</c> next to the server's content root so <c>ReleaseMetadataInstalledVersionProvider</c>
+    /// picks it up. This cannot be redirected to a temporary directory: the server process is started with
+    /// <see cref="StartServer"/>'s <c>WorkingDirectory</c> set to the source <c>FinanceManager.Web</c> folder (its
+    /// <c>ContentRootPath</c>), which the help feature also depends on (<c>HelpDocumentPathResolver</c> reads
+    /// <c>ContentRootPath/../Docs/help</c>) - redirecting the content root away from the source tree would break
+    /// that feature for these tests. The original content is captured and restored in
+    /// <see cref="RestoreInstalledReleaseMetadata"/>, including via an <see cref="AppDomain.ProcessExit"/> handler
+    /// so an aborted test run does not leave the seeded content behind; the file is also excluded via
+    /// <c>.gitignore</c> as defense in depth.
+    /// </summary>
+    private void PrepareInstalledReleaseMetadata()
+    {
+        _releaseMetadataPath = Path.Combine(GetRepoRoot(), "FinanceManager.Web", "release-metadata.json");
+        _originalReleaseMetadata = File.Exists(_releaseMetadataPath) ? File.ReadAllText(_releaseMetadataPath) : null;
+
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true };
+        var metadata = new
+        {
+            version = InstalledUpdateVersion,
+            publishedAt = DateTimeOffset.UtcNow.AddDays(-30),
+            commitSha = (string?)null,
+            repository = "FinanceManager",
+            runtimeIdentifier = OperatingSystem.IsWindows() ? "win-x64" : "linux-x64"
+        };
+        File.WriteAllText(_releaseMetadataPath, JsonSerializer.Serialize(metadata, options));
+    }
+
+    private void RestoreInstalledReleaseMetadata()
+    {
+        if (string.IsNullOrWhiteSpace(_releaseMetadataPath))
+        {
+            return;
+        }
+
+        try
+        {
+            if (_originalReleaseMetadata is null)
+            {
+                File.Delete(_releaseMetadataPath);
+            }
+            else
+            {
+                File.WriteAllText(_releaseMetadataPath, _originalReleaseMetadata);
+            }
+        }
+        catch
+        {
+            // Best-effort cleanup only.
+        }
+    }
+
+    private static void DeleteDirectoryBestEffort(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))
+        {
+            return;
+        }
+
+        try
+        {
+            Directory.Delete(path, recursive: true);
+        }
+        catch
+        {
+            // Best-effort cleanup only.
+        }
     }
 }

@@ -11,11 +11,12 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 ## Features / Highlights
 
 - Kontoauszüge importieren, klassifizieren und verbuchen (`StatementDraftsController`), inklusive mobiler Kontoauszugsansicht mit lesbarer Kartenstruktur, zweispaltigem Datum/Betrag, abgeschwächten gebuchten Einträgen sowie Kontakt-, Sparplan- und Wertpapierinformationen
+- Kontoauszugsentwürfe im Massenänderungsmodus bearbeiten, Zeilen zum Löschen vormerken und neue Zeilen ergänzen
 - Konten, Sammelkonten, Kontakte, Sparpläne und Wertpapiere verwalten, inklusive sichtbarer SVG-Symbole für Kontakte
 - Berichte, KPI-Dashboards und Budgetauswertungen nutzen, inklusive bestandsgepruefter Hochrechnung fuer Wertpapier-Dividendenreports
 - Anhänge und Sicherungen (Backup/Restore) verwalten
-- Responsive Web-UI für kleine Viewports (mobile Topbar, responsive Container, mobile E2E-Abdeckung)
-- Einstellungs-Ribbon mit stets sichtbaren Aktionen: Backup erstellen/hochladen, Profil speichern/zurücksetzen, Benachrichtigungen und Kontoauszugs-Importregeln speichern — unabhängig davon, welche Sektion gerade aufgeklappt ist
+- Responsive Web-UI für kleine Viewports (mobile Topbar, responsive Container, mobile Ribbon-Shortcuts, mobile E2E-Abdeckung)
+- Einstellungs-Ribbon mit stets sichtbaren Aktionen: Backup erstellen/hochladen, Profil speichern/zurücksetzen, Benachrichtigungen, Kontoauszugs-Importregeln und Update-Einstellungen speichern sowie Update-Prüfung, Installation und Lock-Reset auslösen — unabhängig davon, welche Sektion gerade aufgeklappt ist
 - Versionsinformation im Programmmenü (Footer) angezeigt — aktuelle Versionnummer oder Fallback `"Version unbekannt"`
 - JWT-Authentifizierung mit 30 Minuten Access-Token-Laufzeit, SecurityStamp-/Rollen-/Active-Revalidierung und DB-validiertem Refresh
 
@@ -41,7 +42,7 @@ Hinweise:
 
 - Web-App starten: `dotnet run --project FinanceManager.Web`
 - Anmelden/Registrieren über die UI
-- Typischer Flow: Import (`/api/statement-drafts/upload` oder `mass-import`) → Klassifizieren → Buchen → Reporting
+- Typischer Flow: Import (`/api/statement-drafts/upload` oder `mass-import`) → Klassifizieren → optional im Massenänderungsmodus nachbearbeiten → Buchen → Reporting
 
 ### Help-Dokumentation und Sicherheit
 
@@ -66,15 +67,22 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 | `DataProtection:KeysPath` | string | leer | Optionaler Pfad fuer den ASP.NET-Core-Data-Protection-Key-Ring; in produktionsnahen Deployments persistent und geschuetzt bereitstellen |
 | `BackgroundTasks:Enabled` | bool | `true` | Aktiviert den `BackgroundTaskRunner` |
 | `Workers:SecurityPriceWorker:Enabled` | bool | `true` | Aktiviert den Security-Price-Worker |
-| `Updates:Enabled` | bool | `false` | Aktiviert die automatische Suche nach Self-Update-Releases |
-| `Updates:HostedServicesEnabled` | bool | `true` | Aktiviert `UpdateChecker` und `UpdateScheduler` |
-| `Updates:RepositoryOwner` / `Updates:RepositoryName` | string | `martin-stromberg` / `FinanceManager` | GitHub-Repository der Updatequelle |
+| `Updates:Enabled` | bool | `false` | Aktiviert die automatische Suche nach Self-Update-Releases (steuert die externe `msTools.Updater`-Bibliothek) |
+| `Updates:SourceType` | string | `Github` | Update-Quelle: `Github` oder `LocalFolder` |
+| `Updates:RepositoryOwner` / `Updates:RepositoryName` | string | `martin-stromberg` / `FinanceManager` | GitHub-Repository (nur bei `SourceType: Github`) |
+| `Updates:LocalFolderPath` | string? | `null` | Lokales Quellverzeichnis (nur bei `SourceType: LocalFolder`; Fallback: `{WorkingDirectory}/source`) |
+| `Updates:EnableAutomaticDownload` | bool | `true` | Download nach erfolgreicher Versionsprüfung |
+| `Updates:EnableAutomaticInstallation` | bool | `false` | Installation nach erfolgreichem Download |
 | `Updates:ManifestAssetName` | string | `update.json` | Release-Asset mit Update-Metadaten |
 | `Updates:WorkingDirectory` | string | `updates` | Betriebsverzeichnis fuer Pending-Paket, Status, Lock, Staging und Skripte |
-| `Updates:ServiceName` | string? | leer | Optionaler Service-Override fuer die aktuelle Plattform |
-| `Updates:ExecutablePath` | string? | leer | Windows-Fallback, wenn kein Service gesteuert wird; muss absolut im aktuellen Anwendungsverzeichnis liegen |
-| `Updates:HealthTimeoutSeconds` | int | `120` | Wartezeit der Setup-UI bis zur Wiedererreichbarkeit von `/health` |
+| `Updates:ServiceName` | string? | leer | Optionaler Service-Override fuer die aktuelle Plattform; in der Admin-UI mit Windows-/Linux-Service-Autocomplete |
+| `Updates:ExecutablePath` | string? | leer | Windows-Fallback, wenn kein Service gesteuert wird; muss absolut im aktuellen Anwendungsverzeichnis liegen; nicht mehr ueber die Admin-UI editierbar |
+| `Updates:HealthTimeoutSeconds` | int | `120` | Wartezeit der Setup-UI bis zur Wiedererreichbarkeit von `/health`, serverseitig auf 10..600 begrenzt; nicht mehr ueber die Admin-UI editierbar |
 | `Updates:MaxAssetBytes` | long | `536870912` | Maximale Groesse eines Update-ZIP-Assets |
+| `Updates:HostedServicesEnabled` | bool | `true` | Aktiviert `AutoUpdateCheckerService` und `AutoUpdateSchedulerService` |
+| `Updates:SourceCheck:Interval` | int | `360` | Prüfintervall in Minuten (neue Syntax; Legacy-Alias: `CheckIntervalMinutes`) |
+| `Updates:SourceCheck:TimeRanges` | Array | `[]` | Zeitfenster für Prüfungen mit `DayOfWeek`, `StartTime`, `EndTime`; leer = immer erlaubt |
+| `Updates:StopHostAfterScriptStart` | bool | `false` | Host nach erfolgreichem Update-Skriptstart beenden |
 | `Backups:Security:MaxUploadBytes` | long | `104857600` | Maximale Uploadgroesse fuer Backup-ZIP-Dateien |
 | `Backups:Security:MaxCompressedZipBytes` | long | `104857600` | Maximale komprimierte ZIP-Groesse fuer Backup-Validierung |
 | `Backups:Security:MaxUncompressedNdjsonBytes` | long | `262144000` | Maximale entpackte NDJSON-Nutzlast im Backup |
@@ -121,12 +129,23 @@ FinanceManager.Domain                   # Domain-Modelle
 FinanceManager.Infrastructure           # EF Core, Persistenz, Integrationen
 FinanceManager.Shared                   # Gemeinsame DTOs / Client
 FinanceManager.Shared.Dtos.Budget       # Budget-DTO-Paket
+
 FinanceManager.Tests                    # Unit- und Komponenten-Tests (xUnit/bUnit)
 FinanceManager.Tests.Integration        # Integrationstests
 FinanceManager.Tests.E2E                # Playwright-End-to-End-Tests
+
+external/msTools.Updater/v0.2.0         # Geprueftes externes Updater-Release fuer den Testlauf vor NuGet
 ```
 
-Technologien: .NET 10, ASP.NET Core, Blazor Server, EF Core (SQLite), ASP.NET Identity/JWT, xUnit, bUnit, Playwright.
+**Technologien:** .NET 10, ASP.NET Core, Blazor Server, EF Core (SQLite), ASP.NET Identity/JWT, xUnit, bUnit, Playwright.
+
+### Self-Update-System
+
+Das Self-Update-System wird aus dem externen Release-Artefakt `msTools.Updater` eingebunden. Die fruehere lokale Bibliothek `SoftwareSchmiede.AutoUpdate` und ihr Testprojekt sind nicht mehr Teil der Solution.
+
+Bis zur geplanten NuGet-Veröffentlichung liegt der geprüfte Release `v0.2.0` aus `martin-stromberg/msTools.Updater` unter [`external/msTools.Updater/v0.2.0/`](external/msTools.Updater/v0.2.0/). Dort sind das originale `release.zip`, `SHA256SUMS.txt`, eine Herkunfts-README und die entpackte `lib/msTools.Updater.dll` abgelegt; der dokumentierte SHA-256 des ZIPs ist `adf4e64e18345ac8ef30e8c626c639489b3eb84accae0f2f5ab61b59e8ea029c`.
+
+`FinanceManager.Web` referenziert die entpackte DLL direkt und kopiert sie in Build- und Publish-Ausgaben. Die Integration erfolgt weiterhin über den FinanceManager-Adapter (`UpdateOrchestratorAdapter`); Controller, DTOs, Admin-UI und REST-API bleiben dadurch aus Anwendersicht unverändert.
 
 ## API-Dokumentation
 
@@ -138,11 +157,12 @@ Einstiegspunkte:
 - `POST /api/setup/backups/upload` – ZIP-Backup hochladen; akzeptiert nur valide ZIP/NDJSON-Backups innerhalb der konfigurierten `Backups:Security`-Limits
 - `POST /api/setup/backups/{id}/apply` – Backup synchron wiederherstellen; destruktiv und nur mit `BackupRestoreRequestDto`, dessen `confirmationText` exakt dem gespeicherten Dateinamen entspricht
 - `POST /api/setup/backups/{id}/apply/start` – destruktiven Restore als Hintergrundtask starten; verwendet dieselbe serverseitige Dateinamen-Bestaetigung
-- `GET /api/setup/update/status` und `GET|PUT /api/setup/update/settings` – Self-Update-Status und Admin-Einstellungen; nur Rolle `Admin`
+- `GET /api/setup/update/status`, `GET|PUT /api/setup/update/settings` und `GET /api/setup/update/services` – Self-Update-Status, Admin-Einstellungen und Service-Autocomplete; nur Rolle `Admin`
 - `POST /api/setup/update/check` – GitHub-Release-Manifest abrufen, passendes Paket laden und Hash/ZIP validieren
 - `POST /api/setup/update/schedule` – geplante Installationszeit fuer ein vorbereitetes Update speichern
 - `POST /api/setup/update/install/start` – vorbereitetes Update nach Downtime-Bestaetigung installieren; erstellt Lock und startet ein externes Update-Skript
 - `POST /api/setup/update/lock/reset` – verwaisten Update-Lock administrativ zuruecksetzen, sofern dieser Prozess keine laufende Installation kennt und der Lock aelter als das Health-Timeout ist
+- `GET /api/background-tasks/active` – aktive und wartende Background-Tasks fuer authentifizierte Nutzer abrufen; das UI startet das Polling nur bei erkannter Anmeldung und beendet es nach einem `401 Unauthorized`
 - `POST /api/securities/{id}/prices/import` – Wertpapierkurse importieren
 - `POST /api/postings/{id}/reverse` – Buchung stornieren (Reversal)
 - `GET|POST|PUT|DELETE /api/admin/users...` – administrative Benutzerverwaltung; serverseitig auf JWT-authentifizierte Benutzer mit Rolle `Admin` beschränkt. Authentifizierte Nicht-Admins erhalten `403 Forbidden`, anonyme Aufrufe `401 Unauthorized`.
@@ -164,6 +184,9 @@ dotnet test FinanceManager.sln
 
 ## Deployment / CI/CD
 
+- **Branch-Workflow:** `staging` ist der Integrations- und Qualitätssicherungsbranch, `master` bleibt der ausschließliche Release-Branch. Feature- und Hotfix-PRs richten sich gegen `staging`. Der Test-Workflow [`test.yml`](.github/workflows/test.yml) läuft auf `push` und `pull_request` für beide Branches. Nach erfolgreichem Lauf auf `staging` erstellt [`staging-to-master.yml`](.github/workflows/staging-to-master.yml) automatisch einen Draft-PR von `staging` nach `master`, der manuell durch einen Maintainer gemergt werden muss. Siehe [CONTRIBUTING.md](CONTRIBUTING.md#branch-workflow-staging--master) für Details.
+- `test.yml` erzwingt zusätzlich einen Line-Coverage-Schwellwert von 70 % (`FinanceManager.Tests` und `FinanceManager.Tests.Integration`, gemessen via `--collect:"XPlat Code Coverage"` und `reportgenerator`) sowie automatisierte Dependency-Updates über [`dependabot.yml`](.github/dependabot.yml) (NuGet, npm, GitHub Actions) als Quality Gates vor einem Merge auf `staging`/`master`.
+- Branch-Protection-Regeln für `staging` und `master` (Pflicht-Status-Checks, mindestens 1 Approval, kein Direct-Push, `master` nur aus `staging`) werden in den GitHub-Repository-Einstellungen konfiguriert, nicht im Repository-Code.
 - Die Release-Pipeline ist in [`.github/workflows/release.yml`](.github/workflows/release.yml) definiert.
 - Ein Push auf `master` sowie ein Push eines Tags im Format `vX.Y.Z` starten den
   Workflow auf `windows-latest`. Auf `master` bestimmt Semantic Release die
@@ -189,19 +212,23 @@ dotnet test FinanceManager.sln
   Bei der Reparatur eines unvollständigen Assets wird dessen Release-Tag
   ausgecheckt; die Reparatursuche verarbeitet alle Seiten der
   GitHub-Release-API.
-- Das Self-Update ist eine Admin-Funktion im Setup. Die UI zeigt Quelle,
-  Status, Paketmetadaten und Release Notes, verlangt vor manueller Installation
-  eine Downtime-Bestaetigung und wartet nach Start erst auf einen beobachteten
+- Das Self-Update ist eine Admin-Funktion im Setup. Die UI zeigt Status,
+  Paketmetadaten und Release Notes; die technische Update-Quelle (GitHub-Repository
+  oder lokaler Ordner via `Updates:SourceType`) sowie Manifest-Asset und
+  Arbeitsverzeichnis werden serverseitig über `msTools.Updater`
+  konfiguriert. Sichtbare Einstellungswerte werden über den globalen
+  Ribbon-Button `Speichern` persistiert; die Aktionen `Jetzt prüfen`,
+  `Update installieren` und `Update-Lock zurücksetzen` liegen ebenfalls im
+  Setup-Ribbon. Der Service-Name bietet Vorschläge aus Windows-Diensten oder
+  Linux-systemd-Services. Vor manueller Installation verlangt die UI eine
+  Downtime-Bestaetigung und wartet nach Start erst auf einen beobachteten
   Ausfall, bevor ein spaeterer `/health`-Erfolg als abgeschlossen gilt. Vor der
   Installation validiert der Server Hash, Groesse, ZIP-Pfade, Service-/EXE-Ziel
   und Lock. Eine geplante Installationszeit wird vom Scheduler minuetlich
   geprueft und startet ein bereites Update ohne erneute Benutzerbestaetigung.
-  Ein Admin-Lock-Reset loescht nur vorhandene Locks, die aelter als das
-  konfigurierte Health-Timeout sind, und verweigert den Reset, solange der
-  aktuelle Prozess noch eine laufende Installation kennt. Fuer produktive Hosts
-  sollte ein eindeutiger `Updates:ServiceName` fuer das aktuelle System
-  konfiguriert werden; Best-Effort-Erkennung wird nur genutzt, wenn sie
-  eindeutig ist.
+  Ein Admin-Lock-Reset loescht nur vorhandene Locks, die aelter als der interne
+  Health-Timeout sind, und verweigert den Reset, solange der aktuelle Prozess
+  noch eine laufende Installation kennt.
 - **Verbesserungen (Issue #206):** Das Update-System wurde fuer Produktionsumgebungen
   (insbesondere Linux) stabilisiert: Lock-Verwaltung ist atomarer, verwaiste Locks
   werden zuverlaessiger erkannt und bereinigt, der Service-Neustart und die
@@ -233,6 +260,7 @@ dotnet test FinanceManager.sln
 ## Contribution Guide
 
 Siehe [CONTRIBUTING.md](CONTRIBUTING.md), insbesondere:
+- Branch-Workflow: PRs gegen `staging`, automatisierte Promotion nach `master`
 - API-Fehlerbehandlung (`ValidationProblem` vs. standardisierte `origin/code/message`-Antworten)
 - Lokalisierungskonventionen für `.resx` unter `Resources/...`
 - PR-Hinweise zu Ressourcenpfaden und CI-Checks
@@ -241,12 +269,12 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md), insbesondere:
 
 ### Aktuelle / In Bearbeitung
 
-**Issue #206 – Automatisches Update reparieren** ✓ Abgeschlossen
-- Lock-State Stabilisierung für Linux/Produktionsumgebungen
-- Dienst-Neustart und Post-Update-Validierung gehärtet
-- Vollständige Lokalisierung von Fehlermeldungen
-- Fortschrittsanzeige während Installation verbessert
-- Siehe Änderungen im Branch `task/issue-206-*-automatisches-update-repariere`
+**Issue #224 – Update-Einstellungen vereinheitlichen** ✓ Abgeschlossen
+- Technische Update-Konfiguration aus der Admin-UI entfernt und serverseitig normalisiert
+- Update-Einstellungen an das globale Setup-Speicherpattern angebunden
+- Update-Aktionen in das Setup-Ribbon verschoben
+- Service-Name mit plattformspezifischem Autocomplete für Windows und Linux ergänzt
+- Update-Statuswerte lokalisiert
 
 ### Geplant
 

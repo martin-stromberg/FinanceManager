@@ -23,7 +23,7 @@
 
 ## "An update lock is active" — Installation kann nicht gestartet werden
 
-**Symptom:** Button "Installation starten" ist deaktiviert; Status zeigt "A lock is active since [Zeit]".
+**Symptom:** Die Ribbon-Aktion "Update installieren" ist deaktiviert; Status zeigt "A lock is active since [Zeit]".
 
 **Ursache:**
 1. Installation läuft noch (Installer-Skript ist aktiv)
@@ -44,7 +44,7 @@
    - Erhöhen Sie `HealthTimeoutSeconds` in der Konfiguration und reduzieren Sie sie danach (workaround)
 
 3. **Lock manuell zurücksetzen (wenn alt genug):**
-   - Button "Reset Lock" klicken
+   - Im Ribbon "Update-Lock zurücksetzen" klicken
    - System fragt nach Bestätigung und Grund
    - Geben Sie einen Grund ein (z. B. "Installer abgestürzt") und bestätigen
    - Lock sollte gelöscht und Status auf `NoUpdate` gesetzt werden
@@ -65,7 +65,7 @@
 
 ## "No update package is available" — Installation kann nicht gestartet werden
 
-**Symptom:** Button "Installation starten" ist deaktiviert; Status zeigt "No ready update package is available".
+**Symptom:** Die Ribbon-Aktion "Update installieren" ist deaktiviert; Status zeigt "No ready update package is available".
 
 **Ursache:**
 1. Noch kein Update heruntergeladen (Status ist nicht `Ready`)
@@ -79,14 +79,14 @@
    - Falls `Failed`: Welche `LastError`-Meldung wird gezeigt?
 
 2. **Neue Prüfung auslösen:**
-   - Button "Jetzt prüfen" klicken
+   - Im Ribbon "Jetzt prüfen" klicken
    - Warten Sie, bis Prüfung abgeschlossen ist (Status sollte wechseln)
    - Falls neuer verfügbar: Status sollte auf `Ready` gehen
 
 3. **Falls Prüfung fehlschlägt:**
    - GitHub-Credentials prüfen: `GITHUB_TOKEN` ist für private Repos erforderlich
-   - Manifest-Dateinamen prüfen: `ManifestAssetName` muss genau dem Namen im Release-Asset entsprechen
-   - Repository-Einstellungen prüfen: `RepositoryOwner`, `RepositoryName`
+   - Manifest-Dateinamen prüfen: Das erwartete Release-Asset heißt fest `update.json`
+   - Repository prüfen: Die Updatequelle ist fest `martin-stromberg/FinanceManager`
    - Prüfen ob GitHub-Release existiert und öffentlich zugänglich ist
    - Browser-Konsole öffnen (F12) → Network-Tab → Fehler beim Asset-Download?
 
@@ -154,10 +154,9 @@
    ```
    Antwortet der Server?
 
-3. **HealthTimeoutSeconds erhöhen (wenn Applikation einfach langsam startet):**
-   - Admin-UI: Update-Einstellungen
-   - `HealthTimeoutSeconds` auf z. B. 180 oder 300 erhöhen
-   - Speichern und erneut versuchen
+3. **Health-Timeout prüfen (wenn Applikation einfach langsam startet):**
+   - `HealthTimeoutSeconds` ist keine UI-Einstellung mehr.
+   - Prüfen Sie die Serverkonfiguration `UpdateOptions.HealthTimeoutSeconds` und starten Sie die Anwendung nach einer Änderung neu.
 
 4. **Installer-Prozess auf dem Server überprüfen:**
    ```bash
@@ -186,8 +185,8 @@
 
 1. **Manifest-Dateiname prüfen:**
    - Öffnen Sie GitHub Release
-   - Suchen Sie nach dem konfigurierten `ManifestAssetName`
-   - Muss exakt (Groß-/Kleinschreibung) übereinstimmen
+   - Suchen Sie nach `update.json`
+   - Der Name muss exakt (Groß-/Kleinschreibung) übereinstimmen
 
 2. **Asset-Namen für aktuelle Plattform prüfen:**
    - Status zeigt `CurrentPlatform` (z. B. `linux-x64`, `win-x64`)
@@ -230,9 +229,9 @@
 
 ---
 
-## Lock-Reset-Button ist deaktiviert
+## Ribbon-Aktion "Update-Lock zurücksetzen" ist deaktiviert
 
-**Symptom:** Button "Reset Lock" ist grau/deaktiviert, obwohl Lock angezeigt wird.
+**Symptom:** Die Ribbon-Aktion "Update-Lock zurücksetzen" ist deaktiviert, obwohl Lock angezeigt wird.
 
 **Ursache:**
 - Lock ist zu jung (muss mindestens `HealthTimeoutSeconds` alt sein)
@@ -244,13 +243,34 @@
    - Warten Sie bis Lock mindestens `HealthTimeoutSeconds` alt ist (Standard: 120 Sekunden)
    - Button sollte dann aktiviert werden
 
-2. **HealthTimeoutSeconds reduzieren (temporär):**
-   - Admin-UI: Update-Einstellungen
-   - `HealthTimeoutSeconds` auf z. B. 30 reduzieren
-   - Speichern
-   - Button sollte jetzt aktiv sein
-   - Lock zurücksetzen
-   - `HealthTimeoutSeconds` wieder auf normal erhöhen
+2. **Serverseitigen Health-Timeout prüfen:**
+   - Der Timeout wird nicht mehr in der UI geändert.
+   - Prüfen Sie `UpdateOptions.HealthTimeoutSeconds` in der Serverkonfiguration, wenn die Staleness-Schwelle dauerhaft unpassend ist.
+
+---
+
+## Service-Name-Autocomplete zeigt keine Vorschläge
+
+**Symptom:** Im Feld "Service-Name" erscheinen keine Vorschläge.
+
+**Ursache:**
+1. Die Anwendung läuft nicht unter Windows oder Linux.
+2. `sc.exe` oder `systemctl` ist nicht verfügbar.
+3. Das Systemkommando liefert keine passenden Dienste oder läuft in ein Timeout.
+4. Der eingegebene Suchtext filtert alle Treffer heraus.
+
+**Lösung:**
+
+1. Suchtext löschen und Feld erneut fokussieren.
+2. Auf dem Server prüfen:
+   ```bash
+   systemctl list-units --type=service --all --no-legend --no-pager
+   ```
+   oder unter Windows:
+   ```powershell
+   sc.exe query type= service state= all
+   ```
+3. Den Service-Namen manuell eintragen, wenn keine Vorschläge verfügbar sind. Das Feld bleibt auch ohne Autocomplete nutzbar.
 
 ---
 

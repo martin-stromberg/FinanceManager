@@ -28,7 +28,18 @@ Beteiligte Komponenten:
 - `GenericCardPage<TKeyValue>.RenderEditableField(CardField)` — rendert bearbeitbare Felder mit mobilem Kartenlayout.
 - `ListPage` / `CardPage` — hosten Ribbon, Status/Overlay und die generischen Komponenten.
 
-### 3. Seitenbezogene Mobile-Regeln
+### 3. Mobile Ribbon-Shortcuts
+
+`Ribbon` rendert geschlossene mobile Gruppen mit separatem Toggle-Button und optionalen Shortcut-Buttons im Header. Ein Shortcut entsteht entweder aus `UiRibbonAction.MobileShortcut` oder automatisch, wenn eine Gruppe genau eine sichtbare und aktivierte Aktion enthält. Versteckte oder deaktivierte Aktionen werden nicht als Header-Shortcuts berücksichtigt.
+
+Die Shortcut-Buttons nutzen den bestehenden Aktionspfad des Ribbon-Eintrags und stoppen die Klick-Weitergabe, damit der Gruppentoggle nicht ausgelöst wird. Geöffnete mobile Gruppen rendern keine Header-Shortcuts; Dateiaktionen mit `FileCallback` behalten ihr Upload-Overlay auch im kompakten Shortcut.
+
+Beteiligte Komponenten:
+- `FinanceManager.Web/ViewModels/Common/RibbonModels.cs` — transportiert die Shortcut-Markierung über `UiRibbonAction.MobileShortcut`.
+- `FinanceManager.Web/Components/Shared/Ribbon.razor` — filtert sichtbare Aktionen, wendet die Ein-Aktions-Regel an und rendert die mobilen Header-Shortcuts.
+- `FinanceManager.Web/wwwroot/css/ribbon.css` — begrenzt und positioniert Titel, Toggle und Icon-Shortcuts im mobilen Header.
+
+### 4. Seitenbezogene Mobile-Regeln
 
 Seiten mit komplexen Inhalten erhalten ergänzende Styles für Mobile-Breakpoints.
 
@@ -37,7 +48,7 @@ Beteiligte Komponenten:
 - CSS-Dateien wie `app.Home.css`, `app.ReportDashboard.css`, `app.ReportsHome.css`, `app.BudgetReport.css`, `app.Setup.css`, `app.ReturnAnalysis.css`.
 - Dark-Theme-Pendants: `theme.Dark.*.css`.
 
-### 4. Mobile E2E-Ausführung
+### 5. Mobile E2E-Ausführung
 
 Tests erzeugen mobile Browserkontexte und führen bestehende End-to-End-Flows unter Mobile-Bedingungen aus.
 

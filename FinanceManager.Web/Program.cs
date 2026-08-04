@@ -29,6 +29,9 @@ namespace FinanceManager.Web
             // apply migrations and seeding
             app.ApplyMigrationsAndSeed();
 
+            // apply persisted update settings before the auto-update hosted services start
+            app.ApplyPersistedUpdateSettings();
+
             // configure middleware (localization is applied within ConfigureMiddleware after UseAuthentication)
             app.ConfigureMiddleware();
 

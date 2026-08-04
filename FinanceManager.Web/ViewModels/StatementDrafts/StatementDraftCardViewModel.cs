@@ -30,28 +30,16 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         if (DraftId == Guid.Empty) return;
         if (EmbeddedList is not StatementDraftEntriesListViewModel vm) return;
 
-        // client-side validate changed rows
-        var ok = vm.ValidateAllChangedRows();
+        // client-side validate changed and new rows
+        var ok = vm.ValidateAllQuickEditRows();
         if (!ok)
         {
             // do not proceed if client validation fails; hints are already applied
             return;
         }
 
-        // collect changes and map to shared DTO
-        var changes = vm.CollectChangedRows();
-        if (changes == null || changes.Count == 0) return;
-
-        var req = new BatchUpdateRequestDto();
-        foreach (var kv in changes)
-        {
-            var upd = new EntryUpdateDto { EntryId = kv.Key, Fields = new Dictionary<string, object?>() };
-            foreach (var f in kv.Value)
-            {
-                upd.Fields[f.Key] = f.Value;
-            }
-            req.Updates.Add(upd);
-        }
+        var req = vm.CollectQuickEditSaveRequest();
+        if (req.Updates.Count == 0 && req.Deletes.Count == 0 && req.Creates.Count == 0) return;
 
         Loading = true; RaiseStateChanged();
         try
@@ -59,11 +47,9 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
             var (success, error) = await ApiClient.StatementDrafts_BatchUpdateDetailedAsync(DraftId, req, CancellationToken.None);
             if (error != null)
             {
-                // Map per-entry field errors to DraftValidationResultDto for embedded list to consume
-                var dv = new DraftValidationResultDto(DraftId, false, error.Errors.SelectMany(e => e.FieldErrors.Select(fe => new DraftValidationMessageDto(fe.Field /* code */, "Error", fe.Message, DraftId, e.EntryId))).ToList());
                 if (EmbeddedList is StatementDraftEntriesListViewModel evm)
                 {
-                    evm.ApplyValidationMessages(dv);
+                    evm.ApplyBatchValidationErrors(error);
                         // request UI focus on the first invalid row so user can correct it
                         evm.RequestFocusFirstInvalid();
                 }
@@ -90,6 +76,7 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
                     Draft = updated;
                     // recreate embedded list to pick up latest entries
                     var entriesVm = new StatementDraftEntriesListViewModel(ServiceProvider, Draft.DraftId);
+                    entriesVm.StateChanged += (_, __) => RaiseStateChanged();
                     EmbeddedList = entriesVm;
                     await entriesVm.InitializeAsync();
                 }
@@ -346,9 +333,9 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         // Navigation group
         var navItems = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })),
-            new UiRibbonAction("Prev", localizer["Ribbon_Prev"].Value, "<svg><use href='/icons/sprite.svg#chevron-left'/></svg>", UiRibbonItemSize.Small, Draft == null || Draft.PrevInUpload == null, null, new Func<Task>(() => { RaiseUiActionRequested("Prev"); return Task.CompletedTask; })),
-            new UiRibbonAction("Next", localizer["Ribbon_Next"].Value, "<svg><use href='/icons/sprite.svg#chevron-right'/></svg>", UiRibbonItemSize.Small, Draft == null || Draft.NextInUpload == null, null, new Func<Task>(() => { RaiseUiActionRequested("Next"); return Task.CompletedTask; }))
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })) { MobileShortcut = true },
+            new UiRibbonAction("Prev", localizer["Ribbon_Prev"].Value, "<svg><use href='/icons/sprite.svg#chevron-left'/></svg>", UiRibbonItemSize.Small, Draft == null || Draft.PrevInUpload == null, null, new Func<Task>(() => { RaiseUiActionRequested("Prev"); return Task.CompletedTask; })) { MobileShortcut = true },
+            new UiRibbonAction("Next", localizer["Ribbon_Next"].Value, "<svg><use href='/icons/sprite.svg#chevron-right'/></svg>", UiRibbonItemSize.Small, Draft == null || Draft.NextInUpload == null, null, new Func<Task>(() => { RaiseUiActionRequested("Next"); return Task.CompletedTask; })) { MobileShortcut = true }
         };
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, navItems));
 
@@ -357,7 +344,7 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
             var manageItems = new List<UiRibbonAction>
         {
             // Save should be enabled when there are pending changes (including create-mode selections)
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, new Func<Task>(async () => { await SaveAsync(); })),
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, new Func<Task>(async () => { await SaveAsync(); })) { MobileShortcut = true },
             new UiRibbonAction("Add", localizer["Ribbon_NewEntry"].Value, "<svg><use href='/icons/sprite.svg#new'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { Navigation.NavigateTo($"/card/statement-drafts/entries/new?draftId={DraftId}"); return Task.CompletedTask; })),
             new UiRibbonAction("Book", localizer["Ribbon_Book"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(async () => { await BookAsync(); })),
             new UiRibbonAction("DeleteDraft", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })),
@@ -387,7 +374,7 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
             })) { Hidden = EmbeddedList is StatementDraftEntriesListViewModel toggleEvm && toggleEvm.IsQuickEditActive },
             new UiRibbonAction("SaveQuickEdit", localizer["Ribbon_SaveQuickEdit"].Value, (Loading ? "<svg class='spin'><use href='/icons/sprite.svg#spinner'/></svg>" : "<svg><use href='/icons/sprite.svg#save'/></svg>"), UiRibbonItemSize.Small,
                 // compute Disabled dynamically using embedded list state
-                !(EmbeddedList is StatementDraftEntriesListViewModel sevm && sevm.HasChangedRows() && sevm.ChangedRowsAreValid() && !Loading),
+                !(EmbeddedList is StatementDraftEntriesListViewModel sevm && sevm.HasPendingQuickEditChanges() && sevm.QuickEditRowsAreValid() && !Loading),
                 null, new Func<Task>(async () => { await SaveQuickEditAsync(); })) { FileCallback = null, Hidden = !(EmbeddedList is StatementDraftEntriesListViewModel saveEvm && saveEvm.IsQuickEditActive) },
             new UiRibbonAction("CancelQuickEdit", localizer["Ribbon_CancelQuickEdit"].Value, "<svg><use href='/icons/sprite.svg#close'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(async () => { await CancelQuickEditAsync(); })) { Hidden = !(EmbeddedList is StatementDraftEntriesListViewModel cancelEvm && cancelEvm.IsQuickEditActive) }
         };

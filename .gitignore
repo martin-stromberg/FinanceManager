@@ -50,6 +50,9 @@ Generated\ Files/
 TestResult.xml
 nunit-*.xml
 
+# Ad-hoc redirected test run output (e.g. `dotnet test ... > test-output.txt`)
+test-output.txt
+
 # Build Results of an ATL Project
 [Dd]ebugPS/
 [Rr]eleasePS/
@@ -393,6 +396,7 @@ FodyWeavers.xsd
 /FinanceManager.Web/financemanager.db-shm
 /FinanceManager.Web/financemanager.db-wal
 /FinanceManager.Web/updates/
+/FinanceManager.Web/release-metadata.json
 /init
 /FinanceManager.Web/init
 /FinanceManager.Web/.config/dotnet-tools.json

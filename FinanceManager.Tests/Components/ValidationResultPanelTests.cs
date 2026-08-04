@@ -19,7 +19,7 @@ public sealed class ValidationResultPanelTests : BunitContext
     {
         // Arrange
         Services.AddLocalization(options => options.ResourcesPath = "Resources");
-        Services.AddSingleton(typeof(IStringLocalizer<Pages>), new PagesStringLocalizer());
+        Services.AddSingleton(typeof(IStringLocalizer<FinanceManager.Web.Pages>), new PagesStringLocalizer());
 
         var draftId = Guid.NewGuid();
         var relatedId = Guid.NewGuid();
@@ -31,7 +31,7 @@ public sealed class ValidationResultPanelTests : BunitContext
             true,
             new List<DraftValidationMessageDto>
             {
-                new("SAVINGSPLAN_DUE", "Information", "Sparplan ist faellig.", draftId, null, "savings-plans", relatedId)
+                new("SAVINGSPLAN_DUE", "Information", "Validation_SAVINGSPLAN_DUE|Test Plan|05/01/2025", draftId, null, "savings-plans", relatedId)
             });
 
         // Act
@@ -59,7 +59,7 @@ public sealed class ValidationResultPanelTests : BunitContext
     {
         // Arrange
         Services.AddLocalization(options => options.ResourcesPath = "Resources");
-        Services.AddSingleton(typeof(IStringLocalizer<Pages>), new PagesStringLocalizer());
+        Services.AddSingleton(typeof(IStringLocalizer<FinanceManager.Web.Pages>), new PagesStringLocalizer());
 
         var draftId = Guid.NewGuid();
         var entryId = Guid.NewGuid();
@@ -69,7 +69,7 @@ public sealed class ValidationResultPanelTests : BunitContext
             false,
             new List<DraftValidationMessageDto>
             {
-                new("ENTRY_HINT", "Information", "Entry-specific hint.", draftId, entryId, "savings-plans", relatedId)
+                new("ENTRY_HINT", "Information", "Validation_ENTRY_NO_CONTACT", draftId, entryId, "savings-plans", relatedId)
             });
 
         // Act

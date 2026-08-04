@@ -1,5 +1,6 @@
 using Bunit;
 using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using FinanceManager.Application;
 using FinanceManager.Shared;
 using FinanceManager.Shared.Dtos.Contacts;
 using FinanceManager.Web;
@@ -45,6 +46,7 @@ namespace FinanceManager.Tests.Components
             Services.AddSingleton(apiMock.Object);
             Services.AddLocalization(options => options.ResourcesPath = "Resources");
             Services.AddSingleton(typeof(IStringLocalizer<Pages>), new PagesStringLocalizer());
+            Services.AddSingleton<ICurrentUserService>(new TestCurrentUserService { IsAuthenticated = false });
 
             // Render CardPage for contacts
             var cut = Render<FinanceManager.Web.Components.Pages.CardPage>(parameters => parameters
@@ -92,6 +94,7 @@ namespace FinanceManager.Tests.Components
             Services.AddSingleton(apiMock.Object);
             Services.AddLocalization(options => options.ResourcesPath = "Resources");
             Services.AddSingleton(typeof(IStringLocalizer<Pages>), new PagesStringLocalizer());
+            Services.AddSingleton<ICurrentUserService>(new TestCurrentUserService { IsAuthenticated = false });
 
             var cut = Render<FinanceManager.Web.Components.Pages.CardPage>(parameters => parameters
                 .Add(p => p.Kind, "contacts")
@@ -126,6 +129,7 @@ namespace FinanceManager.Tests.Components
             Services.AddSingleton(apiMock.Object);
             Services.AddLocalization(options => options.ResourcesPath = "Resources");
             Services.AddSingleton(typeof(IStringLocalizer<Pages>), new PagesStringLocalizer());
+            Services.AddSingleton<ICurrentUserService>(new TestCurrentUserService { IsAuthenticated = false });
 
             // Act: render CardPage for contact
             var cut = Render<FinanceManager.Web.Components.Pages.CardPage>(parameters => parameters
@@ -158,6 +162,14 @@ namespace FinanceManager.Tests.Components
             // Symbol image rendered
             var imgs = cut.FindAll("img");
             Assert.Contains(imgs, img => img.GetAttribute("src")?.Contains($"/api/attachments/{symbolId}/download") == true);
+        }
+
+        private sealed class TestCurrentUserService : ICurrentUserService
+        {
+            public Guid UserId { get; set; } = Guid.NewGuid();
+            public string? PreferredLanguage { get; set; }
+            public bool IsAuthenticated { get; set; }
+            public bool IsAdmin { get; set; }
         }
     }
 }

@@ -10,6 +10,18 @@ namespace FinanceManager.Infrastructure.Statements;
 
 public sealed partial class StatementDraftService
 {
+    private sealed class BatchEntryUpdateProposal
+    {
+        public DateTime BookingDate { get; set; }
+        public DateTime? ValutaDate { get; set; }
+        public decimal Amount { get; set; }
+        public string Subject { get; set; } = string.Empty;
+        public string? BookingDescription { get; set; }
+        public string? RecipientName { get; set; }
+        public string? CurrencyCode { get; set; }
+        public StatementDraftEntryStatus? Status { get; set; }
+    }
+
     /// <summary>
     /// Applies a batch of entry updates atomically. Validates inputs and applies all changes in a single DB transaction.
     /// Returns per-entry field errors when validation fails; in that case no changes are committed.
@@ -33,7 +45,7 @@ public sealed partial class StatementDraftService
 
         if (request == null) throw new ArgumentNullException(nameof(request));
 
-        _logger?.Log(LogLevel.Information, "User {User} requested batch update for draft {DraftId} with {Count} updates", ownerUserId, draftId, request.Updates?.Count ?? 0);
+        _logger?.Log(LogLevel.Information, "User {User} requested batch update for draft {DraftId} with {UpdateCount} updates, {DeleteCount} deletes and {CreateCount} creates", ownerUserId, draftId, request.Updates?.Count ?? 0, request.Deletes?.Count ?? 0, request.Creates?.Count ?? 0);
 
         // Load draft with entries and check ownership
         var draft = await _db.StatementDrafts.Include(d => d.Entries).FirstOrDefaultAsync(d => d.Id == draftId, ct);
@@ -42,17 +54,55 @@ public sealed partial class StatementDraftService
             _logger?.Log(LogLevel.Warning, "Unauthorized batch update attempt for draft {DraftId} by user {User}", draftId, ownerUserId);
             throw new UnauthorizedAccessException();
         }
+        if (draft.Status != StatementDraftStatus.Draft)
+        {
+            return (false, null, new FinanceManager.Shared.Dtos.Statements.BatchUpdateErrorResponseDto
+            {
+                Errors =
+                {
+                    new FinanceManager.Shared.Dtos.Statements.EntryErrorDto
+                    {
+                        FieldErrors = { new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = string.Empty, Message = "Draft is not editable" } }
+                    }
+                }
+            });
+        }
 
         var errors = new List<FinanceManager.Shared.Dtos.Statements.EntryErrorDto>();
+        var updates = request.Updates ?? new List<FinanceManager.Shared.Dtos.Statements.EntryUpdateDto>();
+        var deletes = request.Deletes ?? new List<Guid>();
+        var creates = request.Creates ?? new List<FinanceManager.Shared.Dtos.Statements.EntryCreateDto>();
 
         // Map entries for quick lookup
         var entryMap = draft.Entries.ToDictionary(e => e.Id, e => e);
 
-        // gather proposed changes per entry (do not apply yet)
-        // Added ValutaDate and BookingDescription so quick-edit changes for these fields are persisted
-        var proposed = new Dictionary<Guid, (DateTime? BookingDate, DateTime? ValutaDate, decimal? Amount, string? Subject, string? BookingDescription, string? RecipientName, StatementDraftEntryStatus? Status)>();
+        var proposed = new Dictionary<Guid, BatchEntryUpdateProposal>();
+        var updateIds = updates.Select(u => u.EntryId).ToHashSet();
+        foreach (var deleteId in deletes.Distinct())
+        {
+            var entryErrors = new List<FinanceManager.Shared.Dtos.Statements.FieldErrorDto>();
+            if (!entryMap.TryGetValue(deleteId, out var entry))
+            {
+                entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = string.Empty, Message = "Entry not found in draft" });
+            }
+            else
+            {
+                if (updateIds.Contains(deleteId))
+                {
+                    entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = string.Empty, Message = "Entry cannot be updated and deleted in the same request" });
+                }
+                if (entry.Status == StatementDraftEntryStatus.AlreadyBooked)
+                {
+                    entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = string.Empty, Message = "Entry cannot be deleted in quick edit" });
+                }
+            }
+            if (entryErrors.Count > 0)
+            {
+                errors.Add(new FinanceManager.Shared.Dtos.Statements.EntryErrorDto { EntryId = deleteId, FieldErrors = entryErrors });
+            }
+        }
 
-        foreach (var upd in request.Updates)
+        foreach (var upd in updates)
         {
             var entryErrors = new List<FinanceManager.Shared.Dtos.Statements.FieldErrorDto>();
             if (!entryMap.TryGetValue(upd.EntryId, out var entry))
@@ -62,18 +112,17 @@ public sealed partial class StatementDraftService
                 continue;
             }
 
-            // Business rule: editing restrictions (e.g., already-booked) are enforced by UpdateEntryCoreAsync; collect changes here.
-
             // start from current values
-            DateTime? newBooking = entry.BookingDate;
+            DateTime newBooking = entry.BookingDate;
             DateTime? newValuta = entry.ValutaDate;
-            decimal? newAmount = entry.Amount;
-            string? newSubject = entry.Subject;
+            decimal newAmount = entry.Amount;
+            string newSubject = entry.Subject;
             string? newBookingDesc = entry.BookingDescription;
             string? newRecipient = entry.RecipientName;
-            StatementDraftEntryStatus? newStatus = (StatementDraftEntryStatus?)entry.Status;
+            string? newCurrency = entry.CurrencyCode;
+            StatementDraftEntryStatus? newStatus = null;
 
-            foreach (var kv in upd.Fields)
+            foreach (var kv in upd.Fields ?? new Dictionary<string, object?>())
             {
                 var key = kv.Key ?? string.Empty;
                 var val = kv.Value;
@@ -117,8 +166,7 @@ public sealed partial class StatementDraftService
                     case "ValutaDate":
                         if (val == null)
                         {
-                            // Treat explicit null as an invalid date input (client-side parse failed)
-                            entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = key, Message = "Invalid date format" });
+                            newValuta = null;
                             break;
                         }
                         DateTime parsedValuta;
@@ -186,7 +234,7 @@ public sealed partial class StatementDraftService
                             }
                             else
                             {
-                                newAmount = dec;
+                            newAmount = dec;
                             }
                         }
                         catch
@@ -196,6 +244,11 @@ public sealed partial class StatementDraftService
                         break;
                     case "Subject":
                         var subjText = Convert.ToString(val, CultureInfo.InvariantCulture) ?? string.Empty;
+                        if (string.IsNullOrWhiteSpace(subjText))
+                        {
+                            entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = key, Message = "Subject is required" });
+                            break;
+                        }
                         if (subjText.Length > 1000)
                         {
                             entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = key, Message = "Subject too long" });
@@ -278,13 +331,68 @@ public sealed partial class StatementDraftService
                 }
             }
 
+            var nonStatusFields = upd.Fields?.Keys.Where(k => !string.Equals(k, "Status", StringComparison.Ordinal)).ToList() ?? new List<string>();
+            if (entry.Status == StatementDraftEntryStatus.AlreadyBooked
+                && nonStatusFields.Count > 0
+                && newStatus != StatementDraftEntryStatus.Open)
+            {
+                entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = string.Empty, Message = "Entry is not editable" });
+            }
+
             if (entryErrors.Count > 0)
             {
                 errors.Add(new FinanceManager.Shared.Dtos.Statements.EntryErrorDto { EntryId = upd.EntryId, FieldErrors = entryErrors });
             }
             else
             {
-                proposed[upd.EntryId] = (newBooking, newValuta, newAmount, newSubject, newBookingDesc, newRecipient, newStatus);
+                proposed[upd.EntryId] = new BatchEntryUpdateProposal
+                {
+                    BookingDate = newBooking,
+                    ValutaDate = newValuta,
+                    Amount = newAmount,
+                    Subject = newSubject,
+                    BookingDescription = newBookingDesc,
+                    RecipientName = newRecipient,
+                    CurrencyCode = newCurrency,
+                    Status = newStatus
+                };
+            }
+        }
+
+        foreach (var create in creates)
+        {
+            var entryErrors = new List<FinanceManager.Shared.Dtos.Statements.FieldErrorDto>();
+            if (create.ClientId == Guid.Empty)
+            {
+                entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = nameof(create.ClientId), Message = "Client id is required" });
+            }
+            if (create.BookingDate == DateTime.MinValue)
+            {
+                entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = nameof(create.BookingDate), Message = "Booking date is required" });
+            }
+            if (create.Amount == 0m)
+            {
+                entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = nameof(create.Amount), Message = "Amount must not be zero" });
+            }
+            if (string.IsNullOrWhiteSpace(create.Subject))
+            {
+                entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = nameof(create.Subject), Message = "Subject is required" });
+            }
+            else if (create.Subject.Length > 1000)
+            {
+                entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = nameof(create.Subject), Message = "Subject too long" });
+            }
+            if ((create.BookingDescription?.Length ?? 0) > 1000)
+            {
+                entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = nameof(create.BookingDescription), Message = "Booking description too long" });
+            }
+            if ((create.RecipientName?.Length ?? 0) > 250)
+            {
+                entryErrors.Add(new FinanceManager.Shared.Dtos.Statements.FieldErrorDto { Field = nameof(create.RecipientName), Message = "Recipient name too long" });
+            }
+            if (entryErrors.Count > 0)
+            {
+                errors.Add(new FinanceManager.Shared.Dtos.Statements.EntryErrorDto { ClientId = create.ClientId, FieldErrors = entryErrors });
             }
         }
 
@@ -298,66 +406,94 @@ public sealed partial class StatementDraftService
         using var tx = await _db.Database.BeginTransactionAsync(ct);
         try
         {
+            var splitDraftIdsToReevaluate = new HashSet<Guid>();
+            foreach (var deleteId in deletes.Distinct())
+            {
+                if (!entryMap.TryGetValue(deleteId, out var entry))
+                {
+                    continue;
+                }
+                if (entry.SplitDraftId.HasValue)
+                {
+                    splitDraftIdsToReevaluate.Add(entry.SplitDraftId.Value);
+                }
+                _db.StatementDraftEntries.Remove(entry);
+            }
+
             foreach (var kv in proposed)
             {
                 var entryId = kv.Key;
                 var p = kv.Value;
-                // load current entry DTO values for parameters not changed
-                var existing = await GetDraftEntryAsync(draftId, entryId, ct);
-                if (existing == null) continue; // should not happen
+                if (!entryMap.TryGetValue(entryId, out var ent))
+                {
+                    continue;
+                }
 
-                var bookingDate = p.BookingDate ?? existing.BookingDate;
-                var valutaDate = p.ValutaDate ?? existing.ValutaDate;
-                var amount = p.Amount ?? existing.Amount;
-                var subject = p.Subject ?? existing.Subject ?? string.Empty;
-                var bookingDesc = p.BookingDescription ?? existing.BookingDescription ?? string.Empty;
-                var recipient = p.RecipientName ?? existing.RecipientName;
-
-                var updatedEntry = await UpdateEntryCoreAsync(draftId, entryId, ownerUserId, bookingDate, valutaDate, amount, subject, recipient, null, bookingDesc, ct);
+                ent.UpdateCore(p.BookingDate, p.ValutaDate, p.Amount, p.Subject, p.RecipientName, p.CurrencyCode, p.BookingDescription);
 
                 // If caller requested an explicit status change (e.g., mark as AlreadyBooked), apply it here.
                 if (p.Status.HasValue)
                 {
-                    try
+                    if (p.Status.Value == StatementDraftEntryStatus.AlreadyBooked)
                     {
-                        var ent = await _db.StatementDraftEntries.FirstOrDefaultAsync(e => e.Id == entryId && e.DraftId == draftId, ct);
-                        if (ent != null)
-                        {
-                            // Apply requested status change using domain methods (setters are private)
-                            if (p.Status.Value == StatementDraftEntryStatus.AlreadyBooked)
-                            {
-                                ent.MarkAlreadyBooked();
-                            }
-                            else if (p.Status.Value == StatementDraftEntryStatus.Accounted)
-                            {
-                                // If we already have a contact assignment, mark accounted; otherwise mark for manual check
-                                if (ent.ContactId.HasValue)
-                                    ent.MarkAccounted(ent.ContactId.Value);
-                                else
-                                    ent.MarkNeedsCheck();
-                            }
-                            else if (p.Status.Value == StatementDraftEntryStatus.Announced)
-                            {
-                                // ResetOpen will set to Announced when the entry was originally announced
-                                ent.ResetOpen();
-                            }
-                            else if (p.Status.Value == StatementDraftEntryStatus.Open)
-                            {
-                                ent.MarkNeedsCheck();
-                            }
-
-                            _db.StatementDraftEntries.Update(ent);
-                            await _db.SaveChangesAsync(ct);
-                        }
+                        ent.MarkAlreadyBooked();
                     }
-                    catch (Exception ex)
+                    else if (p.Status.Value == StatementDraftEntryStatus.Accounted)
                     {
-                        _logger?.LogWarning(ex, "Failed to apply status change for entry {EntryId} in draft {DraftId}", entryId, draftId);
-                        // swallow per-entry status apply failure; overall update should have succeeded or reported earlier validation errors
+                        if (ent.ContactId.HasValue)
+                            ent.MarkAccounted(ent.ContactId.Value);
+                        else
+                            ent.MarkNeedsCheck();
                     }
+                    else if (p.Status.Value == StatementDraftEntryStatus.Announced)
+                    {
+                        ent.ResetOpen();
+                    }
+                    else if (p.Status.Value == StatementDraftEntryStatus.Open)
+                    {
+                        ent.MarkNeedsCheck();
+                    }
+                }
+                if (ent.SplitDraftId.HasValue)
+                {
+                    splitDraftIdsToReevaluate.Add(ent.SplitDraftId.Value);
                 }
             }
 
+            var createdEntryIds = new List<Guid>();
+            foreach (var create in creates)
+            {
+                var entry = draft.AddEntry(
+                    create.BookingDate.Date,
+                    create.Amount,
+                    create.Subject.Trim(),
+                    string.IsNullOrWhiteSpace(create.RecipientName) ? null : create.RecipientName.Trim(),
+                    create.ValutaDate?.Date,
+                    null,
+                    string.IsNullOrWhiteSpace(create.BookingDescription) ? null : create.BookingDescription.Trim(),
+                    false,
+                    false);
+                _db.Entry(entry).State = EntityState.Added;
+                createdEntryIds.Add(entry.Id);
+            }
+
+            await _db.SaveChangesAsync(ct);
+
+            foreach (var createdEntryId in createdEntryIds)
+            {
+                await ClassifyInternalAsync(draft, createdEntryId, ownerUserId, ct);
+            }
+            await _db.SaveChangesAsync(ct);
+
+            if (await _db.StatementDraftEntries.AnyAsync(e => e.SplitDraftId == draft.Id, ct))
+            {
+                await ReevaluateParentEntryStatusAsync(ownerUserId, draft.Id, ct);
+            }
+            foreach (var splitDraftId in splitDraftIdsToReevaluate)
+            {
+                await ReevaluateParentEntryStatusAsync(ownerUserId, splitDraftId, ct);
+            }
+            await _db.SaveChangesAsync(ct);
             await tx.CommitAsync(ct);
 
             // return updated draft snapshot
@@ -385,7 +521,7 @@ public sealed partial class StatementDraftService
                 );
             }
             var success = new FinanceManager.Shared.Dtos.Statements.BatchUpdateSuccessResponseDto { UpdatedDraft = detail };
-            _logger?.Log(LogLevel.Information, "Batch update applied for draft {DraftId} by user {User}", draftId, ownerUserId);
+            _logger?.Log(LogLevel.Information, "Batch quick-edit save applied for draft {DraftId} by user {User}", draftId, ownerUserId);
             return (true, success, null);
         }
         catch (Exception ex)

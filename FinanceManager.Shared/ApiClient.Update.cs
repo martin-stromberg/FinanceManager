@@ -27,6 +27,19 @@ public partial class ApiClient
         return (await resp.Content.ReadFromJsonAsync<UpdateSettingsDto>(cancellationToken: ct))!;
     }
 
+    public async Task<IReadOnlyList<string>> Updates_GetServiceNamesAsync(string? query, int take = 20, CancellationToken ct = default)
+    {
+        var url = $"/api/setup/update/services?take={take}";
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            url += $"&query={Uri.EscapeDataString(query)}";
+        }
+
+        var resp = await _http.GetAsync(url, ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return (await resp.Content.ReadFromJsonAsync<IReadOnlyList<string>>(cancellationToken: ct)) ?? Array.Empty<string>();
+    }
+
     public async Task<UpdateCheckResultDto> Updates_CheckAsync(CancellationToken ct = default)
     {
         var resp = await _http.PostAsync("/api/setup/update/check", content: null, ct);

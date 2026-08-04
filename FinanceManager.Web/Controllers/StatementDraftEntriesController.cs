@@ -45,10 +45,10 @@ namespace FinanceManager.Web.Controllers
         [HttpPost("batch-update")]
         public async Task<IActionResult> BatchUpdate(Guid draftId, [FromBody] FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto req, CancellationToken ct)
         {
-            _logger?.LogInformation("BatchUpdate called for draft {DraftId} with {Count} updates", draftId, req?.Updates?.Count ?? 0);
+            _logger?.LogInformation("BatchUpdate called for draft {DraftId} with {UpdateCount} updates, {DeleteCount} deletes and {CreateCount} creates", draftId, req?.Updates?.Count ?? 0, req?.Deletes?.Count ?? 0, req?.Creates?.Count ?? 0);
             // Basic validation
-            if (req == null || req.Updates == null || req.Updates.Count == 0)
-                return BadRequest(new { message = "No updates provided" });
+            if (req == null || ((req.Updates?.Count ?? 0) == 0 && (req.Deletes?.Count ?? 0) == 0 && (req.Creates?.Count ?? 0) == 0))
+                return BadRequest(new { message = "No quick edit changes provided" });
 
             // Delegate to service - the service performs permission checks and validation
             try

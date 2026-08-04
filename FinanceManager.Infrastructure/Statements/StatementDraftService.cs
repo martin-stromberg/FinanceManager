@@ -1643,11 +1643,11 @@ public sealed partial class StatementDraftService : IStatementDraftService
 
         var entries = await scopedEntryQuery.ToArrayAsync(ct);
 
-        void Add(string code, string sev, string msg, Guid? draftId, Guid? eId) => messages.Add(new DraftValidationMessageDto(code, sev, msg, draftId ?? draft.Id, eId));
+        void Add(string code, string sev, string msg, Guid? draftId, Guid? eId, string prefix = "") => messages.Add(new DraftValidationMessageDto(code, sev, prefix + msg, draftId ?? draft.Id, eId));
 
         if (draft.DetectedAccountId == null)
         {
-            Add("NO_ACCOUNT", "Error", "Kein Konto zugeordnet.", null, null);
+            Add("NO_ACCOUNT", "Error", "Validation_NO_ACCOUNT", null, null);
         }
 
         var self = await _db.Contacts.AsNoTracking().FirstOrDefaultAsync(c => c.OwnerUserId == ownerUserId && c.Type == ContactType.Self, ct);
@@ -1676,7 +1676,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
         }
         if (DetectCycle(draft.Id))
         {
-            Add("SPLIT_CYCLE_DETECTED", "Error", "[Split] Zyklen in Split-Verknüpfungen erkannt.", null, null);
+            Add("SPLIT_CYCLE_DETECTED", "Error", "Validation_SPLIT_CYCLE_DETECTED", null, null);
         }
 
         async Task<List<StatementDraft>> LoadSplitGroupAsync(StatementDraft rootChild, StatementDraft parent, Guid userId, CancellationToken token)
@@ -1707,18 +1707,18 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 .ToList();
             if (groupDrafts.Any(d => d.DetectedAccountId != null))
             {
-                Add("SPLIT_DRAFT_HAS_ACCOUNT", "Error", prefix + "Split-Draft darf kein Konto zugeordnet haben.", draft.Id, parentEntry.Id);
+                Add("SPLIT_DRAFT_HAS_ACCOUNT", "Error", "Validation_SPLIT_DRAFT_HAS_ACCOUNT", draft.Id, parentEntry.Id, prefix);
             }
             var sum = groupEntries.Sum(e => e.Amount);
             if (sum != parentEntry.Amount)
             {
-                Add("SPLIT_AMOUNT_MISMATCH", "Error", prefix + "Summe der Aufteilung entspricht nicht dem Ursprungsbetrag.", draft.Id, parentEntry.Id);
+                Add("SPLIT_AMOUNT_MISMATCH", "Error", "Validation_SPLIT_AMOUNT_MISMATCH", draft.Id, parentEntry.Id, prefix);
             }
             foreach (var ce in groupEntries)
             {
                 if (ce.ContactId == null)
                 {
-                    Add("ENTRY_NO_CONTACT", "Error", prefix + "Kein Kontakt zugeordnet.", parentEntry.DraftId, parentEntry.Id);
+                    Add("ENTRY_NO_CONTACT", "Error", "Validation_ENTRY_NO_CONTACT", parentEntry.DraftId, parentEntry.Id, prefix);
                     continue;
                 }
                 var c = await _db.Contacts.AsNoTracking().FirstOrDefaultAsync(x => x.Id == ce.ContactId && x.OwnerUserId == ownerUserId, token);
@@ -1727,7 +1727,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 {
                     if (ce.SplitDraftId == null)
                     {
-                        Add("INTERMEDIARY_NO_SPLIT", "Error", prefix + "Zahlungsdienst ohne weitere Aufteilung.", parentEntry.DraftId, parentEntry.Id);
+                        Add("INTERMEDIARY_NO_SPLIT", "Error", "Validation_INTERMEDIARY_NO_SPLIT", parentEntry.DraftId, parentEntry.Id, prefix);
                     }
                     else
                     {
@@ -1739,7 +1739,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
                     // Determine severity based on parent account setting; default to Warning when account unknown
                     if (account == null)
                     {
-                        Add("SAVINGSPLAN_MISSING_FOR_SELF", "Warning", prefix + "Für Eigentransfer ist ein Sparplan sinnvoll.", parentEntry.DraftId, parentEntry.Id);
+                        Add("SAVINGSPLAN_MISSING_FOR_SELF", "Warning", "Validation_SAVINGSPLAN_MISSING_FOR_SELF", parentEntry.DraftId, parentEntry.Id, prefix);
                     }
                     else
                     {
@@ -1752,7 +1752,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
                         };
                         if (sev != null)
                         {
-                            Add("SAVINGSPLAN_MISSING_FOR_SELF", sev, prefix + "Für Eigentransfer ist ein Sparplan sinnvoll.", parentEntry.DraftId, parentEntry.Id);
+                            Add("SAVINGSPLAN_MISSING_FOR_SELF", sev, "Validation_SAVINGSPLAN_MISSING_FOR_SELF", parentEntry.DraftId, parentEntry.Id, prefix);
                         }
                     }
                 }
@@ -1765,32 +1765,32 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 {
                     if (!account.SecurityProcessingEnabled)
                     {
-                        Add("SECURITY_ACCOUNT_NOT_ALLOWED", "Error", prefix + "Wertpapierabwicklung ist für dieses Konto deaktiviert.", parentEntry.DraftId, parentEntry.Id);
+                        Add("SECURITY_ACCOUNT_NOT_ALLOWED", "Error", "Validation_SECURITY_ACCOUNT_NOT_ALLOWED", parentEntry.DraftId, parentEntry.Id, prefix);
                     }
                     if (ce.ContactId != account.BankContactId)
                     {
-                        Add("SECURITY_INVALID_CONTACT", "Error", prefix + "Wertpapierbuchung erfordert Bankkontakt des Kontos.", parentEntry.DraftId, parentEntry.Id);
+                        Add("SECURITY_INVALID_CONTACT", "Error", "Validation_SECURITY_INVALID_CONTACT", parentEntry.DraftId, parentEntry.Id, prefix);
                     }
                     if (ce.SecurityTransactionType == null)
                     {
-                        Add("SECURITY_MISSING_TXTYPE", "Error", prefix + "Wertpapier: Transaktionstyp fehlt.", parentEntry.DraftId, parentEntry.Id);
+                        Add("SECURITY_MISSING_TXTYPE", "Error", "Validation_SECURITY_MISSING_TXTYPE", parentEntry.DraftId, parentEntry.Id, prefix);
                     }
                     if (ce.SecurityTransactionType != null && ce.SecurityTransactionType != SecurityTransactionType.Dividend)
                     {
                         if (ce.SecurityQuantity == null || ce.SecurityQuantity <= 0m)
                         {
-                            Add("SECURITY_MISSING_QUANTITY", "Error", prefix + "Wertpapier: Stückzahl fehlt.", parentEntry.DraftId, parentEntry.Id);
+                            Add("SECURITY_MISSING_QUANTITY", "Error", "Validation_SECURITY_MISSING_QUANTITY", parentEntry.DraftId, parentEntry.Id, prefix);
                         }
                     }
                     if (ce.SecurityTransactionType == SecurityTransactionType.Dividend && ce.SecurityQuantity != null)
                     {
-                        Add("SECURITY_QUANTITY_NOT_ALLOWED_FOR_DIVIDEND", "Error", prefix + "Wertpapier: Menge ist bei Dividende nicht zulässig.", parentEntry.DraftId, parentEntry.Id);
+                        Add("SECURITY_QUANTITY_NOT_ALLOWED_FOR_DIVIDEND", "Error", "Validation_SECURITY_QUANTITY_NOT_ALLOWED_FOR_DIVIDEND", parentEntry.DraftId, parentEntry.Id, prefix);
                     }
                     var fee = ce.SecurityFeeAmount ?? 0m;
                     var tax = ce.SecurityTaxAmount ?? 0m;
                     if (fee + tax > Math.Abs(ce.Amount))
                     {
-                        Add("SECURITY_FEE_TAX_EXCEEDS_AMOUNT", "Error", prefix + "Wertpapier: Gebühren+Steuern übersteigen Betrag.", parentEntry.DraftId, parentEntry.Id);
+                        Add("SECURITY_FEE_TAX_EXCEEDS_AMOUNT", "Error", "Validation_SECURITY_FEE_TAX_EXCEEDS_AMOUNT", parentEntry.DraftId, parentEntry.Id, prefix);
                     }
                 }
             }
@@ -1803,12 +1803,12 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 if (entryId != null && e.Id != entryId) { continue; }
                 if (e.ContactId == null)
                 {
-                    Add("ENTRY_NO_CONTACT", "Error", "Kein Kontakt zugeordnet.", null, e.Id);
+                    Add("ENTRY_NO_CONTACT", "Error", "Validation_ENTRY_NO_CONTACT", null, e.Id);
                     continue;
                 }
                 if (e.Status == StatementDraftEntryStatus.Open)
                 {
-                    Add("ENTRY_NEEDS_CHECK", "Error", "Eine Prüfung der Angaben ist erforderlich.", null, e.Id);
+                    Add("ENTRY_NEEDS_CHECK", "Error", "Validation_ENTRY_NEEDS_CHECK", null, e.Id);
                     continue;
                 }
                 var c = await _db.Contacts.AsNoTracking().FirstOrDefaultAsync(x => x.Id == e.ContactId && x.OwnerUserId == ownerUserId, ct);
@@ -1817,7 +1817,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 {
                     if (e.SplitDraftId == null)
                     {
-                        Add("INTERMEDIARY_NO_SPLIT", "Error", "Zahlungsdienst ohne Aufteilungs-Entwurf.", null, e.Id);
+                        Add("INTERMEDIARY_NO_SPLIT", "Error", "Validation_INTERMEDIARY_NO_SPLIT", null, e.Id);
                     }
                     else
                     {
@@ -1831,7 +1831,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
                         // Use account setting to decide severity; default to Warning
                         if (account == null)
                         {
-                            Add("SAVINGSPLAN_MISSING_FOR_SELF", "Warning", "Für Eigentransfer ist ein Sparplan sinnvoll.", null, e.Id);
+                            Add("SAVINGSPLAN_MISSING_FOR_SELF", "Warning", "Validation_SAVINGSPLAN_MISSING_FOR_SELF", null, e.Id);
                         }
                         else
                         {
@@ -1844,13 +1844,13 @@ public sealed partial class StatementDraftService : IStatementDraftService
                             };
                             if (sev != null)
                             {
-                                Add("SAVINGSPLAN_MISSING_FOR_SELF", sev, "Für Eigentransfer ist ein Sparplan sinnvoll.", null, e.Id);
+                                Add("SAVINGSPLAN_MISSING_FOR_SELF", sev, "Validation_SAVINGSPLAN_MISSING_FOR_SELF", null, e.Id);
                             }
                         }
                     }
                     else if (account != null && account.Type == AccountType.Savings)
                     {
-                        Add("SAVINGSPLAN_INVALID_ACCOUNT", "Error", "Sparplan auf Sparkonto ist nicht zulässig.", null, e.Id);
+                        Add("SAVINGSPLAN_INVALID_ACCOUNT", "Error", "Validation_SAVINGSPLAN_INVALID_ACCOUNT", null, e.Id);
                     }
                 }
                 var hasSecurity = e.SecurityId != null
@@ -1862,32 +1862,32 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 {
                     if (!account.SecurityProcessingEnabled)
                     {
-                        Add("SECURITY_ACCOUNT_NOT_ALLOWED", "Error", "Wertpapierabwicklung ist für dieses Konto deaktiviert.", null, e.Id);
+                        Add("SECURITY_ACCOUNT_NOT_ALLOWED", "Error", "Validation_SECURITY_ACCOUNT_NOT_ALLOWED", null, e.Id);
                     }
                     if (e.ContactId != account.BankContactId)
                     {
-                        Add("SECURITY_INVALID_CONTACT", "Error", "Wertpapierbuchung erfordert Bankkontakt des Kontos.", null, e.Id);
+                        Add("SECURITY_INVALID_CONTACT", "Error", "Validation_SECURITY_INVALID_CONTACT", null, e.Id);
                     }
                     if (e.SecurityTransactionType == null)
                     {
-                        Add("SECURITY_MISSING_TXTYPE", "Error", "Wertpapier: Transaktionstyp fehlt.", null, e.Id);
+                        Add("SECURITY_MISSING_TXTYPE", "Error", "Validation_SECURITY_MISSING_TXTYPE", null, e.Id);
                     }
                     if (e.SecurityTransactionType != null && e.SecurityTransactionType != SecurityTransactionType.Dividend)
                     {
                         if (e.SecurityQuantity == null || e.SecurityQuantity <= 0m)
                         {
-                            Add("SECURITY_MISSING_QUANTITY", "Error", "Wertpapier: Stückzahl fehlt.", null, e.Id);
+                            Add("SECURITY_MISSING_QUANTITY", "Error", "Validation_SECURITY_MISSING_QUANTITY", null, e.Id);
                         }
                     }
                     if (e.SecurityTransactionType == SecurityTransactionType.Dividend && e.SecurityQuantity != null)
                     {
-                        Add("SECURITY_QUANTITY_NOT_ALLOWED_FOR_DIVIDEND", "Error", "Wertpapier: Menge ist bei Dividende nicht zulässig.", null, e.Id);
+                        Add("SECURITY_QUANTITY_NOT_ALLOWED_FOR_DIVIDEND", "Error", "Validation_SECURITY_QUANTITY_NOT_ALLOWED_FOR_DIVIDEND", null, e.Id);
                     }
                     var fee = e.SecurityFeeAmount ?? 0m;
                     var tax = e.SecurityTaxAmount ?? 0m;
                     if (fee + tax > Math.Abs(e.Amount))
                     {
-                        Add("SECURITY_FEE_TAX_EXCEEDS_AMOUNT", "Error", "Wertpapier: Gebühren+Steuern übersteigen Betrag.", null, e.Id);
+                        Add("SECURITY_FEE_TAX_EXCEEDS_AMOUNT", "Error", "Validation_SECURITY_FEE_TAX_EXCEEDS_AMOUNT", null, e.Id);
                     }
                 }
             }
@@ -1921,15 +1921,15 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 var remaining = target - current;
                 if (remaining > 0m && planned == remaining)
                 {
-                    messages.Add(new("SAVINGSPLAN_GOAL_REACHED_INFO", "Information", $"Mit den Buchungen in diesem Auszug wird das Sparziel des Sparplans '{plan.Name}' erreicht.", draft.Id, null, "savings-plans", plan.Id));
+                    messages.Add(new("SAVINGSPLAN_GOAL_REACHED_INFO", "Information", $"Validation_SAVINGSPLAN_GOAL_REACHED_INFO|{plan.Name}", draft.Id, null, "savings-plans", plan.Id));
                 }
                 else if (remaining > 0m && planned > remaining)
                 {
-                    messages.Add(new("SAVINGSPLAN_GOAL_EXCEEDS", "Warning", $"Die geplanten Buchungen überschreiten das Sparziel des Sparplans '{plan.Name}'.", draft.Id, null, "savings-plans", plan.Id));
+                    messages.Add(new("SAVINGSPLAN_GOAL_EXCEEDS", "Warning", $"Validation_SAVINGSPLAN_GOAL_EXCEEDS|{plan.Name}", draft.Id, null, "savings-plans", plan.Id));
                 }
                 if (wantsArchive && current + planned != target)
                 {
-                    messages.Add(new("SAVINGSPLAN_ARCHIVE_MISMATCH", "Error", $"Sparplan '{plan.Name}' kann nicht archiviert werden: Buchungen gleichen den Restbetrag nicht exakt aus.", draft.Id, null, "savings-plans", plan.Id));
+                    messages.Add(new("SAVINGSPLAN_ARCHIVE_MISMATCH", "Error", $"Validation_SAVINGSPLAN_ARCHIVE_MISMATCH|{plan.Name}", draft.Id, null, "savings-plans", plan.Id));
                 }
             }
         }
@@ -1963,7 +1963,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
                     .Join(_db.StatementDrafts, e => e.DraftId, d => d.Id, (e, d) => new { e, d })
                     .AnyAsync(x => x.d.OwnerUserId == ownerUserId && x.d.Status == StatementDraftStatus.Draft && x.e.SavingsPlanId == plan.Id, ct);
                 if (assignedInOpenDraft) { continue; }
-                messages.Add(new("SAVINGSPLAN_DUE", "Information", $"Sparplan '{plan.Name}' ist fällig (Fälligkeitsdatum: {effectiveDue:d}).", draft.Id, null, "savings-plans", plan.Id));
+                messages.Add(new("SAVINGSPLAN_DUE", "Information", $"Validation_SAVINGSPLAN_DUE|{plan.Name}|{effectiveDue:d}", draft.Id, null, "savings-plans", plan.Id));
             }
         }
         var isValid = messages.All(m => !string.Equals(m.Severity, "Error", StringComparison.OrdinalIgnoreCase));

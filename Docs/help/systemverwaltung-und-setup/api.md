@@ -129,9 +129,11 @@ optionaler Windows-EXE-Pfad, WorkingDirectory und HealthTimeoutSeconds.
 
 ### `POST /api/setup/update/check`
 
-**Beschreibung:** Update-Manifest aus dem konfigurierten GitHub-Release-Kontext
-abrufen, passendes Asset fuer die aktuelle Runtime auswaehlen, ZIP laden und
-gegen Manifest sowie sichere ZIP-Eintragspfade validieren.
+**Beschreibung:** Update-Manifest aus der konfigurierten Quelle abrufen
+(GitHub-Release oder lokaler Ordner, gesteuert ueber `Updates:SourceType`),
+passendes Asset fuer die aktuelle Runtime auswaehlen, ZIP laden (sofern
+`Updates:EnableAutomaticDownload` aktiviert ist) und gegen Manifest sowie
+sichere ZIP-Eintragspfade validieren.
 
 **Berechtigung:** Rolle `Admin`.
 
@@ -180,6 +182,20 @@ Installationslocks gedacht.
 ### `GET /api/notifications`
 
 **Beschreibung:** Benachrichtigungen laden.
+
+### `GET /api/background-tasks/active`
+
+**Beschreibung:** Laufende und wartende Hintergrundtasks des aktuellen Benutzers laden.
+
+**Berechtigung:** JWT-Bearer-Authentifizierung. Nicht authentifizierte Anfragen werden mit `401 Unauthorized` abgelehnt.
+
+**UI-Verhalten:** Das globale Statuspanel ruft diesen Endpunkt nur bei authentifiziertem Benutzerkontext wiederkehrend auf. Erhält das Panel während einer laufenden Sitzung dennoch `401 Unauthorized`, stoppt es das Polling für die aktuelle Komponenteninstanz.
+
+### `DELETE /api/background-tasks/{id}`
+
+**Beschreibung:** Laufenden Hintergrundtask abbrechen oder wartenden Hintergrundtask entfernen, sofern der Task dem aktuellen Benutzer gehört.
+
+**Berechtigung:** JWT-Bearer-Authentifizierung.
 
 ### `POST /api/background-tasks/aggregates/rebuild`
 

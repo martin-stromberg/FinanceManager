@@ -1,5 +1,5 @@
 /* =====================================================
-   app.StatementDraftDetail.css - Allgemeingültige StatementDraftDetail Styles
+   app.StatementDraftDetail.css - Allgemeingï¿½ltige StatementDraftDetail Styles
    ===================================================== */
 
 .draft-entries-container {
@@ -32,6 +32,43 @@
 .entry-row { cursor: pointer; }
 .row-booked { opacity: .55; }
 .row-announced { opacity: .55; }
+.quick-edit-new-row td {
+    background-color: color-mix(in srgb, var(--accent, #2f7d57) 8%, transparent);
+}
+
+.quick-edit-placeholder-row td {
+    background-color: color-mix(in srgb, var(--border, #d6d6d6) 16%, transparent);
+    opacity: .72;
+}
+
+.quick-edit-delete-button {
+    width: 1.65rem;
+    height: 1.65rem;
+    min-width: 1.65rem;
+    border: 1px solid #dc3545;
+    border-radius: .25rem;
+    background: transparent;
+    color: #dc3545;
+    cursor: pointer;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.quick-edit-delete-button:hover,
+.quick-edit-delete-button:focus-visible {
+    background: #dc3545;
+    color: #fff;
+}
+
+.quick-edit-delete-button svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex: 0 0 1.15rem;
+    fill: currentColor;
+}
 
 .split-icon { width: 1rem; height: 1rem; }
 

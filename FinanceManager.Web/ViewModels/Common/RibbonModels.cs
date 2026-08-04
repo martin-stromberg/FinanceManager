@@ -61,6 +61,12 @@ public sealed record UiRibbonAction(
     public Func<Microsoft.AspNetCore.Components.Forms.InputFileChangeEventArgs, System.Threading.Tasks.Task>? FileCallback { get; init; }
 
     /// <summary>
+    /// When <c>true</c> the action is rendered as an icon-only shortcut in the closed mobile ribbon group header.
+    /// The shortcut invokes the same callback as the regular ribbon action.
+    /// </summary>
+    public bool MobileShortcut { get; init; }
+
+    /// <summary>
     /// When <c>true</c> the action is completely omitted from the rendered ribbon.
     /// Use this to hide context-sensitive buttons that should not be visible in certain states
     /// (e.g. hiding the "Start quick-edit" button while quick-edit is already active).
