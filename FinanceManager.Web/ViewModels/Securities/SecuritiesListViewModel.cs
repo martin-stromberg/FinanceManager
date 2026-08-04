@@ -164,7 +164,8 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
                 false,
                 null,
                 new Func<Task>(() => { RaiseUiActionRequested("New"); return Task.CompletedTask; })
-            ),
+            )
+            { MobileShortcut = true },
             new UiRibbonAction(
                 "Categories",
                 localizer["Ribbon_Categories"].Value,

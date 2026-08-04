@@ -28,11 +28,17 @@ public sealed class ApiClientUpdateTests
     public async Task UpdateApiClientFlows_CallExpectedEndpoints()
     {
         var requests = new List<(HttpMethod Method, string Path)>();
+        string? serviceQuery = null;
         var api = CreateClient(request =>
         {
             requests.Add((request.Method, request.RequestUri!.AbsolutePath));
+            if (request.RequestUri!.AbsolutePath == "/api/setup/update/services")
+            {
+                serviceQuery = request.RequestUri.Query;
+            }
             return request.RequestUri!.AbsolutePath switch
             {
+                "/api/setup/update/services" => JsonResponse<IReadOnlyList<string>>(new[] { "financemanager.service" }),
                 "/api/setup/update/check" => JsonResponse(new UpdateCheckResultDto(false, Status(UpdateStatusKind.NoUpdate), "No update")),
                 "/api/setup/update/schedule" => JsonResponse(Settings(new TimeOnly(3, 15))),
                 "/api/setup/update/install/start" => JsonResponse(Status(UpdateStatusKind.Installing)),
@@ -41,15 +47,20 @@ public sealed class ApiClientUpdateTests
             };
         });
 
+        var services = await api.Updates_GetServiceNamesAsync("finance manager", 10);
         var check = await api.Updates_CheckAsync();
         var schedule = await api.Updates_ScheduleAsync(new UpdateScheduleRequest(new TimeOnly(3, 15)));
         var install = await api.Updates_StartInstallAsync(new UpdateStartRequest(true));
         var reset = await api.Updates_ResetLockAsync(new UpdateLockResetRequest("stale"));
 
+        services.Should().ContainSingle().Which.Should().Be("financemanager.service");
+        serviceQuery.Should().Contain("take=10");
+        serviceQuery.Should().Contain("query=finance%20manager");
         check.UpdateAvailable.Should().BeFalse();
         schedule.ScheduledInstallTime.Should().Be(new TimeOnly(3, 15));
         install!.Status.Should().Be(UpdateStatusKind.Installing);
         reset.Should().BeTrue();
+        requests.Should().Contain((HttpMethod.Get, "/api/setup/update/services"));
         requests.Should().Contain((HttpMethod.Post, "/api/setup/update/check"));
         requests.Should().Contain((HttpMethod.Post, "/api/setup/update/schedule"));
         requests.Should().Contain((HttpMethod.Post, "/api/setup/update/install/start"));

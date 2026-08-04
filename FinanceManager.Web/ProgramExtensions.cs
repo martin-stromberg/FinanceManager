@@ -16,6 +16,7 @@ using FinanceManager.Web.Infrastructure.Logging;
 using FinanceManager.Web.Services;
 using FinanceManager.Web.Services.Help;
 using FinanceManager.Web.Services.Updates;
+using msTools.Updater;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -154,31 +155,26 @@ namespace FinanceManager.Web
             builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api"));
             builder.Services.AddScoped<IApiClient>(sp => new ApiClient(sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api")));
 
-            // Self-update services
-            builder.Services.AddHttpClient<IUpdateManifestClient, UpdateManifestClient>(client =>
+            // Self-update services: the auto-update subsystem is provided by the external msTools.Updater release
+            // and activated through the single UseAutoUpdate() entry point. The Web project only keeps the adapter
+            // that maps the library onto the existing IUpdateOrchestrator contract and DTOs, plus the
+            // FinanceManager-specific settings persistence and installed-version display.
+            builder.Services.AddSingleton(TimeProvider.System);
+            var updateOptions = builder.Configuration.GetSection(UpdateOptions.SectionName).Get<UpdateOptions>() ?? new UpdateOptions();
+            // "Updates:SourceCheck:Interval" binds directly onto AutoUpdateOptions.SourceCheck.Interval (matching
+            // property names). Only fall back to the legacy "Updates:CheckIntervalMinutes" alias via the fluent
+            // setter when the new key is absent - calling WithSourceCheck unconditionally would make the fluent
+            // value win over configuration every time, per UseAutoUpdate's documented precedence.
+            var sourceCheckIntervalConfigured = builder.Configuration.GetValue<int?>($"{UpdateOptions.SectionName}:SourceCheck:Interval") is not null;
+            builder.UseAutoUpdate(cfg =>
             {
-                client.Timeout = TimeSpan.FromMinutes(5);
-                client.DefaultRequestHeaders.UserAgent.ParseAdd("FinanceManager/1.0 (+https://github.com/martin-stromberg/FinanceManager)");
+                cfg.SetInitialConfiguration(updateOptions, sourceCheckIntervalConfigured);
             });
-            builder.Services.AddSingleton<IUpdateFileStore, UpdateFileStore>();
+            builder.Services.AddScoped<IUpdateOrchestrator, UpdateOrchestratorAdapter>();
             builder.Services.AddSingleton<IUpdateSettingsStore, UpdateSettingsStore>();
             builder.Services.AddSingleton<IInstalledReleaseMetadataProvider, InstalledReleaseMetadataProvider>();
-            builder.Services.AddSingleton<IUpdatePlatformResolver, UpdatePlatformResolver>();
-            builder.Services.AddSingleton<IUpdateServiceProbe, DefaultUpdateServiceProbe>();
-            builder.Services.AddSingleton<IUpdateServiceResolver, UpdateServiceResolver>();
-            builder.Services.AddSingleton<IUpdateValidator, UpdateValidator>();
-            builder.Services.AddSingleton<IUpdateScriptGenerator, UpdateScriptGenerator>();
-            builder.Services.AddSingleton<IUpdateProcessRunner, DefaultUpdateProcessRunner>();
-            builder.Services.AddSingleton<IUpdateHostTerminator, DefaultUpdateHostTerminator>();
-            builder.Services.AddSingleton<IUpdateExecutor, UpdateExecutor>();
-            builder.Services.AddScoped<IUpdateOrchestrator, UpdateOrchestrator>();
-            builder.Services.AddSingleton(TimeProvider.System);
-            var enableUpdateHostedServices = builder.Configuration.GetValue<bool?>("Updates:HostedServicesEnabled") ?? true;
-            if (enableUpdateHostedServices)
-            {
-                builder.Services.AddHostedService<UpdateChecker>();
-                builder.Services.AddHostedService<UpdateScheduler>();
-            }
+            builder.Services.AddSingleton<UpdateStatusMapper>();
+            builder.Services.AddSingleton<IUpdateServiceCatalog, DefaultUpdateServiceCatalog>();
 
             // AlphaVantage
             builder.Services.AddHttpClient("AlphaVantage", client =>
@@ -319,6 +315,34 @@ namespace FinanceManager.Web
             });
 
             builder.Services.AddAuthorization();
+        }
+
+        private static void SetInitialConfiguration(this AutoUpdateBuilder cfg, UpdateOptions updateOptions, bool sourceCheckIntervalConfigured)
+        {
+            cfg.BindConfiguration(UpdateOptions.SectionName);
+            cfg.WithUpdateUnitName("FinanceManagerUpdate");
+            if (!string.IsNullOrWhiteSpace(updateOptions.WorkingDirectory))
+            {
+                cfg.WithDownloadPath(updateOptions.WorkingDirectory);
+            }
+
+            if (!sourceCheckIntervalConfigured)
+            {
+                cfg.WithSourceCheck(Math.Max(1, updateOptions.CheckIntervalMinutes));
+            }
+
+            if (string.Equals(updateOptions.SourceType, "LocalFolder", StringComparison.OrdinalIgnoreCase))
+            {
+                cfg.UseLocalFolderSource(
+                    string.IsNullOrWhiteSpace(updateOptions.LocalFolderPath)
+                        ? Path.Combine(updateOptions.WorkingDirectory, "source")
+                        : updateOptions.LocalFolderPath,
+                    updateOptions.ManifestAssetName);
+            }
+            else
+            {
+                cfg.UseGithubSource(updateOptions.RepositoryOwner, updateOptions.RepositoryName, updateOptions.ManifestAssetName);
+            }
         }
 
         /// <summary>
@@ -470,6 +494,36 @@ namespace FinanceManager.Web
             using var scope2 = app.Services.CreateScope();
             var initializer = scope2.ServiceProvider.GetService<IAutoInitializationService>();
             initializer?.Run();
+        }
+
+        /// <summary>
+        /// Applies the persisted update settings (from <see cref="IUpdateSettingsStore"/>) onto the auto-update
+        /// library's runtime <c>AutoUpdateOptions</c> singleton before the host starts.
+        /// </summary>
+        /// <param name="app">The <see cref="WebApplication"/> instance used to resolve services and for logging.</param>
+        /// <remarks>
+        /// <see cref="AutoUpdateHostBuilderExtensions.UseAutoUpdate"/> only seeds <c>AutoUpdateOptions</c> from
+        /// <c>appsettings*.json</c>; without this step, settings previously saved through the setup UI would only
+        /// take effect once the admin saves them again after each restart (they were applied in-memory by
+        /// <see cref="IUpdateSettingsStore.ApplyToOptions"/> only from <c>UpdateOrchestratorAdapter.SaveSettingsAsync</c>/
+        /// <c>ScheduleAsync</c>), while the auto-update hosted services would keep running against the
+        /// configuration-only defaults after every restart. Must run before <c>app.Run()</c>/<c>app.RunAsync()</c>
+        /// starts <c>AutoUpdateCheckerService</c>/<c>AutoUpdateSchedulerService</c>, which read <c>AutoUpdateOptions</c>
+        /// as soon as they start. Failures are logged and swallowed so that a corrupt settings file cannot prevent
+        /// the application from starting; the appsettings-configured defaults remain in effect in that case.
+        /// </remarks>
+        public static void ApplyPersistedUpdateSettings(this WebApplication app)
+        {
+            try
+            {
+                var settingsStore = app.Services.GetRequiredService<IUpdateSettingsStore>();
+                var settings = settingsStore.GetAsync().GetAwaiter().GetResult();
+                settingsStore.ApplyToOptions(settings);
+            }
+            catch (Exception ex)
+            {
+                app.Logger.LogError(ex, "Failed to apply persisted update settings at startup; using appsettings-configured defaults instead.");
+            }
         }
 
         /// <summary>

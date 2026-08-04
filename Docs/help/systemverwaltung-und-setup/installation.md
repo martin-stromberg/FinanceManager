@@ -22,14 +22,22 @@
 | `Jwt:Audience` | string | `financemanager` | Erwartete Token-Audience fuer Ausstellung und Validierung. Bereitstellung per `Jwt__Audience` ist moeglich. |
 | `Jwt:LifetimeMinutes` | int | `30` | JWT- und Cookie-Lebensdauer in Minuten. Betriebsstandard ist `30`; produktionsnah muss der Wert groesser als `0` sein und darf maximal `1440` betragen. Bereitstellung per `Jwt__LifetimeMinutes` ist moeglich. |
 | `DataProtection:KeysPath` | string | leer | Optionaler Dateisystempfad fuer den ASP.NET-Core-Data-Protection-Key-Ring. Fuer produktionsnahe Deployments mit persistent verschluesselten AlphaVantage API Keys sollte der Pfad auf ein dauerhaftes, gesichertes Volume zeigen. |
-| `Updates:Enabled` | bool | `false` | Aktiviert die automatische Suche nach GitHub-Releases. |
+| `Updates:Enabled` | bool | `false` | Aktiviert die automatische Suche nach Updates. |
 | `Updates:HostedServicesEnabled` | bool | `true` | Aktiviert die Hintergrunddienste fuer Updatepruefung und geplante Installation. |
-| `Updates:RepositoryOwner` / `Updates:RepositoryName` | string | `martin-stromberg` / `FinanceManager` | GitHub-Repository der Updatequelle. |
-| `Updates:ManifestAssetName` | string | `update.json` | Release-Asset mit Update-Metadaten. |
+| `Updates:SourceType` | string | `Github` | Update-Quelle: `Github` (Releases aus GitHub) oder `LocalFolder` (Manifest und Pakete aus lokalem Verzeichnis). |
+| `Updates:LocalFolderPath` | string? | `null` | Lokales Verzeichnis mit Update-Manifest und Paketen (nur fuer `SourceType: LocalFolder`). |
+| `Updates:EnableAutomaticDownload` | bool | `true` | Automatischer Download des Update-Pakets, sobald eine neuere Version erkannt wird. |
+| `Updates:EnableAutomaticInstallation` | bool | `false` | Automatische Installation des vorbereiteten Update-Pakets zu konfigurierter Zeit oder bei nachfolgenden Hintergrundueberpruefungen. |
+| `Updates:RepositoryOwner` / `Updates:RepositoryName` | string | `martin-stromberg` / `FinanceManager` | GitHub-Repository fuer `SourceType: Github`. Wird ignoriert bei `SourceType: LocalFolder`. |
+| `Updates:ManifestAssetName` | string | `update.json` | Release-Asset mit Update-Metadaten (Github) oder Dateiname im lokalen Verzeichnis. |
 | `Updates:WorkingDirectory` | string | `updates` | Betriebsverzeichnis fuer Pending-Paket, Status, Lock, Staging und Skripte. |
+| `Updates:SourceCheck:Interval` | int | `360` | Pruefintervall in Minuten fuer Hintergrunddienst. |
+| `Updates:SourceCheck:TimeRanges` | Array | `[]` | Zeitfenster, in denen Pruefungen erlaubt sind. Leeres Array bedeutet "jederzeit". Jeder Eintrag hat `DayOfWeek` (Wochentag), `StartTime` (HH:MM:SS) und `EndTime` (HH:MM:SS). |
 | `Updates:ServiceName` | string? | leer | Service-Override fuer die aktuelle Plattform. Unter Windows ist dies der Windows-Dienst, unter Linux der systemd-Service. |
 | `Updates:ExecutablePath` | string? | leer | Windows-Fallback ohne Service; muss absolut im aktuellen Anwendungsverzeichnis liegen. |
 | `Updates:HealthTimeoutSeconds` | int | `120` | Maximale Wartezeit der Setup-UI auf die Wiedererreichbarkeit von `/health`. |
+| `Updates:StopHostAfterScriptStart` | bool | `false` | Beendet den Host nach erfolgreichem Start des Installationsskripts. Standardverhalten bleibt, dass der Host laeuft. |
+| `Updates:MaxAssetBytes` | int | `536870912` | Maximalgroesse eines Update-Pakets in Bytes (512 MB). |
 | `ImportSplitMode` | Enum | `MonthlyOrFixed` | Strategie für Import-Splitting |
 | `ImportMaxEntriesPerDraft` | int | `250` | Max. Entwurfszeilen pro Draft |
 | `ImportMonthlySplitThreshold` | int? | `250` | Schwellwert für Monats-Split |
@@ -116,12 +124,59 @@ Benutzerprofilen hinterlegen.
 
 ## Self-Update-Betrieb
 
-Das Self-Update ist im Setup nur fuer Administratoren sichtbar. Die Anwendung
-liest das Release-Manifest standardmaessig aus
-`martin-stromberg/FinanceManager` und erwartet dort das Asset `update.json`.
-Das Manifest verweist auf runtime-spezifische ZIP-Pakete fuer `win-x64` und
-`linux-x64`; vor der Installation werden Dateigroesse, SHA-256, ZIP-Struktur
-und sichere Eintragspfade validiert.
+Das Self-Update ist im Setup nur fuer Administratoren sichtbar und wird durch
+die externe Bibliothek `msTools.Updater` bereitgestellt. FinanceManager
+referenziert bis zur NuGet-Veroeffentlichung den geprueften Release `v0.2.0`
+unter `external/msTools.Updater/v0.2.0/`. Updates koennen aus GitHub-Releases
+(`Updates:SourceType: Github`, Standardwert) oder aus einem lokalen Verzeichnis
+(`Updates:SourceType: LocalFolder`, `Updates:LocalFolderPath`) geladen werden.
+
+Das Release-Manifest hat immer den Namen `update.json` und verweist auf
+runtime-spezifische ZIP-Pakete fuer `win-x64` und `linux-x64`. Vor der
+Installation werden Dateigroesse, SHA-256, ZIP-Struktur und sichere
+Eintragspfade validiert.
+
+### GitHub-Quelle konfigurieren
+
+Die Anwendung liest das Release-Manifest standardmaessig aus
+`martin-stromberg/FinanceManager` (konfigurierbar ueber `Updates:RepositoryOwner`
+und `Updates:RepositoryName`). Das Asset `update.json` wird erwartet
+(`Updates:ManifestAssetName`).
+
+### Lokale Quelle konfigurieren
+
+Alternativ koennen Updates aus einem lokalen Verzeichnis bezogen werden:
+
+```json
+{
+  "Updates": {
+    "SourceType": "LocalFolder",
+    "LocalFolderPath": "/path/to/updates"
+  }
+}
+```
+
+Das Verzeichnis muss folgende Struktur aufweisen:
+- `update.json` — Update-Manifest mit Metadaten und Asset-Verzeichnis
+- `win-x64/` — Windows-Paket `FinanceManager-vX.Y.Z-win-x64.zip`
+- `linux-x64/` — Linux-Paket `FinanceManager-vX.Y.Z-linux-x64.zip`
+
+### Automatische Pruefungen und Installation
+
+`Updates:EnableAutomaticDownload` steuert, ob das Paket nach erfolgter
+Versionspruefung automatisch heruntergeladen wird. `Updates:EnableAutomaticInstallation`
+steuert, ob das Paket automatisch installiert wird, sobald es vorbereitet ist.
+
+Der Hintergrunddienst `AutoUpdateCheckerService` prueft in `Updates:SourceCheck:Interval`
+Minuten-Intervallen. Nur Pruefungen innerhalb der in `Updates:SourceCheck:TimeRanges`
+konfigurierten Zeitfenster werden ausgefuehrt; ein leeres Array erlaubt Pruefungen
+zu jeder Tageszeit.
+
+Geplante Installationen werden ueber `POST /api/setup/update/schedule` konfiguriert
+und von `AutoUpdateSchedulerService` zu konfigurierten Uhrzeiten ausgefuehrt
+(hoechstens einmal pro Tag pro Uhrzeit).
+
+### Service- und Zielkonfiguration
 
 Produktive Installationen sollten einen eindeutigen Service konfigurieren:
 `Updates:ServiceName` gilt fuer das aktuell installierte System. Unter Windows
@@ -135,8 +190,10 @@ Anwendungsverzeichnis liegen.
 `Updates:WorkingDirectory` bestimmt das Betriebsverzeichnis fuer Pending-ZIP,
 Staging, Status, Lock und erzeugte Skripte. Aenderungen ueber die Admin-UI
 werden gespeichert und nach einem Neustart wieder angewendet. Der manuelle
-Installationsstart verlangt eine Downtime-Bestaetigung; geplante Installationen
-werden pro konfigurierter Uhrzeit hoechstens einmal pro Tag versucht.
+Installationsstart verlangt eine Downtime-Bestaetigung.
+
+`Updates:StopHostAfterScriptStart` beendet den Host nach erfolgreichem Start
+des externen Installationsskripts (Standardwert: `false`, Host bleibt laufen).
 
 ## Überprüfung
 

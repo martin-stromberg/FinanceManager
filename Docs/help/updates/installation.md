@@ -83,7 +83,7 @@ Das Update-System ist bereits im Projekt integriert. Es erfordert keine zusätzl
 
 ## Konfiguration
 
-Update-Einstellungen werden in `appsettings.json` konfiguriert und können auch über die Web-UI überschrieben werden.
+Update-Einstellungen werden in `appsettings.json` konfiguriert und teilweise über die Web-UI überschrieben. Die Web-UI zeigt nur noch betriebliche Einstellungen an: Aktivierung, Prüfintervall, geplante Installationszeit und Service-Name. Technische Werte für Repository, Manifest, Arbeitsverzeichnis, Exe-Pfad und Health-Timeout sind nicht mehr editierbar.
 
 ### appsettings.json
 
@@ -96,13 +96,13 @@ Update-Einstellungen werden in `appsettings.json` konfiguriert und können auch 
   "UpdateSettings": {
     "Enabled": true,
     "CheckIntervalMinutes": 60,
-    "RepositoryOwner": "my-org",
-    "RepositoryName": "my-app",
-    "ManifestAssetName": "manifest.json",
+    "RepositoryOwner": "martin-stromberg",
+    "RepositoryName": "FinanceManager",
+    "ManifestAssetName": "update.json",
     "ScheduledInstallTime": null,
     "ServiceName": "my-app-service",
-    "ExecutablePath": "/opt/app/MyApp",
-    "WorkingDirectory": "/opt/app",
+    "ExecutablePath": null,
+    "WorkingDirectory": "updates",
     "HealthTimeoutSeconds": 120
   }
 }
@@ -116,14 +116,25 @@ Update-Einstellungen werden in `appsettings.json` konfiguriert und können auch 
 | `UpdateOptions.MaxAssetBytes` | int | 536 MB | Maximale Größe eines herunterladbaren Assets (verhindert DoS) |
 | `UpdateSettings.Enabled` | bool | false | Aktiviert/deaktiviert automatische Prüfung |
 | `UpdateSettings.CheckIntervalMinutes` | int | 60 | Prüf-Intervall in Minuten (1–1440, auf UI geclamped) |
-| `UpdateSettings.RepositoryOwner` | string | — | GitHub-Organisation oder Benutzername |
-| `UpdateSettings.RepositoryName` | string | — | GitHub-Repository-Name |
-| `UpdateSettings.ManifestAssetName` | string | `manifest.json` | Name des Release-Assets mit Manifest |
+| `UpdateSettings.RepositoryOwner` | string | `martin-stromberg` | Fester GitHub-Benutzername der Updatequelle; wird beim Speichern serverseitig normalisiert |
+| `UpdateSettings.RepositoryName` | string | `FinanceManager` | Festes GitHub-Repository der Updatequelle; wird beim Speichern serverseitig normalisiert |
+| `UpdateSettings.ManifestAssetName` | string | `update.json` | Festes Release-Asset mit Manifest; wird beim Speichern serverseitig normalisiert |
 | `UpdateSettings.ScheduledInstallTime` | time | null | Geplante Installationszeit (z. B. `"03:00:00"`) — derzeit nicht automatisiert |
-| `UpdateSettings.ServiceName` | string | — | Windows Service-Name oder systemd-Service-Name |
-| `UpdateSettings.ExecutablePath` | string | — | Pfad zur ausführbaren Datei (z. B. `/opt/app/MyApp` oder `C:\Program Files\App\MyApp.exe`) |
-| `UpdateSettings.WorkingDirectory` | string | — | Arbeitsverzeichnis für Installer (z. B. `/opt/app`) |
-| `UpdateSettings.HealthTimeoutSeconds` | int | 120 | Wartezeit für Dienst-Neustart (10–600 Sekunden, auf UI geclamped) |
+| `UpdateSettings.ServiceName` | string | — | Windows Service-Name oder systemd-Service-Name; in der UI mit plattformspezifischen Autocomplete-Vorschlägen |
+| `UpdateSettings.ExecutablePath` | string | — | Legacy-Lesewert; nicht mehr in der UI editierbar und wird bei neuen Speichervorgängen nicht aus Anwenderwerten übernommen |
+| `UpdateSettings.WorkingDirectory` | string | `updates` | Festes Arbeitsverzeichnis für Installer, Status, Lock und Assets |
+| `UpdateSettings.HealthTimeoutSeconds` | int | 120 | Interner Timeout für UI-Health-Polling und Lock-Staleness, aus `UpdateOptions` mit Clamp 10–600; nicht mehr in der UI editierbar |
+
+### Web-UI
+
+Die Update-Sektion befindet sich in der Admin-Setup-Seite. Änderungen an den sichtbaren Einstellungen werden über den globalen Ribbon-Button **Speichern** gespeichert. Der frühere Button **Einstellungen speichern** im Update-Register ist entfallen.
+
+Im Ribbon der Setup-Seite stehen außerdem die Update-Aktionen bereit:
+- **Jetzt prüfen** lädt Manifest und passendes Paket.
+- **Update installieren** startet ein vorbereitetes Update nach Downtime-Bestätigung.
+- **Update-Lock zurücksetzen** entfernt einen verwaisten Lock, sofern der Server den Reset erlaubt.
+
+Das Feld **Service-Name** lädt Vorschläge aus dem aktuellen Betriebssystem. Windows nutzt `sc.exe`, Linux nutzt `systemctl`. Wenn die Dienstliste nicht gelesen werden kann, bleibt die Vorschlagsliste leer; die Seite bleibt bedienbar.
 
 ### Manifest-Format (GitHub Release Asset)
 
@@ -170,10 +181,10 @@ Wichtig:
 1. **Web-UI öffnen:**
    - Navigiere zur Admin-Setup-Seite (`/admin/setup`)
    - Reiter "Update" sollte sichtbar sein
-   - Als Admin-Benutzer: Einstellungen sollten konfigurierbar sein
+   - Als Admin-Benutzer: Aktivierung, Prüfintervall, geplante Zeit und Service-Name sollten konfigurierbar sein
 
-2. **Manualle Prüfung auslösen:**
-   - Button "Jetzt prüfen" klicken
+2. **Manuelle Prüfung auslösen:**
+   - Im Ribbon "Jetzt prüfen" klicken
    - System sollte GitHub-Release-Manifest laden
    - Verfügbares Update sollte angezeigt werden (falls neuer verfügbar)
 
@@ -202,7 +213,7 @@ Wichtig:
 **Ursache:** Lock-Datei existiert, aber Installation ist nicht aktiv.
 
 **Lösung:**
-1. Admin-UI öffnen, Button "Reset Lock" klicken (nur wenn Lock ≥ `HealthTimeoutSeconds` alt ist)
+1. Admin-UI öffnen, im Ribbon "Update-Lock zurücksetzen" klicken (nur wenn Lock mindestens so alt wie der serverseitige Health-Timeout ist)
 2. Oder manuell Lock-Datei löschen: `rm /var/lib/myapp/updates/update.lock`
 3. Dann Status-UI aktualisieren
 
@@ -211,8 +222,8 @@ Wichtig:
 **Ursache:** Update wurde heruntergeladen, aber nicht erfolgreich validiert.
 
 **Lösung:**
-1. "Jetzt prüfen" erneut ausführen
-2. Prüfen ob `RepositoryOwner`, `RepositoryName`, `ManifestAssetName` korrekt konfiguriert sind
+1. Im Ribbon "Jetzt prüfen" erneut ausführen
+2. Prüfen, ob das feste Release-Asset `update.json` im Repository `martin-stromberg/FinanceManager` vorhanden ist
 3. GitHub-Zugriffsrechte prüfen (ggf. `GITHUB_TOKEN` setzen)
 
 ### Installer-Prozess schlägt fehl (Windows)
@@ -222,7 +233,7 @@ Wichtig:
 **Lösung:**
 1. PowerShell Execution Policy prüfen: `Get-ExecutionPolicy`
 2. Bei Bedarf: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine`
-3. Service-Konto prüfen: muss Schreibrechte auf `ExecutablePath` haben
+3. Service-Konto und Zielverzeichnis prüfen; der Exe-Pfad ist nicht mehr als UI-Einstellung vorgesehen
 
 ### Installer-Prozess schlägt fehl (Linux)
 

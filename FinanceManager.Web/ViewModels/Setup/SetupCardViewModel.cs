@@ -89,6 +89,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
             return GetSectionViewModel<SetupProfileViewModel>("profile")?.Dirty == true
                 || GetSectionViewModel<SetupNotificationsViewModel>("notifications")?.Dirty == true
                 || GetSectionViewModel<SetupStatementsViewModel>("statements")?.Dirty == true
+                || GetSectionViewModel<SetupUpdateViewModel>("update")?.Dirty == true
                 || GetSectionViewModel<SetupReturnAnalysisViewModel>("returnanalysis")?.Dirty == true;
         }
     }
@@ -137,7 +138,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
             // Intentionally not registered as a child view model via CreateSubViewModel<T>:
             // The sections resolved here at runtime (attachments, security, returnanalysis) do not
             // contribute ribbon actions, so omitting them from _childViewModels is by design.
-            // Sections that do contribute ribbon actions (profile, notifications, backup, statements)
+            // Sections that do contribute ribbon actions (profile, notifications, backup, statements, update)
             // are pre-created in LoadAsync using CreateSubViewModel<T> which registers them properly.
             _sectionViewModels[key] = baseVm;
             return baseVm;
@@ -190,6 +191,12 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                 var statementsVm = CreateSubViewModel<SetupStatementsViewModel>();
                 _sectionViewModels["statements"] = statementsVm;
 
+                if (TryGetSectionDefinition("update", out var updateSection) && updateSection is not null && IsSectionVisible(updateSection))
+                {
+                    var updateVm = CreateSubViewModel<SetupUpdateViewModel>();
+                    _sectionViewModels["update"] = updateVm;
+                }
+
                 _coreSectionViewModelsInitialized = true;
             }
 
@@ -240,6 +247,12 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                 await statementsVm.SaveAsync(ct);
             }
 
+            var updateVm = GetSectionViewModel<SetupUpdateViewModel>("update");
+            if (updateVm?.Dirty == true)
+            {
+                await updateVm.SaveAsync(ct);
+            }
+
             var returnAnalysisVm = GetSectionViewModel<SetupReturnAnalysisViewModel>("returnanalysis");
             if (returnAnalysisVm?.Dirty == true)
             {
@@ -260,6 +273,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
         GetSectionViewModel<SetupProfileViewModel>("profile")?.Reset();
         GetSectionViewModel<SetupNotificationsViewModel>("notifications")?.Reset();
         GetSectionViewModel<SetupStatementsViewModel>("statements")?.Reset();
+        GetSectionViewModel<SetupUpdateViewModel>("update")?.Reset();
         GetSectionViewModel<SetupReturnAnalysisViewModel>("returnanalysis")?.Reset();
         RaiseStateChanged();
     }
@@ -340,7 +354,8 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                     UiRibbonItemSize.Small,
                     Saving || !HasPendingChanges,
                     null,
-                    new Func<Task>(async () => await SaveAllAsync())),
+                    new Func<Task>(async () => await SaveAllAsync()))
+                { MobileShortcut = true },
                 new UiRibbonAction(
                     "Reset",
                     localizer["Ribbon_Reset"].Value,
@@ -348,7 +363,8 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                     UiRibbonItemSize.Small,
                     Saving || !HasPendingChanges,
                     null,
-                    new Func<Task>(() => { ResetAll(); return Task.CompletedTask; })),
+                    new Func<Task>(() => { ResetAll(); return Task.CompletedTask; }))
+                { MobileShortcut = true },
                 new UiRibbonAction(
                     "RebuildAggregates",
                     localizer["Ribbon_RebuildAggregates"].Value,

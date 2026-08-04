@@ -1,5 +1,7 @@
 using FinanceManager.Shared;
 using Microsoft.Extensions.Localization;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace FinanceManager.Web.ViewModels.StatementDrafts;
 
@@ -27,6 +29,9 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     private readonly Dictionary<Guid, string> _entryHints = new();
     // flag to request UI focus on first invalid entry after validation
     private bool _focusFirstInvalidRequested;
+    private readonly HashSet<Guid> _pendingDeleteIds = new();
+    private readonly HashSet<Guid> _newEntryIds = new();
+    private Guid? _placeholderId;
 
     public StatementDraftEntriesListViewModel(IServiceProvider sp, Guid draftId)
         : base(sp)
@@ -49,8 +54,72 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     public override bool IsRowEditable(object item)
     {
         if (item is StatementDraftEntryItem sdi)
-            return sdi.Status != StatementDraftEntryStatus.AlreadyBooked;
+            return sdi.IsNew || sdi.IsPlaceholder || (sdi.Status != StatementDraftEntryStatus.AlreadyBooked && !sdi.IsAnnounced);
         return false;
+    }
+
+    public IReadOnlyList<StatementDraftEntryItem> VisibleQuickEditItems => Items
+        .Where(i => !_pendingDeleteIds.Contains(i.Id) || _entryHints.ContainsKey(i.Id))
+        .ToList();
+
+    public bool CanDeleteRow(StatementDraftEntryItem item)
+        => !item.IsPlaceholder
+           && (item.IsNew || item.Status != StatementDraftEntryStatus.AlreadyBooked);
+
+    private StatementDraftEntryItem ToItem(StatementDraftEntryDto d) => new()
+    {
+        Id = d.Id,
+        DraftId = _draftId,
+        BookingDate = d.BookingDate,
+        ValutaDate = d.ValutaDate,
+        Amount = d.Amount,
+        RecipientName = d.RecipientName,
+        Subject = d.Subject,
+        BookingDescription = d.BookingDescription,
+        Status = d.Status,
+        IsAnnounced = d.IsAnnounced,
+        ContactId = d.ContactId,
+        SavingsPlanId = d.SavingsPlanId,
+        SecurityId = d.SecurityId,
+        SecurityTransactionType = d.SecurityTransactionType,
+        BudgetImpact = d.BudgetImpact,
+        CanDelete = d.Status != StatementDraftEntryStatus.AlreadyBooked
+    };
+
+    private Dictionary<string, object?> CreateEditSnapshot(StatementDraftEntryItem it) => new()
+    {
+        ["BookingDate"] = it.IsPlaceholder ? null : it.BookingDate,
+        ["ValutaDate"] = it.ValutaDate,
+        ["RecipientName"] = it.RecipientName,
+        ["Subject"] = it.Subject,
+        ["Amount"] = it.IsPlaceholder ? null : it.Amount,
+        ["BookingDescription"] = it.BookingDescription,
+        ["Status"] = it.Status
+    };
+
+    private void AddPlaceholderRow()
+    {
+        var id = Guid.NewGuid();
+        _placeholderId = id;
+        var placeholder = new StatementDraftEntryItem
+        {
+            Id = id,
+            DraftId = _draftId,
+            BookingDate = DateTime.MinValue,
+            Status = StatementDraftEntryStatus.Open,
+            IsPlaceholder = true
+        };
+        Items.Add(placeholder);
+        _editValues[id] = CreateEditSnapshot(placeholder);
+    }
+
+    private void RestoreLoadedItems()
+    {
+        var loadedCount = _skip > 0 ? _skip : _take;
+        Items.Clear();
+        Items.AddRange(_allEntries.Take(loadedCount).Select(ToItem));
+        CanLoadMore = _skip < _allEntries.Count;
+        BuildRecords();
     }
 
     /// <summary>
@@ -60,21 +129,22 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     {
         _editValues.Clear();
         _originalValues.Clear();
+        _pendingDeleteIds.Clear();
+        _newEntryIds.Clear();
+        _entryHints.Clear();
+        _placeholderId = null;
+        Items.RemoveAll(i => i.IsNew || i.IsPlaceholder);
         foreach (var it in Items)
         {
-            var dict = new Dictionary<string, object?>
-            {
-                ["BookingDate"] = it.BookingDate,
-                ["ValutaDate"] = it.ValutaDate,
-                ["RecipientName"] = it.RecipientName,
-                ["Subject"] = it.Subject,
-                ["Amount"] = it.Amount,
-                ["BookingDescription"] = it.BookingDescription,
-                ["Status"] = it.Status
-            };
+            it.IsNew = false;
+            it.IsPlaceholder = false;
+            it.CanDelete = CanDeleteRow(it);
+            var dict = CreateEditSnapshot(it);
             _originalValues[it.Id] = new Dictionary<string, object?>(dict);
             _editValues[it.Id] = new Dictionary<string, object?>(dict);
         }
+        AddPlaceholderRow();
+        BuildRecords();
         return base.BeginQuickEditAsync();
     }
 
@@ -85,6 +155,11 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     {
         _editValues.Clear();
         _originalValues.Clear();
+        _pendingDeleteIds.Clear();
+        _newEntryIds.Clear();
+        _entryHints.Clear();
+        _placeholderId = null;
+        RestoreLoadedItems();
         return base.EndQuickEditAsync();
     }
 
@@ -106,6 +181,78 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     {
         if (!_editValues.TryGetValue(entryId, out var map)) return;
         map[field] = value;
+        var item = Items.FirstOrDefault(i => i.Id == entryId);
+        if (item != null)
+        {
+            switch (field)
+            {
+                case "BookingDate":
+                    item.BookingDate = value is DateTime bd ? bd : DateTime.MinValue;
+                    break;
+                case "ValutaDate":
+                    item.ValutaDate = value is DateTime vd ? vd : null;
+                    break;
+                case "Amount":
+                    item.Amount = value is decimal amount ? amount : 0m;
+                    break;
+                case "RecipientName":
+                    item.RecipientName = value as string;
+                    break;
+                case "Subject":
+                    item.Subject = value as string;
+                    break;
+                case "BookingDescription":
+                    item.BookingDescription = value as string;
+                    break;
+                case "Status":
+                    if (value is StatementDraftEntryStatus status) item.Status = status;
+                    break;
+            }
+        }
+        if (_placeholderId == entryId && PlaceholderHasUserInput(map))
+        {
+            PromotePlaceholder(entryId);
+        }
+        RaiseStateChanged();
+    }
+
+    private static bool PlaceholderHasUserInput(IDictionary<string, object?> map)
+        => (map.TryGetValue("BookingDate", out var bd) && bd is DateTime)
+           || (map.TryGetValue("ValutaDate", out var vd) && vd is DateTime)
+           || (map.TryGetValue("Amount", out var amount) && amount is decimal)
+           || (map.TryGetValue("Subject", out var subject) && !string.IsNullOrWhiteSpace(subject as string))
+           || (map.TryGetValue("BookingDescription", out var desc) && !string.IsNullOrWhiteSpace(desc as string))
+           || (map.TryGetValue("RecipientName", out var rec) && !string.IsNullOrWhiteSpace(rec as string));
+
+    private void PromotePlaceholder(Guid entryId)
+    {
+        var item = Items.FirstOrDefault(i => i.Id == entryId);
+        if (item == null || !item.IsPlaceholder) return;
+        item.IsPlaceholder = false;
+        item.IsNew = true;
+        item.CanDelete = true;
+        _newEntryIds.Add(entryId);
+        _placeholderId = null;
+        AddPlaceholderRow();
+    }
+
+    public void MarkRowForDeletion(Guid entryId)
+    {
+        var item = Items.FirstOrDefault(i => i.Id == entryId);
+        if (item == null || item.IsPlaceholder || !CanDeleteRow(item)) return;
+
+        _entryHints.Remove(entryId);
+        if (item.IsNew)
+        {
+            Items.Remove(item);
+            _newEntryIds.Remove(entryId);
+            _editValues.Remove(entryId);
+        }
+        else
+        {
+            _pendingDeleteIds.Add(entryId);
+        }
+        BuildRecords();
         RaiseStateChanged();
     }
 
@@ -114,6 +261,13 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     /// </summary>
     public void ResetRow(Guid entryId)
     {
+        _pendingDeleteIds.Remove(entryId);
+        _entryHints.Remove(entryId);
+        if (_newEntryIds.Contains(entryId))
+        {
+            MarkRowForDeletion(entryId);
+            return;
+        }
         if (_originalValues.TryGetValue(entryId, out var orig))
         {
             _editValues[entryId] = new Dictionary<string, object?>(orig);
@@ -146,6 +300,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         var result = new Dictionary<Guid, IDictionary<string, object?>>();
         foreach (var kv in _editValues)
         {
+            if (_pendingDeleteIds.Contains(kv.Key) || _newEntryIds.Contains(kv.Key) || _placeholderId == kv.Key) continue;
             if (!_originalValues.TryGetValue(kv.Key, out var orig)) continue;
             var diffs = new Dictionary<string, object?>();
             foreach (var f in kv.Value.Keys)
@@ -172,6 +327,46 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         return result;
     }
 
+    public IReadOnlyList<Guid> CollectPendingDeleteIds() => _pendingDeleteIds.ToList();
+
+    public IReadOnlyList<EntryCreateDto> CollectCreateRows()
+    {
+        var result = new List<EntryCreateDto>();
+        foreach (var id in _newEntryIds.ToList())
+        {
+            if (!_editValues.TryGetValue(id, out var map)) continue;
+            var bookingDate = map.TryGetValue("BookingDate", out var bd) && bd is DateTime bdt ? bdt.Date : DateTime.MinValue;
+            var valutaDate = map.TryGetValue("ValutaDate", out var vd) && vd is DateTime vdt ? vdt.Date : (DateTime?)null;
+            var amount = map.TryGetValue("Amount", out var am) && am is decimal dec ? dec : 0m;
+            var subject = map.TryGetValue("Subject", out var subj) ? subj as string : null;
+            var bookingDescription = map.TryGetValue("BookingDescription", out var desc) ? desc as string : null;
+            var recipientName = map.TryGetValue("RecipientName", out var rec) ? rec as string : null;
+            result.Add(new EntryCreateDto
+            {
+                ClientId = id,
+                BookingDate = bookingDate,
+                ValutaDate = valutaDate,
+                Amount = amount,
+                Subject = subject ?? string.Empty,
+                BookingDescription = bookingDescription,
+                RecipientName = recipientName
+            });
+        }
+        return result;
+    }
+
+    public BatchUpdateRequestDto CollectQuickEditSaveRequest()
+    {
+        var req = new BatchUpdateRequestDto();
+        foreach (var kv in CollectChangedRows())
+        {
+            req.Updates.Add(new EntryUpdateDto { EntryId = kv.Key, Fields = new Dictionary<string, object?>(kv.Value) });
+        }
+        req.Deletes.AddRange(CollectPendingDeleteIds());
+        req.Creates.AddRange(CollectCreateRows());
+        return req;
+    }
+
     /// <summary>
     /// Performs basic client-side validation for a single row based on current edit values.
     /// Returns tuples of (field, message) for validation errors.
@@ -182,7 +377,12 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         if (!_editValues.TryGetValue(it.Id, out var map)) yield break;
 
         // BookingDate must be set
-        if (map.TryGetValue("BookingDate", out var bd) && bd is DateTime dt)
+        if (!map.TryGetValue("BookingDate", out var bd) || bd is not DateTime dt)
+        {
+            if (it.IsNew || it.IsPlaceholder)
+                yield return ("BookingDate", "Booking date is required");
+        }
+        else
         {
             if (dt == DateTime.MinValue)
                 yield return ("BookingDate", "Booking date is required");
@@ -193,18 +393,34 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         {
             if (amt == null || !(amt is decimal))
                 yield return ("Amount", "Amount is required");
+            else if (amt is decimal dec && dec == 0m)
+                yield return ("Amount", "Amount must not be zero");
+        }
+        else if (it.IsNew || it.IsPlaceholder)
+        {
+            yield return ("Amount", "Amount is required");
         }
 
         // Subject length
         if (map.TryGetValue("Subject", out var subj) && subj is string s)
         {
-            if (s.Length > 500) yield return ("Subject", "Subject too long");
+            if ((it.IsNew || it.IsPlaceholder) && string.IsNullOrWhiteSpace(s)) yield return ("Subject", "Subject is required");
+            if (s.Length > 1000) yield return ("Subject", "Subject too long");
+        }
+        else if (it.IsNew || it.IsPlaceholder)
+        {
+            yield return ("Subject", "Subject is required");
         }
 
         // RecipientName length
         if (map.TryGetValue("RecipientName", out var rec) && rec is string r)
         {
             if (r.Length > 250) yield return ("RecipientName", "Recipient name too long");
+        }
+
+        if (map.TryGetValue("BookingDescription", out var desc) && desc is string bookingDescription)
+        {
+            if (bookingDescription.Length > 1000) yield return ("BookingDescription", "Booking description too long");
         }
     }
 
@@ -252,23 +468,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         if (pageDtos.Count > 0)
         {
             // convert DTOs to lightweight navigable items
-            var pageItems = pageDtos.Select(d => new StatementDraftEntryItem
-            {
-                Id = d.Id,
-                DraftId = _draftId,
-                BookingDate = d.BookingDate,
-                    ValutaDate = d.ValutaDate,
-                Amount = d.Amount,
-                RecipientName = d.RecipientName,
-                    Subject = d.Subject,
-                BookingDescription = d.BookingDescription,
-                Status = d.Status,
-                ContactId = d.ContactId,
-                SavingsPlanId = d.SavingsPlanId,
-                SecurityId = d.SecurityId,
-                SecurityTransactionType = d.SecurityTransactionType,
-                BudgetImpact = d.BudgetImpact
-            }).ToList();
+            var pageItems = pageDtos.Select(ToItem).ToList();
 
             Items.AddRange(pageItems);
             _skip += pageItems.Count;
@@ -471,22 +671,100 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
                         severityLocalized = m.Severity ?? string.Empty;
                     }
 
-                    // try to map common English message texts to resource keys (e.g. "Invalid date format")
-                    string normalized = string.Empty;
+                    // First check if the message is a direct translation key (e.g. "Validation_ENTRY_NO_CONTACT")
+                    string msgLocalized = string.Empty;
                     if (!string.IsNullOrWhiteSpace(m.Message))
                     {
-                        var partsWords = m.Message.Split(new[] { ' ', '\t', '\r', '\n', '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
-                        normalized = string.Concat(partsWords.Select(w => char.ToUpperInvariant(w[0]) + (w.Length > 1 ? w.Substring(1) : string.Empty)));
+                        // Check if the message contains a pipe separator (indicating translation key with parameters)
+                        if (m.Message.Contains('|'))
+                        {
+                            var keyParts = m.Message.Split('|');
+                            var key = keyParts[0];
+                            var parameters = keyParts.Skip(1).ToArray();
+
+                            // Try to get the localized string
+                            try
+                            {
+                                var localizedString = L?[key];
+                                if (localizedString != null && !localizedString.ResourceNotFound && localizedString.Value != null)
+                                {
+                                    // Format the message with parameters
+                                    try
+                                    {
+                                        var formattedParams = new List<object>();
+                                        foreach (var p in parameters)
+                                        {
+                                            // Try to parse as DateTime for date formatting
+                                            if (DateTime.TryParse(p, out var dateValue))
+                                            {
+                                                formattedParams.Add(dateValue);
+                                            }
+                                            else
+                                            {
+                                                formattedParams.Add(p);
+                                            }
+                                        }
+                                        
+                                        msgLocalized = string.Format(localizedString.Value, formattedParams.ToArray());
+                                    }
+                                    catch (FormatException)
+                                    {
+                                        // If formatting fails, use the key as fallback
+                                        msgLocalized = m.Message;
+                                    }
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                // If localization fails, use the original message as fallback
+                                msgLocalized = m.Message;
+                            }
+                        }
+                        else
+                        {
+                            // Simple translation key without parameters
+                            try
+                            {
+                                var localizedString = L?[m.Message];
+                                if (localizedString != null && !localizedString.ResourceNotFound && localizedString.Value != null)
+                                {
+                                    msgLocalized = localizedString.Value;
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                // If localization fails, use the original message as fallback
+                                msgLocalized = m.Message;
+                            }
+                        }
                     }
 
-                    string msgLocalized = string.Empty;
-                    if (!string.IsNullOrWhiteSpace(normalized))
+                    // If direct translation didn't work, try the old normalization approach
+                    if (string.IsNullOrWhiteSpace(msgLocalized))
                     {
-                        var msgKey = $"Validation_Message_{normalized}";
-                        var candidate = L[msgKey].Value;
-                        if (!string.IsNullOrWhiteSpace(candidate) && candidate != msgKey)
+                        try
                         {
-                            msgLocalized = candidate;
+                            string normalized = string.Empty;
+                            if (!string.IsNullOrWhiteSpace(m.Message))
+                            {
+                                var partsWords = m.Message.Split(new[] { ' ', '\t', '\r', '\n', '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
+                                normalized = string.Concat(partsWords.Select(w => char.ToUpperInvariant(w[0]) + (w.Length > 1 ? w.Substring(1) : string.Empty)));
+                            }
+
+                            if (!string.IsNullOrWhiteSpace(normalized))
+                            {
+                                var msgKey = $"Validation_Message_{normalized}";
+                                var candidate = L?[msgKey]?.Value;
+                                if (!string.IsNullOrWhiteSpace(candidate) && candidate != msgKey)
+                                {
+                                    msgLocalized = candidate;
+                                }
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            // If normalization fails, use the original message as fallback
+                            msgLocalized = m.Message ?? string.Empty;
                         }
                     }
 
@@ -504,6 +782,22 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
             }
         }
         // rebuild records so hints are applied
+        BuildRecords();
+        RaiseStateChanged();
+    }
+
+    public void ApplyBatchValidationErrors(BatchUpdateErrorResponseDto? error)
+    {
+        _entryHints.Clear();
+        if (error?.Errors != null)
+        {
+            foreach (var entryError in error.Errors)
+            {
+                var id = entryError.EntryId ?? entryError.ClientId;
+                if (!id.HasValue) continue;
+                _entryHints[id.Value] = string.Join("; ", entryError.FieldErrors.Select(e => $"{e.Field}: {e.Message}"));
+            }
+        }
         BuildRecords();
         RaiseStateChanged();
     }
@@ -553,6 +847,28 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         return !_entryHints.Any();
     }
 
+    public bool ValidateAllQuickEditRows()
+    {
+        _entryHints.Clear();
+        var idsToValidate = CollectChangedRows().Keys
+            .Concat(_newEntryIds)
+            .Distinct()
+            .ToList();
+        foreach (var id in idsToValidate)
+        {
+            var recItem = Items.FirstOrDefault(i => i.Id == id);
+            if (recItem == null || recItem.IsPlaceholder) continue;
+            var errors = ValidateRow(recItem).ToList();
+            if (errors.Any())
+            {
+                _entryHints[id] = string.Join("; ", errors.Select(e => $"{e.Field}: {e.Message}"));
+            }
+        }
+        BuildRecords();
+        RaiseStateChanged();
+        return !_entryHints.Any();
+    }
+
     /// <summary>
     /// Returns true when there are any changed rows pending in the quick-edit buffer.
     /// </summary>
@@ -561,6 +877,9 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         var changed = CollectChangedRows();
         return changed != null && changed.Count > 0;
     }
+
+    public bool HasPendingQuickEditChanges()
+        => HasChangedRows() || _pendingDeleteIds.Count > 0 || _newEntryIds.Count > 0;
 
     /// <summary>
     /// Performs a non-mutating client-side validation of changed rows and returns whether they are all valid.
@@ -574,6 +893,21 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
             var id = kv.Key;
             var recItem = Items.FirstOrDefault(i => i.Id == id);
             if (recItem == null) continue;
+            var errors = ValidateRow(recItem);
+            if (errors.Any()) return false;
+        }
+        return true;
+    }
+
+    public bool QuickEditRowsAreValid()
+    {
+        var idsToValidate = CollectChangedRows().Keys
+            .Concat(_newEntryIds)
+            .Distinct();
+        foreach (var id in idsToValidate)
+        {
+            var recItem = Items.FirstOrDefault(i => i.Id == id);
+            if (recItem == null || recItem.IsPlaceholder) continue;
             var errors = ValidateRow(recItem);
             if (errors.Any()) return false;
         }

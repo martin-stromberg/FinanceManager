@@ -328,10 +328,10 @@ public sealed class BudgetImpactEvaluationService : IBudgetImpactEvaluationServi
     {
         return hintType switch
         {
-            BudgetImpactHintType.Exceeded => $"Budget überschritten (Soll: {target.ToString("0.##", CultureInfo.InvariantCulture)}, Ist nachher: {actualAfter.ToString("0.##", CultureInfo.InvariantCulture)}).",
-            BudgetImpactHintType.AlmostExhausted => $"Budget fast ausgeschöpft (Soll: {target.ToString("0.##", CultureInfo.InvariantCulture)}, Ist nachher: {actualAfter.ToString("0.##", CultureInfo.InvariantCulture)}).",
-            BudgetImpactHintType.StronglyChanged => $"Zielerreichung stark verändert (Δ Quote: {(delta * 100m).ToString("0.##", CultureInfo.InvariantCulture)}%).",
-            _ => $"Keine kritische Abweichung (Ist vorher: {actualBefore.ToString("0.##", CultureInfo.InvariantCulture)}, Ist nachher: {actualAfter.ToString("0.##", CultureInfo.InvariantCulture)})."
+            BudgetImpactHintType.Exceeded => $"Budget_BudgetExceeded|{target.ToString("0.##", CultureInfo.InvariantCulture)}|{actualAfter.ToString("0.##", CultureInfo.InvariantCulture)}",
+            BudgetImpactHintType.AlmostExhausted => $"Budget_BudgetAlmostExhausted|{target.ToString("0.##", CultureInfo.InvariantCulture)}|{actualAfter.ToString("0.##", CultureInfo.InvariantCulture)}",
+            BudgetImpactHintType.StronglyChanged => $"Budget_StronglyChanged|{(delta * 100m).ToString("0.##", CultureInfo.InvariantCulture)}",
+            _ => $"Budget_NoCriticalDeviation|{actualBefore.ToString("0.##", CultureInfo.InvariantCulture)}|{actualAfter.ToString("0.##", CultureInfo.InvariantCulture)}"
         };
     }
 

@@ -1,4 +1,6 @@
 @using FinanceManager.Shared.Dtos.Statements
+@using System.Linq
+@using System.Collections.Generic
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
 
 @if (ValidationResult?.BudgetImpact == null || ValidationResult.BudgetImpact.Items == null || ValidationResult.BudgetImpact.Items.Count == 0)
@@ -40,7 +42,7 @@ else
                         </div>
                         @if (!string.IsNullOrWhiteSpace(hint.Reason))
                         {
-                            <div style="margin-top:.25rem;font-size:.9rem;opacity:.85;">@hint.Reason</div>
+                            <div style="margin-top:.25rem;font-size:.9rem;opacity:.85;">@GetLocalizedMessage(hint.Reason)</div>
                         }
                     </div>
                 </div>
@@ -51,4 +53,45 @@ else
 
 @code {
     [Parameter] public DraftValidationResultDto? ValidationResult { get; set; }
+
+    private string GetLocalizedMessage(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return message;
+        }
+
+        // Check if the message contains a pipe separator (indicating translation key with parameters)
+        if (message.Contains('|'))
+        {
+            var parts = message.Split('|');
+            var key = parts[0];
+            var parameters = parts.Skip(1).ToArray();
+
+            // Try to get the localized string
+            var localizedString = Localizer?[key];
+            if (localizedString != null && !localizedString.ResourceNotFound)
+            {
+                // Format the message with parameters
+                try
+                {
+                    var formattedParams = new List<object>();
+                    foreach (var p in parameters)
+                    {
+                        formattedParams.Add(p);
+                    }
+                    
+                    return string.Format(localizedString, formattedParams.ToArray());
+                }
+                catch (FormatException)
+                {
+                    // If formatting fails, return the key as fallback
+                    return message;
+                }
+            }
+        }
+        
+        // If no translation key format or translation not found, return the original message
+        return message;
+    }
 }
