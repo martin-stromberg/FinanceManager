@@ -71,6 +71,7 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 | `Updates:SourceType` | string | `Github` | Update-Quelle: `Github` oder `LocalFolder` |
 | `Updates:RepositoryOwner` / `Updates:RepositoryName` | string | `martin-stromberg` / `FinanceManager` | GitHub-Repository (nur bei `SourceType: Github`) |
 | `Updates:LocalFolderPath` | string? | `null` | Lokales Quellverzeichnis (nur bei `SourceType: LocalFolder`; Fallback: `{WorkingDirectory}/source`) |
+| `Updates:IncludePrereleases` | bool | `false` | Beruecksichtigt Vorabversionen bei GitHub-Updatepruefungen; wird in den gespeicherten Update-Einstellungen als `UpdateSettings.IncludePrereleases` persistiert |
 | `Updates:EnableAutomaticDownload` | bool | `true` | Download nach erfolgreicher Versionsprüfung |
 | `Updates:EnableAutomaticInstallation` | bool | `false` | Installation nach erfolgreichem Download |
 | `Updates:ManifestAssetName` | string | `update.json` | Release-Asset mit Update-Metadaten |
@@ -134,7 +135,7 @@ FinanceManager.Tests                    # Unit- und Komponenten-Tests (xUnit/bUn
 FinanceManager.Tests.Integration        # Integrationstests
 FinanceManager.Tests.E2E                # Playwright-End-to-End-Tests
 
-external/msTools.Updater/v0.2.0         # Geprueftes externes Updater-Release fuer den Testlauf vor NuGet
+external/msTools.Updater/v0.3.0         # Geprueftes externes Updater-Release fuer den Testlauf vor NuGet
 ```
 
 **Technologien:** .NET 10, ASP.NET Core, Blazor Server, EF Core (SQLite), ASP.NET Identity/JWT, xUnit, bUnit, Playwright.
@@ -143,9 +144,9 @@ external/msTools.Updater/v0.2.0         # Geprueftes externes Updater-Release fu
 
 Das Self-Update-System wird aus dem externen Release-Artefakt `msTools.Updater` eingebunden. Die fruehere lokale Bibliothek `SoftwareSchmiede.AutoUpdate` und ihr Testprojekt sind nicht mehr Teil der Solution.
 
-Bis zur geplanten NuGet-Veröffentlichung liegt der geprüfte Release `v0.2.0` aus `martin-stromberg/msTools.Updater` unter [`external/msTools.Updater/v0.2.0/`](external/msTools.Updater/v0.2.0/). Dort sind das originale `release.zip`, `SHA256SUMS.txt`, eine Herkunfts-README und die entpackte `lib/msTools.Updater.dll` abgelegt; der dokumentierte SHA-256 des ZIPs ist `adf4e64e18345ac8ef30e8c626c639489b3eb84accae0f2f5ab61b59e8ea029c`.
+Bis zur geplanten NuGet-Veröffentlichung liegt der geprüfte Release `v0.3.0` aus `martin-stromberg/msTools.Updater` unter [`external/msTools.Updater/v0.3.0/`](external/msTools.Updater/v0.3.0/). Dort sind das originale `release.zip`, `SHA256SUMS.txt`, eine Herkunfts-README und die entpackte `lib/msTools.Updater.dll` abgelegt; der dokumentierte SHA-256 des ZIPs ist `9b9e578deffddd44a36a3ac844ca9b55b1c201984823f6134db56aafdd292834`.
 
-`FinanceManager.Web` referenziert die entpackte DLL direkt und kopiert sie in Build- und Publish-Ausgaben. Die Integration erfolgt weiterhin über den FinanceManager-Adapter (`UpdateOrchestratorAdapter`); Controller, DTOs, Admin-UI und REST-API bleiben dadurch aus Anwendersicht unverändert.
+`FinanceManager.Web` referenziert die entpackte DLL direkt und kopiert sie in Build- und Publish-Ausgaben. Die Integration erfolgt weiterhin über den FinanceManager-Adapter (`UpdateOrchestratorAdapter`); Controller, DTOs, Admin-UI und REST-API bleiben dadurch aus Anwendersicht stabil. Vorabversionen werden nur geladen, wenn `Updates:IncludePrereleases` beziehungsweise `UpdateSettings.IncludePrereleases` aktiviert ist.
 
 ## API-Dokumentation
 

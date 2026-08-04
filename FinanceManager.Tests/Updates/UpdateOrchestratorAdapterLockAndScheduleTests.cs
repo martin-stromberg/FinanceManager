@@ -64,7 +64,7 @@ public sealed class UpdateOrchestratorAdapterLockAndScheduleTests
     public async Task ScheduleAsync_SavesScheduleAndAppliesToAutoUpdateOptions()
     {
         var scheduledTime = new TimeOnly(3, 0);
-        var savedSettings = new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", scheduledTime, "svc", null, "updates", 120);
+        var savedSettings = new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", scheduledTime, "svc", null, "updates", 120, false);
         var settingsStore = new Mock<IUpdateSettingsStore>();
         settingsStore.Setup(s => s.SaveScheduleAsync(scheduledTime, It.IsAny<CancellationToken>())).ReturnsAsync(savedSettings);
         var applied = false;

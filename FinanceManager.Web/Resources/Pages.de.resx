@@ -2220,6 +2220,9 @@
   <data name="SetupUpdate_Lbl_Enabled" xml:space="preserve">
     <value>Automatische Prüfung aktiv</value>
   </data>
+  <data name="SetupUpdate_Lbl_IncludePrereleases" xml:space="preserve">
+    <value>Vorabversionen berücksichtigen</value>
+  </data>
   <data name="SetupUpdate_Lbl_CheckInterval" xml:space="preserve">
     <value>Prüfintervall in Minuten</value>
   </data>

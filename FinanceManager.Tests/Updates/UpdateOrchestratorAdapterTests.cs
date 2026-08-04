@@ -18,7 +18,7 @@ public sealed class UpdateOrchestratorAdapterTests
         orchestrator.Setup(o => o.GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(snapshot);
         var settingsStore = new Mock<IUpdateSettingsStore>();
         settingsStore.Setup(s => s.GetAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", new TimeOnly(4, 0), "svc", null, "updates", 120));
+            .ReturnsAsync(new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", new TimeOnly(4, 0), "svc", null, "updates", 120, false));
         var installedProvider = new Mock<IInstalledReleaseMetadataProvider>();
         installedProvider.Setup(p => p.GetAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new InstalledReleaseMetadataDto("1.0.0", DateTimeOffset.UtcNow, "sha", "repo", "win-x64"));
@@ -68,7 +68,7 @@ public sealed class UpdateOrchestratorAdapterTests
             .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.UpdateAvailable, "found an update", null));
         var settingsStore = new Mock<IUpdateSettingsStore>();
         settingsStore.Setup(s => s.GetAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, "svc", null, "updates", 120));
+            .ReturnsAsync(new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, "svc", null, "updates", 120, false));
         var installedProvider = new Mock<IInstalledReleaseMetadataProvider>();
         installedProvider.Setup(p => p.GetAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new InstalledReleaseMetadataDto(null, null, null, null, null));
@@ -87,7 +87,7 @@ public sealed class UpdateOrchestratorAdapterTests
     [Fact]
     public async Task Adapter_SaveSettings_AppliesToAutoUpdateOptions()
     {
-        var savedSettings = new UpdateSettingsDto(true, 45, "owner", "repo", "update.json", null, "svc", null, "custom", 200);
+        var savedSettings = new UpdateSettingsDto(true, 45, "owner", "repo", "update.json", null, "svc", null, "custom", 200, true);
         var settingsStore = new Mock<IUpdateSettingsStore>();
         settingsStore.Setup(s => s.SaveAsync(It.IsAny<UpdateSettingsUpdateRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(savedSettings);
@@ -96,7 +96,7 @@ public sealed class UpdateOrchestratorAdapterTests
             .Callback(() => applied = true);
         var adapter = UpdateOrchestratorAdapterTestFactory.Create(settingsStore: settingsStore.Object);
 
-        var result = await adapter.SaveSettingsAsync(new UpdateSettingsUpdateRequest(true, 45, "owner", "repo", "update.json", null, "svc", null, "custom", 200));
+        var result = await adapter.SaveSettingsAsync(new UpdateSettingsUpdateRequest(true, 45, "owner", "repo", "update.json", null, "svc", null, "custom", 200, true));
 
         result.Should().Be(savedSettings);
         applied.Should().BeTrue();

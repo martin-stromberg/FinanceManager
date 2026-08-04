@@ -91,15 +91,15 @@ Repository-Berechtigungen.
 Das Self-Update ist eine Admin-Funktion im Setup und standardmaessig
 deaktiviert. Die Logik wird durch das externe Release-Artefakt
 `msTools.Updater` bereitgestellt. FinanceManager konsumiert die unter
-`external/msTools.Updater/v0.2.0/` abgelegte `msTools.Updater.dll` ueber einen
+`external/msTools.Updater/v0.3.0/` abgelegte `msTools.Updater.dll` ueber einen
 Adapter (`UpdateOrchestratorAdapter`); die oeffentliche REST-API und die
 Setup-UI bleiben davon unberührt.
 
-Das eingebundene Artefakt stammt aus dem GitHub-Release `v0.2.0` des
+Das eingebundene Artefakt stammt aus dem GitHub-Release `v0.3.0` des
 Repositories `martin-stromberg/msTools.Updater`. Das Original-ZIP
 `release.zip` und `SHA256SUMS.txt` bleiben im Repository erhalten; massgeblich
 ist der SHA-256-Wert
-`adf4e64e18345ac8ef30e8c626c639489b3eb84accae0f2f5ab61b59e8ea029c`. Die
+`9b9e578deffddd44a36a3ac844ca9b55b1c201984823f6134db56aafdd292834`. Die
 frueher lokale Updater-Bibliothek ist kein Projekt dieser Solution mehr. Eine
 spaetere NuGet-Referenz ersetzt nur diese lokale Artefaktablage, nicht die
 FinanceManager-spezifische Update-API.
@@ -123,6 +123,8 @@ Automatische Pruefungen laufen im Intervall `Updates:SourceCheck:Interval`
 Minuten und respektieren Zeitfenster in `Updates:SourceCheck:TimeRanges`.
 `Updates:EnableAutomaticDownload` und `Updates:EnableAutomaticInstallation`
 steuern, ob Pakete automatisch heruntergeladen bzw. installiert werden.
+`Updates:IncludePrereleases` ist standardmaessig `false`; nur bei aktivierter
+Option beruecksichtigt die GitHub-Quelle auch Vorabversionen.
 
 Vor der Installation erstellt der Server ein Lock, validiert Service-/EXE-Ziel,
 Paketgroesse, SHA-256 und ZIP-Eintraege gegen Traversal, absolute Pfade und
