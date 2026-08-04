@@ -2223,8 +2223,11 @@
   <data name="SetupUpdate_Lbl_IncludePrereleases" xml:space="preserve">
     <value>Include prerelease versions</value>
   </data>
-  <data name="SetupUpdate_Lbl_CheckInterval" xml:space="preserve">
-    <value>Check interval (minutes)</value>
+  <data name="SetupUpdate_Lbl_SourceCheckStartTime" xml:space="preserve">
+    <value>Check from</value>
+  </data>
+  <data name="SetupUpdate_Lbl_SourceCheckEndTime" xml:space="preserve">
+    <value>Check until</value>
   </data>
   <data name="SetupUpdate_Lbl_ScheduledTime" xml:space="preserve">
     <value>Scheduled time</value>

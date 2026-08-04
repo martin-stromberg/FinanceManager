@@ -234,8 +234,8 @@ gespeicherte Konfiguration (z. B. beim allerersten Start), bleiben die
 
 1. Ein Administrator startet `POST /api/setup/update/check` oder der
    Hintergrunddienst `AutoUpdateCheckerService` laeuft bei aktivierter
-   Updatepruefung im konfigurierten Intervall (`Updates:SourceCheck:Interval`,
-   unter Beachtung optionaler Zeitfenster).
+   Updatepruefung einmal taeglich im konfigurierten Zeitfenster
+   (`Updates:SourceCheckStartTime` bis `Updates:SourceCheckEndTime`).
 2. `AutoUpdateOrchestrator.CheckForUpdateAsync` setzt den Status auf
    `Checking` und liest die installierte Version ueber
    `ReleaseMetadataInstalledVersionProvider` (`IInstalledVersionProvider`) aus

@@ -16,9 +16,14 @@ public sealed class UpdateOptions
     public const string SectionName = "Updates";
 
     /// <summary>
-    /// Gets or sets the interval, in minutes, between successive source checks.
+    /// Gets or sets the inclusive start time for daily automatic update checks.
     /// </summary>
-    public int CheckIntervalMinutes { get; set; } = 360;
+    public TimeOnly SourceCheckStartTime { get; set; } = AutoUpdateOptionsMapper.DefaultSourceCheckStartTime;
+
+    /// <summary>
+    /// Gets or sets the exclusive end time for daily automatic update checks.
+    /// </summary>
+    public TimeOnly SourceCheckEndTime { get; set; } = AutoUpdateOptionsMapper.DefaultSourceCheckEndTime;
 
     /// <summary>
     /// Gets or sets the owner (user or organization) of the GitHub repository used as the update source.

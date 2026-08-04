@@ -81,8 +81,8 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 | `Updates:HealthTimeoutSeconds` | int | `120` | Wartezeit der Setup-UI bis zur Wiedererreichbarkeit von `/health`, serverseitig auf 10..600 begrenzt; nicht mehr ueber die Admin-UI editierbar |
 | `Updates:MaxAssetBytes` | long | `536870912` | Maximale Groesse eines Update-ZIP-Assets |
 | `Updates:HostedServicesEnabled` | bool | `true` | Aktiviert `AutoUpdateCheckerService` und `AutoUpdateSchedulerService` |
-| `Updates:SourceCheck:Interval` | int | `360` | Prüfintervall in Minuten (neue Syntax; Legacy-Alias: `CheckIntervalMinutes`) |
-| `Updates:SourceCheck:TimeRanges` | Array | `[]` | Zeitfenster für Prüfungen mit `DayOfWeek`, `StartTime`, `EndTime`; leer = immer erlaubt |
+| `Updates:SourceCheckStartTime` | time | `20:00:00` | Beginn des täglichen Zeitfensters fuer automatische Updatepruefungen |
+| `Updates:SourceCheckEndTime` | time | `06:00:00` | Ende des täglichen Zeitfensters fuer automatische Updatepruefungen; Fenster ueber Mitternacht werden unterstuetzt |
 | `Updates:StopHostAfterScriptStart` | bool | `false` | Host nach erfolgreichem Update-Skriptstart beenden |
 | `Backups:Security:MaxUploadBytes` | long | `104857600` | Maximale Uploadgroesse fuer Backup-ZIP-Dateien |
 | `Backups:Security:MaxCompressedZipBytes` | long | `104857600` | Maximale komprimierte ZIP-Groesse fuer Backup-Validierung |
@@ -218,7 +218,9 @@ dotnet test FinanceManager.sln
   oder lokaler Ordner via `Updates:SourceType`) sowie Manifest-Asset und
   Arbeitsverzeichnis werden serverseitig über `msTools.Updater`
   konfiguriert. Sichtbare Einstellungswerte werden über den globalen
-  Ribbon-Button `Speichern` persistiert; die Aktionen `Jetzt prüfen`,
+  Ribbon-Button `Speichern` persistiert. Die automatische Pruefung laeuft einmal
+  taeglich im konfigurierten Zeitfenster, standardmaessig von `20:00` bis `06:00`;
+  die Aktionen `Jetzt prüfen`,
   `Update installieren` und `Update-Lock zurücksetzen` liegen ebenfalls im
   Setup-Ribbon. Der Service-Name bietet Vorschläge aus Windows-Diensten oder
   Linux-systemd-Services. Vor manueller Installation verlangt die UI eine

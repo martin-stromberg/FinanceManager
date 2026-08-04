@@ -71,9 +71,27 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
     /// <inheritdoc />
     public async Task<UpdateCheckResultDto> CheckAsync(CancellationToken ct = default)
     {
-        var result = await _orchestrator.CheckForUpdateAsync(ct);
-        var statusDto = await _statusMapper.MapAsync(_statusService.GetSnapshot(), ct);
-        return new UpdateCheckResultDto(result.Outcome == AutoUpdateOutcome.Success, statusDto, result.Message);
+        try
+        {
+            var result = await _orchestrator.CheckForUpdateAsync(ct);
+            var statusDto = await _statusMapper.MapAsync(_statusService.GetSnapshot(), ct);
+            var message = UpdateErrorMessageMapper.Map(result.Message);
+            if (result.Outcome == AutoUpdateOutcome.Failed
+                && result.Error is not null
+                && UpdateErrorMessageMapper.IsGithubRateLimit(result.Error.ToString()))
+            {
+                message = UpdateErrorMessageMapper.Map(result.Error);
+                statusDto = statusDto with { LastError = message };
+            }
+
+            return new UpdateCheckResultDto(result.Outcome == AutoUpdateOutcome.Success, statusDto, message);
+        }
+        catch (Exception ex) when (UpdateErrorMessageMapper.IsGithubRateLimit(ex.ToString()))
+        {
+            var message = UpdateErrorMessageMapper.GithubRateLimitMessage;
+            var statusDto = await _statusMapper.MapAsync(_statusService.GetSnapshot(), ct);
+            return new UpdateCheckResultDto(false, statusDto with { LastError = message }, message);
+        }
     }
 
     /// <inheritdoc />
