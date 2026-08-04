@@ -83,6 +83,48 @@ Start des Installationsskripts (Standard: deaktiviert, wie bisher).
   startet die Installation nach Downtime-Bestaetigung.
 - Ein angemeldeter Benutzer startet einen Hintergrundtask und sieht Fortschritt, Warteschlange sowie Abbrechen- oder Entfernen-Aktionen im Statuspanel.
 
+## Spracheinstellung (Anzeigesprache)
+
+Benutzer können ihre bevorzugte Anzeigesprache im Profil-Tab der Einstellungsseite festlegen.
+Unterstützte Sprachen sind aktuell **Deutsch (de)**, **Englisch (en)** und **Automatisch**.
+
+### Anzeigesprachen-Modi
+
+| Einstellung | Verhalten |
+|-------------|-----------|
+| **Automatisch** | Die Sprache wird aus dem `Accept-Language`-Header des Browsers ermittelt |
+| **Deutsch (de)** | Die Oberfläche erscheint immer auf Deutsch |
+| **Englisch (en)** | Die Oberfläche erscheint immer auf Englisch |
+
+### Technische Umsetzung
+
+Die gewählte Sprache wird als `PreferredLanguage`-Feld am Benutzer in der Datenbank gespeichert.
+Bei explizit gewählter Sprache wird der Wert beim Login als `pref_lang`-Claim in das JWT eingebettet.
+
+Der `UserPreferenceRequestCultureProvider` liest bei jedem HTTP-Request die Anzeigesprache
+in folgender Priorität:
+
+1. **JWT-Claim `pref_lang`** — schnellster Pfad, kein Datenbankzugriff
+2. **Datenbankabfrage** — Fallback, wenn der Claim fehlt oder ungültig ist
+3. **`null` (= Automatisch)** — Weiterreichen an den nächsten Provider in der Kette
+4. **`Accept-Language`-Header** — Browsersprache, wenn keine explizite Einstellung gesetzt ist
+5. **Standardsprache Deutsch (`de`)** — falls der Browser keine Sprache sendet
+
+Unangemeldete Benutzer sehen die Anwendung gemäß ihrer Browsersprache oder auf Deutsch.
+
+### Sprachänderung & sofortige Wirkung
+
+Wenn ein Benutzer die Sprache speichert, stellt der Server den Auth-Cookie mit einem neuen
+JWT neu aus, der den aktualisierten `pref_lang`-Claim enthält. Die Seite lädt anschließend
+automatisch neu, sodass die neue Sprache unmittelbar in der gesamten Benutzeroberfläche
+sichtbar wird — ohne erneuten Login.
+
+### Beispiele
+
+- Ein Benutzer stellt **Englisch** als Anzeigesprache ein. Nach dem Speichern erscheinen alle Texte auf Englisch — unabhängig von der Browser-Spracheinstellung.
+- Ein Benutzer stellt **Automatisch** ein. Die Anwendung erkennt seine Browser-Sprache (z.B. Englisch) und zeigt die Oberfläche entsprechend an.
+- Die Spracheinstellung bleibt nach einem erneuten Login erhalten. Die Browser-Sprache überschreibt eine gespeicherte **Automatisch**-Einstellung nicht.
+
 ## Einschränkungen
 
 - Administrative Endpunkte erfordern entsprechende Berechtigungen.
@@ -96,3 +138,6 @@ Start des Installationsskripts (Standard: deaktiviert, wie bisher).
 - Der administrative Lock-Reset ist ein Betriebswerkzeug fuer manuell
   gepruefte Haengefaelle. Aktuell prueft die Anwendung nur, ob diese
   Prozessinstanz noch eine Installation besitzt.
+- Die Anzeigesprache gilt für die gesamte Benutzeroberfläche. Im Modus „Automatisch"
+  wird die Browser-Sprache berücksichtigt; es werden nur die unterstützten Sprachen
+  Deutsch und Englisch angeboten.

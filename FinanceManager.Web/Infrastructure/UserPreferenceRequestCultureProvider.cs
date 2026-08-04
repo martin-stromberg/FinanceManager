@@ -12,11 +12,13 @@ namespace FinanceManager.Web.Infrastructure;
 /// The provider resolves culture in the following order:
 /// 1) JWT claim "pref_lang" (set at login/registration)
 /// 2) Database fallback (User.PreferredLanguage)
-/// 3) null -> delegate to the next configured provider (cookie/query/header)
+/// 3) null → delegate to the next configured provider (Accept-Language header)
 ///
-/// When a culture string cannot be parsed to a valid <see cref="CultureInfo"/>, the provider falls back to the next source.
-/// Database access is performed using a scoped <see cref="AppDbContext"/> resolved from the request services. If the DB
-/// context is not available the provider returns <c>null</c> and allows other providers to participate.
+/// Returning null for unauthenticated requests and for users with no explicit
+/// preference ("Automatisch") lets the browser's Accept-Language header determine
+/// the display language. An explicit preference ("de" or "en") is always honoured.
+/// Database access is performed using a scoped <see cref="AppDbContext"/> resolved
+/// from the request services.
 /// </remarks>
 public sealed class UserPreferenceRequestCultureProvider : RequestCultureProvider
 {
@@ -25,20 +27,16 @@ public sealed class UserPreferenceRequestCultureProvider : RequestCultureProvide
     /// </summary>
     /// <param name="httpContext">The HTTP context for the current request. Must not be <c>null</c>.</param>
     /// <returns>
-    /// A <see cref="ProviderCultureResult"/> when a culture could be resolved from the user's preferences; otherwise <c>null</c>
-    /// to let subsequent <see cref="RequestCultureProvider"/> instances attempt resolution.
+    /// A <see cref="ProviderCultureResult"/> when the user has an explicit language preference;
+    /// <c>null</c> to let subsequent providers (Accept-Language header) participate when no
+    /// explicit preference is stored or when the request is unauthenticated.
     /// </returns>
-    /// <exception cref="OperationCanceledException">Thrown when the request's cancellation token (<see cref="HttpContext.RequestAborted"/>) is signalled while awaiting database operations.</exception>
-    /// <remarks>
-    /// The method first attempts to read a "pref_lang" claim from the authenticated user's claims (no DB access).
-    /// If the claim exists and represents a valid culture name it will be returned. If the claim is absent or invalid
-    /// the provider looks up the user's preferred language in the database using <see cref="AppDbContext"/>.
-    /// If no preference is configured or if parsing fails the method returns <c>null</c>.
-    /// </remarks>
+    /// <exception cref="OperationCanceledException">Thrown when the request's cancellation token is signalled.</exception>
     public override async Task<ProviderCultureResult?> DetermineProviderCultureResult(HttpContext httpContext)
     {
         if (httpContext.User?.Identity?.IsAuthenticated != true)
         {
+            // Unauthenticated: let the Accept-Language header decide.
             return null;
         }
 
@@ -53,7 +51,7 @@ public sealed class UserPreferenceRequestCultureProvider : RequestCultureProvide
             }
             catch (CultureNotFoundException)
             {
-                // ignore and fallback to DB or next providers
+                // Invalid claim — fall through to DB lookup
             }
         }
 
@@ -78,6 +76,7 @@ public sealed class UserPreferenceRequestCultureProvider : RequestCultureProvide
 
         if (string.IsNullOrWhiteSpace(lang))
         {
+            // "Automatisch" / no explicit preference: let the Accept-Language header decide.
             return null;
         }
 

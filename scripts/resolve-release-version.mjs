@@ -3,8 +3,9 @@ import { appendFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
-const NEXT_RELEASE_PATTERN = /The next release version is\s+(\d+\.\d+\.\d+)/i;
+const VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/;
+const NEXT_RELEASE_PATTERN = /The next release version is\s+(\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)/i;
+const AUTOMATIC_RELEASE_BRANCHES = ["master", "staging"];
 
 export function parseManualTag(tagName) {
   if (!tagName?.startsWith("v")) {
@@ -30,7 +31,7 @@ export function classifyWorkflowRef({ refType, refName }) {
     return { kind: "manual", version: parseManualTag(refName), tag: refName };
   }
 
-  if (refType === "branch" && refName === "master") {
+  if (refType === "branch" && AUTOMATIC_RELEASE_BRANCHES.includes(refName)) {
     return { kind: "automatic" };
   }
 
