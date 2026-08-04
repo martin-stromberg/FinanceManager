@@ -31,7 +31,8 @@ Feature-Branch
                                   ├→ GitHub Release veröffentlichen
                              ├→ sync-staging-with-master.yml (Push-Event auf master)
                                   ↓
-                                  ├→ master zurück nach staging mergen
+                                  ├→ Automatischer PR master → staging
+                                  ├→ Maintainer Review + Merge ("Create a merge commit")
                                   ├→ Damit bleibt der neue Release-Tag für künftige
                                      RC-Berechnungen auf staging erreichbar
 ```
@@ -130,10 +131,11 @@ Feature-Branch
 **Schritte:**
 1. Checkout von `staging`
 2. Prüfen, ob `master` bereits vollständig in `staging` enthalten ist (nichts zu tun, falls ja)
-3. `master` per Merge-Commit in `staging` einmergen
-4. Direkter Push nach `staging`
+3. Automatischen PR `master → staging` erstellen (analog zu `staging-to-master.yml`, Label `automated-sync`), sofern noch keiner offen ist
 
-**Voraussetzung:** Der ausführende Actor (`github-actions[bot]` via `GITHUB_TOKEN`) muss in den Branch-Protection-Rules/Rulesets von `staging` als Bypass für "Require a pull request before merging" hinterlegt sein, sonst schlägt der Push fehl.
+**Wichtig beim Mergen:** Dieser PR muss mit **"Create a merge commit"** gemergt werden, nicht mit "Rebase and merge". Die Promotion-Merge-Commits auf `master` sind inhaltlich leer (reine History-Knoten); ein Rebase verwirft sie beim Replay, wodurch `staging` trotz "erfolgreichem" Merge weiterhin hinter `master` zurückbleibt.
+
+**Warum PR-basiert statt direktem Push:** Klassische Branch-Protection-Rules unterstützen keinen granularen Bypass für einzelne Actors (nur den globalen "Include administrators"-Schalter) — ein Bot-Push würde an "Require a pull request before merging" scheitern. Der PR-basierte Ansatz braucht keine Sonderrechte.
 
 ## Quality Gates
 
@@ -261,9 +263,18 @@ Feature-Branch
 - Prüfen: `git merge-base --is-ancestor v1.16.0 origin/staging` (Exit-Code `1` = Tag ist kein Vorfahre von `staging`, Ursache bestätigt)
 
 **Lösung:**
-1. Prüfen, ob `sync-staging-with-master.yml` nach dem letzten `master`-Push erfolgreich gelaufen ist (`gh run list --workflow=sync-staging-with-master.yml`)
-2. Falls der Workflow fehlgeschlagen ist (typischerweise weil der Bot-Actor noch nicht als Bypass für "Require a pull request before merging" auf `staging` hinterlegt ist): Branch-Protection-Rule/Ruleset für `staging` entsprechend ergänzen
-3. Einmalig manuell nachholen: `master` lokal in `staging` mergen und pushen, danach läuft die Automatik wieder normal
+1. Prüfen, ob ein offener Sync-PR (`master → staging`, Label `automated-sync`) existiert: `gh pr list --base staging --head master`
+2. Diesen PR mit **"Create a merge commit"** mergen (nicht "Rebase and merge" — verwirft die inhaltsleeren Promotion-Merge-Commits, siehe unten)
+3. Falls kein PR existiert, obwohl `staging` erkennbar hinter `master` liegt: `gh run list --workflow=sync-staging-with-master.yml` prüfen, ob der Workflow fehlgeschlagen ist
+
+### staging bleibt nach dem Merge des Sync-PRs weiterhin "N commits behind master"
+
+**Ursache:**
+- Der Sync-PR wurde mit "Rebase and merge" gemergt. Die Promotion-Merge-Commits auf `master` (z. B. `Merge pull request #255 from martin-stromberg/staging`) enthalten selbst keine Dateiänderungen — beim Rebase werden inhaltsleere Commits beim Replay verworfen, wodurch effektiv nichts nach `staging` übertragen wird, obwohl GitHub den PR als gemergt anzeigt.
+
+**Lösung:**
+1. Erneut einen PR `master → staging` erstellen (oder den bestehenden Zustand direkt lokal prüfen: `git rev-list origin/staging..origin/master --count`)
+2. Dieses Mal zwingend **"Create a merge commit"** verwenden
 
 ### Release schlägt fehl
 
