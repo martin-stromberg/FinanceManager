@@ -2224,13 +2224,13 @@
     <value>Vorabversionen berücksichtigen</value>
   </data>
   <data name="SetupUpdate_Lbl_SourceCheckStartTime" xml:space="preserve">
-    <value>Prüfung ab</value>
+    <value>Tägliche Update-Prüfung ab</value>
   </data>
   <data name="SetupUpdate_Lbl_SourceCheckEndTime" xml:space="preserve">
-    <value>Prüfung bis</value>
+    <value>Tägliche Update-Prüfung bis</value>
   </data>
   <data name="SetupUpdate_Lbl_ScheduledTime" xml:space="preserve">
-    <value>Geplante Uhrzeit</value>
+    <value>Automatische Installation um</value>
   </data>
   <data name="SetupUpdate_Lbl_ServiceName" xml:space="preserve">
     <value>Servicename</value>
