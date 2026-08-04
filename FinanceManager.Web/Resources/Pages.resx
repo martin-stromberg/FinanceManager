@@ -2224,13 +2224,13 @@
     <value>Include prerelease versions</value>
   </data>
   <data name="SetupUpdate_Lbl_SourceCheckStartTime" xml:space="preserve">
-    <value>Check from</value>
+    <value>Daily update check from</value>
   </data>
   <data name="SetupUpdate_Lbl_SourceCheckEndTime" xml:space="preserve">
-    <value>Check until</value>
+    <value>Daily update check until</value>
   </data>
   <data name="SetupUpdate_Lbl_ScheduledTime" xml:space="preserve">
-    <value>Scheduled time</value>
+    <value>Automatic installation at</value>
   </data>
   <data name="SetupUpdate_Lbl_ServiceName" xml:space="preserve">
     <value>Service name</value>
