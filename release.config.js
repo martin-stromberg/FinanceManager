@@ -11,7 +11,7 @@ const releaseAssets = [...releaseAssetPaths, releaseAssetPath, releaseManifestPa
   .map((assetPath) => ({ path: assetPath, name: path.basename(assetPath) }));
 
 module.exports = {
-  branches: ["master"],
+  branches: ["master", { name: "staging", prerelease: "RC" }],
   tagFormat: "v${version}",
   plugins: [
     [

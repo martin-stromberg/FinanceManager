@@ -87,7 +87,7 @@ Feature-Branch
 ### 3. release.yml — Versionsverwaltung und Publikation
 
 **Auslöser:**
-- `push` zu `master`
+- `push` zu `master` oder `staging`
 - `push` eines Tags im Format `vX.Y.Z`
 
 **Schritte:**
@@ -103,6 +103,17 @@ Feature-Branch
 **Nicht blockiert durch:**
 - E2E-Test-Fehler (continue-on-error)
 - Manuelle Tags (haben Vorrang vor Auto-Versioning)
+
+**RC-Versionierung auf `staging`:**
+
+`staging` ist in `release.config.js` als Semantic-Release-Prerelease-Branch mit Identifier `RC` konfiguriert (`{ name: "staging", prerelease: "RC" }`). Jeder Push nach `staging` löst denselben release.yml-Ablauf wie `master` aus, erzeugt aber ein GitHub-Release mit `prerelease: true` statt eines stabilen Releases:
+
+- Die Zielversion (`X.Y.Z`) wird wie auf `master` aus allen Conventional Commits seit dem letzten stabilen Tag berechnet (höchster Schweregrad gewinnt: `feat` → minor, `fix` → patch, `breaking` → major).
+- Solange sich diese Zielversion nicht ändert, wird nur der RC-Zähler erhöht: `1.16.1-RC.1` → `1.16.1-RC.2` → …
+- Ändert sich die Zielversion (z. B. weil nach reinen Fixes nun ein `feat`-Commit dazukommt), springt die Version auf die neue Ziffer und der RC-Zähler startet bei 1: `1.16.1-RC.3` → `1.17.0-RC.1`.
+- Beim Merge nach `master` entfällt das `-RC.N`-Suffix; die zuletzt berechnete Version wird zum finalen, stabilen Release (z. B. `1.17.0-RC.4` → `1.17.0`).
+- Da Squash-Merge im Repository deaktiviert ist, bleiben alle einzelnen Commit-Typen beim Promotion-Merge `staging → master` erhalten — die auf `master` berechnete Version stimmt daher exakt mit der zuletzt erreichten RC-Zielversion überein.
+- Beide Branches teilen sich dieselbe repository-weite Concurrency-Gruppe (`release-${{ github.repository }}`), damit parallele Versionsberechnungen auf `master` und `staging` nicht dieselbe Tag-Historie gleichzeitig verändern.
 
 ## Quality Gates
 
@@ -147,8 +158,9 @@ Feature-Branch
    - test.yml läuft automatisch
    - Mindestens 1 Approval erforderlich
    - Alle Checks müssen grün sein
-7. **Merge:** "Squash and merge" oder "Create a merge commit" (je nach Projektvorgabe)
-8. **Automatische Promotion:** Nach dem Merge zu `staging` prüft `staging-to-master.yml`, ob ein PR zu `master` nötig ist
+7. **Merge:** "Create a merge commit" oder "Rebase and merge" (Squash-Merge ist im Repository deaktiviert, damit Conventional-Commit-Typen für Semantic Release erhalten bleiben)
+8. **RC-Release:** Der Merge nach `staging` löst release.yml aus und erzeugt/erhöht die RC-Version (z. B. `1.16.1-RC.1`)
+9. **Automatische Promotion:** Nach dem Merge zu `staging` prüft `staging-to-master.yml`, ob ein PR zu `master` nötig ist
 
 ### Hotfix-Prozess
 
@@ -162,10 +174,10 @@ Feature-Branch
 
 ### Release-Prozess
 
-1. **Automatisch:** Merge zu `master` löst release.yml aus
-2. **Versionierung:** Semantic Release aus Conventional Commits
-3. **Artefakte:** ZIP-Pakete für Windows und Linux werden erstellt
-4. **GitHub Release:** Automatisch veröffentlicht mit Update-Manifest
+1. **Automatisch:** Merge zu `staging` oder `master` löst release.yml aus
+2. **Versionierung:** Semantic Release aus Conventional Commits; auf `staging` als RC-Prerelease (`X.Y.Z-RC.N`), auf `master` als finales, stabiles Release
+3. **Artefakte:** ZIP-Pakete für Windows und Linux werden erstellt (für RC-Releases identisch zum stabilen Release-Prozess)
+4. **GitHub Release:** Automatisch veröffentlicht mit Update-Manifest; RC-Releases werden dabei als `prerelease: true` markiert
 
 ## Fehlersuche
 
