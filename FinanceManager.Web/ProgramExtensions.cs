@@ -161,14 +161,9 @@ namespace FinanceManager.Web
             // FinanceManager-specific settings persistence and installed-version display.
             builder.Services.AddSingleton(TimeProvider.System);
             var updateOptions = builder.Configuration.GetSection(UpdateOptions.SectionName).Get<UpdateOptions>() ?? new UpdateOptions();
-            // "Updates:SourceCheck:Interval" binds directly onto AutoUpdateOptions.SourceCheck.Interval (matching
-            // property names). Only fall back to the legacy "Updates:CheckIntervalMinutes" alias via the fluent
-            // setter when the new key is absent - calling WithSourceCheck unconditionally would make the fluent
-            // value win over configuration every time, per UseAutoUpdate's documented precedence.
-            var sourceCheckIntervalConfigured = builder.Configuration.GetValue<int?>($"{UpdateOptions.SectionName}:SourceCheck:Interval") is not null;
             builder.UseAutoUpdate(cfg =>
             {
-                cfg.SetInitialConfiguration(updateOptions, sourceCheckIntervalConfigured);
+                cfg.SetInitialConfiguration(updateOptions);
             });
             builder.Services.AddScoped<IUpdateOrchestrator, UpdateOrchestratorAdapter>();
             builder.Services.AddSingleton<IUpdateSettingsStore, UpdateSettingsStore>();
@@ -317,7 +312,7 @@ namespace FinanceManager.Web
             builder.Services.AddAuthorization();
         }
 
-        private static void SetInitialConfiguration(this AutoUpdateBuilder cfg, UpdateOptions updateOptions, bool sourceCheckIntervalConfigured)
+        private static void SetInitialConfiguration(this AutoUpdateBuilder cfg, UpdateOptions updateOptions)
         {
             cfg.BindConfiguration(UpdateOptions.SectionName);
             cfg.WithUpdateUnitName("FinanceManagerUpdate");
@@ -326,10 +321,9 @@ namespace FinanceManager.Web
                 cfg.WithDownloadPath(updateOptions.WorkingDirectory);
             }
 
-            if (!sourceCheckIntervalConfigured)
-            {
-                cfg.WithSourceCheck(Math.Max(1, updateOptions.CheckIntervalMinutes));
-            }
+            cfg.WithSourceCheck(
+                AutoUpdateOptionsMapper.DailySourceCheckIntervalMinutes,
+                AutoUpdateOptionsMapper.BuildSourceCheckTimeRanges(updateOptions.SourceCheckStartTime, updateOptions.SourceCheckEndTime));
 
             if (string.Equals(updateOptions.SourceType, "LocalFolder", StringComparison.OrdinalIgnoreCase))
             {

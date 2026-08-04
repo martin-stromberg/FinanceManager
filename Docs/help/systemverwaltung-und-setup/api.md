@@ -121,8 +121,8 @@ Release-Metadaten.
 ### `PUT /api/setup/update/settings`
 
 **Beschreibung:** Self-Update-Einstellungen speichern. Relevante Felder sind
-Aktivierung, Pruefintervall, RepositoryOwner, RepositoryName,
-ManifestAssetName, geplante Uhrzeit, Servicename fuer das aktuelle System,
+Aktivierung, Start- und Enduhrzeit des taeglichen Prueffensters,
+RepositoryOwner, RepositoryName, ManifestAssetName, geplante Uhrzeit, Servicename fuer das aktuelle System,
 optionaler Windows-EXE-Pfad, WorkingDirectory und HealthTimeoutSeconds.
 
 **Berechtigung:** Rolle `Admin`.

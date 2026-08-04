@@ -42,7 +42,7 @@ Aktive Hintergrundtasks werden in der Benutzeroberfläche über ein Statuspanel 
 Die Update-Sektion zeigt Quelle, Status, Release Notes und die Metadaten der
 verfuegbaren Release-Assets. Administratoren koennen die automatische Pruefung
 aktivieren, Vorabversionen beruecksichtigen, Repository/Manifest,
-Pruefintervall, geplante Uhrzeit, Service-/EXE-Ziele, WorkingDirectory und
+Start- und Enduhrzeit des Prueffensters, geplante Uhrzeit, Service-/EXE-Ziele, WorkingDirectory und
 Health-Timeout pflegen. Ein manueller
 Installationsstart verlangt eine Downtime-Bestaetigung. Nach dem Start zeigt
 die UI eine Warteseite, wartet zunaechst auf einen beobachteten Ausfall und
@@ -64,8 +64,8 @@ folgende, neu hinzugekommene Werte: `SourceType` (`Github` oder `LocalFolder`)
 waehlt die Update-Quelle, `LocalFolderPath` das Quellverzeichnis fuer
 `LocalFolder`, `EnableAutomaticDownload`/`EnableAutomaticInstallation`
 schalten den automatischen Download bzw. die automatische Installation nach
-einer gefundenen neueren Version, `SourceCheck:Interval` und
-`SourceCheck:TimeRanges` steuern Intervall und erlaubte Zeitfenster der
+einer gefundenen neueren Version, `SourceCheckStartTime` und
+`SourceCheckEndTime` steuern das taegliche Zeitfenster der
 Hintergrundpruefung, `IncludePrereleases` erlaubt explizit GitHub-Prereleases,
 und `StopHostAfterScriptStart` beendet den Host nach dem Start des
 Installationsskripts (Standard: deaktiviert, wie bisher).

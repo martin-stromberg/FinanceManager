@@ -84,7 +84,7 @@
    - Falls neuer verfügbar: Status sollte auf `Ready` gehen
 
 3. **Falls Prüfung fehlschlägt:**
-   - GitHub-Credentials prüfen: `GITHUB_TOKEN` ist für private Repos erforderlich
+   - Bei "GitHub hat die Update-Pruefung wegen einer Rate-Limit-Begrenzung voruebergehend abgelehnt": später erneut prüfen; das öffentliche Repository kann weiterhin erreichbar sein, GitHub begrenzt aber anonyme API-Abfragen zeitweise
    - Manifest-Dateinamen prüfen: Das erwartete Release-Asset heißt fest `update.json`
    - Repository prüfen: Die Updatequelle ist fest `martin-stromberg/FinanceManager`
    - Prüfen ob GitHub-Release existiert und öffentlich zugänglich ist
@@ -201,31 +201,28 @@
 
 4. **GitHub-Manifest direkt abrufen (zu Debug-Zwecken):**
    ```bash
-   curl -H "Authorization: token $GITHUB_TOKEN" \
-     https://api.github.com/repos/my-org/my-app/releases/latest
+   curl https://api.github.com/repos/martin-stromberg/FinanceManager/releases/latest
    ```
    Prüfen Sie JSON-Struktur und Asset-Namen
 
 ---
 
-## Zu häufige Update-Prüfungen (Server-Last)
+## Update-Prüfung meldet GitHub-Rate-Limit
 
-**Symptom:** Server-Logs zeigen sehr viele Update-Check-Logs; `CheckIntervalMinutes` ist niedrig eingestellt.
+**Symptom:** Status oder manueller Check zeigt eine Rate-Limit-/später-erneut-versuchen-Meldung.
 
-**Ursache:** 
-- Administrator hat `CheckIntervalMinutes` zu niedrig gesetzt (z. B. 1 Minute)
-- Viele Background-Service-Instanzen prüfen parallel
+**Ursache:**
+- GitHub hat anonyme API-Abfragen für die aktuelle IP vorübergehend begrenzt.
+- Das Repository kann trotzdem öffentlich und korrekt konfiguriert sein.
+- Mehrere Instanzen oder häufige manuelle Checks können die Begrenzung schneller erreichen.
 
 **Lösung:**
 
-1. **CheckIntervalMinutes erhöhen:**
-   - Admin-UI: Update-Einstellungen
-   - `CheckIntervalMinutes` auf vernünftigen Wert erhöhen (z. B. 60, 120, 1440)
-   - Speichern
-
+1. Später erneut prüfen.
 2. **Background-Service überprüfen:**
    - Nur eine Instanz sollte laufen
    - Bei Mehrfach-Deployment prüfen, ob Background-Service richtig konfiguriert ist
+3. Das automatische Prüfzeitfenster nutzen; die Hintergrundprüfung läuft täglich und nicht in frei konfigurierbaren Kurzintervallen.
 
 ---
 

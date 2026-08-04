@@ -119,8 +119,9 @@ API den Installationsstart mit `400 BadRequest` ab. Unter Windows kann
 alternativ `Updates:ExecutablePath` verwendet werden, wenn die Anwendung
 ohne Dienst betrieben wird.
 
-Automatische Pruefungen laufen im Intervall `Updates:SourceCheck:Interval`
-Minuten und respektieren Zeitfenster in `Updates:SourceCheck:TimeRanges`.
+Automatische Pruefungen laufen taeglich im Zeitfenster
+`Updates:SourceCheckStartTime` bis `Updates:SourceCheckEndTime`
+(Standard: `20:00:00` bis `06:00:00`).
 `Updates:EnableAutomaticDownload` und `Updates:EnableAutomaticInstallation`
 steuern, ob Pakete automatisch heruntergeladen bzw. installiert werden.
 `Updates:IncludePrereleases` ist standardmaessig `false`; nur bei aktivierter

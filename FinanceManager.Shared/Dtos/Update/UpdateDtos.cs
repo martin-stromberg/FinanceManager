@@ -51,10 +51,11 @@ public sealed record UpdateStatusDto(
 
 public sealed record UpdateSettingsDto(
     bool Enabled,
-    int CheckIntervalMinutes,
     string RepositoryOwner,
     string RepositoryName,
     string ManifestAssetName,
+    TimeOnly SourceCheckStartTime,
+    TimeOnly SourceCheckEndTime,
     TimeOnly? ScheduledInstallTime,
     string? ServiceName,
     string? ExecutablePath,
@@ -64,10 +65,11 @@ public sealed record UpdateSettingsDto(
 
 public sealed record UpdateSettingsUpdateRequest(
     bool Enabled,
-    int CheckIntervalMinutes,
     string? RepositoryOwner,
     string? RepositoryName,
     string? ManifestAssetName,
+    TimeOnly SourceCheckStartTime,
+    TimeOnly SourceCheckEndTime,
     TimeOnly? ScheduledInstallTime,
     string? ServiceName,
     string? ExecutablePath,

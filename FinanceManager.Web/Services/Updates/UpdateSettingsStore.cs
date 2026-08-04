@@ -69,10 +69,11 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
 
         return Build(new UpdateSettingsUpdateRequest(
             raw.Enabled,
-            raw.CheckIntervalMinutes,
             raw.RepositoryOwner,
             raw.RepositoryName,
             raw.ManifestAssetName,
+            raw.SourceCheckStartTime,
+            raw.SourceCheckEndTime,
             raw.ScheduledInstallTime,
             raw.ServiceName,
             raw.ExecutablePath,
@@ -83,18 +84,19 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
 
     /// <summary>
     /// Normalizes and clamps <paramref name="request"/> into a persistable <see cref="UpdateSettingsDto"/>: blank
-    /// repository/manifest values fall back to the host defaults, the check interval and health timeout are
-    /// clamped to their valid ranges, and optional string fields are trimmed to <see langword="null"/>.
+    /// repository/manifest values fall back to the host defaults, the health timeout is clamped to its valid range,
+    /// and optional string fields are trimmed to <see langword="null"/>.
     /// </summary>
     /// <param name="request">The settings to normalize.</param>
     /// <returns>The normalized settings.</returns>
     private UpdateSettingsDto Build(UpdateSettingsUpdateRequest request)
         => new(
             request.Enabled,
-            Math.Clamp(request.CheckIntervalMinutes, 1, 24 * 60),
             NormalizeRepositoryPart(request.RepositoryOwner, _webOptions.RepositoryOwner),
             NormalizeRepositoryPart(request.RepositoryName, _webOptions.RepositoryName),
             string.IsNullOrWhiteSpace(request.ManifestAssetName) ? _webOptions.ManifestAssetName : request.ManifestAssetName.Trim(),
+            request.SourceCheckStartTime,
+            request.SourceCheckEndTime,
             request.ScheduledInstallTime,
             TrimToNull(request.ServiceName),
             TrimToNull(request.ExecutablePath),
@@ -123,10 +125,11 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
             var legacyServiceName = TrimToNull(legacy.ServiceName) ?? TrimToNull(legacy.WindowsServiceName) ?? TrimToNull(legacy.LinuxServiceName);
             return Build(new UpdateSettingsUpdateRequest(
                 legacy.Enabled,
-                legacy.CheckIntervalMinutes,
                 legacy.RepositoryOwner,
                 legacy.RepositoryName,
                 legacy.ManifestAssetName,
+                AutoUpdateOptionsMapper.DefaultSourceCheckStartTime,
+                AutoUpdateOptionsMapper.DefaultSourceCheckEndTime,
                 legacy.ScheduledInstallTime,
                 legacyServiceName,
                 legacy.ExecutablePath,
@@ -135,7 +138,25 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
                 false));
         }
 
-        return document.Deserialize<UpdateSettingsDto>(JsonFileStore.JsonOptions);
+        var persisted = document.Deserialize<PersistedUpdateSettingsDto>(JsonFileStore.JsonOptions);
+        if (persisted is null)
+        {
+            return null;
+        }
+
+        return Build(new UpdateSettingsUpdateRequest(
+            persisted.Enabled,
+            persisted.RepositoryOwner,
+            persisted.RepositoryName,
+            persisted.ManifestAssetName,
+            persisted.SourceCheckStartTime ?? AutoUpdateOptionsMapper.DefaultSourceCheckStartTime,
+            persisted.SourceCheckEndTime ?? AutoUpdateOptionsMapper.DefaultSourceCheckEndTime,
+            persisted.ScheduledInstallTime,
+            persisted.ServiceName,
+            persisted.ExecutablePath,
+            persisted.WorkingDirectory,
+            persisted.HealthTimeoutSeconds,
+            persisted.IncludePrereleases));
     }
 
     private Task WriteAtomicAsync(UpdateSettingsDto settings, CancellationToken ct)
@@ -171,4 +192,19 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
         string? ExecutablePath,
         string? WorkingDirectory,
         int HealthTimeoutSeconds);
+
+    private sealed record PersistedUpdateSettingsDto(
+        bool Enabled,
+        int? CheckIntervalMinutes,
+        string? RepositoryOwner,
+        string? RepositoryName,
+        string? ManifestAssetName,
+        TimeOnly? SourceCheckStartTime,
+        TimeOnly? SourceCheckEndTime,
+        TimeOnly? ScheduledInstallTime,
+        string? ServiceName,
+        string? ExecutablePath,
+        string? WorkingDirectory,
+        int HealthTimeoutSeconds,
+        bool IncludePrereleases);
 }
