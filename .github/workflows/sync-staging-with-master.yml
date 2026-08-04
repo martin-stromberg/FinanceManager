@@ -1,0 +1,46 @@
+name: Sync Staging with Master
+
+# Jede Promotion staging -> master erzeugt einen Merge-Commit, der ausschliesslich auf master
+# existiert (siehe staging-to-master.yml). Ohne Ruecksynchronisation faellt staging dadurch sofort
+# wieder hinter den zuletzt auf master vergebenen Release-Tag zurueck: Semantic Release auf staging
+# faende den Tag dann nicht mehr erreichbar und wuerde die naechste RC-Version auf Basis eines
+# aelteren Tags berechnen (zu niedrige Zielversion). Dieser Workflow merged master nach jedem Push
+# direkt zurueck nach staging, damit der jeweils neueste Release-Tag fuer kuenftige RC-Berechnungen
+# erreichbar bleibt.
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-staging-with-master
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout staging
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: staging
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge master into staging
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin master
+          if git merge-base --is-ancestor origin/master HEAD; then
+            echo "staging already contains the latest master state, nothing to sync."
+            exit 0
+          fi
+          git merge --no-edit origin/master
+          git push origin HEAD:staging
+        shell: bash
