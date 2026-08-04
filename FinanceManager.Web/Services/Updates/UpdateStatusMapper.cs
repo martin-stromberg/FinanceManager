@@ -59,7 +59,7 @@ public sealed class UpdateStatusMapper
             snapshot.AvailableVersion,
             _platformResolver.CurrentRuntimeIdentifier,
             snapshot.LastCheckedAt,
-            snapshot.LastError,
+            UpdateErrorMessageMapper.Map(snapshot.LastError),
             snapshot.LastDownloadResult is not null ? Path.GetFileName(snapshot.LastDownloadResult.LocalPath) : null,
             snapshot.IsLocked,
             snapshot.LockCreatedAt,

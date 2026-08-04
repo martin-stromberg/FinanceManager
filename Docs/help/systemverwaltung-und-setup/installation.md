@@ -32,8 +32,8 @@
 | `Updates:RepositoryOwner` / `Updates:RepositoryName` | string | `martin-stromberg` / `FinanceManager` | GitHub-Repository fuer `SourceType: Github`. Wird ignoriert bei `SourceType: LocalFolder`. |
 | `Updates:ManifestAssetName` | string | `update.json` | Release-Asset mit Update-Metadaten (Github) oder Dateiname im lokalen Verzeichnis. |
 | `Updates:WorkingDirectory` | string | `updates` | Betriebsverzeichnis fuer Pending-Paket, Status, Lock, Staging und Skripte. |
-| `Updates:SourceCheck:Interval` | int | `360` | Pruefintervall in Minuten fuer Hintergrunddienst. |
-| `Updates:SourceCheck:TimeRanges` | Array | `[]` | Zeitfenster, in denen Pruefungen erlaubt sind. Leeres Array bedeutet "jederzeit". Jeder Eintrag hat `DayOfWeek` (Wochentag), `StartTime` (HH:MM:SS) und `EndTime` (HH:MM:SS). |
+| `Updates:SourceCheckStartTime` | time | `20:00:00` | Beginn des taeglichen Zeitfensters fuer automatische Update-Pruefungen. |
+| `Updates:SourceCheckEndTime` | time | `06:00:00` | Ende des taeglichen Zeitfensters; Fenster ueber Mitternacht werden unterstuetzt. |
 | `Updates:ServiceName` | string? | leer | Service-Override fuer die aktuelle Plattform. Unter Windows ist dies der Windows-Dienst, unter Linux der systemd-Service. |
 | `Updates:ExecutablePath` | string? | leer | Windows-Fallback ohne Service; muss absolut im aktuellen Anwendungsverzeichnis liegen. |
 | `Updates:HealthTimeoutSeconds` | int | `120` | Maximale Wartezeit der Setup-UI auf die Wiedererreichbarkeit von `/health`. |
@@ -170,10 +170,10 @@ steuert, ob das Paket automatisch installiert wird, sobald es vorbereitet ist.
 `Updates:IncludePrereleases` bleibt standardmaessig deaktiviert; nur bei
 aktivierter Option werden GitHub-Prereleases in die Suche einbezogen.
 
-Der Hintergrunddienst `AutoUpdateCheckerService` prueft in `Updates:SourceCheck:Interval`
-Minuten-Intervallen. Nur Pruefungen innerhalb der in `Updates:SourceCheck:TimeRanges`
-konfigurierten Zeitfenster werden ausgefuehrt; ein leeres Array erlaubt Pruefungen
-zu jeder Tageszeit.
+Der Hintergrunddienst `AutoUpdateCheckerService` prueft taeglich. Nur Pruefungen
+innerhalb des aus `Updates:SourceCheckStartTime` und `Updates:SourceCheckEndTime`
+abgeleiteten Zeitfensters werden ausgefuehrt; das Standardfenster `20:00:00` bis
+`06:00:00` laeuft ueber Mitternacht.
 
 Geplante Installationen werden ueber `POST /api/setup/update/schedule` konfiguriert
 und von `AutoUpdateSchedulerService` zu konfigurierten Uhrzeiten ausgefuehrt

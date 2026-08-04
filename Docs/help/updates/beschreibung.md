@@ -4,14 +4,14 @@
 
 ## Zweck
 
-Das Update-System automatisiert die Erkennung, den Download und die Installation von Programmaktualisierungen auf produktiven Servern. Die Update-Quelle ist fest auf das GitHub-Repository `martin-stromberg/FinanceManager` und das Manifest-Asset `update.json` eingestellt. Administratoren steuern in der Oberfläche nur noch, ob geprüft wird, in welchem Intervall geprüft wird, welche Installationszeit vorgesehen ist, welcher Windows- oder Linux-Dienst neu gestartet werden soll und ob Vorabversionen in die automatische Update-Prüfung einbezogen werden.
+Das Update-System automatisiert die Erkennung, den Download und die Installation von Programmaktualisierungen auf produktiven Servern. Die Update-Quelle ist fest auf das GitHub-Repository `martin-stromberg/FinanceManager` und das Manifest-Asset `update.json` eingestellt. Administratoren steuern in der Oberfläche nur noch, ob geprüft wird, in welchem täglichen Zeitfenster geprüft wird, welche Installationszeit vorgesehen ist, welcher Windows- oder Linux-Dienst neu gestartet werden soll und ob Vorabversionen in die automatische Update-Prüfung einbezogen werden.
 
 ## Funktionsweise
 
 Das System arbeitet in vier Phasen:
 
-### 1. Automatische Prüfung (periodisch)
-Der `UpdateOrchestrator` prüft in konfigurierten Intervallen (Standard: alle 60 Minuten), ob ein neueres Release im definierten GitHub-Repository verfügbar ist. Standardmäßig werden nur stabile Releases berücksichtigt. Wenn die Einstellung **Vorabversionen berücksichtigen** aktiviert ist, werden auch GitHub-Prereleases in die Prüfung einbezogen. Die Prüfung läuft im Hintergrund und schreibt den Status in eine lokal gespeicherte `status.json`-Datei.
+### 1. Automatische Prüfung (täglich)
+Der `UpdateOrchestrator` prüft einmal täglich, ob ein neueres Release im definierten GitHub-Repository verfügbar ist. Die Prüfung ist nur im konfigurierten Zeitfenster erlaubt; Standard ist `20:00` bis `06:00`, also ein Fenster über Mitternacht. Standardmäßig werden nur stabile Releases berücksichtigt. Wenn die Einstellung **Vorabversionen berücksichtigen** aktiviert ist, werden auch GitHub-Prereleases in die Prüfung einbezogen. Die Prüfung läuft im Hintergrund und schreibt den Status in eine lokal gespeicherte `status.json`-Datei.
 
 ### 2. Download vorbereiten
 Sobald eine neuere Version erkannt wird, wird das entsprechende Asset (`.zip`-Archiv für die aktuelle Plattform) heruntergeladen und validiert. Der Status wird auf `Ready` gesetzt.
@@ -44,7 +44,7 @@ Die Update-Sektion folgt dem allgemeinen Setup-Speicherverhalten. Änderungen an
 
 Editierbar sind:
 - Update-Prüfung aktiviert/deaktiviert
-- Prüfintervall in Minuten
+- Prüfzeitfenster mit Start- und Enduhrzeit
 - Vorabversionen berücksichtigen
 - geplante Installationszeit
 - Service-Name
@@ -60,8 +60,8 @@ Die technischen Werte `RepositoryOwner`, `RepositoryName`, `ManifestAssetName`, 
 ## Beispiele
 
 ### Szenario: Regelmäßige Prüfung
-1. Administrator aktiviert Updates in der Konfiguration und setzt Intervall auf 60 Minuten
-2. Das System prüft alle 60 Minuten GitHub und findet Version 2.5.0 (aktuell installiert: 2.4.0)
+1. Administrator aktiviert Updates und belässt das Prüfzeitfenster auf `20:00` bis `06:00`
+2. Das System prüft einmal täglich innerhalb dieses Fensters GitHub und findet Version 2.5.0 (aktuell installiert: 2.4.0)
 3. Version 2.5.0 wird heruntergeladen und als `Ready` gekennzeichnet
 4. Administrator wird benachrichtigt (Statusseite zeigt verfügbares Update)
 5. Administrator klickt im Ribbon **Update installieren**, bestätigt die Downtime, System wechselt zu `Installing`

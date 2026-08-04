@@ -59,7 +59,8 @@ Datenbankentitaeten.
 | Eigenschaft | Typ | Beschreibung |
 |-------------|-----|--------------|
 | `Enabled` | `bool` | Aktiviert die periodische Updatepruefung |
-| `CheckIntervalMinutes` | `int` | Intervall des `UpdateChecker` in Minuten |
+| `SourceCheckStartTime` | `TimeOnly` | Beginn des taeglichen Prueffensters |
+| `SourceCheckEndTime` | `TimeOnly` | Ende des taeglichen Prueffensters; Fenster ueber Mitternacht sind erlaubt |
 | `RepositoryOwner` / `RepositoryName` | `string` | GitHub-Repository der Updatequelle |
 | `ManifestAssetName` | `string` | Name des Manifest-Assets, standardmaessig `update.json` |
 | `ScheduledInstallTime` | `TimeOnly?` | Optionale lokale Uhrzeit fuer geplante Installation |

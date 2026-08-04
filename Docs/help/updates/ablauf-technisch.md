@@ -10,7 +10,7 @@ Das Update-System prüft GitHub-Releases regelmäßig, lädt neue Versionen heru
 
 ### 1. Automatische Prüfung (CheckAsync)
 
-**Voraussetzung:** Update-Service ist aktiviert und das Prüfintervall ist abgelaufen.
+**Voraussetzung:** Update-Service ist aktiviert, die tägliche Prüfung ist fällig und die lokale Uhrzeit liegt im konfigurierten Prüfzeitfenster.
 
 **Beteiligte Komponenten:**
 - `UpdateOrchestrator.CheckAsync()` — Einstiegspunkt der Prüfung
@@ -34,6 +34,7 @@ Das Update-System prüft GitHub-Releases regelmäßig, lädt neue Versionen heru
 - Netzwerkfehler, Manifest ungültig, Asset nicht für Plattform vorhanden → `Failed`
 - Bereits aktuelle Version → Status `NoUpdate` (kein Fehler)
 - Unbekannte installierte Version (z. B. Entwicklungs-Build) → `NoUpdate` mit Info-Meldung
+- GitHub `403 (rate limit exceeded)` → verständliche Rate-Limit-Meldung im Status und in der Check-Antwort; der Administrator soll später erneut prüfen
 
 ### 2. Installationsvorbereitung (StartInstallAsync)
 
@@ -137,9 +138,9 @@ Resultat:    {Status: Failed, LastError: "Err_Update_VersionMismatch"}
 **Fehlerbehandlung:**
 Alle Verweigerungen werfen `IOException`, die über die API als HTTP 409 (Conflict) oder HTTP 400 (Bad Request) beantwortet werden.
 
-### 6. Einstellungen normalisieren, Vorabversionen anwenden und Service-Vorschläge laden
+### 6. Einstellungen normalisieren, Prüfzeitfenster ableiten, Vorabversionen anwenden und Service-Vorschläge laden
 
-Die Update-Einstellungen enthalten weiterhin DTO-Felder für ältere gespeicherte Dateien und API-Kompatibilität. Anwender bearbeiten in der Setup-UI jedoch nur noch `Enabled`, `CheckIntervalMinutes`, `IncludePrereleases`, `ScheduledInstallTime` und `ServiceName`.
+Anwender bearbeiten in der Setup-UI nur noch `Enabled`, `SourceCheckStartTime`, `SourceCheckEndTime`, `IncludePrereleases`, `ScheduledInstallTime` und `ServiceName`.
 
 Beim Laden und Speichern normalisiert `UpdateSettingsStore` technische Werte:
 - `RepositoryOwner` = `martin-stromberg`
@@ -148,9 +149,12 @@ Beim Laden und Speichern normalisiert `UpdateSettingsStore` technische Werte:
 - `WorkingDirectory` = `updates`
 - `HealthTimeoutSeconds` = `UpdateOptions.HealthTimeoutSeconds`, Fallback `120`, Clamp `10..600`
 - `ExecutablePath` wird bei Speichervorgängen nicht aus Anwenderwerten übernommen
+- fehlende `SourceCheckStartTime`/`SourceCheckEndTime` aus älteren Dateien werden als `20:00` bis `06:00` gelesen
 - `IncludePrereleases` bleibt ein Anwenderwert; fehlende Legacy-Werte werden als `false` gelesen
 
 `AutoUpdateOptionsMapper.ApplySettings()` spiegelt die gespeicherte Einstellung unmittelbar in die Updater-Library:
+- `AutoUpdateOptions.SourceCheck.Interval` wird fest auf `1440` Minuten gesetzt
+- `AutoUpdateOptions.SourceCheck.TimeRanges` wird aus Start- und Enduhrzeit für alle Wochentage erzeugt; Fenster über Mitternacht werden in Abend- und Morgenbereich gesplittet
 - `AutoUpdateOptions.AllowPrereleaseUpdates` erhält den Wert aus `UpdateSettingsDto.IncludePrereleases`
 - Bei GitHub-Quellen wird `AutoUpdateGithubSource.Create(owner, repository, manifestAsset, includePrereleases)` erneut aufgerufen, damit die nächste Prüfung dieselbe Prerelease-Entscheidung verwendet
 - Local-Folder-Quellen bleiben unverändert; dort wird nur die Runtime-Option gesetzt
@@ -228,7 +232,7 @@ flowchart TD
 
 - **Lock-Datei:** Minimal (< 100 Bytes, nur Zeitstempel)
 - **Status-JSON:** Klein (< 5 KB, nur Metadaten)
-- **Prüf-Intervall:** Konfigurierbar 1–1440 Minuten (Default: 60 Min)
+- **Prüfung:** Täglich (`1440` Minuten) innerhalb des konfigurierten Zeitfensters (Default: `20:00` bis `06:00`)
 - **Download-Limit:** Konfigurierbar max. Asset-Größe (verhindert DoS)
 - **Health-Timeout:** Konfigurierbar 10–600 Sekunden für Neustart-Wartezeit
 

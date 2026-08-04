@@ -18,7 +18,7 @@ public sealed class UpdateOrchestratorAdapterTests
         orchestrator.Setup(o => o.GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(snapshot);
         var settingsStore = new Mock<IUpdateSettingsStore>();
         settingsStore.Setup(s => s.GetAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", new TimeOnly(4, 0), "svc", null, "updates", 120, false));
+            .ReturnsAsync(new UpdateSettingsDto(true, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), new TimeOnly(4, 0), "svc", null, "updates", 120, false));
         var installedProvider = new Mock<IInstalledReleaseMetadataProvider>();
         installedProvider.Setup(p => p.GetAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new InstalledReleaseMetadataDto("1.0.0", DateTimeOffset.UtcNow, "sha", "repo", "win-x64"));
@@ -68,7 +68,7 @@ public sealed class UpdateOrchestratorAdapterTests
             .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.UpdateAvailable, "found an update", null));
         var settingsStore = new Mock<IUpdateSettingsStore>();
         settingsStore.Setup(s => s.GetAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, "svc", null, "updates", 120, false));
+            .ReturnsAsync(new UpdateSettingsDto(true, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, "svc", null, "updates", 120, false));
         var installedProvider = new Mock<IInstalledReleaseMetadataProvider>();
         installedProvider.Setup(p => p.GetAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new InstalledReleaseMetadataDto(null, null, null, null, null));
@@ -87,7 +87,7 @@ public sealed class UpdateOrchestratorAdapterTests
     [Fact]
     public async Task Adapter_SaveSettings_AppliesToAutoUpdateOptions()
     {
-        var savedSettings = new UpdateSettingsDto(true, 45, "owner", "repo", "update.json", null, "svc", null, "custom", 200, true);
+        var savedSettings = new UpdateSettingsDto(true, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, "svc", null, "custom", 200, true);
         var settingsStore = new Mock<IUpdateSettingsStore>();
         settingsStore.Setup(s => s.SaveAsync(It.IsAny<UpdateSettingsUpdateRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(savedSettings);
@@ -96,9 +96,34 @@ public sealed class UpdateOrchestratorAdapterTests
             .Callback(() => applied = true);
         var adapter = UpdateOrchestratorAdapterTestFactory.Create(settingsStore: settingsStore.Object);
 
-        var result = await adapter.SaveSettingsAsync(new UpdateSettingsUpdateRequest(true, 45, "owner", "repo", "update.json", null, "svc", null, "custom", 200, true));
+        var result = await adapter.SaveSettingsAsync(new UpdateSettingsUpdateRequest(true, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, "svc", null, "custom", 200, true));
 
         result.Should().Be(savedSettings);
         applied.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Adapter_CheckAsync_WhenRateLimitedResult_ReturnsFriendlyMessage()
+    {
+        var raw = "Response status code does not indicate success: 403 (rate limit exceeded).";
+        var orchestrator = new Mock<IAutoUpdateOrchestrator>();
+        orchestrator.Setup(o => o.CheckForUpdateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Failed, AutoUpdateState.Failed, raw, new HttpRequestException(raw)));
+        var settingsStore = new Mock<IUpdateSettingsStore>();
+        settingsStore.Setup(s => s.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UpdateSettingsDto(true, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, "svc", null, "updates", 120, false));
+        var installedProvider = new Mock<IInstalledReleaseMetadataProvider>();
+        installedProvider.Setup(p => p.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new InstalledReleaseMetadataDto(null, null, null, null, null));
+        var adapter = UpdateOrchestratorAdapterTestFactory.Create(
+            orchestrator: orchestrator.Object,
+            settingsStore: settingsStore.Object,
+            installedProvider: installedProvider.Object);
+
+        var result = await adapter.CheckAsync();
+
+        result.UpdateAvailable.Should().BeFalse();
+        result.Message.Should().Be(UpdateErrorMessageMapper.GithubRateLimitMessage);
+        result.Status.LastError.Should().Be(UpdateErrorMessageMapper.GithubRateLimitMessage);
     }
 }

@@ -64,10 +64,11 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 ```json
 {
   "enabled": true,
-  "checkIntervalMinutes": 60,
   "repositoryOwner": "martin-stromberg",
   "repositoryName": "FinanceManager",
   "manifestAssetName": "update.json",
+  "sourceCheckStartTime": "20:00:00",
+  "sourceCheckEndTime": "06:00:00",
   "scheduledInstallTime": "03:00:00",
   "serviceName": "my-app-service",
   "executablePath": null,
@@ -95,10 +96,11 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 ```json
 {
   "enabled": true,
-  "checkIntervalMinutes": 60,
   "repositoryOwner": "ignored",
   "repositoryName": "ignored",
   "manifestAssetName": "ignored",
+  "sourceCheckStartTime": "20:00:00",
+  "sourceCheckEndTime": "06:00:00",
   "scheduledInstallTime": "03:00:00",
   "serviceName": "my-app-service",
   "executablePath": null,
@@ -111,7 +113,7 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 **Rückgabe:** `UpdateSettingsDto` (gespeicherte Konfiguration, mit Normalisierung)
 
 **Normalisierung und Validierung:**
-- `CheckIntervalMinutes`: 1–1440 (geclamped)
+- `SourceCheckStartTime` / `SourceCheckEndTime`: werden als tägliches Prüfzeitfenster gespeichert; fehlende Legacy-Werte ergeben `20:00:00` bis `06:00:00`
 - `RepositoryOwner`: immer `martin-stromberg`
 - `RepositoryName`: immer `FinanceManager`
 - `ManifestAssetName`: immer `update.json`
@@ -337,10 +339,11 @@ public class UpdateStatusDto
 ```csharp
 public sealed record UpdateSettingsDto(
     bool Enabled,
-    int CheckIntervalMinutes,
     string RepositoryOwner,
     string RepositoryName,
     string ManifestAssetName,
+    TimeOnly SourceCheckStartTime,
+    TimeOnly SourceCheckEndTime,
     TimeOnly? ScheduledInstallTime,
     string? ServiceName,          // Windows Service oder systemd-Dienst
     string? ExecutablePath,       // Legacy-Lesewert, nicht mehr editierbar
@@ -354,10 +357,11 @@ public sealed record UpdateSettingsDto(
 ```csharp
 public sealed record UpdateSettingsUpdateRequest(
     bool Enabled,
-    int CheckIntervalMinutes,
     string? RepositoryOwner,
     string? RepositoryName,
     string? ManifestAssetName,
+    TimeOnly SourceCheckStartTime,
+    TimeOnly SourceCheckEndTime,
     TimeOnly? ScheduledInstallTime,
     string? ServiceName,
     string? ExecutablePath,

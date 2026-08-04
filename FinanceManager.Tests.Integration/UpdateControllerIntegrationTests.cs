@@ -53,10 +53,11 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
 
         var update = new UpdateSettingsUpdateRequest(
             true,
-            15,
             "martin-stromberg",
             "FinanceManager",
             "update.json",
+            new TimeOnly(20, 0),
+            new TimeOnly(6, 0),
             new TimeOnly(3, 30),
             "FinanceManagerService",
             null,
@@ -69,7 +70,8 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         var settings = await put.Content.ReadFromJsonAsync<UpdateSettingsDto>();
 
         settings!.Enabled.Should().BeTrue();
-        settings.CheckIntervalMinutes.Should().Be(15);
+        settings.SourceCheckStartTime.Should().Be(new TimeOnly(20, 0));
+        settings.SourceCheckEndTime.Should().Be(new TimeOnly(6, 0));
         settings.RepositoryOwner.Should().Be("martin-stromberg");
         settings.IncludePrereleases.Should().BeTrue();
     }
@@ -153,10 +155,11 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             // re-applied to the auto-update library's runtime options because the process later restarted.
             var persisted = new UpdateSettingsDto(
                 true,
-                77,
                 "martin-stromberg",
                 "FinanceManager",
                 "update.json",
+                new TimeOnly(21, 0),
+                new TimeOnly(5, 0),
                 null,
                 "PersistedServiceName",
                 null,
@@ -175,7 +178,8 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             var options = factory.Services.GetRequiredService<AutoUpdateOptions>();
 
             options.ServiceName.Should().Be("PersistedServiceName");
-            options.SourceCheck.Interval.Should().Be(77);
+            options.SourceCheck.Interval.Should().Be(AutoUpdateOptionsMapper.DailySourceCheckIntervalMinutes);
+            options.SourceCheck.TimeRanges.Should().HaveCount(14);
             options.HealthTimeoutSeconds.Should().Be(250);
             options.AllowPrereleaseUpdates.Should().BeTrue();
         }

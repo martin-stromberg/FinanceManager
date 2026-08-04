@@ -74,7 +74,7 @@ public sealed class ApiClientUpdateTests
         => new(HttpStatusCode.OK) { Content = JsonContent.Create(value) };
 
     private static UpdateSettingsDto Settings(TimeOnly? scheduledInstallTime)
-        => new(false, 60, "owner", "repo", "update.json", scheduledInstallTime, null, null, "updates", 120, false);
+        => new(false, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), scheduledInstallTime, null, null, "updates", 120, false);
 
     private static UpdateStatusDto Status(UpdateStatusKind kind)
         => new(kind, "1.0.0", null, null, "win-x64", null, null, null, kind == UpdateStatusKind.Installing, kind == UpdateStatusKind.Installing ? DateTimeOffset.UtcNow : null, null, null);
