@@ -41,8 +41,9 @@ Aktive Hintergrundtasks werden in der Benutzeroberfläche über ein Statuspanel 
 
 Die Update-Sektion zeigt Quelle, Status, Release Notes und die Metadaten der
 verfuegbaren Release-Assets. Administratoren koennen die automatische Pruefung
-aktivieren, Repository/Manifest, Pruefintervall, geplante Uhrzeit,
-Service-/EXE-Ziele, WorkingDirectory und Health-Timeout pflegen. Ein manueller
+aktivieren, Vorabversionen beruecksichtigen, Repository/Manifest,
+Pruefintervall, geplante Uhrzeit, Service-/EXE-Ziele, WorkingDirectory und
+Health-Timeout pflegen. Ein manueller
 Installationsstart verlangt eine Downtime-Bestaetigung. Nach dem Start zeigt
 die UI eine Warteseite, wartet zunaechst auf einen beobachteten Ausfall und
 laedt erst nach einem spaeteren erfolgreichen `/health`-Aufruf neu.
@@ -52,12 +53,12 @@ aelter als das konfigurierte Health-Timeout ist.
 
 Die Self-Update-Logik selbst wird als externe, hosting-unabhaengige Bibliothek
 `msTools.Updater` eingebunden. Bis zur NuGet-Veroeffentlichung referenziert
-FinanceManager den geprueften Release `v0.2.0` unter
-`external/msTools.Updater/v0.2.0/`; die dort entpackte `msTools.Updater.dll`
+FinanceManager den geprueften Release `v0.3.0` unter
+`external/msTools.Updater/v0.3.0/`; die dort entpackte `msTools.Updater.dll`
 wird beim Start ueber einen einzigen Aufruf `builder.UseAutoUpdate(...)` in
 `ProgramExtensions` registriert. FinanceManager greift darauf ueber die duenne
 Adapterschicht `UpdateOrchestratorAdapter` zu, sodass Controller, `ApiClient`,
-`SetupUpdateViewModel` und `SetupUpdateTab.razor` unveraendert bleiben. Die
+`SetupUpdateViewModel` und `SetupUpdateTab.razor` stabil bleiben. Die
 Konfigurationssektion `Updates` in `appsettings.json` steuert zusaetzlich
 folgende, neu hinzugekommene Werte: `SourceType` (`Github` oder `LocalFolder`)
 waehlt die Update-Quelle, `LocalFolderPath` das Quellverzeichnis fuer
@@ -65,8 +66,9 @@ waehlt die Update-Quelle, `LocalFolderPath` das Quellverzeichnis fuer
 schalten den automatischen Download bzw. die automatische Installation nach
 einer gefundenen neueren Version, `SourceCheck:Interval` und
 `SourceCheck:TimeRanges` steuern Intervall und erlaubte Zeitfenster der
-Hintergrundpruefung, und `StopHostAfterScriptStart` beendet den Host nach dem
-Start des Installationsskripts (Standard: deaktiviert, wie bisher).
+Hintergrundpruefung, `IncludePrereleases` erlaubt explizit GitHub-Prereleases,
+und `StopHostAfterScriptStart` beendet den Host nach dem Start des
+Installationsskripts (Standard: deaktiviert, wie bisher).
 
 ## Beispiele
 

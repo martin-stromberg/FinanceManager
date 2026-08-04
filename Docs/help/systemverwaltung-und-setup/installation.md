@@ -26,6 +26,7 @@
 | `Updates:HostedServicesEnabled` | bool | `true` | Aktiviert die Hintergrunddienste fuer Updatepruefung und geplante Installation. |
 | `Updates:SourceType` | string | `Github` | Update-Quelle: `Github` (Releases aus GitHub) oder `LocalFolder` (Manifest und Pakete aus lokalem Verzeichnis). |
 | `Updates:LocalFolderPath` | string? | `null` | Lokales Verzeichnis mit Update-Manifest und Paketen (nur fuer `SourceType: LocalFolder`). |
+| `Updates:IncludePrereleases` | bool | `false` | Beruecksichtigt GitHub-Vorabversionen bei automatischen und manuellen Update-Pruefungen, wenn aktiviert. |
 | `Updates:EnableAutomaticDownload` | bool | `true` | Automatischer Download des Update-Pakets, sobald eine neuere Version erkannt wird. |
 | `Updates:EnableAutomaticInstallation` | bool | `false` | Automatische Installation des vorbereiteten Update-Pakets zu konfigurierter Zeit oder bei nachfolgenden Hintergrundueberpruefungen. |
 | `Updates:RepositoryOwner` / `Updates:RepositoryName` | string | `martin-stromberg` / `FinanceManager` | GitHub-Repository fuer `SourceType: Github`. Wird ignoriert bei `SourceType: LocalFolder`. |
@@ -126,8 +127,8 @@ Benutzerprofilen hinterlegen.
 
 Das Self-Update ist im Setup nur fuer Administratoren sichtbar und wird durch
 die externe Bibliothek `msTools.Updater` bereitgestellt. FinanceManager
-referenziert bis zur NuGet-Veroeffentlichung den geprueften Release `v0.2.0`
-unter `external/msTools.Updater/v0.2.0/`. Updates koennen aus GitHub-Releases
+referenziert bis zur NuGet-Veroeffentlichung den geprueften Release `v0.3.0`
+unter `external/msTools.Updater/v0.3.0/`. Updates koennen aus GitHub-Releases
 (`Updates:SourceType: Github`, Standardwert) oder aus einem lokalen Verzeichnis
 (`Updates:SourceType: LocalFolder`, `Updates:LocalFolderPath`) geladen werden.
 
@@ -166,6 +167,8 @@ Das Verzeichnis muss folgende Struktur aufweisen:
 `Updates:EnableAutomaticDownload` steuert, ob das Paket nach erfolgter
 Versionspruefung automatisch heruntergeladen wird. `Updates:EnableAutomaticInstallation`
 steuert, ob das Paket automatisch installiert wird, sobald es vorbereitet ist.
+`Updates:IncludePrereleases` bleibt standardmaessig deaktiviert; nur bei
+aktivierter Option werden GitHub-Prereleases in die Suche einbezogen.
 
 Der Hintergrunddienst `AutoUpdateCheckerService` prueft in `Updates:SourceCheck:Interval`
 Minuten-Intervallen. Nur Pruefungen innerhalb der in `Updates:SourceCheck:TimeRanges`

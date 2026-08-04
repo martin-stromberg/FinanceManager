@@ -5,6 +5,7 @@
 - ASP.NET Core 8.0+ (für die Web-Anwendung)
 - GitHub-Repository mit Releases (als Update-Quelle)
 - Admin-Berechtigungen zum Verwalten von Updates
+- Vendored `msTools.Updater v0.3.0` unter `external/msTools.Updater/v0.3.0/`
 - Auf Windows: Windows Service mit entsprechender Dienstkonfiguration
 - Auf Linux: systemd-Service oder Daemon-Mechanismus für Dienst-Restart
 - Auf Linux: Dienstbenutzer muss Berechtigungen zum Starten transienter systemd-Units besitzen (siehe Abschnitt „Dienstbenutzer-Berechtigungen“)
@@ -66,6 +67,8 @@ Diese Konfiguration stellt sicher, dass der Installer-Prozess zuverlässig ausge
 
 Das Update-System ist bereits im Projekt integriert. Es erfordert keine zusätzliche Installation, sondern nur Konfiguration.
 
+Die Updater-Library wird nicht per NuGet bezogen, sondern als vendored Artefakt referenziert. `FinanceManager.Web.csproj` verweist auf `..\external\msTools.Updater\v0.3.0\lib\msTools.Updater.dll`; das zugehörige Release-Archiv liegt als `external/msTools.Updater/v0.3.0/release.zip` mit Prüfsummen in `SHA256SUMS.txt` vor.
+
 1. **Abhängigkeiten in DI-Container registrieren** (in `Program.cs`):
    ```csharp
    services.AddUpdateServices(configuration);
@@ -83,7 +86,7 @@ Das Update-System ist bereits im Projekt integriert. Es erfordert keine zusätzl
 
 ## Konfiguration
 
-Update-Einstellungen werden in `appsettings.json` konfiguriert und teilweise über die Web-UI überschrieben. Die Web-UI zeigt nur noch betriebliche Einstellungen an: Aktivierung, Prüfintervall, geplante Installationszeit und Service-Name. Technische Werte für Repository, Manifest, Arbeitsverzeichnis, Exe-Pfad und Health-Timeout sind nicht mehr editierbar.
+Update-Einstellungen werden in `appsettings.json` konfiguriert und teilweise über die Web-UI überschrieben. Die Web-UI zeigt nur noch betriebliche Einstellungen an: Aktivierung, Prüfintervall, Vorabversionen, geplante Installationszeit und Service-Name. Technische Werte für Repository, Manifest, Arbeitsverzeichnis, Exe-Pfad und Health-Timeout sind nicht mehr editierbar.
 
 ### appsettings.json
 
@@ -103,7 +106,8 @@ Update-Einstellungen werden in `appsettings.json` konfiguriert und teilweise üb
     "ServiceName": "my-app-service",
     "ExecutablePath": null,
     "WorkingDirectory": "updates",
-    "HealthTimeoutSeconds": 120
+    "HealthTimeoutSeconds": 120,
+    "IncludePrereleases": false
   }
 }
 ```
@@ -116,6 +120,7 @@ Update-Einstellungen werden in `appsettings.json` konfiguriert und teilweise üb
 | `UpdateOptions.MaxAssetBytes` | int | 536 MB | Maximale Größe eines herunterladbaren Assets (verhindert DoS) |
 | `UpdateSettings.Enabled` | bool | false | Aktiviert/deaktiviert automatische Prüfung |
 | `UpdateSettings.CheckIntervalMinutes` | int | 60 | Prüf-Intervall in Minuten (1–1440, auf UI geclamped) |
+| `UpdateSettings.IncludePrereleases` | bool | false | Berücksichtigt GitHub-Vorabversionen bei automatischen und manuellen Update-Prüfungen, wenn aktiviert |
 | `UpdateSettings.RepositoryOwner` | string | `martin-stromberg` | Fester GitHub-Benutzername der Updatequelle; wird beim Speichern serverseitig normalisiert |
 | `UpdateSettings.RepositoryName` | string | `FinanceManager` | Festes GitHub-Repository der Updatequelle; wird beim Speichern serverseitig normalisiert |
 | `UpdateSettings.ManifestAssetName` | string | `update.json` | Festes Release-Asset mit Manifest; wird beim Speichern serverseitig normalisiert |
@@ -128,6 +133,8 @@ Update-Einstellungen werden in `appsettings.json` konfiguriert und teilweise üb
 ### Web-UI
 
 Die Update-Sektion befindet sich in der Admin-Setup-Seite. Änderungen an den sichtbaren Einstellungen werden über den globalen Ribbon-Button **Speichern** gespeichert. Der frühere Button **Einstellungen speichern** im Update-Register ist entfallen.
+
+Die Checkbox **Vorabversionen berücksichtigen** ist standardmäßig aus. Solange sie deaktiviert ist, bleiben automatische und manuelle Prüfungen auf stabile GitHub-Releases beschränkt. Nach dem Aktivieren und Speichern wird die Einstellung dauerhaft abgelegt und sofort an `msTools.Updater v0.3.0` weitergegeben; die nächste Prüfung kann dann auch GitHub-Prereleases finden.
 
 Im Ribbon der Setup-Seite stehen außerdem die Update-Aktionen bereit:
 - **Jetzt prüfen** lädt Manifest und passendes Paket.
@@ -181,7 +188,7 @@ Wichtig:
 1. **Web-UI öffnen:**
    - Navigiere zur Admin-Setup-Seite (`/admin/setup`)
    - Reiter "Update" sollte sichtbar sein
-   - Als Admin-Benutzer: Aktivierung, Prüfintervall, geplante Zeit und Service-Name sollten konfigurierbar sein
+   - Als Admin-Benutzer: Aktivierung, Prüfintervall, Vorabversionen, geplante Zeit und Service-Name sollten konfigurierbar sein
 
 2. **Manuelle Prüfung auslösen:**
    - Im Ribbon "Jetzt prüfen" klicken

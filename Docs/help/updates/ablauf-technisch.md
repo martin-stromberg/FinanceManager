@@ -4,7 +4,7 @@
 
 ## Übersicht
 
-Das Update-System prüft GitHub-Releases regelmäßig, lädt neue Versionen herunter und orchestriert die Installation über einen eigenständigen Installer-Prozess. Die Installation wird nicht vom Host-Prozess selbst durchgeführt, sondern über eine transient service unit, die mittels systemd-run gestartet wird. Dadurch kann der Host-Prozess sich selbst beenden, während das Installer-Skript unabhängig weiterläuft. Nach dem Neustart validiert das System, ob die neue Version erfolgreich geladen wurde. Lock-Dateien verhindern parallele Installationen; bei Fehlern werden Locks automatisch bereinigt.
+Das Update-System prüft GitHub-Releases regelmäßig, lädt neue Versionen herunter und orchestriert die Installation über einen eigenständigen Installer-Prozess. Die Installation wird nicht vom Host-Prozess selbst durchgeführt, sondern über eine transient service unit, die mittels systemd-run gestartet wird. Dadurch kann der Host-Prozess sich selbst beenden, während das Installer-Skript unabhängig weiterläuft. Nach dem Neustart validiert das System, ob die neue Version erfolgreich geladen wurde. Lock-Dateien verhindern parallele Installationen; bei Fehlern werden Locks automatisch bereinigt. Die vendored Komponente `msTools.Updater v0.3.0` stellt die Runtime-Option `AutoUpdateOptions.AllowPrereleaseUpdates` und die GitHub-Source-Erzeugung mit `includePrereleases` bereit.
 
 ## Ablauf
 
@@ -22,7 +22,7 @@ Das Update-System prüft GitHub-Releases regelmäßig, lädt neue Versionen heru
 
 **Ablauf:**
 1. Status auf `Checking` setzen
-2. Manifest-Asset aus GitHub laden (URL aus Konfiguration)
+2. Manifest-Asset aus GitHub laden (URL aus Konfiguration); Vorabversionen werden nur einbezogen, wenn `IncludePrereleases` gespeichert und auf `AutoUpdateOptions.AllowPrereleaseUpdates` angewendet ist
 3. Manifest validieren (Format, Plattform-Asset vorhanden)
 4. Installierte Version gegen verfügbare Version vergleichen
 5. Wenn neuer: herunterladbare Asset-URL mit `IUpdatePlatformResolver` für aktuelle Plattform auswählen
@@ -137,9 +137,9 @@ Resultat:    {Status: Failed, LastError: "Err_Update_VersionMismatch"}
 **Fehlerbehandlung:**
 Alle Verweigerungen werfen `IOException`, die über die API als HTTP 409 (Conflict) oder HTTP 400 (Bad Request) beantwortet werden.
 
-### 6. Einstellungen normalisieren und Service-Vorschläge laden
+### 6. Einstellungen normalisieren, Vorabversionen anwenden und Service-Vorschläge laden
 
-Die Update-Einstellungen enthalten weiterhin DTO-Felder für ältere gespeicherte Dateien und API-Kompatibilität. Anwender bearbeiten in der Setup-UI jedoch nur noch `Enabled`, `CheckIntervalMinutes`, `ScheduledInstallTime` und `ServiceName`.
+Die Update-Einstellungen enthalten weiterhin DTO-Felder für ältere gespeicherte Dateien und API-Kompatibilität. Anwender bearbeiten in der Setup-UI jedoch nur noch `Enabled`, `CheckIntervalMinutes`, `IncludePrereleases`, `ScheduledInstallTime` und `ServiceName`.
 
 Beim Laden und Speichern normalisiert `UpdateSettingsStore` technische Werte:
 - `RepositoryOwner` = `martin-stromberg`
@@ -148,6 +148,12 @@ Beim Laden und Speichern normalisiert `UpdateSettingsStore` technische Werte:
 - `WorkingDirectory` = `updates`
 - `HealthTimeoutSeconds` = `UpdateOptions.HealthTimeoutSeconds`, Fallback `120`, Clamp `10..600`
 - `ExecutablePath` wird bei Speichervorgängen nicht aus Anwenderwerten übernommen
+- `IncludePrereleases` bleibt ein Anwenderwert; fehlende Legacy-Werte werden als `false` gelesen
+
+`AutoUpdateOptionsMapper.ApplySettings()` spiegelt die gespeicherte Einstellung unmittelbar in die Updater-Library:
+- `AutoUpdateOptions.AllowPrereleaseUpdates` erhält den Wert aus `UpdateSettingsDto.IncludePrereleases`
+- Bei GitHub-Quellen wird `AutoUpdateGithubSource.Create(owner, repository, manifestAsset, includePrereleases)` erneut aufgerufen, damit die nächste Prüfung dieselbe Prerelease-Entscheidung verwendet
+- Local-Folder-Quellen bleiben unverändert; dort wird nur die Runtime-Option gesetzt
 
 Das Autocomplete für `ServiceName` läuft über `IUpdateServiceCatalog`:
 - Windows: `sc.exe query type= service state= all`, Dienstnamen aus `SERVICE_NAME:`-Zeilen

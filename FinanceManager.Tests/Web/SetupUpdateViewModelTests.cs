@@ -58,7 +58,7 @@ public sealed class SetupUpdateViewModelTests
     [Fact]
     public async Task GetRibbonRegisters_WhenReadyButNoConfirmationCallback_DisablesInstallAction()
     {
-        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120);
+        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120, false);
         var apiMock = new Mock<IApiClient>();
         apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(Status(UpdateStatusKind.Ready));
@@ -75,7 +75,7 @@ public sealed class SetupUpdateViewModelTests
     [Fact]
     public async Task LoadAsync_PopulatesSettingsAndStatus()
     {
-        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120);
+        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120, false);
         var ready = Status(UpdateStatusKind.Ready);
         var apiMock = new Mock<IApiClient>();
         apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
@@ -91,26 +91,31 @@ public sealed class SetupUpdateViewModelTests
     [Fact]
     public async Task SaveAsync_PersistsUpdatedSettings()
     {
-        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120);
+        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120, false);
         var ready = Status(UpdateStatusKind.Ready);
+        UpdateSettingsUpdateRequest? sentRequest = null;
         var apiMock = new Mock<IApiClient>();
         apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(ready);
-        apiMock.Setup(a => a.Updates_UpdateSettingsAsync(It.IsAny<UpdateSettingsUpdateRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(settings with { Enabled = true });
+        apiMock.Setup(a => a.Updates_UpdateSettingsAsync(It.IsAny<UpdateSettingsUpdateRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<UpdateSettingsUpdateRequest, CancellationToken>((request, _) => sentRequest = request)
+            .ReturnsAsync(settings with { Enabled = true, IncludePrereleases = true });
         var vm = CreateVm(apiMock.Object);
         await vm.LoadAsync();
-        vm.UpdateSettings(settings with { Enabled = true });
+        vm.UpdateSettings(settings with { Enabled = true, IncludePrereleases = true });
 
         await vm.SaveAsync();
 
         vm.Settings!.Enabled.Should().BeTrue();
+        vm.Settings.IncludePrereleases.Should().BeTrue();
+        sentRequest!.IncludePrereleases.Should().BeTrue();
         vm.Dirty.Should().BeFalse();
     }
 
     [Fact]
     public async Task UpdateSettings_WhenEditableValueChanges_SetsDirty()
     {
-        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120);
+        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120, false);
         var apiMock = new Mock<IApiClient>();
         apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(Status(UpdateStatusKind.NoUpdate));
@@ -123,9 +128,24 @@ public sealed class SetupUpdateViewModelTests
     }
 
     [Fact]
+    public async Task UpdateSettings_WhenIncludePrereleasesChanges_SetsDirty()
+    {
+        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120, false);
+        var apiMock = new Mock<IApiClient>();
+        apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
+        apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(Status(UpdateStatusKind.NoUpdate));
+        var vm = CreateVm(apiMock.Object);
+        await vm.LoadAsync();
+
+        vm.UpdateSettings(settings with { IncludePrereleases = true });
+
+        vm.Dirty.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task UpdateSettings_WhenRemovedValueChanges_DoesNotSetDirty()
     {
-        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120);
+        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120, false);
         var apiMock = new Mock<IApiClient>();
         apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(Status(UpdateStatusKind.NoUpdate));
@@ -140,13 +160,13 @@ public sealed class SetupUpdateViewModelTests
     [Fact]
     public async Task Reset_RestoresLoadedSettings()
     {
-        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120);
+        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120, false);
         var apiMock = new Mock<IApiClient>();
         apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(Status(UpdateStatusKind.NoUpdate));
         var vm = CreateVm(apiMock.Object);
         await vm.LoadAsync();
-        vm.UpdateSettings(settings with { Enabled = true });
+        vm.UpdateSettings(settings with { IncludePrereleases = true });
 
         vm.Reset();
 
@@ -170,7 +190,7 @@ public sealed class SetupUpdateViewModelTests
     [Fact]
     public async Task StartInstallAsync_WhenReady_SetsInstallingState()
     {
-        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120);
+        var settings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120, false);
         var installing = Status(UpdateStatusKind.Installing);
         var apiMock = new Mock<IApiClient>();
         apiMock.Setup(a => a.Updates_StartInstallAsync(It.IsAny<UpdateStartRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(installing);

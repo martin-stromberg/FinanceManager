@@ -4,14 +4,14 @@
 
 ## Zweck
 
-Das Update-System automatisiert die Erkennung, den Download und die Installation von Programmaktualisierungen auf produktiven Servern. Die Update-Quelle ist fest auf das GitHub-Repository `martin-stromberg/FinanceManager` und das Manifest-Asset `update.json` eingestellt. Administratoren steuern in der Oberfläche nur noch, ob geprüft wird, in welchem Intervall geprüft wird, welche Installationszeit vorgesehen ist und welcher Windows- oder Linux-Dienst neu gestartet werden soll.
+Das Update-System automatisiert die Erkennung, den Download und die Installation von Programmaktualisierungen auf produktiven Servern. Die Update-Quelle ist fest auf das GitHub-Repository `martin-stromberg/FinanceManager` und das Manifest-Asset `update.json` eingestellt. Administratoren steuern in der Oberfläche nur noch, ob geprüft wird, in welchem Intervall geprüft wird, welche Installationszeit vorgesehen ist, welcher Windows- oder Linux-Dienst neu gestartet werden soll und ob Vorabversionen in die automatische Update-Prüfung einbezogen werden.
 
 ## Funktionsweise
 
 Das System arbeitet in vier Phasen:
 
 ### 1. Automatische Prüfung (periodisch)
-Der `UpdateOrchestrator` prüft in konfigurierten Intervallen (Standard: alle 60 Minuten), ob ein neueres Release im definierten GitHub-Repository verfügbar ist. Die Prüfung läuft im Hintergrund und schreibt den Status in eine lokal gespeicherte `status.json`-Datei.
+Der `UpdateOrchestrator` prüft in konfigurierten Intervallen (Standard: alle 60 Minuten), ob ein neueres Release im definierten GitHub-Repository verfügbar ist. Standardmäßig werden nur stabile Releases berücksichtigt. Wenn die Einstellung **Vorabversionen berücksichtigen** aktiviert ist, werden auch GitHub-Prereleases in die Prüfung einbezogen. Die Prüfung läuft im Hintergrund und schreibt den Status in eine lokal gespeicherte `status.json`-Datei.
 
 ### 2. Download vorbereiten
 Sobald eine neuere Version erkannt wird, wird das entsprechende Asset (`.zip`-Archiv für die aktuelle Plattform) heruntergeladen und validiert. Der Status wird auf `Ready` gesetzt.
@@ -36,6 +36,7 @@ Nach dem Neustart prüft das System, dass die neue Version tatsächlich geladen 
 | `UpdateFileStore` | Persistierung von Lock-Dateien und Status-JSON |
 | `SetupUpdateTab.razor` | Web-UI für Administrator (editierbare Update-Einstellungen, Status, Release-Informationen, Service-Autocomplete) |
 | `SetupUpdateViewModel` | ViewModel mit Polling-Logik für Live-Status-Updates während Installation |
+| `msTools.Updater v0.3.0` | Vendored Updater-Komponente mit Unterstützung für stabile Releases und optional aktivierte Vorabversionen |
 
 ## Bedienung in der Setup-Oberfläche
 
@@ -44,8 +45,11 @@ Die Update-Sektion folgt dem allgemeinen Setup-Speicherverhalten. Änderungen an
 Editierbar sind:
 - Update-Prüfung aktiviert/deaktiviert
 - Prüfintervall in Minuten
+- Vorabversionen berücksichtigen
 - geplante Installationszeit
 - Service-Name
+
+Die Option **Vorabversionen berücksichtigen** ist standardmäßig deaktiviert. Bei deaktivierter Option bleibt das bisherige Verhalten erhalten: automatische Prüfungen berücksichtigen nur stabile Releases. Bei aktivierter Option wird der Wert dauerhaft gespeichert und für die nächste automatische oder manuelle Update-Prüfung sofort auf die Runtime-Konfiguration übertragen.
 
 Der Service-Name bietet Autocomplete-Vorschläge aus den Diensten des aktuellen Systems. Unter Windows liest das System Windows-Dienste, unter Linux systemd-Services. Auf anderen Plattformen oder bei fehlenden Systemwerkzeugen bleibt die Vorschlagsliste leer.
 

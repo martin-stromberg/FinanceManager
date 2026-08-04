@@ -215,11 +215,11 @@ Beteiligte Komponenten: `BackgroundTaskStatusPanel`, `ICurrentUserService`, `Api
 
 Die Self-Update-Logik wird aus dem externen Release-Artefakt
 `msTools.Updater` eingebunden. Bis zur NuGet-Veroeffentlichung liegt der
-gepruefte Release `v0.2.0` unter `external/msTools.Updater/v0.2.0/`; die dort
+gepruefte Release `v0.3.0` unter `external/msTools.Updater/v0.3.0/`; die dort
 entpackte `msTools.Updater.dll` wird ueber `builder.UseAutoUpdate(...)` in
 `ProgramExtensions` registriert. FinanceManager greift ausschliesslich ueber
 die Adapterklasse `UpdateOrchestratorAdapter` darauf zu, sodass Controller,
-`ApiClient` und ViewModel unveraendert bleiben.
+`ApiClient` und ViewModel stabil bleiben.
 
 `UseAutoUpdate(...)` seedet die Bibliothekseinstellungen (`AutoUpdateOptions`)
 zunaechst ausschliesslich aus `appsettings*.json`. Direkt danach, aber noch vor
@@ -243,7 +243,11 @@ gespeicherte Konfiguration (z. B. beim allerersten Start), bleiben die
 3. Je nach `Updates:SourceType` laedt `AutoUpdateGithubSource` das Manifest aus
    dem GitHub-Release-Kontext oder `AutoUpdateLocalFolderSource` aus dem unter
    `Updates:LocalFolderPath` konfigurierten Verzeichnis. Der Manifestname ist
-   in beiden Quellen `update.json`.
+   in beiden Quellen `update.json`. GitHub-Prereleases werden nur beruecksichtigt,
+   wenn `Updates:IncludePrereleases` beziehungsweise die gespeicherte Einstellung
+   `UpdateSettings.IncludePrereleases` aktiviert ist; der Wert wird auf
+   `AutoUpdateOptions.AllowPrereleaseUpdates` und die GitHub-Source-Erzeugung
+   mit `includePrereleases` uebertragen.
 4. `AutoUpdatePackageValidator` prueft Version, PublishedAt, Release Notes,
    Repository/Herkunft, Assetnamen, SHA-256, positive Dateigroessen sowie
    Plattform-/Runtime-Konsistenz.

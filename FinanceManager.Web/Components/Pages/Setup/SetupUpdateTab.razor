@@ -38,6 +38,10 @@ else
                 @Localizer["SetupUpdate_Lbl_Enabled"]
             </label>
             <label>
+                <input type="checkbox" checked="@_vm.Settings.IncludePrereleases" @onchange="OnIncludePrereleasesChanged" />
+                @Localizer["SetupUpdate_Lbl_IncludePrereleases"]
+            </label>
+            <label>
                 @Localizer["SetupUpdate_Lbl_CheckInterval"]
                 <input class="form-control" type="number" min="1" max="1440" value="@_vm.Settings.CheckIntervalMinutes" @onchange="OnIntervalChanged" />
             </label>
@@ -192,6 +196,7 @@ else
     }
 
     private void OnEnabledChanged(ChangeEventArgs e) => Update(s => s with { Enabled = e.Value is bool b && b });
+    private void OnIncludePrereleasesChanged(ChangeEventArgs e) => Update(s => s with { IncludePrereleases = e.Value is bool b && b });
     private void OnIntervalChanged(ChangeEventArgs e) => Update(s => s with { CheckIntervalMinutes = int.TryParse(Convert.ToString(e.Value), out var value) ? value : s.CheckIntervalMinutes });
     private void OnScheduleChanged(ChangeEventArgs e) => Update(s => s with { ScheduledInstallTime = TimeOnly.TryParse(Convert.ToString(e.Value), out var t) ? t : null });
     private void OnServiceNameChanged(ChangeEventArgs e) => Update(s => s with { ServiceName = Convert.ToString(e.Value) });

@@ -72,7 +72,8 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
   "serviceName": "my-app-service",
   "executablePath": null,
   "workingDirectory": "updates",
-  "healthTimeoutSeconds": 120
+  "healthTimeoutSeconds": 120,
+  "includePrereleases": false
 }
 ```
 
@@ -102,7 +103,8 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
   "serviceName": "my-app-service",
   "executablePath": null,
   "workingDirectory": "updates",
-  "healthTimeoutSeconds": 300
+  "healthTimeoutSeconds": 300,
+  "includePrereleases": true
 }
 ```
 
@@ -116,6 +118,7 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 - `WorkingDirectory`: immer `updates`
 - `ExecutablePath`: wird bei Speichervorgängen nicht aus Anwenderwerten fortgeschrieben
 - `HealthTimeoutSeconds`: kommt aus `UpdateOptions.HealthTimeoutSeconds`, Fallback `120`, Clamp 10–600
+- `IncludePrereleases`: wird als Anwenderentscheidung gespeichert; fehlende Werte aus älteren Konfigurationsdateien werden als `false` behandelt
 
 **Fehler:**
 
@@ -332,19 +335,35 @@ public class UpdateStatusDto
 ### `UpdateSettingsDto`
 
 ```csharp
-public class UpdateSettingsDto
-{
-    public bool Enabled { get; set; }
-    public int CheckIntervalMinutes { get; set; }           // 1-1440
-    public string RepositoryOwner { get; set; }
-    public string RepositoryName { get; set; }
-    public string ManifestAssetName { get; set; }
-    public TimeOnly? ScheduledInstallTime { get; set; }
-    public string ServiceName { get; set; }                 // Windows Service oder systemd-Dienst
-    public string ExecutablePath { get; set; }               // Legacy-Lesewert, nicht mehr editierbar
-    public string WorkingDirectory { get; set; }             // serverseitig normalisiert auf "updates"
-    public int HealthTimeoutSeconds { get; set; }            // aus Serverkonfiguration, nicht mehr editierbar
-}
+public sealed record UpdateSettingsDto(
+    bool Enabled,
+    int CheckIntervalMinutes,
+    string RepositoryOwner,
+    string RepositoryName,
+    string ManifestAssetName,
+    TimeOnly? ScheduledInstallTime,
+    string? ServiceName,          // Windows Service oder systemd-Dienst
+    string? ExecutablePath,       // Legacy-Lesewert, nicht mehr editierbar
+    string WorkingDirectory,      // serverseitig normalisiert auf "updates"
+    int HealthTimeoutSeconds,     // aus Serverkonfiguration, nicht mehr editierbar
+    bool IncludePrereleases);     // true: GitHub-Prereleases bei Prüfungen berücksichtigen
+```
+
+### `UpdateSettingsUpdateRequest`
+
+```csharp
+public sealed record UpdateSettingsUpdateRequest(
+    bool Enabled,
+    int CheckIntervalMinutes,
+    string? RepositoryOwner,
+    string? RepositoryName,
+    string? ManifestAssetName,
+    TimeOnly? ScheduledInstallTime,
+    string? ServiceName,
+    string? ExecutablePath,
+    string? WorkingDirectory,
+    int HealthTimeoutSeconds,
+    bool IncludePrereleases);
 ```
 
 ### `UpdateCheckResultDto`

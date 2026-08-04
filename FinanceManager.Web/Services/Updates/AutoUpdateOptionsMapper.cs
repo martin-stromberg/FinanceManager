@@ -26,10 +26,15 @@ public static class AutoUpdateOptionsMapper
         options.DownloadPath = settings.WorkingDirectory;
         options.HealthTimeoutSeconds = settings.HealthTimeoutSeconds;
         options.ScheduledInstallTime = settings.ScheduledInstallTime;
+        options.AllowPrereleaseUpdates = settings.IncludePrereleases;
 
         if (options.Source is AutoUpdateGithubSource previousSource)
         {
-            options.Source = AutoUpdateGithubSource.Create(settings.RepositoryOwner, settings.RepositoryName, settings.ManifestAssetName);
+            options.Source = AutoUpdateGithubSource.Create(
+                settings.RepositoryOwner,
+                settings.RepositoryName,
+                settings.ManifestAssetName,
+                settings.IncludePrereleases);
             previousSource.Dispose();
         }
     }
@@ -56,5 +61,6 @@ public static class AutoUpdateOptionsMapper
             options.ServiceName,
             options.ExecutablePath,
             options.DownloadPath,
-            options.HealthTimeoutSeconds);
+            options.HealthTimeoutSeconds,
+            options.AllowPrereleaseUpdates);
 }

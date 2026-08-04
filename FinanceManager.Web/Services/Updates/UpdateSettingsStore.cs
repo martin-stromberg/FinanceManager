@@ -77,7 +77,8 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
             raw.ServiceName,
             raw.ExecutablePath,
             raw.WorkingDirectory,
-            raw.HealthTimeoutSeconds));
+            raw.HealthTimeoutSeconds,
+            raw.IncludePrereleases));
     }
 
     /// <summary>
@@ -98,7 +99,8 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
             TrimToNull(request.ServiceName),
             TrimToNull(request.ExecutablePath),
             NormalizeWorkingDirectory(request.WorkingDirectory),
-            Math.Clamp(request.HealthTimeoutSeconds, AutoUpdateOptions.MinHealthTimeoutSeconds, AutoUpdateOptions.MaxHealthTimeoutSeconds));
+            Math.Clamp(request.HealthTimeoutSeconds, AutoUpdateOptions.MinHealthTimeoutSeconds, AutoUpdateOptions.MaxHealthTimeoutSeconds),
+            request.IncludePrereleases);
 
     private async Task<UpdateSettingsDto?> ReadSettingsAsync(CancellationToken ct)
     {
@@ -129,7 +131,8 @@ public sealed class UpdateSettingsStore : IUpdateSettingsStore
                 legacyServiceName,
                 legacy.ExecutablePath,
                 legacy.WorkingDirectory,
-                legacy.HealthTimeoutSeconds));
+                legacy.HealthTimeoutSeconds,
+                false));
         }
 
         return document.Deserialize<UpdateSettingsDto>(JsonFileStore.JsonOptions);
