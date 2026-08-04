@@ -2220,6 +2220,9 @@
   <data name="SetupUpdate_Lbl_Enabled" xml:space="preserve">
     <value>Automatic check enabled</value>
   </data>
+  <data name="SetupUpdate_Lbl_IncludePrereleases" xml:space="preserve">
+    <value>Include prerelease versions</value>
+  </data>
   <data name="SetupUpdate_Lbl_CheckInterval" xml:space="preserve">
     <value>Check interval (minutes)</value>
   </data>

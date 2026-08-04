@@ -59,7 +59,8 @@ public sealed record UpdateSettingsDto(
     string? ServiceName,
     string? ExecutablePath,
     string WorkingDirectory,
-    int HealthTimeoutSeconds);
+    int HealthTimeoutSeconds,
+    bool IncludePrereleases);
 
 public sealed record UpdateSettingsUpdateRequest(
     bool Enabled,
@@ -71,7 +72,8 @@ public sealed record UpdateSettingsUpdateRequest(
     string? ServiceName,
     string? ExecutablePath,
     string? WorkingDirectory,
-    int HealthTimeoutSeconds);
+    int HealthTimeoutSeconds,
+    bool IncludePrereleases);
 
 public sealed record UpdateScheduleRequest(TimeOnly? ScheduledInstallTime);
 

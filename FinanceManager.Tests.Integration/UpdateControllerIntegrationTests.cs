@@ -61,7 +61,8 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             "FinanceManagerService",
             null,
             "updates",
-            120);
+            120,
+            true);
 
         var put = await client.PutAsJsonAsync("/api/setup/update/settings", update);
         put.EnsureSuccessStatusCode();
@@ -70,6 +71,7 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         settings!.Enabled.Should().BeTrue();
         settings.CheckIntervalMinutes.Should().Be(15);
         settings.RepositoryOwner.Should().Be("martin-stromberg");
+        settings.IncludePrereleases.Should().BeTrue();
     }
 
     [Fact]
@@ -159,7 +161,8 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
                 "PersistedServiceName",
                 null,
                 tempDir.FullName,
-                250);
+                250,
+                true);
             var json = JsonSerializer.Serialize(persisted, new JsonSerializerOptions(JsonSerializerDefaults.Web));
             await File.WriteAllTextAsync(Path.Combine(tempDir.FullName, "settings.json"), json);
 
@@ -174,6 +177,7 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             options.ServiceName.Should().Be("PersistedServiceName");
             options.SourceCheck.Interval.Should().Be(77);
             options.HealthTimeoutSeconds.Should().Be(250);
+            options.AllowPrereleaseUpdates.Should().BeTrue();
         }
         finally
         {

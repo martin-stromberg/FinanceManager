@@ -62,7 +62,7 @@ public sealed class SetupUpdateTabTests : BunitContext
     [Fact]
     public async Task Render_WhileInstallingAndWaitingPhase_ShowsLocalizedWaitingMessage()
     {
-        var settings = new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, null, null, "updates", 120);
+        var settings = new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, null, null, "updates", 120, false);
         var status = new UpdateStatusDto(UpdateStatusKind.Ready, "1.0.0", null, "1.0.1", "win-x64", null, null, "release.zip", false, null, null, null);
         var installing = status with { Status = UpdateStatusKind.Installing };
         var apiMock = new Mock<IApiClient>();
@@ -81,7 +81,7 @@ public sealed class SetupUpdateTabTests : BunitContext
     [Fact]
     public void Render_WithLoadedSettings_HidesRemovedFieldsAndTabButtons()
     {
-        var settings = new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, "FinanceManagerService", "app.exe", "updates", 120);
+        var settings = new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, "FinanceManagerService", "app.exe", "updates", 120, false);
         var status = new UpdateStatusDto(UpdateStatusKind.Ready, "1.0.0", null, "1.0.1", "win-x64", null, null, "release.zip", false, null, null, null);
         var apiMock = new Mock<IApiClient>();
         apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
@@ -106,9 +106,33 @@ public sealed class SetupUpdateTabTests : BunitContext
     }
 
     [Fact]
+    public void Render_WithLoadedSettings_ShowsIncludePrereleasesCheckboxAndUpdatesViewModel()
+    {
+        var settings = new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, null, null, "updates", 120, false);
+        var status = new UpdateStatusDto(UpdateStatusKind.NoUpdate, "1.0.0", null, null, "win-x64", null, null, null, false, null, null, null);
+        var apiMock = new Mock<IApiClient>();
+        apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
+        apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(status);
+        var (vm, localizer) = CreateVmAndLocalizer(apiMock.Object);
+
+        var render = Render<SetupUpdateTab>(parameters => parameters.Add(p => p.ViewModel, vm));
+
+        render.WaitForAssertion(() =>
+        {
+            render.Markup.Should().Contain(localizer["SetupUpdate_Lbl_IncludePrereleases"].Value);
+            render.FindAll("input[type=checkbox]").Should().HaveCountGreaterThanOrEqualTo(2);
+        });
+
+        render.FindAll("input[type=checkbox]")[1].Change(true);
+
+        vm.Settings!.IncludePrereleases.Should().BeTrue();
+        vm.Dirty.Should().BeTrue();
+    }
+
+    [Fact]
     public void Render_WithLoadedStatus_ShowsLocalizedStatus()
     {
-        var settings = new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, null, null, "updates", 120);
+        var settings = new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, null, null, "updates", 120, false);
         var status = new UpdateStatusDto(UpdateStatusKind.Ready, "1.0.0", null, "1.0.1", "win-x64", null, null, "release.zip", false, null, null, null);
         var apiMock = new Mock<IApiClient>();
         apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
@@ -146,7 +170,7 @@ public sealed class SetupUpdateTabTests : BunitContext
     [Fact]
     public async Task PollHealthAsync_WhenHealthCheckIsCancelledByTimeout_DoesNotTreatCancellationAsOutage()
     {
-        var settings = new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, null, null, "updates", 3);
+        var settings = new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, null, null, "updates", 3, false);
         var status = new UpdateStatusDto(UpdateStatusKind.Ready, "1.0.0", null, "1.0.1", "win-x64", null, null, "release.zip", false, null, null, null);
         var installing = status with { Status = UpdateStatusKind.Installing };
         var apiMock = new Mock<IApiClient>();
