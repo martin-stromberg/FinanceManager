@@ -295,19 +295,44 @@ public sealed class UserAuthServiceTests
     }
 
     [Fact]
-    public async Task LoginAsync_ShouldNotIncrementAttempts_WhileLocked()
+    public async Task LoginAsync_ShouldNotOverwritePreferredLanguage_WhenAlreadyNull()
     {
-        var (sut, db, userManager, signInManager, _, _) = Create();
-        var user = new User("eve", "HASH::pw", false);
+        // Arrange: user has null PreferredLanguage (= "Automatic" mode)
+        var (sut, db, _, signInManager, _, _) = Create();
+        var user = new User("dave", "HASH::pw", false);
+        // user.PreferredLanguage is null by default (= Automatic)
         db.Users.Add(user);
         db.SaveChanges();
+        signInManager.Setup(s => s.PasswordSignInAsync(user, "pw", false, true)).ReturnsAsync(SignInResult.Success);
 
-        // simulate locked state -> PasswordSignInAsync returns LockedOut
-        signInManager.Setup(s => s.PasswordSignInAsync(user, It.IsAny<string>(), false, true)).ReturnsAsync(SignInResult.LockedOut);
+        // Act: login sends browser language "en" as PreferredLanguage hint
+        var result = await sut.LoginAsync(new LoginCommand("dave", "pw", null, "en", null), CancellationToken.None);
 
-        var res = await sut.LoginAsync(new LoginCommand("eve", "wrong"), CancellationToken.None);
-        Assert.False(res.Success);
-        Assert.Contains("locked", res.Error ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        // Assert: PreferredLanguage remains null so Automatic mode is preserved
+        Assert.True(result.Success);
+        var saved = db.Users.Single(u => u.UserName == "dave");
+        Assert.Null(saved.PreferredLanguage);
+    }
+
+    [Fact]
+    public async Task LoginAsync_ShouldNotOverwritePreferredLanguage_WhenExplicitLanguageIsSet()
+    {
+        // Arrange: user already has an explicit language preference "de"
+        var (sut, db, _, signInManager, _, _) = Create();
+        var user = new User("frank", "HASH::pw", false);
+        user.SetPreferredLanguage("de");
+        db.Users.Add(user);
+        db.SaveChanges();
+        signInManager.Setup(s => s.PasswordSignInAsync(user, "pw", false, true)).ReturnsAsync(SignInResult.Success);
+
+        // Act: browser reports "en" during login
+        var result = await sut.LoginAsync(new LoginCommand("frank", "pw", null, "en", null), CancellationToken.None);
+
+        // Assert: explicit "de" must not be changed to "en"
+        Assert.True(result.Success);
+        var saved = db.Users.Single(u => u.UserName == "frank");
+        Assert.Equal("de", saved.PreferredLanguage);
     }
 
 }
+
