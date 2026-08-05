@@ -174,6 +174,22 @@ public sealed class SavingsPlanEditViewModelTests
     }
 
     [Fact]
+    public async Task LoadAsync_ShouldNotExposeRemainingAmount_WhenRemainingAmountIsZero()
+    {
+        var (vm, apiMock) = CreateVm();
+        var id = Guid.NewGuid();
+        var dto = CreateSavingsPlanDto(id, currentAmount: 1000m, remainingAmount: 0m);
+        apiMock.Setup(a => a.SavingsPlans_GetAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
+        apiMock.Setup(a => a.SavingsPlans_AnalyzeAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(new SavingsPlanAnalysisDto(id, true, 1000m, dto.TargetDate, 1000m, 0m, 6));
+        apiMock.Setup(a => a.SavingsPlanCategories_ListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<SavingsPlanCategoryDto>());
+
+        await vm.LoadAsync(id);
+
+        Assert.NotNull(FindField(vm, "Card_Caption_SavingsPlan_CurrentAmount"));
+        Assert.Null(FindField(vm, "Card_Caption_SavingsPlan_RemainingAmount"));
+    }
+
+    [Fact]
     public async Task LoadAsync_ShouldExposeRequiredMonthly_ForOneTimePlanWithFutureTargetAndRemainingAmount()
     {
         var (vm, apiMock) = CreateVm();

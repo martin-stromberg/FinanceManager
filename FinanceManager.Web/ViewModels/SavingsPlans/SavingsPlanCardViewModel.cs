@@ -442,7 +442,11 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
         if (dto != null)
         {
             fields.Add(new CardField("Card_Caption_SavingsPlan_CurrentAmount", CardFieldKind.Currency, amount: dto.CurrentAmount));
-            fields.Add(new CardField("Card_Caption_SavingsPlan_RemainingAmount", CardFieldKind.Currency, amount: dto.RemainingAmount));
+
+            if (dto.RemainingAmount > 0m)
+            {
+                fields.Add(new CardField("Card_Caption_SavingsPlan_RemainingAmount", CardFieldKind.Currency, amount: dto.RemainingAmount));
+            }
 
             if (dto.Type == SavingsPlanType.OneTime &&
                 dto.RemainingAmount > 0m &&
