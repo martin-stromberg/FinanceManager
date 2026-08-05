@@ -555,6 +555,15 @@
   <data name="Card_Caption_SavingsPlan_TargetDate" xml:space="preserve">
     <value>Target date</value>
   </data>
+  <data name="Card_Caption_SavingsPlan_CurrentAmount" xml:space="preserve">
+    <value>Current balance</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_RemainingAmount" xml:space="preserve">
+    <value>Remaining amount</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_RequiredMonthly" xml:space="preserve">
+    <value>Required monthly amount</value>
+  </data>
   <data name="Card_Caption_SavingsPlan_Interval" xml:space="preserve">
     <value>Interval</value>
   </data>

@@ -12,7 +12,7 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 
 - Kontoauszüge importieren, klassifizieren und verbuchen (`StatementDraftsController`), inklusive mobiler Kontoauszugsansicht mit lesbarer Kartenstruktur, zweispaltigem Datum/Betrag, abgeschwächten gebuchten Einträgen sowie Kontakt-, Sparplan- und Wertpapierinformationen
 - Kontoauszugsentwürfe im Massenänderungsmodus bearbeiten, Zeilen zum Löschen vormerken und neue Zeilen ergänzen
-- Konten, Sammelkonten, Kontakte, Sparpläne und Wertpapiere verwalten, inklusive sichtbarer SVG-Symbole für Kontakte
+- Konten, Sammelkonten, Kontakte, Sparpläne und Wertpapiere verwalten, inklusive sichtbarer SVG-Symbole für Kontakte sowie Sparplan-Kennzahlen zu aktuellem Saldo, Restbetrag und benötigtem Monatsbetrag in der Detailansicht
 - Berichte, KPI-Dashboards und Budgetauswertungen nutzen, inklusive bestandsgepruefter Hochrechnung fuer Wertpapier-Dividendenreports
 - Anhänge und Sicherungen (Backup/Restore) verwalten
 - Responsive Web-UI für kleine Viewports (mobile Topbar, responsive Container, mobile Ribbon-Shortcuts, mobile E2E-Abdeckung)

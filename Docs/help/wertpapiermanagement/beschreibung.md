@@ -28,5 +28,5 @@ AlphaVantage-Aufruf entschluesselt.
 
 - Fehlerhafte Kursabfragen markieren das Wertpapier als Preisfehlerzustand.
 - Renditeberechnungen hängen von vorhandenen Buchungs- und Kursdaten ab.
-- AlphaVantage-Abrufe benoetigen entweder einen persoenlichen API Key oder
+- AlphaVantage-Abrufe benötigen entweder einen persönlichen API Key oder
   einen durch einen Administrator freigegebenen Key.
