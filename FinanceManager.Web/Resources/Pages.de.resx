@@ -562,7 +562,7 @@
     <value>Restbetrag</value>
   </data>
   <data name="Card_Caption_SavingsPlan_RequiredMonthly" xml:space="preserve">
-    <value>Benoetigter Monatsbetrag</value>
+    <value>Benötigter Monatsbetrag</value>
   </data>
   <data name="Card_Caption_SavingsPlan_Interval" xml:space="preserve">
     <value>Intervall</value>
