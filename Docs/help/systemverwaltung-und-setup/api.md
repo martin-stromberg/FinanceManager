@@ -172,10 +172,13 @@ Paketstatus, Service-/EXE-Ziel und erzeugt ein externes Update-Skript.
 ### `POST /api/setup/update/lock/reset`
 
 **Beschreibung:** Update-Lock administrativ zuruecksetzen. Der Reset wird
-abgelehnt, solange die aktuelle Prozessinstanz selbst eine Installation
-besitzt, kein Lock vorhanden ist oder die Lock-Datei juenger als das
-konfigurierte Health-Timeout ist. Der Endpunkt ist fuer verwaiste
-Installationslocks gedacht.
+abgelehnt, wenn kein Lock vorhanden ist, die Lock-Datei juenger als das
+konfigurierte Health-Timeout ist, die Lock-Datei nicht geloescht werden kann
+oder ein sonstiger technischer Reset-Fehler auftritt. Der Endpunkt ist fuer
+verwaiste Installationslocks gedacht. Reset-Fehler werden mit eigenen Fehlercodes
+zurueckgegeben: `Err_Update_Reset_NoLock`, `Err_Update_Reset_LockNotStale`,
+`Err_Update_Reset_DeleteFailed` oder `Err_Update_Reset_Failed`. Die Meldung
+`Err_Update_InstallRunning` wird nicht als pauschaler Reset-Fehler verwendet.
 
 **Berechtigung:** Rolle `Admin`.
 

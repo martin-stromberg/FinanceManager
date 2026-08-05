@@ -118,13 +118,21 @@ Resultat:    {Status: Failed, LastError: "Err_Update_VersionMismatch"}
 ```
 
 
-### 5. Lock-Reset (Verweigerung und Staleness-Prüfung)
+### 5. Lock-Reset (klassifizierte Verweigerung und Staleness-Prüfung)
 
 **Einstiegspunkt:** `UpdateOrchestrator.ResetLockAsync(reason: string?)`
 
-**Verweigerungsbedingungen:**
-- `_executor.IsInstallRunning == true` → `IOException` mit `Err_Update_InstallRunning`
-- Kein Lock vorhanden → `IOException` mit `No update lock is active.`
+**Fehlervertrag:**
+`UpdateOrchestratorAdapter.ResetLockAsync` wirft für kontrollierte Reset-Fehler eine `UpdateLockResetException`. Die Exception enthält `Kind`, `FailureSource`, optional `LockCreatedAt`, optional `LockPath` und die technische Ursache als Inner Exception. Der Controller mappt diese Typisierung auf lokalisierte API-Fehlercodes.
+
+| Fehlerart | API-Code | HTTP | Typische Ursache |
+|-----------|----------|------|------------------|
+| `NoLock` | `Err_Update_Reset_NoLock` | 409 | Es ist kein aktiver Lock vorhanden |
+| `LockNotStale` | `Err_Update_Reset_LockNotStale` | 409 | Der Lock ist jünger als die Staleness-Schwelle |
+| `LockDeleteFailed` | `Err_Update_Reset_DeleteFailed` | 409 | `DeleteLockAsync` gibt `false` zurück oder die Lock-Datei kann wegen I/O-/Zugriffsfehlern nicht gelöscht werden |
+| `ResetFailed` | `Err_Update_Reset_Failed` | 500 | Sonstiger technischer Fehler beim Lesen, Prüfen oder Aktualisieren des Reset-Zustands |
+
+Klassifizierte Reset-Fehler werden nicht mehr auf `Err_Update_InstallRunning` gemappt. Dieser Code bleibt Situationen vorbehalten, in denen die Anwendung tatsächlich eine laufende Update-Installation belegen kann. Eine allgemeine `IOException` im Reset-Pfad wird nicht mehr pauschal als laufende Installation gemeldet.
 
 **Staleness-Prüfung:**
 1. Lock-Erstellungszeit auslesen:
@@ -132,11 +140,13 @@ Resultat:    {Status: Failed, LastError: "Err_Update_VersionMismatch"}
    - Fallback: `File.GetLastWriteTimeUtc()` wenn Inhalt nicht parsbar
 2. Schwellenwert berechnen: `max(HealthTimeoutSeconds, 60) Sekunden`
 3. Alter prüfen: `DateTime.UtcNow - LockCreatedAt >= Schwellenwert`?
-4. Zu jung → `IOException` mit `The update lock is not old enough to be considered stale.`
-5. Alt genug → Lock-Datei löschen, Status aktualisieren mit Hinweis-Meldung
+4. Kein Lock → `UpdateLockResetFailureKind.NoLock`
+5. Zu jung → `UpdateLockResetFailureKind.LockNotStale`
+6. Alt genug → Lock-Datei löschen; Erfolg gilt nur, wenn `DeleteLockAsync` `true` liefert
+7. Nach erfolgreichem Löschen wird der Statussnapshot als entsperrt aktualisiert und die UI lädt den Status erneut
 
 **Fehlerbehandlung:**
-Alle Verweigerungen werfen `IOException`, die über die API als HTTP 409 (Conflict) oder HTTP 400 (Bad Request) beantwortet werden.
+Der Controller protokolliert klassifizierte Reset-Fehler mit Fehlerart, Quelle, Lock-Zeitpunkt, Lock-Pfad, Benutzer und technischer Ursache. Anwender sehen weiterhin lokalisierte, verständliche Meldungen ohne interne Dateipfade.
 
 ### 6. Einstellungen normalisieren, Prüfzeitfenster ableiten, Vorabversionen anwenden und Service-Vorschläge laden
 
@@ -225,8 +235,10 @@ flowchart TD
 | Prozessstart schlägt fehl (nach Lock erstellt) | `Err_Update_InvalidState` | 400 | Lock + Flag automatisch bereinigt, Status → Failed |
 | Skript-Generierung schlägt fehl | `Err_Update_InvalidState` | 400 | Lock + Flag bereinigt |
 | Version nach Update nicht aktualisiert (Reconciliation) | `Err_Update_VersionMismatch` | (async in status.json) | Status → Failed, Admin wird benachrichtigt |
-| Lock zu jung zum Reset | (IOException) | 409 | Lock muss mindestens `HealthTimeoutSeconds` alt sein |
-| Kein Lock zum Reset | (IOException) | 409 | Keine Aktion erforderlich |
+| Kein Lock zum Reset | `Err_Update_Reset_NoLock` | 409 | Keine Aktion erforderlich; Status erneut prüfen |
+| Lock zu jung zum Reset | `Err_Update_Reset_LockNotStale` | 409 | Lock muss mindestens `HealthTimeoutSeconds` alt sein |
+| Lock-Datei kann nicht gelöscht werden | `Err_Update_Reset_DeleteFailed` | 409 | Dateizugriff und Berechtigungen prüfen |
+| Sonstiger Reset-Fehler | `Err_Update_Reset_Failed` | 500 | Server-Logs mit Fehlerart, Quelle und technischer Ursache prüfen |
 
 ## Performance und Ressourcen
 

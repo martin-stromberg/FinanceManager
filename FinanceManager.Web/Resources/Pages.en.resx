@@ -2187,6 +2187,18 @@
   <data name="Err_Update_InstallRunning" xml:space="preserve">
     <value>The current process still owns an update installation.</value>
   </data>
+  <data name="Err_Update_Reset_NoLock" xml:space="preserve">
+    <value>No active update lock exists.</value>
+  </data>
+  <data name="Err_Update_Reset_LockNotStale" xml:space="preserve">
+    <value>The update lock is not old enough to be reset yet.</value>
+  </data>
+  <data name="Err_Update_Reset_DeleteFailed" xml:space="preserve">
+    <value>The update lock could not be removed. Check file access and permissions.</value>
+  </data>
+  <data name="Err_Update_Reset_Failed" xml:space="preserve">
+    <value>The update lock could not be reset because of a technical error.</value>
+  </data>
   <data name="Err_Update_NotReady" xml:space="preserve">
     <value>No ready update package is available.</value>
   </data>

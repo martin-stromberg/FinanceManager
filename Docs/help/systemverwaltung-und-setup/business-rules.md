@@ -311,9 +311,15 @@ zurueckgeblieben ist.
 
 **Verhalten:**
 - Wenn kein Lock vorhanden ist, antwortet der Reset mit Konflikt (`409`) und
-  loescht nichts.
+  `Err_Update_Reset_NoLock`; es wird nichts geloescht.
 - Wenn der Lock noch nicht alt genug ist, antwortet der Reset ebenfalls mit
-  Konflikt und loescht den Lock nicht.
+  Konflikt (`Err_Update_Reset_LockNotStale`) und loescht den Lock nicht.
+- Wenn die Lock-Datei nicht geloescht werden kann, antwortet der Reset mit
+  Konflikt (`Err_Update_Reset_DeleteFailed`) und protokolliert die technische
+  Ursache.
+- Sonstige technische Reset-Fehler werden als `Err_Update_Reset_Failed`
+  gemeldet. Reset-Fehler werden nicht pauschal als
+  `Err_Update_InstallRunning` gemeldet.
 - Bei einem ausreichend alten Lock wird die Lock-Datei geloescht, der
   Statussnapshot als entsperrt aktualisiert und optional der angegebene Grund
   im Statusfehler vermerkt.

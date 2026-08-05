@@ -109,23 +109,91 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
     /// <inheritdoc />
     public async Task ResetLockAsync(string? reason, CancellationToken ct = default)
     {
-        var lockCreatedAt = await _packageStore.GetLockCreatedAtAsync(ct);
-        if (!lockCreatedAt.HasValue)
+        DateTimeOffset? lockCreatedAt = null;
+        var statusUpdateStarted = false;
+        try
         {
-            throw new IOException("No update lock is active.");
-        }
+            lockCreatedAt = await _packageStore.GetLockCreatedAtAsync(ct);
+            if (!lockCreatedAt.HasValue)
+            {
+                throw CreateResetException(
+                    UpdateLockResetFailureKind.NoLock,
+                    UpdateLockResetFailureSource.FinanceManager,
+                    "No update lock is active.");
+            }
 
-        if (!_packageStore.IsLockStale(lockCreatedAt.Value))
-        {
-            throw new IOException("The update lock is not old enough to be considered stale.");
-        }
+            if (!_packageStore.IsLockStale(lockCreatedAt.Value))
+            {
+                throw CreateResetException(
+                    UpdateLockResetFailureKind.LockNotStale,
+                    UpdateLockResetFailureSource.FinanceManager,
+                    "The update lock is not old enough to be considered stale.",
+                    lockCreatedAt);
+            }
 
-        await _packageStore.DeleteLockAsync(ct);
-        await _statusService.UpdateAsync(s => s with
+            var deleted = await DeleteLockOrThrowAsync(lockCreatedAt.Value, ct);
+            if (!deleted)
+            {
+                throw CreateResetException(
+                    UpdateLockResetFailureKind.LockDeleteFailed,
+                    UpdateLockResetFailureSource.FinanceManager,
+                    "The update lock could not be deleted.",
+                    lockCreatedAt);
+            }
+
+            statusUpdateStarted = true;
+            await _statusService.UpdateAsync(s => s with
+            {
+                IsLocked = false,
+                LockCreatedAt = null,
+                LastError = string.IsNullOrWhiteSpace(reason) ? s.LastError : $"Lock reset: {reason}"
+            }, ct);
+        }
+        catch (UpdateLockResetException)
         {
-            IsLocked = false,
-            LockCreatedAt = null,
-            LastError = string.IsNullOrWhiteSpace(reason) ? s.LastError : $"Lock reset: {reason}"
-        }, ct);
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw CreateResetException(
+                UpdateLockResetFailureKind.ResetFailed,
+                statusUpdateStarted ? UpdateLockResetFailureSource.FinanceManager : UpdateLockResetFailureSource.Updater,
+                "The update lock reset failed.",
+                lockCreatedAt,
+                ex);
+        }
     }
+
+    private async Task<bool> DeleteLockOrThrowAsync(DateTimeOffset lockCreatedAt, CancellationToken ct)
+    {
+        try
+        {
+            return await _packageStore.DeleteLockAsync(ct);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw CreateResetException(
+                UpdateLockResetFailureKind.LockDeleteFailed,
+                UpdateLockResetFailureSource.Updater,
+                "The update lock could not be deleted.",
+                lockCreatedAt,
+                ex);
+        }
+    }
+
+    private UpdateLockResetException CreateResetException(
+        UpdateLockResetFailureKind kind,
+        UpdateLockResetFailureSource failureSource,
+        string message,
+        DateTimeOffset? lockCreatedAt = null,
+        Exception? innerException = null)
+        => new(kind, failureSource, message, lockCreatedAt, _packageStore.LockPath, innerException);
 }
