@@ -105,6 +105,8 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
         Loading = true; SetError(null, null); RaiseStateChanged();
         try
         {
+            Analysis = null;
+
             if (id == Guid.Empty)
             {
                 // If a prefill name was provided via InitializeAsync, apply it to the new model
@@ -130,6 +132,15 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
             await LoadCategoriesAsync();
 
             _loadedDto = dto;
+            try
+            {
+                Analysis = await ApiClient.SavingsPlans_AnalyzeAsync(id);
+            }
+            catch
+            {
+                Analysis = null;
+            }
+
             CardRecord = await BuildCardRecordAsync(dto);
         }
         catch (Exception ex)
@@ -148,6 +159,10 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
     {
         if (!IsEdit) { return; }
         try { Analysis = await ApiClient.SavingsPlans_AnalyzeAsync(Id, ct); } catch { }
+        if (_loadedDto != null)
+        {
+            CardRecord = await BuildCardRecordAsync(_loadedDto);
+        }
         RaiseStateChanged();
     }
 
@@ -422,6 +437,20 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
         if (showTargetDate)
         {
             fields.Add(new CardField("Card_Caption_SavingsPlan_TargetDate", CardFieldKind.Date, text: dto?.TargetDate?.ToString("d", System.Globalization.CultureInfo.CurrentCulture), editable: true));
+        }
+
+        if (dto != null)
+        {
+            fields.Add(new CardField("Card_Caption_SavingsPlan_CurrentAmount", CardFieldKind.Currency, amount: dto.CurrentAmount));
+            fields.Add(new CardField("Card_Caption_SavingsPlan_RemainingAmount", CardFieldKind.Currency, amount: dto.RemainingAmount));
+
+            if (dto.Type == SavingsPlanType.OneTime &&
+                dto.RemainingAmount > 0m &&
+                dto.TargetDate?.Date > DateTime.Today &&
+                Analysis?.RequiredMonthly > 0m)
+            {
+                fields.Add(new CardField("Card_Caption_SavingsPlan_RequiredMonthly", CardFieldKind.Currency, amount: Analysis.RequiredMonthly));
+            }
         }
 
         fields.Add(new CardField("Card_Caption_SavingsPlan_ContractNumber", CardFieldKind.Text, text: dto?.ContractNumber ?? string.Empty, editable: true));
