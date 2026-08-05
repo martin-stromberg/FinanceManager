@@ -21,6 +21,12 @@ concurrency:
 
 jobs:
   test:
+    # Automatisierte Promotion-/Sync-PRs (staging-to-master.yml, sync-staging-with-master.yml) haben
+    # als Head-Branch immer "staging" oder "master" - dieser Commit wurde bereits per "push"-Event auf
+    # dem jeweiligen Branch getestet, bevor der PR erstellt wurde. Ohne diese Bedingung liefe die
+    # gesamte Suite fuer denselben Commit ein zweites Mal (push + pull_request). Fuer normale
+    # Feature-Branch-PRs (Head-Ref != master/staging) bleibt der pull_request-Lauf unveraendert.
+    if: github.event_name == 'push' || (github.head_ref != 'master' && github.head_ref != 'staging')
     runs-on: windows-latest
     timeout-minutes: 60
 
