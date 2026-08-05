@@ -122,5 +122,8 @@ public interface IUpdateOrchestrator
     /// <param name="reason">An optional explanation recorded alongside the reset.</param>
     /// <param name="ct">A token to observe for cancellation requests.</param>
     /// <returns>A task that completes once the lock has been reset.</returns>
+    /// <exception cref="UpdateLockResetException">
+    /// Thrown when the lock reset fails with a classified reset failure.
+    /// </exception>
     Task ResetLockAsync(string? reason, CancellationToken ct = default);
 }

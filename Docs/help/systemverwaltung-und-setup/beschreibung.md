@@ -48,8 +48,9 @@ Installationsstart verlangt eine Downtime-Bestaetigung. Nach dem Start zeigt
 die UI eine Warteseite, wartet zunaechst auf einen beobachteten Ausfall und
 laedt erst nach einem spaeteren erfolgreichen `/health`-Aufruf neu.
 Ein aktiver Update-Lock kann durch Administratoren zurueckgesetzt werden, wenn
-die aktuelle Prozessinstanz keine Installation mehr besitzt und die Lock-Datei
-aelter als das konfigurierte Health-Timeout ist.
+die Lock-Datei aelter als das konfigurierte Health-Timeout ist. Schlaegt der
+Reset fehl, unterscheidet die UI zwischen fehlendem Lock, noch nicht altem
+Lock, fehlgeschlagenem Loeschen und sonstigem technischen Reset-Fehler.
 
 Die Self-Update-Logik selbst wird als externe, hosting-unabhaengige Bibliothek
 `msTools.Updater` eingebunden. Bis zur NuGet-Veroeffentlichung referenziert
@@ -138,8 +139,9 @@ sichtbar wird — ohne erneuten Login.
   abgelehnt, wenn Paket, Lock, ZIP-Struktur oder Service-/EXE-Ziel nicht
   eindeutig valide sind.
 - Der administrative Lock-Reset ist ein Betriebswerkzeug fuer manuell
-  gepruefte Haengefaelle. Aktuell prueft die Anwendung nur, ob diese
-  Prozessinstanz noch eine Installation besitzt.
+  gepruefte Haengefaelle. Die Anwendung loescht nur alte Locks und zeigt bei
+  fehlgeschlagenem Reset den konkreten Grund statt pauschal eine laufende
+  Installation zu melden.
 - Die Anzeigesprache gilt für die gesamte Benutzeroberfläche. Im Modus „Automatisch"
   wird die Browser-Sprache berücksichtigt; es werden nur die unterstützten Sprachen
   Deutsch und Englisch angeboten.

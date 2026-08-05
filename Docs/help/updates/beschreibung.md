@@ -53,7 +53,7 @@ Die Option **Vorabversionen berücksichtigen** ist standardmäßig deaktiviert. 
 
 Der Service-Name bietet Autocomplete-Vorschläge aus den Diensten des aktuellen Systems. Unter Windows liest das System Windows-Dienste, unter Linux systemd-Services. Auf anderen Plattformen oder bei fehlenden Systemwerkzeugen bleibt die Vorschlagsliste leer.
 
-Die Aktionen **Jetzt prüfen**, **Update installieren** und **Update-Lock zurücksetzen** sind im Ribbon der Setup-Seite verfügbar. **Update installieren** ist nur aktiv, wenn der Status `Ready` ist; **Update-Lock zurücksetzen** ist nur aktiv, wenn ein Lock gemeldet wird.
+Die Aktionen **Jetzt prüfen**, **Update installieren** und **Update-Lock zurücksetzen** sind im Ribbon der Setup-Seite verfügbar. **Update installieren** ist nur aktiv, wenn der Status `Ready` ist; **Update-Lock zurücksetzen** ist nur aktiv, wenn ein Lock gemeldet wird. Wenn der Reset nicht möglich ist, zeigt die UI den konkreten Grund an, z. B. dass kein aktiver Lock vorhanden ist, der Lock noch nicht alt genug ist, die Lock-Datei nicht entfernt werden konnte oder ein technischer Reset-Fehler aufgetreten ist.
 
 Die technischen Werte `RepositoryOwner`, `RepositoryName`, `ManifestAssetName`, `WorkingDirectory`, `ExecutablePath` und `HealthTimeoutSeconds` werden Anwendern nicht mehr als Eingabefelder angezeigt. Beim Speichern normalisiert der Server Repository, Manifest und Arbeitsverzeichnis auf die festen Werte der Anwendung; der Health-Timeout kommt aus der Serverkonfiguration mit Fallback `120` Sekunden.
 
@@ -71,7 +71,7 @@ Die technischen Werte `RepositoryOwner`, `RepositoryName`, `ManifestAssetName`, 
 1. Installation startet, aber Installer-Prozess bricht ab (z. B. Datei-Zugriff fehlgeschlagen)
 2. Lock wird automatisch bereinigt, In-Memory-Flag zurückgesetzt
 3. Update-Status wechselt auf `Failed` mit Fehlermeldung
-4. Administrator kann Lock-Reset-Button drücken oder nächste Installation versuchen
+4. Administrator kann den Lock-Reset-Button drücken oder die nächste Installation versuchen; bei einem fehlgeschlagenen Reset nennt die UI den konkreten Reset-Grund statt pauschal eine laufende Installation zu behaupten
 
 ## Einschränkungen
 

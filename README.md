@@ -162,7 +162,7 @@ Einstiegspunkte:
 - `POST /api/setup/update/check` – GitHub-Release-Manifest abrufen, passendes Paket laden und Hash/ZIP validieren
 - `POST /api/setup/update/schedule` – geplante Installationszeit fuer ein vorbereitetes Update speichern
 - `POST /api/setup/update/install/start` – vorbereitetes Update nach Downtime-Bestaetigung installieren; erstellt Lock und startet ein externes Update-Skript
-- `POST /api/setup/update/lock/reset` – verwaisten Update-Lock administrativ zuruecksetzen, sofern dieser Prozess keine laufende Installation kennt und der Lock aelter als das Health-Timeout ist
+- `POST /api/setup/update/lock/reset` – verwaisten Update-Lock administrativ zuruecksetzen; fehlgeschlagene Resets liefern spezifische Fehlercodes fuer fehlenden Lock, noch nicht stalen Lock, fehlgeschlagenes Loeschen oder technischen Reset-Fehler
 - `GET /api/background-tasks/active` – aktive und wartende Background-Tasks fuer authentifizierte Nutzer abrufen; das UI startet das Polling nur bei erkannter Anmeldung und beendet es nach einem `401 Unauthorized`
 - `POST /api/securities/{id}/prices/import` – Wertpapierkurse importieren
 - `POST /api/postings/{id}/reverse` – Buchung stornieren (Reversal)
@@ -231,7 +231,11 @@ dotnet test FinanceManager.sln
   geprueft und startet ein bereites Update ohne erneute Benutzerbestaetigung.
   Ein Admin-Lock-Reset loescht nur vorhandene Locks, die aelter als der interne
   Health-Timeout sind, und verweigert den Reset, solange der aktuelle Prozess
-  noch eine laufende Installation kennt.
+  noch eine laufende Installation kennt. Fehlgeschlagene Resets zeigen konkrete
+  Ursachen wie fehlenden Lock, noch nicht stalen Lock, fehlgeschlagenes Loeschen
+  oder technischen Reset-Fehler; Diagnose-Logs enthalten Fehlerart, Quelle und
+  technische Ursache. `Err_Update_InstallRunning` bleibt Faellen vorbehalten, in
+  denen eine laufende Installation tatsaechlich belegt ist.
 - **Verbesserungen (Issue #206):** Das Update-System wurde fuer Produktionsumgebungen
   (insbesondere Linux) stabilisiert: Lock-Verwaltung ist atomarer, verwaiste Locks
   werden zuverlaessiger erkannt und bereinigt, der Service-Neustart und die

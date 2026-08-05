@@ -145,6 +145,60 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         }
     }
 
+    [Theory]
+    [InlineData(UpdateLockResetFailureKind.NoLock, HttpStatusCode.Conflict, "Err_Update_Reset_NoLock")]
+    [InlineData(UpdateLockResetFailureKind.LockNotStale, HttpStatusCode.Conflict, "Err_Update_Reset_LockNotStale")]
+    [InlineData(UpdateLockResetFailureKind.LockDeleteFailed, HttpStatusCode.Conflict, "Err_Update_Reset_DeleteFailed")]
+    [InlineData(UpdateLockResetFailureKind.ResetFailed, HttpStatusCode.InternalServerError, "Err_Update_Reset_Failed")]
+    public async Task ResetLock_ReturnsSpecificErrorCode_WhenResetFailureIsClassified(
+        UpdateLockResetFailureKind kind,
+        HttpStatusCode statusCode,
+        string errorCode)
+    {
+        using var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<IUpdateOrchestrator>();
+                services.AddScoped<IUpdateOrchestrator>(_ => new ThrowingUpdateOrchestrator(
+                    new NotSupportedException(),
+                    new UpdateLockResetException(kind, UpdateLockResetFailureSource.FinanceManager, "reset failed")));
+            });
+        });
+        var client = factory.CreateClient();
+        await AuthenticateAdminAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"));
+
+        response.StatusCode.Should().Be(statusCode);
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
+        error!.code.Should().Be(errorCode);
+        error.code.Should().NotBe("Err_Update_InstallRunning");
+    }
+
+    [Fact]
+    public async Task ResetLock_ReturnsResetFailed_WhenResetThrowsUnclassifiedIOException()
+    {
+        using var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<IUpdateOrchestrator>();
+                services.AddScoped<IUpdateOrchestrator>(_ => new ThrowingUpdateOrchestrator(
+                    new NotSupportedException(),
+                    new IOException("unclassified reset failure")));
+            });
+        });
+        var client = factory.CreateClient();
+        await AuthenticateAdminAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
+        error!.code.Should().Be("Err_Update_Reset_Failed");
+    }
+
     [Fact]
     public async Task PersistedSettings_AreAppliedToAutoUpdateOptions_OnStartup_WithoutManualSave()
     {
@@ -325,11 +379,13 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
 
     private sealed class ThrowingUpdateOrchestrator : IUpdateOrchestrator
     {
-        private readonly Exception _exception;
+        private readonly Exception _startException;
+        private readonly Exception? _resetException;
 
-        public ThrowingUpdateOrchestrator(Exception exception)
+        public ThrowingUpdateOrchestrator(Exception startException, Exception? resetException = null)
         {
-            _exception = exception;
+            _startException = startException;
+            _resetException = resetException;
         }
 
         public Task<UpdateStatusDto> GetStatusAsync(CancellationToken ct = default) => throw new NotSupportedException();
@@ -337,8 +393,10 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         public Task<UpdateSettingsDto> SaveSettingsAsync(UpdateSettingsUpdateRequest request, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<UpdateSettingsDto> ScheduleAsync(TimeOnly? scheduledInstallTime, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<UpdateCheckResultDto> CheckAsync(CancellationToken ct = default) => throw new NotSupportedException();
-        public Task ResetLockAsync(string? reason, CancellationToken ct = default) => throw new NotSupportedException();
-        public Task<UpdateStatusDto> StartInstallAsync(bool confirmDowntime, CancellationToken ct = default) => Task.FromException<UpdateStatusDto>(_exception);
+        public Task ResetLockAsync(string? reason, CancellationToken ct = default)
+            => _resetException is null ? throw new NotSupportedException() : Task.FromException(_resetException);
+
+        public Task<UpdateStatusDto> StartInstallAsync(bool confirmDowntime, CancellationToken ct = default) => Task.FromException<UpdateStatusDto>(_startException);
     }
 
     private sealed class FixedInstalledReleaseMetadataProvider : IInstalledReleaseMetadataProvider

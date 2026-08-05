@@ -2187,6 +2187,18 @@
   <data name="Err_Update_InstallRunning" xml:space="preserve">
     <value>Der aktuelle Prozess führt noch eine Update-Installation aus.</value>
   </data>
+  <data name="Err_Update_Reset_NoLock" xml:space="preserve">
+    <value>Es ist kein aktiver Update-Lock vorhanden.</value>
+  </data>
+  <data name="Err_Update_Reset_LockNotStale" xml:space="preserve">
+    <value>Der Update-Lock ist noch nicht alt genug und kann noch nicht zurückgesetzt werden.</value>
+  </data>
+  <data name="Err_Update_Reset_DeleteFailed" xml:space="preserve">
+    <value>Der Update-Lock konnte nicht entfernt werden. Bitte prüfen Sie Dateizugriff und Berechtigungen.</value>
+  </data>
+  <data name="Err_Update_Reset_Failed" xml:space="preserve">
+    <value>Der Update-Lock konnte wegen eines technischen Fehlers nicht zurückgesetzt werden.</value>
+  </data>
   <data name="Err_Update_NotReady" xml:space="preserve">
     <value>Kein Update-Paket bereit.</value>
   </data>

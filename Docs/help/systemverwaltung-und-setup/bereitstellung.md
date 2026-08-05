@@ -136,10 +136,12 @@ Tag versucht, damit ein fehlerhaft konfigurierter Host nicht jede Minute
 erneut installiert.
 
 Der Admin-Endpunkt zum Lock-Reset loescht eine vorhandene Lock-Datei nur dann,
-wenn die aktuelle Prozessinstanz keine Installation fuehrt und die Lock-Datei
-aelter als das konfigurierte Health-Timeout ist. Frische Locks und fehlende
-Locks werden abgelehnt; der Reset bleibt deshalb eine gezielte Betriebsaktion
-fuer verwaiste Installationen.
+wenn die Lock-Datei aelter als das konfigurierte Health-Timeout ist. Frische
+Locks und fehlende Locks werden mit eigenen Reset-Fehlercodes abgelehnt. Kann
+die Lock-Datei nicht geloescht werden oder tritt ein sonstiger technischer
+Reset-Fehler auf, meldet die API ebenfalls einen spezifischen Reset-Code und
+protokolliert Fehlerart, Quelle und technische Ursache. Der Reset bleibt
+deshalb eine gezielte Betriebsaktion fuer verwaiste Installationen.
 
 ## Produktive JWT-Konfiguration
 
