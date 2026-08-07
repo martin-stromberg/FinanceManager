@@ -1,6 +1,8 @@
 using FinanceManager.Shared.Dtos.Update;
+using FinanceManager.Tests.TestHelpers;
 using FinanceManager.Web.Services.Updates;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using msTools.Updater;
 
@@ -125,5 +127,72 @@ public sealed class UpdateOrchestratorAdapterTests
         result.UpdateAvailable.Should().BeFalse();
         result.Message.Should().Be(UpdateErrorMessageMapper.GithubRateLimitMessage);
         result.Status.LastError.Should().Be(UpdateErrorMessageMapper.GithubRateLimitMessage);
+    }
+
+    [Fact]
+    public async Task Adapter_StartInstallAsync_WhenLockAbsentAfterInstall_DoesNotLog()
+    {
+        var orchestrator = new Mock<IAutoUpdateOrchestrator>();
+        orchestrator.Setup(o => o.InstallAsync(true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.Success, "installed", null));
+        var packageStore = new Mock<IAutoUpdatePackageStore>();
+        packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync((DateTimeOffset?)null);
+        var logger = new CapturingLogger<UpdateOrchestratorAdapter>();
+        var adapter = CreateAdapterForInstall(orchestrator.Object, packageStore.Object, logger);
+
+        await adapter.StartInstallAsync(true);
+
+        logger.Entries.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Adapter_StartInstallAsync_WhenSuccess_ValidatesLockCleanup()
+    {
+        var orchestrator = new Mock<IAutoUpdateOrchestrator>();
+        orchestrator.Setup(o => o.InstallAsync(true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.Success, "installed", null));
+        var packageStore = new Mock<IAutoUpdatePackageStore>();
+        packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync((DateTimeOffset?)null);
+        var adapter = CreateAdapterForInstall(orchestrator.Object, packageStore.Object, new CapturingLogger<UpdateOrchestratorAdapter>());
+
+        await adapter.StartInstallAsync(true);
+
+        packageStore.Verify(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Adapter_StartInstallAsync_WhenLockStillPresentAfterInstall_LogsWarning()
+    {
+        var orchestrator = new Mock<IAutoUpdateOrchestrator>();
+        orchestrator.Setup(o => o.InstallAsync(true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.Success, "installed", null));
+        var packageStore = new Mock<IAutoUpdatePackageStore>();
+        packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync(DateTimeOffset.UtcNow);
+        var logger = new CapturingLogger<UpdateOrchestratorAdapter>();
+        var adapter = CreateAdapterForInstall(orchestrator.Object, packageStore.Object, logger);
+
+        await adapter.StartInstallAsync(true);
+
+        logger.Entries.Should().ContainSingle(entry => entry.Level == LogLevel.Warning);
+    }
+
+    private static UpdateOrchestratorAdapter CreateAdapterForInstall(
+        IAutoUpdateOrchestrator orchestrator,
+        IAutoUpdatePackageStore packageStore,
+        ILogger<UpdateOrchestratorAdapter> logger)
+    {
+        var settingsStore = new Mock<IUpdateSettingsStore>();
+        settingsStore.Setup(s => s.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UpdateSettingsDto(true, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, "svc", null, "updates", 120, false));
+        var installedProvider = new Mock<IInstalledReleaseMetadataProvider>();
+        installedProvider.Setup(p => p.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new InstalledReleaseMetadataDto(null, null, null, null, null));
+
+        return UpdateOrchestratorAdapterTestFactory.Create(
+            orchestrator: orchestrator,
+            settingsStore: settingsStore.Object,
+            packageStore: packageStore,
+            installedProvider: installedProvider.Object,
+            logger: logger);
     }
 }
