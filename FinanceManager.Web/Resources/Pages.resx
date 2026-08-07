@@ -1698,6 +1698,9 @@
   <data name="List_Sum" xml:space="preserve">
     <value>Sum</value>
   </data>
+  <data name="List_SubSum" xml:space="preserve">
+    <value>Sub-sum</value>
+  </data>
   <data name="Budget_Report_Surplus" xml:space="preserve">
     <value>Surplus</value>
   </data>
@@ -2432,5 +2435,8 @@
   </data>
   <data name="Budget_NoCriticalDeviation" xml:space="preserve">
     <value>No critical deviation (Actual before: {0}, Actual after: {1}).</value>
+  </data>
+  <data name="PleaseLoginPrompt" xml:space="preserve">
+    <value>Please login.</value>
   </data>
 </root>

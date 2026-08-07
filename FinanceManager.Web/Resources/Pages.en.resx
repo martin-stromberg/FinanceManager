@@ -1158,15 +1158,6 @@
   <data name="ImportSplit_SaveSuccess" xml:space="preserve">
     <value>Settings saved</value>
   </data>
-  <data name="MassImport_DialogPolicy_Label" xml:space="preserve">
-    <value>Mass import dialog</value>
-  </data>
-  <data name="MassImport_DialogPolicy_AlwaysConfirm" xml:space="preserve">
-    <value>Always confirm</value>
-  </data>
-  <data name="MassImport_DialogPolicy_OnMissingInformation" xml:space="preserve">
-    <value>Only on missing information</value>
-  </data>
   <data name="Notifications_TabTitle" xml:space="preserve">
     <value>Notifications</value>
   </data>
@@ -1707,6 +1698,9 @@
   <data name="List_Sum" xml:space="preserve">
     <value>Sum</value>
   </data>
+  <data name="List_SubSum" xml:space="preserve">
+    <value>Sub-sum</value>
+  </data>
   <data name="Budget_Report_Surplus" xml:space="preserve">
     <value>Surplus</value>
   </data>
@@ -1836,12 +1830,6 @@
   <data name="Validation_Valid" xml:space="preserve">
     <value>Alle entries are valid.</value>
   </data>
-  <data name="Ribbon_Reverse" xml:space="preserve">
-    <value>Reverse</value>
-  </data>
-  <data name="List_Th_Postings_IsReversal" xml:space="preserve">
-    <value>Reversal</value>
-  </data>
   <data name="List_Th_BookingDate" xml:space="preserve">
     <value>Booking date</value>
   </data>
@@ -1857,8 +1845,20 @@
   <data name="List_Th_Actions" xml:space="preserve">
     <value>Actions</value>
   </data>
+  <data name="Ribbon_Reverse" xml:space="preserve">
+    <value>Reverse</value>
+  </data>
+  <data name="List_Th_Postings_IsReversal" xml:space="preserve">
+    <value>Reversal</value>
+  </data>
   <data name="BudgetImpact_FulfillmentChange" xml:space="preserve">
     <value>Change in target fulfillment</value>
+  </data>
+  <data name="Ribbon_Group_Period" xml:space="preserve">
+    <value>Period</value>
+  </data>
+  <data name="Ribbon_OpenAccount" xml:space="preserve">
+    <value>Account</value>
   </data>
   <data name="StatementDrafts_SaveQuickEdit_RowsFailedValidation" xml:space="preserve">
     <value>Some rows have validation errors. Please review and correct the highlighted entries.</value>
@@ -1964,9 +1964,6 @@
   </data>
   <data name="Tab_Benchmark" xml:space="preserve">
     <value>Benchmark</value>
-  </data>
-  <data name="Ribbon_Group_Period" xml:space="preserve">
-    <value>Period</value>
   </data>
   <data name="Ribbon_Group_Settings" xml:space="preserve">
     <value>Settings</value>
@@ -2124,9 +2121,6 @@
   <data name="Cashflow_Costs_Col_Cumulative" xml:space="preserve">
     <value>Cumulative</value>
   </data>
-  <data name="Ribbon_OpenAccount" xml:space="preserve">
-    <value>Account</value>
-  </data>
   <data name="Card_Caption_BudgetRule_PurposePattern" xml:space="preserve">
     <value>Purpose Pattern</value>
   </data>
@@ -2178,14 +2172,23 @@
   <data name="LinkedIbans_Empty" xml:space="preserve">
     <value>No linked IBANs configured.</value>
   </data>
-  <data name="LinkedIbans_Error_AlreadyLinked" xml:space="preserve">
-    <value>This IBAN is already linked to this account.</value>
-  </data>
   <data name="KnownContacts_AutoCreate_Label" xml:space="preserve">
     <value>Create known contacts automatically</value>
   </data>
   <data name="KnownContacts_AutoCreate_Help" xml:space="preserve">
     <value>When a statement entry does not match an existing contact, the bundled list of known companies is checked.</value>
+  </data>
+  <data name="MassImport_DialogPolicy_Label" xml:space="preserve">
+    <value>Mass import dialog</value>
+  </data>
+  <data name="MassImport_DialogPolicy_AlwaysConfirm" xml:space="preserve">
+    <value>Always confirm</value>
+  </data>
+  <data name="MassImport_DialogPolicy_OnMissingInformation" xml:space="preserve">
+    <value>Only on missing information</value>
+  </data>
+  <data name="LinkedIbans_Error_AlreadyLinked" xml:space="preserve">
+    <value>This IBAN is already linked to this account.</value>
   </data>
   <data name="Msg_Loading" xml:space="preserve">
     <value>Loading...</value>
@@ -2432,5 +2435,8 @@
   </data>
   <data name="Budget_NoCriticalDeviation" xml:space="preserve">
     <value>No critical deviation (Actual before: {0}, Actual after: {1}).</value>
+  </data>
+  <data name="PleaseLoginPrompt" xml:space="preserve">
+    <value>Please login.</value>
   </data>
 </root>

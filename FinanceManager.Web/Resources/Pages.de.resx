@@ -1158,15 +1158,6 @@
   <data name="ImportSplit_SaveSuccess" xml:space="preserve">
     <value>Einstellungen gespeichert</value>
   </data>
-  <data name="MassImport_DialogPolicy_Label" xml:space="preserve">
-    <value>Massenimport-Dialog</value>
-  </data>
-  <data name="MassImport_DialogPolicy_AlwaysConfirm" xml:space="preserve">
-    <value>Immer bestätigen</value>
-  </data>
-  <data name="MassImport_DialogPolicy_OnMissingInformation" xml:space="preserve">
-    <value>Nur bei fehlenden Angaben anzeigen</value>
-  </data>
   <data name="Notifications_TabTitle" xml:space="preserve">
     <value>Benachrichtigungen</value>
   </data>
@@ -1707,6 +1698,9 @@
   <data name="List_Sum" xml:space="preserve">
     <value>Summe</value>
   </data>
+  <data name="List_SubSum" xml:space="preserve">
+    <value>Zwischensumme</value>
+  </data>
   <data name="Budget_Report_Surplus" xml:space="preserve">
     <value>Überschuss</value>
   </data>
@@ -1860,6 +1854,12 @@
   <data name="BudgetImpact_FulfillmentChange" xml:space="preserve">
     <value>Änderung der Zielerreichung</value>
   </data>
+  <data name="Ribbon_Group_Period" xml:space="preserve">
+    <value>Zeitraum</value>
+  </data>
+  <data name="Ribbon_OpenAccount" xml:space="preserve">
+    <value>Konto</value>
+  </data>
   <data name="StatementDrafts_SaveQuickEdit_RowsFailedValidation" xml:space="preserve">
     <value>Einige Zeilen enthalten Validierungsfehler. Bitte prüfen und korrigieren Sie die markierten Einträge.</value>
   </data>
@@ -1964,9 +1964,6 @@
   </data>
   <data name="Tab_Benchmark" xml:space="preserve">
     <value>Benchmark</value>
-  </data>
-  <data name="Ribbon_Group_Period" xml:space="preserve">
-    <value>Zeitraum</value>
   </data>
   <data name="Ribbon_Group_Settings" xml:space="preserve">
     <value>Einstellungen</value>
@@ -2124,9 +2121,6 @@
   <data name="Cashflow_Costs_Col_Cumulative" xml:space="preserve">
     <value>Kumuliert</value>
   </data>
-  <data name="Ribbon_OpenAccount" xml:space="preserve">
-    <value>Konto</value>
-  </data>
   <data name="Card_Caption_BudgetRule_PurposePattern" xml:space="preserve">
     <value>Verwendungszweck</value>
   </data>
@@ -2178,14 +2172,23 @@
   <data name="LinkedIbans_Empty" xml:space="preserve">
     <value>Keine verknüpften IBANs vorhanden.</value>
   </data>
-  <data name="LinkedIbans_Error_AlreadyLinked" xml:space="preserve">
-    <value>Diese IBAN ist bereits verknüpft.</value>
-  </data>
   <data name="KnownContacts_AutoCreate_Label" xml:space="preserve">
     <value>Bekannte Kontakte automatisch anlegen</value>
   </data>
   <data name="KnownContacts_AutoCreate_Help" xml:space="preserve">
     <value>Wenn ein Kontoauszugseintrag keinen vorhandenen Kontakt findet, wird die mitgelieferte Liste bekannter Unternehmen geprueft.</value>
+  </data>
+  <data name="MassImport_DialogPolicy_Label" xml:space="preserve">
+    <value>Massenimport-Dialog</value>
+  </data>
+  <data name="MassImport_DialogPolicy_AlwaysConfirm" xml:space="preserve">
+    <value>Immer bestätigen</value>
+  </data>
+  <data name="MassImport_DialogPolicy_OnMissingInformation" xml:space="preserve">
+    <value>Nur bei fehlenden Angaben anzeigen</value>
+  </data>
+  <data name="LinkedIbans_Error_AlreadyLinked" xml:space="preserve">
+    <value>Diese IBAN ist bereits verknüpft.</value>
   </data>
   <data name="Msg_Loading" xml:space="preserve">
     <value>Wird geladen...</value>
@@ -2432,5 +2435,8 @@
   </data>
   <data name="Budget_NoCriticalDeviation" xml:space="preserve">
     <value>Keine kritische Abweichung (Ist vorher: {0}, Ist nachher: {1}).</value>
+  </data>
+  <data name="PleaseLoginPrompt" xml:space="preserve">
+    <value>Bitte melden Sie sich an.</value>
   </data>
 </root>

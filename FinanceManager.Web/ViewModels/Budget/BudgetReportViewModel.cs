@@ -184,6 +184,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
                             BudgetReportCategoryRowKind.Sum => _localizer?["List_Sum"].Value ?? c.Name,
                             BudgetReportCategoryRowKind.Unbudgeted => _localizer?["Budget_Report_Unbudgeted"].Value ?? c.Name,
                             BudgetReportCategoryRowKind.UnbudgetedSelfCostNeutral => _localizer?["Budget_Report_Unbudgeted_SelfCostNeutral"].Value ?? c.Name,
+                            BudgetReportCategoryRowKind.UnbudgetedSubSum => _localizer?["List_SubSum"].Value ?? c.Name,
                             BudgetReportCategoryRowKind.Result => _localizer?["Budget_Report_Result"].Value ?? c.Name,
                             _ => c.Name
                         };

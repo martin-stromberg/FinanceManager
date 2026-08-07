@@ -115,9 +115,14 @@ public enum BudgetReportCategoryRowKind
     UnbudgetedSelfCostNeutral = 3,
 
     /// <summary>
+    /// Sub-sum for unbudgeted categories (sum of regular unbudgeted postings).
+    /// </summary>
+    UnbudgetedSubSum = 4,
+
+    /// <summary>
     /// Final result (sum + unbudgeted).
     /// </summary>
-    Result = 4
+    Result = 5
 }
 
 /// <summary>
