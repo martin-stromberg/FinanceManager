@@ -72,6 +72,33 @@ Das Update-System prüft GitHub-Releases regelmäßig, lädt neue Versionen heru
 ```
 (Erste Zeile: ISO-8601-UTC-Zeitstempel)
 
+### 2b. Post-Installation Lock-Cleanup-Validierung (nach `_orchestrator.InstallAsync()`)
+
+**Voraussetzung:** Installation hat erfolgreich abgeschlossen (Outcome != Failed)
+
+**Beteiligte Komponenten:**
+- `UpdateOrchestratorAdapter.ValidateLockCleanupAsync()` — private Methode zur Lock-Cleanup-Validierung
+- `IAutoUpdatePackageStore.GetLockCreatedAtAsync()` — prüft Lock-Existenz
+
+**Ablauf:**
+1. Nach erfolgreichem `_orchestrator.InstallAsync(confirmDowntime, ct)` (Library führt Installation durch)
+2. Ruft `ValidateLockCleanupAsync(ct)` auf
+3. Diese Methode prüft: `GetLockCreatedAtAsync()` → sollte `null` sein (Lock gelöscht)
+4. Falls Lock immer noch vorhanden (nicht null):
+   - Loggt Warning: "Lock was not cleaned up after installation. LockCreatedAt: {LockCreatedAt}"
+   - Wirft KEINE Exception — Cleanup-Fehler sind nicht kritisch für die Installation
+5. Falls Lock gelöscht:
+   - Nichts zu tun, Installation fortfahren
+
+**Beispiel (Lock nicht gelöscht):**
+```
+INFO: Installation erfolgreich abgeschlossen (Outcome = Success)
+WARN: Lock was not cleaned up after installation. LockCreatedAt: 2026-07-20T14:30:00Z
+→ Status wird dennoch auf "NoUpdate" oder "Ready" gesetzt, Installation als erfolgreich berichtet
+```
+
+Diese Validierung ist eine Sicherheitsmaßnahme: Falls das Installer-Skript aus Berechtigungsgründen (z. B. auf Linux) die Lock-Datei nicht löschen konnte, wird dies protokolliert. Der Administrator kann danach bei Bedarf manuell über "Update-Lock zurücksetzen" aufräumen.
+
 ### 3. Installation läuft (asynchron)
 
 Das Installer-Skript wird durch systemd-run als eigenständige transient service unit ausgeführt. Der Host-Prozess ist zu diesem Zeitpunkt bereits beendet.
