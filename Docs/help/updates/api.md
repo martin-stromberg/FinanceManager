@@ -64,15 +64,17 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 ```json
 {
   "enabled": true,
-  "checkIntervalMinutes": 60,
   "repositoryOwner": "martin-stromberg",
   "repositoryName": "FinanceManager",
   "manifestAssetName": "update.json",
+  "sourceCheckStartTime": "20:00:00",
+  "sourceCheckEndTime": "06:00:00",
   "scheduledInstallTime": "03:00:00",
   "serviceName": "my-app-service",
   "executablePath": null,
   "workingDirectory": "updates",
-  "healthTimeoutSeconds": 120
+  "healthTimeoutSeconds": 120,
+  "includePrereleases": false
 }
 ```
 
@@ -94,28 +96,31 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 ```json
 {
   "enabled": true,
-  "checkIntervalMinutes": 60,
   "repositoryOwner": "ignored",
   "repositoryName": "ignored",
   "manifestAssetName": "ignored",
+  "sourceCheckStartTime": "20:00:00",
+  "sourceCheckEndTime": "06:00:00",
   "scheduledInstallTime": "03:00:00",
   "serviceName": "my-app-service",
   "executablePath": null,
   "workingDirectory": "updates",
-  "healthTimeoutSeconds": 300
+  "healthTimeoutSeconds": 300,
+  "includePrereleases": true
 }
 ```
 
 **Rückgabe:** `UpdateSettingsDto` (gespeicherte Konfiguration, mit Normalisierung)
 
 **Normalisierung und Validierung:**
-- `CheckIntervalMinutes`: 1–1440 (geclamped)
+- `SourceCheckStartTime` / `SourceCheckEndTime`: werden als tägliches Prüfzeitfenster gespeichert; fehlende Legacy-Werte ergeben `20:00:00` bis `06:00:00`
 - `RepositoryOwner`: immer `martin-stromberg`
 - `RepositoryName`: immer `FinanceManager`
 - `ManifestAssetName`: immer `update.json`
 - `WorkingDirectory`: immer `updates`
 - `ExecutablePath`: wird bei Speichervorgängen nicht aus Anwenderwerten fortgeschrieben
 - `HealthTimeoutSeconds`: kommt aus `UpdateOptions.HealthTimeoutSeconds`, Fallback `120`, Clamp 10–600
+- `IncludePrereleases`: wird als Anwenderentscheidung gespeichert; fehlende Werte aus älteren Konfigurationsdateien werden als `false` behandelt
 
 **Fehler:**
 
@@ -278,21 +283,25 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 
 **Fehler:**
 
-| Code | Ursache |
-|------|---------|
-| 403 | Anwender ist nicht Admin |
-| 409 | Lock ist zu jung oder Installation läuft noch |
-| 500 | Fehler beim Löschen der Lock-Datei |
+| HTTP | Fehlercode | Ursache |
+|------|------------|---------|
+| 403 | `Access_AdminOnly` | Anwender ist nicht Admin |
+| 409 | `Err_Update_Reset_NoLock` | Es ist kein aktiver Update-Lock vorhanden |
+| 409 | `Err_Update_Reset_LockNotStale` | Der vorhandene Lock ist noch nicht alt genug für einen Reset |
+| 409 | `Err_Update_Reset_DeleteFailed` | Die Lock-Datei konnte nicht entfernt werden |
+| 500 | `Err_Update_Reset_Failed` | Sonstiger technischer Reset-Fehler |
 
 **Fehler-Response-Body:**
 
 ```json
 {
   "origin": "UpdateController",
-  "code": "Err_Update_InstallRunning",
-  "message": "The current process still owns an update installation."
+  "code": "Err_Update_Reset_LockNotStale",
+  "message": "The update lock is not old enough to be reset yet."
 }
 ```
+
+Klassifizierte Reset-Fehler werden nicht mehr auf `Err_Update_InstallRunning` gemappt. Dieser Code bleibt den Pfaden vorbehalten, in denen eine laufende Update-Installation tatsächlich belegt ist.
 
 ## Fehler-Codes
 
@@ -302,6 +311,10 @@ Alle `ApiErrorDto.code`-Werte sind Lokalisierungsschlüssel:
 |------|-----------|------|
 | `Err_Update_Locked` | Ein Update-Lock ist aktiv (Installation läuft oder ist stecken geblieben) | 409 |
 | `Err_Update_InstallRunning` | Der lokale Prozess führt noch eine Installation durch | 409 |
+| `Err_Update_Reset_NoLock` | Kein aktiver Update-Lock vorhanden | 409 |
+| `Err_Update_Reset_LockNotStale` | Update-Lock ist noch nicht alt genug für einen Reset | 409 |
+| `Err_Update_Reset_DeleteFailed` | Update-Lock konnte nicht entfernt werden | 409 |
+| `Err_Update_Reset_Failed` | Update-Lock konnte wegen eines technischen Fehlers nicht zurückgesetzt werden | 500 |
 | `Err_Update_NotReady` | Kein bereites Update vorhanden | 404 |
 | `Err_Update_InvalidState` | Ungültiger Update-Zustand (z. B. Installer fehlgeschlagen) | 400 |
 | `Err_Update_InvalidRequest` | Ungültige Anfrage-Parameter | 400 |
@@ -332,19 +345,37 @@ public class UpdateStatusDto
 ### `UpdateSettingsDto`
 
 ```csharp
-public class UpdateSettingsDto
-{
-    public bool Enabled { get; set; }
-    public int CheckIntervalMinutes { get; set; }           // 1-1440
-    public string RepositoryOwner { get; set; }
-    public string RepositoryName { get; set; }
-    public string ManifestAssetName { get; set; }
-    public TimeOnly? ScheduledInstallTime { get; set; }
-    public string ServiceName { get; set; }                 // Windows Service oder systemd-Dienst
-    public string ExecutablePath { get; set; }               // Legacy-Lesewert, nicht mehr editierbar
-    public string WorkingDirectory { get; set; }             // serverseitig normalisiert auf "updates"
-    public int HealthTimeoutSeconds { get; set; }            // aus Serverkonfiguration, nicht mehr editierbar
-}
+public sealed record UpdateSettingsDto(
+    bool Enabled,
+    string RepositoryOwner,
+    string RepositoryName,
+    string ManifestAssetName,
+    TimeOnly SourceCheckStartTime,
+    TimeOnly SourceCheckEndTime,
+    TimeOnly? ScheduledInstallTime,
+    string? ServiceName,          // Windows Service oder systemd-Dienst
+    string? ExecutablePath,       // Legacy-Lesewert, nicht mehr editierbar
+    string WorkingDirectory,      // serverseitig normalisiert auf "updates"
+    int HealthTimeoutSeconds,     // aus Serverkonfiguration, nicht mehr editierbar
+    bool IncludePrereleases);     // true: GitHub-Prereleases bei Prüfungen berücksichtigen
+```
+
+### `UpdateSettingsUpdateRequest`
+
+```csharp
+public sealed record UpdateSettingsUpdateRequest(
+    bool Enabled,
+    string? RepositoryOwner,
+    string? RepositoryName,
+    string? ManifestAssetName,
+    TimeOnly SourceCheckStartTime,
+    TimeOnly SourceCheckEndTime,
+    TimeOnly? ScheduledInstallTime,
+    string? ServiceName,
+    string? ExecutablePath,
+    string? WorkingDirectory,
+    int HealthTimeoutSeconds,
+    bool IncludePrereleases);
 ```
 
 ### `UpdateCheckResultDto`

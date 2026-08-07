@@ -161,14 +161,9 @@ namespace FinanceManager.Web
             // FinanceManager-specific settings persistence and installed-version display.
             builder.Services.AddSingleton(TimeProvider.System);
             var updateOptions = builder.Configuration.GetSection(UpdateOptions.SectionName).Get<UpdateOptions>() ?? new UpdateOptions();
-            // "Updates:SourceCheck:Interval" binds directly onto AutoUpdateOptions.SourceCheck.Interval (matching
-            // property names). Only fall back to the legacy "Updates:CheckIntervalMinutes" alias via the fluent
-            // setter when the new key is absent - calling WithSourceCheck unconditionally would make the fluent
-            // value win over configuration every time, per UseAutoUpdate's documented precedence.
-            var sourceCheckIntervalConfigured = builder.Configuration.GetValue<int?>($"{UpdateOptions.SectionName}:SourceCheck:Interval") is not null;
             builder.UseAutoUpdate(cfg =>
             {
-                cfg.SetInitialConfiguration(updateOptions, sourceCheckIntervalConfigured);
+                cfg.SetInitialConfiguration(updateOptions);
             });
             builder.Services.AddScoped<IUpdateOrchestrator, UpdateOrchestratorAdapter>();
             builder.Services.AddSingleton<IUpdateSettingsStore, UpdateSettingsStore>();
@@ -317,7 +312,7 @@ namespace FinanceManager.Web
             builder.Services.AddAuthorization();
         }
 
-        private static void SetInitialConfiguration(this AutoUpdateBuilder cfg, UpdateOptions updateOptions, bool sourceCheckIntervalConfigured)
+        private static void SetInitialConfiguration(this AutoUpdateBuilder cfg, UpdateOptions updateOptions)
         {
             cfg.BindConfiguration(UpdateOptions.SectionName);
             cfg.WithUpdateUnitName("FinanceManagerUpdate");
@@ -326,10 +321,9 @@ namespace FinanceManager.Web
                 cfg.WithDownloadPath(updateOptions.WorkingDirectory);
             }
 
-            if (!sourceCheckIntervalConfigured)
-            {
-                cfg.WithSourceCheck(Math.Max(1, updateOptions.CheckIntervalMinutes));
-            }
+            cfg.WithSourceCheck(
+                AutoUpdateOptionsMapper.DailySourceCheckIntervalMinutes,
+                AutoUpdateOptionsMapper.BuildSourceCheckTimeRanges(updateOptions.SourceCheckStartTime, updateOptions.SourceCheckEndTime));
 
             if (string.Equals(updateOptions.SourceType, "LocalFolder", StringComparison.OrdinalIgnoreCase))
             {
@@ -346,11 +340,16 @@ namespace FinanceManager.Web
         }
 
         /// <summary>
-        /// Configures request localization for the application including supported cultures and a custom request culture provider
-        /// that reads a user preference.
+        /// Builds the request localization options with supported cultures and the custom
+        /// <see cref="UserPreferenceRequestCultureProvider"/>.
+        /// <para>
+        /// <b>Important:</b> the returned options must be applied via <c>app.UseRequestLocalization</c>
+        /// <em>after</em> <c>app.UseAuthentication()</c> so that <see cref="HttpContext.User"/> is already
+        /// populated when <see cref="UserPreferenceRequestCultureProvider"/> reads the JWT claims.
+        /// </para>
         /// </summary>
-        /// <param name="app">The <see cref="WebApplication"/> instance to configure.</param>
-        public static void ConfigureLocalization(this WebApplication app)
+        /// <returns>Configured <see cref="RequestLocalizationOptions"/>.</returns>
+        public static RequestLocalizationOptions BuildLocalizationOptions(this WebApplication _)
         {
             var supportedCultures = new[] { "de", "en" }.Select(c => new CultureInfo(c)).ToList();
             var locOptions = new RequestLocalizationOptions
@@ -360,7 +359,7 @@ namespace FinanceManager.Web
                 SupportedUICultures = supportedCultures
             };
             locOptions.RequestCultureProviders.Insert(0, new UserPreferenceRequestCultureProvider());
-            app.UseRequestLocalization(locOptions);
+            return locOptions;
         }
 
         /// <summary>
@@ -430,6 +429,10 @@ namespace FinanceManager.Web
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            // Localization must run AFTER authentication so that HttpContext.User is populated
+            // when UserPreferenceRequestCultureProvider reads the pref_lang JWT claim.
+            app.UseRequestLocalization(app.BuildLocalizationOptions());
 
             app.UseMiddleware<JwtRefreshMiddleware>();
 

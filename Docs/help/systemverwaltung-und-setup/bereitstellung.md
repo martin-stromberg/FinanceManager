@@ -91,15 +91,15 @@ Repository-Berechtigungen.
 Das Self-Update ist eine Admin-Funktion im Setup und standardmaessig
 deaktiviert. Die Logik wird durch das externe Release-Artefakt
 `msTools.Updater` bereitgestellt. FinanceManager konsumiert die unter
-`external/msTools.Updater/v0.2.0/` abgelegte `msTools.Updater.dll` ueber einen
+`external/msTools.Updater/v0.3.0/` abgelegte `msTools.Updater.dll` ueber einen
 Adapter (`UpdateOrchestratorAdapter`); die oeffentliche REST-API und die
 Setup-UI bleiben davon unberührt.
 
-Das eingebundene Artefakt stammt aus dem GitHub-Release `v0.2.0` des
+Das eingebundene Artefakt stammt aus dem GitHub-Release `v0.3.0` des
 Repositories `martin-stromberg/msTools.Updater`. Das Original-ZIP
 `release.zip` und `SHA256SUMS.txt` bleiben im Repository erhalten; massgeblich
 ist der SHA-256-Wert
-`adf4e64e18345ac8ef30e8c626c639489b3eb84accae0f2f5ab61b59e8ea029c`. Die
+`9b9e578deffddd44a36a3ac844ca9b55b1c201984823f6134db56aafdd292834`. Die
 frueher lokale Updater-Bibliothek ist kein Projekt dieser Solution mehr. Eine
 spaetere NuGet-Referenz ersetzt nur diese lokale Artefaktablage, nicht die
 FinanceManager-spezifische Update-API.
@@ -119,10 +119,13 @@ API den Installationsstart mit `400 BadRequest` ab. Unter Windows kann
 alternativ `Updates:ExecutablePath` verwendet werden, wenn die Anwendung
 ohne Dienst betrieben wird.
 
-Automatische Pruefungen laufen im Intervall `Updates:SourceCheck:Interval`
-Minuten und respektieren Zeitfenster in `Updates:SourceCheck:TimeRanges`.
+Automatische Pruefungen laufen taeglich im Zeitfenster
+`Updates:SourceCheckStartTime` bis `Updates:SourceCheckEndTime`
+(Standard: `20:00:00` bis `06:00:00`).
 `Updates:EnableAutomaticDownload` und `Updates:EnableAutomaticInstallation`
 steuern, ob Pakete automatisch heruntergeladen bzw. installiert werden.
+`Updates:IncludePrereleases` ist standardmaessig `false`; nur bei aktivierter
+Option beruecksichtigt die GitHub-Quelle auch Vorabversionen.
 
 Vor der Installation erstellt der Server ein Lock, validiert Service-/EXE-Ziel,
 Paketgroesse, SHA-256 und ZIP-Eintraege gegen Traversal, absolute Pfade und
@@ -133,10 +136,12 @@ Tag versucht, damit ein fehlerhaft konfigurierter Host nicht jede Minute
 erneut installiert.
 
 Der Admin-Endpunkt zum Lock-Reset loescht eine vorhandene Lock-Datei nur dann,
-wenn die aktuelle Prozessinstanz keine Installation fuehrt und die Lock-Datei
-aelter als das konfigurierte Health-Timeout ist. Frische Locks und fehlende
-Locks werden abgelehnt; der Reset bleibt deshalb eine gezielte Betriebsaktion
-fuer verwaiste Installationen.
+wenn die Lock-Datei aelter als das konfigurierte Health-Timeout ist. Frische
+Locks und fehlende Locks werden mit eigenen Reset-Fehlercodes abgelehnt. Kann
+die Lock-Datei nicht geloescht werden oder tritt ein sonstiger technischer
+Reset-Fehler auf, meldet die API ebenfalls einen spezifischen Reset-Code und
+protokolliert Fehlerart, Quelle und technische Ursache. Der Reset bleibt
+deshalb eine gezielte Betriebsaktion fuer verwaiste Installationen.
 
 ## Produktive JWT-Konfiguration
 

@@ -5,6 +5,7 @@
 - ASP.NET Core 8.0+ (für die Web-Anwendung)
 - GitHub-Repository mit Releases (als Update-Quelle)
 - Admin-Berechtigungen zum Verwalten von Updates
+- Vendored `msTools.Updater v0.3.0` unter `external/msTools.Updater/v0.3.0/`
 - Auf Windows: Windows Service mit entsprechender Dienstkonfiguration
 - Auf Linux: systemd-Service oder Daemon-Mechanismus für Dienst-Restart
 - Auf Linux: Dienstbenutzer muss Berechtigungen zum Starten transienter systemd-Units besitzen (siehe Abschnitt „Dienstbenutzer-Berechtigungen“)
@@ -66,6 +67,8 @@ Diese Konfiguration stellt sicher, dass der Installer-Prozess zuverlässig ausge
 
 Das Update-System ist bereits im Projekt integriert. Es erfordert keine zusätzliche Installation, sondern nur Konfiguration.
 
+Die Updater-Library wird nicht per NuGet bezogen, sondern als vendored Artefakt referenziert. `FinanceManager.Web.csproj` verweist auf `..\external\msTools.Updater\v0.3.0\lib\msTools.Updater.dll`; das zugehörige Release-Archiv liegt als `external/msTools.Updater/v0.3.0/release.zip` mit Prüfsummen in `SHA256SUMS.txt` vor.
+
 1. **Abhängigkeiten in DI-Container registrieren** (in `Program.cs`):
    ```csharp
    services.AddUpdateServices(configuration);
@@ -75,7 +78,7 @@ Das Update-System ist bereits im Projekt integriert. Es erfordert keine zusätzl
 2. **Repository konfigurieren** (siehe Konfiguration unten)
 
 3. **Update-Check-Background-Service starten**
-   - Der Service `UpdateCheckBackgroundService` startet automatisch und prüft in konfigurierten Intervallen
+   - Der Service `AutoUpdateCheckerService` startet automatisch und prüft einmal täglich im konfigurierten Zeitfenster
 
 4. **Web-UI aktivieren**
    - `SetupUpdateTab.razor` ist in der Admin-Setup-Seite integriert
@@ -83,19 +86,16 @@ Das Update-System ist bereits im Projekt integriert. Es erfordert keine zusätzl
 
 ## Konfiguration
 
-Update-Einstellungen werden in `appsettings.json` konfiguriert und teilweise über die Web-UI überschrieben. Die Web-UI zeigt nur noch betriebliche Einstellungen an: Aktivierung, Prüfintervall, geplante Installationszeit und Service-Name. Technische Werte für Repository, Manifest, Arbeitsverzeichnis, Exe-Pfad und Health-Timeout sind nicht mehr editierbar.
+Update-Einstellungen werden in `appsettings.json` konfiguriert und teilweise über die Web-UI überschrieben. Die Web-UI zeigt nur noch betriebliche Einstellungen an: Aktivierung, Start- und Enduhrzeit des Prüfzeitfensters, Vorabversionen, geplante Installationszeit und Service-Name. Technische Werte für Repository, Manifest, Arbeitsverzeichnis, Exe-Pfad und Health-Timeout sind nicht mehr editierbar.
 
 ### appsettings.json
 
 ```json
 {
-  "UpdateOptions": {
-    "BaseDirectory": "/opt/app/updates",
-    "MaxAssetBytes": 536870912
-  },
-  "UpdateSettings": {
+  "Updates": {
     "Enabled": true,
-    "CheckIntervalMinutes": 60,
+    "SourceCheckStartTime": "20:00:00",
+    "SourceCheckEndTime": "06:00:00",
     "RepositoryOwner": "martin-stromberg",
     "RepositoryName": "FinanceManager",
     "ManifestAssetName": "update.json",
@@ -103,7 +103,8 @@ Update-Einstellungen werden in `appsettings.json` konfiguriert und teilweise üb
     "ServiceName": "my-app-service",
     "ExecutablePath": null,
     "WorkingDirectory": "updates",
-    "HealthTimeoutSeconds": 120
+    "HealthTimeoutSeconds": 120,
+    "IncludePrereleases": false
   }
 }
 ```
@@ -112,27 +113,28 @@ Update-Einstellungen werden in `appsettings.json` konfiguriert und teilweise üb
 
 | Parameter | Typ | Standard | Beschreibung |
 |-----------|-----|----------|--------------|
-| `UpdateOptions.BaseDirectory` | string | `/var/lib/myapp/updates` | Verzeichnis für Lock-, Status- und Asset-Dateien |
-| `UpdateOptions.MaxAssetBytes` | int | 536 MB | Maximale Größe eines herunterladbaren Assets (verhindert DoS) |
-| `UpdateSettings.Enabled` | bool | false | Aktiviert/deaktiviert automatische Prüfung |
-| `UpdateSettings.CheckIntervalMinutes` | int | 60 | Prüf-Intervall in Minuten (1–1440, auf UI geclamped) |
-| `UpdateSettings.RepositoryOwner` | string | `martin-stromberg` | Fester GitHub-Benutzername der Updatequelle; wird beim Speichern serverseitig normalisiert |
-| `UpdateSettings.RepositoryName` | string | `FinanceManager` | Festes GitHub-Repository der Updatequelle; wird beim Speichern serverseitig normalisiert |
-| `UpdateSettings.ManifestAssetName` | string | `update.json` | Festes Release-Asset mit Manifest; wird beim Speichern serverseitig normalisiert |
-| `UpdateSettings.ScheduledInstallTime` | time | null | Geplante Installationszeit (z. B. `"03:00:00"`) — derzeit nicht automatisiert |
-| `UpdateSettings.ServiceName` | string | — | Windows Service-Name oder systemd-Service-Name; in der UI mit plattformspezifischen Autocomplete-Vorschlägen |
-| `UpdateSettings.ExecutablePath` | string | — | Legacy-Lesewert; nicht mehr in der UI editierbar und wird bei neuen Speichervorgängen nicht aus Anwenderwerten übernommen |
-| `UpdateSettings.WorkingDirectory` | string | `updates` | Festes Arbeitsverzeichnis für Installer, Status, Lock und Assets |
-| `UpdateSettings.HealthTimeoutSeconds` | int | 120 | Interner Timeout für UI-Health-Polling und Lock-Staleness, aus `UpdateOptions` mit Clamp 10–600; nicht mehr in der UI editierbar |
+| `Updates:Enabled` | bool | false | Aktiviert/deaktiviert automatische Prüfung |
+| `Updates:SourceCheckStartTime` | time | `20:00:00` | Beginn des täglichen Prüfzeitfensters |
+| `Updates:SourceCheckEndTime` | time | `06:00:00` | Ende des täglichen Prüfzeitfensters; Fenster über Mitternacht sind erlaubt |
+| `Updates:IncludePrereleases` | bool | false | Berücksichtigt GitHub-Vorabversionen bei automatischen und manuellen Update-Prüfungen, wenn aktiviert |
+| `Updates:RepositoryOwner` | string | `martin-stromberg` | Fester GitHub-Benutzername der Updatequelle; wird beim Speichern serverseitig normalisiert |
+| `Updates:RepositoryName` | string | `FinanceManager` | Festes GitHub-Repository der Updatequelle; wird beim Speichern serverseitig normalisiert |
+| `Updates:ManifestAssetName` | string | `update.json` | Festes Release-Asset mit Manifest; wird beim Speichern serverseitig normalisiert |
+| `Updates:ServiceName` | string | — | Windows Service-Name oder systemd-Service-Name; in der UI mit plattformspezifischen Autocomplete-Vorschlägen |
+| `Updates:ExecutablePath` | string | — | Legacy-Lesewert; nicht mehr in der UI editierbar und wird bei neuen Speichervorgängen nicht aus Anwenderwerten übernommen |
+| `Updates:WorkingDirectory` | string | `updates` | Festes Arbeitsverzeichnis für Installer, Status, Lock und Assets |
+| `Updates:HealthTimeoutSeconds` | int | 120 | Interner Timeout für UI-Health-Polling und Lock-Staleness, aus `UpdateOptions` mit Clamp 10–600; nicht mehr in der UI editierbar |
 
 ### Web-UI
 
 Die Update-Sektion befindet sich in der Admin-Setup-Seite. Änderungen an den sichtbaren Einstellungen werden über den globalen Ribbon-Button **Speichern** gespeichert. Der frühere Button **Einstellungen speichern** im Update-Register ist entfallen.
 
+Die Checkbox **Vorabversionen berücksichtigen** ist standardmäßig aus. Solange sie deaktiviert ist, bleiben automatische und manuelle Prüfungen auf stabile GitHub-Releases beschränkt. Nach dem Aktivieren und Speichern wird die Einstellung dauerhaft abgelegt und sofort an `msTools.Updater v0.3.0` weitergegeben; die nächste Prüfung kann dann auch GitHub-Prereleases finden.
+
 Im Ribbon der Setup-Seite stehen außerdem die Update-Aktionen bereit:
 - **Jetzt prüfen** lädt Manifest und passendes Paket.
 - **Update installieren** startet ein vorbereitetes Update nach Downtime-Bestätigung.
-- **Update-Lock zurücksetzen** entfernt einen verwaisten Lock, sofern der Server den Reset erlaubt.
+- **Update-Lock zurücksetzen** entfernt einen verwaisten Lock, sofern der Server den Reset erlaubt. Fehlgeschlagene Resets melden den konkreten Grund, z. B. fehlenden Lock, noch nicht stale Lock, fehlgeschlagenes Löschen oder technischen Reset-Fehler.
 
 Das Feld **Service-Name** lädt Vorschläge aus dem aktuellen Betriebssystem. Windows nutzt `sc.exe`, Linux nutzt `systemctl`. Wenn die Dienstliste nicht gelesen werden kann, bleibt die Vorschlagsliste leer; die Seite bleibt bedienbar.
 
@@ -181,7 +183,7 @@ Wichtig:
 1. **Web-UI öffnen:**
    - Navigiere zur Admin-Setup-Seite (`/admin/setup`)
    - Reiter "Update" sollte sichtbar sein
-   - Als Admin-Benutzer: Aktivierung, Prüfintervall, geplante Zeit und Service-Name sollten konfigurierbar sein
+   - Als Admin-Benutzer: Aktivierung, Prüfzeitfenster, Vorabversionen, geplante Zeit und Service-Name sollten konfigurierbar sein
 
 2. **Manuelle Prüfung auslösen:**
    - Im Ribbon "Jetzt prüfen" klicken
@@ -214,6 +216,7 @@ Wichtig:
 
 **Lösung:**
 1. Admin-UI öffnen, im Ribbon "Update-Lock zurücksetzen" klicken (nur wenn Lock mindestens so alt wie der serverseitige Health-Timeout ist)
+   - Bei Ablehnung zeigt die UI einen spezifischen Reset-Fehlercode (`Err_Update_Reset_NoLock`, `Err_Update_Reset_LockNotStale`, `Err_Update_Reset_DeleteFailed` oder `Err_Update_Reset_Failed`).
 2. Oder manuell Lock-Datei löschen: `rm /var/lib/myapp/updates/update.lock`
 3. Dann Status-UI aktualisieren
 

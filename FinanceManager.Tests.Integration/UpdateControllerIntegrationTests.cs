@@ -53,23 +53,27 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
 
         var update = new UpdateSettingsUpdateRequest(
             true,
-            15,
             "martin-stromberg",
             "FinanceManager",
             "update.json",
+            new TimeOnly(20, 0),
+            new TimeOnly(6, 0),
             new TimeOnly(3, 30),
             "FinanceManagerService",
             null,
             "updates",
-            120);
+            120,
+            true);
 
         var put = await client.PutAsJsonAsync("/api/setup/update/settings", update);
         put.EnsureSuccessStatusCode();
         var settings = await put.Content.ReadFromJsonAsync<UpdateSettingsDto>();
 
         settings!.Enabled.Should().BeTrue();
-        settings.CheckIntervalMinutes.Should().Be(15);
+        settings.SourceCheckStartTime.Should().Be(new TimeOnly(20, 0));
+        settings.SourceCheckEndTime.Should().Be(new TimeOnly(6, 0));
         settings.RepositoryOwner.Should().Be("martin-stromberg");
+        settings.IncludePrereleases.Should().BeTrue();
     }
 
     [Fact]
@@ -141,6 +145,60 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         }
     }
 
+    [Theory]
+    [InlineData(UpdateLockResetFailureKind.NoLock, HttpStatusCode.Conflict, "Err_Update_Reset_NoLock")]
+    [InlineData(UpdateLockResetFailureKind.LockNotStale, HttpStatusCode.Conflict, "Err_Update_Reset_LockNotStale")]
+    [InlineData(UpdateLockResetFailureKind.LockDeleteFailed, HttpStatusCode.Conflict, "Err_Update_Reset_DeleteFailed")]
+    [InlineData(UpdateLockResetFailureKind.ResetFailed, HttpStatusCode.InternalServerError, "Err_Update_Reset_Failed")]
+    public async Task ResetLock_ReturnsSpecificErrorCode_WhenResetFailureIsClassified(
+        UpdateLockResetFailureKind kind,
+        HttpStatusCode statusCode,
+        string errorCode)
+    {
+        using var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<IUpdateOrchestrator>();
+                services.AddScoped<IUpdateOrchestrator>(_ => new ThrowingUpdateOrchestrator(
+                    new NotSupportedException(),
+                    new UpdateLockResetException(kind, UpdateLockResetFailureSource.FinanceManager, "reset failed")));
+            });
+        });
+        var client = factory.CreateClient();
+        await AuthenticateAdminAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"));
+
+        response.StatusCode.Should().Be(statusCode);
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
+        error!.code.Should().Be(errorCode);
+        error.code.Should().NotBe("Err_Update_InstallRunning");
+    }
+
+    [Fact]
+    public async Task ResetLock_ReturnsResetFailed_WhenResetThrowsUnclassifiedIOException()
+    {
+        using var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<IUpdateOrchestrator>();
+                services.AddScoped<IUpdateOrchestrator>(_ => new ThrowingUpdateOrchestrator(
+                    new NotSupportedException(),
+                    new IOException("unclassified reset failure")));
+            });
+        });
+        var client = factory.CreateClient();
+        await AuthenticateAdminAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
+        error!.code.Should().Be("Err_Update_Reset_Failed");
+    }
+
     [Fact]
     public async Task PersistedSettings_AreAppliedToAutoUpdateOptions_OnStartup_WithoutManualSave()
     {
@@ -151,15 +209,17 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             // re-applied to the auto-update library's runtime options because the process later restarted.
             var persisted = new UpdateSettingsDto(
                 true,
-                77,
                 "martin-stromberg",
                 "FinanceManager",
                 "update.json",
+                new TimeOnly(21, 0),
+                new TimeOnly(5, 0),
                 null,
                 "PersistedServiceName",
                 null,
                 tempDir.FullName,
-                250);
+                250,
+                true);
             var json = JsonSerializer.Serialize(persisted, new JsonSerializerOptions(JsonSerializerDefaults.Web));
             await File.WriteAllTextAsync(Path.Combine(tempDir.FullName, "settings.json"), json);
 
@@ -172,8 +232,10 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             var options = factory.Services.GetRequiredService<AutoUpdateOptions>();
 
             options.ServiceName.Should().Be("PersistedServiceName");
-            options.SourceCheck.Interval.Should().Be(77);
+            options.SourceCheck.Interval.Should().Be(AutoUpdateOptionsMapper.DailySourceCheckIntervalMinutes);
+            options.SourceCheck.TimeRanges.Should().HaveCount(14);
             options.HealthTimeoutSeconds.Should().Be(250);
+            options.AllowPrereleaseUpdates.Should().BeTrue();
         }
         finally
         {
@@ -317,11 +379,13 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
 
     private sealed class ThrowingUpdateOrchestrator : IUpdateOrchestrator
     {
-        private readonly Exception _exception;
+        private readonly Exception _startException;
+        private readonly Exception? _resetException;
 
-        public ThrowingUpdateOrchestrator(Exception exception)
+        public ThrowingUpdateOrchestrator(Exception startException, Exception? resetException = null)
         {
-            _exception = exception;
+            _startException = startException;
+            _resetException = resetException;
         }
 
         public Task<UpdateStatusDto> GetStatusAsync(CancellationToken ct = default) => throw new NotSupportedException();
@@ -329,8 +393,10 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         public Task<UpdateSettingsDto> SaveSettingsAsync(UpdateSettingsUpdateRequest request, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<UpdateSettingsDto> ScheduleAsync(TimeOnly? scheduledInstallTime, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<UpdateCheckResultDto> CheckAsync(CancellationToken ct = default) => throw new NotSupportedException();
-        public Task ResetLockAsync(string? reason, CancellationToken ct = default) => throw new NotSupportedException();
-        public Task<UpdateStatusDto> StartInstallAsync(bool confirmDowntime, CancellationToken ct = default) => Task.FromException<UpdateStatusDto>(_exception);
+        public Task ResetLockAsync(string? reason, CancellationToken ct = default)
+            => _resetException is null ? throw new NotSupportedException() : Task.FromException(_resetException);
+
+        public Task<UpdateStatusDto> StartInstallAsync(bool confirmDowntime, CancellationToken ct = default) => Task.FromException<UpdateStatusDto>(_startException);
     }
 
     private sealed class FixedInstalledReleaseMetadataProvider : IInstalledReleaseMetadataProvider

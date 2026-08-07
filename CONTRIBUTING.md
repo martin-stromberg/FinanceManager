@@ -100,6 +100,13 @@ Fallback:
   ```
 - Projektkonfiguration: Stelle sicher, dass `Program.cs`/Startup `services.AddLocalization(options => options.ResourcesPath = "Resources");` setzt.
 
+## Branch-Workflow (staging / master)
+- PRs werden gegen `staging` erstellt, nicht gegen `master`. `staging` ist der Integrations- und QualitÃ¤tssicherungsbranch, `master` ist der ausschlieÃŸliche Release-Branch.
+- Hotfixes gehen ebenfalls Ã¼ber `staging` (kein Direct-Push oder PR direkt gegen `master`).
+- Nach erfolgreichem Merge zu `staging` erstellt der Workflow [`staging-to-master.yml`](.github/workflows/staging-to-master.yml) automatisch einen Draft-PR von `staging` nach `master`. Dieser PR benÃ¶tigt einen manuellen Review und Merge durch einen Maintainer.
+- Versionsbumps (Semantic Release) erfolgen ausschlieÃŸlich beim Merge zu `master`, nicht auf `staging`.
+- FÃ¼r alle PRs (gegen `staging` wie gegen `master`) ist mindestens ein Approval erforderlich; die Branch-Protection-Rules werden Ã¼ber die GitHub-Repository-Einstellungen konfiguriert.
+
 ## Pull Requests
 - Prüfe vor dem Erstellen eines PRs, dass keine neuen `*.resx`-Dateien an unerwarteten Orten liegen. Nutze die bestehende Namespace-/Ordner-Struktur.
 - Beschreibe im PR-Text, welche Ressourcen hinzugefügt oder geändert wurden und für welche Komponenten/Typen sie gedacht sind.

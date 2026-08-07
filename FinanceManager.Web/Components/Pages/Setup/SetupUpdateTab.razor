@@ -38,8 +38,16 @@ else
                 @Localizer["SetupUpdate_Lbl_Enabled"]
             </label>
             <label>
-                @Localizer["SetupUpdate_Lbl_CheckInterval"]
-                <input class="form-control" type="number" min="1" max="1440" value="@_vm.Settings.CheckIntervalMinutes" @onchange="OnIntervalChanged" />
+                <input type="checkbox" checked="@_vm.Settings.IncludePrereleases" @onchange="OnIncludePrereleasesChanged" />
+                @Localizer["SetupUpdate_Lbl_IncludePrereleases"]
+            </label>
+            <label>
+                @Localizer["SetupUpdate_Lbl_SourceCheckStartTime"]
+                <input class="form-control" type="time" value="@FormatTime(_vm.Settings.SourceCheckStartTime)" @onchange="OnSourceCheckStartChanged" />
+            </label>
+            <label>
+                @Localizer["SetupUpdate_Lbl_SourceCheckEndTime"]
+                <input class="form-control" type="time" value="@FormatTime(_vm.Settings.SourceCheckEndTime)" @onchange="OnSourceCheckEndChanged" />
             </label>
             <label>
                 @Localizer["SetupUpdate_Lbl_ScheduledTime"]
@@ -192,7 +200,9 @@ else
     }
 
     private void OnEnabledChanged(ChangeEventArgs e) => Update(s => s with { Enabled = e.Value is bool b && b });
-    private void OnIntervalChanged(ChangeEventArgs e) => Update(s => s with { CheckIntervalMinutes = int.TryParse(Convert.ToString(e.Value), out var value) ? value : s.CheckIntervalMinutes });
+    private void OnIncludePrereleasesChanged(ChangeEventArgs e) => Update(s => s with { IncludePrereleases = e.Value is bool b && b });
+    private void OnSourceCheckStartChanged(ChangeEventArgs e) => Update(s => s with { SourceCheckStartTime = TimeOnly.TryParse(Convert.ToString(e.Value), out var t) ? t : s.SourceCheckStartTime });
+    private void OnSourceCheckEndChanged(ChangeEventArgs e) => Update(s => s with { SourceCheckEndTime = TimeOnly.TryParse(Convert.ToString(e.Value), out var t) ? t : s.SourceCheckEndTime });
     private void OnScheduleChanged(ChangeEventArgs e) => Update(s => s with { ScheduledInstallTime = TimeOnly.TryParse(Convert.ToString(e.Value), out var t) ? t : null });
     private void OnServiceNameChanged(ChangeEventArgs e) => Update(s => s with { ServiceName = Convert.ToString(e.Value) });
 
@@ -213,6 +223,7 @@ else
         }
     }
 
+    private static string FormatTime(TimeOnly time) => time.ToString("HH:mm");
     private static string FormatTime(TimeOnly? time) => time?.ToString("HH:mm") ?? string.Empty;
     private static string FormatDate(DateTimeOffset? date) => date?.ToLocalTime().ToString("g") ?? "-";
     private static string FormatBytes(long bytes) => bytes <= 0 ? "-" : $"{bytes / 1024d / 1024d:0.##} MB";

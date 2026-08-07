@@ -12,7 +12,7 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 
 - Kontoauszüge importieren, klassifizieren und verbuchen (`StatementDraftsController`), inklusive mobiler Kontoauszugsansicht mit lesbarer Kartenstruktur, zweispaltigem Datum/Betrag, abgeschwächten gebuchten Einträgen sowie Kontakt-, Sparplan- und Wertpapierinformationen
 - Kontoauszugsentwürfe im Massenänderungsmodus bearbeiten, Zeilen zum Löschen vormerken und neue Zeilen ergänzen
-- Konten, Sammelkonten, Kontakte, Sparpläne und Wertpapiere verwalten, inklusive sichtbarer SVG-Symbole für Kontakte
+- Konten, Sammelkonten, Kontakte, Sparpläne und Wertpapiere verwalten, inklusive sichtbarer SVG-Symbole für Kontakte sowie Sparplan-Kennzahlen zu aktuellem Saldo, Restbetrag und benötigtem Monatsbetrag in der Detailansicht
 - Berichte, KPI-Dashboards und Budgetauswertungen nutzen, inklusive bestandsgepruefter Hochrechnung fuer Wertpapier-Dividendenreports
 - Anhänge und Sicherungen (Backup/Restore) verwalten
 - Responsive Web-UI für kleine Viewports (mobile Topbar, responsive Container, mobile Ribbon-Shortcuts, mobile E2E-Abdeckung)
@@ -71,6 +71,7 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 | `Updates:SourceType` | string | `Github` | Update-Quelle: `Github` oder `LocalFolder` |
 | `Updates:RepositoryOwner` / `Updates:RepositoryName` | string | `martin-stromberg` / `FinanceManager` | GitHub-Repository (nur bei `SourceType: Github`) |
 | `Updates:LocalFolderPath` | string? | `null` | Lokales Quellverzeichnis (nur bei `SourceType: LocalFolder`; Fallback: `{WorkingDirectory}/source`) |
+| `Updates:IncludePrereleases` | bool | `false` | Beruecksichtigt Vorabversionen bei GitHub-Updatepruefungen; wird in den gespeicherten Update-Einstellungen als `UpdateSettings.IncludePrereleases` persistiert |
 | `Updates:EnableAutomaticDownload` | bool | `true` | Download nach erfolgreicher Versionsprüfung |
 | `Updates:EnableAutomaticInstallation` | bool | `false` | Installation nach erfolgreichem Download |
 | `Updates:ManifestAssetName` | string | `update.json` | Release-Asset mit Update-Metadaten |
@@ -80,8 +81,8 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 | `Updates:HealthTimeoutSeconds` | int | `120` | Wartezeit der Setup-UI bis zur Wiedererreichbarkeit von `/health`, serverseitig auf 10..600 begrenzt; nicht mehr ueber die Admin-UI editierbar |
 | `Updates:MaxAssetBytes` | long | `536870912` | Maximale Groesse eines Update-ZIP-Assets |
 | `Updates:HostedServicesEnabled` | bool | `true` | Aktiviert `AutoUpdateCheckerService` und `AutoUpdateSchedulerService` |
-| `Updates:SourceCheck:Interval` | int | `360` | Prüfintervall in Minuten (neue Syntax; Legacy-Alias: `CheckIntervalMinutes`) |
-| `Updates:SourceCheck:TimeRanges` | Array | `[]` | Zeitfenster für Prüfungen mit `DayOfWeek`, `StartTime`, `EndTime`; leer = immer erlaubt |
+| `Updates:SourceCheckStartTime` | time | `20:00:00` | Beginn des täglichen Zeitfensters fuer automatische Updatepruefungen |
+| `Updates:SourceCheckEndTime` | time | `06:00:00` | Ende des täglichen Zeitfensters fuer automatische Updatepruefungen; Fenster ueber Mitternacht werden unterstuetzt |
 | `Updates:StopHostAfterScriptStart` | bool | `false` | Host nach erfolgreichem Update-Skriptstart beenden |
 | `Backups:Security:MaxUploadBytes` | long | `104857600` | Maximale Uploadgroesse fuer Backup-ZIP-Dateien |
 | `Backups:Security:MaxCompressedZipBytes` | long | `104857600` | Maximale komprimierte ZIP-Groesse fuer Backup-Validierung |
@@ -134,7 +135,7 @@ FinanceManager.Tests                    # Unit- und Komponenten-Tests (xUnit/bUn
 FinanceManager.Tests.Integration        # Integrationstests
 FinanceManager.Tests.E2E                # Playwright-End-to-End-Tests
 
-external/msTools.Updater/v0.2.0         # Geprueftes externes Updater-Release fuer den Testlauf vor NuGet
+external/msTools.Updater/v0.3.0         # Geprueftes externes Updater-Release fuer den Testlauf vor NuGet
 ```
 
 **Technologien:** .NET 10, ASP.NET Core, Blazor Server, EF Core (SQLite), ASP.NET Identity/JWT, xUnit, bUnit, Playwright.
@@ -143,9 +144,9 @@ external/msTools.Updater/v0.2.0         # Geprueftes externes Updater-Release fu
 
 Das Self-Update-System wird aus dem externen Release-Artefakt `msTools.Updater` eingebunden. Die fruehere lokale Bibliothek `SoftwareSchmiede.AutoUpdate` und ihr Testprojekt sind nicht mehr Teil der Solution.
 
-Bis zur geplanten NuGet-Veröffentlichung liegt der geprüfte Release `v0.2.0` aus `martin-stromberg/msTools.Updater` unter [`external/msTools.Updater/v0.2.0/`](external/msTools.Updater/v0.2.0/). Dort sind das originale `release.zip`, `SHA256SUMS.txt`, eine Herkunfts-README und die entpackte `lib/msTools.Updater.dll` abgelegt; der dokumentierte SHA-256 des ZIPs ist `adf4e64e18345ac8ef30e8c626c639489b3eb84accae0f2f5ab61b59e8ea029c`.
+Bis zur geplanten NuGet-Veröffentlichung liegt der geprüfte Release `v0.3.0` aus `martin-stromberg/msTools.Updater` unter [`external/msTools.Updater/v0.3.0/`](external/msTools.Updater/v0.3.0/). Dort sind das originale `release.zip`, `SHA256SUMS.txt`, eine Herkunfts-README und die entpackte `lib/msTools.Updater.dll` abgelegt; der dokumentierte SHA-256 des ZIPs ist `9b9e578deffddd44a36a3ac844ca9b55b1c201984823f6134db56aafdd292834`.
 
-`FinanceManager.Web` referenziert die entpackte DLL direkt und kopiert sie in Build- und Publish-Ausgaben. Die Integration erfolgt weiterhin über den FinanceManager-Adapter (`UpdateOrchestratorAdapter`); Controller, DTOs, Admin-UI und REST-API bleiben dadurch aus Anwendersicht unverändert.
+`FinanceManager.Web` referenziert die entpackte DLL direkt und kopiert sie in Build- und Publish-Ausgaben. Die Integration erfolgt weiterhin über den FinanceManager-Adapter (`UpdateOrchestratorAdapter`); Controller, DTOs, Admin-UI und REST-API bleiben dadurch aus Anwendersicht stabil. Vorabversionen werden nur geladen, wenn `Updates:IncludePrereleases` beziehungsweise `UpdateSettings.IncludePrereleases` aktiviert ist.
 
 ## API-Dokumentation
 
@@ -161,7 +162,7 @@ Einstiegspunkte:
 - `POST /api/setup/update/check` – GitHub-Release-Manifest abrufen, passendes Paket laden und Hash/ZIP validieren
 - `POST /api/setup/update/schedule` – geplante Installationszeit fuer ein vorbereitetes Update speichern
 - `POST /api/setup/update/install/start` – vorbereitetes Update nach Downtime-Bestaetigung installieren; erstellt Lock und startet ein externes Update-Skript
-- `POST /api/setup/update/lock/reset` – verwaisten Update-Lock administrativ zuruecksetzen, sofern dieser Prozess keine laufende Installation kennt und der Lock aelter als das Health-Timeout ist
+- `POST /api/setup/update/lock/reset` – verwaisten Update-Lock administrativ zuruecksetzen; fehlgeschlagene Resets liefern spezifische Fehlercodes fuer fehlenden Lock, noch nicht stalen Lock, fehlgeschlagenes Loeschen oder technischen Reset-Fehler
 - `GET /api/background-tasks/active` – aktive und wartende Background-Tasks fuer authentifizierte Nutzer abrufen; das UI startet das Polling nur bei erkannter Anmeldung und beendet es nach einem `401 Unauthorized`
 - `POST /api/securities/{id}/prices/import` – Wertpapierkurse importieren
 - `POST /api/postings/{id}/reverse` – Buchung stornieren (Reversal)
@@ -184,6 +185,9 @@ dotnet test FinanceManager.sln
 
 ## Deployment / CI/CD
 
+- **Branch-Workflow:** `staging` ist der Integrations- und Qualitätssicherungsbranch, `master` bleibt der ausschließliche Release-Branch. Feature- und Hotfix-PRs richten sich gegen `staging`. Der Test-Workflow [`test.yml`](.github/workflows/test.yml) läuft auf `push` und `pull_request` für beide Branches. Nach erfolgreichem Lauf auf `staging` erstellt [`staging-to-master.yml`](.github/workflows/staging-to-master.yml) automatisch einen Draft-PR von `staging` nach `master`, der manuell durch einen Maintainer gemergt werden muss. Siehe [CONTRIBUTING.md](CONTRIBUTING.md#branch-workflow-staging--master) für Details.
+- `test.yml` erzwingt zusätzlich einen Line-Coverage-Schwellwert von 70 % (`FinanceManager.Tests` und `FinanceManager.Tests.Integration`, gemessen via `--collect:"XPlat Code Coverage"` und `reportgenerator`) sowie automatisierte Dependency-Updates über [`dependabot.yml`](.github/dependabot.yml) (NuGet, npm, GitHub Actions) als Quality Gates vor einem Merge auf `staging`/`master`.
+- Branch-Protection-Regeln für `staging` und `master` (Pflicht-Status-Checks, mindestens 1 Approval, kein Direct-Push, `master` nur aus `staging`) werden in den GitHub-Repository-Einstellungen konfiguriert, nicht im Repository-Code.
 - Die Release-Pipeline ist in [`.github/workflows/release.yml`](.github/workflows/release.yml) definiert.
 - Ein Push auf `master` sowie ein Push eines Tags im Format `vX.Y.Z` starten den
   Workflow auf `windows-latest`. Auf `master` bestimmt Semantic Release die
@@ -214,7 +218,9 @@ dotnet test FinanceManager.sln
   oder lokaler Ordner via `Updates:SourceType`) sowie Manifest-Asset und
   Arbeitsverzeichnis werden serverseitig über `msTools.Updater`
   konfiguriert. Sichtbare Einstellungswerte werden über den globalen
-  Ribbon-Button `Speichern` persistiert; die Aktionen `Jetzt prüfen`,
+  Ribbon-Button `Speichern` persistiert. Die automatische Pruefung laeuft einmal
+  taeglich im konfigurierten Zeitfenster, standardmaessig von `20:00` bis `06:00`;
+  die Aktionen `Jetzt prüfen`,
   `Update installieren` und `Update-Lock zurücksetzen` liegen ebenfalls im
   Setup-Ribbon. Der Service-Name bietet Vorschläge aus Windows-Diensten oder
   Linux-systemd-Services. Vor manueller Installation verlangt die UI eine
@@ -225,7 +231,11 @@ dotnet test FinanceManager.sln
   geprueft und startet ein bereites Update ohne erneute Benutzerbestaetigung.
   Ein Admin-Lock-Reset loescht nur vorhandene Locks, die aelter als der interne
   Health-Timeout sind, und verweigert den Reset, solange der aktuelle Prozess
-  noch eine laufende Installation kennt.
+  noch eine laufende Installation kennt. Fehlgeschlagene Resets zeigen konkrete
+  Ursachen wie fehlenden Lock, noch nicht stalen Lock, fehlgeschlagenes Loeschen
+  oder technischen Reset-Fehler; Diagnose-Logs enthalten Fehlerart, Quelle und
+  technische Ursache. `Err_Update_InstallRunning` bleibt Faellen vorbehalten, in
+  denen eine laufende Installation tatsaechlich belegt ist.
 - **Verbesserungen (Issue #206):** Das Update-System wurde fuer Produktionsumgebungen
   (insbesondere Linux) stabilisiert: Lock-Verwaltung ist atomarer, verwaiste Locks
   werden zuverlaessiger erkannt und bereinigt, der Service-Neustart und die
@@ -257,6 +267,7 @@ dotnet test FinanceManager.sln
 ## Contribution Guide
 
 Siehe [CONTRIBUTING.md](CONTRIBUTING.md), insbesondere:
+- Branch-Workflow: PRs gegen `staging`, automatisierte Promotion nach `master`
 - API-Fehlerbehandlung (`ValidationProblem` vs. standardisierte `origin/code/message`-Antworten)
 - Lokalisierungskonventionen für `.resx` unter `Resources/...`
 - PR-Hinweise zu Ressourcenpfaden und CI-Checks

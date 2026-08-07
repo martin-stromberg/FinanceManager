@@ -32,8 +32,7 @@ namespace FinanceManager.Web
             // apply persisted update settings before the auto-update hosted services start
             app.ApplyPersistedUpdateSettings();
 
-            // configure localization and middleware
-            app.ConfigureLocalization();
+            // configure middleware (localization is applied within ConfigureMiddleware after UseAuthentication)
             app.ConfigureMiddleware();
 
             app.Run();

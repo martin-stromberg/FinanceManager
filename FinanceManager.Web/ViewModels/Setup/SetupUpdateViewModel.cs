@@ -122,15 +122,17 @@ public sealed class SetupUpdateViewModel : BaseViewModel
         {
             Settings = await ApiClient.Updates_UpdateSettingsAsync(new UpdateSettingsUpdateRequest(
                 Settings.Enabled,
-                Settings.CheckIntervalMinutes,
                 Settings.RepositoryOwner,
                 Settings.RepositoryName,
                 Settings.ManifestAssetName,
+                Settings.SourceCheckStartTime,
+                Settings.SourceCheckEndTime,
                 Settings.ScheduledInstallTime,
                 Settings.ServiceName,
                 Settings.ExecutablePath,
                 Settings.WorkingDirectory,
-                Settings.HealthTimeoutSeconds), ct);
+                Settings.HealthTimeoutSeconds,
+                Settings.IncludePrereleases), ct);
             _originalSettings = Settings;
             Dirty = false;
             Status = await ApiClient.Updates_GetStatusAsync(ct);
@@ -321,8 +323,10 @@ public sealed class SetupUpdateViewModel : BaseViewModel
         }
 
         return current.Enabled != original.Enabled
-            || current.CheckIntervalMinutes != original.CheckIntervalMinutes
+            || current.SourceCheckStartTime != original.SourceCheckStartTime
+            || current.SourceCheckEndTime != original.SourceCheckEndTime
             || current.ScheduledInstallTime != original.ScheduledInstallTime
+            || current.IncludePrereleases != original.IncludePrereleases
             || !string.Equals(NormalizeOptional(current.ServiceName), NormalizeOptional(original.ServiceName), StringComparison.Ordinal);
     }
 

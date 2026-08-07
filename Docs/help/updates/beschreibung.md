@@ -4,14 +4,14 @@
 
 ## Zweck
 
-Das Update-System automatisiert die Erkennung, den Download und die Installation von Programmaktualisierungen auf produktiven Servern. Die Update-Quelle ist fest auf das GitHub-Repository `martin-stromberg/FinanceManager` und das Manifest-Asset `update.json` eingestellt. Administratoren steuern in der Oberfläche nur noch, ob geprüft wird, in welchem Intervall geprüft wird, welche Installationszeit vorgesehen ist und welcher Windows- oder Linux-Dienst neu gestartet werden soll.
+Das Update-System automatisiert die Erkennung, den Download und die Installation von Programmaktualisierungen auf produktiven Servern. Die Update-Quelle ist fest auf das GitHub-Repository `martin-stromberg/FinanceManager` und das Manifest-Asset `update.json` eingestellt. Administratoren steuern in der Oberfläche nur noch, ob geprüft wird, in welchem täglichen Zeitfenster geprüft wird, welche Installationszeit vorgesehen ist, welcher Windows- oder Linux-Dienst neu gestartet werden soll und ob Vorabversionen in die automatische Update-Prüfung einbezogen werden.
 
 ## Funktionsweise
 
 Das System arbeitet in vier Phasen:
 
-### 1. Automatische Prüfung (periodisch)
-Der `UpdateOrchestrator` prüft in konfigurierten Intervallen (Standard: alle 60 Minuten), ob ein neueres Release im definierten GitHub-Repository verfügbar ist. Die Prüfung läuft im Hintergrund und schreibt den Status in eine lokal gespeicherte `status.json`-Datei.
+### 1. Automatische Prüfung (täglich)
+Der `UpdateOrchestrator` prüft einmal täglich, ob ein neueres Release im definierten GitHub-Repository verfügbar ist. Die Prüfung ist nur im konfigurierten Zeitfenster erlaubt; Standard ist `20:00` bis `06:00`, also ein Fenster über Mitternacht. Standardmäßig werden nur stabile Releases berücksichtigt. Wenn die Einstellung **Vorabversionen berücksichtigen** aktiviert ist, werden auch GitHub-Prereleases in die Prüfung einbezogen. Die Prüfung läuft im Hintergrund und schreibt den Status in eine lokal gespeicherte `status.json`-Datei.
 
 ### 2. Download vorbereiten
 Sobald eine neuere Version erkannt wird, wird das entsprechende Asset (`.zip`-Archiv für die aktuelle Plattform) heruntergeladen und validiert. Der Status wird auf `Ready` gesetzt.
@@ -36,6 +36,7 @@ Nach dem Neustart prüft das System, dass die neue Version tatsächlich geladen 
 | `UpdateFileStore` | Persistierung von Lock-Dateien und Status-JSON |
 | `SetupUpdateTab.razor` | Web-UI für Administrator (editierbare Update-Einstellungen, Status, Release-Informationen, Service-Autocomplete) |
 | `SetupUpdateViewModel` | ViewModel mit Polling-Logik für Live-Status-Updates während Installation |
+| `msTools.Updater v0.3.0` | Vendored Updater-Komponente mit Unterstützung für stabile Releases und optional aktivierte Vorabversionen |
 
 ## Bedienung in der Setup-Oberfläche
 
@@ -43,21 +44,24 @@ Die Update-Sektion folgt dem allgemeinen Setup-Speicherverhalten. Änderungen an
 
 Editierbar sind:
 - Update-Prüfung aktiviert/deaktiviert
-- Prüfintervall in Minuten
+- Prüfzeitfenster mit Start- und Enduhrzeit
+- Vorabversionen berücksichtigen
 - geplante Installationszeit
 - Service-Name
 
+Die Option **Vorabversionen berücksichtigen** ist standardmäßig deaktiviert. Bei deaktivierter Option bleibt das bisherige Verhalten erhalten: automatische Prüfungen berücksichtigen nur stabile Releases. Bei aktivierter Option wird der Wert dauerhaft gespeichert und für die nächste automatische oder manuelle Update-Prüfung sofort auf die Runtime-Konfiguration übertragen.
+
 Der Service-Name bietet Autocomplete-Vorschläge aus den Diensten des aktuellen Systems. Unter Windows liest das System Windows-Dienste, unter Linux systemd-Services. Auf anderen Plattformen oder bei fehlenden Systemwerkzeugen bleibt die Vorschlagsliste leer.
 
-Die Aktionen **Jetzt prüfen**, **Update installieren** und **Update-Lock zurücksetzen** sind im Ribbon der Setup-Seite verfügbar. **Update installieren** ist nur aktiv, wenn der Status `Ready` ist; **Update-Lock zurücksetzen** ist nur aktiv, wenn ein Lock gemeldet wird.
+Die Aktionen **Jetzt prüfen**, **Update installieren** und **Update-Lock zurücksetzen** sind im Ribbon der Setup-Seite verfügbar. **Update installieren** ist nur aktiv, wenn der Status `Ready` ist; **Update-Lock zurücksetzen** ist nur aktiv, wenn ein Lock gemeldet wird. Wenn der Reset nicht möglich ist, zeigt die UI den konkreten Grund an, z. B. dass kein aktiver Lock vorhanden ist, der Lock noch nicht alt genug ist, die Lock-Datei nicht entfernt werden konnte oder ein technischer Reset-Fehler aufgetreten ist.
 
 Die technischen Werte `RepositoryOwner`, `RepositoryName`, `ManifestAssetName`, `WorkingDirectory`, `ExecutablePath` und `HealthTimeoutSeconds` werden Anwendern nicht mehr als Eingabefelder angezeigt. Beim Speichern normalisiert der Server Repository, Manifest und Arbeitsverzeichnis auf die festen Werte der Anwendung; der Health-Timeout kommt aus der Serverkonfiguration mit Fallback `120` Sekunden.
 
 ## Beispiele
 
 ### Szenario: Regelmäßige Prüfung
-1. Administrator aktiviert Updates in der Konfiguration und setzt Intervall auf 60 Minuten
-2. Das System prüft alle 60 Minuten GitHub und findet Version 2.5.0 (aktuell installiert: 2.4.0)
+1. Administrator aktiviert Updates und belässt das Prüfzeitfenster auf `20:00` bis `06:00`
+2. Das System prüft einmal täglich innerhalb dieses Fensters GitHub und findet Version 2.5.0 (aktuell installiert: 2.4.0)
 3. Version 2.5.0 wird heruntergeladen und als `Ready` gekennzeichnet
 4. Administrator wird benachrichtigt (Statusseite zeigt verfügbares Update)
 5. Administrator klickt im Ribbon **Update installieren**, bestätigt die Downtime, System wechselt zu `Installing`
@@ -67,7 +71,7 @@ Die technischen Werte `RepositoryOwner`, `RepositoryName`, `ManifestAssetName`, 
 1. Installation startet, aber Installer-Prozess bricht ab (z. B. Datei-Zugriff fehlgeschlagen)
 2. Lock wird automatisch bereinigt, In-Memory-Flag zurückgesetzt
 3. Update-Status wechselt auf `Failed` mit Fehlermeldung
-4. Administrator kann Lock-Reset-Button drücken oder nächste Installation versuchen
+4. Administrator kann den Lock-Reset-Button drücken oder die nächste Installation versuchen; bei einem fehlgeschlagenen Reset nennt die UI den konkreten Reset-Grund statt pauschal eine laufende Installation zu behaupten
 
 ## Einschränkungen
 

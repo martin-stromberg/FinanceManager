@@ -63,8 +63,11 @@ test("rejects non-semantic manual tags", () => {
   assert.throws(() => parseManualTag("v02.3.4"), /valid vX\.Y\.Z/);
 });
 
-test("accepts only master for automatic releases", () => {
+test("accepts only master and staging for automatic releases", () => {
   assert.deepEqual(classifyWorkflowRef({ refType: "branch", refName: "master" }), {
+    kind: "automatic"
+  });
+  assert.deepEqual(classifyWorkflowRef({ refType: "branch", refName: "staging" }), {
     kind: "automatic"
   });
   assert.throws(
@@ -76,6 +79,26 @@ test("accepts only master for automatic releases", () => {
 test("extracts a version only when Semantic Release announces one", () => {
   assert.equal(parseNextReleaseVersion("The next release version is 3.4.5"), "3.4.5");
   assert.equal(parseNextReleaseVersion("There are no relevant changes"), null);
+});
+
+test("extracts a prerelease version announced for the staging RC channel", () => {
+  assert.equal(parseNextReleaseVersion("The next release version is 1.17.0-RC.1"), "1.17.0-RC.1");
+  assert.equal(parseNextReleaseVersion("The next release version is 1.16.1-RC.12"), "1.16.1-RC.12");
+});
+
+test("creates an RC release when Semantic Release resolves a staging prerelease", async () => {
+  const testEffects = effects({ runSemanticReleaseDryRun: () => "The next release version is 1.17.0-RC.1" });
+
+  await resolveReleaseVersion(environment({ refName: "staging" }), testEffects.dependencies);
+
+  assert.deepEqual(testEffects.output[0], {
+    released: "true",
+    reason: "semantic-release",
+    version: "1.17.0-RC.1",
+    tag: "v1.17.0-RC.1",
+    release_kind: "automatic",
+    release_action: "create"
+  });
 });
 
 test("creates a release for a manual tag without an existing release", async () => {

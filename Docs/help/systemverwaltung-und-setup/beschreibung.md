@@ -41,32 +41,35 @@ Aktive Hintergrundtasks werden in der Benutzeroberfläche über ein Statuspanel 
 
 Die Update-Sektion zeigt Quelle, Status, Release Notes und die Metadaten der
 verfuegbaren Release-Assets. Administratoren koennen die automatische Pruefung
-aktivieren, Repository/Manifest, Pruefintervall, geplante Uhrzeit,
-Service-/EXE-Ziele, WorkingDirectory und Health-Timeout pflegen. Ein manueller
+aktivieren, Vorabversionen beruecksichtigen, Repository/Manifest,
+Start- und Enduhrzeit des Prueffensters, geplante Uhrzeit, Service-/EXE-Ziele, WorkingDirectory und
+Health-Timeout pflegen. Ein manueller
 Installationsstart verlangt eine Downtime-Bestaetigung. Nach dem Start zeigt
 die UI eine Warteseite, wartet zunaechst auf einen beobachteten Ausfall und
 laedt erst nach einem spaeteren erfolgreichen `/health`-Aufruf neu.
 Ein aktiver Update-Lock kann durch Administratoren zurueckgesetzt werden, wenn
-die aktuelle Prozessinstanz keine Installation mehr besitzt und die Lock-Datei
-aelter als das konfigurierte Health-Timeout ist.
+die Lock-Datei aelter als das konfigurierte Health-Timeout ist. Schlaegt der
+Reset fehl, unterscheidet die UI zwischen fehlendem Lock, noch nicht altem
+Lock, fehlgeschlagenem Loeschen und sonstigem technischen Reset-Fehler.
 
 Die Self-Update-Logik selbst wird als externe, hosting-unabhaengige Bibliothek
 `msTools.Updater` eingebunden. Bis zur NuGet-Veroeffentlichung referenziert
-FinanceManager den geprueften Release `v0.2.0` unter
-`external/msTools.Updater/v0.2.0/`; die dort entpackte `msTools.Updater.dll`
+FinanceManager den geprueften Release `v0.3.0` unter
+`external/msTools.Updater/v0.3.0/`; die dort entpackte `msTools.Updater.dll`
 wird beim Start ueber einen einzigen Aufruf `builder.UseAutoUpdate(...)` in
 `ProgramExtensions` registriert. FinanceManager greift darauf ueber die duenne
 Adapterschicht `UpdateOrchestratorAdapter` zu, sodass Controller, `ApiClient`,
-`SetupUpdateViewModel` und `SetupUpdateTab.razor` unveraendert bleiben. Die
+`SetupUpdateViewModel` und `SetupUpdateTab.razor` stabil bleiben. Die
 Konfigurationssektion `Updates` in `appsettings.json` steuert zusaetzlich
 folgende, neu hinzugekommene Werte: `SourceType` (`Github` oder `LocalFolder`)
 waehlt die Update-Quelle, `LocalFolderPath` das Quellverzeichnis fuer
 `LocalFolder`, `EnableAutomaticDownload`/`EnableAutomaticInstallation`
 schalten den automatischen Download bzw. die automatische Installation nach
-einer gefundenen neueren Version, `SourceCheck:Interval` und
-`SourceCheck:TimeRanges` steuern Intervall und erlaubte Zeitfenster der
-Hintergrundpruefung, und `StopHostAfterScriptStart` beendet den Host nach dem
-Start des Installationsskripts (Standard: deaktiviert, wie bisher).
+einer gefundenen neueren Version, `SourceCheckStartTime` und
+`SourceCheckEndTime` steuern das taegliche Zeitfenster der
+Hintergrundpruefung, `IncludePrereleases` erlaubt explizit GitHub-Prereleases,
+und `StopHostAfterScriptStart` beendet den Host nach dem Start des
+Installationsskripts (Standard: deaktiviert, wie bisher).
 
 ## Beispiele
 
@@ -83,6 +86,48 @@ Start des Installationsskripts (Standard: deaktiviert, wie bisher).
   startet die Installation nach Downtime-Bestaetigung.
 - Ein angemeldeter Benutzer startet einen Hintergrundtask und sieht Fortschritt, Warteschlange sowie Abbrechen- oder Entfernen-Aktionen im Statuspanel.
 
+## Spracheinstellung (Anzeigesprache)
+
+Benutzer können ihre bevorzugte Anzeigesprache im Profil-Tab der Einstellungsseite festlegen.
+Unterstützte Sprachen sind aktuell **Deutsch (de)**, **Englisch (en)** und **Automatisch**.
+
+### Anzeigesprachen-Modi
+
+| Einstellung | Verhalten |
+|-------------|-----------|
+| **Automatisch** | Die Sprache wird aus dem `Accept-Language`-Header des Browsers ermittelt |
+| **Deutsch (de)** | Die Oberfläche erscheint immer auf Deutsch |
+| **Englisch (en)** | Die Oberfläche erscheint immer auf Englisch |
+
+### Technische Umsetzung
+
+Die gewählte Sprache wird als `PreferredLanguage`-Feld am Benutzer in der Datenbank gespeichert.
+Bei explizit gewählter Sprache wird der Wert beim Login als `pref_lang`-Claim in das JWT eingebettet.
+
+Der `UserPreferenceRequestCultureProvider` liest bei jedem HTTP-Request die Anzeigesprache
+in folgender Priorität:
+
+1. **JWT-Claim `pref_lang`** — schnellster Pfad, kein Datenbankzugriff
+2. **Datenbankabfrage** — Fallback, wenn der Claim fehlt oder ungültig ist
+3. **`null` (= Automatisch)** — Weiterreichen an den nächsten Provider in der Kette
+4. **`Accept-Language`-Header** — Browsersprache, wenn keine explizite Einstellung gesetzt ist
+5. **Standardsprache Deutsch (`de`)** — falls der Browser keine Sprache sendet
+
+Unangemeldete Benutzer sehen die Anwendung gemäß ihrer Browsersprache oder auf Deutsch.
+
+### Sprachänderung & sofortige Wirkung
+
+Wenn ein Benutzer die Sprache speichert, stellt der Server den Auth-Cookie mit einem neuen
+JWT neu aus, der den aktualisierten `pref_lang`-Claim enthält. Die Seite lädt anschließend
+automatisch neu, sodass die neue Sprache unmittelbar in der gesamten Benutzeroberfläche
+sichtbar wird — ohne erneuten Login.
+
+### Beispiele
+
+- Ein Benutzer stellt **Englisch** als Anzeigesprache ein. Nach dem Speichern erscheinen alle Texte auf Englisch — unabhängig von der Browser-Spracheinstellung.
+- Ein Benutzer stellt **Automatisch** ein. Die Anwendung erkennt seine Browser-Sprache (z.B. Englisch) und zeigt die Oberfläche entsprechend an.
+- Die Spracheinstellung bleibt nach einem erneuten Login erhalten. Die Browser-Sprache überschreibt eine gespeicherte **Automatisch**-Einstellung nicht.
+
 ## Einschränkungen
 
 - Administrative Endpunkte erfordern entsprechende Berechtigungen.
@@ -94,5 +139,9 @@ Start des Installationsskripts (Standard: deaktiviert, wie bisher).
   abgelehnt, wenn Paket, Lock, ZIP-Struktur oder Service-/EXE-Ziel nicht
   eindeutig valide sind.
 - Der administrative Lock-Reset ist ein Betriebswerkzeug fuer manuell
-  gepruefte Haengefaelle. Aktuell prueft die Anwendung nur, ob diese
-  Prozessinstanz noch eine Installation besitzt.
+  gepruefte Haengefaelle. Die Anwendung loescht nur alte Locks und zeigt bei
+  fehlgeschlagenem Reset den konkreten Grund statt pauschal eine laufende
+  Installation zu melden.
+- Die Anzeigesprache gilt für die gesamte Benutzeroberfläche. Im Modus „Automatisch"
+  wird die Browser-Sprache berücksichtigt; es werden nur die unterstützten Sprachen
+  Deutsch und Englisch angeboten.

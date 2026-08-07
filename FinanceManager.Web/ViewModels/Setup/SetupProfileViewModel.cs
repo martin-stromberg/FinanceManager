@@ -105,6 +105,10 @@ public sealed class SetupProfileViewModel : BaseViewModel
 
     /// <summary>
     /// Persists pending profile changes to the API, including API key updates or clears.
+    /// When the preferred language changes the method triggers a full page reload after a successful save
+    /// so that the updated auth cookie (which contains the new <c>pref_lang</c> JWT claim issued by the
+    /// server) is sent with the next HTTP request and the ASP.NET request localisation middleware picks
+    /// up the new culture for the refreshed Blazor circuit.
     /// </summary>
     /// <param name="ct">Cancellation token used to cancel the operation.</param>
     /// <returns>A task that completes when the save operation has finished. The <see cref="SavedOk"/>, <see cref="SaveError"/> and <see cref="Dirty"/> state will be updated accordingly.</returns>
@@ -114,6 +118,8 @@ public sealed class SetupProfileViewModel : BaseViewModel
         Saving = true; SavedOk = false; SaveError = null; RaiseStateChanged();
         try
         {
+            var languageChanged = Model.PreferredLanguage != _original.PreferredLanguage;
+
             var request = new UserProfileSettingsUpdateRequest(
                 PreferredLanguage: Model.PreferredLanguage,
                 TimeZoneId: Model.TimeZoneId,
@@ -132,6 +138,17 @@ public sealed class SetupProfileViewModel : BaseViewModel
                 _clearRequested = false;
                 SavedOk = true;
                 RecomputeDirty();
+
+                // A full page reload is required when the language changed: the server re-issues the auth
+                // cookie with an updated JWT (containing the new pref_lang claim), but the running Blazor
+                // Server circuit keeps the culture that was resolved at circuit creation time.  A force-
+                // reload sends the new cookie as a regular HTTP request so the RequestLocalizationMiddleware
+                // can pick up the correct culture for the new circuit.
+                if (languageChanged)
+                {
+                    Navigation.Refresh(forceReload: true);
+                    return;
+                }
             }
             else
             {

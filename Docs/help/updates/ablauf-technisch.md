@@ -4,13 +4,13 @@
 
 ## Übersicht
 
-Das Update-System prüft GitHub-Releases regelmäßig, lädt neue Versionen herunter und orchestriert die Installation über einen eigenständigen Installer-Prozess. Die Installation wird nicht vom Host-Prozess selbst durchgeführt, sondern über eine transient service unit, die mittels systemd-run gestartet wird. Dadurch kann der Host-Prozess sich selbst beenden, während das Installer-Skript unabhängig weiterläuft. Nach dem Neustart validiert das System, ob die neue Version erfolgreich geladen wurde. Lock-Dateien verhindern parallele Installationen; bei Fehlern werden Locks automatisch bereinigt.
+Das Update-System prüft GitHub-Releases regelmäßig, lädt neue Versionen herunter und orchestriert die Installation über einen eigenständigen Installer-Prozess. Die Installation wird nicht vom Host-Prozess selbst durchgeführt, sondern über eine transient service unit, die mittels systemd-run gestartet wird. Dadurch kann der Host-Prozess sich selbst beenden, während das Installer-Skript unabhängig weiterläuft. Nach dem Neustart validiert das System, ob die neue Version erfolgreich geladen wurde. Lock-Dateien verhindern parallele Installationen; bei Fehlern werden Locks automatisch bereinigt. Die vendored Komponente `msTools.Updater v0.3.0` stellt die Runtime-Option `AutoUpdateOptions.AllowPrereleaseUpdates` und die GitHub-Source-Erzeugung mit `includePrereleases` bereit.
 
 ## Ablauf
 
 ### 1. Automatische Prüfung (CheckAsync)
 
-**Voraussetzung:** Update-Service ist aktiviert und das Prüfintervall ist abgelaufen.
+**Voraussetzung:** Update-Service ist aktiviert, die tägliche Prüfung ist fällig und die lokale Uhrzeit liegt im konfigurierten Prüfzeitfenster.
 
 **Beteiligte Komponenten:**
 - `UpdateOrchestrator.CheckAsync()` — Einstiegspunkt der Prüfung
@@ -22,7 +22,7 @@ Das Update-System prüft GitHub-Releases regelmäßig, lädt neue Versionen heru
 
 **Ablauf:**
 1. Status auf `Checking` setzen
-2. Manifest-Asset aus GitHub laden (URL aus Konfiguration)
+2. Manifest-Asset aus GitHub laden (URL aus Konfiguration); Vorabversionen werden nur einbezogen, wenn `IncludePrereleases` gespeichert und auf `AutoUpdateOptions.AllowPrereleaseUpdates` angewendet ist
 3. Manifest validieren (Format, Plattform-Asset vorhanden)
 4. Installierte Version gegen verfügbare Version vergleichen
 5. Wenn neuer: herunterladbare Asset-URL mit `IUpdatePlatformResolver` für aktuelle Plattform auswählen
@@ -34,6 +34,7 @@ Das Update-System prüft GitHub-Releases regelmäßig, lädt neue Versionen heru
 - Netzwerkfehler, Manifest ungültig, Asset nicht für Plattform vorhanden → `Failed`
 - Bereits aktuelle Version → Status `NoUpdate` (kein Fehler)
 - Unbekannte installierte Version (z. B. Entwicklungs-Build) → `NoUpdate` mit Info-Meldung
+- GitHub `403 (rate limit exceeded)` → verständliche Rate-Limit-Meldung im Status und in der Check-Antwort; der Administrator soll später erneut prüfen
 
 ### 2. Installationsvorbereitung (StartInstallAsync)
 
@@ -117,13 +118,21 @@ Resultat:    {Status: Failed, LastError: "Err_Update_VersionMismatch"}
 ```
 
 
-### 5. Lock-Reset (Verweigerung und Staleness-Prüfung)
+### 5. Lock-Reset (klassifizierte Verweigerung und Staleness-Prüfung)
 
 **Einstiegspunkt:** `UpdateOrchestrator.ResetLockAsync(reason: string?)`
 
-**Verweigerungsbedingungen:**
-- `_executor.IsInstallRunning == true` → `IOException` mit `Err_Update_InstallRunning`
-- Kein Lock vorhanden → `IOException` mit `No update lock is active.`
+**Fehlervertrag:**
+`UpdateOrchestratorAdapter.ResetLockAsync` wirft für kontrollierte Reset-Fehler eine `UpdateLockResetException`. Die Exception enthält `Kind`, `FailureSource`, optional `LockCreatedAt`, optional `LockPath` und die technische Ursache als Inner Exception. Der Controller mappt diese Typisierung auf lokalisierte API-Fehlercodes.
+
+| Fehlerart | API-Code | HTTP | Typische Ursache |
+|-----------|----------|------|------------------|
+| `NoLock` | `Err_Update_Reset_NoLock` | 409 | Es ist kein aktiver Lock vorhanden |
+| `LockNotStale` | `Err_Update_Reset_LockNotStale` | 409 | Der Lock ist jünger als die Staleness-Schwelle |
+| `LockDeleteFailed` | `Err_Update_Reset_DeleteFailed` | 409 | `DeleteLockAsync` gibt `false` zurück oder die Lock-Datei kann wegen I/O-/Zugriffsfehlern nicht gelöscht werden |
+| `ResetFailed` | `Err_Update_Reset_Failed` | 500 | Sonstiger technischer Fehler beim Lesen, Prüfen oder Aktualisieren des Reset-Zustands |
+
+Klassifizierte Reset-Fehler werden nicht mehr auf `Err_Update_InstallRunning` gemappt. Dieser Code bleibt Situationen vorbehalten, in denen die Anwendung tatsächlich eine laufende Update-Installation belegen kann. Eine allgemeine `IOException` im Reset-Pfad wird nicht mehr pauschal als laufende Installation gemeldet.
 
 **Staleness-Prüfung:**
 1. Lock-Erstellungszeit auslesen:
@@ -131,15 +140,17 @@ Resultat:    {Status: Failed, LastError: "Err_Update_VersionMismatch"}
    - Fallback: `File.GetLastWriteTimeUtc()` wenn Inhalt nicht parsbar
 2. Schwellenwert berechnen: `max(HealthTimeoutSeconds, 60) Sekunden`
 3. Alter prüfen: `DateTime.UtcNow - LockCreatedAt >= Schwellenwert`?
-4. Zu jung → `IOException` mit `The update lock is not old enough to be considered stale.`
-5. Alt genug → Lock-Datei löschen, Status aktualisieren mit Hinweis-Meldung
+4. Kein Lock → `UpdateLockResetFailureKind.NoLock`
+5. Zu jung → `UpdateLockResetFailureKind.LockNotStale`
+6. Alt genug → Lock-Datei löschen; Erfolg gilt nur, wenn `DeleteLockAsync` `true` liefert
+7. Nach erfolgreichem Löschen wird der Statussnapshot als entsperrt aktualisiert und die UI lädt den Status erneut
 
 **Fehlerbehandlung:**
-Alle Verweigerungen werfen `IOException`, die über die API als HTTP 409 (Conflict) oder HTTP 400 (Bad Request) beantwortet werden.
+Der Controller protokolliert klassifizierte Reset-Fehler mit Fehlerart, Quelle, Lock-Zeitpunkt, Lock-Pfad, Benutzer und technischer Ursache. Anwender sehen weiterhin lokalisierte, verständliche Meldungen ohne interne Dateipfade.
 
-### 6. Einstellungen normalisieren und Service-Vorschläge laden
+### 6. Einstellungen normalisieren, Prüfzeitfenster ableiten, Vorabversionen anwenden und Service-Vorschläge laden
 
-Die Update-Einstellungen enthalten weiterhin DTO-Felder für ältere gespeicherte Dateien und API-Kompatibilität. Anwender bearbeiten in der Setup-UI jedoch nur noch `Enabled`, `CheckIntervalMinutes`, `ScheduledInstallTime` und `ServiceName`.
+Anwender bearbeiten in der Setup-UI nur noch `Enabled`, `SourceCheckStartTime`, `SourceCheckEndTime`, `IncludePrereleases`, `ScheduledInstallTime` und `ServiceName`.
 
 Beim Laden und Speichern normalisiert `UpdateSettingsStore` technische Werte:
 - `RepositoryOwner` = `martin-stromberg`
@@ -148,6 +159,15 @@ Beim Laden und Speichern normalisiert `UpdateSettingsStore` technische Werte:
 - `WorkingDirectory` = `updates`
 - `HealthTimeoutSeconds` = `UpdateOptions.HealthTimeoutSeconds`, Fallback `120`, Clamp `10..600`
 - `ExecutablePath` wird bei Speichervorgängen nicht aus Anwenderwerten übernommen
+- fehlende `SourceCheckStartTime`/`SourceCheckEndTime` aus älteren Dateien werden als `20:00` bis `06:00` gelesen
+- `IncludePrereleases` bleibt ein Anwenderwert; fehlende Legacy-Werte werden als `false` gelesen
+
+`AutoUpdateOptionsMapper.ApplySettings()` spiegelt die gespeicherte Einstellung unmittelbar in die Updater-Library:
+- `AutoUpdateOptions.SourceCheck.Interval` wird fest auf `1440` Minuten gesetzt
+- `AutoUpdateOptions.SourceCheck.TimeRanges` wird aus Start- und Enduhrzeit für alle Wochentage erzeugt; Fenster über Mitternacht werden in Abend- und Morgenbereich gesplittet
+- `AutoUpdateOptions.AllowPrereleaseUpdates` erhält den Wert aus `UpdateSettingsDto.IncludePrereleases`
+- Bei GitHub-Quellen wird `AutoUpdateGithubSource.Create(owner, repository, manifestAsset, includePrereleases)` erneut aufgerufen, damit die nächste Prüfung dieselbe Prerelease-Entscheidung verwendet
+- Local-Folder-Quellen bleiben unverändert; dort wird nur die Runtime-Option gesetzt
 
 Das Autocomplete für `ServiceName` läuft über `IUpdateServiceCatalog`:
 - Windows: `sc.exe query type= service state= all`, Dienstnamen aus `SERVICE_NAME:`-Zeilen
@@ -215,14 +235,16 @@ flowchart TD
 | Prozessstart schlägt fehl (nach Lock erstellt) | `Err_Update_InvalidState` | 400 | Lock + Flag automatisch bereinigt, Status → Failed |
 | Skript-Generierung schlägt fehl | `Err_Update_InvalidState` | 400 | Lock + Flag bereinigt |
 | Version nach Update nicht aktualisiert (Reconciliation) | `Err_Update_VersionMismatch` | (async in status.json) | Status → Failed, Admin wird benachrichtigt |
-| Lock zu jung zum Reset | (IOException) | 409 | Lock muss mindestens `HealthTimeoutSeconds` alt sein |
-| Kein Lock zum Reset | (IOException) | 409 | Keine Aktion erforderlich |
+| Kein Lock zum Reset | `Err_Update_Reset_NoLock` | 409 | Keine Aktion erforderlich; Status erneut prüfen |
+| Lock zu jung zum Reset | `Err_Update_Reset_LockNotStale` | 409 | Lock muss mindestens `HealthTimeoutSeconds` alt sein |
+| Lock-Datei kann nicht gelöscht werden | `Err_Update_Reset_DeleteFailed` | 409 | Dateizugriff und Berechtigungen prüfen |
+| Sonstiger Reset-Fehler | `Err_Update_Reset_Failed` | 500 | Server-Logs mit Fehlerart, Quelle und technischer Ursache prüfen |
 
 ## Performance und Ressourcen
 
 - **Lock-Datei:** Minimal (< 100 Bytes, nur Zeitstempel)
 - **Status-JSON:** Klein (< 5 KB, nur Metadaten)
-- **Prüf-Intervall:** Konfigurierbar 1–1440 Minuten (Default: 60 Min)
+- **Prüfung:** Täglich (`1440` Minuten) innerhalb des konfigurierten Zeitfensters (Default: `20:00` bis `06:00`)
 - **Download-Limit:** Konfigurierbar max. Asset-Größe (verhindert DoS)
 - **Health-Timeout:** Konfigurierbar 10–600 Sekunden für Neustart-Wartezeit
 

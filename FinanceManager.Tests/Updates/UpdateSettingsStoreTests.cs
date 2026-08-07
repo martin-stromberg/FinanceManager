@@ -18,15 +18,17 @@ public sealed class UpdateSettingsStoreTests
 
             var settings = await store.SaveAsync(new UpdateSettingsUpdateRequest(
                 true,
-                30,
                 "other-owner",
                 "OtherRepo",
                 "manifest.json",
+                new TimeOnly(20, 0),
+                new TimeOnly(6, 0),
                 null,
                 "FinanceManager",
                 "C:\\app\\FinanceManager.exe",
                 "custom-updates",
-                30));
+                30,
+                false));
 
             File.Exists(Path.Combine(packageStore.RootDirectory, "settings.json")).Should().BeTrue();
         }
@@ -43,13 +45,15 @@ public sealed class UpdateSettingsStoreTests
         try
         {
             var (firstStore, _) = CreateStore(root.FullName);
-            await firstStore.SaveAsync(new UpdateSettingsUpdateRequest(false, 60, "martin-stromberg", "FinanceManager", "update.json", null, null, null, "updates", 120));
+            await firstStore.SaveAsync(new UpdateSettingsUpdateRequest(false, "martin-stromberg", "FinanceManager", "update.json", new TimeOnly(21, 0), new TimeOnly(5, 0), null, null, null, "updates", 120, true));
 
             var (restartedStore, _) = CreateStore(root.FullName);
             var settings = await restartedStore.GetAsync();
 
             settings.Enabled.Should().BeFalse();
-            settings.CheckIntervalMinutes.Should().Be(60);
+            settings.SourceCheckStartTime.Should().Be(new TimeOnly(21, 0));
+            settings.SourceCheckEndTime.Should().Be(new TimeOnly(5, 0));
+            settings.IncludePrereleases.Should().BeTrue();
         }
         finally
         {
@@ -86,6 +90,66 @@ public sealed class UpdateSettingsStoreTests
             var settings = await store.GetAsync();
 
             settings.ServiceName.Should().Be("FinanceManagerService");
+            settings.SourceCheckStartTime.Should().Be(new TimeOnly(20, 0));
+            settings.SourceCheckEndTime.Should().Be(new TimeOnly(6, 0));
+            settings.IncludePrereleases.Should().BeFalse();
+        }
+        finally
+        {
+            root.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task GetAsync_WhenNoSettingsExist_DefaultsIncludePrereleasesToFalse()
+    {
+        var root = Directory.CreateTempSubdirectory();
+        try
+        {
+            var (store, _) = CreateStore(root.FullName);
+
+            var settings = await store.GetAsync();
+
+            settings.SourceCheckStartTime.Should().Be(new TimeOnly(20, 0));
+            settings.SourceCheckEndTime.Should().Be(new TimeOnly(6, 0));
+            settings.IncludePrereleases.Should().BeFalse();
+        }
+        finally
+        {
+            root.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task GetAsync_WhenStoredJsonMissesIncludePrereleases_DefaultsToFalse()
+    {
+        var root = Directory.CreateTempSubdirectory();
+        try
+        {
+            var (store, packageStore) = CreateStore(root.FullName);
+            await packageStore.EnsureAsync();
+            await File.WriteAllTextAsync(
+                Path.Combine(packageStore.RootDirectory, "settings.json"),
+                """
+                {
+                  "enabled": true,
+                  "checkIntervalMinutes": 60,
+                  "repositoryOwner": "martin-stromberg",
+                  "repositoryName": "FinanceManager",
+                  "manifestAssetName": "update.json",
+                  "scheduledInstallTime": null,
+                  "serviceName": null,
+                  "executablePath": null,
+                  "workingDirectory": "updates",
+                  "healthTimeoutSeconds": 120
+                }
+                """);
+
+            var settings = await store.GetAsync();
+
+            settings.SourceCheckStartTime.Should().Be(new TimeOnly(20, 0));
+            settings.SourceCheckEndTime.Should().Be(new TimeOnly(6, 0));
+            settings.IncludePrereleases.Should().BeFalse();
         }
         finally
         {
@@ -102,24 +166,28 @@ public sealed class UpdateSettingsStoreTests
             var (store, _) = CreateStore(root.FullName, out var autoUpdateOptions);
             var settings = await store.SaveAsync(new UpdateSettingsUpdateRequest(
                 true,
-                45,
                 "martin-stromberg",
                 "FinanceManager",
                 "update.json",
+                new TimeOnly(20, 0),
+                new TimeOnly(6, 0),
                 new TimeOnly(3, 0),
                 "FinanceManagerService",
                 null,
                 "custom-updates",
-                200));
+                200,
+                true));
 
             store.ApplyToOptions(settings);
 
             autoUpdateOptions.Enabled.Should().BeTrue();
-            autoUpdateOptions.SourceCheck.Interval.Should().Be(45);
+            autoUpdateOptions.SourceCheck.Interval.Should().Be(AutoUpdateOptionsMapper.DailySourceCheckIntervalMinutes);
+            autoUpdateOptions.SourceCheck.TimeRanges.Should().HaveCount(14);
             autoUpdateOptions.ServiceName.Should().Be("FinanceManagerService");
             autoUpdateOptions.DownloadPath.Should().Be("custom-updates");
             autoUpdateOptions.HealthTimeoutSeconds.Should().Be(200);
             autoUpdateOptions.ScheduledInstallTime.Should().Be(new TimeOnly(3, 0));
+            autoUpdateOptions.AllowPrereleaseUpdates.Should().BeTrue();
         }
         finally
         {

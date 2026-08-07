@@ -555,6 +555,15 @@
   <data name="Card_Caption_SavingsPlan_TargetDate" xml:space="preserve">
     <value>Zieldatum</value>
   </data>
+  <data name="Card_Caption_SavingsPlan_CurrentAmount" xml:space="preserve">
+    <value>Aktueller Saldo</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_RemainingAmount" xml:space="preserve">
+    <value>Restbetrag</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_RequiredMonthly" xml:space="preserve">
+    <value>Benötigter Monatsbetrag</value>
+  </data>
   <data name="Card_Caption_SavingsPlan_Interval" xml:space="preserve">
     <value>Intervall</value>
   </data>
@@ -2190,6 +2199,18 @@
   <data name="Err_Update_InstallRunning" xml:space="preserve">
     <value>Der aktuelle Prozess führt noch eine Update-Installation aus.</value>
   </data>
+  <data name="Err_Update_Reset_NoLock" xml:space="preserve">
+    <value>Es ist kein aktiver Update-Lock vorhanden.</value>
+  </data>
+  <data name="Err_Update_Reset_LockNotStale" xml:space="preserve">
+    <value>Der Update-Lock ist noch nicht alt genug und kann noch nicht zurückgesetzt werden.</value>
+  </data>
+  <data name="Err_Update_Reset_DeleteFailed" xml:space="preserve">
+    <value>Der Update-Lock konnte nicht entfernt werden. Bitte prüfen Sie Dateizugriff und Berechtigungen.</value>
+  </data>
+  <data name="Err_Update_Reset_Failed" xml:space="preserve">
+    <value>Der Update-Lock konnte wegen eines technischen Fehlers nicht zurückgesetzt werden.</value>
+  </data>
   <data name="Err_Update_NotReady" xml:space="preserve">
     <value>Kein Update-Paket bereit.</value>
   </data>
@@ -2223,11 +2244,17 @@
   <data name="SetupUpdate_Lbl_Enabled" xml:space="preserve">
     <value>Automatische Prüfung aktiv</value>
   </data>
-  <data name="SetupUpdate_Lbl_CheckInterval" xml:space="preserve">
-    <value>Prüfintervall in Minuten</value>
+  <data name="SetupUpdate_Lbl_IncludePrereleases" xml:space="preserve">
+    <value>Vorabversionen berücksichtigen</value>
+  </data>
+  <data name="SetupUpdate_Lbl_SourceCheckStartTime" xml:space="preserve">
+    <value>Tägliche Update-Prüfung ab</value>
+  </data>
+  <data name="SetupUpdate_Lbl_SourceCheckEndTime" xml:space="preserve">
+    <value>Tägliche Update-Prüfung bis</value>
   </data>
   <data name="SetupUpdate_Lbl_ScheduledTime" xml:space="preserve">
-    <value>Geplante Uhrzeit</value>
+    <value>Automatische Installation um</value>
   </data>
   <data name="SetupUpdate_Lbl_ServiceName" xml:space="preserve">
     <value>Servicename</value>

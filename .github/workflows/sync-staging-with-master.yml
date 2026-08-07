@@ -1,0 +1,76 @@
+name: Sync Staging with Master
+
+# Jede Promotion staging -> master erzeugt einen Merge-Commit, der ausschliesslich auf master
+# existiert (siehe staging-to-master.yml). Ohne Ruecksynchronisation faellt staging dadurch sofort
+# wieder hinter den zuletzt auf master vergebenen Release-Tag zurueck: Semantic Release auf staging
+# faende den Tag dann nicht mehr erreichbar und wuerde die naechste RC-Version auf Basis eines
+# aelteren Tags berechnen (zu niedrige Zielversion). Dieser Workflow erstellt nach jedem Push nach
+# master automatisch einen PR master -> staging, analog zu staging-to-master.yml. PR-basiert statt
+# Direct-Push, weil klassische Branch-Protection-Rules keinen granularen Bypass fuer einzelne Actors
+# unterstuetzen (nur ein globaler "Include administrators"-Schalter, kein Bot-spezifischer Bypass).
+#
+# Wichtig: Der PR muss mit "Create a merge commit" gemergt werden, nicht mit "Rebase and merge" -
+# die Promotion-Merge-Commits auf master sind inhaltlich leer (reine History-Knoten) und wuerden
+# von einem Rebase beim Replay verworfen, wodurch staging trotz "erfolgreichem" Merge weiterhin
+# hinter master zurueckbleibt.
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: sync-staging-with-master
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout staging
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: staging
+
+      - name: Fetch master
+        run: git fetch origin master
+        shell: bash
+
+      - name: Check if staging is behind master
+        id: diff
+        run: |
+          count=$(git rev-list HEAD..origin/master --count)
+          echo "commits_behind=$count" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - name: Ensure automated-sync label exists
+        if: steps.diff.outputs.commits_behind != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh label create automated-sync --color "0E8A16" --description "Automatisierter Sync-PR von master nach staging" --force
+        shell: bash
+
+      - name: Create sync pull request
+        if: steps.diff.outputs.commits_behind != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          existing=$(gh pr list --base staging --head master --state open --json number --jq 'length')
+          if [ "$existing" = "0" ]; then
+            gh pr create \
+              --base staging \
+              --head master \
+              --title "Sync staging with master" \
+              --body "Automatischer Sync-PR nach einer Promotion nach master. Bitte mit **Create a merge commit** mergen (nicht Rebase), damit der neue Release-Tag fuer kuenftige RC-Berechnungen auf staging erreichbar bleibt." \
+              --label "automated-sync"
+          else
+            echo "An open sync PR from master to staging already exists."
+          fi
+        shell: bash

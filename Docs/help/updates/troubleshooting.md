@@ -38,7 +38,7 @@
    - Status aktualisieren (Browser-Seite neu laden) → sollte zu `NoUpdate` oder `Failed` wechseln
 
 2. **Lock ist zu jung zum Reset?**
-   - Status zeigt "The update lock is not old enough to be considered stale"
+   - Status zeigt `Err_Update_Reset_LockNotStale` oder die lokalisierte Meldung "Der Update-Lock ist noch nicht alt genug und kann noch nicht zurückgesetzt werden."
    - Lock muss mindestens `HealthTimeoutSeconds` alt sein (Standard: 120 Sekunden)
    - Warten Sie, bis Lock alt genug ist, oder:
    - Erhöhen Sie `HealthTimeoutSeconds` in der Konfiguration und reduzieren Sie sie danach (workaround)
@@ -48,14 +48,21 @@
    - System fragt nach Bestätigung und Grund
    - Geben Sie einen Grund ein (z. B. "Installer abgestürzt") und bestätigen
    - Lock sollte gelöscht und Status auf `NoUpdate` gesetzt werden
+   - Falls der Reset abgelehnt wird, zeigt die UI jetzt den konkreten Grund: kein aktiver Lock, Lock noch nicht alt genug, Lock-Datei nicht löschbar oder technischer Reset-Fehler
 
-4. **Manuelles Löschen (Linux):**
+4. **Reset-Meldung einordnen:**
+   - `Err_Update_Reset_NoLock`: Status neu laden; wahrscheinlich ist der Lock bereits entfernt.
+   - `Err_Update_Reset_LockNotStale`: Warten, bis der Lock mindestens `HealthTimeoutSeconds` alt ist.
+   - `Err_Update_Reset_DeleteFailed`: Schreibrechte, Dateisperren und Eigentümer des Update-Verzeichnisses prüfen.
+   - `Err_Update_Reset_Failed`: Server-Logs prüfen; dort stehen Fehlerart, Quelle und technische Ursache.
+
+5. **Manuelles Löschen (Linux):**
    ```bash
    rm -f /var/lib/myapp/updates/update.lock
    ```
    Dann Browser aktualisieren
 
-5. **Manuelles Löschen (Windows):**
+6. **Manuelles Löschen (Windows):**
    ```powershell
    Remove-Item -Path "C:\ProgramData\MyApp\updates\update.lock" -ErrorAction SilentlyContinue
    ```
@@ -84,7 +91,7 @@
    - Falls neuer verfügbar: Status sollte auf `Ready` gehen
 
 3. **Falls Prüfung fehlschlägt:**
-   - GitHub-Credentials prüfen: `GITHUB_TOKEN` ist für private Repos erforderlich
+   - Bei "GitHub hat die Update-Pruefung wegen einer Rate-Limit-Begrenzung voruebergehend abgelehnt": später erneut prüfen; das öffentliche Repository kann weiterhin erreichbar sein, GitHub begrenzt aber anonyme API-Abfragen zeitweise
    - Manifest-Dateinamen prüfen: Das erwartete Release-Asset heißt fest `update.json`
    - Repository prüfen: Die Updatequelle ist fest `martin-stromberg/FinanceManager`
    - Prüfen ob GitHub-Release existiert und öffentlich zugänglich ist
@@ -201,31 +208,28 @@
 
 4. **GitHub-Manifest direkt abrufen (zu Debug-Zwecken):**
    ```bash
-   curl -H "Authorization: token $GITHUB_TOKEN" \
-     https://api.github.com/repos/my-org/my-app/releases/latest
+   curl https://api.github.com/repos/martin-stromberg/FinanceManager/releases/latest
    ```
    Prüfen Sie JSON-Struktur und Asset-Namen
 
 ---
 
-## Zu häufige Update-Prüfungen (Server-Last)
+## Update-Prüfung meldet GitHub-Rate-Limit
 
-**Symptom:** Server-Logs zeigen sehr viele Update-Check-Logs; `CheckIntervalMinutes` ist niedrig eingestellt.
+**Symptom:** Status oder manueller Check zeigt eine Rate-Limit-/später-erneut-versuchen-Meldung.
 
-**Ursache:** 
-- Administrator hat `CheckIntervalMinutes` zu niedrig gesetzt (z. B. 1 Minute)
-- Viele Background-Service-Instanzen prüfen parallel
+**Ursache:**
+- GitHub hat anonyme API-Abfragen für die aktuelle IP vorübergehend begrenzt.
+- Das Repository kann trotzdem öffentlich und korrekt konfiguriert sein.
+- Mehrere Instanzen oder häufige manuelle Checks können die Begrenzung schneller erreichen.
 
 **Lösung:**
 
-1. **CheckIntervalMinutes erhöhen:**
-   - Admin-UI: Update-Einstellungen
-   - `CheckIntervalMinutes` auf vernünftigen Wert erhöhen (z. B. 60, 120, 1440)
-   - Speichern
-
+1. Später erneut prüfen.
 2. **Background-Service überprüfen:**
    - Nur eine Instanz sollte laufen
    - Bei Mehrfach-Deployment prüfen, ob Background-Service richtig konfiguriert ist
+3. Das automatische Prüfzeitfenster nutzen; die Hintergrundprüfung läuft täglich und nicht in frei konfigurierbaren Kurzintervallen.
 
 ---
 
@@ -283,6 +287,22 @@
 ### `Err_Update_InstallRunning`
 **Bedeutung:** Der lokale Prozess führt noch eine Installation durch.  
 **Aktion:** Warten Sie, bis Installation abgeschlossen ist, oder starten Sie die Applikation neu.
+
+### `Err_Update_Reset_NoLock`
+**Bedeutung:** Es ist kein aktiver Update-Lock vorhanden.  
+**Aktion:** Status aktualisieren; vermutlich wurde der Lock bereits entfernt.
+
+### `Err_Update_Reset_LockNotStale`
+**Bedeutung:** Der Update-Lock ist noch nicht alt genug für einen Reset.  
+**Aktion:** Warten Sie mindestens bis zum serverseitigen `HealthTimeoutSeconds`-Schwellwert und versuchen Sie den Reset erneut.
+
+### `Err_Update_Reset_DeleteFailed`
+**Bedeutung:** Die Lock-Datei konnte nicht entfernt werden.  
+**Aktion:** Schreibrechte, Dateisperren und Eigentümer des Update-Verzeichnisses auf dem Server prüfen.
+
+### `Err_Update_Reset_Failed`
+**Bedeutung:** Der Reset ist wegen eines sonstigen technischen Fehlers fehlgeschlagen.  
+**Aktion:** Server-Logs prüfen; der Reset-Fehler wird mit Fehlerart, Quelle und technischer Ursache protokolliert.
 
 ### `Err_Update_NotReady`
 **Bedeutung:** Kein bereites Update vorhanden.  

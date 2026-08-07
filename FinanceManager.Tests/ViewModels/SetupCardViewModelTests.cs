@@ -145,7 +145,7 @@ namespace FinanceManager.Tests.ViewModels
         {
             var apiMock = new Mock<IApiClient>();
             apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new UpdateSettingsDto(true, 60, "owner", "repo", "update.json", null, null, null, "updates", 120));
+                .ReturnsAsync(new UpdateSettingsDto(true, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, null, null, "updates", 120, false));
             apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new UpdateStatusDto(UpdateStatusKind.Ready, "1.0.0", null, "1.1.0", "win-x64", null, null, "release.zip", true, null, null, null));
             var sp = BuildServices(apiMock.Object, isAdmin: true);
@@ -241,7 +241,7 @@ namespace FinanceManager.Tests.ViewModels
             apiMock.Setup(a => a.Securities_UpdateReturnAnalysisSettingsAsync(It.IsAny<ReturnAnalysisSettingsUpdateRequest>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
-            var updateSettings = new UpdateSettingsDto(false, 60, "owner", "repo", "update.json", null, null, null, "updates", 120);
+            var updateSettings = new UpdateSettingsDto(false, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, null, null, "updates", 120, false);
             apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(updateSettings);
             apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>()))

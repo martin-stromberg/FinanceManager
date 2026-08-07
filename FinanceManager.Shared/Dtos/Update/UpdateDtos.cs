@@ -51,27 +51,31 @@ public sealed record UpdateStatusDto(
 
 public sealed record UpdateSettingsDto(
     bool Enabled,
-    int CheckIntervalMinutes,
     string RepositoryOwner,
     string RepositoryName,
     string ManifestAssetName,
+    TimeOnly SourceCheckStartTime,
+    TimeOnly SourceCheckEndTime,
     TimeOnly? ScheduledInstallTime,
     string? ServiceName,
     string? ExecutablePath,
     string WorkingDirectory,
-    int HealthTimeoutSeconds);
+    int HealthTimeoutSeconds,
+    bool IncludePrereleases);
 
 public sealed record UpdateSettingsUpdateRequest(
     bool Enabled,
-    int CheckIntervalMinutes,
     string? RepositoryOwner,
     string? RepositoryName,
     string? ManifestAssetName,
+    TimeOnly SourceCheckStartTime,
+    TimeOnly SourceCheckEndTime,
     TimeOnly? ScheduledInstallTime,
     string? ServiceName,
     string? ExecutablePath,
     string? WorkingDirectory,
-    int HealthTimeoutSeconds);
+    int HealthTimeoutSeconds,
+    bool IncludePrereleases);
 
 public sealed record UpdateScheduleRequest(TimeOnly? ScheduledInstallTime);
 
