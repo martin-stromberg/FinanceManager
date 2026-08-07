@@ -213,6 +213,12 @@ public sealed class BudgetReportsController : ControllerBase
                 .Where(r => r.OwnerUserId == _current.UserId)
                 .ToListAsync(ct);
 
+            // Get self contact ID for filtering
+            var selfId = await _db.Contacts.AsNoTracking()
+                .Where(c => c.OwnerUserId == _current.UserId && c.Type == FinanceManager.Shared.Dtos.Contacts.ContactType.Self)
+                .Select(c => (Guid?)c.Id)
+                .FirstOrDefaultAsync(ct);
+
             var periods = new List<BudgetReportPeriodDto>(req.Months);
             for (int i = 0; i < req.Months; i++)
             {
@@ -247,12 +253,19 @@ public sealed class BudgetReportsController : ControllerBase
                     }
                 }
 
-                // unbudgeted postings
+                // unbudgeted postings (filter self-contact grouped postings)
                 foreach (var p in raw.UnbudgetedPostings ?? Array.Empty<BudgetReportPostingRawDataDto>())
                 {
                     var d = GetDate(p, req.DateBasis);
                     var dd = DateOnly.FromDateTime(d);
-                    if (dd >= periodFrom && dd <= periodTo) actual += p.Amount;
+                    if (dd >= periodFrom && dd <= periodTo)
+                    {
+                        // Only include if not self-contact or not grouped (cost-neutral postings)
+                        if (!selfId.HasValue || p.ContactId != selfId.Value || p.GroupId == Guid.Empty)
+                        {
+                            actual += p.Amount;
+                        }
+                    }
                 }
 
                 var budget = ComputeBudgetedAmountForPeriod(rules, periodFrom, periodTo);
@@ -343,9 +356,17 @@ public sealed class BudgetReportsController : ControllerBase
                     purposeDtos));
             }
 
+            // Filter self-contact postings from unbudgeted for separate display
             var unbudgetedActual = unbudgetedPostings
                 .Where(p => p.BudgetPurposeId == null || p.BudgetPurposeId == Guid.Empty)
                 .Where(IsInCategoryRange)
+                .Where(p => !selfId.HasValue || p.ContactId != selfId.Value || p.GroupId == Guid.Empty)
+                .Sum(p => p.Amount);
+
+            var unbudgetedSelfCostNeutralActual = unbudgetedPostings
+                .Where(p => p.BudgetPurposeId == null || p.BudgetPurposeId == Guid.Empty)
+                .Where(IsInCategoryRange)
+                .Where(p => selfId.HasValue && p.ContactId == selfId.Value && p.GroupId != Guid.Empty)
                 .Sum(p => p.Amount);
 
             if (unbudgetedActual != 0m)
@@ -361,10 +382,44 @@ public sealed class BudgetReportsController : ControllerBase
                     Array.Empty<BudgetReportPurposeDto>()));
             }
 
+            // Add sub-sum for all categories before cost-neutral postings
+            // This sums all regular categories + unbudgeted
+            var subSumBudget = categories.Where(c => c.Kind == BudgetReportCategoryRowKind.Data || c.Kind == BudgetReportCategoryRowKind.Unbudgeted).Sum(c => c.Budget);
+            var subSumActual = categories.Where(c => c.Kind == BudgetReportCategoryRowKind.Data || c.Kind == BudgetReportCategoryRowKind.Unbudgeted).Sum(c => c.Actual);
+            var subSumDelta = subSumBudget - subSumActual;
+            var subSumDeltaPct = subSumBudget == 0m ? 0m : (subSumDelta / subSumBudget) * 100m;
+
+            if (subSumActual != 0m || subSumBudget != 0m)
+            {
+                categories.Add(new BudgetReportCategoryDto(
+                    Guid.Empty,
+                    "Sub-sum",
+                    BudgetReportCategoryRowKind.UnbudgetedSubSum,
+                    subSumBudget,
+                    subSumActual,
+                    -subSumDelta,
+                    -subSumDeltaPct,
+                    Array.Empty<BudgetReportPurposeDto>()));
+            }
+
+            if (unbudgetedSelfCostNeutralActual != 0m)
+            {
+                categories.Add(new BudgetReportCategoryDto(
+                    Guid.Empty,
+                    "Unbudgeted (Self, cost-neutral)",
+                    BudgetReportCategoryRowKind.UnbudgetedSelfCostNeutral,
+                    0m,
+                    unbudgetedSelfCostNeutralActual,
+                    unbudgetedSelfCostNeutralActual,
+                    0m,
+                    Array.Empty<BudgetReportPurposeDto>()));
+            }
+
             if (categories.Count > 0)
             {
-                var sumBudget = categories.Sum(c => c.Budget);
-                var sumActual = categories.Sum(c => c.Actual);
+                // Final sum includes all categories except sub-sum (to avoid double-counting)
+                var sumBudget = categories.Where(c => c.Kind != BudgetReportCategoryRowKind.UnbudgetedSubSum).Sum(c => c.Budget);
+                var sumActual = categories.Where(c => c.Kind != BudgetReportCategoryRowKind.UnbudgetedSubSum).Sum(c => c.Actual);
                 var sumDelta = ComputeDelta(sumBudget, sumActual);
                 var sumDeltaPct = ComputeDeltaPct(sumBudget, sumDelta);
 

@@ -139,6 +139,7 @@ public sealed class BudgetReportService : IBudgetReportService
                 SavingsPlanName = spId.HasValue ? savingsPlans.FirstOrDefault(sp => sp.Id == spId.Value)?.Name : null,
                 SecurityId = secId,
                 SecurityName = secId.HasValue ? securities.FirstOrDefault(sec => sec.Id == secId.Value)?.Name : null,
+                GroupId = p.GroupId != Guid.Empty ? p.GroupId : null,
 
                 BudgetCategoryId = null,
                 BudgetCategoryName = null,
@@ -523,6 +524,7 @@ public sealed class BudgetReportService : IBudgetReportService
         // not considered further when constructing category/purpose postings.
         postingDtos = postingDtos.Where(p => p.BudgetPurposeId != null && p.BudgetPurposeId != Guid.Empty).ToList();
 
+
         // Categories and UncategorizedPurposes placeholders: purposes empty for now
         var categoryDtos = new List<BudgetReportCategoryRawDataDto>();
         foreach (var cat in categoryOverviews.OrderBy(c => c.Name))
@@ -559,7 +561,11 @@ public sealed class BudgetReportService : IBudgetReportService
                 var rulesForCategory = categoryRules.ToList();
 
                 // collect postings that belong to this category (these postings already carry purpose metadata)
+                // Exclude postings with BudgetPurposeId for Contact-based purposes (already handled by purpose processing)
+                // Include postings without BudgetPurposeId and ContactGroup-based postings for category rule processing
                 var postingsForCategory = postingDtos.Where(d => d.BudgetCategoryId == cat.Id)
+                    .Where(d => !d.BudgetPurposeId.HasValue || d.BudgetPurposeId == Guid.Empty ||
+                        (d.BudgetPurposeId.HasValue && purposesInCat.Any(p => p.Id == d.BudgetPurposeId && p.SourceType == BudgetSourceType.ContactGroup)))
                     .OrderBy(p => p.BookingDate)
                     .ThenBy(p => p.ValutaDate ?? DateTime.MinValue)
                     .ThenBy(p => p.Amount)
@@ -593,8 +599,13 @@ public sealed class BudgetReportService : IBudgetReportService
                         }
 
                         rulesForCategory.Remove(rule);
-                        postingsForCategory.RemoveAll(x => x.PostingId == candidate.PostingId);
-                        postingDtos.RemoveAll(x => x.PostingId == candidate.PostingId);
+                        // Only remove from postingsForCategory if it has a BudgetPurposeId and was allocated
+                        // Postings without BudgetPurposeId should remain for unbudgeted processing
+                        if (candidate.BudgetPurposeId.HasValue)
+                        {
+                            postingsForCategory.RemoveAll(x => x.PostingId == candidate.PostingId);
+                            postingDtos.RemoveAll(x => x.PostingId == candidate.PostingId);
+                        }
                     }
                 }
 
@@ -630,9 +641,17 @@ public sealed class BudgetReportService : IBudgetReportService
                                 }
 
                                 remaining -= p.Amount;
-                                postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
-                                postingsForCategory.RemoveAll(x => x.PostingId == p.PostingId);
-                                idx = 0; // Reset index since we removed an element
+                                // Only remove if it has a BudgetPurposeId and was allocated
+                                if (targetPurposeId != Guid.Empty)
+                                {
+                                    postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
+                                    postingsForCategory.RemoveAll(x => x.PostingId == p.PostingId);
+                                    idx = 0; // Reset index since we removed an element
+                                }
+                                else
+                                {
+                                    idx++; // Skip to next since we didn't remove this one
+                                }
                             }
                             else
                             {
@@ -657,8 +676,16 @@ public sealed class BudgetReportService : IBudgetReportService
                                         break;
                                     }
                                 }
-                                postingsForCategory.RemoveAll(x => x.PostingId == p.PostingId);
-                                idx = 0; // Reset index since we removed an element
+                                // Only remove if it has a BudgetPurposeId and was allocated
+                                if (targetPurposeId != Guid.Empty)
+                                {
+                                    postingsForCategory.RemoveAll(x => x.PostingId == p.PostingId);
+                                    idx = 0; // Reset index since we removed an element
+                                }
+                                else
+                                {
+                                    idx++; // Skip to next since we didn't remove this one
+                                }
                                 remaining = 0;
                             }
                         }
@@ -686,9 +713,17 @@ public sealed class BudgetReportService : IBudgetReportService
                                 }
 
                                 remainingAbs -= pAbs;
-                                postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
-                                postingsForCategory.RemoveAll(x => x.PostingId == p.PostingId);
-                                idx = 0; // Reset index since we removed an element
+                                // Only remove if it has a BudgetPurposeId and was allocated
+                                if (targetPurposeId != Guid.Empty)
+                                {
+                                    postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
+                                    postingsForCategory.RemoveAll(x => x.PostingId == p.PostingId);
+                                    idx = 0; // Reset index since we removed an element
+                                }
+                                else
+                                {
+                                    idx++; // Skip to next since we didn't remove this one
+                                }
                             }
                             else
                             {
@@ -713,8 +748,16 @@ public sealed class BudgetReportService : IBudgetReportService
                                         break;
                                     }
                                 }
-                                postingsForCategory.RemoveAll(x => x.PostingId == p.PostingId);
-                                idx = 0; // Reset index since we removed an element
+                                // Only remove if it has a BudgetPurposeId and was allocated
+                                if (targetPurposeId != Guid.Empty)
+                                {
+                                    postingsForCategory.RemoveAll(x => x.PostingId == p.PostingId);
+                                    idx = 0; // Reset index since we removed an element
+                                }
+                                else
+                                {
+                                    idx++; // Skip to next since we didn't remove this one
+                                }
                                 remainingAbs = 0;
                             }
                         }
@@ -752,13 +795,32 @@ public sealed class BudgetReportService : IBudgetReportService
                     }
                     else if (!allocatedPostingIds.Contains(left.PostingId))
                     {
-                        unbudgetedList.Add(left with
+                        // Postings without BudgetPurposeId go to unbudgeted list
+                        // Postings with BudgetPurposeId are kept in postingDtos for purpose processing
+                        if (!left.BudgetPurposeId.HasValue)
                         {
-                            BudgetCategoryId = null,
-                            BudgetPurposeId = null
-                        });
+                            unbudgetedList.Add(left with
+                            {
+                                BudgetCategoryId = null,
+                                BudgetPurposeId = null
+                            });
+                            postingDtos.RemoveAll(x => x.PostingId == left.PostingId);
+                        }
+                        // Postings with BudgetPurposeId (ContactGroup-based) remain in postingDtos for later purpose processing
+                        // Postings with BudgetPurposeId (Contact-based) are already handled by purpose processing and should be removed
+                        else if (left.BudgetPurposeId.HasValue)
+                        {
+                            var purpose = purposesInCat.FirstOrDefault(p => p.Id == left.BudgetPurposeId.Value);
+                            if (purpose?.SourceType == BudgetSourceType.Contact)
+                            {
+                                // Contact-based postings are already handled by purpose processing, remove from postingDtos
+                                postingDtos.RemoveAll(x => x.PostingId == left.PostingId);
+                            }
+                            // ContactGroup-based postings remain for purpose processing
+                        }
                     }
-                    postingDtos.RemoveAll(x => x.PostingId == left.PostingId);
+                    // Postings that are already allocated should not be added to unbudgeted list
+                    // even if they have BudgetPurposeId and were not allocated due to rules/budget limits
                 }
 
                 // build purpose dtos populated with allocated postings (if any)
@@ -806,6 +868,27 @@ public sealed class BudgetReportService : IBudgetReportService
             to,
             dateBasis,
             ct);
+
+        // Remove postings from unbudgetedList that are already allocated to purposes to prevent double-counting
+        var allocatedToPurposesPostingIds = new HashSet<Guid>();
+        foreach (var cat in categoryDtos)
+        {
+            foreach (var pur in cat.Purposes)
+            {
+                foreach (var posting in pur.Postings)
+                {
+                    allocatedToPurposesPostingIds.Add(posting.PostingId);
+                }
+            }
+        }
+        foreach (var pur in uncategorizedDtos)
+        {
+            foreach (var posting in pur.Postings)
+            {
+                allocatedToPurposesPostingIds.Add(posting.PostingId);
+            }
+        }
+        unbudgetedList = unbudgetedList.Where(p => !allocatedToPurposesPostingIds.Contains(p.PostingId)).ToList();
 
         var result = new BudgetReportRawDataDto
         {
@@ -924,7 +1007,8 @@ public sealed class BudgetReportService : IBudgetReportService
             SavingsPlanId = p.SavingsPlanId,
             SavingsPlanName = null,
             SecurityId = p.SecurityId,
-            SecurityName = null
+            SecurityName = null,
+            GroupId = p.GroupId != Guid.Empty ? p.GroupId : null
         }).ToArray();
     }
 
@@ -1326,7 +1410,8 @@ public sealed class BudgetReportService : IBudgetReportService
                 SavingsPlanId = p.SavingsPlanId,
                 SavingsPlanName = null,
                 SecurityId = p.SecurityId,
-                SecurityName = null
+                SecurityName = null,
+                GroupId = p.GroupId != Guid.Empty ? p.GroupId : null
             })
             .OrderBy(p => dateBasis == BudgetReportDateBasis.ValutaDate ? p.ValutaDate : p.BookingDate)
             .ThenBy(p => p.PostingId)
