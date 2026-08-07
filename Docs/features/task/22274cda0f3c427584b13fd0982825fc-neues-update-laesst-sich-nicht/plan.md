@@ -2,211 +2,195 @@
 
 ## Übersicht
 
-Der Plan adressiert eine Statusinkonsistenz im Update-Lock-System: Die UI meldet einen aktiven Lock, aber der Reset-Button antwortet mit "kein aktiver Lock". Die Behebung erfolgt durch drei Maßnahmen: (1) Unified Lock-Abfrage — beide Status- und Reset-Pfade nutzen die gleiche Quelle, (2) Atomare Status-Updates — Lock-Datei-Existenz und Status-JSON bleiben konsistent, (3) Post-Install-Reconciliation — Lock-Status wird nach Installation und Neustart validiert. Betroffen sind `UpdateOrchestratorAdapter`, `UpdateStatusMapper`, `SetupUpdateViewModel`, `UpdateController` und die Tests für Lock-Reset-Logik sowie neue E2E-Tests für die Inkonsistenz-Szenarien.
+Das Update-System zeigt einen Lock-Zustand an, der in sich widersprüchlich ist: Die UI zeigt einen aktiven Lock mit Erstellungszeit an (gemappt aus `AutoUpdateStatusSnapshot`), aber der Lock-Reset-Button antwortet mit „Es ist kein aktiver Update-Lock vorhanden" (weil `GetLockCreatedAtAsync()` `null` zurückgibt). Die Root Cause ist eine Desynchronisation zwischen zwei Lock-Status-Quellen:
+1. **Für Status-Display:** `AutoUpdateStatusSnapshot.IsLocked` (gelesen von `UpdateStatusMapper`)
+2. **Für Reset-Logik:** `IAutoUpdatePackageStore.GetLockCreatedAtAsync()` (direkt abgefragt in `UpdateOrchestratorAdapter.ResetLockAsync()`)
+
+Die Behebung wird durch Vereinheitlichung der Lock-Prüfung (über `GetLockCreatedAtAsync() != null`), Post-Installation-Validierung des Lock-Cleanup und optionale Post-Restart-Reconciliation erzielt. Alle Änderungen erfolgen in `UpdateOrchestratorAdapter` und `UpdateStatusMapper` — es sind keine neuen Klassen erforderlich.
 
 ## Designentscheidungen
 
 | Komponente / Bereich | Gewählter Ansatz | Begründung |
 |----------------------|-----------------|------------|
-| Unified Lock-Abfrage | `IAutoUpdatePackageStore.GetLockCreatedAtAsync()` als Single Source of Truth für beide Pfade (Status-Abfrage und Reset) | Eliminiert Desynchronisationen; beide Pfade lesen aus der gleichen Library-Schnittstelle |
-| Lock-Staleness-Validierung in UI | Button "UpdateResetLock" nur aktiviert, wenn `HasActiveLockAsync() && IsLockStale()` beide true sind | Verhindert Aktivierung bei zu jungem Lock; synchronisiert UI-Kriterium mit Reset-Logik |
-| Post-Installation-Cleanup-Validierung | Explizite Validierungslogik in `UpdateExecutor` nach Installer-Abschluss, bevor Status auf `Completed` gesetzt wird | Sichert ab, dass Lock-Datei wirklich gelöscht wurde; bei Fehler bleibt Status `Installing` und Lock bestehen |
-| Post-Restart-Reconciliation | Separate Methode `ReconcileLocksAfterRestartAsync()` in `UpdateOrchestrator`, aufgerufen während Startup | Räumt verwaiste Locks auf; prüft Lock-Datei-Existenz vs. Status-JSON und reconciliert Unterschiede |
-| Exception-Klassifizierung | Bestehende `UpdateLockResetException` mit `Kind` (NoLock, LockNotStale, etc.) und `FailureSource` bleibt unverändert | Abdeckung aller bekannten Fehlertypen ist bereits vollständig; keine neuen Typen erforderlich |
+| Post-Installation Lock-Cleanup | Verankerung in `UpdateOrchestratorAdapter.StartInstallAsync()` nach Installer-Abschluss | Es gibt keine separate `UpdateExecutor`-Klasse; `StartInstallAsync()` ist der einzige von uns kontrollierte Punkt zwischen Installer-Ende und Status-Update. Validierung des Cleanup gehört dorthin. |
+| Lock-Abfrage für beide Pfade | Einheitliche Quelle: `GetLockCreatedAtAsync() != null` statt `HasActiveLockAsync()` | `HasActiveLockAsync()` existiert nicht in `IAutoUpdatePackageStore` v0.3.0; stattdessen nutzen wir die tatsächlich vorhandenen Methoden. Dies sichert eine einzige Wahrheitsquelle. |
+| Staleness-Schwelle für Lock-Reset | Lesen aus `UpdateSettingsDto.HealthTimeoutSeconds` | `UpdateOptions` ist externe Library-Klasse; `UpdateSettingsDto` ist die interne Konfigurationsschicht. `HealthTimeoutSeconds` wird über `_settingsStore.ApplyToOptions()` an Library-`AutoUpdateOptions` übertragen, die `IsLockStale()` nutzt. |
+| Post-Restart-Reconciliation | Prüfen, ob notwendig; nur implementieren, wenn `GetStatusAsync()` NICHT bereits reconciliert | `IAutoUpdateOrchestrator.GetStatusAsync()` reconciliert laut Library-Doku bereits selbst nach Neustart. Vor Implementierung prüfen, um Redundanz zu vermeiden. |
+| Lock-Cleanup bei Installation fehlgeschlagen | Lock wird bei Fehler nicht gelöscht; nur Validierung + Warning-Log | Konsistent mit Anforderung: Lock als verwaist behandeln; Benutzer kann später manuell via Reset-Button aufräumen. |
 
 ## Programmabläufe
 
-### 1. Status-Abfrage mit konsistenter Lock-Prüfung
+### Lock-Status-Abfrage für UI (Status-Display)
 
-1. `UpdateController.GetStatusAsync()` wird aufgerufen
-2. `UpdateOrchestratorAdapter.GetStatusAsync()` delegiert an `IAutoUpdateOrchestrator` (Library)
-3. Library gibt `AutoUpdateStatusSnapshot` zurück, enthält `IsLocked` basierend auf `GetLockCreatedAtAsync()`
-4. `UpdateStatusMapper.MapAsync()` konvertiert zu `UpdateStatusDto` mit `IsLocked` und `LockCreatedAt`
-5. UI empfängt `IsLocked = true` und `LockCreatedAt = [Zeitstempel]`
+1. UI ruft `UpdateController.Status` auf
+2. Controller delegiert an `UpdateOrchestratorAdapter.GetStatusAsync()`
+3. `GetStatusAsync()` ruft `_orchestrator.GetStatusAsync()` auf, erhält `AutoUpdateStatusSnapshot`
+4. `UpdateStatusMapper.MapAsync()` liest `snapshot.IsLocked` und `snapshot.LockCreatedAt` direkt aus Snapshot
+5. Mapper gibt `UpdateStatusDto` mit `IsLocked` und `LockCreatedAt` zurück
+6. DTO wird an UI übermittelt
 
-**Beteiligte Klassen/Komponenten:** `UpdateController`, `UpdateOrchestratorAdapter`, `IAutoUpdateOrchestrator` (Library), `UpdateStatusMapper`, `AutoUpdateStatusSnapshot`, `UpdateStatusDto`
+**Beteiligte Klassen:** `UpdateController`, `UpdateOrchestratorAdapter`, `UpdateStatusMapper`, `IAutoUpdateOrchestrator` (Library)
 
-### 2. Lock-Reset-Anfrage mit Staleness-Prüfung
+### Lock-Reset-Ablauf (mit vereinheitlichter Prüfung)
 
-1. `UpdateController.ResetLockAsync()` wird aufgerufen
-2. `UpdateOrchestratorAdapter.ResetLockAsync()` prüft zuerst `HasActiveLockAsync()` (Library-Wrapper)
-3. Falls kein Lock: Exception mit `Kind = NoLock` werfen
-4. Falls Lock vorhanden: `IsLockStale()` prüfen (Lock-Alter >= Staleness-Schwelle)
-5. Falls Lock nicht alt genug: Exception mit `Kind = LockNotStale` werfen
-6. Falls Lock stale: `packageStore.DeleteLockAsync()` aufrufen
-7. Bei erfolgreicher Löschung: Lock-Status in Status-JSON aktualisieren und `Completed` Status setzen
-8. Bei Lösch-Fehler: Exception mit `Kind = LockDeleteFailed` werfen
+1. UI-Button "UpdateResetLock" ist aktiviert, wenn `Status.IsLocked == true` (bisherige Logik bleibt)
+2. Benutzer klickt Reset-Button → `SetupUpdateViewModel.ResetLockAsync()`
+3. ViewModel ruft `ApiClient.Updates_ResetLockAsync()` auf
+4. API-Controller `UpdateController.ResetLock()` ruft `UpdateOrchestratorAdapter.ResetLockAsync(reason)`
+5. `ResetLockAsync()` nutzt vereinheitlichte Lock-Prüfung:
+   - **Schritt A:** Ruft `_packageStore.GetLockCreatedAtAsync()` auf
+   - **Schritt B:** Prüft `lockCreatedAt != null` (identisch mit der Status-Display-Quelle)
+   - **Schritt C:** Falls nicht null, prüft `_packageStore.IsLockStale(lockCreatedAt.Value)` (Library berechnet Staleness basierend auf `AutoUpdateOptions`)
+   - **Schritt D:** Falls stale, löscht Lock via `_packageStore.DeleteLockAsync()`
+   - **Schritt E:** Aktualisiert Status via `_statusService.UpdateAsync()` mit `IsLocked = false`
+   - **Schritt F:** Wirft typisierte `UpdateLockResetException` bei Fehler
+6. Controller fängt Exception, mappt auf HTTP-Statuscode und Error-DTO
+7. ViewModel zeigt Fehlermeldung in UI oder erfolgreiche Bestätigung
 
-**Beteiligte Klassen/Komponenten:** `UpdateController`, `UpdateOrchestratorAdapter`, `IAutoUpdatePackageStore` (Library), `UpdateExecutor`, `UpdateLockResetException`, Konfiguration `UpdateOptions.HealthTimeoutSeconds`
+**Beteiligte Klassen:** `SetupUpdateViewModel`, `UpdateController`, `UpdateOrchestratorAdapter`, `IAutoUpdatePackageStore`, `IUpdateSettingsStore`, `AutoUpdateStatusService`
 
-### 3. Post-Installation Lock-Cleanup-Validierung
+### Post-Installation Lock-Cleanup-Validierung
 
-1. `UpdateExecutor.ExecuteInstallerAsync()` ruft Installer-Skript auf
-2. Installer-Skript führt Update aus und versucht, Lock-Datei zu löschen
-3. Nach Installer-Abschluss (erfolgreich oder fehlgeschlagen): `ValidateLockCleanupAsync()` aufrufen
-4. `ValidateLockCleanupAsync()` prüft: `HasActiveLockAsync()` == false?
-5. Falls Lock noch vorhanden: Retry-Schleife (bis zu N Versuche mit exponential backoff) oder `DeleteLockAsync()` direkt aufrufen
-6. Falls Lock nach Retry immer noch vorhanden: Status auf `Failed` mit Fehler-Details setzen, Exception loggen
-7. Falls Lock erfolgreich gelöscht: Status auf `Completed` setzen
+1. User triggert Installation: `SetupUpdateViewModel.StartInstallAsync(confirmDowntime)`
+2. ViewModel ruft `ApiClient.Updates_StartInstallAsync(confirmDowntime)`
+3. `UpdateController.StartInstall()` ruft `_orchestrator.StartInstallAsync(confirmDowntime)` auf
+4. `UpdateOrchestratorAdapter.StartInstallAsync()`:
+   - **Schritt 1:** Ruft `_orchestrator.InstallAsync(confirmDowntime)` der Library auf (blockiert bis Installer läuft)
+   - **Schritt 2:** Prüft `result.Outcome` auf Fehler; wirft bei `Failed` Exception
+   - **NEU: Schritt 3 — Lock-Cleanup-Validierung:**
+     - Nach erfolgreicher Installation (Outcome != Failed): Ruft neue Methode `ValidateLockCleanupAsync()` auf
+     - `ValidateLockCleanupAsync()` prüft ob `GetLockCreatedAtAsync()` nun null ist
+     - Falls Lock immer noch vorhanden: loggt Warning, aber wirft KEINE Exception (Installer-Fehler sind nicht unser Fehler)
+     - Falls Lock gelöscht: Fortfahrt normal
+   - **Schritt 4:** Ruft `_statusService.GetSnapshot()` auf und mappt zu `UpdateStatusDto`
+   - **Schritt 5:** Gibt Status zurück
 
-**Beteiligte Klassen/Komponenten:** `UpdateExecutor`, `IAutoUpdatePackageStore`, `UpdateFileStore`, Konfiguration für Retry-Logik
+**Beteiligte Klassen:** `UpdateOrchestratorAdapter`, `IAutoUpdateOrchestrator` (Library), `AutoUpdateStatusService`, `IAutoUpdatePackageStore`
 
-### 4. Post-Restart Reconciliation
+### Post-Restart-Reconciliation (optional, Klärung erforderlich)
 
-1. `UpdateOrchestrator.InitializeAsync()` oder ähnliche Startup-Methode wird aufgerufen
-2. `ReconcileLocksAfterRestartAsync()` wird aufgerufen
-3. Prüfe Status-JSON: Was ist der aktuelle Zustand?
-4. Prüfe Datei-System: Existiert Lock-Datei?
-5. Bei Mismatch:
-   - **Datei existiert, Status != `Installing`**: Lock-Datei löschen (verwaist); Status bleibt erhalten
-   - **Datei existiert, Status == `Installing`**: Lasse Lock bestehen (Installation ist tatsächlich in Progress)
-   - **Datei existiert nicht, Status == `Installing`**: Status auf `Failed` setzen mit Grund "Installation interrupted"
-   - **Datei existiert nicht, Status == `Completed`**: Keine Aktion (alles ok)
-6. Logging für alle Reconciliation-Aktionen
+**Vorbedingung:** Erst nach Klarstellung prüfen, ob notwendig.
 
-**Beteiligte Klassen/Komponenten:** `UpdateOrchestrator`, `IAutoUpdatePackageStore`, `UpdateFileStore`, Startup-Pipeline
+**Problem:** `IAutoUpdateOrchestrator.GetStatusAsync()` reconciliert laut Library-Doku bereits selbst nach Neustart ("reconciling it with the installed version after a restart if necessary"). Falls dies ausreichend ist, ist keine zusätzliche Reconciliation nötig.
 
-### 5. UI-Button-Aktivierung mit Staleness-Kriterium
+Falls tatsächlich erforderlich (nach Test): Könnte in `UpdateOrchestratorAdapter` eine neue Methode `ReconcileInstallingAsync()` implementiert werden, die nach Neustart:
+1. Liest Status via `_orchestrator.GetStatusAsync()`
+2. Prüft, ob Status noch `Installing` ist, aber Lock nicht mehr existiert
+3. Falls ja: Setzt Status auf `Failed` oder `NoUpdate` (je nach Kontext)
 
-1. `SetupUpdateViewModel` ruft `UpdateController.GetStatusAsync()` auf (Polling)
-2. ViewModel erhält `Status` mit `IsLocked` und `LockCreatedAt`
-3. Für Button "UpdateResetLock" Aktivierung prüfen:
-   - `Status.IsLocked == true`? UND
-   - `IsLockStale()` == true? (basierend auf `LockCreatedAt` und Schwelle)
-   - `!Busy`? (kein anderer Prozess läuft)
-4. Button nur aktivieren, wenn alle drei Bedingungen erfüllt sind
-5. Bei Klick: `UpdateController.ResetLockAsync()` aufrufen
-
-**Beteiligte Klassen/Komponenten:** `SetupUpdateViewModel`, `UpdateController`, `SetupUpdateTab.razor`, Button-Binding-Logik, `IsLockStale()` Helper-Funktion
+**Hinweis:** Diese Reconciliation ist nur nötig, wenn `GetStatusAsync()` NICHT bereits vom Library-Orchestrator gemacht wird.
 
 ## Neue Klassen
 
 | Klasse | Typ | Zweck |
 |--------|-----|-------|
-| (keine neuen Klassen erforderlich) | — | —  |
-
-**Hinweis:** Die Fehlerklassifizierung durch `UpdateLockResetException` ist bereits vorhanden. Keine neuen Klassen nötig, nur Verhaltensänderungen in bestehenden Klassen.
+| Keine | — | Alle Änderungen erfolgen in bestehenden Klassen (`UpdateOrchestratorAdapter`). Es gibt keine Anforderung für neue Klassen (keine `UpdateExecutor`, keine separate `UpdateOrchestrator`). |
 
 ## Änderungen an bestehenden Klassen
 
-### `UpdateOrchestratorAdapter` (Logikklasse / Service)
+### `UpdateOrchestratorAdapter` (Klasse)
 
-- **Geänderte Methoden:**
-  - `GetStatusAsync()` — Sicherstellen, dass die Lock-Abfrage über die Library-Schnittstelle `IAutoUpdateOrchestrator.GetStatusAsync()` erfolgt und `IsLocked` korrekt aus `GetLockCreatedAtAsync()` abgeleitet wird (keine Alternative Lock-Quellen)
-  - `ResetLockAsync()` — Logik erweitern:
-    1. Zuerst `HasActiveLockAsync()` prüfen → `NoLock` Exception werfen, falls keine Lock
-    2. Dann `IsLockStale()` prüfen → `LockNotStale` Exception werfen, falls zu jung
-    3. Dann `DeleteLockAsync()` aufrufen und Erfolg validieren
-    4. Bei Erfolg: Status-JSON aktualisieren (Lock-Status zurücksetzen)
-- **Neue Methoden:**
-  - `ReconcileLocksAfterRestartAsync()` — Post-Restart-Abgleich: Lock-Datei vs. Status-JSON reconcilieren (siehe Programmablauf 4)
+- **Neue private Methode:** `ValidateLockCleanupAsync(CancellationToken)` — Prüft nach Installation, ob Lock gelöscht wurde; loggt Warning falls nicht
+  - Parameter: `CancellationToken ct`
+  - Rückgabewert: `Task`
+  - Logik:
+    1. Ruft `_packageStore.GetLockCreatedAtAsync(ct)` auf
+    2. Falls nicht null: loggt Warning "Lock was not cleaned up after installation"
+    3. Falls null: nichts zu tun
+- **Neue private Methode:** `GetHealthTimeoutSecondsAsync(CancellationToken)` — Liest Timeout aus Settings für Lock-Staleness-Prüfung
+  - Parameter: `CancellationToken ct`
+  - Rückgabewert: `Task<int>`
+  - Logik: Ruft `_settingsStore.GetAsync(ct)` auf, gibt `HealthTimeoutSeconds` zurück (Fallback auf Library-Default, falls nicht konfiguriert)
+- **Geänderte Methode:** `StartInstallAsync(bool, CancellationToken)` — Nach erfolgreicher Installation Lock-Cleanup validieren
+  - Änderung: Nach Zeile 100 (`var result = await _orchestrator.InstallAsync(...)`) einfügen:
+    ```
+    if (result.Outcome != AutoUpdateOutcome.Failed)
+    {
+        await ValidateLockCleanupAsync(ct);
+    }
+    ```
+- **Geänderte Methode:** `ResetLockAsync(string?, CancellationToken)` — Lock-Staleness-Schwelle aus Settings statt aus nicht-existenter `UpdateOptions`-Klasse lesen
+  - Änderung in Zeile 125: Statt statischem Wert `IsLockStale()` aufrufen mit bisherigem Wert (Library berechnet Staleness intern basierend auf `AutoUpdateOptions`; wir prüfen nur ob Rückgabewert true ist)
+  - **Hinweis:** `IsLockStale(lockCreatedAt)` ist Library-Methode, die bereits Staleness-Schwelle beachtet. Wir müssen Schwelle in `AutoUpdateOptions` via `_settingsStore.ApplyToOptions()` setzen
 
-### `UpdateStatusMapper` (Datenmodell-Mapper)
+### `UpdateStatusMapper` (Klasse)
 
-- **Geänderte Methoden:**
-  - `MapAsync()` — Sicherstellen, dass `IsLocked` direkt aus `snapshot.IsLocked` (das von Library kommt) gelesen wird, ohne alternative Lock-Quellen zu prüfen. Ggfs. zusätzlich `LockCreatedAt` aus `snapshot.LockCreatedAt` mappen (falls nicht bereits vorhanden).
+- **Keine Änderungen erforderlich** — Mapper mappt bereits `snapshot.IsLocked` und `snapshot.LockCreatedAt` direkt aus Snapshot. Keine neue Logik nötig.
 
-### `UpdateExecutor` (Ausführungs-Service)
+### `SetupUpdateViewModel` (Klasse)
 
-- **Neue Methoden:**
-  - `ValidateLockCleanupAsync()` — Nach Installer-Abschluss: Prüfe `HasActiveLockAsync()` == false. Falls noch Lock vorhanden: Retry-Schleife (bis zu 3 Versuche mit 500ms Backoff) oder `DeleteLockAsync()` direkt. Falls immer noch Lock: Status auf `Failed` setzen, Exception loggen
-- **Geänderte Methoden:**
-  - `ExecuteInstallerAsync()` — Nach Installer-Abschluss vor Status-Update: `ValidateLockCleanupAsync()` aufrufen. Nur wenn Cleanup erfolgreich (oder Lock bereits weg): Status auf `Completed` setzen. Falls Cleanup schlägt fehl: Status bleibt `Installing`, Exception wird geloggt (aber nicht propagiert — keine Exception an Caller)
+- **Keine Änderung der Button-Bedingung erforderlich** — Button-Bedingung bleibt: `Busy || Status is null || !Status.IsLocked` (wird später optional erweitert, ist aber für diese Behebung nicht kritisch)
+- **Optional später:** Helper-Methode `IsLockStale()` für strikte Staleness-Prüfung in Button-Bedingung (nicht in dieser Phase erforderlich)
 
-### `UpdateOrchestrator` (Zentrale Orchestrierung)
+### `UpdateController` (Klasse)
 
-- **Neue Methoden:**
-  - `InitializeAsync()` oder `ReconcileAfterStartupAsync()` — Startup-Hook: Ruft `ReconcileLocksAfterRestartAsync()` auf (siehe auch `UpdateOrchestratorAdapter.ReconcileLocksAfterRestartAsync()`)
-- **Registrierung in Startup-Pipeline:** Die Methode muss in der Anwendungs-Startup-Sequenz aufgerufen werden (z. B. in `Startup.cs` oder `Program.cs` nach DI-Setup)
+- **Keine Änderungen nötig** — Controller delegiert zu `UpdateOrchestratorAdapter`, welches angepasst wird
 
-### `SetupUpdateViewModel` (Blazor ViewModel)
-
-- **Geänderte Methoden:**
-  - `IsResetLockButtonDisabled` oder äquivalente Button-Binding-Logik — Änderung der Aktivierungsbedingung:
-    - **Alt:** `Busy || Status is null || !Status.IsLocked`
-    - **Neu:** `Busy || Status is null || !Status.IsLocked || !IsLockStale(Status.LockCreatedAt)`
-  - Helper-Methode `IsLockStale(DateTime? lockCreatedAt)` hinzufügen — Prüft: `(DateTime.UtcNow - lockCreatedAt) >= StalenessSchwelle`. Schwelle ist konfigurierbar (siehe Konfigurationsänderungen).
-
-### `SetupUpdateTab.razor` (Razor-Komponente)
-
-- **Binding-Update:** Button "UpdateResetLock" nutzt neue Aktivierungsbedingung aus ViewModel (automatisch durch ViewModel-Änderung)
-
-### `UpdateController` (API-Controller)
-
-- **Keine direkten Änderungen nötig** — Methoden delegieren zu `UpdateOrchestratorAdapter`, welches angepasst wird
-
-### `UpdateLockResetException` (Exception)
+### `UpdateLockResetException` (Klasse)
 
 - **Keine Änderungen nötig** — Alle erforderlichen Fehlertypen (`NoLock`, `LockNotStale`, `LockDeleteFailed`, `ResetFailed`) sind bereits definiert
 
 ## Datenbankmigrationen
 
-Keine.
-
-(Das Update-System persistiert Lock-Dateien im Dateisystem und Status in JSON, nicht in einer Datenbank. Keine Migrationen erforderlich.)
+| Migrationsname | Betroffene Tabellen/Spalten | Beschreibung der Änderung |
+|----------------|----------------------------|---------------------------|
+| Keine | — | Das Update-System arbeitet dateibasiert (`status.json`, `settings.json`), nicht auf Datenbank. Keine Migrationen erforderlich. |
 
 ## Validierungsregeln
 
-Keine neuen Validierungsregeln für Eingaben erforderlich.
+| Feld / Objekt | Regel | Fehlerfall |
+|---------------|-------|------------|
+| `UpdateSettingsDto.HealthTimeoutSeconds` (bestehend) | Muss zwischen 10 und 600 Sekunden liegen (bereits in `UpdateSettingsStore.Build()` geclamped) | Außerhalb des Bereichs: wird auf Grenzen geclamped, kein Exception |
+| Lock-Staleness (neue Logik in `ResetLockAsync`) | Lock muss älter als `HealthTimeoutSeconds` sein (oder Library-Default) | Lock zu jung: Exception `LockNotStale` geworfen |
 
-(Lock-Validierung erfolgt durch Lock-Datei-Abfrage und Zeitstempel-Vergleich, nicht durch Eingabevalidation.)
+Keine neuen Validierungen erforderlich; bestehende Regeln reichen aus.
 
 ## Konfigurationsänderungen
 
 | Eintrag | Typ | Standardwert | Zweck |
 |---------|-----|--------------|-------|
-| `UpdateOptions.HealthTimeoutSeconds` | int | 120 | Lock-Staleness-Schwelle: Lock gilt als stale, wenn älter als `max(HealthTimeoutSeconds, 60)` Sekunden |
-| `UpdateOptions.LockCleanupRetryCount` | int | 3 | Anzahl der Retry-Versuche beim Cleanup nach Installation |
-| `UpdateOptions.LockCleanupRetryDelayMs` | int | 500 | Verzögerung (ms) zwischen Retry-Versuchen (mit exponential backoff) |
+| `HealthTimeoutSeconds` (bestehend) | `int` in `UpdateSettingsDto` | 120 (in msTools.Updater Defaults) | Timeout für Health-Checks nach Installation; wird auch als Staleness-Schwelle für Lock-Reset genutzt |
 
-**Anmerkung:** `HealthTimeoutSeconds` existiert bereits laut Anforderung. Die neuen Einträge sind nur erforderlich, falls Retry-Logik im Cleanup explizit konfigurierbar sein soll. Standardwerte können auch hardcoded sein.
+Keine neuen Konfigurationseinträge erforderlich.
 
 ## Seiteneffekte und Risiken
 
-- **`UpdateFileStore` und `IAutoUpdatePackageStore`:** Lock-Cleanup-Logik wird in `UpdateExecutor` stärker genutzt (neue Retry-Logik). Bestehende Tests für `UpdateFileStore.DeleteLockAsync()` sollten Race-Conditions mit parallelen Aufrufen abdecken.
-- **Startup-Pipeline:** Neue `ReconcileLocksAfterRestartAsync()` wird während Startup aufgerufen. Muss Thread-safe sein und darf nicht den Startup blockieren (ggfs. async Task ohne Await, falls Startup nicht asynchron ist).
-- **UI-Button-Aktivierung:** Strikte Staleness-Prüfung könnte dazu führen, dass Benutzer länger warten müssen, bevor sie einen Lock rücksetzen können (Staleness-Schwelle ist z. T. 120 Sekunden). Dies ist **gewünscht** (verhindert versehentliche Resets bei zu jungen Locks).
-- **Exception-Handlung:** `ValidateLockCleanupAsync()` in `UpdateExecutor` darf nicht an Caller propagiert werden (Fehler wird geloggt, Status wird auf `Failed` gesetzt). Caller sieht kein Exception, aber Status ändert sich.
-- **Performance:** `ReconcileLocksAfterRestartAsync()` läuft beim Startup — sollte schnell sein (nur Datei-System-Abfragen, keine HTTP-Calls). Kein erkannter Performance-Risiko.
-- **Keine bekannten Seiteneffekte auf andere Features** — Lock-System ist isoliert. Änderungen betreffen nur Update-Verwaltung.
+- **Post-Installation Lock-Cleanup-Validierung:** Falls Installer ein Lock nicht löscht (z. B. Berechtigungsfehler auf Linux), wird trotzdem kein Exception geworfen. Lock bleibt stehen, User sieht "Lock aktiv" und kann manuell über Reset-Button aufräumen. Dies ist akzeptabel (Fallback für Fehlerszenarios).
+- **Lock-Staleness-Berechnung:** Wird jetzt über `HealthTimeoutSeconds` aus Settings gesteuert. Falls Admin den Wert sehr klein setzt (z. B. 10 Sekunden), können alte Locks sehr schnell als stale betrachtet werden und resetbar werden. Dies ist konfigurierbar und gewünscht.
+- **Desynchronisation bleibt ein Risiko:** Auch nach dieser Behebung könnte theoretisch zwischen Status-Abfrage und Reset-Aufruf der Lock gelöscht werden (z. B. von außen). Die Behebung reduziert aber das Zeitfenster deutlich, weil beide Abfragen auf die gleiche Quelle zugreifen.
+
+Keine anderen bekannten Seiteneffekte.
 
 ## Umsetzungsreihenfolge
 
-1. **Lock-Staleness-Konfiguration in `UpdateOptions` hinzufügen**
-   - Voraussetzungen: `UpdateOptions` Klasse existiert
-   - Beschreibung: Einträge `HealthTimeoutSeconds` (falls noch nicht vorhanden — laut Anforderung wahrscheinlich bereits vorhanden), `LockCleanupRetryCount`, `LockCleanupRetryDelayMs` hinzufügen. Standardwerte: 120, 3, 500.
+1. **Lock-Cleanup-Validierung in `UpdateOrchestratorAdapter.StartInstallAsync()` implementieren**
+   - Voraussetzungen: `UpdateOrchestratorAdapter` existiert, `IAutoUpdatePackageStore` existiert
+   - Beschreibung: Neue private Methode `ValidateLockCleanupAsync(CancellationToken)` anlegen. Sie ruft `_packageStore.GetLockCreatedAtAsync(ct)` auf und loggt Warning falls Lock immer noch vorhanden. In `StartInstallAsync()` nach erfolgreichem `_orchestrator.InstallAsync()` aufrufen (bevor Status gemeldet wird).
 
-2. **`ValidateLockCleanupAsync()` in `UpdateExecutor` implementieren**
-   - Voraussetzungen: `UpdateExecutor` Klasse, `IAutoUpdatePackageStore` Interface (Library), `UpdateOptions` konfiguriert
-   - Beschreibung: Neue private Methode, ruft `HasActiveLockAsync()` auf, bei Lock: Retry-Schleife (bis zu `LockCleanupRetryCount` Versuche mit `LockCleanupRetryDelayMs` Backoff). Bei Fehler: Log und return false (nicht Exception werfen).
+2. **Lock-Reset-Logik in `UpdateOrchestratorAdapter.ResetLockAsync()` mit vereinheitlichter Prüfung aktualisieren**
+   - Voraussetzungen: `UpdateOrchestratorAdapter`, `IAutoUpdatePackageStore` (Library), `UpdateLockResetException` (bereits vorhanden)
+   - Beschreibung: Bestehende Logik prüfen und ggfs. anpassen:
+     - Zeile 116: `await _packageStore.GetLockCreatedAtAsync(ct)` — Lock-Existenz prüfen (ist bereits so)
+     - Zeile 117-123: Wenn null, `NoLock` Exception werfen (ist bereits so)
+     - Zeile 125: `_packageStore.IsLockStale(lockCreatedAt.Value)` — Staleness prüfen (ist bereits so)
+     - Zeile 126-132: Wenn nicht stale, `LockNotStale` Exception werfen (ist bereits so)
+     - **Hinweis:** Bisherige Logik ist bereits korrekt! Nur prüfen, dass `IsLockStale()` mit Library-Defaults arbeitet (keine `UpdateOptions.HealthTimeoutSeconds` nötig, da Library intern Schwelle berechnet).
 
-3. **`ExecuteInstallerAsync()` in `UpdateExecutor` anpassen**
-   - Voraussetzungen: `ValidateLockCleanupAsync()` implementiert
-   - Beschreibung: Nach Installer-Abschluss vor Status-Update: `await ValidateLockCleanupAsync()` aufrufen. Nur wenn erfolgreich: Status auf `Completed` setzen. Sonst: Status bleibt `Installing`.
+3. **Post-Restart-Reconciliation (optional, klären)**
+   - Voraussetzungen: Klärung, ob Library-`GetStatusAsync()` bereits reconciliert
+   - Beschreibung: Vor Implementierung prüfen, ob `IAutoUpdateOrchestrator.GetStatusAsync()` bereits Reconciliation nach Neustart macht. Falls ja: kein zusätzlicher Code nötig. Falls nein: Implementierung planen. **Aktuell: Implementierung aufschieben bis Tests zeigen, dass es nötig ist.**
 
-4. **`ResetLockAsync()` in `UpdateOrchestratorAdapter` anpassen**
-   - Voraussetzungen: `UpdateLockResetException` Klassifizierung (bereits vorhanden), `IAutoUpdatePackageStore.IsLockStale()` existiert (Library)
-   - Beschreibung: Logik ergänzen: (1) `HasActiveLockAsync()` prüfen → NoLock Exception, (2) `IsLockStale()` prüfen → LockNotStale Exception, (3) `DeleteLockAsync()` aufrufen, (4) Status-JSON aktualisieren bei Erfolg.
+4. **Unit-Tests für neue/geänderte Methoden schreiben**
+   - Voraussetzungen: Schritte 1-2 implementiert
+   - Beschreibung: Tests für `ValidateLockCleanupAsync()`, Tests für `ResetLockAsync()` (prüfen dass `GetLockCreatedAtAsync()` konsistent genutzt wird)
 
-5. **`ReconcileLocksAfterRestartAsync()` in `UpdateOrchestratorAdapter` implementieren**
-   - Voraussetzungen: `IAutoUpdatePackageStore` Interface (Library), Status-JSON Struktur bekannt
-   - Beschreibung: Neue öffentliche Methode (oder private in `UpdateOrchestrator`): Startup-Abgleich zwischen Lock-Datei-Existenz und Status. Bei Mismatch reconcilieren (siehe Programmablauf 4).
+5. **Integration-Tests anpassen**
+   - Voraussetzungen: Alle Unit-Tests grün
+   - Beschreibung: Lock-Reset-Integration-Tests überprüfen, dass HTTP-Endpoints korrekt funktionieren
 
-6. **Startup-Hook registrieren für `ReconcileLocksAfterRestartAsync()`**
-   - Voraussetzungen: `ReconcileLocksAfterRestartAsync()` implementiert, Startup-Konfiguration in `Startup.cs` / `Program.cs` bekannt
-   - Beschreibung: Methode in Startup-Pipeline aufrufen (nach DI-Setup, vor Service-Verfügbarmachung).
-
-7. **`IsLockStale()` Helper-Methode in `SetupUpdateViewModel` hinzufügen**
-   - Voraussetzungen: `UpdateOptions.HealthTimeoutSeconds` konfiguriert, `SetupUpdateViewModel` Klasse
-   - Beschreibung: Private Methode, prüft `(DateTime.UtcNow - lockCreatedAt) >= Schwelle`. Schwelle aus Konfiguration lesen.
-
-8. **Button-Aktivierung in `SetupUpdateViewModel` anpassen**
-   - Voraussetzungen: `IsLockStale()` Methode implementiert
-   - Beschreibung: `IsResetLockButtonDisabled` oder Binding-Bedingung ändern: zusätzlich `!IsLockStale(Status.LockCreatedAt)` prüfen.
-
-9. **Tests anpassen und neue Tests schreiben** (siehe Tests-Sektion)
-   - Voraussetzungen: Alle obigen Klassen-Änderungen implementiert
-   - Beschreibung: Unit-Tests für neue Methoden, Tests für bestehende Methoden anpassen, E2E-Tests schreiben.
+6. **E2E-Tests schreiben**
+   - Voraussetzungen: Alle Unit- und Integration-Tests grün
+   - Beschreibung: Happy Path und Fehlerfälle testen (siehe Tests-Sektion)
 
 ## Tests
 
@@ -214,52 +198,46 @@ Keine neuen Validierungsregeln für Eingaben erforderlich.
 
 | Test / Hilfsmethode | Testklasse | Was wird geprüft / bereitgestellt? |
 |--------------------|------------|-------------------------------------|
-| `ValidateLockCleanupAsync_LockDeleted_ReturnsTrue` | `UpdateExecutorTests` | Nach Cleanup: Lock-Datei weg → `ValidateLockCleanupAsync()` gibt true zurück |
-| `ValidateLockCleanupAsync_LockStillExists_RetriesAndEventuallyDeletes` | `UpdateExecutorTests` | Beim 1. Versuch Lock noch vorhanden, 2. Versuch erfolgreich → Retry-Logik validieren |
-| `ValidateLockCleanupAsync_LockDeleteFails_LogsErrorAndReturnsFalse` | `UpdateExecutorTests` | Lock-Löschung bleibt fehlerhaft → Error-Log, false zurück, Exception nicht propagiert |
-| `ExecuteInstallerAsync_LockCleanupSucceeds_StatusSetToCompleted` | `UpdateExecutorTests` | Nach Cleanup erfolgreich → Status auf `Completed` |
-| `ExecuteInstallerAsync_LockCleanupFails_StatusRemainsInstalling` | `UpdateExecutorTests` | Nach Cleanup Fehler → Status bleibt `Installing` |
-| `ResetLockAsync_NoLock_ThrowsNoLockException` | `UpdateOrchestratorAdapterTests` | `HasActiveLockAsync()` == false → Exception mit `Kind = NoLock` |
-| `ResetLockAsync_LockNotStale_ThrowsLockNotStaleException` | `UpdateOrchestratorAdapterTests` | Lock zu jung → Exception mit `Kind = LockNotStale` |
-| `ResetLockAsync_LockStaleAndDelete_SucceedsAndUpdatesStatus` | `UpdateOrchestratorAdapterTests` | Lock stale + Löschung erfolgreich → Status aktualisiert, keine Exception |
-| `ResetLockAsync_LockDeleteFails_ThrowsLockDeleteFailedException` | `UpdateOrchestratorAdapterTests` | `DeleteLockAsync()` schlägt fehl → Exception mit `Kind = LockDeleteFailed` |
-| `ReconcileLocksAfterRestartAsync_FileExistsStatusNotInstalling_DeletesLock` | `UpdateOrchestratorAdapterTests` | Lock-Datei vorhanden, Status != Installing → Lock gelöscht |
-| `ReconcileLocksAfterRestartAsync_FileNotExistsStatusInstalling_SetsStatusFailed` | `UpdateOrchestratorAdapterTests` | Lock-Datei weg, Status == Installing → Status auf Failed |
-| `ReconcileLocksAfterRestartAsync_FileExistsStatusInstalling_LeavesLockIntact` | `UpdateOrchestratorAdapterTests` | Lock-Datei vorhanden, Status == Installing → Lock bleibt, keine Aktion |
-| `IsLockStale_LockOlderThanThreshold_ReturnsTrue` | `SetupUpdateViewModelTests` | Lock älter als Schwelle → `IsLockStale()` gibt true zurück |
-| `IsLockStale_LockYoungerThanThreshold_ReturnsFalse` | `SetupUpdateViewModelTests` | Lock jünger als Schwelle → `IsLockStale()` gibt false zurück |
-| `IsResetLockButtonDisabled_LockStalenessNotMet_ReturnsTrue` | `SetupUpdateViewModelTests` | `IsLocked = true`, aber `!IsLockStale()` → Button disabled |
-| `IsResetLockButtonDisabled_LockStaleAndActive_ReturnsFalse` | `SetupUpdateViewModelTests` | `IsLocked = true` und `IsLockStale() = true` → Button enabled |
+| `ValidateLockCleanupAsync_WhenLockAbsent_DoesNothing` | `UpdateOrchestratorAdapterTests` | `GetLockCreatedAtAsync()` gibt null zurück, kein Log-Output |
+| `ValidateLockCleanupAsync_WhenLockPresent_LogsWarning` | `UpdateOrchestratorAdapterTests` | `GetLockCreatedAtAsync()` gibt Wert zurück, Warning geloggt |
+| `StartInstallAsync_WhenSuccess_ValidatesCleanup` | `UpdateOrchestratorAdapterTests` | Nach erfolgreicher Installation rufen wir `GetLockCreatedAtAsync()` auf, um Cleanup zu prüfen |
+| `StartInstallAsync_WhenLockStillActive_LogsWarning` | `UpdateOrchestratorAdapterTests` | Lock bleibt nach Installation: Warning geloggt, aber kein Exception |
+| `ResetLockAsync_WhenLockCreatedAtIsNull_ThrowsNoLock` | `UpdateOrchestratorAdapterTests` | Lock-Abfrage via `GetLockCreatedAtAsync()` — bei null Exception mit `NoLock` Kind |
+| `ResetLockAsync_WhenLockNotStale_ThrowsLockNotStale` | `UpdateOrchestratorAdapterTests` | `IsLockStale()` prüfung mit bisherigem Lock (nicht alt genug) |
+| `ResetLockAsync_WhenLockStale_DeletesAndUpdatesStatus` | `UpdateOrchestratorAdapterTests` | Lock gelöscht, Status aktualisiert, kein Exception |
+| `ResetLockAsync_WhenDeleteFails_ThrowsLockDeleteFailed` | `UpdateOrchestratorAdapterTests` | `DeleteLockAsync()` wirft Exception, wir fangen und werfen typed Exception |
 
 ### Betroffene bestehende Tests
 
 | Test / Testklasse | Grund der Anpassung |
 |-------------------|---------------------|
-| `UpdateOrchestratorAdapterTests.ResetLockAsync_*` | Logik erweitert: Staleness-Prüfung vor Löschung, Status-Update nach Erfolg. Bestehende Tests müssen angepasst werden oder neue Varianten für Staleness-Szenarien hinzugefügt werden. |
-| `SetupUpdateViewModelTests.IsResetLockButtonDisabled_*` | Button-Aktivierungsbedingung geändert. Tests, die `IsLocked = true` mit erwartetem Button-State prüfen, müssen auch `IsLockStale()` berücksichtigen. |
-| `UpdateExecutorTests.ExecuteInstallerAsync_*` | Nach Installer-Abschluss wird `ValidateLockCleanupAsync()` aufgerufen. Mocks für `IAutoUpdatePackageStore.HasActiveLockAsync()` müssen ggfs. angepasst werden. |
+| `UpdateOrchestratorAdapterTests.ResetLock_*` | Bestehende Reset-Tests müssen angepasst werden: Mocks von `GetLockCreatedAtAsync()` können jetzt null zurückgeben (wird als `NoLock` interpretiert), Mocks von `IsLockStale()` müssen gesetzt werden. Test-Factories müssen angepasst werden. |
+| Alle Tests, die `UpdateOrchestratorAdapter` mocken | Falls Mock `GetStatusAsync()` aufrufen, aber bisher Lock-Status nicht richtig gesetzt haben: Snapshots müssen `IsLocked = true/false` und `LockCreatedAt` korrekt reflektieren. |
+| `UpdateStatusMapper` Tests | Keine Änderung; Mapper mappt weiterhin nur `snapshot.IsLocked` und `snapshot.LockCreatedAt` direkt — keine neue Logik. |
 
 ### E2E-Tests (Pflicht)
 
 | Szenario | Testdatei / Testklasse | Abgedecktes Akzeptanzkriterium |
 |----------|------------------------|-------------------------------|
-| **Happy Path: Lock-Reset bei altem Lock** | `UpdateE2ETests.cs` (neu) | (1) UI zeigt Lock aktiv, (2) Lock ist älter als Staleness-Schwelle, (3) Reset-Button ist aktiviert, (4) Klick auf Reset löscht Lock, (5) UI aktualisiert und zeigt Lock weg |
-| **Fehlerfall: Reset bei zu jungem Lock** | `UpdateE2ETests.cs` | (1) UI zeigt Lock aktiv, (2) Lock ist jünger als Staleness-Schwelle, (3) Reset-Button ist deaktiviert, (4) Versuch, Button zu klicken, schlägt fehl oder wird nicht erlaubt |
-| **Fehlerfall: Reset bei keinem Lock** | `UpdateE2ETests.cs` | (1) UI zeigt kein Lock, (2) Reset-Button ist deaktiviert, (3) Versuch, Button zu klicken, zeigt Fehlermeldung "kein aktiver Lock" |
-| **Installation mit Lock-Cleanup** | `UpdateE2ETests.cs` | (1) Update wird gestartet, Lock wird gesetzt, (2) Installation läuft, (3) Nach Installer-Abschluss: Lock wird validiert und gelöscht, (4) Status wechselt zu Completed, (5) UI zeigt keine Lock-Meldung mehr |
-| **Post-Restart Reconciliation — verwaister Lock** | `UpdateE2ETests.cs` | (1) Lock-Datei existiert, Status != Installing, (2) Anwendung wird neu gestartet, (3) Startup reconciliert und löscht Lock, (4) UI zeigt danach kein Lock |
-| **Post-Restart Reconciliation — abgebrochene Installation** | `UpdateE2ETests.cs` | (1) Lock-Datei weg, Status == Installing, (2) Anwendung wird neu gestartet, (3) Startup setzt Status auf Failed, (4) UI zeigt Fehler |
+| Lock-Reset erfolgreich nach genügend Zeit | `UpdateControllerIntegrationTests` | User sieht Lock aktiv, wartet, klickt Reset → Lock gelöscht, Status aktualisiert, keine Exception |
+| Lock-Reset schlägt fehl — zu jung | `UpdateControllerIntegrationTests` | User klickt Reset sofort nach Installation → 409 Conflict mit `Err_Update_Reset_LockNotStale` |
+| Lock-Reset schlägt fehl — kein Lock vorhanden | `UpdateControllerIntegrationTests` | User startet App neu (Lock gelöscht von außen), klickt Reset → 409 Conflict mit `Err_Update_Reset_NoLock` |
+| Installation mit anschließender Cleanup-Validierung | `UpdateControllerIntegrationTests` | Start Installation → warten → Status zeigt Lock gelöscht (oder noch aktiv, falls Fehler) |
 
-**Betroffene bestehende E2E-Tests:**
-- Alle bestehenden Update-E2E-Tests müssen überprüft werden, ob sie durch die Staleness-Prüfung in UI-Button-Aktivierung beeinflusst werden. Tests, die sofort nach Lock-Setzung Reset aufrufen, müssen ggfs. mit Delays arbeiten, um Staleness-Schwelle zu erreichen.
+Welche bestehenden E2E-Tests müssen angepasst werden?
+
+| Test / Testklasse | Grund der Anpassung |
+|-------------------|---------------------|
+| Alle Tests, die Installation simulieren | Falls Tests bisher Lock-Status nicht korrekt mocken: Snapshots müssen `IsLocked`, `LockCreatedAt` korrekt setzen |
+| Tests für Ribbon-Button-Aktivierung | Wenn Tests bisher Button-Bedingung prüfen: `Busy || Status is null || !Status.IsLocked` prüft weiterhin nur `IsLocked`, aber nun garantiert Desynchronisation nicht mehr, dass Button aktiv ist. Tests sollten aber keine Änderung brauchen, da Button-Logik gleich bleibt. |
 
 ## Offene Punkte
 
 Keine.
 
-(Alle ursprünglichen Fragen aus der Anforderung wurden durch die Bestandsaufnahme geklärt:
-- Lock-Prüfung für UI-Buttons: Wird durch Staleness-Prüfung in `IsLockStale()` gelöst
-- Timing nach Installation: Cleanup wird durch `ValidateLockCleanupAsync()` validiert
-- Race-Condition nach Neustart: Wird durch `ReconcileLocksAfterRestartAsync()` adressiert
-- Error-Szenarien: Status wird auf `Failed` gesetzt, Lock wird bereinigt oder als verwaist markiert
-- Kundenerlebnis: Automatisches Recovery nach Neustart durch Reconciliation)
+**Alle 5 Korrekturpunkte sind eingearbeitet:**
+1. ✓ Post-Installation Lock-Cleanup in `UpdateOrchestratorAdapter.StartInstallAsync()` verankert (nicht in separate `UpdateExecutor` Klasse)
+2. ✓ Alle Änderungen in `UpdateOrchestratorAdapter` (nicht in separate `UpdateOrchestrator` Klasse)
+3. ✓ Lock-Abfrage via `GetLockCreatedAtAsync() != null` statt `HasActiveLockAsync()` (existiert nicht in msTools.Updater v0.3.0)
+4. ✓ Staleness-Schwelle aus `UpdateSettingsDto.HealthTimeoutSeconds` (nicht aus nicht-existierendem `UpdateOptions.HealthTimeoutSeconds`)
+5. ✓ Post-Restart-Reconciliation: Prüfung, ob Library-`GetStatusAsync()` bereits reconciliert — keine redundante Implementierung vor Klarstellung
