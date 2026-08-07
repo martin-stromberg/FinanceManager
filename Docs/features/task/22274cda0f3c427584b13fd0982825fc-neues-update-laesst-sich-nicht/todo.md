@@ -20,6 +20,6 @@ Branch: `task/22274cda0f3c427584b13fd0982825fc-neues-update-laesst-sich-nicht`
 | [x] | 8a | Folgeaufgaben dokumentieren (bei Schleifenabbruch) | `continue.md` |
 | [x] | 9 | Dokumentation erstellen (Unteragent) | `docs/help/` |
 | [x] | 9b | README aktualisieren (Unteragent) | `README.md` |
-| [ ] | 10 | Nacharbeiten abschließen (offene Punkte aus `continue.md`) | `continue-done.md` |
-| [ ] | – | Feature-Verzeichnis löschen | – |
-| [ ] | – | Commit durchführen | – |
+| [~] | 10 | Nacharbeiten abschließen (offene Punkte aus `continue.md`) | `continue.md` (aktualisiert) — Code-Review-Befund behoben; 9 Testfehler bleiben offen (vorbestehend auf staging / außerhalb des Aufgabenbereichs), keine weitere automatisierte Bearbeitung vorgesehen |
+| [ ] | – | Feature-Verzeichnis löschen | Übersprungen — `continue.md` enthält weiterhin offene, bewusst nicht automatisiert zu lösende Punkte |
+| [x] | – | Commit durchführen | Zwischencommit dieses Nacharbeiten-Laufs |

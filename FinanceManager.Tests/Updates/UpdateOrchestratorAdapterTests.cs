@@ -176,6 +176,23 @@ public sealed class UpdateOrchestratorAdapterTests
         logger.Entries.Should().ContainSingle(entry => entry.Level == LogLevel.Warning);
     }
 
+    [Fact]
+    public async Task Adapter_StartInstallAsync_WhenLockCleanupCheckThrowsIOException_StillReturnsSuccessStatus()
+    {
+        var orchestrator = new Mock<IAutoUpdateOrchestrator>();
+        orchestrator.Setup(o => o.InstallAsync(true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.Success, "installed", null));
+        var packageStore = new Mock<IAutoUpdatePackageStore>();
+        packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new IOException("read failed"));
+        var logger = new CapturingLogger<UpdateOrchestratorAdapter>();
+        var adapter = CreateAdapterForInstall(orchestrator.Object, packageStore.Object, logger);
+
+        var status = await adapter.StartInstallAsync(true);
+
+        status.Should().NotBeNull();
+        logger.Entries.Should().ContainSingle(entry => entry.Level == LogLevel.Warning);
+    }
+
     private static UpdateOrchestratorAdapter CreateAdapterForInstall(
         IAutoUpdateOrchestrator orchestrator,
         IAutoUpdatePackageStore packageStore,

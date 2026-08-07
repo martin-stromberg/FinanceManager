@@ -209,7 +209,21 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
 
     private async Task ValidateLockCleanupAsync(CancellationToken ct)
     {
-        var lockCreatedAt = await _packageStore.GetLockCreatedAtAsync(ct);
+        DateTimeOffset? lockCreatedAt;
+        try
+        {
+            lockCreatedAt = await _packageStore.GetLockCreatedAtAsync(ct);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to validate lock cleanup after installation.");
+            return;
+        }
+
         if (lockCreatedAt.HasValue)
         {
             _logger.LogWarning("Lock was not cleaned up after installation. LockCreatedAt: {LockCreatedAt}", lockCreatedAt);
