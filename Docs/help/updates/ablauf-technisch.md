@@ -77,18 +77,19 @@ Das Update-System prüft GitHub-Releases regelmäßig, lädt neue Versionen heru
 **Voraussetzung:** Installation hat erfolgreich abgeschlossen (Outcome != Failed)
 
 **Beteiligte Komponenten:**
-- `UpdateOrchestratorAdapter.ValidateLockCleanupAsync()` — private Methode zur Lock-Cleanup-Validierung
+- `UpdateOrchestratorAdapter.StartInstallAsync()` — enthält den Cleanup-Check inline im Erfolgspfad
+- `UpdateOrchestratorAdapter.TryGetLockCreatedAtAsync()` — private Hilfsmethode, liest den Lock live vom Dateisystem
 - `IAutoUpdatePackageStore.GetLockCreatedAtAsync()` — prüft Lock-Existenz
 
 **Ablauf:**
 1. Nach erfolgreichem `_orchestrator.InstallAsync(confirmDowntime, ct)` (Library führt Installation durch)
-2. Ruft `ValidateLockCleanupAsync(ct)` auf
-3. Diese Methode prüft: `GetLockCreatedAtAsync()` → sollte `null` sein (Lock gelöscht)
-4. Falls Lock immer noch vorhanden (nicht null):
+2. `StartInstallAsync` ruft `TryGetLockCreatedAtAsync(ct, LogLevel.Warning, ...)` auf: liest `GetLockCreatedAtAsync()` → sollte `null` sein (Lock gelöscht)
+3. Falls Lock immer noch vorhanden (nicht null):
    - Loggt Warning: "Lock was not cleaned up after installation. LockCreatedAt: {LockCreatedAt}"
    - Wirft KEINE Exception — Cleanup-Fehler sind nicht kritisch für die Installation
+4. Unabhängig vom Ergebnis wird anschließend `ReconcileLockStatusCacheAsync(lockCreatedAt, ct)` aufgerufen (siehe Abschnitt 2c), damit der gecachte Status direkt nach der Installation zum tatsächlichen Dateisystemzustand passt
 5. Falls Lock gelöscht:
-   - Nichts zu tun, Installation fortfahren
+   - Nichts weiter zu tun, Installation fortfahren
 
 **Beispiel (Lock nicht gelöscht):**
 ```
@@ -98,6 +99,36 @@ WARN: Lock was not cleaned up after installation. LockCreatedAt: 2026-07-20T14:3
 ```
 
 Diese Validierung ist eine Sicherheitsmaßnahme: Falls das Installer-Skript aus Berechtigungsgründen (z. B. auf Linux) die Lock-Datei nicht löschen konnte, wird dies protokolliert. Der Administrator kann danach bei Bedarf manuell über "Update-Lock zurücksetzen" aufräumen.
+
+### 2c. Automatische Lock-Status-Reconciliation (bei jeder Statusabfrage)
+
+**Hintergrund:** `AutoUpdateStatusService` hält einen gecachten Status-Snapshot (`IsLocked`, `LockCreatedAt`), der aus `status.json` geladen und nur über explizite `UpdateAsync(...)`-Aufrufe verändert wird. Die Lock-Datei auf der Festplatte ist davon unabhängig — sie wird direkt vom Installer-Skript bzw. über `ResetLockAsync` gelöscht. Die Updater-Library gleicht nach einem Neustart nur die installierte Version ab (siehe Abschnitt 4), **nicht** den Lock-Status. Dadurch konnte der Cache dauerhaft einen aktiven Lock melden, obwohl auf der Festplatte längst keine Lock-Datei mehr existierte — sichtbar als Widerspruch: "Update installieren" war wegen "Lock aktiv" deaktiviert, während "Update-Lock zurücksetzen" mit `Err_Update_Reset_NoLock` ("kein aktiver Lock vorhanden") fehlschlug.
+
+**Beteiligte Komponenten:**
+- `UpdateOrchestratorAdapter.ReconcileLockStatusAsync()` — liest den Lock live vom Dateisystem und stößt bei Bedarf eine Cache-Korrektur an
+- `UpdateOrchestratorAdapter.ReconcileLockStatusCacheAsync()` — vergleicht Cache-Snapshot gegen den Live-Lock-Zustand und korrigiert den Cache
+- `UpdateOrchestratorAdapter.TryGetLockCreatedAtAsync()` — kapselt den Live-Read inkl. Fehlerbehandlung (Abbruch nur bei `OperationCanceledException`, sonstige Fehler werden geloggt statt propagiert)
+- `IAutoUpdatePackageStore.GetLockCreatedAtAsync()` — liefert den aktuellen Lock-Zeitstempel oder `null`, wenn keine Lock-Datei existiert
+- `AutoUpdateStatusService.UpdateAsync()` — persistiert die Cache-Korrektur
+
+**Ablauf:**
+1. `ReconcileLockStatusAsync(ct)` wird zu Beginn von `GetStatusAsync()`, `CheckAsync()` und `StartInstallAsync()` (im Fehlerfall der Installation) aufgerufen
+2. Liest per `GetLockCreatedAtAsync()` den Live-Zustand der Lock-Datei
+3. `ReconcileLockStatusCacheAsync(lockCreatedAt, ct)` vergleicht: Zeigt der Cache-Snapshot `IsLocked = true`, existiert aber keine Lock-Datei mehr (`lockCreatedAt == null`)?
+4. Falls ja: Cache wird korrigiert (`IsLocked = false`, `LockCreatedAt = null`) und als Debug-Log vermerkt: "Lock status cache reconciled: cleared stale lock entry not present on disk."
+5. Falls nein (Cache und Dateisystem stimmen überein, oder es existiert tatsächlich noch ein Lock): keine Änderung
+
+**Beispiel (Cache veraltet):**
+```
+Cache:  {IsLocked: true, LockCreatedAt: "2026-08-06T10:00:00Z"}
+Disk:   keine update.lock-Datei vorhanden
+→ ReconcileLockStatusCacheAsync korrigiert Cache auf {IsLocked: false, LockCreatedAt: null}
+→ GetStatusAsync() liefert danach einen konsistenten Status; "Update installieren" ist nicht mehr fälschlich deaktiviert
+```
+
+**Ausdrücklich außerhalb des Geltungsbereichs:** Die umgekehrte Abweichung (Cache zeigt keinen Lock, aber auf der Festplatte existiert tatsächlich eine Lock-Datei) wird nicht behandelt — in diesem Fall bleibt die vorhandene Lock-Datei die maßgebliche Quelle für nachfolgende Operationen (z. B. `StartInstallAsync`, das über die Library selbst prüft).
+
+Falls Fehler beim Lesen des Lock-Zustands auftreten (z. B. I/O-Fehler), wird die Reconciliation übersprungen und der Fehler nur geloggt (Log-Level abhängig vom Aufrufkontext: `Debug` bei regulären Statusabfragen, `Warning` nach einer Installation) — dies blockiert nie die eigentliche Statusabfrage oder Installation.
 
 ### 3. Installation läuft (asynchron)
 

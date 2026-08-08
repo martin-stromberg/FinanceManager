@@ -193,10 +193,129 @@ public sealed class UpdateOrchestratorAdapterTests
         logger.Entries.Should().ContainSingle(entry => entry.Level == LogLevel.Warning);
     }
 
+    [Fact]
+    public async Task Adapter_GetStatusAsync_WhenCacheIsLockedButFileIsAbsent_ClearsLock()
+    {
+        var packageStore = new Mock<IAutoUpdatePackageStore>();
+        packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync((DateTimeOffset?)null);
+        var statusService = UpdateOrchestratorAdapterTestFactory.CreateStatusService();
+        await statusService.UpdateAsync(s => s with { IsLocked = true, LockCreatedAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        var orchestrator = new Mock<IAutoUpdateOrchestrator>();
+        orchestrator.Setup(o => o.GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(() => statusService.GetSnapshot());
+        var adapter = CreateAdapterForInstall(orchestrator.Object, packageStore.Object, statusService: statusService);
+
+        var status = await adapter.GetStatusAsync();
+
+        status.IsLocked.Should().BeFalse();
+        var snapshot = statusService.GetSnapshot();
+        snapshot.IsLocked.Should().BeFalse();
+        snapshot.LockCreatedAt.Should().BeNull();
+        packageStore.Verify(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Adapter_GetStatusAsync_WhenCacheIsLockedAndFileExists_DoesNothing()
+    {
+        var lockCreatedAt = DateTimeOffset.UtcNow;
+        var packageStore = new Mock<IAutoUpdatePackageStore>();
+        packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync(lockCreatedAt);
+        var statusService = UpdateOrchestratorAdapterTestFactory.CreateStatusService();
+        await statusService.UpdateAsync(s => s with { IsLocked = true, LockCreatedAt = lockCreatedAt }, CancellationToken.None);
+        var orchestrator = new Mock<IAutoUpdateOrchestrator>();
+        orchestrator.Setup(o => o.GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(statusService.GetSnapshot());
+        var adapter = CreateAdapterForInstall(orchestrator.Object, packageStore.Object, statusService: statusService);
+
+        await adapter.GetStatusAsync();
+
+        var snapshot = statusService.GetSnapshot();
+        snapshot.IsLocked.Should().BeTrue();
+        snapshot.LockCreatedAt.Should().Be(lockCreatedAt);
+    }
+
+    [Fact]
+    public async Task Adapter_GetStatusAsync_WhenGetLockThrowsIOException_LogsDebugAndContinues()
+    {
+        var packageStore = new Mock<IAutoUpdatePackageStore>();
+        packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new IOException("read failed"));
+        var statusService = UpdateOrchestratorAdapterTestFactory.CreateStatusService();
+        await statusService.UpdateAsync(s => s with { IsLocked = true, LockCreatedAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        var orchestrator = new Mock<IAutoUpdateOrchestrator>();
+        orchestrator.Setup(o => o.GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(statusService.GetSnapshot());
+        var logger = new CapturingLogger<UpdateOrchestratorAdapter>();
+        var adapter = CreateAdapterForInstall(orchestrator.Object, packageStore.Object, logger, statusService);
+
+        var status = await adapter.GetStatusAsync();
+
+        status.Should().NotBeNull();
+        var snapshot = statusService.GetSnapshot();
+        snapshot.IsLocked.Should().BeTrue();
+        logger.Entries.Should().ContainSingle(entry => entry.Level == LogLevel.Debug);
+    }
+
+    [Fact]
+    public async Task Adapter_GetStatusAsync_WhenGetLockThrowsOperationCanceledException_Propagates()
+    {
+        var packageStore = new Mock<IAutoUpdatePackageStore>();
+        packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new OperationCanceledException());
+        var adapter = UpdateOrchestratorAdapterTestFactory.Create(packageStore: packageStore.Object);
+
+        var act = () => adapter.GetStatusAsync();
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public async Task Adapter_CheckAsync_ReconcilesCacheBeforeCheck()
+    {
+        var packageStore = new Mock<IAutoUpdatePackageStore>();
+        packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync((DateTimeOffset?)null);
+        var statusService = UpdateOrchestratorAdapterTestFactory.CreateStatusService();
+        await statusService.UpdateAsync(s => s with { IsLocked = true, LockCreatedAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        var orchestrator = new Mock<IAutoUpdateOrchestrator>();
+        orchestrator.Setup(o => o.CheckForUpdateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.UpdateAvailable, "found an update", null));
+        var settingsStore = new Mock<IUpdateSettingsStore>();
+        settingsStore.Setup(s => s.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UpdateSettingsDto(true, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, "svc", null, "updates", 120, false));
+        var installedProvider = new Mock<IInstalledReleaseMetadataProvider>();
+        installedProvider.Setup(p => p.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new InstalledReleaseMetadataDto(null, null, null, null, null));
+        var adapter = UpdateOrchestratorAdapterTestFactory.Create(
+            orchestrator: orchestrator.Object,
+            statusService: statusService,
+            settingsStore: settingsStore.Object,
+            packageStore: packageStore.Object,
+            installedProvider: installedProvider.Object);
+
+        var result = await adapter.CheckAsync();
+
+        result.Status.IsLocked.Should().BeFalse();
+        packageStore.Verify(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Adapter_StartInstallAsync_ReconcilesCacheAfterValidationBeforeReturn()
+    {
+        var orchestrator = new Mock<IAutoUpdateOrchestrator>();
+        orchestrator.Setup(o => o.InstallAsync(true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.Success, "installed", null));
+        var packageStore = new Mock<IAutoUpdatePackageStore>();
+        packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync((DateTimeOffset?)null);
+        var statusService = UpdateOrchestratorAdapterTestFactory.CreateStatusService();
+        await statusService.UpdateAsync(s => s with { IsLocked = true, LockCreatedAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        var adapter = CreateAdapterForInstall(orchestrator.Object, packageStore.Object, new CapturingLogger<UpdateOrchestratorAdapter>(), statusService);
+
+        var status = await adapter.StartInstallAsync(true);
+
+        status.IsLocked.Should().BeFalse();
+        packageStore.Verify(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     private static UpdateOrchestratorAdapter CreateAdapterForInstall(
         IAutoUpdateOrchestrator orchestrator,
         IAutoUpdatePackageStore packageStore,
-        ILogger<UpdateOrchestratorAdapter> logger)
+        ILogger<UpdateOrchestratorAdapter>? logger = null,
+        AutoUpdateStatusService? statusService = null)
     {
         var settingsStore = new Mock<IUpdateSettingsStore>();
         settingsStore.Setup(s => s.GetAsync(It.IsAny<CancellationToken>()))
@@ -207,6 +326,7 @@ public sealed class UpdateOrchestratorAdapterTests
 
         return UpdateOrchestratorAdapterTestFactory.Create(
             orchestrator: orchestrator,
+            statusService: statusService,
             settingsStore: settingsStore.Object,
             packageStore: packageStore,
             installedProvider: installedProvider.Object,

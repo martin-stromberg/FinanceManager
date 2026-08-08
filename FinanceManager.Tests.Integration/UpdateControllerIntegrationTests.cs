@@ -286,6 +286,100 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
     }
 
     [Fact]
+    public async Task GetStatus_WhenCacheIsStale_ReturnsFreshStatusAfterReconciliation()
+    {
+        var tempDir = Directory.CreateTempSubdirectory();
+        try
+        {
+            using var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services => SetDownloadPath(services, tempDir.FullName));
+            });
+            var client = factory.CreateClient();
+            await AuthenticateAdminAsync(client);
+
+            var statusService = factory.Services.GetRequiredService<AutoUpdateStatusService>();
+            await statusService.UpdateAsync(s => s with { IsLocked = true, LockCreatedAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+
+            var response = await client.GetAsync("/api/setup/update/status");
+
+            response.EnsureSuccessStatusCode();
+            var status = await response.Content.ReadFromJsonAsync<UpdateStatusDto>();
+            status!.IsLocked.Should().BeFalse();
+        }
+        finally
+        {
+            tempDir.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Check_WhenCacheIsStale_ReturnsFreshStatusDuringCheck()
+    {
+        var tempDir = Directory.CreateTempSubdirectory();
+        try
+        {
+            using var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    SetDownloadPath(services, tempDir.FullName);
+                    services.RemoveAll<IAutoUpdateOrchestrator>();
+                    services.AddSingleton<IAutoUpdateOrchestrator>(new SucceedingCheckAutoUpdateOrchestrator());
+                });
+            });
+            var client = factory.CreateClient();
+            await AuthenticateAdminAsync(client);
+
+            var statusService = factory.Services.GetRequiredService<AutoUpdateStatusService>();
+            await statusService.UpdateAsync(s => s with { IsLocked = true, LockCreatedAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+
+            var response = await client.PostAsync("/api/setup/update/check", null);
+
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadFromJsonAsync<UpdateCheckResultDto>();
+            result!.Status.IsLocked.Should().BeFalse();
+        }
+        finally
+        {
+            tempDir.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task StartInstall_WhenCacheIsStale_ReturnsFreshStatusAfterInstall()
+    {
+        var tempDir = Directory.CreateTempSubdirectory();
+        try
+        {
+            using var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    SetDownloadPath(services, tempDir.FullName);
+                    services.RemoveAll<IAutoUpdateOrchestrator>();
+                    services.AddSingleton<IAutoUpdateOrchestrator>(new SucceedingAutoUpdateOrchestrator());
+                });
+            });
+            var client = factory.CreateClient();
+            await AuthenticateAdminAsync(client);
+
+            var statusService = factory.Services.GetRequiredService<AutoUpdateStatusService>();
+            await statusService.UpdateAsync(s => s with { IsLocked = true, LockCreatedAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+
+            var response = await client.PostAsJsonAsync("/api/setup/update/install/start", new UpdateStartRequest(true));
+
+            response.EnsureSuccessStatusCode();
+            var status = await response.Content.ReadFromJsonAsync<UpdateStatusDto>();
+            status!.IsLocked.Should().BeFalse();
+        }
+        finally
+        {
+            tempDir.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task PersistedSettings_AreAppliedToAutoUpdateOptions_OnStartup_WithoutManualSave()
     {
         var tempDir = Directory.CreateTempSubdirectory();
@@ -492,6 +586,16 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         public Task<AutoUpdateResult> DownloadAsync(CancellationToken ct = default) => throw new NotSupportedException();
         public Task<AutoUpdateResult> InstallAsync(bool confirmDowntime, CancellationToken ct = default)
             => Task.FromResult(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.Success, "installed", null));
+        public Task<AutoUpdateStatusSnapshot> GetStatusAsync(CancellationToken ct = default) => throw new NotSupportedException();
+    }
+
+    private sealed class SucceedingCheckAutoUpdateOrchestrator : IAutoUpdateOrchestrator
+    {
+        public Task<AutoUpdateResult> RunUpdateAsync(CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<AutoUpdateResult> CheckForUpdateAsync(CancellationToken ct = default)
+            => Task.FromResult(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.Idle, "no update found", null));
+        public Task<AutoUpdateResult> DownloadAsync(CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<AutoUpdateResult> InstallAsync(bool confirmDowntime, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<AutoUpdateStatusSnapshot> GetStatusAsync(CancellationToken ct = default) => throw new NotSupportedException();
     }
 

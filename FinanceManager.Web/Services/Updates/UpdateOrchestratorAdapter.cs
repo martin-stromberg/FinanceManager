@@ -49,6 +49,7 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
     /// <inheritdoc />
     public async Task<UpdateStatusDto> GetStatusAsync(CancellationToken ct = default)
     {
+        await ReconcileLockStatusAsync(ct);
         var snapshot = await _orchestrator.GetStatusAsync(ct);
         return await _statusMapper.MapAsync(snapshot, ct);
     }
@@ -78,6 +79,7 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
     {
         try
         {
+            await ReconcileLockStatusAsync(ct);
             var result = await _orchestrator.CheckForUpdateAsync(ct);
             var statusDto = await _statusMapper.MapAsync(_statusService.GetSnapshot(), ct);
             var message = UpdateErrorMessageMapper.Map(result.Message);
@@ -110,7 +112,21 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
 
         if (result.Outcome != AutoUpdateOutcome.Failed)
         {
-            await ValidateLockCleanupAsync(ct);
+            var (succeeded, lockCreatedAt) = await TryGetLockCreatedAtAsync(
+                ct, LogLevel.Warning, "Failed to validate lock cleanup after installation.");
+            if (succeeded)
+            {
+                if (lockCreatedAt.HasValue)
+                {
+                    _logger.LogWarning("Lock was not cleaned up after installation. LockCreatedAt: {LockCreatedAt}", lockCreatedAt);
+                }
+
+                await ReconcileLockStatusCacheAsync(lockCreatedAt, ct);
+            }
+        }
+        else
+        {
+            await ReconcileLockStatusAsync(ct);
         }
 
         return await _statusMapper.MapAsync(_statusService.GetSnapshot(), ct);
@@ -207,12 +223,33 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
         Exception? innerException = null)
         => new(kind, failureSource, message, lockCreatedAt, _packageStore.LockPath, innerException);
 
-    private async Task ValidateLockCleanupAsync(CancellationToken ct)
+    private async Task ReconcileLockStatusAsync(CancellationToken ct)
     {
-        DateTimeOffset? lockCreatedAt;
+        var (succeeded, lockCreatedAt) = await TryGetLockCreatedAtAsync(
+            ct, LogLevel.Debug, "Failed to reconcile lock status against the file system.");
+        if (succeeded)
+        {
+            await ReconcileLockStatusCacheAsync(lockCreatedAt, ct);
+        }
+    }
+
+    private async Task ReconcileLockStatusCacheAsync(DateTimeOffset? lockCreatedAt, CancellationToken ct)
+    {
+        var snapshot = _statusService.GetSnapshot();
+        if (snapshot.IsLocked && !lockCreatedAt.HasValue)
+        {
+            await _statusService.UpdateAsync(s => s with { IsLocked = false, LockCreatedAt = null }, ct);
+            _logger.LogDebug("Lock status cache reconciled: cleared stale lock entry not present on disk.");
+        }
+    }
+
+    private async Task<(bool Succeeded, DateTimeOffset? LockCreatedAt)> TryGetLockCreatedAtAsync(
+        CancellationToken ct, LogLevel failureLogLevel, string failureLogMessage)
+    {
         try
         {
-            lockCreatedAt = await _packageStore.GetLockCreatedAtAsync(ct);
+            var lockCreatedAt = await _packageStore.GetLockCreatedAtAsync(ct);
+            return (true, lockCreatedAt);
         }
         catch (OperationCanceledException)
         {
@@ -220,13 +257,8 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to validate lock cleanup after installation.");
-            return;
-        }
-
-        if (lockCreatedAt.HasValue)
-        {
-            _logger.LogWarning("Lock was not cleaned up after installation. LockCreatedAt: {LockCreatedAt}", lockCreatedAt);
+            _logger.Log(failureLogLevel, ex, failureLogMessage);
+            return (false, null);
         }
     }
 }

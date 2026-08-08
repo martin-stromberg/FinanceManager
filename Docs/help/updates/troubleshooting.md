@@ -30,6 +30,8 @@
 2. Installation ist abgestürzt und Lock wurde nicht bereinigt (verwaister Lock)
 3. In-Memory-Flag `IsInstallRunning` ist gesetzt, aber Prozess existiert nicht mehr
 
+**Hinweis:** Der Anzeigestatus wird bei jeder Statusabfrage automatisch gegen die tatsächliche Lock-Datei auf der Festplatte abgeglichen (siehe "Automatische Lock-Status-Reconciliation" im technischen Ablauf). Ein Fall, in dem "Update installieren" wegen "Lock aktiv" deaktiviert bleibt, während "Update-Lock zurücksetzen" gleichzeitig mit "kein aktiver Lock vorhanden" fehlschlägt, sollte dadurch nicht mehr dauerhaft bestehen bleiben — ein einfaches Neuladen der Seite (löst eine neue Statusabfrage aus) reicht in der Regel aus, um die Anzeige zu korrigieren. Bleibt der Widerspruch dennoch bestehen, mit den folgenden Schritten fortfahren.
+
 **Lösung (Schritt für Schritt):**
 
 1. **Installation läuft noch?** → Warten Sie
