@@ -407,19 +407,23 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
     }
 
     /// <summary>
-    /// Reconstruction test built from a real August 2026 bank statement, with all identifying data -
-    /// IBAN, contact/company/person names and free-text descriptions - replaced by fictional placeholders;
-    /// only the amounts, dates and overall statement structure (which postings share a recipient, which
-    /// budget rule anchor days apply, etc.) are preserved, since those are what reproduce the bug. All 18
-    /// August 2026 bank postings are replayed with the exact master data (accounts, contacts, savings
-    /// plans, securities, budget categories/purposes/rules) that produced them, step by step (statement
-    /// entry, contact/savings-plan/security assignment). After booking, every resulting
+    /// Regression test built from a real August 2026 bank statement, with all identifying data - IBAN,
+    /// contact/company/person names and free-text descriptions - replaced by fictional placeholders; only
+    /// the amounts, dates and overall statement structure (which postings share a recipient, which budget
+    /// rule anchor days apply, etc.) are preserved, since those are what originally reproduced the bug
+    /// fixed in <see cref="FinanceManager.Domain.Budget.ReportCalculation.Budgetbericht"/>
+    /// (<c>ExpandRuleOccurrences</c>/<c>ExpandRulesToExpectationPostings</c>): a posting matching a
+    /// mid-month-anchored monthly rule (e.g. StartDate on the 11th) was shown correctly at its budget
+    /// purpose AND additionally listed among the unbudgeted postings, because the "unbudgeted" endpoint
+    /// builds its own <c>Budgetbericht</c> over a narrower date range than the main report and dropped the
+    /// rule occurrence that reaches into that range from the month before it. All 18 August 2026 bank
+    /// postings are replayed with the exact master data (accounts, contacts, savings plans, securities,
+    /// budget categories/purposes/rules) that produced them, step by step (statement entry,
+    /// contact/savings-plan/security assignment). After booking, every resulting
     /// contact/savings-plan/security posting is checked against the original (anonymized) values, and only
-    /// then is the budget report requested and checked field by field.
-    ///
-    /// This test intentionally does NOT fix any production behavior - it only reconstructs and confirms
-    /// the reported bug: the Nordstern "Berufsunfaehigkeit" posting from 03.08. is correctly shown at its own
-    /// purpose AND additionally listed among the unbudgeted postings.
+    /// then is the budget report requested and checked field by field: the Nordstern and Rheinstern
+    /// "Berufsunfaehigkeit" postings from 03.08. must be shown exactly once, at their own budget purpose,
+    /// and must not additionally appear among the unbudgeted postings.
     /// </summary>
     [Fact]
     public async Task BudgetReport_WithComplexData()
@@ -1048,9 +1052,10 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         provinzialPurposeRow.Actual.Should().Be(-20.64m);
 
         // Ein Posten, der bereits korrekt seinem Budgetzweck zugeordnet ist (siehe oben), darf NICHT
-        // zusaetzlich in der Liste der nicht budgetierten Posten auftauchen. Das ist das korrekte,
-        // gewuenschte Verhalten - diese Assertion schlaegt aktuell fehl (bestaetigter Fehler) und wird
-        // erst nach einer Korrektur des Produktivcodes gruen.
+        // zusaetzlich in der Liste der nicht budgetierten Posten auftauchen. Vor der Korrektur von
+        // Budgetbericht.ExpandRuleOccurrences (siehe Klassenkommentar) schlugen beide Assertions fehl, da
+        // der eng auf einen Monat begrenzte "unbudgeted"-Bericht die von Ende Juli hereinreichende
+        // Regel-Periode nicht kannte.
         axaAlsoInUnbudgeted.Should().BeFalse(
             "der Nordstern-Posten vom 03.08. ist bereits korrekt seinem Budgetzweck zugeordnet und darf nicht zusaetzlich " +
             "unter den nicht budgetierten Posten gefuehrt werden");
