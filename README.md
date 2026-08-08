@@ -19,6 +19,7 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 - Einstellungs-Ribbon mit stets sichtbaren Aktionen: Backup erstellen/hochladen, Profil speichern/zurücksetzen, Benachrichtigungen, Kontoauszugs-Importregeln und Update-Einstellungen speichern sowie Update-Prüfung, Installation und Lock-Reset auslösen — unabhängig davon, welche Sektion gerade aufgeklappt ist
 - Versionsinformation im Programmmenü (Footer) angezeigt — aktuelle Versionnummer oder Fallback `"Version unbekannt"`
 - JWT-Authentifizierung mit 30 Minuten Access-Token-Laufzeit, SecurityStamp-/Rollen-/Active-Revalidierung und DB-validiertem Refresh
+- RFC-9116-konforme `security.txt` unter `/security.txt` und `/.well-known/security.txt`, zusätzlich als Markdown (`/.well-known/security.md`) und HTML (`/.well-known/security.html`); Direktiven (Contact, Expires, Encryption, Acknowledgments, Preferred-Languages, Policy, Hiring) im Setup konfigurierbar — liefert HTTP 503, solange keine Konfiguration vorhanden ist
 
 ## Installation / Setup
 
@@ -163,6 +164,7 @@ Einstiegspunkte:
 - `POST /api/setup/update/schedule` – geplante Installationszeit fuer ein vorbereitetes Update speichern
 - `POST /api/setup/update/install/start` – vorbereitetes Update nach Downtime-Bestaetigung installieren; erstellt Lock und startet ein externes Update-Skript
 - `POST /api/setup/update/lock/reset` – verwaisten Update-Lock administrativ zuruecksetzen; fehlgeschlagene Resets liefern spezifische Fehlercodes fuer fehlenden Lock, noch nicht stalen Lock, fehlgeschlagenes Loeschen oder technischen Reset-Fehler
+- `GET /security.txt`, `GET /.well-known/security.txt` – RFC-9116-Security-Policy; `GET /.well-known/security.md` und `GET /.well-known/security.html` – dieselbe Policy als Markdown bzw. HTML; alle vier liefern `503 Service Unavailable`, solange keine Konfiguration hinterlegt ist
 - `GET /api/background-tasks/active` – aktive und wartende Background-Tasks fuer authentifizierte Nutzer abrufen; das UI startet das Polling nur bei erkannter Anmeldung und beendet es nach einem `401 Unauthorized`
 - `POST /api/securities/{id}/prices/import` – Wertpapierkurse importieren
 - `POST /api/postings/{id}/reverse` – Buchung stornieren (Reversal)

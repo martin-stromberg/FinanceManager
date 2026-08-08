@@ -1044,6 +1044,9 @@
   <data name="Setup_Section_Security" xml:space="preserve">
     <value>Security</value>
   </data>
+  <data name="Setup_Section_SecurityTxt" xml:space="preserve">
+    <value>security.txt</value>
+  </data>
   <data name="Setup_Section_Update" xml:space="preserve">
     <value>Updates</value>
   </data>
@@ -1259,6 +1262,33 @@
   </data>
   <data name="SetupSecurity_Title" xml:space="preserve">
     <value>IP Block List</value>
+  </data>
+  <data name="SetupSecurityTxt_Title" xml:space="preserve">
+    <value>security.txt settings</value>
+  </data>
+  <data name="SetupSecurityTxt_Label_Contact" xml:space="preserve">
+    <value>Contact</value>
+  </data>
+  <data name="SetupSecurityTxt_Label_Expires" xml:space="preserve">
+    <value>Expires</value>
+  </data>
+  <data name="SetupSecurityTxt_Label_Encryption" xml:space="preserve">
+    <value>Encryption</value>
+  </data>
+  <data name="SetupSecurityTxt_Label_Acknowledgments" xml:space="preserve">
+    <value>Acknowledgments</value>
+  </data>
+  <data name="SetupSecurityTxt_Label_PreferredLanguages" xml:space="preserve">
+    <value>Preferred languages</value>
+  </data>
+  <data name="SetupSecurityTxt_Label_Policy" xml:space="preserve">
+    <value>Policy</value>
+  </data>
+  <data name="SetupSecurityTxt_Label_Hiring" xml:space="preserve">
+    <value>Hiring</value>
+  </data>
+  <data name="SetupSecurityTxt_SaveSuccess" xml:space="preserve">
+    <value>Settings saved.</value>
   </data>
   <data name="SetupSecurity_Ip_Placeholder" xml:space="preserve">
     <value>IP address</value>

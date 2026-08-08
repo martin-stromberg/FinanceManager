@@ -48,6 +48,23 @@
 | `FileName` | `string` | Dateiname |
 | `SizeBytes` | `long` | Dateigröße |
 
+### `SecurityTxtSettings`
+
+| Eigenschaft | Typ | Beschreibung |
+|-------------|-----|--------------|
+| `Id` | `Guid` | Primärschlüssel (Singleton-Zeile) |
+| `Contact` | `string` | `Contact`-Direktive (URI oder mailto); leer = noch nicht konfiguriert |
+| `Expires` | `DateTimeOffset` | `Expires`-Direktive; ISO-8601-Ablaufdatum |
+| `Encryption` | `string?` | `Encryption`-Direktive; URI zum öffentlichen Schlüssel |
+| `Acknowledgments` | `string?` | `Acknowledgments`-Direktive; URI zur Danksagungsseite |
+| `PreferredLanguages` | `string?` | `Preferred-Languages`-Direktive; kommagetrennte BCP-47-Tags |
+| `Policy` | `string?` | `Policy`-Direktive; URI zur Sicherheitsrichtlinie |
+| `Hiring` | `string?` | `Hiring`-Direktive; URI zur Stellenausschreibungsseite |
+
+Die Tabelle enthält immer genau eine Zeile (Singleton-Pattern). Beim ersten Aufruf eines öffentlichen Endpunkts oder des Admin-GET-Endpunkts wird die Zeile automatisch mit `Contact = ""` und `Expires = DateTimeOffset.MaxValue` angelegt, sofern noch keine Zeile vorhanden ist.
+
+Die `Canonical`-Direktive wird **nicht** in der Datenbank gespeichert, sondern zur Laufzeit aus `IConfiguration["Api:BaseAddress"]` abgeleitet.
+
 ## Self-Update-DTOs
 
 Die Self-Update-Funktion persistiert ihre Betriebsdaten dateibasiert im
