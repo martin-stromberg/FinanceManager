@@ -59,8 +59,8 @@ public static class BudgetberichtMapper
 
                 foreach (var direct in group.DirectExpectations)
                 {
-                    accumulator.Income += direct.Postings.Where(p => p.Amount > 0).Sum(p => p.Amount);
-                    accumulator.Expense += direct.Postings.Where(p => p.Amount < 0).Sum(p => p.Amount);
+                    accumulator.Income += direct.Postings.Where(p => p.BudgetedDisplayAmount > 0).Sum(p => p.BudgetedDisplayAmount);
+                    accumulator.Expense += direct.Postings.Where(p => p.BudgetedDisplayAmount < 0).Sum(p => p.BudgetedDisplayAmount);
                 }
 
                 foreach (var expectation in group.Purposes)
@@ -197,8 +197,8 @@ public static class BudgetberichtMapper
 
         var expectationPostings = expectations.SelectMany(e => e.Postings).ToList();
 
-        var budgetedIncome = expectationPostings.Where(p => p.Amount > 0).Sum(p => p.Amount);
-        var budgetedExpense = expectationPostings.Where(p => p.Amount < 0).Sum(p => p.Amount);
+        var budgetedIncome = expectationPostings.Where(p => p.BudgetedDisplayAmount > 0).Sum(p => p.BudgetedDisplayAmount);
+        var budgetedExpense = expectationPostings.Where(p => p.BudgetedDisplayAmount < 0).Sum(p => p.BudgetedDisplayAmount);
 
         var valuedPostings = expectationPostings.SelectMany(p => p.AssignedPostings).Select(MapPosting);
         var unvaluedPostings = expectationPostings.SelectMany(p => p.UnvaluedMatchedPostings)

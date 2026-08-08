@@ -48,8 +48,11 @@ public sealed class BudgetberichtTests_Finish
         var firstRule = CreatePurposeRule(purpose.Id, -5m, BudgetIntervalType.Monthly, new DateOnly(2026, 1, 1));
         // StartDate is a priority tie-breaker, but also anchors the occurrence's own eligibility period
         // (see AddPosting_MultipleTotalBudgets_AssignsToEarliestStartDateFirst) -- keep it before the
-        // posting date so both occurrences are actually eligible for it.
-        var secondRule = CreatePurposeRule(purpose.Id, -5m, BudgetIntervalType.Monthly, new DateOnly(2026, 1, 2));
+        // posting date so both occurrences are actually eligible for it. Anchored on day 1 (like
+        // firstRule), just a month earlier, so its generated January occurrence's period stays entirely
+        // within January (day != 1 would make the period end in February, homing its budgeted amount
+        // there instead - see ExpandRuleOccurrences - which is not what this test is about).
+        var secondRule = CreatePurposeRule(purpose.Id, -5m, BudgetIntervalType.Monthly, new DateOnly(2025, 12, 1));
 
         var budgetbericht = new Budgetbericht(new DateOnly(2026, 1, 1), 1, BudgetReportInterval.Month, BudgetReportDateBasis.BookingDate);
         budgetbericht.SetPlanung(Array.Empty<BudgetCategoryDto>(), new[] { purpose }, new[] { firstRule, secondRule });

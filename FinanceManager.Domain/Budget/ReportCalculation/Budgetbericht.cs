@@ -14,10 +14,17 @@ namespace FinanceManager.Domain.Budget.ReportCalculation;
 /// than the <c>FinanceManager.Domain.Budget</c> entities, because those DTOs already carry the stable,
 /// persisted identifiers required to correlate the calculation result back to the user's real
 /// categories/purposes, and because no repository access is introduced for this calculation.
-/// A <see cref="BudgetRule"/> whose period spans multiple months (Quarterly/Yearly/CustomMonths) is
-/// attributed, for display and summation purposes, to the month containing its period start only, so
-/// that summing months never double-counts a budgeted amount; matching of actual postings against such
-/// a rule is independent of this "home month" and instead uses the rule's own period window.
+/// A <see cref="BudgetRule"/> whose period spans multiple months is attributed, for display and summation
+/// purposes, to a single "home month" only, so that summing months never double-counts a budgeted amount.
+/// For a rule anchored on day 1 (Yearly always is, but Monthly/Quarterly/CustomMonths can be too) this is
+/// the month containing the period's start - day-1 anchors align with calendar boundaries, so a
+/// day-1-anchored quarterly rule for Jan-Mar is unambiguously shown in January. A rule anchored on any
+/// other day produces occurrences that straddle two calendar months without a natural "which one" answer
+/// (e.g. a monthly rule anchored on the 11th produces a period like 11 Jul - 10 Aug); such a rule is instead
+/// homed to the month containing the period's END, since the posting that fulfills the occurrence is
+/// expected to land in the month the period closes in, not the one it opens in (see
+/// <c>ExpandRuleOccurrences</c>'s <c>NaturalHomeMonth</c>). Matching of actual postings against a rule is
+/// independent of this "home month" and instead uses the rule's own period window.
 /// <para>
 /// The class name <c>Budgetbericht</c> and the constructor parameter names (<c>betrachtungsDatum</c>,
 /// <c>anzahlMonate</c>, <c>intervall</c>) are intentionally German: the class is explicitly named
@@ -391,9 +398,9 @@ public sealed class Budgetbericht
     }
 
     // Expands every rule's occurrences within the report period into MonthlyBudgetExpectationPosting
-    // instances, registers them as candidates for posting assignment, and groups them by "home month"
-    // (the month containing each occurrence's period start) for later use when building the monthly
-    // expectation groups.
+    // instances, registers them as candidates for posting assignment, and groups them by "home month" (see
+    // ExpandRuleOccurrences' NaturalHomeMonth, clamped to the report's own month range) for later use when
+    // building the monthly expectation groups.
     private (
         Dictionary<(Guid PurposeId, DateOnly Month), List<MonthlyBudgetExpectationPosting>> PurposeExpectationPostingsByHomeMonth,
         Dictionary<(Guid CategoryId, DateOnly Month), List<MonthlyBudgetExpectationPosting>> CategoryExpectationPostingsByHomeMonth
@@ -401,22 +408,40 @@ public sealed class Budgetbericht
     {
         var purposeExpectationPostingsByHomeMonth = new Dictionary<(Guid PurposeId, DateOnly Month), List<MonthlyBudgetExpectationPosting>>();
         var categoryExpectationPostingsByHomeMonth = new Dictionary<(Guid CategoryId, DateOnly Month), List<MonthlyBudgetExpectationPosting>>();
+        var lastMonth = new DateOnly(_periodEnd.Year, _periodEnd.Month, 1);
 
         var creationOrder = 0;
         foreach (var rule in rules.OrderBy(r => r.StartDate))
         {
             var valuationType = ResolveValuationType(rule, purposes);
+            var occurrences = ExpandRuleOccurrences(rule, _periodStart, _periodEnd).ToList();
 
-            foreach (var (periodStart, periodEnd) in ExpandRuleOccurrences(rule, _periodStart, _periodEnd))
+            // An occurrence whose natural home month (see ExpandRuleOccurrences) falls outside the report's
+            // own month range can still be the right match for a posting dated within the report period -
+            // e.g. a monthly rule anchored on the 11th produces an occurrence spanning two calendar months,
+            // and the report may only cover one of them, or a quarterly rule's cycle straddles the report's
+            // own start because the report range does not happen to align with the rule's own cycle
+            // boundary. Such an occurrence is homed to the nearest report boundary month instead of being
+            // dropped. Whether it is also excluded from that month's budgeted-amount sum (see
+            // MonthlyBudgetExpectationPosting.BudgetedDisplayAmount) depends on whether this rule has ANY
+            // other, properly (non-clamped) homed occurrence elsewhere in the report: if it does, counting
+            // this boundary occurrence too would double the budgeted amount for a cycle that is otherwise
+            // already fully represented. If it does not - e.g. the rule only started shortly before the
+            // report's end, so this is its only occurrence anywhere near the report - there is nothing to
+            // double-count against, and dropping it would make the rule vanish from the report entirely, so
+            // it keeps its budgeted amount.
+            var homeMonths = occurrences
+                .Select(o => o.NaturalHomeMonth < _periodStart ? _periodStart
+                    : o.NaturalHomeMonth > lastMonth ? lastMonth
+                    : o.NaturalHomeMonth)
+                .ToList();
+            var hasNaturalOccurrence = Enumerable.Range(0, occurrences.Count).Any(idx => homeMonths[idx] == occurrences[idx].NaturalHomeMonth);
+
+            for (var i = 0; i < occurrences.Count; i++)
             {
-                // An occurrence whose period starts before the report's own first month can still be the
-                // right match for a posting dated within the report period (its period can reach into it -
-                // e.g. a monthly rule anchored on the 11th covers days 1-10 of the following month via the
-                // PRECEDING occurrence, see ExpandRuleOccurrences). Such an occurrence has no natural
-                // MonthlyBudgetResult bucket of its own within the report period, so it is homed to the
-                // report's first month instead of being dropped.
-                var naturalHomeMonth = new DateOnly(periodStart.Year, periodStart.Month, 1);
-                var homeMonth = naturalHomeMonth < _periodStart ? _periodStart : naturalHomeMonth;
+                var (periodStart, periodEnd, naturalHomeMonth) = occurrences[i];
+                var homeMonth = homeMonths[i];
+                var isCarriedOver = homeMonth != naturalHomeMonth && hasNaturalOccurrence;
                 if (!_monthlyResultsByMonth.ContainsKey(homeMonth))
                 {
                     continue;
@@ -428,7 +453,8 @@ public sealed class Budgetbericht
                     rule.StartDate,
                     creationOrder++,
                     new RuleOccurrencePeriod(periodStart, periodEnd),
-                    new PurposeMatchPattern(rule.PurposePattern, rule.UseRegex));
+                    new PurposeMatchPattern(rule.PurposePattern, rule.UseRegex),
+                    isCarriedOverAcrossReportBoundary: isCarriedOver);
 
                 if (rule.BudgetPurposeId.HasValue)
                 {
@@ -752,7 +778,17 @@ public sealed class Budgetbericht
         return DateOnly.FromDateTime(posting.BookingDate);
     }
 
-    private static IEnumerable<(DateOnly PeriodStart, DateOnly PeriodEnd)> ExpandRuleOccurrences(BudgetRuleDto rule, DateOnly from, DateOnly to)
+    // NaturalHomeMonth is the month an occurrence is attributed to for BUDGETED-amount display purposes
+    // (see ExpandRulesToExpectationPostings). For a rule anchored on day 1, this is the month containing
+    // the occurrence's period START, same as always - day-1 anchors align with calendar boundaries, so
+    // there is no ambiguity. For a Monthly/Quarterly/CustomMonths rule anchored on any other day, this is
+    // instead the month containing the occurrence's (unclipped) period END: such a rule produces an
+    // occurrence whose period straddles two calendar months (e.g. StartDate day 11 produces a period like
+    // 11 Jul - 10 Aug), and the actual posting fulfilling it is expected to land in the month the period
+    // closes in, not the month it opens in. Yearly rules always use the period start's month regardless of
+    // anchor day, since deferring a yearly amount a full cycle to its close month would be far more
+    // surprising than the day-of-month nuance this exists to handle for shorter intervals.
+    private static IEnumerable<(DateOnly PeriodStart, DateOnly PeriodEnd, DateOnly NaturalHomeMonth)> ExpandRuleOccurrences(BudgetRuleDto rule, DateOnly from, DateOnly to)
     {
         var stepMonths = rule.Interval switch
         {
@@ -795,7 +831,7 @@ public sealed class Budgetbericht
                     periodEnd = to;
                 }
 
-                yield return (normalizedStart, periodEnd);
+                yield return (normalizedStart, periodEnd, normalizedStart);
                 normalizedStart = next;
             }
 
@@ -816,10 +852,21 @@ public sealed class Budgetbericht
             }
         }
 
+        // Rules anchored on day 1 align with calendar month/quarter/year boundaries, so their period start
+        // and the calendar unit they represent are unambiguous - homing them by period start (as
+        // historically) is correct and expected (e.g. a day-1-anchored quarterly rule for Jan-Mar is shown
+        // in January). Only a rule anchored on any other day produces a period that straddles two calendar
+        // months without a natural "which one" answer, which is what the period-end homing below resolves.
+        var homeByPeriodEnd = rule.StartDate.Day != 1;
+
         while (current <= to && current <= ruleEnd)
         {
             var next = current.AddMonths(stepMonths);
-            var periodEnd = next.AddDays(-1);
+            var unclippedPeriodEnd = next.AddDays(-1);
+            var homeBasis = homeByPeriodEnd ? unclippedPeriodEnd : current;
+            var naturalHomeMonth = new DateOnly(homeBasis.Year, homeBasis.Month, 1);
+
+            var periodEnd = unclippedPeriodEnd;
             if (periodEnd > ruleEnd)
             {
                 periodEnd = ruleEnd;
@@ -830,7 +877,7 @@ public sealed class Budgetbericht
                 periodEnd = to;
             }
 
-            yield return (current, periodEnd);
+            yield return (current, periodEnd, naturalHomeMonth);
             current = next;
         }
     }

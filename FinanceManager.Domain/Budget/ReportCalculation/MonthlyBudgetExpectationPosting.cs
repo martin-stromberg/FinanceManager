@@ -17,7 +17,8 @@ public sealed class MonthlyBudgetExpectationPosting
         DateOnly startDate,
         int creationOrder,
         RuleOccurrencePeriod period,
-        PurposeMatchPattern purposeMatchPattern)
+        PurposeMatchPattern purposeMatchPattern,
+        bool isCarriedOverAcrossReportBoundary = false)
     {
         Amount = amount;
         BudgetType = budgetType;
@@ -27,12 +28,32 @@ public sealed class MonthlyBudgetExpectationPosting
         PeriodEnd = period.PeriodEnd;
         PurposePattern = purposeMatchPattern.Pattern;
         PurposePatternIsRegex = purposeMatchPattern.IsRegex;
+        IsCarriedOverAcrossReportBoundary = isCarriedOverAcrossReportBoundary;
     }
 
     /// <summary>
     /// Gets the expected amount for this occurrence (positive or negative).
     /// </summary>
     public decimal Amount { get; }
+
+    /// <summary>
+    /// Gets whether this occurrence's natural home month (see <see cref="Budgetbericht"/>'s rule occurrence
+    /// expansion) falls before the report's first month or after its last month - it was only generated
+    /// because its period still reaches into the report's month range and was homed to the nearest boundary
+    /// month instead of being dropped. Its budgeted amount conceptually belongs to a month outside the
+    /// report and must not be added to <see cref="MonthlyBudgetExpectation.SumExpectedAmount"/> (that
+    /// boundary month already has its own, naturally-homed occurrence of the same rule, and counting this
+    /// one too would double-count it), but it still participates in matching/assignment normally, so a
+    /// posting dated within the report period that this occurrence's period covers is still correctly
+    /// counted as actual.
+    /// </summary>
+    public bool IsCarriedOverAcrossReportBoundary { get; }
+
+    /// <summary>
+    /// Gets the amount to add to the budgeted display sum for this occurrence: <see cref="Amount"/>, or
+    /// zero when <see cref="IsCarriedOverAcrossReportBoundary"/> is <c>true</c>.
+    /// </summary>
+    public decimal BudgetedDisplayAmount => IsCarriedOverAcrossReportBoundary ? 0m : Amount;
 
     /// <summary>
     /// Gets how matching postings are valued for this occurrence.

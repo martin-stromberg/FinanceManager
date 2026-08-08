@@ -32,9 +32,11 @@ public sealed class MonthlyBudgetExpectation
     public IReadOnlyList<MonthlyBudgetExpectationPosting> Postings => _postings;
 
     /// <summary>
-    /// Gets the sum of the expected amounts of all occurrences.
+    /// Gets the sum of the expected amounts of all occurrences (see
+    /// <see cref="MonthlyBudgetExpectationPosting.BudgetedDisplayAmount"/> - occurrences carried over from
+    /// a period before the report's first month are excluded here to avoid double-counting).
     /// </summary>
-    public decimal SumExpectedAmount => _postings.Sum(p => p.Amount);
+    public decimal SumExpectedAmount => _postings.Sum(p => p.BudgetedDisplayAmount);
 
     /// <summary>
     /// Gets the sum of the actually assigned amounts of all occurrences.

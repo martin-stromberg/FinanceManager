@@ -43,6 +43,9 @@ public sealed class BudgetberichtTests_Planning
             .Select(m => m.ExpectationGroups.Single().Purposes.Single().SumExpectedAmount)
             .ToList();
 
+        // StartDate is anchored on day 1, so this rule aligns with calendar quarter boundaries and is
+        // homed to the period START's month (see ExpandRuleOccurrences) - the Jan-Mar occurrence shows in
+        // January (index 0), not spread across the quarter's other months.
         expectedAmounts.Should().Equal(-120m, 0m, 0m, -120m, 0m, 0m);
     }
 
@@ -78,6 +81,9 @@ public sealed class BudgetberichtTests_Planning
             .Select(m => m.ExpectationGroups.Single().Purposes.Single().SumExpectedAmount)
             .ToList();
 
+        // StartDate is anchored on day 1, so this rule aligns with calendar boundaries and is homed to the
+        // period START's month (see ExpandRuleOccurrences) - the Jan-Feb occurrence shows in January
+        // (index 0), the Mar-Apr occurrence in March (index 2).
         expectedAmounts.Should().Equal(-30m, 0m, -30m, 0m);
     }
 
