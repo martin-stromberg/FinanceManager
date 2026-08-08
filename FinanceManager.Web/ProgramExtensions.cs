@@ -7,6 +7,8 @@ using FinanceManager.Infrastructure.Auth;
 using FinanceManager.Infrastructure.Backups;
 using FinanceManager.Infrastructure.Notifications;
 using FinanceManager.Infrastructure.Setup;
+using FinanceManager.Infrastructure.Security;
+using FinanceManager.Application.Security;
 using FinanceManager.Shared; // register ApiClient
 using FinanceManager.Web.Components;
 using FinanceManager.Web.Infrastructure;
@@ -140,6 +142,7 @@ namespace FinanceManager.Web
             // HttpClient
             builder.Services.AddTransient<AuthenticatedHttpClientHandler>();
             builder.Services.AddScoped<IAuthTokenProvider, JwtCookieAuthTokenProvider>();
+            builder.Services.AddScoped<ISecurityTxtSettingsService, SecurityTxtSettingsService>();
             builder.Services.AddHttpClient("Api", (sp, client) =>
             {
                 var accessor = sp.GetRequiredService<IHttpContextAccessor>();
@@ -423,8 +426,21 @@ namespace FinanceManager.Web
                 await next();
             });
 
-            // Serve ALL static files including help HTML pages
-            app.UseStaticFiles();
+            // Serve ALL static files including help HTML pages.
+            // /.well-known/ requests must not be handled as static files so that
+            // the SecurityTxtController endpoints take precedence.
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                OnPrepareResponse = ctx =>
+                {
+                    if (ctx.Context.Request.Path.StartsWithSegments("/.well-known"))
+                    {
+                        ctx.Context.Response.StatusCode = StatusCodes.Status404NotFound;
+                        ctx.Context.Response.ContentLength = 0;
+                        ctx.Context.Response.Body = Stream.Null;
+                    }
+                }
+            });
             app.UseAntiforgery();
 
             app.UseAuthentication();

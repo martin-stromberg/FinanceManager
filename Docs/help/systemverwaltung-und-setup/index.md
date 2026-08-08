@@ -1,6 +1,6 @@
 # Systemverwaltung und Setup
 
-Dieser Bereich bündelt Benutzerverwaltung, Sicherheit, Benachrichtigungen und Sicherungen.
+Dieser Bereich bündelt Benutzerverwaltung, Sicherheit, Benachrichtigungen, Sicherungen und die security.txt-Konfiguration gemäß RFC 9116.
 
 ## Inhalt
 

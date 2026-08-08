@@ -84,6 +84,8 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<ReportCacheEntry> ReportCacheEntries => Set<ReportCacheEntry>();
     /// <summary>IP blocks for rate limiting / security.</summary>
     public DbSet<IpBlock> IpBlocks => Set<IpBlock>(); // new
+    /// <summary>Security.txt settings.</summary>
+    public DbSet<SecurityTxtSettings> SecurityTxtSettings => Set<SecurityTxtSettings>();
     /// <summary>Notification entities for user notifications.</summary>
     public DbSet<Notification> Notifications => Set<Notification>(); // new
     /// <summary>Attachments stored in the database (binary or URL references).</summary>

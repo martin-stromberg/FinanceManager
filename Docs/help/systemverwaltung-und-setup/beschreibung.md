@@ -128,6 +128,42 @@ sichtbar wird — ohne erneuten Login.
 - Ein Benutzer stellt **Automatisch** ein. Die Anwendung erkennt seine Browser-Sprache (z.B. Englisch) und zeigt die Oberfläche entsprechend an.
 - Die Spracheinstellung bleibt nach einem erneuten Login erhalten. Die Browser-Sprache überschreibt eine gespeicherte **Automatisch**-Einstellung nicht.
 
+## security.txt (RFC 9116)
+
+Der Setup-Bereich enthält eine eigene Einstellungssektion **security.txt**, die ausschließlich für Benutzer mit der Rolle `Admin` sichtbar ist. Hierüber werden alle konfigurierbaren RFC-9116-Direktiven gepflegt.
+
+### Öffentliche Ausgabe-Endpunkte
+
+Nach erfolgreicher Konfiguration sind folgende Endpunkte ohne Anmeldung erreichbar:
+
+| Endpunkt | Format | MIME-Typ |
+|----------|--------|----------|
+| `/security.txt` | RFC-9116-Plaintext | `text/plain; charset=utf-8` |
+| `/.well-known/security.txt` | RFC-9116-Plaintext | `text/plain; charset=utf-8` |
+| `/.well-known/security.md` | Markdown | `text/markdown; charset=utf-8` |
+| `/.well-known/security.html` | HTML | `text/html; charset=utf-8` |
+
+Solange das Pflichtfeld **Kontakt** noch nicht konfiguriert ist, antworten alle vier Endpunkte mit **HTTP 503** und einer erklärenden Fehlermeldung.
+
+### Konfigurierbare Direktiven
+
+| Feldbezeichnung (UI) | RFC-9116-Direktive | Pflicht |
+|----------------------|--------------------|---------|
+| Kontakt | `Contact` | Ja |
+| Ablaufdatum | `Expires` | Ja |
+| Verschlüsselung | `Encryption` | Nein |
+| Danksagungen | `Acknowledgments` | Nein |
+| Bevorzugte Sprachen | `Preferred-Languages` | Nein |
+| Richtlinie | `Policy` | Nein |
+| Jobs | `Hiring` | Nein |
+
+Die Direktive `Canonical` wird nicht manuell gepflegt, sondern automatisch aus dem Konfigurationswert `Api:BaseAddress` (appsettings.json) als `<BaseAddress>/.well-known/security.txt` gebildet.
+
+### Beispiele
+
+- Ein Administrator trägt `mailto:security@example.com` als Kontakt ein und setzt ein Ablaufdatum in der Zukunft. Nach dem Speichern ist `/.well-known/security.txt` öffentlich erreichbar.
+- Ein Sicherheitsforscher ruft `/.well-known/security.html` auf und erhält eine strukturierte HTML-Seite mit allen konfigurierten Direktiven.
+
 ## Einschränkungen
 
 - Administrative Endpunkte erfordern entsprechende Berechtigungen.
@@ -145,3 +181,5 @@ sichtbar wird — ohne erneuten Login.
 - Die Anzeigesprache gilt für die gesamte Benutzeroberfläche. Im Modus „Automatisch"
   wird die Browser-Sprache berücksichtigt; es werden nur die unterstützten Sprachen
   Deutsch und Englisch angeboten.
+- Die `security.txt`-Direktive `Contact` akzeptiert nur einen einzelnen Wert (URI oder mailto). Mehrfacheinträge gemäß RFC 9116 werden aktuell nicht unterstützt.
+- Die `Canonical`-Direktive ist nicht manuell editierbar und leitet sich ausschließlich aus `Api:BaseAddress` in `appsettings.json` ab. Eine Änderung der Basis-URL erfordert einen Neustart der Anwendung.
