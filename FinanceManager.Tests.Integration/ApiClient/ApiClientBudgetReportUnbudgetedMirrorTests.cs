@@ -199,9 +199,13 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             IncludePurposeRows: true,
             DateBasis: BudgetReportDateBasis.BookingDate));
 
-        // The report may include additional unbudgeted effects depending on booking/grouping logic.
-        // The core requirement for this scenario is validated via the unbudgeted postings endpoint below.
-        report.Categories.Should().Contain(c => c.Kind == BudgetReportCategoryRowKind.Unbudgeted);
+        // All postings that remain without a matching budget expectation in this scenario are self-contact
+        // postings (mirrored savings-plan transfer "Mirror +60" and the extra self posting "Extra"), so per
+        // issue.md/requirement.md they are reported as their own "cost-neutral" category, not as regular
+        // Unbudgeted (Kind=Unbudgeted is only for postings without a match that are NOT self-contact/cost-neutral
+        // transfers). The core requirement for this scenario is validated via the unbudgeted postings endpoint below.
+        report.Categories.Should().Contain(c => c.Kind == BudgetReportCategoryRowKind.UnbudgetedSelfCostNeutral);
+        report.Categories.Should().NotContain(c => c.Kind == BudgetReportCategoryRowKind.Unbudgeted);
 
         var from = new DateTime(2025, 2, 1);
         var to = new DateTime(2026, 1, 31, 23, 59, 59);
