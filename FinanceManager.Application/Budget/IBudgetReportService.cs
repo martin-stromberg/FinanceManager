@@ -34,4 +34,26 @@ public interface IBudgetReportService
     /// <returns>A task that represents the asynchronous operation. The task result contains a <see cref="MonthlyBudgetKpiDto"/>
     /// with the KPI data for the specified user and month.</returns>
     Task<MonthlyBudgetKpiDto> GetMonthlyKpiAsync(Guid userId, DateOnly? date, BudgetReportDateBasis dateBasis, CancellationToken ct);
+
+    /// <summary>
+    /// Builds the aggregated budget report (period table and category/purpose detail table) for the given
+    /// user and range, using <c>Budgetbericht.GetCumulativeResult()</c> and <c>Budgetbericht.GetCurrentResult()</c>
+    /// as the single source of truth for the aggregation and deviation calculation.
+    /// </summary>
+    /// <param name="ownerUserId">The owner user id.</param>
+    /// <param name="asOfDate">Any date within the last (most recent) month of the report period.</param>
+    /// <param name="months">Number of months to include in the report period, counting back from <paramref name="asOfDate"/>'s month.</param>
+    /// <param name="interval">Interval to echo back on the resulting <see cref="BudgetReportDto"/>. The period table itself is always built at monthly granularity.</param>
+    /// <param name="categoryValueScope">Whether the category/purpose table should reflect the whole report range or just its last month.</param>
+    /// <param name="dateBasis">Date basis used when calculating actual values.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The budget report DTO containing the period table and the category/purpose detail table.</returns>
+    Task<BudgetReportDto> GetReportAsync(
+        Guid ownerUserId,
+        DateOnly asOfDate,
+        int months,
+        BudgetReportInterval interval,
+        BudgetReportValueScope categoryValueScope,
+        BudgetReportDateBasis dateBasis,
+        CancellationToken ct);
 }
