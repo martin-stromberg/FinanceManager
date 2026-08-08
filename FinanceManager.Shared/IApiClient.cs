@@ -2,6 +2,7 @@ using static FinanceManager.Shared.ApiClient;
 using FinanceManager.Shared.Dtos.Postings;
 using FinanceManager.Shared.Dtos.Budget;
 using FinanceManager.Shared.Dtos.Update;
+using FinanceManager.Shared.Dtos.Admin;
 
 namespace FinanceManager.Shared;
 
@@ -209,6 +210,13 @@ public interface IApiClient
     Task<bool> Admin_ResetCountersAsync(Guid id, CancellationToken ct = default);
     /// <summary>Deletes an IP block entry. Returns false when not found.</summary>
     Task<bool> Admin_DeleteIpBlockAsync(Guid id, CancellationToken ct = default);
+
+    // Admin - Security.txt
+
+    /// <summary>Reads the current security.txt settings.</summary>
+    Task<SecurityTxtSettingsDto?> GetSecurityTxtSettingsAsync(CancellationToken ct = default);
+    /// <summary>Updates the current security.txt settings.</summary>
+    Task UpdateSecurityTxtSettingsAsync(SecurityTxtSettingsUpdateRequest request, CancellationToken ct = default);
 
     // Attachments
 

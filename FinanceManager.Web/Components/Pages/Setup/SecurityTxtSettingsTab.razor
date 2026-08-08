@@ -1,0 +1,77 @@
+@using FinanceManager.Shared.Dtos.Admin
+@using FinanceManager.Web.ViewModels.Setup
+@implements IDisposable
+@inject FinanceManager.Application.ICurrentUserService CurrentUser
+@inject Microsoft.Extensions.Localization.IStringLocalizer<Pages> Localizer
+
+@if (!CurrentUser.IsAuthenticated || !CurrentUser.IsAdmin)
+{
+    <p>@Localizer["Access_AdminOnly"]</p>
+}
+else
+{
+    <div class="setup-tab setup-securitytxt-tab">
+        <h4 style="margin-top:0;">@Localizer["SetupSecurityTxt_Title"]</h4>
+
+        @if (_vm is null)
+        {
+            <div>@Localizer["Msg_Loading"]</div>
+        }
+        else if (!string.IsNullOrWhiteSpace(_vm.Error))
+        {
+            <div class="error">@_vm.Error</div>
+        }
+        else
+        {
+            <div class="form-grid">
+                <div class="form-row"><label for="securitytxt-contact">@Localizer["SetupSecurityTxt_Label_Contact"]</label><input id="securitytxt-contact" @bind="_vm.Model.Contact" @bind:after="_vm.OnChanged" /></div>
+                <div class="form-row"><label for="securitytxt-expires">@Localizer["SetupSecurityTxt_Label_Expires"]</label><input id="securitytxt-expires" type="datetime-local" value="@_vm.ExpiresText" @onchange="OnExpiresChanged" /></div>
+                <div class="form-row"><label for="securitytxt-encryption">@Localizer["SetupSecurityTxt_Label_Encryption"]</label><input id="securitytxt-encryption" @bind="_vm.Model.Encryption" @bind:after="_vm.OnChanged" /></div>
+                <div class="form-row"><label for="securitytxt-ack">@Localizer["SetupSecurityTxt_Label_Acknowledgments"]</label><input id="securitytxt-ack" @bind="_vm.Model.Acknowledgments" @bind:after="_vm.OnChanged" /></div>
+                <div class="form-row"><label for="securitytxt-lang">@Localizer["SetupSecurityTxt_Label_PreferredLanguages"]</label><input id="securitytxt-lang" @bind="_vm.Model.PreferredLanguages" @bind:after="_vm.OnChanged" /></div>
+                <div class="form-row"><label for="securitytxt-policy">@Localizer["SetupSecurityTxt_Label_Policy"]</label><input id="securitytxt-policy" @bind="_vm.Model.Policy" @bind:after="_vm.OnChanged" /></div>
+                <div class="form-row"><label for="securitytxt-hiring">@Localizer["SetupSecurityTxt_Label_Hiring"]</label><input id="securitytxt-hiring" @bind="_vm.Model.Hiring" @bind:after="_vm.OnChanged" /></div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_vm.SaveError))
+            {
+                <div class="error">@_vm.SaveError</div>
+            }
+
+            @if (_vm.SavedOk)
+            {
+                <div class="info">@Localizer["SetupSecurityTxt_SaveSuccess"]</div>
+            }
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public SetupSecurityTxtViewModel? ViewModel { get; set; }
+    private SetupSecurityTxtViewModel? _vm;
+    private EventHandler? _handler;
+
+    private void OnExpiresChanged(ChangeEventArgs e)
+    {
+        if (_vm is not null)
+        {
+            _vm.ExpiresText = Convert.ToString(e.Value) ?? _vm.ExpiresText;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _vm = ViewModel ?? throw new InvalidOperationException("ViewModel parameter is required for SecurityTxtSettingsTab.");
+        _handler = (_, __) => _ = InvokeAsync(StateHasChanged);
+        _vm.StateChanged += _handler;
+        await _vm.LoadAsync();
+    }
+
+    public void Dispose()
+    {
+        if (_vm is not null && _handler is not null)
+        {
+            _vm.StateChanged -= _handler;
+        }
+    }
+}
