@@ -409,7 +409,14 @@ public sealed class Budgetbericht
 
             foreach (var (periodStart, periodEnd) in ExpandRuleOccurrences(rule, _periodStart, _periodEnd))
             {
-                var homeMonth = new DateOnly(periodStart.Year, periodStart.Month, 1);
+                // An occurrence whose period starts before the report's own first month can still be the
+                // right match for a posting dated within the report period (its period can reach into it -
+                // e.g. a monthly rule anchored on the 11th covers days 1-10 of the following month via the
+                // PRECEDING occurrence, see ExpandRuleOccurrences). Such an occurrence has no natural
+                // MonthlyBudgetResult bucket of its own within the report period, so it is homed to the
+                // report's first month instead of being dropped.
+                var naturalHomeMonth = new DateOnly(periodStart.Year, periodStart.Month, 1);
+                var homeMonth = naturalHomeMonth < _periodStart ? _periodStart : naturalHomeMonth;
                 if (!_monthlyResultsByMonth.ContainsKey(homeMonth))
                 {
                     continue;
@@ -795,8 +802,12 @@ public sealed class Budgetbericht
             yield break;
         }
 
+        // Advance to the first occurrence whose period actually reaches into [from, to] - not merely the
+        // first one that STARTS on or after 'from'. A rule anchored mid-month (e.g. StartDate day 11)
+        // produces occurrences whose period spans into the following month, so the occurrence starting
+        // the month before 'from' can still cover the first days of 'from' and must not be skipped.
         var current = rule.StartDate;
-        while (current < from)
+        while (current.AddMonths(stepMonths).AddDays(-1) < from)
         {
             current = current.AddMonths(stepMonths);
             if (current > ruleEnd)
