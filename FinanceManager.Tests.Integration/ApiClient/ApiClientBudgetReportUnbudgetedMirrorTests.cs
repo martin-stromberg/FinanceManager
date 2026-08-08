@@ -627,11 +627,11 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
 
         #region Posten 8: Erika Musterfrau -> Wohnungsmiete -649.42 am 03.08.
 
-        var manfredContact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
+        var landlordContact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
             Name: "Erika Musterfrau", Type: ContactType.Organization, CategoryId: contactCategoryDienstleister.Id,
             Description: null, IsPaymentIntermediary: null, Parent: null), ct);
         var budgetPurposeMiete = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
-            Name: "Wohnungsmiete", SourceType: BudgetSourceType.Contact, SourceId: manfredContact.Id,
+            Name: "Wohnungsmiete", SourceType: BudgetSourceType.Contact, SourceId: landlordContact.Id,
             Description: null, BudgetCategoryId: budgetCategoryWohnen.Id), ct);
         await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: budgetPurposeMiete.Id, BudgetCategoryId: null, Amount: -649.42m,
@@ -639,7 +639,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
 
         var entry8 = await AddFullEntryAsync(aug3, aug3, -649.42m,
             "WOHNUNGSMIETE MUSTERWEG 20", "Erika Musterfrau", "Dauerauftrag / Terminueberweisung");
-        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry8, new StatementDraftSetContactRequest(manfredContact.Id), ct)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry8, new StatementDraftSetContactRequest(landlordContact.Id), ct)).Should().NotBeNull();
 
         #endregion
 
@@ -704,7 +704,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
 
         #region Posten 12: Zins/Dividende Muster Corp +8.37 am 03.08. (Valuta 31.07.)
 
-        var gladstoneSecurity = await api.Securities_CreateAsync(new SecurityRequest
+        var musterCorpSecurity = await api.Securities_CreateAsync(new SecurityRequest
         {
             Name = "Muster Corp",
             Identifier = "US0000000001",
@@ -717,7 +717,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             "Zins/Dividende ISIN US0000000001 MUSTERCORP", "", "Zins / Dividende WP");
         (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry12, new StatementDraftSetContactRequest(bankContactId), ct)).Should().NotBeNull();
         (await api.StatementDrafts_SetEntrySecurityAsync(statementDraft.DraftId, entry12,
-            new StatementDraftSetEntrySecurityRequest(gladstoneSecurity.Id, SecurityTransactionType.Dividend, null, null, 1.18m), ct)).Should().NotBeNull();
+            new StatementDraftSetEntrySecurityRequest(musterCorpSecurity.Id, SecurityTransactionType.Dividend, null, null, 1.18m), ct)).Should().NotBeNull();
 
         #endregion
 
@@ -750,7 +750,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
 
         #region Posten 15: Zins/Dividende Beispiel AG +9.67 am 04.08. (Valuta 31.07.)
 
-        var jpmorganSecurity = await api.Securities_CreateAsync(new SecurityRequest
+        var beispielAGSecurity = await api.Securities_CreateAsync(new SecurityRequest
         {
             Name = "Beispiel AG",
             Identifier = "US0000000002",
@@ -763,7 +763,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             "Zins/Dividende ISIN US0000000002 BEISPIELAG", "", "Zins / Dividende WP");
         (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry15, new StatementDraftSetContactRequest(bankContactId), ct)).Should().NotBeNull();
         (await api.StatementDrafts_SetEntrySecurityAsync(statementDraft.DraftId, entry15,
-            new StatementDraftSetEntrySecurityRequest(jpmorganSecurity.Id, SecurityTransactionType.Dividend, null, null, 1.36m), ct)).Should().NotBeNull();
+            new StatementDraftSetEntrySecurityRequest(beispielAGSecurity.Id, SecurityTransactionType.Dividend, null, null, 1.36m), ct)).Should().NotBeNull();
 
         #endregion
 
@@ -889,7 +889,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         AssertCore(posting7, PostingKind.Contact, aug3, aug3, "Rheinstern Leben AG", "Lastschrift");
 
         // Posten 8: Wohnungsmiete
-        var posting8 = await GetSingleContactPostingAsync(manfredContact.Id, -649.42m, "WOHNUNGSMIETE MUSTERWEG 20");
+        var posting8 = await GetSingleContactPostingAsync(landlordContact.Id, -649.42m, "WOHNUNGSMIETE MUSTERWEG 20");
         AssertCore(posting8, PostingKind.Contact, aug3, aug3, "Erika Musterfrau", "Dauerauftrag / Terminueberweisung");
 
         // Posten 9: Musterkasse Musterstadt Unfallversicherung
@@ -912,11 +912,11 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         var posting12Contact = await GetSingleContactPostingAsync(bankContactId, 8.37m, "Zins/Dividende ISIN US0000000001 MUSTERCORP");
         AssertCore(posting12Contact, PostingKind.Contact, aug3, new DateTime(2026, 07, 31), null, "Zins / Dividende WP");
         posting12Contact.SecurityId.Should().BeNull("Contact-kind postings never carry a SecurityId - only the linked Security-kind postings do");
-        var gladstonePostings = await api.Postings_GetSecurityAsync(gladstoneSecurity.Id, 0, 100, checkFrom, checkTo, ct);
-        gladstonePostings.Should().HaveCount(2);
-        var posting12Dividend = gladstonePostings.Should().ContainSingle(p => p.SecuritySubType == SecurityPostingSubType.Dividend).Subject;
+        var musterCorpPostings = await api.Postings_GetSecurityAsync(musterCorpSecurity.Id, 0, 100, checkFrom, checkTo, ct);
+        musterCorpPostings.Should().HaveCount(2);
+        var posting12Dividend = musterCorpPostings.Should().ContainSingle(p => p.SecuritySubType == SecurityPostingSubType.Dividend).Subject;
         posting12Dividend.Amount.Should().Be(9.55m);
-        var posting12Tax = gladstonePostings.Should().ContainSingle(p => p.SecuritySubType == SecurityPostingSubType.Tax).Subject;
+        var posting12Tax = musterCorpPostings.Should().ContainSingle(p => p.SecuritySubType == SecurityPostingSubType.Tax).Subject;
         posting12Tax.Amount.Should().Be(-1.18m);
         posting12Dividend.GroupId.Should().Be(posting12Contact.GroupId);
         posting12Tax.GroupId.Should().Be(posting12Contact.GroupId);
@@ -936,11 +936,11 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         var posting15Contact = await GetSingleContactPostingAsync(bankContactId, 9.67m, "Zins/Dividende ISIN US0000000002 BEISPIELAG");
         AssertCore(posting15Contact, PostingKind.Contact, aug4, new DateTime(2026, 07, 31), null, "Zins / Dividende WP");
         posting15Contact.SecurityId.Should().BeNull("Contact-kind postings never carry a SecurityId - only the linked Security-kind postings do");
-        var jpmorganPostings = await api.Postings_GetSecurityAsync(jpmorganSecurity.Id, 0, 100, checkFrom, checkTo, ct);
-        jpmorganPostings.Should().HaveCount(2);
-        var posting15Dividend = jpmorganPostings.Should().ContainSingle(p => p.SecuritySubType == SecurityPostingSubType.Dividend).Subject;
+        var beispielAGPostings = await api.Postings_GetSecurityAsync(beispielAGSecurity.Id, 0, 100, checkFrom, checkTo, ct);
+        beispielAGPostings.Should().HaveCount(2);
+        var posting15Dividend = beispielAGPostings.Should().ContainSingle(p => p.SecuritySubType == SecurityPostingSubType.Dividend).Subject;
         posting15Dividend.Amount.Should().Be(11.03m);
-        var posting15Tax = jpmorganPostings.Should().ContainSingle(p => p.SecuritySubType == SecurityPostingSubType.Tax).Subject;
+        var posting15Tax = beispielAGPostings.Should().ContainSingle(p => p.SecuritySubType == SecurityPostingSubType.Tax).Subject;
         posting15Tax.Amount.Should().Be(-1.36m);
 
         // Posten 16: Transfer Testbausparkasse -5000 (Selbstkontakt)
@@ -982,86 +982,125 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         var rawReport = await api.Budgets_GetReportRawAsync(reportRequest, ct);
         rawReport.Should().NotBeNull();
 
-        // Steuer / Rueckstellung Rundfunkgebuehr: -18.36 trifft exakt die monatliche Regel.
+        // Full-field check of a BudgetReportPurposeDto row: Name, Budget (the rule-derived expectation
+        // summed over all 12 months of the report range), Actual, and the values Budget/Actual imply -
+        // Delta and DeltaPct are computed here from the same known-correct Budget/Actual rather than
+        // hardcoded, since DeltaPct is a repeating decimal for most of these purposes (Actual is exactly
+        // one month's worth of a purely monthly rule, so DeltaPct always comes out to 11/12) - plus
+        // SourceType/SourceId, which the previous version of this test never checked at all.
+        void AssertPurposeRow(BudgetReportPurposeDto row, string expectedName, decimal expectedBudget, decimal expectedActual, BudgetSourceType expectedSourceType, Guid expectedSourceId)
+        {
+            row.Name.Should().Be(expectedName);
+            row.Budget.Should().Be(expectedBudget);
+            row.Actual.Should().Be(expectedActual);
+            var expectedDelta = expectedActual - expectedBudget;
+            row.Delta.Should().Be(expectedDelta);
+            row.DeltaPct.Should().Be(expectedBudget == 0m ? 0m : expectedDelta / Math.Abs(expectedBudget));
+            row.SourceType.Should().Be(expectedSourceType);
+            row.SourceId.Should().Be(expectedSourceId);
+        }
+
+        // Steuer / Rueckstellung Rundfunkgebuehr: Monatsregel -18.36 (Tag 1, x12 = -220.32) und
+        // Quartalsregel +55.08 (Tag 15, x4 Vorkommen im Berichtszeitraum = 220.32) gleichen sich exakt aus
+        // (Rueckstellungs-Charakter: monatlich zurueckgelegt, quartalsweise "freigegeben").
         var steuerCategory = report.Categories.Single(c => c.Id == budgetCategorySteuer!.Id);
         var rundfunkPurposeRow = steuerCategory.Purposes.Single(p => p.Id == budgetPurposeRundfunk.Id);
-        rundfunkPurposeRow.Actual.Should().Be(-18.36m);
+        AssertPurposeRow(rundfunkPurposeRow, "Rückstellung Rundfunkgebuehr", 0.00m, -18.36m, BudgetSourceType.SavingsPlan, rundfunkSavingsPlan.Id);
 
-        // Wohnen: Stromkosten (-75.00) und Wohnungsmiete (-649.42).
+        // Wohnen: Stromkosten (-75.00 x12) und Wohnungsmiete (-649.42 x12).
         var wohnenCategory = report.Categories.Single(c => c.Id == budgetCategoryWohnen!.Id);
         var stromkostenPurposeRow = wohnenCategory.Purposes.Single(p => p.Id == budgetPurposeStromkosten.Id);
-        stromkostenPurposeRow.Actual.Should().Be(-75.00m);
+        AssertPurposeRow(stromkostenPurposeRow, "Stromkosten", -900.00m, -75.00m, BudgetSourceType.Contact, stadtwerkeContact.Id);
         var mietePurposeRow = wohnenCategory.Purposes.Single(p => p.Id == budgetPurposeMiete.Id);
-        mietePurposeRow.Actual.Should().Be(-649.42m);
+        AssertPurposeRow(mietePurposeRow, "Wohnungsmiete", -7793.04m, -649.42m, BudgetSourceType.Contact, landlordContact.Id);
 
-        // Vorsorge: Einzahlung Bausparvertrag (-10.00) und Rueckstellung S-Vorsorge (-139.00).
+        // Vorsorge: Einzahlung Bausparvertrag (-10.00 x12, keine Ausgleichsregel) und Rueckstellung
+        // S-Vorsorge (-139.00 x12, keine Ausgleichsregel).
         var vorsorgeCategory = report.Categories.Single(c => c.Id == budgetCategoryVorsorge!.Id);
         var bausparenPurposeRow = vorsorgeCategory.Purposes.Single(p => p.Id == budgetPurposeBausparen.Id);
-        bausparenPurposeRow.Actual.Should().Be(-10.00m);
+        AssertPurposeRow(bausparenPurposeRow, "Einzahlung Bausparvertrag", -120.00m, -10.00m, BudgetSourceType.SavingsPlan, bausparenSavingsPlan.Id);
         var sVorsorgePurposeRow = vorsorgeCategory.Purposes.Single(p => p.Id == budgetPurposeSVorsorge.Id);
-        sVorsorgePurposeRow.Actual.Should().Be(-139.00m);
+        AssertPurposeRow(sVorsorgePurposeRow, "Rückstellung S-Vorsorge", -1668.00m, -139.00m, BudgetSourceType.SavingsPlan, sVorsorgeSavingsPlan.Id);
 
-        // Unterhaltung & Aktivitaeten: Fitnessstudio (-15.00).
+        // Unterhaltung & Aktivitaeten: Fitnessstudio (-15.00 x12, keine Ausgleichsregel).
         var unterhaltungCategory = report.Categories.Single(c => c.Id == budgetCategoryUnterhaltung!.Id);
         var fitnessPurposeRow = unterhaltungCategory.Purposes.Single(p => p.Id == budgetPurposeFitness.Id);
-        fitnessPurposeRow.Actual.Should().Be(-15.00m);
+        AssertPurposeRow(fitnessPurposeRow, "Fitnessstudio", -180.00m, -15.00m, BudgetSourceType.Contact, fitxContact.Id);
 
-        // Versicherungen: Rheinstern, Zahnzusatz, Krankenhaustagegeld, Unfall und Hausrat sind je exakt
-        // gebucht. Nordstern Berufsunfaehigkeit UND Rheinstern Berufsunfaehigkeit haben beide eine monatliche
-        // Regel mit StartDate am 11., waehrend die Buchung bereits am 03. erfolgte - siehe unten fuer die
-        // konkrete Auswirkung auf Nordstern. Haftpflichtversicherung wird ebenfalls geprueft.
+        // Versicherungen: Zahnzusatz, Unfall und Hausrat sind je exakt gebucht; Krankenhaustagegeld gleicht
+        // sich (wie Rundfunkgebuehr) ueber Monats-/Quartalsregel fast/genau aus. Nordstern Berufsunfaehigkeit
+        // UND Rheinstern Berufsunfaehigkeit haben beide eine monatliche Regel mit StartDate am 11., waehrend
+        // die Buchung bereits am 03. erfolgte - siehe unten fuer die konkrete Auswirkung.
         var versicherungenCategory = report.Categories.Single(c => c.Id == budgetCategoryVersicherungen!.Id);
         var zahnzusatzPurposeRow = versicherungenCategory.Purposes.Single(p => p.Id == budgetPurposeZahnzusatz.Id);
-        zahnzusatzPurposeRow.Actual.Should().Be(-10.50m);
+        AssertPurposeRow(zahnzusatzPurposeRow, "Rückstellung Zahnzusatzversicherung", -126.00m, -10.50m, BudgetSourceType.SavingsPlan, zahnzusatzSavingsPlan.Id);
         var krankenhaustagegeldPurposeRow = versicherungenCategory.Purposes.Single(p => p.Id == budgetPurposeKrankenhaustagegeld.Id);
-        krankenhaustagegeldPurposeRow.Actual.Should().Be(-3.82m);
+        AssertPurposeRow(krankenhaustagegeldPurposeRow, "Rückstellung Krankenhaustagegeld", 0.00m, -3.82m, BudgetSourceType.SavingsPlan, krankenhaustagegeldSavingsPlan.Id);
         var unfallPurposeRow = versicherungenCategory.Purposes.Single(p => p.Id == budgetPurposeUnfall.Id);
-        unfallPurposeRow.Actual.Should().Be(-13.01m);
+        AssertPurposeRow(unfallPurposeRow, "Rückstellung Unfallversicherung", -0.08m, -13.01m, BudgetSourceType.SavingsPlan, unfallSavingsPlan.Id);
         var hausratPurposeRow = versicherungenCategory.Purposes.Single(p => p.Id == budgetPurposeHausrat.Id);
-        hausratPurposeRow.Actual.Should().Be(-5.21m);
+        AssertPurposeRow(hausratPurposeRow, "Rückstellung Hausratversicherung", -62.52m, -5.21m, BudgetSourceType.SavingsPlan, hausratSavingsPlan.Id);
         var haftpflichtPurposeRow = versicherungenCategory.Purposes.Single(p => p.Id == budgetPurposeHaftpflicht.Id);
-        haftpflichtPurposeRow.Actual.Should().Be(-4.63m);
+        AssertPurposeRow(haftpflichtPurposeRow, "Rückstellung Haftpflichtversicherung", -55.56m, -4.63m, BudgetSourceType.SavingsPlan, haftpflichtSavingsPlan.Id);
 
         // Nordstern Berufsunfaehigkeit und Rheinstern Berufsunfaehigkeit teilen dieselbe Konstellation: eine
         // monatliche Exakte-Buchung-Regel mit StartDate am 11. eines Monats, aber die tatsaechliche
         // Buchung liegt bereits am 03. des Monats - also VOR dem Beginn des periodenbasierten
         // Gueltigkeitsfensters der (auf den Regel-Starttag verankerten) monatlichen Erwartung fuer August.
-        var axaPurposeRow = versicherungenCategory.Purposes.Single(p => p.Id == budgetPurposeAxa.Id);
-        var provinzialPurposeRow = versicherungenCategory.Purposes.Single(p => p.Id == budgetPurposeRheinstern.Id);
+        var nordsternPurposeRow = versicherungenCategory.Purposes.Single(p => p.Id == budgetPurposeAxa.Id);
+        var rheinsternPurposeRow = versicherungenCategory.Purposes.Single(p => p.Id == budgetPurposeRheinstern.Id);
 
-        var axaRawPurpose = rawReport.Categories.Single(c => c.CategoryId == budgetCategoryVersicherungen.Id)
+        var nordsternRawPurpose = rawReport.Categories.Single(c => c.CategoryId == budgetCategoryVersicherungen.Id)
             .Purposes.Single(p => p.PurposeId == budgetPurposeAxa.Id);
-        var provinzialRawPurpose = rawReport.Categories.Single(c => c.CategoryId == budgetCategoryVersicherungen.Id)
+        var rheinsternRawPurpose = rawReport.Categories.Single(c => c.CategoryId == budgetCategoryVersicherungen.Id)
             .Purposes.Single(p => p.PurposeId == budgetPurposeRheinstern.Id);
 
         var unbudgeted = await api.Budgets_GetUnbudgetedPostingsAsync(checkFrom, checkTo, BudgetReportDateBasis.BookingDate, null, ct);
-        var axaAlsoInUnbudgeted = unbudgeted.Any(p => p.ContactId == axaContact.Id && p.Amount == -20.93m);
-        var provinzialAlsoInUnbudgeted = unbudgeted.Any(p => p.ContactId == provinzialContact.Id && p.Amount == -20.64m);
+        var nordsternAlsoInUnbudgeted = unbudgeted.Any(p => p.ContactId == axaContact.Id && p.Amount == -20.93m);
+        var rheinsternAlsoInUnbudgeted = unbudgeted.Any(p => p.ContactId == provinzialContact.Id && p.Amount == -20.64m);
 
         // Sowohl Nordstern als auch Rheinstern werden - trotz des am 11. verankerten monatlichen Regel-
         // Zeitfensters - korrekt (mit vollem Betrag, voll ausgewertet) ihrem jeweiligen Budgetzweck
         // zugeordnet, wenn der Bericht (wie die echte UI per Default) ueber mehrere Monate (Months: 12)
         // abgefragt wird - anders als bei einer einmonatigen Abfrage (siehe oben), bei der der Posten
         // gar keinem Budgetzweck zugeordnet wird.
-        var axaPosting = axaRawPurpose.Postings.Should().ContainSingle(p => p.Amount == -20.93m && p.PostingId == posting3.Id).Subject;
-        axaPosting.IsValuedForBudgetPurpose.Should().BeTrue();
-        axaPurposeRow.Actual.Should().Be(-20.93m);
+        var nordsternPosting = nordsternRawPurpose.Postings.Should().ContainSingle(p => p.Amount == -20.93m && p.PostingId == posting3.Id).Subject;
+        nordsternPosting.IsValuedForBudgetPurpose.Should().BeTrue();
+        // Budget: 12 natuerliche Monatsvorkommen (Tag 11) x -20.93 = -251.16. Das 13. (hereinragende)
+        // Vorkommen vom Vormonat wird - seit der Korrektur - NICHT mitgezaehlt (siehe
+        // MonthlyBudgetExpectationPosting.IsCarriedOverFromPriorPeriod/BudgetedDisplayAmount), da es sonst
+        // gemeinsam mit dem natuerlichen ersten Monatsvorkommen im selben Berichtsmonat doppelt zaehlen wuerde.
+        AssertPurposeRow(nordsternPurposeRow, "Nordstern Berufsunfähigkeit", -251.16m, -20.93m, BudgetSourceType.Contact, axaContact.Id);
 
-        var provinzialPosting = provinzialRawPurpose.Postings.Should().ContainSingle(p => p.Amount == -20.64m && p.PostingId == posting7.Id).Subject;
-        provinzialPosting.IsValuedForBudgetPurpose.Should().BeTrue();
-        provinzialPurposeRow.Actual.Should().Be(-20.64m);
+        var rheinsternPosting = rheinsternRawPurpose.Postings.Should().ContainSingle(p => p.Amount == -20.64m && p.PostingId == posting7.Id).Subject;
+        rheinsternPosting.IsValuedForBudgetPurpose.Should().BeTrue();
+        AssertPurposeRow(rheinsternPurposeRow, "Rheinstern Berufsunfähigkeit", -247.68m, -20.64m, BudgetSourceType.Contact, provinzialContact.Id);
 
         // Ein Posten, der bereits korrekt seinem Budgetzweck zugeordnet ist (siehe oben), darf NICHT
         // zusaetzlich in der Liste der nicht budgetierten Posten auftauchen. Vor der Korrektur von
         // Budgetbericht.ExpandRuleOccurrences (siehe Klassenkommentar) schlugen beide Assertions fehl, da
         // der eng auf einen Monat begrenzte "unbudgeted"-Bericht die von Ende Juli hereinreichende
         // Regel-Periode nicht kannte.
-        axaAlsoInUnbudgeted.Should().BeFalse(
+        nordsternAlsoInUnbudgeted.Should().BeFalse(
             "der Nordstern-Posten vom 03.08. ist bereits korrekt seinem Budgetzweck zugeordnet und darf nicht zusaetzlich " +
             "unter den nicht budgetierten Posten gefuehrt werden");
-        provinzialAlsoInUnbudgeted.Should().BeFalse(
+        rheinsternAlsoInUnbudgeted.Should().BeFalse(
             "der Rheinstern-Posten vom 03.08. ist bereits korrekt seinem Budgetzweck zugeordnet und darf nicht zusaetzlich " +
             "unter den nicht budgetierten Posten gefuehrt werden");
+
+        // Zweiter, urspruenglich unabhaengig gemeldeter Fehler: mit CategoryValueScope.LastInterval (dem
+        // Default der echten UI) zeigte der Bericht fuer August bei Nordstern Budget=-20.93/Actual=0/
+        // Delta=20.93 - der Posten vom 03.08. schien "noch nicht bezahlt", obwohl er bereits gebucht war.
+        // Ursache: Die Regel-Periode 11.07.-10.08. wurde (vor der Periodenende-Korrektur in
+        // ExpandRuleOccurrences) dem Monat Juli zugeordnet, sodass die auf August gefilterte Einzelmonats-
+        // Ansicht den zugeordneten Ist-Betrag nicht sah.
+        var lastIntervalRequest = reportRequest with { CategoryValueScope = BudgetReportValueScope.LastInterval };
+        var lastIntervalReport = await api.Budgets_GetReportAsync(lastIntervalRequest, ct);
+        var lastIntervalNordstern = lastIntervalReport.Categories.Single(c => c.Id == budgetCategoryVersicherungen!.Id)
+            .Purposes.Single(p => p.Id == budgetPurposeAxa.Id);
+        lastIntervalNordstern.Budget.Should().Be(-20.93m);
+        lastIntervalNordstern.Actual.Should().Be(-20.93m);
+        lastIntervalNordstern.Delta.Should().Be(0.00m);
 
         #endregion
     }
