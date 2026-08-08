@@ -1,6 +1,8 @@
 using FinanceManager.Web.Services.Updates;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using msTools.Updater;
+using Microsoft.Extensions.Logging;
 
 namespace FinanceManager.Tests.Updates;
 
@@ -27,7 +29,8 @@ internal static class UpdateOrchestratorAdapterTestFactory
         IUpdateSettingsStore? settingsStore = null,
         IAutoUpdatePackageStore? packageStore = null,
         IInstalledReleaseMetadataProvider? installedProvider = null,
-        IAutoUpdatePlatformResolver? platformResolver = null)
+        IAutoUpdatePlatformResolver? platformResolver = null,
+        ILogger<UpdateOrchestratorAdapter>? logger = null)
     {
         var settings = settingsStore ?? new Mock<IUpdateSettingsStore>().Object;
         var mapper = new UpdateStatusMapper(
@@ -40,6 +43,7 @@ internal static class UpdateOrchestratorAdapterTestFactory
             statusService ?? CreateStatusService(),
             settings,
             packageStore ?? new Mock<IAutoUpdatePackageStore>().Object,
-            mapper);
+            mapper,
+            logger ?? NullLogger<UpdateOrchestratorAdapter>.Instance);
     }
 }

@@ -200,6 +200,92 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
     }
 
     [Fact]
+    public async Task ResetLock_Returns409NoLock_WhenNoLockFileExists()
+    {
+        var tempDir = Directory.CreateTempSubdirectory();
+        try
+        {
+            using var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services => SetDownloadPath(services, tempDir.FullName));
+            });
+            var client = factory.CreateClient();
+            await AuthenticateAdminAsync(client);
+
+            var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"));
+
+            response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
+            error!.code.Should().Be("Err_Update_Reset_NoLock");
+        }
+        finally
+        {
+            tempDir.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ResetLock_Returns409LockNotStale_WhenLockFileIsTooYoung()
+    {
+        var tempDir = Directory.CreateTempSubdirectory();
+        try
+        {
+            using var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services => SetDownloadPath(services, tempDir.FullName));
+            });
+            var client = factory.CreateClient();
+            await AuthenticateAdminAsync(client);
+
+            var lockPath = Path.Combine(tempDir.FullName, "update.lock");
+            await File.WriteAllTextAsync(lockPath, DateTimeOffset.UtcNow.ToString("O"));
+
+            var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"));
+
+            response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
+            error!.code.Should().Be("Err_Update_Reset_LockNotStale");
+            File.Exists(lockPath).Should().BeTrue();
+        }
+        finally
+        {
+            tempDir.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task StartInstall_SucceedsAndLockRemains_WhenInstallerDoesNotCleanUpLock()
+    {
+        var tempDir = Directory.CreateTempSubdirectory();
+        try
+        {
+            using var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    SetDownloadPath(services, tempDir.FullName);
+                    services.RemoveAll<IAutoUpdateOrchestrator>();
+                    services.AddSingleton<IAutoUpdateOrchestrator>(new SucceedingAutoUpdateOrchestrator());
+                });
+            });
+            var client = factory.CreateClient();
+            await AuthenticateAdminAsync(client);
+
+            var lockPath = Path.Combine(tempDir.FullName, "update.lock");
+            await File.WriteAllTextAsync(lockPath, DateTimeOffset.UtcNow.ToString("O"));
+
+            var response = await client.PostAsJsonAsync("/api/setup/update/install/start", new UpdateStartRequest(true));
+
+            response.EnsureSuccessStatusCode();
+            File.Exists(lockPath).Should().BeTrue();
+        }
+        finally
+        {
+            tempDir.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task PersistedSettings_AreAppliedToAutoUpdateOptions_OnStartup_WithoutManualSave()
     {
         var tempDir = Directory.CreateTempSubdirectory();
@@ -397,6 +483,16 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             => _resetException is null ? throw new NotSupportedException() : Task.FromException(_resetException);
 
         public Task<UpdateStatusDto> StartInstallAsync(bool confirmDowntime, CancellationToken ct = default) => Task.FromException<UpdateStatusDto>(_startException);
+    }
+
+    private sealed class SucceedingAutoUpdateOrchestrator : IAutoUpdateOrchestrator
+    {
+        public Task<AutoUpdateResult> RunUpdateAsync(CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<AutoUpdateResult> CheckForUpdateAsync(CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<AutoUpdateResult> DownloadAsync(CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<AutoUpdateResult> InstallAsync(bool confirmDowntime, CancellationToken ct = default)
+            => Task.FromResult(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.Success, "installed", null));
+        public Task<AutoUpdateStatusSnapshot> GetStatusAsync(CancellationToken ct = default) => throw new NotSupportedException();
     }
 
     private sealed class FixedInstalledReleaseMetadataProvider : IInstalledReleaseMetadataProvider

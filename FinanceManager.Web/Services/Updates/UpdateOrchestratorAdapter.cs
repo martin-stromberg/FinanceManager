@@ -1,4 +1,5 @@
 using FinanceManager.Shared.Dtos.Update;
+using Microsoft.Extensions.Logging;
 using msTools.Updater;
 
 namespace FinanceManager.Web.Services.Updates;
@@ -18,6 +19,7 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
     private readonly IUpdateSettingsStore _settingsStore;
     private readonly IAutoUpdatePackageStore _packageStore;
     private readonly UpdateStatusMapper _statusMapper;
+    private readonly ILogger<UpdateOrchestratorAdapter> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UpdateOrchestratorAdapter"/> class.
@@ -27,18 +29,21 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
     /// <param name="settingsStore">The host-specific settings store.</param>
     /// <param name="packageStore">Used to inspect, reset and evaluate the staleness of the installation lock.</param>
     /// <param name="statusMapper">Used to map a status snapshot onto <see cref="UpdateStatusDto"/>.</param>
+    /// <param name="logger">Used to log a warning when the installation lock is not cleaned up after a successful installation.</param>
     public UpdateOrchestratorAdapter(
         IAutoUpdateOrchestrator orchestrator,
         AutoUpdateStatusService statusService,
         IUpdateSettingsStore settingsStore,
         IAutoUpdatePackageStore packageStore,
-        UpdateStatusMapper statusMapper)
+        UpdateStatusMapper statusMapper,
+        ILogger<UpdateOrchestratorAdapter> logger)
     {
         _orchestrator = orchestrator;
         _statusService = statusService;
         _settingsStore = settingsStore;
         _packageStore = packageStore;
         _statusMapper = statusMapper;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -101,6 +106,11 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
         if (result.Outcome == AutoUpdateOutcome.Failed && result.Error is not null)
         {
             throw result.Error;
+        }
+
+        if (result.Outcome != AutoUpdateOutcome.Failed)
+        {
+            await ValidateLockCleanupAsync(ct);
         }
 
         return await _statusMapper.MapAsync(_statusService.GetSnapshot(), ct);
@@ -196,4 +206,27 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
         DateTimeOffset? lockCreatedAt = null,
         Exception? innerException = null)
         => new(kind, failureSource, message, lockCreatedAt, _packageStore.LockPath, innerException);
+
+    private async Task ValidateLockCleanupAsync(CancellationToken ct)
+    {
+        DateTimeOffset? lockCreatedAt;
+        try
+        {
+            lockCreatedAt = await _packageStore.GetLockCreatedAtAsync(ct);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to validate lock cleanup after installation.");
+            return;
+        }
+
+        if (lockCreatedAt.HasValue)
+        {
+            _logger.LogWarning("Lock was not cleaned up after installation. LockCreatedAt: {LockCreatedAt}", lockCreatedAt);
+        }
+    }
 }
