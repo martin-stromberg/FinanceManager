@@ -107,7 +107,9 @@ public sealed class BudgetberichtMapperTests_MonthlyKpi
 
         kpi.RemainingPlannedExpenseAbs.Should().Be(0m);
         kpi.BudgetedRealizedExpenseAbs.Should().Be(100m);
-        kpi.UnbudgetedExpenseAbs.Should().Be(40m);
+        // The 40 overrun stays attributed to the "Groceries" purpose (not the generic Unbudgeted row),
+        // so it does not show up as UnbudgetedExpenseAbs here.
+        kpi.UnbudgetedExpenseAbs.Should().Be(0m);
     }
 
     /// <summary>

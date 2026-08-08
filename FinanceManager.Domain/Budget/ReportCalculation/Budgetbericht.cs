@@ -150,12 +150,19 @@ public sealed class Budgetbericht
         var candidates = FindCandidateExpectationPostings(posting, postingDate);
         if (candidates.Count == 0)
         {
-            RecordUnvaluedMatches(posting, postingDate);
-            RouteUnmatchedPosting(monthResult, posting);
+            // A posting that matches some purpose's source/period/pattern but not its ExactPostings sign
+            // is recorded against that purpose (visible there, not valued) and must NOT also be routed to
+            // the month's top-level Unbudgeted/CostNeutral buckets - those are reserved for postings that
+            // matched no budget purpose whatsoever.
+            if (!RecordUnvaluedMatches(posting, postingDate))
+            {
+                RouteUnmatchedPosting(monthResult, posting);
+            }
+
             return;
         }
 
-        AssignSequentially(candidates, posting, monthResult);
+        AssignSequentially(candidates, posting);
     }
 
     /// <summary>
@@ -178,7 +185,7 @@ public sealed class Budgetbericht
             {
                 foreach (var expectation in group.DirectExpectations.Concat(group.Purposes))
                 {
-                    ReconcileMultiOccurrenceExpectation(monthResult, expectation);
+                    ReconcileMultiOccurrenceExpectation(expectation);
                 }
             }
         }
@@ -506,7 +513,13 @@ public sealed class Budgetbericht
         list.Add(posting);
     }
 
-    private void AssignSequentially(List<MonthlyBudgetExpectationPosting> candidates, MonthlyBudgetRealization posting, MonthlyBudgetResult monthResult)
+    // Assigns 'posting' across 'candidates' (all belonging to the same purpose/category, ordered by
+    // priority) in order, filling each occurrence's remaining capacity before moving to the next. Any
+    // amount left over once every candidate is exhausted still originated from a posting that matched
+    // this purpose/category — it is therefore recorded against the last (lowest-priority) candidate via
+    // AddUnvaluedMatch rather than routed to the month's top-level Unbudgeted/CostNeutral buckets, which
+    // are reserved for postings that matched no budget at all (see RouteUnmatchedPosting).
+    private static void AssignSequentially(List<MonthlyBudgetExpectationPosting> candidates, MonthlyBudgetRealization posting)
     {
         var remaining = posting;
         foreach (var candidate in candidates)
@@ -522,11 +535,11 @@ public sealed class Budgetbericht
 
         if (remaining.Amount != 0m)
         {
-            monthResult.AddUnbudgetedPosting(remaining);
+            candidates[^1].AddUnvaluedMatch(remaining);
         }
     }
 
-    private void ReconcileMultiOccurrenceExpectation(MonthlyBudgetResult monthResult, MonthlyBudgetExpectation expectation)
+    private void ReconcileMultiOccurrenceExpectation(MonthlyBudgetExpectation expectation)
     {
         if (expectation.Postings.Count <= 1)
         {
@@ -555,7 +568,7 @@ public sealed class Budgetbericht
 
         foreach (var assigned in sortedAssigned)
         {
-            AssignSequentially(orderedOccurrences, assigned, monthResult);
+            AssignSequentially(orderedOccurrences, assigned);
         }
     }
 
@@ -604,9 +617,14 @@ public sealed class Budgetbericht
     // Records, for every purpose whose source matches the posting, any ExactPostings-valued expectation
     // occurrence whose period and purpose pattern match the (otherwise fully unmatched) posting but whose
     // sign does not — so it can still be shown against the purpose (with IsValuedForBudgetPurpose = false
-    // at the DTO layer) even though it is not counted toward the purpose's actual amount.
-    private void RecordUnvaluedMatches(MonthlyBudgetRealization posting, DateOnly postingDate)
+    // at the DTO layer) even though it is not counted toward the purpose's actual amount. Returns true when
+    // at least one such match was recorded, so the caller can skip routing the posting to the month's
+    // top-level Unbudgeted/CostNeutral buckets as well (a posting shown at a purpose must not also appear
+    // there — those buckets are reserved for postings that matched no budget purpose whatsoever).
+    private bool RecordUnvaluedMatches(MonthlyBudgetRealization posting, DateOnly postingDate)
     {
+        var recorded = false;
+
         foreach (var (purposeId, source) in _purposeSources)
         {
             if (!MatchesSource(source, posting))
@@ -637,8 +655,11 @@ public sealed class Budgetbericht
                 }
 
                 candidate.AddUnvaluedMatch(posting);
+                recorded = true;
             }
         }
+
+        return recorded;
     }
 
     private static bool IsEligible(MonthlyBudgetExpectationPosting candidate, MonthlyBudgetRealization posting, DateOnly postingDate)

@@ -86,8 +86,13 @@ public sealed class BudgetberichtTests_Scenarios
         var purposeRow = budgetbericht.GetCurrentResult().Single(e => e.RowKind == BudgetReportEntryRowKind.Purpose);
         purposeRow.ActualAmount.Should().Be(-10m);
 
+        // The -5.98 overrun stays attributed to this purpose (visible via UnvaluedMatchedPostings), not
+        // the generic Unbudgeted row, which is reserved for postings matching no purpose at all.
+        var expectation = budgetbericht.MonthlyResults.Single().ExpectationGroups.Single().Purposes.Single();
+        expectation.Postings.SelectMany(p => p.UnvaluedMatchedPostings).Sum(p => p.Amount).Should().Be(-5.98m);
+
         var unbudgetedRow = budgetbericht.GetCurrentResult().Single(e => e.RowKind == BudgetReportEntryRowKind.Unbudgeted);
-        unbudgetedRow.ActualAmount.Should().Be(-5.98m);
+        unbudgetedRow.ActualAmount.Should().Be(0m);
     }
 
     [Fact]
@@ -107,7 +112,11 @@ public sealed class BudgetberichtTests_Scenarios
         purposeRow.ActualAmount.Should().Be(3000m);
         purposeRow.Deviation.Should().Be(0m);
 
-        budgetbericht.GetCurrentResult().Single(e => e.RowKind == BudgetReportEntryRowKind.Unbudgeted).ActualAmount.Should().Be(450m);
+        // The 450 overrun stays attributed to this purpose, not the generic Unbudgeted row.
+        var expectation = budgetbericht.MonthlyResults.Single().ExpectationGroups.Single().Purposes.Single();
+        expectation.Postings.SelectMany(p => p.UnvaluedMatchedPostings).Sum(p => p.Amount).Should().Be(450m);
+
+        budgetbericht.GetCurrentResult().Single(e => e.RowKind == BudgetReportEntryRowKind.Unbudgeted).ActualAmount.Should().Be(0m);
     }
 
     [Fact]

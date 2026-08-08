@@ -946,15 +946,26 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         // pre-refactor BudgetReportService (which tracked BudgetedIncome/BudgetedExpense separately per purpose) did.
         // This is a known, pre-existing gap in the new BudgetReportEntry shape (not related to the cost-neutral
         // change) that is out of scope for this fix; see the KPI mapper's MapToMonthlyKpiDto for details.
-        kpi.ActualExpenseAbs.Should().Be(2817.56m);
-        kpi.ActualIncome.Should().Be(7007.68m);
-        kpi.ExpectedExpenseAbs.Should().Be(4416.95m);
-        kpi.ExpectedIncome.Should().Be(7007.68m);
+        //
+        // ActualExpenseAbs/ActualIncome are lower than the raw total booked amounts: some postings match a
+        // purpose's contact/pattern/sign but overrun that purpose's already-filled budget for the month (e.g.
+        // an extra payment, or "Arbeitgeber" booking 5767.89 against a 3326.46 monthly salary rule), or match
+        // by contact/pattern/period but not by sign (an ExactPostings purpose). Per issue.md/requirement.md,
+        // both cases stay attributed to their own budget purpose (visible there, not valued) instead of
+        // falling into the generic Unbudgeted row, so they are excluded from
+        // ActualExpenseAbs/ActualIncome/UnbudgetedExpenseAbs/UnbudgetedIncome.
+        kpi.ActualExpenseAbs.Should().Be(2788.97m);
+        kpi.ActualIncome.Should().Be(4556.23m);
+        kpi.ExpectedExpenseAbs.Should().Be(4388.36m);
+        kpi.ExpectedIncome.Should().Be(4556.23m);
         kpi.PlannedExpenseAbs.Should().Be(3193.91m);
         kpi.PlannedIncome.Should().Be(3450.85m);
         kpi.PlannedResult.Should().Be(256.94m);
-        kpi.UnbudgetedExpenseAbs.Should().Be(28.59m);
-        kpi.UnbudgetedIncome.Should().Be(2441.45m);
+        // Both were previously non-zero because purpose-bound overruns (see the "Arbeitgeber" comment
+        // above) landed in the generic Unbudgeted bucket. They now stay attributed to their own purpose,
+        // so genuinely unmatched postings are all that remains here - none in this dataset, hence 0.
+        kpi.UnbudgetedExpenseAbs.Should().Be(0m);
+        kpi.UnbudgetedIncome.Should().Be(0m);
     }
 
     private static async Task<List<SavingsPlanDto>> CreateSavingsPlansAsync(FinanceManager.Shared.ApiClient api)

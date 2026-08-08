@@ -212,11 +212,14 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         var unbudgeted = await api.Budgets_GetUnbudgetedPostingsAsync(from, to, BudgetReportDateBasis.BookingDate);
 
         // The mirrored -5 self-contact posting is budgeted by the savings-plan purpose and therefore excluded.
-        // Remaining unbudgeted self-contact postings are returned by the endpoint.
-        unbudgeted.Should().HaveCount(2);
+        // "Mirror +60" matches the same purpose's source/period/pattern as the -5 rule, just with the wrong
+        // sign for its ExactPostings valuation; it is therefore shown against that purpose (as an unvalued
+        // match, not counted) instead of the generic Unbudgeted list - a posting shown at a purpose must not
+        // also be listed here. Only "Extra", which matches no purpose at all, remains.
+        unbudgeted.Should().HaveCount(1);
         unbudgeted.Should().OnlyContain(p => p.ContactId == selfContact.Id);
         unbudgeted.Should().ContainSingle(p => p.Subject == "Extra" && p.Amount == 12.34m);
-        unbudgeted.Should().ContainSingle(p => p.Subject == "Mirror +60" && p.Amount == 60m);
+        unbudgeted.Should().NotContain(p => p.Subject == "Mirror +60");
         unbudgeted.Should().NotContain(p => p.Subject == "Mirror -5");
     }
 
@@ -400,5 +403,354 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         var categoryRow = report.Categories.Single(x => x.Id == category.Id);
         var purposeRow = categoryRow.Purposes.Single(x => x.Id == purpose.Id);
         purposeRow.Actual.Should().Be(-60m);
+    }
+
+    [Fact]
+    public async Task BudgetReport_WithComplexData()
+    {
+        var api = CreateClient();
+        await EnsureAuthenticatedAsync(api);
+
+        var account = await api.CreateAccountAsync(new AccountCreateRequest(
+            Name: "ComplexData",
+            Type: AccountType.Giro,
+            Iban: "DE50700500000007882996",
+            BankContactId: null,
+            NewBankContactName: "Test Bank",
+            SymbolAttachmentId: null,
+            SavingsPlanExpectation: SavingsPlanExpectation.Optional,
+            SecurityProcessingEnabled: true),
+            TestContext.Current.CancellationToken);
+
+        var selfContact = (await api.Contacts_ListAsync(type: ContactType.Self, all: true, ct: TestContext.Current.CancellationToken)).Single();
+
+        var contactCategoryActivities = await api.ContactCategories_CreateAsync(new ContactCategoryCreateRequest("Activities"), TestContext.Current.CancellationToken);
+        var contactCategoryInsurances = await api.ContactCategories_CreateAsync(new ContactCategoryCreateRequest("Insurances"), TestContext.Current.CancellationToken);
+
+        var taxSavingPlanCategory = await api.SavingsPlanCategories_CreateAsync(new SavingsPlanCategoryDto()
+        {
+            Name = "Steuer",
+        }, TestContext.Current.CancellationToken);
+        taxSavingPlanCategory.Should().NotBeNull();        
+
+        var budgetCategoryTax = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Steuern"), TestContext.Current.CancellationToken);
+        budgetCategoryTax.Should().NotBeNull();
+        var budgetCategoryActivities = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Activities"), TestContext.Current.CancellationToken);
+        var budgetCategoryInsurances = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Insurances"), TestContext.Current.CancellationToken);
+
+        #region Rundfunkgebühr Budget Purpose and Rules
+        var radioSavingPlan = await api.SavingsPlans_CreateAsync(
+            new SavingsPlanCreateRequest()
+            {
+                Name = "Rundfunkgebühr",
+                CategoryId = taxSavingPlanCategory?.Id,
+                Interval = SavingsPlanInterval.Quarterly,
+                Type = SavingsPlanType.Recurring,
+                TargetAmount = 54.22m,
+                TargetDate = new DateTime(2026, 11, 01)
+            },
+            TestContext.Current.CancellationToken);
+        radioSavingPlan.Should().NotBeNull();
+        var budgetPurposeRadio = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Rundfunkgebühr",
+            SourceType: BudgetSourceType.SavingsPlan,
+            SourceId: radioSavingPlan?.Id ?? Guid.Empty,
+            Description: null,
+            BudgetCategoryId: budgetCategoryTax?.Id),
+            TestContext.Current.CancellationToken);
+        budgetPurposeRadio.Should().NotBeNull();
+        var budgetRuleRadioMonthly = await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeRadio?.Id ?? Guid.Empty,
+            BudgetCategoryId: null,
+            Amount: -18.35m,
+            Interval: BudgetIntervalType.Monthly,
+            CustomIntervalMonths: null,
+            StartDate: new DateOnly(2020, 01, 01),
+            EndDate: null),
+            TestContext.Current.CancellationToken);
+        var budgetRuleRadioQuarterly = await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeRadio?.Id ?? Guid.Empty,
+            BudgetCategoryId: null,
+            Amount: 55.08m,
+            Interval: BudgetIntervalType.Quarterly,
+            CustomIntervalMonths: null,
+            StartDate: new DateOnly(2020, 02, 15),
+            EndDate: null),
+            TestContext.Current.CancellationToken);
+        #endregion
+
+        #region Gym Budget Purpose and Rules
+        var gymContact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
+            Name: "Gym",
+            Type: ContactType.Organization,
+            CategoryId: contactCategoryActivities?.Id,
+            Description: null,
+            IsPaymentIntermediary: null,
+            Parent: null), TestContext.Current.CancellationToken);
+        var budgetPurposeGym = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Gym",
+            SourceType: BudgetSourceType.Contact,
+            SourceId: gymContact?.Id ?? Guid.Empty,
+            Description: null,
+            BudgetCategoryId: budgetCategoryActivities?.Id),
+            TestContext.Current.CancellationToken);
+        var budgetRuleGymMonthly = await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeGym?.Id ?? Guid.Empty,
+            BudgetCategoryId: null,
+            Amount: -15m,
+            Interval: BudgetIntervalType.Monthly,
+            CustomIntervalMonths: null,
+            StartDate: new DateOnly(2020, 01, 01),
+            EndDate: null),
+            TestContext.Current.CancellationToken);
+        #endregion
+
+        #region Insurance Budget Purpose and Rules
+        var insuranceContact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
+            Name: "Insurance",
+            Type: ContactType.Organization,
+            CategoryId: contactCategoryInsurances?.Id,
+            Description: null,
+            IsPaymentIntermediary: null,
+            Parent: null), TestContext.Current.CancellationToken);
+        var budgetPurposeInsurance = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Insurance",
+            SourceType: BudgetSourceType.Contact,
+            SourceId: insuranceContact?.Id ?? Guid.Empty,
+            Description: null,
+            BudgetCategoryId: budgetCategoryInsurances?.Id),
+            TestContext.Current.CancellationToken);
+        var budgetRuleInsuranceMonthly = await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeInsurance?.Id ?? Guid.Empty,
+            BudgetCategoryId: null,
+            Amount: -20.93m,
+            Interval: BudgetIntervalType.Monthly,
+            CustomIntervalMonths: null,
+            StartDate: new DateOnly(2020, 01, 01),
+            EndDate: null),
+            TestContext.Current.CancellationToken);
+        #endregion
+
+        #region Insurance 2 Budget Purpose and Rules
+        var insurance2Contact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
+            Name: "Insurance 2",
+            Type: ContactType.Organization,
+            CategoryId: contactCategoryInsurances?.Id,
+            Description: null,
+            IsPaymentIntermediary: null,
+            Parent: null), TestContext.Current.CancellationToken);
+        var budgetPurposeInsurance2 = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Insurance 2",
+            SourceType: BudgetSourceType.Contact,
+            SourceId: insurance2Contact?.Id ?? Guid.Empty,
+            Description: null,
+            BudgetCategoryId: budgetCategoryInsurances?.Id),
+            TestContext.Current.CancellationToken);
+        var budgetRuleInsurance2Monthly = await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeInsurance2?.Id ?? Guid.Empty,
+            BudgetCategoryId: null,
+            Amount: -20.64m,
+            Interval: BudgetIntervalType.Monthly,
+            CustomIntervalMonths: null,
+            StartDate: new DateOnly(2020, 01, 01),
+            EndDate: null),
+            TestContext.Current.CancellationToken);
+        #endregion
+
+        #region Stromkosten Budget Purpose and Rules
+        var budgetCategoryNebenkosten = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Nebenkosten"), TestContext.Current.CancellationToken);
+        var stadtwerkeContact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
+            Name: "Stadtwerke",
+            Type: ContactType.Organization,
+            CategoryId: null,
+            Description: null,
+            IsPaymentIntermediary: null,
+            Parent: null), TestContext.Current.CancellationToken);
+        var budgetPurposeStromkosten = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Stromkosten",
+            SourceType: BudgetSourceType.Contact,
+            SourceId: stadtwerkeContact?.Id ?? Guid.Empty,
+            Description: null,
+            BudgetCategoryId: budgetCategoryNebenkosten?.Id),
+            TestContext.Current.CancellationToken);
+        var budgetRuleStromkostenMonthly = await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeStromkosten?.Id ?? Guid.Empty,
+            BudgetCategoryId: null,
+            Amount: -75m,
+            Interval: BudgetIntervalType.Monthly,
+            CustomIntervalMonths: null,
+            StartDate: new DateOnly(2020, 01, 01),
+            EndDate: null),
+            TestContext.Current.CancellationToken);
+        #endregion
+
+        #region Dividend Security
+        var dividendSecurity = await api.Securities_CreateAsync(new SecurityRequest
+        {
+            Name = "Complex Data Security",
+            Identifier = "US546585765H8",
+            CurrencyCode = "EUR"
+        }, TestContext.Current.CancellationToken);
+        dividendSecurity.Should().NotBeNull();
+        #endregion
+
+        #region Statements
+        var statementDraft = await api.StatementDrafts_CreateAsync(null, TestContext.Current.CancellationToken);
+        (await api.StatementDrafts_SetAccountAsync(statementDraft.DraftId, account.Id, TestContext.Current.CancellationToken)).Should().NotBeNull();
+
+        async Task<Guid> AddEntryAsync(DateTime date, decimal amount, string subject)
+        {
+            var result = await api.StatementDrafts_AddEntryAsync(statementDraft.DraftId, new StatementDraftAddEntryRequest(date, amount, subject), TestContext.Current.CancellationToken);
+            result.Should().NotBeNull();
+            return result!.Entries.Last().Id;
+        }
+
+        // 1) Dividend #1: -/+ security income, booked against the account's bank contact.
+        var statementEntrySecurityIncome1 = (await api.StatementDrafts_AddEntryAsync(statementDraft.DraftId, new StatementDraftAddEntryRequest(new DateTime(2026,08,03), 8.37m, "Zins/Dividende ISIN US546585765H8") , TestContext.Current.CancellationToken)).Entries.Last();
+        statementEntrySecurityIncome1 = await api.StatementDrafts_UpdateEntryCoreAsync(statementDraft.DraftId, statementEntrySecurityIncome1.Id,
+                new StatementDraftUpdateEntryCoreRequest(statementEntrySecurityIncome1.BookingDate, statementEntrySecurityIncome1.BookingDate, statementEntrySecurityIncome1.Amount, statementEntrySecurityIncome1.Subject, "", "EUR", "Zins/Dividende"), TestContext.Current.CancellationToken);
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, statementEntrySecurityIncome1.Id, new StatementDraftSetContactRequest(account.BankContactId), TestContext.Current.CancellationToken)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntrySecurityAsync(statementDraft.DraftId, statementEntrySecurityIncome1.Id, new StatementDraftSetEntrySecurityRequest(dividendSecurity.Id, SecurityTransactionType.Dividend, null, null, null), TestContext.Current.CancellationToken)).Should().NotBeNull();
+
+        // 2) Rueckstellung Rundfunkgebuehr: self-contact posting mirrored into the savings plan.
+        var radioEntryId = await AddEntryAsync(new DateTime(2026, 08, 03), -18.36m, "Rueckstellung Rundfunkgebuehr");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, radioEntryId, new StatementDraftSetContactRequest(selfContact.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntrySavingsPlanAsync(statementDraft.DraftId, radioEntryId, new StatementDraftSetSavingsPlanRequest(radioSavingPlan!.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+
+        // 3) Versicherung: matches Insurance 2's exact monthly rule amount (-20.64).
+        var insurance2EntryId = await AddEntryAsync(new DateTime(2026, 08, 03), -20.64m, "Versicherung");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, insurance2EntryId, new StatementDraftSetContactRequest(insurance2Contact!.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+
+        // 4) Stadtwerke: exact match for the "Stromkosten" budget purpose.
+        var stadtwerkeEntryId = await AddEntryAsync(new DateTime(2026, 08, 03), -75m, "Stadtwerke");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, stadtwerkeEntryId, new StatementDraftSetContactRequest(stadtwerkeContact!.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+
+        // 5) Gym: exact match for the Gym budget purpose.
+        var gymEntryId = await AddEntryAsync(new DateTime(2026, 08, 03), -15m, "Gym");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, gymEntryId, new StatementDraftSetContactRequest(gymContact!.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+
+        // 6) Dividend #2: second, unbudgeted dividend from the same security.
+        var securityIncome2EntryId = await AddEntryAsync(new DateTime(2026, 08, 04), 9.67m, "Zins/Dividende ISIN US546585765H8");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, securityIncome2EntryId, new StatementDraftSetContactRequest(account.BankContactId), TestContext.Current.CancellationToken)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntrySecurityAsync(statementDraft.DraftId, securityIncome2EntryId, new StatementDraftSetEntrySecurityRequest(dividendSecurity.Id, SecurityTransactionType.Dividend, null, null, null), TestContext.Current.CancellationToken)).Should().NotBeNull();
+
+        // 7) + 8) Transfer Sparkonto: self-contact pair, unbudgeted and cost-neutral.
+        var transferOutEntryId = await AddEntryAsync(new DateTime(2026, 08, 04), 5000m, "Transfer Sparkonto");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, transferOutEntryId, new StatementDraftSetContactRequest(selfContact.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+
+        var transferInEntryId = await AddEntryAsync(new DateTime(2026, 08, 04), -5000m, "Transfer Sparkonto");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, transferInEntryId, new StatementDraftSetContactRequest(selfContact.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+
+        // 9) Sparplan Allgemein: self-contact posting without a matching savings-plan purpose, unbudgeted and cost-neutral.
+        var sparplanAllgemeinEntryId = await AddEntryAsync(new DateTime(2026, 08, 04), -200m, "Sparplan Allgemein");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, sparplanAllgemeinEntryId, new StatementDraftSetContactRequest(selfContact.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+
+        var book = await api.StatementDrafts_BookAsync(statementDraft.DraftId, forceWarnings: true, TestContext.Current.CancellationToken);
+        book.Should().NotBeNull();
+        book!.Success.Should().BeTrue();
+
+        #endregion
+
+        #region Assertions
+        var report = await api.Budgets_GetReportAsync(new BudgetReportRequest(
+            AsOfDate: new DateOnly(2026, 08, 31),
+            Months: 1,
+            Interval: BudgetReportInterval.Month,
+            ShowTitle: false,
+            ShowLineChart: false,
+            ShowMonthlyTable: false,
+            ShowDetailsTable: true,
+            CategoryValueScope: BudgetReportValueScope.TotalRange,
+            IncludePurposeRows: true,
+            DateBasis: BudgetReportDateBasis.BookingDate),
+            TestContext.Current.CancellationToken);
+        report.Should().NotBeNull();
+
+        // Rundfunkgebuehr: the booked amount (-18.36) overshoots the exact monthly rule (-18.35) by one
+        // cent, so the posting is split: -18.35 is recognized as Actual, and the leftover -0.01 stays
+        // attributed to this purpose (visible in its Postings, not valued) rather than being routed to
+        // the top-level Unbudgeted/CostNeutral buckets, which are reserved for postings that matched no
+        // budget purpose at all.
+        var taxCategory = report.Categories.Single(c => c.Id == budgetCategoryTax!.Id);
+        var radioPurposeRow = taxCategory.Purposes.Single(p => p.Id == budgetPurposeRadio!.Id);
+        radioPurposeRow.Actual.Should().Be(-18.35m);
+
+        var rawReport = await api.Budgets_GetReportRawAsync(new BudgetReportRequest(
+            AsOfDate: new DateOnly(2026, 08, 31),
+            Months: 1,
+            Interval: BudgetReportInterval.Month,
+            ShowTitle: false,
+            ShowLineChart: false,
+            ShowMonthlyTable: false,
+            ShowDetailsTable: true,
+            CategoryValueScope: BudgetReportValueScope.TotalRange,
+            IncludePurposeRows: true,
+            DateBasis: BudgetReportDateBasis.BookingDate),
+            TestContext.Current.CancellationToken);
+        var radioRawPurpose = rawReport.Categories.Single(c => c.CategoryId == budgetCategoryTax!.Id)
+            .Purposes.Single(p => p.PurposeId == budgetPurposeRadio!.Id);
+        radioRawPurpose.Postings.Should().ContainSingle(p => !p.IsValuedForBudgetPurpose && p.Amount == -0.01m);
+
+        // Insurances: Insurance 2 is actually booked; Insurance (the first one) stays at zero actual.
+        var insurancesCategory = report.Categories.Single(c => c.Id == budgetCategoryInsurances!.Id);
+        var insurancePurposeRow = insurancesCategory.Purposes.Single(p => p.Id == budgetPurposeInsurance!.Id);
+        insurancePurposeRow.Actual.Should().Be(0m);
+        var insurance2PurposeRow = insurancesCategory.Purposes.Single(p => p.Id == budgetPurposeInsurance2!.Id);
+        insurance2PurposeRow.Actual.Should().Be(-20.64m);
+
+        // Activities: Gym is booked at the exact budgeted amount.
+        var activitiesCategory = report.Categories.Single(c => c.Id == budgetCategoryActivities!.Id);
+        var gymPurposeRow = activitiesCategory.Purposes.Single(p => p.Id == budgetPurposeGym!.Id);
+        gymPurposeRow.Actual.Should().Be(-15m);
+
+        // Stromkosten: exact match against the "Nebenkosten" category's Stadtwerke rule.
+        var nebenkostenCategory = report.Categories.Single(c => c.Id == budgetCategoryNebenkosten!.Id);
+        var stromkostenPurposeRow = nebenkostenCategory.Purposes.Single(p => p.Id == budgetPurposeStromkosten!.Id);
+        stromkostenPurposeRow.Actual.Should().Be(-75m);
+
+        // Both dividends (8.37 + 9.67) have no matching budget purpose.
+        report.Categories.Should().Contain(c => c.Kind == BudgetReportCategoryRowKind.Unbudgeted);
+        var unbudgetedCategory = report.Categories.Single(c => c.Kind == BudgetReportCategoryRowKind.Unbudgeted);
+        unbudgetedCategory.Actual.Should().Be(8.37m + 9.67m);
+
+        // Only the three self-contact transfers (5000 - 5000 - 200) show up as cost-neutral. The
+        // Rundfunkgebuehr overshoot is NOT cost-neutral, even though it also originates from a
+        // self-contact posting: it is a leftover of a posting that DID match a budget purpose, so per
+        // the requirement it stays attributed to that purpose (asserted above) instead of falling into
+        // the generic cost-neutral/unbudgeted buckets, which are reserved for postings that matched no
+        // budget purpose whatsoever.
+        report.Categories.Should().Contain(c => c.Kind == BudgetReportCategoryRowKind.UnbudgetedSelfCostNeutral);
+        var costNeutralCategory = report.Categories.Single(c => c.Kind == BudgetReportCategoryRowKind.UnbudgetedSelfCostNeutral);
+        costNeutralCategory.Actual.Should().Be(5000m - 5000m - 200m);
+
+        var from = new DateTime(2026, 08, 01);
+        var to = new DateTime(2026, 08, 31, 23, 59, 59);
+        var unbudgeted = await api.Budgets_GetUnbudgetedPostingsAsync(from, to, BudgetReportDateBasis.BookingDate, null, TestContext.Current.CancellationToken);
+        // 5 raw postings: the two dividends and the three self-contact transfers. The Rundfunkgebuehr
+        // posting is NOT among them, since its 0.01 overshoot is reported against its own purpose only.
+        unbudgeted.Should().HaveCount(5);
+        unbudgeted.Should().ContainSingle(p => p.Subject == "Zins/Dividende ISIN US546585765H8" && p.Amount == 8.37m);
+        unbudgeted.Should().ContainSingle(p => p.Subject == "Zins/Dividende ISIN US546585765H8" && p.Amount == 9.67m);
+        unbudgeted.Should().ContainSingle(p => p.Subject == "Transfer Sparkonto" && p.Amount == 5000m);
+        unbudgeted.Should().ContainSingle(p => p.Subject == "Transfer Sparkonto" && p.Amount == -5000m);
+        unbudgeted.Should().ContainSingle(p => p.Subject == "Sparplan Allgemein" && p.Amount == -200m);
+
+        // Every real posting must be listed under exactly one result row: either a single budget purpose
+        // (its Postings array - a posting can legitimately appear twice there when Finish() splits it into
+        // a valued and an unvalued/overrun fragment, both sharing the same PostingId) or the top-level
+        // Unbudgeted list, never both. A posting shown at its purpose must never also show up in the
+        // generic Unbudgeted list, and vice versa.
+        var postingRowLabels = rawReport.Categories
+            .SelectMany(c => c.Purposes)
+            .Concat(rawReport.UncategorizedPurposes)
+            .SelectMany(p => p.Postings.Select(posting => (posting.PostingId, RowLabel: $"purpose:{p.PurposeId}")))
+            .Concat(rawReport.UnbudgetedPostings.Select(posting => (posting.PostingId, RowLabel: "unbudgeted")))
+            .ToList();
+        var postingsListedUnderMultipleRows = postingRowLabels
+            .GroupBy(x => x.PostingId)
+            .Where(g => g.Select(x => x.RowLabel).Distinct().Count() > 1)
+            .ToList();
+        postingsListedUnderMultipleRows.Should().BeEmpty("no posting may be listed under more than one result row");
+        #endregion
     }
 }

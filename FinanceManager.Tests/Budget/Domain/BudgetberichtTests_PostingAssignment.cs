@@ -116,7 +116,11 @@ public sealed class BudgetberichtTests_PostingAssignment
         var monthResult = budgetbericht.MonthlyResults.Single();
         var expectation = monthResult.ExpectationGroups.Single().Purposes.Single();
         expectation.SumActualAmount.Should().Be(-12.50m, "the refund has the wrong sign for an ExactPostings expectation");
-        monthResult.UnbudgetedPostings.Should().ContainSingle(p => p.Amount == 9.40m);
+        // The sign-mismatched refund is shown against this purpose (see
+        // AddPosting_ExactPostings_SignMismatch_RecordsPostingAsUnvaluedMatchOnTheOccurrence) and must
+        // therefore NOT also appear in the month's top-level Unbudgeted bucket.
+        expectation.Postings.SelectMany(p => p.UnvaluedMatchedPostings).Should().ContainSingle(p => p.Amount == 9.40m);
+        monthResult.UnbudgetedPostings.Should().BeEmpty();
     }
 
     [Fact]
@@ -130,10 +134,14 @@ public sealed class BudgetberichtTests_PostingAssignment
         var refund = CreateContactPosting(9.40m, new DateTime(2026, 1, 4), contactId, purpose: "VEREIN Erstattung");
         budgetbericht.AddPosting(refund, BudgetReportDateBasis.BookingDate);
 
-        var occurrence = budgetbericht.MonthlyResults.Single().ExpectationGroups.Single().Purposes.Single().Postings.Single();
+        var monthResult = budgetbericht.MonthlyResults.Single();
+        var occurrence = monthResult.ExpectationGroups.Single().Purposes.Single().Postings.Single();
         occurrence.UnvaluedMatchedPostings.Should().ContainSingle(p => p.Amount == 9.40m,
             "a posting that matches the purpose's source and pattern, but not its sign, is still visible against the occurrence, just not valued");
         occurrence.AssignedPostings.Should().BeEmpty();
+        // A posting shown at its purpose must not also be listed as (self-contact) unbudgeted/cost-neutral.
+        monthResult.UnbudgetedPostings.Should().BeEmpty();
+        monthResult.CostNeutralPostings.Should().BeEmpty();
     }
 
     [Fact]
