@@ -1,4 +1,5 @@
 using FinanceManager.Shared.Dtos.Update;
+using Microsoft.Extensions.Logging;
 using msTools.Updater;
 
 namespace FinanceManager.Web.Services.Updates;
@@ -18,6 +19,7 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
     private readonly IUpdateSettingsStore _settingsStore;
     private readonly IAutoUpdatePackageStore _packageStore;
     private readonly UpdateStatusMapper _statusMapper;
+    private readonly ILogger<UpdateOrchestratorAdapter> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UpdateOrchestratorAdapter"/> class.
@@ -27,18 +29,21 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
     /// <param name="settingsStore">The host-specific settings store.</param>
     /// <param name="packageStore">Used to inspect, reset and evaluate the staleness of the installation lock.</param>
     /// <param name="statusMapper">Used to map a status snapshot onto <see cref="UpdateStatusDto"/>.</param>
+    /// <param name="logger">Used to log a warning when the installation lock is not cleaned up after a successful installation.</param>
     public UpdateOrchestratorAdapter(
         IAutoUpdateOrchestrator orchestrator,
         AutoUpdateStatusService statusService,
         IUpdateSettingsStore settingsStore,
         IAutoUpdatePackageStore packageStore,
-        UpdateStatusMapper statusMapper)
+        UpdateStatusMapper statusMapper,
+        ILogger<UpdateOrchestratorAdapter> logger)
     {
         _orchestrator = orchestrator;
         _statusService = statusService;
         _settingsStore = settingsStore;
         _packageStore = packageStore;
         _statusMapper = statusMapper;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -103,29 +108,125 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
             throw result.Error;
         }
 
+        if (result.Outcome != AutoUpdateOutcome.Failed)
+        {
+            await ValidateLockCleanupAsync(ct);
+        }
+
         return await _statusMapper.MapAsync(_statusService.GetSnapshot(), ct);
     }
 
     /// <inheritdoc />
     public async Task ResetLockAsync(string? reason, CancellationToken ct = default)
     {
-        var lockCreatedAt = await _packageStore.GetLockCreatedAtAsync(ct);
-        if (!lockCreatedAt.HasValue)
+        DateTimeOffset? lockCreatedAt = null;
+        var statusUpdateStarted = false;
+        try
         {
-            throw new IOException("No update lock is active.");
+            lockCreatedAt = await _packageStore.GetLockCreatedAtAsync(ct);
+            if (!lockCreatedAt.HasValue)
+            {
+                throw CreateResetException(
+                    UpdateLockResetFailureKind.NoLock,
+                    UpdateLockResetFailureSource.FinanceManager,
+                    "No update lock is active.");
+            }
+
+            if (!_packageStore.IsLockStale(lockCreatedAt.Value))
+            {
+                throw CreateResetException(
+                    UpdateLockResetFailureKind.LockNotStale,
+                    UpdateLockResetFailureSource.FinanceManager,
+                    "The update lock is not old enough to be considered stale.",
+                    lockCreatedAt);
+            }
+
+            var deleted = await DeleteLockOrThrowAsync(lockCreatedAt.Value, ct);
+            if (!deleted)
+            {
+                throw CreateResetException(
+                    UpdateLockResetFailureKind.LockDeleteFailed,
+                    UpdateLockResetFailureSource.FinanceManager,
+                    "The update lock could not be deleted.",
+                    lockCreatedAt);
+            }
+
+            statusUpdateStarted = true;
+            await _statusService.UpdateAsync(s => s with
+            {
+                IsLocked = false,
+                LockCreatedAt = null,
+                LastError = string.IsNullOrWhiteSpace(reason) ? s.LastError : $"Lock reset: {reason}"
+            }, ct);
+        }
+        catch (UpdateLockResetException)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw CreateResetException(
+                UpdateLockResetFailureKind.ResetFailed,
+                statusUpdateStarted ? UpdateLockResetFailureSource.FinanceManager : UpdateLockResetFailureSource.Updater,
+                "The update lock reset failed.",
+                lockCreatedAt,
+                ex);
+        }
+    }
+
+    private async Task<bool> DeleteLockOrThrowAsync(DateTimeOffset lockCreatedAt, CancellationToken ct)
+    {
+        try
+        {
+            return await _packageStore.DeleteLockAsync(ct);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw CreateResetException(
+                UpdateLockResetFailureKind.LockDeleteFailed,
+                UpdateLockResetFailureSource.Updater,
+                "The update lock could not be deleted.",
+                lockCreatedAt,
+                ex);
+        }
+    }
+
+    private UpdateLockResetException CreateResetException(
+        UpdateLockResetFailureKind kind,
+        UpdateLockResetFailureSource failureSource,
+        string message,
+        DateTimeOffset? lockCreatedAt = null,
+        Exception? innerException = null)
+        => new(kind, failureSource, message, lockCreatedAt, _packageStore.LockPath, innerException);
+
+    private async Task ValidateLockCleanupAsync(CancellationToken ct)
+    {
+        DateTimeOffset? lockCreatedAt;
+        try
+        {
+            lockCreatedAt = await _packageStore.GetLockCreatedAtAsync(ct);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to validate lock cleanup after installation.");
+            return;
         }
 
-        if (!_packageStore.IsLockStale(lockCreatedAt.Value))
+        if (lockCreatedAt.HasValue)
         {
-            throw new IOException("The update lock is not old enough to be considered stale.");
+            _logger.LogWarning("Lock was not cleaned up after installation. LockCreatedAt: {LockCreatedAt}", lockCreatedAt);
         }
-
-        await _packageStore.DeleteLockAsync(ct);
-        await _statusService.UpdateAsync(s => s with
-        {
-            IsLocked = false,
-            LockCreatedAt = null,
-            LastError = string.IsNullOrWhiteSpace(reason) ? s.LastError : $"Lock reset: {reason}"
-        }, ct);
     }
 }

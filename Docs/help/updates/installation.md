@@ -134,7 +134,7 @@ Die Checkbox **Vorabversionen berücksichtigen** ist standardmäßig aus. Solang
 Im Ribbon der Setup-Seite stehen außerdem die Update-Aktionen bereit:
 - **Jetzt prüfen** lädt Manifest und passendes Paket.
 - **Update installieren** startet ein vorbereitetes Update nach Downtime-Bestätigung.
-- **Update-Lock zurücksetzen** entfernt einen verwaisten Lock, sofern der Server den Reset erlaubt.
+- **Update-Lock zurücksetzen** entfernt einen verwaisten Lock, sofern der Server den Reset erlaubt. Fehlgeschlagene Resets melden den konkreten Grund, z. B. fehlenden Lock, noch nicht stale Lock, fehlgeschlagenes Löschen oder technischen Reset-Fehler.
 
 Das Feld **Service-Name** lädt Vorschläge aus dem aktuellen Betriebssystem. Windows nutzt `sc.exe`, Linux nutzt `systemctl`. Wenn die Dienstliste nicht gelesen werden kann, bleibt die Vorschlagsliste leer; die Seite bleibt bedienbar.
 
@@ -216,6 +216,7 @@ Wichtig:
 
 **Lösung:**
 1. Admin-UI öffnen, im Ribbon "Update-Lock zurücksetzen" klicken (nur wenn Lock mindestens so alt wie der serverseitige Health-Timeout ist)
+   - Bei Ablehnung zeigt die UI einen spezifischen Reset-Fehlercode (`Err_Update_Reset_NoLock`, `Err_Update_Reset_LockNotStale`, `Err_Update_Reset_DeleteFailed` oder `Err_Update_Reset_Failed`).
 2. Oder manuell Lock-Datei löschen: `rm /var/lib/myapp/updates/update.lock`
 3. Dann Status-UI aktualisieren
 

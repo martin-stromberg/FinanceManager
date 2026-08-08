@@ -172,10 +172,13 @@ Paketstatus, Service-/EXE-Ziel und erzeugt ein externes Update-Skript.
 ### `POST /api/setup/update/lock/reset`
 
 **Beschreibung:** Update-Lock administrativ zuruecksetzen. Der Reset wird
-abgelehnt, solange die aktuelle Prozessinstanz selbst eine Installation
-besitzt, kein Lock vorhanden ist oder die Lock-Datei juenger als das
-konfigurierte Health-Timeout ist. Der Endpunkt ist fuer verwaiste
-Installationslocks gedacht.
+abgelehnt, wenn kein Lock vorhanden ist, die Lock-Datei juenger als das
+konfigurierte Health-Timeout ist, die Lock-Datei nicht geloescht werden kann
+oder ein sonstiger technischer Reset-Fehler auftritt. Der Endpunkt ist fuer
+verwaiste Installationslocks gedacht. Reset-Fehler werden mit eigenen Fehlercodes
+zurueckgegeben: `Err_Update_Reset_NoLock`, `Err_Update_Reset_LockNotStale`,
+`Err_Update_Reset_DeleteFailed` oder `Err_Update_Reset_Failed`. Die Meldung
+`Err_Update_InstallRunning` wird nicht als pauschaler Reset-Fehler verwendet.
 
 **Berechtigung:** Rolle `Admin`.
 
@@ -200,3 +203,105 @@ Installationslocks gedacht.
 ### `POST /api/background-tasks/aggregates/rebuild`
 
 **Beschreibung:** Rebuild von Aggregaten starten.
+
+---
+
+## security.txt
+
+### `GET /security.txt` und `GET /.well-known/security.txt`
+
+**Beschreibung:** RFC-9116-konformen Plaintext abrufen.
+
+**Berechtigung:** Keine (öffentlich, `[AllowAnonymous]`).
+
+**Antworten:**
+- `200 OK` mit `Content-Type: text/plain; charset=utf-8` wenn `Contact` konfiguriert ist.
+- `503 Service Unavailable` mit `{ "error": "security.txt is not configured yet." }` wenn das Kontaktfeld noch leer ist.
+
+---
+
+### `GET /.well-known/security.md`
+
+**Beschreibung:** Markdown-Darstellung der security.txt abrufen. Jede Direktive wird als `## Direktive` Abschnittsüberschrift gerendert.
+
+**Berechtigung:** Keine (öffentlich).
+
+**Antworten:**
+- `200 OK` mit `Content-Type: text/markdown; charset=utf-8`
+- `503 Service Unavailable` wenn nicht konfiguriert.
+
+---
+
+### `GET /.well-known/security.html`
+
+**Beschreibung:** HTML-Darstellung der security.txt abrufen. Jede Direktive wird als `<section><h2>…</h2><p>…</p></section>` gerendert. Werte werden HTML-enkodiert ausgegeben.
+
+**Berechtigung:** Keine (öffentlich).
+
+**Antworten:**
+- `200 OK` mit `Content-Type: text/html; charset=utf-8`
+- `503 Service Unavailable` wenn nicht konfiguriert.
+
+---
+
+### `GET /api/admin/security-txt`
+
+**Beschreibung:** Aktuelle security.txt-Einstellungen als `SecurityTxtSettingsDto` laden.
+
+**Berechtigung:** JWT-Bearer, Rolle `Admin`.
+
+**Antworten:**
+- `200 OK` mit `SecurityTxtSettingsDto`.
+- `403 Forbidden` ohne Admin-Rolle.
+
+**Beispielantwort:**
+```json
+{
+  "contact": "mailto:security@example.com",
+  "expires": "2027-01-01T00:00:00+00:00",
+  "encryption": null,
+  "acknowledgments": null,
+  "preferredLanguages": "de, en",
+  "policy": null,
+  "hiring": null
+}
+```
+
+---
+
+### `PUT /api/admin/security-txt`
+
+**Beschreibung:** security.txt-Einstellungen aktualisieren.
+
+**Berechtigung:** JWT-Bearer, Rolle `Admin`.
+
+**Request-Body:** `SecurityTxtSettingsUpdateRequest`
+
+```json
+{
+  "contact": "mailto:security@example.com",
+  "expires": "2027-01-01T00:00:00+00:00",
+  "encryption": "https://example.com/pgp-key.asc",
+  "acknowledgments": null,
+  "preferredLanguages": "de, en",
+  "policy": null,
+  "hiring": null
+}
+```
+
+**Parameter:**
+
+| Name | Typ | Pflicht | Max. Länge | Beschreibung |
+|------|-----|---------|-----------|--------------|
+| `Contact` | `string` | Ja | 2048 | URI oder mailto-Adresse |
+| `Expires` | `DateTimeOffset` | Ja | – | ISO-8601-Ablaufdatum |
+| `Encryption` | `string?` | Nein | 2048 | URI zum öffentlichen Schlüssel |
+| `Acknowledgments` | `string?` | Nein | 2048 | URI zur Danksagungsseite |
+| `PreferredLanguages` | `string?` | Nein | 2048 | Kommagetrennte BCP-47-Tags |
+| `Policy` | `string?` | Nein | 2048 | URI zur Sicherheitsrichtlinie |
+| `Hiring` | `string?` | Nein | 2048 | URI zur Stellenausschreibungsseite |
+
+**Antworten:**
+- `204 No Content` bei Erfolg.
+- `400 ValidationProblem` bei fehlenden Pflichtfeldern oder überschrittener Maximallänge.
+- `403 Forbidden` ohne Admin-Rolle.

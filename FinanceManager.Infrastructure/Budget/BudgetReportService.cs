@@ -139,6 +139,7 @@ public sealed class BudgetReportService : IBudgetReportService
                 SavingsPlanName = spId.HasValue ? savingsPlans.FirstOrDefault(sp => sp.Id == spId.Value)?.Name : null,
                 SecurityId = secId,
                 SecurityName = secId.HasValue ? securities.FirstOrDefault(sec => sec.Id == secId.Value)?.Name : null,
+                GroupId = p.GroupId != Guid.Empty ? p.GroupId : null,
 
                 BudgetCategoryId = null,
                 BudgetCategoryName = null,
@@ -192,6 +193,8 @@ public sealed class BudgetReportService : IBudgetReportService
         CancellationToken ct)
     {
         var result = new List<BudgetReportPurposeRawDataDto>();
+        // track which posting IDs have been allocated across all purposes
+        var allocatedPostingIds = new HashSet<Guid>();
 
         foreach (var pur in uncategorizedPurposes)
         {
@@ -214,9 +217,13 @@ public sealed class BudgetReportService : IBudgetReportService
             // If no rules exist, assign all postings to the purpose
             if (rules.Count == 0)
             {
-                matchedPostings.AddRange(postingsForPurpose);
                 foreach (var p in postingsForPurpose)
                 {
+                    if (!allocatedPostingIds.Contains(p.PostingId))
+                    {
+                        matchedPostings.Add(p);
+                        allocatedPostingIds.Add(p.PostingId);
+                    }
                     postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
                 }
                 postingsForPurpose.Clear();
@@ -240,7 +247,11 @@ public sealed class BudgetReportService : IBudgetReportService
 
                         foreach (var p in bucketPostings)
                         {
-                            matchedPostings.Add(p with { IsValuedForBudgetPurpose = true });
+                            if (!allocatedPostingIds.Contains(p.PostingId))
+                            {
+                                matchedPostings.Add(p with { IsValuedForBudgetPurpose = true });
+                                allocatedPostingIds.Add(p.PostingId);
+                            }
                             postingsForPurpose.RemoveAll(x => x.PostingId == p.PostingId);
                             postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
                         }
@@ -276,7 +287,11 @@ public sealed class BudgetReportService : IBudgetReportService
                             && p.Amount == expected);
                         if (exactCandidate != null)
                         {
-                            matchedPostings.Add(exactCandidate);
+                            if (!allocatedPostingIds.Contains(exactCandidate.PostingId))
+                            {
+                                matchedPostings.Add(exactCandidate);
+                                allocatedPostingIds.Add(exactCandidate.PostingId);
+                            }
                             postingsForPurpose.RemoveAll(x => x.PostingId == exactCandidate.PostingId);
                             postingDtos.RemoveAll(x => x.PostingId == exactCandidate.PostingId);
                             bucketPostings.RemoveAll(x => x.PostingId == exactCandidate.PostingId);
@@ -299,7 +314,11 @@ public sealed class BudgetReportService : IBudgetReportService
 
                                 if (p.Amount <= remaining)
                                 {
-                                    matchedPostings.Add(p);
+                                    if (!allocatedPostingIds.Contains(p.PostingId))
+                                    {
+                                        matchedPostings.Add(p);
+                                        allocatedPostingIds.Add(p.PostingId);
+                                    }
                                     remaining -= p.Amount;
                                     postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
                                     postingsForPurpose.RemoveAll(x => x.PostingId == p.PostingId);
@@ -307,7 +326,11 @@ public sealed class BudgetReportService : IBudgetReportService
                                 }
 
                                 var allocated = p with { Amount = remaining };
-                                matchedPostings.Add(allocated);
+                                if (!allocatedPostingIds.Contains(p.PostingId))
+                                {
+                                    matchedPostings.Add(allocated);
+                                    allocatedPostingIds.Add(p.PostingId);
+                                }
                                 var remainingAmount = p.Amount - remaining;
                                 for (int j = 0; j < postingDtos.Count; j++)
                                 {
@@ -348,7 +371,11 @@ public sealed class BudgetReportService : IBudgetReportService
                                 var pAbs = Math.Abs(p.Amount);
                                 if (pAbs <= remainingAbs)
                                 {
-                                    matchedPostings.Add(p);
+                                    if (!allocatedPostingIds.Contains(p.PostingId))
+                                    {
+                                        matchedPostings.Add(p);
+                                        allocatedPostingIds.Add(p.PostingId);
+                                    }
                                     remainingAbs -= pAbs;
                                     postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
                                     postingsForPurpose.RemoveAll(x => x.PostingId == p.PostingId);
@@ -356,7 +383,11 @@ public sealed class BudgetReportService : IBudgetReportService
                                 }
 
                                 var allocated = p with { Amount = -remainingAbs };
-                                matchedPostings.Add(allocated);
+                                if (!allocatedPostingIds.Contains(p.PostingId))
+                                {
+                                    matchedPostings.Add(allocated);
+                                    allocatedPostingIds.Add(p.PostingId);
+                                }
                                 var remainingAmount = p.Amount + remainingAbs; // p.Amount is negative
                                 for (int j = 0; j < postingDtos.Count; j++)
                                 {
@@ -392,18 +423,21 @@ public sealed class BudgetReportService : IBudgetReportService
             // any postings left in postingsForPurpose are unbudgeted for this purpose
             foreach (var left in postingsForPurpose)
             {
-                if (pur.ValuationType == BudgetValuationType.ExactPostings
-                    && rules.Any(rule => BudgetRulePatternMatcher.MatchesPosting(left.Subject, left.Description, rule.PurposePattern, rule.UseRegex)))
+                if (!allocatedPostingIds.Contains(left.PostingId))
                 {
-                    unvaluedMatchingPostings.Add(left with { IsValuedForBudgetPurpose = false });
-                }
+                    if (pur.ValuationType == BudgetValuationType.ExactPostings
+                        && rules.Any(rule => BudgetRulePatternMatcher.MatchesPosting(left.Subject, left.Description, rule.PurposePattern, rule.UseRegex)))
+                    {
+                        unvaluedMatchingPostings.Add(left with { IsValuedForBudgetPurpose = false });
+                    }
 
-                unbudgetedList.Add(left with
-                {
-                    BudgetCategoryId = null,
-                    BudgetPurposeId = null,
-                    IsValuedForBudgetPurpose = false
-                });
+                    unbudgetedList.Add(left with
+                    {
+                        BudgetCategoryId = null,
+                        BudgetPurposeId = null,
+                        IsValuedForBudgetPurpose = false
+                    });
+                }
                 postingDtos.RemoveAll(x => x.PostingId == left.PostingId);
             }
 
@@ -490,6 +524,7 @@ public sealed class BudgetReportService : IBudgetReportService
         // not considered further when constructing category/purpose postings.
         postingDtos = postingDtos.Where(p => p.BudgetPurposeId != null && p.BudgetPurposeId != Guid.Empty).ToList();
 
+
         // Categories and UncategorizedPurposes placeholders: purposes empty for now
         var categoryDtos = new List<BudgetReportCategoryRawDataDto>();
         foreach (var cat in categoryOverviews.OrderBy(c => c.Name))
@@ -526,7 +561,11 @@ public sealed class BudgetReportService : IBudgetReportService
                 var rulesForCategory = categoryRules.ToList();
 
                 // collect postings that belong to this category (these postings already carry purpose metadata)
+                // Exclude postings with BudgetPurposeId for Contact-based purposes (already handled by purpose processing)
+                // Include postings without BudgetPurposeId and ContactGroup-based postings for category rule processing
                 var postingsForCategory = postingDtos.Where(d => d.BudgetCategoryId == cat.Id)
+                    .Where(d => !d.BudgetPurposeId.HasValue || d.BudgetPurposeId == Guid.Empty ||
+                        (d.BudgetPurposeId.HasValue && purposesInCat.Any(p => p.Id == d.BudgetPurposeId && p.SourceType == BudgetSourceType.ContactGroup)))
                     .OrderBy(p => p.BookingDate)
                     .ThenBy(p => p.ValutaDate ?? DateTime.MinValue)
                     .ThenBy(p => p.Amount)
@@ -534,6 +573,8 @@ public sealed class BudgetReportService : IBudgetReportService
 
                 // map of purposeId -> allocated postings
                 var allocated = new Dictionary<Guid, List<BudgetReportPostingRawDataDto>>();
+                // track which posting IDs have been allocated
+                var allocatedPostingIds = new HashSet<Guid>();
 
                 // exact matches first
                 foreach (var rule in rulesForCategory.ToList())
@@ -554,11 +595,17 @@ public sealed class BudgetReportService : IBudgetReportService
                                 allocated[key] = postingsList;
                             }
                             postingsList.Add(candidate with { IsValuedForBudgetPurpose = true });
+                            allocatedPostingIds.Add(candidate.PostingId);
                         }
 
                         rulesForCategory.Remove(rule);
-                        postingsForCategory.RemoveAll(x => x.PostingId == candidate.PostingId);
-                        postingDtos.RemoveAll(x => x.PostingId == candidate.PostingId);
+                        // Only remove from postingsForCategory if it has a BudgetPurposeId and was allocated
+                        // Postings without BudgetPurposeId should remain for unbudgeted processing
+                        if (candidate.BudgetPurposeId.HasValue)
+                        {
+                            postingsForCategory.RemoveAll(x => x.PostingId == candidate.PostingId);
+                            postingDtos.RemoveAll(x => x.PostingId == candidate.PostingId);
+                        }
                     }
                 }
 
@@ -582,7 +629,7 @@ public sealed class BudgetReportService : IBudgetReportService
                             var targetPurposeId = p.BudgetPurposeId ?? Guid.Empty;
                             if (p.Amount <= remaining)
                             {
-                                if (targetPurposeId != Guid.Empty)
+                                if (targetPurposeId != Guid.Empty && !allocatedPostingIds.Contains(p.PostingId))
                                 {
                                 if (!allocated.TryGetValue(targetPurposeId, out var postsForPurpose))
                                 {
@@ -590,16 +637,26 @@ public sealed class BudgetReportService : IBudgetReportService
                                     allocated[targetPurposeId] = postsForPurpose;
                                 }
                                 postsForPurpose.Add(p with { IsValuedForBudgetPurpose = true });
+                                allocatedPostingIds.Add(p.PostingId);
                                 }
 
                                 remaining -= p.Amount;
-                                postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
-                                postingsForCategory.RemoveAt(idx);
+                                // Only remove if it has a BudgetPurposeId and was allocated
+                                if (targetPurposeId != Guid.Empty)
+                                {
+                                    postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
+                                    postingsForCategory.RemoveAll(x => x.PostingId == p.PostingId);
+                                    idx = 0; // Reset index since we removed an element
+                                }
+                                else
+                                {
+                                    idx++; // Skip to next since we didn't remove this one
+                                }
                             }
                             else
                             {
                                 var allocatedPart = p with { Amount = remaining };
-                                if (targetPurposeId != Guid.Empty)
+                                if (targetPurposeId != Guid.Empty && !allocatedPostingIds.Contains(p.PostingId))
                                 {
                                 if (!allocated.TryGetValue(targetPurposeId, out var postsForPurpose2))
                                 {
@@ -607,6 +664,7 @@ public sealed class BudgetReportService : IBudgetReportService
                                     allocated[targetPurposeId] = postsForPurpose2;
                                 }
                                 postsForPurpose2.Add(allocatedPart with { IsValuedForBudgetPurpose = true });
+                                allocatedPostingIds.Add(p.PostingId);
                                 }
 
                                 var remainingAmount = p.Amount - remaining;
@@ -618,7 +676,16 @@ public sealed class BudgetReportService : IBudgetReportService
                                         break;
                                     }
                                 }
-                                postingsForCategory[idx] = p with { Amount = remainingAmount };
+                                // Only remove if it has a BudgetPurposeId and was allocated
+                                if (targetPurposeId != Guid.Empty)
+                                {
+                                    postingsForCategory.RemoveAll(x => x.PostingId == p.PostingId);
+                                    idx = 0; // Reset index since we removed an element
+                                }
+                                else
+                                {
+                                    idx++; // Skip to next since we didn't remove this one
+                                }
                                 remaining = 0;
                             }
                         }
@@ -634,7 +701,7 @@ public sealed class BudgetReportService : IBudgetReportService
                             var targetPurposeId = p.BudgetPurposeId ?? Guid.Empty;
                             if (pAbs <= remainingAbs)
                             {
-                                if (targetPurposeId != Guid.Empty)
+                                if (targetPurposeId != Guid.Empty && !allocatedPostingIds.Contains(p.PostingId))
                                 {
                                     if (!allocated.TryGetValue(targetPurposeId, out var list))
                                     {
@@ -642,16 +709,26 @@ public sealed class BudgetReportService : IBudgetReportService
                                         allocated[targetPurposeId] = list;
                                     }
                                     list.Add(p with { IsValuedForBudgetPurpose = true });
+                                    allocatedPostingIds.Add(p.PostingId);
                                 }
 
                                 remainingAbs -= pAbs;
-                                postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
-                                postingsForCategory.RemoveAt(idx);
+                                // Only remove if it has a BudgetPurposeId and was allocated
+                                if (targetPurposeId != Guid.Empty)
+                                {
+                                    postingDtos.RemoveAll(x => x.PostingId == p.PostingId);
+                                    postingsForCategory.RemoveAll(x => x.PostingId == p.PostingId);
+                                    idx = 0; // Reset index since we removed an element
+                                }
+                                else
+                                {
+                                    idx++; // Skip to next since we didn't remove this one
+                                }
                             }
                             else
                             {
                                 var allocatedPart = p with { Amount = -remainingAbs };
-                                if (targetPurposeId != Guid.Empty)
+                                if (targetPurposeId != Guid.Empty && !allocatedPostingIds.Contains(p.PostingId))
                                 {
                                     if (!allocated.TryGetValue(targetPurposeId, out var list))
                                     {
@@ -659,6 +736,7 @@ public sealed class BudgetReportService : IBudgetReportService
                                         allocated[targetPurposeId] = list;
                                     }
                                     list.Add(allocatedPart with { IsValuedForBudgetPurpose = true });
+                                    allocatedPostingIds.Add(p.PostingId);
                                 }
 
                                 var remainingAmount = p.Amount + remainingAbs; // negative
@@ -670,7 +748,16 @@ public sealed class BudgetReportService : IBudgetReportService
                                         break;
                                     }
                                 }
-                                postingsForCategory[idx] = p with { Amount = remainingAmount };
+                                // Only remove if it has a BudgetPurposeId and was allocated
+                                if (targetPurposeId != Guid.Empty)
+                                {
+                                    postingsForCategory.RemoveAll(x => x.PostingId == p.PostingId);
+                                    idx = 0; // Reset index since we removed an element
+                                }
+                                else
+                                {
+                                    idx++; // Skip to next since we didn't remove this one
+                                }
                                 remainingAbs = 0;
                             }
                         }
@@ -686,39 +773,54 @@ public sealed class BudgetReportService : IBudgetReportService
                 // Otherwise, they become unbudgeted.
                 foreach (var left in postingsForCategory)
                 {
+                    bool allocateToPurpose = false;
                     if (left.BudgetPurposeId.HasValue)
                     {
-                        var purpose = purposesInCat.FirstOrDefault(p => p.Id == left.BudgetPurposeId.Value);
+                        var purpose = purposesInCat.FirstOrDefault(pur => pur.Id == left.BudgetPurposeId.Value);
                         var isContactGroupPurpose = purpose?.SourceType == BudgetSourceType.ContactGroup;
-                        
-                        if (originalCategoryRules.Count == 0 || (isContactGroupPurpose && originalCategoryRules.Count > 0))
+
+                        allocateToPurpose = originalCategoryRules.Count == 0 || (isContactGroupPurpose && originalCategoryRules.Count > 0);
+                    }
+                    
+                    if (allocateToPurpose && !allocatedPostingIds.Contains(left.PostingId))
+                    {
+                        var key = left.BudgetPurposeId.Value;
+                        if (!allocated.TryGetValue(key, out var postingsList))
                         {
-                            var key = left.BudgetPurposeId.Value;
-                            if (!allocated.TryGetValue(key, out var postingsList))
-                            {
-                                postingsList = new List<BudgetReportPostingRawDataDto>();
-                                allocated[key] = postingsList;
-                            }
-                            postingsList.Add(left with { IsValuedForBudgetPurpose = true });
+                            postingsList = new List<BudgetReportPostingRawDataDto>();
+                            allocated[key] = postingsList;
                         }
-                        else
+                        postingsList.Add(left with { IsValuedForBudgetPurpose = true });
+                        allocatedPostingIds.Add(left.PostingId);
+                    }
+                    else if (!allocatedPostingIds.Contains(left.PostingId))
+                    {
+                        // Postings without BudgetPurposeId go to unbudgeted list
+                        // Postings with BudgetPurposeId are kept in postingDtos for purpose processing
+                        if (!left.BudgetPurposeId.HasValue)
                         {
                             unbudgetedList.Add(left with
                             {
                                 BudgetCategoryId = null,
                                 BudgetPurposeId = null
                             });
+                            postingDtos.RemoveAll(x => x.PostingId == left.PostingId);
+                        }
+                        // Postings with BudgetPurposeId (ContactGroup-based) remain in postingDtos for later purpose processing
+                        // Postings with BudgetPurposeId (Contact-based) are already handled by purpose processing and should be removed
+                        else if (left.BudgetPurposeId.HasValue)
+                        {
+                            var purpose = purposesInCat.FirstOrDefault(p => p.Id == left.BudgetPurposeId.Value);
+                            if (purpose?.SourceType == BudgetSourceType.Contact)
+                            {
+                                // Contact-based postings are already handled by purpose processing, remove from postingDtos
+                                postingDtos.RemoveAll(x => x.PostingId == left.PostingId);
+                            }
+                            // ContactGroup-based postings remain for purpose processing
                         }
                     }
-                    else
-                    {
-                        unbudgetedList.Add(left with
-                        {
-                            BudgetCategoryId = null,
-                            BudgetPurposeId = null
-                        });
-                    }
-                    postingDtos.RemoveAll(x => x.PostingId == left.PostingId);
+                    // Postings that are already allocated should not be added to unbudgeted list
+                    // even if they have BudgetPurposeId and were not allocated due to rules/budget limits
                 }
 
                 // build purpose dtos populated with allocated postings (if any)
@@ -766,6 +868,27 @@ public sealed class BudgetReportService : IBudgetReportService
             to,
             dateBasis,
             ct);
+
+        // Remove postings from unbudgetedList that are already allocated to purposes to prevent double-counting
+        var allocatedToPurposesPostingIds = new HashSet<Guid>();
+        foreach (var cat in categoryDtos)
+        {
+            foreach (var pur in cat.Purposes)
+            {
+                foreach (var posting in pur.Postings)
+                {
+                    allocatedToPurposesPostingIds.Add(posting.PostingId);
+                }
+            }
+        }
+        foreach (var pur in uncategorizedDtos)
+        {
+            foreach (var posting in pur.Postings)
+            {
+                allocatedToPurposesPostingIds.Add(posting.PostingId);
+            }
+        }
+        unbudgetedList = unbudgetedList.Where(p => !allocatedToPurposesPostingIds.Contains(p.PostingId)).ToList();
 
         var result = new BudgetReportRawDataDto
         {
@@ -884,7 +1007,8 @@ public sealed class BudgetReportService : IBudgetReportService
             SavingsPlanId = p.SavingsPlanId,
             SavingsPlanName = null,
             SecurityId = p.SecurityId,
-            SecurityName = null
+            SecurityName = null,
+            GroupId = p.GroupId != Guid.Empty ? p.GroupId : null
         }).ToArray();
     }
 
@@ -984,7 +1108,9 @@ public sealed class BudgetReportService : IBudgetReportService
                 _ => 1
             };
 
-            var occ = rule.StartDate;
+            var occ = rule.Interval == BudgetIntervalType.Yearly
+                ? new DateOnly(rule.StartDate.Year, rule.StartDate.Month, 1)
+                : rule.StartDate;
             var ruleEnd = rule.EndDate ?? to;
 
             while (occ < from)
@@ -1058,11 +1184,44 @@ public sealed class BudgetReportService : IBudgetReportService
             return count;
         }
 
+        static int CountByMonthStepIgnoreDay(DateOnly ruleStart, DateOnly rangeStart, DateOnly rangeEnd, int stepMonths)
+        {
+            // For yearly budgets, ignore the day and only consider month/year
+            // This ensures that a budget set for July 15 applies to all of July
+            var occ = new DateOnly(ruleStart.Year, ruleStart.Month, 1);
+            var effStart = new DateOnly(rangeStart.Year, rangeStart.Month, 1);
+            var effEnd = new DateOnly(rangeEnd.Year, rangeEnd.Month, 1);
+
+            if (occ < effStart)
+            {
+                var monthsDiff = (effStart.Year - occ.Year) * 12 + (effStart.Month - occ.Month);
+                var stepsToAdvance = monthsDiff / stepMonths;
+                if (stepsToAdvance > 0)
+                {
+                    occ = AddMonthsSafe(occ, stepsToAdvance * stepMonths);
+                }
+
+                while (occ < effStart)
+                {
+                    occ = AddMonthsSafe(occ, stepMonths);
+                }
+            }
+
+            var count = 0;
+            while (occ <= effEnd)
+            {
+                count++;
+                occ = AddMonthsSafe(occ, stepMonths);
+            }
+
+            return count;
+        }
+
         return interval switch
         {
             BudgetIntervalType.Monthly => CountByMonthStep(start, effectiveStart, effectiveEnd, 1),
             BudgetIntervalType.Quarterly => CountByMonthStep(start, effectiveStart, effectiveEnd, 3),
-            BudgetIntervalType.Yearly => CountByMonthStep(start, effectiveStart, effectiveEnd, 12),
+            BudgetIntervalType.Yearly => CountByMonthStepIgnoreDay(start, effectiveStart, effectiveEnd, 12),
             BudgetIntervalType.CustomMonths => CountByMonthStep(start, effectiveStart, effectiveEnd, Math.Max(1, customIntervalMonths ?? 1)),
             _ => CountByMonthStep(start, effectiveStart, effectiveEnd, 1)
         };
@@ -1106,31 +1265,75 @@ public sealed class BudgetReportService : IBudgetReportService
         var current = rule.StartDate;
         var ruleEnd = rule.EndDate ?? to;
 
-        while (current < from)
+        // For yearly intervals, ignore the day of the month when calculating period boundaries
+        // This ensures that a yearly budget starting on July 15 applies to all postings in July
+        // regardless of the specific day
+        if (rule.Interval == BudgetIntervalType.Yearly)
         {
-            current = current.AddMonths(stepMonths);
-            if (current > ruleEnd)
+            // Normalize to first day of the month for period calculation
+            var normalizedStart = new DateOnly(current.Year, current.Month, 1);
+            var normalizedFrom = new DateOnly(from.Year, from.Month, 1);
+            var normalizedTo = new DateOnly(to.Year, to.Month, 1);
+            var normalizedRuleEnd = new DateOnly(ruleEnd.Year, ruleEnd.Month, 1);
+
+            while (normalizedStart < normalizedFrom)
             {
-                yield break;
+                normalizedStart = normalizedStart.AddMonths(stepMonths);
+                if (normalizedStart > normalizedRuleEnd)
+                {
+                    yield break;
+                }
+            }
+
+            while (normalizedStart <= normalizedTo && normalizedStart <= normalizedRuleEnd)
+            {
+                var next = normalizedStart.AddMonths(stepMonths);
+                var periodEnd = next.AddDays(-1);
+                if (periodEnd > ruleEnd)
+                {
+                    periodEnd = ruleEnd;
+                }
+
+                if (periodEnd > to)
+                {
+                    periodEnd = to;
+                }
+
+                // Return the normalized start (first day of month) instead of the original start date
+                var periodStart = new DateOnly(normalizedStart.Year, normalizedStart.Month, 1);
+                yield return (periodStart, periodEnd);
+                normalizedStart = next;
+                current = current.AddMonths(stepMonths);
             }
         }
-
-        while (current <= to && current <= ruleEnd)
+        else
         {
-            var next = current.AddMonths(stepMonths);
-            var periodEnd = next.AddDays(-1);
-            if (periodEnd > ruleEnd)
+            while (current < from)
             {
-                periodEnd = ruleEnd;
+                current = current.AddMonths(stepMonths);
+                if (current > ruleEnd)
+                {
+                    yield break;
+                }
             }
 
-            if (periodEnd > to)
+            while (current <= to && current <= ruleEnd)
             {
-                periodEnd = to;
-            }
+                var next = current.AddMonths(stepMonths);
+                var periodEnd = next.AddDays(-1);
+                if (periodEnd > ruleEnd)
+                {
+                    periodEnd = ruleEnd;
+                }
 
-            yield return (current, periodEnd);
-            current = next;
+                if (periodEnd > to)
+                {
+                    periodEnd = to;
+                }
+
+                yield return (current, periodEnd);
+                current = next;
+            }
         }
     }
 
@@ -1207,7 +1410,8 @@ public sealed class BudgetReportService : IBudgetReportService
                 SavingsPlanId = p.SavingsPlanId,
                 SavingsPlanName = null,
                 SecurityId = p.SecurityId,
-                SecurityName = null
+                SecurityName = null,
+                GroupId = p.GroupId != Guid.Empty ? p.GroupId : null
             })
             .OrderBy(p => dateBasis == BudgetReportDateBasis.ValutaDate ? p.ValutaDate : p.BookingDate)
             .ThenBy(p => p.PostingId)

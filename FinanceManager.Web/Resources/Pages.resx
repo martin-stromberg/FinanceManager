@@ -555,6 +555,15 @@
   <data name="Card_Caption_SavingsPlan_TargetDate" xml:space="preserve">
     <value>Target date</value>
   </data>
+  <data name="Card_Caption_SavingsPlan_CurrentAmount" xml:space="preserve">
+    <value>Current balance</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_RemainingAmount" xml:space="preserve">
+    <value>Remaining amount</value>
+  </data>
+  <data name="Card_Caption_SavingsPlan_RequiredMonthly" xml:space="preserve">
+    <value>Required monthly amount</value>
+  </data>
   <data name="Card_Caption_SavingsPlan_Interval" xml:space="preserve">
     <value>Interval</value>
   </data>
@@ -1035,6 +1044,9 @@
   <data name="Setup_Section_Security" xml:space="preserve">
     <value>Security</value>
   </data>
+  <data name="Setup_Section_SecurityTxt" xml:space="preserve">
+    <value>security.txt</value>
+  </data>
   <data name="Setup_Section_Update" xml:space="preserve">
     <value>Updates</value>
   </data>
@@ -1250,6 +1262,33 @@
   </data>
   <data name="SetupSecurity_Title" xml:space="preserve">
     <value>IP Block List</value>
+  </data>
+  <data name="SetupSecurityTxt_Title" xml:space="preserve">
+    <value>security.txt settings</value>
+  </data>
+  <data name="SetupSecurityTxt_Label_Contact" xml:space="preserve">
+    <value>Contact</value>
+  </data>
+  <data name="SetupSecurityTxt_Label_Expires" xml:space="preserve">
+    <value>Expires</value>
+  </data>
+  <data name="SetupSecurityTxt_Label_Encryption" xml:space="preserve">
+    <value>Encryption</value>
+  </data>
+  <data name="SetupSecurityTxt_Label_Acknowledgments" xml:space="preserve">
+    <value>Acknowledgments</value>
+  </data>
+  <data name="SetupSecurityTxt_Label_PreferredLanguages" xml:space="preserve">
+    <value>Preferred languages</value>
+  </data>
+  <data name="SetupSecurityTxt_Label_Policy" xml:space="preserve">
+    <value>Policy</value>
+  </data>
+  <data name="SetupSecurityTxt_Label_Hiring" xml:space="preserve">
+    <value>Hiring</value>
+  </data>
+  <data name="SetupSecurityTxt_SaveSuccess" xml:space="preserve">
+    <value>Settings saved.</value>
   </data>
   <data name="SetupSecurity_Ip_Placeholder" xml:space="preserve">
     <value>IP address</value>
@@ -1688,6 +1727,9 @@
   </data>
   <data name="List_Sum" xml:space="preserve">
     <value>Sum</value>
+  </data>
+  <data name="List_SubSum" xml:space="preserve">
+    <value>Sub-sum</value>
   </data>
   <data name="Budget_Report_Surplus" xml:space="preserve">
     <value>Surplus</value>
@@ -2187,6 +2229,18 @@
   <data name="Err_Update_InstallRunning" xml:space="preserve">
     <value>The current process still owns an update installation.</value>
   </data>
+  <data name="Err_Update_Reset_NoLock" xml:space="preserve">
+    <value>No active update lock exists.</value>
+  </data>
+  <data name="Err_Update_Reset_LockNotStale" xml:space="preserve">
+    <value>The update lock is not old enough to be reset yet.</value>
+  </data>
+  <data name="Err_Update_Reset_DeleteFailed" xml:space="preserve">
+    <value>The update lock could not be removed. Check file access and permissions.</value>
+  </data>
+  <data name="Err_Update_Reset_Failed" xml:space="preserve">
+    <value>The update lock could not be reset because of a technical error.</value>
+  </data>
   <data name="Err_Update_NotReady" xml:space="preserve">
     <value>No ready update package is available.</value>
   </data>
@@ -2411,5 +2465,8 @@
   </data>
   <data name="Budget_NoCriticalDeviation" xml:space="preserve">
     <value>No critical deviation (Actual before: {0}, Actual after: {1}).</value>
+  </data>
+  <data name="PleaseLoginPrompt" xml:space="preserve">
+    <value>Please login.</value>
   </data>
 </root>

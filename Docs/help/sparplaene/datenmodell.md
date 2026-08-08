@@ -19,6 +19,19 @@
 | `IsActive` | `bool` | Aktivstatus |
 | `ArchivedUtc` | `DateTime?` | Archivzeit |
 
+### `SavingsPlanDto`
+
+| Eigenschaft | Typ | Beschreibung |
+|-------------|-----|--------------|
+| `CurrentAmount` | `decimal` | Aktueller Saldo des Sparplans aus den zugeordneten Buchungen |
+| `RemainingAmount` | `decimal` | Noch offener Betrag bis zum Zielbetrag |
+
+### `SavingsPlanAnalysisDto`
+
+| Eigenschaft | Typ | Beschreibung |
+|-------------|-----|--------------|
+| `RequiredMonthly` | `decimal` | Durchschnittlich benötigter Monatsbetrag bis zum Zieldatum |
+
 ### `SavingsPlanCategory`
 
 | Eigenschaft | Typ | Beschreibung |

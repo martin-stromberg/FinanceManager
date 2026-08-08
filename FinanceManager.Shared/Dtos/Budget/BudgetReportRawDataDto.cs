@@ -239,4 +239,9 @@ public sealed record BudgetReportPostingRawDataDto
     /// Gets whether this posting is valued in the actual amount of its budget purpose.
     /// </summary>
     public bool IsValuedForBudgetPurpose { get; init; } = true;
+
+    /// <summary>
+    /// Gets the group id for mirror postings (e.g., self-contact transfers).
+    /// </summary>
+    public Guid? GroupId { get; init; }
 }
