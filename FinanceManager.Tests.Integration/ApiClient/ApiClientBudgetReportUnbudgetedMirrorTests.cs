@@ -1,6 +1,7 @@
 using FinanceManager.Shared;
 using FinanceManager.Shared.Dtos.Budget;
 using FinanceManager.Shared.Dtos.Contacts;
+using FinanceManager.Shared.Dtos.Postings;
 using FinanceManager.Shared.Dtos.SavingsPlans;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -405,256 +406,564 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         purposeRow.Actual.Should().Be(-60m);
     }
 
+    /// <summary>
+    /// Reconstruction test built from a real August 2026 bank statement, with all identifying data -
+    /// IBAN, contact/company/person names and free-text descriptions - replaced by fictional placeholders;
+    /// only the amounts, dates and overall statement structure (which postings share a recipient, which
+    /// budget rule anchor days apply, etc.) are preserved, since those are what reproduce the bug. All 18
+    /// August 2026 bank postings are replayed with the exact master data (accounts, contacts, savings
+    /// plans, securities, budget categories/purposes/rules) that produced them, step by step (statement
+    /// entry, contact/savings-plan/security assignment). After booking, every resulting
+    /// contact/savings-plan/security posting is checked against the original (anonymized) values, and only
+    /// then is the budget report requested and checked field by field.
+    ///
+    /// This test intentionally does NOT fix any production behavior - it only reconstructs and confirms
+    /// the reported bug: the Nordstern "Berufsunfaehigkeit" posting from 03.08. is correctly shown at its own
+    /// purpose AND additionally listed among the unbudgeted postings.
+    /// </summary>
     [Fact]
     public async Task BudgetReport_WithComplexData()
     {
         var api = CreateClient();
         await EnsureAuthenticatedAsync(api);
+        var ct = TestContext.Current.CancellationToken;
+
+        #region Stammdaten: Konto, Kategorien
 
         var account = await api.CreateAccountAsync(new AccountCreateRequest(
-            Name: "ComplexData",
+            Name: "Girokonto",
             Type: AccountType.Giro,
-            Iban: "DE50700500000007882996",
+            Iban: "DE12300000001234567890",
             BankContactId: null,
-            NewBankContactName: "Test Bank",
+            NewBankContactName: "Testbank AG",
             SymbolAttachmentId: null,
             SavingsPlanExpectation: SavingsPlanExpectation.Optional,
             SecurityProcessingEnabled: true),
-            TestContext.Current.CancellationToken);
+            ct);
+        account.Should().NotBeNull();
+        account.SecurityProcessingEnabled.Should().BeTrue();
 
-        var selfContact = (await api.Contacts_ListAsync(type: ContactType.Self, all: true, ct: TestContext.Current.CancellationToken)).Single();
+        var selfContact = (await api.Contacts_ListAsync(type: ContactType.Self, all: true, ct: ct)).Single();
+        var bankContactId = account.BankContactId;
 
-        var contactCategoryActivities = await api.ContactCategories_CreateAsync(new ContactCategoryCreateRequest("Activities"), TestContext.Current.CancellationToken);
-        var contactCategoryInsurances = await api.ContactCategories_CreateAsync(new ContactCategoryCreateRequest("Insurances"), TestContext.Current.CancellationToken);
+        // Contact categories (as used by the real data; created on first use, reused afterwards).
+        var contactCategoryDienstleister = await api.ContactCategories_CreateAsync(new ContactCategoryCreateRequest("Dienstleister"), ct);
+        var contactCategoryVersicherung = await api.ContactCategories_CreateAsync(new ContactCategoryCreateRequest("Versicherung"), ct);
+        var contactCategoryFreizeiteinrichtung = await api.ContactCategories_CreateAsync(new ContactCategoryCreateRequest("Freizeiteinrichtung"), ct);
 
-        var taxSavingPlanCategory = await api.SavingsPlanCategories_CreateAsync(new SavingsPlanCategoryDto()
+        // Savings-plan categories.
+        var savingsPlanCategorySteuer = await api.SavingsPlanCategories_CreateAsync(new SavingsPlanCategoryDto { Name = "Steuer" }, ct);
+        var savingsPlanCategoryVersicherung = await api.SavingsPlanCategories_CreateAsync(new SavingsPlanCategoryDto { Name = "Versicherung" }, ct);
+        var savingsPlanCategorySparen = await api.SavingsPlanCategories_CreateAsync(new SavingsPlanCategoryDto { Name = "Sparen" }, ct);
+
+        // Budget categories.
+        var budgetCategorySteuer = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Steuer"), ct);
+        var budgetCategoryWohnen = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Wohnen"), ct);
+        var budgetCategoryVersicherungen = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Versicherungen"), ct);
+        var budgetCategoryVorsorge = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Vorsorge"), ct);
+        var budgetCategoryUnterhaltung = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Unterhaltung & Aktivitäten"), ct);
+
+        // Security category.
+        var securityCategoryAktien = await api.SecurityCategories_CreateAsync(new SecurityCategoryRequest { Name = "Aktien" }, ct);
+
+        var statementDraft = await api.StatementDrafts_CreateAsync(null, ct);
+        (await api.StatementDrafts_SetAccountAsync(statementDraft.DraftId, account.Id, ct)).Should().NotBeNull();
+
+        async Task<Guid> AddFullEntryAsync(DateTime bookingDate, DateTime valutaDate, decimal amount, string subject, string recipientName, string description)
         {
-            Name = "Steuer",
-        }, TestContext.Current.CancellationToken);
-        taxSavingPlanCategory.Should().NotBeNull();        
-
-        var budgetCategoryTax = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Steuern"), TestContext.Current.CancellationToken);
-        budgetCategoryTax.Should().NotBeNull();
-        var budgetCategoryActivities = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Activities"), TestContext.Current.CancellationToken);
-        var budgetCategoryInsurances = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Insurances"), TestContext.Current.CancellationToken);
-
-        #region Rundfunkgebühr Budget Purpose and Rules
-        var radioSavingPlan = await api.SavingsPlans_CreateAsync(
-            new SavingsPlanCreateRequest()
-            {
-                Name = "Rundfunkgebühr",
-                CategoryId = taxSavingPlanCategory?.Id,
-                Interval = SavingsPlanInterval.Quarterly,
-                Type = SavingsPlanType.Recurring,
-                TargetAmount = 54.22m,
-                TargetDate = new DateTime(2026, 11, 01)
-            },
-            TestContext.Current.CancellationToken);
-        radioSavingPlan.Should().NotBeNull();
-        var budgetPurposeRadio = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
-            Name: "Rundfunkgebühr",
-            SourceType: BudgetSourceType.SavingsPlan,
-            SourceId: radioSavingPlan?.Id ?? Guid.Empty,
-            Description: null,
-            BudgetCategoryId: budgetCategoryTax?.Id),
-            TestContext.Current.CancellationToken);
-        budgetPurposeRadio.Should().NotBeNull();
-        var budgetRuleRadioMonthly = await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
-            BudgetPurposeId: budgetPurposeRadio?.Id ?? Guid.Empty,
-            BudgetCategoryId: null,
-            Amount: -18.35m,
-            Interval: BudgetIntervalType.Monthly,
-            CustomIntervalMonths: null,
-            StartDate: new DateOnly(2020, 01, 01),
-            EndDate: null),
-            TestContext.Current.CancellationToken);
-        var budgetRuleRadioQuarterly = await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
-            BudgetPurposeId: budgetPurposeRadio?.Id ?? Guid.Empty,
-            BudgetCategoryId: null,
-            Amount: 55.08m,
-            Interval: BudgetIntervalType.Quarterly,
-            CustomIntervalMonths: null,
-            StartDate: new DateOnly(2020, 02, 15),
-            EndDate: null),
-            TestContext.Current.CancellationToken);
-        #endregion
-
-        #region Gym Budget Purpose and Rules
-        var gymContact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
-            Name: "Gym",
-            Type: ContactType.Organization,
-            CategoryId: contactCategoryActivities?.Id,
-            Description: null,
-            IsPaymentIntermediary: null,
-            Parent: null), TestContext.Current.CancellationToken);
-        var budgetPurposeGym = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
-            Name: "Gym",
-            SourceType: BudgetSourceType.Contact,
-            SourceId: gymContact?.Id ?? Guid.Empty,
-            Description: null,
-            BudgetCategoryId: budgetCategoryActivities?.Id),
-            TestContext.Current.CancellationToken);
-        var budgetRuleGymMonthly = await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
-            BudgetPurposeId: budgetPurposeGym?.Id ?? Guid.Empty,
-            BudgetCategoryId: null,
-            Amount: -15m,
-            Interval: BudgetIntervalType.Monthly,
-            CustomIntervalMonths: null,
-            StartDate: new DateOnly(2020, 01, 01),
-            EndDate: null),
-            TestContext.Current.CancellationToken);
-        #endregion
-
-        #region Insurance Budget Purpose and Rules
-        var insuranceContact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
-            Name: "Insurance",
-            Type: ContactType.Organization,
-            CategoryId: contactCategoryInsurances?.Id,
-            Description: null,
-            IsPaymentIntermediary: null,
-            Parent: null), TestContext.Current.CancellationToken);
-        var budgetPurposeInsurance = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
-            Name: "Insurance",
-            SourceType: BudgetSourceType.Contact,
-            SourceId: insuranceContact?.Id ?? Guid.Empty,
-            Description: null,
-            BudgetCategoryId: budgetCategoryInsurances?.Id),
-            TestContext.Current.CancellationToken);
-        var budgetRuleInsuranceMonthly = await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
-            BudgetPurposeId: budgetPurposeInsurance?.Id ?? Guid.Empty,
-            BudgetCategoryId: null,
-            Amount: -20.93m,
-            Interval: BudgetIntervalType.Monthly,
-            CustomIntervalMonths: null,
-            StartDate: new DateOnly(2020, 01, 01),
-            EndDate: null),
-            TestContext.Current.CancellationToken);
-        #endregion
-
-        #region Insurance 2 Budget Purpose and Rules
-        var insurance2Contact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
-            Name: "Insurance 2",
-            Type: ContactType.Organization,
-            CategoryId: contactCategoryInsurances?.Id,
-            Description: null,
-            IsPaymentIntermediary: null,
-            Parent: null), TestContext.Current.CancellationToken);
-        var budgetPurposeInsurance2 = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
-            Name: "Insurance 2",
-            SourceType: BudgetSourceType.Contact,
-            SourceId: insurance2Contact?.Id ?? Guid.Empty,
-            Description: null,
-            BudgetCategoryId: budgetCategoryInsurances?.Id),
-            TestContext.Current.CancellationToken);
-        var budgetRuleInsurance2Monthly = await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
-            BudgetPurposeId: budgetPurposeInsurance2?.Id ?? Guid.Empty,
-            BudgetCategoryId: null,
-            Amount: -20.64m,
-            Interval: BudgetIntervalType.Monthly,
-            CustomIntervalMonths: null,
-            StartDate: new DateOnly(2020, 01, 01),
-            EndDate: null),
-            TestContext.Current.CancellationToken);
-        #endregion
-
-        #region Stromkosten Budget Purpose and Rules
-        var budgetCategoryNebenkosten = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Nebenkosten"), TestContext.Current.CancellationToken);
-        var stadtwerkeContact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
-            Name: "Stadtwerke",
-            Type: ContactType.Organization,
-            CategoryId: null,
-            Description: null,
-            IsPaymentIntermediary: null,
-            Parent: null), TestContext.Current.CancellationToken);
-        var budgetPurposeStromkosten = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
-            Name: "Stromkosten",
-            SourceType: BudgetSourceType.Contact,
-            SourceId: stadtwerkeContact?.Id ?? Guid.Empty,
-            Description: null,
-            BudgetCategoryId: budgetCategoryNebenkosten?.Id),
-            TestContext.Current.CancellationToken);
-        var budgetRuleStromkostenMonthly = await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
-            BudgetPurposeId: budgetPurposeStromkosten?.Id ?? Guid.Empty,
-            BudgetCategoryId: null,
-            Amount: -75m,
-            Interval: BudgetIntervalType.Monthly,
-            CustomIntervalMonths: null,
-            StartDate: new DateOnly(2020, 01, 01),
-            EndDate: null),
-            TestContext.Current.CancellationToken);
-        #endregion
-
-        #region Dividend Security
-        var dividendSecurity = await api.Securities_CreateAsync(new SecurityRequest
-        {
-            Name = "Complex Data Security",
-            Identifier = "US546585765H8",
-            CurrencyCode = "EUR"
-        }, TestContext.Current.CancellationToken);
-        dividendSecurity.Should().NotBeNull();
-        #endregion
-
-        #region Statements
-        var statementDraft = await api.StatementDrafts_CreateAsync(null, TestContext.Current.CancellationToken);
-        (await api.StatementDrafts_SetAccountAsync(statementDraft.DraftId, account.Id, TestContext.Current.CancellationToken)).Should().NotBeNull();
-
-        async Task<Guid> AddEntryAsync(DateTime date, decimal amount, string subject)
-        {
-            var result = await api.StatementDrafts_AddEntryAsync(statementDraft.DraftId, new StatementDraftAddEntryRequest(date, amount, subject), TestContext.Current.CancellationToken);
-            result.Should().NotBeNull();
-            return result!.Entries.Last().Id;
+            var added = await api.StatementDrafts_AddEntryAsync(statementDraft.DraftId, new StatementDraftAddEntryRequest(bookingDate, amount, subject), ct);
+            added.Should().NotBeNull();
+            var entry = added!.Entries.Last();
+            var updated = await api.StatementDrafts_UpdateEntryCoreAsync(statementDraft.DraftId, entry.Id,
+                new StatementDraftUpdateEntryCoreRequest(bookingDate, valutaDate, amount, subject, recipientName, "EUR", description), ct);
+            updated.Should().NotBeNull();
+            return entry.Id;
         }
 
-        // 1) Dividend #1: -/+ security income, booked against the account's bank contact.
-        var statementEntrySecurityIncome1 = (await api.StatementDrafts_AddEntryAsync(statementDraft.DraftId, new StatementDraftAddEntryRequest(new DateTime(2026,08,03), 8.37m, "Zins/Dividende ISIN US546585765H8") , TestContext.Current.CancellationToken)).Entries.Last();
-        statementEntrySecurityIncome1 = await api.StatementDrafts_UpdateEntryCoreAsync(statementDraft.DraftId, statementEntrySecurityIncome1.Id,
-                new StatementDraftUpdateEntryCoreRequest(statementEntrySecurityIncome1.BookingDate, statementEntrySecurityIncome1.BookingDate, statementEntrySecurityIncome1.Amount, statementEntrySecurityIncome1.Subject, "", "EUR", "Zins/Dividende"), TestContext.Current.CancellationToken);
-        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, statementEntrySecurityIncome1.Id, new StatementDraftSetContactRequest(account.BankContactId), TestContext.Current.CancellationToken)).Should().NotBeNull();
-        (await api.StatementDrafts_SetEntrySecurityAsync(statementDraft.DraftId, statementEntrySecurityIncome1.Id, new StatementDraftSetEntrySecurityRequest(dividendSecurity.Id, SecurityTransactionType.Dividend, null, null, null), TestContext.Current.CancellationToken)).Should().NotBeNull();
+        #endregion
 
-        // 2) Rueckstellung Rundfunkgebuehr: self-contact posting mirrored into the savings plan.
-        var radioEntryId = await AddEntryAsync(new DateTime(2026, 08, 03), -18.36m, "Rueckstellung Rundfunkgebuehr");
-        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, radioEntryId, new StatementDraftSetContactRequest(selfContact.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
-        (await api.StatementDrafts_SetEntrySavingsPlanAsync(statementDraft.DraftId, radioEntryId, new StatementDraftSetSavingsPlanRequest(radioSavingPlan!.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+        var aug3 = new DateTime(2026, 08, 03);
+        var aug4 = new DateTime(2026, 08, 04);
 
-        // 3) Versicherung: matches Insurance 2's exact monthly rule amount (-20.64).
-        var insurance2EntryId = await AddEntryAsync(new DateTime(2026, 08, 03), -20.64m, "Versicherung");
-        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, insurance2EntryId, new StatementDraftSetContactRequest(insurance2Contact!.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+        #region Posten 1: Stadtwerke Musterstadt (Stromkosten) -75.00 am 03.08.
 
-        // 4) Stadtwerke: exact match for the "Stromkosten" budget purpose.
-        var stadtwerkeEntryId = await AddEntryAsync(new DateTime(2026, 08, 03), -75m, "Stadtwerke");
-        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, stadtwerkeEntryId, new StatementDraftSetContactRequest(stadtwerkeContact!.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+        var stadtwerkeContact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
+            Name: "Stadtwerke Musterstadt", Type: ContactType.Organization, CategoryId: contactCategoryDienstleister!.Id,
+            Description: null, IsPaymentIntermediary: null, Parent: null), ct);
+        var budgetPurposeStromkosten = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Stromkosten", SourceType: BudgetSourceType.Contact, SourceId: stadtwerkeContact.Id,
+            Description: null, BudgetCategoryId: budgetCategoryWohnen!.Id), ct);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeStromkosten.Id, BudgetCategoryId: null, Amount: -75m,
+            Interval: BudgetIntervalType.Monthly, CustomIntervalMonths: null, StartDate: new DateOnly(2020, 01, 01), EndDate: null), ct);
 
-        // 5) Gym: exact match for the Gym budget purpose.
-        var gymEntryId = await AddEntryAsync(new DateTime(2026, 08, 03), -15m, "Gym");
-        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, gymEntryId, new StatementDraftSetContactRequest(gymContact!.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+        var entry1 = await AddFullEntryAsync(aug3, aug3, -75.00m,
+            "Vertragskonto 1234567890, Musterweg 1, Musterstadt, Energie", "Stadtwerke Musterstadt GmbH", "Lastschrift");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry1, new StatementDraftSetContactRequest(stadtwerkeContact.Id), ct)).Should().NotBeNull();
 
-        // 6) Dividend #2: second, unbudgeted dividend from the same security.
-        var securityIncome2EntryId = await AddEntryAsync(new DateTime(2026, 08, 04), 9.67m, "Zins/Dividende ISIN US546585765H8");
-        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, securityIncome2EntryId, new StatementDraftSetContactRequest(account.BankContactId), TestContext.Current.CancellationToken)).Should().NotBeNull();
-        (await api.StatementDrafts_SetEntrySecurityAsync(statementDraft.DraftId, securityIncome2EntryId, new StatementDraftSetEntrySecurityRequest(dividendSecurity.Id, SecurityTransactionType.Dividend, null, null, null), TestContext.Current.CancellationToken)).Should().NotBeNull();
+        #endregion
 
-        // 7) + 8) Transfer Sparkonto: self-contact pair, unbudgeted and cost-neutral.
-        var transferOutEntryId = await AddEntryAsync(new DateTime(2026, 08, 04), 5000m, "Transfer Sparkonto");
-        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, transferOutEntryId, new StatementDraftSetContactRequest(selfContact.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+        #region Posten 2: Muster Krankenversicherung -> Zahnzusatzversicherung -10.50 am 03.08.
 
-        var transferInEntryId = await AddEntryAsync(new DateTime(2026, 08, 04), -5000m, "Transfer Sparkonto");
-        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, transferInEntryId, new StatementDraftSetContactRequest(selfContact.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+        var zahnzusatzSavingsPlan = await api.SavingsPlans_CreateAsync(new SavingsPlanCreateRequest(
+            "Zahnzusatzversicherung", SavingsPlanType.Recurring, 115.2m, new DateTime(2027, 06, 08),
+            SavingsPlanInterval.Annually, savingsPlanCategoryVersicherung!.Id, null), ct);
+        var budgetPurposeZahnzusatz = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Rückstellung Zahnzusatzversicherung", SourceType: BudgetSourceType.SavingsPlan, SourceId: zahnzusatzSavingsPlan.Id,
+            Description: null, BudgetCategoryId: budgetCategoryVersicherungen!.Id), ct);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeZahnzusatz.Id, BudgetCategoryId: null, Amount: -10.5m,
+            Interval: BudgetIntervalType.Monthly, CustomIntervalMonths: null, StartDate: new DateOnly(2020, 01, 01), EndDate: null), ct);
 
-        // 9) Sparplan Allgemein: self-contact posting without a matching savings-plan purpose, unbudgeted and cost-neutral.
-        var sparplanAllgemeinEntryId = await AddEntryAsync(new DateTime(2026, 08, 04), -200m, "Sparplan Allgemein");
-        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, sparplanAllgemeinEntryId, new StatementDraftSetContactRequest(selfContact.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+        var entry2 = await AddFullEntryAsync(aug3, aug3, -10.50m,
+            "Rueckstellung Muster Krankenversiche rung Zahnzusatzversicherung", "Max Mustermann", "Dauerauftrag / Terminueberweisung");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry2, new StatementDraftSetContactRequest(selfContact.Id), ct)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntrySavingsPlanAsync(statementDraft.DraftId, entry2, new StatementDraftSetSavingsPlanRequest(zahnzusatzSavingsPlan.Id), ct)).Should().NotBeNull();
 
-        var book = await api.StatementDrafts_BookAsync(statementDraft.DraftId, forceWarnings: true, TestContext.Current.CancellationToken);
+        #endregion
+
+        #region Posten 3: Nordstern Lebensversicherung -> "Nordstern Berufsunfähigkeit" -20.93 am 03.08.
+
+        var axaContact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
+            Name: "Nordstern", Type: ContactType.Organization, CategoryId: contactCategoryVersicherung.Id,
+            Description: null, IsPaymentIntermediary: null, Parent: null), ct);
+        var budgetPurposeAxa = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Nordstern Berufsunfähigkeit", SourceType: BudgetSourceType.Contact, SourceId: axaContact.Id,
+            Description: null, BudgetCategoryId: budgetCategoryVersicherungen.Id), ct);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeAxa.Id, BudgetCategoryId: null, Amount: -20.93m,
+            Interval: BudgetIntervalType.Monthly, CustomIntervalMonths: null, StartDate: new DateOnly(2020, 01, 11), EndDate: null), ct);
+
+        var entry3 = await AddFullEntryAsync(aug3, aug3, -20.93m,
+            "LV 12345678901 20,93. EUR BTR. 08/2 6", "Nordstern Lebensversicherung AG", "Lastschrift");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry3, new StatementDraftSetContactRequest(axaContact.Id), ct)).Should().NotBeNull();
+
+        #endregion
+
+        #region Posten 4: Rueckstellung Rundfunkgebuehr -18.36 am 03.08.
+
+        var rundfunkSavingsPlan = await api.SavingsPlans_CreateAsync(new SavingsPlanCreateRequest(
+            "Rundfunkgebühr", SavingsPlanType.Recurring, 54.22m, new DateTime(2026, 11, 01),
+            SavingsPlanInterval.Quarterly, savingsPlanCategorySteuer!.Id, null), ct);
+        var budgetPurposeRundfunk = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Rückstellung Rundfunkgebuehr", SourceType: BudgetSourceType.SavingsPlan, SourceId: rundfunkSavingsPlan.Id,
+            Description: null, BudgetCategoryId: budgetCategorySteuer!.Id), ct);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeRundfunk.Id, BudgetCategoryId: null, Amount: -18.36m,
+            Interval: BudgetIntervalType.Monthly, CustomIntervalMonths: null, StartDate: new DateOnly(2020, 01, 01), EndDate: null), ct);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeRundfunk.Id, BudgetCategoryId: null, Amount: 55.08m,
+            Interval: BudgetIntervalType.Quarterly, CustomIntervalMonths: null, StartDate: new DateOnly(2020, 02, 15), EndDate: null), ct);
+
+        var entry4 = await AddFullEntryAsync(aug3, aug3, -18.36m,
+            "Rueckstellung Rundfunkgebuehr", "Max Mustermann", "Dauerauftrag / Terminueberweisung");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry4, new StatementDraftSetContactRequest(selfContact.Id), ct)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntrySavingsPlanAsync(statementDraft.DraftId, entry4, new StatementDraftSetSavingsPlanRequest(rundfunkSavingsPlan.Id), ct)).Should().NotBeNull();
+
+        #endregion
+
+        #region Posten 5: Musterversicherung -> Krankenhaustagegeld -3.82 am 03.08.
+
+        var krankenhaustagegeldSavingsPlan = await api.SavingsPlans_CreateAsync(new SavingsPlanCreateRequest(
+            "Krankenhaustagegeld", SavingsPlanType.Recurring, 11.46m, new DateTime(2026, 09, 15),
+            SavingsPlanInterval.Quarterly, savingsPlanCategoryVersicherung.Id, null), ct);
+        var budgetPurposeKrankenhaustagegeld = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Rückstellung Krankenhaustagegeld", SourceType: BudgetSourceType.SavingsPlan, SourceId: krankenhaustagegeldSavingsPlan.Id,
+            Description: null, BudgetCategoryId: budgetCategoryVersicherungen.Id), ct);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeKrankenhaustagegeld.Id, BudgetCategoryId: null, Amount: -3.82m,
+            Interval: BudgetIntervalType.Monthly, CustomIntervalMonths: null, StartDate: new DateOnly(2020, 01, 01), EndDate: null), ct);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeKrankenhaustagegeld.Id, BudgetCategoryId: null, Amount: 11.46m,
+            Interval: BudgetIntervalType.Quarterly, CustomIntervalMonths: null, StartDate: new DateOnly(2020, 01, 01), EndDate: null), ct);
+
+        var entry5 = await AddFullEntryAsync(aug3, aug3, -3.82m,
+            "Rueckstellung Musterversicherung Krankenh austagegeld", "Max Mustermann", "Dauerauftrag / Terminueberweisung");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry5, new StatementDraftSetContactRequest(selfContact.Id), ct)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntrySavingsPlanAsync(statementDraft.DraftId, entry5, new StatementDraftSetSavingsPlanRequest(krankenhaustagegeldSavingsPlan.Id), ct)).Should().NotBeNull();
+
+        #endregion
+
+        #region Posten 6: Musterbausparkasse Nordwest -> Bausparen (Einzahlung Bausparvertrag) -10.00 am 03.08.
+
+        var bausparenSavingsPlan = await api.SavingsPlans_CreateAsync(new SavingsPlanCreateRequest(
+            "Bausparen", SavingsPlanType.OneTime, 50000m, new DateTime(2030, 01, 01),
+            null, savingsPlanCategorySparen!.Id, "1234509876"), ct);
+        var budgetPurposeBausparen = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Einzahlung Bausparvertrag", SourceType: BudgetSourceType.SavingsPlan, SourceId: bausparenSavingsPlan.Id,
+            Description: null, BudgetCategoryId: budgetCategoryVorsorge!.Id), ct);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeBausparen.Id, BudgetCategoryId: null, Amount: -10m,
+            Interval: BudgetIntervalType.Monthly, CustomIntervalMonths: null, StartDate: new DateOnly(2020, 01, 01), EndDate: null), ct);
+
+        var entry6 = await AddFullEntryAsync(aug3, aug3, -10.00m,
+            "1234509876 10,00", "Musterbausparkasse Nordwest", "Lastschrift");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry6, new StatementDraftSetContactRequest(selfContact.Id), ct)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntrySavingsPlanAsync(statementDraft.DraftId, entry6, new StatementDraftSetSavingsPlanRequest(bausparenSavingsPlan.Id), ct)).Should().NotBeNull();
+
+        #endregion
+
+        #region Posten 7: Rheinstern Leben AG -> "Rheinstern Berufsunfähigkeit" -20.64 am 03.08.
+
+        var provinzialContact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
+            Name: "Rheinstern Leben AG", Type: ContactType.Organization, CategoryId: contactCategoryVersicherung.Id,
+            Description: null, IsPaymentIntermediary: null, Parent: null), ct);
+        var budgetPurposeRheinstern = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Rheinstern Berufsunfähigkeit", SourceType: BudgetSourceType.Contact, SourceId: provinzialContact.Id,
+            Description: null, BudgetCategoryId: budgetCategoryVersicherungen.Id), ct);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeRheinstern.Id, BudgetCategoryId: null, Amount: -20.64m,
+            Interval: BudgetIntervalType.Monthly, CustomIntervalMonths: null, StartDate: new DateOnly(2020, 01, 11), EndDate: null), ct);
+
+        var entry7 = await AddFullEntryAsync(aug3, aug3, -20.64m,
+            "BU - Vorsorge Plus L987654321 01.08 .2026", "Rheinstern Leben AG", "Lastschrift");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry7, new StatementDraftSetContactRequest(provinzialContact.Id), ct)).Should().NotBeNull();
+
+        #endregion
+
+        #region Posten 8: Erika Musterfrau -> Wohnungsmiete -649.42 am 03.08.
+
+        var manfredContact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
+            Name: "Erika Musterfrau", Type: ContactType.Organization, CategoryId: contactCategoryDienstleister.Id,
+            Description: null, IsPaymentIntermediary: null, Parent: null), ct);
+        var budgetPurposeMiete = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Wohnungsmiete", SourceType: BudgetSourceType.Contact, SourceId: manfredContact.Id,
+            Description: null, BudgetCategoryId: budgetCategoryWohnen.Id), ct);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeMiete.Id, BudgetCategoryId: null, Amount: -649.42m,
+            Interval: BudgetIntervalType.Monthly, CustomIntervalMonths: null, StartDate: new DateOnly(2020, 01, 01), EndDate: null), ct);
+
+        var entry8 = await AddFullEntryAsync(aug3, aug3, -649.42m,
+            "WOHNUNGSMIETE MUSTERWEG 20", "Erika Musterfrau", "Dauerauftrag / Terminueberweisung");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry8, new StatementDraftSetContactRequest(manfredContact.Id), ct)).Should().NotBeNull();
+
+        #endregion
+
+        #region Posten 9: Musterkasse Musterstadt -> Unfallversicherung -13.01 am 03.08.
+
+        var unfallSavingsPlan = await api.SavingsPlans_CreateAsync(new SavingsPlanCreateRequest(
+            "Unfallversicherung", SavingsPlanType.Recurring, 39.03m, new DateTime(2026, 10, 01),
+            SavingsPlanInterval.Quarterly, savingsPlanCategoryVersicherung.Id, null), ct);
+        var budgetPurposeUnfall = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Rückstellung Unfallversicherung", SourceType: BudgetSourceType.SavingsPlan, SourceId: unfallSavingsPlan.Id,
+            Description: null, BudgetCategoryId: budgetCategoryVersicherungen.Id), ct);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeUnfall.Id, BudgetCategoryId: null, Amount: -13.01m,
+            Interval: BudgetIntervalType.Monthly, CustomIntervalMonths: null, StartDate: new DateOnly(2020, 01, 01), EndDate: null), ct);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeUnfall.Id, BudgetCategoryId: null, Amount: 39.01m,
+            Interval: BudgetIntervalType.Quarterly, CustomIntervalMonths: null, StartDate: new DateOnly(2020, 01, 01), EndDate: null), ct);
+
+        var entry9 = await AddFullEntryAsync(aug3, aug3, -13.01m,
+            "Rueckstellung Musterkasse Muster stadt Unfallversicherung", "Max Mustermann", "Dauerauftrag / Terminueberweisung");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry9, new StatementDraftSetContactRequest(selfContact.Id), ct)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntrySavingsPlanAsync(statementDraft.DraftId, entry9, new StatementDraftSetSavingsPlanRequest(unfallSavingsPlan.Id), ct)).Should().NotBeNull();
+
+        #endregion
+
+        #region Posten 10: FitStudio Deutschland GmbH -> Fitnessstudio -15.00 am 03.08.
+
+        var fitxContact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
+            Name: "FitStudio Deutschland GmbH", Type: ContactType.Organization, CategoryId: contactCategoryFreizeiteinrichtung!.Id,
+            Description: null, IsPaymentIntermediary: null, Parent: null), ct);
+        var budgetPurposeFitness = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Fitnessstudio", SourceType: BudgetSourceType.Contact, SourceId: fitxContact.Id,
+            Description: null, BudgetCategoryId: budgetCategoryUnterhaltung!.Id), ct);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeFitness.Id, BudgetCategoryId: null, Amount: -15m,
+            Interval: BudgetIntervalType.Monthly, CustomIntervalMonths: null, StartDate: new DateOnly(2020, 01, 01), EndDate: null), ct);
+
+        var entry10 = await AddFullEntryAsync(aug3, aug3, -15.00m,
+            "12--0000-0000000 12-000000 Einzug 1 5 12/12 15.00 EUR 01.08.26-31.08.26", "FitStudio Deutschland GmbH", "Lastschrift");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry10, new StatementDraftSetContactRequest(fitxContact.Id), ct)).Should().NotBeNull();
+
+        #endregion
+
+        #region Posten 11: Nordkasse Hausratversicherung -5.21 am 03.08.
+
+        var hausratSavingsPlan = await api.SavingsPlans_CreateAsync(new SavingsPlanCreateRequest(
+            "Hausratversicherung", SavingsPlanType.Recurring, 62.6m, new DateTime(2026, 12, 01),
+            SavingsPlanInterval.Annually, savingsPlanCategoryVersicherung.Id, null), ct);
+        var budgetPurposeHausrat = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Rückstellung Hausratversicherung", SourceType: BudgetSourceType.SavingsPlan, SourceId: hausratSavingsPlan.Id,
+            Description: null, BudgetCategoryId: budgetCategoryVersicherungen.Id), ct);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeHausrat.Id, BudgetCategoryId: null, Amount: -5.21m,
+            Interval: BudgetIntervalType.Monthly, CustomIntervalMonths: null, StartDate: new DateOnly(2020, 01, 01), EndDate: null), ct);
+
+        var entry11 = await AddFullEntryAsync(aug3, aug3, -5.21m,
+            "Rueckstellung Nordkasse Hausratversich erung", "Max Mustermann", "Dauerauftrag / Terminueberweisung");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry11, new StatementDraftSetContactRequest(selfContact.Id), ct)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntrySavingsPlanAsync(statementDraft.DraftId, entry11, new StatementDraftSetSavingsPlanRequest(hausratSavingsPlan.Id), ct)).Should().NotBeNull();
+
+        #endregion
+
+        #region Posten 12: Zins/Dividende Muster Corp +8.37 am 03.08. (Valuta 31.07.)
+
+        var gladstoneSecurity = await api.Securities_CreateAsync(new SecurityRequest
+        {
+            Name = "Muster Corp",
+            Identifier = "US0000000001",
+            CurrencyCode = "USD",
+            AlphaVantageCode = "MUST",
+            CategoryId = securityCategoryAktien!.Id
+        }, ct);
+
+        var entry12 = await AddFullEntryAsync(aug3, new DateTime(2026, 07, 31), 8.37m,
+            "Zins/Dividende ISIN US0000000001 MUSTERCORP", "", "Zins / Dividende WP");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry12, new StatementDraftSetContactRequest(bankContactId), ct)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntrySecurityAsync(statementDraft.DraftId, entry12,
+            new StatementDraftSetEntrySecurityRequest(gladstoneSecurity.Id, SecurityTransactionType.Dividend, null, null, 1.18m), ct)).Should().NotBeNull();
+
+        #endregion
+
+        #region Posten 13: Nordkasse Haftpflichtversicherung -4.63 am 03.08.
+
+        var haftpflichtSavingsPlan = await api.SavingsPlans_CreateAsync(new SavingsPlanCreateRequest(
+            "Haftpflichtversicherung", SavingsPlanType.Recurring, 55.65m, new DateTime(2026, 12, 01),
+            SavingsPlanInterval.Annually, savingsPlanCategoryVersicherung.Id, null), ct);
+        var budgetPurposeHaftpflicht = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Rückstellung Haftpflichtversicherung", SourceType: BudgetSourceType.SavingsPlan, SourceId: haftpflichtSavingsPlan.Id,
+            Description: null, BudgetCategoryId: budgetCategoryVersicherungen.Id), ct);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeHaftpflicht.Id, BudgetCategoryId: null, Amount: -4.63m,
+            Interval: BudgetIntervalType.Monthly, CustomIntervalMonths: null, StartDate: new DateOnly(2020, 01, 01), EndDate: null), ct);
+
+        var entry13 = await AddFullEntryAsync(aug3, aug3, -4.63m,
+            "Rueckstellung Nordkasse Haftpflichtve rsicherung", "Max Mustermann", "Dauerauftrag / Terminueberweisung");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry13, new StatementDraftSetContactRequest(selfContact.Id), ct)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntrySavingsPlanAsync(statementDraft.DraftId, entry13, new StatementDraftSetSavingsPlanRequest(haftpflichtSavingsPlan.Id), ct)).Should().NotBeNull();
+
+        #endregion
+
+        #region Posten 14: Transfer Testbausparkasse +5000.00 am 04.08. (Selbstkontakt, kostenneutral)
+
+        var entry14 = await AddFullEntryAsync(aug4, aug4, 5000.00m,
+            "Transfer Testbausparkasse", "Max Mustermann", "Gutschrift");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry14, new StatementDraftSetContactRequest(selfContact.Id), ct)).Should().NotBeNull();
+
+        #endregion
+
+        #region Posten 15: Zins/Dividende Beispiel AG +9.67 am 04.08. (Valuta 31.07.)
+
+        var jpmorganSecurity = await api.Securities_CreateAsync(new SecurityRequest
+        {
+            Name = "Beispiel AG",
+            Identifier = "US0000000002",
+            CurrencyCode = "EUR",
+            AlphaVantageCode = "BSPL",
+            CategoryId = securityCategoryAktien.Id
+        }, ct);
+
+        var entry15 = await AddFullEntryAsync(aug4, new DateTime(2026, 07, 31), 9.67m,
+            "Zins/Dividende ISIN US0000000002 BEISPIELAG", "", "Zins / Dividende WP");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry15, new StatementDraftSetContactRequest(bankContactId), ct)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntrySecurityAsync(statementDraft.DraftId, entry15,
+            new StatementDraftSetEntrySecurityRequest(jpmorganSecurity.Id, SecurityTransactionType.Dividend, null, null, 1.36m), ct)).Should().NotBeNull();
+
+        #endregion
+
+        #region Posten 16: Transfer Testbausparkasse -5000.00 am 04.08. (Selbstkontakt, kostenneutral)
+
+        var entry16 = await AddFullEntryAsync(aug4, aug4, -5000.00m,
+            "Transfer Testbausparkasse", "Max Mustermann Testbausparkasse", "Überweisung");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry16, new StatementDraftSetContactRequest(selfContact.Id), ct)).Should().NotBeNull();
+
+        #endregion
+
+        #region Posten 17: Sparrate 123456789 -> S-Vorsorge -139.00 am 04.08.
+
+        var sVorsorgeSavingsPlan = await api.SavingsPlans_CreateAsync(new SavingsPlanCreateRequest(
+            "S-Vorsorge", SavingsPlanType.Open, 0m, null, null, savingsPlanCategoryVersicherung.Id, "123456789"), ct);
+        var budgetPurposeSVorsorge = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
+            Name: "Rückstellung S-Vorsorge", SourceType: BudgetSourceType.SavingsPlan, SourceId: sVorsorgeSavingsPlan.Id,
+            Description: null, BudgetCategoryId: budgetCategoryVorsorge.Id), ct);
+        await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
+            BudgetPurposeId: budgetPurposeSVorsorge.Id, BudgetCategoryId: null, Amount: -139m,
+            Interval: BudgetIntervalType.Monthly, CustomIntervalMonths: null, StartDate: new DateOnly(2020, 01, 01), EndDate: null), ct);
+
+        var entry17 = await AddFullEntryAsync(aug4, aug4, -139.00m,
+            "Sparrate 123456789 SPARKASSE MUSTERLAND OST", "Max Mustermann", "Lastschrift");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry17, new StatementDraftSetContactRequest(selfContact.Id), ct)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntrySavingsPlanAsync(statementDraft.DraftId, entry17, new StatementDraftSetSavingsPlanRequest(sVorsorgeSavingsPlan.Id), ct)).Should().NotBeNull();
+
+        #endregion
+
+        #region Posten 18: Sparplan Allgemein -200.00 am 04.08. (Selbstkontakt + Sparplan ohne Budgetzweck, kostenneutral)
+
+        var sparplanAllgemeinSavingsPlan = await api.SavingsPlans_CreateAsync(new SavingsPlanCreateRequest(
+            "Sparplan Allgemein", SavingsPlanType.Open, 0m, null, null, savingsPlanCategorySparen.Id, null), ct);
+        // Deliberately no BudgetPurpose is created for this savings plan (matches the real data): the
+        // posting matches no budget purpose and must end up unbudgeted/cost-neutral.
+
+        var entry18 = await AddFullEntryAsync(aug4, aug4, -200.00m,
+            "Sparplan Allgemein", "Max Mustermann Testbausparkasse", "Dauerauftrag / Terminueberweisung");
+        (await api.StatementDrafts_SetEntryContactAsync(statementDraft.DraftId, entry18, new StatementDraftSetContactRequest(selfContact.Id), ct)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntrySavingsPlanAsync(statementDraft.DraftId, entry18, new StatementDraftSetSavingsPlanRequest(sparplanAllgemeinSavingsPlan.Id), ct)).Should().NotBeNull();
+
+        #endregion
+
+        #region Buchen
+
+        var book = await api.StatementDrafts_BookAsync(statementDraft.DraftId, forceWarnings: true, ct);
         book.Should().NotBeNull();
         book!.Success.Should().BeTrue();
 
         #endregion
 
-        #region Assertions
-        var report = await api.Budgets_GetReportAsync(new BudgetReportRequest(
+        #region Pruefung der gebuchten Kontakt-/Sparplan-/Wertpapierposten
+
+        var checkFrom = new DateTime(2026, 08, 01);
+        var checkTo = new DateTime(2026, 08, 31, 23, 59, 59);
+
+        async Task<PostingServiceDto> GetSingleContactPostingAsync(Guid contactId, decimal amount, string subject)
+        {
+            var postings = await api.Postings_GetContactAsync(contactId, 0, 100, null, checkFrom, checkTo, ct);
+            return postings.Should().ContainSingle(p => p.Amount == amount && p.Subject == subject).Subject;
+        }
+
+        async Task<PostingServiceDto> GetSingleSavingsPlanPostingAsync(Guid savingsPlanId, decimal amount, string subject)
+        {
+            var postings = await api.Postings_GetSavingsPlanAsync(savingsPlanId, 0, 100, checkFrom, checkTo, null, ct);
+            return postings.Should().ContainSingle(p => p.Amount == amount && p.Subject == subject).Subject;
+        }
+
+        void AssertCore(PostingServiceDto posting, PostingKind kind, DateTime bookingDate, DateTime valutaDate, string recipientName, string description)
+        {
+            posting.Kind.Should().Be(kind);
+            posting.BookingDate.Should().Be(bookingDate);
+            posting.ValutaDate.Should().Be(valutaDate);
+            posting.RecipientName.Should().Be(recipientName);
+            posting.Description.Should().Be(description);
+            posting.IsReversed.Should().BeFalse();
+            posting.IsReversal.Should().BeFalse();
+        }
+
+        // Posten 1: Stadtwerke
+        var posting1 = await GetSingleContactPostingAsync(stadtwerkeContact.Id, -75.00m, "Vertragskonto 1234567890, Musterweg 1, Musterstadt, Energie");
+        AssertCore(posting1, PostingKind.Contact, aug3, aug3, "Stadtwerke Musterstadt GmbH", "Lastschrift");
+        posting1.ContactId.Should().Be(stadtwerkeContact.Id);
+
+        // Posten 2: Zahnzusatzversicherung (Kontakt- und Sparplanposten)
+        var posting2Contact = await GetSingleContactPostingAsync(selfContact.Id, -10.50m, "Rueckstellung Muster Krankenversiche rung Zahnzusatzversicherung");
+        AssertCore(posting2Contact, PostingKind.Contact, aug3, aug3, "Max Mustermann", "Dauerauftrag / Terminueberweisung");
+        posting2Contact.ContactId.Should().Be(selfContact.Id);
+        posting2Contact.SavingsPlanId.Should().BeNull("Contact-kind postings never carry a SavingsPlanId - only the linked SavingsPlan-kind posting does");
+        var posting2SavingsPlan = await GetSingleSavingsPlanPostingAsync(zahnzusatzSavingsPlan.Id, 10.50m, "Rueckstellung Muster Krankenversiche rung Zahnzusatzversicherung");
+        AssertCore(posting2SavingsPlan, PostingKind.SavingsPlan, aug3, aug3, "Max Mustermann", "Dauerauftrag / Terminueberweisung");
+        posting2SavingsPlan.SavingsPlanId.Should().Be(zahnzusatzSavingsPlan.Id);
+        posting2SavingsPlan.GroupId.Should().Be(posting2Contact.GroupId);
+
+        // Posten 3: Nordstern
+        var posting3 = await GetSingleContactPostingAsync(axaContact.Id, -20.93m, "LV 12345678901 20,93. EUR BTR. 08/2 6");
+        AssertCore(posting3, PostingKind.Contact, aug3, aug3, "Nordstern Lebensversicherung AG", "Lastschrift");
+        posting3.ContactId.Should().Be(axaContact.Id);
+
+        // Posten 4: Rundfunkgebuehr
+        var posting4Contact = await GetSingleContactPostingAsync(selfContact.Id, -18.36m, "Rueckstellung Rundfunkgebuehr");
+        AssertCore(posting4Contact, PostingKind.Contact, aug3, aug3, "Max Mustermann", "Dauerauftrag / Terminueberweisung");
+        posting4Contact.SavingsPlanId.Should().BeNull("Contact-kind postings never carry a SavingsPlanId - only the linked SavingsPlan-kind posting does");
+        var posting4SavingsPlan = await GetSingleSavingsPlanPostingAsync(rundfunkSavingsPlan.Id, 18.36m, "Rueckstellung Rundfunkgebuehr");
+        posting4SavingsPlan.GroupId.Should().Be(posting4Contact.GroupId);
+
+        // Posten 5: Musterversicherung Krankenhaustagegeld
+        var posting5Contact = await GetSingleContactPostingAsync(selfContact.Id, -3.82m, "Rueckstellung Musterversicherung Krankenh austagegeld");
+        AssertCore(posting5Contact, PostingKind.Contact, aug3, aug3, "Max Mustermann", "Dauerauftrag / Terminueberweisung");
+        posting5Contact.SavingsPlanId.Should().BeNull("Contact-kind postings never carry a SavingsPlanId - only the linked SavingsPlan-kind posting does");
+        var posting5SavingsPlan = await GetSingleSavingsPlanPostingAsync(krankenhaustagegeldSavingsPlan.Id, 3.82m, "Rueckstellung Musterversicherung Krankenh austagegeld");
+        posting5SavingsPlan.GroupId.Should().Be(posting5Contact.GroupId);
+
+        // Posten 6: LBS Bausparen
+        var posting6Contact = await GetSingleContactPostingAsync(selfContact.Id, -10.00m, "1234509876 10,00");
+        AssertCore(posting6Contact, PostingKind.Contact, aug3, aug3, "Musterbausparkasse Nordwest", "Lastschrift");
+        posting6Contact.SavingsPlanId.Should().BeNull("Contact-kind postings never carry a SavingsPlanId - only the linked SavingsPlan-kind posting does");
+        var posting6SavingsPlan = await GetSingleSavingsPlanPostingAsync(bausparenSavingsPlan.Id, 10.00m, "1234509876 10,00");
+        posting6SavingsPlan.GroupId.Should().Be(posting6Contact.GroupId);
+
+        // Posten 7: Rheinstern
+        var posting7 = await GetSingleContactPostingAsync(provinzialContact.Id, -20.64m, "BU - Vorsorge Plus L987654321 01.08 .2026");
+        AssertCore(posting7, PostingKind.Contact, aug3, aug3, "Rheinstern Leben AG", "Lastschrift");
+
+        // Posten 8: Wohnungsmiete
+        var posting8 = await GetSingleContactPostingAsync(manfredContact.Id, -649.42m, "WOHNUNGSMIETE MUSTERWEG 20");
+        AssertCore(posting8, PostingKind.Contact, aug3, aug3, "Erika Musterfrau", "Dauerauftrag / Terminueberweisung");
+
+        // Posten 9: Musterkasse Musterstadt Unfallversicherung
+        var posting9Contact = await GetSingleContactPostingAsync(selfContact.Id, -13.01m, "Rueckstellung Musterkasse Muster stadt Unfallversicherung");
+        posting9Contact.SavingsPlanId.Should().BeNull("Contact-kind postings never carry a SavingsPlanId - only the linked SavingsPlan-kind posting does");
+        var posting9SavingsPlan = await GetSingleSavingsPlanPostingAsync(unfallSavingsPlan.Id, 13.01m, "Rueckstellung Musterkasse Muster stadt Unfallversicherung");
+        posting9SavingsPlan.GroupId.Should().Be(posting9Contact.GroupId);
+
+        // Posten 10: FitStudio
+        var posting10 = await GetSingleContactPostingAsync(fitxContact.Id, -15.00m, "12--0000-0000000 12-000000 Einzug 1 5 12/12 15.00 EUR 01.08.26-31.08.26");
+        AssertCore(posting10, PostingKind.Contact, aug3, aug3, "FitStudio Deutschland GmbH", "Lastschrift");
+
+        // Posten 11: Nordkasse Hausratversicherung
+        var posting11Contact = await GetSingleContactPostingAsync(selfContact.Id, -5.21m, "Rueckstellung Nordkasse Hausratversich erung");
+        posting11Contact.SavingsPlanId.Should().BeNull("Contact-kind postings never carry a SavingsPlanId - only the linked SavingsPlan-kind posting does");
+        var posting11SavingsPlan = await GetSingleSavingsPlanPostingAsync(hausratSavingsPlan.Id, 5.21m, "Rueckstellung Nordkasse Hausratversich erung");
+        posting11SavingsPlan.GroupId.Should().Be(posting11Contact.GroupId);
+
+        // Posten 12: Dividende Muster Corp (Kontakt- und Wertpapierposten, Brutto/Steuer-Split)
+        var posting12Contact = await GetSingleContactPostingAsync(bankContactId, 8.37m, "Zins/Dividende ISIN US0000000001 MUSTERCORP");
+        AssertCore(posting12Contact, PostingKind.Contact, aug3, new DateTime(2026, 07, 31), null, "Zins / Dividende WP");
+        posting12Contact.SecurityId.Should().BeNull("Contact-kind postings never carry a SecurityId - only the linked Security-kind postings do");
+        var gladstonePostings = await api.Postings_GetSecurityAsync(gladstoneSecurity.Id, 0, 100, checkFrom, checkTo, ct);
+        gladstonePostings.Should().HaveCount(2);
+        var posting12Dividend = gladstonePostings.Should().ContainSingle(p => p.SecuritySubType == SecurityPostingSubType.Dividend).Subject;
+        posting12Dividend.Amount.Should().Be(9.55m);
+        var posting12Tax = gladstonePostings.Should().ContainSingle(p => p.SecuritySubType == SecurityPostingSubType.Tax).Subject;
+        posting12Tax.Amount.Should().Be(-1.18m);
+        posting12Dividend.GroupId.Should().Be(posting12Contact.GroupId);
+        posting12Tax.GroupId.Should().Be(posting12Contact.GroupId);
+
+        // Posten 13: Nordkasse Haftpflichtversicherung
+        var posting13Contact = await GetSingleContactPostingAsync(selfContact.Id, -4.63m, "Rueckstellung Nordkasse Haftpflichtve rsicherung");
+        posting13Contact.SavingsPlanId.Should().BeNull("Contact-kind postings never carry a SavingsPlanId - only the linked SavingsPlan-kind posting does");
+        var posting13SavingsPlan = await GetSingleSavingsPlanPostingAsync(haftpflichtSavingsPlan.Id, 4.63m, "Rueckstellung Nordkasse Haftpflichtve rsicherung");
+        posting13SavingsPlan.GroupId.Should().Be(posting13Contact.GroupId);
+
+        // Posten 14: Transfer Testbausparkasse +5000 (Selbstkontakt)
+        var posting14 = await GetSingleContactPostingAsync(selfContact.Id, 5000.00m, "Transfer Testbausparkasse");
+        AssertCore(posting14, PostingKind.Contact, aug4, aug4, "Max Mustermann", "Gutschrift");
+        posting14.GroupId.Should().NotBe(Guid.Empty);
+
+        // Posten 15: Dividende Beispiel AG
+        var posting15Contact = await GetSingleContactPostingAsync(bankContactId, 9.67m, "Zins/Dividende ISIN US0000000002 BEISPIELAG");
+        AssertCore(posting15Contact, PostingKind.Contact, aug4, new DateTime(2026, 07, 31), null, "Zins / Dividende WP");
+        posting15Contact.SecurityId.Should().BeNull("Contact-kind postings never carry a SecurityId - only the linked Security-kind postings do");
+        var jpmorganPostings = await api.Postings_GetSecurityAsync(jpmorganSecurity.Id, 0, 100, checkFrom, checkTo, ct);
+        jpmorganPostings.Should().HaveCount(2);
+        var posting15Dividend = jpmorganPostings.Should().ContainSingle(p => p.SecuritySubType == SecurityPostingSubType.Dividend).Subject;
+        posting15Dividend.Amount.Should().Be(11.03m);
+        var posting15Tax = jpmorganPostings.Should().ContainSingle(p => p.SecuritySubType == SecurityPostingSubType.Tax).Subject;
+        posting15Tax.Amount.Should().Be(-1.36m);
+
+        // Posten 16: Transfer Testbausparkasse -5000 (Selbstkontakt)
+        var posting16 = await GetSingleContactPostingAsync(selfContact.Id, -5000.00m, "Transfer Testbausparkasse");
+        AssertCore(posting16, PostingKind.Contact, aug4, aug4, "Max Mustermann Testbausparkasse", "Überweisung");
+        posting16.GroupId.Should().NotBe(posting14.GroupId, "each booked transfer forms its own mirror group, even though both share the same subject");
+
+        // Posten 17: Sparrate S-Vorsorge
+        var posting17Contact = await GetSingleContactPostingAsync(selfContact.Id, -139.00m, "Sparrate 123456789 SPARKASSE MUSTERLAND OST");
+        posting17Contact.SavingsPlanId.Should().BeNull("Contact-kind postings never carry a SavingsPlanId - only the linked SavingsPlan-kind posting does");
+        var posting17SavingsPlan = await GetSingleSavingsPlanPostingAsync(sVorsorgeSavingsPlan.Id, 139.00m, "Sparrate 123456789 SPARKASSE MUSTERLAND OST");
+        posting17SavingsPlan.GroupId.Should().Be(posting17Contact.GroupId);
+
+        // Posten 18: Sparplan Allgemein (Selbstkontakt + Sparplan, aber ohne Budgetzweck)
+        var posting18Contact = await GetSingleContactPostingAsync(selfContact.Id, -200.00m, "Sparplan Allgemein");
+        AssertCore(posting18Contact, PostingKind.Contact, aug4, aug4, "Max Mustermann Testbausparkasse", "Dauerauftrag / Terminueberweisung");
+        posting18Contact.SavingsPlanId.Should().BeNull("Contact-kind postings never carry a SavingsPlanId - only the linked SavingsPlan-kind posting does");
+        var posting18SavingsPlan = await GetSingleSavingsPlanPostingAsync(sparplanAllgemeinSavingsPlan.Id, 200.00m, "Sparplan Allgemein");
+        posting18SavingsPlan.GroupId.Should().Be(posting18Contact.GroupId);
+
+        #endregion
+
+        #region Budgetbericht abrufen und pruefen
+
+        var reportRequest = new BudgetReportRequest(
             AsOfDate: new DateOnly(2026, 08, 31),
-            Months: 1,
+            Months: 12,
             Interval: BudgetReportInterval.Month,
             ShowTitle: false,
             ShowLineChart: false,
@@ -662,95 +971,93 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             ShowDetailsTable: true,
             CategoryValueScope: BudgetReportValueScope.TotalRange,
             IncludePurposeRows: true,
-            DateBasis: BudgetReportDateBasis.BookingDate),
-            TestContext.Current.CancellationToken);
+            DateBasis: BudgetReportDateBasis.BookingDate);
+
+        var report = await api.Budgets_GetReportAsync(reportRequest, ct);
         report.Should().NotBeNull();
+        var rawReport = await api.Budgets_GetReportRawAsync(reportRequest, ct);
+        rawReport.Should().NotBeNull();
 
-        // Rundfunkgebuehr: the booked amount (-18.36) overshoots the exact monthly rule (-18.35) by one
-        // cent, so the posting is split: -18.35 is recognized as Actual, and the leftover -0.01 stays
-        // attributed to this purpose (visible in its Postings, not valued) rather than being routed to
-        // the top-level Unbudgeted/CostNeutral buckets, which are reserved for postings that matched no
-        // budget purpose at all.
-        var taxCategory = report.Categories.Single(c => c.Id == budgetCategoryTax!.Id);
-        var radioPurposeRow = taxCategory.Purposes.Single(p => p.Id == budgetPurposeRadio!.Id);
-        radioPurposeRow.Actual.Should().Be(-18.35m);
+        // Steuer / Rueckstellung Rundfunkgebuehr: -18.36 trifft exakt die monatliche Regel.
+        var steuerCategory = report.Categories.Single(c => c.Id == budgetCategorySteuer!.Id);
+        var rundfunkPurposeRow = steuerCategory.Purposes.Single(p => p.Id == budgetPurposeRundfunk.Id);
+        rundfunkPurposeRow.Actual.Should().Be(-18.36m);
 
-        var rawReport = await api.Budgets_GetReportRawAsync(new BudgetReportRequest(
-            AsOfDate: new DateOnly(2026, 08, 31),
-            Months: 1,
-            Interval: BudgetReportInterval.Month,
-            ShowTitle: false,
-            ShowLineChart: false,
-            ShowMonthlyTable: false,
-            ShowDetailsTable: true,
-            CategoryValueScope: BudgetReportValueScope.TotalRange,
-            IncludePurposeRows: true,
-            DateBasis: BudgetReportDateBasis.BookingDate),
-            TestContext.Current.CancellationToken);
-        var radioRawPurpose = rawReport.Categories.Single(c => c.CategoryId == budgetCategoryTax!.Id)
-            .Purposes.Single(p => p.PurposeId == budgetPurposeRadio!.Id);
-        radioRawPurpose.Postings.Should().ContainSingle(p => !p.IsValuedForBudgetPurpose && p.Amount == -0.01m);
+        // Wohnen: Stromkosten (-75.00) und Wohnungsmiete (-649.42).
+        var wohnenCategory = report.Categories.Single(c => c.Id == budgetCategoryWohnen!.Id);
+        var stromkostenPurposeRow = wohnenCategory.Purposes.Single(p => p.Id == budgetPurposeStromkosten.Id);
+        stromkostenPurposeRow.Actual.Should().Be(-75.00m);
+        var mietePurposeRow = wohnenCategory.Purposes.Single(p => p.Id == budgetPurposeMiete.Id);
+        mietePurposeRow.Actual.Should().Be(-649.42m);
 
-        // Insurances: Insurance 2 is actually booked; Insurance (the first one) stays at zero actual.
-        var insurancesCategory = report.Categories.Single(c => c.Id == budgetCategoryInsurances!.Id);
-        var insurancePurposeRow = insurancesCategory.Purposes.Single(p => p.Id == budgetPurposeInsurance!.Id);
-        insurancePurposeRow.Actual.Should().Be(0m);
-        var insurance2PurposeRow = insurancesCategory.Purposes.Single(p => p.Id == budgetPurposeInsurance2!.Id);
-        insurance2PurposeRow.Actual.Should().Be(-20.64m);
+        // Vorsorge: Einzahlung Bausparvertrag (-10.00) und Rueckstellung S-Vorsorge (-139.00).
+        var vorsorgeCategory = report.Categories.Single(c => c.Id == budgetCategoryVorsorge!.Id);
+        var bausparenPurposeRow = vorsorgeCategory.Purposes.Single(p => p.Id == budgetPurposeBausparen.Id);
+        bausparenPurposeRow.Actual.Should().Be(-10.00m);
+        var sVorsorgePurposeRow = vorsorgeCategory.Purposes.Single(p => p.Id == budgetPurposeSVorsorge.Id);
+        sVorsorgePurposeRow.Actual.Should().Be(-139.00m);
 
-        // Activities: Gym is booked at the exact budgeted amount.
-        var activitiesCategory = report.Categories.Single(c => c.Id == budgetCategoryActivities!.Id);
-        var gymPurposeRow = activitiesCategory.Purposes.Single(p => p.Id == budgetPurposeGym!.Id);
-        gymPurposeRow.Actual.Should().Be(-15m);
+        // Unterhaltung & Aktivitaeten: Fitnessstudio (-15.00).
+        var unterhaltungCategory = report.Categories.Single(c => c.Id == budgetCategoryUnterhaltung!.Id);
+        var fitnessPurposeRow = unterhaltungCategory.Purposes.Single(p => p.Id == budgetPurposeFitness.Id);
+        fitnessPurposeRow.Actual.Should().Be(-15.00m);
 
-        // Stromkosten: exact match against the "Nebenkosten" category's Stadtwerke rule.
-        var nebenkostenCategory = report.Categories.Single(c => c.Id == budgetCategoryNebenkosten!.Id);
-        var stromkostenPurposeRow = nebenkostenCategory.Purposes.Single(p => p.Id == budgetPurposeStromkosten!.Id);
-        stromkostenPurposeRow.Actual.Should().Be(-75m);
+        // Versicherungen: Rheinstern, Zahnzusatz, Krankenhaustagegeld, Unfall und Hausrat sind je exakt
+        // gebucht. Nordstern Berufsunfaehigkeit UND Rheinstern Berufsunfaehigkeit haben beide eine monatliche
+        // Regel mit StartDate am 11., waehrend die Buchung bereits am 03. erfolgte - siehe unten fuer die
+        // konkrete Auswirkung auf Nordstern. Haftpflichtversicherung wird ebenfalls geprueft.
+        var versicherungenCategory = report.Categories.Single(c => c.Id == budgetCategoryVersicherungen!.Id);
+        var zahnzusatzPurposeRow = versicherungenCategory.Purposes.Single(p => p.Id == budgetPurposeZahnzusatz.Id);
+        zahnzusatzPurposeRow.Actual.Should().Be(-10.50m);
+        var krankenhaustagegeldPurposeRow = versicherungenCategory.Purposes.Single(p => p.Id == budgetPurposeKrankenhaustagegeld.Id);
+        krankenhaustagegeldPurposeRow.Actual.Should().Be(-3.82m);
+        var unfallPurposeRow = versicherungenCategory.Purposes.Single(p => p.Id == budgetPurposeUnfall.Id);
+        unfallPurposeRow.Actual.Should().Be(-13.01m);
+        var hausratPurposeRow = versicherungenCategory.Purposes.Single(p => p.Id == budgetPurposeHausrat.Id);
+        hausratPurposeRow.Actual.Should().Be(-5.21m);
+        var haftpflichtPurposeRow = versicherungenCategory.Purposes.Single(p => p.Id == budgetPurposeHaftpflicht.Id);
+        haftpflichtPurposeRow.Actual.Should().Be(-4.63m);
 
-        // Both dividends (8.37 + 9.67) have no matching budget purpose.
-        report.Categories.Should().Contain(c => c.Kind == BudgetReportCategoryRowKind.Unbudgeted);
-        var unbudgetedCategory = report.Categories.Single(c => c.Kind == BudgetReportCategoryRowKind.Unbudgeted);
-        unbudgetedCategory.Actual.Should().Be(8.37m + 9.67m);
+        // Nordstern Berufsunfaehigkeit und Rheinstern Berufsunfaehigkeit teilen dieselbe Konstellation: eine
+        // monatliche Exakte-Buchung-Regel mit StartDate am 11. eines Monats, aber die tatsaechliche
+        // Buchung liegt bereits am 03. des Monats - also VOR dem Beginn des periodenbasierten
+        // Gueltigkeitsfensters der (auf den Regel-Starttag verankerten) monatlichen Erwartung fuer August.
+        var axaPurposeRow = versicherungenCategory.Purposes.Single(p => p.Id == budgetPurposeAxa.Id);
+        var provinzialPurposeRow = versicherungenCategory.Purposes.Single(p => p.Id == budgetPurposeRheinstern.Id);
 
-        // Only the three self-contact transfers (5000 - 5000 - 200) show up as cost-neutral. The
-        // Rundfunkgebuehr overshoot is NOT cost-neutral, even though it also originates from a
-        // self-contact posting: it is a leftover of a posting that DID match a budget purpose, so per
-        // the requirement it stays attributed to that purpose (asserted above) instead of falling into
-        // the generic cost-neutral/unbudgeted buckets, which are reserved for postings that matched no
-        // budget purpose whatsoever.
-        report.Categories.Should().Contain(c => c.Kind == BudgetReportCategoryRowKind.UnbudgetedSelfCostNeutral);
-        var costNeutralCategory = report.Categories.Single(c => c.Kind == BudgetReportCategoryRowKind.UnbudgetedSelfCostNeutral);
-        costNeutralCategory.Actual.Should().Be(5000m - 5000m - 200m);
+        var axaRawPurpose = rawReport.Categories.Single(c => c.CategoryId == budgetCategoryVersicherungen.Id)
+            .Purposes.Single(p => p.PurposeId == budgetPurposeAxa.Id);
+        var provinzialRawPurpose = rawReport.Categories.Single(c => c.CategoryId == budgetCategoryVersicherungen.Id)
+            .Purposes.Single(p => p.PurposeId == budgetPurposeRheinstern.Id);
 
-        var from = new DateTime(2026, 08, 01);
-        var to = new DateTime(2026, 08, 31, 23, 59, 59);
-        var unbudgeted = await api.Budgets_GetUnbudgetedPostingsAsync(from, to, BudgetReportDateBasis.BookingDate, null, TestContext.Current.CancellationToken);
-        // 5 raw postings: the two dividends and the three self-contact transfers. The Rundfunkgebuehr
-        // posting is NOT among them, since its 0.01 overshoot is reported against its own purpose only.
-        unbudgeted.Should().HaveCount(5);
-        unbudgeted.Should().ContainSingle(p => p.Subject == "Zins/Dividende ISIN US546585765H8" && p.Amount == 8.37m);
-        unbudgeted.Should().ContainSingle(p => p.Subject == "Zins/Dividende ISIN US546585765H8" && p.Amount == 9.67m);
-        unbudgeted.Should().ContainSingle(p => p.Subject == "Transfer Sparkonto" && p.Amount == 5000m);
-        unbudgeted.Should().ContainSingle(p => p.Subject == "Transfer Sparkonto" && p.Amount == -5000m);
-        unbudgeted.Should().ContainSingle(p => p.Subject == "Sparplan Allgemein" && p.Amount == -200m);
+        var unbudgeted = await api.Budgets_GetUnbudgetedPostingsAsync(checkFrom, checkTo, BudgetReportDateBasis.BookingDate, null, ct);
+        var axaAlsoInUnbudgeted = unbudgeted.Any(p => p.ContactId == axaContact.Id && p.Amount == -20.93m);
+        var provinzialAlsoInUnbudgeted = unbudgeted.Any(p => p.ContactId == provinzialContact.Id && p.Amount == -20.64m);
 
-        // Every real posting must be listed under exactly one result row: either a single budget purpose
-        // (its Postings array - a posting can legitimately appear twice there when Finish() splits it into
-        // a valued and an unvalued/overrun fragment, both sharing the same PostingId) or the top-level
-        // Unbudgeted list, never both. A posting shown at its purpose must never also show up in the
-        // generic Unbudgeted list, and vice versa.
-        var postingRowLabels = rawReport.Categories
-            .SelectMany(c => c.Purposes)
-            .Concat(rawReport.UncategorizedPurposes)
-            .SelectMany(p => p.Postings.Select(posting => (posting.PostingId, RowLabel: $"purpose:{p.PurposeId}")))
-            .Concat(rawReport.UnbudgetedPostings.Select(posting => (posting.PostingId, RowLabel: "unbudgeted")))
-            .ToList();
-        var postingsListedUnderMultipleRows = postingRowLabels
-            .GroupBy(x => x.PostingId)
-            .Where(g => g.Select(x => x.RowLabel).Distinct().Count() > 1)
-            .ToList();
-        postingsListedUnderMultipleRows.Should().BeEmpty("no posting may be listed under more than one result row");
+        // Sowohl Nordstern als auch Rheinstern werden - trotz des am 11. verankerten monatlichen Regel-
+        // Zeitfensters - korrekt (mit vollem Betrag, voll ausgewertet) ihrem jeweiligen Budgetzweck
+        // zugeordnet, wenn der Bericht (wie die echte UI per Default) ueber mehrere Monate (Months: 12)
+        // abgefragt wird - anders als bei einer einmonatigen Abfrage (siehe oben), bei der der Posten
+        // gar keinem Budgetzweck zugeordnet wird.
+        var axaPosting = axaRawPurpose.Postings.Should().ContainSingle(p => p.Amount == -20.93m && p.PostingId == posting3.Id).Subject;
+        axaPosting.IsValuedForBudgetPurpose.Should().BeTrue();
+        axaPurposeRow.Actual.Should().Be(-20.93m);
+
+        var provinzialPosting = provinzialRawPurpose.Postings.Should().ContainSingle(p => p.Amount == -20.64m && p.PostingId == posting7.Id).Subject;
+        provinzialPosting.IsValuedForBudgetPurpose.Should().BeTrue();
+        provinzialPurposeRow.Actual.Should().Be(-20.64m);
+
+        // Ein Posten, der bereits korrekt seinem Budgetzweck zugeordnet ist (siehe oben), darf NICHT
+        // zusaetzlich in der Liste der nicht budgetierten Posten auftauchen. Das ist das korrekte,
+        // gewuenschte Verhalten - diese Assertion schlaegt aktuell fehl (bestaetigter Fehler) und wird
+        // erst nach einer Korrektur des Produktivcodes gruen.
+        axaAlsoInUnbudgeted.Should().BeFalse(
+            "der Nordstern-Posten vom 03.08. ist bereits korrekt seinem Budgetzweck zugeordnet und darf nicht zusaetzlich " +
+            "unter den nicht budgetierten Posten gefuehrt werden");
+        provinzialAlsoInUnbudgeted.Should().BeFalse(
+            "der Rheinstern-Posten vom 03.08. ist bereits korrekt seinem Budgetzweck zugeordnet und darf nicht zusaetzlich " +
+            "unter den nicht budgetierten Posten gefuehrt werden");
+
         #endregion
     }
 }
