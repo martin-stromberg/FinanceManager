@@ -177,4 +177,55 @@ public sealed class BudgetberichtMapperTests_RawData
         dto.UnbudgetedPostings.Should().ContainSingle(p => p.Amount == 3m && p.GroupId == mirrorGroupId);
         dto.UnbudgetedPostings.Should().OnlyContain(p => !p.IsValuedForBudgetPurpose && p.BudgetCategoryId == null && p.BudgetPurposeId == null);
     }
+
+    /// <summary>
+    /// Tests that a category-direct budget rule (BudgetCategoryId set, BudgetPurposeId null) correctly
+    /// aggregates budgeted amounts on the category row's BudgetedExpense.
+    /// </summary>
+    [Fact]
+    public void MapToRawDataDto_CategoryDirectRule_AggregatesBudgetedAmountsOnCategoryRow()
+    {
+        var category = CreateCategory("Utilities");
+        var rule = CreateCategoryRule(category.Id, -150m, BudgetIntervalType.Monthly, new DateOnly(2026, 1, 1));
+
+        var budgetbericht = new Budgetbericht(new DateOnly(2026, 1, 1), 1, BudgetReportInterval.Month, BudgetReportDateBasis.BookingDate);
+        budgetbericht.SetPlanung(new[] { category }, Array.Empty<BudgetPurposeDto>(), new[] { rule });
+        // Add an actual posting that matches the category-level rule (no purpose involved).
+        budgetbericht.AddPosting(CreateUnattributedPosting(-150m, new DateTime(2026, 1, 15)), BudgetReportDateBasis.BookingDate);
+        budgetbericht.Finish();
+
+        var dto = BudgetberichtMapper.MapToRawDataDto(budgetbericht, new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31), EmptyPurposeInfo);
+
+        // The category-direct rule's amount (-150) should appear on the category row's BudgetedExpense.
+        var utilities = dto.Categories.Should().ContainSingle(c => c.CategoryName == "Utilities").Subject;
+        utilities.BudgetedExpense.Should().Be(-150m);
+        utilities.BudgetedIncome.Should().Be(0m);
+        utilities.BudgetedTarget.Should().Be(-150m);
+        utilities.Purposes.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Tests that a category-direct budget rule with positive amount (income) correctly
+    /// aggregates budgeted amounts on the category row's BudgetedIncome.
+    /// </summary>
+    [Fact]
+    public void MapToRawDataDto_CategoryDirectRuleIncome_AggregatesIncomeOnCategoryRow()
+    {
+        var category = CreateCategory("Bonus");
+        var rule = CreateCategoryRule(category.Id, 500m, BudgetIntervalType.Monthly, new DateOnly(2026, 1, 1));
+
+        var budgetbericht = new Budgetbericht(new DateOnly(2026, 1, 1), 1, BudgetReportInterval.Month, BudgetReportDateBasis.BookingDate);
+        budgetbericht.SetPlanung(new[] { category }, Array.Empty<BudgetPurposeDto>(), new[] { rule });
+        budgetbericht.AddPosting(CreateUnattributedPosting(500m, new DateTime(2026, 1, 15)), BudgetReportDateBasis.BookingDate);
+        budgetbericht.Finish();
+
+        var dto = BudgetberichtMapper.MapToRawDataDto(budgetbericht, new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31), EmptyPurposeInfo);
+
+        // The category-direct rule's income (500) should appear on the category row's BudgetedIncome.
+        var bonus = dto.Categories.Should().ContainSingle(c => c.CategoryName == "Bonus").Subject;
+        bonus.BudgetedIncome.Should().Be(500m);
+        bonus.BudgetedExpense.Should().Be(0m);
+        bonus.BudgetedTarget.Should().Be(500m);
+        bonus.Purposes.Should().BeEmpty();
+    }
 }

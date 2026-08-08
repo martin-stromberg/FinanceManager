@@ -110,6 +110,32 @@ public sealed class BudgetberichtMapperTests_MonthlyKpi
         kpi.UnbudgetedExpenseAbs.Should().Be(40m);
     }
 
+    /// <summary>
+    /// Tests that income-side remaining planned and expected amounts are computed correctly
+    /// when actual income is below planned income (analogous to the expense-side test).
+    /// </summary>
+    [Fact]
+    public void MapToMonthlyKpiDto_ComputesRemainingAndExpectedIncome_WhenActualBelowPlanned()
+    {
+        var contactId = Guid.NewGuid();
+        var purpose = CreatePurpose("Freelance", BudgetSourceType.Contact, contactId, categoryId: null);
+        var rule = CreatePurposeRule(purpose.Id, 2000m, BudgetIntervalType.Monthly, new DateOnly(2026, 3, 1));
+
+        var budgetbericht = new Budgetbericht(new DateOnly(2026, 3, 1), 1, BudgetReportInterval.Month, BudgetReportDateBasis.BookingDate);
+        budgetbericht.SetPlanung(Array.Empty<BudgetCategoryDto>(), new[] { purpose }, new[] { rule });
+        budgetbericht.AddPosting(CreateContactPosting(1200m, new DateTime(2026, 3, 15), contactId), BudgetReportDateBasis.BookingDate);
+        budgetbericht.Finish();
+
+        var kpi = BudgetberichtMapper.MapToMonthlyKpiDto(BuildEntries(budgetbericht));
+
+        kpi.PlannedIncome.Should().Be(2000m);
+        kpi.BudgetedRealizedIncome.Should().Be(1200m);
+        kpi.RemainingPlannedIncome.Should().Be(800m);
+        kpi.ActualIncome.Should().Be(1200m);
+        kpi.ExpectedIncome.Should().Be(2000m);
+        kpi.ExpectedTargetResult.Should().Be(2000m);
+    }
+
     [Fact]
     public void MapToMonthlyKpiDto_ThrowsArgumentNullException_WhenEntriesIsNull()
     {
