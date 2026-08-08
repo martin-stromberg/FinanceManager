@@ -108,6 +108,35 @@ public sealed class BudgetReportService : IBudgetReportService
         return BudgetberichtMapper.MapToMonthlyKpiDto(entries);
     }
 
+    /// <inheritdoc />
+    public async Task<BudgetReportDto> GetReportAsync(
+        Guid ownerUserId,
+        DateOnly asOfDate,
+        int months,
+        BudgetReportInterval interval,
+        BudgetReportValueScope categoryValueScope,
+        BudgetReportDateBasis dateBasis,
+        CancellationToken ct)
+    {
+        var to = new DateOnly(asOfDate.Year, asOfDate.Month, DateTime.DaysInMonth(asOfDate.Year, asOfDate.Month));
+        var from = new DateOnly(to.Year, to.Month, 1).AddMonths(-(months - 1));
+
+        var (budgetbericht, purposeInfoById) = await BuildBudgetberichtAsync(ownerUserId, from, to, dateBasis, ct);
+
+        var periods = BudgetberichtMapper.MapToPeriodDtos(budgetbericht.GetCumulativeResult());
+
+        // "LastInterval" restricts the category/purpose table to the report range's last (most recent)
+        // month - the period table above is always built at monthly granularity, so that last period is
+        // always exactly the "to" month.
+        var entries = categoryValueScope == BudgetReportValueScope.LastInterval
+            ? budgetbericht.GetCurrentResult(new DateOnly(to.Year, to.Month, 1))
+            : budgetbericht.GetCurrentResult();
+
+        var categories = BudgetberichtMapper.MapToReportCategoryDtos(entries, purposeInfoById);
+
+        return new BudgetReportDto(from, to, interval, periods, categories);
+    }
+
     private async Task<(Budgetbericht Budgetbericht, Dictionary<Guid, BudgetPurposeOverviewDto> PurposeInfoById)> BuildBudgetberichtAsync(
         Guid ownerUserId,
         DateOnly from,
@@ -193,6 +222,8 @@ public sealed class BudgetReportService : IBudgetReportService
             .GroupBy(p => p.GroupId)
             .ToDictionary(g => g.Key, g => g.First());
 
+        var selfContactId = contacts.FirstOrDefault(c => c.Type == ContactType.Self)?.Id;
+
         var realizations = contactPostings.Select(p =>
         {
             var contact = contacts.FirstOrDefault(c => c.Id == p.ContactId);
@@ -221,6 +252,7 @@ public sealed class BudgetReportService : IBudgetReportService
                 Purpose = p.Subject,
                 Description = p.Description,
                 GroupId = p.GroupId != Guid.Empty ? p.GroupId : null,
+                IsSelfContact = selfContactId.HasValue && p.ContactId == selfContactId.Value,
                 PostingKind = p.Kind,
                 AccountId = p.AccountId,
                 AccountName = p.LinkedPostingAccountName ?? p.BankPostingAccountName,

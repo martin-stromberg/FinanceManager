@@ -102,17 +102,25 @@ internal static class BudgetberichtTestFixtures
     /// Creates a <see cref="MonthlyBudgetRealization"/> that does not match any contact/contact group/savings plan
     /// source (used to exercise the unbudgeted/cost-neutral routing).
     /// </summary>
+    /// <param name="isSelfContact">
+    /// Whether the posting is attributed to the owner's "Self" contact. Combined with <paramref name="groupId"/>,
+    /// this identifies cost-neutral mirror postings - a <paramref name="groupId"/> alone is not sufficient
+    /// (see <c>Budgetbericht.RouteUnmatchedPosting</c>): a grouped posting is only cost-neutral when it is
+    /// also attributed to the Self contact.
+    /// </param>
     public static MonthlyBudgetRealization CreateUnattributedPosting(
         decimal amount,
         DateTime bookingDate,
         string? purpose = null,
-        Guid? groupId = null)
+        Guid? groupId = null,
+        bool isSelfContact = false)
         => new()
         {
             PostingId = Guid.NewGuid(),
             BookingDate = bookingDate,
             Amount = amount,
             Purpose = purpose,
-            GroupId = groupId
+            GroupId = groupId,
+            IsSelfContact = isSelfContact
         };
 }

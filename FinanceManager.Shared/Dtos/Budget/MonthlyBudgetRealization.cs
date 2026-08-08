@@ -55,9 +55,19 @@ public sealed record MonthlyBudgetRealization
     public string? Description { get; init; }
 
     /// <summary>
-    /// Gets the group id used to identify cost-neutral mirror postings, when applicable.
+    /// Gets the group id linking this posting to its paired ledger leg (e.g. the bank-side and
+    /// contact-side leg of the same booked transaction), when applicable. This is set for essentially
+    /// every booked posting and, on its own, does <b>not</b> indicate a self-contact cost-neutral mirror
+    /// transfer - see <see cref="IsSelfContact"/>, which must also be true for that.
     /// </summary>
     public Guid? GroupId { get; init; }
+
+    /// <summary>
+    /// Gets whether this posting is attributed to the owner's "Self" contact. Combined with
+    /// <see cref="GroupId"/>, this identifies cost-neutral mirror postings (e.g. a savings-plan
+    /// contribution or an internal transfer booked against the Self contact).
+    /// </summary>
+    public bool IsSelfContact { get; init; }
 
     /// <summary>
     /// Gets the kind of the underlying posting.

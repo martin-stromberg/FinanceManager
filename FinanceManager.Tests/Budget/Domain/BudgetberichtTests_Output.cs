@@ -27,7 +27,7 @@ public sealed class BudgetberichtTests_Output
         var budgetbericht = new Budgetbericht(new DateOnly(2026, 1, 1), 1, BudgetReportInterval.Month, BudgetReportDateBasis.BookingDate);
         budgetbericht.SetPlanung(new[] { category, otherCategory }, new[] { purpose, otherPurpose }, rules);
         budgetbericht.AddPosting(CreateUnattributedPosting(-9.99m, new DateTime(2026, 1, 12)), BudgetReportDateBasis.BookingDate);
-        budgetbericht.AddPosting(CreateUnattributedPosting(3m, new DateTime(2026, 1, 12), groupId: Guid.NewGuid()), BudgetReportDateBasis.BookingDate);
+        budgetbericht.AddPosting(CreateUnattributedPosting(3m, new DateTime(2026, 1, 12), groupId: Guid.NewGuid(), isSelfContact: true), BudgetReportDateBasis.BookingDate);
         budgetbericht.Finish();
 
         var entries = budgetbericht.GetCurrentResult();

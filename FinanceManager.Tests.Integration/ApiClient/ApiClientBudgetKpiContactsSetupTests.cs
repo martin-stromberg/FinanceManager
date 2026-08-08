@@ -961,11 +961,14 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         kpi.PlannedExpenseAbs.Should().Be(3193.91m);
         kpi.PlannedIncome.Should().Be(3450.85m);
         kpi.PlannedResult.Should().Be(256.94m);
-        // Both were previously non-zero because purpose-bound overruns (see the "Arbeitgeber" comment
-        // above) landed in the generic Unbudgeted bucket. They now stay attributed to their own purpose,
-        // so genuinely unmatched postings are all that remains here - none in this dataset, hence 0.
-        kpi.UnbudgetedExpenseAbs.Should().Be(0m);
-        kpi.UnbudgetedIncome.Should().Be(0m);
+        // UnbudgetedExpenseAbs is not zero: this dataset's generated postings include grouped postings
+        // (GroupId set - every booked posting pairs a bank-side and a contact-side ledger leg, see
+        // Budgetbericht.RouteUnmatchedPosting) that are not attributed to the owner's "Self" contact and
+        // match no budget purpose. A GroupId alone does not make a posting cost-neutral - only a grouped
+        // posting that is ALSO attributed to the Self contact is a cost-neutral self-mirror transfer; every
+        // other unmatched posting (like these) is genuinely unbudgeted, regardless of its GroupId.
+        kpi.UnbudgetedExpenseAbs.Should().Be(809.67m);
+        kpi.UnbudgetedIncome.Should().Be(81.10m);
     }
 
     private static async Task<List<SavingsPlanDto>> CreateSavingsPlansAsync(FinanceManager.Shared.ApiClient api)

@@ -197,15 +197,31 @@ public sealed class BudgetberichtTests_PostingAssignment
     }
 
     [Fact]
-    public void AddPosting_NoMatchWithGroupId_RoutesToCostNeutral()
+    public void AddPosting_NoMatchWithGroupIdAndSelfContact_RoutesToCostNeutral()
     {
         var budgetbericht = CreatePlanned(Array.Empty<BudgetCategoryDto>(), Array.Empty<BudgetPurposeDto>(), Array.Empty<BudgetRuleDto>());
 
-        var posting = CreateUnattributedPosting(12.34m, new DateTime(2026, 1, 27), purpose: "Extra", groupId: Guid.NewGuid());
+        var posting = CreateUnattributedPosting(12.34m, new DateTime(2026, 1, 27), purpose: "Extra", groupId: Guid.NewGuid(), isSelfContact: true);
         budgetbericht.AddPosting(posting, BudgetReportDateBasis.BookingDate);
 
         budgetbericht.MonthlyResults.Single().CostNeutralPostings.Should().ContainSingle(p => p.Amount == 12.34m);
         budgetbericht.MonthlyResults.Single().UnbudgetedPostings.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AddPosting_NoMatchWithGroupId_ButNotSelfContact_RoutesToUnbudgeted()
+    {
+        // GroupId links a posting to its paired ledger leg (e.g. the bank-side and contact-side leg of the
+        // same booked transaction) and is set for essentially every booked posting - it does not, on its
+        // own, identify a cost-neutral self-contact mirror transfer. A grouped posting that is NOT attributed
+        // to the Self contact (e.g. an ordinary external payment) must still be routed to Unbudgeted.
+        var budgetbericht = CreatePlanned(Array.Empty<BudgetCategoryDto>(), Array.Empty<BudgetPurposeDto>(), Array.Empty<BudgetRuleDto>());
+
+        var posting = CreateUnattributedPosting(8.37m, new DateTime(2026, 1, 27), purpose: "Dividend", groupId: Guid.NewGuid(), isSelfContact: false);
+        budgetbericht.AddPosting(posting, BudgetReportDateBasis.BookingDate);
+
+        budgetbericht.MonthlyResults.Single().UnbudgetedPostings.Should().ContainSingle(p => p.Amount == 8.37m);
+        budgetbericht.MonthlyResults.Single().CostNeutralPostings.Should().BeEmpty();
     }
 
     [Fact]

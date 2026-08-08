@@ -1,6 +1,5 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Budget;
-using FinanceManager.Domain.Budget;
 using FinanceManager.Shared.Dtos.Budget;
 using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,7 +10,6 @@ using System.Net.Mime;
 using FinanceManager.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using FinanceManager.Shared.Dtos.Postings;
-using FinanceManager.Domain.Postings;
 using FinanceManager.Web.Infrastructure;
 
 namespace FinanceManager.Web.Controllers;
@@ -32,7 +30,6 @@ public sealed class BudgetReportsController : ControllerBase
     private readonly ILogger<BudgetReportsController> _logger;
     private readonly IStringLocalizer<Controller> _localizer;
     private readonly AppDbContext _db;
-    private readonly IBudgetPurposeService _purposes;
     private readonly IBudgetReportExportService _export;
     private readonly IReportCacheService _cacheService;
 
@@ -41,7 +38,6 @@ public sealed class BudgetReportsController : ControllerBase
     /// </summary>
     public BudgetReportsController(
         IBudgetReportService reports,
-        IBudgetPurposeService purposes,
         AppDbContext db,
         ICurrentUserService current,
         ILogger<BudgetReportsController> logger,
@@ -50,7 +46,6 @@ public sealed class BudgetReportsController : ControllerBase
         IReportCacheService cacheService)
     {
         _reports = reports;
-        _purposes = purposes;
         _db = db;
         _current = current;
         _logger = logger;
@@ -101,53 +96,6 @@ public sealed class BudgetReportsController : ControllerBase
         return NoContent();
     }
 
-    private static decimal ComputeBudgetedAmountForPeriod(IReadOnlyList<BudgetRule> rules, DateOnly from, DateOnly to)
-    {
-        if (rules == null || rules.Count == 0)
-        {
-            return 0m;
-        }
-
-        decimal sum = 0m;
-        foreach (var rule in rules)
-        {
-            var step = rule.Interval switch
-            {
-                BudgetIntervalType.Monthly => 1,
-                BudgetIntervalType.Quarterly => 3,
-                BudgetIntervalType.Yearly => 12,
-                BudgetIntervalType.CustomMonths => rule.CustomIntervalMonths ?? 1,
-                _ => 1
-            };
-
-            var occ = rule.StartDate;
-            var ruleEnd = rule.EndDate ?? to;
-
-            while (occ < from)
-            {
-                occ = occ.AddMonths(step);
-                if (occ > ruleEnd)
-                {
-                    break;
-                }
-            }
-
-            while (occ <= to && occ <= ruleEnd)
-            {
-                sum += rule.Amount;
-                occ = occ.AddMonths(step);
-            }
-        }
-
-        return sum;
-    }
-
-    private static decimal ComputeDelta(decimal budget, decimal actual)
-        => actual - budget;
-
-    private static decimal ComputeDeltaPct(decimal budget, decimal delta)
-        => budget == 0m ? 0m : delta / Math.Abs(budget);
-
     /// <summary>
     /// Generates a budget report for the current user.
     /// </summary>
@@ -196,245 +144,21 @@ public sealed class BudgetReportsController : ControllerBase
                 return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
             }
 
-            // Determine inclusive range: use AsOfDate as month anchor (end of month)
-            var to = new DateOnly(req.AsOfDate.Year, req.AsOfDate.Month, DateTime.DaysInMonth(req.AsOfDate.Year, req.AsOfDate.Month));
-            var from = new DateOnly(to.Year, to.Month, 1).AddMonths(-(req.Months - 1));
+            // Aggregation (categories/purposes/subtotals/unbudgeted/cost-neutral/totals and the period
+            // table) is entirely delegated to Budgetbericht.GetCurrentResult()/GetCumulativeResult() via
+            // IBudgetReportService.GetReportAsync, so there is a single implementation of this logic shared
+            // with the KPI tile (BudgetReportService.GetMonthlyKpiAsync) rather than a second, parallel one
+            // here. This always recomputes fresh (bypasses the raw-data cache), matching the previous
+            // behavior of this endpoint.
+            var result = await _reports.GetReportAsync(
+                _current.UserId,
+                req.AsOfDate,
+                req.Months,
+                req.Interval,
+                req.CategoryValueScope,
+                req.DateBasis,
+                ct);
 
-            // Retrieve raw data for the requested range and date basis
-            var raw = await _reports.GetRawDataAsync(_current.UserId, from, to, req.DateBasis, ct, ignoreCache: true);
-
-            // Helper: choose date field according to request date basis
-            static DateTime GetDate(BudgetReportPostingRawDataDto p, BudgetReportDateBasis basis)
-                => basis == BudgetReportDateBasis.ValutaDate ? (p.ValutaDate ?? p.BookingDate) : p.BookingDate;
-
-            // Build periods (monthly only supported for now)
-            var rules = await _db.BudgetRules
-                .AsNoTracking()
-                .Where(r => r.OwnerUserId == _current.UserId)
-                .ToListAsync(ct);
-
-            // Get self contact ID for filtering
-            var selfId = await _db.Contacts.AsNoTracking()
-                .Where(c => c.OwnerUserId == _current.UserId && c.Type == FinanceManager.Shared.Dtos.Contacts.ContactType.Self)
-                .Select(c => (Guid?)c.Id)
-                .FirstOrDefaultAsync(ct);
-
-            var periods = new List<BudgetReportPeriodDto>(req.Months);
-            for (int i = 0; i < req.Months; i++)
-            {
-                var periodFrom = new DateOnly(from.Year, from.Month, 1).AddMonths(i);
-                var periodTo = new DateOnly(periodFrom.Year, periodFrom.Month, DateTime.DaysInMonth(periodFrom.Year, periodFrom.Month));
-
-                // sum actual across all postings (categorized + uncategorized + unbudgeted)
-                decimal actual = 0m;
-
-                // categorized postings
-                foreach (var cat in raw.Categories ?? Array.Empty<BudgetReportCategoryRawDataDto>())
-                {
-                    foreach (var pur in cat.Purposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
-                    {
-                        foreach (var p in (pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>()).Where(p => p.IsValuedForBudgetPurpose))
-                        {
-                            var d = GetDate(p, req.DateBasis);
-                            var dd = DateOnly.FromDateTime(d);
-                            if (dd >= periodFrom && dd <= periodTo) actual += p.Amount;
-                        }
-                    }
-                }
-
-                // uncategorized purposes
-                foreach (var pur in raw.UncategorizedPurposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
-                {
-                    foreach (var p in (pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>()).Where(p => p.IsValuedForBudgetPurpose))
-                    {
-                        var d = GetDate(p, req.DateBasis);
-                        var dd = DateOnly.FromDateTime(d);
-                        if (dd >= periodFrom && dd <= periodTo) actual += p.Amount;
-                    }
-                }
-
-                // unbudgeted postings (filter self-contact grouped postings)
-                foreach (var p in raw.UnbudgetedPostings ?? Array.Empty<BudgetReportPostingRawDataDto>())
-                {
-                    var d = GetDate(p, req.DateBasis);
-                    var dd = DateOnly.FromDateTime(d);
-                    if (dd >= periodFrom && dd <= periodTo)
-                    {
-                        // Only include if not self-contact or not grouped (cost-neutral postings)
-                        if (!selfId.HasValue || p.ContactId != selfId.Value || p.GroupId == Guid.Empty)
-                        {
-                            actual += p.Amount;
-                        }
-                    }
-                }
-
-                var budget = ComputeBudgetedAmountForPeriod(rules, periodFrom, periodTo);
-                var delta = ComputeDelta(budget, actual);
-                var deltaPct = ComputeDeltaPct(budget, delta);
-
-                periods.Add(new BudgetReportPeriodDto(periodFrom, periodTo, budget, actual, delta, deltaPct));
-            }
-
-            // Build categories and purposes
-            var categories = new List<BudgetReportCategoryDto>();
-            var lastPeriod = periods.Last();
-            var categoryFrom = req.CategoryValueScope == BudgetReportValueScope.TotalRange ? from : lastPeriod.From;
-            var categoryTo = req.CategoryValueScope == BudgetReportValueScope.TotalRange ? to : lastPeriod.To;
-            var unbudgetedPostings = raw.UnbudgetedPostings ?? Array.Empty<BudgetReportPostingRawDataDto>();
-
-            bool IsInCategoryRange(BudgetReportPostingRawDataDto posting)
-            {
-                var dd = DateOnly.FromDateTime(GetDate(posting, req.DateBasis));
-                return dd >= categoryFrom && dd <= categoryTo;
-            }
-
-            foreach (var cat in raw.Categories ?? Array.Empty<BudgetReportCategoryRawDataDto>())
-            {
-                var categoryRules = rules.Where(r => r.BudgetCategoryId == cat.CategoryId).ToList();
-                decimal catBudget = ComputeBudgetedAmountForPeriod(categoryRules, categoryFrom, categoryTo);
-                decimal catActual = 0m;
-                var postingsToConsider = new List<BudgetReportPostingRawDataDto>();
-                foreach (var pur in cat.Purposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
-                {
-                    postingsToConsider.AddRange((pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
-                        .Where(p => p.IsValuedForBudgetPurpose)
-                        .Where(p =>
-                        {
-                            var d = GetDate(p, req.DateBasis);
-                            var dd = DateOnly.FromDateTime(d);
-                            return dd >= categoryFrom && dd <= categoryTo;
-                        }));
-                }
-
-                catActual = postingsToConsider.Sum(p => p.Amount)
-                    + unbudgetedPostings.Where(p => p.BudgetCategoryId == cat.CategoryId)
-                        .Where(IsInCategoryRange)
-                        .Sum(p => p.Amount);
-
-                var purposeDtos = new List<BudgetReportPurposeDto>();
-                foreach (var pur in cat.Purposes ?? Array.Empty<BudgetReportPurposeRawDataDto>())
-                {
-                    var purposeRules = rules.Where(r => r.BudgetPurposeId == pur.PurposeId).ToList();
-                    decimal purBudget = ComputeBudgetedAmountForPeriod(purposeRules, categoryFrom, categoryTo);
-                    catBudget += purBudget;
-                    decimal purActual = (pur.Postings ?? Array.Empty<BudgetReportPostingRawDataDto>())
-                        .Where(p => p.IsValuedForBudgetPurpose)
-                        .Where(p =>
-                        {
-                            var dd = DateOnly.FromDateTime(GetDate(p, req.DateBasis));
-                            return dd >= categoryFrom && dd <= categoryTo;
-                        })
-                        .Sum(p => p.Amount);
-
-                    purActual += unbudgetedPostings.Where(p => p.BudgetPurposeId == pur.PurposeId)
-                        .Where(IsInCategoryRange)
-                        .Sum(p => p.Amount);
-
-                    var purDelta = ComputeDelta(purBudget, purActual);
-
-                    purposeDtos.Add(new BudgetReportPurposeDto(
-                        pur.PurposeId,
-                        pur.PurposeName,
-                        purBudget,
-                        purActual,
-                        purDelta,
-                        ComputeDeltaPct(purBudget, purDelta),
-                        pur.BudgetSourceType,
-                        pur.SourceId));
-                }
-
-                var catDelta = ComputeDelta(catBudget, catActual);
-
-                categories.Add(new BudgetReportCategoryDto(
-                    cat.CategoryId,
-                    cat.CategoryName,
-                    BudgetReportCategoryRowKind.Data,
-                    catBudget,
-                    catActual,
-                    catDelta,
-                    ComputeDeltaPct(catBudget, catDelta),
-                    purposeDtos));
-            }
-
-            // Filter self-contact postings from unbudgeted for separate display
-            var unbudgetedActual = unbudgetedPostings
-                .Where(p => p.BudgetPurposeId == null || p.BudgetPurposeId == Guid.Empty)
-                .Where(IsInCategoryRange)
-                .Where(p => !selfId.HasValue || p.ContactId != selfId.Value || p.GroupId == Guid.Empty)
-                .Sum(p => p.Amount);
-
-            var unbudgetedSelfCostNeutralActual = unbudgetedPostings
-                .Where(p => p.BudgetPurposeId == null || p.BudgetPurposeId == Guid.Empty)
-                .Where(IsInCategoryRange)
-                .Where(p => selfId.HasValue && p.ContactId == selfId.Value && p.GroupId != Guid.Empty)
-                .Sum(p => p.Amount);
-
-            if (unbudgetedActual != 0m)
-            {
-                categories.Add(new BudgetReportCategoryDto(
-                    Guid.Empty,
-                    "Unbudgeted",
-                    BudgetReportCategoryRowKind.Unbudgeted,
-                    0m,
-                    unbudgetedActual,
-                    unbudgetedActual,
-                    0m,
-                    Array.Empty<BudgetReportPurposeDto>()));
-            }
-
-            // Add sub-sum for all categories before cost-neutral postings
-            // This sums all regular categories + unbudgeted
-            var subSumBudget = categories.Where(c => c.Kind == BudgetReportCategoryRowKind.Data || c.Kind == BudgetReportCategoryRowKind.Unbudgeted).Sum(c => c.Budget);
-            var subSumActual = categories.Where(c => c.Kind == BudgetReportCategoryRowKind.Data || c.Kind == BudgetReportCategoryRowKind.Unbudgeted).Sum(c => c.Actual);
-            var subSumDelta = subSumBudget - subSumActual;
-            var subSumDeltaPct = subSumBudget == 0m ? 0m : (subSumDelta / subSumBudget) * 100m;
-
-            if (subSumActual != 0m || subSumBudget != 0m)
-            {
-                categories.Add(new BudgetReportCategoryDto(
-                    Guid.Empty,
-                    "Sub-sum",
-                    BudgetReportCategoryRowKind.UnbudgetedSubSum,
-                    subSumBudget,
-                    subSumActual,
-                    -subSumDelta,
-                    -subSumDeltaPct,
-                    Array.Empty<BudgetReportPurposeDto>()));
-            }
-
-            if (unbudgetedSelfCostNeutralActual != 0m)
-            {
-                categories.Add(new BudgetReportCategoryDto(
-                    Guid.Empty,
-                    "Unbudgeted (Self, cost-neutral)",
-                    BudgetReportCategoryRowKind.UnbudgetedSelfCostNeutral,
-                    0m,
-                    unbudgetedSelfCostNeutralActual,
-                    unbudgetedSelfCostNeutralActual,
-                    0m,
-                    Array.Empty<BudgetReportPurposeDto>()));
-            }
-
-            if (categories.Count > 0)
-            {
-                // Final sum includes all categories except sub-sum (to avoid double-counting)
-                var sumBudget = categories.Where(c => c.Kind != BudgetReportCategoryRowKind.UnbudgetedSubSum).Sum(c => c.Budget);
-                var sumActual = categories.Where(c => c.Kind != BudgetReportCategoryRowKind.UnbudgetedSubSum).Sum(c => c.Actual);
-                var sumDelta = ComputeDelta(sumBudget, sumActual);
-                var sumDeltaPct = ComputeDeltaPct(sumBudget, sumDelta);
-
-                categories.Add(new BudgetReportCategoryDto(
-                    Guid.Empty,
-                    "Sum",
-                    BudgetReportCategoryRowKind.Sum,
-                    sumBudget,
-                    sumActual,
-                    sumDelta,
-                    sumDeltaPct,
-                    Array.Empty<BudgetReportPurposeDto>()));
-            }
-
-            var result = new BudgetReportDto(from, to, req.Interval, periods, categories);
             return Ok(result);
         }
         catch (ArgumentOutOfRangeException ex)
@@ -473,7 +197,9 @@ public sealed class BudgetReportsController : ControllerBase
 
             var to = new DateOnly(req.AsOfDate.Year, req.AsOfDate.Month, DateTime.DaysInMonth(req.AsOfDate.Year, req.AsOfDate.Month));
             var from = new DateOnly(to.Year, to.Month, 1).AddMonths(-(req.Months - 1));
-            var raw = await _reports.GetRawDataAsync(_current.UserId, from, to, req.DateBasis, ct);
+            // ignoreCache: true so the drill-down never shows data that is staler than the main table
+            // (GetAsync, via GetReportAsync, always recomputes fresh as well).
+            var raw = await _reports.GetRawDataAsync(_current.UserId, from, to, req.DateBasis, ct, ignoreCache: true);
             return Ok(raw);
         }
         catch (ArgumentOutOfRangeException ex)
@@ -513,8 +239,9 @@ public sealed class BudgetReportsController : ControllerBase
             var fromDate = DateOnly.FromDateTime(fromDt);
             var toDate = DateOnly.FromDateTime(toDt);
 
-            // Use GetRawDataAsync to get properly filtered posting IDs that respect pattern matching
-            var raw = await _reports.GetRawDataAsync(ownerUserId, fromDate, toDate, dateBasis, ct);
+            // Use GetRawDataAsync to get properly filtered posting IDs that respect pattern matching.
+            // ignoreCache: true so this list never shows postings that are staler than the main table.
+            var raw = await _reports.GetRawDataAsync(ownerUserId, fromDate, toDate, dateBasis, ct, ignoreCache: true);
 
             var unbudgetedPostingIds = (raw.UnbudgetedPostings ?? Array.Empty<BudgetReportPostingRawDataDto>())
                 .Select(p => p.PostingId)

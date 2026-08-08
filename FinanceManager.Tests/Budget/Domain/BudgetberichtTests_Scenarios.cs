@@ -120,13 +120,13 @@ public sealed class BudgetberichtTests_Scenarios
     }
 
     [Fact]
-    public void Scenario_CostNeutralTransfer_WithGroupId_DoesNotCountAsUnbudgeted()
+    public void Scenario_CostNeutralTransfer_WithGroupIdAndSelfContact_DoesNotCountAsUnbudgeted()
     {
         var budgetbericht = new Budgetbericht(new DateOnly(2026, 1, 1), 1, BudgetReportInterval.Month, BudgetReportDateBasis.BookingDate);
         budgetbericht.SetPlanung(Array.Empty<BudgetCategoryDto>(), Array.Empty<BudgetPurposeDto>(), Array.Empty<BudgetRuleDto>());
 
         var mirrorGroupId = Guid.NewGuid();
-        budgetbericht.AddPosting(CreateUnattributedPosting(-5m, new DateTime(2026, 1, 10), groupId: mirrorGroupId), BudgetReportDateBasis.BookingDate);
+        budgetbericht.AddPosting(CreateUnattributedPosting(-5m, new DateTime(2026, 1, 10), groupId: mirrorGroupId, isSelfContact: true), BudgetReportDateBasis.BookingDate);
         budgetbericht.AddPosting(CreateUnattributedPosting(-49.90m, new DateTime(2026, 1, 15)), BudgetReportDateBasis.BookingDate);
         budgetbericht.Finish();
 

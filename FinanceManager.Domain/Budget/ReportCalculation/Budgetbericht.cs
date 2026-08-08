@@ -205,11 +205,24 @@ public sealed class Budgetbericht
             ? _monthlyResults.Where(m => DateOnly.FromDateTime(m.Month) == new DateOnly(month.Value.Year, month.Value.Month, 1)).ToList()
             : _monthlyResults;
 
+        var entries = new List<BudgetReportEntry>();
+        var (totalBudgeted, totalActual) = BuildCategoryEntries(monthsToInclude, entries);
+        BuildSummaryEntries(monthsToInclude, entries, totalBudgeted, totalActual);
+
+        return entries.ToArray();
+    }
+
+    // Builds the Category/Purpose/Subtotal rows (one group of rows per budget category present in
+    // monthsToInclude), appending them to entries, and returns the total budgeted/actual amount summed
+    // across all categories - used by BuildSummaryEntries for the Total row.
+    private static (decimal TotalBudgeted, decimal TotalActual) BuildCategoryEntries(
+        IReadOnlyList<MonthlyBudgetResult> monthsToInclude,
+        List<BudgetReportEntry> entries)
+    {
         var allGroups = monthsToInclude.SelectMany(m => m.ExpectationGroups).ToList();
         var categoryIds = allGroups.Select(g => g.BudgetCategoryId).Distinct().ToList();
         var showCategoryRows = categoryIds.Count > 1 || categoryIds.Any(id => id != Guid.Empty);
 
-        var entries = new List<BudgetReportEntry>();
         decimal totalBudgeted = 0m;
         decimal totalActual = 0m;
 
@@ -217,33 +230,51 @@ public sealed class Budgetbericht
         {
             var groupsForCategory = allGroups.Where(g => g.BudgetCategoryId == categoryId).ToList();
             var categoryName = groupsForCategory[0].CategoryName;
-            var directExpectations = groupsForCategory.SelectMany(g => g.DirectExpectations).ToList();
-            var purposeExpectations = groupsForCategory.SelectMany(g => g.Purposes).ToList();
+
+            // Each MonthlyBudgetExpectationGroup (and therefore each MonthlyBudgetExpectation) is scoped to
+            // a single month, so a multi-month report period produces one expectation object per month for
+            // the same purpose/direct-category-rule. These are merged here by budget purpose id (Guid.Empty
+            // for the category's direct expectation) into a single row per purpose/direct-rule spanning the
+            // whole included range, so a multi-month GetCurrentResult() doesn't emit one duplicate "Purpose"
+            // row per month for the same purpose.
+            var directExpectations = MergeAcrossMonths(groupsForCategory.SelectMany(g => g.DirectExpectations));
+            var purposeExpectations = MergeAcrossMonths(groupsForCategory.SelectMany(g => g.Purposes));
 
             var categoryBudgeted = directExpectations.Sum(e => e.SumExpectedAmount) + purposeExpectations.Sum(e => e.SumExpectedAmount);
             var categoryActual = directExpectations.Sum(e => e.SumActualAmount) + purposeExpectations.Sum(e => e.SumActualAmount);
 
             if (showCategoryRows)
             {
-                entries.Add(CreateEntry(BudgetReportEntryRowKind.Category, categoryName, categoryBudgeted, categoryActual, Array.Empty<MonthlyBudgetRealization>()));
+                entries.Add(CreateEntry(BudgetReportEntryRowKind.Category, categoryName, categoryBudgeted, categoryActual, Array.Empty<MonthlyBudgetRealization>(), categoryId));
             }
 
             foreach (var direct in directExpectations)
             {
-                entries.Add(CreateEntry(BudgetReportEntryRowKind.Purpose, direct.Name, direct.SumExpectedAmount, direct.SumActualAmount, CollectAssigned(direct)));
+                entries.Add(CreateEntry(BudgetReportEntryRowKind.Purpose, direct.Name, direct.SumExpectedAmount, direct.SumActualAmount, direct.Postings, categoryId, direct.BudgetPurposeId));
             }
 
             foreach (var purpose in purposeExpectations)
             {
-                entries.Add(CreateEntry(BudgetReportEntryRowKind.Purpose, purpose.Name, purpose.SumExpectedAmount, purpose.SumActualAmount, CollectAssigned(purpose)));
+                entries.Add(CreateEntry(BudgetReportEntryRowKind.Purpose, purpose.Name, purpose.SumExpectedAmount, purpose.SumActualAmount, purpose.Postings, categoryId, purpose.BudgetPurposeId));
             }
 
-            entries.Add(CreateEntry(BudgetReportEntryRowKind.Subtotal, categoryName, categoryBudgeted, categoryActual, Array.Empty<MonthlyBudgetRealization>()));
+            entries.Add(CreateEntry(BudgetReportEntryRowKind.Subtotal, categoryName, categoryBudgeted, categoryActual, Array.Empty<MonthlyBudgetRealization>(), categoryId));
 
             totalBudgeted += categoryBudgeted;
             totalActual += categoryActual;
         }
 
+        return (totalBudgeted, totalActual);
+    }
+
+    // Appends the Unbudgeted, CostNeutral and Total rows to entries, given the category totals already
+    // accumulated by BuildCategoryEntries.
+    private static void BuildSummaryEntries(
+        IReadOnlyList<MonthlyBudgetResult> monthsToInclude,
+        List<BudgetReportEntry> entries,
+        decimal totalBudgeted,
+        decimal totalActual)
+    {
         var unbudgeted = monthsToInclude.SelectMany(m => m.UnbudgetedPostings).ToArray();
         var costNeutral = monthsToInclude.SelectMany(m => m.CostNeutralPostings).ToArray();
         var unbudgetedSum = unbudgeted.Sum(p => p.Amount);
@@ -254,8 +285,6 @@ public sealed class Budgetbericht
 
         totalActual += unbudgetedSum + costNeutralSum;
         entries.Add(CreateEntry(BudgetReportEntryRowKind.Total, "Total", totalBudgeted, totalActual, Array.Empty<MonthlyBudgetRealization>()));
-
-        return entries.ToArray();
     }
 
     /// <summary>
@@ -265,13 +294,11 @@ public sealed class Budgetbericht
     /// <remarks>
     /// This method is part of the customer-mandated public API of <see cref="Budgetbericht"/> (see
     /// <c>issue.md</c>, Akzeptanzkriterien: "GetCummulativeResult liefert korrekte Intervall-Zusammenfassungen
-    /// für Monat, Quartal und Jahr."). It is intentionally not called from <c>BudgetReportService</c> or
-    /// <c>BudgetReportsController</c>: both already have their own, independently tested period/interval
-    /// aggregation (<c>BudgetReportsController.GetAsync</c>'s per-period loop and
-    /// <c>BudgetReportViewModel.BuildPeriodBoundaries</c>), and the plan for this refactor explicitly keeps
-    /// those call sites unchanged ("Keine Änderungen" to <c>BudgetReportRawDataDto</c> and its consumers).
-    /// Wiring this method into either of them would be a behavioral change outside the scope of this task.
-    /// It is covered directly by unit tests instead.
+    /// für Monat, Quartal und Jahr."). <c>BudgetReportService.GetReportAsync</c> uses it to build the period
+    /// table returned by <c>BudgetReportsController.GetAsync</c> (the <see cref="Budgetbericht"/> instance
+    /// used there is always constructed with a monthly interval, so each bucket corresponds to exactly one
+    /// calendar month, matching the report period table's granularity). It is also covered directly by unit
+    /// tests for the Quarter/Year bucketing that no current production call site exercises yet.
     /// </remarks>
     /// <returns>One <see cref="BudgetReportCumulativeEntry"/> per interval bucket, in chronological order.</returns>
     public BudgetReportCumulativeEntry[] GetCumulativeResult()
@@ -692,7 +719,13 @@ public sealed class Budgetbericht
 
     private static void RouteUnmatchedPosting(MonthlyBudgetResult monthResult, MonthlyBudgetRealization posting)
     {
-        if (posting.GroupId.HasValue)
+        // GroupId links a posting to its paired ledger leg (e.g. the bank-side and contact-side leg of the
+        // same booked transaction) and is set for essentially every booked posting - on its own it does not
+        // identify a cost-neutral self-contact mirror transfer (e.g. a savings-plan contribution or an
+        // internal transfer booked against the Self contact). Only postings that are BOTH grouped AND
+        // attributed to the Self contact are cost-neutral; every other unmatched posting is genuinely
+        // unbudgeted.
+        if (posting.GroupId.HasValue && posting.IsSelfContact)
         {
             monthResult.AddCostNeutralPosting(posting);
         }
@@ -804,7 +837,14 @@ public sealed class Budgetbericht
         }
     }
 
-    private static BudgetReportEntry CreateEntry(BudgetReportEntryRowKind kind, string name, decimal budgeted, decimal actual, IReadOnlyList<MonthlyBudgetRealization> postings)
+    private static BudgetReportEntry CreateEntry(
+        BudgetReportEntryRowKind kind,
+        string name,
+        decimal budgeted,
+        decimal actual,
+        IReadOnlyList<MonthlyBudgetRealization> postings,
+        Guid? budgetCategoryId = null,
+        Guid? budgetPurposeId = null)
     {
         var (deviation, deviationPct) = CalculateDeviation(budgeted, actual);
 
@@ -816,7 +856,9 @@ public sealed class Budgetbericht
             ActualAmount = actual,
             Deviation = deviation,
             DeviationPercentage = deviationPct,
-            Postings = postings.ToArray()
+            Postings = postings.ToArray(),
+            BudgetCategoryId = budgetCategoryId,
+            BudgetPurposeId = budgetPurposeId
         };
     }
 
@@ -830,6 +872,28 @@ public sealed class Budgetbericht
 
     private static IReadOnlyList<MonthlyBudgetRealization> CollectAssigned(MonthlyBudgetExpectation expectation) =>
         expectation.Postings.SelectMany(p => p.AssignedPostings).ToArray();
+
+    // Merges the (per-month) MonthlyBudgetExpectation instances belonging to the same budget purpose (or,
+    // for direct category-level expectations, the same category) into a single MergedExpectation per
+    // purpose/direct-rule, summing amounts and concatenating assigned postings across all included months.
+    // See GetCurrentResult for why this merge is necessary.
+    private static List<MergedExpectation> MergeAcrossMonths(IEnumerable<MonthlyBudgetExpectation> expectations) =>
+        expectations
+            .GroupBy(e => e.BudgetPurposeId)
+            .Select(g => new MergedExpectation(
+                g.Key,
+                g.First().Name,
+                g.Sum(e => e.SumExpectedAmount),
+                g.Sum(e => e.SumActualAmount),
+                g.SelectMany(CollectAssigned).ToArray()))
+            .ToList();
+
+    private readonly record struct MergedExpectation(
+        Guid? BudgetPurposeId,
+        string Name,
+        decimal SumExpectedAmount,
+        decimal SumActualAmount,
+        IReadOnlyList<MonthlyBudgetRealization> Postings);
 
     // Small value type replacing the previous (BudgetSourceType, Guid) tuple used to identify what a
     // budget purpose or category matches actual postings against (a Contact, ContactGroup or SavingsPlan).

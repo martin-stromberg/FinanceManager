@@ -44,8 +44,8 @@ public sealed class BudgetberichtMapperTests_MonthlyKpi
         // Self-contact mirror transfers (GroupId set) that match no expectation are cost-neutral, not
         // regular unbudgeted postings, but the "Endsumme"/Total row of GetCurrentResult() still includes
         // them - ActualIncome/ActualExpenseAbs must mirror that.
-        budgetbericht.AddPosting(CreateUnattributedPosting(155m, new DateTime(2026, 1, 15), groupId: Guid.NewGuid()), BudgetReportDateBasis.BookingDate);
-        budgetbericht.AddPosting(CreateUnattributedPosting(-155m, new DateTime(2026, 1, 15), groupId: Guid.NewGuid()), BudgetReportDateBasis.BookingDate);
+        budgetbericht.AddPosting(CreateUnattributedPosting(155m, new DateTime(2026, 1, 15), groupId: Guid.NewGuid(), isSelfContact: true), BudgetReportDateBasis.BookingDate);
+        budgetbericht.AddPosting(CreateUnattributedPosting(-155m, new DateTime(2026, 1, 15), groupId: Guid.NewGuid(), isSelfContact: true), BudgetReportDateBasis.BookingDate);
         budgetbericht.Finish();
 
         var kpi = BudgetberichtMapper.MapToMonthlyKpiDto(BuildEntries(budgetbericht));
@@ -61,7 +61,7 @@ public sealed class BudgetberichtMapperTests_MonthlyKpi
         var budgetbericht = new Budgetbericht(new DateOnly(2026, 1, 1), 1, BudgetReportInterval.Month, BudgetReportDateBasis.BookingDate);
         budgetbericht.SetPlanung(Array.Empty<BudgetCategoryDto>(), Array.Empty<BudgetPurposeDto>(), Array.Empty<BudgetRuleDto>());
         budgetbericht.AddPosting(CreateUnattributedPosting(-9.99m, new DateTime(2026, 1, 12)), BudgetReportDateBasis.BookingDate);
-        budgetbericht.AddPosting(CreateUnattributedPosting(3m, new DateTime(2026, 1, 12), groupId: Guid.NewGuid()), BudgetReportDateBasis.BookingDate);
+        budgetbericht.AddPosting(CreateUnattributedPosting(3m, new DateTime(2026, 1, 12), groupId: Guid.NewGuid(), isSelfContact: true), BudgetReportDateBasis.BookingDate);
         budgetbericht.Finish();
 
         var kpi = BudgetberichtMapper.MapToMonthlyKpiDto(BuildEntries(budgetbericht));

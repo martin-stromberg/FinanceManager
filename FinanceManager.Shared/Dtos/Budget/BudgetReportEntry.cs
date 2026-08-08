@@ -75,6 +75,21 @@ public sealed record BudgetReportEntry
     /// Gets the postings contributing to this row.
     /// </summary>
     public MonthlyBudgetRealization[] Postings { get; init; } = Array.Empty<MonthlyBudgetRealization>();
+
+    /// <summary>
+    /// Gets the id of the budget category this row belongs to (for <see cref="BudgetReportEntryRowKind.Category"/>,
+    /// <see cref="BudgetReportEntryRowKind.Purpose"/> and <see cref="BudgetReportEntryRowKind.Subtotal"/> rows), or
+    /// <c>null</c> for rows that are not scoped to a single category (Unbudgeted, CostNeutral, Total). Uses
+    /// <see cref="Guid.Empty"/> for the virtual "Uncategorized" category.
+    /// </summary>
+    public Guid? BudgetCategoryId { get; init; }
+
+    /// <summary>
+    /// Gets the id of the budget purpose this row represents (for <see cref="BudgetReportEntryRowKind.Purpose"/>
+    /// rows backed by an actual budget purpose), or <c>null</c> for category rows, subtotal rows, category-level
+    /// direct expectation rows (a "Purpose" row without an underlying budget purpose) and the other row kinds.
+    /// </summary>
+    public Guid? BudgetPurposeId { get; init; }
 }
 
 /// <summary>
