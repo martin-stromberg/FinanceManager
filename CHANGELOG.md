@@ -50,6 +50,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Removed
 
 - Removed the local `SoftwareSchmiede.AutoUpdate` and `SoftwareSchmiede.AutoUpdate.Tests` projects from the solution. Updater library tests belong to the external updater repository; this repository keeps only the FinanceManager integration tests.
+- Removed obsolete `msTools.Updater` `v0.2.0` (under `external/msTools.Updater/v0.2.0/`) after successful migration to `v0.3.0`, which is now the only vendored version and referenced by `FinanceManager.Web.csproj`.
 
 ---
 

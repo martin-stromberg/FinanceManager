@@ -56,7 +56,15 @@ public sealed class UpdateSetupPlaywrightTests
         await page.ReloadAsync();
         await gateway.OpenAsync();
 
-        (await gateway.IsEnabledAsync()).Should().BeFalse();
+        (await gateway.IsEnabledCheckedAsync()).Should().BeFalse();
+
+        // Update settings are a single app-wide row, not scoped to the admin user created for this test, so
+        // leaving Enabled=false here would leak into whichever other test in this class (sharing the same
+        // PlaywrightWebAppFixture server/database) runs next - e.g. Admin_TriggersCheck_ShowsAvailableUpdate
+        // relies on updates being enabled to get a result from a manual check. Restore it so this test's
+        // side effect does not depend on / affect test execution order.
+        await gateway.SetEnabledAsync(true);
+        await gateway.SaveSettingsAsync();
     }
 
     /// <summary>
