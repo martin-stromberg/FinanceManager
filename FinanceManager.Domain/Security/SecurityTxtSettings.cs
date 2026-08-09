@@ -29,6 +29,7 @@ public sealed class SecurityTxtSettings : Entity, IAggregateRoot
     public SecurityTxtSettings(string contact, DateTimeOffset expires)
     {
         Contact = Guards.NotNullOrWhiteSpace(contact, nameof(contact)).Trim();
+        EnsureFutureExpires(expires);
         Expires = expires;
     }
 

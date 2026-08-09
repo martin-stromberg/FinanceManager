@@ -93,8 +93,18 @@ public sealed class SecurityTxtSettingsService : ISecurityTxtSettingsService
             return canonical.Trim();
         }
 
-        var baseAddress = _configuration["Api:BaseAddress"] ?? "https://localhost:5001/";
-        return new Uri(new Uri(baseAddress), "/.well-known/security.txt").ToString();
+        var baseAddress = _configuration["Api:BaseAddress"];
+        if (string.IsNullOrWhiteSpace(baseAddress))
+        {
+            throw new InvalidOperationException("Api:BaseAddress must be configured when Canonical is empty.");
+        }
+
+        if (!Uri.TryCreate(baseAddress, UriKind.Absolute, out var baseUri))
+        {
+            throw new InvalidOperationException("Api:BaseAddress must be a valid absolute URI when Canonical is empty.");
+        }
+
+        return new Uri(baseUri, "/.well-known/security.txt").ToString();
     }
 
     private static string BuildPlainText(SecurityTxtSettings entity, string canonical)

@@ -4,6 +4,7 @@
 [![Release](https://img.shields.io/github/actions/workflow/status/martin-stromberg/FinanceManager/release.yml?label=Release)](https://github.com/martin-stromberg/FinanceManager/actions)
 [![License](https://img.shields.io/github/license/martin-stromberg/FinanceManager)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D22.x-339933?logo=nodedotjs)](https://nodejs.org/)
 
 `FinanceManager` ist eine Blazor-Server-Anwendung zur Verwaltung persönlicher Finanzen.  
 Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Reporting, Budgetplanung, Sparpläne, Wertpapiermanagement und Setup-/Admin-Funktionen ab.
@@ -66,6 +67,7 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 | `Jwt:Audience` | string | `financemanager` | Erwartete JWT-Audience fuer Ausstellung und Validierung |
 | `Jwt:LifetimeMinutes` | int | `30` | JWT-/Cookie-Lebensdauer in Minuten |
 | `DataProtection:KeysPath` | string | leer | Optionaler Pfad fuer den ASP.NET-Core-Data-Protection-Key-Ring; in produktionsnahen Deployments persistent und geschuetzt bereitstellen |
+| `Api:BaseAddress` | string | leer | Basisadresse der API; wird als Fallback fuer `Canonical` unter `security.txt` verwendet, wenn im Setup kein eigener Canonical-Wert gesetzt ist (muss dann absolute URI sein) |
 | `BackgroundTasks:Enabled` | bool | `true` | Aktiviert den `BackgroundTaskRunner` |
 | `Workers:SecurityPriceWorker:Enabled` | bool | `true` | Aktiviert den Security-Price-Worker |
 | `Updates:Enabled` | bool | `false` | Aktiviert die automatische Suche nach Self-Update-Releases (steuert die externe `msTools.Updater`-Bibliothek) |
@@ -151,24 +153,18 @@ Bis zur geplanten NuGet-Veröffentlichung liegt der geprüfte Release `v0.3.0` a
 
 ## API-Dokumentation
 
-Einstiegspunkte:
+Wichtige Einstiegspunkte:
 
-- `POST /api/auth/login` – Anmeldung
-- `POST /api/statement-drafts/upload` – Einzeldatei als Entwurf importieren
-- `POST /api/statement-drafts/mass-import` – Massenimport analysieren/ausführen
-- `POST /api/setup/backups/upload` – ZIP-Backup hochladen; akzeptiert nur valide ZIP/NDJSON-Backups innerhalb der konfigurierten `Backups:Security`-Limits
-- `POST /api/setup/backups/{id}/apply` – Backup synchron wiederherstellen; destruktiv und nur mit `BackupRestoreRequestDto`, dessen `confirmationText` exakt dem gespeicherten Dateinamen entspricht
-- `POST /api/setup/backups/{id}/apply/start` – destruktiven Restore als Hintergrundtask starten; verwendet dieselbe serverseitige Dateinamen-Bestaetigung
-- `GET /api/setup/update/status`, `GET|PUT /api/setup/update/settings` und `GET /api/setup/update/services` – Self-Update-Status, Admin-Einstellungen und Service-Autocomplete; nur Rolle `Admin`
-- `POST /api/setup/update/check` – GitHub-Release-Manifest abrufen, passendes Paket laden und Hash/ZIP validieren
-- `POST /api/setup/update/schedule` – geplante Installationszeit fuer ein vorbereitetes Update speichern
-- `POST /api/setup/update/install/start` – vorbereitetes Update nach Downtime-Bestaetigung installieren; erstellt Lock und startet ein externes Update-Skript
-- `POST /api/setup/update/lock/reset` – verwaisten Update-Lock administrativ zuruecksetzen; fehlgeschlagene Resets liefern spezifische Fehlercodes fuer fehlenden Lock, noch nicht stalen Lock, fehlgeschlagenes Loeschen oder technischen Reset-Fehler
-- `GET /security.txt`, `GET /.well-known/security.txt` – RFC-9116-Security-Policy; `GET /.well-known/security.md` und `GET /.well-known/security.html` – dieselbe Policy als Markdown bzw. HTML; Direktiven inklusive optionaler `Canonical`-URL werden aus dem Setup geladen, bei leerem `Canonical` greift `<Api:BaseAddress>/.well-known/security.txt`; alle vier liefern `503 Service Unavailable`, solange keine Konfiguration hinterlegt ist
-- `GET /api/background-tasks/active` – aktive und wartende Background-Tasks fuer authentifizierte Nutzer abrufen; das UI startet das Polling nur bei erkannter Anmeldung und beendet es nach einem `401 Unauthorized`
-- `POST /api/securities/{id}/prices/import` – Wertpapierkurse importieren
-- `POST /api/postings/{id}/reverse` – Buchung stornieren (Reversal)
-- `GET|POST|PUT|DELETE /api/admin/users...` – administrative Benutzerverwaltung; serverseitig auf JWT-authentifizierte Benutzer mit Rolle `Admin` beschränkt. Authentifizierte Nicht-Admins erhalten `403 Forbidden`, anonyme Aufrufe `401 Unauthorized`.
+- `POST /api/auth/login` – Anmeldung und JWT-Ausstellung
+- `POST /api/statement-drafts/upload` – Kontoauszug als Entwurf importieren
+- `POST /api/statement-drafts/mass-import` – Massenimport analysieren und ausführen
+- `GET|PUT /api/setup/update/settings` – Self-Update-Einstellungen für Admins lesen/speichern
+- `GET /.well-known/security.txt` – öffentliche RFC-9116-Sicherheitsrichtlinie (`Canonical` aus Setup oder Fallback auf `<Api:BaseAddress>/.well-known/security.txt`)
+
+Weitere API-Oberflächen:
+- Setup- und Betriebs-API unter `/api/setup/*` (Backups, Updates, Benachrichtigungen)
+- Admin-API unter `/api/admin/*` (Benutzerverwaltung, rollenbasiert)
+- Öffentliche Security-Endpunkte unter `/security.txt` und `/.well-known/security.*`
 
 Weitere API-Dokumentation:
 - `Docs/help/*/api.md`
@@ -301,6 +297,7 @@ Aus `Docs/features/task/issue-90-fb7b291b995c45f3b35a0bf86c8ae321-mobile-ansicht
 ## Changelog
 
 - Laufender Änderungsverlauf: [CHANGELOG.md](CHANGELOG.md)
+- Ergänzende Chronik: [changes.log](changes.log)
 
 ## Lizenz
 

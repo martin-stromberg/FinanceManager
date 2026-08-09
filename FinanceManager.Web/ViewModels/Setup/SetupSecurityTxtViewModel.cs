@@ -10,11 +10,14 @@ namespace FinanceManager.Web.ViewModels.Setup;
 /// </summary>
 public sealed class SetupSecurityTxtViewModel : BaseViewModel
 {
+    private const string InvalidExpiresMessage = "Expires must be a valid date and time.";
+
     private readonly FinanceManager.Shared.IApiClient _api;
     private readonly ILogger<SetupSecurityTxtViewModel>? _logger;
     private SecurityTxtSettingsDto _original = new();
     private bool _busy;
     private bool _dirty;
+    private bool _hasExpiresValidationError;
 
     /// <summary>Creates a new instance.</summary>
     public SetupSecurityTxtViewModel(IServiceProvider sp) : base(sp)
@@ -32,7 +35,17 @@ public sealed class SetupSecurityTxtViewModel : BaseViewModel
         get => Model.Expires.ToString("yyyy-MM-ddTHH:mm");
         set
         {
-            Model.Expires = DateTimeOffset.TryParse(value, out var dto) ? dto : Model.Expires;
+            if (DateTimeOffset.TryParse(value, out var dto))
+            {
+                Model.Expires = dto;
+                _hasExpiresValidationError = false;
+            }
+            else
+            {
+                _hasExpiresValidationError = true;
+                SaveError = InvalidExpiresMessage;
+            }
+
             OnChanged();
         }
     }
@@ -91,6 +104,7 @@ public sealed class SetupSecurityTxtViewModel : BaseViewModel
         {
             Model = await _api.GetSecurityTxtSettingsAsync(ct) ?? new SecurityTxtSettingsDto();
             _original = Clone(Model);
+            _hasExpiresValidationError = false;
             RecomputeDirty();
         }
         catch (HttpRequestException ex)
@@ -130,6 +144,14 @@ public sealed class SetupSecurityTxtViewModel : BaseViewModel
     /// <summary>Saves the current settings.</summary>
     public async Task SaveAsync(CancellationToken ct = default)
     {
+        if (_hasExpiresValidationError)
+        {
+            SavedOk = false;
+            SaveError = InvalidExpiresMessage;
+            RaiseStateChanged();
+            return;
+        }
+
         if (!Dirty)
         {
             return;
@@ -194,7 +216,11 @@ public sealed class SetupSecurityTxtViewModel : BaseViewModel
     public void OnChanged()
     {
         SavedOk = false;
-        SaveError = null;
+        if (!_hasExpiresValidationError)
+        {
+            SaveError = null;
+        }
+
         RecomputeDirty();
         RaiseStateChanged();
     }

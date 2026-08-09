@@ -90,6 +90,28 @@ public sealed class SetupSecurityTxtViewModelTests_ErrorHandling
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
+    [Fact]
+    public async Task SaveAsync_WhenExpiresTextInvalid_DoesNotPersistAndSetsSaveError()
+    {
+        var apiMock = new Mock<IApiClient>();
+        apiMock.Setup(a => a.GetSecurityTxtSettingsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SecurityTxtSettingsDto
+            {
+                Contact = "mailto:security@example.com",
+                Expires = DateTimeOffset.UtcNow.AddYears(1)
+            });
+        var vm = new SetupSecurityTxtViewModel(CreateSp(apiMock.Object));
+        await vm.LoadAsync();
+        vm.Model.Contact = "mailto:updated@example.com";
+        vm.ExpiresText = "not-a-date";
+
+        await vm.SaveAsync();
+
+        vm.SaveError.Should().NotBeNullOrWhiteSpace();
+        vm.SavedOk.Should().BeFalse();
+        apiMock.Verify(a => a.UpdateSecurityTxtSettingsAsync(It.IsAny<SecurityTxtSettingsUpdateRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     private static IServiceProvider CreateSp(IApiClient api)
     {
         var services = new ServiceCollection();

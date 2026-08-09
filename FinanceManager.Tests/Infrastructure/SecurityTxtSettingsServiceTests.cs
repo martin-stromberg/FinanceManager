@@ -14,7 +14,7 @@ namespace FinanceManager.Tests.Infrastructure;
 public sealed class SecurityTxtSettingsServiceTests
 {
     private static (SecurityTxtSettingsService service, AppDbContext db) Create(
-        string baseAddress = "https://example.com/")
+        string? baseAddress = "https://example.com/")
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -118,6 +118,18 @@ public sealed class SecurityTxtSettingsServiceTests
 
         result.Should().Contain("Canonical: https://security.example.org/.well-known/security.txt");
         result.Should().NotContain("Canonical: https://myapp.example.org/.well-known/security.txt");
+    }
+
+    [Fact]
+    public async Task BuildContent_Throws_WhenCanonicalEmpty_AndApiBaseAddressMissing()
+    {
+        var (service, _) = Create(baseAddress: null);
+        await service.UpdateAsync(SecurityTxtSettingsTestData.ValidRequest(canonical: null), CancellationToken.None);
+
+        var act = () => service.BuildContentAsync(SecurityTxtFormat.PlainText, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Api:BaseAddress*");
     }
 
     // ---------------------------------------------------------------------------
