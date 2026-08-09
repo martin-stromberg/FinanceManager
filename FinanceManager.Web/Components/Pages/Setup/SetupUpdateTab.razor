@@ -38,7 +38,7 @@ else
                 @Localizer["SetupUpdate_Lbl_Enabled"]
             </label>
             <label>
-                <input type="checkbox" data-testid="update-include-prereleases-checkbox" checked="@_vm.Settings.IncludePrereleases" @onchange="OnIncludePrereleasesChanged" />
+                <input type="checkbox" checked="@_vm.Settings.IncludePrereleases" @onchange="OnIncludePrereleasesChanged" />
                 @Localizer["SetupUpdate_Lbl_IncludePrereleases"]
             </label>
             <label>
