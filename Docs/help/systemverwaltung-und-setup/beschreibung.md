@@ -156,8 +156,9 @@ Solange das Pflichtfeld **Kontakt** noch nicht konfiguriert ist, antworten alle 
 | Bevorzugte Sprachen | `Preferred-Languages` | Nein |
 | Richtlinie | `Policy` | Nein |
 | Jobs | `Hiring` | Nein |
+| Canonical | `Canonical` | Nein |
 
-Die Direktive `Canonical` wird nicht manuell gepflegt, sondern automatisch aus dem Konfigurationswert `Api:BaseAddress` (appsettings.json) als `<BaseAddress>/.well-known/security.txt` gebildet.
+Die Direktive `Canonical` kann im Setup-Bereich als vollständige HTTPS-URL gepflegt werden. Ist das Feld leer, wird weiterhin automatisch `<Api:BaseAddress>/.well-known/security.txt` als Fallback verwendet.
 
 ### Beispiele
 
@@ -182,4 +183,4 @@ Die Direktive `Canonical` wird nicht manuell gepflegt, sondern automatisch aus d
   wird die Browser-Sprache berücksichtigt; es werden nur die unterstützten Sprachen
   Deutsch und Englisch angeboten.
 - Die `security.txt`-Direktive `Contact` akzeptiert nur einen einzelnen Wert (URI oder mailto). Mehrfacheinträge gemäß RFC 9116 werden aktuell nicht unterstützt.
-- Die `Canonical`-Direktive ist nicht manuell editierbar und leitet sich ausschließlich aus `Api:BaseAddress` in `appsettings.json` ab. Eine Änderung der Basis-URL erfordert einen Neustart der Anwendung.
+- Die `Canonical`-Direktive akzeptiert optional nur absolute HTTPS-URLs ohne Query/Fragment und ohne localhost/Loopback-Host. Bei leerem Feld wird `Api:BaseAddress` als Fallback verwendet.

@@ -32,6 +32,9 @@ public sealed class UpdateSetupPlaywrightTests
         var (session, gateway) = await LoginAsAdminAndOpenUpdateTabAsync();
         await using var _ = session;
 
+        await gateway.SetEnabledAsync(true);
+        await gateway.AllowChecksAnyTimeAsync();
+        await gateway.SaveSettingsAsync();
         await gateway.CheckNowAsync();
 
         await gateway.WaitForAvailableVersionAsync(PlaywrightWebAppFixture.AvailableUpdateVersion);

@@ -430,52 +430,115 @@ public sealed class Budgetbericht
             // report's end, so this is its only occurrence anywhere near the report - there is nothing to
             // double-count against, and dropping it would make the rule vanish from the report entirely, so
             // it keeps its budgeted amount.
-            var homeMonths = occurrences
-                .Select(o => o.NaturalHomeMonth < _periodStart ? _periodStart
-                    : o.NaturalHomeMonth > lastMonth ? lastMonth
-                    : o.NaturalHomeMonth)
-                .ToList();
-            var hasNaturalOccurrence = Enumerable.Range(0, occurrences.Count).Any(idx => homeMonths[idx] == occurrences[idx].NaturalHomeMonth);
+            var homeMonths = ComputeHomeMonths(occurrences, lastMonth);
+            var hasNaturalOccurrence = HasNaturalOccurrence(occurrences, homeMonths);
 
             for (var i = 0; i < occurrences.Count; i++)
             {
-                var (periodStart, periodEnd, naturalHomeMonth) = occurrences[i];
                 var homeMonth = homeMonths[i];
-                var isCarriedOver = homeMonth != naturalHomeMonth && hasNaturalOccurrence;
                 if (!_monthlyResultsByMonth.ContainsKey(homeMonth))
                 {
                     continue;
                 }
 
-                var expectationPosting = new MonthlyBudgetExpectationPosting(
-                    rule.Amount,
-                    valuationType,
-                    rule.StartDate,
-                    creationOrder++,
-                    new RuleOccurrencePeriod(periodStart, periodEnd),
-                    new PurposeMatchPattern(rule.PurposePattern, rule.UseRegex),
-                    isCarriedOverAcrossReportBoundary: isCarriedOver);
-
-                if (rule.BudgetPurposeId.HasValue)
-                {
-                    AddToHomeMonth(purposeExpectationPostingsByHomeMonth, (rule.BudgetPurposeId.Value, homeMonth), expectationPosting);
-                    if (_purposeCandidatePostings.TryGetValue(rule.BudgetPurposeId.Value, out var purposeCandidates))
-                    {
-                        purposeCandidates.Add(expectationPosting);
-                    }
-                }
-                else if (rule.BudgetCategoryId.HasValue)
-                {
-                    AddToHomeMonth(categoryExpectationPostingsByHomeMonth, (rule.BudgetCategoryId.Value, homeMonth), expectationPosting);
-                    if (_categoryCandidatePostings.TryGetValue(rule.BudgetCategoryId.Value, out var categoryCandidates))
-                    {
-                        categoryCandidates.Add(expectationPosting);
-                    }
-                }
+                var expectationPosting = CreateExpectationPosting(rule, valuationType, creationOrder++, occurrences[i], homeMonth, hasNaturalOccurrence);
+                RegisterExpectationPosting(rule, homeMonth, expectationPosting, purposeExpectationPostingsByHomeMonth, categoryExpectationPostingsByHomeMonth);
             }
         }
 
         return (purposeExpectationPostingsByHomeMonth, categoryExpectationPostingsByHomeMonth);
+    }
+
+    private List<DateOnly> ComputeHomeMonths(
+        IReadOnlyList<(DateOnly PeriodStart, DateOnly PeriodEnd, DateOnly NaturalHomeMonth)> occurrences,
+        DateOnly lastMonth) =>
+        occurrences
+            .Select(o => ClampHomeMonth(o.NaturalHomeMonth, lastMonth))
+            .ToList();
+
+    private DateOnly ClampHomeMonth(DateOnly naturalHomeMonth, DateOnly lastMonth)
+    {
+        if (naturalHomeMonth < _periodStart)
+        {
+            return _periodStart;
+        }
+
+        if (naturalHomeMonth > lastMonth)
+        {
+            return lastMonth;
+        }
+
+        return naturalHomeMonth;
+    }
+
+    private static bool HasNaturalOccurrence(
+        IReadOnlyList<(DateOnly PeriodStart, DateOnly PeriodEnd, DateOnly NaturalHomeMonth)> occurrences,
+        IReadOnlyList<DateOnly> homeMonths) =>
+        Enumerable.Range(0, occurrences.Count).Any(idx => homeMonths[idx] == occurrences[idx].NaturalHomeMonth);
+
+    private static MonthlyBudgetExpectationPosting CreateExpectationPosting(
+        BudgetRuleDto rule,
+        BudgetValuationType valuationType,
+        int creationOrder,
+        (DateOnly PeriodStart, DateOnly PeriodEnd, DateOnly NaturalHomeMonth) occurrence,
+        DateOnly homeMonth,
+        bool hasNaturalOccurrence)
+    {
+        var (periodStart, periodEnd, naturalHomeMonth) = occurrence;
+        var isCarriedOver = homeMonth != naturalHomeMonth && hasNaturalOccurrence;
+        return new MonthlyBudgetExpectationPosting(
+            rule.Amount,
+            valuationType,
+            rule.StartDate,
+            creationOrder,
+            new RuleOccurrencePeriod(periodStart, periodEnd),
+            new PurposeMatchPattern(rule.PurposePattern, rule.UseRegex),
+            isCarriedOverAcrossReportBoundary: isCarriedOver);
+    }
+
+    private void RegisterExpectationPosting(
+        BudgetRuleDto rule,
+        DateOnly homeMonth,
+        MonthlyBudgetExpectationPosting expectationPosting,
+        Dictionary<(Guid PurposeId, DateOnly Month), List<MonthlyBudgetExpectationPosting>> purposeExpectationPostingsByHomeMonth,
+        Dictionary<(Guid CategoryId, DateOnly Month), List<MonthlyBudgetExpectationPosting>> categoryExpectationPostingsByHomeMonth)
+    {
+        if (rule.BudgetPurposeId.HasValue)
+        {
+            RegisterPurposePosting(rule.BudgetPurposeId.Value, homeMonth, expectationPosting, purposeExpectationPostingsByHomeMonth);
+            return;
+        }
+
+        if (rule.BudgetCategoryId.HasValue)
+        {
+            RegisterCategoryPosting(rule.BudgetCategoryId.Value, homeMonth, expectationPosting, categoryExpectationPostingsByHomeMonth);
+        }
+    }
+
+    private void RegisterPurposePosting(
+        Guid purposeId,
+        DateOnly homeMonth,
+        MonthlyBudgetExpectationPosting expectationPosting,
+        Dictionary<(Guid PurposeId, DateOnly Month), List<MonthlyBudgetExpectationPosting>> purposeExpectationPostingsByHomeMonth)
+    {
+        AddToHomeMonth(purposeExpectationPostingsByHomeMonth, (purposeId, homeMonth), expectationPosting);
+        if (_purposeCandidatePostings.TryGetValue(purposeId, out var purposeCandidates))
+        {
+            purposeCandidates.Add(expectationPosting);
+        }
+    }
+
+    private void RegisterCategoryPosting(
+        Guid categoryId,
+        DateOnly homeMonth,
+        MonthlyBudgetExpectationPosting expectationPosting,
+        Dictionary<(Guid CategoryId, DateOnly Month), List<MonthlyBudgetExpectationPosting>> categoryExpectationPostingsByHomeMonth)
+    {
+        AddToHomeMonth(categoryExpectationPostingsByHomeMonth, (categoryId, homeMonth), expectationPosting);
+        if (_categoryCandidatePostings.TryGetValue(categoryId, out var categoryCandidates))
+        {
+            categoryCandidates.Add(expectationPosting);
+        }
     }
 
     private static BudgetValuationType ResolveValuationType(BudgetRuleDto rule, IReadOnlyList<BudgetPurposeDto> purposes)

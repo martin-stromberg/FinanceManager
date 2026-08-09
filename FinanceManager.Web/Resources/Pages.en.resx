@@ -1272,6 +1272,9 @@
   <data name="SetupSecurityTxt_Label_Expires" xml:space="preserve">
     <value>Expires</value>
   </data>
+  <data name="SetupSecurityTxt_Label_Canonical" xml:space="preserve">
+    <value>Canonical</value>
+  </data>
   <data name="SetupSecurityTxt_Label_Encryption" xml:space="preserve">
     <value>Encryption</value>
   </data>
