@@ -1147,6 +1147,9 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<string>("Acknowledgments")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Canonical")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Contact")
                         .IsRequired()
                         .HasColumnType("TEXT");

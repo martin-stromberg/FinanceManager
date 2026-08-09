@@ -39,11 +39,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Budgetbericht objektorientiert neu strukturiert:** Die Berechnungslogik des Budgetberichts wurde von einer prozeduralen `BudgetReportService`-Implementierung auf ein objektorientiertes Domänenmodell umgestellt (`Budgetbericht`, `MonthlyBudgetResult`, `MonthlyBudgetExpectationGroup`, `MonthlyBudgetExpectation`, `MonthlyBudgetExpectationPosting` in `FinanceManager.Domain.Budget.ReportCalculation`); `BudgetReportService` bleibt als schlanker Adapter bestehen.
+  - Neue Zeilenreihenfolge im Detailbericht: Kategorie-/Zweckzeilen → Zwischensumme → Unbudgetiert → Zwischensumme → Kostenneutral → Endsumme.
+  - Buchungen mit `GroupId` (Self-Kontakt, kostenneutrale Transfers) werden jetzt als eigene Zeilenart „Kostenneutral" ausgewiesen statt unter „Unbudgetiert".
+  - Neue virtuelle Kategorie „Ohne Kategorie" für Budgetzwecke ohne zugeordnete Kategorie; wird ausgeblendet, wenn sie die einzige Kategoriezeile ist.
+  - Mehrere Gesamtbudget-Erwartungen am selben Zweck/derselben Kategorie werden sequenziell nach `BudgetRule.StartDate` (aufsteigend), dann Erstellungsreihenfolge befüllt.
+  - Neue DTOs: `BudgetReportEntry` (Detailzeile, `BudgetReportEntryRowKind`), `BudgetReportCumulativeEntry` (Intervall-Zusammenfassung), `MonthlyBudgetRealization` (Eingabe-DTO für Buchungsposten).
 - **Self-update library moved to external release artifact:** `FinanceManager.Web` now references the vendored `msTools.Updater` `v0.2.0` release under `external/msTools.Updater/v0.2.0/` instead of the local `SoftwareSchmiede.AutoUpdate` project. The ZIP is kept with a SHA256 checksum and the extracted `msTools.Updater.dll` is copied locally for build and publish.
 
 ### Removed
 
 - Removed the local `SoftwareSchmiede.AutoUpdate` and `SoftwareSchmiede.AutoUpdate.Tests` projects from the solution. Updater library tests belong to the external updater repository; this repository keeps only the FinanceManager integration tests.
+- Removed obsolete `msTools.Updater` `v0.2.0` (under `external/msTools.Updater/v0.2.0/`) after successful migration to `v0.3.0`, which is now the only vendored version and referenced by `FinanceManager.Web.csproj`.
 
 ---
 
@@ -52,6 +59,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Bug:** `GetRelatedPostingsAsync` with `GroupId == Guid.Empty` returns all ungrouped postings instead of an empty result. Integration test `L21` is skipped as a workaround. This is a pre-existing issue unrelated to the reversal feature.
 - **UX:** No confirmation dialog is shown before executing a reversal. The action is irreversible and currently triggers immediately on button click.
 - **Tests:** 13 pre-existing test failures exist in the test suite. These failures are not caused by the reversal feature and were present before this branch was created.
+- **Tests:** 3 `UpdateSetupPlaywrightTests` E2E tests fail (Admin/Update-Setup UI, timeouts and a strict-mode selector match). Pre-existing, unrelated to the Budgetbericht refactor.
+- **Bug:** `BudgetReportEntry.BudgetedAmount` is a net amount per purpose; purposes with both an income and an expense rule active in the same month have the smaller side netted away, skewing `PlannedIncome`/`PlannedExpenseAbs`/`ExpectedExpenseAbs`. Pre-existing, out of scope for the Budgetbericht restructuring — tracked as follow-up.
 
 ---
 
