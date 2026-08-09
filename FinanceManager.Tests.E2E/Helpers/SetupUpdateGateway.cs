@@ -62,6 +62,12 @@ public sealed class SetupUpdateGateway
 
     public Task<bool> IsEnabledCheckedAsync() => EnabledCheckbox.IsCheckedAsync();
 
+    public async Task AllowChecksAnyTimeAsync()
+    {
+        await SourceCheckStartTimeInput.FillAsync("00:00");
+        await SourceCheckEndTimeInput.FillAsync("23:59");
+    }
+
     public async Task SaveSettingsAsync()
     {
         await SaveSettingsButton.ClickAsync();
@@ -95,7 +101,6 @@ public sealed class SetupUpdateGateway
 
     private ILocator SaveSettingsButton => _page.Locator("#Save");
 
-    private ILocator EnabledCheckbox => _page.Locator("#setup-update-enabled");
     private ILocator SourceCheckStartTimeInput => _page.Locator("#setup-update-source-check-start-time");
     private ILocator SourceCheckEndTimeInput => _page.Locator("#setup-update-source-check-end-time");
 
