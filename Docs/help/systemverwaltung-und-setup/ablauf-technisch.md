@@ -176,7 +176,7 @@ Beteiligte Komponenten: `SetupBackupsViewModel`, `ApiClient.Backups_UploadAsync`
    - `PlainText`: `Key: Value`-Zeilen gemäß RFC 9116.
    - `Markdown`: `## Direktive`-Abschnitte.
    - `Html`: `<section><h2>Direktive</h2><p>Wert</p></section>`-Blöcke, HTML-enkodiert.
-   Die `Canonical`-Direktive wird als `<Api:BaseAddress>/.well-known/security.txt` aus `IConfiguration` ermittelt.
+   Die `Canonical`-Direktive wird aus dem gespeicherten Feld `SecurityTxtSettings.Canonical` gelesen; ist dieses leer, wird `<Api:BaseAddress>/.well-known/security.txt` aus `IConfiguration` als Fallback verwendet.
 7. Controller gibt `ContentResult` mit passendem `Content-Type` und HTTP 200 zurück.
 
 Beteiligte Komponenten: `SecurityTxtController`, `ISecurityTxtSettingsService`, `SecurityTxtSettingsService`, `AppDbContext`, `SecurityTxtSettings`
@@ -188,10 +188,11 @@ Beteiligte Komponenten: `SecurityTxtController`, `ISecurityTxtSettingsService`, 
 1. Admin-UI ruft beim Laden über `ApiClient.GetSecurityTxtSettingsAsync()` → `GET /api/admin/security-txt` die aktuellen Werte ab.
 2. `SecurityTxtController.GetSettingsAsync` prüft JWT-Bearer-Token und Rolle `Admin`. Dann delegiert er an `ISecurityTxtSettingsService.GetAsync(ct)`.
 3. `SecurityTxtSettingsService` lädt die Singleton-Zeile und mappt sie auf `SecurityTxtSettingsDto`.
-4. Der Admin bearbeitet Felder in `SetupSecurityTxtViewModel` (`Contact`, `Ablaufdatum`, optionale Felder). Jede Änderung setzt `Dirty = true`.
+4. Der Admin bearbeitet Felder in `SetupSecurityTxtViewModel` (`Contact`, `Ablaufdatum`, `Canonical`, optionale Felder). Jede Änderung setzt `Dirty = true`.
 5. Admin klickt „Speichern" in der Ribbon-Aktionsleiste. `SetupCardViewModel` ruft `SetupSecurityTxtViewModel.SaveAsync()` auf.
 6. `SaveAsync` sendet `SecurityTxtSettingsUpdateRequest` via `ApiClient.UpdateSecurityTxtSettingsAsync()` → `PUT /api/admin/security-txt`.
 7. `SecurityTxtController.UpdateSettingsAsync` validiert das Modell und delegiert an `ISecurityTxtSettingsService.UpdateAsync(request, ct)`.
+   Die Request-Validierung in `SecurityTxtSettingsUpdateRequest.Validate(...)` erzwingt für `Canonical` bei gesetztem Wert eine absolute HTTPS-URL ohne Query/Fragment und ohne localhost-/Loopback-Host.
 8. `SecurityTxtSettingsService` lädt die Singleton-Zeile, ruft `entity.Update(...)` auf und speichert mit `SaveChangesAsync`.
 9. Controller antwortet mit **HTTP 204**. Das ViewModel setzt `SavedOk = true` und `Dirty = false`; die Razor-Komponente `SecurityTxtSettingsTab.razor` zeigt „Einstellungen gespeichert."
 

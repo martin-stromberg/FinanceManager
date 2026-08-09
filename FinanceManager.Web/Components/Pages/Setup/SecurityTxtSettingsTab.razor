@@ -26,6 +26,7 @@ else
             <div class="form-grid">
                 <div class="form-row"><label for="securitytxt-contact">@Localizer["SetupSecurityTxt_Label_Contact"]</label><input id="securitytxt-contact" @bind="_vm.Model.Contact" @bind:after="_vm.OnChanged" /></div>
                 <div class="form-row"><label for="securitytxt-expires">@Localizer["SetupSecurityTxt_Label_Expires"]</label><input id="securitytxt-expires" type="datetime-local" value="@_vm.ExpiresText" @onchange="OnExpiresChanged" /></div>
+                <div class="form-row"><label for="securitytxt-canonical">@Localizer["SetupSecurityTxt_Label_Canonical"]</label><input id="securitytxt-canonical" @bind="_vm.Model.Canonical" @bind:after="_vm.OnChanged" /></div>
                 <div class="form-row"><label for="securitytxt-encryption">@Localizer["SetupSecurityTxt_Label_Encryption"]</label><input id="securitytxt-encryption" @bind="_vm.Model.Encryption" @bind:after="_vm.OnChanged" /></div>
                 <div class="form-row"><label for="securitytxt-ack">@Localizer["SetupSecurityTxt_Label_Acknowledgments"]</label><input id="securitytxt-ack" @bind="_vm.Model.Acknowledgments" @bind:after="_vm.OnChanged" /></div>
                 <div class="form-row"><label for="securitytxt-lang">@Localizer["SetupSecurityTxt_Label_PreferredLanguages"]</label><input id="securitytxt-lang" @bind="_vm.Model.PreferredLanguages" @bind:after="_vm.OnChanged" /></div>

@@ -68,9 +68,9 @@ public sealed class SetupUpdateGateway
         await WaitUntilSaveCompletedAsync();
     }
 
-    public Task<string> GetStatusValueAsync() => GetDefinitionValueAsync("update-status-value");
+    public Task<string> GetStatusValueAsync() => ReadTextAsync(StatusValue);
 
-    public Task<string> GetAvailableVersionValueAsync() => GetDefinitionValueAsync("update-available-value");
+    public Task<string> GetAvailableVersionValueAsync() => ReadTextAsync(AvailableVersionValue);
 
     /// <summary>
     /// Waits until the available-version definition value equals <paramref name="expectedVersion"/>.
@@ -82,7 +82,8 @@ public sealed class SetupUpdateGateway
     public Task WaitForAvailableVersionAsync(string expectedVersion)
         => Microsoft.Playwright.Assertions.Expect(AvailableVersionValue).ToHaveTextAsync(expectedVersion, new() { Timeout = 15000 });
 
-    private ILocator AvailableVersionValue => _page.Locator(".setup-update-tab [data-testid='update-available-value']");
+    private ILocator StatusValue => _page.Locator("#setup-update-status-value");
+    private ILocator AvailableVersionValue => _page.Locator("#setup-update-available-version-value");
 
     private ILocator EnabledCheckbox => _page.Locator(".setup-update-tab [data-testid='update-enabled-checkbox']");
 
@@ -94,11 +95,12 @@ public sealed class SetupUpdateGateway
 
     private ILocator SaveSettingsButton => _page.Locator("#Save");
 
-    private async Task<string> GetDefinitionValueAsync(string testId)
-    {
-        var value = _page.Locator($".setup-update-tab [data-testid='{testId}']");
-        return (await value.InnerTextAsync()).Trim();
-    }
+    private ILocator EnabledCheckbox => _page.Locator("#setup-update-enabled");
+    private ILocator SourceCheckStartTimeInput => _page.Locator("#setup-update-source-check-start-time");
+    private ILocator SourceCheckEndTimeInput => _page.Locator("#setup-update-source-check-end-time");
+
+    private static async Task<string> ReadTextAsync(ILocator locator)
+        => (await locator.InnerTextAsync()).Trim();
 
     private async Task WaitUntilLoadedAsync()
     {

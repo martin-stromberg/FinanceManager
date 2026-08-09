@@ -259,6 +259,7 @@ zurueckgegeben: `Err_Update_Reset_NoLock`, `Err_Update_Reset_LockNotStale`,
 {
   "contact": "mailto:security@example.com",
   "expires": "2027-01-01T00:00:00+00:00",
+  "canonical": "https://security.example.com/.well-known/security.txt",
   "encryption": null,
   "acknowledgments": null,
   "preferredLanguages": "de, en",
@@ -281,6 +282,7 @@ zurueckgegeben: `Err_Update_Reset_NoLock`, `Err_Update_Reset_LockNotStale`,
 {
   "contact": "mailto:security@example.com",
   "expires": "2027-01-01T00:00:00+00:00",
+  "canonical": "https://security.example.com/.well-known/security.txt",
   "encryption": "https://example.com/pgp-key.asc",
   "acknowledgments": null,
   "preferredLanguages": "de, en",
@@ -295,6 +297,7 @@ zurueckgegeben: `Err_Update_Reset_NoLock`, `Err_Update_Reset_LockNotStale`,
 |------|-----|---------|-----------|--------------|
 | `Contact` | `string` | Ja | 2048 | URI oder mailto-Adresse |
 | `Expires` | `DateTimeOffset` | Ja | – | ISO-8601-Ablaufdatum |
+| `Canonical` | `string?` | Nein | 2048 | Absolute HTTPS-URL ohne Query/Fragment; kein localhost/Loopback |
 | `Encryption` | `string?` | Nein | 2048 | URI zum öffentlichen Schlüssel |
 | `Acknowledgments` | `string?` | Nein | 2048 | URI zur Danksagungsseite |
 | `PreferredLanguages` | `string?` | Nein | 2048 | Kommagetrennte BCP-47-Tags |
@@ -303,5 +306,5 @@ zurueckgegeben: `Err_Update_Reset_NoLock`, `Err_Update_Reset_LockNotStale`,
 
 **Antworten:**
 - `204 No Content` bei Erfolg.
-- `400 ValidationProblem` bei fehlenden Pflichtfeldern oder überschrittener Maximallänge.
+- `400 ValidationProblem` bei fehlenden Pflichtfeldern, ungültigem `Canonical` oder überschrittener Maximallänge.
 - `403 Forbidden` ohne Admin-Rolle.
