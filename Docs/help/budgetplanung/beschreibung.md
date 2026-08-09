@@ -16,6 +16,27 @@ Im Budgetbericht zeigen Kategoriezeilen das zusammengefasste Budget der Kategori
 
 Passende Buchungen, die wegen der Budgetwertungsart nicht in den Istwert eines Verwendungszwecks eingehen, bleiben beim Verwendungszweck sichtbar und erscheinen zusaetzlich in der regulaeren Auflistung der nicht budgetierten Betraege. In der Postenauflistung des Verwendungszwecks werden sie als nicht budgetiert gekennzeichnet und optisch schwaecher dargestellt.
 
+## Zeilenstruktur im Budgetbericht
+
+Der Detailbericht gliedert sich nach folgendem Muster:
+
+1. **Kategoriezeilen** (wenn mehrere Kategorien vorhanden oder ausschließlich nicht-kategorisierte Zwecke existieren)
+   - Zweckzeilen und direkte Kategorieregeln
+   - Zwischensumme pro Kategorie
+2. **Nicht budgetierte Buchungen** (Zwischensumme)
+3. **Kostenneutrale Buchungen** (Spiegelgruppen mit `GroupId`)
+4. **Endsumme**
+
+Verwendungszwecke ohne zugeordnete Kategorie werden unter der virtuellen Kategorie „Uncategorized" aggregiert. Diese wird ausgeblendet, wenn sie die einzige Kategoriezeile ist.
+
+## Kostenneutrale Transfers
+
+Buchungen mit gesetzter `GroupId` (Spiegelgruppen) werden nicht als unbudgetiert gezählt, sondern separat in der Zeile „Kostenneutral" ausgewiesen. Dies gilt typischerweise für Selbst-Kontakt-Transfers zwischen eigenen Konten.
+
+## Mehrere Gesamtbudgets pro Zweck
+
+Sind mehrere Gesamtbudget-Regeln einem Zweck zugeordnet, werden sie sequenziell nach `StartDate` der Regel (aufsteigend) und anschließend nach Erstellungsreihenfolge verarbeitet. Der Buchungsposten wird der höchstpriorisierten (frühesten) Erwartung zugeordnet; übersteigt der Betrag, wird der Rest zur nächsten Erwartung weitergeleitet. Nicht zugeordnete Reste werden als unbudgetiert erfasst.
+
 Die Abweichung im Budgetbericht wird als `Ist - Budget` ausgewiesen. Die prozentuale Abweichung verwendet dieselbe Richtung und bezieht sich auf den Absolutbetrag des Budgets. Dadurch bleiben Kategorieansicht, Periodensummen und XLSX-Export fachlich konsistent.
 
 ## Beispiele
