@@ -34,28 +34,28 @@ else
     {
         <div class="setup-form-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:.75rem;">
             <label>
-                <input type="checkbox" checked="@_vm.Settings.Enabled" @onchange="OnEnabledChanged" />
+                <input type="checkbox" data-testid="update-enabled-checkbox" checked="@_vm.Settings.Enabled" @onchange="OnEnabledChanged" />
                 @Localizer["SetupUpdate_Lbl_Enabled"]
             </label>
             <label>
-                <input type="checkbox" checked="@_vm.Settings.IncludePrereleases" @onchange="OnIncludePrereleasesChanged" />
+                <input id="setup-update-include-prereleases" type="checkbox" checked="@_vm.Settings.IncludePrereleases" @onchange="OnIncludePrereleasesChanged" />
                 @Localizer["SetupUpdate_Lbl_IncludePrereleases"]
             </label>
             <label>
                 @Localizer["SetupUpdate_Lbl_SourceCheckStartTime"]
-                <input class="form-control" type="time" value="@FormatTime(_vm.Settings.SourceCheckStartTime)" @onchange="OnSourceCheckStartChanged" />
+                <input id="setup-update-source-check-start-time" class="form-control" type="time" value="@FormatTime(_vm.Settings.SourceCheckStartTime)" @onchange="OnSourceCheckStartChanged" />
             </label>
             <label>
                 @Localizer["SetupUpdate_Lbl_SourceCheckEndTime"]
-                <input class="form-control" type="time" value="@FormatTime(_vm.Settings.SourceCheckEndTime)" @onchange="OnSourceCheckEndChanged" />
+                <input id="setup-update-source-check-end-time" class="form-control" type="time" value="@FormatTime(_vm.Settings.SourceCheckEndTime)" @onchange="OnSourceCheckEndChanged" />
             </label>
             <label>
                 @Localizer["SetupUpdate_Lbl_ScheduledTime"]
-                <input class="form-control" type="time" value="@FormatTime(_vm.Settings.ScheduledInstallTime)" @onchange="OnScheduleChanged" />
+                <input id="setup-update-scheduled-time" class="form-control" type="time" value="@FormatTime(_vm.Settings.ScheduledInstallTime)" @onchange="OnScheduleChanged" />
             </label>
             <label>
                 @Localizer["SetupUpdate_Lbl_ServiceName"]
-                <input class="form-control" list="update-service-suggestions" value="@_vm.Settings.ServiceName" @oninput="OnServiceNameInputAsync" @onchange="OnServiceNameChanged" @onfocus="LoadServiceSuggestionsAsync" />
+                <input id="setup-update-service-name" class="form-control" list="update-service-suggestions" value="@_vm.Settings.ServiceName" @oninput="OnServiceNameInputAsync" @onchange="OnServiceNameChanged" @onfocus="LoadServiceSuggestionsAsync" />
                 <datalist id="update-service-suggestions">
                     @foreach (var serviceName in _vm.ServiceSuggestions)
                     {
@@ -66,11 +66,11 @@ else
         </div>
 
         <dl style="display:grid;grid-template-columns:max-content 1fr;gap:.35rem .75rem;margin-top:1rem;">
-            <dt>@Localizer["SetupUpdate_Dl_Status"]</dt><dd>@Localizer[UpdateStatusKey(_vm.Status.Status)]</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Status"]</dt><dd data-testid="update-status-value">@Localizer[UpdateStatusKey(_vm.Status.Status)]</dd>
             <dt>@Localizer["SetupUpdate_Dl_Installed"]</dt><dd>@(_vm.Status.InstalledVersion ?? Localizer["SetupUpdate_Val_Unknown"].Value)</dd>
             <dt>@Localizer["SetupUpdate_Dl_Platform"]</dt><dd>@_vm.Status.CurrentPlatform</dd>
             <dt>@Localizer["SetupUpdate_Dl_LastChecked"]</dt><dd>@FormatDate(_vm.Status.LastCheckedAt)</dd>
-            <dt>@Localizer["SetupUpdate_Dl_Available"]</dt><dd>@(_vm.Status.AvailableVersion ?? "-")</dd>
+            <dt>@Localizer["SetupUpdate_Dl_Available"]</dt><dd data-testid="update-available-value">@(_vm.Status.AvailableVersion ?? "-")</dd>
             <dt>@Localizer["SetupUpdate_Dl_Package"]</dt><dd>@(_vm.Status.DownloadedAssetName ?? "-")</dd>
             <dt>@Localizer["SetupUpdate_Dl_Lock"]</dt><dd>@(_vm.Status.IsLocked ? string.Format(Localizer["SetupUpdate_Val_LockActiveSince"].Value, FormatDate(_vm.Status.LockCreatedAt)) : "-")</dd>
         </dl>

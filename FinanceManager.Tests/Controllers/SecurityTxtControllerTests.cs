@@ -1,6 +1,8 @@
 using System;
 using System.Reflection;
 using System.Security.Claims;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FinanceManager.Application.Security;
@@ -159,7 +161,8 @@ public sealed class SecurityTxtControllerTests
             Acknowledgments: null,
             PreferredLanguages: null,
             Policy: null,
-            Hiring: null);
+            Hiring: null,
+            Canonical: null);
 
         var result = await controller.UpdateSettingsAsync(request, CancellationToken.None);
 
@@ -168,6 +171,50 @@ public sealed class SecurityTxtControllerTests
         // and the service must not have been called.
         result.Should().BeAssignableTo<ObjectResult>();
         service.Verify(s => s.UpdateAsync(It.IsAny<SecurityTxtSettingsUpdateRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("http://localhost/.well-known/security.txt")]
+    [InlineData("https://security.example.com/.well-known/security.txt?from=admin")]
+    [InlineData("https://security.example.com/.well-known/security.txt#anchor")]
+    [InlineData("http://security.example.com/.well-known/security.txt")]
+    [InlineData("/.well-known/security.txt")]
+    public async Task UpdateSettings_InvalidCanonical_Returns400(string canonical)
+    {
+        var (controller, service) = Create(isAdmin: true);
+        var request = SecurityTxtSettingsTestData.ValidRequest(canonical: canonical);
+
+        var validationResults = new System.Collections.Generic.List<ValidationResult>();
+        Validator.TryValidateObject(request, new ValidationContext(request), validationResults, validateAllProperties: true);
+        foreach (var validationResult in validationResults)
+        {
+            var memberName = validationResult.MemberNames.FirstOrDefault() ?? nameof(SecurityTxtSettingsUpdateRequest.Canonical);
+            controller.ModelState.AddModelError(memberName, validationResult.ErrorMessage ?? "Validation failed.");
+        }
+
+        var result = await controller.UpdateSettingsAsync(request, CancellationToken.None);
+
+        result.Should().BeAssignableTo<ObjectResult>();
+        service.Verify(s => s.UpdateAsync(It.IsAny<SecurityTxtSettingsUpdateRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateSettings_ExpiredExpires_Returns400()
+    {
+        var (controller, service) = Create(isAdmin: true);
+        var request = SecurityTxtSettingsTestData.ValidRequest(expires: DateTimeOffset.UtcNow.AddMinutes(-1));
+
+        var validationResults = new System.Collections.Generic.List<ValidationResult>();
+        Validator.TryValidateObject(request, new ValidationContext(request), validationResults, validateAllProperties: true);
+        foreach (var validationResult in validationResults)
+        {
+            var memberName = validationResult.MemberNames.FirstOrDefault() ?? nameof(SecurityTxtSettingsUpdateRequest.Expires);
+            controller.ModelState.AddModelError(memberName, validationResult.ErrorMessage ?? "Validation failed.");
+        }
+
+        var result = await controller.UpdateSettingsAsync(request, CancellationToken.None);
+
+        result.Should().BeAssignableTo<ObjectResult>();
         service.Verify(s => s.UpdateAsync(It.IsAny<SecurityTxtSettingsUpdateRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

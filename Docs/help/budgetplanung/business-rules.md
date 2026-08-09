@@ -71,6 +71,50 @@
 
 **Umsetzung:** `BudgetPurpose`, `BudgetReportService`, `BudgetReportsController` und `BudgetReportExportService`.
 
+## Kostenneutrale Buchungen (Spiegelgruppen) werden separat erfasst
+
+**Beschreibung:** Buchungen mit gesetzter `GroupId` (Spiegelgruppen) werden nicht als unbudgetiert gezählt.
+
+**Bedingungen:**
+- Buchung hat `GroupId` gesetzt (typischerweise Selbst-Kontakt-Transfers zwischen eigenen Konten).
+- Keine Budgetzuordnung vorhanden.
+
+**Verhalten:**
+- Buchung wird in der Zeile „Kostenneutral" erfasst, nicht in „Unbudgetiert".
+- Zeile „Kostenneutral" ist separate Zeilenart im Detailbericht, nach „Unbudgetiert" und vor Endsumme.
+
+**Umsetzung:** `Budgetbericht.AddPosting()` (Domänenlogik).
+
+## Virtuelle Kategorie „Uncategorized" für kategorielose Zwecke
+
+**Beschreibung:** Verwendungszwecke ohne zugeordnete Kategorie werden unter der virtuellen Kategorie „Uncategorized" aggregiert.
+
+**Bedingungen:**
+- `BudgetPurpose.CategoryId` ist `null`.
+- Mindestens ein solcher Zweck ist im Bericht enthalten.
+
+**Verhalten:**
+- Zwecke werden unter „Uncategorized" (ID=`Guid.Empty`) gruppiert.
+- Kategorie wird ausgeblendet, wenn sie die **einzige** Kategoriezeile ist.
+- Kategorie wird angezeigt, wenn mehrere Kategorien existieren oder direkte Kategorieregeln vorhanden sind.
+
+**Umsetzung:** `Budgetbericht.SetPlanung()` (Domänenlogik) und `Budgetbericht.GetCurrentResult()` (Output-Filterung).
+
+## Mehrere Gesamtbudgets pro Zweck werden sequenziell verarbeitet
+
+**Beschreibung:** Sind mehrere Gesamtbudget-Regeln (`BudgetValuationType.TotalBudget`) einem Zweck zugeordnet, werden sie in definierter Prioritätsreihenfolge verarbeitet.
+
+**Bedingungen:**
+- Mehrere `BudgetRule` mit gleichem `BudgetPurposeId` und `BudgetValuationType = TotalBudget`.
+
+**Verhalten:**
+- Sortierung nach `BudgetRule.StartDate` (aufsteigend), Gleichstand: Erstellungsreihenfolge.
+- Buchungsposten wird der höchstpriorisierten (frühesten) Erwartung zugeordnet.
+- Übersteigt der Betrag die Erwartung, wird der Rest zur nächsten Erwartung weitergeleitet.
+- Nicht zugeordnete Reste werden als unbudgetiert erfasst.
+
+**Umsetzung:** `Budgetbericht.Finish()` (Domänenlogik), Hilfsmethoden für Regelpriorisierung und sequenzielle Zuweisung.
+
 ## Abweichung wird als Ist minus Budget berechnet
 
 **Beschreibung:** Sichtbare Abweichungen im Budgetbericht verwenden die Richtung `Ist - Budget`.
@@ -83,4 +127,4 @@
 - `Abweichung % = Abweichung / Abs(Budget)`.
 - Bei Budget `0` wird die prozentuale Abweichung mit `0` ausgewiesen.
 
-**Umsetzung:** `BudgetReportsController`, `BudgetReport.razor` und `BudgetReportExportService`.
+**Umsetzung:** `BudgetReportsController`, `BudgetReport.razor`, `BudgetReportExportService` und Domänenklasse `Budgetbericht`.
