@@ -326,3 +326,34 @@ zurueckgeblieben ist.
 
 **Umsetzung:** `UpdateController.ResetLock`, `UpdateOrchestratorAdapter.ResetLockAsync`,
 `IAutoUpdatePackageStore.DeleteLockAsync`, `AutoUpdateStatusService.UpdateAsync`.
+
+## security.txt Canonical priorisiert persistierte Admin-Konfiguration
+
+**Beschreibung:** Die öffentliche `Canonical`-Direktive folgt vorrangig der administrativ gepflegten URL, damit Reverse-Proxy- und öffentliche Zieladressen korrekt veröffentlicht werden.
+
+**Bedingungen:**
+- `SecurityTxtSettings.Canonical` ist gesetzt oder leer.
+- Öffentliche Ausgabe wird über `BuildContentAsync(...)` für `PlainText`, `Markdown` oder `Html` erzeugt.
+
+**Verhalten:**
+- Wenn `Canonical` gesetzt ist: genau dieser Wert wird in allen Ausgabeformaten verwendet.
+- Wenn `Canonical` leer ist: als Fallback wird `<Api:BaseAddress>/.well-known/security.txt` erzeugt.
+- Wenn `Contact` leer ist: es wird keine Ausgabe erzeugt (`null`), der Controller antwortet mit `503`.
+
+**Umsetzung:** `SecurityTxtSettingsService.BuildContentAsync(...)`, `SecurityTxtSettingsService.BuildCanonical(...)`, `SecurityTxtController.RenderAsync(...)`.
+
+## security.txt Canonical wird am API-Eingang strikt validiert
+
+**Beschreibung:** Die Admin-API akzeptiert für `Canonical` nur öffentlich plausible URLs, um fehlerhafte oder interne Ziele in der veröffentlichten `security.txt` zu verhindern.
+
+**Bedingungen:**
+- Request `SecurityTxtSettingsUpdateRequest` enthält optional `Canonical`.
+
+**Verhalten:**
+- Leerer Wert ist zulässig.
+- Nicht-leerer Wert muss absolute HTTPS-URL sein.
+- Query-Strings und Fragmente sind unzulässig.
+- `localhost` und Loopback-Adressen werden abgelehnt.
+- Bei Verstoß liefert die API einen `400 ValidationProblem` und speichert keine Änderung.
+
+**Umsetzung:** `SecurityTxtSettingsUpdateRequest.Validate(...)`, `SecurityTxtController.UpdateSettingsAsync(...)`.

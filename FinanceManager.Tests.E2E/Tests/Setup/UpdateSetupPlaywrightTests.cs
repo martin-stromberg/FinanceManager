@@ -32,6 +32,9 @@ public sealed class UpdateSetupPlaywrightTests
         var (session, gateway) = await LoginAsAdminAndOpenUpdateTabAsync();
         await using var _ = session;
 
+        await gateway.SetEnabledAsync(true);
+        await gateway.AllowChecksAnyTimeAsync();
+        await gateway.SaveSettingsAsync();
         await gateway.CheckNowAsync();
 
         await gateway.WaitForAvailableVersionAsync(PlaywrightWebAppFixture.AvailableUpdateVersion);
@@ -53,8 +56,15 @@ public sealed class UpdateSetupPlaywrightTests
         await page.ReloadAsync();
         await gateway.OpenAsync();
 
-        var checkbox = page.Locator(".setup-update-tab input[type=checkbox]");
-        (await checkbox.IsCheckedAsync()).Should().BeFalse();
+        (await gateway.IsEnabledCheckedAsync()).Should().BeFalse();
+
+        // Update settings are a single app-wide row, not scoped to the admin user created for this test, so
+        // leaving Enabled=false here would leak into whichever other test in this class (sharing the same
+        // PlaywrightWebAppFixture server/database) runs next - e.g. Admin_TriggersCheck_ShowsAvailableUpdate
+        // relies on updates being enabled to get a result from a manual check. Restore it so this test's
+        // side effect does not depend on / affect test execution order.
+        await gateway.SetEnabledAsync(true);
+        await gateway.SaveSettingsAsync();
     }
 
     /// <summary>
