@@ -33,7 +33,8 @@ public sealed class SecurityTxtSettingsService : ISecurityTxtSettingsService
             Acknowledgments = entity.Acknowledgments,
             PreferredLanguages = entity.PreferredLanguages,
             Policy = entity.Policy,
-            Hiring = entity.Hiring
+            Hiring = entity.Hiring,
+            Canonical = entity.Canonical
         };
     }
 
@@ -41,7 +42,15 @@ public sealed class SecurityTxtSettingsService : ISecurityTxtSettingsService
     public async Task UpdateAsync(SecurityTxtSettingsUpdateRequest request, CancellationToken ct)
     {
         var entity = await GetEntityAsync(ct);
-        entity.Update(request.Contact, request.Expires, request.Encryption, request.Acknowledgments, request.PreferredLanguages, request.Policy, request.Hiring);
+        entity.Update(new SecurityTxtDirectives(
+            request.Contact,
+            request.Expires,
+            request.Encryption,
+            request.Acknowledgments,
+            request.PreferredLanguages,
+            request.Policy,
+            request.Hiring,
+            request.Canonical));
         await _db.SaveChangesAsync(ct);
     }
 
@@ -54,7 +63,7 @@ public sealed class SecurityTxtSettingsService : ISecurityTxtSettingsService
             return null;
         }
 
-        var canonical = BuildCanonical();
+        var canonical = BuildCanonical(entity.Canonical);
         return format switch
         {
             SecurityTxtFormat.Markdown => BuildMarkdown(entity, canonical),
@@ -77,8 +86,13 @@ public sealed class SecurityTxtSettingsService : ISecurityTxtSettingsService
         return entity;
     }
 
-    private string BuildCanonical()
+    private string BuildCanonical(string? canonical)
     {
+        if (!string.IsNullOrWhiteSpace(canonical))
+        {
+            return canonical.Trim();
+        }
+
         var baseAddress = _configuration["Api:BaseAddress"] ?? "https://localhost:5001/";
         return new Uri(new Uri(baseAddress), "/.well-known/security.txt").ToString();
     }

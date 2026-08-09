@@ -1,5 +1,7 @@
 using FinanceManager.Shared.Dtos.Admin;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace FinanceManager.Web.ViewModels.Setup;
 
@@ -9,6 +11,7 @@ namespace FinanceManager.Web.ViewModels.Setup;
 public sealed class SetupSecurityTxtViewModel : BaseViewModel
 {
     private readonly FinanceManager.Shared.IApiClient _api;
+    private readonly ILogger<SetupSecurityTxtViewModel>? _logger;
     private SecurityTxtSettingsDto _original = new();
     private bool _busy;
     private bool _dirty;
@@ -17,6 +20,7 @@ public sealed class SetupSecurityTxtViewModel : BaseViewModel
     public SetupSecurityTxtViewModel(IServiceProvider sp) : base(sp)
     {
         _api = sp.GetRequiredService<FinanceManager.Shared.IApiClient>();
+        _logger = sp.GetService<ILogger<SetupSecurityTxtViewModel>>();
     }
 
     /// <summary>Current editable settings.</summary>
@@ -89,9 +93,32 @@ public sealed class SetupSecurityTxtViewModel : BaseViewModel
             _original = Clone(Model);
             RecomputeDirty();
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
+        {
+            Error = _api.LastError ?? ex.Message;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (TaskCanceledException ex)
         {
             Error = ex.Message;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger?.LogError(ex, "Loading security.txt settings failed.");
+            throw;
+        }
+        catch (JsonException ex)
+        {
+            _logger?.LogError(ex, "Loading security.txt settings failed.");
+            throw;
+        }
+        catch (NotSupportedException ex)
+        {
+            _logger?.LogError(ex, "Loading security.txt settings failed.");
+            throw;
         }
         finally
         {
@@ -122,15 +149,39 @@ public sealed class SetupSecurityTxtViewModel : BaseViewModel
                 Model.Acknowledgments,
                 Model.PreferredLanguages,
                 Model.Policy,
-                Model.Hiring), ct);
+                Model.Hiring,
+                Model.Canonical), ct);
 
             _original = Clone(Model);
             SavedOk = true;
             RecomputeDirty();
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
+        {
+            SaveError = _api.LastError ?? ex.Message;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (TaskCanceledException ex)
         {
             SaveError = ex.Message;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger?.LogError(ex, "Saving security.txt settings failed.");
+            throw;
+        }
+        catch (JsonException ex)
+        {
+            _logger?.LogError(ex, "Saving security.txt settings failed.");
+            throw;
+        }
+        catch (NotSupportedException ex)
+        {
+            _logger?.LogError(ex, "Saving security.txt settings failed.");
+            throw;
         }
         finally
         {
@@ -156,7 +207,8 @@ public sealed class SetupSecurityTxtViewModel : BaseViewModel
             || Model.Acknowledgments != _original.Acknowledgments
             || Model.PreferredLanguages != _original.PreferredLanguages
             || Model.Policy != _original.Policy
-            || Model.Hiring != _original.Hiring;
+            || Model.Hiring != _original.Hiring
+            || Model.Canonical != _original.Canonical;
     }
 
     private static SecurityTxtSettingsDto Clone(SecurityTxtSettingsDto src) => new()
@@ -167,6 +219,7 @@ public sealed class SetupSecurityTxtViewModel : BaseViewModel
         Acknowledgments = src.Acknowledgments,
         PreferredLanguages = src.PreferredLanguages,
         Policy = src.Policy,
-        Hiring = src.Hiring
+        Hiring = src.Hiring,
+        Canonical = src.Canonical
     };
 }

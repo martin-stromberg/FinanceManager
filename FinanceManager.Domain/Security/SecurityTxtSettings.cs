@@ -46,22 +46,35 @@ public sealed class SecurityTxtSettings : Entity, IAggregateRoot
     public string? Policy { get; private set; }
     /// <summary>Hiring directive.</summary>
     public string? Hiring { get; private set; }
+    /// <summary>Canonical directive.</summary>
+    public string? Canonical { get; private set; }
 
     /// <summary>Updates all directives.</summary>
-    public void Update(string contact, DateTimeOffset expires, string? encryption, string? acknowledgments, string? preferredLanguages, string? policy, string? hiring)
+    public void Update(SecurityTxtDirectives directives)
     {
-        Contact = Guards.NotNullOrWhiteSpace(contact, nameof(contact)).Trim();
-        Expires = expires;
-        Encryption = Normalize(encryption);
-        Acknowledgments = Normalize(acknowledgments);
-        PreferredLanguages = Normalize(preferredLanguages);
-        Policy = Normalize(policy);
-        Hiring = Normalize(hiring);
+        ArgumentNullException.ThrowIfNull(directives);
+        Contact = Guards.NotNullOrWhiteSpace(directives.Contact, nameof(directives.Contact)).Trim();
+        EnsureFutureExpires(directives.Expires);
+        Expires = directives.Expires;
+        Encryption = Normalize(directives.Encryption);
+        Acknowledgments = Normalize(directives.Acknowledgments);
+        PreferredLanguages = Normalize(directives.PreferredLanguages);
+        Policy = Normalize(directives.Policy);
+        Hiring = Normalize(directives.Hiring);
+        Canonical = Normalize(directives.Canonical);
         Touch();
     }
 
     private static string? Normalize(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static void EnsureFutureExpires(DateTimeOffset expires)
+    {
+        if (expires <= DateTimeOffset.UtcNow)
+        {
+            throw new ArgumentOutOfRangeException(nameof(expires), "Expires must be in the future.");
+        }
     }
 }

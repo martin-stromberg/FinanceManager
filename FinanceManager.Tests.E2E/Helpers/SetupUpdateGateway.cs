@@ -47,23 +47,30 @@ public sealed class SetupUpdateGateway
 
     public async Task SetEnabledAsync(bool enabled)
     {
-        var checkbox = _page.Locator(".setup-update-tab input[type=checkbox]");
-        var isChecked = await checkbox.IsCheckedAsync();
+        var isChecked = await EnabledCheckbox.IsCheckedAsync();
         if (isChecked != enabled)
         {
-            await checkbox.ClickAsync();
+            await EnabledCheckbox.ClickAsync();
         }
     }
+
+    public Task<bool> IsEnabledAsync() => EnabledCheckbox.IsCheckedAsync();
 
     public async Task SaveSettingsAsync()
     {
         await SaveSettingsButton.ClickAsync();
-        await WaitUntilNotBusyAsync();
+        await Microsoft.Playwright.Assertions.Expect(SaveSettingsButton).ToBeDisabledAsync();
     }
 
-    public Task<string> GetStatusValueAsync() => GetDefinitionValueAsync("update-status-value");
+    public async Task AllowChecksAnyTimeAsync()
+    {
+        await SourceCheckStartTimeInput.FillAsync("00:00");
+        await SourceCheckEndTimeInput.FillAsync("00:00");
+    }
 
-    public Task<string> GetAvailableVersionValueAsync() => GetDefinitionValueAsync("update-available-value");
+    public Task<string> GetStatusValueAsync() => ReadTextAsync(StatusValue);
+
+    public Task<string> GetAvailableVersionValueAsync() => ReadTextAsync(AvailableVersionValue);
 
     /// <summary>
     /// Waits until the available-version definition value equals <paramref name="expectedVersion"/>. Blazor
@@ -74,19 +81,23 @@ public sealed class SetupUpdateGateway
     /// </summary>
     /// <param name="expectedVersion">The version expected to appear once the check result is fully rendered.</param>
     public Task WaitForAvailableVersionAsync(string expectedVersion)
-        => Microsoft.Playwright.Assertions.Expect(AvailableVersionValue).ToHaveTextAsync(expectedVersion);
+        => Microsoft.Playwright.Assertions.Expect(AvailableVersionValue).ToHaveTextAsync(
+            expectedVersion,
+            new() { Timeout = 15000 });
 
-    private ILocator AvailableVersionValue => _page.Locator(".setup-update-tab [data-testid='update-available-value']");
+    private ILocator StatusValue => _page.Locator("#setup-update-status-value");
+    private ILocator AvailableVersionValue => _page.Locator("#setup-update-available-version-value");
 
-    private ILocator CheckNowButton => _page.Locator(".setup-update-tab [data-testid='update-check-now']");
+    private ILocator CheckNowButton => _page.Locator("#UpdateCheckNow");
 
-    private ILocator SaveSettingsButton => _page.Locator(".setup-update-tab [data-testid='update-save-settings']");
+    private ILocator SaveSettingsButton => _page.Locator("#Save");
 
-    private async Task<string> GetDefinitionValueAsync(string testId)
-    {
-        var value = _page.Locator($".setup-update-tab [data-testid='{testId}']");
-        return (await value.InnerTextAsync()).Trim();
-    }
+    private ILocator EnabledCheckbox => _page.Locator("#setup-update-enabled");
+    private ILocator SourceCheckStartTimeInput => _page.Locator("#setup-update-source-check-start-time");
+    private ILocator SourceCheckEndTimeInput => _page.Locator("#setup-update-source-check-end-time");
+
+    private static async Task<string> ReadTextAsync(ILocator locator)
+        => (await locator.InnerTextAsync()).Trim();
 
     private async Task WaitUntilLoadedAsync()
     {
@@ -95,9 +106,7 @@ public sealed class SetupUpdateGateway
 
     private async Task WaitUntilNotBusyAsync()
     {
-        // Only the save/check-now buttons are disabled exclusively by the "Busy" flag; the install and
-        // reset-lock buttons are also disabled by unrelated status conditions (not Ready / not locked) and
-        // would otherwise make this locator match more than one element even when idle.
-        await _page.Locator(".setup-update-tab [data-testid='update-save-settings'][disabled]").WaitForAsync(new() { State = WaitForSelectorState.Detached, Timeout = 15000 });
+        await CheckNowButton.WaitForAsync(new() { State = WaitForSelectorState.Attached, Timeout = 15000 });
+        await Microsoft.Playwright.Assertions.Expect(CheckNowButton).ToBeEnabledAsync();
     }
 }
