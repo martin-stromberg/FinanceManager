@@ -112,6 +112,9 @@ public sealed class PostingsCardViewModel : BaseCardViewModel<(string Key, strin
         var kindLower = Posting?.Kind.ToString().ToLowerInvariant() switch
         {
             "bank" => $"account/{Posting.AccountId}",
+            "contact" => $"contact/{Posting.ContactId}",
+            "savingsplan" => $"savings-plan/{Posting.SavingsPlanId}",
+            "security" => $"security/{Posting.SecurityId}",
             _ => Posting?.Kind.ToString().ToLowerInvariant()
         };
         var nav = new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, new List<UiRibbonAction>
