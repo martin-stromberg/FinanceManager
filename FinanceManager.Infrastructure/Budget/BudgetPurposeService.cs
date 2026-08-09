@@ -12,14 +12,21 @@ namespace FinanceManager.Infrastructure.Budget;
 public sealed class BudgetPurposeService : IBudgetPurposeService
 {
     private readonly AppDbContext _db;
+    private readonly IReportCacheService? _reportCacheService;
 
     /// <summary>
     /// Creates a new instance.
     /// </summary>
     /// <param name="db">App database context.</param>
-    public BudgetPurposeService(AppDbContext db)
+    /// <param name="reportCacheService">
+    /// Optional report cache service. When provided, the budget report cache is invalidated whenever a
+    /// purpose's contact/contact-group/savings-plan source assignment is created, changed or removed, so
+    /// the report never keeps serving cached data computed against a purpose's previous source.
+    /// </param>
+    public BudgetPurposeService(AppDbContext db, IReportCacheService? reportCacheService = null)
     {
         _db = db;
+        _reportCacheService = reportCacheService;
     }
 
     /// <inheritdoc />
@@ -44,6 +51,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
 
         _db.BudgetPurposes.Add(entity);
         await _db.SaveChangesAsync(ct);
+        await MarkReportCacheForUpdateAsync(ownerUserId, ct);
 
         return Map(entity);
     }
@@ -87,6 +95,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
         entity.SetValuationType(valuationType);
 
         await _db.SaveChangesAsync(ct);
+        await MarkReportCacheForUpdateAsync(ownerUserId, ct);
         return Map(entity);
     }
 
@@ -116,7 +125,18 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
 
         _db.BudgetPurposes.Remove(entity);
         await _db.SaveChangesAsync(ct);
+        await MarkReportCacheForUpdateAsync(ownerUserId, ct);
         return true;
+    }
+
+    private async Task MarkReportCacheForUpdateAsync(Guid ownerUserId, CancellationToken ct)
+    {
+        if (_reportCacheService == null)
+        {
+            return;
+        }
+
+        await _reportCacheService.MarkAllReportCacheEntriesForUpdateAsync(ownerUserId, ct);
     }
 
     /// <inheritdoc />

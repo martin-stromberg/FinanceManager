@@ -21,4 +21,6 @@ public sealed class SecurityTxtSettingsDto
     public string? Policy { get; set; }
     /// <summary>Hiring directive.</summary>
     public string? Hiring { get; set; }
+    /// <summary>Canonical directive.</summary>
+    public string? Canonical { get; set; }
 }

@@ -14,7 +14,7 @@ namespace FinanceManager.Tests.Infrastructure;
 public sealed class SecurityTxtSettingsServiceTests
 {
     private static (SecurityTxtSettingsService service, AppDbContext db) Create(
-        string baseAddress = "https://example.com/")
+        string? baseAddress = "https://example.com/")
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -94,18 +94,42 @@ public sealed class SecurityTxtSettingsServiceTests
     }
 
     // ---------------------------------------------------------------------------
-    // BuildContentAsync — Canonical from config
+    // BuildContentAsync — Canonical fallback from config
     // ---------------------------------------------------------------------------
 
     [Fact]
-    public async Task BuildContent_CanonicalFromConfig()
+    public async Task BuildContent_UsesApiBaseAddressFallback_WhenCanonicalEmpty()
     {
         var (service, _) = Create(baseAddress: "https://myapp.example.org/");
-        await SeedContactAsync(service);
+        await service.UpdateAsync(SecurityTxtSettingsTestData.ValidRequest(canonical: null), CancellationToken.None);
 
         var result = await service.BuildContentAsync(SecurityTxtFormat.PlainText, CancellationToken.None);
 
         result.Should().Contain("Canonical: https://myapp.example.org/.well-known/security.txt");
+    }
+
+    [Fact]
+    public async Task BuildContent_UsesPersistedCanonical_WhenSet()
+    {
+        var (service, _) = Create(baseAddress: "https://myapp.example.org/");
+        await service.UpdateAsync(SecurityTxtSettingsTestData.ValidRequestWithCanonical("https://security.example.org/.well-known/security.txt"), CancellationToken.None);
+
+        var result = await service.BuildContentAsync(SecurityTxtFormat.PlainText, CancellationToken.None);
+
+        result.Should().Contain("Canonical: https://security.example.org/.well-known/security.txt");
+        result.Should().NotContain("Canonical: https://myapp.example.org/.well-known/security.txt");
+    }
+
+    [Fact]
+    public async Task BuildContent_Throws_WhenCanonicalEmpty_AndApiBaseAddressMissing()
+    {
+        var (service, _) = Create(baseAddress: null);
+        await service.UpdateAsync(SecurityTxtSettingsTestData.ValidRequest(canonical: null), CancellationToken.None);
+
+        var act = () => service.BuildContentAsync(SecurityTxtFormat.PlainText, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Api:BaseAddress*");
     }
 
     // ---------------------------------------------------------------------------
@@ -165,6 +189,7 @@ public sealed class SecurityTxtSettingsServiceTests
         dto.PreferredLanguages.Should().Be(request.PreferredLanguages);
         dto.Policy.Should().Be(request.Policy);
         dto.Hiring.Should().Be(request.Hiring);
+        dto.Canonical.Should().Be(request.Canonical);
     }
 
     // ---------------------------------------------------------------------------
@@ -184,5 +209,31 @@ public sealed class SecurityTxtSettingsServiceTests
         var dto = await service.GetAsync(CancellationToken.None);
 
         dto.Contact.Should().Be("mailto:updated@example.com");
+        dto.Canonical.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateAsync_PersistsCanonical()
+    {
+        var (service, _) = Create();
+        var request = SecurityTxtSettingsTestData.ValidRequestWithCanonical("https://security.example.com/.well-known/security.txt");
+
+        await service.UpdateAsync(request, CancellationToken.None);
+
+        var dto = await service.GetAsync(CancellationToken.None);
+
+        dto.Canonical.Should().Be("https://security.example.com/.well-known/security.txt");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_Throws_WhenExpiresInPast()
+    {
+        var (service, _) = Create();
+        var request = SecurityTxtSettingsTestData.ValidRequest(expires: DateTimeOffset.UtcNow.AddMinutes(-5));
+
+        var act = () => service.UpdateAsync(request, CancellationToken.None);
+
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>()
+            .WithMessage("*Expires must be in the future.*");
     }
 }
