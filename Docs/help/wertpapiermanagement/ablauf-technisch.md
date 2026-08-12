@@ -45,7 +45,11 @@ Beteiligte Komponenten:
   - `BuildStructure` summiert Marktwert (`TotalSharesHeld * CurrentPrice`) und
     investiertes Kapital (`TotalCostBasis - StandaloneFeeTotal`) je Position,
     gruppiert nach Kategorie/Region/Sektor (fehlende Werte werden als
-    "Ohne Kategorie" bzw. "Unbekannt" gruppiert) und bildet die Top-10-Liste.
+    "Ohne Kategorie" bzw. "Unbekannt" gruppiert) und bildet zwei Listen:
+    `TopPositions` (Top 10) und `AllPositions` (vollständig, gedeckelt auf
+    200 Einträge mit „und N weitere"-Hinweis). Zusätzlich wird pro Wertpapier
+    der `InvestedCapitalBreakdown` (FIFO-Lots, ebenfalls gedeckelt auf 200
+    Einträge) berechnet.
   - `BuildPerformance` berechnet je Kalenderjahr und je Kalendermonat eine
     Modified-Dietz-Periodenrendite (`ComputePeriodMetrics`) und verkettet die
     Jahreswerte über `IReturnCalculationService.CalculateTwr` zur
@@ -86,10 +90,12 @@ Kennzahlen mit einer sinnvollen Herleitung (z. B. Gesamtmarktwert, investiertes
 Kapital, unrealisierter Gewinn/Verlust, TWR, YTD-Rendite, Netto-Einzahlungen,
 Dividenden) binden zusätzlich `KpiInfoButton` ein: Ein Info-Button öffnet ein
 Overlay-Panel (`role="dialog"`) mit der Erklärung als Text, Formel oder
-Tabelle (z. B. listet die Erklärung zum Gesamtmarktwert in
-`PortfolioStructureCard` die Top-10-Positionen samt Marktwert sowie eine
-"weitere Positionen"-Restzeile auf, deren Summe den angezeigten Gesamtwert
-ergibt).
+Tabelle. Die Erklärung zum Gesamtmarktwert nutzt das DTO-Feld `AllPositions`
+und zeigt alle Positionen in einem scrollbaren Container (`.kpi-explanation-scroll`),
+bei Überschreitung von 200 Einträgen mit „und N weitere"-Hinweis. Die Erklärung
+zum investierten Kapital nutzt `InvestedCapitalBreakdown` und zeigt je Wertpapier
+ein Akkordeon-Element (`<details>/<summary>`) mit den zugehörigen FIFO-Lots,
+ebenfalls gedeckelt auf 200 Einträge.
 
 ### 4. Konfiguration bearbeiten (Edit-Mode)
 

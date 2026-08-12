@@ -600,6 +600,21 @@
   <data name="PortfolioReport_Th_UnrealizedGainLoss" xml:space="preserve">
     <value>Unrealized G/L</value>
   </data>
+  <data name="PortfolioReport_Th_PurchaseDate" xml:space="preserve">
+    <value>Purchase date</value>
+  </data>
+  <data name="PortfolioReport_Th_Quantity" xml:space="preserve">
+    <value>Quantity</value>
+  </data>
+  <data name="PortfolioReport_Th_CostPerUnit" xml:space="preserve">
+    <value>Cost per unit</value>
+  </data>
+  <data name="PortfolioReport_Th_TotalCost" xml:space="preserve">
+    <value>Total cost</value>
+  </data>
+  <data name="PortfolioReport_Explain_MoreEntries" xml:space="preserve">
+    <value>and {0} more</value>
+  </data>
   <data name="PortfolioReport_Twr" xml:space="preserve">
     <value>Time-weighted return (since inception)</value>
   </data>
@@ -860,6 +875,12 @@
   </data>
   <data name="Card_Caption_Security_Description" xml:space="preserve">
     <value>Description</value>
+  </data>
+  <data name="Card_Caption_Security_Region" xml:space="preserve">
+    <value>Region</value>
+  </data>
+  <data name="Card_Caption_Security_Sector" xml:space="preserve">
+    <value>Sector</value>
   </data>
   <data name="Card_Caption_Security_Symbol" xml:space="preserve">
     <value>Symbol</value>

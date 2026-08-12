@@ -56,6 +56,10 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         public Guid? CategoryId { get; set; }
         /// <summary>Optional attachment id for the security symbol.</summary>
         public Guid? SymbolAttachmentId { get; set; }
+        /// <summary>Optional region of the security (e.g. "Europa", "Nordamerika") used for regional distribution.</summary>
+        public string? Region { get; set; }
+        /// <summary>Optional sector of the security (e.g. "Technologie", "Pharma") used for sector distribution.</summary>
+        public string? Sector { get; set; }
     }
 
     /// <summary>
@@ -304,6 +308,8 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         var currency = GetFieldText("Card_Caption_Security_Currency", Model.CurrencyCode ?? "EUR");
         var description = GetFieldText("Card_Caption_Security_Description", Model.Description);
         var categoryId = GetFieldGuidValue("Card_Caption_Security_Category", Model.CategoryId);
+        var region = GetFieldText("Card_Caption_Security_Region", Model.Region);
+        var sector = GetFieldText("Card_Caption_Security_Sector", Model.Sector);
 
         return new SecurityRequest
         {
@@ -312,7 +318,9 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
             Description = string.IsNullOrWhiteSpace(description) ? null : description,
             AlphaVantageCode = string.IsNullOrWhiteSpace(alpha) ? null : alpha,
             CurrencyCode = string.IsNullOrWhiteSpace(currency) ? "EUR" : currency,
-            CategoryId = categoryId
+            CategoryId = categoryId,
+            Region = string.IsNullOrWhiteSpace(region) ? null : region,
+            Sector = string.IsNullOrWhiteSpace(sector) ? null : sector
         };
     }
 
@@ -326,6 +334,8 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
             new CardField("Card_Caption_Security_Currency", CardFieldKind.Text, text: dto?.CurrencyCode ?? Model.CurrencyCode ?? "EUR", editable: true),
             new CardField("Card_Caption_Security_Category", CardFieldKind.Text, text: dto?.CategoryName ?? (Model.CategoryId.HasValue ? Categories.FirstOrDefault(c => c.Id == Model.CategoryId)?.Name ?? string.Empty : string.Empty), editable: true, lookupType: "SecurityCategory", valueId: dto?.CategoryId ?? Model.CategoryId),
             new CardField("Card_Caption_Security_Description", CardFieldKind.Text, text: dto?.Description ?? Model.Description ?? string.Empty, editable: true),
+            new CardField("Card_Caption_Security_Region", CardFieldKind.Text, text: dto?.Region ?? Model.Region ?? string.Empty, editable: true),
+            new CardField("Card_Caption_Security_Sector", CardFieldKind.Text, text: dto?.Sector ?? Model.Sector ?? string.Empty, editable: true),
             new CardField("Card_Caption_Security_Symbol", CardFieldKind.Symbol, symbolId: dto?.SymbolAttachmentId ?? Model.SymbolAttachmentId, editable: dto?.Id != Guid.Empty)
         };
 
@@ -498,6 +508,10 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
                 Model.CurrencyCode = sCurr;
             if (_pendingFieldValues.TryGetValue("Card_Caption_Security_Description", out var vDesc) && vDesc is string sDesc)
                 Model.Description = sDesc;
+            if (_pendingFieldValues.TryGetValue("Card_Caption_Security_Region", out var vRegion) && vRegion is string sRegion)
+                Model.Region = sRegion;
+            if (_pendingFieldValues.TryGetValue("Card_Caption_Security_Sector", out var vSector) && vSector is string sSector)
+                Model.Sector = sSector;
             if (_pendingFieldValues.TryGetValue("Card_Caption_Security_Category", out var vCat))
             {
                 switch (vCat)

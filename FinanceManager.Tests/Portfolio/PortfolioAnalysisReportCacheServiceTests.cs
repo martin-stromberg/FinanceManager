@@ -31,7 +31,7 @@ public sealed class PortfolioAnalysisReportCacheServiceTests : IDisposable
 
     private static PortfolioAnalysisReportDto CreateReport(decimal marketValue, DateTime generatedUtc, DateTime validUntilUtc)
         => new(
-            new PortfolioStructureDto(marketValue, 0m, marketValue, [], [], [], []),
+            new PortfolioStructureDto(marketValue, 0m, marketValue, [], [], [], [], [], []),
             new PortfolioPerformanceDto(null, null, [], []),
             new PortfolioCashflowDto(0m, 0m, 0m, 0m),
             new PortfolioRiskDto(null, null, null, null, null),

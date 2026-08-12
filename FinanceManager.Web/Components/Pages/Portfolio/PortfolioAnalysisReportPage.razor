@@ -37,19 +37,18 @@
     {
         <div class="portfolio-edit-mode">
             <ul class="portfolio-edit-list">
-                @for (int i = 0; i < _editOrder.Count; i++)
+                @for (int i = 0; i < _vm.EditOrder.Count; i++)
                 {
                     var idx = i;
-                    var tile = _editOrder[idx];
+                    var tile = _vm.EditOrder[idx];
                     <li class="portfolio-edit-item">
-                        <input type="checkbox" checked="@_editActive.Contains(tile)" @onchange="(e) => ToggleActive(tile, (bool)(e.Value ?? false))" />
+                        <input type="checkbox" checked="@_vm.EditActive.Contains(tile)" @onchange="(e) => _vm.ToggleTileActive(tile, (bool)(e.Value ?? false))" />
                         <span>@GetTileLabel(tile)</span>
-                        <button type="button" disabled="@(idx == 0)" @onclick="() => MoveTile(idx, -1)">↑</button>
-                        <button type="button" disabled="@(idx == _editOrder.Count - 1)" @onclick="() => MoveTile(idx, 1)">↓</button>
+                        <button type="button" disabled="@(idx == 0)" @onclick="() => _vm.MoveEditTile(idx, -1)">↑</button>
+                        <button type="button" disabled="@(idx == _vm.EditOrder.Count - 1)" @onclick="() => _vm.MoveEditTile(idx, 1)">↓</button>
                     </li>
                 }
             </ul>
-            <button type="button" @onclick="SaveAsync">@Localizer["PortfolioReport_Save"]</button>
         </div>
     }
     else if (_vm.PortfolioReportData != null && _vm.CurrentConfiguration != null)
@@ -80,8 +79,6 @@
 
 @code {
     private PortfolioAnalysisReportPageViewModel? _vm;
-    private List<PortfolioTileId> _editOrder = new();
-    private HashSet<PortfolioTileId> _editActive = new();
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
@@ -93,48 +90,12 @@
 
     private void VmOnStateChanged(object? sender, EventArgs e)
     {
-        if (_vm?.IsEditMode == true && _vm.CurrentConfiguration != null && _editOrder.Count == 0)
-        {
-            _editOrder = _vm.CurrentConfiguration.TileOrder.ToList();
-            _editActive = _vm.CurrentConfiguration.ActiveTileIds.ToHashSet();
-        }
-        if (_vm?.IsEditMode == false)
-        {
-            _editOrder = new List<PortfolioTileId>();
-            _editActive = new HashSet<PortfolioTileId>();
-        }
         _ = InvokeAsync(StateHasChanged);
     }
 
     public void Dispose()
     {
         if (_vm != null) { _vm.StateChanged -= VmOnStateChanged; }
-    }
-
-    private void ToggleActive(PortfolioTileId tile, bool isActive)
-    {
-        if (isActive) { _editActive.Add(tile); }
-        else { _editActive.Remove(tile); }
-    }
-
-    private void MoveTile(int index, int delta)
-    {
-        var newIndex = index + delta;
-        if (newIndex < 0 || newIndex >= _editOrder.Count) { return; }
-        (_editOrder[index], _editOrder[newIndex]) = (_editOrder[newIndex], _editOrder[index]);
-    }
-
-    private async Task SaveAsync()
-    {
-        if (_vm == null) { return; }
-
-        var request = new PortfolioKpiConfigurationRequest
-        {
-            ActiveTileIds = _editOrder.Where(t => _editActive.Contains(t)).ToList(),
-            TileOrder = _editOrder
-        };
-
-        await _vm.SaveConfigurationAsync(request);
     }
 
     private string GetTileLabel(PortfolioTileId tile) => tile switch

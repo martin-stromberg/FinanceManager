@@ -97,7 +97,7 @@ public sealed class PortfolioAnalysisReportE2ETests
         var cashflowCheckbox = page.Locator(".portfolio-edit-item", new() { HasText = "Cashflow" }).Locator("input[type=checkbox]");
         await cashflowCheckbox.UncheckAsync();
 
-        await page.Locator("button", new() { HasText = "Speichern" }).ClickAsync();
+        await page.Locator("button#SaveEdit").ClickAsync();
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         var tileGrid = page.Locator(".portfolio-tile-grid");
@@ -135,7 +135,7 @@ public sealed class PortfolioAnalysisReportE2ETests
         await editListA.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
         var cashflowCheckboxA = pageA.Locator(".portfolio-edit-item", new() { HasText = "Cashflow" }).Locator("input[type=checkbox]");
         await cashflowCheckboxA.UncheckAsync();
-        await pageA.Locator("button", new() { HasText = "Speichern" }).ClickAsync();
+        await pageA.Locator("button#SaveEdit").ClickAsync();
         await pageA.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         await using var sessionB = await _fixture.CreateSessionAsync();

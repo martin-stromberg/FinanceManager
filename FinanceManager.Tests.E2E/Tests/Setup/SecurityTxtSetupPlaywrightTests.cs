@@ -76,6 +76,7 @@ public sealed class SecurityTxtSetupPlaywrightTests
         await page.ReloadAsync();
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await securityToggle.ClickAsync();
+        await page.Locator("#securitytxt-canonical").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
 
         (await page.Locator("#securitytxt-canonical").InputValueAsync()).Should().Be("https://security-canonical.example.org/.well-known/security.txt");
     }

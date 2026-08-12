@@ -58,6 +58,37 @@ monatlichen Cache; bei Cache-Miss wird der Bericht neu berechnet.
 |-----|--------------|
 | `PortfolioAnalysisReportDto` | Enthält `Structure`, `Performance`, `Cashflow`, `Risk`, `GeneratedUtc`, `CacheValidUntilUtc`. |
 
+**DTO-Struktur `PortfolioStructureDto` (in `PortfolioAnalysisReportDto.Structure`):**
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `TotalMarketValue` | `decimal` | Gesamtmarktwert aller Positionen |
+| `InvestedCapital` | `decimal` | Gesamtinvestitionen (Summe aller FIFO-Kosten) |
+| `UnrealizedGainLoss` | `decimal` | Unrealisierter Gewinn/Verlust |
+| `TopPositions` | `List<PositionDto>` | Die 10 größten Positionen nach Marktwert (absteigend sortiert) |
+| `AllPositions` | `List<PositionDto>` | Alle Positionen mit Marktwert, absteigend sortiert; gedeckelt auf 200 Einträge mit „und N weitere"-Hinweis bei Überschreitung |
+| `CategoryAllocation` | `List<CategoryAllocationDto>` | Asset Allocation nach Kategorie |
+| `RegionalDistribution` | `List<RegionalDistributionDto>` | Regionale Verteilung |
+| `SectorDistribution` | `List<SectorDistributionDto>` | Sektorverteilung |
+| `InvestedCapitalBreakdown` | `List<InvestedCapitalBreakdownDto>` | Pro Wertpapier die verbleibenden FIFO-Kauf-Lots (Kaufdatum, Menge, Kosten/Einheit, Gesamtkosten); gedeckelt auf 200 Einträge mit „und N weitere"-Hinweis bei Überschreitung |
+
+**DTO-Struktur `InvestedCapitalBreakdownDto` (in `PortfolioStructureDto.InvestedCapitalBreakdown`):**
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `SecurityName` | `string` | Name des Wertpapiers |
+| `TotalInvestedCapital` | `decimal` | Gesamtinvestitionen für dieses Wertpapier |
+| `FifoLots` | `List<FifoLotDto>` | Liste der verbleibenden FIFO-Lots |
+
+**DTO-Struktur `FifoLotDto` (in `InvestedCapitalBreakdownDto.FifoLots`):**
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `PurchaseDate` | `DateTime` | Kaufdatum |
+| `Quantity` | `decimal` | Menge |
+| `CostPerUnit` | `decimal` | Kosten pro Einheit |
+| `TotalCost` | `decimal` | Gesamtkosten für diesen Lot |
+
 ### `GET /api/portfolio/kpi-configuration`
 
 **Beschreibung:** Liefert die gespeicherte Kachel-Konfiguration

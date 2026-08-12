@@ -9,7 +9,9 @@
   leeren/nullwertigen Kacheln an.
 - Für eine aussagekräftige Asset-Allocation-, Regions- und
   Sektor-Aufschlüsselung sollten Kategorie, Region und Sektor der
-  Wertpapiere gepflegt sein. Fehlende Angaben erscheinen im Bericht als
+  Wertpapiere gepflegt sein. Diese können über die Wertpapier-Bearbeitungsmaske
+  (Wertpapierübersicht → Wertpapier anklicken → „Bearbeiten" im Ribbon)
+  gepflegt werden. Fehlende Angaben erscheinen im Bericht als
   "Ohne Kategorie" bzw. "Unbekannt".
 
 ## Schritt-für-Schritt-Anleitung
@@ -51,11 +53,20 @@ kombiniert eine grafische Darstellung mit den zugehörigen Kennzahlen:
 ### 4. Kennzahlen erklären lassen
 
 Neben vielen Kennzahlen steht ein Info-Symbol (Fragezeichen). Ein Klick
-öffnet ein Overlay-Panel mit der Erklärung der Kennzahl — z. B. zeigt die
-Erklärung zum Gesamtmarktwert die Liste der Einzelpositionen samt
-Marktwerten, aus denen sich der Gesamtwert zusammensetzt. Das Panel wird
-über den "Schließen"-Button, per Klick außerhalb oder per Tastatur wieder
-geschlossen.
+öffnet ein Overlay-Panel mit der Erklärung der Kennzahl:
+
+- **Gesamtmarktwert:** Zeigt eine vollständige, sortierte Liste aller
+  Positionen mit Marktwert in einem scrollbaren Container. Bei mehr als
+  200 Positionen wird ein „und N weitere"-Hinweis angezeigt.
+- **Investiertes Kapital:** Zeigt ein Akkordeon mit allen Wertpapieren
+  des Depots. Jeder Eintrag enthält das gesamte investierte Kapital für
+  dieses Wertpapier und kann aufgeklappt werden, um die zugehörigen
+  FIFO-Kauf-Lots (Kaufdatum, Menge, Kosten pro Einheit, Gesamtkosten)
+  anzuzeigen. Bei mehr als 200 Lots wird ein „und N weitere"-Hinweis
+  angezeigt.
+
+Das Panel wird über den "Schließen"-Button, per Klick außerhalb oder per
+Tastatur wieder geschlossen.
 
 ### 5. Bericht manuell aktualisieren
 
@@ -71,8 +82,8 @@ berechnen zu lassen, statt auf die automatische Aktualisierung zu warten
    Anzeigereihenfolge.
 3. Setzen oder entfernen Sie Häkchen, um Kacheln ein-/auszublenden, und
    verwenden Sie die Pfeile, um die Reihenfolge zu ändern.
-4. Klicken Sie auf **"Speichern"**, um die Änderungen zu übernehmen. Der
-   Bericht wird daraufhin mit der neuen Auswahl und Reihenfolge neu geladen.
+4. Klicken Sie im Ribbon auf **"Speichern"**, um die Änderungen zu übernehmen.
+   Der Bericht wird daraufhin mit der neuen Auswahl und Reihenfolge neu geladen.
 5. Alternativ beenden Sie den Bearbeitungsmodus über **"Abbrechen"** im
    Ribbon, ohne die Änderungen zu speichern.
 
@@ -87,10 +98,14 @@ zurückzukehren.
 ## Ergebnis
 
 Der Anwender erhält eine konsolidierte, visuell aufbereitete Übersicht über
-sein gesamtes Wertpapierdepot (Diagramme statt reiner Zahlenlisten) mit
-Erklärungen zu den einzelnen Kennzahlen und kann festlegen, welche Kacheln in
-welcher Reihenfolge angezeigt werden. Diese Auswahl bleibt benutzerbezogen
-gespeichert und wird bei jedem weiteren Aufruf des Depot-Berichts angewendet.
+sein gesamtes Wertpapierdepot (Diagramme statt reiner Zahlenlisten) in voller
+Seitenbreite mit detaillierten Erklärungen zu den einzelnen Kennzahlen.
+Insbesondere die Erklärungen zum Gesamtmarktwert (scrollbare Positionsliste)
+und zum investierten Kapital (Akkordeon mit FIFO-Lot-Details) geben Einblick
+in die Zusammensetzung der Kennzahlen. Der Anwender kann festlegen, welche
+Kacheln in welcher Reihenfolge angezeigt werden. Diese Auswahl bleibt
+benutzerbezogen gespeichert und wird bei jedem weiteren Aufruf des
+Depot-Berichts angewendet.
 
 ## Barrierefreiheit
 

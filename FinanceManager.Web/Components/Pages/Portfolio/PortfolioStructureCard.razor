@@ -16,34 +16,35 @@
             <span class="portfolio-kpi-label">@Localizer["PortfolioReport_TotalMarketValue"]</span>
             <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_TotalMarketValue_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
                 <p>@Localizer["PortfolioReport_Explain_TotalMarketValue_Intro"]</p>
-                <table class="fm-table kpi-explanation-table">
-                    <thead>
-                        <tr>
-                            <th>@Localizer["PortfolioReport_Th_Name"]</th>
-                            <th>@Localizer["PortfolioReport_Th_MarketValue"]</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var pos in Data.TopPositions)
-                        {
+                <div class="kpi-explanation-scroll">
+                    <table class="fm-table kpi-explanation-table">
+                        <thead>
                             <tr>
-                                <td>@pos.Name</td>
-                                <td>@pos.MarketValue.ToString("N2")</td>
+                                <th>@Localizer["PortfolioReport_Th_Name"]</th>
+                                <th>@Localizer["PortfolioReport_Th_MarketValue"]</th>
                             </tr>
-                        }
-                        @if (OtherPositionsValue > 0.01m)
-                        {
-                            <tr>
-                                <td>@Localizer["PortfolioReport_Explain_OtherPositions"]</td>
-                                <td>@OtherPositionsValue.ToString("N2")</td>
+                        </thead>
+                        <tbody>
+                            @foreach (var pos in Data.AllPositions.Take(MaxListEntries))
+                            {
+                                <tr>
+                                    <td>@pos.Name</td>
+                                    <td>@pos.MarketValue.ToString("N2")</td>
+                                </tr>
+                            }
+                            @if (Data.AllPositions.Count > MaxListEntries)
+                            {
+                                <tr class="kpi-explanation-more">
+                                    <td colspan="2">@Localizer["PortfolioReport_Explain_MoreEntries", Data.AllPositions.Count - MaxListEntries]</td>
+                                </tr>
+                            }
+                            <tr class="kpi-explanation-total">
+                                <td>@Localizer["PortfolioReport_TotalMarketValue"]</td>
+                                <td>@Data.TotalMarketValue.ToString("N2")</td>
                             </tr>
-                        }
-                        <tr class="kpi-explanation-total">
-                            <td>@Localizer["PortfolioReport_TotalMarketValue"]</td>
-                            <td>@Data.TotalMarketValue.ToString("N2")</td>
-                        </tr>
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
             </KpiInfoButton>
         </span>
         <span class="portfolio-kpi-value">@Data.TotalMarketValue.ToString("N2")</span>
@@ -53,6 +54,51 @@
             <span class="portfolio-kpi-label">@Localizer["PortfolioReport_InvestedCapital"]</span>
             <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_InvestedCapital_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
                 <p>@Localizer["PortfolioReport_Explain_InvestedCapital_Text"]</p>
+                @if (Data.InvestedCapitalBreakdown.Count > 0)
+                {
+                    <div class="kpi-explanation-scroll">
+                        <ul class="kpi-invested-capital-accordion">
+                            @foreach (var position in Data.InvestedCapitalBreakdown)
+                            {
+                                <li>
+                                    <details>
+                                        <summary>
+                                            <span class="kpi-invested-capital-name">@position.Name</span>
+                                            <span class="kpi-invested-capital-value">@position.InvestedCapital.ToString("N2")</span>
+                                        </summary>
+                                        <table class="fm-table kpi-explanation-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>@Localizer["PortfolioReport_Th_PurchaseDate"]</th>
+                                                    <th>@Localizer["PortfolioReport_Th_Quantity"]</th>
+                                                    <th>@Localizer["PortfolioReport_Th_CostPerUnit"]</th>
+                                                    <th>@Localizer["PortfolioReport_Th_TotalCost"]</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var lot in position.Lots.Take(MaxListEntries))
+                                                {
+                                                    <tr>
+                                                        <td>@lot.PurchaseDate.ToString("d")</td>
+                                                        <td>@lot.Quantity.ToString("N4")</td>
+                                                        <td>@lot.CostPerUnit.ToString("N2")</td>
+                                                        <td>@lot.TotalCost.ToString("N2")</td>
+                                                    </tr>
+                                                }
+                                                @if (position.Lots.Count > MaxListEntries)
+                                                {
+                                                    <tr class="kpi-explanation-more">
+                                                        <td colspan="4">@Localizer["PortfolioReport_Explain_MoreEntries", position.Lots.Count - MaxListEntries]</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </details>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
             </KpiInfoButton>
         </span>
         <span class="portfolio-kpi-value">@Data.InvestedCapital.ToString("N2")</span>
@@ -96,27 +142,29 @@
     @if (Data.TopPositions.Count > 0)
     {
         <h4>@Localizer["PortfolioReport_TopPositions"]</h4>
-        <table class="portfolio-top-positions">
-            <thead>
-                <tr>
-                    <th>@Localizer["PortfolioReport_Th_Name"]</th>
-                    <th>@Localizer["PortfolioReport_Th_MarketValue"]</th>
-                    <th>@Localizer["PortfolioReport_Th_Share"]</th>
-                    <th>@Localizer["PortfolioReport_Th_UnrealizedGainLoss"]</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var pos in Data.TopPositions)
-                {
+        <div class="portfolio-table-scroll">
+            <table class="portfolio-top-positions">
+                <thead>
                     <tr>
-                        <td>@pos.Name</td>
-                        <td>@pos.MarketValue.ToString("N2")</td>
-                        <td>@((pos.Percentage * 100m).ToString("N1"))%</td>
-                        <td class="@(pos.UnrealizedGainLoss >= 0 ? "positive" : "negative")">@pos.UnrealizedGainLoss.ToString("N2")</td>
+                        <th>@Localizer["PortfolioReport_Th_Name"]</th>
+                        <th>@Localizer["PortfolioReport_Th_MarketValue"]</th>
+                        <th>@Localizer["PortfolioReport_Th_Share"]</th>
+                        <th>@Localizer["PortfolioReport_Th_UnrealizedGainLoss"]</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var pos in Data.TopPositions)
+                    {
+                        <tr>
+                            <td>@pos.Name</td>
+                            <td>@pos.MarketValue.ToString("N2")</td>
+                            <td>@((pos.Percentage * 100m).ToString("N1"))%</td>
+                            <td class="@(pos.UnrealizedGainLoss >= 0 ? "positive" : "negative")">@pos.UnrealizedGainLoss.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     }
 </PortfolioKpiCard>
 
@@ -124,6 +172,6 @@
     /// <summary>Portfolio structure data to display.</summary>
     [Parameter, EditorRequired] public PortfolioStructureDto Data { get; set; } = null!;
 
-    /// <summary>Portion of <see cref="PortfolioStructureDto.TotalMarketValue"/> attributable to positions beyond the top-10 list.</summary>
-    private decimal OtherPositionsValue => Data.TotalMarketValue - Data.TopPositions.Sum(p => p.MarketValue);
+    /// <summary>Hard limit for rendered entries in the "all positions" and per-security "lots" lists, to bound payload/DOM size for extreme portfolios.</summary>
+    private const int MaxListEntries = 200;
 }

@@ -142,7 +142,7 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
     {
         if (positions.Count == 0)
         {
-            return new PortfolioStructureDto(0m, 0m, 0m, [], [], [], []);
+            return new PortfolioStructureDto(0m, 0m, 0m, [], [], [], [], [], []);
         }
 
         decimal totalMarketValue = 0m;
@@ -151,7 +151,8 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
         var byCategory = new Dictionary<string, decimal>();
         var byRegion = new Dictionary<string, decimal>();
         var bySector = new Dictionary<string, decimal>();
-        var topPositions = new List<PortfolioTopPosition>();
+        var allPositions = new List<PortfolioTopPosition>();
+        var investedCapitalBreakdown = new List<PortfolioInvestedCapitalPosition>();
 
         foreach (var p in positions)
         {
@@ -172,14 +173,25 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
 
             if (marketValue != 0m)
             {
-                topPositions.Add(new PortfolioTopPosition(p.SecurityId, p.Name, marketValue, 0m, marketValue - investedCapital));
+                allPositions.Add(new PortfolioTopPosition(p.SecurityId, p.Name, marketValue, 0m, marketValue - investedCapital));
+            }
+
+            var breakdownEntry = BuildInvestedCapitalBreakdown(p.SecurityId, p.Name, p.Fifo, investedCapital);
+            if (breakdownEntry is not null)
+            {
+                investedCapitalBreakdown.Add(breakdownEntry);
             }
         }
 
-        var top10 = topPositions
+        var allPositionsSorted = allPositions
             .OrderByDescending(t => t.MarketValue)
-            .Take(10)
             .Select(t => t with { Percentage = totalMarketValue != 0m ? t.MarketValue / totalMarketValue : 0m })
+            .ToList();
+
+        var top10 = allPositionsSorted.Take(10).ToList();
+
+        investedCapitalBreakdown = investedCapitalBreakdown
+            .OrderByDescending(i => i.InvestedCapital)
             .ToList();
 
         return new PortfolioStructureDto(
@@ -189,7 +201,9 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
             ToSlices(byCategory, totalMarketValue),
             ToSlices(byRegion, totalMarketValue),
             ToSlices(bySector, totalMarketValue),
-            top10);
+            top10,
+            allPositionsSorted,
+            investedCapitalBreakdown);
     }
 
     private static IReadOnlyList<PortfolioAllocationSlice> ToSlices(Dictionary<string, decimal> values, decimal total)
@@ -198,6 +212,22 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
             .Select(kv => new PortfolioAllocationSlice(kv.Key, kv.Value, total != 0m ? kv.Value / total : 0m))
             .OrderByDescending(s => s.Value)
             .ToList();
+    }
+
+    private static PortfolioInvestedCapitalPosition? BuildInvestedCapitalBreakdown(
+        Guid securityId, string name, FifoCostBasisResult fifo, decimal investedCapital)
+    {
+        if (investedCapital == 0m && fifo.RemainingLots.Count == 0)
+        {
+            return null;
+        }
+
+        var lots = fifo.RemainingLots
+            .Select(l => new PortfolioInvestedCapitalLot(l.PurchaseDate, l.Quantity, l.CostPerUnit, l.Quantity * l.CostPerUnit))
+            .OrderByDescending(l => l.PurchaseDate)
+            .ToList();
+
+        return new PortfolioInvestedCapitalPosition(securityId, name, investedCapital, lots);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

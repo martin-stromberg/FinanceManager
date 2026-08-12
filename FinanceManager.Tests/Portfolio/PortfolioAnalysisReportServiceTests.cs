@@ -154,4 +154,100 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         reportA.Structure.TopPositions.Should().ContainSingle(p => p.SecurityId == securityA.Id);
         reportA.Structure.TopPositions.Should().NotContain(p => p.SecurityId == securityB.Id);
     }
+
+    [Fact]
+    public async Task GetPortfolioReport_AllPositions_ContainsAllNonZeroPositionsSortedByMarketValueDescending()
+    {
+        var user = CreateUser();
+
+        var s1 = CreateSecurity(user.Id, "Apple");
+        AddBuyPosting(s1.Id, DateTime.Today.AddYears(-1), 1000m, 10m);
+        AddPrice(s1.Id, DateTime.Today, 100m); // market value 1000
+
+        var s2 = CreateSecurity(user.Id, "SAP");
+        AddBuyPosting(s2.Id, DateTime.Today.AddYears(-1), 500m, 5m);
+        AddPrice(s2.Id, DateTime.Today, 300m); // market value 1500
+
+        var s3 = CreateSecurity(user.Id, "Siemens");
+        AddBuyPosting(s3.Id, DateTime.Today.AddYears(-1), 200m, 2m);
+        AddPrice(s3.Id, DateTime.Today, 100m); // market value 200
+
+        await _db.SaveChangesAsync();
+
+        var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
+
+        report.Structure.AllPositions.Should().HaveCount(3);
+        report.Structure.AllPositions.Select(p => p.SecurityId).Should().ContainInOrder(s2.Id, s1.Id, s3.Id);
+        report.Structure.AllPositions.Select(p => p.MarketValue).Should().BeInDescendingOrder();
+        report.Structure.AllPositions.Should().OnlyContain(p => p.MarketValue != 0m);
+    }
+
+    [Fact]
+    public async Task GetPortfolioReport_TopPositions_EqualsAllPositionsTakeTen()
+    {
+        var user = CreateUser();
+
+        var securities = new List<Security>();
+        for (int i = 0; i < 12; i++)
+        {
+            var security = CreateSecurity(user.Id, $"Security{i:D2}");
+            securities.Add(security);
+            decimal quantity = 1m;
+            decimal price = 100m + i; // distinct market values, no ties
+            AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), quantity * price, quantity);
+            AddPrice(security.Id, DateTime.Today, price);
+        }
+
+        await _db.SaveChangesAsync();
+
+        var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
+
+        report.Structure.AllPositions.Should().HaveCount(12);
+        report.Structure.TopPositions.Should().HaveCount(10);
+        report.Structure.TopPositions.Should().BeEquivalentTo(
+            report.Structure.AllPositions.Take(10),
+            options => options.WithStrictOrdering());
+    }
+
+    [Fact]
+    public async Task GetPortfolioReport_InvestedCapitalBreakdown_LotsSumMatchesInvestedCapitalAndSortedByPurchaseDateDescending()
+    {
+        var user = CreateUser();
+        var security = CreateSecurity(user.Id, "Apple");
+
+        var olderBuy = new Posting(Guid.NewGuid(), PostingKind.Security, null, null, null, security.Id, DateTime.Today.AddYears(-2), -1000m, null, null, null, SecurityPostingSubType.Buy, 10m);
+        var groupId = Guid.NewGuid();
+        olderBuy.SetGroup(groupId);
+        _db.Postings.Add(olderBuy);
+
+        var linkedFee = new Posting(Guid.NewGuid(), PostingKind.Security, null, null, null, security.Id, DateTime.Today.AddYears(-2), -10m, null, null, null, SecurityPostingSubType.Fee, null);
+        linkedFee.SetGroup(groupId);
+        _db.Postings.Add(linkedFee);
+
+        AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 500m, 5m); // newer lot, no fee
+        AddPrice(security.Id, DateTime.Today, 100m);
+
+        await _db.SaveChangesAsync();
+
+        var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
+
+        var breakdown = report.Structure.InvestedCapitalBreakdown.Should().ContainSingle(b => b.SecurityId == security.Id).Subject;
+
+        breakdown.Lots.Sum(l => l.TotalCost).Should().Be(breakdown.InvestedCapital);
+        breakdown.Lots.Select(l => l.PurchaseDate).Should().BeInDescendingOrder();
+    }
+
+    [Fact]
+    public async Task GetPortfolioReport_InvestedCapitalBreakdown_FullySoldSecurity_IsExcluded()
+    {
+        var user = CreateUser();
+        var security = CreateSecurity(user.Id, "Apple");
+        AddBuyPosting(security.Id, DateTime.Today.AddYears(-2), 1000m, 10m);
+        AddSellPosting(security.Id, DateTime.Today.AddYears(-1), 1200m, 10m);
+        await _db.SaveChangesAsync();
+
+        var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
+
+        report.Structure.InvestedCapitalBreakdown.Should().NotContain(b => b.SecurityId == security.Id);
+    }
 }

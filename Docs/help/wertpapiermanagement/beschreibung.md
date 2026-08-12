@@ -43,8 +43,9 @@ Einzelpositionen samt Marktwert auf:
 
 Für die regionale Verteilung und die Sektorverteilung wurden dem Wertpapier
 zwei neue optionale Felder hinzugefügt: `Region` und `Sector` (je max. 255
-Zeichen). Positionen ohne gepflegte Region/Sektor werden im Bericht unter
-"Unbekannt" zusammengefasst.
+Zeichen). Diese können über die Wertpapier-Bearbeitungsmaske gepflegt werden,
+analog zu Beschreibung und Kategorie. Positionen ohne gepflegte Region/Sektor
+werden im Bericht unter "Unbekannt" zusammengefasst.
 
 Über den Ribbon-Button "Bearbeiten" auf der Berichtsseite kann jeder Benutzer
 festlegen, welche Kacheln sichtbar sind und in welcher Reihenfolge sie
@@ -79,9 +80,6 @@ nach dem Speichern der Kachel-Konfiguration.
 - Renditeberechnungen hängen von vorhandenen Buchungs- und Kursdaten ab.
 - AlphaVantage-Abrufe benötigen entweder einen persönlichen API Key oder
   einen durch einen Administrator freigegebenen Key.
-- `Region` und `Sector` können aktuell nur über die API (`SecurityRequest`)
-  gesetzt werden; ein Eingabefeld dafür in der Wertpapier-Bearbeitungsmaske
-  ist noch nicht vorhanden.
 - Die Risikoanalyse-Kachel des Depot-Analyseberichts liefert noch keine
   Werte (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk sind
   `null`); sie ist als Platzhalter für eine spätere Phase angelegt.
@@ -96,3 +94,6 @@ nach dem Speichern der Kachel-Konfiguration.
 - Bei sehr großen Depots (mehr als ca. 1000 Positionen) kann die
   Neuberechnung bei Cache-Miss spürbar dauern, da alle Positionen,
   Buchungen und Kurse pro Aufruf geladen werden.
+- Die Auflistung von Positionen und FIFO-Kauf-Lots im Depot-Analysebericht
+  ist auf jeweils 200 Einträge gedeckelt; bei Überschreitung wird dies mit
+  einem „und N weitere"-Hinweis angezeigt.

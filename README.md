@@ -15,7 +15,7 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 - Kontoauszugsentwürfe im Massenänderungsmodus bearbeiten, Zeilen zum Löschen vormerken und neue Zeilen ergänzen
 - Konten, Sammelkonten, Kontakte, Sparpläne und Wertpapiere verwalten, inklusive sichtbarer SVG-Symbole für Kontakte sowie Sparplan-Kennzahlen zu aktuellem Saldo, Restbetrag und benötigtem Monatsbetrag in der Detailansicht
 - Berichte, KPI-Dashboards und Budgetauswertungen nutzen, inklusive bestandsgepruefter Hochrechnung fuer Wertpapier-Dividendenreports
-- Depot-Analysebericht (`/portfolio/analysis-report`, Ribbon-Gruppe "Berichte" → "Depot-Bericht" der Wertpapierübersicht): konsolidierter Bericht über alle Wertpapiere mit konfigurierbaren, visuell aufbereiteten Kacheln (Depotstruktur mit Ringdiagramm, Performance und Cashflow mit Balkendiagrammen; Risikoanalyse als Platzhalter für Phase 2), Info-Buttons mit Overlay-Erklärungen zu den Kennzahlen (z. B. Herleitung des Gesamtmarktwerts aus den Einzelpositionen), inklusive Bearbeitungsmodus für Kachel-Sichtbarkeit/-Reihenfolge je Benutzer und monatlichem Berichts-Cache mit automatischer Invalidierung bei Kursänderungen und Buchungsstornierungen; Wertpapiere unterstützen dafür optionale Region-/Sektor-Felder (bislang nur über die API pflegbar)
+- Depot-Analysebericht (`/portfolio/analysis-report`, Ribbon-Gruppe "Berichte" → "Depot-Bericht" der Wertpapierübersicht): konsolidierter Bericht über alle Wertpapiere mit konfigurierbaren, visuell aufbereiteten Kacheln (Depotstruktur mit Ringdiagramm, Performance und Cashflow mit Balkendiagrammen; Risikoanalyse als Platzhalter für Phase 2), Info-Buttons mit Overlay-Erklärungen zu den Kennzahlen (z. B. scrollbare Übersicht aller Positionen im Gesamtmarktwert-Panel statt nur Top 10, Akkordeon mit FIFO-Lot-Details je Wertpapier im Investiertes-Kapital-Panel), inklusive Bearbeitungsmodus für Kachel-Sichtbarkeit/-Reihenfolge je Benutzer und monatlichem Berichts-Cache mit automatischer Invalidierung bei Kursänderungen und Buchungsstornierungen; Wertpapiere unterstützen optionale Region-/Sektor-Felder, die über die Wertpapier-Bearbeitungsmaske gepflegt werden können (200er-Kappung bei Positionen und FIFO-Lots im Bericht; volle Seitenbreite, Speichern-Button im Editiermodus ins Ribbon-Menü verschoben)
 - Anhänge und Sicherungen (Backup/Restore) verwalten
 - Responsive Web-UI für kleine Viewports (mobile Topbar, responsive Container, mobile Ribbon-Shortcuts, mobile E2E-Abdeckung)
 - Einstellungs-Ribbon mit stets sichtbaren Aktionen: Backup erstellen/hochladen, Profil speichern/zurücksetzen, Benachrichtigungen, Kontoauszugs-Importregeln und Update-Einstellungen speichern sowie Update-Prüfung, Installation und Lock-Reset auslösen — unabhängig davon, welche Sektion gerade aufgeklappt ist
@@ -276,13 +276,14 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md), insbesondere:
 
 ### Aktuelle / In Bearbeitung
 
-**Issue #298 – Wertpapierstatistiken für Gesamtdepot** ✓ Abgeschlossen (Phase 1)
+**Issue #298 – Wertpapierstatistiken für Gesamtdepot** ✓ Abgeschlossen (Phase 1 + Fortsetzung)
 - Depot-Analysebericht mit Kacheln für Depotstruktur, Performance und Cashflow implementiert; eigene Ribbon-Gruppe "Berichte" auf der Wertpapierübersicht
 - Kacheln visuell aufbereitet mit Ring-/Balkendiagrammen (`DonutChart`, `MiniBarChart`) statt reiner Zahlenlisten
-- Kennzahlen-Erklärungen über Info-Buttons (`KpiInfoButton`) mit Overlay-Panel, u. a. Herleitung des Gesamtmarktwerts aus den Einzelpositionen
+- Kennzahlen-Erklärungen über Info-Buttons (`KpiInfoButton`) mit Overlay-Panel; Gesamtmarktwert zeigt alle Positionen in scrollbarem Container, Investiertes-Kapital zeigt Akkordeon mit FIFO-Lot-Details je Wertpapier
 - Kachel-Konfiguration (Sichtbarkeit/Reihenfolge) pro Benutzer sowie monatlicher Berichts-Cache mit automatischer Invalidierung
-- `Region`/`Sector` als neue Wertpapierfelder für regionale Verteilung und Sektorverteilung ergänzt (bislang nur über die API pflegbar)
-- Offen für Phase 2: Risikoanalyse-Kennzahlen (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk), Region-/Sektor-Eingabefelder in der Wertpapier-Bearbeitungsmaske, Liquiditätsquote auf Basis echter Kontostände sowie automatische Cache-Invalidierung bei einzelnen Wertpapierbuchungen ohne Stornierung
+- `Region`/`Sector` Wertpapierfelder sind jetzt über die Wertpapier-Bearbeitungsmaske pflegbar (200er-Kappung bei Positionen/Lots im Bericht)
+- UI-Verbesserungen: Tabellen-Overflow behoben, volle Seitenbreite genutzt, Speichern-Button im Editiermodus ins Ribbon-Menü verschoben
+- Offen für Phase 2: Risikoanalyse-Kennzahlen (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk), Liquiditätsquote auf Basis echter Kontostände sowie automatische Cache-Invalidierung bei einzelnen Wertpapierbuchungen ohne Stornierung
 
 **Issue #224 – Update-Einstellungen vereinheitlichen** ✓ Abgeschlossen
 - Technische Update-Konfiguration aus der Admin-UI entfernt und serverseitig normalisiert

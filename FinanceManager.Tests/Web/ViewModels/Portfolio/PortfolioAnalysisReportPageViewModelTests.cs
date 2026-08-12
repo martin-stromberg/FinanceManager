@@ -17,7 +17,7 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
 {
     private static PortfolioAnalysisReportDto CreateReport(decimal marketValue)
         => new(
-            new PortfolioStructureDto(marketValue, 0m, marketValue, [], [], [], []),
+            new PortfolioStructureDto(marketValue, 0m, marketValue, [], [], [], [], [], []),
             new PortfolioPerformanceDto(null, null, [], []),
             new PortfolioCashflowDto(0m, 0m, 0m, 0m),
             new PortfolioRiskDto(null, null, null, null, null),
@@ -81,6 +81,65 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         vm.IsEditMode.Should().BeFalse();
         apiMock.Verify(a => a.Portfolio_SaveKpiConfigurationAsync(request, It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task EnterEditMode_ViewModel_PopulatesEditOrderAndActiveFromConfiguration()
+    {
+        var vm = CreateVm(out var apiMock);
+        apiMock.Setup(a => a.Portfolio_GetKpiConfigurationAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateConfig());
+
+        await vm.EnterEditModeAsync();
+
+        vm.EditOrder.Should().Equal(PortfolioTileId.Structure);
+        vm.EditActive.Should().Contain(PortfolioTileId.Structure);
+    }
+
+    [Fact]
+    public async Task SaveEditConfiguration_ViewModel_PersistsEditStateAndExitsEditMode()
+    {
+        var vm = CreateVm(out var apiMock);
+        apiMock.Setup(a => a.Portfolio_GetKpiConfigurationAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateConfig());
+        apiMock.Setup(a => a.Portfolio_SaveKpiConfigurationAsync(It.IsAny<PortfolioKpiConfigurationRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateConfig());
+        apiMock.Setup(a => a.Portfolio_GetAnalysisReportAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateReport(500m));
+
+        await vm.EnterEditModeAsync();
+        vm.ToggleTileActive(PortfolioTileId.Structure, false);
+
+        await vm.SaveEditConfigurationAsync();
+
+        vm.IsEditMode.Should().BeFalse();
+        vm.EditOrder.Should().BeEmpty();
+        vm.EditActive.Should().BeEmpty();
+        apiMock.Verify(a => a.Portfolio_SaveKpiConfigurationAsync(
+            It.Is<PortfolioKpiConfigurationRequest>(r => r.ActiveTileIds.Count == 0 && r.TileOrder.Count == 1),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetRibbonRegisters_ViewModel_ExposesSaveActionOnlyInEditMode()
+    {
+        var vm = CreateVm(out var apiMock);
+        apiMock.Setup(a => a.Portfolio_GetKpiConfigurationAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateConfig());
+
+        var actionsBeforeEdit = GetActions(vm);
+        Assert.DoesNotContain(actionsBeforeEdit, a => a.Action == "SaveEdit");
+
+        await vm.EnterEditModeAsync();
+
+        var actionsInEdit = GetActions(vm);
+        Assert.Contains(actionsInEdit, a => a.Action == "SaveEdit");
+    }
+
+    private static IReadOnlyList<FinanceManager.Web.ViewModels.Common.UiRibbonAction> GetActions(PortfolioAnalysisReportPageViewModel vm)
+        => vm.GetRibbon(new PassthroughLocalizer<FinanceManager.Web.Pages>())!
+            .SelectMany(x => x.Tabs ?? new List<FinanceManager.Web.ViewModels.Common.UiRibbonTab>())
+            .SelectMany(x => x.Items ?? new List<FinanceManager.Web.ViewModels.Common.UiRibbonAction>())
+            .ToList();
 
     [Fact]
     public async Task Refresh_ViewModel_ClearsAndReloadsReport()

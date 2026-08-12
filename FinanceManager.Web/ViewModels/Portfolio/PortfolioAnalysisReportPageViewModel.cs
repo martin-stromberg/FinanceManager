@@ -32,6 +32,41 @@ public sealed class PortfolioAnalysisReportPageViewModel : BaseViewModel
     public bool IsEditMode { get; private set; }
 
     /// <summary>
+    /// Tile order currently being edited. Only meaningful while <see cref="IsEditMode"/> is <c>true</c>.
+    /// </summary>
+    public List<PortfolioTileId> EditOrder { get; } = new();
+
+    /// <summary>
+    /// Tile ids currently marked as active/visible while editing. Only meaningful while <see cref="IsEditMode"/> is <c>true</c>.
+    /// </summary>
+    public HashSet<PortfolioTileId> EditActive { get; } = new();
+
+    /// <summary>
+    /// Marks the given tile as active or inactive within the current edit session.
+    /// </summary>
+    /// <param name="tile">Tile to toggle.</param>
+    /// <param name="isActive">Whether the tile should be active.</param>
+    public void ToggleTileActive(PortfolioTileId tile, bool isActive)
+    {
+        if (isActive) { EditActive.Add(tile); }
+        else { EditActive.Remove(tile); }
+        RaiseStateChanged();
+    }
+
+    /// <summary>
+    /// Moves the tile at <paramref name="index"/> within <see cref="EditOrder"/> by <paramref name="delta"/> positions.
+    /// </summary>
+    /// <param name="index">Current index of the tile to move.</param>
+    /// <param name="delta">Offset to move the tile by (e.g. -1 to move up, 1 to move down).</param>
+    public void MoveEditTile(int index, int delta)
+    {
+        var newIndex = index + delta;
+        if (newIndex < 0 || newIndex >= EditOrder.Count) { return; }
+        (EditOrder[index], EditOrder[newIndex]) = (EditOrder[newIndex], EditOrder[index]);
+        RaiseStateChanged();
+    }
+
+    /// <summary>
     /// Loads the portfolio analysis report for the current user.
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
@@ -70,6 +105,10 @@ public sealed class PortfolioAnalysisReportPageViewModel : BaseViewModel
         {
             CurrentConfiguration = await ApiClient.Portfolio_GetKpiConfigurationAsync(ct);
             IsEditMode = true;
+            EditOrder.Clear();
+            EditOrder.AddRange(CurrentConfiguration.TileOrder);
+            EditActive.Clear();
+            foreach (var tile in CurrentConfiguration.ActiveTileIds) { EditActive.Add(tile); }
         }
         catch (Exception ex)
         {
@@ -85,7 +124,29 @@ public sealed class PortfolioAnalysisReportPageViewModel : BaseViewModel
     public void CancelEditMode()
     {
         IsEditMode = false;
+        EditOrder.Clear();
+        EditActive.Clear();
         RaiseStateChanged();
+    }
+
+    /// <summary>
+    /// Persists the tile order/visibility currently held in <see cref="EditOrder"/> and <see cref="EditActive"/>.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task SaveEditConfigurationAsync(CancellationToken ct = default)
+    {
+        var request = new PortfolioKpiConfigurationRequest
+        {
+            ActiveTileIds = EditOrder.Where(t => EditActive.Contains(t)).ToList(),
+            TileOrder = EditOrder.ToList()
+        };
+
+        await SaveConfigurationAsync(request, ct);
+        if (!IsEditMode)
+        {
+            EditOrder.Clear();
+            EditActive.Clear();
+        }
     }
 
     /// <summary>
@@ -178,6 +239,15 @@ public sealed class PortfolioAnalysisReportPageViewModel : BaseViewModel
 
         if (IsEditMode)
         {
+            actions.Add(new UiRibbonAction(
+                "SaveEdit",
+                localizer["PortfolioReport_Save"].Value,
+                "<svg><use href='/icons/sprite.svg#save'/></svg>",
+                UiRibbonItemSize.Large,
+                EditActive.Count == 0,
+                null,
+                async () => { await SaveEditConfigurationAsync(); }
+            ));
             actions.Add(new UiRibbonAction(
                 "CancelEdit",
                 localizer["Ribbon_Cancel"].Value,

@@ -29,7 +29,7 @@ public sealed class PortfolioAnalysisReportControllerTests
 
     private static PortfolioAnalysisReportDto CreateReport()
         => new(
-            new PortfolioStructureDto(1000m, 800m, 200m, [], [], [], []),
+            new PortfolioStructureDto(1000m, 800m, 200m, [], [], [], [], [], []),
             new PortfolioPerformanceDto(null, null, [], []),
             new PortfolioCashflowDto(0m, 0m, 0m, 0m),
             new PortfolioRiskDto(null, null, null, null, null),
