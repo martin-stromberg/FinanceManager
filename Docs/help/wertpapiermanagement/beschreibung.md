@@ -19,9 +19,14 @@ AlphaVantage-Aufruf entschluesselt.
 Zusätzlich zur Performance-Ansicht je einzelnem Wertpapier gibt es den
 **Depot-Analysebericht**: eine konsolidierte Auswertung über alle Wertpapiere
 eines Benutzers hinweg. Der Bericht wird über den Ribbon-Button
-"Depot-Bericht" auf der Wertpapierübersicht (`/list/securities`) aufgerufen
-und öffnet die Seite `/portfolio/analysis-report`. Er zeigt die aggregierten
-Kennzahlen des Gesamtdepots in Kacheln ("Tiles"):
+"Depot-Bericht" (Gruppe "Berichte") auf der Wertpapierübersicht
+(`/list/securities`) aufgerufen und öffnet die Seite
+`/portfolio/analysis-report`. Er zeigt die aggregierten Kennzahlen des
+Gesamtdepots in visuell aufbereiteten Kacheln ("Tiles") — mit Diagrammen
+(Ring- und Balkendiagramme) statt reiner Zahlenlisten. Viele Kennzahlen bieten
+zusätzlich über ein Info-Symbol eine Erklärung als Overlay-Panel an, z. B.
+listet die Erklärung zum Gesamtmarktwert die zugrunde liegenden
+Einzelpositionen samt Marktwert auf:
 
 - **Depotstruktur** — Gesamtmarktwert, investiertes Kapital, unrealisierte
   Gewinne/Verluste, Asset Allocation nach Kategorie, regionale Verteilung,

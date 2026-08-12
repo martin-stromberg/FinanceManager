@@ -74,6 +74,23 @@ Kachel-Komponente: `PortfolioStructureCard`, `PortfolioPerformanceCard`,
 `PortfolioCashflowCard` bzw. `PortfolioRiskCard`. Jede Kachel bettet ihren
 Inhalt in die generische `PortfolioKpiCard` (Titel + Body) ein.
 
+Für die visuelle Darstellung nutzen die Kacheln zwei generische
+Diagramm-Komponenten aus `FinanceManager.Web/Components/Shared/`:
+- `DonutChart` (Ringdiagramm mit Legende und Zentrumswert) — Asset Allocation
+  in `PortfolioStructureCard`.
+- `MiniBarChart` (kompaktes Balkendiagramm) — jährliche Renditen in
+  `PortfolioPerformanceCard` sowie Netto-Einzahlungen/Dividenden/realisierte
+  Gewinne in `PortfolioCashflowCard`.
+
+Kennzahlen mit einer sinnvollen Herleitung (z. B. Gesamtmarktwert, investiertes
+Kapital, unrealisierter Gewinn/Verlust, TWR, YTD-Rendite, Netto-Einzahlungen,
+Dividenden) binden zusätzlich `KpiInfoButton` ein: Ein Info-Button öffnet ein
+Overlay-Panel (`role="dialog"`) mit der Erklärung als Text, Formel oder
+Tabelle (z. B. listet die Erklärung zum Gesamtmarktwert in
+`PortfolioStructureCard` die Top-10-Positionen samt Marktwert sowie eine
+"weitere Positionen"-Restzeile auf, deren Summe den angezeigten Gesamtwert
+ergibt).
+
 ### 4. Konfiguration bearbeiten (Edit-Mode)
 
 1. Klick auf den Ribbon-Button "Bearbeiten" ruft

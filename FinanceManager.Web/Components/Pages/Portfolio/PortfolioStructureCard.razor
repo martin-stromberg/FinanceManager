@@ -1,30 +1,75 @@
 @using FinanceManager.Shared.Dtos.Portfolio
+@using FinanceManager.Web.Components.Shared
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
 
 <PortfolioKpiCard Title="@Localizer["PortfolioReport_Tile_Structure"].Value">
+    @if (Data.AssetAllocation.Count > 0)
+    {
+        <DonutChart Slices="@(Data.AssetAllocation.Select(s => new DonutChart.DonutChartSlice(s.Label, s.Value)).ToList())"
+                    CenterValue="@Data.TotalMarketValue.ToString("N0")"
+                    CenterLabel="@Localizer["PortfolioReport_TotalMarketValue"].Value"
+                    AriaLabel="@Localizer["PortfolioReport_Chart_Aria_AssetAllocation"].Value" />
+    }
+
     <div class="portfolio-kpi-row">
-        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_TotalMarketValue"]</span>
+        <span class="portfolio-kpi-label-wrap">
+            <span class="portfolio-kpi-label">@Localizer["PortfolioReport_TotalMarketValue"]</span>
+            <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_TotalMarketValue_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
+                <p>@Localizer["PortfolioReport_Explain_TotalMarketValue_Intro"]</p>
+                <table class="fm-table kpi-explanation-table">
+                    <thead>
+                        <tr>
+                            <th>@Localizer["PortfolioReport_Th_Name"]</th>
+                            <th>@Localizer["PortfolioReport_Th_MarketValue"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var pos in Data.TopPositions)
+                        {
+                            <tr>
+                                <td>@pos.Name</td>
+                                <td>@pos.MarketValue.ToString("N2")</td>
+                            </tr>
+                        }
+                        @if (OtherPositionsValue > 0.01m)
+                        {
+                            <tr>
+                                <td>@Localizer["PortfolioReport_Explain_OtherPositions"]</td>
+                                <td>@OtherPositionsValue.ToString("N2")</td>
+                            </tr>
+                        }
+                        <tr class="kpi-explanation-total">
+                            <td>@Localizer["PortfolioReport_TotalMarketValue"]</td>
+                            <td>@Data.TotalMarketValue.ToString("N2")</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </KpiInfoButton>
+        </span>
         <span class="portfolio-kpi-value">@Data.TotalMarketValue.ToString("N2")</span>
     </div>
     <div class="portfolio-kpi-row">
-        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_InvestedCapital"]</span>
+        <span class="portfolio-kpi-label-wrap">
+            <span class="portfolio-kpi-label">@Localizer["PortfolioReport_InvestedCapital"]</span>
+            <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_InvestedCapital_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
+                <p>@Localizer["PortfolioReport_Explain_InvestedCapital_Text"]</p>
+            </KpiInfoButton>
+        </span>
         <span class="portfolio-kpi-value">@Data.InvestedCapital.ToString("N2")</span>
     </div>
     <div class="portfolio-kpi-row">
-        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_UnrealizedGainLoss"]</span>
+        <span class="portfolio-kpi-label-wrap">
+            <span class="portfolio-kpi-label">@Localizer["PortfolioReport_UnrealizedGainLoss"]</span>
+            <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_UnrealizedGainLoss_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
+                <p>
+                    @Localizer["PortfolioReport_TotalMarketValue"]: @Data.TotalMarketValue.ToString("N2")<br />
+                    @Localizer["PortfolioReport_InvestedCapital"]: −@Data.InvestedCapital.ToString("N2")<br />
+                    <strong>@Localizer["PortfolioReport_UnrealizedGainLoss"]: @Data.UnrealizedGainLoss.ToString("N2")</strong>
+                </p>
+            </KpiInfoButton>
+        </span>
         <span class="portfolio-kpi-value @(Data.UnrealizedGainLoss >= 0 ? "positive" : "negative")">@Data.UnrealizedGainLoss.ToString("N2")</span>
     </div>
-
-    @if (Data.AssetAllocation.Count > 0)
-    {
-        <h4>@Localizer["PortfolioReport_AssetAllocation"]</h4>
-        <ul class="portfolio-distribution-list">
-            @foreach (var slice in Data.AssetAllocation)
-            {
-                <li>@slice.Label: @slice.Value.ToString("N2") (@((slice.Percentage * 100m).ToString("N1"))%)</li>
-            }
-        </ul>
-    }
 
     @if (Data.RegionalDistribution.Count > 0)
     {
@@ -78,4 +123,7 @@
 @code {
     /// <summary>Portfolio structure data to display.</summary>
     [Parameter, EditorRequired] public PortfolioStructureDto Data { get; set; } = null!;
+
+    /// <summary>Portion of <see cref="PortfolioStructureDto.TotalMarketValue"/> attributable to positions beyond the top-10 list.</summary>
+    private decimal OtherPositionsValue => Data.TotalMarketValue - Data.TopPositions.Sum(p => p.MarketValue);
 }

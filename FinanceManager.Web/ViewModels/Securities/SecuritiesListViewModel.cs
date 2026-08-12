@@ -174,7 +174,11 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
                 false,
                 null,
                 () => { RaiseUiActionRequested("OpenCategories"); return Task.CompletedTask; }
-            ),
+            )
+        };
+
+        var reports = new List<UiRibbonAction>
+        {
             new UiRibbonAction(
                 "PortfolioAnalysisReport",
                 localizer["Ribbon_PortfolioAnalysisReport"].Value,
@@ -199,7 +203,11 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
             )
         };
 
-        var tabsActions = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Actions"].Value, actions) };
+        var tabsActions = new List<UiRibbonTab>
+        {
+            new UiRibbonTab(localizer["Ribbon_Group_Actions"].Value, actions),
+            new UiRibbonTab(localizer["Ribbon_Group_Reports"].Value, reports)
+        };
         var tabsFilter = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Filter"].Value, filter) };
 
         return new List<UiRibbonRegister>

@@ -425,3 +425,6 @@ FodyWeavers.xsd
 copilot.context.md
 copilot.context*.md
 issue.md
+
+# Design reference artifact used while building the portfolio analysis visualizations (not a build input)
+/stitch_advanced_portfolio_analysis_report.zip

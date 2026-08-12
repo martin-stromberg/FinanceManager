@@ -1,0 +1,120 @@
+/* =====================================================
+   theme.Dark.PortfolioReport.css - Dark Theme für Portfolio-Bericht
+   ===================================================== */
+
+:root {
+    /* Categorical chart palette (validated for the dark surface, CVD-safe fixed order) */
+    --chart-1: #3987e5;
+    --chart-2: #d95926;
+    --chart-3: #199e70;
+    --chart-4: #c98500;
+    --chart-5: #d55181;
+    --chart-6: #008300;
+    --chart-7: #9085e9;
+    --chart-8: #e66767;
+    --chart-muted: #555a61;
+}
+
+.portfolio-tile {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+}
+
+.portfolio-kpi-value.positive {
+    color: var(--success);
+}
+
+.portfolio-kpi-value.negative {
+    color: var(--danger);
+}
+
+.portfolio-top-positions,
+.portfolio-return-table {
+    border: 1px solid var(--border);
+}
+
+.portfolio-top-positions th,
+.portfolio-return-table th {
+    background: var(--bg-alt);
+    border-bottom: 1px solid var(--border);
+}
+
+.portfolio-top-positions td,
+.portfolio-return-table td {
+    border-bottom: 1px solid var(--border);
+}
+
+.portfolio-top-positions td.positive,
+.portfolio-return-table td.positive {
+    color: var(--success);
+}
+
+.portfolio-top-positions td.negative,
+.portfolio-return-table td.negative {
+    color: var(--danger);
+}
+
+.kpi-info-btn {
+    color: var(--muted);
+    background: transparent;
+}
+
+.kpi-info-btn:hover {
+    color: var(--text);
+    background: var(--border);
+}
+
+.kpi-explanation-table th {
+    border-bottom: 1px solid var(--border);
+}
+
+.kpi-explanation-table td {
+    border-bottom: 1px solid rgba(127, 127, 127, .18);
+}
+
+.kpi-explanation-table .kpi-explanation-total td {
+    border-top: 1px solid var(--border);
+    border-bottom: none;
+}
+
+.donut-track {
+    stroke: var(--border);
+}
+
+.mini-bar-chart-bar.positive {
+    background: var(--success);
+}
+
+.mini-bar-chart-bar.negative {
+    background: var(--danger);
+}
+
+.mini-bar-chart-zero {
+    background: var(--muted);
+}
+
+.mini-bar-chart-label {
+    color: var(--muted);
+}
+
+.portfolio-risk-gauge {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+}
+
+.portfolio-risk-gauge-fill {
+    background: var(--accent);
+}
+
+.portfolio-risk-gauge-fill.negative {
+    background: var(--danger);
+}
+
+.portfolio-edit-mode {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+}
+
+.portfolio-edit-item {
+    background: var(--bg-alt);
+}

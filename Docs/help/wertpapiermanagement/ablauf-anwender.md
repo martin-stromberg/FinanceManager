@@ -20,9 +20,9 @@
 
 ### 2. Depot-Bericht öffnen
 
-Klicken Sie im Ribbon auf **"Depot-Bericht"**. Die Seite
-"Depot-Analysebericht" öffnet sich und lädt automatisch die Kennzahlen Ihres
-gesamten Depots.
+Klicken Sie im Ribbon in der Gruppe **"Berichte"** auf **"Depot-Bericht"**.
+Die Seite "Depot-Analysebericht" öffnet sich und lädt automatisch die
+Kennzahlen Ihres gesamten Depots.
 
 > **Hinweis:** Beim ersten Aufruf im Monat kann das Laden je nach Depotgröße
 > einen Moment dauern, da der Bericht neu berechnet wird. Danach wird bis zum
@@ -30,26 +30,40 @@ gesamten Depots.
 
 ### 3. Kacheln ansehen
 
-Je nach Konfiguration werden bis zu vier Kacheln angezeigt:
+Je nach Konfiguration werden bis zu vier Kacheln angezeigt. Jede Kachel
+kombiniert eine grafische Darstellung mit den zugehörigen Kennzahlen:
 
-- **Depotstruktur** — Gesamtmarktwert, investiertes Kapital, unrealisierte
-  Gewinne/Verluste, Asset Allocation, regionale Verteilung, Sektorverteilung
-  und die zehn größten Positionen.
-- **Performance** — Zeitgewichtete Rendite seit Beginn, Rendite
-  Jahr-zu-Datum und jährliche Renditen.
-- **Cashflow** — Netto-Einzahlungen, Dividenden und realisierte
-  Gewinne/Verluste des laufenden Jahres sowie die Liquiditätsquote.
+- **Depotstruktur** — ein Ringdiagramm der Asset Allocation mit dem
+  Gesamtmarktwert im Zentrum, dazu Gesamtmarktwert, investiertes Kapital,
+  unrealisierte Gewinne/Verluste, regionale Verteilung, Sektorverteilung und
+  die zehn größten Positionen.
+- **Performance** — ein Balkendiagramm der jährlichen Renditen (das laufende,
+  noch nicht abgeschlossene Jahr ist mit "*" markiert und per Fußnote
+  erläutert), dazu die zeitgewichtete Rendite seit Beginn und die Rendite
+  Jahr-zu-Datum.
+- **Cashflow** — ein Balkendiagramm mit Netto-Einzahlungen, Dividenden und
+  realisierten Gewinnen/Verlusten des laufenden Jahres sowie die
+  Liquiditätsquote.
 - **Risikoanalyse** — zeigt aktuell einen Hinweis, dass Risikokennzahlen
   (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk) für eine
   spätere Ausbaustufe geplant sind.
 
-### 4. Bericht manuell aktualisieren
+### 4. Kennzahlen erklären lassen
+
+Neben vielen Kennzahlen steht ein Info-Symbol (Fragezeichen). Ein Klick
+öffnet ein Overlay-Panel mit der Erklärung der Kennzahl — z. B. zeigt die
+Erklärung zum Gesamtmarktwert die Liste der Einzelpositionen samt
+Marktwerten, aus denen sich der Gesamtwert zusammensetzt. Das Panel wird
+über den "Schließen"-Button, per Klick außerhalb oder per Tastatur wieder
+geschlossen.
+
+### 5. Bericht manuell aktualisieren
 
 Klicken Sie im Ribbon auf **"Aktualisieren"**, um den Bericht sofort neu
 berechnen zu lassen, statt auf die automatische Aktualisierung zu warten
 (z. B. nach dem Erfassen einer neuen Wertpapierbuchung).
 
-### 5. Kacheln anpassen (Bearbeitungsmodus)
+### 6. Kacheln anpassen (Bearbeitungsmodus)
 
 1. Klicken Sie im Ribbon auf **"Bearbeiten"**.
 2. Für jede Kachel erscheint eine Zeile mit einer Checkbox (sichtbar/
@@ -65,15 +79,16 @@ berechnen zu lassen, statt auf die automatische Aktualisierung zu warten
 > **Hinweis:** Mindestens eine Kachel muss aktiv bleiben — der Speichern-
 > Versuch mit null aktiven Kacheln wird abgelehnt.
 
-### 6. Zurück zur Wertpapierübersicht
+### 7. Zurück zur Wertpapierübersicht
 
 Klicken Sie im Ribbon auf **"Zurück"**, um zur Wertpapierübersicht
 zurückzukehren.
 
 ## Ergebnis
 
-Der Anwender erhält eine konsolidierte, nach Kacheln gegliederte Übersicht
-über sein gesamtes Wertpapierdepot und kann festlegen, welche Kacheln in
+Der Anwender erhält eine konsolidierte, visuell aufbereitete Übersicht über
+sein gesamtes Wertpapierdepot (Diagramme statt reiner Zahlenlisten) mit
+Erklärungen zu den einzelnen Kennzahlen und kann festlegen, welche Kacheln in
 welcher Reihenfolge angezeigt werden. Diese Auswahl bleibt benutzerbezogen
 gespeichert und wird bei jedem weiteren Aufruf des Depot-Berichts angewendet.
 

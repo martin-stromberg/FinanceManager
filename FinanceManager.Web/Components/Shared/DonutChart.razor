@@ -1,0 +1,92 @@
+@using System.Globalization
+
+<div class="donut-chart">
+    <div class="donut-chart-ring" role="img" aria-label="@AriaLabel">
+        <svg viewBox="0 0 36 36" class="donut-chart-svg">
+            <circle class="donut-track" cx="18" cy="18" r="15.9155" />
+            @{ decimal cursor = 0m; }
+            @foreach (var entry in _entries)
+            {
+                if (entry.Percent > 0m)
+                {
+                    var dashArray = string.Format(CultureInfo.InvariantCulture, "{0:F2} {1:F2}", (double)entry.Percent, (double)(100m - entry.Percent));
+                    var dashOffset = (-(double)cursor).ToString("F2", CultureInfo.InvariantCulture);
+                    <circle class="donut-segment" cx="18" cy="18" r="15.9155"
+                            stroke="@GetColor(entry.Index)"
+                            stroke-dasharray="@dashArray"
+                            stroke-dashoffset="@dashOffset">
+                        <title>@($"{entry.Slice.Label}: {entry.Percent.ToString("N1", CultureInfo.CurrentUICulture)}%")</title>
+                    </circle>
+                    cursor += entry.Percent;
+                }
+            }
+        </svg>
+        @if (!string.IsNullOrEmpty(CenterValue) || !string.IsNullOrEmpty(CenterLabel))
+        {
+            <div class="donut-center">
+                @if (!string.IsNullOrEmpty(CenterValue))
+                {
+                    <span class="donut-center-value">@CenterValue</span>
+                }
+                @if (!string.IsNullOrEmpty(CenterLabel))
+                {
+                    <span class="donut-center-label">@CenterLabel</span>
+                }
+            </div>
+        }
+    </div>
+
+    @if (_entries.Count > 0)
+    {
+        <ul class="donut-legend">
+            @foreach (var entry in _entries)
+            {
+                <li class="donut-legend-item">
+                    <span class="donut-swatch" style="background:@GetColor(entry.Index)"></span>
+                    <span class="donut-legend-label">@entry.Slice.Label</span>
+                    <span class="donut-legend-value">@entry.Percent.ToString("N1", CultureInfo.CurrentUICulture)%</span>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    /// <summary>A single named value contributing to the donut chart.</summary>
+    /// <param name="Label">Display label of the slice.</param>
+    /// <param name="Value">Absolute value of the slice (must be non-negative to be rendered).</param>
+    public sealed record DonutChartSlice(string Label, decimal Value);
+
+    private sealed record Entry(DonutChartSlice Slice, int Index, decimal Percent);
+
+    private static readonly string[] Palette =
+    {
+        "var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)",
+        "var(--chart-5)", "var(--chart-6)", "var(--chart-7)", "var(--chart-8)"
+    };
+
+    /// <summary>Slices to render, largest first is not required — order is preserved.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<DonutChartSlice> Slices { get; set; } = Array.Empty<DonutChartSlice>();
+
+    /// <summary>Optional bold value shown in the center of the ring (e.g. the total).</summary>
+    [Parameter] public string? CenterValue { get; set; }
+
+    /// <summary>Optional small caption shown below <see cref="CenterValue"/>.</summary>
+    [Parameter] public string? CenterLabel { get; set; }
+
+    /// <summary>Accessible label describing the chart for screen readers.</summary>
+    [Parameter] public string AriaLabel { get; set; } = string.Empty;
+
+    private List<Entry> _entries = new();
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        var total = Slices.Where(s => s.Value > 0m).Sum(s => s.Value);
+        _entries = Slices
+            .Select((s, i) => new Entry(s, i, total > 0m && s.Value > 0m ? s.Value / total * 100m : 0m))
+            .ToList();
+    }
+
+    private static string GetColor(int index) => index < Palette.Length ? Palette[index] : "var(--chart-muted)";
+}

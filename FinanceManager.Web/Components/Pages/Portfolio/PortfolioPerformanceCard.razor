@@ -1,13 +1,35 @@
 @using FinanceManager.Shared.Dtos.Portfolio
+@using FinanceManager.Web.Components.Shared
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
 
 <PortfolioKpiCard Title="@Localizer["PortfolioReport_Tile_Performance"].Value">
+    @if (Data.AnnualReturns.Count > 0)
+    {
+        <MiniBarChart Points="@(Data.AnnualReturns.Select(pt => new MiniBarChart.MiniBarChartPoint(pt.Year.ToString() + (pt.IsYtd ? "*" : string.Empty), pt.ReturnPercent * 100m)).ToList())"
+                      AriaLabel="@Localizer["PortfolioReport_Chart_Aria_AnnualReturns"].Value"
+                      TooltipFormatter="@(p => $"{p.Label}: {p.Value:N1}%")" />
+        @if (Data.AnnualReturns.Any(pt => pt.IsYtd))
+        {
+            <p class="portfolio-chart-footnote">@Localizer["PortfolioReport_YtdChartFootnote"]</p>
+        }
+    }
+
     <div class="portfolio-kpi-row">
-        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_Twr"]</span>
+        <span class="portfolio-kpi-label-wrap">
+            <span class="portfolio-kpi-label">@Localizer["PortfolioReport_Twr"]</span>
+            <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_Twr_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
+                <p>@Localizer["PortfolioReport_Explain_Twr_Text"]</p>
+            </KpiInfoButton>
+        </span>
         <span class="portfolio-kpi-value">@(Data.TimeWeightedReturn.HasValue ? (Data.TimeWeightedReturn.Value * 100m).ToString("N2") + "%" : "–")</span>
     </div>
     <div class="portfolio-kpi-row">
-        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_Ytd"]</span>
+        <span class="portfolio-kpi-label-wrap">
+            <span class="portfolio-kpi-label">@Localizer["PortfolioReport_Ytd"]</span>
+            <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_Ytd_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
+                <p>@Localizer["PortfolioReport_Explain_Ytd_Text"]</p>
+            </KpiInfoButton>
+        </span>
         <span class="portfolio-kpi-value">@(Data.YtdReturn.HasValue ? (Data.YtdReturn.Value * 100m).ToString("N2") + "%" : "–")</span>
     </div>
 
@@ -25,7 +47,7 @@
                 @foreach (var pt in Data.AnnualReturns)
                 {
                     <tr>
-                        <td>@pt.Year@(pt.IsYtd ? " (YTD)" : "")</td>
+                        <td>@pt.Year@(pt.IsYtd ? Localizer["PortfolioReport_YtdSuffix"].Value : "")</td>
                         <td class="@(pt.ReturnPercent >= 0 ? "positive" : "negative")">@((pt.ReturnPercent * 100m).ToString("N2"))%</td>
                     </tr>
                 }
