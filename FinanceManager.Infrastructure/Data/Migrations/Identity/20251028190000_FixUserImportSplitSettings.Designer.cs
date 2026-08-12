@@ -8,17 +8,17 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace FinanceManager.Infrastructure.Migrations
+namespace FinanceManager.Infrastructure.Data.Migrations.Identity
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250927085052_AddHomeKPITitle")]
-    partial class AddHomeKPITitle
+    [Migration("20251028190000_FixUserImportSplitSettings")]
+    partial class FixUserImportSplitSettings
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.0-rc.1.24451.1");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
 
             modelBuilder.Entity("FinanceManager.Domain.Accounts.Account", b =>
                 {
@@ -93,6 +93,96 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.ToTable("AccountShares");
                 });
 
+            modelBuilder.Entity("FinanceManager.Domain.Attachments.Attachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("Content")
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<short>("EntityKind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ReferenceAttachmentId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Sha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("UploadedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Url")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("ReferenceAttachmentId");
+
+                    b.HasIndex("Sha256", "OwnerUserId");
+
+                    b.HasIndex("OwnerUserId", "EntityKind", "EntityId");
+
+                    b.ToTable("Attachments");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Attachments.AttachmentCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("AttachmentCategories");
+                });
+
             modelBuilder.Entity("FinanceManager.Domain.Contacts.AliasName", b =>
                 {
                     b.Property<Guid>("Id")
@@ -159,6 +249,10 @@ namespace FinanceManager.Infrastructure.Migrations
 
                     b.HasIndex("OwnerUserId", "Name");
 
+                    b.HasIndex("OwnerUserId", "Type")
+                        .IsUnique()
+                        .HasFilter("[Type] = 0");
+
                     b.ToTable("Contacts");
                 });
 
@@ -188,6 +282,57 @@ namespace FinanceManager.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("ContactCategories");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Notifications.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDismissed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ScheduledDateUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Target")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(140)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TriggerEventKey")
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId", "Type", "ScheduledDateUtc");
+
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Postings.Posting", b =>
@@ -288,6 +433,9 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<Guid?>("SecurityId")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("SecuritySubType")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Kind", "AccountId", "Period", "PeriodStart")
@@ -302,11 +450,11 @@ namespace FinanceManager.Infrastructure.Migrations
                         .IsUnique()
                         .HasFilter("[SavingsPlanId] IS NOT NULL AND [AccountId] IS NULL AND [ContactId] IS NULL AND [SecurityId] IS NULL");
 
-                    b.HasIndex("Kind", "SecurityId", "Period", "PeriodStart")
+                    b.HasIndex("Kind", "SecurityId", "SecuritySubType", "Period", "PeriodStart")
                         .IsUnique()
                         .HasFilter("[SecurityId] IS NOT NULL AND [AccountId] IS NULL AND [ContactId] IS NULL AND [SavingsPlanId] IS NULL");
 
-                    b.HasIndex("Kind", "AccountId", "ContactId", "SavingsPlanId", "SecurityId", "Period", "PeriodStart")
+                    b.HasIndex("Kind", "AccountId", "ContactId", "SavingsPlanId", "SecurityId", "SecuritySubType", "Period", "PeriodStart")
                         .IsUnique();
 
                     b.ToTable("PostingAggregates");
@@ -332,6 +480,9 @@ namespace FinanceManager.Infrastructure.Migrations
 
                     b.Property<Guid>("OwnerUserId")
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("PredefinedType")
+                        .HasColumnType("INTEGER");
 
                     b.Property<Guid?>("ReportFavoriteId")
                         .HasColumnType("TEXT");
@@ -382,6 +533,9 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<bool>("IncludeCategory")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool?>("IncludeDividendRelated")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Interval")
                         .HasColumnType("INTEGER");
 
@@ -414,7 +568,13 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<string>("SecurityIdsCsv")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SecuritySubTypesCsv")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("ShowChart")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Take")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
@@ -524,6 +684,9 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("HasPriceError")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Identifier")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -538,6 +701,12 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PriceErrorMessage")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("PriceErrorSinceUtc")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -601,6 +770,46 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.ToTable("SecurityPrices");
                 });
 
+            modelBuilder.Entity("FinanceManager.Domain.Security.IpBlock", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BlockReason")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("BlockedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsBlocked")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UnknownUserFailedAttempts")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("UnknownUserLastFailedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IpAddress")
+                        .IsUnique();
+
+                    b.ToTable("IpBlocks");
+                });
+
             modelBuilder.Entity("FinanceManager.Domain.Statements.StatementDraft", b =>
                 {
                     b.Property<Guid>("Id")
@@ -620,12 +829,6 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("ModifiedUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<byte[]>("OriginalFileContent")
-                        .HasColumnType("BLOB");
-
-                    b.Property<string>("OriginalFileContentType")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("OriginalFileName")
@@ -856,14 +1059,35 @@ namespace FinanceManager.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("Active")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime>("CreatedUtc")
+                    b.Property<string>("AlphaVantageApiKey")
+                        .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("FailedLoginAttempts")
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("EmailConfirmed")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("HolidayCountryCode")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("HolidayProviderKind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("HolidaySubdivisionCode")
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("IsAdmin")
                         .HasColumnType("INTEGER");
@@ -871,30 +1095,74 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<DateTime>("LastLoginUtc")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("LockedUntilUtc")
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("ModifiedUtc")
+                    b.Property<bool>("MonthlyReminderEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("MonthlyReminderHour")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("MonthlyReminderMinute")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("PreferredLanguage")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Username")
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("ShareAlphaVantageApiKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("TimeZoneId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Username")
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex");
+
+                    b.HasIndex("UserName")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("AspNetUsers", (string)null);
                 });
 
             modelBuilder.Entity("FinanceManager.Infrastructure.Backups.BackupRecord", b =>
@@ -932,6 +1200,145 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.HasIndex("OwnerUserId", "CreatedUtc");
 
                     b.ToTable("Backups");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex");
+
+                    b.ToTable("AspNetRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetRoleClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
+                {
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderKey")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("LoginProvider", "ProviderKey");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserLogins", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetUserRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId", "LoginProvider", "Name");
+
+                    b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Attachments.Attachment", b =>
+                {
+                    b.HasOne("FinanceManager.Domain.Attachments.AttachmentCategory", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("FinanceManager.Domain.Attachments.Attachment", null)
+                        .WithMany()
+                        .HasForeignKey("ReferenceAttachmentId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Contacts.Contact", b =>
@@ -986,6 +1393,57 @@ namespace FinanceManager.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("SavingsPlanId")
                         .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
+                {
+                    b.HasOne("FinanceManager.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
+                {
+                    b.HasOne("FinanceManager.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FinanceManager.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
+                {
+                    b.HasOne("FinanceManager.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Statements.StatementDraft", b =>

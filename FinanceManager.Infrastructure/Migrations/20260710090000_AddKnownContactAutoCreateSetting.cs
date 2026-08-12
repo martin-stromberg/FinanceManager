@@ -13,20 +13,21 @@ namespace FinanceManager.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<bool>(
-                name: "KnownContactAutoCreateEnabled",
-                table: "AspNetUsers",
-                type: "INTEGER",
-                nullable: false,
-                defaultValue: true);
+            // KnownContactAutoCreateEnabled on AspNetUsers is created by FixUserImportSplitSettings.
+            // migrationBuilder.AddColumn<bool>(
+            //     name: "KnownContactAutoCreateEnabled",
+            //     table: "AspNetUsers",
+            //     type: "INTEGER",
+            //     nullable: false,
+            //     defaultValue: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "KnownContactAutoCreateEnabled",
-                table: "AspNetUsers");
+            // migrationBuilder.DropColumn(
+            //     name: "KnownContactAutoCreateEnabled",
+            //     table: "AspNetUsers");
         }
     }
 }

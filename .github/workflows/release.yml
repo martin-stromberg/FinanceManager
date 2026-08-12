@@ -43,6 +43,17 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/resolve-release-version.mjs
 
+      - name: Stash manifest script
+        if: steps.version.outputs.released == 'true'
+        run: |
+          $script = "scripts\generate-update-manifest.mjs"
+          if (-not (Test-Path -LiteralPath $script)) {
+            throw "Manifest script not found: $script"
+          }
+          $backup = Join-Path $env:TEMP "generate-update-manifest.mjs"
+          Copy-Item -LiteralPath $script -Destination $backup -Force
+          "MANIFEST_SCRIPT=$backup" | Add-Content -Path $env:GITHUB_ENV -Encoding utf8
+
       - name: Check out release tag for asset repair
         if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'upload-existing'
         env:
@@ -200,7 +211,13 @@ jobs:
 
           $env:RELEASE_PUBLISHED_AT = $publishedAt
           $env:RELEASE_NOTES = Get-Content -Raw -LiteralPath $env:RELEASE_NOTES_PATH
-          node scripts/generate-update-manifest.mjs
+
+          $manifestScript = $env:MANIFEST_SCRIPT
+          if ([string]::IsNullOrWhiteSpace($manifestScript) -or -not (Test-Path -LiteralPath $manifestScript)) {
+            $manifestScript = "scripts\generate-update-manifest.mjs"
+          }
+          node $manifestScript
+
           if (-not (Test-Path -LiteralPath "update.json")) {
             throw "update.json was not generated."
           }
