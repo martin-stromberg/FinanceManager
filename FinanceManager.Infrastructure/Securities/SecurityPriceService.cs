@@ -1,3 +1,4 @@
+using FinanceManager.Application.Portfolio;
 using FinanceManager.Application.Securities;
 using FinanceManager.Shared.Dtos.Securities;
 using FinanceManager.Infrastructure;
@@ -18,17 +19,23 @@ public class SecurityPriceService : ISecurityPriceService
 {
     private readonly AppDbContext _db;
     private readonly ILogger<SecurityPriceService> _logger;
+    private readonly IPortfolioAnalysisReportCacheService? _portfolioCache;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SecurityPriceService"/> class.
     /// </summary>
     /// <param name="db">The application's database context used to persist and query security prices.</param>
     /// <param name="logger">Logger used for diagnostic messages.</param>
+    /// <param name="portfolioCache">
+    /// Optional portfolio analysis report cache service. When supplied, the portfolio report cache for the
+    /// affected owner is invalidated after price changes so the next report request recomputes fresh data.
+    /// </param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="db"/> is <c>null</c>.</exception>
-    public SecurityPriceService(AppDbContext db, ILogger<SecurityPriceService> logger)
+    public SecurityPriceService(AppDbContext db, ILogger<SecurityPriceService> logger, IPortfolioAnalysisReportCacheService? portfolioCache = null)
     {
         _db = db;
         _logger = logger;
+        _portfolioCache = portfolioCache;
     }
 
     /// <summary>
@@ -54,6 +61,8 @@ public class SecurityPriceService : ISecurityPriceService
         var entity = new FinanceManager.Domain.Securities.SecurityPrice(securityId, date, close);
         _db.SecurityPrices.Add(entity);
         await _db.SaveChangesAsync(ct);
+
+        if (_portfolioCache != null) { await _portfolioCache.InvalidateCacheAsync(ownerUserId, ct); }
     }
 
     /// <summary>
@@ -176,6 +185,8 @@ public class SecurityPriceService : ISecurityPriceService
         if (inserted > 0 || updated > 0)
         {
             await _db.SaveChangesAsync(ct);
+
+            if (_portfolioCache != null) { await _portfolioCache.InvalidateCacheAsync(ownerUserId, ct); }
         }
 
         return new SecurityPriceImportResultDto(inserted, updated, unchanged, 0, Array.Empty<SecurityPriceImportErrorDto>());

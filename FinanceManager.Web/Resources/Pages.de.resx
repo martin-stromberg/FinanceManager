@@ -687,6 +687,117 @@
   <data name="Ribbon_Group_Actions" xml:space="preserve">
     <value>Aktionen</value>
   </data>
+  <data name="Ribbon_PortfolioAnalysisReport" xml:space="preserve">
+    <value>Depot-Bericht</value>
+  </data>
+  <data name="Ribbon_Refresh" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="Ribbon_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="PortfolioReport_Title" xml:space="preserve">
+    <value>Depot-Analysebericht</value>
+  </data>
+  <data name="PortfolioReport_Loading" xml:space="preserve">
+    <value>Wird geladen...</value>
+  </data>
+  <data name="PortfolioReport_NotAuthenticated" xml:space="preserve">
+    <value>Bitte melden Sie sich an, um diese Seite anzuzeigen.</value>
+  </data>
+  <data name="PortfolioReport_Save" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="PortfolioReport_Tile_Structure" xml:space="preserve">
+    <value>Depotstruktur</value>
+  </data>
+  <data name="PortfolioReport_Tile_Performance" xml:space="preserve">
+    <value>Performance</value>
+  </data>
+  <data name="PortfolioReport_Tile_Cashflow" xml:space="preserve">
+    <value>Cashflow</value>
+  </data>
+  <data name="PortfolioReport_Tile_Risk" xml:space="preserve">
+    <value>Risikoanalyse</value>
+  </data>
+  <data name="PortfolioReport_TotalMarketValue" xml:space="preserve">
+    <value>Gesamtmarktwert</value>
+  </data>
+  <data name="PortfolioReport_InvestedCapital" xml:space="preserve">
+    <value>Investiertes Kapital</value>
+  </data>
+  <data name="PortfolioReport_UnrealizedGainLoss" xml:space="preserve">
+    <value>Unrealisierte Gewinne/Verluste</value>
+  </data>
+  <data name="PortfolioReport_AssetAllocation" xml:space="preserve">
+    <value>Asset Allocation</value>
+  </data>
+  <data name="PortfolioReport_RegionalDistribution" xml:space="preserve">
+    <value>Regionale Verteilung</value>
+  </data>
+  <data name="PortfolioReport_SectorDistribution" xml:space="preserve">
+    <value>Sektorverteilung</value>
+  </data>
+  <data name="PortfolioReport_TopPositions" xml:space="preserve">
+    <value>Top 10 Positionen</value>
+  </data>
+  <data name="PortfolioReport_Th_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="PortfolioReport_Th_MarketValue" xml:space="preserve">
+    <value>Marktwert</value>
+  </data>
+  <data name="PortfolioReport_Th_Share" xml:space="preserve">
+    <value>Anteil</value>
+  </data>
+  <data name="PortfolioReport_Th_UnrealizedGainLoss" xml:space="preserve">
+    <value>Unrealisiert G/V</value>
+  </data>
+  <data name="PortfolioReport_Twr" xml:space="preserve">
+    <value>Zeitgewichtete Rendite (seit Beginn)</value>
+  </data>
+  <data name="PortfolioReport_Ytd" xml:space="preserve">
+    <value>Jahr-zu-Datum</value>
+  </data>
+  <data name="PortfolioReport_AnnualReturns" xml:space="preserve">
+    <value>Jährliche Rendite</value>
+  </data>
+  <data name="PortfolioReport_Th_Year" xml:space="preserve">
+    <value>Jahr</value>
+  </data>
+  <data name="PortfolioReport_Th_Return" xml:space="preserve">
+    <value>Rendite</value>
+  </data>
+  <data name="PortfolioReport_NetDeposits" xml:space="preserve">
+    <value>Netto-Einzahlungen (dieses Jahr)</value>
+  </data>
+  <data name="PortfolioReport_Dividends" xml:space="preserve">
+    <value>Dividenden (dieses Jahr)</value>
+  </data>
+  <data name="PortfolioReport_RealizedGains" xml:space="preserve">
+    <value>Realisierte Gewinne/Verluste (dieses Jahr)</value>
+  </data>
+  <data name="PortfolioReport_LiquidityRatio" xml:space="preserve">
+    <value>Liquiditätsquote</value>
+  </data>
+  <data name="PortfolioReport_Risk_Phase2Hint" xml:space="preserve">
+    <value>Risikokennzahlen sind für eine spätere Phase geplant und werden noch nicht berechnet.</value>
+  </data>
+  <data name="PortfolioReport_Volatility" xml:space="preserve">
+    <value>Volatilität</value>
+  </data>
+  <data name="PortfolioReport_MaxDrawdown" xml:space="preserve">
+    <value>Maximaler Drawdown</value>
+  </data>
+  <data name="PortfolioReport_SharpeRatio" xml:space="preserve">
+    <value>Sharpe Ratio</value>
+  </data>
+  <data name="PortfolioReport_Beta" xml:space="preserve">
+    <value>Beta</value>
+  </data>
+  <data name="PortfolioReport_ValueAtRisk" xml:space="preserve">
+    <value>Value at Risk</value>
+  </data>
   <data name="Dlg_Backfill_Title" xml:space="preserve">
     <value>Kurse nachfüllen</value>
   </data>

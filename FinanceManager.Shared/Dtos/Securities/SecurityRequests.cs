@@ -24,4 +24,10 @@ public sealed class SecurityRequest
     /// Optional parent context used for server-side assignment.
     /// </summary>
     public ParentLinkRequest? Parent { get; set; }
+    /// <summary>Optional region of the security (e.g. "Europa", "Nordamerika"). Max. 255 characters.</summary>
+    [StringLength(255)]
+    public string? Region { get; set; }
+    /// <summary>Optional sector of the security (e.g. "Technologie", "Pharma"). Max. 255 characters.</summary>
+    [StringLength(255)]
+    public string? Sector { get; set; }
 }

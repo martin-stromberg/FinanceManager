@@ -1,0 +1,81 @@
+@using FinanceManager.Shared.Dtos.Portfolio
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
+
+<PortfolioKpiCard Title="@Localizer["PortfolioReport_Tile_Structure"].Value">
+    <div class="portfolio-kpi-row">
+        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_TotalMarketValue"]</span>
+        <span class="portfolio-kpi-value">@Data.TotalMarketValue.ToString("N2")</span>
+    </div>
+    <div class="portfolio-kpi-row">
+        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_InvestedCapital"]</span>
+        <span class="portfolio-kpi-value">@Data.InvestedCapital.ToString("N2")</span>
+    </div>
+    <div class="portfolio-kpi-row">
+        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_UnrealizedGainLoss"]</span>
+        <span class="portfolio-kpi-value @(Data.UnrealizedGainLoss >= 0 ? "positive" : "negative")">@Data.UnrealizedGainLoss.ToString("N2")</span>
+    </div>
+
+    @if (Data.AssetAllocation.Count > 0)
+    {
+        <h4>@Localizer["PortfolioReport_AssetAllocation"]</h4>
+        <ul class="portfolio-distribution-list">
+            @foreach (var slice in Data.AssetAllocation)
+            {
+                <li>@slice.Label: @slice.Value.ToString("N2") (@((slice.Percentage * 100m).ToString("N1"))%)</li>
+            }
+        </ul>
+    }
+
+    @if (Data.RegionalDistribution.Count > 0)
+    {
+        <h4>@Localizer["PortfolioReport_RegionalDistribution"]</h4>
+        <ul class="portfolio-distribution-list">
+            @foreach (var slice in Data.RegionalDistribution)
+            {
+                <li>@slice.Label: @slice.Value.ToString("N2") (@((slice.Percentage * 100m).ToString("N1"))%)</li>
+            }
+        </ul>
+    }
+
+    @if (Data.SectorDistribution.Count > 0)
+    {
+        <h4>@Localizer["PortfolioReport_SectorDistribution"]</h4>
+        <ul class="portfolio-distribution-list">
+            @foreach (var slice in Data.SectorDistribution)
+            {
+                <li>@slice.Label: @slice.Value.ToString("N2") (@((slice.Percentage * 100m).ToString("N1"))%)</li>
+            }
+        </ul>
+    }
+
+    @if (Data.TopPositions.Count > 0)
+    {
+        <h4>@Localizer["PortfolioReport_TopPositions"]</h4>
+        <table class="portfolio-top-positions">
+            <thead>
+                <tr>
+                    <th>@Localizer["PortfolioReport_Th_Name"]</th>
+                    <th>@Localizer["PortfolioReport_Th_MarketValue"]</th>
+                    <th>@Localizer["PortfolioReport_Th_Share"]</th>
+                    <th>@Localizer["PortfolioReport_Th_UnrealizedGainLoss"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var pos in Data.TopPositions)
+                {
+                    <tr>
+                        <td>@pos.Name</td>
+                        <td>@pos.MarketValue.ToString("N2")</td>
+                        <td>@((pos.Percentage * 100m).ToString("N1"))%</td>
+                        <td class="@(pos.UnrealizedGainLoss >= 0 ? "positive" : "negative")">@pos.UnrealizedGainLoss.ToString("N2")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</PortfolioKpiCard>
+
+@code {
+    /// <summary>Portfolio structure data to display.</summary>
+    [Parameter, EditorRequired] public PortfolioStructureDto Data { get; set; } = null!;
+}

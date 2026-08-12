@@ -174,6 +174,15 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
                 false,
                 null,
                 () => { RaiseUiActionRequested("OpenCategories"); return Task.CompletedTask; }
+            ),
+            new UiRibbonAction(
+                "PortfolioAnalysisReport",
+                localizer["Ribbon_PortfolioAnalysisReport"].Value,
+                "<svg><use href='/icons/sprite.svg#chart'/></svg>",
+                UiRibbonItemSize.Small,
+                false,
+                null,
+                () => { _nav.NavigateTo("/portfolio/analysis-report"); return Task.CompletedTask; }
             )
         };
 

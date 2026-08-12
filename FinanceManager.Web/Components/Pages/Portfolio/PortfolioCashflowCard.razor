@@ -1,0 +1,26 @@
+@using FinanceManager.Shared.Dtos.Portfolio
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
+
+<PortfolioKpiCard Title="@Localizer["PortfolioReport_Tile_Cashflow"].Value">
+    <div class="portfolio-kpi-row">
+        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_NetDeposits"]</span>
+        <span class="portfolio-kpi-value">@Data.NetDepositsCurrentYear.ToString("N2")</span>
+    </div>
+    <div class="portfolio-kpi-row">
+        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_Dividends"]</span>
+        <span class="portfolio-kpi-value">@Data.DividendsCurrentYear.ToString("N2")</span>
+    </div>
+    <div class="portfolio-kpi-row">
+        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_RealizedGains"]</span>
+        <span class="portfolio-kpi-value @(Data.RealizedGainsCurrentYear >= 0 ? "positive" : "negative")">@Data.RealizedGainsCurrentYear.ToString("N2")</span>
+    </div>
+    <div class="portfolio-kpi-row">
+        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_LiquidityRatio"]</span>
+        <span class="portfolio-kpi-value">@((Data.LiquidityRatio * 100m).ToString("N1"))%</span>
+    </div>
+</PortfolioKpiCard>
+
+@code {
+    /// <summary>Portfolio cashflow data to display.</summary>
+    [Parameter, EditorRequired] public PortfolioCashflowDto Data { get; set; } = null!;
+}

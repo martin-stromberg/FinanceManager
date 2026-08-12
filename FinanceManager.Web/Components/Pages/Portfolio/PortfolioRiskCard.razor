@@ -1,0 +1,31 @@
+@using FinanceManager.Shared.Dtos.Portfolio
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
+
+<PortfolioKpiCard Title="@Localizer["PortfolioReport_Tile_Risk"].Value">
+    <p class="portfolio-risk-placeholder">@Localizer["PortfolioReport_Risk_Phase2Hint"]</p>
+    <div class="portfolio-kpi-row">
+        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_Volatility"]</span>
+        <span class="portfolio-kpi-value">@(Data.Volatility.HasValue ? (Data.Volatility.Value * 100m).ToString("N2") + "%" : "–")</span>
+    </div>
+    <div class="portfolio-kpi-row">
+        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_MaxDrawdown"]</span>
+        <span class="portfolio-kpi-value">@(Data.MaxDrawdown.HasValue ? (Data.MaxDrawdown.Value * 100m).ToString("N2") + "%" : "–")</span>
+    </div>
+    <div class="portfolio-kpi-row">
+        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_SharpeRatio"]</span>
+        <span class="portfolio-kpi-value">@(Data.SharpeRatio.HasValue ? Data.SharpeRatio.Value.ToString("N2") : "–")</span>
+    </div>
+    <div class="portfolio-kpi-row">
+        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_Beta"]</span>
+        <span class="portfolio-kpi-value">@(Data.Beta.HasValue ? Data.Beta.Value.ToString("N2") : "–")</span>
+    </div>
+    <div class="portfolio-kpi-row">
+        <span class="portfolio-kpi-label">@Localizer["PortfolioReport_ValueAtRisk"]</span>
+        <span class="portfolio-kpi-value">@(Data.ValueAtRisk.HasValue ? Data.ValueAtRisk.Value.ToString("N2") : "–")</span>
+    </div>
+</PortfolioKpiCard>
+
+@code {
+    /// <summary>Portfolio risk data to display (Phase 2 placeholder).</summary>
+    [Parameter, EditorRequired] public PortfolioRiskDto Data { get; set; } = null!;
+}

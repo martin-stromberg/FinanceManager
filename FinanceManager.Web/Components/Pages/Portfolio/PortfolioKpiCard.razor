@@ -1,0 +1,14 @@
+<div class="portfolio-tile">
+    <h3 class="portfolio-tile-title">@Title</h3>
+    <div class="portfolio-tile-body">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    /// <summary>Title displayed in the tile header.</summary>
+    [Parameter] public string Title { get; set; } = string.Empty;
+
+    /// <summary>Tile body content.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

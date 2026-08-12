@@ -5,6 +5,7 @@ using FinanceManager.Domain.Attachments; // new
 using FinanceManager.Domain.Budget;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Notifications; // new
+using FinanceManager.Domain.Portfolio;
 using FinanceManager.Domain.Postings;
 using FinanceManager.Domain.Reports; // added
 using FinanceManager.Domain.Savings;
@@ -82,6 +83,8 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<HomeKpi> HomeKpis => Set<HomeKpi>(); // new
     /// <summary>Cached report data entries.</summary>
     public DbSet<ReportCacheEntry> ReportCacheEntries => Set<ReportCacheEntry>();
+    /// <summary>Per-user portfolio analysis report KPI tile configuration.</summary>
+    public DbSet<PortfolioKpiConfiguration> PortfolioKpiConfigurations => Set<PortfolioKpiConfiguration>();
     /// <summary>IP blocks for rate limiting / security.</summary>
     public DbSet<IpBlock> IpBlocks => Set<IpBlock>(); // new
     /// <summary>Security.txt settings.</summary>
@@ -289,6 +292,8 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.Identifier).HasMaxLength(50).IsRequired();
             b.Property(x => x.CurrencyCode).HasMaxLength(10).IsRequired();
             b.Property(x => x.AlphaVantageCode).HasMaxLength(50);
+            b.Property(x => x.Region).HasMaxLength(255);
+            b.Property(x => x.Sector).HasMaxLength(255);
             b.HasOne<SecurityCategory>()
                 .WithMany()
                 .HasForeignKey(x => x.CategoryId)
@@ -388,6 +393,18 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.CacheValue).IsRequired();
             b.Property(x => x.NeedsRefresh).IsRequired();
             b.Property(x => x.Parameter).HasMaxLength(200).IsRequired();
+            b.Property(x => x.CacheValidUntilUtc);
+        });
+
+        // PortfolioKpiConfiguration
+        modelBuilder.Entity<PortfolioKpiConfiguration>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => x.OwnerUserId).IsUnique();
+            b.Property(x => x.OwnerUserId).IsRequired();
+            b.Property(x => x.ActiveTileIds).IsRequired();
+            b.Property(x => x.TileOrder).IsRequired();
+            b.Property(x => x.UpdatedUtc).IsRequired();
         });
 
         // HomeKpi configuration

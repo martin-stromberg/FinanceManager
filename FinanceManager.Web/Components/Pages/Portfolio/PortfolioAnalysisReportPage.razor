@@ -1,0 +1,148 @@
+@page "/portfolio/analysis-report"
+@rendermode InteractiveServer
+@implements IDisposable
+@using FinanceManager.Shared.Dtos.Portfolio
+@using FinanceManager.Web.Components.Shared
+@using FinanceManager.Web.ViewModels.Portfolio
+@using Microsoft.Extensions.Localization
+@inject IServiceProvider Services
+@inject IStringLocalizer<FinanceManager.Web.Pages> Localizer
+
+<PageTitle>@Localizer["PortfolioReport_Title"]</PageTitle>
+
+@if (_vm == null)
+{
+    <p>@Localizer["PortfolioReport_Loading"]</p>
+    return;
+}
+
+@if (!_vm.IsAuthenticated)
+{
+    <p>@Localizer["PortfolioReport_NotAuthenticated"]</p>
+    return;
+}
+
+<div class="portfolio-report-page">
+    <Ribbon TTabEnum="string" Provider="_vm" Localizer="Localizer" />
+
+    <div class="portfolio-report-header">
+        <h2>@Localizer["PortfolioReport_Title"]</h2>
+    </div>
+
+    @if (_vm.Loading)
+    {
+        <p>@Localizer["PortfolioReport_Loading"]</p>
+    }
+    else if (_vm.IsEditMode && _vm.CurrentConfiguration != null)
+    {
+        <div class="portfolio-edit-mode">
+            <ul class="portfolio-edit-list">
+                @for (int i = 0; i < _editOrder.Count; i++)
+                {
+                    var idx = i;
+                    var tile = _editOrder[idx];
+                    <li class="portfolio-edit-item">
+                        <input type="checkbox" checked="@_editActive.Contains(tile)" @onchange="(e) => ToggleActive(tile, (bool)(e.Value ?? false))" />
+                        <span>@GetTileLabel(tile)</span>
+                        <button type="button" disabled="@(idx == 0)" @onclick="() => MoveTile(idx, -1)">↑</button>
+                        <button type="button" disabled="@(idx == _editOrder.Count - 1)" @onclick="() => MoveTile(idx, 1)">↓</button>
+                    </li>
+                }
+            </ul>
+            <button type="button" @onclick="SaveAsync">@Localizer["PortfolioReport_Save"]</button>
+        </div>
+    }
+    else if (_vm.PortfolioReportData != null && _vm.CurrentConfiguration != null)
+    {
+        <div class="portfolio-tile-grid">
+            @foreach (var tile in _vm.CurrentConfiguration.TileOrder.Where(t => _vm.CurrentConfiguration.ActiveTileIds.Contains(t)))
+            {
+                @if (tile == PortfolioTileId.Structure)
+                {
+                    <PortfolioStructureCard Data="_vm.PortfolioReportData.Structure" />
+                }
+                else if (tile == PortfolioTileId.Performance)
+                {
+                    <PortfolioPerformanceCard Data="_vm.PortfolioReportData.Performance" />
+                }
+                else if (tile == PortfolioTileId.Cashflow)
+                {
+                    <PortfolioCashflowCard Data="_vm.PortfolioReportData.Cashflow" />
+                }
+                else if (tile == PortfolioTileId.Risk)
+                {
+                    <PortfolioRiskCard Data="_vm.PortfolioReportData.Risk" />
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private PortfolioAnalysisReportPageViewModel? _vm;
+    private List<PortfolioTileId> _editOrder = new();
+    private HashSet<PortfolioTileId> _editActive = new();
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        _vm = new PortfolioAnalysisReportPageViewModel(Services);
+        _vm.StateChanged += VmOnStateChanged;
+        await _vm.LoadReportAsync();
+    }
+
+    private void VmOnStateChanged(object? sender, EventArgs e)
+    {
+        if (_vm?.IsEditMode == true && _vm.CurrentConfiguration != null && _editOrder.Count == 0)
+        {
+            _editOrder = _vm.CurrentConfiguration.TileOrder.ToList();
+            _editActive = _vm.CurrentConfiguration.ActiveTileIds.ToHashSet();
+        }
+        if (_vm?.IsEditMode == false)
+        {
+            _editOrder = new List<PortfolioTileId>();
+            _editActive = new HashSet<PortfolioTileId>();
+        }
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        if (_vm != null) { _vm.StateChanged -= VmOnStateChanged; }
+    }
+
+    private void ToggleActive(PortfolioTileId tile, bool isActive)
+    {
+        if (isActive) { _editActive.Add(tile); }
+        else { _editActive.Remove(tile); }
+    }
+
+    private void MoveTile(int index, int delta)
+    {
+        var newIndex = index + delta;
+        if (newIndex < 0 || newIndex >= _editOrder.Count) { return; }
+        (_editOrder[index], _editOrder[newIndex]) = (_editOrder[newIndex], _editOrder[index]);
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_vm == null) { return; }
+
+        var request = new PortfolioKpiConfigurationRequest
+        {
+            ActiveTileIds = _editOrder.Where(t => _editActive.Contains(t)).ToList(),
+            TileOrder = _editOrder
+        };
+
+        await _vm.SaveConfigurationAsync(request);
+    }
+
+    private string GetTileLabel(PortfolioTileId tile) => tile switch
+    {
+        PortfolioTileId.Structure => Localizer["PortfolioReport_Tile_Structure"],
+        PortfolioTileId.Performance => Localizer["PortfolioReport_Tile_Performance"],
+        PortfolioTileId.Cashflow => Localizer["PortfolioReport_Tile_Cashflow"],
+        PortfolioTileId.Risk => Localizer["PortfolioReport_Tile_Risk"],
+        _ => tile.ToString()
+    };
+}
