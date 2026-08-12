@@ -46,11 +46,12 @@ namespace FinanceManager.Infrastructure.Data.Migrations.Identity
                 type: "TEXT",
                 nullable: true);
 
-            migrationBuilder.AddColumn<Guid>(
-                name: "SymbolAttachmentId",
-                table: "AspNetUsers",
-                type: "TEXT",
-                nullable: true);
+            // SymbolAttachmentId on AspNetUsers is already created by FixUserImportSplitSettings.
+            // migrationBuilder.AddColumn<Guid>(
+            //     name: "SymbolAttachmentId",
+            //     table: "AspNetUsers",
+            //     type: "TEXT",
+            //     nullable: true);
         }
 
         /// <inheritdoc />
@@ -80,9 +81,10 @@ namespace FinanceManager.Infrastructure.Data.Migrations.Identity
                 name: "SymbolAttachmentId",
                 table: "ContactCategories");
 
-            migrationBuilder.DropColumn(
-                name: "SymbolAttachmentId",
-                table: "AspNetUsers");
+            // SymbolAttachmentId on AspNetUsers is kept by FixUserImportSplitSettings.
+            // migrationBuilder.DropColumn(
+            //     name: "SymbolAttachmentId",
+            //     table: "AspNetUsers");
         }
     }
 }
