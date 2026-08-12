@@ -90,11 +90,17 @@ Kennzahlen mit einer sinnvollen Herleitung (z. B. Gesamtmarktwert, investiertes
 Kapital, unrealisierter Gewinn/Verlust, TWR, YTD-Rendite, Netto-Einzahlungen,
 Dividenden) binden zusätzlich `KpiInfoButton` ein: Ein Info-Button öffnet ein
 Overlay-Panel (`role="dialog"`) mit der Erklärung als Text, Formel oder
-Tabelle. Die Erklärung zum Gesamtmarktwert nutzt das DTO-Feld `AllPositions`
-und zeigt alle Positionen in einem scrollbaren Container (`.kpi-explanation-scroll`),
-bei Überschreitung von 200 Einträgen mit „und N weitere"-Hinweis. Die Erklärung
-zum investierten Kapital nutzt `InvestedCapitalBreakdown` und zeigt je Wertpapier
-ein Akkordeon-Element (`<details>/<summary>`) mit den zugehörigen FIFO-Lots,
+Tabelle. Die Erklärungen zum Gesamtmarktwert und zum unrealisierten
+Gewinn/Verlust nutzen beide das DTO-Feld `AllPositions` und die gemeinsame
+Komponente `PositionsExplanationTable` (Positionsliste mit Marktwert bzw.
+Gewinn/Verlust je Position, optional farblich hervorgehoben über
+`ColorizePositiveNegative`) in einem scrollbaren Container
+(`.kpi-explanation-scroll`), bei Überschreitung von 200 Einträgen mit „und N
+weitere"-Hinweis. Die Top-Positionen-Tabelle in der Kachel selbst zeigt nur
+noch Name, Marktwert und Anteil — die unrealisierten Gewinne/Verluste sind
+ausschließlich in der Erklärung verfügbar. Die Erklärung zum investierten
+Kapital nutzt `InvestedCapitalBreakdown` und zeigt je Wertpapier ein
+Akkordeon-Element (`<details>/<summary>`) mit den zugehörigen FIFO-Lots,
 ebenfalls gedeckelt auf 200 Einträge.
 
 ### 4. Konfiguration bearbeiten (Edit-Mode)

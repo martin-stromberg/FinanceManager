@@ -1,0 +1,63 @@
+@using FinanceManager.Shared.Dtos.Portfolio
+
+<div class="kpi-explanation-scroll">
+    <table class="fm-table kpi-explanation-table">
+        <thead>
+            <tr>
+                <th>@NameColumnHeader</th>
+                <th>@ValueColumnHeader</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var pos in Positions.Take(MaxListEntries))
+            {
+                var value = ValueSelector(pos);
+                <tr>
+                    <td>@pos.Name</td>
+                    <td class="@ColorClass(value)">@value.ToString("N2")</td>
+                </tr>
+            }
+            @if (Positions.Count > MaxListEntries)
+            {
+                <tr class="kpi-explanation-more">
+                    <td colspan="2">@MoreEntriesText(Positions.Count - MaxListEntries)</td>
+                </tr>
+            }
+            <tr class="kpi-explanation-total">
+                <td>@TotalLabel</td>
+                <td class="@ColorClass(TotalValue)">@TotalValue.ToString("N2")</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+@code {
+    /// <summary>Positions to list; only the first <see cref="MaxListEntries"/> are rendered as rows.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<PortfolioTopPosition> Positions { get; set; } = Array.Empty<PortfolioTopPosition>();
+
+    /// <summary>Hard limit for rendered position rows, to bound payload/DOM size for extreme portfolios.</summary>
+    [Parameter] public int MaxListEntries { get; set; } = 200;
+
+    /// <summary>Header text for the name column.</summary>
+    [Parameter, EditorRequired] public string NameColumnHeader { get; set; } = string.Empty;
+
+    /// <summary>Header text for the value column.</summary>
+    [Parameter, EditorRequired] public string ValueColumnHeader { get; set; } = string.Empty;
+
+    /// <summary>Selects the value shown per position and used to derive the total row's colorization.</summary>
+    [Parameter, EditorRequired] public Func<PortfolioTopPosition, decimal> ValueSelector { get; set; } = _ => 0m;
+
+    /// <summary>Label shown in the total row.</summary>
+    [Parameter, EditorRequired] public string TotalLabel { get; set; } = string.Empty;
+
+    /// <summary>Value shown in the total row.</summary>
+    [Parameter, EditorRequired] public decimal TotalValue { get; set; }
+
+    /// <summary>When true, values are colorized with the "positive"/"negative" CSS class depending on their sign.</summary>
+    [Parameter] public bool ColorizePositiveNegative { get; set; }
+
+    /// <summary>Formats the "and N more" row's text for the given count of omitted positions.</summary>
+    [Parameter, EditorRequired] public Func<int, string> MoreEntriesText { get; set; } = _ => string.Empty;
+
+    private string? ColorClass(decimal value) => ColorizePositiveNegative ? (value >= 0 ? "positive" : "negative") : null;
+}

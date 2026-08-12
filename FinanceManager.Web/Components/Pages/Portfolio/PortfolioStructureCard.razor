@@ -16,35 +16,14 @@
             <span class="portfolio-kpi-label">@Localizer["PortfolioReport_TotalMarketValue"]</span>
             <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_TotalMarketValue_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
                 <p>@Localizer["PortfolioReport_Explain_TotalMarketValue_Intro"]</p>
-                <div class="kpi-explanation-scroll">
-                    <table class="fm-table kpi-explanation-table">
-                        <thead>
-                            <tr>
-                                <th>@Localizer["PortfolioReport_Th_Name"]</th>
-                                <th>@Localizer["PortfolioReport_Th_MarketValue"]</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var pos in Data.AllPositions.Take(MaxListEntries))
-                            {
-                                <tr>
-                                    <td>@pos.Name</td>
-                                    <td>@pos.MarketValue.ToString("N2")</td>
-                                </tr>
-                            }
-                            @if (Data.AllPositions.Count > MaxListEntries)
-                            {
-                                <tr class="kpi-explanation-more">
-                                    <td colspan="2">@Localizer["PortfolioReport_Explain_MoreEntries", Data.AllPositions.Count - MaxListEntries]</td>
-                                </tr>
-                            }
-                            <tr class="kpi-explanation-total">
-                                <td>@Localizer["PortfolioReport_TotalMarketValue"]</td>
-                                <td>@Data.TotalMarketValue.ToString("N2")</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <PositionsExplanationTable Positions="@Data.AllPositions"
+                                            MaxListEntries="MaxListEntries"
+                                            NameColumnHeader="@Localizer["PortfolioReport_Th_Name"].Value"
+                                            ValueColumnHeader="@Localizer["PortfolioReport_Th_MarketValue"].Value"
+                                            ValueSelector="@(pos => pos.MarketValue)"
+                                            TotalLabel="@Localizer["PortfolioReport_TotalMarketValue"].Value"
+                                            TotalValue="Data.TotalMarketValue"
+                                            MoreEntriesText="@(n => Localizer["PortfolioReport_Explain_MoreEntries", n].Value)" />
             </KpiInfoButton>
         </span>
         <span class="portfolio-kpi-value">@Data.TotalMarketValue.ToString("N2")</span>
@@ -112,6 +91,18 @@
                     @Localizer["PortfolioReport_InvestedCapital"]: −@Data.InvestedCapital.ToString("N2")<br />
                     <strong>@Localizer["PortfolioReport_UnrealizedGainLoss"]: @Data.UnrealizedGainLoss.ToString("N2")</strong>
                 </p>
+                @if (Data.AllPositions.Count > 0)
+                {
+                    <PositionsExplanationTable Positions="@Data.AllPositions"
+                                                MaxListEntries="MaxListEntries"
+                                                NameColumnHeader="@Localizer["PortfolioReport_Th_Name"].Value"
+                                                ValueColumnHeader="@Localizer["PortfolioReport_Th_UnrealizedGainLoss"].Value"
+                                                ValueSelector="@(pos => pos.UnrealizedGainLoss)"
+                                                TotalLabel="@Localizer["PortfolioReport_UnrealizedGainLoss"].Value"
+                                                TotalValue="Data.UnrealizedGainLoss"
+                                                ColorizePositiveNegative="true"
+                                                MoreEntriesText="@(n => Localizer["PortfolioReport_Explain_MoreEntries", n].Value)" />
+                }
             </KpiInfoButton>
         </span>
         <span class="portfolio-kpi-value @(Data.UnrealizedGainLoss >= 0 ? "positive" : "negative")">@Data.UnrealizedGainLoss.ToString("N2")</span>
@@ -149,7 +140,6 @@
                         <th>@Localizer["PortfolioReport_Th_Name"]</th>
                         <th>@Localizer["PortfolioReport_Th_MarketValue"]</th>
                         <th>@Localizer["PortfolioReport_Th_Share"]</th>
-                        <th>@Localizer["PortfolioReport_Th_UnrealizedGainLoss"]</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -159,7 +149,6 @@
                             <td>@pos.Name</td>
                             <td>@pos.MarketValue.ToString("N2")</td>
                             <td>@((pos.Percentage * 100m).ToString("N1"))%</td>
-                            <td class="@(pos.UnrealizedGainLoss >= 0 ? "positive" : "negative")">@pos.UnrealizedGainLoss.ToString("N2")</td>
                         </tr>
                     }
                 </tbody>

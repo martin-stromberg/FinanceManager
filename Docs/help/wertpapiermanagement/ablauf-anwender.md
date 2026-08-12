@@ -38,7 +38,7 @@ kombiniert eine grafische Darstellung mit den zugehörigen Kennzahlen:
 - **Depotstruktur** — ein Ringdiagramm der Asset Allocation mit dem
   Gesamtmarktwert im Zentrum, dazu Gesamtmarktwert, investiertes Kapital,
   unrealisierte Gewinne/Verluste, regionale Verteilung, Sektorverteilung und
-  die zehn größten Positionen.
+  die zehn größten Positionen (Name, Marktwert, Anteil).
 - **Performance** — ein Balkendiagramm der jährlichen Renditen (das laufende,
   noch nicht abgeschlossene Jahr ist mit "*" markiert und per Fußnote
   erläutert), dazu die zeitgewichtete Rendite seit Beginn und die Rendite
@@ -64,6 +64,11 @@ Neben vielen Kennzahlen steht ein Info-Symbol (Fragezeichen). Ein Klick
   FIFO-Kauf-Lots (Kaufdatum, Menge, Kosten pro Einheit, Gesamtkosten)
   anzuzeigen. Bei mehr als 200 Lots wird ein „und N weitere"-Hinweis
   angezeigt.
+- **Unrealisierte Gewinne/Verluste:** Zeigt, wie beim Gesamtmarktwert, eine
+  vollständige, sortierte Liste aller Positionen — hier mit dem
+  unrealisierten Gewinn/Verlust je Position statt dem Marktwert, farblich
+  hervorgehoben (grün/rot). Bei mehr als 200 Positionen wird ein „und N
+  weitere"-Hinweis angezeigt.
 
 Das Panel wird über den "Schließen"-Button, per Klick außerhalb oder per
 Tastatur wieder geschlossen.
