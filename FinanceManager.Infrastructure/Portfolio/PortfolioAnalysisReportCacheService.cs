@@ -15,6 +15,14 @@ public sealed class PortfolioAnalysisReportCacheService : IPortfolioAnalysisRepo
 {
     private const string CacheKeyPrefix = "portfolio-analysis-report";
 
+    /// <summary>
+    /// Version of the <see cref="PortfolioAnalysisReportDto"/> shape written to <see cref="Domain.Reports.ReportCacheEntry.Parameter"/>.
+    /// Bump this whenever the DTO gains/loses non-nullable members, so cache entries serialized under an older
+    /// shape are treated as a miss instead of being deserialized into a partially-null DTO (missing JSON
+    /// properties deserialize to <c>null</c> for reference-typed record parameters, even when declared non-nullable).
+    /// </summary>
+    private const string CacheSchemaVersion = "2";
+
     private readonly AppDbContext _db;
     private readonly IPortfolioAnalysisReportService _service;
 
@@ -38,7 +46,8 @@ public sealed class PortfolioAnalysisReportCacheService : IPortfolioAnalysisRepo
         var entry = await _db.ReportCacheEntries
             .FirstOrDefaultAsync(e => e.OwnerUserId == ownerUserId && e.CacheKey == key, ct);
 
-        if (entry != null && !entry.NeedsRefresh && entry.CacheValidUntilUtc.HasValue && entry.CacheValidUntilUtc.Value >= now)
+        if (entry != null && !entry.NeedsRefresh && entry.CacheValidUntilUtc.HasValue && entry.CacheValidUntilUtc.Value >= now
+            && entry.Parameter == CacheSchemaVersion)
         {
             var cached = JsonSerializer.Deserialize<PortfolioAnalysisReportDto>(entry.CacheValue);
             if (cached != null) { return cached; }
@@ -50,12 +59,12 @@ public sealed class PortfolioAnalysisReportCacheService : IPortfolioAnalysisRepo
 
         if (entry == null)
         {
-            entry = new ReportCacheEntry(ownerUserId, key, json, parameter: null, needsRefresh: false, cacheValidUntilUtc: validUntil);
+            entry = new ReportCacheEntry(ownerUserId, key, json, parameter: CacheSchemaVersion, needsRefresh: false, cacheValidUntilUtc: validUntil);
             _db.ReportCacheEntries.Add(entry);
         }
         else
         {
-            entry.Update(json, parameter: null, needsRefresh: false, cacheValidUntilUtc: validUntil);
+            entry.Update(json, parameter: CacheSchemaVersion, needsRefresh: false, cacheValidUntilUtc: validUntil);
         }
 
         await _db.SaveChangesAsync(ct);

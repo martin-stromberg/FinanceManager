@@ -83,6 +83,36 @@ public sealed class PortfolioAnalysisReportCacheServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task CacheHit_EntryFromOlderDtoSchema_TreatedAsMissAndRecalculated()
+    {
+        // Simulates a cache entry written before PortfolioStructureDto gained AllPositions/InvestedCapitalBreakdown:
+        // its JSON lacks those properties, so deserializing it directly would yield null for non-nullable
+        // record members. The cache service must recompute instead of returning that partially-null DTO.
+        var userId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+        var validUntil = PortfolioAnalysisReportService.EndOfMonthUtc(now);
+
+        var entry = new Domain.Reports.ReportCacheEntry(
+            userId,
+            $"portfolio-analysis-report-{userId:N}",
+            System.Text.Json.JsonSerializer.Serialize(CreateReport(500m, now, validUntil)),
+            parameter: null,
+            needsRefresh: false,
+            cacheValidUntilUtc: validUntil);
+        _db.ReportCacheEntries.Add(entry);
+        await _db.SaveChangesAsync();
+
+        var freshReport = CreateReport(999m, now, validUntil);
+        _serviceMock.Setup(s => s.GetPortfolioAnalysisReportAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(freshReport);
+
+        var result = await _sut.GetPortfolioReportAsync(userId, CancellationToken.None);
+
+        result.Structure.TotalMarketValue.Should().Be(999m);
+        _serviceMock.Verify(s => s.GetPortfolioAnalysisReportAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task InvalidateCache_AfterPostingUpdate_DeletesCacheEntry()
     {
         var userId = Guid.NewGuid();
