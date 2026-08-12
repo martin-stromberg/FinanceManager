@@ -10,20 +10,21 @@ namespace FinanceManager.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<short>(
-                name: "MassImportDialogPolicy",
-                table: "AspNetUsers",
-                type: "INTEGER",
-                nullable: false,
-                defaultValue: (short)1);
+            // MassImportDialogPolicy on AspNetUsers is created by FixUserImportSplitSettings.
+            // migrationBuilder.AddColumn<short>(
+            //     name: "MassImportDialogPolicy",
+            //     table: "AspNetUsers",
+            //     type: "INTEGER",
+            //     nullable: false,
+            //     defaultValue: (short)1);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "MassImportDialogPolicy",
-                table: "AspNetUsers");
+            // migrationBuilder.DropColumn(
+            //     name: "MassImportDialogPolicy",
+            //     table: "AspNetUsers");
         }
     }
 }
