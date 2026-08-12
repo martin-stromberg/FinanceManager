@@ -801,9 +801,6 @@
   <data name="PortfolioReport_RealizedGains" xml:space="preserve">
     <value>Realisierte Gewinne/Verluste (dieses Jahr)</value>
   </data>
-  <data name="PortfolioReport_LiquidityRatio" xml:space="preserve">
-    <value>Liquiditätsquote</value>
-  </data>
   <data name="PortfolioReport_Risk_Phase2Hint" xml:space="preserve">
     <value>Risikokennzahlen sind für eine spätere Phase geplant und werden noch nicht berechnet.</value>
   </data>
@@ -878,12 +875,6 @@
   </data>
   <data name="PortfolioReport_Explain_RealizedGains_Text" xml:space="preserve">
     <value>Realisierte Gewinne/Verluste dieses Jahr = FIFO-realisierte Gewinne bis heute abzüglich der FIFO-realisierten Gewinne bis zum Ende des Vorjahres, also die durch Verkäufe im laufenden Jahr festgeschriebenen Gewinne/Verluste.</value>
-  </data>
-  <data name="PortfolioReport_Explain_LiquidityRatio_Title" xml:space="preserve">
-    <value>Warum die Liquiditätsquote 0 % beträgt</value>
-  </data>
-  <data name="PortfolioReport_Explain_LiquidityRatio_Text" xml:space="preserve">
-    <value>Die Liquiditätsquote setzt nicht investiertes Guthaben ins Verhältnis zum Gesamtwert des Depots. Sie kann noch nicht berechnet werden, da Kontostände nicht mit dem Depot-Bestandsmodell verknüpft sind, und wird daher stets als 0 % ausgewiesen (dokumentierte Einschränkung, geplante Erweiterung).</value>
   </data>
   <data name="PortfolioReport_Explain_Volatility_Title" xml:space="preserve">
     <value>Was Volatilität bedeutet</value>

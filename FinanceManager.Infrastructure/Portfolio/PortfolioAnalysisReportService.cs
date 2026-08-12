@@ -367,7 +367,7 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
     {
         if (positions.Count == 0)
         {
-            return new PortfolioCashflowDto(0m, 0m, 0m, 0m);
+            return new PortfolioCashflowDto(0m, 0m, 0m);
         }
 
         int currentYear = DateTime.UtcNow.Year;
@@ -393,11 +393,6 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
             realizedGains += p.Fifo.RealizedGains - realizedBeforeYear;
         }
 
-        // LiquidityRatio (Cash / total portfolio value) requires cash account balances that are not linked
-        // to the portfolio holdings model in this implementation. Left at 0 as a documented Phase 1 limitation
-        // (see PortfolioCashflowDto.LiquidityRatio).
-        const decimal liquidityRatio = 0m;
-
-        return new PortfolioCashflowDto(netDeposits, dividends, realizedGains, liquidityRatio);
+        return new PortfolioCashflowDto(netDeposits, dividends, realizedGains);
     }
 }

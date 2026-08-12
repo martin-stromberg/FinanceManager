@@ -35,7 +35,7 @@ Einzelpositionen samt Marktwert auf:
   alle Jahre) seit dem ersten Wertpapiergeschäft, Jahr-zu-Datum-Rendite sowie
   jährliche Renditen.
 - **Cashflow** — Netto-Einzahlungen, Dividenden und realisierte
-  Gewinne/Verluste des laufenden Jahres sowie eine Liquiditätsquote.
+  Gewinne/Verluste des laufenden Jahres.
 - **Risikoanalyse** — als Kachel bereits vorhanden, die eigentlichen
   Kennzahlen (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk)
   sind für eine spätere Phase vorgesehen und werden aktuell nicht berechnet
@@ -83,9 +83,6 @@ nach dem Speichern der Kachel-Konfiguration.
 - Die Risikoanalyse-Kachel des Depot-Analyseberichts liefert noch keine
   Werte (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk sind
   `null`); sie ist als Platzhalter für eine spätere Phase angelegt.
-- Die Liquiditätsquote im Cashflow-Bereich ist konstant `0`, da
-  Kontostand-Daten im Depot-Analysebericht noch nicht mit den
-  Wertpapierbeständen verknüpft sind.
 - Der Berichts-Cache wird bei Kursänderungen und bei der Stornierung von
   Wertpapierbuchungen automatisch invalidiert; das Anlegen oder Bearbeiten
   einzelner Wertpapierbuchungen (ohne Stornierung) löst noch keine

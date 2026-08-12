@@ -44,8 +44,7 @@ kombiniert eine grafische Darstellung mit den zugehörigen Kennzahlen:
   erläutert), dazu die zeitgewichtete Rendite seit Beginn und die Rendite
   Jahr-zu-Datum.
 - **Cashflow** — ein Balkendiagramm mit Netto-Einzahlungen, Dividenden und
-  realisierten Gewinnen/Verlusten des laufenden Jahres sowie die
-  Liquiditätsquote.
+  realisierten Gewinnen/Verlusten des laufenden Jahres.
 - **Risikoanalyse** — zeigt aktuell einen Hinweis, dass Risikokennzahlen
   (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk) für eine
   spätere Ausbaustufe geplant sind.

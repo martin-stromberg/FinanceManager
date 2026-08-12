@@ -34,15 +34,6 @@
         </span>
         <span class="portfolio-kpi-value @(Data.RealizedGainsCurrentYear >= 0 ? "positive" : "negative")">@Data.RealizedGainsCurrentYear.ToString("N2")</span>
     </div>
-    <div class="portfolio-kpi-row">
-        <span class="portfolio-kpi-label-wrap">
-            <span class="portfolio-kpi-label">@Localizer["PortfolioReport_LiquidityRatio"]</span>
-            <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_LiquidityRatio_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
-                <p>@Localizer["PortfolioReport_Explain_LiquidityRatio_Text"]</p>
-            </KpiInfoButton>
-        </span>
-        <span class="portfolio-kpi-value">@((Data.LiquidityRatio * 100m).ToString("N1"))%</span>
-    </div>
 </PortfolioKpiCard>
 
 @code {

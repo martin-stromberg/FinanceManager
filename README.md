@@ -283,7 +283,7 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md), insbesondere:
 - Kachel-Konfiguration (Sichtbarkeit/Reihenfolge) pro Benutzer sowie monatlicher Berichts-Cache mit automatischer Invalidierung
 - `Region`/`Sector` Wertpapierfelder sind jetzt über die Wertpapier-Bearbeitungsmaske pflegbar (200er-Kappung bei Positionen/Lots im Bericht)
 - UI-Verbesserungen: Tabellen-Overflow behoben, volle Seitenbreite genutzt, Speichern-Button im Editiermodus ins Ribbon-Menü verschoben
-- Offen für Phase 2: Risikoanalyse-Kennzahlen (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk), Liquiditätsquote auf Basis echter Kontostände sowie automatische Cache-Invalidierung bei einzelnen Wertpapierbuchungen ohne Stornierung
+- Offen für Phase 2: Risikoanalyse-Kennzahlen (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk) sowie automatische Cache-Invalidierung bei einzelnen Wertpapierbuchungen ohne Stornierung; Liquiditätsquote entfernt (#301), da nicht sinnvoll berechenbar ohne Kontostand-Verknüpfung
 
 **Issue #224 – Update-Einstellungen vereinheitlichen** ✓ Abgeschlossen
 - Technische Update-Konfiguration aus der Admin-UI entfernt und serverseitig normalisiert

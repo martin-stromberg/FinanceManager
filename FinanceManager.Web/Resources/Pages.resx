@@ -801,9 +801,6 @@
   <data name="PortfolioReport_RealizedGains" xml:space="preserve">
     <value>Realized gains/losses (this year)</value>
   </data>
-  <data name="PortfolioReport_LiquidityRatio" xml:space="preserve">
-    <value>Liquidity ratio</value>
-  </data>
   <data name="PortfolioReport_Risk_Phase2Hint" xml:space="preserve">
     <value>Risk metrics are planned for a future phase and are not yet calculated.</value>
   </data>
@@ -878,12 +875,6 @@
   </data>
   <data name="PortfolioReport_Explain_RealizedGains_Text" xml:space="preserve">
     <value>Realized gains/losses this year = FIFO realized gains up to today minus the FIFO realized gains up to the end of last year, i.e. the gains/losses locked in by sell transactions executed within the current year.</value>
-  </data>
-  <data name="PortfolioReport_Explain_LiquidityRatio_Title" xml:space="preserve">
-    <value>Why the liquidity ratio is 0%</value>
-  </data>
-  <data name="PortfolioReport_Explain_LiquidityRatio_Text" xml:space="preserve">
-    <value>The liquidity ratio relates uninvested cash to the total portfolio value. It cannot be calculated yet because cash account balances are not linked to the portfolio holdings model, so it is always shown as 0% (documented limitation, planned enhancement).</value>
   </data>
   <data name="PortfolioReport_Explain_Volatility_Title" xml:space="preserve">
     <value>What volatility means</value>

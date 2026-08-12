@@ -56,8 +56,7 @@ Beteiligte Komponenten:
     Gesamtrendite seit Beginn.
   - `BuildCashflow` summiert Käufe/Verkäufe/Dividenden des laufenden Jahres
     sowie realisierte Gewinne (Differenz der FIFO-Ergebnisse mit/ohne
-    Transaktionen vor Jahresbeginn). Die Liquiditätsquote ist in Phase 1
-    konstant `0`.
+    Transaktionen vor Jahresbeginn).
   - `Risk` wird als `PortfolioRiskDto` mit ausschließlich `null`-Werten
     zurückgegeben (Platzhalter für Phase 2).
   - `CacheValidUntilUtc` wird auf das Monatsende (`EndOfMonthUtc`) gesetzt.
