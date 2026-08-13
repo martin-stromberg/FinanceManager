@@ -14,7 +14,7 @@ namespace FinanceManager.Tests.Updates;
 public sealed class UpdateOrchestratorAdapterLockAndScheduleTests
 {
     [Fact]
-    public async Task ResetLockAsync_WhenNoLockActive_ThrowsIOException()
+    public async Task ResetLockAsync_WhenNoLockActive_ThrowsTypedNoLock()
     {
         var packageStore = new Mock<IAutoUpdatePackageStore>();
         packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync((DateTimeOffset?)null);
@@ -22,22 +22,79 @@ public sealed class UpdateOrchestratorAdapterLockAndScheduleTests
 
         var act = () => adapter.ResetLockAsync("reason");
 
-        await act.Should().ThrowAsync<IOException>();
+        var exception = await act.Should().ThrowAsync<UpdateLockResetException>();
+        exception.Which.Kind.Should().Be(UpdateLockResetFailureKind.NoLock);
+        exception.Which.FailureSource.Should().Be(UpdateLockResetFailureSource.FinanceManager);
         packageStore.Verify(s => s.DeleteLockAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task ResetLockAsync_WhenLockNotStale_ThrowsIOExceptionAndKeepsLock()
+    public async Task ResetLockAsync_WhenLockNotStale_ThrowsTypedLockNotStale()
     {
+        var lockCreatedAt = DateTimeOffset.UtcNow;
         var packageStore = new Mock<IAutoUpdatePackageStore>();
-        packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync(DateTimeOffset.UtcNow);
-        packageStore.Setup(s => s.IsLockStale(It.IsAny<DateTimeOffset>())).Returns(false);
+        packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync(lockCreatedAt);
+        packageStore.Setup(s => s.IsLockStale(lockCreatedAt)).Returns(false);
         var adapter = UpdateOrchestratorAdapterTestFactory.Create(packageStore: packageStore.Object);
 
         var act = () => adapter.ResetLockAsync("reason");
 
-        await act.Should().ThrowAsync<IOException>();
+        var exception = await act.Should().ThrowAsync<UpdateLockResetException>();
+        exception.Which.Kind.Should().Be(UpdateLockResetFailureKind.LockNotStale);
+        exception.Which.LockCreatedAt.Should().Be(lockCreatedAt);
         packageStore.Verify(s => s.DeleteLockAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ResetLockAsync_WhenDeleteReturnsFalse_ThrowsTypedLockDeleteFailed()
+    {
+        var lockCreatedAt = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(200);
+        var packageStore = new Mock<IAutoUpdatePackageStore>();
+        packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync(lockCreatedAt);
+        packageStore.Setup(s => s.IsLockStale(lockCreatedAt)).Returns(true);
+        packageStore.Setup(s => s.DeleteLockAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        var adapter = UpdateOrchestratorAdapterTestFactory.Create(packageStore: packageStore.Object);
+
+        var act = () => adapter.ResetLockAsync("reason");
+
+        var exception = await act.Should().ThrowAsync<UpdateLockResetException>();
+        exception.Which.Kind.Should().Be(UpdateLockResetFailureKind.LockDeleteFailed);
+        exception.Which.FailureSource.Should().Be(UpdateLockResetFailureSource.FinanceManager);
+    }
+
+    [Fact]
+    public async Task ResetLockAsync_WhenDeleteThrowsIOException_ThrowsTypedLockDeleteFailed()
+    {
+        var lockCreatedAt = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(200);
+        var ioException = new IOException("delete failed");
+        var packageStore = new Mock<IAutoUpdatePackageStore>();
+        packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync(lockCreatedAt);
+        packageStore.Setup(s => s.IsLockStale(lockCreatedAt)).Returns(true);
+        packageStore.Setup(s => s.DeleteLockAsync(It.IsAny<CancellationToken>())).ThrowsAsync(ioException);
+        var adapter = UpdateOrchestratorAdapterTestFactory.Create(packageStore: packageStore.Object);
+
+        var act = () => adapter.ResetLockAsync("reason");
+
+        var exception = await act.Should().ThrowAsync<UpdateLockResetException>();
+        exception.Which.Kind.Should().Be(UpdateLockResetFailureKind.LockDeleteFailed);
+        exception.Which.FailureSource.Should().Be(UpdateLockResetFailureSource.Updater);
+        exception.Which.InnerException.Should().BeSameAs(ioException);
+    }
+
+    [Fact]
+    public async Task ResetLockAsync_WhenGetLockCreatedAtThrowsIOException_ThrowsTypedResetFailed()
+    {
+        var ioException = new IOException("read failed");
+        var packageStore = new Mock<IAutoUpdatePackageStore>();
+        packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ThrowsAsync(ioException);
+        var adapter = UpdateOrchestratorAdapterTestFactory.Create(packageStore: packageStore.Object);
+
+        var act = () => adapter.ResetLockAsync("reason");
+
+        var exception = await act.Should().ThrowAsync<UpdateLockResetException>();
+        exception.Which.Kind.Should().Be(UpdateLockResetFailureKind.ResetFailed);
+        exception.Which.FailureSource.Should().Be(UpdateLockResetFailureSource.Updater);
+        exception.Which.InnerException.Should().BeSameAs(ioException);
     }
 
     [Fact]

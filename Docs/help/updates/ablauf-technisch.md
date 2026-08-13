@@ -72,6 +72,33 @@ Das Update-System prüft GitHub-Releases regelmäßig, lädt neue Versionen heru
 ```
 (Erste Zeile: ISO-8601-UTC-Zeitstempel)
 
+### 2b. Post-Installation Lock-Cleanup-Validierung (nach `_orchestrator.InstallAsync()`)
+
+**Voraussetzung:** Installation hat erfolgreich abgeschlossen (Outcome != Failed)
+
+**Beteiligte Komponenten:**
+- `UpdateOrchestratorAdapter.ValidateLockCleanupAsync()` — private Methode zur Lock-Cleanup-Validierung
+- `IAutoUpdatePackageStore.GetLockCreatedAtAsync()` — prüft Lock-Existenz
+
+**Ablauf:**
+1. Nach erfolgreichem `_orchestrator.InstallAsync(confirmDowntime, ct)` (Library führt Installation durch)
+2. Ruft `ValidateLockCleanupAsync(ct)` auf
+3. Diese Methode prüft: `GetLockCreatedAtAsync()` → sollte `null` sein (Lock gelöscht)
+4. Falls Lock immer noch vorhanden (nicht null):
+   - Loggt Warning: "Lock was not cleaned up after installation. LockCreatedAt: {LockCreatedAt}"
+   - Wirft KEINE Exception — Cleanup-Fehler sind nicht kritisch für die Installation
+5. Falls Lock gelöscht:
+   - Nichts zu tun, Installation fortfahren
+
+**Beispiel (Lock nicht gelöscht):**
+```
+INFO: Installation erfolgreich abgeschlossen (Outcome = Success)
+WARN: Lock was not cleaned up after installation. LockCreatedAt: 2026-07-20T14:30:00Z
+→ Status wird dennoch auf "NoUpdate" oder "Ready" gesetzt, Installation als erfolgreich berichtet
+```
+
+Diese Validierung ist eine Sicherheitsmaßnahme: Falls das Installer-Skript aus Berechtigungsgründen (z. B. auf Linux) die Lock-Datei nicht löschen konnte, wird dies protokolliert. Der Administrator kann danach bei Bedarf manuell über "Update-Lock zurücksetzen" aufräumen.
+
 ### 3. Installation läuft (asynchron)
 
 Das Installer-Skript wird durch systemd-run als eigenständige transient service unit ausgeführt. Der Host-Prozess ist zu diesem Zeitpunkt bereits beendet.
@@ -118,13 +145,21 @@ Resultat:    {Status: Failed, LastError: "Err_Update_VersionMismatch"}
 ```
 
 
-### 5. Lock-Reset (Verweigerung und Staleness-Prüfung)
+### 5. Lock-Reset (klassifizierte Verweigerung und Staleness-Prüfung)
 
 **Einstiegspunkt:** `UpdateOrchestrator.ResetLockAsync(reason: string?)`
 
-**Verweigerungsbedingungen:**
-- `_executor.IsInstallRunning == true` → `IOException` mit `Err_Update_InstallRunning`
-- Kein Lock vorhanden → `IOException` mit `No update lock is active.`
+**Fehlervertrag:**
+`UpdateOrchestratorAdapter.ResetLockAsync` wirft für kontrollierte Reset-Fehler eine `UpdateLockResetException`. Die Exception enthält `Kind`, `FailureSource`, optional `LockCreatedAt`, optional `LockPath` und die technische Ursache als Inner Exception. Der Controller mappt diese Typisierung auf lokalisierte API-Fehlercodes.
+
+| Fehlerart | API-Code | HTTP | Typische Ursache |
+|-----------|----------|------|------------------|
+| `NoLock` | `Err_Update_Reset_NoLock` | 409 | Es ist kein aktiver Lock vorhanden |
+| `LockNotStale` | `Err_Update_Reset_LockNotStale` | 409 | Der Lock ist jünger als die Staleness-Schwelle |
+| `LockDeleteFailed` | `Err_Update_Reset_DeleteFailed` | 409 | `DeleteLockAsync` gibt `false` zurück oder die Lock-Datei kann wegen I/O-/Zugriffsfehlern nicht gelöscht werden |
+| `ResetFailed` | `Err_Update_Reset_Failed` | 500 | Sonstiger technischer Fehler beim Lesen, Prüfen oder Aktualisieren des Reset-Zustands |
+
+Klassifizierte Reset-Fehler werden nicht mehr auf `Err_Update_InstallRunning` gemappt. Dieser Code bleibt Situationen vorbehalten, in denen die Anwendung tatsächlich eine laufende Update-Installation belegen kann. Eine allgemeine `IOException` im Reset-Pfad wird nicht mehr pauschal als laufende Installation gemeldet.
 
 **Staleness-Prüfung:**
 1. Lock-Erstellungszeit auslesen:
@@ -132,11 +167,13 @@ Resultat:    {Status: Failed, LastError: "Err_Update_VersionMismatch"}
    - Fallback: `File.GetLastWriteTimeUtc()` wenn Inhalt nicht parsbar
 2. Schwellenwert berechnen: `max(HealthTimeoutSeconds, 60) Sekunden`
 3. Alter prüfen: `DateTime.UtcNow - LockCreatedAt >= Schwellenwert`?
-4. Zu jung → `IOException` mit `The update lock is not old enough to be considered stale.`
-5. Alt genug → Lock-Datei löschen, Status aktualisieren mit Hinweis-Meldung
+4. Kein Lock → `UpdateLockResetFailureKind.NoLock`
+5. Zu jung → `UpdateLockResetFailureKind.LockNotStale`
+6. Alt genug → Lock-Datei löschen; Erfolg gilt nur, wenn `DeleteLockAsync` `true` liefert
+7. Nach erfolgreichem Löschen wird der Statussnapshot als entsperrt aktualisiert und die UI lädt den Status erneut
 
 **Fehlerbehandlung:**
-Alle Verweigerungen werfen `IOException`, die über die API als HTTP 409 (Conflict) oder HTTP 400 (Bad Request) beantwortet werden.
+Der Controller protokolliert klassifizierte Reset-Fehler mit Fehlerart, Quelle, Lock-Zeitpunkt, Lock-Pfad, Benutzer und technischer Ursache. Anwender sehen weiterhin lokalisierte, verständliche Meldungen ohne interne Dateipfade.
 
 ### 6. Einstellungen normalisieren, Prüfzeitfenster ableiten, Vorabversionen anwenden und Service-Vorschläge laden
 
@@ -225,8 +262,10 @@ flowchart TD
 | Prozessstart schlägt fehl (nach Lock erstellt) | `Err_Update_InvalidState` | 400 | Lock + Flag automatisch bereinigt, Status → Failed |
 | Skript-Generierung schlägt fehl | `Err_Update_InvalidState` | 400 | Lock + Flag bereinigt |
 | Version nach Update nicht aktualisiert (Reconciliation) | `Err_Update_VersionMismatch` | (async in status.json) | Status → Failed, Admin wird benachrichtigt |
-| Lock zu jung zum Reset | (IOException) | 409 | Lock muss mindestens `HealthTimeoutSeconds` alt sein |
-| Kein Lock zum Reset | (IOException) | 409 | Keine Aktion erforderlich |
+| Kein Lock zum Reset | `Err_Update_Reset_NoLock` | 409 | Keine Aktion erforderlich; Status erneut prüfen |
+| Lock zu jung zum Reset | `Err_Update_Reset_LockNotStale` | 409 | Lock muss mindestens `HealthTimeoutSeconds` alt sein |
+| Lock-Datei kann nicht gelöscht werden | `Err_Update_Reset_DeleteFailed` | 409 | Dateizugriff und Berechtigungen prüfen |
+| Sonstiger Reset-Fehler | `Err_Update_Reset_Failed` | 500 | Server-Logs mit Fehlerart, Quelle und technischer Ursache prüfen |
 
 ## Performance und Ressourcen
 

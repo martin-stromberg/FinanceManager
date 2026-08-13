@@ -136,8 +136,12 @@ public sealed class BudgetReportViewModelIntegrationTests : IClassFixture<TestWe
         strom.Budget.Should().Be(-960m);
         strom.Actual.Should().Be(-960m);
 
+        // The KNR-4711 "Nachzahlung" (-120) matches the Strom purpose (same contact and pattern as its
+        // regular booking) but overruns that month's already-filled -80 budget slot; it therefore stays
+        // attributed to the Strom purpose rather than falling into the generic Unbudgeted row. Only the
+        // Verkehrsabo booking (-49.90), which matches no purpose at all, ends up here.
         var unbudgeted = vm.Categories.Should().ContainSingle(c => c.Kind == BudgetReportCategoryRowKind.Unbudgeted).Subject;
-        unbudgeted.Actual.Should().Be(-169.90m);
+        unbudgeted.Actual.Should().Be(-49.90m);
         unbudgeted.Purposes.Should().BeEmpty();
     }
 
@@ -340,9 +344,12 @@ public sealed class BudgetReportViewModelIntegrationTests : IClassFixture<TestWe
         vm.PurposePostings.Single(p => p.Posting.Amount == -12.50m).IsValuedForBudgetPurpose.Should().BeTrue();
         vm.PurposePostings.Single(p => p.Posting.Amount == 9.40m).IsValuedForBudgetPurpose.Should().BeFalse();
 
+        // The sign-mismatched "Erstattung" (9.40) is shown at its own purpose (asserted above) and must
+        // therefore NOT also appear in the general Unbudgeted list - that list is reserved for postings
+        // that matched no budget purpose whatsoever.
         await vm.ShowUnbudgetedPostingsAsync();
 
-        vm.PurposePostings.Should().ContainSingle(p => p.Posting.Amount == 9.40m);
+        vm.PurposePostings.Should().NotContain(p => p.Posting.Amount == 9.40m);
     }
 
     /// <summary>

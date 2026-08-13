@@ -4,6 +4,7 @@
 [![Release](https://img.shields.io/github/actions/workflow/status/martin-stromberg/FinanceManager/release.yml?label=Release)](https://github.com/martin-stromberg/FinanceManager/actions)
 [![License](https://img.shields.io/github/license/martin-stromberg/FinanceManager)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D22.x-339933?logo=nodedotjs)](https://nodejs.org/)
 
 `FinanceManager` ist eine Blazor-Server-Anwendung zur Verwaltung persönlicher Finanzen.  
 Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Reporting, Budgetplanung, Sparpläne, Wertpapiermanagement und Setup-/Admin-Funktionen ab.
@@ -12,13 +13,15 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 
 - Kontoauszüge importieren, klassifizieren und verbuchen (`StatementDraftsController`), inklusive mobiler Kontoauszugsansicht mit lesbarer Kartenstruktur, zweispaltigem Datum/Betrag, abgeschwächten gebuchten Einträgen sowie Kontakt-, Sparplan- und Wertpapierinformationen
 - Kontoauszugsentwürfe im Massenänderungsmodus bearbeiten, Zeilen zum Löschen vormerken und neue Zeilen ergänzen
-- Konten, Sammelkonten, Kontakte, Sparpläne und Wertpapiere verwalten, inklusive sichtbarer SVG-Symbole für Kontakte
+- Konten, Sammelkonten, Kontakte, Sparpläne und Wertpapiere verwalten, inklusive sichtbarer SVG-Symbole für Kontakte sowie Sparplan-Kennzahlen zu aktuellem Saldo, Restbetrag und benötigtem Monatsbetrag in der Detailansicht
 - Berichte, KPI-Dashboards und Budgetauswertungen nutzen, inklusive bestandsgepruefter Hochrechnung fuer Wertpapier-Dividendenreports
+- Depot-Analysebericht (`/portfolio/analysis-report`, Ribbon-Gruppe "Berichte" → "Depot-Bericht" der Wertpapierübersicht): konsolidierter Bericht über alle Wertpapiere mit konfigurierbaren, visuell aufbereiteten Kacheln (Depotstruktur mit Ringdiagramm, Performance und Cashflow mit Balkendiagrammen; Risikoanalyse als Platzhalter für Phase 2), Info-Buttons mit Overlay-Erklärungen zu den Kennzahlen (z. B. scrollbare Übersicht aller Positionen im Gesamtmarktwert-Panel statt nur Top 10, Akkordeon mit FIFO-Lot-Details je Wertpapier im Investiertes-Kapital-Panel), inklusive Bearbeitungsmodus für Kachel-Sichtbarkeit/-Reihenfolge je Benutzer und monatlichem Berichts-Cache mit automatischer Invalidierung bei Kursänderungen und Buchungsstornierungen; Wertpapiere unterstützen optionale Region-/Sektor-Felder, die über die Wertpapier-Bearbeitungsmaske gepflegt werden können (200er-Kappung bei Positionen und FIFO-Lots im Bericht; volle Seitenbreite, Speichern-Button im Editiermodus ins Ribbon-Menü verschoben)
 - Anhänge und Sicherungen (Backup/Restore) verwalten
 - Responsive Web-UI für kleine Viewports (mobile Topbar, responsive Container, mobile Ribbon-Shortcuts, mobile E2E-Abdeckung)
 - Einstellungs-Ribbon mit stets sichtbaren Aktionen: Backup erstellen/hochladen, Profil speichern/zurücksetzen, Benachrichtigungen, Kontoauszugs-Importregeln und Update-Einstellungen speichern sowie Update-Prüfung, Installation und Lock-Reset auslösen — unabhängig davon, welche Sektion gerade aufgeklappt ist
 - Versionsinformation im Programmmenü (Footer) angezeigt — aktuelle Versionnummer oder Fallback `"Version unbekannt"`
 - JWT-Authentifizierung mit 30 Minuten Access-Token-Laufzeit, SecurityStamp-/Rollen-/Active-Revalidierung und DB-validiertem Refresh
+- RFC-9116-konforme `security.txt` unter `/security.txt` und `/.well-known/security.txt`, zusätzlich als Markdown (`/.well-known/security.md`) und HTML (`/.well-known/security.html`); Direktiven (Contact, Expires, Canonical, Encryption, Acknowledgments, Preferred-Languages, Policy, Hiring) im Setup konfigurierbar — `Canonical` optional als vollständige HTTPS-URL ohne Query/Fragment und ohne localhost/Loopback, sonst Fallback auf `<Api:BaseAddress>/.well-known/security.txt`; liefert HTTP 503, solange keine Konfiguration vorhanden ist
 
 ## Installation / Setup
 
@@ -65,6 +68,7 @@ Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
 | `Jwt:Audience` | string | `financemanager` | Erwartete JWT-Audience fuer Ausstellung und Validierung |
 | `Jwt:LifetimeMinutes` | int | `30` | JWT-/Cookie-Lebensdauer in Minuten |
 | `DataProtection:KeysPath` | string | leer | Optionaler Pfad fuer den ASP.NET-Core-Data-Protection-Key-Ring; in produktionsnahen Deployments persistent und geschuetzt bereitstellen |
+| `Api:BaseAddress` | string | leer | Basisadresse der API; wird als Fallback fuer `Canonical` unter `security.txt` verwendet, wenn im Setup kein eigener Canonical-Wert gesetzt ist (muss dann absolute URI sein) |
 | `BackgroundTasks:Enabled` | bool | `true` | Aktiviert den `BackgroundTaskRunner` |
 | `Workers:SecurityPriceWorker:Enabled` | bool | `true` | Aktiviert den Security-Price-Worker |
 | `Updates:Enabled` | bool | `false` | Aktiviert die automatische Suche nach Self-Update-Releases (steuert die externe `msTools.Updater`-Bibliothek) |
@@ -150,23 +154,19 @@ Bis zur geplanten NuGet-Veröffentlichung liegt der geprüfte Release `v0.3.0` a
 
 ## API-Dokumentation
 
-Einstiegspunkte:
+Wichtige Einstiegspunkte:
 
-- `POST /api/auth/login` – Anmeldung
-- `POST /api/statement-drafts/upload` – Einzeldatei als Entwurf importieren
-- `POST /api/statement-drafts/mass-import` – Massenimport analysieren/ausführen
-- `POST /api/setup/backups/upload` – ZIP-Backup hochladen; akzeptiert nur valide ZIP/NDJSON-Backups innerhalb der konfigurierten `Backups:Security`-Limits
-- `POST /api/setup/backups/{id}/apply` – Backup synchron wiederherstellen; destruktiv und nur mit `BackupRestoreRequestDto`, dessen `confirmationText` exakt dem gespeicherten Dateinamen entspricht
-- `POST /api/setup/backups/{id}/apply/start` – destruktiven Restore als Hintergrundtask starten; verwendet dieselbe serverseitige Dateinamen-Bestaetigung
-- `GET /api/setup/update/status`, `GET|PUT /api/setup/update/settings` und `GET /api/setup/update/services` – Self-Update-Status, Admin-Einstellungen und Service-Autocomplete; nur Rolle `Admin`
-- `POST /api/setup/update/check` – GitHub-Release-Manifest abrufen, passendes Paket laden und Hash/ZIP validieren
-- `POST /api/setup/update/schedule` – geplante Installationszeit fuer ein vorbereitetes Update speichern
-- `POST /api/setup/update/install/start` – vorbereitetes Update nach Downtime-Bestaetigung installieren; erstellt Lock und startet ein externes Update-Skript
-- `POST /api/setup/update/lock/reset` – verwaisten Update-Lock administrativ zuruecksetzen, sofern dieser Prozess keine laufende Installation kennt und der Lock aelter als das Health-Timeout ist
-- `GET /api/background-tasks/active` – aktive und wartende Background-Tasks fuer authentifizierte Nutzer abrufen; das UI startet das Polling nur bei erkannter Anmeldung und beendet es nach einem `401 Unauthorized`
-- `POST /api/securities/{id}/prices/import` – Wertpapierkurse importieren
-- `POST /api/postings/{id}/reverse` – Buchung stornieren (Reversal)
-- `GET|POST|PUT|DELETE /api/admin/users...` – administrative Benutzerverwaltung; serverseitig auf JWT-authentifizierte Benutzer mit Rolle `Admin` beschränkt. Authentifizierte Nicht-Admins erhalten `403 Forbidden`, anonyme Aufrufe `401 Unauthorized`.
+- `POST /api/auth/login` – Anmeldung und JWT-Ausstellung
+- `POST /api/statement-drafts/upload` – Kontoauszug als Entwurf importieren
+- `POST /api/statement-drafts/mass-import` – Massenimport analysieren und ausführen
+- `GET|PUT /api/setup/update/settings` – Self-Update-Einstellungen für Admins lesen/speichern
+- `GET /api/portfolio/analysis-report` – konsolidierter Depot-Analysebericht (gecacht, monatliche Gültigkeit)
+- `GET /.well-known/security.txt` – öffentliche RFC-9116-Sicherheitsrichtlinie (`Canonical` aus Setup oder Fallback auf `<Api:BaseAddress>/.well-known/security.txt`)
+
+Weitere API-Oberflächen:
+- Setup- und Betriebs-API unter `/api/setup/*` (Backups, Updates, Benachrichtigungen)
+- Admin-API unter `/api/admin/*` (Benutzerverwaltung, rollenbasiert)
+- Öffentliche Security-Endpunkte unter `/security.txt` und `/.well-known/security.*`
 
 Weitere API-Dokumentation:
 - `Docs/help/*/api.md`
@@ -231,7 +231,11 @@ dotnet test FinanceManager.sln
   geprueft und startet ein bereites Update ohne erneute Benutzerbestaetigung.
   Ein Admin-Lock-Reset loescht nur vorhandene Locks, die aelter als der interne
   Health-Timeout sind, und verweigert den Reset, solange der aktuelle Prozess
-  noch eine laufende Installation kennt.
+  noch eine laufende Installation kennt. Fehlgeschlagene Resets zeigen konkrete
+  Ursachen wie fehlenden Lock, noch nicht stalen Lock, fehlgeschlagenes Loeschen
+  oder technischen Reset-Fehler; Diagnose-Logs enthalten Fehlerart, Quelle und
+  technische Ursache. `Err_Update_InstallRunning` bleibt Faellen vorbehalten, in
+  denen eine laufende Installation tatsaechlich belegt ist.
 - **Verbesserungen (Issue #206):** Das Update-System wurde fuer Produktionsumgebungen
   (insbesondere Linux) stabilisiert: Lock-Verwaltung ist atomarer, verwaiste Locks
   werden zuverlaessiger erkannt und bereinigt, der Service-Neustart und die
@@ -272,6 +276,15 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md), insbesondere:
 
 ### Aktuelle / In Bearbeitung
 
+**Issue #298 – Wertpapierstatistiken für Gesamtdepot** ✓ Abgeschlossen (Phase 1 + Fortsetzung)
+- Depot-Analysebericht mit Kacheln für Depotstruktur, Performance und Cashflow implementiert; eigene Ribbon-Gruppe "Berichte" auf der Wertpapierübersicht
+- Kacheln visuell aufbereitet mit Ring-/Balkendiagrammen (`DonutChart`, `MiniBarChart`) statt reiner Zahlenlisten
+- Kennzahlen-Erklärungen über Info-Buttons (`KpiInfoButton`) mit Overlay-Panel; Gesamtmarktwert zeigt alle Positionen in scrollbarem Container, Investiertes-Kapital zeigt Akkordeon mit FIFO-Lot-Details je Wertpapier
+- Kachel-Konfiguration (Sichtbarkeit/Reihenfolge) pro Benutzer sowie monatlicher Berichts-Cache mit automatischer Invalidierung
+- `Region`/`Sector` Wertpapierfelder sind jetzt über die Wertpapier-Bearbeitungsmaske pflegbar (200er-Kappung bei Positionen/Lots im Bericht)
+- UI-Verbesserungen: Tabellen-Overflow behoben, volle Seitenbreite genutzt, Speichern-Button im Editiermodus ins Ribbon-Menü verschoben
+- Offen für Phase 2: Risikoanalyse-Kennzahlen (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk) sowie automatische Cache-Invalidierung bei einzelnen Wertpapierbuchungen ohne Stornierung; Liquiditätsquote entfernt (#301), da nicht sinnvoll berechenbar ohne Kontostand-Verknüpfung
+
 **Issue #224 – Update-Einstellungen vereinheitlichen** ✓ Abgeschlossen
 - Technische Update-Konfiguration aus der Admin-UI entfernt und serverseitig normalisiert
 - Update-Einstellungen an das globale Setup-Speicherpattern angebunden
@@ -294,8 +307,8 @@ Aus `Docs/features/task/issue-90-fb7b291b995c45f3b35a0bf86c8ae321-mobile-ansicht
 
 ## Changelog
 
-- Laufender Änderungsverlauf: [changes.log](changes.log)
-- Zusätzlich vorhanden: [CHANGELOG.md](CHANGELOG.md)
+- Laufender Änderungsverlauf: [CHANGELOG.md](CHANGELOG.md)
+- Ergänzende Chronik: [changes.log](changes.log)
 
 ## Lizenz
 

@@ -25,6 +25,22 @@ public sealed class ApiClientUpdateTests
     }
 
     [Fact]
+    public async Task Updates_ResetLockAsync_WhenConflict_PreservesApiErrorCodeAndMessage()
+    {
+        var api = CreateClient(request => new HttpResponseMessage(HttpStatusCode.Conflict)
+        {
+            Content = JsonContent.Create(ApiErrorDto.Create("API_Update", "Err_Update_Reset_NoLock", "No active update lock exists."))
+        });
+
+        var act = () => api.Updates_ResetLockAsync(new UpdateLockResetRequest("stale"));
+
+        await act.Should().ThrowAsync<HttpRequestException>();
+        api.LastErrorCode.Should().Be("Err_Update_Reset_NoLock");
+        api.LastError.Should().Be("No active update lock exists.");
+    }
+
+
+    [Fact]
     public async Task UpdateApiClientFlows_CallExpectedEndpoints()
     {
         var requests = new List<(HttpMethod Method, string Path)>();

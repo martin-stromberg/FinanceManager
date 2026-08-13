@@ -40,6 +40,46 @@ public sealed class SetupUpdateViewModelTests
     }
 
     [Fact]
+    public async Task ResetLockAsync_WhenApiReportsSpecificError_SetsError()
+    {
+        var apiMock = new Mock<IApiClient>();
+        apiMock
+            .Setup(a => a.Updates_ResetLockAsync(It.IsAny<UpdateLockResetRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("reset failed"));
+        apiMock.Setup(a => a.LastErrorCode).Returns("Err_Update_Reset_NoLock");
+        apiMock.Setup(a => a.LastError).Returns("No active update lock exists.");
+        var vm = CreateVm(apiMock.Object);
+
+        await vm.ResetLockAsync();
+
+        vm.Busy.Should().BeFalse();
+        vm.LastErrorCode.Should().Be("Err_Update_Reset_NoLock");
+        vm.LastError.Should().Be("No active update lock exists.");
+        apiMock.Verify(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ResetLockAsync_WhenSuccessful_ReloadsStatus()
+    {
+        var unlocked = Status(UpdateStatusKind.NoUpdate, isLocked: false);
+        var apiMock = new Mock<IApiClient>();
+        apiMock
+            .Setup(a => a.Updates_ResetLockAsync(It.IsAny<UpdateLockResetRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        apiMock
+            .Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(unlocked);
+        var vm = CreateVm(apiMock.Object);
+
+        await vm.ResetLockAsync();
+
+        vm.Status.Should().Be(unlocked);
+        vm.Status!.IsLocked.Should().BeFalse();
+        apiMock.Verify(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+
+    [Fact]
     public async Task StartInstallWithConfirmationAsync_WhenNoConfirmationCallback_DoesNotStartInstall()
     {
         var apiMock = new Mock<IApiClient>();
@@ -257,6 +297,6 @@ public sealed class SetupUpdateViewModelTests
             .First(a => a.Id == id);
     }
 
-    private static UpdateStatusDto Status(UpdateStatusKind kind)
-        => new(kind, "1.0.0", null, null, "win-x64", null, null, null, kind == UpdateStatusKind.Installing, null, null, null);
+    private static UpdateStatusDto Status(UpdateStatusKind kind, bool? isLocked = null)
+        => new(kind, "1.0.0", null, null, "win-x64", null, null, null, isLocked ?? kind == UpdateStatusKind.Installing, null, null, null);
 }

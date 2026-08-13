@@ -1072,18 +1072,6 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<string>("HolidaySubdivisionCode")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ImportMaxEntriesPerDraft")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("ImportMinEntriesPerDraft")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("ImportMonthlySplitThreshold")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<short>("ImportSplitMode")
-                        .HasColumnType("INTEGER");
-
                     b.Property<bool>("IsAdmin")
                         .HasColumnType("INTEGER");
 

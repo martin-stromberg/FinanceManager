@@ -48,8 +48,9 @@ Installationsstart verlangt eine Downtime-Bestaetigung. Nach dem Start zeigt
 die UI eine Warteseite, wartet zunaechst auf einen beobachteten Ausfall und
 laedt erst nach einem spaeteren erfolgreichen `/health`-Aufruf neu.
 Ein aktiver Update-Lock kann durch Administratoren zurueckgesetzt werden, wenn
-die aktuelle Prozessinstanz keine Installation mehr besitzt und die Lock-Datei
-aelter als das konfigurierte Health-Timeout ist.
+die Lock-Datei aelter als das konfigurierte Health-Timeout ist. Schlaegt der
+Reset fehl, unterscheidet die UI zwischen fehlendem Lock, noch nicht altem
+Lock, fehlgeschlagenem Loeschen und sonstigem technischen Reset-Fehler.
 
 Die Self-Update-Logik selbst wird als externe, hosting-unabhaengige Bibliothek
 `msTools.Updater` eingebunden. Bis zur NuGet-Veroeffentlichung referenziert
@@ -127,6 +128,43 @@ sichtbar wird — ohne erneuten Login.
 - Ein Benutzer stellt **Automatisch** ein. Die Anwendung erkennt seine Browser-Sprache (z.B. Englisch) und zeigt die Oberfläche entsprechend an.
 - Die Spracheinstellung bleibt nach einem erneuten Login erhalten. Die Browser-Sprache überschreibt eine gespeicherte **Automatisch**-Einstellung nicht.
 
+## security.txt (RFC 9116)
+
+Der Setup-Bereich enthält eine eigene Einstellungssektion **security.txt**, die ausschließlich für Benutzer mit der Rolle `Admin` sichtbar ist. Hierüber werden alle konfigurierbaren RFC-9116-Direktiven gepflegt.
+
+### Öffentliche Ausgabe-Endpunkte
+
+Nach erfolgreicher Konfiguration sind folgende Endpunkte ohne Anmeldung erreichbar:
+
+| Endpunkt | Format | MIME-Typ |
+|----------|--------|----------|
+| `/security.txt` | RFC-9116-Plaintext | `text/plain; charset=utf-8` |
+| `/.well-known/security.txt` | RFC-9116-Plaintext | `text/plain; charset=utf-8` |
+| `/.well-known/security.md` | Markdown | `text/markdown; charset=utf-8` |
+| `/.well-known/security.html` | HTML | `text/html; charset=utf-8` |
+
+Solange das Pflichtfeld **Kontakt** noch nicht konfiguriert ist, antworten alle vier Endpunkte mit **HTTP 503** und einer erklärenden Fehlermeldung.
+
+### Konfigurierbare Direktiven
+
+| Feldbezeichnung (UI) | RFC-9116-Direktive | Pflicht |
+|----------------------|--------------------|---------|
+| Kontakt | `Contact` | Ja |
+| Ablaufdatum | `Expires` | Ja |
+| Verschlüsselung | `Encryption` | Nein |
+| Danksagungen | `Acknowledgments` | Nein |
+| Bevorzugte Sprachen | `Preferred-Languages` | Nein |
+| Richtlinie | `Policy` | Nein |
+| Jobs | `Hiring` | Nein |
+| Canonical | `Canonical` | Nein |
+
+Die Direktive `Canonical` kann im Setup-Bereich als vollständige HTTPS-URL gepflegt werden. Ist das Feld leer, wird weiterhin automatisch `<Api:BaseAddress>/.well-known/security.txt` als Fallback verwendet.
+
+### Beispiele
+
+- Ein Administrator trägt `mailto:security@example.com` als Kontakt ein und setzt ein Ablaufdatum in der Zukunft. Nach dem Speichern ist `/.well-known/security.txt` öffentlich erreichbar.
+- Ein Sicherheitsforscher ruft `/.well-known/security.html` auf und erhält eine strukturierte HTML-Seite mit allen konfigurierten Direktiven.
+
 ## Einschränkungen
 
 - Administrative Endpunkte erfordern entsprechende Berechtigungen.
@@ -138,8 +176,11 @@ sichtbar wird — ohne erneuten Login.
   abgelehnt, wenn Paket, Lock, ZIP-Struktur oder Service-/EXE-Ziel nicht
   eindeutig valide sind.
 - Der administrative Lock-Reset ist ein Betriebswerkzeug fuer manuell
-  gepruefte Haengefaelle. Aktuell prueft die Anwendung nur, ob diese
-  Prozessinstanz noch eine Installation besitzt.
+  gepruefte Haengefaelle. Die Anwendung loescht nur alte Locks und zeigt bei
+  fehlgeschlagenem Reset den konkreten Grund statt pauschal eine laufende
+  Installation zu melden.
 - Die Anzeigesprache gilt für die gesamte Benutzeroberfläche. Im Modus „Automatisch"
   wird die Browser-Sprache berücksichtigt; es werden nur die unterstützten Sprachen
   Deutsch und Englisch angeboten.
+- Die `security.txt`-Direktive `Contact` akzeptiert nur einen einzelnen Wert (URI oder mailto). Mehrfacheinträge gemäß RFC 9116 werden aktuell nicht unterstützt.
+- Die `Canonical`-Direktive akzeptiert optional nur absolute HTTPS-URLs ohne Query/Fragment und ohne localhost/Loopback-Host. Bei leerem Feld wird `Api:BaseAddress` als Fallback verwendet.

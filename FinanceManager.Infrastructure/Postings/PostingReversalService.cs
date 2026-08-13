@@ -1,4 +1,5 @@
 using FinanceManager.Application.Aggregates;
+using FinanceManager.Application.Portfolio;
 using FinanceManager.Application.Postings;
 using FinanceManager.Domain.Postings;
 using FinanceManager.Domain.Statements;
@@ -19,6 +20,7 @@ public sealed class PostingReversalService : IPostingReversalService
     private readonly AppDbContext _context;
     private readonly IPostingAggregateService _aggregateService;
     private readonly ILogger<PostingReversalService> _logger;
+    private readonly IPortfolioAnalysisReportCacheService? _portfolioCache;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PostingReversalService"/> class.
@@ -26,14 +28,20 @@ public sealed class PostingReversalService : IPostingReversalService
     /// <param name="context">Database context.</param>
     /// <param name="aggregateService">Posting aggregate service for updating aggregates.</param>
     /// <param name="logger">Logger instance.</param>
+    /// <param name="portfolioCache">
+    /// Optional portfolio analysis report cache service. When supplied and the reversal affects a security
+    /// posting, the portfolio report cache for the owner is invalidated so the next report request recomputes fresh data.
+    /// </param>
     public PostingReversalService(
         AppDbContext context,
         IPostingAggregateService aggregateService,
-        ILogger<PostingReversalService> logger)
+        ILogger<PostingReversalService> logger,
+        IPortfolioAnalysisReportCacheService? portfolioCache = null)
     {
         _context = context;
         _aggregateService = aggregateService;
         _logger = logger;
+        _portfolioCache = portfolioCache;
     }
 
     /// <inheritdoc />
@@ -103,6 +111,11 @@ public sealed class PostingReversalService : IPostingReversalService
 
             // Commit transaction
             await transaction.CommitAsync(ct);
+
+            if (_portfolioCache != null && allPostings.Any(p => p.Kind == PostingKind.Security))
+            {
+                await _portfolioCache.InvalidateCacheAsync(userId, ct);
+            }
 
             _logger.LogInformation(
                 "Reversal completed: {ReversedCount} postings reversed, {CreatedCount} reversals created by user {UserId}",

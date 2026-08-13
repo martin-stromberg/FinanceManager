@@ -70,6 +70,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
         new SetupSectionDefinition("backup", "Setup_Section_Backup", "Backup", typeof(SetupBackupsViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupBackupTab)),
         new SetupSectionDefinition("update", "Setup_Section_Update", "Update", typeof(SetupUpdateViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupUpdateTab)),
         new SetupSectionDefinition("security", "Setup_Section_Security", "Sicherheit", typeof(SetupSecurityViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupSecurityTab)),
+        new SetupSectionDefinition("securitytxt", "Setup_Section_SecurityTxt", "security.txt", typeof(SetupSecurityTxtViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SecurityTxtSettingsTab)),
         new SetupSectionDefinition("returnanalysis", "Setup_Section_ReturnAnalysis", "Renditeanalyse", typeof(SetupReturnAnalysisViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupReturnAnalysisTab)),
     };
 
@@ -90,7 +91,8 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                 || GetSectionViewModel<SetupNotificationsViewModel>("notifications")?.Dirty == true
                 || GetSectionViewModel<SetupStatementsViewModel>("statements")?.Dirty == true
                 || GetSectionViewModel<SetupUpdateViewModel>("update")?.Dirty == true
-                || GetSectionViewModel<SetupReturnAnalysisViewModel>("returnanalysis")?.Dirty == true;
+                || GetSectionViewModel<SetupReturnAnalysisViewModel>("returnanalysis")?.Dirty == true
+                || GetSectionViewModel<SetupSecurityTxtViewModel>("securitytxt")?.Dirty == true;
         }
     }
 
@@ -197,6 +199,12 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                     _sectionViewModels["update"] = updateVm;
                 }
 
+                if (TryGetSectionDefinition("securitytxt", out var securityTxtSection) && securityTxtSection is not null && IsSectionVisible(securityTxtSection))
+                {
+                    var securityTxtVm = CreateSubViewModel<SetupSecurityTxtViewModel>();
+                    _sectionViewModels["securitytxt"] = securityTxtVm;
+                }
+
                 _coreSectionViewModelsInitialized = true;
             }
 
@@ -257,6 +265,12 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
             if (returnAnalysisVm?.Dirty == true)
             {
                 await returnAnalysisVm.SaveAsync(ct);
+            }
+
+            var securityTxtVm = GetSectionViewModel<SetupSecurityTxtViewModel>("securitytxt");
+            if (securityTxtVm?.Dirty == true)
+            {
+                await securityTxtVm.SaveAsync(ct);
             }
         }
         finally

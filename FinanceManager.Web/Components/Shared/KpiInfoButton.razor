@@ -1,0 +1,39 @@
+<button type="button" class="kpi-info-btn" title="@Title" aria-haspopup="dialog" aria-expanded="@_open" @onclick="Toggle">
+    <svg><use href="/icons/sprite.svg#info" /></svg>
+</button>
+
+@if (_open)
+{
+    <div class="modal-overlay kpi-explanation-overlay" role="dialog" aria-modal="true" aria-labelledby="@_titleId" @onclick="Close">
+        <div class="modal kpi-explanation-modal" @onclick:stopPropagation="true">
+            <div class="kpi-explanation-header">
+                <h3 id="@_titleId">@Title</h3>
+                <button type="button" class="icon-btn small" title="@CloseLabel" @onclick="Close">
+                    <svg><use href="/icons/sprite.svg#close" /></svg>
+                </button>
+            </div>
+            <div class="kpi-explanation-body">
+                @ChildContent
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>Title shown as the button tooltip and as the explanation panel heading.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    /// <summary>Localized label for the panel's close button.</summary>
+    [Parameter] public string CloseLabel { get; set; } = "Close";
+
+    /// <summary>Explanation content (formula, derivation, breakdown list, ...) rendered inside the panel.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private readonly string _titleId = $"kpi-info-title-{Guid.NewGuid():N}";
+
+    private bool _open;
+
+    private void Toggle() => _open = !_open;
+
+    private void Close() => _open = false;
+}

@@ -283,21 +283,25 @@ Fehlerresponse bei fehlender Admin-Rolle: HTTP 403 Forbidden mit `Access_AdminOn
 
 **Fehler:**
 
-| Code | Ursache |
-|------|---------|
-| 403 | Anwender ist nicht Admin |
-| 409 | Lock ist zu jung oder Installation läuft noch |
-| 500 | Fehler beim Löschen der Lock-Datei |
+| HTTP | Fehlercode | Ursache |
+|------|------------|---------|
+| 403 | `Access_AdminOnly` | Anwender ist nicht Admin |
+| 409 | `Err_Update_Reset_NoLock` | Es ist kein aktiver Update-Lock vorhanden |
+| 409 | `Err_Update_Reset_LockNotStale` | Der vorhandene Lock ist noch nicht alt genug für einen Reset |
+| 409 | `Err_Update_Reset_DeleteFailed` | Die Lock-Datei konnte nicht entfernt werden |
+| 500 | `Err_Update_Reset_Failed` | Sonstiger technischer Reset-Fehler |
 
 **Fehler-Response-Body:**
 
 ```json
 {
   "origin": "UpdateController",
-  "code": "Err_Update_InstallRunning",
-  "message": "The current process still owns an update installation."
+  "code": "Err_Update_Reset_LockNotStale",
+  "message": "The update lock is not old enough to be reset yet."
 }
 ```
+
+Klassifizierte Reset-Fehler werden nicht mehr auf `Err_Update_InstallRunning` gemappt. Dieser Code bleibt den Pfaden vorbehalten, in denen eine laufende Update-Installation tatsächlich belegt ist.
 
 ## Fehler-Codes
 
@@ -307,6 +311,10 @@ Alle `ApiErrorDto.code`-Werte sind Lokalisierungsschlüssel:
 |------|-----------|------|
 | `Err_Update_Locked` | Ein Update-Lock ist aktiv (Installation läuft oder ist stecken geblieben) | 409 |
 | `Err_Update_InstallRunning` | Der lokale Prozess führt noch eine Installation durch | 409 |
+| `Err_Update_Reset_NoLock` | Kein aktiver Update-Lock vorhanden | 409 |
+| `Err_Update_Reset_LockNotStale` | Update-Lock ist noch nicht alt genug für einen Reset | 409 |
+| `Err_Update_Reset_DeleteFailed` | Update-Lock konnte nicht entfernt werden | 409 |
+| `Err_Update_Reset_Failed` | Update-Lock konnte wegen eines technischen Fehlers nicht zurückgesetzt werden | 500 |
 | `Err_Update_NotReady` | Kein bereites Update vorhanden | 404 |
 | `Err_Update_InvalidState` | Ungültiger Update-Zustand (z. B. Installer fehlgeschlagen) | 400 |
 | `Err_Update_InvalidRequest` | Ungültige Anfrage-Parameter | 400 |

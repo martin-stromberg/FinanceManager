@@ -1600,16 +1600,7 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
     private static decimal ComputeSharesHeldOnDate(
         IReadOnlyList<SecurityTransaction> transactions, DateTime date)
     {
-        decimal shares = 0m;
-        foreach (var tx in transactions)
-        {
-            if (tx.Date.Date > date.Date) break;
-            if (tx.Type == SecurityPostingSubType.Buy)
-                shares += tx.Quantity ?? 0m;
-            else if (tx.Type == SecurityPostingSubType.Sell)
-                shares -= Math.Abs(tx.Quantity ?? 0m); // sell quantities are stored as negative; use Abs to subtract correctly
-        }
-        return Math.Max(0m, shares);
+        return SecurityValuationHelper.SharesHeldOnDate(transactions, date);
     }
 
     /// <summary>
@@ -1642,17 +1633,9 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         IReadOnlyList<(DateTime Date, decimal Close)> filledPrices,
         DateTime date)
     {
-        // Find the closest price on or before the requested date
-        decimal? close = null;
-        foreach (var (d, c) in filledPrices)
-        {
-            if (d.Date <= date.Date) close = c;
-            else break;
-        }
-
-        if (close == null) return 0m;
+        decimal close = SecurityValuationHelper.LatestPriceOnOrBefore(filledPrices, date);
         decimal shares = ComputeSharesHeldOnDate(transactions, date);
-        return shares * close.Value;
+        return shares * close;
     }
 
     /// <summary>

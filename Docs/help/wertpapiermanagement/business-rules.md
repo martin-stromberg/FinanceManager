@@ -50,3 +50,69 @@ persoenlichem Key auf einen freigegebenen Admin-Key zurueck.
 
 **Umsetzung:** `AlphaVantagePriceProvider`, `AlphaVantageKeyResolver`,
 `DataProtectionAlphaVantageSecretProtector`.
+
+## Depot-Analysebericht: Kachel-Konfiguration muss konsistent sein
+
+**Beschreibung:** Beim Speichern der Kachel-Sichtbarkeit/-Reihenfolge für den
+Depot-Analysebericht muss mindestens eine Kachel aktiv sein, und die
+Reihenfolge muss exakt die aktiven Kachel-IDs ohne Duplikate enthalten.
+
+**Bedingungen:**
+- `PortfolioKpiConfigurationRequest.ActiveTileIds` ist leer.
+- Oder `TileOrder` enthält Duplikate oder deckt `ActiveTileIds` nicht
+  vollständig ab.
+
+**Verhalten:**
+- Gültige Eingabe: Konfiguration wird gespeichert, Berichts-Cache wird
+  invalidiert.
+- Ungültige Eingabe: `400 Bad Request` mit Validierungsfehler, nichts wird
+  gespeichert.
+
+**Umsetzung:** `PortfolioAnalysisReportController.SaveKpiConfigurationAsync`.
+
+## Depot-Analysebericht: Monatliche Cache-Gültigkeit
+
+**Beschreibung:** Der berechnete Depot-Analysebericht wird pro Benutzer
+zwischengespeichert und gilt bis zum Ende des Kalendermonats, in dem er
+berechnet wurde.
+
+**Bedingungen:**
+- Es existiert ein `ReportCacheEntry` mit Schlüssel
+  `portfolio-analysis-report-{OwnerUserId:N}`.
+
+**Verhalten:**
+- `CacheValidUntilUtc` des Eintrags liegt in der Zukunft und
+  `NeedsRefresh == false`: der gecachte Bericht wird unverändert
+  zurückgegeben.
+- `CacheValidUntilUtc` ist überschritten (Monatswechsel), der Eintrag fehlt,
+  oder `NeedsRefresh == true`: der Bericht wird neu berechnet und mit neuem
+  `CacheValidUntilUtc` (Ende des aktuellen Monats) gespeichert.
+
+**Umsetzung:** `PortfolioAnalysisReportCacheService.GetPortfolioReportAsync`,
+`PortfolioAnalysisReportService.EndOfMonthUtc`.
+
+## Depot-Analysebericht: Automatische Cache-Invalidierung
+
+**Beschreibung:** Bestimmte Datenänderungen verwerfen den Berichts-Cache
+sofort, damit der nächste Aufruf frische Werte liefert, statt bis zum
+regulären Monatswechsel zu warten.
+
+**Bedingungen:**
+- Eine neue Kursnotierung wird angelegt oder ein Kurs-Batch-Import fügt
+  neue/geänderte Kurse ein (`SecurityPriceService`).
+- Eine Buchung mit `Kind == PostingKind.Security` wird über
+  `PostingReversalService.ReversePostingAsync` storniert.
+- Die Kachel-Konfiguration wird gespeichert
+  (`PortfolioAnalysisReportController.SaveKpiConfigurationAsync`).
+- Der Benutzer löst manuell "Aktualisieren" aus
+  (`POST /api/portfolio/cache/reset`).
+
+**Verhalten:**
+- Der `ReportCacheEntry` des betroffenen Benutzers wird gelöscht.
+- Anlegen oder Bearbeiten einer Wertpapierbuchung ohne Stornierung löst
+  aktuell keine automatische Invalidierung aus.
+
+**Umsetzung:** `IPortfolioAnalysisReportCacheService.InvalidateCacheAsync`,
+aufgerufen aus `SecurityPriceService.CreateAsync`,
+`SecurityPriceService.UpsertDailyPricesAsync` und
+`PostingReversalService.ReversePostingAsync`.

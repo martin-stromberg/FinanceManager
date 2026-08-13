@@ -26,8 +26,14 @@ Die Schnittstelle liegt in `SavingsPlansController` und `SavingsPlanCategoriesCo
 
 ### `GET /api/savings-plans/{id}/analysis`
 
-**Beschreibung:** Liefert Sparplananalyse.
+**Beschreibung:** Liefert Sparplananalyse. Die Detailansicht nutzt daraus `RequiredMonthly` für den benötigten Monatsbetrag bei offenen einmaligen Sparzielen.
 
 ### `GET /api/savings-plan-categories`
 
 **Beschreibung:** Liefert Sparplankategorien.
+
+## Verwendung in der Detailansicht
+
+Die Sparplandetailansicht lädt bestehende Sparpläne über `GET /api/savings-plans/{id}`. Die Antwort enthält `CurrentAmount` und `RemainingAmount`, die als nicht editierbare Kennzahlen angezeigt werden. Zusätzlich wird `GET /api/savings-plans/{id}/analysis` geladen, um den benötigten Monatsbetrag anzuzeigen, sofern die fachlichen Bedingungen dafür erfüllt sind.
+
+Fehlschläge beim Laden der Analyse blockieren die Detailansicht nicht. In diesem Fall bleiben aktueller Saldo und Restbetrag sichtbar, der benötigte Monatsbetrag wird nicht angezeigt.

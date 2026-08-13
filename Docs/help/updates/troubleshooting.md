@@ -38,7 +38,7 @@
    - Status aktualisieren (Browser-Seite neu laden) → sollte zu `NoUpdate` oder `Failed` wechseln
 
 2. **Lock ist zu jung zum Reset?**
-   - Status zeigt "The update lock is not old enough to be considered stale"
+   - Status zeigt `Err_Update_Reset_LockNotStale` oder die lokalisierte Meldung "Der Update-Lock ist noch nicht alt genug und kann noch nicht zurückgesetzt werden."
    - Lock muss mindestens `HealthTimeoutSeconds` alt sein (Standard: 120 Sekunden)
    - Warten Sie, bis Lock alt genug ist, oder:
    - Erhöhen Sie `HealthTimeoutSeconds` in der Konfiguration und reduzieren Sie sie danach (workaround)
@@ -48,14 +48,21 @@
    - System fragt nach Bestätigung und Grund
    - Geben Sie einen Grund ein (z. B. "Installer abgestürzt") und bestätigen
    - Lock sollte gelöscht und Status auf `NoUpdate` gesetzt werden
+   - Falls der Reset abgelehnt wird, zeigt die UI jetzt den konkreten Grund: kein aktiver Lock, Lock noch nicht alt genug, Lock-Datei nicht löschbar oder technischer Reset-Fehler
 
-4. **Manuelles Löschen (Linux):**
+4. **Reset-Meldung einordnen:**
+   - `Err_Update_Reset_NoLock`: Status neu laden; wahrscheinlich ist der Lock bereits entfernt.
+   - `Err_Update_Reset_LockNotStale`: Warten, bis der Lock mindestens `HealthTimeoutSeconds` alt ist.
+   - `Err_Update_Reset_DeleteFailed`: Schreibrechte, Dateisperren und Eigentümer des Update-Verzeichnisses prüfen.
+   - `Err_Update_Reset_Failed`: Server-Logs prüfen; dort stehen Fehlerart, Quelle und technische Ursache.
+
+5. **Manuelles Löschen (Linux):**
    ```bash
    rm -f /var/lib/myapp/updates/update.lock
    ```
    Dann Browser aktualisieren
 
-5. **Manuelles Löschen (Windows):**
+6. **Manuelles Löschen (Windows):**
    ```powershell
    Remove-Item -Path "C:\ProgramData\MyApp\updates\update.lock" -ErrorAction SilentlyContinue
    ```
@@ -280,6 +287,22 @@
 ### `Err_Update_InstallRunning`
 **Bedeutung:** Der lokale Prozess führt noch eine Installation durch.  
 **Aktion:** Warten Sie, bis Installation abgeschlossen ist, oder starten Sie die Applikation neu.
+
+### `Err_Update_Reset_NoLock`
+**Bedeutung:** Es ist kein aktiver Update-Lock vorhanden.  
+**Aktion:** Status aktualisieren; vermutlich wurde der Lock bereits entfernt.
+
+### `Err_Update_Reset_LockNotStale`
+**Bedeutung:** Der Update-Lock ist noch nicht alt genug für einen Reset.  
+**Aktion:** Warten Sie mindestens bis zum serverseitigen `HealthTimeoutSeconds`-Schwellwert und versuchen Sie den Reset erneut.
+
+### `Err_Update_Reset_DeleteFailed`
+**Bedeutung:** Die Lock-Datei konnte nicht entfernt werden.  
+**Aktion:** Schreibrechte, Dateisperren und Eigentümer des Update-Verzeichnisses auf dem Server prüfen.
+
+### `Err_Update_Reset_Failed`
+**Bedeutung:** Der Reset ist wegen eines sonstigen technischen Fehlers fehlgeschlagen.  
+**Aktion:** Server-Logs prüfen; der Reset-Fehler wird mit Fehlerart, Quelle und technischer Ursache protokolliert.
 
 ### `Err_Update_NotReady`
 **Bedeutung:** Kein bereites Update vorhanden.  

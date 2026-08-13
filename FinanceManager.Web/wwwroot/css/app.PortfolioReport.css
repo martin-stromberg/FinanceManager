@@ -1,0 +1,488 @@
+/* =====================================================
+   app.PortfolioReport.css - Allgemeingültige Portfolio-Bericht Styles
+   ===================================================== */
+
+.portfolio-report-page {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.portfolio-report-header {
+    margin-bottom: .25rem;
+}
+
+.portfolio-report-header h2 {
+    margin: 0;
+}
+
+.portfolio-tile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
+
+.portfolio-tile {
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.portfolio-tile-title {
+    margin: 0 0 .75rem 0;
+    font-size: 1.05rem;
+}
+
+.portfolio-tile-body h4 {
+    margin: 1rem 0 .4rem 0;
+    font-size: .85rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    opacity: .8;
+}
+
+.portfolio-kpi-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .35rem 0;
+}
+
+.portfolio-kpi-label-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+}
+
+.portfolio-kpi-label {
+    font-size: .9rem;
+    opacity: .85;
+}
+
+.portfolio-kpi-value {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.portfolio-distribution-list {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: .9rem;
+}
+
+.portfolio-distribution-list li {
+    padding: .15rem 0;
+}
+
+.portfolio-table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.portfolio-top-positions,
+.portfolio-return-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .9rem;
+}
+
+.portfolio-top-positions th,
+.portfolio-top-positions td,
+.portfolio-return-table th,
+.portfolio-return-table td {
+    padding: .4rem .5rem;
+    text-align: left;
+}
+
+.portfolio-top-positions td:not(:first-child),
+.portfolio-top-positions th:not(:first-child),
+.portfolio-return-table td:not(:first-child),
+.portfolio-return-table th:not(:first-child) {
+    text-align: right;
+}
+
+.portfolio-risk-placeholder {
+    font-size: .85rem;
+    opacity: .75;
+    margin: 0 0 .75rem 0;
+}
+
+/* ---------- KPI info button + explanation overlay ---------- */
+
+.kpi-info-btn {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+.kpi-info-btn svg {
+    width: 13px;
+    height: 13px;
+    stroke: currentColor;
+}
+
+.kpi-explanation-modal {
+    max-width: min(560px, calc(100vw - 2.5rem));
+    box-sizing: border-box;
+}
+
+.kpi-explanation-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: .6rem;
+}
+
+.kpi-explanation-header h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.kpi-explanation-body {
+    font-size: .9rem;
+    line-height: 1.45;
+}
+
+.kpi-explanation-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: .5rem;
+    font-size: .85rem;
+}
+
+.kpi-explanation-table th,
+.kpi-explanation-table td {
+    padding: .35rem .5rem;
+    text-align: left;
+}
+
+.kpi-explanation-table td:last-child,
+.kpi-explanation-table th:last-child {
+    text-align: right;
+}
+
+.kpi-explanation-table .kpi-explanation-total td {
+    font-weight: 700;
+}
+
+.kpi-explanation-table .kpi-explanation-more td {
+    font-style: italic;
+    opacity: .7;
+    text-align: left;
+}
+
+.kpi-explanation-scroll {
+    max-width: 100%;
+    max-height: 320px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+/* ---------- Invested capital accordion ---------- */
+
+.kpi-invested-capital-accordion {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.kpi-invested-capital-accordion li {
+    border-bottom: 1px solid var(--border);
+}
+
+.kpi-invested-capital-accordion li:last-child {
+    border-bottom: none;
+}
+
+.kpi-invested-capital-accordion summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .4rem .2rem;
+    cursor: pointer;
+    font-size: .9rem;
+    list-style: none;
+}
+
+.kpi-invested-capital-accordion summary::-webkit-details-marker {
+    display: none;
+}
+
+.kpi-invested-capital-accordion summary::before {
+    content: "▸";
+    margin-right: .4rem;
+    opacity: .7;
+}
+
+.kpi-invested-capital-accordion details[open] summary::before {
+    content: "▾";
+}
+
+.kpi-invested-capital-name {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.kpi-invested-capital-value {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.kpi-invested-capital-accordion .kpi-explanation-table {
+    margin: 0 0 .5rem 1.2rem;
+    width: calc(100% - 1.2rem);
+}
+
+/* ---------- Donut chart ---------- */
+
+.donut-chart {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: .75rem;
+}
+
+.donut-chart-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    flex: 0 0 auto;
+}
+
+.donut-chart-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.donut-track {
+    fill: none;
+    stroke-width: 3.2;
+}
+
+.donut-segment {
+    fill: none;
+    stroke-width: 3.2;
+    stroke-linecap: butt;
+    transition: stroke-width .15s;
+}
+
+.donut-segment:hover {
+    stroke-width: 4;
+}
+
+.donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 .5rem;
+}
+
+.donut-center-value {
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1.1;
+}
+
+.donut-center-label {
+    font-size: .65rem;
+    opacity: .75;
+    line-height: 1.2;
+}
+
+.donut-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    font-size: .8rem;
+    flex: 1 1 160px;
+    min-width: 140px;
+}
+
+.donut-legend-item {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.donut-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex: 0 0 auto;
+}
+
+.donut-legend-label {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.donut-legend-value {
+    font-variant-numeric: tabular-nums;
+    opacity: .85;
+}
+
+/* ---------- Mini bar chart ---------- */
+
+.mini-bar-chart {
+    margin-bottom: .75rem;
+}
+
+.mini-bar-chart-bars {
+    display: flex;
+    flex-direction: column;
+}
+
+.mini-bar-chart-row {
+    flex: 1 1 0;
+    display: flex;
+    align-items: flex-end;
+    gap: .5rem;
+    min-width: 0;
+}
+
+.mini-bar-chart-row.neg {
+    align-items: flex-start;
+}
+
+.mini-bar-chart-zero {
+    height: 1px;
+    opacity: .6;
+}
+
+.mini-bar-chart-bar-wrap {
+    flex: 1 1 0;
+    display: flex;
+    align-items: flex-end;
+    min-width: 4px;
+}
+
+.mini-bar-chart-row.neg .mini-bar-chart-bar-wrap {
+    align-items: flex-start;
+}
+
+.mini-bar-chart-bar {
+    width: 100%;
+    border-radius: 3px 3px 0 0;
+    transition: filter .15s;
+}
+
+.mini-bar-chart-row.neg .mini-bar-chart-bar {
+    border-radius: 0 0 3px 3px;
+}
+
+.mini-bar-chart-bar:hover {
+    filter: brightness(1.15);
+}
+
+.mini-bar-chart-labels {
+    display: flex;
+    gap: .5rem;
+    margin-top: .3rem;
+}
+
+.mini-bar-chart-label {
+    flex: 1 1 0;
+    text-align: center;
+    font-size: .65rem;
+    opacity: .8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mini-bar-chart-empty {
+    font-size: .8rem;
+    opacity: .7;
+}
+
+.portfolio-chart-footnote {
+    font-size: .7rem;
+    opacity: .7;
+    margin: .3rem 0 .75rem 0;
+}
+
+/* ---------- Risk gauges ---------- */
+
+.portfolio-risk-gauge-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 1fr) minmax(80px, 2fr) auto;
+    align-items: center;
+    gap: .6rem;
+    padding: .35rem 0;
+}
+
+.portfolio-risk-gauge {
+    height: 8px;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.portfolio-risk-gauge-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width .2s;
+}
+
+/* ---------- Edit mode ---------- */
+
+.portfolio-edit-mode {
+    border-radius: var(--radius);
+    padding: .75rem 1rem;
+}
+
+.portfolio-edit-list {
+    list-style: none;
+    margin: 0 0 .75rem 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+
+.portfolio-edit-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .3rem .4rem;
+    border-radius: var(--radius);
+}
+
+.portfolio-edit-item span {
+    flex: 1 1 auto;
+}
+
+@media (max-width: 640px) {
+    .portfolio-tile-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .portfolio-risk-gauge-row {
+        grid-template-columns: 1fr;
+        gap: .3rem;
+    }
+}

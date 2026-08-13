@@ -18,13 +18,15 @@ public sealed class ReportCacheEntry : Entity, IAggregateRoot
     /// <param name="cacheValue">Serialized JSON cache value.</param>
     /// <param name="parameter">Additional parameter stored with the cache.</param>
     /// <param name="needsRefresh">Whether the cache entry needs to be recalculated.</param>
-    public ReportCacheEntry(Guid ownerUserId, string cacheKey, string cacheValue, string? parameter, bool needsRefresh)
+    /// <param name="cacheValidUntilUtc">Optional UTC timestamp until which the cache entry is considered valid (e.g. end of the current month).</param>
+    public ReportCacheEntry(Guid ownerUserId, string cacheKey, string cacheValue, string? parameter, bool needsRefresh, DateTime? cacheValidUntilUtc = null)
     {
         OwnerUserId = Guards.NotEmpty(ownerUserId, nameof(ownerUserId));
         CacheKey = Guards.NotNullOrWhiteSpace(cacheKey, nameof(cacheKey));
         CacheValue = Guards.NotNullOrWhiteSpace(cacheValue, nameof(cacheValue));
         Parameter = parameter ?? string.Empty;
         NeedsRefresh = needsRefresh;
+        CacheValidUntilUtc = cacheValidUntilUtc;
     }
 
     /// <summary>
@@ -53,16 +55,24 @@ public sealed class ReportCacheEntry : Entity, IAggregateRoot
     public string Parameter { get; private set; } = string.Empty;
 
     /// <summary>
+    /// UTC timestamp until which the cache entry is considered valid (e.g. end of the current month).
+    /// <c>null</c> means the entry has no time-based validity boundary (legacy behaviour, governed only by <see cref="NeedsRefresh"/>).
+    /// </summary>
+    public DateTime? CacheValidUntilUtc { get; private set; }
+
+    /// <summary>
     /// Updates the cached value and metadata.
     /// </summary>
     /// <param name="cacheValue">Serialized JSON cache value.</param>
     /// <param name="parameter">Additional parameter stored with the cache.</param>
     /// <param name="needsRefresh">Whether the cache entry needs recalculation.</param>
-    public void Update(string cacheValue, string? parameter, bool needsRefresh)
+    /// <param name="cacheValidUntilUtc">Optional UTC timestamp until which the cache entry is considered valid.</param>
+    public void Update(string cacheValue, string? parameter, bool needsRefresh, DateTime? cacheValidUntilUtc = null)
     {
         CacheValue = Guards.NotNullOrWhiteSpace(cacheValue, nameof(cacheValue));
         Parameter = parameter ?? string.Empty;
         NeedsRefresh = needsRefresh;
+        CacheValidUntilUtc = cacheValidUntilUtc;
         Touch();
     }
 

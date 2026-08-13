@@ -1,3 +1,4 @@
+using FinanceManager.Application.Portfolio;
 using FinanceManager.Domain.Securities;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
@@ -170,5 +171,138 @@ public sealed class SecurityPriceServiceUpsertTests
 
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(act);
         Assert.Empty(await db.SecurityPrices.ToListAsync());
+    }
+
+    /// <summary>
+    /// Verifies that upsert invalidates the portfolio analysis report cache for the owner
+    /// when at least one price was inserted or updated.
+    /// </summary>
+    [Fact]
+    public async Task UpsertDailyPricesAsync_ShouldInvalidatePortfolioCache_WhenPricesChanged()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
+            .Options;
+
+        await using var db = new AppDbContext(options);
+        var owner = new User("owner", "hash", true);
+        db.Users.Add(owner);
+        var security = new Security(owner.Id, "ETF", "ISIN123", null, "ETF", "EUR", null);
+        db.Securities.Add(security);
+        await db.SaveChangesAsync();
+
+        var portfolioCache = new Mock<IPortfolioAnalysisReportCacheService>();
+        var sut = new SecurityPriceService(db, Mock.Of<ILogger<SecurityPriceService>>(), portfolioCache.Object);
+        var items = new List<SecurityPriceImportItem> { new(new DateTime(2026, 7, 1), 10.00m, 3) };
+
+        await sut.UpsertDailyPricesAsync(owner.Id, security.Id, items, CancellationToken.None);
+
+        portfolioCache.Verify(c => c.InvalidateCacheAsync(owner.Id, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that upsert does not invalidate the portfolio analysis report cache when every
+    /// supplied price is unchanged compared to what is already stored.
+    /// </summary>
+    [Fact]
+    public async Task UpsertDailyPricesAsync_ShouldNotInvalidatePortfolioCache_WhenAllPricesUnchanged()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
+            .Options;
+
+        await using var db = new AppDbContext(options);
+        var owner = new User("owner", "hash", true);
+        db.Users.Add(owner);
+        var security = new Security(owner.Id, "ETF", "ISIN123", null, "ETF", "EUR", null);
+        db.Securities.Add(security);
+        db.SecurityPrices.Add(new SecurityPrice(security.Id, new DateTime(2026, 7, 1), 10.10m));
+        await db.SaveChangesAsync();
+
+        var portfolioCache = new Mock<IPortfolioAnalysisReportCacheService>();
+        var sut = new SecurityPriceService(db, Mock.Of<ILogger<SecurityPriceService>>(), portfolioCache.Object);
+        var items = new List<SecurityPriceImportItem> { new(new DateTime(2026, 7, 1), 10.10m, 3) };
+
+        var result = await sut.UpsertDailyPricesAsync(owner.Id, security.Id, items, CancellationToken.None);
+
+        Assert.Equal(1, result.Unchanged);
+        portfolioCache.Verify(c => c.InvalidateCacheAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Verifies that upsert completes without throwing when no portfolio cache service is supplied
+    /// (the optional dependency is left at its default of <c>null</c>).
+    /// </summary>
+    [Fact]
+    public async Task UpsertDailyPricesAsync_ShouldNotThrow_WhenPortfolioCacheServiceIsNull()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
+            .Options;
+
+        await using var db = new AppDbContext(options);
+        var owner = new User("owner", "hash", true);
+        db.Users.Add(owner);
+        var security = new Security(owner.Id, "ETF", "ISIN123", null, "ETF", "EUR", null);
+        db.Securities.Add(security);
+        await db.SaveChangesAsync();
+
+        var sut = new SecurityPriceService(db, Mock.Of<ILogger<SecurityPriceService>>());
+        var items = new List<SecurityPriceImportItem> { new(new DateTime(2026, 7, 1), 10.00m, 3) };
+
+        var result = await sut.UpsertDailyPricesAsync(owner.Id, security.Id, items, CancellationToken.None);
+
+        Assert.Equal(1, result.Inserted);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="SecurityPriceService.CreateAsync"/> invalidates the portfolio analysis
+    /// report cache for the owner after successfully persisting a new price.
+    /// </summary>
+    [Fact]
+    public async Task CreateAsync_ShouldInvalidatePortfolioCache_WhenPortfolioCacheServiceIsSupplied()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
+            .Options;
+
+        await using var db = new AppDbContext(options);
+        var owner = new User("owner", "hash", true);
+        db.Users.Add(owner);
+        var security = new Security(owner.Id, "ETF", "ISIN123", null, "ETF", "EUR", null);
+        db.Securities.Add(security);
+        await db.SaveChangesAsync();
+
+        var portfolioCache = new Mock<IPortfolioAnalysisReportCacheService>();
+        var sut = new SecurityPriceService(db, Mock.Of<ILogger<SecurityPriceService>>(), portfolioCache.Object);
+
+        await sut.CreateAsync(owner.Id, security.Id, new DateTime(2026, 7, 1), 10.00m, CancellationToken.None);
+
+        portfolioCache.Verify(c => c.InvalidateCacheAsync(owner.Id, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="SecurityPriceService.CreateAsync"/> completes without throwing when no
+    /// portfolio cache service is supplied (the optional dependency is left at its default of <c>null</c>).
+    /// </summary>
+    [Fact]
+    public async Task CreateAsync_ShouldNotThrow_WhenPortfolioCacheServiceIsNull()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
+            .Options;
+
+        await using var db = new AppDbContext(options);
+        var owner = new User("owner", "hash", true);
+        db.Users.Add(owner);
+        var security = new Security(owner.Id, "ETF", "ISIN123", null, "ETF", "EUR", null);
+        db.Securities.Add(security);
+        await db.SaveChangesAsync();
+
+        var sut = new SecurityPriceService(db, Mock.Of<ILogger<SecurityPriceService>>());
+
+        await sut.CreateAsync(owner.Id, security.Id, new DateTime(2026, 7, 1), 10.00m, CancellationToken.None);
+
+        Assert.Single(await db.SecurityPrices.ToListAsync());
     }
 }
