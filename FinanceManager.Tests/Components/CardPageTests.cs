@@ -5,6 +5,7 @@ using FinanceManager.Shared;
 using FinanceManager.Shared.Dtos.Contacts;
 using FinanceManager.Web;
 using FinanceManager.Web.Components.Pages;
+using msTools.Web.Blazor;
 using FinanceManager.Web.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
@@ -24,6 +25,9 @@ namespace FinanceManager.Tests.Components
             CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
             CultureInfo.CurrentCulture = new CultureInfo("en-US");
             CultureInfo.CurrentUICulture = new CultureInfo("en-US");
+            Services.AddScoped<LoadingBarService>();
+            JSInterop.SetupVoid("financeManager.loadingBar.start").SetVoidResult();
+            JSInterop.SetupVoid("financeManager.loadingBar.stop").SetVoidResult();
         }
         
         [Fact]

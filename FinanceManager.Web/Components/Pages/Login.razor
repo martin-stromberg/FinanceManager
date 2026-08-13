@@ -83,6 +83,10 @@
             _error = string.Format(Localizer["Error_Unexpected"], ex.Message);
         }
         _busy = false;
+        if (!string.IsNullOrEmpty(_error))
+        {
+            await JS.InvokeVoidAsync("financeManager.loadingBar.stop");
+        }
     }
 
     private sealed class LoginVm

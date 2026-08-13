@@ -5,6 +5,7 @@ using FinanceManager.Shared;
 using FinanceManager.Web;
 using FinanceManager.Web.Components.Pages;
 using FinanceManager.Web.Components.Shared;
+using msTools.Web.Blazor;
 using FinanceManager.Web.Services;
 using FinanceManager.Web.ViewModels.Setup;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,9 @@ public sealed class SetupSectionsTests : BunitContext
         // Arrange
         Services.AddSingleton<ICurrentUserService>(new TestCurrentUserService());
         Services.AddSingleton<IApiClient>(new Mock<IApiClient>().Object);
+        Services.AddScoped<LoadingBarService>();
+        JSInterop.SetupVoid("financeManager.loadingBar.start").SetVoidResult();
+        JSInterop.SetupVoid("financeManager.loadingBar.stop").SetVoidResult();
         Services.AddLocalization(options => options.ResourcesPath = "Resources");
         Services.AddSingleton(typeof(IStringLocalizer<Pages>), new PagesStringLocalizer());
 
