@@ -141,6 +141,7 @@ FinanceManager.Tests.Integration        # Integrationstests
 FinanceManager.Tests.E2E                # Playwright-End-to-End-Tests
 
 external/msTools.Updater/v0.3.0         # Geprueftes externes Updater-Release fuer den Testlauf vor NuGet
+external/msTools.Web.Blazor             # Lokales NuGet-Paket fuer wiederverwendbare Blazor-Komponenten
 ```
 
 **Technologien:** .NET 10, ASP.NET Core, Blazor Server, EF Core (SQLite), ASP.NET Identity/JWT, xUnit, bUnit, Playwright.
@@ -152,6 +153,15 @@ Das Self-Update-System wird aus dem externen Release-Artefakt `msTools.Updater` 
 Bis zur geplanten NuGet-Veröffentlichung liegt der geprüfte Release `v0.3.0` aus `martin-stromberg/msTools.Updater` unter [`external/msTools.Updater/v0.3.0/`](external/msTools.Updater/v0.3.0/). Dort sind das originale `release.zip`, `SHA256SUMS.txt`, eine Herkunfts-README und die entpackte `lib/msTools.Updater.dll` abgelegt; der dokumentierte SHA-256 des ZIPs ist `9b9e578deffddd44a36a3ac844ca9b55b1c201984823f6134db56aafdd292834`.
 
 `FinanceManager.Web` referenziert die entpackte DLL direkt und kopiert sie in Build- und Publish-Ausgaben. Die Integration erfolgt weiterhin über den FinanceManager-Adapter (`UpdateOrchestratorAdapter`); Controller, DTOs, Admin-UI und REST-API bleiben dadurch aus Anwendersicht stabil. Vorabversionen werden nur geladen, wenn `Updates:IncludePrereleases` beziehungsweise `UpdateSettings.IncludePrereleases` aktiviert ist.
+
+### Wiederverwendbare Blazor-Komponenten
+
+Die globale Ladeleiste kommt aus dem separaten Paket `msTools.Web.Blazor`.
+FinanceManager bindet bis zur zentralen NuGet-Veroeffentlichung das lokal
+versionierte Paket unter `external/msTools.Web.Blazor/` ein. Die konkrete
+Registrierung, Root-Komponente, Service-Nutzung und der Aktualisierungsablauf
+sind in [Docs/maintenance/mstools-web-blazor-integration.md](Docs/maintenance/mstools-web-blazor-integration.md)
+dokumentiert.
 
 ## API-Dokumentation
 
