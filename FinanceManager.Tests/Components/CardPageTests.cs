@@ -24,6 +24,9 @@ namespace FinanceManager.Tests.Components
             CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
             CultureInfo.CurrentCulture = new CultureInfo("en-US");
             CultureInfo.CurrentUICulture = new CultureInfo("en-US");
+            Services.AddScoped<LoadingBarService>();
+            JSInterop.SetupVoid("financeManager.loadingBar.start").SetVoidResult();
+            JSInterop.SetupVoid("financeManager.loadingBar.stop").SetVoidResult();
         }
         
         [Fact]

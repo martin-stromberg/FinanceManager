@@ -3,7 +3,9 @@ using FinanceManager.Web.Components.Shared;
 using FinanceManager.Web.ViewModels.Common;
 using Moq;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.DependencyInjection;
 using FinanceManager.Web.ViewModels;
+using FinanceManager.Web.Services;
 using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Tests.Components;
@@ -11,6 +13,13 @@ namespace FinanceManager.Tests.Components;
 public class RibbonTests : Bunit.BunitContext
 {
     private enum TabId { One, Two }
+
+    public RibbonTests()
+    {
+        Services.AddScoped<LoadingBarService>();
+        JSInterop.SetupVoid("financeManager.loadingBar.start").SetVoidResult();
+        JSInterop.SetupVoid("financeManager.loadingBar.stop").SetVoidResult();
+    }
 
     [Fact]
     public void SingleTab_RendersGroupsAndButtons()
