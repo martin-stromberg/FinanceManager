@@ -59,4 +59,8 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\msTools.Web.Blazor\msTools.Web.Blazor.csproj" />
+  </ItemGroup>
+
 </Project>

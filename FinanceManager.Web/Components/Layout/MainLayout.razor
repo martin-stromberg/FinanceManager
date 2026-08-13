@@ -2,7 +2,7 @@
 @inject FinanceManager.Application.ICurrentUserService CurrentUser
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
 @inject Microsoft.AspNetCore.Components.NavigationManager Nav
-@inject Microsoft.JSInterop.IJSRuntime JS
+@inject LoadingBarService LoadingBar
 @implements IDisposable
 
 <link rel="stylesheet" href="/css/ribbon.css" />
@@ -82,16 +82,7 @@
     {
         if (context.IsNavigationIntercepted || !string.Equals(Nav.Uri, context.TargetLocation, StringComparison.Ordinal))
         {
-            try
-            {
-                await JS.InvokeVoidAsync("financeManager.loadingBar.start");
-            }
-            catch (Microsoft.JSInterop.JSDisconnectedException)
-            {
-            }
-            catch (InvalidOperationException)
-            {
-            }
+            await LoadingBar.StartAsync();
         }
     }
 
@@ -104,16 +95,7 @@
 
     private async Task StopLoadingBarAsync()
     {
-        try
-        {
-            await JS.InvokeVoidAsync("financeManager.loadingBar.stop");
-        }
-        catch (Microsoft.JSInterop.JSDisconnectedException)
-        {
-        }
-        catch (InvalidOperationException)
-        {
-        }
+        await LoadingBar.StopAsync();
     }
 
     private void UpdateLogo(string uri)

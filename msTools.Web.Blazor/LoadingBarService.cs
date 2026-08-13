@@ -1,9 +1,9 @@
 using Microsoft.JSInterop;
 
-namespace FinanceManager.Web.Services;
+namespace msTools.Web.Blazor;
 
 /// <summary>
-/// Central Blazor-side bridge for the global loading bar.
+/// Provides a Blazor-side bridge for the reusable global loading bar.
 /// </summary>
 public sealed class LoadingBarService
 {
@@ -64,6 +64,27 @@ public sealed class LoadingBarService
         try
         {
             await action();
+        }
+        finally
+        {
+            await StopAsync();
+        }
+    }
+
+    /// <summary>
+    /// Runs an asynchronous UI action while the global loading bar is visible and returns its result.
+    /// </summary>
+    /// <typeparam name="T">Result type.</typeparam>
+    /// <param name="action">Action to execute.</param>
+    /// <returns>The action result.</returns>
+    public async Task<T> RunAsync<T>(Func<Task<T>> action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+
+        await StartAsync();
+        try
+        {
+            return await action();
         }
         finally
         {

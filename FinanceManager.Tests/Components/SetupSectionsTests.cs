@@ -5,6 +5,7 @@ using FinanceManager.Shared;
 using FinanceManager.Web;
 using FinanceManager.Web.Components.Pages;
 using FinanceManager.Web.Components.Shared;
+using msTools.Web.Blazor;
 using FinanceManager.Web.Services;
 using FinanceManager.Web.ViewModels.Setup;
 using Microsoft.Extensions.DependencyInjection;

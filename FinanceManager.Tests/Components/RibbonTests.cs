@@ -5,7 +5,7 @@ using Moq;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using FinanceManager.Web.ViewModels;
-using FinanceManager.Web.Services;
+using msTools.Web.Blazor;
 using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Tests.Components;

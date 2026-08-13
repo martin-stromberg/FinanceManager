@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceManager.Tests.Integr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceManager.Tests.E2E", "FinanceManager.Tests.E2E\FinanceManager.Tests.E2E.csproj", "{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "msTools.Web.Blazor", "msTools.Web.Blazor\msTools.Web.Blazor.csproj", "{CEA0B1D8-A3BB-4EBA-9A84-81DC38A6FDF2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -125,6 +127,18 @@ Global
 		{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}.Release|x64.Build.0 = Release|Any CPU
 		{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}.Release|x86.ActiveCfg = Release|Any CPU
 		{2BE60BD5-910E-48FB-B3B5-F1FB09F1A033}.Release|x86.Build.0 = Release|Any CPU
+		{CEA0B1D8-A3BB-4EBA-9A84-81DC38A6FDF2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CEA0B1D8-A3BB-4EBA-9A84-81DC38A6FDF2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CEA0B1D8-A3BB-4EBA-9A84-81DC38A6FDF2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CEA0B1D8-A3BB-4EBA-9A84-81DC38A6FDF2}.Debug|x64.Build.0 = Debug|Any CPU
+		{CEA0B1D8-A3BB-4EBA-9A84-81DC38A6FDF2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CEA0B1D8-A3BB-4EBA-9A84-81DC38A6FDF2}.Debug|x86.Build.0 = Debug|Any CPU
+		{CEA0B1D8-A3BB-4EBA-9A84-81DC38A6FDF2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CEA0B1D8-A3BB-4EBA-9A84-81DC38A6FDF2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CEA0B1D8-A3BB-4EBA-9A84-81DC38A6FDF2}.Release|x64.ActiveCfg = Release|Any CPU
+		{CEA0B1D8-A3BB-4EBA-9A84-81DC38A6FDF2}.Release|x64.Build.0 = Release|Any CPU
+		{CEA0B1D8-A3BB-4EBA-9A84-81DC38A6FDF2}.Release|x86.ActiveCfg = Release|Any CPU
+		{CEA0B1D8-A3BB-4EBA-9A84-81DC38A6FDF2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

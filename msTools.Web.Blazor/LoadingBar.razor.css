@@ -1,0 +1,43 @@
+.mst-loading-bar {
+    --mst-loading-bar-color: currentColor;
+    position: fixed;
+    top: var(--mst-loading-bar-top, 0);
+    left: 0;
+    width: 100%;
+    height: var(--mst-loading-bar-height, 3px);
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    z-index: var(--mst-loading-bar-z-index, 1200);
+    transform: translateZ(0);
+}
+
+.mst-loading-bar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 42%;
+    min-width: 6rem;
+    background: linear-gradient(270deg, transparent 0%, var(--mst-loading-bar-color) 30%, var(--mst-loading-bar-color) 72%, transparent 100%);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--mst-loading-bar-color) 70%, transparent);
+    transform: translateX(240%);
+}
+
+.mst-loading-bar.is-visible {
+    opacity: 1;
+}
+
+.mst-loading-bar.is-running::before {
+    animation: mst-loading-bar-sweep .9s cubic-bezier(.4, 0, .2, 1) infinite;
+}
+
+@keyframes mst-loading-bar-sweep {
+    from {
+        transform: translateX(240%);
+    }
+
+    to {
+        transform: translateX(-140%);
+    }
+}

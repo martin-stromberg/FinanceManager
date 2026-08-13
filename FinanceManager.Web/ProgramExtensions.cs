@@ -18,6 +18,7 @@ using FinanceManager.Web.Infrastructure.Logging;
 using FinanceManager.Web.Services;
 using FinanceManager.Web.Services.Help;
 using FinanceManager.Web.Services.Updates;
+using msTools.Web.Blazor;
 using msTools.Updater;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -132,7 +133,24 @@ namespace FinanceManager.Web
             builder.Services.AddScoped<IPostingsQueryService, PostingsQueryService>();
             builder.Services.AddScoped<Application.Postings.IPostingsQueryService>(sp => sp.GetRequiredService<IPostingsQueryService>());
             builder.Services.AddScoped<Application.Budget.IBudgetReportExportService, BudgetReportExportService>();
-            builder.Services.AddScoped<LoadingBarService>();
+            builder.Services.AddLoadingBar(options =>
+            {
+                options.Colors = new[]
+                {
+                    "#4dabf7",
+                    "#51cf66",
+                    "#ffd43b",
+                    "#ff6b6b",
+                    "#b197fc",
+                    "#20c997",
+                    "#ff922b"
+                };
+                options.Height = "3px";
+                options.Top = "0";
+                options.MobileTop = "54px";
+                options.MobileBreakpoint = "900px";
+                options.ZIndex = 1200;
+            });
             builder.Services.AddSingleton<IHelpContentRenderer, HelpContentRenderer>();
             builder.Services.AddSingleton<IHelpAssetIntegrityValidator, HelpAssetIntegrityValidator>();
 

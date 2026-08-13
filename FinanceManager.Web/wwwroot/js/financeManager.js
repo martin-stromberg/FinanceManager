@@ -2,14 +2,23 @@ window.financeManager = window.financeManager || {};
 
 (function (fm) {
   const loadingBarId = "fm-loading-bar";
-  const colors = ["#4dabf7", "#51cf66", "#ffd43b", "#ff6b6b", "#b197fc", "#20c997", "#ff922b"];
   let submitFallbackTimers = [];
 
   function getLoadingBar() {
-    return document.getElementById(loadingBarId);
+    return document.querySelector("[data-mst-loading-bar]") || document.getElementById(loadingBarId);
   }
 
-  function randomColor() {
+  function getLoadingBarColors(el) {
+    const configuredColors = (el.dataset.loadingColors || "")
+      .split(",")
+      .map(function (color) { return color.trim(); })
+      .filter(Boolean);
+
+    return configuredColors.length > 0 ? configuredColors : ["currentColor"];
+  }
+
+  function randomColor(el) {
+    const colors = getLoadingBarColors(el);
     if (window.crypto && typeof window.crypto.getRandomValues === "function") {
       const values = new Uint32Array(1);
       window.crypto.getRandomValues(values);
@@ -31,7 +40,7 @@ window.financeManager = window.financeManager || {};
       return;
     }
 
-    el.style.setProperty("--fm-loading-bar-color", randomColor());
+    el.style.setProperty("--mst-loading-bar-color", randomColor(el));
     el.dataset.sequence = String((Number(el.dataset.sequence || "0") + 1));
     el.classList.add("is-visible");
     restartAnimation(el);
