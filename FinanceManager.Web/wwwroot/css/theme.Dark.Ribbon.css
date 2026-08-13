@@ -73,6 +73,28 @@
         color: #f0f0f0;
     }
 
+    .fm-ribbon-mobile-group-title-toggle,
+    .fm-ribbon-mobile-group-toggle,
+    .fm-ribbon-mobile-shortcut {
+        color: #f0f0f0;
+    }
+
+    .fm-ribbon-mobile-group-title-toggle:hover:not(:disabled),
+    .fm-ribbon-mobile-group-toggle:hover:not(:disabled),
+    .fm-ribbon-mobile-shortcut:hover:not(:disabled),
+    .fm-ribbon-mobile-group-title-toggle:focus-visible,
+    .fm-ribbon-mobile-group-toggle:focus-visible,
+    .fm-ribbon-mobile-shortcut:focus-visible {
+        color: #fff;
+    }
+
+    .fm-ribbon-mobile-group-title-toggle:focus-visible,
+    .fm-ribbon-mobile-group-toggle:focus-visible,
+    .fm-ribbon-mobile-shortcut:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+
     .fm-ribbon-mobile-group-header:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: -2px;
