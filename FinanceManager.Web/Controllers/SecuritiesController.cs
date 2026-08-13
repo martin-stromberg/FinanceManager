@@ -140,7 +140,7 @@ public sealed class SecuritiesController : ControllerBase
         if (!ModelState.IsValid) { return ValidationProblem(ModelState); }
         try
         {
-            var dto = await _service.CreateAsync(_current.UserId, req.Name, req.Identifier, req.Description, req.AlphaVantageCode, req.CurrencyCode, req.CategoryId, ct);
+            var dto = await _service.CreateAsync(_current.UserId, req.Name, req.Identifier, req.Description, req.AlphaVantageCode, req.CurrencyCode, req.CategoryId, ct, req.Region, req.Sector);
 
             await _parentAssign.TryAssignAsync(
                 _current.UserId,
@@ -182,7 +182,7 @@ public sealed class SecuritiesController : ControllerBase
         if (!ModelState.IsValid) { return ValidationProblem(ModelState); }
         try
         {
-            var dto = await _service.UpdateAsync(id, _current.UserId, req.Name, req.Identifier, req.Description, req.AlphaVantageCode, req.CurrencyCode, req.CategoryId, ct);
+            var dto = await _service.UpdateAsync(id, _current.UserId, req.Name, req.Identifier, req.Description, req.AlphaVantageCode, req.CurrencyCode, req.CategoryId, ct, req.Region, req.Sector);
             return dto == null ? NotFound() : Ok(dto);
         }
         catch (ArgumentOutOfRangeException ex)

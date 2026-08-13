@@ -177,6 +177,19 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
             )
         };
 
+        var reports = new List<UiRibbonAction>
+        {
+            new UiRibbonAction(
+                "PortfolioAnalysisReport",
+                localizer["Ribbon_PortfolioAnalysisReport"].Value,
+                "<svg><use href='/icons/sprite.svg#chart'/></svg>",
+                UiRibbonItemSize.Small,
+                false,
+                null,
+                () => { _nav.NavigateTo("/portfolio/analysis-report"); return Task.CompletedTask; }
+            )
+        };
+
         var filter = new List<UiRibbonAction>
         {
             new UiRibbonAction(
@@ -190,7 +203,11 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
             )
         };
 
-        var tabsActions = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Actions"].Value, actions) };
+        var tabsActions = new List<UiRibbonTab>
+        {
+            new UiRibbonTab(localizer["Ribbon_Group_Actions"].Value, actions),
+            new UiRibbonTab(localizer["Ribbon_Group_Reports"].Value, reports)
+        };
         var tabsFilter = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Filter"].Value, filter) };
 
         return new List<UiRibbonRegister>

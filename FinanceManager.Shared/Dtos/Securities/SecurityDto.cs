@@ -37,4 +37,8 @@ public sealed class SecurityDto
     /// A value indicating whether a pricing error has occurred for the current instance.
     /// </summary>
     public bool HasPriceError { get; set; }
+    /// <summary>Optional region of the security (e.g. "Europa", "Nordamerika") used for regional distribution.</summary>
+    public string? Region { get; set; }
+    /// <summary>Optional sector of the security (e.g. "Technologie", "Pharma") used for sector distribution.</summary>
+    public string? Sector { get; set; }
 }

@@ -1,0 +1,68 @@
+@using System.Globalization
+
+<div class="mini-bar-chart" role="img" aria-label="@AriaLabel">
+    @if (Points.Count == 0)
+    {
+        <div class="mini-bar-chart-empty">@EmptyText</div>
+    }
+    else
+    {
+        var maxAbs = Points.Select(p => Math.Abs(p.Value)).DefaultIfEmpty(0m).Max();
+        var half = HeightPx / 2m;
+        var scale = maxAbs == 0m ? 0m : half / maxAbs;
+
+        <div class="mini-bar-chart-bars" style="height:@(HeightPx)px;">
+            <div class="mini-bar-chart-row pos">
+                @foreach (var p in Points)
+                {
+                    var h = p.Value > 0m ? (int)Math.Round((double)(p.Value * scale)) : 0;
+                    <div class="mini-bar-chart-bar-wrap" title="@FormatTooltip(p)">
+                        <div class="mini-bar-chart-bar positive" style="height:@(h)px;"></div>
+                    </div>
+                }
+            </div>
+            <div class="mini-bar-chart-zero"></div>
+            <div class="mini-bar-chart-row neg">
+                @foreach (var p in Points)
+                {
+                    var h = p.Value < 0m ? (int)Math.Round((double)(-p.Value * scale)) : 0;
+                    <div class="mini-bar-chart-bar-wrap" title="@FormatTooltip(p)">
+                        <div class="mini-bar-chart-bar negative" style="height:@(h)px;"></div>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="mini-bar-chart-labels">
+            @foreach (var p in Points)
+            {
+                <span class="mini-bar-chart-label">@p.Label</span>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>A single labeled value rendered as a bar (positive values grow up, negative values grow down from the zero line).</summary>
+    /// <param name="Label">Short label shown below the bar (e.g. a year or KPI name).</param>
+    /// <param name="Value">Signed value the bar height is scaled from.</param>
+    public sealed record MiniBarChartPoint(string Label, decimal Value);
+
+    /// <summary>Points to render, in display order.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<MiniBarChartPoint> Points { get; set; } = Array.Empty<MiniBarChartPoint>();
+
+    /// <summary>Total height in pixels available for the bars (split evenly above/below the zero line).</summary>
+    [Parameter] public int HeightPx { get; set; } = 90;
+
+    /// <summary>Accessible label describing the chart for screen readers.</summary>
+    [Parameter] public string AriaLabel { get; set; } = string.Empty;
+
+    /// <summary>Text shown when <see cref="Points"/> is empty.</summary>
+    [Parameter] public string EmptyText { get; set; } = string.Empty;
+
+    /// <summary>Optional formatter for the value shown in each bar's hover tooltip; defaults to "N2".</summary>
+    [Parameter] public Func<MiniBarChartPoint, string>? TooltipFormatter { get; set; }
+
+    private string FormatTooltip(MiniBarChartPoint p) => TooltipFormatter != null
+        ? TooltipFormatter(p)
+        : string.Format(CultureInfo.CurrentUICulture, "{0}: {1:N2}", p.Label, p.Value);
+}

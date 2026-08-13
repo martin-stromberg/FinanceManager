@@ -35,9 +35,11 @@ public interface ISecurityService
     /// <param name="currencyCode">ISO currency code (e.g. "USD", "EUR"). Required.</param>
     /// <param name="categoryId">Optional category id grouping the security.</param>
     /// <param name="ct">Cancellation token to cancel the operation.</param>
+    /// <param name="region">Optional region of the security (e.g. "Europa", "Nordamerika") used for regional distribution.</param>
+    /// <param name="sector">Optional sector of the security (e.g. "Technologie", "Pharma") used for sector distribution.</param>
     /// <returns>The created <see cref="SecurityDto"/> representing the new security.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/>, <paramref name="identifier"/> or <paramref name="currencyCode"/> is <c>null</c> or empty.</exception>
-    Task<SecurityDto> CreateAsync(Guid ownerUserId, string name, string identifier, string? description, string? alphaVantageCode, string currencyCode, Guid? categoryId, CancellationToken ct);
+    Task<SecurityDto> CreateAsync(Guid ownerUserId, string name, string identifier, string? description, string? alphaVantageCode, string currencyCode, Guid? categoryId, CancellationToken ct, string? region = null, string? sector = null);
 
     /// <summary>
     /// Updates an existing security and returns the updated DTO.
@@ -51,10 +53,12 @@ public interface ISecurityService
     /// <param name="currencyCode">ISO currency code. Required.</param>
     /// <param name="categoryId">Optional category id.</param>
     /// <param name="ct">Cancellation token to cancel the operation.</param>
+    /// <param name="region">Optional region of the security (e.g. "Europa", "Nordamerika") used for regional distribution.</param>
+    /// <param name="sector">Optional sector of the security (e.g. "Technologie", "Pharma") used for sector distribution.</param>
     /// <returns>The updated <see cref="SecurityDto"/>, or <c>null</c> if the security does not exist.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="id"/> is <see cref="Guid.Empty"/>.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/>, <paramref name="identifier"/> or <paramref name="currencyCode"/> is <c>null</c> or empty.</exception>
-    Task<SecurityDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string identifier, string? description, string? alphaVantageCode, string currencyCode, Guid? categoryId, CancellationToken ct);
+    Task<SecurityDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string identifier, string? description, string? alphaVantageCode, string currencyCode, Guid? categoryId, CancellationToken ct, string? region = null, string? sector = null);
 
     /// <summary>
     /// Archives (marks as inactive) the specified security.

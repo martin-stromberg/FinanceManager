@@ -20,12 +20,14 @@ public sealed class Security: Entity
     /// <param name="alphaVantageCode">Optional AlphaVantage symbol/code used for price lookups.</param>
     /// <param name="currencyCode">Currency ISO code (e.g. "EUR"). Must not be null or whitespace.</param>
     /// <param name="categoryId">Optional category id.</param>
+    /// <param name="region">Optional region of the security (e.g. "Europa", "Nordamerika") used for regional distribution.</param>
+    /// <param name="sector">Optional sector of the security (e.g. "Technologie", "Pharma") used for sector distribution.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="name"/>, <paramref name="identifier"/> or <paramref name="currencyCode"/> are null or whitespace. See <see cref="Update"/>.</exception>
-    public Security(Guid ownerUserId, string name, string identifier, string? description, string? alphaVantageCode, string currencyCode, Guid? categoryId)
+    public Security(Guid ownerUserId, string name, string identifier, string? description, string? alphaVantageCode, string currencyCode, Guid? categoryId, string? region = null, string? sector = null)
     {
         Id = Guid.NewGuid();
         OwnerUserId = ownerUserId;
-        Update(name, identifier, description, alphaVantageCode, currencyCode, categoryId);
+        Update(name, identifier, description, alphaVantageCode, currencyCode, categoryId, region, sector);
         CreatedUtc = DateTime.UtcNow;
         IsActive = true;
     }
@@ -73,6 +75,18 @@ public sealed class Security: Entity
     public Guid? CategoryId { get; private set; }          // NEW
 
     /// <summary>
+    /// Optional region of the security (e.g. "Europa", "Nordamerika") used for regional distribution in the portfolio analysis report.
+    /// </summary>
+    /// <value>Region string or <c>null</c>.</value>
+    public string? Region { get; private set; }
+
+    /// <summary>
+    /// Optional sector of the security (e.g. "Technologie", "Pharma") used for sector distribution in the portfolio analysis report.
+    /// </summary>
+    /// <value>Sector string or <c>null</c>.</value>
+    public string? Sector { get; private set; }
+
+    /// <summary>
     /// Indicates whether the security is active.
     /// </summary>
     /// <value><c>true</c> when active; otherwise <c>false</c>.</value>
@@ -117,12 +131,16 @@ public sealed class Security: Entity
     /// <param name="alphaVantageCode">Optional external provider code.</param>
     /// <param name="currencyCode">ISO currency code. Must not be null or whitespace.</param>
     /// <param name="categoryId">Optional category id.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="name"/>, <paramref name="identifier"/>, or <paramref name="currencyCode"/> are null or whitespace.</exception>
-    public void Update(string name, string identifier, string? description, string? alphaVantageCode, string currencyCode, Guid? categoryId)
+    /// <param name="region">Optional region of the security (e.g. "Europa", "Nordamerika"). Max. 255 characters.</param>
+    /// <param name="sector">Optional sector of the security (e.g. "Technologie", "Pharma"). Max. 255 characters.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="name"/>, <paramref name="identifier"/>, or <paramref name="currencyCode"/> are null or whitespace, or when <paramref name="region"/> or <paramref name="sector"/> exceed 255 characters.</exception>
+    public void Update(string name, string identifier, string? description, string? alphaVantageCode, string currencyCode, Guid? categoryId, string? region = null, string? sector = null)
     {
         if (string.IsNullOrWhiteSpace(name)) { throw new ArgumentException("Name required", nameof(name)); }
         if (string.IsNullOrWhiteSpace(identifier)) { throw new ArgumentException("Identifier required", nameof(identifier)); }
         if (string.IsNullOrWhiteSpace(currencyCode)) { throw new ArgumentException("Currency required", nameof(currencyCode)); }
+        if (region != null && region.Trim().Length > 255) { throw new ArgumentException("Region must not exceed 255 characters", nameof(region)); }
+        if (sector != null && sector.Trim().Length > 255) { throw new ArgumentException("Sector must not exceed 255 characters", nameof(sector)); }
 
         Name = name.Trim();
         Identifier = identifier.Trim();
@@ -130,6 +148,8 @@ public sealed class Security: Entity
         AlphaVantageCode = string.IsNullOrWhiteSpace(alphaVantageCode) ? null : alphaVantageCode.Trim();
         CurrencyCode = currencyCode.Trim().ToUpperInvariant();
         CategoryId = categoryId;
+        Region = string.IsNullOrWhiteSpace(region) ? null : region.Trim();
+        Sector = string.IsNullOrWhiteSpace(sector) ? null : sector.Trim();
     }
 
     /// <summary>
@@ -202,13 +222,30 @@ public sealed class Security: Entity
     /// <param name="ModifiedUtc">Last modification timestamp in UTC, if any.</param>
     /// <param name="ArchivedUtc">Archive timestamp in UTC if archived.</param>
     /// <param name="SymbolAttachmentId">Optional symbol attachment identifier.</param>
-    public sealed record SecurityBackupDto(Guid Id, Guid OwnerUserId, string Name, string Identifier, string? Description, string? AlphaVantageCode, string CurrencyCode, Guid? CategoryId, bool IsActive, DateTime CreatedUtc, DateTime? ModifiedUtc, DateTime? ArchivedUtc, Guid? SymbolAttachmentId);
+    /// <param name="Region">Optional region of the security.</param>
+    /// <param name="Sector">Optional sector of the security.</param>
+    /// <returns>A backup record instance.</returns>
+    public sealed record SecurityBackupDto(Guid Id, Guid OwnerUserId, string Name, string Identifier, string? Description, string? AlphaVantageCode, string CurrencyCode, Guid? CategoryId, bool IsActive, DateTime CreatedUtc, DateTime? ModifiedUtc, DateTime? ArchivedUtc, Guid? SymbolAttachmentId, string? Region = null, string? Sector = null);
 
     /// <summary>
     /// Creates a backup DTO representing this security.
     /// </summary>
+    /// <param name="OwnerUserId">Identifier of the user who owns the security.</param>
+    /// <param name="Name">Display name of the security.</param>
+    /// <param name="Identifier">Primary identifier (e.g. WKN or ISIN).</param>
+    /// <param name="Description">Optional description text.</param>
+    /// <param name="AlphaVantageCode">Optional code for external price providers.</param>
+    /// <param name="CurrencyCode">ISO currency code used for prices.</param>
+    /// <param name="CategoryId">Optional category identifier for the security.</param>
+    /// <param name="IsActive">Whether the security is active.</param>
+    /// <param name="CreatedUtc">Creation timestamp in UTC.</param>
+    /// <param name="ModifiedUtc">Last modification timestamp in UTC, if any.</param>
+    /// <param name="ArchivedUtc">Archive timestamp in UTC if archived.</param>
+    /// <param name="SymbolAttachmentId">Optional symbol attachment identifier.</param>
+    /// <param name="Region">Optional region of the security.</param>
+    /// <param name="Sector">Optional sector of the security.</param>
     /// <returns>A <see cref="SecurityBackupDto"/> with serializable security data.</returns>
-    public SecurityBackupDto ToBackupDto() => new SecurityBackupDto(Id, OwnerUserId, Name, Identifier, Description, AlphaVantageCode, CurrencyCode, CategoryId, IsActive, CreatedUtc, ModifiedUtc, ArchivedUtc, SymbolAttachmentId);
+    public SecurityBackupDto ToBackupDto() => new SecurityBackupDto(Id, OwnerUserId, Name, Identifier, Description, AlphaVantageCode, CurrencyCode, CategoryId, IsActive, CreatedUtc, ModifiedUtc, ArchivedUtc, SymbolAttachmentId, Region, Sector);
 
     /// <summary>
     /// Assigns values from a backup DTO to this entity.
@@ -218,7 +255,7 @@ public sealed class Security: Entity
     public void AssignBackupDto(SecurityBackupDto dto)
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
-        Update(dto.Name, dto.Identifier, dto.Description, dto.AlphaVantageCode, dto.CurrencyCode, dto.CategoryId);
+        Update(dto.Name, dto.Identifier, dto.Description, dto.AlphaVantageCode, dto.CurrencyCode, dto.CategoryId, dto.Region, dto.Sector);
         if (!dto.IsActive && IsActive) Archive();
         SymbolAttachmentId = dto.SymbolAttachmentId;
         SetDates(dto.CreatedUtc, dto.ModifiedUtc, dto.ArchivedUtc);

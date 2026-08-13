@@ -6,6 +6,7 @@ using FinanceManager.Application.Backups;
 using FinanceManager.Application.Contacts;
 using FinanceManager.Application.Demo;
 using FinanceManager.Application.Notifications; // new
+using FinanceManager.Application.Portfolio;
 using FinanceManager.Application.Postings;
 using FinanceManager.Application.Reports;
 using FinanceManager.Application.Savings;
@@ -22,6 +23,7 @@ using FinanceManager.Infrastructure.Auth;
 using FinanceManager.Infrastructure.Backups;
 using FinanceManager.Infrastructure.Contacts;
 using FinanceManager.Infrastructure.Notifications; // new
+using FinanceManager.Infrastructure.Portfolio;
 using FinanceManager.Infrastructure.Postings;
 using FinanceManager.Infrastructure.Reports;
 using FinanceManager.Infrastructure.Savings;
@@ -147,6 +149,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IReturnCalculationService, ReturnCalculationService>();
         services.AddSingleton<IFifoCostBasisCalculator, FifoCostBasisCalculator>();
         services.AddSingleton<IReturnAnalysisCache, MemoryReturnAnalysisCache>();
+
+        // Portfolio analysis report services
+        services.AddScoped<IPortfolioAnalysisReportService, PortfolioAnalysisReportService>();
+        services.AddScoped<IPortfolioAnalysisReportCacheService, PortfolioAnalysisReportCacheService>();
+        services.AddScoped<IPortfolioKpiConfigurationRepository, PortfolioKpiConfigurationRepository>();
 
         return services;
     }

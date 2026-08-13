@@ -859,4 +859,36 @@ public interface IApiClient
     /// <param name="kind">Optional discriminator to split unbudgeted postings (e.g. "selfCostNeutral" or "remaining").</param>
     /// <param name="ct">Cancellation token.</param>
     Task<IReadOnlyList<FinanceManager.Shared.Dtos.Postings.PostingServiceDto>> Budgets_GetUnbudgetedPostingsAsync(DateTime? from, DateTime? to, FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis dateBasis, string? kind = null, CancellationToken ct = default);
+
+    // Portfolio Analysis Report
+
+    /// <summary>
+    /// Gets the portfolio analysis report for the current user (server-side cached, monthly validity).
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The portfolio analysis report.</returns>
+    Task<FinanceManager.Shared.Dtos.Portfolio.PortfolioAnalysisReportDto> Portfolio_GetAnalysisReportAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets the current user's portfolio KPI tile configuration (or defaults when none saved yet).
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The current KPI tile configuration.</returns>
+    Task<FinanceManager.Shared.Dtos.Portfolio.PortfolioKpiConfigurationDto> Portfolio_GetKpiConfigurationAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Saves the current user's portfolio KPI tile configuration and invalidates the report cache.
+    /// Returns <c>null</c> when the request payload was rejected as invalid.
+    /// </summary>
+    /// <param name="request">KPI configuration request payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The persisted configuration, or <c>null</c> on validation failure.</returns>
+    Task<FinanceManager.Shared.Dtos.Portfolio.PortfolioKpiConfigurationDto?> Portfolio_SaveKpiConfigurationAsync(FinanceManager.Shared.Dtos.Portfolio.PortfolioKpiConfigurationRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Manually resets (invalidates) the portfolio analysis report cache for the current user.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the cache has been invalidated.</returns>
+    Task Portfolio_ResetCacheAsync(CancellationToken ct = default);
 }

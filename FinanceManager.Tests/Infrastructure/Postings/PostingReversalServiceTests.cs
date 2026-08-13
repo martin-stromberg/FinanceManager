@@ -1,4 +1,5 @@
 using FinanceManager.Application.Aggregates;
+using FinanceManager.Application.Portfolio;
 using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Postings;
 using FinanceManager.Domain.Statements;
@@ -32,10 +33,13 @@ public sealed class PostingReversalServiceTests
         return new AppDbContext(options);
     }
 
-    private static PostingReversalService CreateService(AppDbContext context, IPostingAggregateService? aggregateService = null)
+    private static PostingReversalService CreateService(
+        AppDbContext context,
+        IPostingAggregateService? aggregateService = null,
+        IPortfolioAnalysisReportCacheService? portfolioCache = null)
     {
         var aggService = aggregateService ?? Mock.Of<IPostingAggregateService>();
-        return new PostingReversalService(context, aggService, NullLogger<PostingReversalService>.Instance);
+        return new PostingReversalService(context, aggService, NullLogger<PostingReversalService>.Instance, portfolioCache);
     }
 
     private static Account CreateAccount(Guid ownerId)
@@ -850,5 +854,101 @@ public sealed class PostingReversalServiceTests
         entry.SecurityQuantity.Should().Be(10m);
         entry.SecurityFeeAmount.Should().Be(30m, "fee amount must be the absolute value of the fee posting");
         entry.SecurityTaxAmount.Should().Be(20m, "tax amount must be the absolute value of the tax posting");
+    }
+
+    /// <summary>
+    /// L25 – When the reversed group contains a security posting and a portfolio cache service is supplied,
+    /// the portfolio analysis report cache for the owner is invalidated after a successful reversal.
+    /// </summary>
+    [Fact]
+    public async Task ReversePostingAsync_ShouldInvalidatePortfolioCache_WhenReversalIncludesSecurityPosting()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var account = CreateAccount(OwnerId);
+        context.Accounts.Add(account);
+
+        var groupId = Guid.NewGuid();
+        var securityId = Guid.NewGuid();
+
+        var bankPosting = new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null,
+            new DateTime(2025, 6, 1), -500m, "ETF Kauf", null, null, null);
+        bankPosting.SetGroup(groupId);
+
+        var securityPosting = new Posting(Guid.NewGuid(), PostingKind.Security, account.Id, null, null, securityId,
+            new DateTime(2025, 6, 1), -500m, "ETF Kauf", null, null, SecurityPostingSubType.Buy, 5m);
+        securityPosting.SetGroup(groupId);
+
+        context.Postings.AddRange(bankPosting, securityPosting);
+        await context.SaveChangesAsync();
+
+        var portfolioCache = new Mock<IPortfolioAnalysisReportCacheService>();
+        var service = CreateService(context, portfolioCache: portfolioCache.Object);
+
+        // Act
+        await service.ReversePostingAsync(bankPosting.Id, OwnerId);
+
+        // Assert
+        portfolioCache.Verify(c => c.InvalidateCacheAsync(OwnerId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// L26 – When the reversed group contains no security posting, the portfolio analysis report cache
+    /// must not be invalidated even though a cache service is supplied.
+    /// </summary>
+    [Fact]
+    public async Task ReversePostingAsync_ShouldNotInvalidatePortfolioCache_WhenReversalHasNoSecurityPosting()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var account = CreateAccount(OwnerId);
+        context.Accounts.Add(account);
+        var posting = CreatePosting(account.Id, 100m, "NoSecurity");
+        context.Postings.Add(posting);
+        await context.SaveChangesAsync();
+
+        var portfolioCache = new Mock<IPortfolioAnalysisReportCacheService>();
+        var service = CreateService(context, portfolioCache: portfolioCache.Object);
+
+        // Act
+        await service.ReversePostingAsync(posting.Id, OwnerId);
+
+        // Assert
+        portfolioCache.Verify(c => c.InvalidateCacheAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// L27 – When no portfolio cache service is supplied (optional dependency left at its default of <c>null</c>),
+    /// reversing a security posting completes successfully without throwing.
+    /// </summary>
+    [Fact]
+    public async Task ReversePostingAsync_ShouldNotThrow_WhenPortfolioCacheServiceIsNull()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var account = CreateAccount(OwnerId);
+        context.Accounts.Add(account);
+
+        var groupId = Guid.NewGuid();
+        var securityId = Guid.NewGuid();
+
+        var bankPosting = new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null,
+            new DateTime(2025, 6, 1), -500m, "ETF Kauf", null, null, null);
+        bankPosting.SetGroup(groupId);
+
+        var securityPosting = new Posting(Guid.NewGuid(), PostingKind.Security, account.Id, null, null, securityId,
+            new DateTime(2025, 6, 1), -500m, "ETF Kauf", null, null, SecurityPostingSubType.Buy, 5m);
+        securityPosting.SetGroup(groupId);
+
+        context.Postings.AddRange(bankPosting, securityPosting);
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context);
+
+        // Act
+        var act = async () => await service.ReversePostingAsync(bankPosting.Id, OwnerId);
+
+        // Assert
+        await act.Should().NotThrowAsync();
     }
 }

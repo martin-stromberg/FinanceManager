@@ -1,0 +1,55 @@
+@using FinanceManager.Shared.Dtos.Portfolio
+@using FinanceManager.Web.Components.Shared
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
+
+<PortfolioKpiCard Title="@Localizer["PortfolioReport_Tile_Cashflow"].Value">
+    <MiniBarChart Points="@_chartPoints"
+                  AriaLabel="@Localizer["PortfolioReport_Chart_Aria_Cashflow"].Value"
+                  TooltipFormatter="@(p => $"{p.Label}: {p.Value:N2}")" />
+
+    <div class="portfolio-kpi-row">
+        <span class="portfolio-kpi-label-wrap">
+            <span class="portfolio-kpi-label">@Localizer["PortfolioReport_NetDeposits"]</span>
+            <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_NetDeposits_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
+                <p>@Localizer["PortfolioReport_Explain_NetDeposits_Text"]</p>
+            </KpiInfoButton>
+        </span>
+        <span class="portfolio-kpi-value">@Data.NetDepositsCurrentYear.ToString("N2")</span>
+    </div>
+    <div class="portfolio-kpi-row">
+        <span class="portfolio-kpi-label-wrap">
+            <span class="portfolio-kpi-label">@Localizer["PortfolioReport_Dividends"]</span>
+            <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_Dividends_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
+                <p>@Localizer["PortfolioReport_Explain_Dividends_Text"]</p>
+            </KpiInfoButton>
+        </span>
+        <span class="portfolio-kpi-value">@Data.DividendsCurrentYear.ToString("N2")</span>
+    </div>
+    <div class="portfolio-kpi-row">
+        <span class="portfolio-kpi-label-wrap">
+            <span class="portfolio-kpi-label">@Localizer["PortfolioReport_RealizedGains"]</span>
+            <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_RealizedGains_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
+                <p>@Localizer["PortfolioReport_Explain_RealizedGains_Text"]</p>
+            </KpiInfoButton>
+        </span>
+        <span class="portfolio-kpi-value @(Data.RealizedGainsCurrentYear >= 0 ? "positive" : "negative")">@Data.RealizedGainsCurrentYear.ToString("N2")</span>
+    </div>
+</PortfolioKpiCard>
+
+@code {
+    /// <summary>Portfolio cashflow data to display.</summary>
+    [Parameter, EditorRequired] public PortfolioCashflowDto Data { get; set; } = null!;
+
+    private List<MiniBarChart.MiniBarChartPoint> _chartPoints = new();
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        _chartPoints = new List<MiniBarChart.MiniBarChartPoint>
+        {
+            new(Localizer["PortfolioReport_NetDeposits"].Value, Data.NetDepositsCurrentYear),
+            new(Localizer["PortfolioReport_Dividends"].Value, Data.DividendsCurrentYear),
+            new(Localizer["PortfolioReport_RealizedGains"].Value, Data.RealizedGainsCurrentYear)
+        };
+    }
+}

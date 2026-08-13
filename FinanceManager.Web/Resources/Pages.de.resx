@@ -654,6 +654,12 @@
   <data name="Card_Caption_Security_Description" xml:space="preserve">
     <value>Beschreibung</value>
   </data>
+  <data name="Card_Caption_Security_Region" xml:space="preserve">
+    <value>Region</value>
+  </data>
+  <data name="Card_Caption_Security_Sector" xml:space="preserve">
+    <value>Sektor</value>
+  </data>
   <data name="Card_Caption_Security_Symbol" xml:space="preserve">
     <value>Symbol</value>
   </data>
@@ -686,6 +692,219 @@
   </data>
   <data name="Ribbon_Group_Actions" xml:space="preserve">
     <value>Aktionen</value>
+  </data>
+  <data name="Ribbon_PortfolioAnalysisReport" xml:space="preserve">
+    <value>Depot-Bericht</value>
+  </data>
+  <data name="Ribbon_Refresh" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="Ribbon_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="PortfolioReport_Title" xml:space="preserve">
+    <value>Depot-Analysebericht</value>
+  </data>
+  <data name="PortfolioReport_Loading" xml:space="preserve">
+    <value>Wird geladen...</value>
+  </data>
+  <data name="PortfolioReport_NotAuthenticated" xml:space="preserve">
+    <value>Bitte melden Sie sich an, um diese Seite anzuzeigen.</value>
+  </data>
+  <data name="PortfolioReport_Save" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="PortfolioReport_Tile_Structure" xml:space="preserve">
+    <value>Depotstruktur</value>
+  </data>
+  <data name="PortfolioReport_Tile_Performance" xml:space="preserve">
+    <value>Performance</value>
+  </data>
+  <data name="PortfolioReport_Tile_Cashflow" xml:space="preserve">
+    <value>Cashflow</value>
+  </data>
+  <data name="PortfolioReport_Tile_Risk" xml:space="preserve">
+    <value>Risikoanalyse</value>
+  </data>
+  <data name="PortfolioReport_TotalMarketValue" xml:space="preserve">
+    <value>Gesamtmarktwert</value>
+  </data>
+  <data name="PortfolioReport_InvestedCapital" xml:space="preserve">
+    <value>Investiertes Kapital</value>
+  </data>
+  <data name="PortfolioReport_UnrealizedGainLoss" xml:space="preserve">
+    <value>Unrealisierte Gewinne/Verluste</value>
+  </data>
+  <data name="PortfolioReport_RegionalDistribution" xml:space="preserve">
+    <value>Regionale Verteilung</value>
+  </data>
+  <data name="PortfolioReport_SectorDistribution" xml:space="preserve">
+    <value>Sektorverteilung</value>
+  </data>
+  <data name="PortfolioReport_TopPositions" xml:space="preserve">
+    <value>Top 10 Positionen</value>
+  </data>
+  <data name="PortfolioReport_Th_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="PortfolioReport_Th_MarketValue" xml:space="preserve">
+    <value>Marktwert</value>
+  </data>
+  <data name="PortfolioReport_Th_Share" xml:space="preserve">
+    <value>Anteil</value>
+  </data>
+  <data name="PortfolioReport_Th_UnrealizedGainLoss" xml:space="preserve">
+    <value>Unrealisiert G/V</value>
+  </data>
+  <data name="PortfolioReport_Th_PurchaseDate" xml:space="preserve">
+    <value>Kaufdatum</value>
+  </data>
+  <data name="PortfolioReport_Th_Quantity" xml:space="preserve">
+    <value>Anzahl</value>
+  </data>
+  <data name="PortfolioReport_Th_CostPerUnit" xml:space="preserve">
+    <value>Preis je Stück</value>
+  </data>
+  <data name="PortfolioReport_Th_TotalCost" xml:space="preserve">
+    <value>Gesamtkosten</value>
+  </data>
+  <data name="PortfolioReport_Explain_MoreEntries" xml:space="preserve">
+    <value>und {0} weitere</value>
+  </data>
+  <data name="PortfolioReport_Twr" xml:space="preserve">
+    <value>Zeitgewichtete Rendite (seit Beginn)</value>
+  </data>
+  <data name="PortfolioReport_Ytd" xml:space="preserve">
+    <value>Jahr-zu-Datum</value>
+  </data>
+  <data name="PortfolioReport_YtdSuffix" xml:space="preserve">
+    <value> (YTD)</value>
+  </data>
+  <data name="PortfolioReport_YtdChartFootnote" xml:space="preserve">
+    <value>* Laufendes, noch nicht abgeschlossenes Jahr (YTD)</value>
+  </data>
+  <data name="PortfolioReport_AnnualReturns" xml:space="preserve">
+    <value>Jährliche Rendite</value>
+  </data>
+  <data name="PortfolioReport_Th_Year" xml:space="preserve">
+    <value>Jahr</value>
+  </data>
+  <data name="PortfolioReport_Th_Return" xml:space="preserve">
+    <value>Rendite</value>
+  </data>
+  <data name="PortfolioReport_NetDeposits" xml:space="preserve">
+    <value>Netto-Einzahlungen (dieses Jahr)</value>
+  </data>
+  <data name="PortfolioReport_Dividends" xml:space="preserve">
+    <value>Dividenden (dieses Jahr)</value>
+  </data>
+  <data name="PortfolioReport_RealizedGains" xml:space="preserve">
+    <value>Realisierte Gewinne/Verluste (dieses Jahr)</value>
+  </data>
+  <data name="PortfolioReport_Risk_Phase2Hint" xml:space="preserve">
+    <value>Risikokennzahlen sind für eine spätere Phase geplant und werden noch nicht berechnet.</value>
+  </data>
+  <data name="PortfolioReport_Volatility" xml:space="preserve">
+    <value>Volatilität</value>
+  </data>
+  <data name="PortfolioReport_MaxDrawdown" xml:space="preserve">
+    <value>Maximaler Drawdown</value>
+  </data>
+  <data name="PortfolioReport_SharpeRatio" xml:space="preserve">
+    <value>Sharpe Ratio</value>
+  </data>
+  <data name="PortfolioReport_Beta" xml:space="preserve">
+    <value>Beta</value>
+  </data>
+  <data name="PortfolioReport_ValueAtRisk" xml:space="preserve">
+    <value>Value at Risk</value>
+  </data>
+  <data name="PortfolioReport_Chart_Aria_AssetAllocation" xml:space="preserve">
+    <value>Ringdiagramm der Asset Allocation nach Kategorie</value>
+  </data>
+  <data name="PortfolioReport_Chart_Aria_AnnualReturns" xml:space="preserve">
+    <value>Balkendiagramm der jährlichen Renditen</value>
+  </data>
+  <data name="PortfolioReport_Chart_Aria_Cashflow" xml:space="preserve">
+    <value>Balkendiagramm mit Netto-Einzahlungen, Dividenden und realisierten Gewinnen des laufenden Jahres</value>
+  </data>
+  <data name="PortfolioReport_Explain_TotalMarketValue_Title" xml:space="preserve">
+    <value>Wie sich der Gesamtmarktwert zusammensetzt</value>
+  </data>
+  <data name="PortfolioReport_Explain_TotalMarketValue_Intro" xml:space="preserve">
+    <value>Der Gesamtmarktwert ist die Summe der Marktwerte aller gehaltenen Positionen:</value>
+  </data>
+  <data name="PortfolioReport_Explain_OtherPositions" xml:space="preserve">
+    <value>Weitere Positionen (nicht in den Top 10 enthalten)</value>
+  </data>
+  <data name="PortfolioReport_Explain_InvestedCapital_Title" xml:space="preserve">
+    <value>Wie sich das investierte Kapital berechnet</value>
+  </data>
+  <data name="PortfolioReport_Explain_InvestedCapital_Text" xml:space="preserve">
+    <value>Das investierte Kapital ist die Summe der FIFO-Anschaffungskosten aller aktuell gehaltenen Stücke über alle Positionen, abzüglich eigenständiger Gebühren.</value>
+  </data>
+  <data name="PortfolioReport_Explain_UnrealizedGainLoss_Title" xml:space="preserve">
+    <value>Wie sich der unrealisierte Gewinn/Verlust berechnet</value>
+  </data>
+  <data name="PortfolioReport_Explain_Twr_Title" xml:space="preserve">
+    <value>Wie sich die zeitgewichtete Rendite berechnet</value>
+  </data>
+  <data name="PortfolioReport_Explain_Twr_Text" xml:space="preserve">
+    <value>Die zeitgewichtete Rendite verkettet die Modified-Dietz-Rendite jedes Kalenderjahres seit der ersten Transaktion und eliminiert dadurch den Einfluss von Zeitpunkt und Höhe der Ein-/Auszahlungen: TWR = (1 + R1) x (1 + R2) x ... x (1 + Rn) - 1. Jede Jahresrendite Ri ergibt sich aus (Endwert - Anfangswert - Netto-Cashflow) / (Anfangswert + 0,5 x Netto-Cashflow).</value>
+  </data>
+  <data name="PortfolioReport_Explain_Ytd_Title" xml:space="preserve">
+    <value>Wie sich die Jahr-zu-Datum-Rendite berechnet</value>
+  </data>
+  <data name="PortfolioReport_Explain_Ytd_Text" xml:space="preserve">
+    <value>Die Jahr-zu-Datum-Rendite ist die Modified-Dietz-Rendite des laufenden Kalenderjahres vom 1. Januar bis heute: (aktueller Wert - Wert am 1. Januar - Netto-Cashflow) / (Wert am 1. Januar + 0,5 x Netto-Cashflow).</value>
+  </data>
+  <data name="PortfolioReport_Explain_NetDeposits_Title" xml:space="preserve">
+    <value>Wie sich die Netto-Einzahlungen berechnen</value>
+  </data>
+  <data name="PortfolioReport_Explain_NetDeposits_Text" xml:space="preserve">
+    <value>Netto-Einzahlungen dieses Jahr = Summe aller Kauftransaktionen abzüglich der Summe aller Verkaufstransaktionen, die im laufenden Kalenderjahr für Wertpapiere gebucht wurden.</value>
+  </data>
+  <data name="PortfolioReport_Explain_Dividends_Title" xml:space="preserve">
+    <value>Wie sich die Dividenden berechnen</value>
+  </data>
+  <data name="PortfolioReport_Explain_Dividends_Text" xml:space="preserve">
+    <value>Summe aller Dividendenzahlungen, die im laufenden Kalenderjahr für gehaltene Wertpapiere gebucht wurden (brutto, vor Steuern).</value>
+  </data>
+  <data name="PortfolioReport_Explain_RealizedGains_Title" xml:space="preserve">
+    <value>Wie sich die realisierten Gewinne/Verluste berechnen</value>
+  </data>
+  <data name="PortfolioReport_Explain_RealizedGains_Text" xml:space="preserve">
+    <value>Realisierte Gewinne/Verluste dieses Jahr = FIFO-realisierte Gewinne bis heute abzüglich der FIFO-realisierten Gewinne bis zum Ende des Vorjahres, also die durch Verkäufe im laufenden Jahr festgeschriebenen Gewinne/Verluste.</value>
+  </data>
+  <data name="PortfolioReport_Explain_Volatility_Title" xml:space="preserve">
+    <value>Was Volatilität bedeutet</value>
+  </data>
+  <data name="PortfolioReport_Explain_Volatility_Text" xml:space="preserve">
+    <value>Annualisierte Standardabweichung der periodischen Renditen des Depots; ein Maß dafür, wie stark der Depotwert schwankt. Noch nicht berechnet – für eine spätere Phase geplant.</value>
+  </data>
+  <data name="PortfolioReport_Explain_MaxDrawdown_Title" xml:space="preserve">
+    <value>Was der maximale Drawdown bedeutet</value>
+  </data>
+  <data name="PortfolioReport_Explain_MaxDrawdown_Text" xml:space="preserve">
+    <value>Der größte beobachtete Rückgang von einem historischen Höchststand zu einem nachfolgenden Tiefststand des Depotwerts. Noch nicht berechnet – für eine spätere Phase geplant.</value>
+  </data>
+  <data name="PortfolioReport_Explain_SharpeRatio_Title" xml:space="preserve">
+    <value>Was die Sharpe Ratio bedeutet</value>
+  </data>
+  <data name="PortfolioReport_Explain_SharpeRatio_Text" xml:space="preserve">
+    <value>Überrendite je Risikoeinheit: (Rendite des Depots - risikoloser Zins) / Volatilität. Höhere Werte deuten auf eine bessere risikoadjustierte Rendite hin. Noch nicht berechnet – für eine spätere Phase geplant.</value>
+  </data>
+  <data name="PortfolioReport_Explain_Beta_Title" xml:space="preserve">
+    <value>Was Beta bedeutet</value>
+  </data>
+  <data name="PortfolioReport_Explain_Beta_Text" xml:space="preserve">
+    <value>Empfindlichkeit der Depotrendite gegenüber Bewegungen einer konfigurierten Benchmark; ein Beta von 1,0 bedeutet, dass sich das Depot im Gleichlauf mit der Benchmark bewegt. Noch nicht berechnet – für eine spätere Phase geplant.</value>
+  </data>
+  <data name="PortfolioReport_Explain_ValueAtRisk_Title" xml:space="preserve">
+    <value>Was Value at Risk bedeutet</value>
+  </data>
+  <data name="PortfolioReport_Explain_ValueAtRisk_Text" xml:space="preserve">
+    <value>Geschätzter maximaler Verlust über einen bestimmten Zeithorizont bei einem bestimmten Konfidenzniveau (z. B. „95 % Konfidenz, an einem Tag nicht mehr als X zu verlieren“). Noch nicht berechnet – für eine spätere Phase geplant.</value>
   </data>
   <data name="Dlg_Backfill_Title" xml:space="preserve">
     <value>Kurse nachfüllen</value>

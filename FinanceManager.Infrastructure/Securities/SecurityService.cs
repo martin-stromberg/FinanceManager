@@ -60,9 +60,11 @@ public sealed class SecurityService : ISecurityService
     /// <param name="currencyCode">Currency code of the security.</param>
     /// <param name="categoryId">Optional category id; when supplied must belong to the owner.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="region">Optional region of the security used for regional distribution.</param>
+    /// <param name="sector">Optional sector of the security used for sector distribution.</param>
     /// <returns>The created <see cref="SecurityDto"/>.</returns>
     /// <exception cref="ArgumentException">Thrown when the category is invalid or the security name is not unique for the owner.</exception>
-    public async Task<SecurityDto> CreateAsync(Guid ownerUserId, string name, string identifier, string? description, string? alphaVantageCode, string currencyCode, Guid? categoryId, CancellationToken ct)
+    public async Task<SecurityDto> CreateAsync(Guid ownerUserId, string name, string identifier, string? description, string? alphaVantageCode, string currencyCode, Guid? categoryId, CancellationToken ct, string? region = null, string? sector = null)
     {
         if (categoryId != null)
         {
@@ -72,7 +74,7 @@ public sealed class SecurityService : ISecurityService
         bool exists = await _db.Securities.AnyAsync(s => s.OwnerUserId == ownerUserId && s.Name == name, ct);
         if (exists) { throw new ArgumentException("Security name must be unique per user", nameof(name)); }
 
-        var entity = new FinanceManager.Domain.Securities.Security(ownerUserId, name, identifier, description, alphaVantageCode, currencyCode, categoryId);
+        var entity = new FinanceManager.Domain.Securities.Security(ownerUserId, name, identifier, description, alphaVantageCode, currencyCode, categoryId, region, sector);
         _db.Securities.Add(entity);
         await _db.SaveChangesAsync(ct);
         return await MapToDtoAsync(entity, ct);
@@ -90,9 +92,11 @@ public sealed class SecurityService : ISecurityService
     /// <param name="currencyCode">New currency code.</param>
     /// <param name="categoryId">New category id (optional).</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="region">Optional region of the security used for regional distribution.</param>
+    /// <param name="sector">Optional sector of the security used for sector distribution.</param>
     /// <returns>The updated <see cref="SecurityDto"/>, or <c>null</c> when the security was not found.</returns>
     /// <exception cref="ArgumentException">Thrown when the new name conflicts with another security of the same owner or when the category is invalid.</exception>
-    public async Task<SecurityDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string identifier, string? description, string? alphaVantageCode, string currencyCode, Guid? categoryId, CancellationToken ct)
+    public async Task<SecurityDto?> UpdateAsync(Guid id, Guid ownerUserId, string name, string identifier, string? description, string? alphaVantageCode, string currencyCode, Guid? categoryId, CancellationToken ct, string? region = null, string? sector = null)
     {
         var entity = await _db.Securities.FirstOrDefaultAsync(s => s.Id == id && s.OwnerUserId == ownerUserId, ct);
         if (entity == null) { return null; }
@@ -108,7 +112,7 @@ public sealed class SecurityService : ISecurityService
             if (!catExists) { throw new ArgumentException("Invalid category", nameof(categoryId)); }
         }
 
-        entity.Update(name, identifier, description, alphaVantageCode, currencyCode, categoryId);
+        entity.Update(name, identifier, description, alphaVantageCode, currencyCode, categoryId, region, sector);
         await _db.SaveChangesAsync(ct);
 
         return await MapToDtoAsync(entity, ct);
@@ -207,7 +211,9 @@ public sealed class SecurityService : ISecurityService
             CreatedUtc = s.CreatedUtc,
             ArchivedUtc = s.ArchivedUtc,
             SymbolAttachmentId = s.SymbolAttachmentId,
-            HasPriceError = s.HasPriceError
+            HasPriceError = s.HasPriceError,
+            Region = s.Region,
+            Sector = s.Sector
         };
     }
 }

@@ -5,6 +5,7 @@ global using FinanceManager.Shared.Dtos.Backups;
 global using FinanceManager.Shared.Dtos.Common;
 global using FinanceManager.Shared.Dtos.Contacts;
 global using FinanceManager.Shared.Dtos.HomeKpi;
+global using FinanceManager.Shared.Dtos.Portfolio;
 global using FinanceManager.Shared.Dtos.Postings;
 global using FinanceManager.Shared.Dtos.Reports;
 global using FinanceManager.Shared.Dtos.SavingsPlans;

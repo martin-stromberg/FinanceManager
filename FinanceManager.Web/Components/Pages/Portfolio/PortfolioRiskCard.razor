@@ -1,0 +1,81 @@
+@using FinanceManager.Shared.Dtos.Portfolio
+@using FinanceManager.Web.Components.Shared
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
+
+<PortfolioKpiCard Title="@Localizer["PortfolioReport_Tile_Risk"].Value">
+    <p class="portfolio-risk-placeholder">@Localizer["PortfolioReport_Risk_Phase2Hint"]</p>
+
+    <div class="portfolio-risk-gauge-row">
+        <span class="portfolio-kpi-label-wrap">
+            <span class="portfolio-kpi-label">@Localizer["PortfolioReport_Volatility"]</span>
+            <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_Volatility_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
+                <p>@Localizer["PortfolioReport_Explain_Volatility_Text"]</p>
+            </KpiInfoButton>
+        </span>
+        <div class="portfolio-risk-gauge">
+            <div class="portfolio-risk-gauge-fill" style="width:@(Data.Volatility.HasValue ? Math.Min(100, (double)(Data.Volatility.Value * 100m)) : 0)%;"></div>
+        </div>
+        <span class="portfolio-kpi-value">@(Data.Volatility.HasValue ? (Data.Volatility.Value * 100m).ToString("N2") + "%" : "–")</span>
+    </div>
+
+    <div class="portfolio-risk-gauge-row">
+        <span class="portfolio-kpi-label-wrap">
+            <span class="portfolio-kpi-label">@Localizer["PortfolioReport_MaxDrawdown"]</span>
+            <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_MaxDrawdown_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
+                <p>@Localizer["PortfolioReport_Explain_MaxDrawdown_Text"]</p>
+            </KpiInfoButton>
+        </span>
+        <div class="portfolio-risk-gauge">
+            <div class="portfolio-risk-gauge-fill negative" style="width:@(Data.MaxDrawdown.HasValue ? Math.Min(100, (double)(Math.Abs(Data.MaxDrawdown.Value) * 100m)) : 0)%;"></div>
+        </div>
+        <span class="portfolio-kpi-value">@(Data.MaxDrawdown.HasValue ? (Data.MaxDrawdown.Value * 100m).ToString("N2") + "%" : "–")</span>
+    </div>
+
+    <div class="portfolio-risk-gauge-row">
+        <span class="portfolio-kpi-label-wrap">
+            <span class="portfolio-kpi-label">@Localizer["PortfolioReport_SharpeRatio"]</span>
+            <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_SharpeRatio_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
+                <p>@Localizer["PortfolioReport_Explain_SharpeRatio_Text"]</p>
+            </KpiInfoButton>
+        </span>
+        <div class="portfolio-risk-gauge">
+            <div class="portfolio-risk-gauge-fill" style="width:@(Data.SharpeRatio.HasValue ? Math.Min(100, Math.Max(0, (double)Data.SharpeRatio.Value) * SharpeRatioGaugeScale) : 0)%;"></div>
+        </div>
+        <span class="portfolio-kpi-value">@(Data.SharpeRatio.HasValue ? Data.SharpeRatio.Value.ToString("N2") : "–")</span>
+    </div>
+
+    <div class="portfolio-risk-gauge-row">
+        <span class="portfolio-kpi-label-wrap">
+            <span class="portfolio-kpi-label">@Localizer["PortfolioReport_Beta"]</span>
+            <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_Beta_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
+                <p>@Localizer["PortfolioReport_Explain_Beta_Text"]</p>
+            </KpiInfoButton>
+        </span>
+        <div class="portfolio-risk-gauge">
+            <div class="portfolio-risk-gauge-fill" style="width:@(Data.Beta.HasValue ? Math.Min(100, Math.Max(0, (double)Data.Beta.Value) * BetaGaugeScale) : 0)%;"></div>
+        </div>
+        <span class="portfolio-kpi-value">@(Data.Beta.HasValue ? Data.Beta.Value.ToString("N2") : "–")</span>
+    </div>
+
+    <div class="portfolio-risk-gauge-row">
+        <span class="portfolio-kpi-label-wrap">
+            <span class="portfolio-kpi-label">@Localizer["PortfolioReport_ValueAtRisk"]</span>
+            <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_ValueAtRisk_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
+                <p>@Localizer["PortfolioReport_Explain_ValueAtRisk_Text"]</p>
+            </KpiInfoButton>
+        </span>
+        <span class="portfolio-risk-gauge-empty" aria-hidden="true"></span>
+        <span class="portfolio-kpi-value">@(Data.ValueAtRisk.HasValue ? Data.ValueAtRisk.Value.ToString("N2") : "–")</span>
+    </div>
+</PortfolioKpiCard>
+
+@code {
+    /// <summary>Scaling factor for the Sharpe ratio gauge fill, assuming a typical Sharpe ratio range of 0–3 (3.0 -> 100%).</summary>
+    private const double SharpeRatioGaugeScale = 33.3;
+
+    /// <summary>Scaling factor for the Beta gauge fill, assuming a typical Beta range of 0–2 (2.0 -> 100%).</summary>
+    private const double BetaGaugeScale = 50;
+
+    /// <summary>Portfolio risk data to display (Phase 2 placeholder).</summary>
+    [Parameter, EditorRequired] public PortfolioRiskDto Data { get; set; } = null!;
+}
