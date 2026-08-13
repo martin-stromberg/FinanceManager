@@ -59,11 +59,13 @@ Beteiligte Komponenten:
 
 ### 6. Globale Ladeleiste
 
-Die globale Ladeleiste wird als einzelner DOM-Knoten im Dokumentrahmen gerendert. Native Klick- und Submit-Listener in `financeManager.js` erkennen relevante interne Navigationen und Formularvorgänge frühzeitig. `MainLayout` startet die Leiste zusätzlich über `RegisterLocationChangingHandler` und beendet sie über `LocationChanged`; Validierungs- und Abschlussfälle stoppen sie ebenfalls über die JavaScript-Schnittstelle.
+Die globale Ladeleiste wird als einzelner DOM-Knoten im Dokumentrahmen gerendert. Native Klick- und Submit-Listener in `financeManager.js` erkennen relevante interne Navigationen und Formularvorgänge frühzeitig. `MainLayout` startet die Leiste zusätzlich über `RegisterLocationChangingHandler` und beendet sie über `LocationChanged`; Validierungs- und Abschlussfälle stoppen sie ebenfalls über die JavaScript-Schnittstelle. Länger laufende Blazor-Aktionen werden über `LoadingBarService.RunAsync(...)` zentral umschlossen, damit auch komponenteninterne Ladevorgänge wie der Budgetbericht dieselbe globale Anzeige nutzen.
 
 Beteiligte Komponenten:
 - `FinanceManager.Web/Components/App.razor` — rendert die eindeutige Ladeleisten-Instanz und bindet das globale Skript ein.
 - `FinanceManager.Web/Components/Layout/MainLayout.razor` — startet und beendet die Leiste beim Blazor-Navigationszyklus.
+- `FinanceManager.Web/Services/LoadingBarService.cs` — kapselt Start/Stop für Blazor-seitige async-Aktionen.
+- `FinanceManager.Web/Components/Shared/Ribbon.razor` — führt Ribbon-Aktionen über die zentrale Ladeleisten-Abstraktion aus.
 - `FinanceManager.Web/wwwroot/js/financeManager.js` — stellt `financeManager.loadingBar.start`, `restart` und `stop` bereit und verhindert doppelte Listener.
 - `FinanceManager.Web/wwwroot/css/app.css` — positioniert die fixed Leiste, animiert sie von rechts nach links und verschiebt sie im Mobile-Breakpoint unter die Topbar.
 

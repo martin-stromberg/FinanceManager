@@ -132,6 +132,7 @@ namespace FinanceManager.Web
             builder.Services.AddScoped<IPostingsQueryService, PostingsQueryService>();
             builder.Services.AddScoped<Application.Postings.IPostingsQueryService>(sp => sp.GetRequiredService<IPostingsQueryService>());
             builder.Services.AddScoped<Application.Budget.IBudgetReportExportService, BudgetReportExportService>();
+            builder.Services.AddScoped<LoadingBarService>();
             builder.Services.AddSingleton<IHelpContentRenderer, HelpContentRenderer>();
             builder.Services.AddSingleton<IHelpAssetIntegrityValidator, HelpAssetIntegrityValidator>();
 

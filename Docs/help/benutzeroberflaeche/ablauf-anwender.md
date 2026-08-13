@@ -16,11 +16,11 @@ Auf kleinen Displays wird oben eine mobile Leiste angezeigt.
 
 > **Hinweis:** Beim Öffnen der Navigation erscheint eine Overlay-Fläche, über die das Menü wieder geschlossen werden kann.
 
-### 2. Ladezustand bei Navigation und Formularen
+### 2. Ladezustand bei Navigation, Formularen und Aktionen
 
 Beim Auswählen eines internen Links erscheint sofort eine schmale Ladeleiste. Sie bewegt sich sichtbar über den oberen Seitenrand. Auf mobilen Displays befindet sie sich direkt unterhalb der mobilen Topbar.
 
-Auch beim Absenden eines Formulars kann die Ladeleiste erscheinen, wenn dadurch eine Navigation oder ein längerer Ladevorgang gestartet wird. Nach dem Seitenwechsel oder dem Abschluss des Vorgangs wird sie ausgeblendet. Bei mehreren schnellen Klicks bleibt es bei einer einzigen Ladeleiste, die neu gestartet und farblich aktualisiert wird.
+Auch beim Absenden eines Formulars oder bei länger laufenden Aktionen innerhalb einer Seite kann die Ladeleiste erscheinen, wenn dadurch Inhalte geladen oder neu berechnet werden. Nach dem Seitenwechsel oder dem Abschluss des Vorgangs wird sie ausgeblendet. Bei mehreren schnellen Klicks bleibt es bei einer einzigen Ladeleiste, die neu gestartet und farblich aktualisiert wird.
 
 ### 3. Seite auswählen und Inhalte bedienen
 

@@ -155,6 +155,54 @@ public sealed class LoadingBarPlaywrightTests
         (await page.Locator("#fm-loading-bar").GetAttributeAsync("class")).Should().NotContain("is-visible");
     }
 
+    [Fact]
+    public async Task BudgetReportInitialLoad_ShouldStartGlobalLoadingBar()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        await InstallEarlyLoadingBarVisibilityObserverAsync(page);
+        await EnsureAuthenticatedAsync(page, "loading-bar-budget-initial-user");
+
+        await page.GotoAsync("/reports/budget");
+
+        await page.WaitForFunctionAsync("() => window.__fmLoadingBarObservedVisible === true");
+        await page.WaitForFunctionAsync(
+            "() => !document.querySelector('#fm-loading-bar')?.classList.contains('is-visible')",
+            null,
+            new() { Timeout = 5000 });
+
+        (await page.Locator("#fm-loading-bar").GetAttributeAsync("class")).Should().NotContain("is-visible");
+    }
+
+    [Fact]
+    public async Task BudgetReportApplySettings_ShouldStartAndStopGlobalLoadingBar()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        await EnsureAuthenticatedAsync(page, "loading-bar-budget-settings-user");
+
+        await page.GotoAsync("/reports/budget");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await page.WaitForFunctionAsync(
+            "() => !document.querySelector('#fm-loading-bar')?.classList.contains('is-visible')",
+            null,
+            new() { Timeout = 5000 });
+
+        await page.Locator("#Settings").ClickAsync();
+        await page.Locator(".split-dialog").WaitForAsync();
+        await InstallLoadingBarVisibilityObserverAsync(page);
+
+        await page.Locator(".split-dialog button.btn.btn-primary").EvaluateAsync("button => button.click()");
+
+        await page.WaitForFunctionAsync("() => window.__fmLoadingBarObservedVisible === true");
+        await page.WaitForFunctionAsync(
+            "() => !document.querySelector('#fm-loading-bar')?.classList.contains('is-visible')",
+            null,
+            new() { Timeout = 5000 });
+
+        (await page.Locator("#fm-loading-bar").GetAttributeAsync("class")).Should().NotContain("is-visible");
+    }
+
     private async Task EnsureAuthenticatedAsync(IPage page, string userPrefix)
     {
         var auth = new AuthGateway(page, _fixture.BaseUrl);
@@ -197,6 +245,37 @@ public sealed class LoadingBarPlaywrightTests
                     window.__fmLoadingBarObserver.observe(bar, { attributes: true, attributeFilter: ['class'] });
                 }
             }");
+    }
+
+    private static Task InstallEarlyLoadingBarVisibilityObserverAsync(IPage page)
+    {
+        return page.AddInitScriptAsync(
+            @"(() => {
+                const install = () => {
+                    window.__fmLoadingBarObservedVisible = false;
+                    window.__fmLoadingBarObserver?.disconnect();
+                    const markIfVisible = () => {
+                        const bar = document.querySelector('#fm-loading-bar');
+                        if (bar?.classList.contains('is-visible')) {
+                            window.__fmLoadingBarObservedVisible = true;
+                        }
+                    };
+                    window.__fmLoadingBarObserver = new MutationObserver(markIfVisible);
+                    window.__fmLoadingBarObserver.observe(document.documentElement, {
+                        attributes: true,
+                        attributeFilter: ['class'],
+                        childList: true,
+                        subtree: true
+                    });
+                    markIfVisible();
+                };
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', install, { once: true });
+                } else {
+                    install();
+                }
+            })();");
     }
 
     private sealed class LoadingBarMetrics
