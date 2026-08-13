@@ -57,6 +57,16 @@ Beteiligte Komponenten:
 - `PlaywrightWebAppFixture.CreateMobileSessionAsync()` — startet Sessions mit `390x844`, Touch und Mobile-Flag.
 - Testmethoden mit Suffix `_OnMobileViewport` in `AuthenticationFlowPlaywrightTests`, `ListNavigationPlaywrightTests`, `ReportingFlowPlaywrightTests`, `HomeMassImportPlaywrightTests`.
 
+### 6. Globale Ladeleiste
+
+Die globale Ladeleiste wird als einzelner DOM-Knoten im Dokumentrahmen gerendert. Native Klick- und Submit-Listener in `financeManager.js` erkennen relevante interne Navigationen und Formularvorgänge frühzeitig. `MainLayout` startet die Leiste zusätzlich über `RegisterLocationChangingHandler` und beendet sie über `LocationChanged`; Validierungs- und Abschlussfälle stoppen sie ebenfalls über die JavaScript-Schnittstelle.
+
+Beteiligte Komponenten:
+- `FinanceManager.Web/Components/App.razor` — rendert die eindeutige Ladeleisten-Instanz und bindet das globale Skript ein.
+- `FinanceManager.Web/Components/Layout/MainLayout.razor` — startet und beendet die Leiste beim Blazor-Navigationszyklus.
+- `FinanceManager.Web/wwwroot/js/financeManager.js` — stellt `financeManager.loadingBar.start`, `restart` und `stop` bereit und verhindert doppelte Listener.
+- `FinanceManager.Web/wwwroot/css/app.css` — positioniert die fixed Leiste, animiert sie von rechts nach links und verschiebt sie im Mobile-Breakpoint unter die Topbar.
+
 ## Fehlerbehandlung
 
 - Bei nicht initialisiertem Browserkontext wirft `PlaywrightWebAppFixture.CreateSessionAsync(...)` eine `InvalidOperationException`.

@@ -10,6 +10,49 @@
 
 html, body { margin: 0; padding: 0; }
 
+.fm-loading-bar {
+    --fm-loading-bar-color: var(--accent, #4dabf7);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 1200;
+    transform: translateZ(0);
+}
+
+.fm-loading-bar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 42%;
+    min-width: 6rem;
+    background: linear-gradient(270deg, transparent 0%, var(--fm-loading-bar-color) 30%, var(--fm-loading-bar-color) 72%, transparent 100%);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--fm-loading-bar-color) 70%, transparent);
+    transform: translateX(240%);
+}
+
+.fm-loading-bar.is-visible {
+    opacity: 1;
+}
+
+.fm-loading-bar.is-running::before {
+    animation: fm-loading-bar-sweep .9s cubic-bezier(.4, 0, .2, 1) infinite;
+}
+
+@keyframes fm-loading-bar-sweep {
+    from {
+        transform: translateX(240%);
+    }
+    to {
+        transform: translateX(-140%);
+    }
+}
+
 /* App Shell Layout */
 .app-shell {
     display: flex;
@@ -279,6 +322,10 @@ form {
     border-radius: 6px; 
     display: inline-flex; 
     align-items: center; 
+    margin: 0;
+    opacity: 1;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .mobile-brand { 
@@ -388,6 +435,9 @@ form {
 }
 
 @media (max-width: 900px) {
+    .fm-loading-bar {
+        top: 54px;
+    }
     .app-shell { position: relative; }
     .sidebar { 
         position: fixed; 

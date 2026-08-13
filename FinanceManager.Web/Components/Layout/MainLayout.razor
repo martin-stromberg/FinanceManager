@@ -2,6 +2,7 @@
 @inject FinanceManager.Application.ICurrentUserService CurrentUser
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
 @inject Microsoft.AspNetCore.Components.NavigationManager Nav
+@inject Microsoft.JSInterop.IJSRuntime JS
 @implements IDisposable
 
 <link rel="stylesheet" href="/css/ribbon.css" />
@@ -68,17 +69,51 @@
 @code {
     private string _logoPath = "/icons/finance_manager.png";
     private bool _useFullWidth;
+    private IDisposable? _locationChangingRegistration;
 
     protected override void OnInitialized()
     {
         UpdateLogo(Nav.Uri);
+        _locationChangingRegistration = Nav.RegisterLocationChangingHandler(HandleLocationChanging);
         Nav.LocationChanged += HandleLocationChanged;
+    }
+
+    private async ValueTask HandleLocationChanging(Microsoft.AspNetCore.Components.Routing.LocationChangingContext context)
+    {
+        if (context.IsNavigationIntercepted || !string.Equals(Nav.Uri, context.TargetLocation, StringComparison.Ordinal))
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("financeManager.loadingBar.start");
+            }
+            catch (Microsoft.JSInterop.JSDisconnectedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+        }
     }
 
     private void HandleLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
         UpdateLogo(e.Location);
+        _ = StopLoadingBarAsync();
         _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task StopLoadingBarAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("financeManager.loadingBar.stop");
+        }
+        catch (Microsoft.JSInterop.JSDisconnectedException)
+        {
+        }
+        catch (InvalidOperationException)
+        {
+        }
     }
 
     private void UpdateLogo(string uri)
@@ -154,5 +189,6 @@
     public void Dispose()
     {
         Nav.LocationChanged -= HandleLocationChanged;
+        _locationChangingRegistration?.Dispose();
     }
 }
