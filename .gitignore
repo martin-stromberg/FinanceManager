@@ -377,6 +377,9 @@ ASALocalRun/
 # Local History for Visual Studio
 .localhistory/
 
+# Local nested repository used to publish reusable components
+Repository/
+
 # BeatPulse healthcheck temp database
 healthchecksdb
 
