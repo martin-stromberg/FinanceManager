@@ -131,10 +131,11 @@ Depotwerts als abgeleitete Liquidität auf Verrechnungskonten liegt.
 
 **Verhalten:**
 - Der aktuelle Saldo jedes gefundenen Kontos wird genau einmal summiert.
-- Formel: `LiquidityRatio = depotCashBalance / (TotalMarketValue + depotCashBalance)`.
-- Ist der aktuelle Depot-Marktwert kleiner oder gleich `0` oder ist der
-  Nenner kleiner oder gleich `0`, wird `0 %` angezeigt.
-- Negative Kontosalden werden nicht gekappt.
+- Formel bei belastbarer Datenbasis:
+  `LiquidityRatio = depotCashBalance / (TotalMarketValue + depotCashBalance)`.
+- Ist der abgeleitete Cash-Bestand negativ, der aktuelle Depot-Marktwert
+  kleiner oder gleich `0` oder der Nenner kleiner oder gleich `0`, wird keine
+  Quote berechnet (`LiquidityRatio = null`) und die UI zeigt `n/a`.
 
 **Umsetzung:** `PortfolioAnalysisReportService.LoadDepotCashBalanceAsync` und
 `PortfolioAnalysisReportService.BuildCashflow`.

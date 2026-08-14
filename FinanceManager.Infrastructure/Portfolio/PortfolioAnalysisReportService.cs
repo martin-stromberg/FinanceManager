@@ -419,7 +419,7 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
     {
         if (positions.Count == 0)
         {
-            return new PortfolioCashflowDto(0m, 0m, 0m, 0m);
+            return new PortfolioCashflowDto(0m, 0m, 0m, CalculateLiquidityRatio(depotCashBalance, totalMarketValue), depotCashBalance, totalMarketValue);
         }
 
         int currentYear = DateTime.UtcNow.Year;
@@ -445,17 +445,23 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
             realizedGains += p.Fifo.RealizedGains - realizedBeforeYear;
         }
 
-        return new PortfolioCashflowDto(netDeposits, dividends, realizedGains, CalculateLiquidityRatio(depotCashBalance, totalMarketValue));
+        return new PortfolioCashflowDto(
+            netDeposits,
+            dividends,
+            realizedGains,
+            CalculateLiquidityRatio(depotCashBalance, totalMarketValue),
+            depotCashBalance,
+            totalMarketValue);
     }
 
-    private static decimal CalculateLiquidityRatio(decimal depotCashBalance, decimal totalMarketValue)
+    private static decimal? CalculateLiquidityRatio(decimal depotCashBalance, decimal totalMarketValue)
     {
-        if (totalMarketValue <= 0m)
+        if (depotCashBalance < 0m || totalMarketValue <= 0m)
         {
-            return 0m;
+            return null;
         }
 
         var denominator = totalMarketValue + depotCashBalance;
-        return denominator > 0m ? depotCashBalance / denominator : 0m;
+        return denominator > 0m ? depotCashBalance / denominator : null;
     }
 }

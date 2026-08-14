@@ -804,6 +804,9 @@
   <data name="PortfolioReport_LiquidityRatio" xml:space="preserve">
     <value>Liquidity ratio</value>
   </data>
+  <data name="PortfolioReport_NotAvailable" xml:space="preserve">
+    <value>n/a</value>
+  </data>
   <data name="PortfolioReport_Risk_Phase2Hint" xml:space="preserve">
     <value>Risk metrics are planned for a future phase and are not yet calculated.</value>
   </data>
@@ -883,7 +886,13 @@
     <value>How the liquidity ratio is calculated</value>
   </data>
   <data name="PortfolioReport_Explain_LiquidityRatio_Text" xml:space="preserve">
-    <value>Liquidity ratio = current balance of the cash accounts derived from security booking groups divided by current portfolio market value plus that cash balance. If the current portfolio market value is less than or equal to 0, or if the denominator is less than or equal to 0, 0% is displayed. Mixed accounts are included with their full current balance.</value>
+    <value>The liquidity ratio shows which share of the current portfolio value is not tied up in securities, but held as cash on the derived settlement accounts. The higher the value, the larger the immediately available cash share compared with the invested portfolio. Mixed accounts are included with their full current balance.</value>
+  </data>
+  <data name="PortfolioReport_Explain_LiquidityRatio_Calculation" xml:space="preserve">
+    <value>Calculation with current values: {0} cash / ({1} market value + {0} cash) = {0} / {2} = {3}.</value>
+  </data>
+  <data name="PortfolioReport_Explain_LiquidityRatio_NotCalculated" xml:space="preserve">
+    <value>Current values: {0} cash and {1} market value produce a denominator of {2}. Because the derived cash balance is negative or the market value or denominator is not positive, no reliable calculation is currently possible. n/a is displayed.</value>
   </data>
   <data name="PortfolioReport_Explain_Volatility_Title" xml:space="preserve">
     <value>What volatility means</value>

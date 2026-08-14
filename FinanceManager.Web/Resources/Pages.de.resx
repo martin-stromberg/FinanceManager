@@ -804,6 +804,9 @@
   <data name="PortfolioReport_LiquidityRatio" xml:space="preserve">
     <value>Liquiditätsquote</value>
   </data>
+  <data name="PortfolioReport_NotAvailable" xml:space="preserve">
+    <value>n/a</value>
+  </data>
   <data name="PortfolioReport_Risk_Phase2Hint" xml:space="preserve">
     <value>Risikokennzahlen sind für eine spätere Phase geplant und werden noch nicht berechnet.</value>
   </data>
@@ -883,7 +886,13 @@
     <value>Wie sich die Liquiditätsquote berechnet</value>
   </data>
   <data name="PortfolioReport_Explain_LiquidityRatio_Text" xml:space="preserve">
-    <value>Liquiditätsquote = aktueller Saldo der aus Wertpapier-Buchungsgruppen abgeleiteten Verrechnungskonten geteilt durch aktuellen Depot-Marktwert plus diesen Cash-Bestand. Ist der aktuelle Depot-Marktwert kleiner oder gleich 0 oder ist der Nenner kleiner oder gleich 0, wird 0 % angezeigt. Gemischte Konten werden mit ihrem vollständigen aktuellen Saldo berücksichtigt.</value>
+    <value>Die Liquiditätsquote zeigt, welcher Anteil des aktuellen Depotwerts nicht in Wertpapieren gebunden ist, sondern als Cash auf den abgeleiteten Verrechnungskonten liegt. Je höher der Wert, desto größer ist der sofort verfügbare Cash-Anteil im Verhältnis zum investierten Depot. Gemischte Konten werden mit ihrem vollständigen aktuellen Saldo berücksichtigt.</value>
+  </data>
+  <data name="PortfolioReport_Explain_LiquidityRatio_Calculation" xml:space="preserve">
+    <value>Herleitung mit den aktuellen Werten: {0} Cash / ({1} Marktwert + {0} Cash) = {0} / {2} = {3}.</value>
+  </data>
+  <data name="PortfolioReport_Explain_LiquidityRatio_NotCalculated" xml:space="preserve">
+    <value>Aktuelle Werte: {0} Cash und {1} Marktwert ergeben einen Nenner von {2}. Weil der abgeleitete Cash-Bestand negativ ist oder Marktwert bzw. Nenner nicht positiv sind, ist aktuell keine belastbare Berechnung möglich. Angezeigt wird n/a.</value>
   </data>
   <data name="PortfolioReport_Explain_Volatility_Title" xml:space="preserve">
     <value>Was Volatilität bedeutet</value>

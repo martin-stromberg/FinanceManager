@@ -163,6 +163,8 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
         report.Structure.TotalMarketValue.Should().Be(1000m);
+        report.Cashflow.LiquidityCashBalance.Should().Be(500m);
+        report.Cashflow.LiquidityTotalMarketValue.Should().Be(1000m);
         report.Cashflow.LiquidityRatio.Should().Be(500m / 1500m);
     }
 
@@ -185,6 +187,8 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
         report.Structure.TotalMarketValue.Should().Be(1000m);
+        report.Cashflow.LiquidityCashBalance.Should().Be(250m);
+        report.Cashflow.LiquidityTotalMarketValue.Should().Be(1000m);
         report.Cashflow.LiquidityRatio.Should().Be(250m / 1250m);
     }
 
@@ -212,6 +216,8 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
         report.Structure.TotalMarketValue.Should().Be(800m);
+        report.Cashflow.LiquidityCashBalance.Should().Be(200m);
+        report.Cashflow.LiquidityTotalMarketValue.Should().Be(800m);
         report.Cashflow.LiquidityRatio.Should().Be(200m / 1000m);
     }
 
@@ -226,11 +232,13 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
+        report.Cashflow.LiquidityCashBalance.Should().Be(0m);
+        report.Cashflow.LiquidityTotalMarketValue.Should().Be(1000m);
         report.Cashflow.LiquidityRatio.Should().Be(0m);
     }
 
     [Fact]
-    public async Task GetPortfolioReport_NonPositiveLiquidityDenominator_ReturnsZeroLiquidityRatio()
+    public async Task GetPortfolioReport_NegativeDepotCash_ReturnsUnavailableLiquidityRatio()
     {
         var user = CreateUser();
         var security = CreateSecurity(user.Id, "Apple");
@@ -245,11 +253,13 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
         report.Structure.TotalMarketValue.Should().Be(1000m);
-        report.Cashflow.LiquidityRatio.Should().Be(0m);
+        report.Cashflow.LiquidityCashBalance.Should().Be(-1000m);
+        report.Cashflow.LiquidityTotalMarketValue.Should().Be(1000m);
+        report.Cashflow.LiquidityRatio.Should().BeNull();
     }
 
     [Fact]
-    public async Task GetPortfolioReport_ClosedPositionWithPositiveDepotCash_ReturnsZeroLiquidityRatio()
+    public async Task GetPortfolioReport_ClosedPositionWithPositiveDepotCash_ReturnsUnavailableLiquidityRatio()
     {
         var user = CreateUser();
         var security = CreateSecurity(user.Id, "Apple");
@@ -265,7 +275,9 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
         report.Structure.TotalMarketValue.Should().Be(0m);
-        report.Cashflow.LiquidityRatio.Should().Be(0m);
+        report.Cashflow.LiquidityCashBalance.Should().Be(500m);
+        report.Cashflow.LiquidityTotalMarketValue.Should().Be(0m);
+        report.Cashflow.LiquidityRatio.Should().BeNull();
     }
 
     [Fact]

@@ -38,7 +38,10 @@ Einzelpositionen samt Marktwert auf:
   Gewinne/Verluste des laufenden Jahres sowie die aktuelle
   Liquiditätsquote. Die Liquiditätsquote setzt den aktuellen Saldo der aus
   Wertpapier-Buchungsgruppen abgeleiteten Verrechnungskonten ins Verhältnis
-  zu Depot-Marktwert plus diesem Cash-Bestand.
+  zu Depot-Marktwert plus diesem Cash-Bestand. Das Info-Panel der Kennzahl
+  zeigt Bedeutung und Herleitung mit den aktuell berechneten Werten. Bei
+  negativem Cash-Bestand, fehlendem Marktwert oder nicht positivem Nenner
+  wird keine Quote berechnet und `n/a` angezeigt.
 - **Risikoanalyse** — als Kachel bereits vorhanden, die eigentlichen
   Kennzahlen (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk)
   sind für eine spätere Phase vorgesehen und werden aktuell nicht berechnet
@@ -91,7 +94,10 @@ Kachel-Konfiguration verworfen werden.
   `null`); sie ist als Platzhalter für eine spätere Phase angelegt.
 - Die Liquiditätsquote ordnet den vollständigen aktuellen Saldo eines
   gefundenen Verrechnungskontos dem Depot zu. Bei gemischt genutzten Konten
-  kann die Quote deshalb auch nicht depotbezogene Liquidität enthalten.
+  kann die Quote deshalb auch nicht depotbezogene Liquidität enthalten. Ist
+  der abgeleitete Cash-Bestand negativ, wird die Quote nicht berechnet, weil
+  dies auf unvollständig gepflegte Kontosalden oder eine nicht belastbare
+  Cash-Datenbasis hinweisen kann.
 - Bei sehr großen Depots (mehr als ca. 1000 Positionen) kann die
   Neuberechnung bei Cache-Miss spürbar dauern, da alle Positionen,
   Buchungen und Kurse pro Aufruf geladen werden.

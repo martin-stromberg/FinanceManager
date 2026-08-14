@@ -39,9 +39,17 @@
             <span class="portfolio-kpi-label">@Localizer["PortfolioReport_LiquidityRatio"]</span>
             <KpiInfoButton Title="@Localizer["PortfolioReport_Explain_LiquidityRatio_Title"].Value" CloseLabel="@Localizer["Btn_Close"].Value">
                 <p>@Localizer["PortfolioReport_Explain_LiquidityRatio_Text"]</p>
+                @if (Data.LiquidityRatio.HasValue)
+                {
+                    <p>@Localizer["PortfolioReport_Explain_LiquidityRatio_Calculation", Data.LiquidityCashBalance.ToString("N2"), Data.LiquidityTotalMarketValue.ToString("N2"), LiquidityDenominator.ToString("N2"), Data.LiquidityRatio.Value.ToString("P2")]</p>
+                }
+                else
+                {
+                    <p>@Localizer["PortfolioReport_Explain_LiquidityRatio_NotCalculated", Data.LiquidityCashBalance.ToString("N2"), Data.LiquidityTotalMarketValue.ToString("N2"), LiquidityDenominator.ToString("N2")]</p>
+                }
             </KpiInfoButton>
         </span>
-        <span class="portfolio-kpi-value">@Data.LiquidityRatio.ToString("P2")</span>
+        <span class="portfolio-kpi-value">@(Data.LiquidityRatio.HasValue ? Data.LiquidityRatio.Value.ToString("P2") : Localizer["PortfolioReport_NotAvailable"].Value)</span>
     </div>
 </PortfolioKpiCard>
 
@@ -50,6 +58,7 @@
     [Parameter, EditorRequired] public PortfolioCashflowDto Data { get; set; } = null!;
 
     private List<MiniBarChart.MiniBarChartPoint> _chartPoints = new();
+    private decimal LiquidityDenominator => Data.LiquidityTotalMarketValue + Data.LiquidityCashBalance;
 
     /// <inheritdoc />
     protected override void OnParametersSet()

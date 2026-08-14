@@ -65,7 +65,9 @@ monatlichen Cache; bei Cache-Miss wird der Bericht neu berechnet.
 | `NetDepositsCurrentYear` | `decimal` | Netto-Einzahlungen des laufenden Jahres |
 | `DividendsCurrentYear` | `decimal` | Dividenden des laufenden Jahres |
 | `RealizedGainsCurrentYear` | `decimal` | FIFO-realisierte Gewinne/Verluste des laufenden Jahres |
-| `LiquidityRatio` | `decimal` | Aktueller Saldo der aus Wertpapierbuchungen abgeleiteten Verrechnungskonten geteilt durch Marktwert plus Cash-Bestand |
+| `LiquidityRatio` | `decimal?` | Aktueller Saldo der aus Wertpapierbuchungen abgeleiteten Verrechnungskonten geteilt durch Marktwert plus Cash-Bestand; `null`, wenn wegen negativem Cash-Bestand, fehlendem Marktwert oder nicht positivem Nenner keine belastbare Berechnung möglich ist |
+| `LiquidityCashBalance` | `decimal` | Aktueller Cash-Bestand der fuer die Liquiditaetsquote abgeleiteten Verrechnungskonten |
+| `LiquidityTotalMarketValue` | `decimal` | Aktueller Depot-Marktwert, der als Marktwert-Anteil in die Liquiditaetsquote eingeht |
 
 **DTO-Struktur `PortfolioStructureDto` (in `PortfolioAnalysisReportDto.Structure`):**
 
