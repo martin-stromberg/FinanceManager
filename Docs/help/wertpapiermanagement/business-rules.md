@@ -102,6 +102,9 @@ regulären Monatswechsel zu warten.
   neue/geänderte Kurse ein (`SecurityPriceService`).
 - Eine Buchung mit `Kind == PostingKind.Security` wird über
   `PostingReversalService.ReversePostingAsync` storniert.
+- Ein Kontoauszugsentwurf wird gebucht und das betroffene Konto hat
+  `SecurityProcessingEnabled == true` oder beim Buchen werden
+  Wertpapier-Postings erzeugt.
 - Die Kachel-Konfiguration wird gespeichert
   (`PortfolioAnalysisReportController.SaveKpiConfigurationAsync`).
 - Der Benutzer löst manuell "Aktualisieren" aus
@@ -109,10 +112,29 @@ regulären Monatswechsel zu warten.
 
 **Verhalten:**
 - Der `ReportCacheEntry` des betroffenen Benutzers wird gelöscht.
-- Anlegen oder Bearbeiten einer Wertpapierbuchung ohne Stornierung löst
-  aktuell keine automatische Invalidierung aus.
 
 **Umsetzung:** `IPortfolioAnalysisReportCacheService.InvalidateCacheAsync`,
 aufgerufen aus `SecurityPriceService.CreateAsync`,
-`SecurityPriceService.UpsertDailyPricesAsync` und
-`PostingReversalService.ReversePostingAsync`.
+`SecurityPriceService.UpsertDailyPricesAsync`,
+`PostingReversalService.ReversePostingAsync` und
+`StatementDraftService.BookAsync`.
+
+## Depot-Analysebericht: Liquiditätsquote
+
+**Beschreibung:** Die Cashflow-Kachel weist aus, welcher Anteil des aktuellen
+Depotwerts als abgeleitete Liquidität auf Verrechnungskonten liegt.
+
+**Bedingungen:**
+- Wertpapier-Postings des Benutzers liefern nicht leere `GroupId`-Werte.
+- Bank-Postings derselben Gruppen liefern `AccountId`-Werte.
+- Die gefundenen Konten gehören demselben Benutzer.
+
+**Verhalten:**
+- Der aktuelle Saldo jedes gefundenen Kontos wird genau einmal summiert.
+- Formel: `LiquidityRatio = depotCashBalance / (TotalMarketValue + depotCashBalance)`.
+- Ist der aktuelle Depot-Marktwert kleiner oder gleich `0` oder ist der
+  Nenner kleiner oder gleich `0`, wird `0 %` angezeigt.
+- Negative Kontosalden werden nicht gekappt.
+
+**Umsetzung:** `PortfolioAnalysisReportService.LoadDepotCashBalanceAsync` und
+`PortfolioAnalysisReportService.BuildCashflow`.

@@ -58,6 +58,15 @@ monatlichen Cache; bei Cache-Miss wird der Bericht neu berechnet.
 |-----|--------------|
 | `PortfolioAnalysisReportDto` | Enthält `Structure`, `Performance`, `Cashflow`, `Risk`, `GeneratedUtc`, `CacheValidUntilUtc`. |
 
+**DTO-Struktur `PortfolioCashflowDto` (in `PortfolioAnalysisReportDto.Cashflow`):**
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `NetDepositsCurrentYear` | `decimal` | Netto-Einzahlungen des laufenden Jahres |
+| `DividendsCurrentYear` | `decimal` | Dividenden des laufenden Jahres |
+| `RealizedGainsCurrentYear` | `decimal` | FIFO-realisierte Gewinne/Verluste des laufenden Jahres |
+| `LiquidityRatio` | `decimal` | Aktueller Saldo der aus Wertpapierbuchungen abgeleiteten Verrechnungskonten geteilt durch Marktwert plus Cash-Bestand |
+
 **DTO-Struktur `PortfolioStructureDto` (in `PortfolioAnalysisReportDto.Structure`):**
 
 | Feld | Typ | Beschreibung |

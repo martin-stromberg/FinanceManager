@@ -1,4 +1,6 @@
 using FinanceManager.Application.Securities.ReturnAnalysis;
+using FinanceManager.Domain.Accounts;
+using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Postings;
 using FinanceManager.Domain.Securities;
 using FinanceManager.Domain.Users;
@@ -48,14 +50,42 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         return security;
     }
 
-    private void AddBuyPosting(Guid securityId, DateTime date, decimal amount, decimal quantity)
-        => _db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Security, null, null, null, securityId, date, -Math.Abs(amount), null, null, null, SecurityPostingSubType.Buy, quantity));
+    private async Task<Account> CreateAccountAsync(Guid ownerUserId, decimal currentBalance, string name = "Depot Cash")
+    {
+        var bank = new Contact(ownerUserId, $"Bank-{Guid.NewGuid():N}", ContactType.Bank, null, null);
+        _db.Contacts.Add(bank);
+        await _db.SaveChangesAsync();
+
+        var account = new Account(ownerUserId, AccountType.Giro, name, null, bank.Id);
+        if (currentBalance != 0m)
+        {
+            account.AdjustBalance(currentBalance);
+        }
+
+        _db.Accounts.Add(account);
+        await _db.SaveChangesAsync();
+        return account;
+    }
+
+    private void AddBuyPosting(Guid securityId, DateTime date, decimal amount, decimal quantity, Guid? groupId = null)
+    {
+        var posting = new Posting(Guid.NewGuid(), PostingKind.Security, null, null, null, securityId, date, -Math.Abs(amount), null, null, null, SecurityPostingSubType.Buy, quantity);
+        if (groupId.HasValue)
+        {
+            posting.SetGroup(groupId.Value);
+        }
+
+        _db.Postings.Add(posting);
+    }
 
     private void AddSellPosting(Guid securityId, DateTime date, decimal amount, decimal quantity)
         => _db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Security, null, null, null, securityId, date, Math.Abs(amount), null, null, null, SecurityPostingSubType.Sell, quantity));
 
     private void AddDividendPosting(Guid securityId, DateTime date, decimal amount)
         => _db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Security, null, null, null, securityId, date, Math.Abs(amount), null, null, null, SecurityPostingSubType.Dividend, null));
+
+    private void AddBankPosting(Guid accountId, Guid groupId, DateTime date, decimal amount = 0m)
+        => _db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Bank, accountId, null, null, null, date, amount).SetGroup(groupId));
 
     private void AddPrice(Guid securityId, DateTime date, decimal close)
         => _db.SecurityPrices.Add(new SecurityPrice(securityId, date, close));
@@ -115,6 +145,127 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
         report.Cashflow.DividendsCurrentYear.Should().Be(42m);
+    }
+
+    [Fact]
+    public async Task GetPortfolioReport_WithDepotCashPostingGroup_CalculatesLiquidityRatio()
+    {
+        var user = CreateUser();
+        var security = CreateSecurity(user.Id, "Apple");
+        var account = await CreateAccountAsync(user.Id, 500m);
+        var groupId = Guid.NewGuid();
+
+        AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 1000m, 10m, groupId);
+        AddBankPosting(account.Id, groupId, DateTime.Today.AddYears(-1), -1000m);
+        AddPrice(security.Id, DateTime.Today, 100m);
+        await _db.SaveChangesAsync();
+
+        var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
+
+        report.Structure.TotalMarketValue.Should().Be(1000m);
+        report.Cashflow.LiquidityRatio.Should().Be(500m / 1500m);
+    }
+
+    [Fact]
+    public async Task GetPortfolioReport_MultipleSecurityGroupsForSameAccount_DeduplicatesCashBalance()
+    {
+        var user = CreateUser();
+        var security = CreateSecurity(user.Id, "Apple");
+        var account = await CreateAccountAsync(user.Id, 250m);
+        var groupA = Guid.NewGuid();
+        var groupB = Guid.NewGuid();
+
+        AddBuyPosting(security.Id, DateTime.Today.AddYears(-2), 500m, 5m, groupA);
+        AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 500m, 5m, groupB);
+        AddBankPosting(account.Id, groupA, DateTime.Today.AddYears(-2), -500m);
+        AddBankPosting(account.Id, groupB, DateTime.Today.AddYears(-1), -500m);
+        AddPrice(security.Id, DateTime.Today, 100m);
+        await _db.SaveChangesAsync();
+
+        var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
+
+        report.Structure.TotalMarketValue.Should().Be(1000m);
+        report.Cashflow.LiquidityRatio.Should().Be(250m / 1250m);
+    }
+
+    [Fact]
+    public async Task GetPortfolioReport_ForeignAccountsAndGroups_DoNotAffectLiquidityRatio()
+    {
+        var user = CreateUser();
+        var otherUser = CreateUser();
+        var security = CreateSecurity(user.Id, "Apple");
+        var otherSecurity = CreateSecurity(otherUser.Id, "SAP");
+        var ownAccount = await CreateAccountAsync(user.Id, 200m, "Own Cash");
+        var foreignAccount = await CreateAccountAsync(otherUser.Id, 900m, "Foreign Cash");
+        var ownGroup = Guid.NewGuid();
+        var foreignGroup = Guid.NewGuid();
+
+        AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 800m, 8m, ownGroup);
+        AddBankPosting(ownAccount.Id, ownGroup, DateTime.Today.AddYears(-1), -800m);
+        AddBankPosting(foreignAccount.Id, ownGroup, DateTime.Today.AddYears(-1), -800m);
+        AddBuyPosting(otherSecurity.Id, DateTime.Today.AddYears(-1), 500m, 5m, foreignGroup);
+        AddBankPosting(foreignAccount.Id, foreignGroup, DateTime.Today.AddYears(-1), -500m);
+        AddPrice(security.Id, DateTime.Today, 100m);
+        AddPrice(otherSecurity.Id, DateTime.Today, 100m);
+        await _db.SaveChangesAsync();
+
+        var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
+
+        report.Structure.TotalMarketValue.Should().Be(800m);
+        report.Cashflow.LiquidityRatio.Should().Be(200m / 1000m);
+    }
+
+    [Fact]
+    public async Task GetPortfolioReport_NoCashAccount_ReturnsZeroLiquidityRatio()
+    {
+        var user = CreateUser();
+        var security = CreateSecurity(user.Id, "Apple");
+        AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 1000m, 10m, Guid.NewGuid());
+        AddPrice(security.Id, DateTime.Today, 100m);
+        await _db.SaveChangesAsync();
+
+        var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
+
+        report.Cashflow.LiquidityRatio.Should().Be(0m);
+    }
+
+    [Fact]
+    public async Task GetPortfolioReport_NonPositiveLiquidityDenominator_ReturnsZeroLiquidityRatio()
+    {
+        var user = CreateUser();
+        var security = CreateSecurity(user.Id, "Apple");
+        var account = await CreateAccountAsync(user.Id, -1000m);
+        var groupId = Guid.NewGuid();
+
+        AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 1000m, 10m, groupId);
+        AddBankPosting(account.Id, groupId, DateTime.Today.AddYears(-1), -1000m);
+        AddPrice(security.Id, DateTime.Today, 100m);
+        await _db.SaveChangesAsync();
+
+        var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
+
+        report.Structure.TotalMarketValue.Should().Be(1000m);
+        report.Cashflow.LiquidityRatio.Should().Be(0m);
+    }
+
+    [Fact]
+    public async Task GetPortfolioReport_ClosedPositionWithPositiveDepotCash_ReturnsZeroLiquidityRatio()
+    {
+        var user = CreateUser();
+        var security = CreateSecurity(user.Id, "Apple");
+        var account = await CreateAccountAsync(user.Id, 500m);
+        var groupId = Guid.NewGuid();
+
+        AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 1000m, 10m, groupId);
+        AddBankPosting(account.Id, groupId, DateTime.Today.AddYears(-1), -1000m);
+        AddSellPosting(security.Id, DateTime.Today, 1000m, 10m);
+        AddPrice(security.Id, DateTime.Today, 100m);
+        await _db.SaveChangesAsync();
+
+        var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
+
+        report.Structure.TotalMarketValue.Should().Be(0m);
+        report.Cashflow.LiquidityRatio.Should().Be(0m);
     }
 
     [Fact]

@@ -801,6 +801,9 @@
   <data name="PortfolioReport_RealizedGains" xml:space="preserve">
     <value>Realized gains/losses (this year)</value>
   </data>
+  <data name="PortfolioReport_LiquidityRatio" xml:space="preserve">
+    <value>Liquidity ratio</value>
+  </data>
   <data name="PortfolioReport_Risk_Phase2Hint" xml:space="preserve">
     <value>Risk metrics are planned for a future phase and are not yet calculated.</value>
   </data>
@@ -875,6 +878,12 @@
   </data>
   <data name="PortfolioReport_Explain_RealizedGains_Text" xml:space="preserve">
     <value>Realized gains/losses this year = FIFO realized gains up to today minus the FIFO realized gains up to the end of last year, i.e. the gains/losses locked in by sell transactions executed within the current year.</value>
+  </data>
+  <data name="PortfolioReport_Explain_LiquidityRatio_Title" xml:space="preserve">
+    <value>How the liquidity ratio is calculated</value>
+  </data>
+  <data name="PortfolioReport_Explain_LiquidityRatio_Text" xml:space="preserve">
+    <value>Liquidity ratio = current balance of the cash accounts derived from security booking groups divided by current portfolio market value plus that cash balance. If the current portfolio market value is less than or equal to 0, or if the denominator is less than or equal to 0, 0% is displayed. Mixed accounts are included with their full current balance.</value>
   </data>
   <data name="PortfolioReport_Explain_Volatility_Title" xml:space="preserve">
     <value>What volatility means</value>

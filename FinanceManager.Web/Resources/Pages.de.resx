@@ -801,6 +801,9 @@
   <data name="PortfolioReport_RealizedGains" xml:space="preserve">
     <value>Realisierte Gewinne/Verluste (dieses Jahr)</value>
   </data>
+  <data name="PortfolioReport_LiquidityRatio" xml:space="preserve">
+    <value>Liquiditätsquote</value>
+  </data>
   <data name="PortfolioReport_Risk_Phase2Hint" xml:space="preserve">
     <value>Risikokennzahlen sind für eine spätere Phase geplant und werden noch nicht berechnet.</value>
   </data>
@@ -875,6 +878,12 @@
   </data>
   <data name="PortfolioReport_Explain_RealizedGains_Text" xml:space="preserve">
     <value>Realisierte Gewinne/Verluste dieses Jahr = FIFO-realisierte Gewinne bis heute abzüglich der FIFO-realisierten Gewinne bis zum Ende des Vorjahres, also die durch Verkäufe im laufenden Jahr festgeschriebenen Gewinne/Verluste.</value>
+  </data>
+  <data name="PortfolioReport_Explain_LiquidityRatio_Title" xml:space="preserve">
+    <value>Wie sich die Liquiditätsquote berechnet</value>
+  </data>
+  <data name="PortfolioReport_Explain_LiquidityRatio_Text" xml:space="preserve">
+    <value>Liquiditätsquote = aktueller Saldo der aus Wertpapier-Buchungsgruppen abgeleiteten Verrechnungskonten geteilt durch aktuellen Depot-Marktwert plus diesen Cash-Bestand. Ist der aktuelle Depot-Marktwert kleiner oder gleich 0 oder ist der Nenner kleiner oder gleich 0, wird 0 % angezeigt. Gemischte Konten werden mit ihrem vollständigen aktuellen Saldo berücksichtigt.</value>
   </data>
   <data name="PortfolioReport_Explain_Volatility_Title" xml:space="preserve">
     <value>Was Volatilität bedeutet</value>

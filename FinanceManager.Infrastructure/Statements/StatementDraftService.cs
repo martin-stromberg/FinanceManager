@@ -3,6 +3,7 @@ using FinanceManager.Application.Aggregates;
 using FinanceManager.Application.Attachments; // added
 using FinanceManager.Application.Budget;
 using FinanceManager.Application.Contacts;
+using FinanceManager.Application.Portfolio;
 using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Accounts; // added for Account type
 using FinanceManager.Domain.Attachments; // added
@@ -35,6 +36,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
     // private readonly Microsoft.Extensions.Localization.IStringLocalizer<StatementDraftService> _localizer; // optional localizer
     private readonly IAttachmentService? _attachments; // optional to keep compatibility with tests
     private readonly IReportCacheService? _reportCacheService;
+    private readonly IPortfolioAnalysisReportCacheService? _portfolioAnalysisReportCacheService;
     private readonly IBudgetImpactEvaluationService? _budgetImpactEvaluationService;
     private readonly IKnownContactCatalog? _knownContactCatalog;
     // no-op
@@ -105,7 +107,8 @@ public sealed partial class StatementDraftService : IStatementDraftService
         IAttachmentService? attachments = null,
         IReportCacheService? reportCacheService = null,
         IBudgetImpactEvaluationService? budgetImpactEvaluationService = null,
-        IKnownContactCatalog? knownContactCatalog = null)
+        IKnownContactCatalog? knownContactCatalog = null,
+        IPortfolioAnalysisReportCacheService? portfolioAnalysisReportCacheService = null)
     {
         _db = db;
         _aggregateService = aggregateService;
@@ -114,6 +117,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
         _logger = logger ?? NullLogger<StatementDraftService>.Instance;
         _attachments = attachments;
         _reportCacheService = reportCacheService;
+        _portfolioAnalysisReportCacheService = portfolioAnalysisReportCacheService;
         _budgetImpactEvaluationService = budgetImpactEvaluationService;
         _knownContactCatalog = knownContactCatalog;
         // localization not required in constructor
@@ -140,6 +144,25 @@ public sealed partial class StatementDraftService : IStatementDraftService
         var periodTo = bookingDate >= valutaDate ? bookingDate : valutaDate;
 
         await _reportCacheService.MarkBudgetReportCacheEntriesForUpdateAsync(periodFrom, periodTo, ct);
+    }
+
+    private async Task InvalidatePortfolioAnalysisReportCacheAfterBookingAsync(
+        Guid ownerUserId,
+        Account account,
+        bool createdSecurityPostings,
+        CancellationToken ct)
+    {
+        if (_portfolioAnalysisReportCacheService == null)
+        {
+            return;
+        }
+
+        if (!createdSecurityPostings && !account.SecurityProcessingEnabled)
+        {
+            return;
+        }
+
+        await _portfolioAnalysisReportCacheService.InvalidateCacheAsync(ownerUserId, ct);
     }
 
     /// <summary>
@@ -2158,6 +2181,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
             : await _budgetImpactEvaluationService.EvaluateDraftImpactAsync(draftId, entryId, ownerUserId, ct);
 
         var updatedPlanIds = new HashSet<Guid>();
+        var createdPortfolioSecurityPostings = false;
         async Task UpdateRecurringPlanIfDueAsync(Guid planId, DateTime bookingDate, CancellationToken token)
         {
             if (updatedPlanIds.Contains(planId)) { return; }
@@ -2205,6 +2229,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
         async Task CreateSecurityPostingsAsync(StatementDraftEntry e, Guid gid, CancellationToken token)
         {
             if (e.SecurityId == null) { return; }
+            createdPortfolioSecurityPostings = true;
             var fee = Math.Abs(e.SecurityFeeAmount ?? 0m); var tax = Math.Abs(e.SecurityTaxAmount ?? 0m);
             if (e.Amount < 0) { fee = -fee; tax = -tax; }
             var factor = e.SecurityTransactionType switch { SecurityTransactionType.Buy => 1, SecurityTransactionType.Sell => -1, SecurityTransactionType.Dividend => -1, _ => -1 };
@@ -2354,6 +2379,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
             }
 
             _reportCacheService?.EnqueueBudgetReportCacheRefresh(ownerUserId);
+            await InvalidatePortfolioAnalysisReportCacheAfterBookingAsync(ownerUserId, account, createdPortfolioSecurityPostings, ct);
 
             return new BookingResult(true, false, validation, null, toBook.Count, await GetNextStatementDraftAsync(draft))
             {
@@ -2393,6 +2419,8 @@ public sealed partial class StatementDraftService : IStatementDraftService
             await _db.SaveChangesAsync(ct);
             validation = new DraftValidationResultDto(validation.DraftId, validation.IsValid, msgs);
         }
+
+        await InvalidatePortfolioAnalysisReportCacheAfterBookingAsync(ownerUserId, account, createdPortfolioSecurityPostings, ct);
 
         return new BookingResult(true, false, validation, null, toBook.Count, await GetNextStatementDraftAsync(draft))
         {

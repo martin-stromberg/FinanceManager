@@ -65,6 +65,11 @@
   `SecuritySubType`) und `SecurityPrice`-Datensätze eines Benutzers zu einem
   `PortfolioAnalysisReportDto`, das als JSON in einem `ReportCacheEntry`
   zwischengespeichert wird.
+- Für die Liquiditätsquote leitet der Depot-Analysebericht Verrechnungskonten
+  aus vorhandenen `Posting.GroupId`-Beziehungen ab: Security-Postings des
+  Benutzers bestimmen relevante Gruppen, Bank-Postings derselben Gruppen
+  liefern die `AccountId`, und die aktuellen Salden dieser Konten werden
+  dedupliziert summiert.
 - Eine `PortfolioKpiConfiguration` gehört genau einem Benutzer
   (`OwnerUserId` eindeutig) und bestimmt, welche Kacheln im
   Depot-Analysebericht angezeigt werden und in welcher Reihenfolge.

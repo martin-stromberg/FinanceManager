@@ -13,8 +13,10 @@ using FinanceManager.Shared.Dtos.Statements;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using FinanceManager.Application.Accounts;
+using FinanceManager.Application.Portfolio;
 using Microsoft.Extensions.Logging.Abstractions;
 using FinanceManager.Tests.TestHelpers;
+using Moq;
 
 namespace FinanceManager.Tests.Statements;
 
@@ -950,6 +952,82 @@ public sealed class StatementDraftBookingTests
         Assert.Equal(-0.22m, tax.Amount);
         Assert.Equal(entry.Amount, main.Amount + tax.Amount);
 
+        conn.Dispose();
+    }
+
+    [Fact]
+    public async Task BookAsync_SecurityPosting_InvalidatesPortfolioAnalysisReportCache()
+    {
+        var (_, db, conn, owner) = Create();
+        var (acc, bank) = await AddAccountAsync(db, owner);
+        var draft = await CreateDraftAsync(db, owner, acc.Id);
+        var entry = draft.AddEntry(new DateTime(2024, 5, 10), -100m, "Buy", bank.Name, new DateTime(2024, 5, 10), "EUR", null, false);
+        entry.MarkAccounted(bank.Id);
+        db.Entry(entry).State = EntityState.Added;
+
+        var security = new Security(owner, "ETF", "ETF0001", null, null, "EUR", null);
+        db.Securities.Add(security);
+        await db.SaveChangesAsync();
+
+        var portfolioCache = new Mock<IPortfolioAnalysisReportCacheService>();
+        var sut = new StatementDraftService(
+            db,
+            new PostingAggregateService(db),
+            new StubAccountService(),
+            null,
+            null,
+            NullLogger<StatementDraftService>.Instance,
+            null,
+            null,
+            null,
+            null,
+            portfolioCache.Object);
+
+        await sut.SetEntrySecurityAsync(draft.Id, entry.Id, security.Id, SecurityTransactionType.Buy, 1m, null, null, owner, CancellationToken.None);
+
+        var result = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
+
+        Assert.True(result.Success);
+        portfolioCache.Verify(c => c.InvalidateCacheAsync(owner, It.IsAny<CancellationToken>()), Times.Once);
+        conn.Dispose();
+    }
+
+    [Fact]
+    public async Task BookAsync_NormalPostingOnNonSecurityAccount_DoesNotInvalidatePortfolioAnalysisReportCache()
+    {
+        var (_, db, conn, owner) = Create();
+        var (acc, _) = await AddAccountAsync(db, owner);
+        acc.SetSecurityProcessingEnabled(false);
+        await db.SaveChangesAsync();
+
+        var draft = await CreateDraftAsync(db, owner, acc.Id);
+        var shop = new Contact(owner, "Shop", ContactType.Organization, null, null, false);
+        db.Contacts.Add(shop);
+        await db.SaveChangesAsync();
+
+        var entry = draft.AddEntry(new DateTime(2024, 5, 10), -25m, "Groceries", shop.Name, new DateTime(2024, 5, 10), "EUR", null, false);
+        entry.MarkAccounted(shop.Id);
+        db.Entry(entry).State = EntityState.Added;
+        await db.SaveChangesAsync();
+
+        var portfolioCache = new Mock<IPortfolioAnalysisReportCacheService>();
+        var sut = new StatementDraftService(
+            db,
+            new PostingAggregateService(db),
+            new StubAccountService(),
+            null,
+            null,
+            NullLogger<StatementDraftService>.Instance,
+            null,
+            null,
+            null,
+            null,
+            portfolioCache.Object);
+
+        var result = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
+
+        Assert.True(result.Success);
+        portfolioCache.Verify(c => c.InvalidateCacheAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
         conn.Dispose();
     }
 

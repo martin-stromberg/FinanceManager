@@ -35,7 +35,10 @@ Einzelpositionen samt Marktwert auf:
   alle Jahre) seit dem ersten Wertpapiergeschäft, Jahr-zu-Datum-Rendite sowie
   jährliche Renditen.
 - **Cashflow** — Netto-Einzahlungen, Dividenden und realisierte
-  Gewinne/Verluste des laufenden Jahres.
+  Gewinne/Verluste des laufenden Jahres sowie die aktuelle
+  Liquiditätsquote. Die Liquiditätsquote setzt den aktuellen Saldo der aus
+  Wertpapier-Buchungsgruppen abgeleiteten Verrechnungskonten ins Verhältnis
+  zu Depot-Marktwert plus diesem Cash-Bestand.
 - **Risikoanalyse** — als Kachel bereits vorhanden, die eigentlichen
   Kennzahlen (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk)
   sind für eine spätere Phase vorgesehen und werden aktuell nicht berechnet
@@ -57,8 +60,11 @@ neu berechnet wird.
 Der Bericht wird pro Benutzer bis Monatsende zwischengespeichert
 (`CacheValidUntilUtc`). Der Cache wird automatisch verworfen, wenn sich
 Wertpapierkurse ändern (Kursimport/-eingabe) oder eine Wertpapierbuchung
-storniert wird, sowie manuell über den Ribbon-Button "Aktualisieren" oder
-nach dem Speichern der Kachel-Konfiguration.
+storniert wird. Beim Buchen von Kontoauszugsentwürfen wird der Cache
+ebenfalls verworfen, wenn das betroffene Konto Wertpapierverarbeitung erlaubt
+oder beim Buchen Wertpapier-Postings entstehen. Manuell kann der Cache über
+den Ribbon-Button "Aktualisieren" oder nach dem Speichern der
+Kachel-Konfiguration verworfen werden.
 
 ## Beispiele
 
@@ -83,11 +89,9 @@ nach dem Speichern der Kachel-Konfiguration.
 - Die Risikoanalyse-Kachel des Depot-Analyseberichts liefert noch keine
   Werte (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk sind
   `null`); sie ist als Platzhalter für eine spätere Phase angelegt.
-- Der Berichts-Cache wird bei Kursänderungen und bei der Stornierung von
-  Wertpapierbuchungen automatisch invalidiert; das Anlegen oder Bearbeiten
-  einzelner Wertpapierbuchungen (ohne Stornierung) löst noch keine
-  automatische Invalidierung aus — in diesem Fall hilft der Ribbon-Button
-  "Aktualisieren" auf der Berichtsseite.
+- Die Liquiditätsquote ordnet den vollständigen aktuellen Saldo eines
+  gefundenen Verrechnungskontos dem Depot zu. Bei gemischt genutzten Konten
+  kann die Quote deshalb auch nicht depotbezogene Liquidität enthalten.
 - Bei sehr großen Depots (mehr als ca. 1000 Positionen) kann die
   Neuberechnung bei Cache-Miss spürbar dauern, da alle Positionen,
   Buchungen und Kurse pro Aufruf geladen werden.

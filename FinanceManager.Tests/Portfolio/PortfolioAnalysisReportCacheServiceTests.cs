@@ -33,7 +33,7 @@ public sealed class PortfolioAnalysisReportCacheServiceTests : IDisposable
         => new(
             new PortfolioStructureDto(marketValue, 0m, marketValue, [], [], [], [], [], []),
             new PortfolioPerformanceDto(null, null, [], []),
-            new PortfolioCashflowDto(0m, 0m, 0m),
+            new PortfolioCashflowDto(0m, 0m, 0m, 0m),
             new PortfolioRiskDto(null, null, null, null, null),
             generatedUtc,
             validUntilUtc);
