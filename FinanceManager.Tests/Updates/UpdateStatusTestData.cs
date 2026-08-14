@@ -28,6 +28,25 @@ public static class UpdateStatusTestData
             DateTimeOffset.UtcNow);
 
     /// <summary>
+    /// Builds an <see cref="AutoUpdateStatusSnapshot"/> representing an available update before its package is downloaded.
+    /// </summary>
+    /// <param name="availableVersion">The available update version.</param>
+    /// <param name="package">The package descriptor to attach as the last check result.</param>
+    /// <returns>An <see cref="AutoUpdateStatusSnapshot"/> with <see cref="AutoUpdateState.UpdateAvailable"/> state.</returns>
+    public static AutoUpdateStatusSnapshot UpdateAvailableSnapshot(string availableVersion, AutoUpdatePackageDescriptor package)
+        => new(
+            AutoUpdateState.UpdateAvailable,
+            "1.0.0",
+            availableVersion,
+            DateTimeOffset.UtcNow,
+            new AutoUpdateCheckResult(availableVersion, package, null, null),
+            null,
+            null,
+            null,
+            false,
+            null);
+
+    /// <summary>
     /// Builds an <see cref="AutoUpdateStatusSnapshot"/> representing a package ready to install.
     /// </summary>
     /// <param name="availableVersion">The version ready to be installed.</param>

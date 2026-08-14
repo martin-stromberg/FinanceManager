@@ -79,6 +79,11 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
         try
         {
             var result = await _orchestrator.CheckForUpdateAsync(ct);
+            if (result.Outcome == AutoUpdateOutcome.Success)
+            {
+                result = await _orchestrator.DownloadAsync(ct);
+            }
+
             var statusDto = await _statusMapper.MapAsync(_statusService.GetSnapshot(), ct);
             var message = UpdateErrorMessageMapper.Map(result.Message);
             if (result.Outcome == AutoUpdateOutcome.Failed
@@ -102,6 +107,19 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
     /// <inheritdoc />
     public async Task<UpdateStatusDto> StartInstallAsync(bool confirmDowntime, CancellationToken ct = default)
     {
+        if (confirmDowntime)
+        {
+            var snapshot = _statusService.GetSnapshot();
+            if (snapshot.State == AutoUpdateState.UpdateAvailable && snapshot.LastDownloadResult is null)
+            {
+                var downloadResult = await _orchestrator.DownloadAsync(ct);
+                if (downloadResult.Outcome == AutoUpdateOutcome.Failed && downloadResult.Error is not null)
+                {
+                    throw downloadResult.Error;
+                }
+            }
+        }
+
         var result = await _orchestrator.InstallAsync(confirmDowntime, ct);
         if (result.Outcome == AutoUpdateOutcome.Failed && result.Error is not null)
         {

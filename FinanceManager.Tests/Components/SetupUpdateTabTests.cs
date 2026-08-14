@@ -154,6 +154,37 @@ public sealed class SetupUpdateTabTests : BunitContext
         });
     }
 
+    [Fact]
+    public async Task Ribbon_WhenBusyAndUpdateLockActive_DoesNotDisableResetLockAction()
+    {
+        var settings = new UpdateSettingsDto(true, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, null, null, "updates", 120, false);
+        var status = new UpdateStatusDto(UpdateStatusKind.NoUpdate, "1.0.0", null, null, "win-x64", null, null, null, true, DateTimeOffset.UtcNow.AddHours(-2), null, null);
+        var checkTask = new TaskCompletionSource<UpdateCheckResultDto>();
+        var apiMock = new Mock<IApiClient>();
+        apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
+        apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(status);
+        apiMock.Setup(a => a.Updates_CheckAsync(It.IsAny<CancellationToken>())).Returns(checkTask.Task);
+        var (vm, localizer) = CreateVmAndLocalizer(apiMock.Object);
+        await vm.LoadAsync();
+
+        var busyTask = vm.CheckAsync();
+        var deadline = DateTime.UtcNow.AddSeconds(3);
+        while (!vm.Busy && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(10);
+        }
+
+        vm.Busy.Should().BeTrue();
+        var resetLockAction = vm.GetRibbon(localizer)!
+            .SelectMany(register => register.Items)
+            .Single(action => action.Id == "UpdateResetLock");
+
+        resetLockAction.Disabled.Should().BeFalse();
+
+        checkTask.SetResult(new UpdateCheckResultDto(false, status, null));
+        await busyTask;
+    }
+
     private (SetupUpdateViewModel Vm, IStringLocalizer<Pages> Localizer) CreateVmAndLocalizer(IApiClient api, bool useHangingHttpClient = false)
     {
         Services.AddSingleton<ICurrentUserService>(new TestCurrentUserService());
