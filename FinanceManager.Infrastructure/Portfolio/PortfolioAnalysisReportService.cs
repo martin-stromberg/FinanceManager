@@ -50,10 +50,11 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
     public async Task<PortfolioAnalysisReportDto> GetPortfolioAnalysisReportAsync(Guid ownerUserId, CancellationToken ct)
     {
         var positions = await LoadPositionsAsync(ownerUserId, ct);
+        var depotCashBalance = await LoadDepotCashBalanceAsync(ownerUserId, ct);
 
         var structure = BuildStructure(positions);
         var performance = BuildPerformance(positions);
-        var cashflow = BuildCashflow(positions);
+        var cashflow = BuildCashflow(positions, depotCashBalance, structure.TotalMarketValue);
         var risk = new PortfolioRiskDto(null, null, null, null, null);
 
         var now = DateTime.UtcNow;
@@ -132,6 +133,54 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
         }
 
         return positions;
+    }
+
+    private async Task<decimal> LoadDepotCashBalanceAsync(Guid ownerUserId, CancellationToken ct)
+    {
+        var securityIds = await _db.Securities
+            .AsNoTracking()
+            .Where(s => s.OwnerUserId == ownerUserId)
+            .Select(s => s.Id)
+            .ToListAsync(ct);
+
+        if (securityIds.Count == 0)
+        {
+            return 0m;
+        }
+
+        var securityGroupIds = await _db.Postings
+            .AsNoTracking()
+            .Where(p => p.SecurityId != null
+                        && securityIds.Contains(p.SecurityId.Value)
+                        && p.SecuritySubType != null
+                        && p.GroupId != Guid.Empty)
+            .Select(p => p.GroupId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        if (securityGroupIds.Count == 0)
+        {
+            return 0m;
+        }
+
+        var accountIds = await _db.Postings
+            .AsNoTracking()
+            .Where(p => p.Kind == PostingKind.Bank
+                        && p.AccountId != null
+                        && securityGroupIds.Contains(p.GroupId))
+            .Select(p => p.AccountId!.Value)
+            .Distinct()
+            .ToListAsync(ct);
+
+        if (accountIds.Count == 0)
+        {
+            return 0m;
+        }
+
+        return await _db.Accounts
+            .AsNoTracking()
+            .Where(a => a.OwnerUserId == ownerUserId && accountIds.Contains(a.Id))
+            .SumAsync(a => (decimal?)a.CurrentBalance, ct) ?? 0m;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -363,11 +412,14 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
     // Cashflow
     // ─────────────────────────────────────────────────────────────────────────
 
-    private PortfolioCashflowDto BuildCashflow(IReadOnlyList<PositionSnapshot> positions)
+    private PortfolioCashflowDto BuildCashflow(
+        IReadOnlyList<PositionSnapshot> positions,
+        decimal depotCashBalance,
+        decimal totalMarketValue)
     {
         if (positions.Count == 0)
         {
-            return new PortfolioCashflowDto(0m, 0m, 0m);
+            return new PortfolioCashflowDto(0m, 0m, 0m, CalculateLiquidityRatio(depotCashBalance, totalMarketValue), depotCashBalance, totalMarketValue);
         }
 
         int currentYear = DateTime.UtcNow.Year;
@@ -393,6 +445,23 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
             realizedGains += p.Fifo.RealizedGains - realizedBeforeYear;
         }
 
-        return new PortfolioCashflowDto(netDeposits, dividends, realizedGains);
+        return new PortfolioCashflowDto(
+            netDeposits,
+            dividends,
+            realizedGains,
+            CalculateLiquidityRatio(depotCashBalance, totalMarketValue),
+            depotCashBalance,
+            totalMarketValue);
+    }
+
+    private static decimal? CalculateLiquidityRatio(decimal depotCashBalance, decimal totalMarketValue)
+    {
+        if (depotCashBalance < 0m || totalMarketValue <= 0m)
+        {
+            return null;
+        }
+
+        var denominator = totalMarketValue + depotCashBalance;
+        return denominator > 0m ? depotCashBalance / denominator : null;
     }
 }

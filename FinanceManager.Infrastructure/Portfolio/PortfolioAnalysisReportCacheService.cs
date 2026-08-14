@@ -21,7 +21,7 @@ public sealed class PortfolioAnalysisReportCacheService : IPortfolioAnalysisRepo
     /// shape are treated as a miss instead of being deserialized into a partially-null DTO (missing JSON
     /// properties deserialize to <c>null</c> for reference-typed record parameters, even when declared non-nullable).
     /// </summary>
-    private const string CacheSchemaVersion = "2";
+    private const string CacheSchemaVersion = "5";
 
     private readonly AppDbContext _db;
     private readonly IPortfolioAnalysisReportService _service;
