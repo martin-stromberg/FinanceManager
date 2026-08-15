@@ -155,6 +155,40 @@ public sealed class SetupUpdateViewModelTests
     }
 
     [Fact]
+    public async Task CheckAsync_WhenSettingsAreDirty_SavesSettingsBeforeChecking()
+    {
+        var settings = new UpdateSettingsDto(false, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, null, null, "updates", 120, false);
+        var savedSettings = settings with { IncludePrereleases = true };
+        var ready = Status(UpdateStatusKind.Ready) with { AvailableVersion = "1.21.0-RC.2" };
+        var calls = new List<string>();
+        UpdateSettingsUpdateRequest? sentRequest = null;
+        var apiMock = new Mock<IApiClient>();
+        apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
+        apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(Status(UpdateStatusKind.NoUpdate));
+        apiMock.Setup(a => a.Updates_UpdateSettingsAsync(It.IsAny<UpdateSettingsUpdateRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<UpdateSettingsUpdateRequest, CancellationToken>((request, _) =>
+            {
+                calls.Add("save");
+                sentRequest = request;
+            })
+            .ReturnsAsync(savedSettings);
+        apiMock.Setup(a => a.Updates_CheckAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => calls.Add("check"))
+            .ReturnsAsync(new UpdateCheckResultDto(true, ready, "Update package is ready to install."));
+        var vm = CreateVm(apiMock.Object);
+        await vm.LoadAsync();
+        vm.UpdateSettings(settings with { IncludePrereleases = true });
+
+        await vm.CheckAsync();
+
+        calls.Should().Equal("save", "check");
+        sentRequest!.IncludePrereleases.Should().BeTrue();
+        vm.Dirty.Should().BeFalse();
+        vm.Settings.Should().Be(savedSettings);
+        vm.Status.Should().Be(ready);
+    }
+
+    [Fact]
     public async Task UpdateSettings_WhenEditableValueChanges_SetsDirty()
     {
         var settings = new UpdateSettingsDto(false, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, null, null, "updates", 120, false);

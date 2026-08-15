@@ -120,21 +120,7 @@ public sealed class SetupUpdateViewModel : BaseViewModel
 
         return RunBusyAsync(async ct =>
         {
-            Settings = await ApiClient.Updates_UpdateSettingsAsync(new UpdateSettingsUpdateRequest(
-                Settings.Enabled,
-                Settings.RepositoryOwner,
-                Settings.RepositoryName,
-                Settings.ManifestAssetName,
-                Settings.SourceCheckStartTime,
-                Settings.SourceCheckEndTime,
-                Settings.ScheduledInstallTime,
-                Settings.ServiceName,
-                Settings.ExecutablePath,
-                Settings.WorkingDirectory,
-                Settings.HealthTimeoutSeconds,
-                Settings.IncludePrereleases), ct);
-            _originalSettings = Settings;
-            Dirty = false;
+            await SaveSettingsCoreAsync(ct);
             Status = await ApiClient.Updates_GetStatusAsync(ct);
         }, ct);
     }
@@ -148,6 +134,11 @@ public sealed class SetupUpdateViewModel : BaseViewModel
     {
         return RunBusyAsync(async ct =>
         {
+            if (Dirty && Settings is not null)
+            {
+                await SaveSettingsCoreAsync(ct);
+            }
+
             var result = await ApiClient.Updates_CheckAsync(ct);
             Status = result.Status;
         }, ct);
@@ -265,6 +256,30 @@ public sealed class SetupUpdateViewModel : BaseViewModel
         RaiseStateChanged();
     }
 
+    private async Task SaveSettingsCoreAsync(CancellationToken ct)
+    {
+        if (Settings is null)
+        {
+            return;
+        }
+
+        Settings = await ApiClient.Updates_UpdateSettingsAsync(new UpdateSettingsUpdateRequest(
+            Settings.Enabled,
+            Settings.RepositoryOwner,
+            Settings.RepositoryName,
+            Settings.ManifestAssetName,
+            Settings.SourceCheckStartTime,
+            Settings.SourceCheckEndTime,
+            Settings.ScheduledInstallTime,
+            Settings.ServiceName,
+            Settings.ExecutablePath,
+            Settings.WorkingDirectory,
+            Settings.HealthTimeoutSeconds,
+            Settings.IncludePrereleases), ct);
+        _originalSettings = Settings;
+        Dirty = false;
+    }
+
     /// <summary>
     /// Marks the current install as having timed out while waiting for the application to become reachable again.
     /// </summary>
@@ -359,7 +374,7 @@ public sealed class SetupUpdateViewModel : BaseViewModel
                 localizer["SetupUpdate_Btn_ResetLock"].Value,
                 "<svg><use href='/icons/sprite.svg#undo'/></svg>",
                 UiRibbonItemSize.Small,
-                Busy || Status is null || !Status.IsLocked,
+                Status is null || !Status.IsLocked,
                 localizer["Hint_SetupUpdate_ResetLock"].Value,
                 new Func<Task>(async () => await ResetLockAsync()))
         };
