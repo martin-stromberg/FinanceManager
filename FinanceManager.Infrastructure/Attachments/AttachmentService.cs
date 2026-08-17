@@ -93,7 +93,8 @@ public sealed class AttachmentService : IAttachmentService
         var entity = new Attachment(ownerUserId, kind, entityId, name, "text/uri-list", 0, null, categoryId, null, url);
         _db.Attachments.Add(entity);
         await _db.SaveChangesAsync(ct);
-        _logger.LogInformation("Attachment URL created {AttachmentId} kind={Kind} entity={EntityId} url={Url}", entity.Id, kind, entityId, url);
+        var sanitizedUrl = url.ReplaceLineEndings(string.Empty);
+        _logger.LogInformation("Attachment URL created {AttachmentId} kind={Kind} entity={EntityId} url={Url}", entity.Id, kind, entityId, sanitizedUrl);
         return Map(entity);
     }
 
