@@ -16,6 +16,7 @@
     </PackageReference>
     <PackageReference Include="PdfPig" Version="0.1.15" />
     <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.11" />
+    <PackageReference Include="msTools.Updater" Version="0.7.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -27,9 +28,5 @@
     <ProjectReference Include="..\FinanceManager.Web\FinanceManager.Web.csproj" />
     <ProjectReference Include="..\FinanceManager.Shared\FinanceManager.Shared.csproj" />
     <ProjectReference Include="..\FinanceManager.Tests\FinanceManager.Tests.csproj" />
-    <Reference Include="msTools.Updater">
-      <HintPath>..\external\msTools.Updater\v0.3.0\lib\msTools.Updater.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
   </ItemGroup>
 </Project>

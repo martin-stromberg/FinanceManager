@@ -24,6 +24,7 @@ public static class UpdateStatusTestData
             null,
             null,
             null,
+            null,
             true,
             DateTimeOffset.UtcNow);
 
@@ -40,6 +41,7 @@ public static class UpdateStatusTestData
             availableVersion,
             DateTimeOffset.UtcNow,
             new AutoUpdateCheckResult(availableVersion, package, null, null),
+            null,
             null,
             null,
             null,
@@ -60,6 +62,7 @@ public static class UpdateStatusTestData
             DateTimeOffset.UtcNow,
             package is null ? null : new AutoUpdateCheckResult(availableVersion, package, null, null),
             new AutoUpdateDownloadResult("release.zip", 10, true),
+            null,
             null,
             null,
             false,
