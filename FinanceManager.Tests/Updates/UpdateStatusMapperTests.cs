@@ -30,6 +30,7 @@ public sealed class UpdateStatusMapperTests
             null,
             null,
             null,
+            null,
             false,
             null);
 
@@ -59,6 +60,7 @@ public sealed class UpdateStatusMapperTests
             "1.21.0-RC.2",
             DateTimeOffset.UtcNow,
             checkResult,
+            null,
             null,
             null,
             null,

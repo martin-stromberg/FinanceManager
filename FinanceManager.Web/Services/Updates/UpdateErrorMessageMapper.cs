@@ -1,3 +1,5 @@
+using msTools.Updater;
+
 namespace FinanceManager.Web.Services.Updates;
 
 internal static class UpdateErrorMessageMapper
@@ -17,6 +19,9 @@ internal static class UpdateErrorMessageMapper
 
     public static string Map(Exception exception)
         => IsGithubRateLimit(exception.ToString()) ? GithubRateLimitMessage : exception.Message;
+
+    public static string Map(AutoUpdateError error)
+        => IsGithubRateLimit(error.ToString()) ? GithubRateLimitMessage : error.Message;
 
     public static bool IsGithubRateLimit(string value)
         => value.Contains("403", StringComparison.OrdinalIgnoreCase)

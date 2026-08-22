@@ -490,7 +490,7 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         public Task<AutoUpdateResult> RunUpdateAsync(CancellationToken ct = default) => throw new NotSupportedException();
         public Task<AutoUpdateResult> CheckForUpdateAsync(CancellationToken ct = default) => throw new NotSupportedException();
         public Task<AutoUpdateResult> DownloadAsync(CancellationToken ct = default) => throw new NotSupportedException();
-        public Task<AutoUpdateResult> InstallAsync(bool confirmDowntime, CancellationToken ct = default)
+        public Task<AutoUpdateResult> InstallAsync(bool confirmDowntime, bool force, CancellationToken ct = default)
             => Task.FromResult(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.Success, "installed", null));
         public Task<AutoUpdateStatusSnapshot> GetStatusAsync(CancellationToken ct = default) => throw new NotSupportedException();
     }
