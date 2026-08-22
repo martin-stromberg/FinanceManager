@@ -94,7 +94,7 @@
 	  <RemoveDir Directories="$(TargetDir)init" Condition="Exists('$(TargetDir)init')" />
   </Target>
 
-  <Target Name="GenerateHelpAssetManifest" BeforeTargets="Build">
+  <Target Name="GenerateHelpAssetManifest" BeforeTargets="ResolveProjectStaticWebAssets;Build">
     <ItemGroup>
       <HelpManifestAsset Include="wwwroot\help\css\**\*.css;wwwroot\help\js\**\*.js;wwwroot\help\**\*.json;wwwroot\help\**\*.html;..\Docs\help\**\*.md" />
     </ItemGroup>
