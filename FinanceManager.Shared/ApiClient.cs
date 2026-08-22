@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -22,6 +23,9 @@ public partial class ApiClient : IApiClient
     /// Optional machine-readable error code extracted from the most recent failed HTTP response.
     /// </summary>
     public string? LastErrorCode { get; private set; }
+
+    /// <inheritdoc />
+    public event EventHandler<ApiAuthenticationRequiredEventArgs>? AuthenticationRequired;
 
     /// <summary>
     /// Creates a new instance of <see cref="ApiClient"/> using the provided <see cref="HttpClient"/>.
@@ -104,7 +108,56 @@ public partial class ApiClient : IApiClient
         {
             LastError = resp.ReasonPhrase ?? $"HTTP {(int)resp.StatusCode}";
         }
+
+        if (IsAuthenticationFailure(resp))
+        {
+            AuthenticationRequired?.Invoke(this, new ApiAuthenticationRequiredEventArgs(resp.StatusCode, LastErrorCode, LastError));
+        }
+
         resp.EnsureSuccessStatusCode();
+    }
+
+    private bool IsAuthenticationFailure(HttpResponseMessage resp)
+    {
+        if (resp.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            return true;
+        }
+
+        if (resp.StatusCode != HttpStatusCode.Forbidden)
+        {
+            return false;
+        }
+
+        if (resp.Headers.WwwAuthenticate.Any())
+        {
+            return true;
+        }
+
+        return IsAuthenticationErrorCode(LastErrorCode);
+    }
+
+    private static bool IsAuthenticationErrorCode(string? errorCode)
+    {
+        if (string.IsNullOrWhiteSpace(errorCode))
+        {
+            return false;
+        }
+
+        var normalized = new string(errorCode
+            .Where(char.IsLetterOrDigit)
+            .Select(char.ToLowerInvariant)
+            .ToArray());
+
+        return normalized is "authenticationrequired"
+            or "authrequired"
+            or "loginrequired"
+            or "unauthenticated"
+            or "unauthorized"
+            or "invalidtoken"
+            or "tokenexpired"
+            or "expiredtoken"
+            or "sessionexpired";
     }
 
     /// <summary>

@@ -36,9 +36,17 @@ Das gilt u. a. für Home, Berichte, Setup und Wertpapier-Performance.
 
 Bei geschlossenen Ribbon-Gruppen können rechts im Gruppen-Header zusätzliche Symbol-Schaltflächen erscheinen. Diese Shortcuts führen die jeweilige Aktion direkt aus, ohne die Gruppe zu öffnen. Wird die Gruppe aufgeklappt, verschwinden die Header-Shortcuts und alle Aktionen stehen wie gewohnt in der geöffneten Gruppe zur Verfügung.
 
+### 5. Verhalten bei abgelaufener Anmeldung
+
+Wenn die Anmeldung während einer längeren Inaktivität abläuft und anschließend geschützte Inhalte geladen werden, erkennt die Anwendung den fehlenden Anmeldestatus. Die Anwendung öffnet dann automatisch die Login-Seite, anstatt eine geschützte Seite dauerhaft leer oder veraltet anzuzeigen.
+
+Nach erfolgreicher erneuter Anmeldung kehrt die Anwendung zu der ursprünglich angeforderten Seite zurück. Dabei bleiben auch die ausgewählte Ansicht sowie vorhandene Filter oder andere Angaben in der Adresse erhalten. Wird die Login-Seite direkt geöffnet, führt die Anmeldung weiterhin zur Startseite.
+
+> **Hinweis:** Eine Anmeldung wird nicht automatisch verlängert. Bei abgelaufener Sitzung ist eine erneute Eingabe der Zugangsdaten erforderlich.
+
 ## Ergebnis
 
-Kernabläufe (Anmeldung, Navigation, Favoriten/Reporting, Import) bleiben auch im mobilen Viewport nutzbar und wurden zusätzlich per E2E geprüft.
+Kernabläufe (Anmeldung, Navigation, Rückkehr nach abgelaufener Sitzung, Favoriten/Reporting, Import) bleiben auch im mobilen Viewport nutzbar und wurden zusätzlich per E2E geprüft.
 
 ## Barrierefreiheit
 

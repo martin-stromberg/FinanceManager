@@ -21,7 +21,7 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 - Globale, responsive Ladeleiste für Navigationen, relevante Formularvorgänge und länger laufende UI-Aktionen; umgesetzt als wiederverwendbare `msTools.Web.Blazor`-Komponente mit projektseitig konfigurierbarer Farbgestaltung
 - Einstellungs-Ribbon mit stets sichtbaren Aktionen: Backup erstellen/hochladen, Profil speichern/zurücksetzen, Benachrichtigungen, Kontoauszugs-Importregeln und Update-Einstellungen speichern sowie Update-Prüfung, Installation und Lock-Reset auslösen — unabhängig davon, welche Sektion gerade aufgeklappt ist
 - Versionsinformation im Programmmenü (Footer) angezeigt — aktuelle Versionnummer oder Fallback `"Version unbekannt"`
-- JWT-Authentifizierung mit 30 Minuten Access-Token-Laufzeit, SecurityStamp-/Rollen-/Active-Revalidierung und DB-validiertem Refresh
+- JWT-Authentifizierung mit 30 Minuten Access-Token-Laufzeit, SecurityStamp-/Rollen-/Active-Revalidierung und DB-validiertem Refresh; abgelaufene Sessions führen bei geschützten Datenabrufen zum Login und danach zurück zur ursprünglichen internen Route
 - RFC-9116-konforme `security.txt` unter `/security.txt` und `/.well-known/security.txt`, zusätzlich als Markdown (`/.well-known/security.md`) und HTML (`/.well-known/security.html`); Direktiven (Contact, Expires, Canonical, Encryption, Acknowledgments, Preferred-Languages, Policy, Hiring) im Setup konfigurierbar — `Canonical` optional als vollständige HTTPS-URL ohne Query/Fragment und ohne localhost/Loopback, sonst Fallback auf `<Api:BaseAddress>/.well-known/security.txt`; liefert HTTP 503, solange keine Konfiguration vorhanden ist
 
 ## Installation / Setup

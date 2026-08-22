@@ -37,6 +37,63 @@ public sealed class AuthGateway
         await _page.Locator("body").WaitForAsync();
     }
 
+    public async Task LoginThroughUiAsync(string username, string password, string? returnUrl = null)
+    {
+        var loginUrl = string.IsNullOrWhiteSpace(returnUrl)
+            ? "/login"
+            : $"/login?returnUrl={Uri.EscapeDataString(returnUrl)}";
+
+        if (!IsCurrentLoginPageWithoutExplicitReturnUrl(returnUrl))
+        {
+            await _page.GotoAsync(loginUrl);
+        }
+
+        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        var usernameInput = _page.Locator("#login-user");
+        var passwordInput = _page.Locator("#login-pass");
+        await usernameInput.FillAsync(username);
+        await usernameInput.DispatchEventAsync("change");
+        await passwordInput.FillAsync(password);
+        await passwordInput.DispatchEventAsync("change");
+
+        await _page.WaitForFunctionAsync("() => typeof window.fmAuthLogin === 'function'");
+        await _page.EvaluateAsync("""
+            () => {
+                window.__fmAuthLoginCalls = 0;
+                if (!window.__fmAuthLoginOriginal) {
+                    window.__fmAuthLoginOriginal = window.fmAuthLogin;
+                }
+                window.fmAuthLogin = async (...args) => {
+                    window.__fmAuthLoginCalls += 1;
+                    return await window.__fmAuthLoginOriginal(...args);
+                };
+            }
+            """);
+
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            await _page.Locator("button[type=submit]").ClickAsync();
+            try
+            {
+                await _page.WaitForFunctionAsync("() => window.__fmAuthLoginCalls > 0", null, new() { Timeout = 2_000 });
+                await _page.Locator("body").WaitForAsync();
+                return;
+            }
+            catch (TimeoutException)
+            {
+                // Blazor Server may still be attaching handlers immediately after navigation.
+            }
+        }
+
+        var bodyText = await _page.Locator("body").InnerTextAsync();
+        throw new InvalidOperationException($"Login form did not invoke fmAuthLogin. Url: {_page.Url}. Body: {bodyText}");
+    }
+
+    private bool IsCurrentLoginPageWithoutExplicitReturnUrl(string? returnUrl)
+        => string.IsNullOrWhiteSpace(returnUrl)
+            && Uri.TryCreate(_page.Url, UriKind.Absolute, out var uri)
+            && uri.AbsolutePath.Equals("/login", StringComparison.OrdinalIgnoreCase);
+
     public async Task LogoutAsync()
     {
         await _page.Context.ClearCookiesAsync();
