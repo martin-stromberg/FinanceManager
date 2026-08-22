@@ -2709,4 +2709,13 @@
   <data name="PleaseLoginPrompt" xml:space="preserve">
     <value>Bitte melden Sie sich an.</value>
   </data>
+  <data name="Ribbon_CreatePreliminaryDraft" xml:space="preserve">
+    <value>Vorläufige Buchung erfassen</value>
+  </data>
+  <data name="List_Th_Postings_IsPreliminary" xml:space="preserve">
+    <value>Vorläufig</value>
+  </data>
+  <data name="Validation_PRELIMINARY_POSTINGS_WILL_BE_REVERSED" xml:space="preserve">
+    <value>Vorläufige Buchungen für dieses Konto werden beim Buchen storniert.</value>
+  </data>
 </root>

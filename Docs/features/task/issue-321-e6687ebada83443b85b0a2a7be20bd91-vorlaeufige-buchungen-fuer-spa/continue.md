@@ -18,4 +18,4 @@ Status: Kern-Implementierung und Tests abgeschlossen; verbleibende Schritte auss
 ## Noch offen
 
 - [x] Buchungsdatum-Feld im Schnellbearbeitungsmodus automatisch fokussieren
-- [ ] Lokalisationen (Ribbon, Spalte, Hinweise) ergänzen
+- [x] Lokalisationen (Ribbon, Spalte, Hinweise) ergänzen
