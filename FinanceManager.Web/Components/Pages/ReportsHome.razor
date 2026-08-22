@@ -6,6 +6,7 @@
 @using FinanceManager.Domain
 @using FinanceManager.Domain.Reports
 @using FinanceManager.Web.Components.Shared
+@using FinanceManager.Web.Infrastructure.Auth
 @using FinanceManager.Web.ViewModels
 @using FinanceManager.Web.ViewModels.Common
 @using FinanceManager.Web.ViewModels.Reports
@@ -64,8 +65,9 @@
 
     private void VmOnAuthenticationRequired(object? sender, string? returnUrl)
     {
-        var url = "/login";
-        Nav.NavigateTo(url, forceLoad: true);
+        var target = AuthReturnUrl.Validate(returnUrl)
+            ?? AuthReturnUrl.FromNavigationUri(Nav.BaseUri, Nav.Uri);
+        Nav.NavigateTo(AuthReturnUrl.BuildLoginUrl(target), forceLoad: true);
     }
 
     private void VmOnStateChanged(object? sender, EventArgs e)

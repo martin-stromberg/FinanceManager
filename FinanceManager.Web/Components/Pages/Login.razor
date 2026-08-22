@@ -3,6 +3,7 @@
 @using System.ComponentModel.DataAnnotations
 @inject IJSRuntime JS
 @using FinanceManager.Application.Users
+@using FinanceManager.Web.Infrastructure.Auth
 @inject FinanceManager.Application.Users.IUserReadService UserRead
 @inject NavigationManager Nav
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Pages.Login> Localizer
@@ -42,6 +43,9 @@
     private string? _error;
     private bool _shouldRedirectToRegister;
 
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         if (!await UserRead.HasAnyUsersAsync(CancellationToken.None))
@@ -75,7 +79,7 @@
             }
             else
             {
-                Nav.NavigateTo("/", forceLoad: true);
+                Nav.NavigateTo(AuthReturnUrl.Validate(ReturnUrl) ?? "/", forceLoad: true);
             }
         }
         catch (Exception ex)

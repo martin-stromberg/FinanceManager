@@ -36,6 +36,19 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         return new FinanceManager.Shared.ApiClient(http);
     }
 
+    private static FinanceManager.Shared.ApiClient CreateClient(HttpStatusCode statusCode, HttpContent? content = null)
+    {
+        var http = new HttpClient(new StubHttpMessageHandler(new HttpResponseMessage(statusCode)
+        {
+            Content = content ?? new StringContent(string.Empty)
+        }))
+        {
+            BaseAddress = new Uri("https://example.test/")
+        };
+
+        return new FinanceManager.Shared.ApiClient(http);
+    }
+
     [Fact]
     public async Task Register_ShouldSetAuthCookie_AndReturnResponse()
     {
@@ -253,6 +266,59 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         await login.Should().ThrowAsync<HttpRequestException>();
     }
 
+    [Fact]
+    public async Task ApiClient_ShouldRaiseAuthenticationRequired_OnUnauthorized()
+    {
+        var api = CreateClient(HttpStatusCode.Unauthorized, new StringContent("Session expired", Encoding.UTF8, "text/plain"));
+        FinanceManager.Shared.ApiAuthenticationRequiredEventArgs? observed = null;
+        api.AuthenticationRequired += (_, args) => observed = args;
+
+        Func<Task> call = () => api.Users_HasAnyAsync();
+
+        await call.Should().ThrowAsync<HttpRequestException>()
+            .Where(ex => ex.StatusCode == HttpStatusCode.Unauthorized);
+        observed.Should().NotBeNull();
+        observed!.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        observed.ErrorMessage.Should().Be("Session expired");
+        api.LastError.Should().Be("Session expired");
+    }
+
+    [Fact]
+    public async Task ApiClient_ShouldNotRaiseAuthenticationRequired_OnOrdinaryForbidden()
+    {
+        var api = CreateClient(HttpStatusCode.Forbidden, new StringContent("Forbidden", Encoding.UTF8, "text/plain"));
+        var raised = false;
+        api.AuthenticationRequired += (_, _) => raised = true;
+
+        Func<Task> call = () => api.Users_HasAnyAsync();
+
+        await call.Should().ThrowAsync<HttpRequestException>()
+            .Where(ex => ex.StatusCode == HttpStatusCode.Forbidden);
+        raised.Should().BeFalse();
+        api.LastError.Should().Be("Forbidden");
+    }
+
+    [Fact]
+    public async Task ApiClient_ShouldRaiseAuthenticationRequired_OnForbiddenWithAuthenticationCode()
+    {
+        var content = new StringContent(
+            """{"code":"authentication_required","message":"Please sign in again."}""",
+            Encoding.UTF8,
+            "application/json");
+        var api = CreateClient(HttpStatusCode.Forbidden, content);
+        FinanceManager.Shared.ApiAuthenticationRequiredEventArgs? observed = null;
+        api.AuthenticationRequired += (_, args) => observed = args;
+
+        Func<Task> call = () => api.Users_HasAnyAsync();
+
+        await call.Should().ThrowAsync<HttpRequestException>()
+            .Where(ex => ex.StatusCode == HttpStatusCode.Forbidden);
+        observed.Should().NotBeNull();
+        observed!.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        observed.ErrorCode.Should().Be("authentication_required");
+        observed.ErrorMessage.Should().Be("Please sign in again.");
+    }
+
     private async Task<string> CreateBearerTokenAsync(
         string issuer = JwtIssuer,
         string audience = JwtAudience,
@@ -286,5 +352,20 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private sealed class StubHttpMessageHandler : HttpMessageHandler
+    {
+        private readonly HttpResponseMessage _response;
+
+        public StubHttpMessageHandler(HttpResponseMessage response)
+        {
+            _response = response;
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(_response);
+        }
     }
 }
