@@ -371,3 +371,22 @@ else
         </tbody>
     </table>
 }
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ViewModel is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel vm)
+        {
+            var focusId = vm.ConsumeFocusQuickEditBookingDate();
+            if (focusId.HasValue)
+            {
+                try
+                {
+                    await Task.Yield();
+                    await JS.InvokeVoidAsync("eval", $"document.getElementById('qe_booking_{focusId}')?.focus()");
+                }
+                catch { }
+            }
+        }
+    }
+}

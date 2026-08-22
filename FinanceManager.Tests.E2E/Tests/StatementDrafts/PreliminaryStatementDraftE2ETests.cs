@@ -185,6 +185,11 @@ public sealed class PreliminaryStatementDraftE2ETests
         await page.WaitForURLAsync(url => url.Contains("/card/statement-drafts/") && url.Contains("quickEdit=true"), new() { Timeout = 15000 });
         page.Url.Should().Contain("/card/statement-drafts/");
         page.Url.Should().Contain("quickEdit=true");
+
+        await page.WaitForFunctionAsync("() => { const a = document.activeElement; return a && a.id && a.id.startsWith('qe_booking_'); }", null, new() { Timeout = 15000 });
+
+        var activeElementId = await page.EvaluateAsync<string?>("() => document.activeElement?.id");
+        activeElementId.Should().StartWith("qe_booking_");
     }
 
     private AppDbContext CreateDbContext()
