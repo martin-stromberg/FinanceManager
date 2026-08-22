@@ -12,7 +12,8 @@ Status: Kern-Implementierung und Tests abgeschlossen; verbleibende Schritte auss
 - [x] Build erfolgreich
 - [x] Dedizierte Unit-Tests für Vorläufig-Merkmal, Stornierung und Nicht-Stornierung bei weiterem Vorläufig-Durchlauf
 - [x] Dedizierte E2E-Tests für Vorläufig-Kontoauszüge und Stornierung durch realen Kontoauszug
-- [x] Schnellbearbeitungsmodus wird bei `?quickEdit=true` im `StatementDraftCardViewModel` automatisch gestartet
+- [x] Ribbon-Button auf Bankkonto legt vorläufigen Kontoauszug an und öffnet ihn mit `?quickEdit=true`
+- [x] E2E-Test für Ribbon-Anlage + Öffnen vorhanden
 
 ## Noch offen
 

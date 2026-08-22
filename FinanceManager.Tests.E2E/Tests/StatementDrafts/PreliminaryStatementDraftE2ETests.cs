@@ -160,6 +160,33 @@ public sealed class PreliminaryStatementDraftE2ETests
         await page.Locator("text=Preliminary").First.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
     }
 
+    [Fact]
+    public async Task CreatePreliminaryDraft_ViaRibbon_ShouldCreateAndOpenDraftWithQuickEdit()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var auth = new AuthGateway(page, _fixture.BaseUrl);
+        var seeder = new TestUserSeeder(_fixture.DatabasePath);
+
+        var username = $"prelim-ribbon-{Guid.NewGuid():N}";
+        const string password = "Secret123";
+        await seeder.EnsureUserAsync(username, password);
+        await auth.LoginAsync(username, password);
+
+        var account = await new AccountsApiSeedHelper(page).CreateAccountAsync("E2E Prelim Ribbon", "DE50700500000007882902");
+
+        await page.GotoAsync($"/card/accounts/{account.Id}");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var button = page.Locator("button#CreatePreliminaryDraft");
+        await button.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
+        await button.ClickAsync();
+
+        await page.WaitForURLAsync(url => url.Contains("/card/statement-drafts/") && url.Contains("quickEdit=true"), new() { Timeout = 15000 });
+        page.Url.Should().Contain("/card/statement-drafts/");
+        page.Url.Should().Contain("quickEdit=true");
+    }
+
     private AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
