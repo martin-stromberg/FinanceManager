@@ -33,8 +33,8 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
                 new ListColumn("recipient", recipientLabel),
                 new ListColumn("subject", subjectLabel, Width: "22%"),
                 new ListColumn("description", descriptionLabel),
-                new ListColumn("storno", stornoLabel, Align: ListColumnAlign.Left, Width: "5rem"),
-                new ListColumn("preliminary", preliminaryLabel, Align: ListColumnAlign.Left, Width: "5rem")
+                new ListColumn("preliminary", preliminaryLabel, Align: ListColumnAlign.Left, Width: "5rem"),
+                new ListColumn("storno", stornoLabel, Align: ListColumnAlign.Left, Width: "5rem")
             };
             _take = 50;
         }
@@ -116,8 +116,8 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
                     new ListCell(ListCellKind.Text, Text: i.RecipientName ?? string.Empty),
                     new ListCell(ListCellKind.Text, Text: i.Subject ?? string.Empty),
                     new ListCell(ListCellKind.Text, Text: i.Description ?? string.Empty),
-                    new ListCell(ListCellKind.Text, Text: i.IsReversal ? "✓" : (i.IsReversed ? "—" : string.Empty)),
-                    new ListCell(ListCellKind.Text, Text: i.IsPreliminary ? "✓" : string.Empty)
+                    new ListCell(ListCellKind.Text, Text: i.IsPreliminary ? "✓" : string.Empty),
+                    new ListCell(ListCellKind.Text, Text: i.IsReversal ? "✓" : (i.IsReversed ? "—" : string.Empty))
                 }, navItem);
             }).ToList();
         }
