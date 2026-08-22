@@ -301,7 +301,6 @@ FinanceManager.Web/wwwroot/help/**/*.html
 
 # Search indexes are auto-generated
 FinanceManager.Web/wwwroot/help/**/search-index.json
-FinanceManager.Web/wwwroot/help/help-assets.sha256
 
 # Published/static-web-assets output must not be copied back into source wwwroot
 FinanceManager.Web/wwwroot/_framework/
