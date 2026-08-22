@@ -272,11 +272,30 @@ namespace FinanceManager.Web.ViewModels.Accounts
                 })
             };
 
+            // Group: Buchungen (CreatePreliminaryDraft)
+            var bookingActions = new List<UiRibbonAction>
+            {
+                new UiRibbonAction("CreatePreliminaryDraft", localizer["Ribbon_CreatePreliminaryDraft"].Value ?? "Vorläufige Buchungen erfassen", "<svg><use href='/icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Large, Account == null || Account.Id == Guid.Empty, null, async () => {
+                    var request = new FinanceManager.Shared.Dtos.Statements.CreatePreliminaryStatementDraftRequest(Id);
+                    var draft = await ApiClient.StatementDrafts_CreatePreliminaryAsync(request);
+                    if (draft == null)
+                    {
+                        SetError(ApiClient.LastErrorCode, ApiClient.LastError ?? "Create preliminary draft failed");
+                        RaiseStateChanged();
+                        return;
+                    }
+                    var url = $"/card/statement-drafts/{draft.DraftId}?quickEdit=true";
+                    RaiseUiActionRequested("OpenStatementDraft", url);
+                })
+                { MobileShortcut = true }
+            };
+
             var tabs = new List<UiRibbonTab>
             {
                 new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, navActions),
                 new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, manageActions),
-                new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, linkedActions)
+                new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, linkedActions),
+                new UiRibbonTab(localizer["Ribbon_Group_Bookings"].Value ?? "Buchungen", bookingActions)
             };
 
             return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

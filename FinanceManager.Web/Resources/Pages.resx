@@ -2709,4 +2709,22 @@
   <data name="PleaseLoginPrompt" xml:space="preserve">
     <value>Please login.</value>
   </data>
+  <data name="Ribbon_CreatePreliminaryDraft" xml:space="preserve">
+    <value>Create preliminary statement</value>
+  </data>
+  <data name="List_Th_Postings_IsPreliminary" xml:space="preserve">
+    <value>Preliminary</value>
+  </data>
+  <data name="Validation_PRELIMINARY_POSTINGS_WILL_BE_REVERSED" xml:space="preserve">
+    <value>Preliminary postings for this account will be reversed when this statement is booked.</value>
+  </data>
+  <data name="StatementDraft_Description_Preliminary" xml:space="preserve">
+    <value>Preliminary bookings of {0}</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_IsPreliminary" xml:space="preserve">
+    <value>Preliminary</value>
+  </data>
+  <data name="StatementDraft_IsPreliminary" xml:space="preserve">
+    <value>Yes</value>
+  </data>
 </root>
