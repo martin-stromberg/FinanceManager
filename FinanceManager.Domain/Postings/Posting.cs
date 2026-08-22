@@ -420,10 +420,12 @@ public sealed class Posting : Entity, IAggregateRoot
     /// Marks this posting as preliminary or clears the preliminary flag.
     /// </summary>
     /// <param name="isPreliminary"><c>true</c> to mark the posting as preliminary; otherwise, <c>false</c>.</param>
-    public void SetIsPreliminary(bool isPreliminary)
+    /// <returns>This posting for fluent chaining.</returns>
+    public Posting SetIsPreliminary(bool isPreliminary)
     {
         IsPreliminary = isPreliminary;
         Touch();
+        return this;
     }
 
     /// <summary>
@@ -434,6 +436,22 @@ public sealed class Posting : Entity, IAggregateRoot
     public Posting SetOriginalAmount(decimal? amount)
     {
         OriginalAmount = amount;
+        Touch();
+        return this;
+    }
+
+    /// <summary>
+    /// Zeros the amount while preserving the original amount for traceability.
+    /// </summary>
+    /// <param name="originalAmount">Optional original amount to store; uses the current amount if not supplied.</param>
+    /// <returns>This posting for fluent chaining.</returns>
+    public Posting ZeroAmount(decimal? originalAmount = null)
+    {
+        if (Amount != 0m)
+        {
+            OriginalAmount = originalAmount ?? Amount;
+            Amount = 0m;
+        }
         Touch();
         return this;
     }
