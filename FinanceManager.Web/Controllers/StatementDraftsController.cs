@@ -101,6 +101,32 @@ public sealed class StatementDraftsController : ControllerBase
     }
 
     /// <summary>
+    /// Creates a new preliminary (provisional) statement draft for the specified bank account.
+    /// </summary>
+    /// <param name="body">Request containing the account id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>201 Created with the created <see cref="StatementDraftDto"/>; 400 when the request is invalid; 404 when the account does not exist.</returns>
+    [HttpPost("preliminary")]
+    [ProducesResponseType(typeof(StatementDraftDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CreatePreliminaryDraftAsync([FromBody] CreatePreliminaryStatementDraftRequest body, CancellationToken ct)
+    {
+        if (body.AccountId == Guid.Empty)
+        {
+            return BadRequest(new { error = "Err_Invalid_AccountId", message = "Account id is required" });
+        }
+
+        var draft = await _drafts.CreatePreliminaryDraftAsync(_current.UserId, body.AccountId, ct);
+        if (draft == null)
+        {
+            return NotFound(new { error = "Err_NotFound", message = "Account not found" });
+        }
+
+        return CreatedAtRoute("GetStatementDraft", new { draftId = draft.DraftId }, draft);
+    }
+
+    /// <summary>
     /// Deletes all open drafts for the current user.
     /// </summary>
     /// <param name="ct">Cancellation token.</param>

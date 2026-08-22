@@ -411,6 +411,22 @@ public sealed class Posting : Entity, IAggregateRoot
     public bool IsReversal => ReversalForPostingId.HasValue;
 
     /// <summary>
+    /// Gets or sets a value indicating whether this posting is a preliminary (provisional) booking.
+    /// </summary>
+    /// <value><c>true</c> if this posting is a preliminary booking; otherwise, <c>false</c>.</value>
+    public bool IsPreliminary { get; private set; }
+
+    /// <summary>
+    /// Marks this posting as preliminary or clears the preliminary flag.
+    /// </summary>
+    /// <param name="isPreliminary"><c>true</c> to mark the posting as preliminary; otherwise, <c>false</c>.</param>
+    public void SetIsPreliminary(bool isPreliminary)
+    {
+        IsPreliminary = isPreliminary;
+        Touch();
+    }
+
+    /// <summary>
     /// Sets the original amount for informational purposes.
     /// </summary>
     /// <param name="amount">Original amount or null to clear.</param>
@@ -449,13 +465,14 @@ public sealed class Posting : Entity, IAggregateRoot
     /// <param name="ReversalForPostingId">Optional reference to the original posting.</param>
     /// <param name="ReversedByUserId">Optional user ID who reversed this posting.</param>
     /// <param name="ReversedAtUtc">Optional timestamp when this posting was reversed.</param>
-    public sealed record PostingBackupDto(Guid Id, Guid SourceId, PostingKind Kind, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, DateTime BookingDate, DateTime ValutaDate, decimal Amount, decimal? OriginalAmount, string? Subject, string? RecipientName, string? Description, SecurityPostingSubType? SecuritySubType, decimal? Quantity, Guid? GroupId, Guid? ParentId, Guid? LinkedPostingId, Guid? ReversedByPostingId, Guid? ReversalForPostingId, Guid? ReversedByUserId, DateTime? ReversedAtUtc);
+    /// <param name="IsPreliminary">Indicates whether this posting is a preliminary (provisional) booking.</param>
+    public sealed record PostingBackupDto(Guid Id, Guid SourceId, PostingKind Kind, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, DateTime BookingDate, DateTime ValutaDate, decimal Amount, decimal? OriginalAmount, string? Subject, string? RecipientName, string? Description, SecurityPostingSubType? SecuritySubType, decimal? Quantity, Guid? GroupId, Guid? ParentId, Guid? LinkedPostingId, Guid? ReversedByPostingId, Guid? ReversalForPostingId, Guid? ReversedByUserId, DateTime? ReversedAtUtc, bool IsPreliminary = false);
 
     /// <summary>
     /// Creates a backup DTO representing the serializable state of this posting.
     /// </summary>
     /// <returns>A <see cref="PostingBackupDto"/> containing values required to restore this posting.</returns>
-    public PostingBackupDto ToBackupDto() => new PostingBackupDto(Id, SourceId, Kind, AccountId, ContactId, SavingsPlanId, SecurityId, BookingDate, ValutaDate, Amount, OriginalAmount, Subject, RecipientName, Description, SecuritySubType, Quantity, GroupId, ParentId, LinkedPostingId, ReversedByPostingId, ReversalForPostingId, ReversedByUserId, ReversedAtUtc);
+    public PostingBackupDto ToBackupDto() => new PostingBackupDto(Id, SourceId, Kind, AccountId, ContactId, SavingsPlanId, SecurityId, BookingDate, ValutaDate, Amount, OriginalAmount, Subject, RecipientName, Description, SecuritySubType, Quantity, GroupId, ParentId, LinkedPostingId, ReversedByPostingId, ReversalForPostingId, ReversedByUserId, ReversedAtUtc, IsPreliminary);
 
     /// <summary>
     /// Applies values from the provided backup DTO to this posting instance.
@@ -487,5 +504,6 @@ public sealed class Posting : Entity, IAggregateRoot
         ReversalForPostingId = dto.ReversalForPostingId;
         ReversedByUserId = dto.ReversedByUserId;
         ReversedAtUtc = dto.ReversedAtUtc;
+        IsPreliminary = dto.IsPreliminary;
     }
 }

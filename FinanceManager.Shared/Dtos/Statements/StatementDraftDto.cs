@@ -17,4 +17,5 @@ public sealed record StatementDraftDto(
     Guid? ParentEntryId,
     decimal? ParentEntryAmount,
     Guid? UploadGroupId,
-    IReadOnlyList<StatementDraftEntryDto> Entries);
+    IReadOnlyList<StatementDraftEntryDto> Entries,
+    bool IsPreliminary = false);

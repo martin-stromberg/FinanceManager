@@ -31,6 +31,7 @@ public sealed class StatementDraft : Entity, IAggregateRoot
         OriginalFileName = Guards.NotNullOrWhiteSpace(originalFileName, nameof(originalFileName));
         AccountName = accountNumber;
         Status = StatementDraftStatus.Draft;
+        IsPreliminary = false;
         Description = description ?? Path.GetFileNameWithoutExtension(originalFileName);
     }
 
@@ -81,6 +82,11 @@ public sealed class StatementDraft : Entity, IAggregateRoot
     /// Current status of the draft (Draft, Committed, Expired, ...).
     /// </summary>
     public StatementDraftStatus Status { get; private set; }
+
+    /// <summary>
+    /// Indicates whether this draft is a preliminary (provisional) bookings draft.
+    /// </summary>
+    public bool IsPreliminary { get; private set; }
 
     /// <summary>
     /// Collection of entries parsed from the statement file.
@@ -177,6 +183,11 @@ public sealed class StatementDraft : Entity, IAggregateRoot
     /// </summary>
     public void Expire() { Status = StatementDraftStatus.Expired; Touch(); }
 
+    /// <summary>
+    /// Marks this draft as a preliminary (provisional) bookings draft.
+    /// </summary>
+    public void MarkAsPreliminary() { IsPreliminary = true; Touch(); }
+
     // Backup DTO
     /// <summary>
     /// DTO carrying the serializable state of a <see cref="StatementDraft"/> for backup purposes.
@@ -192,13 +203,13 @@ public sealed class StatementDraft : Entity, IAggregateRoot
     /// <param name="CreatedUtc">Creation timestamp in UTC.</param>
     /// <param name="ModifiedUtc">Last modification timestamp in UTC, if any.</param>
     /// <param name="Entries">List of contained draft entries as backup DTOs.</param>
-    public sealed record StatementDraftBackupDto(Guid Id, Guid OwnerUserId, string OriginalFileName, string? AccountName, string? Description, Guid? DetectedAccountId, StatementDraftStatus Status, Guid? UploadGroupId, DateTime CreatedUtc, DateTime? ModifiedUtc, List<StatementDraftEntry.StatementDraftEntryBackupDto> Entries);
+    public sealed record StatementDraftBackupDto(Guid Id, Guid OwnerUserId, string OriginalFileName, string? AccountName, string? Description, Guid? DetectedAccountId, StatementDraftStatus Status, Guid? UploadGroupId, DateTime CreatedUtc, DateTime? ModifiedUtc, List<StatementDraftEntry.StatementDraftEntryBackupDto> Entries, bool IsPreliminary = false);
 
     /// <summary>
     /// Creates a backup DTO representing the serializable state of this draft and its entries.
     /// </summary>
     /// <returns>A <see cref="StatementDraftBackupDto"/> containing the draft metadata and entry DTOs.</returns>
-    public StatementDraftBackupDto ToBackupDto() => new StatementDraftBackupDto(Id, OwnerUserId, OriginalFileName, AccountName, Description, DetectedAccountId, Status, UploadGroupId, CreatedUtc, ModifiedUtc, _entries.Select(e => e.ToBackupDto()).ToList());
+    public StatementDraftBackupDto ToBackupDto() => new StatementDraftBackupDto(Id, OwnerUserId, OriginalFileName, AccountName, Description, DetectedAccountId, Status, UploadGroupId, CreatedUtc, ModifiedUtc, _entries.Select(e => e.ToBackupDto()).ToList(), IsPreliminary);
 
     /// <summary>
     /// Assigns values from a backup DTO to this draft instance. Existing entries are cleared and replaced by DTO contents.
@@ -214,6 +225,7 @@ public sealed class StatementDraft : Entity, IAggregateRoot
         Description = dto.Description;
         DetectedAccountId = dto.DetectedAccountId;
         Status = dto.Status;
+        IsPreliminary = dto.IsPreliminary;
         UploadGroupId = dto.UploadGroupId;
         SetDates(dto.CreatedUtc, dto.ModifiedUtc);
         if (includeEntries) 
