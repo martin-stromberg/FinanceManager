@@ -57,6 +57,20 @@ Beteiligte Komponenten:
 - `PlaywrightWebAppFixture.CreateMobileSessionAsync()` — startet Sessions mit `390x844`, Touch und Mobile-Flag.
 - Testmethoden mit Suffix `_OnMobileViewport` in `AuthenticationFlowPlaywrightTests`, `ListNavigationPlaywrightTests`, `ReportingFlowPlaywrightTests`, `HomeMassImportPlaywrightTests`.
 
+### 6. Globale Ladeleiste
+
+Die globale Ladeleiste wird als wiederverwendbare Blazor-Komponente aus `msTools.Web.Blazor` im Dokumentrahmen gerendert. FinanceManager konfiguriert Farben, Höhe, Z-Index und mobile Positionierung hostseitig über `AddLoadingBar(...)`. Native Klick- und Submit-Listener in `financeManager.js` erkennen relevante interne Navigationen und Formularvorgänge frühzeitig; die JavaScript-Schicht liest die Farbpalette aus der gerenderten Komponente und definiert keine projektspezifischen Farben mehr. `MainLayout` startet die Leiste zusätzlich über `RegisterLocationChangingHandler` und beendet sie über `LocationChanged`; Validierungs- und Abschlussfälle stoppen sie ebenfalls über die JavaScript-Schnittstelle. Länger laufende Blazor-Aktionen werden über `LoadingBarService.RunAsync(...)` zentral umschlossen, damit auch komponenteninterne Ladevorgänge wie der Budgetbericht dieselbe globale Anzeige nutzen.
+
+Beteiligte Komponenten:
+- `msTools.Web.Blazor/LoadingBar.razor` — rendert die eindeutige Ladeleisten-Instanz als wiederverwendbare Komponente.
+- `msTools.Web.Blazor/LoadingBarService.cs` — kapselt Start/Stop für Blazor-seitige async-Aktionen.
+- `msTools.Web.Blazor/LoadingBarOptions.cs` — definiert hostseitige Darstellungseinstellungen wie Farben, Höhe, Z-Index und mobile Positionierung.
+- `FinanceManager.Web/Components/App.razor` — bindet die Komponente und das globale Skript ein.
+- `FinanceManager.Web/Components/Layout/MainLayout.razor` — startet und beendet die Leiste beim Blazor-Navigationszyklus.
+- `FinanceManager.Web/Components/Shared/Ribbon.razor` — führt Ribbon-Aktionen über die zentrale Ladeleisten-Abstraktion aus.
+- `FinanceManager.Web/ProgramExtensions.cs` — registriert `AddLoadingBar(...)` mit der FinanceManager-Farbpalette.
+- `FinanceManager.Web/wwwroot/js/financeManager.js` — stellt `financeManager.loadingBar.start`, `restart` und `stop` bereit, erkennt globale Browserereignisse und verhindert doppelte Listener.
+
 ## Fehlerbehandlung
 
 - Bei nicht initialisiertem Browserkontext wirft `PlaywrightWebAppFixture.CreateSessionAsync(...)` eine `InvalidOperationException`.

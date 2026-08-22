@@ -16,14 +16,20 @@ Auf kleinen Displays wird oben eine mobile Leiste angezeigt.
 
 > **Hinweis:** Beim Öffnen der Navigation erscheint eine Overlay-Fläche, über die das Menü wieder geschlossen werden kann.
 
-### 2. Seite auswählen und Inhalte bedienen
+### 2. Ladezustand bei Navigation, Formularen und Aktionen
+
+Beim Auswählen eines internen Links erscheint sofort eine schmale Ladeleiste. Sie bewegt sich sichtbar über den oberen Seitenrand. Auf mobilen Displays befindet sie sich direkt unterhalb der mobilen Topbar.
+
+Auch beim Absenden eines Formulars oder bei länger laufenden Aktionen innerhalb einer Seite kann die Ladeleiste erscheinen, wenn dadurch Inhalte geladen oder neu berechnet werden. Nach dem Seitenwechsel oder dem Abschluss des Vorgangs wird sie ausgeblendet. Bei mehreren schnellen Klicks bleibt es bei einer einzigen Ladeleiste, die neu gestartet und farblich aktualisiert wird.
+
+### 3. Seite auswählen und Inhalte bedienen
 
 Nach dem Seitenwechsel stehen Listen, Karten und Berichte in mobiler Darstellung bereit.  
 Tabellen sind so eingebettet, dass bei Bedarf nur der Tabellenbereich horizontal scrollt.
 
 > **Hinweis:** Auf sehr schmalen Displays können breite Tabellen weiterhin horizontales Scrollen innerhalb des Tabellencontainers erfordern.
 
-### 3. Aktionen ausführen
+### 4. Aktionen ausführen
 
 Aktionsleisten (Ribbon), Dialoge und Formulare bleiben verfügbar und werden auf kleinen Breiten umgebrochen bzw. gestapelt.  
 Das gilt u. a. für Home, Berichte, Setup und Wertpapier-Performance.

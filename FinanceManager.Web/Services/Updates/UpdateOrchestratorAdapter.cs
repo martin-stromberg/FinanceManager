@@ -8,7 +8,7 @@ namespace FinanceManager.Web.Services.Updates;
 /// Implements <see cref="IUpdateOrchestrator"/> on top of the <c>msTools.Updater</c> library, mapping
 /// between the library's status/result types and the existing DTOs in <c>FinanceManager.Shared.Dtos.Update</c> so
 /// that <c>UpdateController</c>, <c>ApiClient</c>, <c>SetupUpdateViewModel</c> and <c>SetupUpdateTab.razor</c>
-/// remain unchanged. Errors reported by the library as <see cref="AutoUpdateResult.Error"/> are re-thrown so the
+/// remain unchanged. Errors reported by the library as <see cref="AutoUpdateResult.Error"/> are converted to exceptions so the
 /// controller's existing exception mapping continues to apply. Status-to-DTO mapping is delegated to
 /// <see cref="UpdateStatusMapper"/>; the lock-staleness decision is delegated to <see cref="IAutoUpdatePackageStore.IsLockStale"/>.
 /// </summary>
@@ -79,6 +79,11 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
         try
         {
             var result = await _orchestrator.CheckForUpdateAsync(ct);
+            if (result.Outcome == AutoUpdateOutcome.Success)
+            {
+                result = await _orchestrator.DownloadAsync(ct);
+            }
+
             var statusDto = await _statusMapper.MapAsync(_statusService.GetSnapshot(), ct);
             var message = UpdateErrorMessageMapper.Map(result.Message);
             if (result.Outcome == AutoUpdateOutcome.Failed
@@ -102,10 +107,23 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
     /// <inheritdoc />
     public async Task<UpdateStatusDto> StartInstallAsync(bool confirmDowntime, CancellationToken ct = default)
     {
-        var result = await _orchestrator.InstallAsync(confirmDowntime, ct);
+        if (confirmDowntime)
+        {
+            var snapshot = _statusService.GetSnapshot();
+            if (snapshot.State == AutoUpdateState.UpdateAvailable && snapshot.LastDownloadResult is null)
+            {
+                var downloadResult = await _orchestrator.DownloadAsync(ct);
+                if (downloadResult.Outcome == AutoUpdateOutcome.Failed && downloadResult.Error is not null)
+                {
+                    throw CreateUpdateException(downloadResult.Error);
+                }
+            }
+        }
+
+        var result = await _orchestrator.InstallAsync(confirmDowntime, force: false, ct);
         if (result.Outcome == AutoUpdateOutcome.Failed && result.Error is not null)
         {
-            throw result.Error;
+            throw CreateUpdateException(result.Error);
         }
 
         if (result.Outcome != AutoUpdateOutcome.Failed)
@@ -206,6 +224,9 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
         DateTimeOffset? lockCreatedAt = null,
         Exception? innerException = null)
         => new(kind, failureSource, message, lockCreatedAt, _packageStore.LockPath, innerException);
+
+    private static Exception CreateUpdateException(AutoUpdateError error)
+        => error.Exception ?? new InvalidOperationException(error.Message);
 
     private async Task ValidateLockCleanupAsync(CancellationToken ct)
     {

@@ -279,6 +279,10 @@ form {
     border-radius: 6px; 
     display: inline-flex; 
     align-items: center; 
+    margin: 0;
+    opacity: 1;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .mobile-brand { 

@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using FinanceManager.Web.ViewModels.Common
 @using FinanceManager.Web.ViewModels
+@inject LoadingBarService LoadingBar
 @typeparam TTabEnum
 
 @if ((TabsToRender)?.Any() == true)
@@ -311,7 +312,7 @@
     private async Task OnItemClick(RibbonItem item)
     {
         if (item.Disabled) { return; }
-        if (item.Callback != null) { await item.Callback.Invoke(); }
+        if (item.Callback != null) { await LoadingBar.RunAsync(item.Callback); }
     }
 
     private async Task OnMobileItemClick(RibbonItem item)

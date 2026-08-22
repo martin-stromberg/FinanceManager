@@ -37,8 +37,14 @@ public sealed class UpdateStatusMapper
         var installed = await _installedProvider.GetAsync(ct);
         var settings = await _settingsStore.GetAsync(ct);
 
+        var hasAvailableUpdate = !string.IsNullOrWhiteSpace(snapshot.AvailableVersion)
+            || snapshot.State is AutoUpdateState.UpdateAvailable
+                or AutoUpdateState.Downloading
+                or AutoUpdateState.ReadyToInstall
+                or AutoUpdateState.Installing;
+
         UpdateMetadataDto? availableUpdate = null;
-        if (snapshot.LastCheckResult?.Package is { } package)
+        if (hasAvailableUpdate && snapshot.LastCheckResult?.Package is { } package)
         {
             availableUpdate = new UpdateMetadataDto(
                 snapshot.LastCheckResult.AvailableVersion ?? package.Version,
@@ -52,11 +58,14 @@ public sealed class UpdateStatusMapper
                 });
         }
 
+        var availableVersion = snapshot.AvailableVersion ?? availableUpdate?.Version;
+        var status = MapState(snapshot.State);
+
         return new UpdateStatusDto(
-            MapState(snapshot.State),
+            status,
             installed.Version,
             installed.PublishedAt,
-            snapshot.AvailableVersion,
+            availableVersion,
             _platformResolver.CurrentRuntimeIdentifier,
             snapshot.LastCheckedAt,
             UpdateErrorMessageMapper.Map(snapshot.LastError),

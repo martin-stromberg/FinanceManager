@@ -52,7 +52,7 @@ public sealed class UpdateOrchestratorAdapterTests
     {
         var exception = (Exception)Activator.CreateInstance(exceptionType, "boom")!;
         var orchestrator = new Mock<IAutoUpdateOrchestrator>();
-        orchestrator.Setup(o => o.InstallAsync(true, It.IsAny<CancellationToken>()))
+        orchestrator.Setup(o => o.InstallAsync(true, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Failed, AutoUpdateState.Failed, exception.Message, exception));
         var adapter = UpdateOrchestratorAdapterTestFactory.Create(orchestrator: orchestrator.Object);
 
@@ -65,9 +65,41 @@ public sealed class UpdateOrchestratorAdapterTests
     [Fact]
     public async Task Adapter_CheckAsync_MapsSuccessOutcomeToUpdateCheckResultDto()
     {
+        var package = CreatePackage("2.0.0");
+        var statusService = UpdateOrchestratorAdapterTestFactory.CreateStatusService();
         var orchestrator = new Mock<IAutoUpdateOrchestrator>();
         orchestrator.Setup(o => o.CheckForUpdateAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.UpdateAvailable, "found an update", null));
+        orchestrator.Setup(o => o.DownloadAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => statusService.UpdateAsync(_ => UpdateStatusTestData.ReadyToInstallSnapshot("2.0.0", package)).GetAwaiter().GetResult())
+            .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.ReadyToInstall, "ready to install", null));
+        var settingsStore = new Mock<IUpdateSettingsStore>();
+        settingsStore.Setup(s => s.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UpdateSettingsDto(true, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, "svc", null, "updates", 120, false));
+        var installedProvider = new Mock<IInstalledReleaseMetadataProvider>();
+        installedProvider.Setup(p => p.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new InstalledReleaseMetadataDto(null, null, null, null, null));
+        var adapter = UpdateOrchestratorAdapterTestFactory.Create(
+            orchestrator: orchestrator.Object,
+            statusService: statusService,
+            settingsStore: settingsStore.Object,
+            installedProvider: installedProvider.Object);
+
+        var result = await adapter.CheckAsync();
+
+        result.UpdateAvailable.Should().BeTrue();
+        result.Message.Should().Be("ready to install");
+        result.Status.Should().NotBeNull();
+        result.Status.Status.Should().Be(UpdateStatusKind.Ready);
+        orchestrator.Verify(o => o.DownloadAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Adapter_CheckAsync_WhenNoUpdate_DoesNotDownload()
+    {
+        var orchestrator = new Mock<IAutoUpdateOrchestrator>();
+        orchestrator.Setup(o => o.CheckForUpdateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.NoUpdate, AutoUpdateState.Idle, "no update", null));
         var settingsStore = new Mock<IUpdateSettingsStore>();
         settingsStore.Setup(s => s.GetAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UpdateSettingsDto(true, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, "svc", null, "updates", 120, false));
@@ -81,9 +113,9 @@ public sealed class UpdateOrchestratorAdapterTests
 
         var result = await adapter.CheckAsync();
 
-        result.UpdateAvailable.Should().BeTrue();
-        result.Message.Should().Be("found an update");
-        result.Status.Should().NotBeNull();
+        result.UpdateAvailable.Should().BeFalse();
+        result.Message.Should().Be("no update");
+        orchestrator.Verify(o => o.DownloadAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -133,7 +165,7 @@ public sealed class UpdateOrchestratorAdapterTests
     public async Task Adapter_StartInstallAsync_WhenLockAbsentAfterInstall_DoesNotLog()
     {
         var orchestrator = new Mock<IAutoUpdateOrchestrator>();
-        orchestrator.Setup(o => o.InstallAsync(true, It.IsAny<CancellationToken>()))
+        orchestrator.Setup(o => o.InstallAsync(true, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.Success, "installed", null));
         var packageStore = new Mock<IAutoUpdatePackageStore>();
         packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync((DateTimeOffset?)null);
@@ -146,10 +178,32 @@ public sealed class UpdateOrchestratorAdapterTests
     }
 
     [Fact]
+    public async Task Adapter_StartInstallAsync_WhenUpdateAvailableWithoutDownload_DownloadsBeforeInstall()
+    {
+        var package = CreatePackage("2.0.0");
+        var statusService = UpdateOrchestratorAdapterTestFactory.CreateStatusService();
+        await statusService.UpdateAsync(_ => UpdateStatusTestData.UpdateAvailableSnapshot("2.0.0", package));
+        var orchestrator = new Mock<IAutoUpdateOrchestrator>();
+        orchestrator.Setup(o => o.DownloadAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => statusService.UpdateAsync(_ => UpdateStatusTestData.ReadyToInstallSnapshot("2.0.0", package)).GetAwaiter().GetResult())
+            .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.ReadyToInstall, "ready to install", null));
+        orchestrator.Setup(o => o.InstallAsync(true, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.Success, "installed", null));
+        var packageStore = new Mock<IAutoUpdatePackageStore>();
+        packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync((DateTimeOffset?)null);
+        var adapter = CreateAdapterForInstall(orchestrator.Object, packageStore.Object, new CapturingLogger<UpdateOrchestratorAdapter>(), statusService);
+
+        await adapter.StartInstallAsync(true);
+
+        orchestrator.Verify(o => o.DownloadAsync(It.IsAny<CancellationToken>()), Times.Once);
+        orchestrator.Verify(o => o.InstallAsync(true, false, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task Adapter_StartInstallAsync_WhenSuccess_ValidatesLockCleanup()
     {
         var orchestrator = new Mock<IAutoUpdateOrchestrator>();
-        orchestrator.Setup(o => o.InstallAsync(true, It.IsAny<CancellationToken>()))
+        orchestrator.Setup(o => o.InstallAsync(true, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.Success, "installed", null));
         var packageStore = new Mock<IAutoUpdatePackageStore>();
         packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync((DateTimeOffset?)null);
@@ -164,7 +218,7 @@ public sealed class UpdateOrchestratorAdapterTests
     public async Task Adapter_StartInstallAsync_WhenLockStillPresentAfterInstall_LogsWarning()
     {
         var orchestrator = new Mock<IAutoUpdateOrchestrator>();
-        orchestrator.Setup(o => o.InstallAsync(true, It.IsAny<CancellationToken>()))
+        orchestrator.Setup(o => o.InstallAsync(true, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.Success, "installed", null));
         var packageStore = new Mock<IAutoUpdatePackageStore>();
         packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync(DateTimeOffset.UtcNow);
@@ -180,7 +234,7 @@ public sealed class UpdateOrchestratorAdapterTests
     public async Task Adapter_StartInstallAsync_WhenLockCleanupCheckThrowsIOException_StillReturnsSuccessStatus()
     {
         var orchestrator = new Mock<IAutoUpdateOrchestrator>();
-        orchestrator.Setup(o => o.InstallAsync(true, It.IsAny<CancellationToken>()))
+        orchestrator.Setup(o => o.InstallAsync(true, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.Success, AutoUpdateState.Success, "installed", null));
         var packageStore = new Mock<IAutoUpdatePackageStore>();
         packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new IOException("read failed"));
@@ -196,7 +250,8 @@ public sealed class UpdateOrchestratorAdapterTests
     private static UpdateOrchestratorAdapter CreateAdapterForInstall(
         IAutoUpdateOrchestrator orchestrator,
         IAutoUpdatePackageStore packageStore,
-        ILogger<UpdateOrchestratorAdapter> logger)
+        ILogger<UpdateOrchestratorAdapter> logger,
+        AutoUpdateStatusService? statusService = null)
     {
         var settingsStore = new Mock<IUpdateSettingsStore>();
         settingsStore.Setup(s => s.GetAsync(It.IsAny<CancellationToken>()))
@@ -207,9 +262,13 @@ public sealed class UpdateOrchestratorAdapterTests
 
         return UpdateOrchestratorAdapterTestFactory.Create(
             orchestrator: orchestrator,
+            statusService: statusService,
             settingsStore: settingsStore.Object,
             packageStore: packageStore,
             installedProvider: installedProvider.Object,
             logger: logger);
     }
+
+    private static AutoUpdatePackageDescriptor CreatePackage(string version)
+        => new(version, "windows", "win-x64", "app.zip", new Uri("https://example.test/app.zip"), new string('a', 64), 10);
 }

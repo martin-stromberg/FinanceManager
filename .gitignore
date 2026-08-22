@@ -208,6 +208,7 @@ PublishScripts/
 
 # NuGet Packages
 *.nupkg
+!external/msTools.Updater/*.nupkg
 # NuGet Symbol Packages
 *.snupkg
 # The packages folder can be ignored because of Package Restore
@@ -300,6 +301,24 @@ FinanceManager.Web/wwwroot/help/**/*.html
 
 # Search indexes are auto-generated
 FinanceManager.Web/wwwroot/help/**/search-index.json
+FinanceManager.Web/wwwroot/help/help-assets.sha256
+
+# Published/static-web-assets output must not be copied back into source wwwroot
+FinanceManager.Web/wwwroot/_framework/
+FinanceManager.Web/wwwroot/_content/
+FinanceManager.Web/wwwroot/FinanceManager.Web.styles.css
+FinanceManager.Web/wwwroot/**/*.br
+FinanceManager.Web/wwwroot/**/*.gz
+
+# Accidental publish output copied into the web project root
+FinanceManager.Web/*.dll
+FinanceManager.Web/*.exe
+FinanceManager.Web/*.deps.json
+FinanceManager.Web/*.runtimeconfig.json
+FinanceManager.Web/*.staticwebassets.endpoints.json
+FinanceManager.Web/web.config
+FinanceManager.Web/de/
+FinanceManager.Web/en/
 
 # Generated English documentation (Phase 1: Copy, Phase 2+: Translations)
 docs/business/features/*.en.md
@@ -376,6 +395,9 @@ ASALocalRun/
 
 # Local History for Visual Studio
 .localhistory/
+
+# Local nested repository used to publish reusable components
+Repository/
 
 # BeatPulse healthcheck temp database
 healthchecksdb

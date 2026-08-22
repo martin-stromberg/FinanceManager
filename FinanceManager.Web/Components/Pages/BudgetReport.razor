@@ -3,6 +3,7 @@
 @inject IServiceProvider Services
 @inject Microsoft.Extensions.Localization.IStringLocalizer<Pages>? Localizer
 @inject Microsoft.AspNetCore.Components.NavigationManager Nav
+@inject LoadingBarService LoadingBar
 
 @using FinanceManager.Shared.Dtos.Budget
 @using FinanceManager.Shared.Dtos.Postings
@@ -15,13 +16,28 @@
 
 @code {
     private BudgetReportViewModel? _vm;
+    private bool _initialized;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         _vm = new BudgetReportViewModel(Services);
         _vm.StateChanged += VmOnStateChanged;
         _vm.UiActionRequested += OnUiActionRequested;
-        await _vm.InitializeAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _initialized || _vm == null)
+        {
+            return;
+        }
+
+        _initialized = true;
+        await LoadingBar.RunAsync(async () =>
+        {
+            await _vm.InitializeAsync();
+            await InvokeAsync(StateHasChanged);
+        });
     }
 
     public void Dispose()
@@ -219,20 +235,20 @@ else
                                                 {
                                                     if (p.Name == (Localizer?["Budget_Report_Unbudgeted_SelfCostNeutral"].Value ?? "Unbudgeted (Self, cost-neutral)"))
                                                     {
-                                                        <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="(async () => await _vm.ShowUnbudgetedSelfCostNeutralPostingsAsync())">
+                                                        <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="ShowUnbudgetedSelfCostNeutralPostingsAsync">
                                                             <svg><use href="/icons/sprite.svg#search" /></svg>
                                                         </button>
                                                     }
                                                     else
                                                     {
-                                                        <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="(async () => await _vm.ShowUnbudgetedPostingsAsync())">
+                                                        <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="ShowUnbudgetedPostingsAsync">
                                                             <svg><use href="/icons/sprite.svg#search" /></svg>
                                                         </button>
                                                     }
                                                 }
                                                 else
                                                 {
-                                                    <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="(async () => await _vm.ShowPurposePostingsAsync(p))">
+                                                    <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="(async () => await ShowPurposePostingsAsync(p))">
                                                         <svg><use href="/icons/sprite.svg#search" /></svg>
                                                     </button>
                                                 }
@@ -252,13 +268,13 @@ else
                                     <td style="text-align:right;white-space:nowrap;">
                                         @if (cat.Kind is BudgetReportCategoryRowKind.Unbudgeted)
                                         {
-                                            <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="(async () => await _vm.ShowUnbudgetedPostingsAsync())">
+                                            <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="ShowUnbudgetedPostingsAsync">
                                                 <svg><use href="/icons/sprite.svg#search" /></svg>
                                             </button>
                                         }
                                         @if (cat.Kind is BudgetReportCategoryRowKind.UnbudgetedSelfCostNeutral)
                                         {
-                                            <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="(async () => await _vm.ShowUnbudgetedSelfCostNeutralPostingsAsync())">
+                                            <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="ShowUnbudgetedSelfCostNeutralPostingsAsync">
                                                 <svg><use href="/icons/sprite.svg#search" /></svg>
                                             </button>
                                         }
@@ -276,7 +292,7 @@ else
                                             <td style="text-align:right;">@p.Delta.ToString("N2")</td>
                                             <td style="text-align:right;">@p.DeltaPct.ToString("P0")</td>
                                             <td style="text-align:right;white-space:nowrap;">
-                                                <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="(async () => await _vm.ShowPurposePostingsAsync(p))">
+                                                <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="(async () => await ShowPurposePostingsAsync(p))">
                                                     <svg><use href="/icons/sprite.svg#search" /></svg>
                                                 </button>
                                             </td>
@@ -361,8 +377,30 @@ else
                     <button class="icon-btn" title='@(Localizer?["Btn_Close"].Value ?? "Close")' @onclick="(()=> _vm.HideSettings())"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
                 </div>
 
-                <BudgetReportSettingsOverlay Settings="_vm.Settings" OnApply="_vm.ApplySettingsAsync" />
+                <BudgetReportSettingsOverlay Settings="_vm.Settings" OnApply="ApplySettingsAsync" />
             </div>
         </div>
     }
+}
+
+@code {
+    private Task ApplySettingsAsync(BudgetReportSettings settings)
+        => _vm == null
+            ? Task.CompletedTask
+            : LoadingBar.RunAsync(() => _vm.ApplySettingsAsync(settings));
+
+    private Task ShowUnbudgetedPostingsAsync()
+        => _vm == null
+            ? Task.CompletedTask
+            : LoadingBar.RunAsync(_vm.ShowUnbudgetedPostingsAsync);
+
+    private Task ShowUnbudgetedSelfCostNeutralPostingsAsync()
+        => _vm == null
+            ? Task.CompletedTask
+            : LoadingBar.RunAsync(_vm.ShowUnbudgetedSelfCostNeutralPostingsAsync);
+
+    private Task ShowPurposePostingsAsync(BudgetReportPurposeRow purpose)
+        => _vm == null
+            ? Task.CompletedTask
+            : LoadingBar.RunAsync(() => _vm.ShowPurposePostingsAsync(purpose));
 }

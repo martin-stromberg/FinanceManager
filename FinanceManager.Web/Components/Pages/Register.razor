@@ -73,9 +73,11 @@
         {
             _error = L["Error_MissingCredentials"];
             _busy = false;
+            await JS.InvokeVoidAsync("financeManager.loadingBar.stop");
             return;
         }
 
+        var navigated = false;
         try
         {
             string? preferredLanguage = null; string? timeZoneId = null;
@@ -95,6 +97,7 @@
             try
             {
                 var _ = await Api.Auth_RegisterAsync(req, CancellationToken.None);
+                navigated = true;
                 Nav.NavigateTo("/", forceLoad: true);
             }
             catch (HttpRequestException)
@@ -109,6 +112,10 @@
         finally
         {
             _busy = false;
+            if (!navigated)
+            {
+                await JS.InvokeVoidAsync("financeManager.loadingBar.stop");
+            }
         }
     }
 

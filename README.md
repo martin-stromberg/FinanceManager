@@ -15,9 +15,10 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 - Kontoauszugsentwürfe im Massenänderungsmodus bearbeiten, Zeilen zum Löschen vormerken und neue Zeilen ergänzen
 - Konten, Sammelkonten, Kontakte, Sparpläne und Wertpapiere verwalten, inklusive sichtbarer SVG-Symbole für Kontakte sowie Sparplan-Kennzahlen zu aktuellem Saldo, Restbetrag und benötigtem Monatsbetrag in der Detailansicht
 - Berichte, KPI-Dashboards und Budgetauswertungen nutzen, inklusive bestandsgepruefter Hochrechnung fuer Wertpapier-Dividendenreports
-- Depot-Analysebericht (`/portfolio/analysis-report`, Ribbon-Gruppe "Berichte" → "Depot-Bericht" der Wertpapierübersicht): konsolidierter Bericht über alle Wertpapiere mit konfigurierbaren, visuell aufbereiteten Kacheln (Depotstruktur mit Ringdiagramm, Performance und Cashflow mit Balkendiagrammen; Risikoanalyse als Platzhalter für Phase 2), Info-Buttons mit Overlay-Erklärungen zu den Kennzahlen (z. B. scrollbare Übersicht aller Positionen im Gesamtmarktwert-Panel statt nur Top 10, Akkordeon mit FIFO-Lot-Details je Wertpapier im Investiertes-Kapital-Panel), inklusive Bearbeitungsmodus für Kachel-Sichtbarkeit/-Reihenfolge je Benutzer und monatlichem Berichts-Cache mit automatischer Invalidierung bei Kursänderungen und Buchungsstornierungen; Wertpapiere unterstützen optionale Region-/Sektor-Felder, die über die Wertpapier-Bearbeitungsmaske gepflegt werden können (200er-Kappung bei Positionen und FIFO-Lots im Bericht; volle Seitenbreite, Speichern-Button im Editiermodus ins Ribbon-Menü verschoben)
+- Depot-Analysebericht (`/portfolio/analysis-report`, Ribbon-Gruppe "Berichte" → "Depot-Bericht" der Wertpapierübersicht): konsolidierter Bericht über alle Wertpapiere mit konfigurierbaren, visuell aufbereiteten Kacheln (Depotstruktur mit Ringdiagramm, Performance und Cashflow mit Balkendiagrammen plus Liquiditätsquote; Risikoanalyse als Platzhalter für Phase 2), Info-Buttons mit Overlay-Erklärungen zu den Kennzahlen (z. B. scrollbare Übersicht aller Positionen im Gesamtmarktwert-Panel statt nur Top 10, Akkordeon mit FIFO-Lot-Details je Wertpapier im Investiertes-Kapital-Panel), inklusive Bearbeitungsmodus für Kachel-Sichtbarkeit/-Reihenfolge je Benutzer und monatlichem Berichts-Cache mit automatischer Invalidierung bei Kursänderungen, Buchungsstornierungen und depotrelevanten Kontoauszugsbuchungen; Wertpapiere unterstützen optionale Region-/Sektor-Felder, die über die Wertpapier-Bearbeitungsmaske gepflegt werden können (200er-Kappung bei Positionen und FIFO-Lots im Bericht; volle Seitenbreite, Speichern-Button im Editiermodus ins Ribbon-Menü verschoben)
 - Anhänge und Sicherungen (Backup/Restore) verwalten
 - Responsive Web-UI für kleine Viewports (mobile Topbar, responsive Container, mobile Ribbon-Shortcuts, mobile E2E-Abdeckung)
+- Globale, responsive Ladeleiste für Navigationen, relevante Formularvorgänge und länger laufende UI-Aktionen; umgesetzt als wiederverwendbare `msTools.Web.Blazor`-Komponente mit projektseitig konfigurierbarer Farbgestaltung
 - Einstellungs-Ribbon mit stets sichtbaren Aktionen: Backup erstellen/hochladen, Profil speichern/zurücksetzen, Benachrichtigungen, Kontoauszugs-Importregeln und Update-Einstellungen speichern sowie Update-Prüfung, Installation und Lock-Reset auslösen — unabhängig davon, welche Sektion gerade aufgeklappt ist
 - Versionsinformation im Programmmenü (Footer) angezeigt — aktuelle Versionnummer oder Fallback `"Version unbekannt"`
 - JWT-Authentifizierung mit 30 Minuten Access-Token-Laufzeit, SecurityStamp-/Rollen-/Active-Revalidierung und DB-validiertem Refresh
@@ -140,6 +141,7 @@ FinanceManager.Tests.Integration        # Integrationstests
 FinanceManager.Tests.E2E                # Playwright-End-to-End-Tests
 
 external/msTools.Updater/v0.3.0         # Geprueftes externes Updater-Release fuer den Testlauf vor NuGet
+external/msTools.Web.Blazor             # Lokales NuGet-Paket fuer wiederverwendbare Blazor-Komponenten
 ```
 
 **Technologien:** .NET 10, ASP.NET Core, Blazor Server, EF Core (SQLite), ASP.NET Identity/JWT, xUnit, bUnit, Playwright.
@@ -151,6 +153,15 @@ Das Self-Update-System wird aus dem externen Release-Artefakt `msTools.Updater` 
 Bis zur geplanten NuGet-Veröffentlichung liegt der geprüfte Release `v0.3.0` aus `martin-stromberg/msTools.Updater` unter [`external/msTools.Updater/v0.3.0/`](external/msTools.Updater/v0.3.0/). Dort sind das originale `release.zip`, `SHA256SUMS.txt`, eine Herkunfts-README und die entpackte `lib/msTools.Updater.dll` abgelegt; der dokumentierte SHA-256 des ZIPs ist `9b9e578deffddd44a36a3ac844ca9b55b1c201984823f6134db56aafdd292834`.
 
 `FinanceManager.Web` referenziert die entpackte DLL direkt und kopiert sie in Build- und Publish-Ausgaben. Die Integration erfolgt weiterhin über den FinanceManager-Adapter (`UpdateOrchestratorAdapter`); Controller, DTOs, Admin-UI und REST-API bleiben dadurch aus Anwendersicht stabil. Vorabversionen werden nur geladen, wenn `Updates:IncludePrereleases` beziehungsweise `UpdateSettings.IncludePrereleases` aktiviert ist.
+
+### Wiederverwendbare Blazor-Komponenten
+
+Die globale Ladeleiste kommt aus dem separaten Paket `msTools.Web.Blazor`.
+FinanceManager bindet bis zur zentralen NuGet-Veroeffentlichung das lokal
+versionierte Paket unter `external/msTools.Web.Blazor/` ein. Die konkrete
+Registrierung, Root-Komponente, Service-Nutzung und der Aktualisierungsablauf
+sind in [Docs/maintenance/mstools-web-blazor-integration.md](Docs/maintenance/mstools-web-blazor-integration.md)
+dokumentiert.
 
 ## API-Dokumentation
 
@@ -283,7 +294,7 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md), insbesondere:
 - Kachel-Konfiguration (Sichtbarkeit/Reihenfolge) pro Benutzer sowie monatlicher Berichts-Cache mit automatischer Invalidierung
 - `Region`/`Sector` Wertpapierfelder sind jetzt über die Wertpapier-Bearbeitungsmaske pflegbar (200er-Kappung bei Positionen/Lots im Bericht)
 - UI-Verbesserungen: Tabellen-Overflow behoben, volle Seitenbreite genutzt, Speichern-Button im Editiermodus ins Ribbon-Menü verschoben
-- Offen für Phase 2: Risikoanalyse-Kennzahlen (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk) sowie automatische Cache-Invalidierung bei einzelnen Wertpapierbuchungen ohne Stornierung; Liquiditätsquote entfernt (#301), da nicht sinnvoll berechenbar ohne Kontostand-Verknüpfung
+- Offen für Phase 2: Risikoanalyse-Kennzahlen (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk)
 
 **Issue #224 – Update-Einstellungen vereinheitlichen** ✓ Abgeschlossen
 - Technische Update-Konfiguration aus der Admin-UI entfernt und serverseitig normalisiert

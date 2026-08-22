@@ -1,7 +1,9 @@
 @using FinanceManager.Shared.Dtos
 @using FinanceManager.Shared.Dtos.Statements
 @using FinanceManager.Web.ViewModels.Setup
+@using Microsoft.JSInterop
 @inject Microsoft.Extensions.Localization.IStringLocalizer<Pages> Localizer
+@inject IJSRuntime JS
 @using Microsoft.Extensions.DependencyInjection
 
 <div class="setup-tab setup-statement-tab">
@@ -106,6 +108,31 @@
         }
     }
 
-    private Task SaveAsync() => _vm!.SaveAsync();
+    private async Task SaveAsync()
+    {
+        try
+        {
+            await _vm!.SaveAsync();
+        }
+        finally
+        {
+            await StopLoadingBarAsync();
+        }
+    }
+
+    private async Task StopLoadingBarAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("financeManager.loadingBar.stop");
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
     private void Reset() => _vm!.Reset();
 }
