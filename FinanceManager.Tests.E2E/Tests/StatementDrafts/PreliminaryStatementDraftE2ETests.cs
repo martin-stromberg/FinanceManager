@@ -192,6 +192,37 @@ public sealed class PreliminaryStatementDraftE2ETests
         activeElementId.Should().StartWith("qe_booking_");
     }
 
+    [Fact]
+    public async Task OpenPreliminaryDraft_Card_ShouldShowPreliminaryIndicator()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var auth = new AuthGateway(page, _fixture.BaseUrl);
+        var seeder = new TestUserSeeder(_fixture.DatabasePath);
+
+        var username = $"prelim-indicator-{Guid.NewGuid():N}";
+        const string password = "Secret123";
+        await seeder.EnsureUserAsync(username, password);
+        await auth.LoginAsync(username, password);
+
+        var account = await new AccountsApiSeedHelper(page).CreateAccountAsync("E2E Prelim Indicator", "DE50700500000007882903");
+
+        var prelimDraft = await BrowserApiHelper.PostJsonAsync<CreatePreliminaryStatementDraftRequest, StatementDraftDto>(
+            page,
+            "/api/statement-drafts/preliminary",
+            new CreatePreliminaryStatementDraftRequest(account.Id));
+
+        await page.GotoAsync($"/card/statement-drafts/{prelimDraft.DraftId}");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        // The localized label is shown for preliminary drafts ("Vorläufig" in German, "Preliminary" in English).
+        var indicator = page.Locator("th:has-text('Preliminary'), th:has-text('Vorläufig')").First;
+        await indicator.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
+
+        var value = page.Locator("td:has-text('Yes'), td:has-text('Ja')").First;
+        await value.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
+    }
+
     private AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
