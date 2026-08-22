@@ -11,6 +11,7 @@ Status: Kern-Implementierung und Tests abgeschlossen; verbleibende Schritte auss
 - [x] EF-Migrationen für `IsPreliminary` in `StatementDraft` und `Posting` angelegt
 - [x] Build erfolgreich
 - [x] Dedizierte Unit-Tests für Vorläufig-Merkmal, Stornierung und Nicht-Stornierung bei weiterem Vorläufig-Durchlauf
+- [x] Dedizierte E2E-Tests für Vorläufig-Kontoauszüge und Stornierung durch realen Kontoauszug
 - [x] Schnellbearbeitungsmodus wird bei `?quickEdit=true` im `StatementDraftCardViewModel` automatisch gestartet
 
 ## Noch offen
