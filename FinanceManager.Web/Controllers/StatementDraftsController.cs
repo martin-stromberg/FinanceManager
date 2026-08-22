@@ -117,7 +117,11 @@ public sealed class StatementDraftsController : ControllerBase
             return BadRequest(new { error = "Err_Invalid_AccountId", message = "Account id is required" });
         }
 
-        var draft = await _drafts.CreatePreliminaryDraftAsync(_current.UserId, body.AccountId, ct);
+        var pagesLocalizer = HttpContext.RequestServices.GetRequiredService<IStringLocalizer<FinanceManager.Web.Pages>>();
+        var dateText = DateTime.Today.ToString("d", System.Globalization.CultureInfo.CurrentCulture);
+        var description = pagesLocalizer["StatementDraft_Description_Preliminary", dateText].Value;
+
+        var draft = await _drafts.CreatePreliminaryDraftAsync(_current.UserId, body.AccountId, ct, description);
         if (draft == null)
         {
             return NotFound(new { error = "Err_NotFound", message = "Account not found" });
@@ -367,7 +371,7 @@ public sealed class StatementDraftsController : ControllerBase
         }
         catch { }
 
-        var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId, contactSymbols, planSymbols, planNames, securitySymbols, securityNames, contactNames, accountBankContactId, selfContactId);
+        var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId, contactSymbols, planSymbols, planNames, securitySymbols, securityNames, contactNames, accountBankContactId, selfContactId, draft.IsPreliminary);
         return Ok(dto);
     }
 

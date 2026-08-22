@@ -242,6 +242,7 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
                 new CardField("Card_Caption_StatementDrafts_File", CardFieldKind.Text, text: Draft.OriginalFileName ?? string.Empty),
                 new CardField("Card_Caption_StatementDrafts_Description", CardFieldKind.Text, text: Draft.Description ?? string.Empty),
                 new CardField("Card_Caption_StatementDrafts_Status", CardFieldKind.Text, text: Draft.Status.ToString()),
+                new CardField("Card_Caption_StatementDrafts_IsPreliminary", CardFieldKind.Text, text: Draft.IsPreliminary ? (ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>()["StatementDraft_IsPreliminary"].Value ?? "Yes") : string.Empty),
                 new CardField("Card_Caption_StatementDrafts_Entries", CardFieldKind.Text, text: $"{(Draft.Entries?.Count(e => e.Status != StatementDraftEntryStatus.AlreadyBooked && e.Status != StatementDraftEntryStatus.Announced) ?? 0)} ({(Draft.Entries?.Count ?? 0)})"),
                 // Sum of all entry amounts
                 new CardField("Card_Caption_StatementDrafts_SumAmounts", CardFieldKind.Currency, text: sumAmounts.ToString("C", CultureInfo.CurrentCulture), amount: sumAmounts)

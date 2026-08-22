@@ -15,7 +15,7 @@ public sealed partial class StatementDraftService
     /// <param name="accountId">Identifier of the bank account for which the preliminary draft is created.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The created <see cref="StatementDraftDto"/>; otherwise <c>null</c> when the account does not exist or is not owned.</returns>
-    public async Task<StatementDraftDto?> CreatePreliminaryDraftAsync(Guid ownerUserId, Guid accountId, CancellationToken ct = default)
+    public async Task<StatementDraftDto?> CreatePreliminaryDraftAsync(Guid ownerUserId, Guid accountId, CancellationToken ct, string? description = null)
     {
         var account = await _db.Accounts.AsNoTracking().FirstOrDefaultAsync(a => a.Id == accountId && a.OwnerUserId == ownerUserId, ct);
         if (account == null)
@@ -23,12 +23,12 @@ public sealed partial class StatementDraftService
             return null;
         }
 
-        var dateText = DateTime.Today.ToString("d", new CultureInfo("de-DE"));
+        var dateText = DateTime.Today.ToString("d", CultureInfo.CurrentCulture);
         var draft = new StatementDraft(
             ownerUserId,
             "Preliminary",
             null,
-            $"Vorl. Buchungen vom {dateText}");
+            description ?? $"Preliminary bookings of {dateText}");
 
         draft.SetDetectedAccount(accountId);
         draft.MarkAsPreliminary();

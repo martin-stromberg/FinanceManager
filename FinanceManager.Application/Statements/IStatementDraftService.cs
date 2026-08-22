@@ -364,8 +364,9 @@ public interface IStatementDraftService
     /// <param name="ownerUserId">Owner user identifier.</param>
     /// <param name="accountId">Identifier of the bank account for which the preliminary draft is created.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="description">Optional localized description to store on the draft.</param>
     /// <returns>The created <see cref="StatementDraftDto"/>; otherwise <c>null</c> when the account does not exist or is not owned.</returns>
-    Task<StatementDraftDto?> CreatePreliminaryDraftAsync(Guid ownerUserId, Guid accountId, CancellationToken ct = default);
+    Task<StatementDraftDto?> CreatePreliminaryDraftAsync(Guid ownerUserId, Guid accountId, CancellationToken ct, string? description = null);
 }
 
 
