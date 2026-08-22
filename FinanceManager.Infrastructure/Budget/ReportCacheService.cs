@@ -180,5 +180,5 @@ public sealed class ReportCacheService : IReportCacheService
     }
     private const string KeyPrefix_BudgetReportRawData = "budgetreportraw";
     private static string BuildKey(DateOnly from, DateOnly to, BudgetReportDateBasis dateBasis)
-        => string.Format(CultureInfo.InvariantCulture, $"{KeyPrefix_BudgetReportRawData}-{from:yyyyMMdd}-{to:yyyyMMdd}-{dateBasis}");
+        => string.Create(CultureInfo.InvariantCulture, $"{KeyPrefix_BudgetReportRawData}-{from:yyyyMMdd}-{to:yyyyMMdd}-{dateBasis}");
 }
