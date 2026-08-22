@@ -19,6 +19,54 @@ namespace FinanceManager.Tests.Infrastructure.Budget;
 public sealed class ReportCacheServiceTests
 {
     /// <summary>
+    /// Builds deterministic cache keys with invariant date formatting through the public write path.
+    /// </summary>
+    [Fact]
+    public async Task SetBudgetReportRawDataAsync_ShouldStoreInvariantDeterministicCacheKeys()
+    {
+        // Arrange
+        var originalCulture = CultureInfo.CurrentCulture;
+        var originalUiCulture = CultureInfo.CurrentUICulture;
+
+        try
+        {
+            CultureInfo.CurrentCulture = new CultureInfo("de-DE");
+            CultureInfo.CurrentUICulture = new CultureInfo("de-DE");
+
+            var (db, service) = CreateService();
+            var ownerId = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
+            var from = new DateOnly(2026, 1, 1);
+            var to = new DateOnly(2026, 1, 31);
+            var data = new BudgetReportRawDataDto();
+
+            // Act
+            await service.SetBudgetReportRawDataAsync(ownerId, from, to, BudgetReportDateBasis.BookingDate, data, false, CancellationToken.None);
+            await service.SetBudgetReportRawDataAsync(ownerId, from, to, BudgetReportDateBasis.BookingDate, data, false, CancellationToken.None);
+            await service.SetBudgetReportRawDataAsync(ownerId, from.AddDays(1), to, BudgetReportDateBasis.BookingDate, data, false, CancellationToken.None);
+            await service.SetBudgetReportRawDataAsync(ownerId, from, to.AddDays(1), BudgetReportDateBasis.BookingDate, data, false, CancellationToken.None);
+            await service.SetBudgetReportRawDataAsync(ownerId, from, to, BudgetReportDateBasis.ValutaDate, data, false, CancellationToken.None);
+
+            // Assert
+            var keys = await db.ReportCacheEntries.AsNoTracking()
+                .OrderBy(e => e.CacheKey)
+                .Select(e => e.CacheKey)
+                .ToListAsync();
+
+            keys.Should().BeEquivalentTo(
+                "budgetreportraw-20260101-20260131-BookingDate",
+                "budgetreportraw-20260102-20260131-BookingDate",
+                "budgetreportraw-20260101-20260201-BookingDate",
+                "budgetreportraw-20260101-20260131-ValutaDate");
+            keys.Should().OnlyHaveUniqueItems();
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+            CultureInfo.CurrentUICulture = originalUiCulture;
+        }
+    }
+
+    /// <summary>
     /// Marks cache entries for update when the booking range is inside the cached range.
     /// </summary>
     [Fact]
