@@ -71,7 +71,7 @@ public sealed partial class StatementDraftService
 
         var groupIds = preliminaryBankPostings.Select(p => p.GroupId).Distinct().ToList();
         var allGroupPostings = await _db.Postings
-            .Where(p => p.AccountId == accountId && groupIds.Contains(p.GroupId) && !p.ReversedByPostingId.HasValue)
+            .Where(p => groupIds.Contains(p.GroupId) && !p.ReversedByPostingId.HasValue)
             .ToListAsync(ct);
 
         foreach (var original in allGroupPostings)

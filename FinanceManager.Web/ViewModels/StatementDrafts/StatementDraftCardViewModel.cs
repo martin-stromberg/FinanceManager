@@ -266,6 +266,11 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
             try
             {
                 await entriesVm.InitializeAsync();
+
+                if (Navigation.ToAbsoluteUri(Navigation.Uri).Query.Contains("quickEdit=true", StringComparison.OrdinalIgnoreCase))
+                {
+                    await entriesVm.BeginQuickEditAsync();
+                }
             }
             catch (Exception ex)
             {

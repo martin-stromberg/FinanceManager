@@ -1392,4 +1392,158 @@ public sealed class StatementDraftBookingTests
 
         conn.Dispose();
     }
+
+    /// <summary>
+    /// Verifies that a newly created preliminary draft is linked to the specified account and marked as preliminary.
+    /// </summary>
+    [Fact]
+    public async Task CreatePreliminaryDraftAsync_Should_CreatePreliminaryDraft_ForAccount()
+    {
+        var (sut, db, conn, owner) = Create();
+        var (acc, _) = await AddAccountAsync(db, owner);
+
+        var dto = await sut.CreatePreliminaryDraftAsync(owner, acc.Id, CancellationToken.None);
+
+        Assert.NotNull(dto);
+        Assert.Equal(acc.Id, dto.DetectedAccountId);
+        Assert.True(dto.IsPreliminary);
+
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that booking a preliminary draft propagates the preliminary flag to all created postings.
+    /// </summary>
+    [Fact]
+    public async Task BookAsync_PreliminaryDraft_ShouldCreatePreliminaryPostings()
+    {
+        var (sut, db, conn, owner) = Create();
+        var (acc, _) = await AddAccountAsync(db, owner);
+        var draft = await CreateDraftAsync(db, owner, acc.Id);
+        draft.MarkAsPreliminary();
+        db.Entry(draft).State = EntityState.Modified;
+        await db.SaveChangesAsync();
+
+        var shop = new Contact(owner, "Shop GmbH", ContactType.Organization, null, null, false);
+        db.Contacts.Add(shop);
+        await db.SaveChangesAsync();
+
+        var entry = draft.AddEntry(DateTime.Today, 10m, "A", shop.Name, DateTime.Today, "EUR", null, false);
+        db.Entry(entry).State = EntityState.Added;
+        entry.MarkAccounted(shop.Id);
+        await db.SaveChangesAsync();
+
+        var result = await sut.BookAsync(draft.Id, entry.Id, owner, false, CancellationToken.None);
+
+        Assert.True(result.Success);
+        var postings = await db.Postings.Where(p => p.SourceId == entry.Id).ToListAsync();
+        Assert.All(postings, p => Assert.True(p.IsPreliminary));
+
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that booking a real statement reverses all preliminary postings for the same account.
+    /// </summary>
+    [Fact]
+    public async Task BookAsync_RealDraft_ShouldReversePreliminaryPostings()
+    {
+        var (sut, db, conn, owner) = Create();
+        var (acc, _) = await AddAccountAsync(db, owner);
+
+        // 1. Book a preliminary posting
+        var prelimDraft = await CreateDraftAsync(db, owner, acc.Id);
+        prelimDraft.MarkAsPreliminary();
+        db.Entry(prelimDraft).State = EntityState.Modified;
+        await db.SaveChangesAsync();
+
+        var shop = new Contact(owner, "Shop GmbH", ContactType.Organization, null, null, false);
+        db.Contacts.Add(shop);
+        await db.SaveChangesAsync();
+
+        var prelimEntry = prelimDraft.AddEntry(DateTime.Today, 10m, "A", shop.Name, DateTime.Today, "EUR", null, false);
+        db.Entry(prelimEntry).State = EntityState.Added;
+        prelimEntry.MarkAccounted(shop.Id);
+        await db.SaveChangesAsync();
+
+        var prelimResult = await sut.BookAsync(prelimDraft.Id, prelimEntry.Id, owner, false, CancellationToken.None);
+        Assert.True(prelimResult.Success);
+
+        // 2. Book a real statement for the same account
+        var realDraft = await CreateDraftAsync(db, owner, acc.Id);
+        var realEntry = realDraft.AddEntry(DateTime.Today, 20m, "B", shop.Name, DateTime.Today, "EUR", null, false);
+        db.Entry(realEntry).State = EntityState.Added;
+        realEntry.MarkAccounted(shop.Id);
+        await db.SaveChangesAsync();
+
+        var realResult = await sut.BookAsync(realDraft.Id, realEntry.Id, owner, true, CancellationToken.None);
+        Assert.True(realResult.Success);
+
+        // Preliminary postings are reversed and zeroed
+        var prelimPostings = await db.Postings.Where(p => p.SourceId == prelimEntry.Id).ToListAsync();
+        Assert.All(prelimPostings, p =>
+        {
+            Assert.True(p.IsReversed);
+            Assert.Equal(0m, p.Amount);
+            Assert.True(p.OriginalAmount.HasValue);
+        });
+
+        // Real postings are not preliminary
+        var realPostings = await db.Postings.Where(p => p.SourceId == realEntry.Id).ToListAsync();
+        Assert.All(realPostings, p =>
+        {
+            Assert.False(p.IsPreliminary);
+            Assert.False(p.IsReversed);
+        });
+
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that another preliminary booking does not reverse existing preliminary postings.
+    /// </summary>
+    [Fact]
+    public async Task BookAsync_SecondPreliminaryDraft_ShouldNotReversePreliminaryPostings()
+    {
+        var (sut, db, conn, owner) = Create();
+        var (acc, _) = await AddAccountAsync(db, owner);
+
+        var shop = new Contact(owner, "Shop GmbH", ContactType.Organization, null, null, false);
+        db.Contacts.Add(shop);
+        await db.SaveChangesAsync();
+
+        var firstDraft = await CreateDraftAsync(db, owner, acc.Id);
+        firstDraft.MarkAsPreliminary();
+        db.Entry(firstDraft).State = EntityState.Modified;
+        var firstEntry = firstDraft.AddEntry(DateTime.Today, 10m, "A", shop.Name, DateTime.Today, "EUR", null, false);
+        db.Entry(firstEntry).State = EntityState.Added;
+        firstEntry.MarkAccounted(shop.Id);
+        await db.SaveChangesAsync();
+
+        var firstResult = await sut.BookAsync(firstDraft.Id, firstEntry.Id, owner, false, CancellationToken.None);
+        Assert.True(firstResult.Success);
+
+        var secondDraft = await CreateDraftAsync(db, owner, acc.Id);
+        secondDraft.MarkAsPreliminary();
+        db.Entry(secondDraft).State = EntityState.Modified;
+        var secondEntry = secondDraft.AddEntry(DateTime.Today, 20m, "B", shop.Name, DateTime.Today, "EUR", null, false);
+        db.Entry(secondEntry).State = EntityState.Added;
+        secondEntry.MarkAccounted(shop.Id);
+        await db.SaveChangesAsync();
+
+        var secondResult = await sut.BookAsync(secondDraft.Id, secondEntry.Id, owner, false, CancellationToken.None);
+        Assert.True(secondResult.Success);
+
+        var firstPostings = await db.Postings.Where(p => p.SourceId == firstEntry.Id).ToListAsync();
+        Assert.All(firstPostings, p =>
+        {
+            Assert.False(p.IsReversed);
+            Assert.NotEqual(0m, p.Amount);
+        });
+
+        var secondPostings = await db.Postings.Where(p => p.SourceId == secondEntry.Id).ToListAsync();
+        Assert.All(secondPostings, p => Assert.True(p.IsPreliminary));
+
+        conn.Dispose();
+    }
 }

@@ -1,7 +1,7 @@
 # Offene Aufgaben
 
 Erstellt am: 2026-08-22
-Status: Kern-Implementierung abgeschlossen; verbleibende Schritte ausstehend.
+Status: Kern-Implementierung und Tests abgeschlossen; verbleibende Schritte ausstehend.
 
 ## Erledigt in diesem Durchlauf
 
@@ -9,10 +9,11 @@ Status: Kern-Implementierung abgeschlossen; verbleibende Schritte ausstehend.
 - [x] Automatische Stornierung vorläufiger Posten beim Buchen eines realen Kontoauszugs
 - [x] Hinweis bei der Prüfung eines realen Kontoauszugs, sofern vorläufige Buchungen vorhanden sind
 - [x] EF-Migrationen für `IsPreliminary` in `StatementDraft` und `Posting` angelegt
-- [x] Build und bestehende Statement-Draft-Buchungs-Tests erfolgreich
+- [x] Build erfolgreich
+- [x] Dedizierte Unit-Tests für Vorläufig-Merkmal, Stornierung und Nicht-Stornierung bei weiterem Vorläufig-Durchlauf
+- [x] Schnellbearbeitungsmodus wird bei `?quickEdit=true` im `StatementDraftCardViewModel` automatisch gestartet
 
 ## Noch offen
 
+- [ ] Buchungsdatum-Feld im Schnellbearbeitungsmodus automatisch fokussieren
 - [ ] Lokalisationen (Ribbon, Spalte, Hinweise) ergänzen
-- [ ] Schnellbearbeitungsmodus und Fokus auf Buchungsdatum in `StatementDraftCardViewModel`
-- [ ] Dedizierte Unit-/Integrationstests für Vorläufig-Merkmal und Stornierung ergänzen
