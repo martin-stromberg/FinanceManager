@@ -24,6 +24,13 @@ public interface IApiClient
     /// </summary>
     string? LastErrorCode { get; }
 
+    /// <summary>
+    /// Raised when an API response indicates that the current authentication is missing, expired or invalid.
+    /// Implementations raise this for HTTP 401 and for HTTP 403 only when the response carries an explicit
+    /// authentication-related machine-readable signal.
+    /// </summary>
+    event EventHandler<ApiAuthenticationRequiredEventArgs>? AuthenticationRequired;
+
     // Accounts
 
     /// <summary>
