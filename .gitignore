@@ -450,3 +450,4 @@ issue.md
 
 # Design reference artifact used while building the portfolio analysis visualizations (not a build input)
 /stitch_advanced_portfolio_analysis_report.zip
+/.agents/
