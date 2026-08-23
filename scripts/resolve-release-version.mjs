@@ -74,7 +74,7 @@ function runSemanticReleaseDryRun() {
   );
   const result = spawnSync(process.execPath, [semanticReleaseBinary, "--dry-run"], {
     encoding: "utf8",
-    env: { ...process.env, CI: "true" },
+    env: { ...process.env, CI: "true", RESOLVE_DRY_RUN: "true" },
     stdio: ["ignore", "pipe", "pipe"]
   });
 
