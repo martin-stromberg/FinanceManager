@@ -37,6 +37,8 @@ public sealed class MonthlyBudgetKpiTests : BunitContext
             null,
             BudgetReportDateBasis.BookingDate,
             It.IsAny<CancellationToken>()), Times.Once);
+        Assert.NotEmpty(cut.FindAll(".budget-loading-overlay"));
+        Assert.NotEmpty(cut.FindAll(".budget-loading-spinner"));
         Assert.Empty(cut.FindAll(".budget-fill"));
         Assert.Empty(cut.FindAll(".budget-result"));
     }
@@ -55,6 +57,7 @@ public sealed class MonthlyBudgetKpiTests : BunitContext
 
         cut.WaitForAssertion(() =>
         {
+            Assert.Empty(cut.FindAll(".budget-loading-overlay"));
             Assert.NotEmpty(cut.FindAll(".budget-fill"));
             Assert.Contains("900", cut.Find(".budget-result").TextContent);
         });
@@ -95,6 +98,7 @@ public sealed class MonthlyBudgetKpiTests : BunitContext
             .Add(p => p.ViewModel, new MonthlyBudgetKpiViewModel()));
 
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".error")));
+        Assert.Empty(cut.FindAll(".budget-loading-overlay"));
     }
 
     [Fact]
@@ -114,6 +118,7 @@ public sealed class MonthlyBudgetKpiTests : BunitContext
         cut.WaitForAssertion(() =>
         {
             Assert.NotEmpty(cut.FindAll(".error"));
+            Assert.Empty(cut.FindAll(".budget-loading-overlay"));
             Assert.Empty(cut.FindAll(".budget-result"));
         });
     }

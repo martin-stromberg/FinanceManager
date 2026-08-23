@@ -107,6 +107,12 @@
     width: 100%;
 }
 
+.budget-loading-spinner {
+    border-color: rgba(87, 209, 122, .22);
+    border-top-color: #57d17a;
+    box-shadow: 0 0 0 4px rgba(12, 17, 22, .68);
+}
+
 .budget-side.income {
     background: rgba(45, 157, 79, .28);
     display: flex;

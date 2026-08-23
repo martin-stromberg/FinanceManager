@@ -358,6 +358,12 @@
                 }
             </div>
         </div>
+        @if (!DataLoaded && !HasLoadError)
+        {
+            <div class="budget-loading-overlay" role="status" aria-label="@Localizer["Loading"]">
+                <span class="budget-loading-spinner" aria-hidden="true"></span>
+            </div>
+        }
     </div>
     @if (DataLoaded)
     {
