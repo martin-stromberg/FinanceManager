@@ -369,4 +369,25 @@
   <data name="Validation_SAVINGSPLAN_DUE" xml:space="preserve">
     <value>Savings plan '{0}' is due (Due date: {1:d}).</value>
   </data>
+  <data name="AssignedAccount" xml:space="preserve">
+    <value>Assigned bank account</value>
+  </data>
+  <data name="Btn_AssignAccount" xml:space="preserve">
+    <value>Assign bank account</value>
+  </data>
+  <data name="AssignAccount_Title" xml:space="preserve">
+    <value>Assign bank account</value>
+  </data>
+  <data name="Error_AssignFailed" xml:space="preserve">
+    <value>Assignment failed</value>
+  </data>
+  <data name="Filter" xml:space="preserve">
+    <value>Filter</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="NoMatches" xml:space="preserve">
+    <value>No matches</value>
+  </data>
 </root>

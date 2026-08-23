@@ -182,6 +182,9 @@ else
                 case "OpenPostings":
                     if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
                     break;
+                case "OpenStatementDraft":
+                    if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
+                    break;
                 case "NavigateToPosting":
                     if (!string.IsNullOrWhiteSpace(payload))
                     {

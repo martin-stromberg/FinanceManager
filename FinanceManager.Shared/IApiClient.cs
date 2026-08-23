@@ -716,6 +716,8 @@ public interface IApiClient
     Task<StatementDraftSetEntrySplitDraftResultDto?> StatementDrafts_SetEntrySplitDraftAsync(Guid draftId, Guid entryId, StatementDraftSetSplitDraftRequest req, CancellationToken ct = default);
     /// <summary>Sets the description of a statement draft and returns updated detail or null when not found.</summary>
     Task<StatementDraftDetailDto?> StatementDrafts_SetDescriptionAsync(Guid draftId, string? description, CancellationToken ct = default);
+    /// <summary>Creates a new preliminary (provisional) statement draft for the specified bank account.</summary>
+    Task<StatementDraftDto?> StatementDrafts_CreatePreliminaryAsync(CreatePreliminaryStatementDraftRequest request, CancellationToken ct = default);
     // Users
     /// <summary>Checks if any users exist in the system.</summary>
     Task<bool> Users_HasAnyAsync(CancellationToken ct = default);

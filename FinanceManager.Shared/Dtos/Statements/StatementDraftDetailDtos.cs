@@ -25,5 +25,6 @@ public sealed record StatementDraftDetailDto(
     IReadOnlyDictionary<Guid, string>? SecurityNames = null,
     IReadOnlyDictionary<Guid, string>? ContactNames = null,
     Guid? AccountBankContactId = null,
-    Guid? SelfContactId = null
+    Guid? SelfContactId = null,
+    bool IsPreliminary = false
 );
