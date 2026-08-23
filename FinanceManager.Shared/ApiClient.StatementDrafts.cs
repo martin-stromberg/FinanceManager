@@ -343,6 +343,20 @@ public partial class ApiClient
     }
 
     /// <summary>
+    /// Creates a new preliminary (provisional) statement draft for the specified bank account.
+    /// </summary>
+    /// <param name="request">Request containing the account identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Created draft DTO or null when not found.</returns>
+    public async Task<StatementDraftDto?> StatementDrafts_CreatePreliminaryAsync(CreatePreliminaryStatementDraftRequest request, CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsJsonAsync("/api/statement-drafts/preliminary", request, ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<StatementDraftDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
     /// Commits (books) a statement draft. This finalizes the draft and creates postings.
     /// </summary>
     /// <param name="draftId">Draft identifier.</param>

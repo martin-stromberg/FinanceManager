@@ -77,6 +77,19 @@ else
 
     private string? BuildRelatedRecordUrl(DraftValidationMessageDto message)
     {
+        var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        var currentUrl = "/" + currentPath;
+
+        // The preliminary-reversal warning carries the target posting list URL as the second segment.
+        if (message.Message.StartsWith("Validation_PRELIMINARY_POSTINGS_WILL_BE_REVERSED", StringComparison.Ordinal) && message.Message.Contains('|'))
+        {
+            var parts = message.Message.Split('|');
+            if (parts.Length > 1 && !string.IsNullOrWhiteSpace(parts[1]) && parts[1].StartsWith("/"))
+            {
+                return $"{parts[1].Trim()}?back={Uri.EscapeDataString(currentUrl)}";
+            }
+        }
+
         if (string.IsNullOrWhiteSpace(message.RelatedRecordKind) || message.RelatedRecordId is null || message.RelatedRecordId == Guid.Empty)
         {
             return null;
@@ -88,8 +101,6 @@ else
             return null;
         }
 
-        var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        var currentUrl = "/" + currentPath;
         return $"/card/{kind}/{message.RelatedRecordId}?back={Uri.EscapeDataString(currentUrl)}";
     }
 

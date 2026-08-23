@@ -21,7 +21,8 @@ public sealed partial class StatementDraftService
             null,
             null,
             draft.UploadGroupId,
-            draft.Entries.Select(e => Map(e)).ToList());
+            draft.Entries.Select(e => Map(e)).ToList(),
+            draft.IsPreliminary);
     }
 
     private static StatementDraftEntryDto Map(StatementDraftEntry e)
@@ -94,6 +95,7 @@ public sealed partial class StatementDraftService
                 e.SecurityTransactionType,
                 e.SecurityQuantity,
                 e.SecurityFeeAmount,
-                e.SecurityTaxAmount)).ToList());
+                e.SecurityTaxAmount)).ToList(),
+            draft.IsPreliminary);
     }
 }
