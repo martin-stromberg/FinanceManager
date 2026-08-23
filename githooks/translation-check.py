@@ -6,6 +6,8 @@
 2. Groups .resx files by package (neutral + language variants in the same
    directory) and ensures that every key defined in one file of a package is
    present in all other files of the same package.
+3. Validates the required resx headers (resmimetype, reader, writer) in every
+   .resx file to catch formatting issues such as `Text/microsoft-resx`.
 """
 import re
 import subprocess
@@ -63,6 +65,35 @@ def resx_keys(path):
     return {d.get('name') for d in tree.getroot().iter('data') if d.get('name')}
 
 
+def resx_header_errors(path):
+    """Validate required ResX headers. Returns a list of error strings."""
+    errors = []
+    try:
+        tree = ET.parse(path)
+    except ET.ParseError as e:
+        return [f'cannot parse XML: {e}']
+
+    resheaders = {}
+    for h in tree.getroot().iter('resheader'):
+        name = h.get('name')
+        if name:
+            resheaders[name] = ''.join(h.itertext()).strip()
+
+    resmimetype = resheaders.get('resmimetype', '')
+    if resmimetype != 'text/microsoft-resx':
+        errors.append(f'invalid resmimetype: {resmimetype!r} (expected "text/microsoft-resx")')
+
+    reader = resheaders.get('reader', '')
+    if not reader or 'System.Resources.ResXResourceReader' not in reader:
+        errors.append('missing or invalid reader resheader')
+
+    writer = resheaders.get('writer', '')
+    if not writer or 'System.Resources.ResXResourceWriter' not in writer:
+        errors.append('missing or invalid writer resheader')
+
+    return errors
+
+
 def resx_base(path):
     m = RESX_CULTURE_RE.match(path.name)
     if not m:
@@ -83,6 +114,13 @@ def main():
     all_keys = set()
     for r in resx:
         all_keys.update(resx_keys(r))
+
+    # Part 3: validate resx headers in all files
+    header_errors = []
+    for r in resx:
+        errors = resx_header_errors(r)
+        if errors:
+            header_errors.append((r.relative_to(root), errors))
 
     # Part 1: check staged source files for missing keys
     files = staged_files()
@@ -142,10 +180,18 @@ def main():
                 print(f'  {f}: {key}')
         print()
 
+    if header_errors:
+        failed = True
+        print('ERROR: the following .resx files have invalid headers:')
+        for f, errors in header_errors:
+            for e in errors:
+                print(f'  {f}: {e}')
+        print()
+
     if failed:
         return 1
 
-    print(f'OK: {len(used_keys)} staged localization key(s) found and {len(resx)} .resx package(s) are consistent.')
+    print(f'OK: {len(used_keys)} staged localization key(s) found, {len(resx)} .resx package(s) are consistent and all resx headers are valid.')
     return 0
 
 
