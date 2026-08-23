@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Pre-commit localization check.
+"""Localization check.
+
+Run as a pre-commit hook (default: only staged files) or with --all to scan
+the entire repository for unused/missing localization keys.
 
 1. Scans staged .cs/.razor/.cshtml files for IStringLocalizer indexer usages and
    ensures every key exists in at least one .resx file in the repository.
@@ -9,6 +12,7 @@
 3. Validates the required resx headers (resmimetype, reader, writer) in every
    .resx file to catch formatting issues such as `Text/microsoft-resx`.
 """
+import argparse
 import re
 import subprocess
 import sys
@@ -45,6 +49,16 @@ def staged_files():
     if res.returncode != 0:
         return []
     return [p for p in res.stdout.splitlines() if p]
+
+
+def all_source_files(root):
+    files = []
+    for ext in ('*.cs', '*.razor', '*.cshtml'):
+        for p in root.rglob(ext):
+            if any(part in EXCLUDED_DIRS for part in p.parts):
+                continue
+            files.append(str(p.relative_to(root).as_posix()))
+    return files
 
 
 def resx_files(root):
@@ -101,7 +115,14 @@ def resx_base(path):
     return m.group(1), m.group(2)
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='Localization consistency check')
+    parser.add_argument('--all', action='store_true', help='scan all source files, not only staged ones')
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
     root = repo_root()
     if root is None:
         return 1
@@ -122,8 +143,13 @@ def main():
         if errors:
             header_errors.append((r.relative_to(root), errors))
 
-    # Part 1: check staged source files for missing keys
-    files = staged_files()
+    # Part 1: check source files for missing keys
+    if args.all:
+        files = all_source_files(root)
+        scan_mode = 'all'
+    else:
+        files = staged_files()
+        scan_mode = 'staged'
     source_files = [f for f in files if f.endswith(('.cs', '.razor', '.cshtml'))]
     used_keys = set()
     missing = []
@@ -191,7 +217,7 @@ def main():
     if failed:
         return 1
 
-    print(f'OK: {len(used_keys)} staged localization key(s) found, {len(resx)} .resx package(s) are consistent and all resx headers are valid.')
+    print(f'OK: {len(used_keys)} {scan_mode} localization key(s) found, {len(resx)} .resx package(s) are consistent and all resx headers are valid.')
     return 0
 
 

@@ -13,4 +13,5 @@
   <data name="Loading" xml:space="preserve"><value>Loading...</value></data>
   <data name="NoData" xml:space="preserve"><value>No data</value></data>
   <data name="AriaBar" xml:space="preserve"><value>Period {0}: Amount {1}</value></data>
+  <data name="Aria_SelectInterval" xml:space="preserve"><value>Select interval</value></data>
 </root>
