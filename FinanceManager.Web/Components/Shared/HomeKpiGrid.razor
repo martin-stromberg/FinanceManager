@@ -114,6 +114,7 @@
 
     private List<HomeKpiDto> _kpis = new();
     private Dictionary<Guid, FavKpiData> _favData = new();
+    private Dictionary<Guid, MonthlyBudgetKpiViewModel> _monthlyBudgetKpis = new();
     private HashSet<Guid> _favLoading = new();
     private HashSet<Guid> _kpiMoving = new();
 
@@ -137,6 +138,7 @@
         {
             var list = await Api.HomeKpis_ListAsync();
             _kpis = list.ToList();
+            PruneMonthlyBudgetKpiViewModels();
         }
         catch { }
         StateHasChanged();
@@ -189,6 +191,7 @@
             {
                 _kpis.RemoveAll(k => k.Id == id);
                 _favData.Remove(id);
+                _monthlyBudgetKpis.Remove(id);
             }
         }
         catch { }
@@ -304,7 +307,7 @@
                     builder.OpenComponent(i++, typeof(MonthlyBudgetKpi));
                     builder.AddAttribute(i++, "EditMode", EditMode);
                     builder.AddAttribute(i++, "Title", title);
-                    builder.AddAttribute(i++, "ViewModel", new MonthlyBudgetKpiViewModel());
+                    builder.AddAttribute(i++, "ViewModel", GetMonthlyBudgetKpiViewModel(k.Id));
                     builder.CloseComponent();
                     break;
                 case HomeKpiPredefined.AccountsAggregates:
@@ -494,6 +497,30 @@
         if (k.Kind == HomeKpiKind.ReportFavorite && k.ReportFavoriteId.HasValue)
         {
             Nav.NavigateTo($"/reports/dashboard?favoriteId={k.ReportFavoriteId.Value}&edit=false");
+        }
+    }
+
+    private MonthlyBudgetKpiViewModel GetMonthlyBudgetKpiViewModel(Guid kpiId)
+    {
+        if (!_monthlyBudgetKpis.TryGetValue(kpiId, out var viewModel))
+        {
+            viewModel = new MonthlyBudgetKpiViewModel();
+            _monthlyBudgetKpis[kpiId] = viewModel;
+        }
+
+        return viewModel;
+    }
+
+    private void PruneMonthlyBudgetKpiViewModels()
+    {
+        var activeMonthlyBudgetIds = _kpis
+            .Where(k => k.Kind == HomeKpiKind.Predefined && k.PredefinedType == HomeKpiPredefined.MonthlyBudget)
+            .Select(k => k.Id)
+            .ToHashSet();
+
+        foreach (var id in _monthlyBudgetKpis.Keys.Except(activeMonthlyBudgetIds).ToList())
+        {
+            _monthlyBudgetKpis.Remove(id);
         }
     }
 
