@@ -29,6 +29,8 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     private readonly Dictionary<Guid, string> _entryHints = new();
     // flag to request UI focus on first invalid entry after validation
     private bool _focusFirstInvalidRequested;
+    // id of the row whose BookingDate input should receive focus when quick-edit opens
+    private Guid? _focusQuickEditBookingDateId;
     private readonly HashSet<Guid> _pendingDeleteIds = new();
     private readonly HashSet<Guid> _newEntryIds = new();
     private Guid? _placeholderId;
@@ -145,6 +147,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         }
         AddPlaceholderRow();
         BuildRecords();
+        _focusQuickEditBookingDateId = Items.FirstOrDefault()?.Id;
         return base.BeginQuickEditAsync();
     }
 
@@ -821,6 +824,17 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         _focusFirstInvalidRequested = false;
         if (_entryHints.Count == 0) return null;
         return _entryHints.Keys.FirstOrDefault();
+    }
+
+    /// <summary>
+    /// If quick-edit just opened, returns the id of the first row whose BookingDate input should be focused.
+    /// The request is consumed by the component rendering the list.
+    /// </summary>
+    public Guid? ConsumeFocusQuickEditBookingDate()
+    {
+        var id = _focusQuickEditBookingDateId;
+        _focusQuickEditBookingDateId = null;
+        return id;
     }
 
     /// <summary>
