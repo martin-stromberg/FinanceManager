@@ -294,6 +294,9 @@
   <data name="Ribbon_Group_Navigation" xml:space="preserve">
     <value>Navigieren</value>
   </data>
+  <data name="Ribbon_Group_Bookings" xml:space="preserve">
+    <value>Buchungen</value>
+  </data>
   <data name="Ribbon_OpenPostings" xml:space="preserve">
     <value>Buchungen</value>
   </data>
