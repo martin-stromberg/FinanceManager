@@ -1,0 +1,27 @@
+ERROR: the following .resx files are missing keys that exist in other language files of the same package:
+  FinanceManager.Web\Resources\Components\Pages\PostingsContact.en.resx: Attachments_Title
+  FinanceManager.Web\Resources\Components\Pages\PostingsContact.en.resx: Btn_Close
+  FinanceManager.Web\Resources\Components\Pages\PostingsContact.en.resx: Ribbon_Attachments
+  FinanceManager.Web\Resources\Components\Pages\PostingsContact.en.resx: Ribbon_Group_Linked
+  FinanceManager.Web\Resources\Components\Pages\PostingsContact.en.resx: Ribbon_Group_Related
+  FinanceManager.Web\Resources\Components\Pages\PostingsContact.en.resx: Ribbon_OpenAccount
+  FinanceManager.Web\Resources\Components\Pages\PostingsContact.en.resx: Ribbon_OpenContact
+  FinanceManager.Web\Resources\Components\Pages\PostingsContact.en.resx: Ribbon_OpenSavingsPlan
+  FinanceManager.Web\Resources\Components\Pages\PostingsContact.en.resx: Ribbon_OpenSecurity
+  FinanceManager.Web\Resources\Components\Pages\PostingsSecurity.en.resx: Attachments_Title
+  FinanceManager.Web\Resources\Components\Pages\PostingsSecurity.en.resx: Btn_Close
+  FinanceManager.Web\Resources\Components\Pages\PostingsSecurity.en.resx: Ribbon_Attachments
+  FinanceManager.Web\Resources\Components\Pages\PostingsSecurity.en.resx: Ribbon_Group_Linked
+  FinanceManager.Web\Resources\Components\Pages\PostingsSecurity.en.resx: Ribbon_Group_Related
+  FinanceManager.Web\Resources\Components\Pages\PostingsSecurity.en.resx: Ribbon_OpenAccount
+  FinanceManager.Web\Resources\Components\Pages\PostingsSecurity.en.resx: Ribbon_OpenContact
+  FinanceManager.Web\Resources\Components\Pages\PostingsSecurity.en.resx: Ribbon_OpenSavingsPlan
+  FinanceManager.Web\Resources\Components\Pages\PostingsSecurity.en.resx: Ribbon_OpenSecurity
+  FinanceManager.Web\Resources\Components\Pages\StatementDraftDetail.en.resx: Apply
+  FinanceManager.Web\Resources\Components\Pages\StatementDraftDetail.en.resx: AssignAccount_Title
+  FinanceManager.Web\Resources\Components\Pages\StatementDraftDetail.en.resx: AssignedAccount
+  FinanceManager.Web\Resources\Components\Pages\StatementDraftDetail.en.resx: Btn_AssignAccount
+  FinanceManager.Web\Resources\Components\Pages\StatementDraftDetail.en.resx: Error_AssignFailed
+  FinanceManager.Web\Resources\Components\Pages\StatementDraftDetail.en.resx: Filter
+  FinanceManager.Web\Resources\Components\Pages\StatementDraftDetail.en.resx: NoMatches
+
