@@ -63,7 +63,7 @@
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.22.0" />
     <PackageReference Include="msTools.Updater" Version="0.8.0-rc.1" />
     <PackageReference Include="msTools.Web.Blazor" Version="1.0.0" />
-    <PackageReference Include="PdfPig" Version="0.1.15" />
+    <PackageReference Include="PdfPig" Version="0.1.16" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" />
