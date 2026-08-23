@@ -144,6 +144,16 @@ window.financeManager = window.financeManager || {};
     } catch { }
   };
 
+  fm.quickEdit = {
+    applyValues: function (values) {
+      if (!Array.isArray(values)) return;
+      values.forEach(function (v) {
+        var el = document.getElementById(v.id);
+        if (el) el.value = v.value;
+      });
+    }
+  };
+
   fm.loadingBar = {
     start: startLoadingBar,
     restart: startLoadingBar,

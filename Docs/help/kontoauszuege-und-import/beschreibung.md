@@ -12,6 +12,8 @@ Dateien werden über `StatementDraftsController` hochgeladen (`upload` oder `mas
 
 Im Massenänderungsmodus können editierbare Entwurfszeilen gemeinsam bearbeitet, zum Löschen vorgemerkt oder über die letzte leere Tabellenzeile neu ergänzt werden. Diese Änderungen bleiben zunächst lokal und werden erst beim Speichern des Massenänderungsmodus gemeinsam übernommen.
 
+Im Schnellbearbeitungsmodus einer Kontoauszugdetailansicht können Werte aus der darüberliegenden Zeile übernommen werden, um aufeinanderfolgende, ähnliche Buchungen schneller zu erfassen: Die Taste `F8` im aktuellen Eingabefeld übernimmt den Wert dieses Feldes aus der Zeile darüber. Die Tastenkombination `Strg+F8` übernimmt alle editierbaren Werte der darüberliegenden Zeile in die aktuelle Zeile und überschreibt dabei vorhandene Werte.
+
 Wenn die Klassifizierung keinen vorhandenen Kontakt findet, kann sie die mitgelieferte Liste bekannter Kontakte prüfen. Bei genau einem Treffer wird für den Benutzer automatisch ein Kontakt mit den hinterlegten Alias-Mustern angelegt und der Entwurfszeile zugeordnet. Die Funktion kann in den Einstellungen für den Kontoauszugsimport deaktiviert werden.
 
 Auf mobilen Geräten werden Kontoauszugseinträge als Karten dargestellt. Datum und Betrag stehen dort in einer zweispaltigen Zeile. Bereits gebuchte Einträge erscheinen abgeschwächt, damit offene und erledigte Zeilen unterscheidbar bleiben. Lange Datei- und Textwerte brechen innerhalb der verfügbaren Breite um und erzeugen keine horizontale Seitenverschiebung.
