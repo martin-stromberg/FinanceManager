@@ -2730,4 +2730,61 @@
   <data name="StatementDraft_IsPreliminary" xml:space="preserve">
     <value>Ja</value>
   </data>
+  <data name="Budget_Report_ShowPostings" xml:space="preserve">
+    <value>Buchungen anzeigen</value>
+  </data>
+  <data name="Btn_Edit" xml:space="preserve">
+    <value>Bearbeiten</value>
+  </data>
+  <data name="Completed" xml:space="preserve">
+    <value>Abgeschlossen</value>
+  </data>
+  <data name="Err_MergeFailed" xml:space="preserve">
+    <value>Zusammenführen fehlgeschlagen</value>
+  </data>
+  <data name="General_Title_Contacts" xml:space="preserve">
+    <value>Kontakte</value>
+  </data>
+  <data name="KPI" xml:space="preserve">
+    <value>KPI</value>
+  </data>
+  <data name="Merge_Preference_LABEL" xml:space="preserve">
+    <value>Präferenz</value>
+  </data>
+  <data name="MoveLeft" xml:space="preserve">
+    <value>Nach links</value>
+  </data>
+  <data name="MoveRight" xml:space="preserve">
+    <value>Nach rechts</value>
+  </data>
+  <data name="NoSecurities" xml:space="preserve">
+    <value>Keine Wertpapiere</value>
+  </data>
+  <data name="NoSharedKey" xml:space="preserve">
+    <value>Kein Shared Key</value>
+  </data>
+  <data name="RateLimited" xml:space="preserve">
+    <value>Anfragelimit erreicht</value>
+  </data>
+  <data name="RB_Canceled" xml:space="preserve">
+    <value>Abgebrochen</value>
+  </data>
+  <data name="RB_Completed" xml:space="preserve">
+    <value>Abgeschlossen</value>
+  </data>
+  <data name="Ribbon_ClearPurposePattern" xml:space="preserve">
+    <value>Zweckmuster leeren</value>
+  </data>
+  <data name="Ribbon_Group_Fields" xml:space="preserve">
+    <value>Felder</value>
+  </data>
+  <data name="Ribbon_Retry" xml:space="preserve">
+    <value>Wiederholen</value>
+  </data>
+  <data name="Ribbon_Unblock" xml:space="preserve">
+    <value>Entsperren</value>
+  </data>
+  <data name="Users_Title" xml:space="preserve">
+    <value>Benutzer</value>
+  </data>
 </root>
