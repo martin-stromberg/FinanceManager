@@ -5,6 +5,7 @@
 @using FinanceManager.Shared.Dtos.Statements
 @using System.Linq
 @using System.Collections.Generic
+@using System.Globalization
 @inject IServiceProvider ServiceProvider
 @inject IJSRuntime JS
 
@@ -166,6 +167,61 @@
         // If no translation key format or translation not found, return the original message
         return message;
     }
+
+    private async Task OnKeyDown(KeyboardEventArgs e, Guid id, string field)
+    {
+        if (e.Key != "F8") return;
+        var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
+        if (vm == null) return;
+
+        if (e.CtrlKey)
+        {
+            vm.TakeAllValuesFromAbove(id);
+            var values = new List<object>();
+            foreach (var f in vm.EditableFields)
+            {
+                values.Add(new
+                {
+                    id = GetElementId(id, f),
+                    value = FormatEditValue(vm.GetEditValue(id, f), f)
+                });
+            }
+            await JS.InvokeVoidAsync("financeManager.quickEdit.applyValues", values);
+        }
+        else
+        {
+            vm.TakeValueFromAbove(id, field);
+            await JS.InvokeVoidAsync("financeManager.quickEdit.applyValues", new[]
+            {
+                new
+                {
+                    id = GetElementId(id, field),
+                    value = FormatEditValue(vm.GetEditValue(id, field), field)
+                }
+            });
+        }
+    }
+
+    private string GetElementId(Guid id, string field) => field switch
+    {
+        "BookingDate" => $"qe_booking_{id}",
+        "ValutaDate" => $"qe_valuta_{id}",
+        "Amount" => $"qe_amount_{id}",
+        "BookingDescription" => $"qe_description_{id}",
+        "RecipientName" => $"qe_recipient_{id}",
+        "Subject" => $"qe_subject_{id}",
+        _ => string.Empty
+    };
+
+    private string FormatEditValue(object? value, string field)
+    {
+        if (value == null) return string.Empty;
+        if ((field == "BookingDate" || field == "ValutaDate") && value is DateTime dt)
+            return dt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        if (value is decimal dec)
+            return dec.ToString(CultureInfo.CurrentCulture);
+        return value.ToString() ?? string.Empty;
+    }
 }
 
 @{
@@ -253,7 +309,7 @@ else
                             <input id="qe_booking_@item.Id" type="date" class="form-control form-control-sm" value="@bdInput" @onchange="(ChangeEventArgs e) => {
                                 var s = e?.Value?.ToString() ?? string.Empty;
                                 if (DateTime.TryParse(s, out var dt)) OnDateChanged(new ChangeEventArgs{Value = s}, item.Id); else OnDateChanged(new ChangeEventArgs{Value = null}, item.Id);
-                            }" />
+                            }" @onkeydown='(e) => OnKeyDown(e, item.Id, "BookingDate")' />
                         }
                         else
                         {
@@ -275,7 +331,7 @@ else
                             }
 
                             string inputVal = valDate.HasValue ? valDate.Value.ToString("yyyy-MM-dd") : string.Empty;
-                            <input type="date" class="form-control form-control-sm" value="@inputVal" @onchange="@(e => OnValutaChanged(e, item.Id))" />
+                            <input id="qe_valuta_@item.Id" type="date" class="form-control form-control-sm" value="@inputVal" @onchange="@(e => OnValutaChanged(e, item.Id))" @onkeydown='(e) => OnKeyDown(e, item.Id, "ValutaDate")' />
                         }
                         else
                         {
@@ -287,7 +343,7 @@ else
                     <td style="text-align:right;vertical-align:middle;">
                         @if (editable)
                         {
-                            <input class="form-control form-control-sm text-end" value="@((vm.GetEditValue(item.Id, "Amount") as decimal?)?.ToString())" @oninput="(e) => OnAmountChanged(e, item.Id)" />
+                            <input id="qe_amount_@item.Id" class="form-control form-control-sm text-end" value="@((vm.GetEditValue(item.Id, "Amount") as decimal?)?.ToString())" @oninput="(e) => OnAmountChanged(e, item.Id)" @onkeydown='(e) => OnKeyDown(e, item.Id, "Amount")' />
                         }
                         else
                         {
@@ -299,7 +355,7 @@ else
                     <td style="vertical-align:middle;">
                         @if (editable)
                         {
-                            <input class="form-control form-control-sm" value='@(vm.GetEditValue(item.Id, "BookingDescription") as string ?? item.BookingDescription ?? string.Empty)' @oninput="@(e => OnBookingDescriptionChanged(e, item.Id))" />
+                            <input id="qe_description_@item.Id" class="form-control form-control-sm" value='@(vm.GetEditValue(item.Id, "BookingDescription") as string ?? item.BookingDescription ?? string.Empty)' @oninput="@(e => OnBookingDescriptionChanged(e, item.Id))" @onkeydown='(e) => OnKeyDown(e, item.Id, "BookingDescription")' />
                         }
                         else
                         {
@@ -311,7 +367,7 @@ else
                     <td style="vertical-align:middle;">
                         @if (editable)
                         {
-                            <input class="form-control form-control-sm" value='@(vm.GetEditValue(item.Id, "RecipientName") as string ?? item.RecipientName ?? string.Empty)' @oninput="(e) => OnRecipientChanged(e, item.Id)" />
+                            <input id="qe_recipient_@item.Id" class="form-control form-control-sm" value='@(vm.GetEditValue(item.Id, "RecipientName") as string ?? item.RecipientName ?? string.Empty)' @oninput="(e) => OnRecipientChanged(e, item.Id)" @onkeydown='(e) => OnKeyDown(e, item.Id, "RecipientName")' />
                         }
                         else
                         {
@@ -323,7 +379,7 @@ else
                     <td style="vertical-align:middle;">
                         @if (editable)
                         {
-                            <input class="form-control form-control-sm" value='@(vm.GetEditValue(item.Id, "Subject") as string ?? item.Subject ?? string.Empty)' @oninput="(e) => OnSubjectChanged(e, item.Id)" />
+                            <input id="qe_subject_@item.Id" class="form-control form-control-sm" value='@(vm.GetEditValue(item.Id, "Subject") as string ?? item.Subject ?? string.Empty)' @oninput="(e) => OnSubjectChanged(e, item.Id)" @onkeydown='(e) => OnKeyDown(e, item.Id, "Subject")' />
                         }
                         else
                         {

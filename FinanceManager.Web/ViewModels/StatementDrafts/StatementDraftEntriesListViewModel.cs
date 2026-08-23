@@ -219,6 +219,55 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         RaiseStateChanged();
     }
 
+    /// <summary>
+    /// Copies the value of the given field from the row directly above the
+    /// specified entry into the same field of the specified entry.
+    /// </summary>
+    public void TakeValueFromAbove(Guid entryId, string field)
+    {
+        var idx = -1;
+        for (int i = 0; i < VisibleQuickEditItems.Count; i++)
+        {
+            if (VisibleQuickEditItems[i].Id == entryId)
+            {
+                idx = i;
+                break;
+            }
+        }
+        if (idx <= 0) return;
+        var previous = VisibleQuickEditItems[idx - 1];
+        if (!_editValues.TryGetValue(previous.Id, out var prevMap)) return;
+        if (!prevMap.TryGetValue(field, out var value)) return;
+        SetEditValue(entryId, field, value);
+    }
+
+    /// <summary>
+    /// Copies all editable values from the row directly above the specified
+    /// entry into the corresponding fields of the specified entry.
+    /// </summary>
+    public void TakeAllValuesFromAbove(Guid entryId)
+    {
+        var idx = -1;
+        for (int i = 0; i < VisibleQuickEditItems.Count; i++)
+        {
+            if (VisibleQuickEditItems[i].Id == entryId)
+            {
+                idx = i;
+                break;
+            }
+        }
+        if (idx <= 0) return;
+        var previous = VisibleQuickEditItems[idx - 1];
+        if (!_editValues.TryGetValue(previous.Id, out var prevMap)) return;
+        foreach (var f in EditableFields)
+        {
+            if (prevMap.TryGetValue(f, out var value))
+            {
+                SetEditValue(entryId, f, value);
+            }
+        }
+    }
+
     private static bool PlaceholderHasUserInput(IDictionary<string, object?> map)
         => (map.TryGetValue("BookingDate", out var bd) && bd is DateTime)
            || (map.TryGetValue("ValutaDate", out var vd) && vd is DateTime)
