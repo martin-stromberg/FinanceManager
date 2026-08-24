@@ -8,7 +8,7 @@ Der Bereich verwaltet Wertpapierstammdaten, Kurszeitreihen und Performance-Auswe
 
 ## Funktionsweise
 
-Wertpapiere und Kategorien werden über `SecuritiesController` und `SecurityCategoriesController` gepflegt. Kurse können abgerufen, importiert und nachbefüllt werden. Für die Analyse stehen Endpunkte wie `return-summary`, `return-metrics`, `return-cashflows` und `return-benchmark` bereit.
+Wertpapiere und Kategorien werden in der Wertpapierverwaltung gepflegt. Kurse können abgerufen, importiert und nachbefüllt werden. Die Analyse zeigt Zusammenfassungen, Renditekennzahlen, Zahlungsflüsse und Benchmark-Vergleiche.
 
 AlphaVantage-Kursabrufe verwenden den im Benutzerprofil gespeicherten API Key.
 Ist kein persoenlicher Key vorhanden, kann ein von einem Administrator

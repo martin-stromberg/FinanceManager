@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <Compile Include="..\..\FinanceManager.Web\Services\Help\HelpContentCatalog.cs" Link="Services\Help\HelpContentCatalog.cs" />
     <Compile Include="..\..\FinanceManager.Web\Services\Help\HelpDocumentPathResolver.cs" Link="Services\Help\HelpDocumentPathResolver.cs" />
     <Compile Include="..\..\FinanceManager.Web\Services\Help\HelpLanguages.cs" Link="Services\Help\HelpLanguages.cs" />
     <Compile Include="..\..\FinanceManager.Web\Services\Help\HelpSearchDocumentDto.cs" Link="Services\Help\HelpSearchDocumentDto.cs" />

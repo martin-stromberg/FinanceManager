@@ -36,7 +36,7 @@ Speichern Sie die Änderungen über die Ribbon-Aktion **Speichern**.
 ## Ergebnis
 
 Nach erfolgreichem Speichern sind die Einstellungen persistent gespeichert.  
-Die Endpunkte `/security.txt`, `/.well-known/security.txt`, `/.well-known/security.md` und `/.well-known/security.html` liefern die aktualisierten Inhalte.
+Die öffentlichen Adressen `/security.txt`, `/.well-known/security.txt`, `/.well-known/security.md` und `/.well-known/security.html` liefern die aktualisierten Inhalte.
 
 ## Barrierefreiheit
 

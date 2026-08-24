@@ -1,287 +1,129 @@
 /**
- * Help Pages Search & Navigation
- * Handles loading, searching and displaying help documentation.
+ * Search behavior for the user-facing help hub.
  */
 
 class HelpPageManager {
     constructor() {
-        this.searchIndex = null;
         this.language = this.detectLanguage();
         this.features = [];
         this.featureIdPattern = /^[a-z][a-z0-9-]{0,63}$/;
-        console.log('[HelpPageManager] Initialized with language:', this.language);
         this.init();
     }
 
-    /**
-     * Detects the current language from the document or browser.
-     */
     detectLanguage() {
-        const blazorLang = document.documentElement.getAttribute('data-culture');
-        if (blazorLang) {
-            const result = blazorLang.startsWith('en') ? 'en' : 'de';
-            console.log('[HelpPageManager] Detected language from data-culture:', result);
-            return result;
-        }
-
-        const htmlLang = document.documentElement.lang;
-        if (htmlLang) {
-            const result = htmlLang.startsWith('en') ? 'en' : 'de';
-            console.log('[HelpPageManager] Detected language from html.lang:', result);
-            return result;
-        }
-
-        const navLang = navigator.language || navigator.userLanguage || 'de';
-        const result = navLang.startsWith('en') ? 'en' : 'de';
-        console.log('[HelpPageManager] Detected language from navigator:', result);
-        return result;
+        const culture = document.documentElement.getAttribute('data-culture') || document.documentElement.lang || navigator.language || 'de';
+        return culture.startsWith('en') ? 'en' : 'de';
     }
 
-    /**
-     * Initialize the help page.
-     */
     async init() {
         try {
-            console.log('[HelpPageManager] Initializing...');
             await this.loadSearchIndex();
             this.setupSearch();
-            this.displayAllFeatures();
-            console.log('[HelpPageManager] Initialization complete');
-        } catch (error) {
-            console.error('[HelpPageManager] Error initializing:', error);
-            this.showError(error.message);
+        } catch {
+            this.showError(this.language === 'en'
+                ? 'The help search is currently unavailable.'
+                : 'Die Hilfesuche ist aktuell nicht verfuegbar.');
         }
     }
 
-    /**
-     * Show error message to user.
-     */
-    showError(message) {
-        const featureListDiv = document.getElementById('featureList');
-        if (!featureListDiv) {
-            return;
-        }
-
-        const alert = document.createElement('div');
-        alert.className = 'alert alert-danger';
-
-        const strong = document.createElement('strong');
-        strong.textContent = this.language === 'en' ? 'Error:' : 'Fehler:';
-        alert.append(strong, document.createTextNode(` ${message}`), document.createElement('br'));
-
-        const small = document.createElement('small');
-        small.textContent = this.language === 'en'
-            ? 'Please reload the page.'
-            : 'Bitte versuchen Sie die Seite neu zu laden.';
-        alert.appendChild(small);
-
-        featureListDiv.replaceChildren(alert);
-    }
-
-    /**
-     * Load the search index JSON for current language.
-     */
     async loadSearchIndex() {
-        try {
-            const url = `/api/help/search-index/${this.language}.json`;
-            console.log('[HelpPageManager] Loading search index from:', url);
-
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: Failed to load search index`);
-            }
-
-            const data = await response.json();
-            console.log('[HelpPageManager] Search index loaded:', data);
-
-            this.searchIndex = data;
-            this.features = Array.isArray(data.documents)
-                ? data.documents.filter(f => this.isValidFeature(f))
-                : [];
-            console.log('[HelpPageManager] Loaded', this.features.length, 'documents');
-        } catch (error) {
-            console.error('[HelpPageManager] Error loading search index:', error);
-            this.features = [];
-            throw error;
+        const response = await fetch(`/api/help/search-index/${this.language}.json`);
+        if (!response.ok) {
+            throw new Error('Search index unavailable');
         }
+
+        const data = await response.json();
+        this.features = Array.isArray(data.documents)
+            ? data.documents.filter(feature => this.isValidFeature(feature))
+            : [];
     }
 
-    /**
-     * Setup search input and button handlers.
-     */
     setupSearch() {
         const searchInput = document.getElementById('helpSearch');
         const searchBtn = document.getElementById('searchBtn');
-
-        if (!searchInput) {
-            console.warn('[HelpPageManager] helpSearch input not found');
-            return;
-        }
-        if (!searchBtn) {
-            console.warn('[HelpPageManager] searchBtn not found');
+        if (!searchInput || !searchBtn) {
             return;
         }
 
-        console.log('[HelpPageManager] Setting up search handlers');
-
-        searchInput.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') {
-                console.log('[HelpPageManager] Enter pressed, searching for:', searchInput.value);
+        searchInput.addEventListener('keyup', event => {
+            if (event.key === 'Enter') {
                 this.performSearch(searchInput.value);
             }
         });
 
-        searchBtn.addEventListener('click', () => {
-            console.log('[HelpPageManager] Search button clicked, searching for:', searchInput.value);
-            this.performSearch(searchInput.value);
-        });
+        searchBtn.addEventListener('click', () => this.performSearch(searchInput.value));
 
         let debounceTimer;
-        searchInput.addEventListener('input', (e) => {
+        searchInput.addEventListener('input', event => {
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                if (e.target.value.length >= 2) {
-                    console.log('[HelpPageManager] Auto-complete triggered for:', e.target.value);
-                    this.showAutoComplete(e.target.value);
-                }
-            }, 300);
+            debounceTimer = setTimeout(() => this.performSearch(event.target.value), 200);
         });
     }
 
-    /**
-     * Show auto-complete suggestions (top 3).
-     */
-    showAutoComplete(query) {
-        const results = this.searchFeatures(query).slice(0, 3);
-        console.log('[HelpPageManager] Auto-complete results:', results);
-    }
-
-    /**
-     * Perform full search.
-     */
     performSearch(query) {
         const searchResultsDiv = document.getElementById('searchResults');
         const featureListDiv = document.getElementById('featureList');
-
         if (!searchResultsDiv || !featureListDiv) {
             return;
         }
 
-        if (!query || query.length < 2) {
-            console.log('[HelpPageManager] Search query too short, showing all features');
+        const normalizedQuery = (query || '').trim();
+        if (normalizedQuery.length < 2) {
             searchResultsDiv.classList.add('d-none');
             featureListDiv.classList.remove('d-none');
+            searchResultsDiv.replaceChildren();
             return;
         }
 
-        const results = this.searchFeatures(query);
-        console.log('[HelpPageManager] Search found', results.length, 'results for:', query);
-
-        if (results.length === 0) {
-            searchResultsDiv.replaceChildren(this.createAlert(
-                'alert alert-warning',
-                this.language === 'en' ? 'No results found' : 'Keine Ergebnisse gefunden'));
-        } else {
-            searchResultsDiv.replaceChildren(this.renderResults(results));
-        }
+        const results = this.searchFeatures(normalizedQuery);
+        searchResultsDiv.replaceChildren(results.length === 0
+            ? this.createAlert('alert alert-warning', this.language === 'en' ? 'No matching help topics found.' : 'Keine passenden Hilfethemen gefunden.')
+            : this.renderResults(results));
 
         featureListDiv.classList.add('d-none');
         searchResultsDiv.classList.remove('d-none');
     }
 
-    /**
-     * Search features by query.
-     */
     searchFeatures(query) {
-        if (!this.features || this.features.length === 0) {
-            console.warn('[HelpPageManager] No features loaded');
-            return [];
-        }
-
         const q = query.toLowerCase();
-        return this.features.filter(f =>
-            f.title.toLowerCase().includes(q) ||
-            f.excerpt.toLowerCase().includes(q) ||
-            f.keywords.some(k => k.toLowerCase().includes(q)));
+        return this.features.filter(feature =>
+            feature.title.toLowerCase().includes(q) ||
+            feature.excerpt.toLowerCase().includes(q) ||
+            feature.keywords.some(keyword => keyword.toLowerCase().includes(q)));
     }
 
-    /**
-     * Display all features (hub view).
-     */
-    displayAllFeatures() {
-        const featureListDiv = document.getElementById('featureList');
-        if (!featureListDiv) {
-            console.warn('[HelpPageManager] featureList div not found');
-            return;
-        }
-
-        console.log('[HelpPageManager] Displaying', this.features.length, 'features');
-
-        if (this.features.length === 0) {
-            featureListDiv.replaceChildren(this.createAlert(
-                'alert alert-warning',
-                this.language === 'en' ? 'No documentation available' : 'Keine Dokumentation verfügbar'));
-            return;
-        }
-
-        featureListDiv.replaceChildren(this.renderResults(this.features));
-    }
-
-    /**
-     * Render feature results as cards.
-     */
     renderResults(features) {
-        const row = document.createElement('div');
-        row.className = 'row';
+        const grid = document.createElement('div');
+        grid.className = 'help-topic-grid';
 
         for (const feature of features) {
-            row.appendChild(this.createFeatureCard(feature));
+            grid.appendChild(this.createFeatureCard(feature));
         }
 
-        return row;
+        return grid;
     }
 
     createFeatureCard(feature) {
-        const column = document.createElement('div');
-        column.className = 'col-md-6 col-lg-4 mb-3';
+        const card = document.createElement('a');
+        card.className = 'help-topic-card';
+        card.href = `/help/view/${encodeURIComponent(feature.id)}`;
 
-        const card = document.createElement('div');
-        card.className = 'card feature-card feature-card-action h-100';
-        card.tabIndex = 0;
-        card.setAttribute('role', 'button');
-        card.addEventListener('click', () => this.openFeature(this.language, feature.id));
-        card.addEventListener('keydown', event => {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                this.openFeature(this.language, feature.id);
-            }
-        });
+        const label = document.createElement('span');
+        label.className = 'help-topic-card-label';
+        label.textContent = this.language === 'en' ? 'Guide' : 'Anleitung';
 
-        const body = document.createElement('div');
-        body.className = 'card-body';
-
-        const title = document.createElement('h5');
-        title.className = 'card-title';
+        const title = document.createElement('h3');
         title.textContent = feature.title;
 
         const excerpt = document.createElement('p');
-        excerpt.className = 'card-text text-muted small';
         excerpt.textContent = feature.excerpt;
 
-        body.append(title, excerpt);
+        const action = document.createElement('span');
+        action.className = 'help-topic-card-action';
+        action.textContent = this.language === 'en' ? 'Open topic' : 'Thema oeffnen';
 
-        const footer = document.createElement('div');
-        footer.className = 'card-footer bg-transparent border-top-0';
-
-        const footerText = document.createElement('small');
-        footerText.className = 'text-primary';
-        footerText.textContent = this.language === 'en' ? 'Read more' : 'Mehr erfahren';
-        footer.prepend(document.createTextNode('→ '));
-        footer.appendChild(footerText);
-
-        card.append(body, footer);
-        column.appendChild(card);
-        return column;
+        card.append(label, title, excerpt, action);
+        return card;
     }
 
     createAlert(className, message) {
@@ -291,6 +133,16 @@ class HelpPageManager {
         return alert;
     }
 
+    showError(message) {
+        const searchResultsDiv = document.getElementById('searchResults');
+        if (!searchResultsDiv) {
+            return;
+        }
+
+        searchResultsDiv.replaceChildren(this.createAlert('alert alert-warning', message));
+        searchResultsDiv.classList.remove('d-none');
+    }
+
     isValidFeature(feature) {
         return feature
             && typeof feature.id === 'string'
@@ -298,32 +150,14 @@ class HelpPageManager {
             && typeof feature.title === 'string'
             && typeof feature.excerpt === 'string'
             && Array.isArray(feature.keywords)
-            && feature.keywords.every(k => typeof k === 'string');
-    }
-
-    /**
-     * Navigate to feature documentation (via Blazor route).
-     */
-    openFeature(language, featureId) {
-        const normalizedFeatureId = typeof featureId === 'string'
-            ? featureId.toLowerCase()
-            : '';
-        if (!this.featureIdPattern.test(normalizedFeatureId)) {
-            console.warn('[HelpPageManager] Blocked invalid feature id:', featureId);
-            return;
-        }
-
-        console.log('[HelpPageManager] Opening feature:', language, normalizedFeatureId);
-        window.location.assign(`/help/view/${encodeURIComponent(normalizedFeatureId)}`);
+            && feature.keywords.every(keyword => typeof keyword === 'string');
     }
 }
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        console.log('[HelpPageManager] DOM loaded, creating manager');
         window.helpPageManager = new HelpPageManager();
     });
 } else {
-    console.log('[HelpPageManager] DOM already loaded, creating manager');
     window.helpPageManager = new HelpPageManager();
 }

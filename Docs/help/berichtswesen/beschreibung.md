@@ -8,7 +8,7 @@ Das Berichtswesen liefert aggregierte Finanzdaten für Dashboards und wiederverw
 
 ## Funktionsweise
 
-Die Seite `/reports` zeigt gespeicherte Favoriten und öffnet Dashboards über `/reports/dashboard`. Technisch werden die Daten über `ReportsController` und `HomeKpisController` geliefert. Filter, Intervalle, Vergleichsoptionen und Entitätsbezüge werden in den Favoriten persistiert.
+Die Berichteseite zeigt gespeicherte Favoriten und öffnet daraus Dashboards. Filter, Intervalle, Vergleichsoptionen und Bezüge zu Konten, Kontakten oder Wertpapieren werden in den Favoriten gespeichert und beim erneuten Öffnen wieder angewendet.
 
 Im Report-Dashboard können Anwender Vergleichsspalten wie Vorperiode, Vorjahr und bei Dividendenanalysen die Hochrechnung aktivieren. Die Option `Hochrechnung` steht nur für reine Wertpapierberichte zur Verfügung. Sie ergänzt die Ergebnistabelle direkt nach `Betrag` um eine Spalte mit dem erwarteten Dividendenbetrag des Betrachtungszeitraums.
 

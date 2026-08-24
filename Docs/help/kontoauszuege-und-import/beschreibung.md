@@ -8,7 +8,7 @@ Der Bereich importiert Kontoauszugsdateien, erstellt daraus Entwürfe und verbuc
 
 ## Funktionsweise
 
-Dateien werden über `StatementDraftsController` hochgeladen (`upload` oder `mass-import`). Danach folgen Klassifizierung, Validierung und optionale Nachbearbeitung pro Zeile (Kontakt, Sparplan, Wertpapier, Split, Kostenneutralität). Abschließend wird über `book` oder `book-all` verbucht.
+Dateien werden hochgeladen und als Entwürfe vorbereitet. Danach folgen Klassifizierung, Validierung und optionale Nachbearbeitung pro Zeile, zum Beispiel Kontakt, Sparplan, Wertpapier, Split oder Kostenneutralität. Abschließend werden einzelne oder mehrere geprüfte Entwurfszeilen verbucht.
 
 Im Massenänderungsmodus können editierbare Entwurfszeilen gemeinsam bearbeitet, zum Löschen vorgemerkt oder über die letzte leere Tabellenzeile neu ergänzt werden. Diese Änderungen bleiben zunächst lokal und werden erst beim Speichern des Massenänderungsmodus gemeinsam übernommen.
 

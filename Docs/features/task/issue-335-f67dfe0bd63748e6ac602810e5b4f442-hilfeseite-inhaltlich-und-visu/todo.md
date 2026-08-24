@@ -17,8 +17,8 @@ Branch: `task/issue-335-f67dfe0bd63748e6ac602810e5b4f442-hilfeseite-inhaltlich-u
 | [ ] | 8 | Code-Review (Unteragent) | `review-code.md` |
 | [ ] | 8b | Tests ausfuehren (Unteragent) | `test-results.md` |
 | [ ] | - | Iteration oder Abschluss entscheiden | - |
-| [ ] | 8a | Folgeaufgaben dokumentieren (bei Schleifenabbruch) | `continue.md` |
-| [ ] | 9 | Dokumentation erstellen (Unteragent) | `docs/help/` |
-| [ ] | 9b | README aktualisieren (Unteragent) | `README.md` |
+| [x] | 8a | Folgeaufgaben dokumentieren (bei Schleifenabbruch) | `continue.md` |
+| [x] | 9 | Dokumentation erstellen (Unteragent) | `docs/help/` |
+| [x] | 9b | README aktualisieren (Unteragent) | `README.md` |
 | [ ] | - | Feature-Verzeichnis loeschen | - |
 | [ ] | - | Commit durchfuehren | - |

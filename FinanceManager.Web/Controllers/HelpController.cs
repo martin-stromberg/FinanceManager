@@ -100,7 +100,8 @@ public partial class HelpController : ControllerBase
             }
 
             var selectedFile = HelpDocumentPathResolver.FindMarkdownFile(docsPath, normalizedLanguage, normalizedHelpPath);
-            if (selectedFile is null)
+            if (selectedFile is null
+                || !HelpContentCatalog.TryResolveDocument(docsPath, normalizedLanguage, normalizedHelpPath, out _, out _, out _))
             {
                 _logger.LogWarning("No markdown files found for: {HelpPath}", normalizedHelpPath);
                 return NotFound("Documentation not found");
@@ -205,7 +206,7 @@ public partial class HelpController : ControllerBase
         document = default!;
 
         if (!TryGetSafeString(item, "id", 64, out var id)
-            || !TryNormalizeFeatureId(id, out var normalizedId)
+            || !HelpContentCatalog.TryGetTopic(id, out var topic)
             || !TryGetSafeString(item, "title", 200, out var title)
             || !TryGetSafeString(item, "excerpt", 1000, out var excerpt))
         {
@@ -237,7 +238,7 @@ public partial class HelpController : ControllerBase
             }
         }
 
-        document = new HelpSearchDocumentDto(normalizedId, title.Trim(), excerpt.Trim(), keywords);
+        document = new HelpSearchDocumentDto(topic.Id, title.Trim(), excerpt.Trim(), keywords);
         return true;
     }
 

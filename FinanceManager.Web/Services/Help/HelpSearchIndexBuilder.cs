@@ -37,28 +37,22 @@ public static partial class HelpSearchIndexBuilder
         }
 
         var documents = new List<HelpSearchDocumentDto>();
-        foreach (var directory in Directory.EnumerateDirectories(docsPath).OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase))
+        foreach (var topic in HelpContentCatalog.Topics.OrderBy(topic => topic.Title, StringComparer.OrdinalIgnoreCase))
         {
-            var featureId = Path.GetFileName(directory).ToLowerInvariant();
-            if (!TryNormalizeFeatureId(featureId, out var normalizedFeatureId))
+            var primaryFile = HelpDocumentPathResolver.FindMarkdownFile(docsPath, normalizedLanguage, topic.Id);
+            if (primaryFile is null || includeMarkdown?.Invoke(primaryFile) == false)
             {
                 continue;
             }
 
-            var indexFile = HelpDocumentPathResolver.FindMarkdownFile(docsPath, normalizedLanguage, normalizedFeatureId);
-            if (indexFile is null || includeMarkdown?.Invoke(indexFile) == false)
-            {
-                continue;
-            }
-
-            var markdown = File.ReadAllText(indexFile, Encoding.UTF8);
-            var title = ExtractTitle(markdown, normalizedFeatureId);
-            var excerpt = ExtractExcerpt(markdown);
+            var markdown = File.ReadAllText(primaryFile, Encoding.UTF8);
+            var title = topic.Title;
+            var excerpt = string.IsNullOrWhiteSpace(topic.Description) ? ExtractExcerpt(markdown) : topic.Description;
             documents.Add(new HelpSearchDocumentDto(
-                normalizedFeatureId,
+                topic.Id,
                 title,
                 excerpt,
-                BuildKeywords(normalizedFeatureId, title)));
+                BuildKeywords(topic, markdown)));
         }
 
         return new HelpSearchIndexDto(documents);
@@ -111,11 +105,16 @@ public static partial class HelpSearchIndexBuilder
         return "Dokumentation";
     }
 
-    private static IReadOnlyList<string> BuildKeywords(string featureId, string title)
+    private static IReadOnlyList<string> BuildKeywords(HelpTopic topic, string markdown)
     {
-        return featureId
+        var markdownTitle = ExtractTitle(markdown, topic.Id);
+
+        return topic.Id
             .Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Concat(title.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Concat(topic.Title.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Concat(topic.Description.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Concat(markdownTitle.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Concat(topic.Documents.SelectMany(document => document.Title.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)))
             .Select(keyword => NormalizeSearchText(keyword, 80).ToLowerInvariant())
             .Where(keyword => keyword.Length > 1)
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -143,15 +142,6 @@ public static partial class HelpSearchIndexBuilder
             yield return line;
         }
     }
-
-    private static bool TryNormalizeFeatureId(string? featureId, out string normalizedFeatureId)
-    {
-        normalizedFeatureId = (featureId ?? string.Empty).Trim().ToLowerInvariant();
-        return FeatureIdRegex().IsMatch(normalizedFeatureId);
-    }
-
-    [GeneratedRegex("^[a-z][a-z0-9-]{0,63}$", RegexOptions.Compiled)]
-    private static partial Regex FeatureIdRegex();
 
     [GeneratedRegex(@"^---\s*[\r\n][\s\S]*?[\r\n]---\s*[\r\n]?", RegexOptions.Compiled)]
     private static partial Regex FrontmatterRegex();
