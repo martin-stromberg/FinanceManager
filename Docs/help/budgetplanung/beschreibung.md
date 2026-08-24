@@ -8,7 +8,7 @@ Die Budgetplanung definiert erwartete Beträge pro Zeitraum und vergleicht diese
 
 ## Funktionsweise
 
-Budgetkategorien und Verwendungszwecke strukturieren das Budget. Regeln (`BudgetRule`) steuern Intervall, Start/Ende, Beträge und optional Muster auf den Verwendungszweck. Überschreibungen (`BudgetOverride`) erlauben gezielte Korrekturen. Berichte werden über `BudgetReportsController` erzeugt.
+Budgetkategorien und Verwendungszwecke strukturieren das Budget. Regeln steuern Zeitraum, Start, Ende, Beträge und optional Muster auf den Verwendungszweck. Überschreibungen erlauben gezielte Korrekturen. Berichte zeigen Sollwerte, Istwerte und Abweichungen je Zeitraum.
 
 Verwendungszwecke besitzen eine Budgetwertungsart. `Exakte Buchungen` ist der Standard und wertet nur passende Buchungen mit dem Vorzeichen des Budgetpostens. `Gesamtbudget` wertet alle passenden Buchungen gemeinsam, unabhaengig vom Vorzeichen, und saldiert sie zum Istwert.
 

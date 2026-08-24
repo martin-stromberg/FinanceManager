@@ -8,7 +8,7 @@ Der Bereich verwaltet Dateien und URLs als Anhänge zu Fachobjekten (z. B. Konta
 
 ## Funktionsweise
 
-Anhänge werden über `AttachmentsController` bereitgestellt. Neben Datei-Upload und Download sind Metadatenpflege, Kategorisierung und Symbolzuordnungen möglich. Symbolanhänge können als Bilddateien, einschließlich sicherer SVG-Dateien, hochgeladen und in der Oberfläche angezeigt werden.
+Anhänge können als Datei, Link oder Referenz zu Buchungen und anderen Einträgen abgelegt werden. Neben Upload und Download sind Metadatenpflege, Kategorisierung und Symbolzuordnungen möglich. Symbolanhänge können als Bilddateien, einschließlich sicherer SVG-Dateien, hochgeladen und in der Oberfläche angezeigt werden.
 
 ## Beispiele
 

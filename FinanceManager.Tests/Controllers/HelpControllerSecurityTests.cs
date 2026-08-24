@@ -27,7 +27,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
     {
         var docsPath = Path.Combine(_root, "Docs", "help", "konten-und-buchungen");
         Directory.CreateDirectory(docsPath);
-        await File.WriteAllTextAsync(Path.Combine(docsPath, "index.md"), """
+        await File.WriteAllTextAsync(Path.Combine(docsPath, "beschreibung.md"), """
             ---
             title: Test
             ---
@@ -63,10 +63,10 @@ public sealed class HelpControllerSecurityTests : IDisposable
     [Fact]
     public async Task GetMarkdown_WithRealValidatorBlocksManipulatedMarkdown()
     {
-        var markdownPath = Path.Combine(_root, "Docs", "help", "budgetplanung", "index.md");
+        var markdownPath = Path.Combine(_root, "Docs", "help", "budgetplanung", "beschreibung.md");
         Directory.CreateDirectory(Path.GetDirectoryName(markdownPath)!);
         await File.WriteAllTextAsync(markdownPath, "# Budgetplanung");
-        await WriteManifestAsync(("../Docs/help/budgetplanung/index.md", markdownPath));
+        await WriteManifestAsync(("../Docs/help/budgetplanung/beschreibung.md", markdownPath));
 
         var controller = CreateControllerWithRealValidator();
         var initialResult = await controller.GetMarkdown("de", "budgetplanung");
@@ -83,7 +83,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
     [Fact]
     public async Task GetMarkdown_WithRealValidatorBlocksWhenManifestIsMissing()
     {
-        var markdownPath = Path.Combine(_root, "Docs", "help", "budgetplanung", "index.md");
+        var markdownPath = Path.Combine(_root, "Docs", "help", "budgetplanung", "beschreibung.md");
         Directory.CreateDirectory(Path.GetDirectoryName(markdownPath)!);
         await File.WriteAllTextAsync(markdownPath, "# Budgetplanung");
 
@@ -95,7 +95,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
     [Fact]
     public async Task GetMarkdown_WithRealValidatorSanitizesNestedTablesCodeAndLinks()
     {
-        var markdownPath = Path.Combine(_root, "Docs", "help", "budgetplanung", "index.md");
+        var markdownPath = Path.Combine(_root, "Docs", "help", "budgetplanung", "beschreibung.md");
         Directory.CreateDirectory(Path.GetDirectoryName(markdownPath)!);
         await File.WriteAllTextAsync(markdownPath, """
             # Budgetplanung
@@ -109,7 +109,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
             <script>alert(1)</script>
             ```
             """);
-        await WriteManifestAsync(("../Docs/help/budgetplanung/index.md", markdownPath));
+        await WriteManifestAsync(("../Docs/help/budgetplanung/beschreibung.md", markdownPath));
 
         var result = await CreateControllerWithRealValidator().GetMarkdown("de", "budgetplanung");
         var content = Assert.IsType<ContentResult>(result);
@@ -120,6 +120,19 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Assert.Contains("&lt;script&gt;alert(1)&lt;/script&gt;", content.Content);
         Assert.DoesNotContain("javascript:", content.Content, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("<img", content.Content, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GetMarkdown_ReturnsNotFoundForTechnicalOnlyDocument()
+    {
+        var docsPath = Path.Combine(_root, "Docs", "help", "budgetplanung");
+        Directory.CreateDirectory(docsPath);
+        await File.WriteAllTextAsync(Path.Combine(docsPath, "beschreibung.md"), "# Budgetplanung");
+        await File.WriteAllTextAsync(Path.Combine(docsPath, "api.md"), "# API");
+
+        var result = await CreateController().GetMarkdown("de", "budgetplanung/api");
+
+        Assert.IsType<NotFoundObjectResult>(result);
     }
 
     [Theory]
@@ -179,7 +192,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(helpPath, "search-index.json"), """
             {
               "documents": [
-                { "id": "f001", "title": "Konten", "excerpt": "Sicher", "keywords": ["konto"] },
+                { "id": "konten-und-buchungen", "title": "Konten", "excerpt": "Sicher", "keywords": ["konto"] },
                 { "id": "javascript:alert(1)", "title": "Bad", "excerpt": "Bad", "keywords": [] },
                 { "id": "f002", "title": "<img src=x>", "excerpt": "Text", "keywords": ["x"] }
               ]
@@ -191,7 +204,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
         var documents = GetDocuments(ok.Value);
 
         var document = Assert.Single(documents);
-        Assert.Equal("f001", GetProperty<string>(document, "Id"));
+        Assert.Equal("konten-und-buchungen", GetProperty<string>(document, "Id"));
         Assert.Equal("Konten", GetProperty<string>(document, "Title"));
     }
 

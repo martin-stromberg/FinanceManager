@@ -52,6 +52,12 @@ Hinweise:
 ### Help-Dokumentation und Sicherheit
 
 - Help ist unter `/help` verfügbar; die Markdown-Quellen liegen unter `Docs/help/`.
+- Sichtbare Themen, Suche und Detailseiten verwenden ausschließlich den
+  redaktionellen Katalog in `FinanceManager.Web/Services/Help/HelpContentCatalog.cs`.
+  Die freigegebenen Dateien und der Änderungsablauf sind in
+  [Docs/maintenance/help-content-publishing.md](Docs/maintenance/help-content-publishing.md)
+  dokumentiert; technische Markdown-Dateien bleiben im Repository, werden aber
+  nicht als Anwenderhilfe veröffentlicht.
 - Help-Markdown wird über einen Whitelist-Renderer ausgegeben. Rohes HTML, Skripte,
   Inline-Handler und unsichere Linkziele sind kein unterstütztes Format.
 - Für Help-Seiten und Help-Assets gilt eine restriktive CSP. Der Build erzeugt

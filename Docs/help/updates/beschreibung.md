@@ -11,7 +11,7 @@ Das Update-System automatisiert die Erkennung, den Download und die Installation
 Das System arbeitet in vier Phasen:
 
 ### 1. Automatische Prüfung (täglich)
-Der `UpdateOrchestrator` prüft einmal täglich, ob ein neueres Release im definierten GitHub-Repository verfügbar ist. Die Prüfung ist nur im konfigurierten Zeitfenster erlaubt; Standard ist `20:00` bis `06:00`, also ein Fenster über Mitternacht. Standardmäßig werden nur stabile Releases berücksichtigt. Wenn die Einstellung **Vorabversionen berücksichtigen** aktiviert ist, werden auch GitHub-Prereleases in die Prüfung einbezogen. Die Prüfung läuft im Hintergrund und schreibt den Status in eine lokal gespeicherte `status.json`-Datei.
+Die Anwendung prüft einmal täglich, ob ein neueres Release verfügbar ist. Die Prüfung ist nur im konfigurierten Zeitfenster erlaubt; Standard ist `20:00` bis `06:00`, also ein Fenster über Mitternacht. Standardmäßig werden nur stabile Releases berücksichtigt. Wenn die Einstellung **Vorabversionen berücksichtigen** aktiviert ist, werden auch Vorabversionen in die Prüfung einbezogen. Die Prüfung läuft im Hintergrund und aktualisiert den angezeigten Status.
 
 ### 2. Download vorbereiten
 Sobald eine neuere Version erkannt wird, wird das entsprechende Asset (`.zip`-Archiv für die aktuelle Plattform) heruntergeladen und validiert. Der Status wird auf `Ready` gesetzt.
@@ -26,17 +26,6 @@ Der Administrator startet die Installation über das Ribbon der Setup-Seite und 
 
 ### 4. Validierung nach Neustart
 Nach dem Neustart prüft das System, dass die neue Version tatsächlich geladen wurde. Stimmt die erkannte Version mit der Zielversion überein, ist das Update erfolgreich; andernfalls wird ein Fehler protokolliert.
-
-## Key-Komponenten
-
-| Komponente | Zweck |
-|------------|-------|
-| `UpdateOrchestrator` | Zentrale Orchestrierung: Lock-Verwaltung, Manifest-Abfragen, Installer-Aufruf |
-| `UpdateExecutor` | Ausführung des Installer-Prozesses mit Lock-Management |
-| `UpdateFileStore` | Persistierung von Lock-Dateien und Status-JSON |
-| `SetupUpdateTab.razor` | Web-UI für Administrator (editierbare Update-Einstellungen, Status, Release-Informationen, Service-Autocomplete) |
-| `SetupUpdateViewModel` | ViewModel mit Polling-Logik für Live-Status-Updates während Installation |
-| `msTools.Updater v0.3.0` | Vendored Updater-Komponente mit Unterstützung für stabile Releases und optional aktivierte Vorabversionen |
 
 ## Bedienung in der Setup-Oberfläche
 
@@ -55,7 +44,7 @@ Der Service-Name bietet Autocomplete-Vorschläge aus den Diensten des aktuellen 
 
 Die Aktionen **Jetzt prüfen**, **Update installieren** und **Update-Lock zurücksetzen** sind im Ribbon der Setup-Seite verfügbar. **Update installieren** ist nur aktiv, wenn der Status `Ready` ist; **Update-Lock zurücksetzen** ist nur aktiv, wenn ein Lock gemeldet wird. Wenn der Reset nicht möglich ist, zeigt die UI den konkreten Grund an, z. B. dass kein aktiver Lock vorhanden ist, der Lock noch nicht alt genug ist, die Lock-Datei nicht entfernt werden konnte oder ein technischer Reset-Fehler aufgetreten ist.
 
-Die technischen Werte `RepositoryOwner`, `RepositoryName`, `ManifestAssetName`, `WorkingDirectory`, `ExecutablePath` und `HealthTimeoutSeconds` werden Anwendern nicht mehr als Eingabefelder angezeigt. Beim Speichern normalisiert der Server Repository, Manifest und Arbeitsverzeichnis auf die festen Werte der Anwendung; der Health-Timeout kommt aus der Serverkonfiguration mit Fallback `120` Sekunden.
+Technische Update-Werte werden Anwendern nicht mehr als Eingabefelder angezeigt. Die Oberfläche beschränkt sich auf die betrieblichen Einstellungen, die Administratoren im Alltag benötigen.
 
 ## Beispiele
 
