@@ -60,8 +60,14 @@ public sealed class HelpAssetIntegrityValidator : IHelpAssetIntegrityValidator
         var manifestPath = Path.Combine(_environment.WebRootPath, ManifestRelativePath);
         if (!File.Exists(manifestPath))
         {
-            _logger.LogWarning("Help asset manifest not found at {ManifestPath}", manifestPath);
-            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var outputManifestPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", ManifestRelativePath);
+            if (!File.Exists(outputManifestPath))
+            {
+                _logger.LogWarning("Help asset manifest not found at {ManifestPath}", manifestPath);
+                return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            manifestPath = outputManifestPath;
         }
 
         var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -86,6 +92,16 @@ public sealed class HelpAssetIntegrityValidator : IHelpAssetIntegrityValidator
 
     private string GetManifestKey(string fullPath)
     {
+        var outputWebRootPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "wwwroot"));
+        if (Path.GetRelativePath(outputWebRootPath, fullPath) is { } outputWebRootRelativePath
+            && !outputWebRootRelativePath.Equals("..", StringComparison.Ordinal)
+            && !outputWebRootRelativePath.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+            && !outputWebRootRelativePath.StartsWith($"..{Path.AltDirectorySeparatorChar}", StringComparison.Ordinal)
+            && !Path.IsPathRooted(outputWebRootRelativePath))
+        {
+            return NormalizeManifestPath(Path.Combine("wwwroot", outputWebRootRelativePath));
+        }
+
         var webRootPath = Path.GetFullPath(_environment.WebRootPath);
         if (Path.GetRelativePath(webRootPath, fullPath) is { } webRootRelativePath
             && !webRootRelativePath.Equals("..", StringComparison.Ordinal)

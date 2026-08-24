@@ -149,7 +149,7 @@ public partial class HelpController : ControllerBase
                 return BadRequest("Invalid language parameter");
             }
 
-            var filePath = Path.Combine(_env.WebRootPath, "help", normalizedLanguage, "search-index.json");
+            var filePath = ResolveWebRootFile("help", normalizedLanguage, "search-index.json");
 
             if (!System.IO.File.Exists(filePath))
             {
@@ -266,6 +266,17 @@ public partial class HelpController : ControllerBase
     private static bool TryNormalizeLanguage(string? language, out string normalizedLanguage)
     {
         return HelpLanguages.TryNormalize(language, out normalizedLanguage);
+    }
+
+    private string ResolveWebRootFile(params string[] pathSegments)
+    {
+        var webRootPath = Path.Combine(new[] { _env.WebRootPath }.Concat(pathSegments).ToArray());
+        if (System.IO.File.Exists(webRootPath))
+        {
+            return webRootPath;
+        }
+
+        return Path.Combine(new[] { Path.Combine(AppContext.BaseDirectory, "wwwroot") }.Concat(pathSegments).ToArray());
     }
 
     private static bool TryNormalizeFeatureId(string? featureId, out string normalizedFeatureId)

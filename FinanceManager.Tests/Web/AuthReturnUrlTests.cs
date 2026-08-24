@@ -28,6 +28,8 @@ public sealed class AuthReturnUrlTests
     [InlineData("/login")]
     [InlineData("/login?returnUrl=/reports")]
     [InlineData("/register")]
+    [InlineData("/help")]
+    [InlineData("/help/view/konten-und-buchungen")]
     [InlineData("/error")]
     [InlineData("/api/user/settings/profile")]
     public void Validate_ShouldRejectUnsafeOrPublicTargets(string? input)
