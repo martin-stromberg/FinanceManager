@@ -122,25 +122,14 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Assert.DoesNotContain("<img", content.Content, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
-    public async Task GetSearchIndex_GeneratesDocumentsFromDocsHelpWhenStaticIndexIsMissing()
+    [Theory]
+    [InlineData("de")]
+    [InlineData("en")]
+    public async Task GetSearchIndex_ReturnsNotFoundWhenStaticIndexIsMissing(string language)
     {
-        var docsPath = Path.Combine(_root, "Docs", "help", "budgetplanung");
-        Directory.CreateDirectory(docsPath);
-        await File.WriteAllTextAsync(Path.Combine(docsPath, "index.md"), """
-            # Budgetplanung
+        var result = await CreateController().GetSearchIndex(language);
 
-            Budgets planen und Auswertungen vorbereiten.
-            """);
-
-        var result = await CreateController().GetSearchIndex("de");
-        var ok = Assert.IsType<OkObjectResult>(result);
-        var documents = GetDocuments(ok.Value);
-
-        var document = Assert.Single(documents);
-        Assert.Equal("budgetplanung", GetProperty<string>(document, "Id"));
-        Assert.Equal("Budgetplanung", GetProperty<string>(document, "Title"));
-        Assert.Equal("Budgets planen und Auswertungen vorbereiten.", GetProperty<string>(document, "Excerpt"));
+        Assert.IsType<NotFoundObjectResult>(result);
     }
 
     [Fact]

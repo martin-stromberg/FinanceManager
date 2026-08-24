@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\FinanceManager.Web\Services\Help\HelpLanguages.props" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <Compile Include="..\..\FinanceManager.Web\Services\Help\HelpDocumentPathResolver.cs" Link="Services\Help\HelpDocumentPathResolver.cs" />
+    <Compile Include="..\..\FinanceManager.Web\Services\Help\HelpLanguages.cs" Link="Services\Help\HelpLanguages.cs" />
+    <Compile Include="..\..\FinanceManager.Web\Services\Help\HelpSearchDocumentDto.cs" Link="Services\Help\HelpSearchDocumentDto.cs" />
+    <Compile Include="..\..\FinanceManager.Web\Services\Help\HelpSearchIndexBuilder.cs" Link="Services\Help\HelpSearchIndexBuilder.cs" />
+    <Compile Include="..\..\FinanceManager.Web\Services\Help\HelpSearchIndexDto.cs" Link="Services\Help\HelpSearchIndexDto.cs" />
+  </ItemGroup>
+
+  <Target Name="GenerateHelpLanguagesSource" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <_GeneratedHelpLanguagesPath>$(IntermediateOutputPath)HelpLanguages.g.cs</_GeneratedHelpLanguagesPath>
+      <_EscapedHelpSupportedLanguages>$([MSBuild]::Escape('$(HelpSupportedLanguages)'))</_EscapedHelpSupportedLanguages>
+    </PropertyGroup>
+    <ItemGroup>
+      <Compile Include="$(_GeneratedHelpLanguagesPath)" />
+    </ItemGroup>
+    <WriteLinesToFile
+      File="$(_GeneratedHelpLanguagesPath)"
+      Lines="namespace FinanceManager.Web.Services.Help%3B public static partial class HelpLanguages { private const string GeneratedDefaultLanguage = &quot;$(HelpDefaultLanguage)&quot;%3B private const string SupportedLanguageCodes = &quot;$(_EscapedHelpSupportedLanguages)&quot;%3B }"
+      Overwrite="true"
+      Encoding="UTF-8" />
+  </Target>
+</Project>

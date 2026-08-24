@@ -1,9 +1,12 @@
 @page "/help"
 @layout FinanceManager.Web.Components.Layout.HelpLayout
 @using System.Globalization
+@using FinanceManager.Web.Services.Help
+@inject IHelpAssetIntegrityValidator HelpAssetIntegrityValidator
+@inject IWebHostEnvironment Environment
 
 @{
-    var lang = CultureInfo.CurrentUICulture.Name.StartsWith("en") ? "en" : "de";
+    var lang = language;
 }
 
 <div class="container mt-5">
@@ -42,15 +45,55 @@
             </div>
 
             <div id="featureList">
-                <!-- Features will be loaded here -->
-                <div class="alert alert-info">
-                    @(lang == "en" ? "Loading documentation..." : "Dokumentation wird geladen...")
-                </div>
+                @if (documents.Count == 0)
+                {
+                    <div class="alert alert-warning">
+                        @(lang == "en" ? "No documentation available." : "Keine Dokumentation verfügbar.")
+                    </div>
+                }
+                else
+                {
+                    <div class="row">
+                        @foreach (var document in documents)
+                        {
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <a class="card feature-card feature-card-action h-100 text-decoration-none"
+                                   href="@($"/help/view/{Uri.EscapeDataString(document.Id)}")">
+                                    <div class="card-body">
+                                        <h5 class="card-title">@document.Title</h5>
+                                        <p class="card-text">@document.Excerpt</p>
+                                    </div>
+                                </a>
+                            </div>
+                        }
+                    </div>
+                }
             </div>
         </div>
     </div>
 </div>
 
-<!-- Load the help search script directly after the HTML -->
-<script src="/help/js/help-search.js" defer></script>
+@code {
+    private IReadOnlyList<HelpSearchDocumentDto> documents = [];
+    private string language = "de";
 
+    protected override void OnInitialized()
+    {
+        language = CultureInfo.CurrentUICulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "en" : "de";
+
+        var docsPath = HelpDocumentPathResolver.GetHelpSourcePath(Environment);
+        if (!Directory.Exists(docsPath))
+        {
+            documents = [];
+            return;
+        }
+
+        var index = HelpSearchIndexBuilder.Build(docsPath, language, HelpAssetIntegrityValidator.IsTrustedHelpFile);
+        documents = index?.Documents
+            .Where(document =>
+                !string.IsNullOrWhiteSpace(document.Id)
+                && !string.IsNullOrWhiteSpace(document.Title)
+                && HelpDocumentPathResolver.TryNormalizeHelpPath(document.Id, out _))
+            .ToArray() ?? [];
+    }
+}

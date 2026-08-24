@@ -99,6 +99,8 @@ public static class AuthReturnUrl
 
         return path.Equals("/login", StringComparison.OrdinalIgnoreCase)
             || path.Equals("/register", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/help", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("/help/", StringComparison.OrdinalIgnoreCase)
             || path.StartsWith("/api/auth", StringComparison.OrdinalIgnoreCase)
             || path.StartsWith("/error", StringComparison.OrdinalIgnoreCase);
     }
@@ -152,6 +154,8 @@ public static class AuthReturnUrl
             || path.StartsWith("/login/", StringComparison.OrdinalIgnoreCase)
             || path.Equals("/register", StringComparison.OrdinalIgnoreCase)
             || path.StartsWith("/register/", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/help", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("/help/", StringComparison.OrdinalIgnoreCase)
             || path.Equals("/error", StringComparison.OrdinalIgnoreCase)
             || path.StartsWith("/error/", StringComparison.OrdinalIgnoreCase)
             || path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase);
