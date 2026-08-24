@@ -58,17 +58,18 @@ public sealed partial class HelpSecurityMiddlewareTests : IClassFixture<TestWebA
     }
 
     [Fact]
-    public async Task HelpView_RendersRealRelativeLinksAsInternalRoutes()
+    public async Task HelpView_RendersCatalogDocumentLinksAsInternalRoutes()
     {
         using var client = _factory.CreateClient();
 
-        using var response = await client.GetAsync("/help/view/budgetplanung", TestContext.Current.CancellationToken);
+        using var response = await client.GetAsync("/help/view/konten-und-buchungen", TestContext.Current.CancellationToken);
         var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.EnsureSuccessStatusCode();
-        Assert.Contains("href=\"/help/view/budgetplanung/beschreibung\"", html, StringComparison.Ordinal);
-        Assert.Contains("href=\"/help/view/budgetplanung/api\"", html, StringComparison.Ordinal);
+        Assert.Contains("href=\"/help/view/konten-und-buchungen\"", html, StringComparison.Ordinal);
+        Assert.Contains("href=\"/help/view/konten-und-buchungen/vorlaeufige-buchungen\"", html, StringComparison.Ordinal);
         Assert.DoesNotContain("href=\"beschreibung.md\"", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("href=\"/help/view/konten-und-buchungen/api\"", html, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
