@@ -1,4 +1,6 @@
 using System.Security.Cryptography;
+using System.Xml.Linq;
+using FinanceManager.HelpSearchIndexGenerator;
 using FinanceManager.Web.Services.Help;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
@@ -92,20 +94,30 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
     {
         var repoRoot = GetRepoRoot();
         var webProjectRoot = Path.Combine(repoRoot, "FinanceManager.Web");
-        var manifestPath = Path.Combine(webProjectRoot, "wwwroot", "help", "help-assets.sha256");
+        var buildOutputRoot = GetWebBuildOutputRoot(webProjectRoot);
+        var buildOutputHelpRoot = Path.Combine(buildOutputRoot, "wwwroot", "help");
+        var requiredSearchIndexes = HelpLanguages.Supported
+            .Select(language => Path.Combine(buildOutputHelpRoot, language, "search-index.json"))
+            .ToArray();
+        foreach (var searchIndex in requiredSearchIndexes)
+        {
+            Assert.True(File.Exists(searchIndex), $"Required help search index is missing: {searchIndex}");
+        }
+
+        var manifestPath = Path.Combine(buildOutputHelpRoot, "help-assets.sha256");
         var manifest = File.ReadAllLines(manifestPath)
             .Select(line => line.Split('|', 2, StringSplitOptions.TrimEntries))
             .Where(parts => parts.Length == 2)
             .ToDictionary(parts => NormalizeManifestPath(parts[0]), parts => parts[1], StringComparer.OrdinalIgnoreCase);
 
-        var expectedFiles = Directory.EnumerateFiles(Path.Combine(webProjectRoot, "wwwroot", "help"), "*.*", SearchOption.AllDirectories)
+        var expectedFiles = Directory.EnumerateFiles(buildOutputHelpRoot, "*.*", SearchOption.AllDirectories)
             .Where(path => IsManifestedStaticHelpAsset(path) && !path.EndsWith("help-assets.sha256", StringComparison.OrdinalIgnoreCase))
             .Concat(Directory.EnumerateFiles(Path.Combine(repoRoot, "Docs", "help"), "*.md", SearchOption.AllDirectories))
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
         var expectedKeys = expectedFiles
-            .Select(path => NormalizeManifestPath(Path.GetRelativePath(webProjectRoot, path)))
+            .Select(path => ToManifestKey(webProjectRoot, buildOutputRoot, path))
             .ToArray();
 
         Assert.Empty(expectedKeys.Except(manifest.Keys, StringComparer.OrdinalIgnoreCase));
@@ -113,9 +125,76 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
 
         foreach (var file in expectedFiles)
         {
-            var key = NormalizeManifestPath(Path.GetRelativePath(webProjectRoot, file));
+            var key = ToManifestKey(webProjectRoot, buildOutputRoot, file);
             Assert.Equal(ComputeSha256(file), manifest[key], ignoreCase: true);
         }
+
+        foreach (var searchIndex in requiredSearchIndexes)
+        {
+            var key = ToManifestKey(webProjectRoot, buildOutputRoot, searchIndex);
+            Assert.True(manifest.ContainsKey(key), $"Required help search index is missing from manifest: {key}");
+            Assert.Equal(ComputeSha256(searchIndex), manifest[key], ignoreCase: true);
+        }
+    }
+
+    [Fact]
+    public void HelpBuildContract_UsesSharedLanguagesAndOutputManifestPaths()
+    {
+        var repoRoot = GetRepoRoot();
+        var webProjectRoot = Path.Combine(repoRoot, "FinanceManager.Web");
+        var props = XDocument.Load(Path.Combine(webProjectRoot, "Services", "Help", "HelpLanguages.props"));
+        var supportedLanguages = props.Descendants("HelpSupportedLanguages").Single().Value;
+        var defaultLanguage = props.Descendants("HelpDefaultLanguage").Single().Value;
+
+        Assert.Equal(
+            supportedLanguages.Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+            HelpLanguages.Supported);
+        Assert.Equal(defaultLanguage, HelpLanguages.DefaultLanguage);
+
+        var project = XDocument.Load(Path.Combine(webProjectRoot, "FinanceManager.Web.csproj"));
+        var generateIndexes = project.Descendants("Target").Single(target => (string?)target.Attribute("Name") == "GenerateHelpSearchIndexes");
+        var generateManifest = project.Descendants("Target").Single(target => (string?)target.Attribute("Name") == "GenerateHelpAssetManifest");
+        var includePublishAssets = project.Descendants("Target").Single(target => (string?)target.Attribute("Name") == "IncludeGeneratedHelpAssetsInPublish");
+        var indexCommand = generateIndexes.Descendants("Exec").Single().Attribute("Command")!.Value;
+
+        Assert.Contains("ResolveProjectStaticWebAssets", (string?)generateIndexes.Attribute("BeforeTargets"), StringComparison.Ordinal);
+        Assert.Contains("ComputeFilesToPublish", (string?)generateIndexes.Attribute("BeforeTargets"), StringComparison.Ordinal);
+        Assert.Contains("$(TargetDir)wwwroot\\help", indexCommand, StringComparison.Ordinal);
+        Assert.Contains("$(MSBuildProjectDirectory)\\wwwroot\\help", indexCommand, StringComparison.Ordinal);
+        Assert.Equal("Build", (string?)generateManifest.Attribute("AfterTargets"));
+        Assert.Empty(generateManifest.Descendants("WriteLinesToFile"));
+        Assert.Equal("GenerateHelpSearchIndexes", (string?)includePublishAssets.Attribute("DependsOnTargets"));
+        Assert.Equal("ComputeFilesToPublish", (string?)includePublishAssets.Attribute("BeforeTargets"));
+        Assert.Contains("_GeneratedHelpPublishAsset.RecursiveDir", includePublishAssets.ToString(), StringComparison.Ordinal);
+        Assert.Contains("help-assets.sha256", includePublishAssets.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void HelpSearchIndexGenerator_ReturnsFailureWhenDocsSourceIsMissing()
+    {
+        using var error = new StringWriter();
+        var exitCode = HelpSearchIndexGeneratorRunner.Run(
+            [Path.Combine(_root, "missing-docs"), Path.Combine(_root, "out"), string.Join(';', HelpLanguages.Supported)],
+            error);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("source directory does not exist", error.ToString(), StringComparison.Ordinal);
+        Assert.False(Directory.Exists(Path.Combine(_root, "out")));
+    }
+
+    [Fact]
+    public void HelpSearchIndexGenerator_ReturnsFailureAndRemovesEmptyLanguageIndex()
+    {
+        var docsPath = Path.Combine(_root, "Docs", "help");
+        var outputRoot = Path.Combine(_root, "out");
+        Directory.CreateDirectory(Path.Combine(docsPath, "budgetplanung"));
+
+        using var error = new StringWriter();
+        var exitCode = HelpSearchIndexGeneratorRunner.Run([docsPath, outputRoot, "de"], error);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("No help search documents generated for language: de", error.ToString(), StringComparison.Ordinal);
+        Assert.False(File.Exists(Path.Combine(outputRoot, "de", "search-index.json")));
     }
 
     private HelpAssetIntegrityValidator CreateValidator()
@@ -157,6 +236,20 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
         return path.Replace('\\', '/').TrimStart('/');
     }
 
+    private static string ToManifestKey(string webProjectRoot, string buildOutputRoot, string path)
+    {
+        if (Path.GetRelativePath(buildOutputRoot, path) is { } outputRelativePath
+            && !outputRelativePath.Equals("..", StringComparison.Ordinal)
+            && !outputRelativePath.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+            && !outputRelativePath.StartsWith($"..{Path.AltDirectorySeparatorChar}", StringComparison.Ordinal)
+            && !Path.IsPathRooted(outputRelativePath))
+        {
+            return NormalizeManifestPath(outputRelativePath);
+        }
+
+        return NormalizeManifestPath(Path.GetRelativePath(webProjectRoot, path));
+    }
+
     private static string GetRepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
@@ -166,6 +259,17 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
         }
 
         return dir.FullName;
+    }
+
+    private static string GetWebBuildOutputRoot(string webProjectRoot)
+    {
+        var candidates = new[]
+        {
+            Path.Combine(webProjectRoot, "bin", "FromFinanceManagerTests", "Debug", "net10.0"),
+            Path.Combine(webProjectRoot, "bin", "Debug", "net10.0")
+        };
+
+        return candidates.First(candidate => File.Exists(Path.Combine(candidate, "wwwroot", "help", "help-assets.sha256")));
     }
 
     public void Dispose()

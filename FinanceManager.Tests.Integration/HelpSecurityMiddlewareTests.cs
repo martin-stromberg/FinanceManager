@@ -74,23 +74,15 @@ public sealed partial class HelpSecurityMiddlewareTests : IClassFixture<TestWebA
     [Fact]
     public async Task UnknownHelpFileExtension_IsBlockedBeforeStaticFiles()
     {
-        var payloadPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..",
-            "..",
-            "..",
-            "..",
-            "FinanceManager.Web",
-            "wwwroot",
-            "help",
-            "payload.svg"));
+        using var factory = new TestWebApplicationFactory();
+        var payloadPath = GetWebHelpPath(factory, "payload.svg");
 
         Directory.CreateDirectory(Path.GetDirectoryName(payloadPath)!);
         await File.WriteAllTextAsync(payloadPath, "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>", TestContext.Current.CancellationToken);
 
         try
         {
-            using var client = _factory.CreateClient();
+            using var client = factory.CreateClient();
 
             using var response = await client.GetAsync("/help/payload.svg", TestContext.Current.CancellationToken);
 
@@ -107,7 +99,8 @@ public sealed partial class HelpSecurityMiddlewareTests : IClassFixture<TestWebA
     [Fact]
     public async Task StaticHelpAssetRequest_IsBlockedWhenManifestIsMissing()
     {
-        var manifestPath = GetWebHelpPath("help-assets.sha256");
+        using var factory = new TestWebApplicationFactory();
+        var manifestPath = GetWebHelpPath(factory, "help-assets.sha256");
         var backupPath = $"{manifestPath}.{Guid.NewGuid():N}.bak";
 
         await HelpAssetMutationLock.WaitAsync(TestContext.Current.CancellationToken);
@@ -115,7 +108,6 @@ public sealed partial class HelpSecurityMiddlewareTests : IClassFixture<TestWebA
         {
             File.Move(manifestPath, backupPath);
 
-            using var factory = new TestWebApplicationFactory();
             using var client = factory.CreateClient();
 
             using var response = await client.GetAsync("/help/css/help-page.css", TestContext.Current.CancellationToken);
@@ -139,10 +131,12 @@ public sealed partial class HelpSecurityMiddlewareTests : IClassFixture<TestWebA
     [InlineData("css/help-page.css", "/help/css/help-page.css", "body{outline:999px solid red}")]
     [InlineData("js/help-search.js", "/help/js/help-search.js", "console.log('manipulated');")]
     [InlineData("de/search-index.json", "/api/help/search-index/de.json", """{ "documents": [{ "id": "budgetplanung", "title": "Manipuliert", "excerpt": "Text", "keywords": [] }] }""")]
+    [InlineData("en/search-index.json", "/api/help/search-index/en.json", """{ "documents": [{ "id": "budgetplanung", "title": "Manipulated", "excerpt": "Text", "keywords": [] }] }""")]
     public async Task HelpAssetHttpRequest_IsBlockedWhenManifestedFileIsManipulated(string relativeAssetPath, string requestPath, string manipulatedContent)
     {
-        var assetPath = GetWebHelpPath(relativeAssetPath);
-        var manifestPath = GetWebHelpPath("help-assets.sha256");
+        using var factory = new TestWebApplicationFactory();
+        var assetPath = GetWebHelpPath(factory, relativeAssetPath);
+        var manifestPath = GetWebHelpPath(factory, "help-assets.sha256");
         string? originalContent = null;
         string? originalManifest = null;
         var assetExisted = false;
@@ -169,7 +163,6 @@ public sealed partial class HelpSecurityMiddlewareTests : IClassFixture<TestWebA
 
             await File.WriteAllTextAsync(assetPath, manipulatedContent, TestContext.Current.CancellationToken);
 
-            using var factory = new TestWebApplicationFactory();
             using var client = factory.CreateClient();
 
             using var response = await client.GetAsync(requestPath, TestContext.Current.CancellationToken);
@@ -198,21 +191,48 @@ public sealed partial class HelpSecurityMiddlewareTests : IClassFixture<TestWebA
         }
     }
 
+    [Theory]
+    [InlineData("de")]
+    [InlineData("en")]
+    public async Task HelpSearchIndexHttpRequest_IsNotFoundWhenStaticIndexIsMissing(string language)
+    {
+        using var factory = new TestWebApplicationFactory();
+        var assetPath = GetWebHelpPath(factory, language, "search-index.json");
+        var backupPath = $"{assetPath}.{Guid.NewGuid():N}.bak";
+
+        await HelpAssetMutationLock.WaitAsync(TestContext.Current.CancellationToken);
+        try
+        {
+            File.Move(assetPath, backupPath);
+
+            using var client = factory.CreateClient();
+
+            using var response = await client.GetAsync($"/api/help/search-index/{language}.json", TestContext.Current.CancellationToken);
+
+            Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
+            Assert.True(response.Headers.TryGetValues("Content-Security-Policy", out var values));
+            Assert.Contains(values, value => value.Contains("default-src 'self'", StringComparison.Ordinal));
+        }
+        finally
+        {
+            if (File.Exists(backupPath))
+            {
+                File.Move(backupPath, assetPath, overwrite: true);
+            }
+
+            HelpAssetMutationLock.Release();
+        }
+    }
+
     [GeneratedRegex("<script\\b[^>]*>", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
     private static partial Regex InlineScriptRegex();
 
-    private static string GetWebHelpPath(params string[] segments)
+    private static string GetWebHelpPath(TestWebApplicationFactory factory, params string[] segments)
     {
         return Path.GetFullPath(Path.Combine(
             new[]
             {
-                AppContext.BaseDirectory,
-                "..",
-                "..",
-                "..",
-                "..",
-                "FinanceManager.Web",
-                "wwwroot",
+                factory.HelpWebRootPath,
                 "help"
             }.Concat(segments).ToArray()));
     }

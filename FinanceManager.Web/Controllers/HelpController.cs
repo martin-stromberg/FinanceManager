@@ -13,7 +13,6 @@ namespace FinanceManager.Web.Controllers;
 [Route("api/help")]
 public partial class HelpController : ControllerBase
 {
-    private const int SearchExcerptMaxLength = 240;
     private readonly IWebHostEnvironment _env;
     private readonly ILogger<HelpController> _logger;
     private readonly IHelpContentRenderer _renderer;
@@ -154,8 +153,8 @@ public partial class HelpController : ControllerBase
 
             if (!System.IO.File.Exists(filePath))
             {
-                var generatedIndex = GenerateSearchIndex(normalizedLanguage);
-                return Ok(generatedIndex);
+                _logger.LogWarning("Search index not found: {FilePath}", filePath);
+                return NotFound("Search index not found");
             }
 
             if (!_assetIntegrityValidator.IsTrustedHelpFile(filePath))
@@ -199,108 +198,6 @@ public partial class HelpController : ControllerBase
         }
 
         return new HelpSearchIndexDto(documents);
-    }
-
-    private HelpSearchIndexDto GenerateSearchIndex(string language)
-    {
-        var docsPath = HelpDocumentPathResolver.GetHelpSourcePath(_env);
-        if (!Directory.Exists(docsPath))
-        {
-            _logger.LogWarning("Cannot generate search index because Docs/help does not exist: {DocsPath}", docsPath);
-            return new HelpSearchIndexDto([]);
-        }
-
-        var documents = new List<HelpSearchDocumentDto>();
-        foreach (var directory in Directory.EnumerateDirectories(docsPath).OrderBy(Path.GetFileName))
-        {
-            var featureId = Path.GetFileName(directory).ToLowerInvariant();
-            if (!TryNormalizeFeatureId(featureId, out var normalizedFeatureId))
-            {
-                continue;
-            }
-
-            var indexFile = HelpDocumentPathResolver.FindMarkdownFile(docsPath, language, normalizedFeatureId);
-            if (indexFile is null || !_assetIntegrityValidator.IsTrustedHelpFile(indexFile))
-            {
-                continue;
-            }
-
-            var markdown = System.IO.File.ReadAllText(indexFile);
-            var title = ExtractTitle(markdown, normalizedFeatureId);
-            var excerpt = ExtractExcerpt(markdown);
-            documents.Add(new HelpSearchDocumentDto(
-                normalizedFeatureId,
-                title,
-                excerpt,
-                BuildKeywords(normalizedFeatureId, title)));
-        }
-
-        return new HelpSearchIndexDto(documents);
-    }
-
-    private static string ExtractTitle(string markdown, string featureId)
-    {
-        var content = RemoveMarkdownFrontmatter(markdown);
-        foreach (var line in ReadMarkdownLines(content))
-        {
-            var trimmed = line.Trim();
-            if (trimmed.StartsWith("# ", StringComparison.Ordinal))
-            {
-                return NormalizeSearchText(trimmed[2..], 200);
-            }
-        }
-
-        return NormalizeSearchText(featureId.Replace('-', ' '), 200);
-    }
-
-    private static string ExtractExcerpt(string markdown)
-    {
-        var content = RemoveMarkdownFrontmatter(markdown);
-        foreach (var line in ReadMarkdownLines(content))
-        {
-            var trimmed = line.Trim();
-            if (trimmed.Length == 0 || trimmed.StartsWith('#') || trimmed.StartsWith('|'))
-            {
-                continue;
-            }
-
-            return NormalizeSearchText(trimmed, SearchExcerptMaxLength);
-        }
-
-        return "Dokumentation";
-    }
-
-    private static IReadOnlyList<string> BuildKeywords(string featureId, string title)
-    {
-        return featureId
-            .Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Concat(title.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-            .Select(keyword => NormalizeSearchText(keyword, 80).ToLowerInvariant())
-            .Where(keyword => keyword.Length > 1)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(20)
-            .ToArray();
-    }
-
-    private static string NormalizeSearchText(string value, int maxLength)
-    {
-        var text = MarkdownSyntaxRegex().Replace(value, string.Empty).Trim();
-        text = WhitespaceRegex().Replace(text, " ");
-        return text.Length <= maxLength ? text : text[..maxLength].TrimEnd();
-    }
-
-    private static string RemoveMarkdownFrontmatter(string markdown)
-    {
-        return FrontmatterRegex().Replace(markdown, string.Empty);
-    }
-
-    private static IEnumerable<string> ReadMarkdownLines(string markdown)
-    {
-        using var reader = new StringReader(markdown);
-        while (reader.ReadLine() is { } line)
-        {
-            yield return line;
-        }
     }
 
     private static bool TryReadSearchDocument(JsonElement item, out HelpSearchDocumentDto document)
@@ -368,8 +265,7 @@ public partial class HelpController : ControllerBase
 
     private static bool TryNormalizeLanguage(string? language, out string normalizedLanguage)
     {
-        normalizedLanguage = (language ?? string.Empty).Trim().ToLowerInvariant();
-        return normalizedLanguage is "de" or "en";
+        return HelpLanguages.TryNormalize(language, out normalizedLanguage);
     }
 
     private static bool TryNormalizeFeatureId(string? featureId, out string normalizedFeatureId)
@@ -381,16 +277,4 @@ public partial class HelpController : ControllerBase
     [GeneratedRegex("^[a-z][a-z0-9-]{0,63}$", RegexOptions.Compiled)]
     private static partial Regex FeatureIdRegex();
 
-    [GeneratedRegex(@"^---\s*[\r\n][\s\S]*?[\r\n]---\s*[\r\n]?", RegexOptions.Compiled)]
-    private static partial Regex FrontmatterRegex();
-
-    [GeneratedRegex(@"[`*_>#\[\]\(\)]", RegexOptions.Compiled)]
-    private static partial Regex MarkdownSyntaxRegex();
-
-    [GeneratedRegex(@"\s+", RegexOptions.Compiled)]
-    private static partial Regex WhitespaceRegex();
-
-    private sealed record HelpSearchIndexDto(IReadOnlyList<HelpSearchDocumentDto> Documents);
-
-    private sealed record HelpSearchDocumentDto(string Id, string Title, string Excerpt, IReadOnlyList<string> Keywords);
 }

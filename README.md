@@ -55,8 +55,11 @@ Hinweise:
 - Help-Markdown wird über einen Whitelist-Renderer ausgegeben. Rohes HTML, Skripte,
   Inline-Handler und unsichere Linkziele sind kein unterstütztes Format.
 - Für Help-Seiten und Help-Assets gilt eine restriktive CSP. Der Build erzeugt
+  für `de` und `en` jeweils einen statischen `search-index.json` sowie
   `FinanceManager.Web/wwwroot/help/help-assets.sha256`; Änderungen unter
-  `Docs/help/` erfordern daher einen neuen Build vor dem Deployment.
+  `Docs/help/` erfordern daher einen neuen Build vor dem Deployment. Fehlende,
+  nicht im Manifest enthaltene oder manipulierte Help-Assets werden nicht
+  ausgeliefert (`404 Not Found`).
 
 ## Konfiguration
 

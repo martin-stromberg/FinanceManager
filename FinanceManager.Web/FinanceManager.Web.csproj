@@ -1,5 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <Import Project="Services\Help\HelpLanguages.props" />
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -21,7 +23,7 @@
 
   <ItemGroup>
     <Content Remove="wwwroot\help\**\*.*" />
-    <Content Include="wwwroot\help\css\**\*.css;wwwroot\help\js\**\*.js;wwwroot\help\**\*.json;wwwroot\help\**\*.html;wwwroot\help\help-assets.sha256" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="wwwroot\help\css\**\*.css;wwwroot\help\js\**\*.js;wwwroot\help\**\*.html" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,6 +38,7 @@
     <ProjectReference Include="..\FinanceManager.Infrastructure\FinanceManager.Infrastructure.csproj" />
     <ProjectReference Include="..\FinanceManager.Domain\FinanceManager.Domain.csproj" />
     <ProjectReference Include="..\FinanceManager.Shared\FinanceManager.Shared.csproj" />
+    <ProjectReference Include="..\tools\FinanceManager.HelpSearchIndexGenerator\FinanceManager.HelpSearchIndexGenerator.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
   </ItemGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -94,14 +97,38 @@
 	  <RemoveDir Directories="$(TargetDir)init" Condition="Exists('$(TargetDir)init')" />
   </Target>
 
-  <Target Name="GenerateHelpAssetManifest" BeforeTargets="ResolveProjectStaticWebAssets;Build">
+  <Target Name="GenerateHelpLanguagesSource" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <_GeneratedHelpLanguagesPath>$(IntermediateOutputPath)HelpLanguages.g.cs</_GeneratedHelpLanguagesPath>
+      <_EscapedHelpSupportedLanguages>$([MSBuild]::Escape('$(HelpSupportedLanguages)'))</_EscapedHelpSupportedLanguages>
+    </PropertyGroup>
     <ItemGroup>
-      <HelpManifestAsset Include="wwwroot\help\css\**\*.css;wwwroot\help\js\**\*.js;wwwroot\help\**\*.json;wwwroot\help\**\*.html;..\Docs\help\**\*.md" />
+      <Compile Include="$(_GeneratedHelpLanguagesPath)" />
     </ItemGroup>
-    <GetFileHash Files="@(HelpManifestAsset)" Algorithm="SHA256">
-      <Output TaskParameter="Items" ItemName="HelpManifestAssetHash" />
-    </GetFileHash>
-    <WriteLinesToFile File="$(ProjectDir)wwwroot\help\help-assets.sha256" Lines="@(HelpManifestAssetHash->'%(Identity)|%(FileHash)')" Overwrite="true" Encoding="UTF-8" />
+    <WriteLinesToFile
+      File="$(_GeneratedHelpLanguagesPath)"
+      Lines="namespace FinanceManager.Web.Services.Help%3B public static partial class HelpLanguages { private const string GeneratedDefaultLanguage = &quot;$(HelpDefaultLanguage)&quot;%3B private const string SupportedLanguageCodes = &quot;$(_EscapedHelpSupportedLanguages)&quot;%3B }"
+      Overwrite="true"
+      Encoding="UTF-8" />
+  </Target>
+
+  <Target Name="GenerateHelpSearchIndexes" BeforeTargets="ResolveProjectStaticWebAssets;ComputeFilesToPublish;GenerateHelpAssetManifest">
+    <Message Importance="High" Text="Generating help search indexes for $(HelpSupportedLanguages)" />
+    <Exec Command="dotnet run --no-restore --project &quot;$(MSBuildProjectDirectory)\..\tools\FinanceManager.HelpSearchIndexGenerator\FinanceManager.HelpSearchIndexGenerator.csproj&quot; --no-launch-profile -- &quot;$(MSBuildProjectDirectory)\..\Docs\help&quot; &quot;$(TargetDir)wwwroot\help&quot; &quot;$(HelpSupportedLanguages)&quot; &quot;$(MSBuildProjectDirectory)\wwwroot\help&quot;" />
+  </Target>
+
+  <Target Name="GenerateHelpAssetManifest" DependsOnTargets="GenerateHelpSearchIndexes" AfterTargets="Build">
+  </Target>
+
+  <Target Name="IncludeGeneratedHelpAssetsInPublish" DependsOnTargets="GenerateHelpSearchIndexes" BeforeTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <_GeneratedHelpPublishAsset Include="$(TargetDir)wwwroot\help\**\*.json" />
+      <_GeneratedHelpPublishAsset Include="$(TargetDir)wwwroot\help\help-assets.sha256" />
+      <ResolvedFileToPublish Include="@(_GeneratedHelpPublishAsset)">
+        <RelativePath>wwwroot\help\%(_GeneratedHelpPublishAsset.RecursiveDir)%(_GeneratedHelpPublishAsset.Filename)%(_GeneratedHelpPublishAsset.Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
   </Target>
 
   </Project>

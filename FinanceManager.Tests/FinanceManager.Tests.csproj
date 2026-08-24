@@ -54,6 +54,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\tools\FinanceManager.HelpSearchIndexGenerator\HelpSearchIndexGeneratorRunner.cs" Link="Tools\HelpSearchIndexGeneratorRunner.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
 

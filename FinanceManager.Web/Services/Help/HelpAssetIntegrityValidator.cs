@@ -7,7 +7,7 @@ namespace FinanceManager.Web.Services.Help;
 /// </summary>
 public sealed class HelpAssetIntegrityValidator : IHelpAssetIntegrityValidator
 {
-    private const string ManifestRelativePath = "wwwroot/help/help-assets.sha256";
+    private const string ManifestRelativePath = "help/help-assets.sha256";
     private readonly IWebHostEnvironment _environment;
     private readonly ILogger<HelpAssetIntegrityValidator> _logger;
     private readonly Lazy<IReadOnlyDictionary<string, string>> _manifest;
@@ -38,7 +38,7 @@ public sealed class HelpAssetIntegrityValidator : IHelpAssetIntegrityValidator
 
     private bool ValidateFile(string fullPath)
     {
-        var key = NormalizeManifestPath(Path.GetRelativePath(_environment.ContentRootPath, fullPath));
+        var key = GetManifestKey(fullPath);
         if (!_manifest.Value.TryGetValue(key, out var expectedHash))
         {
             _logger.LogWarning("Help file is not listed in the asset manifest: {RelativePath}", key);
@@ -57,7 +57,7 @@ public sealed class HelpAssetIntegrityValidator : IHelpAssetIntegrityValidator
 
     private IReadOnlyDictionary<string, string> LoadManifest()
     {
-        var manifestPath = Path.Combine(_environment.ContentRootPath, ManifestRelativePath);
+        var manifestPath = Path.Combine(_environment.WebRootPath, ManifestRelativePath);
         if (!File.Exists(manifestPath))
         {
             _logger.LogWarning("Help asset manifest not found at {ManifestPath}", manifestPath);
@@ -82,5 +82,20 @@ public sealed class HelpAssetIntegrityValidator : IHelpAssetIntegrityValidator
     private static string NormalizeManifestPath(string path)
     {
         return path.Replace('\\', '/').TrimStart('/');
+    }
+
+    private string GetManifestKey(string fullPath)
+    {
+        var webRootPath = Path.GetFullPath(_environment.WebRootPath);
+        if (Path.GetRelativePath(webRootPath, fullPath) is { } webRootRelativePath
+            && !webRootRelativePath.Equals("..", StringComparison.Ordinal)
+            && !webRootRelativePath.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+            && !webRootRelativePath.StartsWith($"..{Path.AltDirectorySeparatorChar}", StringComparison.Ordinal)
+            && !Path.IsPathRooted(webRootRelativePath))
+        {
+            return NormalizeManifestPath(Path.Combine("wwwroot", webRootRelativePath));
+        }
+
+        return NormalizeManifestPath(Path.GetRelativePath(_environment.ContentRootPath, fullPath));
     }
 }

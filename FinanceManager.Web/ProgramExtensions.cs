@@ -373,10 +373,10 @@ namespace FinanceManager.Web
         /// <returns>Configured <see cref="RequestLocalizationOptions"/>.</returns>
         public static RequestLocalizationOptions BuildLocalizationOptions(this WebApplication _)
         {
-            var supportedCultures = new[] { "de", "en" }.Select(c => new CultureInfo(c)).ToList();
+            var supportedCultures = HelpLanguages.Supported.Select(c => new CultureInfo(c)).ToList();
             var locOptions = new RequestLocalizationOptions
             {
-                DefaultRequestCulture = new RequestCulture("de"),
+                DefaultRequestCulture = new RequestCulture(HelpLanguages.DefaultLanguage),
                 SupportedCultures = supportedCultures,
                 SupportedUICultures = supportedCultures
             };
