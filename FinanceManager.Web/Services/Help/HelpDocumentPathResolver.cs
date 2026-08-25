@@ -14,6 +14,12 @@ public static partial class HelpDocumentPathResolver
     /// <returns>The absolute Docs/help path.</returns>
     public static string GetHelpSourcePath(IWebHostEnvironment environment)
     {
+        var bundledPath = Path.GetFullPath(Path.Combine(environment.ContentRootPath, "Docs", "help"));
+        if (Directory.Exists(bundledPath))
+        {
+            return bundledPath;
+        }
+
         return Path.GetFullPath(Path.Combine(environment.ContentRootPath, "..", "Docs", "help"));
     }
 

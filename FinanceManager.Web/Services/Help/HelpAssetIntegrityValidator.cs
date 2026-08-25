@@ -41,8 +41,12 @@ public sealed class HelpAssetIntegrityValidator : IHelpAssetIntegrityValidator
         var key = NormalizeManifestPath(Path.GetRelativePath(_environment.ContentRootPath, fullPath));
         if (!_manifest.Value.TryGetValue(key, out var expectedHash))
         {
-            _logger.LogWarning("Help file is not listed in the asset manifest: {RelativePath}", key);
-            return false;
+            var parentKey = key.StartsWith("../", StringComparison.Ordinal) ? key[3..] : "../" + key;
+            if (!_manifest.Value.TryGetValue(parentKey, out expectedHash))
+            {
+                _logger.LogWarning("Help file is not listed in the asset manifest: {RelativePath}", key);
+                return false;
+            }
         }
 
         var actualHash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(fullPath)));
