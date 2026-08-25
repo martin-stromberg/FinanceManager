@@ -517,7 +517,8 @@ public sealed partial class StatementDraftService
                     updated.UploadGroupId,
                     updated.Entries ?? new List<FinanceManager.Shared.Dtos.Statements.StatementDraftEntryDto>(),
                     PrevInUpload: null,
-                    NextInUpload: null
+                    NextInUpload: null,
+                    IsPreliminary: updated.IsPreliminary
                 );
             }
             var success = new FinanceManager.Shared.Dtos.Statements.BatchUpdateSuccessResponseDto { UpdatedDraft = detail };

@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <HelpSupportedLanguages>de,en</HelpSupportedLanguages>
+    <HelpDefaultLanguage>de</HelpDefaultLanguage>
+  </PropertyGroup>
+</Project>

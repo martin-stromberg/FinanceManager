@@ -238,6 +238,7 @@
     flex: 1;
     display: flex;
     align-items: center;
+    position: relative;
 }
 
 .budget-mid-inner {
@@ -271,7 +272,37 @@
     display: flex;    
 }
 
+.budget-loading-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 2;
+}
 
+.budget-loading-spinner {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 3px solid rgba(45, 157, 79, 0.2);
+    border-top-color: #2d9d4f;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.64);
+    animation: budget-kpi-spin .8s linear infinite;
+}
+
+@keyframes budget-kpi-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .budget-loading-spinner {
+        animation: none;
+    }
+}
 
 .budget-side {
     height: 100%;

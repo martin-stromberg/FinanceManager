@@ -21,8 +21,9 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 - Globale, responsive Ladeleiste für Navigationen, relevante Formularvorgänge und länger laufende UI-Aktionen; umgesetzt als wiederverwendbare `msTools.Web.Blazor`-Komponente mit projektseitig konfigurierbarer Farbgestaltung
 - Einstellungs-Ribbon mit stets sichtbaren Aktionen: Backup erstellen/hochladen, Profil speichern/zurücksetzen, Benachrichtigungen, Kontoauszugs-Importregeln und Update-Einstellungen speichern sowie Update-Prüfung, Installation und Lock-Reset auslösen — unabhängig davon, welche Sektion gerade aufgeklappt ist
 - Versionsinformation im Programmmenü (Footer) angezeigt — aktuelle Versionnummer oder Fallback `"Version unbekannt"`
-- JWT-Authentifizierung mit 30 Minuten Access-Token-Laufzeit, SecurityStamp-/Rollen-/Active-Revalidierung und DB-validiertem Refresh
+- JWT-Authentifizierung mit 30 Minuten Access-Token-Laufzeit, SecurityStamp-/Rollen-/Active-Revalidierung und DB-validiertem Refresh; abgelaufene Sessions führen bei geschützten Datenabrufen zum Login und danach zurück zur ursprünglichen internen Route
 - RFC-9116-konforme `security.txt` unter `/security.txt` und `/.well-known/security.txt`, zusätzlich als Markdown (`/.well-known/security.md`) und HTML (`/.well-known/security.html`); Direktiven (Contact, Expires, Canonical, Encryption, Acknowledgments, Preferred-Languages, Policy, Hiring) im Setup konfigurierbar — `Canonical` optional als vollständige HTTPS-URL ohne Query/Fragment und ohne localhost/Loopback, sonst Fallback auf `<Api:BaseAddress>/.well-known/security.txt`; liefert HTTP 503, solange keine Konfiguration vorhanden ist
+- Vorläufige Buchungen für Sparkonten erfassen und stornieren: aus der Bankkonten-Detailansicht lässt sich ein provisorischer Kontoauszug anlegen, dessen Posten in den Übersichten für Bankkonten, Kontakte, Sparpläne und Wertpapiere als „Vorläufig“ markiert werden; beim späteren Buchen eines echten Kontoauszugs für dasselbe Konto werden diese Posten automatisch storniert
 
 ## Installation / Setup
 
@@ -51,11 +52,20 @@ Hinweise:
 ### Help-Dokumentation und Sicherheit
 
 - Help ist unter `/help` verfügbar; die Markdown-Quellen liegen unter `Docs/help/`.
+- Sichtbare Themen, Suche und Detailseiten verwenden ausschließlich den
+  redaktionellen Katalog in `FinanceManager.Web/Services/Help/HelpContentCatalog.cs`.
+  Die freigegebenen Dateien und der Änderungsablauf sind in
+  [Docs/maintenance/help-content-publishing.md](Docs/maintenance/help-content-publishing.md)
+  dokumentiert; technische Markdown-Dateien bleiben im Repository, werden aber
+  nicht als Anwenderhilfe veröffentlicht.
 - Help-Markdown wird über einen Whitelist-Renderer ausgegeben. Rohes HTML, Skripte,
   Inline-Handler und unsichere Linkziele sind kein unterstütztes Format.
 - Für Help-Seiten und Help-Assets gilt eine restriktive CSP. Der Build erzeugt
+  für `de` und `en` jeweils einen statischen `search-index.json` sowie
   `FinanceManager.Web/wwwroot/help/help-assets.sha256`; Änderungen unter
-  `Docs/help/` erfordern daher einen neuen Build vor dem Deployment.
+  `Docs/help/` erfordern daher einen neuen Build vor dem Deployment. Fehlende,
+  nicht im Manifest enthaltene oder manipulierte Help-Assets werden nicht
+  ausgeliefert (`404 Not Found`).
 
 ## Konfiguration
 

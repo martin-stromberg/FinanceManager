@@ -1,5 +1,6 @@
 using Bunit;
 using FinanceManager.Shared;
+using FinanceManager.Shared.Dtos.Budget;
 using FinanceManager.Shared.Dtos.HomeKpi;
 using FinanceManager.Shared.Dtos.Postings;
 using FinanceManager.Shared.Dtos.Reports;
@@ -16,8 +17,10 @@ public sealed class HomeKpiGridTests : BunitContext
 {
     public HomeKpiGridTests()
     {
+        Services.AddLogging();
         Services.AddLocalization(options => options.ResourcesPath = "Resources");
         Services.AddSingleton(typeof(IStringLocalizer<Pages>), new PagesStringLocalizer());
+        Services.AddSingleton(TimeProvider.System);
     }
 
     [Fact]
@@ -96,4 +99,87 @@ public sealed class HomeKpiGridTests : BunitContext
             Assert.True(capturedRequest.UseValutaDate);
         });
     }
+
+    [Fact]
+    public void MonthlyBudgetKpi_DoesNotBlockOtherHomeKpiRendering()
+    {
+        var monthlyKpiId = Guid.NewGuid();
+        var contactsKpiId = Guid.NewGuid();
+        var pendingMonthlyKpi = new TaskCompletionSource<MonthlyBudgetKpiDto>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var apiMock = new Mock<IApiClient>();
+
+        apiMock.Setup(a => a.HomeKpis_ListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                CreatePredefinedKpi(monthlyKpiId, HomeKpiPredefined.MonthlyBudget, 0),
+                CreatePredefinedKpi(contactsKpiId, HomeKpiPredefined.ContactsCount, 1)
+            });
+        apiMock.Setup(a => a.Budgets_GetMonthlyKpiAsync(
+                null,
+                BudgetReportDateBasis.BookingDate,
+                It.IsAny<CancellationToken>()))
+            .Returns(pendingMonthlyKpi.Task);
+        apiMock.Setup(a => a.Contacts_CountAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(7);
+
+        Services.AddSingleton(apiMock.Object);
+
+        var cut = Render<HomeKpiGrid>();
+
+        cut.WaitForAssertion(() =>
+        {
+            apiMock.Verify(a => a.Budgets_GetMonthlyKpiAsync(
+                null,
+                BudgetReportDateBasis.BookingDate,
+                It.IsAny<CancellationToken>()), Times.Once);
+            Assert.NotEmpty(cut.FindAll("a[href='/list/contacts']"));
+        });
+    }
+
+    [Fact]
+    public void MonthlyBudgetKpi_ReRenderDoesNotCreateSecondRequest()
+    {
+        var monthlyKpiId = Guid.NewGuid();
+        var pendingMonthlyKpi = new TaskCompletionSource<MonthlyBudgetKpiDto>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var apiMock = new Mock<IApiClient>();
+
+        apiMock.Setup(a => a.HomeKpis_ListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                CreatePredefinedKpi(monthlyKpiId, HomeKpiPredefined.MonthlyBudget, 0)
+            });
+        apiMock.Setup(a => a.Budgets_GetMonthlyKpiAsync(
+                null,
+                BudgetReportDateBasis.BookingDate,
+                It.IsAny<CancellationToken>()))
+            .Returns(pendingMonthlyKpi.Task);
+
+        Services.AddSingleton(apiMock.Object);
+
+        var cut = Render<HomeKpiGrid>();
+        cut.WaitForAssertion(() => apiMock.Verify(a => a.Budgets_GetMonthlyKpiAsync(
+            null,
+            BudgetReportDateBasis.BookingDate,
+            It.IsAny<CancellationToken>()), Times.Once));
+
+        cut.Render();
+
+        apiMock.Verify(a => a.Budgets_GetMonthlyKpiAsync(
+            null,
+            BudgetReportDateBasis.BookingDate,
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    private static HomeKpiDto CreatePredefinedKpi(Guid id, HomeKpiPredefined predefinedType, int sortOrder) =>
+        new(
+            id,
+            HomeKpiKind.Predefined,
+            null,
+            null,
+            null,
+            predefinedType,
+            HomeKpiDisplayMode.TotalOnly,
+            sortOrder,
+            DateTime.UtcNow,
+            null);
 }

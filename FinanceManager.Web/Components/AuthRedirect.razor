@@ -1,21 +1,32 @@
 @inject NavigationManager Nav
 @inject FinanceManager.Application.ICurrentUserService CurrentUser
 @inject FinanceManager.Application.Users.IUserReadService UserRead
+@inject FinanceManager.Shared.IApiClient ApiClient
 @inject IJSRuntime JS
+@using FinanceManager.Shared
+@using FinanceManager.Web.Infrastructure.Auth
+@implements IDisposable
 @rendermode InteractiveServer
 
 @code {
     private bool _initialized;
     private string _lastPath = string.Empty;
+    private bool _redirecting;
 
     protected override void OnInitialized()
     {
         Nav.LocationChanged += OnLocationChanged;
+        ApiClient.AuthenticationRequired += OnAuthenticationRequired;
     }
 
     private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         await CheckRedirectAsync(e.Location);
+    }
+
+    private void OnAuthenticationRequired(object? sender, ApiAuthenticationRequiredEventArgs e)
+    {
+        _ = InvokeAsync(() => RedirectToLoginAsync(null));
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -39,7 +50,7 @@
             _lastPath = path;
 
             // Allowlist of public routes
-            if (IsPublicPath(path))
+            if (AuthReturnUrl.IsPublicPath(path))
             {
                 return;
             }
@@ -51,7 +62,15 @@
                 var target = anyUsers ? "/login" : "/register";
                 if (!string.Equals(path, target, StringComparison.OrdinalIgnoreCase))
                 {
-                    Nav.NavigateTo(target, forceLoad: true);
+                    if (anyUsers)
+                    {
+                        await RedirectToLoginAsync(AuthReturnUrl.FromNavigationUri(Nav.BaseUri, uri));
+                    }
+                    else
+                    {
+                        _redirecting = true;
+                        Nav.NavigateTo(target, forceLoad: true);
+                    }
                 }
             }
         }
@@ -70,21 +89,54 @@
             var pathIdx = uri.IndexOf('/', idx + 2);
             if (pathIdx >= 0)
             {
-                var qIdx = uri.IndexOf('?', pathIdx);
-                return qIdx >= 0 ? uri.Substring(pathIdx, qIdx - pathIdx) : uri[pathIdx..];
+                var endIdx = FindPathEnd(uri, pathIdx);
+                return endIdx >= 0 ? uri.Substring(pathIdx, endIdx - pathIdx) : uri[pathIdx..];
             }
             return "/";
         }
-        return uri;
+
+        var relativeEndIdx = FindPathEnd(uri, 0);
+        return relativeEndIdx >= 0 ? uri[..relativeEndIdx] : uri;
     }
 
-    private static bool IsPublicPath(string path)
+    private static int FindPathEnd(string uri, int startIndex)
     {
-        if (string.IsNullOrEmpty(path) || path == "/") return false; // root requires auth
-        return path.Equals("/login", StringComparison.OrdinalIgnoreCase)
-            || path.Equals("/register", StringComparison.OrdinalIgnoreCase)
-            || path.StartsWith("/api/auth", StringComparison.OrdinalIgnoreCase)
-            || path.StartsWith("/error", StringComparison.OrdinalIgnoreCase);
+        var queryIndex = uri.IndexOf('?', startIndex);
+        var fragmentIndex = uri.IndexOf('#', startIndex);
+
+        return queryIndex switch
+        {
+            >= 0 when fragmentIndex >= 0 => Math.Min(queryIndex, fragmentIndex),
+            >= 0 => queryIndex,
+            _ => fragmentIndex
+        };
+    }
+
+    private async Task RedirectToLoginAsync(string? explicitReturnUrl)
+    {
+        if (_redirecting)
+        {
+            return;
+        }
+
+        var path = GetPath(Nav.Uri);
+        if (AuthReturnUrl.IsPublicPath(path))
+        {
+            return;
+        }
+
+        if (!await UserRead.HasAnyUsersAsync(CancellationToken.None))
+        {
+            _redirecting = true;
+            Nav.NavigateTo("/register", forceLoad: true);
+            return;
+        }
+
+        var returnUrl = AuthReturnUrl.Validate(explicitReturnUrl)
+            ?? AuthReturnUrl.FromNavigationUri(Nav.BaseUri, Nav.Uri);
+
+        _redirecting = true;
+        Nav.NavigateTo(AuthReturnUrl.BuildLoginUrl(returnUrl), forceLoad: true);
     }
 
     private async Task<bool> IsAuthenticatedAsync()
@@ -107,5 +159,6 @@
     public void Dispose()
     {
         Nav.LocationChanged -= OnLocationChanged;
+        ApiClient.AuthenticationRequired -= OnAuthenticationRequired;
     }
 }

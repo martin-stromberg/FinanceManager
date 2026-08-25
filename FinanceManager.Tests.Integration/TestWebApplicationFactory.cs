@@ -21,8 +21,21 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     public const string BootstrapAdminUsername = "bootstrap.admin";
     public const string BootstrapAdminPassword = "Bootstr4pAdmin!";
+    public static readonly string WebProjectRoot = Path.GetFullPath(Path.Combine(
+        AppContext.BaseDirectory,
+        "..",
+        "..",
+        "..",
+        "..",
+        "FinanceManager.Web"));
+    private readonly string _isolatedWebRoot = Path.Combine(Path.GetTempPath(), $"fm-webroot-{Guid.NewGuid():N}");
 
     private DbConnection? _connection;
+
+    public TestWebApplicationFactory()
+    {
+        CopyDirectory(GetBuiltWebRoot(), _isolatedWebRoot);
+    }
 
     // xUnit constructs many TestWebApplicationFactory instances concurrently (one per test class, run in
     // parallel collections by default). CI runs (fewer/slower cores than local dev machines) intermittently
@@ -40,6 +53,8 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
     /// </summary>
     public DateTime? FixedUtcNow { get; set; }
 
+    public string HelpWebRootPath => _isolatedWebRoot;
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseDefaultServiceProvider(options =>
@@ -49,6 +64,8 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
         });
 
         builder.UseEnvironment("Development");
+        builder.UseContentRoot(WebProjectRoot);
+        builder.UseWebRoot(_isolatedWebRoot);
         // Disable background hosted services for integration tests via configuration flags
         builder.ConfigureAppConfiguration((ctx, cfg) =>
         {
@@ -204,6 +221,54 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
         {
             _connection?.Dispose();
             _connection = null;
+            if (Directory.Exists(_isolatedWebRoot))
+            {
+                Directory.Delete(_isolatedWebRoot, recursive: true);
+            }
+        }
+    }
+
+    private static string GetBuiltWebRoot()
+    {
+        var builtWebRoot = Path.Combine(WebProjectRoot, "bin", "Debug", "net10.0", "wwwroot");
+        var integrationWebRoot = Path.Combine(WebProjectRoot, "bin", "FromFinanceManagerIntegrationTests", "Debug", "net10.0", "wwwroot");
+        if (IsBuiltHelpWebRoot(integrationWebRoot))
+        {
+            return integrationWebRoot;
+        }
+
+        builtWebRoot = Path.Combine(WebProjectRoot, "bin", "FromFinanceManagerTests", "Debug", "net10.0", "wwwroot");
+        if (IsBuiltHelpWebRoot(builtWebRoot))
+        {
+            return builtWebRoot;
+        }
+
+        builtWebRoot = Path.Combine(WebProjectRoot, "bin", "Debug", "net10.0", "wwwroot");
+        if (IsBuiltHelpWebRoot(builtWebRoot))
+        {
+            return builtWebRoot;
+        }
+
+        builtWebRoot = Path.Combine(AppContext.BaseDirectory, "wwwroot");
+        return Directory.Exists(builtWebRoot)
+            ? builtWebRoot
+            : Path.Combine(WebProjectRoot, "wwwroot");
+    }
+
+    private static bool IsBuiltHelpWebRoot(string webRoot)
+    {
+        return File.Exists(Path.Combine(webRoot, "help", "help-assets.sha256"));
+    }
+
+    private static void CopyDirectory(string sourceDirectory, string destinationDirectory)
+    {
+        Directory.CreateDirectory(destinationDirectory);
+        foreach (var sourceFile in Directory.EnumerateFiles(sourceDirectory, "*", SearchOption.AllDirectories))
+        {
+            var relativePath = Path.GetRelativePath(sourceDirectory, sourceFile);
+            var destinationFile = Path.Combine(destinationDirectory, relativePath);
+            Directory.CreateDirectory(Path.GetDirectoryName(destinationFile)!);
+            File.Copy(sourceFile, destinationFile, overwrite: true);
         }
     }
 }

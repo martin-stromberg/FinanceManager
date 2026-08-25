@@ -357,6 +357,16 @@ public interface IStatementDraftService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The updated <see cref="StatementDraftEntryDto"/> when successful; otherwise <c>null</c>.</returns>
     Task<StatementDraftEntryDto?> ResetDuplicateEntryAsync(Guid draftId, Guid entryId, Guid ownerUserId, CancellationToken ct);
+
+    /// <summary>
+    /// Creates a new preliminary (provisional) statement draft for the specified account.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="accountId">Identifier of the bank account for which the preliminary draft is created.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <param name="description">Optional localized description to store on the draft.</param>
+    /// <returns>The created <see cref="StatementDraftDto"/>; otherwise <c>null</c> when the account does not exist or is not owned.</returns>
+    Task<StatementDraftDto?> CreatePreliminaryDraftAsync(Guid ownerUserId, Guid accountId, CancellationToken ct, string? description = null);
 }
 
 

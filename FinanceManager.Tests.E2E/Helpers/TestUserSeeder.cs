@@ -87,6 +87,15 @@ public sealed class TestUserSeeder
         await EnsureSelfContactInternalAsync(db, userId, name);
     }
 
+    public async Task InvalidateSecurityStampAsync(string username)
+    {
+        using var db = CreateContext();
+        var user = await db.Users.SingleAsync(u => u.UserName == username);
+        user.SecurityStamp = Guid.NewGuid().ToString("N");
+        user.ConcurrencyStamp = Guid.NewGuid().ToString("N");
+        await db.SaveChangesAsync();
+    }
+
     private static async Task EnsureSelfContactInternalAsync(AppDbContext db, Guid userId, string name)
     {
         var exists = await db.Contacts.AnyAsync(contact => contact.OwnerUserId == userId && contact.Type == ContactType.Self);

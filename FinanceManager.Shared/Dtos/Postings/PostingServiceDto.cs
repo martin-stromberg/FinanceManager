@@ -59,5 +59,7 @@ namespace FinanceManager.Shared.Dtos.Postings
         /// <summary>Id of the reversal posting that reversed this posting; populated when <see cref="IsReversed"/> is <c>true</c>.</summary>
         Guid? ReversedByPostingId,
         /// <summary>Id of the original posting that this posting reverses; populated when <see cref="IsReversal"/> is <c>true</c>.</summary>
-        Guid? ReversalForPostingId);
+        Guid? ReversalForPostingId,
+        /// <summary>Indicates whether this posting is a preliminary (provisional) booking.</summary>
+        bool IsPreliminary = false);
 }

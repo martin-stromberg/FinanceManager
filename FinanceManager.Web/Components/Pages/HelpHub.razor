@@ -1,56 +1,109 @@
 @page "/help"
 @layout FinanceManager.Web.Components.Layout.HelpLayout
 @using System.Globalization
+@using FinanceManager.Web.Services.Help
+@inject IHelpAssetIntegrityValidator HelpAssetIntegrityValidator
+@inject IWebHostEnvironment Environment
 
 @{
-    var lang = CultureInfo.CurrentUICulture.Name.StartsWith("en") ? "en" : "de";
+    var lang = language;
 }
 
-<div class="container mt-5">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h1>
-                @(lang == "en" ? "📖 Help & Documentation" : "📖 Hilfe & Dokumentation")
-            </h1>
-            <p class="lead text-muted">
-                @(lang == "en" 
-                    ? "Find answers to your questions about FinanceManager features and how to use them." 
-                    : "Hier finden Sie Antworten auf Ihre Fragen zu FinanceManager-Funktionen und deren Verwendung.")
+<div class="help-shell">
+    <header class="help-hero">
+        <div>
+            <p class="help-kicker">FinanceManager</p>
+            <h1>@(lang == "en" ? "Help for everyday work" : "Hilfe fuer den Arbeitsalltag")</h1>
+            <p>
+                @(lang == "en"
+                    ? "Find concise guidance for the features you use in FinanceManager."
+                    : "Finden Sie kurze, verstaendliche Anleitungen zu den Funktionen in FinanceManager.")
             </p>
         </div>
-    </div>
+    </header>
 
-    <div class="row">
-        <div class="col-12 mb-3">
-            <div class="input-group input-group-lg">
-                <input type="text" 
-                       class="form-control" 
-                       id="helpSearch" 
-                       placeholder="@(lang == "en" ? "Search documentation..." : "Dokumentation durchsuchen...")"
-                       aria-label="Search help">
-                <button class="btn btn-primary" type="button" id="searchBtn">
-                    🔍
-                </button>
-            </div>
+    <section class="help-search-panel" aria-labelledby="help-search-heading">
+        <div class="help-search-copy">
+            <h2 id="help-search-heading">@(lang == "en" ? "Search help" : "Hilfe durchsuchen")</h2>
+            <p>@(lang == "en" ? "Search across the published user topics." : "Durchsuchen Sie die freigegebenen Anwender-Themen.")</p>
         </div>
-    </div>
+        <div class="input-group input-group-lg help-search-control">
+            <input type="search"
+                   class="form-control"
+                   id="helpSearch"
+                   placeholder="@(lang == "en" ? "Search topic..." : "Thema suchen...")"
+                   aria-label="@(lang == "en" ? "Search help topics" : "Hilfethemen suchen")">
+            <button class="btn btn-primary" type="button" id="searchBtn" aria-label="@(lang == "en" ? "Start search" : "Suche starten")">
+                <span aria-hidden="true">S</span>
+            </button>
+        </div>
+    </section>
 
-    <div class="row mt-4">
-        <div class="col-12">
-            <div id="searchResults" class="d-none">
-                <!-- Search results will be inserted here -->
+    <section class="help-topic-section" aria-labelledby="help-topic-heading">
+        <div class="help-section-header">
+            <div>
+                <h2 id="help-topic-heading">@(lang == "en" ? "Topics" : "Themen")</h2>
+                <p>@(lang == "en" ? "Choose a topic to open the user guide." : "Waehlen Sie ein Thema, um die passende Anwenderhilfe zu oeffnen.")</p>
             </div>
+            <span class="help-topic-count">@documents.Count @(lang == "en" ? "topics" : "Themen")</span>
+        </div>
 
-            <div id="featureList">
-                <!-- Features will be loaded here -->
-                <div class="alert alert-info">
-                    @(lang == "en" ? "Loading documentation..." : "Dokumentation wird geladen...")
+        <div id="searchResults" class="d-none" aria-live="polite"></div>
+
+        <div id="featureList">
+            @if (documents.Count == 0)
+            {
+                <div class="alert alert-warning">
+                    @(lang == "en" ? "No help topics are available." : "Es sind keine Hilfethemen verfuegbar.")
                 </div>
-            </div>
+            }
+            else
+            {
+                <div class="help-topic-grid">
+                    @foreach (var document in documents)
+                    {
+                        <a class="help-topic-card"
+                           href="@($"/help/view/{Uri.EscapeDataString(document.Id)}")"
+                           data-help-topic-id="@document.Id">
+                            <span class="help-topic-card-label">@(lang == "en" ? "Guide" : "Anleitung")</span>
+                            <h3>@document.Title</h3>
+                            <p>@document.Excerpt</p>
+                            <span class="help-topic-card-action">@(lang == "en" ? "Open topic" : "Thema oeffnen")</span>
+                        </a>
+                    }
+                </div>
+            }
         </div>
-    </div>
+    </section>
+
+    <section class="help-publishing-note" aria-label="@(lang == "en" ? "Published content" : "Veroeffentlichte Inhalte")">
+        @(lang == "en"
+            ? "This help area shows reviewed user documentation. Technical notes remain outside the user navigation."
+            : "Dieser Hilfebereich zeigt redaktionell freigegebene Anwenderdokumentation. Technische Notizen bleiben ausserhalb der Anwendernavigation.")
+    </section>
 </div>
 
-<!-- Load the help search script directly after the HTML -->
-<script src="/help/js/help-search.js" defer></script>
+@code {
+    private IReadOnlyList<HelpSearchDocumentDto> documents = [];
+    private string language = "de";
 
+    protected override void OnInitialized()
+    {
+        language = CultureInfo.CurrentUICulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "en" : "de";
+
+        var docsPath = HelpDocumentPathResolver.GetHelpSourcePath(Environment);
+        if (!Directory.Exists(docsPath))
+        {
+            documents = [];
+            return;
+        }
+
+        var index = HelpSearchIndexBuilder.Build(docsPath, language, HelpAssetIntegrityValidator.IsTrustedHelpFile);
+        documents = index.Documents
+            .Where(document =>
+                !string.IsNullOrWhiteSpace(document.Id)
+                && !string.IsNullOrWhiteSpace(document.Title)
+                && HelpContentCatalog.TryGetTopic(document.Id, out _))
+            .ToArray();
+    }
+}

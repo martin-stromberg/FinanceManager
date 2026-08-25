@@ -29,6 +29,8 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     private readonly Dictionary<Guid, string> _entryHints = new();
     // flag to request UI focus on first invalid entry after validation
     private bool _focusFirstInvalidRequested;
+    // id of the row whose BookingDate input should receive focus when quick-edit opens
+    private Guid? _focusQuickEditBookingDateId;
     private readonly HashSet<Guid> _pendingDeleteIds = new();
     private readonly HashSet<Guid> _newEntryIds = new();
     private Guid? _placeholderId;
@@ -145,6 +147,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         }
         AddPlaceholderRow();
         BuildRecords();
+        _focusQuickEditBookingDateId = Items.FirstOrDefault()?.Id;
         return base.BeginQuickEditAsync();
     }
 
@@ -214,6 +217,55 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
             PromotePlaceholder(entryId);
         }
         RaiseStateChanged();
+    }
+
+    /// <summary>
+    /// Copies the value of the given field from the row directly above the
+    /// specified entry into the same field of the specified entry.
+    /// </summary>
+    public void TakeValueFromAbove(Guid entryId, string field)
+    {
+        var idx = -1;
+        for (int i = 0; i < VisibleQuickEditItems.Count; i++)
+        {
+            if (VisibleQuickEditItems[i].Id == entryId)
+            {
+                idx = i;
+                break;
+            }
+        }
+        if (idx <= 0) return;
+        var previous = VisibleQuickEditItems[idx - 1];
+        if (!_editValues.TryGetValue(previous.Id, out var prevMap)) return;
+        if (!prevMap.TryGetValue(field, out var value)) return;
+        SetEditValue(entryId, field, value);
+    }
+
+    /// <summary>
+    /// Copies all editable values from the row directly above the specified
+    /// entry into the corresponding fields of the specified entry.
+    /// </summary>
+    public void TakeAllValuesFromAbove(Guid entryId)
+    {
+        var idx = -1;
+        for (int i = 0; i < VisibleQuickEditItems.Count; i++)
+        {
+            if (VisibleQuickEditItems[i].Id == entryId)
+            {
+                idx = i;
+                break;
+            }
+        }
+        if (idx <= 0) return;
+        var previous = VisibleQuickEditItems[idx - 1];
+        if (!_editValues.TryGetValue(previous.Id, out var prevMap)) return;
+        foreach (var f in EditableFields)
+        {
+            if (prevMap.TryGetValue(f, out var value))
+            {
+                SetEditValue(entryId, f, value);
+            }
+        }
     }
 
     private static bool PlaceholderHasUserInput(IDictionary<string, object?> map)
@@ -821,6 +873,17 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         _focusFirstInvalidRequested = false;
         if (_entryHints.Count == 0) return null;
         return _entryHints.Keys.FirstOrDefault();
+    }
+
+    /// <summary>
+    /// If quick-edit just opened, returns the id of the first row whose BookingDate input should be focused.
+    /// The request is consumed by the component rendering the list.
+    /// </summary>
+    public Guid? ConsumeFocusQuickEditBookingDate()
+    {
+        var id = _focusQuickEditBookingDateId;
+        _focusQuickEditBookingDateId = null;
+        return id;
     }
 
     /// <summary>

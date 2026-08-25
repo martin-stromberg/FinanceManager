@@ -15,7 +15,7 @@ namespace FinanceManager.Infrastructure.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
 
             modelBuilder.Entity("FinanceManager.Domain.Accounts.Account", b =>
                 {
@@ -630,6 +630,9 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<Guid>("GroupId")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsPreliminary")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Kind")
                         .HasColumnType("INTEGER");
 
@@ -1242,6 +1245,9 @@ namespace FinanceManager.Infrastructure.Migrations
 
                     b.Property<Guid?>("DetectedAccountId")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsPreliminary")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("ModifiedUtc")
                         .HasColumnType("TEXT");

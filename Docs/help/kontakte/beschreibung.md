@@ -8,7 +8,7 @@ Kontakte dienen als Stammdaten für Zahlungsbeziehungen, Gruppierungen und autom
 
 ## Funktionsweise
 
-Kontakte und Kontaktkategorien werden über `ContactsController` und `ContactCategoriesController` gepflegt. Zusätzlich können Aliase pro Kontakt verwaltet, Kontakte zusammengeführt und Symbole hinterlegt werden.
+Kontakte und Kontaktkategorien werden in der Kontaktverwaltung gepflegt. Zusätzlich können Aliase pro Kontakt verwaltet, Kontakte zusammengeführt und Symbole hinterlegt werden.
 
 Ein Kontaktsymbol wird als spezieller Anhang gespeichert und in den Kontaktansichten angezeigt. Unterstützte Bildanhänge schließen SVG-Symbole ein, sofern der Upload die serverseitige Sicherheitsprüfung besteht.
 
