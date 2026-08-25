@@ -19,6 +19,7 @@
     </None>
     <None Include="wwwroot\css\app.SetupNotificationsTab.css" />
     <Content Update="Data\KnownContacts.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\Docs\help\**\*" Link="Docs\help\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
