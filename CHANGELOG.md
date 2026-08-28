@@ -39,6 +39,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Schnellbearbeitung im Kontoauszug:** `Strg`+`Pfeil hoch` bzw. `Strg`+`Pfeil runter` navigiert im Schnellbearbeitungsmodus in derselben Feldspalte zur vorherigen bzw. nächsten sichtbaren editierbaren Zeile.
+
 - **Budgetbericht objektorientiert neu strukturiert:** Die Berechnungslogik des Budgetberichts wurde von einer prozeduralen `BudgetReportService`-Implementierung auf ein objektorientiertes Domänenmodell umgestellt (`Budgetbericht`, `MonthlyBudgetResult`, `MonthlyBudgetExpectationGroup`, `MonthlyBudgetExpectation`, `MonthlyBudgetExpectationPosting` in `FinanceManager.Domain.Budget.ReportCalculation`); `BudgetReportService` bleibt als schlanker Adapter bestehen.
   - Neue Zeilenreihenfolge im Detailbericht: Kategorie-/Zweckzeilen → Zwischensumme → Unbudgetiert → Zwischensumme → Kostenneutral → Endsumme.
   - Buchungen mit `GroupId` (Self-Kontakt, kostenneutrale Transfers) werden jetzt als eigene Zeilenart „Kostenneutral" ausgewiesen statt unter „Unbudgetiert".

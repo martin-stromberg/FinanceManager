@@ -170,9 +170,18 @@
 
     private async Task OnKeyDown(KeyboardEventArgs e, Guid id, string field)
     {
-        if (e.Key != "F8") return;
         var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
-        if (vm == null) return;
+        if (e.CtrlKey && (e.Key == "ArrowUp" || e.Key == "ArrowDown"))
+        {
+            if (vm != null)
+            {
+                await FocusAdjacentQuickEditFieldAsync(vm, id, field, e.Key == "ArrowUp" ? -1 : 1);
+            }
+
+            return;
+        }
+
+        if (e.Key != "F8" || vm == null) return;
 
         if (e.CtrlKey)
         {
@@ -199,6 +208,49 @@
                     value = FormatEditValue(vm.GetEditValue(id, field), field)
                 }
             });
+        }
+    }
+
+    private async Task FocusAdjacentQuickEditFieldAsync(
+        FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel vm,
+        Guid id,
+        string field,
+        int offset)
+    {
+        var visibleItems = vm.VisibleQuickEditItems;
+        var currentIndex = -1;
+        for (var i = 0; i < visibleItems.Count; i++)
+        {
+            if (visibleItems[i].Id == id)
+            {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        if (currentIndex < 0)
+        {
+            return;
+        }
+
+        for (var targetIndex = currentIndex + offset;
+             targetIndex >= 0 && targetIndex < visibleItems.Count;
+             targetIndex += offset)
+        {
+            var target = visibleItems[targetIndex];
+            if (!vm.IsRowEditable(target))
+            {
+                continue;
+            }
+
+            var targetElementId = GetElementId(target.Id, field);
+            if (string.IsNullOrWhiteSpace(targetElementId))
+            {
+                return;
+            }
+
+            await JS.InvokeVoidAsync("financeManager.quickEdit.focusById", targetElementId);
+            return;
         }
     }
 

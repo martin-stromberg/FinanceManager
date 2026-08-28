@@ -151,6 +151,12 @@ window.financeManager = window.financeManager || {};
         var el = document.getElementById(v.id);
         if (el) el.value = v.value;
       });
+    },
+    focusById: function (id) {
+      var el = document.getElementById(id);
+      if (el && typeof el.focus === "function") {
+        el.focus();
+      }
     }
   };
 

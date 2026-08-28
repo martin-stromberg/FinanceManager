@@ -18,6 +18,161 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
     }
 
     [Fact]
+    public async Task QuickEdit_CtrlArrowUp_ShouldFocusSameFieldInPreviousVisibleRow()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var draft = await CreateQuickEditDraftWithPersistedRowsAsync(page, "ctrl-up");
+
+        await OpenQuickEditAsync(page, draft.DraftId);
+
+        var previousAmount = page.Locator("input[id^='qe_amount_']").Nth(0);
+        var currentAmount = page.Locator("input[id^='qe_amount_']").Nth(1);
+        var expectedId = await previousAmount.GetAttributeAsync("id");
+
+        await currentAmount.FocusAsync();
+        await PressKeyAsync(currentAmount, "Control+ArrowUp");
+
+        await WaitForActiveElementAsync(page, expectedId);
+    }
+
+    [Fact]
+    public async Task QuickEdit_CtrlArrowDown_ShouldFocusSameFieldInNextVisibleRow()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var draft = await CreateQuickEditDraftWithPersistedRowsAsync(page, "ctrl-down");
+
+        await OpenQuickEditAsync(page, draft.DraftId);
+
+        var currentSubject = page.Locator("input[id^='qe_subject_']").Nth(1);
+        var nextSubject = page.Locator("input[id^='qe_subject_']").Nth(2);
+        var expectedId = await nextSubject.GetAttributeAsync("id");
+
+        await currentSubject.FocusAsync();
+        await PressKeyAsync(currentSubject, "Control+ArrowDown");
+
+        await WaitForActiveElementAsync(page, expectedId);
+    }
+
+    [Fact]
+    public async Task QuickEdit_CtrlArrowUpAtFirstRow_ShouldKeepFocus()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var draft = await CreateQuickEditDraftWithPersistedRowsAsync(page, "ctrl-up-first");
+
+        await OpenQuickEditAsync(page, draft.DraftId);
+
+        var firstBookingDate = page.Locator("input[id^='qe_booking_']").Nth(0);
+        var expectedId = await firstBookingDate.GetAttributeAsync("id");
+
+        await firstBookingDate.FocusAsync();
+        await PressKeyAsync(firstBookingDate, "Control+ArrowUp");
+
+        await WaitForActiveElementAsync(page, expectedId);
+    }
+
+    [Fact]
+    public async Task QuickEdit_CtrlArrowDownAtLastRow_ShouldKeepFocus()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var draft = await CreateQuickEditDraftWithPersistedRowsAsync(page, "ctrl-down-last");
+
+        await OpenQuickEditAsync(page, draft.DraftId);
+
+        var subjectInputs = page.Locator("input[id^='qe_subject_']");
+        var lastSubject = subjectInputs.Nth(await subjectInputs.CountAsync() - 1);
+        var expectedId = await lastSubject.GetAttributeAsync("id");
+
+        await lastSubject.FocusAsync();
+        await PressKeyAsync(lastSubject, "Control+ArrowDown");
+
+        await WaitForActiveElementAsync(page, expectedId);
+    }
+
+    [Fact]
+    public async Task QuickEdit_CtrlArrowDown_ShouldSkipHiddenDeletedAndLockedRows()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var draft = await CreateQuickEditDraftWithPersistedRowsAsync(page, "ctrl-skip", middleStatus: StatementDraftEntryStatus.AlreadyBooked);
+
+        await OpenQuickEditAsync(page, draft.DraftId);
+
+        var firstSubject = page.Locator("input[id^='qe_subject_']").Nth(0);
+        var subjectBeforeLocked = page.Locator("input[id^='qe_subject_']").Nth(1);
+        var placeholderSubject = page.Locator("input[id^='qe_subject_']").Nth(2);
+        var firstSubjectId = await firstSubject.GetAttributeAsync("id");
+        var subjectBeforeLockedId = await subjectBeforeLocked.GetAttributeAsync("id");
+        var placeholderId = await placeholderSubject.GetAttributeAsync("id");
+
+        await subjectBeforeLocked.FocusAsync();
+        await PressKeyAsync(subjectBeforeLocked, "Control+ArrowDown");
+        await WaitForActiveElementAsync(page, placeholderId);
+
+        var deleteButton = page.Locator(".quick-edit-delete-button").First;
+        await deleteButton.ClickAsync();
+        await page.Locator($"#{firstSubjectId}").WaitForAsync(new() { State = WaitForSelectorState.Detached, Timeout = 5000 });
+
+        var subjectBeforeLockedById = page.Locator($"#{subjectBeforeLockedId}");
+        await subjectBeforeLockedById.FocusAsync();
+        await PressKeyAsync(subjectBeforeLockedById, "Control+ArrowUp");
+
+        await WaitForActiveElementAsync(page, subjectBeforeLockedId);
+    }
+
+    [Fact]
+    public async Task CtrlArrowNavigation_OutsideQuickEdit_ShouldNotChangeFocus()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var draft = await CreateQuickEditDraftWithPersistedRowsAsync(page, "ctrl-outside");
+
+        await page.GotoAsync($"{_fixture.BaseUrl}/card/statement-drafts/{draft.DraftId}");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        (await page.Locator("input[id^='qe_']").CountAsync()).Should().Be(0);
+        var input = page.Locator("input").First;
+        await input.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
+        var expectedId = await input.GetAttributeAsync("id");
+
+        await input.FocusAsync();
+        await PressKeyAsync(input, "Control+ArrowDown");
+
+        await WaitForActiveElementAsync(page, expectedId);
+    }
+
+    [Fact]
+    public async Task QuickEdit_RegularInputAndF8_ShouldRemainUnaffected()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var draft = await CreateQuickEditDraftWithPersistedRowsAsync(page, "regular-input");
+
+        await OpenQuickEditAsync(page, draft.DraftId);
+
+        var sourceSubject = page.Locator("input[id^='qe_subject_']").Nth(0);
+        var targetSubject = page.Locator("input[id^='qe_subject_']").Nth(1);
+        const string typedSubject = "Manual quick edit text";
+
+        await targetSubject.FillAsync(typedSubject);
+        (await targetSubject.InputValueAsync()).Should().Be(typedSubject);
+
+        var expectedFromAbove = await sourceSubject.InputValueAsync();
+        await PressKeyAsync(targetSubject, "F8");
+        await WaitForInputValueAsync(targetSubject, expectedFromAbove);
+
+        var targetAmount = page.Locator("input[id^='qe_amount_']").Nth(1);
+        const string typedAmount = "42.42";
+
+        await targetAmount.FillAsync(typedAmount);
+        (await targetAmount.InputValueAsync()).Should().Be(typedAmount);
+        (await targetSubject.InputValueAsync()).Should().Be(expectedFromAbove);
+    }
+
+    [Fact]
     public async Task QuickEdit_PressesF8_ShouldCopySingleFieldFromRowAbove()
     {
         await using var session = await _fixture.CreateSessionAsync();
@@ -69,14 +224,8 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         var targetSubject = page.Locator("input[id^='qe_subject_']").Nth(1);
 
         var expected = await sourceSubject.InputValueAsync();
-        var targetHandle = await targetSubject.ElementHandleAsync();
-        await page.EvaluateAsync("args => { const el = args[0]; const init = args[1]; el.dispatchEvent(new KeyboardEvent('keydown', init)); }", new object[]
-        {
-            targetHandle,
-            new { key = "F8", code = "F8", ctrlKey = false, bubbles = true }
-        });
-
-        await page.WaitForFunctionAsync($"() => {{ const el = document.querySelectorAll('input[id^=\"qe_subject_\"]')[1]; return el && el.value === '{expected}'; }}");
+        await PressKeyAsync(targetSubject, "F8");
+        await WaitForInputValueAsync(targetSubject, expected);
 
         var actual = await targetSubject.InputValueAsync();
         actual.Should().Be(expected);
@@ -152,14 +301,8 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         await targetSubject.FillAsync("Different");
 
         var expectedSubject = await sourceSubject.InputValueAsync();
-        var targetSubjectHandle = await targetSubject.ElementHandleAsync();
-        await page.EvaluateAsync("args => { const el = args[0]; const init = args[1]; el.dispatchEvent(new KeyboardEvent('keydown', init)); }", new object[]
-        {
-            targetSubjectHandle,
-            new { key = "F8", code = "F8", ctrlKey = true, bubbles = true }
-        });
-
-        await page.WaitForFunctionAsync($"() => {{ const el = document.querySelectorAll('input[id^=\"qe_subject_\"]')[1]; return el && el.value === '{expectedSubject}'; }}");
+        await PressKeyAsync(targetSubject, "Control+F8");
+        await WaitForInputValueAsync(targetSubject, expectedSubject);
 
         (await targetBookingDate.InputValueAsync()).Should().Be(await sourceBookingDate.InputValueAsync());
         (await targetAmount.InputValueAsync()).Should().Be(await sourceAmount.InputValueAsync());
@@ -176,5 +319,126 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         {
             (await targetValuta.InputValueAsync()).Should().Be(sourceValutaValue);
         }
+    }
+
+    private async Task<StatementDraftDto> CreateQuickEditDraftWithPersistedRowsAsync(
+        IPage page,
+        string scenario,
+        StatementDraftEntryStatus middleStatus = StatementDraftEntryStatus.Open)
+    {
+        var auth = new AuthGateway(page, _fixture.BaseUrl);
+        var seeder = new TestUserSeeder(_fixture.DatabasePath);
+
+        var username = $"{scenario}-e2e-{Guid.NewGuid():N}";
+        const string password = "Secret123";
+        await seeder.EnsureUserAsync(username, password);
+        await auth.LoginAsync(username, password);
+
+        var account = await new AccountsApiSeedHelper(page).CreateAccountAsync(
+            $"E2E {scenario}",
+            CreateUniqueIban());
+
+        var draft = await BrowserApiHelper.PostJsonAsync<CreatePreliminaryStatementDraftRequest, StatementDraftDto>(
+            page,
+            "/api/statement-drafts/preliminary",
+            new CreatePreliminaryStatementDraftRequest(account.Id));
+
+        var entryId = draft.Entries!.Single().Id;
+        await BrowserApiHelper.PostJsonAsync(page, $"/api/statement-drafts/{draft.DraftId}/entries/batch-update", new
+        {
+            updates = new[]
+            {
+                new
+                {
+                    entryId,
+                    fields = new Dictionary<string, object?>
+                    {
+                        ["BookingDate"] = DateTime.Today.AddDays(-2).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                        ["Amount"] = 10m,
+                        ["Subject"] = "Source Subject",
+                        ["RecipientName"] = "Source Recipient",
+                        ["BookingDescription"] = "Source Description"
+                    }
+                }
+            },
+            creates = new[]
+            {
+                new
+                {
+                    clientId = Guid.NewGuid(),
+                    bookingDate = DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    valutaDate = DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    amount = 20m,
+                    subject = "Middle Subject",
+                    bookingDescription = "Middle Description",
+                    recipientName = "Middle Recipient"
+                },
+                new
+                {
+                    clientId = Guid.NewGuid(),
+                    bookingDate = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    valutaDate = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    amount = 30m,
+                    subject = "Next Subject",
+                    bookingDescription = "Next Description",
+                    recipientName = "Next Recipient"
+                }
+            },
+            deletes = System.Array.Empty<Guid>()
+        });
+
+        if (middleStatus != StatementDraftEntryStatus.Open)
+        {
+            var updatedDraft = await BrowserApiHelper.GetJsonAsync<StatementDraftDetailDto>(page, $"/api/statement-drafts/{draft.DraftId}");
+            var middleEntryId = updatedDraft.Entries!
+                .OrderBy(e => e.EntryNumber)
+                .Skip(1)
+                .First()
+                .Id;
+
+            await BrowserApiHelper.PostJsonAsync(page, $"/api/statement-drafts/{draft.DraftId}/entries/batch-update", new
+            {
+                updates = new[]
+                {
+                    new
+                    {
+                        entryId = middleEntryId,
+                        fields = new Dictionary<string, object?>
+                        {
+                            ["Status"] = middleStatus.ToString()
+                        }
+                    }
+                },
+                creates = System.Array.Empty<object>(),
+                deletes = System.Array.Empty<Guid>()
+            });
+        }
+
+        return draft;
+    }
+
+    private async Task OpenQuickEditAsync(IPage page, Guid draftId)
+    {
+        await page.GotoAsync($"{_fixture.BaseUrl}/card/statement-drafts/{draftId}?quickEdit=true");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await page.Locator("input[id^='qe_booking_']").Nth(2).WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
+    }
+
+    private static async Task PressKeyAsync(ILocator locator, string key)
+        => await locator.PressAsync(key);
+
+    private static Task WaitForActiveElementAsync(IPage page, string? expectedId)
+        => page.WaitForFunctionAsync("expected => document.activeElement && document.activeElement.id === expected", expectedId, new() { Timeout = 5000 });
+
+    private static async Task WaitForInputValueAsync(ILocator locator, string expected)
+    {
+        await locator.WaitForAsync(new() { State = WaitForSelectorState.Attached, Timeout = 5000 });
+        await Assertions.Expect(locator).ToHaveValueAsync(expected, new() { Timeout = 5000 });
+    }
+
+    private static string CreateUniqueIban()
+    {
+        var value = Math.Abs(Guid.NewGuid().GetHashCode()) % 100000000;
+        return string.Create(CultureInfo.InvariantCulture, $"DE507005000000{value:00000000}");
     }
 }
