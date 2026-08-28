@@ -16,6 +16,8 @@ Im Schnellbearbeitungsmodus einer Kontoauszugdetailansicht können Werte aus der
 
 Beim Verlassen eines Eingabefelds im Schnellbearbeitungsmodus hält die Anwendung die Anmeldung im Hintergrund aktiv. Nicht gespeicherte Eingaben bleiben dabei unverändert im Feld; es wird kein Entwurf neu geladen und keine zusätzliche Oberfläche angezeigt.
 
+Zusätzlich kann der Fokus im Schnellbearbeitungsmodus zeilenübergreifend in derselben Feldspalte bewegt werden. `Strg+Pfeil hoch` fokussiert das gleiche Eingabefeld in der unmittelbar vorherigen sichtbaren Zeile, `Strg+Pfeil runter` das gleiche Eingabefeld in der unmittelbar nächsten sichtbaren Zeile. Gibt es in der jeweiligen Richtung keine Nachbarzeile, bleibt der aktuelle Fokus erhalten. Die Navigation gilt ausschließlich für Eingabefelder im Schnellbearbeitungsmodus.
+
 Wenn die Klassifizierung keinen vorhandenen Kontakt findet, kann sie die mitgelieferte Liste bekannter Kontakte prüfen. Bei genau einem Treffer wird für den Benutzer automatisch ein Kontakt mit den hinterlegten Alias-Mustern angelegt und der Entwurfszeile zugeordnet. Die Funktion kann in den Einstellungen für den Kontoauszugsimport deaktiviert werden.
 
 Auf mobilen Geräten werden Kontoauszugseinträge als Karten dargestellt. Datum und Betrag stehen dort in einer zweispaltigen Zeile. Bereits gebuchte Einträge erscheinen abgeschwächt, damit offene und erledigte Zeilen unterscheidbar bleiben. Lange Datei- und Textwerte brechen innerhalb der verfügbaren Breite um und erzeugen keine horizontale Seitenverschiebung.

@@ -137,7 +137,7 @@ window.financeManager = window.financeManager || {};
   }
 
   function isPublicKeepalivePath() {
-    const path = window.location.pathname || "/";
+    const path = (window.location.pathname || "/").toLowerCase();
     return path === "/login"
       || path === "/register"
       || path === "/help"
@@ -254,6 +254,17 @@ window.financeManager = window.financeManager || {};
     keepaliveListenersAttached = false;
   }
 
+  function handleQuickEditKeyDown(event) {
+    const target = event.target;
+    if (!target || !target.id || !target.id.startsWith("qe_")) {
+      return;
+    }
+
+    if (event.ctrlKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+      event.preventDefault();
+    }
+  }
+
   function attachGlobalListeners() {
     if (fm.__loadingBarListenersAttached) {
       return;
@@ -261,6 +272,7 @@ window.financeManager = window.financeManager || {};
 
     document.addEventListener("click", handleClick, true);
     document.addEventListener("submit", handleSubmit, true);
+    document.addEventListener("keydown", handleQuickEditKeyDown, true);
     window.addEventListener("pageshow", stopLoadingBar);
     fm.__loadingBarListenersAttached = true;
   }
@@ -279,6 +291,12 @@ window.financeManager = window.financeManager || {};
         var el = document.getElementById(v.id);
         if (el) el.value = v.value;
       });
+    },
+    focusById: function (id) {
+      var el = document.getElementById(id);
+      if (el && typeof el.focus === "function") {
+        el.focus();
+      }
     }
   };
 

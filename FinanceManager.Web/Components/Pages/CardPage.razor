@@ -185,6 +185,22 @@ else
                 case "OpenStatementDraft":
                     if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
                     break;
+                case "Prev":
+                    if (_vm is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel prevVm
+                        && prevVm.Draft?.PrevInUpload is Guid prevDraftId
+                        && prevDraftId != Guid.Empty)
+                    {
+                        NavigationManager.NavigateTo(BuildCardPath("statement-drafts", null, prevDraftId.ToString(), Back));
+                    }
+                    break;
+                case "Next":
+                    if (_vm is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel nextVm
+                        && nextVm.Draft?.NextInUpload is Guid nextDraftId
+                        && nextDraftId != Guid.Empty)
+                    {
+                        NavigationManager.NavigateTo(BuildCardPath("statement-drafts", null, nextDraftId.ToString(), Back));
+                    }
+                    break;
                 case "NavigateToPosting":
                     if (!string.IsNullOrWhiteSpace(payload))
                     {
@@ -226,6 +242,9 @@ else
                     break;
                 case "OpenAttachments":
                     // Attachments are handled via UiOverlaySpec payloads emitted by viewmodels. No fallback.
+                    break;
+                case "ClearEmbeddedPanel":
+                    // EmbeddedPanelHost handles the actual clear request through its own subscription.
                     break;
                 case "DownloadOriginal":
                     {
