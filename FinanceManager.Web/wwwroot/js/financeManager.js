@@ -126,6 +126,17 @@ window.financeManager = window.financeManager || {};
     stopIfValidationFailed();
   }
 
+  function handleQuickEditKeyDown(event) {
+    const target = event.target;
+    if (!target || !target.id || !target.id.startsWith("qe_")) {
+      return;
+    }
+
+    if (event.ctrlKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+      event.preventDefault();
+    }
+  }
+
   function attachGlobalListeners() {
     if (fm.__loadingBarListenersAttached) {
       return;
@@ -133,6 +144,7 @@ window.financeManager = window.financeManager || {};
 
     document.addEventListener("click", handleClick, true);
     document.addEventListener("submit", handleSubmit, true);
+    document.addEventListener("keydown", handleQuickEditKeyDown, true);
     window.addEventListener("pageshow", stopLoadingBar);
     fm.__loadingBarListenersAttached = true;
   }

@@ -93,6 +93,40 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
     }
 
     [Fact]
+    public async Task QuickEdit_CtrlArrowOnDateFields_ShouldMoveFocusWithoutChangingDate()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var draft = await CreateQuickEditDraftWithPersistedRowsAsync(page, "ctrl-date-no-spin");
+
+        await OpenQuickEditAsync(page, draft.DraftId);
+
+        var previousBookingDate = page.Locator("input[id^='qe_booking_']").Nth(0);
+        var currentBookingDate = page.Locator("input[id^='qe_booking_']").Nth(1);
+        var expectedPreviousBookingDateId = await previousBookingDate.GetAttributeAsync("id");
+        const string bookingDate = "2026-08-30";
+
+        await currentBookingDate.FillAsync(bookingDate);
+        await currentBookingDate.FocusAsync();
+        await PressKeyAsync(currentBookingDate, "Control+ArrowUp");
+
+        await WaitForActiveElementAsync(page, expectedPreviousBookingDateId);
+        (await currentBookingDate.InputValueAsync()).Should().Be(bookingDate);
+
+        var currentValutaDate = page.Locator("input[id^='qe_valuta_']").Nth(1);
+        var nextValutaDate = page.Locator("input[id^='qe_valuta_']").Nth(2);
+        var expectedNextValutaDateId = await nextValutaDate.GetAttributeAsync("id");
+        const string valutaDate = "2026-08-30";
+
+        await currentValutaDate.FillAsync(valutaDate);
+        await currentValutaDate.FocusAsync();
+        await PressKeyAsync(currentValutaDate, "Control+ArrowDown");
+
+        await WaitForActiveElementAsync(page, expectedNextValutaDateId);
+        (await currentValutaDate.InputValueAsync()).Should().Be(valutaDate);
+    }
+
+    [Fact]
     public async Task QuickEdit_CtrlArrowDown_ShouldSkipHiddenDeletedAndLockedRows()
     {
         await using var session = await _fixture.CreateSessionAsync();
