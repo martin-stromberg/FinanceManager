@@ -127,6 +127,39 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
     }
 
     [Fact]
+    public async Task QuickEdit_BookingDateChange_ShouldCopyToEmptyValutaDateOnly()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var draft = await CreateQuickEditDraftWithPersistedRowsAsync(page, "booking-to-valuta");
+
+        await OpenQuickEditAsync(page, draft.DraftId);
+
+        var bookingDateWithoutValuta = page.Locator("input[id^='qe_booking_']").Nth(0);
+        var emptyValutaDate = page.Locator("input[id^='qe_valuta_']").Nth(0);
+        const string copiedDate = "2026-08-30";
+
+        (await emptyValutaDate.InputValueAsync()).Should().BeEmpty();
+
+        await bookingDateWithoutValuta.FillAsync(copiedDate);
+        await bookingDateWithoutValuta.PressAsync("Tab");
+
+        await WaitForInputValueAsync(emptyValutaDate, copiedDate);
+
+        var bookingDateWithValuta = page.Locator("input[id^='qe_booking_']").Nth(1);
+        var existingValutaDate = page.Locator("input[id^='qe_valuta_']").Nth(1);
+        var existingValutaValue = await existingValutaDate.InputValueAsync();
+        const string changedBookingDate = "2026-09-15";
+
+        existingValutaValue.Should().NotBeNullOrWhiteSpace();
+
+        await bookingDateWithValuta.FillAsync(changedBookingDate);
+        await bookingDateWithValuta.PressAsync("Tab");
+
+        await WaitForInputValueAsync(existingValutaDate, existingValutaValue);
+    }
+
+    [Fact]
     public async Task QuickEdit_CtrlArrowDown_ShouldSkipHiddenDeletedAndLockedRows()
     {
         await using var session = await _fixture.CreateSessionAsync();

@@ -34,13 +34,32 @@
             vm?.SetEditValue(id, "Amount", null);
     }
 
-    private void OnDateChanged(ChangeEventArgs e, Guid id)
+    private async Task OnDateChanged(ChangeEventArgs e, Guid id)
     {
         var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
         if (DateTime.TryParse(e?.Value?.ToString(), out var dt))
+        {
+            var copyToEmptyValuta = vm != null && !HasDateValue(vm.GetEditValue(id, "ValutaDate"));
+
             vm?.SetEditValue(id, "BookingDate", dt.Date);
+
+            if (copyToEmptyValuta)
+            {
+                vm?.SetEditValue(id, "ValutaDate", dt.Date);
+                await JS.InvokeVoidAsync("financeManager.quickEdit.applyValues", new[]
+                {
+                    new
+                    {
+                        id = GetElementId(id, "ValutaDate"),
+                        value = FormatEditValue(dt.Date, "ValutaDate")
+                    }
+                });
+            }
+        }
         else
+        {
             vm?.SetEditValue(id, "BookingDate", null);
+        }
     }
 
     private void ResetRow(Guid id)
@@ -265,6 +284,10 @@
         _ => string.Empty
     };
 
+    private static bool HasDateValue(object? value)
+        => value is DateTime
+           || (value is string text && DateTime.TryParse(text, out _));
+
     private string FormatEditValue(object? value, string field)
     {
         if (value == null) return string.Empty;
@@ -358,10 +381,7 @@ else
                             if (bdVal is DateTime bdt) bd = bdt;
                             else if (bdVal != null && DateTime.TryParse(bdVal.ToString(), out var pb)) bd = pb;
                             var bdInput = bd.HasValue ? bd.Value.ToString("yyyy-MM-dd") : string.Empty;
-                            <input id="qe_booking_@item.Id" type="date" class="form-control form-control-sm" value="@bdInput" @onchange="(ChangeEventArgs e) => {
-                                var s = e?.Value?.ToString() ?? string.Empty;
-                                if (DateTime.TryParse(s, out var dt)) OnDateChanged(new ChangeEventArgs{Value = s}, item.Id); else OnDateChanged(new ChangeEventArgs{Value = null}, item.Id);
-                            }" @onkeydown='(e) => OnKeyDown(e, item.Id, "BookingDate")' />
+                            <input id="qe_booking_@item.Id" type="date" class="form-control form-control-sm" value="@bdInput" @onchange="@(e => OnDateChanged(e, item.Id))" @onkeydown='(e) => OnKeyDown(e, item.Id, "BookingDate")' />
                         }
                         else
                         {
