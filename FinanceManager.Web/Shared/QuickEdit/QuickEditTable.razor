@@ -306,7 +306,7 @@ else
                             if (bdVal is DateTime bdt) bd = bdt;
                             else if (bdVal != null && DateTime.TryParse(bdVal.ToString(), out var pb)) bd = pb;
                             var bdInput = bd.HasValue ? bd.Value.ToString("yyyy-MM-dd") : string.Empty;
-                            <input id="qe_booking_@item.Id" type="date" class="form-control form-control-sm" value="@bdInput" @onchange="(ChangeEventArgs e) => {
+                            <input id="qe_booking_@item.Id" type="date" class="form-control form-control-sm" data-fm-quickedit-keepalive value="@bdInput" @onchange="(ChangeEventArgs e) => {
                                 var s = e?.Value?.ToString() ?? string.Empty;
                                 if (DateTime.TryParse(s, out var dt)) OnDateChanged(new ChangeEventArgs{Value = s}, item.Id); else OnDateChanged(new ChangeEventArgs{Value = null}, item.Id);
                             }" @onkeydown='(e) => OnKeyDown(e, item.Id, "BookingDate")' />
@@ -331,7 +331,7 @@ else
                             }
 
                             string inputVal = valDate.HasValue ? valDate.Value.ToString("yyyy-MM-dd") : string.Empty;
-                            <input id="qe_valuta_@item.Id" type="date" class="form-control form-control-sm" value="@inputVal" @onchange="@(e => OnValutaChanged(e, item.Id))" @onkeydown='(e) => OnKeyDown(e, item.Id, "ValutaDate")' />
+                            <input id="qe_valuta_@item.Id" type="date" class="form-control form-control-sm" data-fm-quickedit-keepalive value="@inputVal" @onchange="@(e => OnValutaChanged(e, item.Id))" @onkeydown='(e) => OnKeyDown(e, item.Id, "ValutaDate")' />
                         }
                         else
                         {
@@ -343,7 +343,7 @@ else
                     <td style="text-align:right;vertical-align:middle;">
                         @if (editable)
                         {
-                            <input id="qe_amount_@item.Id" class="form-control form-control-sm text-end" value="@((vm.GetEditValue(item.Id, "Amount") as decimal?)?.ToString())" @oninput="(e) => OnAmountChanged(e, item.Id)" @onkeydown='(e) => OnKeyDown(e, item.Id, "Amount")' />
+                            <input id="qe_amount_@item.Id" class="form-control form-control-sm text-end" data-fm-quickedit-keepalive value="@((vm.GetEditValue(item.Id, "Amount") as decimal?)?.ToString())" @oninput="(e) => OnAmountChanged(e, item.Id)" @onkeydown='(e) => OnKeyDown(e, item.Id, "Amount")' />
                         }
                         else
                         {
@@ -355,7 +355,7 @@ else
                     <td style="vertical-align:middle;">
                         @if (editable)
                         {
-                            <input id="qe_description_@item.Id" class="form-control form-control-sm" value='@(vm.GetEditValue(item.Id, "BookingDescription") as string ?? item.BookingDescription ?? string.Empty)' @oninput="@(e => OnBookingDescriptionChanged(e, item.Id))" @onkeydown='(e) => OnKeyDown(e, item.Id, "BookingDescription")' />
+                            <input id="qe_description_@item.Id" class="form-control form-control-sm" data-fm-quickedit-keepalive value='@(vm.GetEditValue(item.Id, "BookingDescription") as string ?? item.BookingDescription ?? string.Empty)' @oninput="@(e => OnBookingDescriptionChanged(e, item.Id))" @onkeydown='(e) => OnKeyDown(e, item.Id, "BookingDescription")' />
                         }
                         else
                         {
@@ -367,7 +367,7 @@ else
                     <td style="vertical-align:middle;">
                         @if (editable)
                         {
-                            <input id="qe_recipient_@item.Id" class="form-control form-control-sm" value='@(vm.GetEditValue(item.Id, "RecipientName") as string ?? item.RecipientName ?? string.Empty)' @oninput="(e) => OnRecipientChanged(e, item.Id)" @onkeydown='(e) => OnKeyDown(e, item.Id, "RecipientName")' />
+                            <input id="qe_recipient_@item.Id" class="form-control form-control-sm" data-fm-quickedit-keepalive value='@(vm.GetEditValue(item.Id, "RecipientName") as string ?? item.RecipientName ?? string.Empty)' @oninput="(e) => OnRecipientChanged(e, item.Id)" @onkeydown='(e) => OnKeyDown(e, item.Id, "RecipientName")' />
                         }
                         else
                         {
@@ -379,7 +379,7 @@ else
                     <td style="vertical-align:middle;">
                         @if (editable)
                         {
-                            <input id="qe_subject_@item.Id" class="form-control form-control-sm" value='@(vm.GetEditValue(item.Id, "Subject") as string ?? item.Subject ?? string.Empty)' @oninput="(e) => OnSubjectChanged(e, item.Id)" @onkeydown='(e) => OnKeyDown(e, item.Id, "Subject")' />
+                            <input id="qe_subject_@item.Id" class="form-control form-control-sm" data-fm-quickedit-keepalive value='@(vm.GetEditValue(item.Id, "Subject") as string ?? item.Subject ?? string.Empty)' @oninput="(e) => OnSubjectChanged(e, item.Id)" @onkeydown='(e) => OnKeyDown(e, item.Id, "Subject")' />
                         }
                         else
                         {

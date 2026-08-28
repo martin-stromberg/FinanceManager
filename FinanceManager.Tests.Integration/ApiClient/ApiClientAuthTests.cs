@@ -133,6 +133,52 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Keepalive_WithBearerNearExpiry_ShouldRefreshCookieAndReturnNoContent()
+    {
+        var http = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+        });
+        var token = await CreateBearerTokenAsync(includeAdminRole: true, expiresUtc: DateTime.UtcNow.AddMinutes(10));
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await http.GetAsync("/api/auth/keepalive");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        response.Headers.TryGetValues("X-Auth-Token", out var refreshedTokens).Should().BeTrue();
+        response.Headers.TryGetValues("X-Auth-Token-Expires", out var refreshedExpires).Should().BeTrue();
+        response.Headers.TryGetValues("Set-Cookie", out var cookies).Should().BeTrue();
+        refreshedTokens!.Single().Should().NotBe(token);
+        refreshedExpires!.Single().Should().NotBeNullOrWhiteSpace();
+        cookies!.Should().Contain(cookie => cookie.StartsWith("FinanceManager.Auth=", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task Keepalive_WithInvalidSecurityStamp_ShouldReturnUnauthorizedWithoutRefreshLoop()
+    {
+        var token = await CreateBearerTokenAsync(includeAdminRole: true, expiresUtc: DateTime.UtcNow.AddMinutes(10));
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            var user = await userManager.FindByNameAsync(TestWebApplicationFactory.BootstrapAdminUsername);
+            user.Should().NotBeNull();
+            var result = await userManager.UpdateSecurityStampAsync(user!);
+            result.Succeeded.Should().BeTrue();
+        }
+
+        var http = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+        });
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await http.GetAsync("/api/auth/keepalive");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.Headers.TryGetValues("X-Auth-Token", out _).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Bearer_ShouldRejectToken_WhenSecurityStampChanged()
     {
         var token = await CreateBearerTokenAsync(includeAdminRole: true);
@@ -323,7 +369,8 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         string issuer = JwtIssuer,
         string audience = JwtAudience,
         string username = TestWebApplicationFactory.BootstrapAdminUsername,
-        bool includeAdminRole = false)
+        bool includeAdminRole = false,
+        DateTime? expiresUtc = null)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -348,7 +395,7 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
             audience: audience,
             claims: claims,
             notBefore: DateTime.UtcNow.AddMinutes(-1),
-            expires: DateTime.UtcNow.AddMinutes(30),
+            expires: expiresUtc ?? DateTime.UtcNow.AddMinutes(30),
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
