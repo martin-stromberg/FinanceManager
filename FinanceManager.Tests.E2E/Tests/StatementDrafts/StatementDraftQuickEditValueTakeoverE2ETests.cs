@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FinanceManager.Shared.Dtos.Statements;
 using Microsoft.Playwright;
@@ -388,6 +389,117 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         }
     }
 
+    [Fact]
+    public async Task QuickEdit_Blur_ShouldSendKeepaliveAndKeepLocalInputValue()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var auth = new AuthGateway(page, _fixture.BaseUrl);
+        var seeder = new TestUserSeeder(_fixture.DatabasePath);
+        var cookies = new TestAuthCookieHelper(_fixture.DatabasePath, _fixture.BaseUrl);
+
+        var username = $"quickedit-keepalive-{Guid.NewGuid():N}";
+        const string password = "Secret123";
+        const string expectedSubject = "Unsent quick edit value";
+
+        await seeder.EnsureUserAsync(username, password);
+        await auth.LoginAsync(username, password);
+
+        var account = await new AccountsApiSeedHelper(page).CreateAccountAsync("E2E QuickEdit Keepalive", "DE50700500000007882906");
+
+        var prelimDraft = await BrowserApiHelper.PostJsonAsync<CreatePreliminaryStatementDraftRequest, StatementDraftDto>(
+            page,
+            "/api/statement-drafts/preliminary",
+            new CreatePreliminaryStatementDraftRequest(account.Id));
+
+        await page.GotoAsync($"{_fixture.BaseUrl}/card/statement-drafts/{prelimDraft.DraftId}?quickEdit=true");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await page.Locator("input[id^='qe_subject_']").Nth(1).WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
+
+        var subject = page.Locator("input[id^='qe_subject_']").Nth(1);
+        (await subject.GetAttributeAsync("data-fm-quickedit-keepalive")).Should().NotBeNull();
+        await subject.FillAsync(expectedSubject);
+        (await subject.InputValueAsync()).Should().Be(expectedSubject);
+
+        await cookies.SetNearExpiryCookieAsync(page, username);
+        await WaitForForcedKeepaliveThrottleAsync(page);
+        var response = await page.RunAndWaitForResponseAsync(async () =>
+        {
+            await subject.FocusAsync();
+            await subject.BlurAsync();
+        }, IsKeepaliveResponse);
+
+        response.Status.Should().Be(204);
+        (await subject.InputValueAsync()).Should().Be(expectedSubject);
+
+        var profile = await BrowserApiHelper.GetWithStatusAsync<object>(page, "/api/user/settings/profile");
+        profile.Status.Should().Be(200);
+        page.Url.ToLowerInvariant().Should().NotContain("/login");
+    }
+
+    [Fact]
+    public async Task QuickEdit_MultipleFastBlurs_ShouldCoalesceKeepaliveRequests()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var auth = new AuthGateway(page, _fixture.BaseUrl);
+        var seeder = new TestUserSeeder(_fixture.DatabasePath);
+
+        var username = $"quickedit-blur-coalesce-{Guid.NewGuid():N}";
+        const string password = "Secret123";
+
+        await seeder.EnsureUserAsync(username, password);
+        await auth.LoginAsync(username, password);
+
+        var account = await new AccountsApiSeedHelper(page).CreateAccountAsync("E2E QuickEdit Blur Coalesce", "DE50700500000007882907");
+
+        var prelimDraft = await BrowserApiHelper.PostJsonAsync<CreatePreliminaryStatementDraftRequest, StatementDraftDto>(
+            page,
+            "/api/statement-drafts/preliminary",
+            new CreatePreliminaryStatementDraftRequest(account.Id));
+
+        await page.GotoAsync($"{_fixture.BaseUrl}/card/statement-drafts/{prelimDraft.DraftId}?quickEdit=true");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await page.Locator("input[id^='qe_subject_']").Nth(1).WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
+        await WaitForForcedKeepaliveThrottleAsync(page);
+
+        var keepaliveRequests = 0;
+        page.Request += (_, request) =>
+        {
+            if (IsKeepaliveRequest(request))
+            {
+                Interlocked.Increment(ref keepaliveRequests);
+            }
+        };
+
+        var responseTask = page.WaitForResponseAsync(IsKeepaliveResponse);
+        await page.EvaluateAsync("""
+            () => {
+                const inputs = Array.from(document.querySelectorAll('[data-fm-quickedit-keepalive]')).slice(0, 4);
+                for (const input of inputs) {
+                    input.dispatchEvent(new FocusEvent('blur'));
+                }
+            }
+            """);
+
+        var response = await responseTask;
+        response.Status.Should().Be(204);
+        await page.WaitForTimeoutAsync(250);
+
+        keepaliveRequests.Should().Be(1);
+    }
+
+    private static bool IsKeepaliveRequest(IRequest request)
+        => Uri.TryCreate(request.Url, UriKind.Absolute, out var uri)
+            && uri.AbsolutePath.Equals("/api/auth/keepalive", StringComparison.OrdinalIgnoreCase);
+
+    private static Task WaitForForcedKeepaliveThrottleAsync(IPage page)
+        => page.WaitForTimeoutAsync(5200);
+
+    private static bool IsKeepaliveResponse(IResponse response)
+        => Uri.TryCreate(response.Url, UriKind.Absolute, out var uri)
+            && uri.AbsolutePath.Equals("/api/auth/keepalive", StringComparison.OrdinalIgnoreCase);
+
     private async Task<StatementDraftDto> CreateQuickEditDraftWithPersistedRowsAsync(
         IPage page,
         string scenario,
@@ -421,6 +533,7 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
                     fields = new Dictionary<string, object?>
                     {
                         ["BookingDate"] = DateTime.Today.AddDays(-2).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                        ["ValutaDate"] = null,
                         ["Amount"] = 10m,
                         ["Subject"] = "Source Subject",
                         ["RecipientName"] = "Source Recipient",

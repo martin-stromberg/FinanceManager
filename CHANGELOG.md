@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Aktive Session-Erneuerung:** Authentifizierte Browser-Nutzung hält die JWT-Session jetzt per stillem Keepalive aufrecht. Navigation, Interaktion und das Verlassen von Eingabefeldern im Kontoauszugs-Schnellbearbeitungsmodus lösen bei Bedarf einen gedrosselten Refresh-Ping aus; nicht erneuerbare Sessions bleiben beim normalen Login-Redirect mit Return-URL.
+
 - **Posting Reversal (Stornierung):** Erroneous postings can now be cancelled (reversed) via the API and UI (feature branch `140-buchung-rückgängig-machen`).
   - New endpoint `POST /api/postings/{id}/reverse` — creates a counter-posting with negated amount, reversing the original posting (and all postings in the same booking group). Returns a `ReversalResultDto` with the IDs of reversed and newly created postings plus the reconciliation import ID.
   - New endpoint `GET /api/postings/{id}/validate-reversal` — validates whether a posting can be reversed without performing the operation. Returns a `ReversalValidationDto` (`isValid`, `errors[]`). Use this to pre-validate before showing a confirmation UI.

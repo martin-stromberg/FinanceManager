@@ -14,6 +14,8 @@ Im Massenänderungsmodus können editierbare Entwurfszeilen gemeinsam bearbeitet
 
 Im Schnellbearbeitungsmodus einer Kontoauszugdetailansicht können Werte aus der darüberliegenden Zeile übernommen werden, um aufeinanderfolgende, ähnliche Buchungen schneller zu erfassen: Die Taste `F8` im aktuellen Eingabefeld übernimmt den Wert dieses Feldes aus der Zeile darüber. Die Tastenkombination `Strg+F8` übernimmt alle editierbaren Werte der darüberliegenden Zeile in die aktuelle Zeile und überschreibt dabei vorhandene Werte.
 
+Beim Verlassen eines Eingabefelds im Schnellbearbeitungsmodus hält die Anwendung die Anmeldung im Hintergrund aktiv. Nicht gespeicherte Eingaben bleiben dabei unverändert im Feld; es wird kein Entwurf neu geladen und keine zusätzliche Oberfläche angezeigt.
+
 Zusätzlich kann der Fokus im Schnellbearbeitungsmodus zeilenübergreifend in derselben Feldspalte bewegt werden. `Strg+Pfeil hoch` fokussiert das gleiche Eingabefeld in der unmittelbar vorherigen sichtbaren Zeile, `Strg+Pfeil runter` das gleiche Eingabefeld in der unmittelbar nächsten sichtbaren Zeile. Gibt es in der jeweiligen Richtung keine Nachbarzeile, bleibt der aktuelle Fokus erhalten. Die Navigation gilt ausschließlich für Eingabefelder im Schnellbearbeitungsmodus.
 
 Wenn die Klassifizierung keinen vorhandenen Kontakt findet, kann sie die mitgelieferte Liste bekannter Kontakte prüfen. Bei genau einem Treffer wird für den Benutzer automatisch ein Kontakt mit den hinterlegten Alias-Mustern angelegt und der Entwurfszeile zugeordnet. Die Funktion kann in den Einstellungen für den Kontoauszugsimport deaktiviert werden.
