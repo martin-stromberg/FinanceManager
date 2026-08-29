@@ -841,16 +841,10 @@ public sealed class Budgetbericht
         return DateOnly.FromDateTime(posting.BookingDate);
     }
 
-    // NaturalHomeMonth is the month an occurrence is attributed to for BUDGETED-amount display purposes
-    // (see ExpandRulesToExpectationPostings). For a rule anchored on day 1, this is the month containing
-    // the occurrence's period START, same as always - day-1 anchors align with calendar boundaries, so
-    // there is no ambiguity. For a Monthly/Quarterly/CustomMonths rule anchored on any other day, this is
-    // instead the month containing the occurrence's (unclipped) period END: such a rule produces an
-    // occurrence whose period straddles two calendar months (e.g. StartDate day 11 produces a period like
-    // 11 Jul - 10 Aug), and the actual posting fulfilling it is expected to land in the month the period
-    // closes in, not the month it opens in. Yearly rules always use the period start's month regardless of
-    // anchor day, since deferring a yearly amount a full cycle to its close month would be far more
-    // surprising than the day-of-month nuance this exists to handle for shorter intervals.
+    // NaturalHomeMonth is the calendar month an occurrence is attributed to for BUDGETED-amount display.
+    // Monthly rules use calendar months (1st to last day), quarterly rules use calendar quarters
+    // (Jan/Apr/Jul/Oct), and yearly/custom rules use the month of the StartDate as the first anchor.
+    // StartDate is only used to determine the first calendar unit, not as the period boundary.
     private static IEnumerable<(DateOnly PeriodStart, DateOnly PeriodEnd, DateOnly NaturalHomeMonth)> ExpandRuleOccurrences(BudgetRuleDto rule, DateOnly from, DateOnly to)
     {
         var stepMonths = rule.Interval switch
@@ -864,48 +858,10 @@ public sealed class Budgetbericht
 
         var ruleEnd = rule.EndDate ?? to;
 
-        if (rule.Interval == BudgetIntervalType.Yearly)
-        {
-            var normalizedStart = new DateOnly(rule.StartDate.Year, rule.StartDate.Month, 1);
-            var normalizedFrom = new DateOnly(from.Year, from.Month, 1);
-            var normalizedTo = new DateOnly(to.Year, to.Month, 1);
-            var normalizedRuleEnd = new DateOnly(ruleEnd.Year, ruleEnd.Month, 1);
+        var current = rule.Interval == BudgetIntervalType.Quarterly
+            ? new DateOnly(rule.StartDate.Year, ((rule.StartDate.Month - 1) / 3) * 3 + 1, 1)
+            : new DateOnly(rule.StartDate.Year, rule.StartDate.Month, 1);
 
-            while (normalizedStart < normalizedFrom)
-            {
-                normalizedStart = normalizedStart.AddMonths(stepMonths);
-                if (normalizedStart > normalizedRuleEnd)
-                {
-                    yield break;
-                }
-            }
-
-            while (normalizedStart <= normalizedTo && normalizedStart <= normalizedRuleEnd)
-            {
-                var next = normalizedStart.AddMonths(stepMonths);
-                var periodEnd = next.AddDays(-1);
-                if (periodEnd > ruleEnd)
-                {
-                    periodEnd = ruleEnd;
-                }
-
-                if (periodEnd > to)
-                {
-                    periodEnd = to;
-                }
-
-                yield return (normalizedStart, periodEnd, normalizedStart);
-                normalizedStart = next;
-            }
-
-            yield break;
-        }
-
-        // Advance to the first occurrence whose period actually reaches into [from, to] - not merely the
-        // first one that STARTS on or after 'from'. A rule anchored mid-month (e.g. StartDate day 11)
-        // produces occurrences whose period spans into the following month, so the occurrence starting
-        // the month before 'from' can still cover the first days of 'from' and must not be skipped.
-        var current = rule.StartDate;
         while (current.AddMonths(stepMonths).AddDays(-1) < from)
         {
             current = current.AddMonths(stepMonths);
@@ -915,21 +871,10 @@ public sealed class Budgetbericht
             }
         }
 
-        // Rules anchored on day 1 align with calendar month/quarter/year boundaries, so their period start
-        // and the calendar unit they represent are unambiguous - homing them by period start (as
-        // historically) is correct and expected (e.g. a day-1-anchored quarterly rule for Jan-Mar is shown
-        // in January). Only a rule anchored on any other day produces a period that straddles two calendar
-        // months without a natural "which one" answer, which is what the period-end homing below resolves.
-        var homeByPeriodEnd = rule.StartDate.Day != 1;
-
         while (current <= to && current <= ruleEnd)
         {
             var next = current.AddMonths(stepMonths);
-            var unclippedPeriodEnd = next.AddDays(-1);
-            var homeBasis = homeByPeriodEnd ? unclippedPeriodEnd : current;
-            var naturalHomeMonth = new DateOnly(homeBasis.Year, homeBasis.Month, 1);
-
-            var periodEnd = unclippedPeriodEnd;
+            var periodEnd = next.AddDays(-1);
             if (periodEnd > ruleEnd)
             {
                 periodEnd = ruleEnd;
@@ -940,7 +885,7 @@ public sealed class Budgetbericht
                 periodEnd = to;
             }
 
-            yield return (current, periodEnd, naturalHomeMonth);
+            yield return (current, periodEnd, current);
             current = next;
         }
     }

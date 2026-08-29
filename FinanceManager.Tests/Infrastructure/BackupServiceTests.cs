@@ -3,10 +3,13 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using FinanceManager.Domain.Budget;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Backups;
+using FinanceManager.Shared.Dtos.Budget;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -285,6 +288,58 @@ namespace FinanceManager.Tests.Infrastructure
             using var sr = new MemoryStream();
             await stream!.CopyToAsync(sr);
             Assert.Equal(new byte[] {1,2,3}, sr.ToArray());
+
+            try { Directory.Delete(temp, true); } catch { }
+        }
+
+        [Fact]
+        public async Task CreateAsync_IncludesBudgetRulesForCategoryAndPurpose()
+        {
+            var svc = CreateService(out var db, out var temp);
+
+            var userId = Guid.NewGuid();
+            var category = new BudgetCategory(userId, "Arbeit");
+            var purpose = new BudgetPurpose(userId, "Gehalt", BudgetSourceType.Contact, Guid.NewGuid());
+            var categoryRule = new BudgetRule(userId, null, category.Id, 100m, BudgetIntervalType.Monthly, new DateOnly(2026, 1, 1));
+            var purposeRule = new BudgetRule(userId, purpose.Id, null, 200m, BudgetIntervalType.Monthly, new DateOnly(2026, 1, 1));
+
+            db.BudgetCategories.Add(category);
+            db.BudgetPurposes.Add(purpose);
+            db.BudgetRules.Add(categoryRule);
+            db.BudgetRules.Add(purposeRule);
+            await db.SaveChangesAsync();
+
+            var dto = await svc.CreateAsync(userId, CancellationToken.None);
+            Assert.NotNull(dto);
+
+            var rec = db.Backups.FirstOrDefault(b => b.Id == dto.Id);
+            Assert.NotNull(rec);
+            var full = Path.Combine(temp, "backups", rec.StoragePath);
+            Assert.True(File.Exists(full));
+
+            using var fs = File.OpenRead(full);
+            using var zip = new ZipArchive(fs, ZipArchiveMode.Read, leaveOpen: false);
+            var entry = zip.Entries.FirstOrDefault();
+            Assert.NotNull(entry);
+            using var es = entry.Open();
+            using var sr = new StreamReader(es, Encoding.UTF8);
+            _ = await sr.ReadLineAsync();
+            var data = await sr.ReadToEndAsync();
+
+            using var doc = JsonDocument.Parse(data);
+            var rules = doc.RootElement.GetProperty("BudgetRules");
+            Assert.Equal(2, rules.GetArrayLength());
+
+            var hasCategoryRule = rules.EnumerateArray().Any(r =>
+                r.TryGetProperty("BudgetCategoryId", out var c) &&
+                c.GetString() == category.Id.ToString());
+
+            var hasPurposeRule = rules.EnumerateArray().Any(r =>
+                r.TryGetProperty("BudgetPurposeId", out var p) &&
+                p.GetString() == purpose.Id.ToString());
+
+            Assert.True(hasCategoryRule, "Expected a budget rule for a category.");
+            Assert.True(hasPurposeRule, "Expected a budget rule for a purpose.");
 
             try { Directory.Delete(temp, true); } catch { }
         }

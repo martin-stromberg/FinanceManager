@@ -510,19 +510,34 @@ public sealed class SetupImportService : ISetupImportService
             ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
             foreach (var dto in list)
             {
-                if (dto.BudgetPurposeId == null || dto.BudgetPurposeId == Guid.Empty)
+                Guid? mappedPurposeId = null;
+                Guid? mappedCategoryId = null;
+
+                if (dto.BudgetPurposeId.HasValue && dto.BudgetPurposeId.Value != Guid.Empty)
+                {
+                    if (!budgetPurposeMap.TryGetValue(dto.BudgetPurposeId.Value, out var mp))
+                    {
+                        ProgressChanged?.Invoke(this, progress.IncSub());
+                        continue;
+                    }
+                    mappedPurposeId = mp;
+                }
+                else if (dto.BudgetCategoryId.HasValue && dto.BudgetCategoryId.Value != Guid.Empty)
+                {
+                    if (!budgetCategoryMap.TryGetValue(dto.BudgetCategoryId.Value, out var mc))
+                    {
+                        ProgressChanged?.Invoke(this, progress.IncSub());
+                        continue;
+                    }
+                    mappedCategoryId = mc;
+                }
+                else
                 {
                     ProgressChanged?.Invoke(this, progress.IncSub());
                     continue;
                 }
 
-                if (!budgetPurposeMap.TryGetValue(dto.BudgetPurposeId.Value, out var mappedPurposeId))
-                {
-                    ProgressChanged?.Invoke(this, progress.IncSub());
-                    continue;
-                }
-
-                var entity = new BudgetRule(userId, budgetPurposeId: mappedPurposeId, budgetCategoryId: null, dto.Amount, dto.Interval, dto.StartDate, dto.EndDate, dto.CustomIntervalMonths);
+                var entity = new BudgetRule(userId, mappedPurposeId, mappedCategoryId, dto.Amount, dto.Interval, dto.StartDate, dto.EndDate, dto.CustomIntervalMonths);
                 _db.BudgetRules.Add(entity);
                 await _db.SaveChangesAsync(ct);
                 ProgressChanged?.Invoke(this, progress.IncSub());
